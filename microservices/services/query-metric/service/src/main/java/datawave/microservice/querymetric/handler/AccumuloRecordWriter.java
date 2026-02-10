@@ -27,7 +27,7 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import datawave.core.common.connection.AccumuloClientPool;
+import datawave.core.common.connection.AccumuloConnectionFactory;
 
 public class AccumuloRecordWriter extends RecordWriter<Text,Mutation> {
     private MultiTableBatchWriter mtbw = null;
@@ -38,7 +38,7 @@ public class AccumuloRecordWriter extends RecordWriter<Text,Mutation> {
     private boolean simulate;
     private boolean createTables;
 
-    private AccumuloClientPool accumuloClientPool;
+    private AccumuloConnectionFactory connectionFactory;
     private AccumuloClient accumuloClient;
     private static final String PREFIX = AccumuloRecordWriter.class.getSimpleName();
     private static final String USERNAME = PREFIX + ".username";
@@ -58,10 +58,10 @@ public class AccumuloRecordWriter extends RecordWriter<Text,Mutation> {
 
     private AtomicBoolean healthy = new AtomicBoolean(true);
 
-    public AccumuloRecordWriter(AccumuloClientPool accumuloClientPool, Configuration conf) throws Exception {
+    public AccumuloRecordWriter(AccumuloConnectionFactory connectionFactory, Configuration conf) throws Exception {
         this.simulate = getSimulationMode(conf);
         this.createTables = canCreateTables(conf);
-        this.accumuloClientPool = accumuloClientPool;
+        this.connectionFactory = connectionFactory;
 
         if (simulate) {
             log.info("Simulating output only. No writes to tables will occur");
@@ -73,8 +73,8 @@ public class AccumuloRecordWriter extends RecordWriter<Text,Mutation> {
         this.defaultTableName = (tname == null) ? null : new Text(tname);
 
         if (!simulate) {
-            Map<String,String> trackingMap = AccumuloClientTracking.getTrackingMap(Thread.currentThread().getStackTrace());
-            this.accumuloClient = accumuloClientPool.borrowObject(trackingMap);
+            Map<String,String> trackingMap = this.connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
+            this.accumuloClient = this.connectionFactory.getClient(null, null, AccumuloConnectionFactory.Priority.HIGH, trackingMap);
             BatchWriterConfig bwConfig = new BatchWriterConfig();
             bwConfig.setMaxMemory(getMaxMutationBufferSize(conf));
             bwConfig.setMaxLatency(getMaxLatency(conf), TimeUnit.MILLISECONDS);
@@ -215,7 +215,7 @@ public class AccumuloRecordWriter extends RecordWriter<Text,Mutation> {
     public void returnClient() {
         try {
             if (this.accumuloClient != null) {
-                this.accumuloClientPool.returnObject(accumuloClient);
+                this.connectionFactory.returnClient(accumuloClient);
             }
             this.accumuloClient = null;
         } catch (Exception e) {

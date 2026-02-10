@@ -52,6 +52,7 @@ import datawave.query.attributes.ExcerptFields;
 import datawave.query.attributes.SummaryOptions;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.common.grouping.GroupFields;
+import datawave.query.config.annotation.AllHitsQueryConfig;
 import datawave.query.function.DocumentPermutation;
 import datawave.query.iterator.QueryIterator;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
@@ -103,6 +104,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private boolean allTermsIndexOnly;
     private long maxIndexScanTimeMillis = Long.MAX_VALUE;
     private long maxAnyFieldScanTimeMillis = Long.MAX_VALUE;
+    private boolean useNewIndexLookups = false;
 
     // Allows this query to parse the root uids from TLD uids found in the global shard index. This effectively ignores hits in child documents.
     private boolean parseTldUids = false;
@@ -204,6 +206,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private String metadataTableName = TableName.METADATA;
     private String dateIndexTableName = TableName.DATE_INDEX;
     private String indexStatsTableName = TableName.INDEX_STATS;
+    private String truncatedIndexTableName = TableName.TRUNCATED_SHARD_INDEX;
+    private String dayIndexTableName = TableName.SHARD_DAY_INDEX;
+    private String yearIndexTableName = TableName.SHARD_YEAR_INDEX;
     private String defaultDateTypeName = "EVENT";
     // should we cleanup the shards and days hints that are sent to the tservers?
     private boolean cleanupShardsAndDaysQueryHints = true;
@@ -348,6 +353,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private boolean expandFields = true;
     private int maxUnfieldedExpansionThreshold = 500;
     private boolean expandValues = true;
+    private boolean expandUnfieldedValues = true;
     private int maxValueExpansionThreshold = 5000;
     private int maxOrExpansionThreshold = 500;
     private int maxOrRangeThreshold = 10;
@@ -355,6 +361,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private int maxRangesPerRangeIvarator = 5;
     private int maxOrExpansionFstThreshold = 750;
     private long yieldThresholdMs = Long.MAX_VALUE;
+    private int maxYields = 20;
     private String hdfsSiteConfigURLs = null;
     private String hdfsFileCompressionCodec = null;
     private String zookeeperConfig = null;
@@ -553,10 +560,35 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private DocumentScannerConfig documentScannerConfig;
 
     /**
+     * This property is used to avoid the pushdown/pullup portion of the planning. This is used by the DatePartitionedQueryPlanner as the pushdown/pullup is
+     * done by the reprocess planning method.
+     */
+    private boolean deferPushdownPullup = false;
+
+    /**
      * The maximum number of lines to print when streaming the query from the global index. Useful for limiting the logging footprint of large queries when
      * debug logging is enabled.
      */
     private int maxLinesToPrint = -1;
+
+    private String originalJexlQuery;
+
+    private AllHitsQueryConfig allHitsQueryConfig;
+
+    /**
+     * Flag that controls usage of a truncated shard index. This table has a different key structure that requires different scanner configuration.
+     */
+    private boolean useTruncatedIndex = false;
+
+    /**
+     * Flag that controls usage of the sharded index tables. These tables are sharded based on the year or day and shard offsets are tracked in a bitset.
+     */
+    private boolean useShardedIndex = false;
+
+    /**
+     * If the days in the query date range exceed this threshold, the year index is scanned first in an effort to reduce useless scans against the day index
+     */
+    private int dayIndexThreshold = -1;
 
     /**
      * Default constructor
@@ -597,6 +629,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setAllTermsIndexOnly(other.isAllTermsIndexOnly());
         this.setMaxIndexScanTimeMillis(other.getMaxIndexScanTimeMillis());
         this.setMaxAnyFieldScanTimeMillis(other.getMaxAnyFieldScanTimeMillis());
+        this.setUseNewIndexLookups(other.isUseNewIndexLookups());
         this.setCollapseUids(other.getCollapseUids());
         this.setCollapseUidsThreshold(other.getCollapseUidsThreshold());
         this.setEnforceUniqueTermsWithinExpressions(other.getEnforceUniqueTermsWithinExpressions());
@@ -640,6 +673,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setIgnoreNonExistentFields(other.getIgnoreNonExistentFields());
         this.setDateIndexTableName(other.getDateIndexTableName());
         this.setIndexStatsTableName(other.getIndexStatsTableName());
+        this.setDayIndexTableName(other.getDayIndexTableName());
+        this.setYearIndexTableName(other.getYearIndexTableName());
         this.setDefaultDateTypeName(other.getDefaultDateTypeName());
         this.setCleanupShardsAndDaysQueryHints(other.isCleanupShardsAndDaysQueryHints());
         this.setNumQueryThreads(other.getNumQueryThreads());
@@ -721,12 +756,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setExpandFields(other.isExpandFields());
         this.setMaxValueExpansionThreshold(other.getMaxValueExpansionThreshold());
         this.setExpandValues(other.isExpandValues());
+        this.setExpandUnfieldedValues(other.isExpandUnfieldedValues());
         this.setMaxOrExpansionThreshold(other.getMaxOrExpansionThreshold());
         this.setMaxOrRangeThreshold(other.getMaxOrRangeThreshold());
         this.setMaxOrRangeIvarators(other.getMaxOrRangeIvarators());
         this.setMaxRangesPerRangeIvarator(other.getMaxRangesPerRangeIvarator());
         this.setMaxOrExpansionFstThreshold(other.getMaxOrExpansionFstThreshold());
         this.setYieldThresholdMs(other.getYieldThresholdMs());
+        this.setMaxYields(other.getMaxYields());
         this.setHdfsSiteConfigURLs(other.getHdfsSiteConfigURLs());
         this.setHdfsFileCompressionCodec(other.getHdfsFileCompressionCodec());
         this.setZookeeperConfig(other.getZookeeperConfig());
@@ -812,6 +849,13 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setUseDocumentScheduler(other.isUseDocumentScheduler());
         this.setDocumentScannerConfig(other.getDocumentScannerConfig());
         this.setMaxLinesToPrint(other.getMaxLinesToPrint());
+        this.setDeferPushdownPullup(other.isDeferPushdownPullup());
+        this.setUseShardedIndex(other.isUseShardedIndex());
+        this.setDayIndexThreshold(other.getDayIndexThreshold());
+        this.setUseTruncatedIndex(other.isUseTruncatedIndex());
+        this.setTruncatedIndexTableName(other.getTruncatedIndexTableName());
+        this.setOriginalJexlQuery(other.getOriginalJexlQuery());
+        this.setAllHitsQueryConfig(other.getAllHitsQueryConfig());
     }
 
     /**
@@ -1477,6 +1521,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public void setExpandValues(boolean expandValues) {
         this.expandValues = expandValues;
+    }
+
+    public boolean isExpandUnfieldedValues() {
+        return expandUnfieldedValues;
+    }
+
+    public void setExpandUnfieldedValues(boolean expandUnfieldedValues) {
+        this.expandUnfieldedValues = expandUnfieldedValues;
     }
 
     public int getMaxValueExpansionThreshold() {
@@ -2545,6 +2597,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.yieldThresholdMs = yieldThresholdMs;
     }
 
+    public int getMaxYields() {
+        return maxYields;
+    }
+
+    public void setMaxYields(int maxYields) {
+        this.maxYields = maxYields;
+    }
+
     public boolean isTrackSizes() {
         return trackSizes;
     }
@@ -3021,6 +3081,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 isExpandFields() == that.isExpandFields() &&
                 getMaxUnfieldedExpansionThreshold() == that.getMaxUnfieldedExpansionThreshold() &&
                 isExpandValues() == that.isExpandValues() &&
+                isExpandUnfieldedValues() == that.isExpandUnfieldedValues() &&
                 getMaxValueExpansionThreshold() == that.getMaxValueExpansionThreshold() &&
                 getMaxOrExpansionThreshold() == that.getMaxOrExpansionThreshold() &&
                 getMaxOrRangeThreshold() == that.getMaxOrRangeThreshold() &&
@@ -3028,6 +3089,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getMaxRangesPerRangeIvarator() == that.getMaxRangesPerRangeIvarator() &&
                 getMaxOrExpansionFstThreshold() == that.getMaxOrExpansionFstThreshold() &&
                 getYieldThresholdMs() == that.getYieldThresholdMs() &&
+                getMaxYields() == that.getMaxYields() &&
                 getIvaratorCacheBufferSize() == that.getIvaratorCacheBufferSize() &&
                 getIvaratorCacheScanPersistThreshold() == that.getIvaratorCacheScanPersistThreshold() &&
                 getIvaratorCacheScanTimeout() == that.getIvaratorCacheScanTimeout() &&
@@ -3065,6 +3127,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 Objects.equals(getMetadataTableName(), that.getMetadataTableName()) &&
                 Objects.equals(getDateIndexTableName(), that.getDateIndexTableName()) &&
                 Objects.equals(getIndexStatsTableName(), that.getIndexStatsTableName()) &&
+                Objects.equals(getDayIndexTableName(), that.getDayIndexTableName()) &&
+                Objects.equals(getYearIndexTableName(), that.getYearIndexTableName()) &&
                 Objects.equals(getDefaultDateTypeName(), that.getDefaultDateTypeName()) &&
                 Objects.equals(getNumQueryThreads(), that.getNumQueryThreads()) &&
                 Objects.equals(numLookupThreads, that.numLookupThreads) &&
@@ -3146,8 +3210,29 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 isSortQueryPostIndexWithTermCounts() == that.isSortQueryPostIndexWithTermCounts() &&
                 isSortQueryPostIndexWithFieldCounts() == that.isSortQueryPostIndexWithFieldCounts() &&
                 getCardinalityThreshold() == that.getCardinalityThreshold() &&
-                Objects.equals(getNoExpansionIfCurrentDateTypes(), that.getNoExpansionIfCurrentDateTypes());
-
+                isDeferPushdownPullup() == that.isDeferPushdownPullup() &&
+                getIndexFieldHoleMinThreshold() == that.getIndexFieldHoleMinThreshold() &&
+                Objects.equals(getQueryTreeScanHintRules(), that.getQueryTreeScanHintRules()) &&
+                Objects.equals(getSummaryIterator(), that.getSummaryIterator()) &&
+                Objects.equals(getDisallowedRegexPatterns(), that.getDisallowedRegexPatterns()) &&
+                Objects.equals(getNoExpansionIfCurrentDateTypes(), that.getNoExpansionIfCurrentDateTypes()) &&
+                isDateIndexIterator() == that.isDateIndexIterator() &&
+                isUseDocumentScheduler() == that.isUseDocumentScheduler() &&
+                Objects.equals(getSummaryFieldName(), that.getSummaryFieldName()) &&
+                Objects.equals(getShardDateFormatter(), that.getShardDateFormatter()) &&
+                Objects.equals(getDocumentScannerConfig(), that.getDocumentScannerConfig()) &&
+                Objects.equals(getExcerptIterator(), that.getExcerptIterator()) &&
+                isUseQueryTreeScanHintRules() == that.isUseQueryTreeScanHintRules() &&
+                getMaxLinesToPrint() == that.getMaxLinesToPrint() &&
+                getMaxAnyFieldScanTimeMillis() == that.getMaxAnyFieldScanTimeMillis() &&
+                isUseNewIndexLookups() == that.isUseNewIndexLookups() &&
+                isDisableIteratorUniqueFields() == that.isDisableIteratorUniqueFields() &&
+                isUseShardedIndex() == that.isUseShardedIndex() &&
+                getDayIndexThreshold() == that.getDayIndexThreshold() &&
+                isUseTruncatedIndex() == that.isUseTruncatedIndex() &&
+                getTruncatedIndexTableName() == that.getTruncatedIndexTableName() &&
+                Objects.equals(getOriginalJexlQuery(), that.getOriginalJexlQuery()) &&
+                Objects.equals(getAllHitsQueryConfig(), that.getAllHitsQueryConfig());
         // @formatter:on
     }
 
@@ -3207,6 +3292,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getMetadataTableName(),
                 getDateIndexTableName(),
                 getIndexStatsTableName(),
+                getDayIndexTableName(),
+                getYearIndexTableName(),
                 getDefaultDateTypeName(),
                 isCleanupShardsAndDaysQueryHints(),
                 getNumQueryThreads(),
@@ -3222,6 +3309,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getEnricherClassNames(),
                 getUseFilters(),
                 getFilterClassNames(),
+                getFieldRuleClassName(),
                 getIndexFilteringClassNames(),
                 getNonEventKeyPrefixes(),
                 getUnevaluatedFields(),
@@ -3286,6 +3374,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 isExpandFields(),
                 getMaxUnfieldedExpansionThreshold(),
                 isExpandValues(),
+                isExpandUnfieldedValues(),
                 getMaxValueExpansionThreshold(),
                 getMaxOrExpansionThreshold(),
                 getMaxOrRangeThreshold(),
@@ -3293,6 +3382,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getMaxRangesPerRangeIvarator(),
                 getMaxOrExpansionFstThreshold(),
                 getYieldThresholdMs(),
+                getMaxYields(),
                 getHdfsSiteConfigURLs(),
                 getHdfsFileCompressionCodec(),
                 getZookeeperConfig(),
@@ -3357,7 +3447,30 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 isSortQueryPostIndexWithTermCounts(),
                 isSortQueryPostIndexWithFieldCounts(),
                 getCardinalityThreshold(),
-                getNoExpansionIfCurrentDateTypes()
+                getNoExpansionIfCurrentDateTypes(),
+                isDeferPushdownPullup(),
+                getIndexFieldHoleMinThreshold(),
+                getQueryTreeScanHintRules(),
+                getSummaryIterator(),
+                getDisallowedRegexPatterns(),
+                getNoExpansionIfCurrentDateTypes(),
+                isDateIndexIterator(),
+                isUseDocumentScheduler(),
+                getSummaryFieldName(),
+                getShardDateFormatter(),
+                getDocumentScannerConfig(),
+                getExcerptIterator(),
+                isUseQueryTreeScanHintRules(),
+                getMaxLinesToPrint(),
+                getMaxAnyFieldScanTimeMillis(),
+                isUseNewIndexLookups(),
+                isDisableIteratorUniqueFields(),
+                isUseShardedIndex(),
+                getDayIndexThreshold(),
+                isUseTruncatedIndex(),
+                getTruncatedIndexTableName(),
+                getOriginalJexlQuery(),
+                getAllHitsQueryConfig()
         );
         // @formatter:on
     }
@@ -3423,5 +3536,85 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public void setMaxLinesToPrint(int maxLinesToPrint) {
         this.maxLinesToPrint = maxLinesToPrint;
+    }
+
+    public boolean isDeferPushdownPullup() {
+        return deferPushdownPullup;
+    }
+
+    public void setDeferPushdownPullup(boolean deferPushdownPullup) {
+        this.deferPushdownPullup = deferPushdownPullup;
+    }
+
+    public String getDayIndexTableName() {
+        return dayIndexTableName;
+    }
+
+    public void setDayIndexTableName(String dayIndexTableName) {
+        this.dayIndexTableName = dayIndexTableName;
+    }
+
+    public String getYearIndexTableName() {
+        return yearIndexTableName;
+    }
+
+    public void setYearIndexTableName(String yearIndexTableName) {
+        this.yearIndexTableName = yearIndexTableName;
+    }
+
+    public boolean isUseShardedIndex() {
+        return useShardedIndex;
+    }
+
+    public void setUseShardedIndex(boolean useShardedIndex) {
+        this.useShardedIndex = useShardedIndex;
+    }
+
+    public int getDayIndexThreshold() {
+        return dayIndexThreshold;
+    }
+
+    public void setDayIndexThreshold(int dayIndexThreshold) {
+        this.dayIndexThreshold = dayIndexThreshold;
+    }
+
+    public boolean isUseTruncatedIndex() {
+        return useTruncatedIndex;
+    }
+
+    public void setUseTruncatedIndex(boolean useTruncatedIndex) {
+        this.useTruncatedIndex = useTruncatedIndex;
+    }
+
+    public String getTruncatedIndexTableName() {
+        return truncatedIndexTableName;
+    }
+
+    public void setTruncatedIndexTableName(String truncatedIndexTableName) {
+        this.truncatedIndexTableName = truncatedIndexTableName;
+    }
+
+    public AllHitsQueryConfig getAllHitsQueryConfig() {
+        return allHitsQueryConfig;
+    }
+
+    public void setAllHitsQueryConfig(AllHitsQueryConfig allHitsQueryConfig) {
+        this.allHitsQueryConfig = allHitsQueryConfig;
+    }
+
+    public String getOriginalJexlQuery() {
+        return originalJexlQuery;
+    }
+
+    public void setOriginalJexlQuery(String originalJexlQuery) {
+        this.originalJexlQuery = originalJexlQuery;
+    }
+
+    public boolean isUseNewIndexLookups() {
+        return useNewIndexLookups;
+    }
+
+    public void setUseNewIndexLookups(boolean useNewIndexLookups) {
+        this.useNewIndexLookups = useNewIndexLookups;
     }
 }

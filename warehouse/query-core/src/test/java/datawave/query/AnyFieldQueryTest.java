@@ -1347,7 +1347,11 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
 
         RegexPushdownTransformRule rule = new RegexPushdownTransformRule();
         rule.setRegexPatterns(Arrays.asList("\\.\\*[0-9a-zA-Z]", "[0-9a-zA-Z]\\.\\*"));
-        ((DatePartitionedQueryPlanner) logic.getQueryPlanner()).getQueryPlanner().setTransformRules(Collections.singletonList(rule));
+        if (logic.getQueryPlanner() instanceof DatePartitionedQueryPlanner) {
+            ((DatePartitionedQueryPlanner) logic.getQueryPlanner()).getQueryPlanner().setTransformRules(Collections.singletonList(rule));
+        } else if (logic.getQueryPlanner() instanceof DefaultQueryPlanner) {
+            ((DefaultQueryPlanner) logic.getQueryPlanner()).setTransformRules(Collections.singletonList(rule));
+        }
 
         // Test the plan with all expansions
         try {
@@ -1433,7 +1437,11 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
 
         RegexPushdownTransformRule rule = new RegexPushdownTransformRule();
         rule.setRegexPatterns(Arrays.asList("\\.\\*[0-9a-zA-Z]", "[0-9a-zA-Z]\\.\\*"));
-        ((DatePartitionedQueryPlanner) logic.getQueryPlanner()).getQueryPlanner().setTransformRules(Collections.singletonList(rule));
+        if (logic.getQueryPlanner() instanceof DatePartitionedQueryPlanner) {
+            ((DatePartitionedQueryPlanner) logic.getQueryPlanner()).getQueryPlanner().setTransformRules(Collections.singletonList(rule));
+        } else if (logic.getQueryPlanner() instanceof DefaultQueryPlanner) {
+            ((DefaultQueryPlanner) logic.getQueryPlanner()).setTransformRules(Collections.singletonList(rule));
+        }
 
         // Test the plan with all expansions
         String expect = "CITY == 'rome' && ((_Eval_ = true) && (COUNTRY =~ '.*y'))";
@@ -1463,7 +1471,7 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
         this.documentKey = CityField.EVENT_ID.name();
     }
 
-    private static class DelayedClient implements AccumuloClient {
+    public static class DelayedClient implements AccumuloClient {
         private final AccumuloClient client;
         private long delay;
 
@@ -1697,6 +1705,15 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
                 this.delegateScanner.addScanIterator(iteratorSetting);
             } else if (this.delegateBatchScanner != null) {
                 this.delegateBatchScanner.addScanIterator(iteratorSetting);
+            }
+        }
+
+        @Override
+        public void setExecutionHints(Map<String,String> hints) {
+            if (delegateScanner != null) {
+                delegateScanner.setExecutionHints(hints);
+            } else if (delegateBatchScanner != null) {
+                delegateBatchScanner.setExecutionHints(hints);
             }
         }
 
