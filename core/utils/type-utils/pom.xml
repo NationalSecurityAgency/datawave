@@ -11,7 +11,7 @@
     <properties>
         <datawave.webservice.namespace>http://webservice.datawave.nsa/v1</datawave.webservice.namespace>
         <spotbugs.excludes.file>${project.basedir}/src/main/spotbugs/excludes.xml</spotbugs.excludes.file>
-        <version.commons-lang3>3.12.0</version.commons-lang3>
+        <version.commons-lang3>3.20.0</version.commons-lang3>
         <version.commons-net>3.6</version.commons-net>
     </properties>
     <dependencyManagement>
