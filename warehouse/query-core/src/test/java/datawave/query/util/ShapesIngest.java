@@ -6,7 +6,9 @@ import static datawave.util.TableName.SHARD_INDEX;
 import static datawave.util.TableName.SHARD_RINDEX;
 
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.accumulo.core.client.AccumuloClient;
@@ -28,6 +30,8 @@ import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.ListType;
 import datawave.data.type.NumberType;
 import datawave.ingest.protobuf.Uid;
+import datawave.query.index.day.IndexIngestUtil;
+import datawave.test.MacTestUtil;
 import datawave.util.TableName;
 
 /**
@@ -107,6 +111,8 @@ public class ShapesIngest {
 
     private static final LongCombiner.VarLenEncoder encoder = new LongCombiner.VarLenEncoder();
 
+    private static final IndexIngestUtil ingestUtil = new IndexIngestUtil();
+
     protected static String normalizerForField(String field) {
         switch (field) {
             case "SHAPE":
@@ -136,14 +142,16 @@ public class ShapesIngest {
         tops.create(SHARD_RINDEX);
         tops.create(METADATA);
 
+        Map<String,String> additions = new HashMap<>();
         IteratorUtil.IteratorScope[] scopes = IteratorUtil.IteratorScope.values();
         for (IteratorUtil.IteratorScope scope : scopes) {
             String name = "table.iterator." + scope.name() + ".UIDAggregator";
             String opt = "table.iterator." + scope.name() + ".UIDAggregator.opt.*";
 
-            client.tableOperations().setProperty(SHARD_INDEX, name, "19,datawave.iterators.TotalAggregatingIterator");
-            client.tableOperations().setProperty(SHARD_INDEX, opt, "datawave.ingest.table.aggregator.KeepCountOnlyUidAggregator");
+            additions.put(name, "19,datawave.iterators.TotalAggregatingIterator");
+            additions.put(opt, "datawave.ingest.table.aggregator.KeepCountOnlyUidAggregator");
         }
+        MacTestUtil.addPropertiesAndWait(tops, SHARD_INDEX, additions);
 
         // grant root user all auths so they can scan the tables
         client.securityOperations().changeUserAuthorizations("root", new Authorizations("ALL"));
@@ -621,6 +629,10 @@ public class ShapesIngest {
             m.put("ns", "20240101_1", new Value());
             bw.addMutation(m);
         }
+
+        // this is hacky and highlights an opportunity to improve the test framework
+        Authorizations auths = new Authorizations("ALL");
+        ingestUtil.write(client, auths);
     }
 
     private static void tokenize(AccumuloClient client, BatchWriterConfig config, String field, String data, RangeType type, String datatype, String uid)

@@ -184,7 +184,8 @@ public class UnfieldedIndexExpansionVisitorIT extends BaseIndexExpansionTest {
         write("bat", "FIELD_B", EXCEPTEDVALUE); // should simulate a timeout
         write("baz", "FIELD_C");
         String query = "_ANYFIELD_ =~ 'ba.*'";
-        assertThrows(DatawaveFatalQueryException.class, () -> driveExpansion(query, null));
+        String expected = "_NOFIELD_ =~ 'ba.*'";
+        assertThrows(DatawaveFatalQueryException.class, () -> driveExpansion(query, expected));
     }
 
     @Test
@@ -248,6 +249,56 @@ public class UnfieldedIndexExpansionVisitorIT extends BaseIndexExpansionTest {
         String query = "_ANYFIELD_ =~ 'ba.*'";
         String expected = "FIELD_A == 'bar' || FIELD_A == 'baz'";
         config.setDatatypeFilter(Set.of("datatype-a", "datatype-b"));
+        driveExpansion(query, expected);
+    }
+
+    @Test
+    public void testLiteralExpansionZeroTimeout() throws Exception {
+        write("bar", "FIELD_A");
+        write("bar", "FIELD_B");
+        write("bar", "FIELD_C");
+        String query = "_ANYFIELD_ == 'bar'";
+        String expected = "FIELD_A == 'bar' || FIELD_B == 'bar' || FIELD_C == 'bar'";
+        // unfielded literal expansion does not use a timeout
+        config.setMaxIndexScanTimeMillis(0L);
+        driveExpansion(query, expected);
+    }
+
+    @Test
+    public void testRegexExpansionZeroTimeout() throws Exception {
+        write("bach", "FIELD_A");
+        write("bar", "FIELD_B");
+        write("baz", "FIELD_C");
+        String query = "_ANYFIELD_ =~ 'ba.*'";
+        // new index lookups treat zero timeout as 'don't even run the scan'
+        // String expected = "_NOFIELD_ =~ 'ba.*'";
+        String expected = "FIELD_B == 'bar' || FIELD_A == 'bach' || FIELD_C == 'baz'";
+        config.setMaxIndexScanTimeMillis(0L);
+        driveExpansion(query, expected);
+    }
+
+    @Test
+    public void testReverseIndexExpansion() throws Exception {
+        writeReverse("aaa", "FIELD_A");
+        writeReverse("aaa", "FIELD_B");
+        String query = "_ANYFIELD_ =~ '.*?aa'";
+        String expected = "FIELD_A == 'aaa' || FIELD_B == 'aaa'";
+        driveExpansion(query, expected);
+    }
+
+    @Test
+    public void testReverseIndexExpansionDates() throws Exception {
+        writeReverse("abc", "FIELD_A", "20250605_1");
+        writeReverse("abc", "FIELD_A", "20250606_1");
+        writeReverse("abc", "FIELD_A", "20250607_1");
+        writeReverse("abc", "FIELD_B", "20250605_1");
+        writeReverse("abc", "FIELD_B", "20250606_1");
+        writeReverse("abc", "FIELD_B", "20250607_1");
+        writeReverse("abc", "FIELD_C", "20250605_1");
+        writeReverse("abc", "FIELD_C", "20250606_1");
+        writeReverse("abc", "FIELD_C", "20250607_1");
+        String query = "_ANYFIELD_ =~ '.*?c'";
+        String expected = "FIELD_A == 'abc' || FIELD_B == 'abc' || FIELD_C == 'abc'";
         driveExpansion(query, expected);
     }
 

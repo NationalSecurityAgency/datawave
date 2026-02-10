@@ -395,6 +395,17 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
     }
 
     /**
+     * Some implementations of {@link ScannerSession} support seeking
+     *
+     * @param seekShard
+     *            the minimum shard to advance to
+     * @return the result of advancing the underlying iterator
+     */
+    public String seek(String seekShard) {
+        return seekShard;
+    }
+
+    /**
      * Override this for your specific implementation.
      *
      * @param lastKey

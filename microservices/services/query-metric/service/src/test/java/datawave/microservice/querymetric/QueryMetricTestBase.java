@@ -66,7 +66,7 @@ import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.map.IMap;
 import com.hazelcast.spring.cache.HazelcastCacheManager;
 
-import datawave.core.common.connection.AccumuloClientPool;
+import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.ingest.protobuf.Uid;
 import datawave.marking.MarkingFunctions;
 import datawave.microservice.authorization.preauth.ProxiedEntityX509Filter;
@@ -74,7 +74,6 @@ import datawave.microservice.authorization.user.DatawaveUserDetails;
 import datawave.microservice.querymetric.config.QueryMetricClientProperties;
 import datawave.microservice.querymetric.config.QueryMetricHandlerProperties;
 import datawave.microservice.querymetric.function.QueryMetricSupplier;
-import datawave.microservice.querymetric.handler.AccumuloClientTracking;
 import datawave.microservice.querymetric.handler.QueryMetricCombiner;
 import datawave.microservice.querymetric.handler.ShardTableQueryMetricHandler;
 import datawave.microservice.security.util.DnUtils;
@@ -117,7 +116,7 @@ public class QueryMetricTestBase {
     protected CacheManager cacheManager;
 
     @Autowired
-    protected @Qualifier("warehouse") AccumuloClientPool accumuloClientPool;
+    protected AccumuloConnectionFactory connectionFactory;
 
     @Autowired
     protected QueryMetricHandlerProperties queryMetricHandlerProperties;
@@ -192,8 +191,8 @@ public class QueryMetricTestBase {
         this.tables.add(queryMetricHandlerProperties.getReverseIndexTableName());
         this.tables.add(queryMetricHandlerProperties.getShardTableName());
         try {
-            Map<String,String> trackingMap = AccumuloClientTracking.getTrackingMap(Thread.currentThread().getStackTrace());
-            this.accumuloClient = this.accumuloClientPool.borrowObject(trackingMap);
+            Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
+            this.accumuloClient = connectionFactory.getClient(null, null, AccumuloConnectionFactory.Priority.NORMAL, trackingMap);
         } catch (Exception e) {
             log.error(e.getMessage(), e);
         }
@@ -209,7 +208,13 @@ public class QueryMetricTestBase {
         deleteAccumuloEntries(this.accumuloClient, this.tables, this.auths);
         this.incomingQueryMetricsCache.clear();
         this.lastWrittenQueryMetricCache.clear();
-        this.accumuloClientPool.returnObject(this.accumuloClient);
+        if (this.accumuloClient != null) {
+            try {
+                connectionFactory.returnClient(this.accumuloClient);
+            } catch (Exception e) {
+                log.error(e.getMessage(), e);
+            }
+        }
     }
 
     protected EventBase toEvent(BaseQueryMetric metric) {

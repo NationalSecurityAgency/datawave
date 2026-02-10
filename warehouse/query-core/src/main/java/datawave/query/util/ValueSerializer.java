@@ -175,15 +175,19 @@ public interface ValueSerializer<T> {
     }
 
     class KryoValueSerializer implements ValueSerializer<KryoSerializable> {
-        private final static int DEFAULT_BUFFER_SIZE = 4096;
+        // Reference Kryo source (maximum length)
+        // See https://stackoverflow.com/questions/3038392/do-java-arrays-have-a-maximum-size
+        private final static int MAX_BUFFER_SIZE = Integer.MAX_VALUE - 8;
+
+        final static int DEFAULT_BUFFER_SIZE = 4096;
 
         private final Kryo kryo = new Kryo();
         private final byte[] bufferInput = new byte[DEFAULT_BUFFER_SIZE];
         private final byte[] bufferOutput = new byte[DEFAULT_BUFFER_SIZE];
 
         @Override
-        public Value serialize(KryoSerializable item) {
-            try (Output output = new Output(bufferOutput)) {
+        public Value serialize(KryoSerializable item) throws IOException {
+            try (Output output = new Output(bufferOutput, MAX_BUFFER_SIZE)) {
                 item.write(kryo, output);
                 output.flush();
                 return new Value(output.toBytes());
