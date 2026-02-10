@@ -47,12 +47,6 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <groupId>org.powermock</groupId>
-                <artifactId>powermock-api-support</artifactId>
-                <version>${version.powermock}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-simple</artifactId>
                 <version>${version.slf4j}</version>
@@ -92,11 +86,6 @@
         <dependency>
             <groupId>io.protostuff</groupId>
             <artifactId>protostuff-core</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.powermock</groupId>
-            <artifactId>powermock-api-support</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
