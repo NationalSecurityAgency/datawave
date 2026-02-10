@@ -124,7 +124,7 @@ public class SegmentUtilsJsonTest {
                 "Expected an exception from malformed json");
         //@formatter:on
         System.out.println(e.getMessage());
-        assertTrue(e.getMessage().contains("Expect an array"));
+        assertTrue(e.getMessage().contains("Expected an array"));
 
     }
 

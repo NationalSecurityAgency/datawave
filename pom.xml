@@ -59,7 +59,7 @@
         <version.caffeine>3.1.0</version.caffeine>
         <version.commons-beanutils>1.9.4</version.commons-beanutils>
         <version.commons-cli>1.4</version.commons-cli>
-        <version.commons-codec>1.12</version.commons-codec>
+        <version.commons-codec>1.17.1</version.commons-codec>
         <version.commons-collections>3.2.2</version.commons-collections>
         <version.commons-collections4>4.3</version.commons-collections4>
         <version.commons-configuration>1.10</version.commons-configuration>
@@ -100,7 +100,7 @@
         <version.httpcomponents-httpcore>4.4.8</version.httpcomponents-httpcore>
         <version.in-memory-accumulo>4.0.4</version.in-memory-accumulo>
         <version.infinispan>9.4.21.Final</version.infinispan>
-        <version.jackson>2.13.5</version.jackson>
+        <version.jackson>2.17.2</version.jackson>
         <version.jackson-mapper-asl>1.9.13</version.jackson-mapper-asl>
         <version.jakarta>2.3.3</version.jakarta>
         <version.javassist>3.24.0-GA</version.javassist>
@@ -128,18 +128,18 @@
         <version.minlog>1.2</version.minlog>
         <version.mockito>2.23.0</version.mockito>
         <version.mysql-connector>9.3.0</version.mysql-connector>
-        <version.netty>4.1.42.Final</version.netty>
+        <version.netty>4.1.115.Final</version.netty>
         <version.objenesis>2.1</version.objenesis>
         <version.picketbox>5.0.3.Final</version.picketbox>
         <version.powermock>2.0.9</version.powermock>
         <version.proto-google-common-protos>2.61.0</version.proto-google-common-protos>
-        <version.protobuf>3.16.3</version.protobuf>
-        <version.protobuf-java-util>3.16.3</version.protobuf-java-util>
+        <version.protobuf>3.25.5</version.protobuf>
+        <version.protobuf-java-util>3.25.5</version.protobuf-java-util>
         <version.protostuff>1.6.2</version.protostuff>
         <version.saxon-he>12.4</version.saxon-he>
         <version.slf4j>2.0.17</version.slf4j>
         <version.spotify-dns>3.1.5</version.spotify-dns>
-        <version.spring>5.2.2.RELEASE</version.spring>
+        <version.spring>5.3.39</version.spring>
         <version.springframework>${version.spring}</version.springframework>
         <version.stream>2.9.6</version.stream>
         <version.thrift>0.17.0</version.thrift>
