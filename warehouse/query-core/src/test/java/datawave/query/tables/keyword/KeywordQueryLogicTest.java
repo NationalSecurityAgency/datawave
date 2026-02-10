@@ -17,8 +17,11 @@ import static org.powermock.api.easymock.PowerMock.verifyAll;
 
 import java.util.AbstractMap;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import org.apache.accumulo.core.client.AccumuloClient;
@@ -28,6 +31,7 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.commons.collections.iterators.ArrayListIterator;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.junit.Before;
 import org.junit.Test;
@@ -46,7 +50,10 @@ import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
 import datawave.query.config.KeywordQueryConfiguration;
 import datawave.query.tables.ScannerFactory;
+import datawave.query.tables.keyword.transform.KeywordResultsTransformer;
 import datawave.util.keyword.KeywordResults;
+import datawave.util.keyword.TagCloudInput;
+import datawave.util.keyword.TagCloudPartition;
 import datawave.webservice.query.exception.QueryException;
 
 @SuppressWarnings("rawtypes")
@@ -70,6 +77,7 @@ public class KeywordQueryLogicTest {
 
         keywordQueryLogic.scannerFactory = mockScannerFactory;
         when(mockScannerFactory.newScanner(any(), any(), anyInt(), any())).thenReturn(mockScanner);
+        when(mockScanner.iterator()).thenReturn(new ArrayListIterator());
         when(mockKeywordConfig.getState()).thenReturn(mockKeywordState);
     }
 
@@ -80,12 +88,18 @@ public class KeywordQueryLogicTest {
 
     @Test
     public void setupQueryValidConfigurationSetsUpScanner() throws Exception {
+        Query settings = new QueryImpl();
+        settings.setQuery("not null");
+        when(mockKeywordConfig.getQuery()).thenReturn(settings);
         keywordQueryLogic.setupQuery(mockKeywordConfig);
         verify(mockScanner).setRanges(any());
     }
 
     @Test
     public void setupQueryWithViewNameSetsIteratorSetting() throws Exception {
+        Query settings = new QueryImpl();
+        settings.setQuery("not null");
+        when(mockKeywordConfig.getQuery()).thenReturn(settings);
         keywordQueryLogic.setupQuery(mockKeywordConfig);
         keywordQueryLogic.getConfig().getState().getPreferredViews().add("FOO");
         verify(mockScanner).addScanIterator(any());
@@ -93,8 +107,50 @@ public class KeywordQueryLogicTest {
 
     @Test
     public void setupQueryTableNotFoundThrowsRuntimeException() throws Exception {
+        Query settings = new QueryImpl();
+        settings.setQuery("not null");
+        when(mockKeywordConfig.getQuery()).thenReturn(settings);
         when(mockScannerFactory.newScanner(any(), any(), anyInt(), any())).thenThrow(TableNotFoundException.class);
         assertThrows(RuntimeException.class, () -> keywordQueryLogic.setupQuery(mockKeywordConfig));
+    }
+
+    @Test
+    public void setupNoQuery() throws Exception {
+        keywordQueryLogic.setupQuery(mockKeywordConfig);
+        assertFalse(keywordQueryLogic.iterator().hasNext());
+    }
+
+    @Test
+    public void setupExternalDataQuery() throws Exception {
+        keywordQueryLogic.setExternalData(List.of(Map.entry(new Key("externalKey"), new Value("externalValue"))), Set.of());
+        keywordQueryLogic.setupQuery(mockKeywordConfig);
+        Iterator<Entry<Key,Value>> itr = keywordQueryLogic.iterator();
+        assertTrue(itr.hasNext());
+        Entry<Key,Value> entry = itr.next();
+        assertEquals(new Key("externalKey"), entry.getKey());
+        assertEquals(new Value("externalValue"), entry.getValue());
+        assertFalse(itr.hasNext());
+    }
+
+    @Test
+    public void cloneExternalTest() throws Exception {
+        keywordQueryLogic.setExternalData(List.of(Map.entry(new Key("externalKey"), new Value("externalValue"))), Set.of());
+        keywordQueryLogic.setupQuery(mockKeywordConfig);
+        Iterator<Entry<Key,Value>> itr = keywordQueryLogic.iterator();
+        assertTrue(itr.hasNext());
+        Entry<Key,Value> entry = itr.next();
+        assertEquals(new Key("externalKey"), entry.getKey());
+        assertEquals(new Value("externalValue"), entry.getValue());
+        assertFalse(itr.hasNext());
+
+        KeywordQueryLogic clone = (KeywordQueryLogic) keywordQueryLogic.clone();
+        clone.setupQuery(mockKeywordConfig);
+        itr = clone.iterator();
+        assertTrue(itr.hasNext());
+        entry = itr.next();
+        assertEquals(new Key("externalKey"), entry.getKey());
+        assertEquals(new Value("externalValue"), entry.getValue());
+        assertFalse(itr.hasNext());
     }
 
     @Test
@@ -201,12 +257,15 @@ public class KeywordQueryLogicTest {
         replayAll();
 
         logic.initialize(mockClient, settings, Set.of(auths));
-        QueryLogicTransformer<Map.Entry<Key,Value>,KeywordResults> transformer = logic.getTransformer(settings);
-        KeywordResults base = transformer.transform(entry);
-        String json = base.toJson();
-        assertEquals("{\"source\":\"someSource\",\"view\":\"someView\",\"language\":\"someLanguage\",\"visibility\":\"someVisibility\",\"keywords\":{\"get much\":0.5903,\"kind\":0.2546,\"kind word\":0.2052}}",
-                        json);
+        QueryLogicTransformer<Map.Entry<Key,Value>,TagCloudPartition> transformer = logic.getTransformer(settings);
+        TagCloudPartition base = transformer.transform(entry);
+
         verifyAll();
+
+        TagCloudPartition expected = new TagCloudPartition("someLanguage", KeywordResultsTransformer.LABEL,
+                        List.of(new TagCloudInput("someSource", "someVisibility", Map.of("get much", 0.5903, "kind", 0.2546, "kind word", 0.2052),
+                                        Map.of("view", "someView", "language", "someLanguage", "type", KeywordResultsTransformer.LABEL))));
+        assertEquals(expected, base);
     }
 
     private static class TestKeywordQuery extends KeywordQueryLogic {
@@ -244,7 +303,7 @@ public class KeywordQueryLogicTest {
         }
 
         @Override
-        public QueryLogicTransformer<Map.Entry<Key,Value>,KeywordResults> getTransformer(Query settings) {
+        public QueryLogicTransformer<Map.Entry<Key,Value>,TagCloudPartition> getTransformer(Query settings) {
             return null;
         }
 

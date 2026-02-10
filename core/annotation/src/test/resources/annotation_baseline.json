@@ -1,0 +1,5646 @@
+{
+  "annotations": [{
+    "shard": "20250405_123",
+    "dataType": "audio",
+    "uid": "l46b0b.l9xx93.-jsda4n",
+    "annotationId": "A7699117",
+    "documentId": "000000000001",
+    "annotationType": "tts",
+    "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+    "source": {
+      "analyticHash": "86226841",
+      "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+      "engine": "inline v6",
+      "model": "GR Supra",
+      "configuration": {
+        "octane": "99",
+        "model_year": "2025"
+      },
+      "metadata": {
+        "visibility": "PUBLIC",
+        "created_date": "2025-10-01T00:00:00Z"
+      }
+    },
+    "segments": [{
+      "segmentHash": "6BD6F28F",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 0,
+        "end": 5000
+      },
+      "values": [{
+        "valueHash": "B578A0BB",
+        "value": "the",
+        "score": 0.235
+      }, {
+        "valueHash": "B578A0BB",
+        "value": "the",
+        "score": 0.21
+      }]
+    }, {
+      "segmentHash": "71B06C7B",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 10000,
+        "end": 15000
+      },
+      "values": [{
+        "valueHash": "2CE5103A",
+        "value": "cat",
+        "score": 0.235
+      }, {
+        "valueHash": "102EA958",
+        "value": "bat",
+        "score": 0.21
+      }]
+    }, {
+      "segmentHash": "868C6413",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 20000,
+        "end": 25000
+      },
+      "values": [{
+        "valueHash": "8E4C5C70",
+        "value": "sat",
+        "score": 0.235
+      }, {
+        "valueHash": "6B4F46BE",
+        "value": "ate",
+        "score": 0.21
+      }]
+    }, {
+      "segmentHash": "941674A8",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 30000,
+        "end": 35000
+      },
+      "values": [{
+        "valueHash": "1F83A785",
+        "value": "on",
+        "score": 0.235
+      }, {
+        "valueHash": "017E7B4F",
+        "value": "\u003cunk\u003e",
+        "score": 0.21
+      }]
+    }, {
+      "segmentHash": "FA0FE295",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 40000,
+        "end": 45000
+      },
+      "values": [{
+        "valueHash": "B578A0BB",
+        "value": "the",
+        "score": 0.235
+      }, {
+        "valueHash": "B578A0BB",
+        "value": "the",
+        "score": 0.21
+      }]
+    }, {
+      "segmentHash": "2EB66E6D",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 50000,
+        "end": 55000
+      },
+      "values": [{
+        "valueHash": "76BEE44F",
+        "value": "mat",
+        "score": 0.235
+      }, {
+        "valueHash": "84962936",
+        "value": "gnat",
+        "score": 0.21
+      }]
+    }, {
+      "segmentHash": "E103E6C3",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 60000,
+        "end": 65000
+      },
+      "values": [{
+        "valueHash": "80529ABB",
+        "value": "\u003ceos\u003e",
+        "score": 0.235
+      }, {
+        "valueHash": "80529ABB",
+        "value": "\u003ceos\u003e",
+        "score": 0.21
+      }]
+    }, {
+      "segmentHash": "4FBF9992",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 70000,
+        "end": 75000
+      },
+      "values": [{
+        "valueHash": "B578A0BB",
+        "value": "the",
+        "score": 0.235
+      }, {
+        "valueHash": "B578A0BB",
+        "value": "the",
+        "score": 0.21
+      }]
+    }, {
+      "segmentHash": "6DCE0993",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 80000,
+        "end": 85000
+      },
+      "values": [{
+        "valueHash": "2CE5103A",
+        "value": "cat",
+        "score": 0.235
+      }, {
+        "valueHash": "102EA958",
+        "value": "bat",
+        "score": 0.21
+      }]
+    }, {
+      "segmentHash": "0B2095B4",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 90000,
+        "end": 95000
+      },
+      "values": [{
+        "valueHash": "8E4C5C70",
+        "value": "sat",
+        "score": 0.235
+      }, {
+        "valueHash": "6B4F46BE",
+        "value": "ate",
+        "score": 0.21
+      }]
+    }],
+    "metadata": {
+      "visibility": "PUBLIC",
+      "datatype": "audio",
+      "foo": "bar",
+      "plough": "plover",
+      "shard": "123",
+      "created_date": "2025-10-01T00:00:00Z",
+      "day": "20250405"
+    }
+  }, {
+    "shard": "20250405_123",
+    "dataType": "news",
+    "uid": "6tzt7u.-hm7g23.i1ueb4",
+    "annotationId": "175BF2E8",
+    "documentId": "000000000002",
+    "annotationType": "tokens",
+    "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+    "source": {
+      "analyticHash": "86226841",
+      "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+      "engine": "inline v6",
+      "model": "GR Supra",
+      "configuration": {
+        "octane": "99",
+        "model_year": "2025"
+      },
+      "metadata": {
+        "visibility": "PUBLIC",
+        "created_date": "2025-10-01T00:00:00Z"
+      }
+    },
+    "segments": [{
+      "segmentHash": "C7B766B9",
+      "boundary": {
+        "boundaryType": "TEXT_CHAR",
+        "start": 0,
+        "end": 3
+      },
+      "values": [{
+        "valueHash": "B578A0BB",
+        "value": "the",
+        "score": 1.0
+      }]
+    }, {
+      "segmentHash": "3885607A",
+      "boundary": {
+        "boundaryType": "TEXT_CHAR",
+        "start": 4,
+        "end": 9
+      },
+      "values": [{
+        "valueHash": "F596B9D2",
+        "value": "quick",
+        "score": 1.0
+      }]
+    }, {
+      "segmentHash": "4F6A58B9",
+      "boundary": {
+        "boundaryType": "TEXT_CHAR",
+        "start": 10,
+        "end": 15
+      },
+      "values": [{
+        "valueHash": "7C1D823B",
+        "value": "brown",
+        "score": 1.0
+      }]
+    }, {
+      "segmentHash": "6FF09C09",
+      "boundary": {
+        "boundaryType": "TEXT_CHAR",
+        "start": 16,
+        "end": 19
+      },
+      "values": [{
+        "valueHash": "29E9B80A",
+        "value": "fox",
+        "score": 1.0
+      }]
+    }, {
+      "segmentHash": "BBE2E40F",
+      "boundary": {
+        "boundaryType": "TEXT_CHAR",
+        "start": 20,
+        "end": 26
+      },
+      "values": [{
+        "valueHash": "F4329C61",
+        "value": "caught",
+        "score": 1.0
+      }]
+    }, {
+      "segmentHash": "FA48289B",
+      "boundary": {
+        "boundaryType": "TEXT_CHAR",
+        "start": 27,
+        "end": 30
+      },
+      "values": [{
+        "valueHash": "B578A0BB",
+        "value": "the",
+        "score": 1.0
+      }]
+    }, {
+      "segmentHash": "32443188",
+      "boundary": {
+        "boundaryType": "TEXT_CHAR",
+        "start": 31,
+        "end": 37
+      },
+      "values": [{
+        "valueHash": "CB78DACF",
+        "value": "rabbit",
+        "score": 1.0
+      }]
+    }, {
+      "segmentHash": "7EBDA0EF",
+      "boundary": {
+        "boundaryType": "TEXT_CHAR",
+        "start": 38,
+        "end": 43
+      },
+      "values": [{
+        "valueHash": "80529ABB",
+        "value": "\u003ceos\u003e",
+        "score": 1.0
+      }]
+    }],
+    "metadata": {
+      "visibility": "PUBLIC",
+      "datatype": "news",
+      "foo": "bar",
+      "plough": "plover",
+      "shard": "123",
+      "created_date": "2025-10-01T00:00:00Z",
+      "day": "20250405"
+    }
+  }, {
+    "shard": "20250405_123",
+    "dataType": "cars",
+    "uid": "-pp0vkp.3rzqnz.5q54vx",
+    "annotationId": "3D3AFEA0",
+    "documentId": "000000000003",
+    "annotationType": "object",
+    "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+    "source": {
+      "analyticHash": "86226841",
+      "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+      "engine": "inline v6",
+      "model": "GR Supra",
+      "configuration": {
+        "octane": "99",
+        "model_year": "2025"
+      },
+      "metadata": {
+        "visibility": "PUBLIC",
+        "created_date": "2025-10-01T00:00:00Z"
+      }
+    },
+    "segments": [{
+      "segmentHash": "A95669D7",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 0,
+          "y": 0,
+          "label": "topLeft"
+        }, {
+          "x": 5,
+          "y": 12,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "valueHash": "A9D3B0A4",
+        "value": "bird",
+        "score": 0.97,
+        "extension": {
+          "version": "alpha"
+        }
+      }, {
+        "valueHash": "B29CBAE1",
+        "value": "crow",
+        "score": 0.86,
+        "extension": {
+          "version": "alpha"
+        }
+      }]
+    }, {
+      "segmentHash": "FFF3BAA1",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 10,
+          "y": 15,
+          "label": "topLeft"
+        }, {
+          "x": 15,
+          "y": 18,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "valueHash": "C21AF472",
+        "value": "car",
+        "score": 0.97,
+        "extension": {
+          "version": "beta"
+        }
+      }, {
+        "valueHash": "A1AECAE0",
+        "value": "truck",
+        "score": 0.86,
+        "extension": {
+          "version": "beta"
+        }
+      }]
+    }, {
+      "segmentHash": "EB77E18D",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 20,
+          "y": 20,
+          "label": "topLeft"
+        }, {
+          "x": 28,
+          "y": 47,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "valueHash": "6A06AA42",
+        "value": "stairs",
+        "score": 0.97,
+        "extension": {
+          "version": "delta"
+        }
+      }]
+    }, {
+      "segmentHash": "A665835E",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 30,
+          "y": 50,
+          "label": "topLeft"
+        }, {
+          "x": 36,
+          "y": 55,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "valueHash": "E4C953FF",
+        "value": "motorcycle",
+        "score": 0.97,
+        "extension": {
+          "version": "beta"
+        }
+      }, {
+        "valueHash": "2B1BA4EB",
+        "value": "bicycle",
+        "score": 0.86,
+        "extension": {
+          "version": "beta"
+        }
+      }]
+    }, {
+      "segmentHash": "A458EEBE",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 60,
+          "y": 70,
+          "label": "topLeft"
+        }, {
+          "x": 70,
+          "y": 78,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "valueHash": "E5A4D3D7",
+        "value": "flashlight",
+        "score": 0.97,
+        "extension": {
+          "version": "beta"
+        }
+      }]
+    }, {
+      "segmentHash": "C894D8DA",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 80,
+          "y": 90,
+          "label": "topLeft"
+        }, {
+          "x": 89,
+          "y": 95,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "valueHash": "0A82F7E9",
+        "value": "dog",
+        "score": 0.97,
+        "extension": {
+          "version": "alpha"
+        }
+      }, {
+        "valueHash": "EB8EC849",
+        "value": "pig",
+        "score": 0.86,
+        "extension": {
+          "version": "alpha"
+        }
+      }]
+    }],
+    "metadata": {
+      "visibility": "PUBLIC",
+      "datatype": "cars",
+      "foo": "bar",
+      "plough": "plover",
+      "shard": "123",
+      "created_date": "2025-10-01T00:00:00Z",
+      "day": "20250405"
+    }
+  }, {
+    "shard": "20250405_123",
+    "dataType": "media",
+    "uid": "b4t1ky.gc96ur.2tlvy3",
+    "annotationId": "7B2FAF43",
+    "documentId": "000000000004",
+    "annotationType": "image",
+    "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+    "source": {
+      "analyticHash": "86226841",
+      "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+      "engine": "inline v6",
+      "model": "GR Supra",
+      "configuration": {
+        "octane": "99",
+        "model_year": "2025"
+      },
+      "metadata": {
+        "visibility": "PUBLIC",
+        "created_date": "2025-10-01T00:00:00Z"
+      }
+    },
+    "segments": [{
+      "segmentHash": "B809141A",
+      "boundary": {
+        "boundaryType": "ALL"
+      },
+      "values": [{
+        "valueHash": "BB6D70D3",
+        "value": "landscape",
+        "score": 0.97,
+        "extension": {
+          "version": "charlie"
+        }
+      }, {
+        "valueHash": "F3C97BE0",
+        "value": "underground",
+        "score": 0.86,
+        "extension": {
+          "version": "charlie"
+        }
+      }, {
+        "valueHash": "0CE17D26",
+        "value": "portrait",
+        "score": 0.97,
+        "extension": {
+          "version": "bravo"
+        }
+      }, {
+        "valueHash": "E9416D45",
+        "value": "postcard",
+        "score": 0.86,
+        "extension": {
+          "version": "bravo"
+        }
+      }, {
+        "valueHash": "73A136DF",
+        "value": "scene",
+        "score": 0.97,
+        "extension": {
+          "version": "lima"
+        }
+      }, {
+        "valueHash": "F03AA692",
+        "value": "evening",
+        "score": 0.97,
+        "extension": {
+          "version": "victor"
+        }
+      }, {
+        "valueHash": "C3186504",
+        "value": "afternoon",
+        "score": 0.86,
+        "extension": {
+          "version": "victor"
+        }
+      }, {
+        "valueHash": "C77BBB3D",
+        "value": "astral",
+        "score": 0.97,
+        "extension": {
+          "version": "delta"
+        }
+      }, {
+        "valueHash": "09AF7469",
+        "value": "ethereal",
+        "score": 0.86,
+        "extension": {
+          "version": "delta"
+        }
+      }, {
+        "valueHash": "1C80E5B8",
+        "value": "material",
+        "score": 0.97,
+        "extension": {
+          "version": "micro"
+        }
+      }, {
+        "valueHash": "500A9257",
+        "value": "fabric",
+        "score": 0.86,
+        "extension": {
+          "version": "micro"
+        }
+      }]
+    }],
+    "metadata": {
+      "visibility": "PUBLIC",
+      "datatype": "media",
+      "foo": "bar",
+      "plough": "plover",
+      "shard": "123",
+      "created_date": "2025-10-01T00:00:00Z",
+      "day": "20250405"
+    }
+  }, {
+    "shard": "20250405_456",
+    "dataType": "audio",
+    "uid": "ayu73v.3cwl0r.-4ptvm7",
+    "annotationId": "327C292F",
+    "documentId": "000000000005",
+    "annotationType": "tts",
+    "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+    "source": {
+      "analyticHash": "86226841",
+      "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+      "engine": "inline v6",
+      "model": "GR Supra",
+      "configuration": {
+        "octane": "99",
+        "model_year": "2025"
+      },
+      "metadata": {
+        "visibility": "PUBLIC",
+        "created_date": "2025-10-01T00:00:00Z"
+      }
+    },
+    "segments": [{
+      "segmentHash": "6BD6F28F",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 0,
+        "end": 5000
+      },
+      "values": [{
+        "valueHash": "B578A0BB",
+        "value": "the",
+        "score": 0.235
+      }, {
+        "valueHash": "B578A0BB",
+        "value": "the",
+        "score": 0.21
+      }]
+    }, {
+      "segmentHash": "71B06C7B",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 10000,
+        "end": 15000
+      },
+      "values": [{
+        "valueHash": "2CE5103A",
+        "value": "cat",
+        "score": 0.235
+      }, {
+        "valueHash": "102EA958",
+        "value": "bat",
+        "score": 0.21
+      }]
+    }, {
+      "segmentHash": "868C6413",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 20000,
+        "end": 25000
+      },
+      "values": [{
+        "valueHash": "8E4C5C70",
+        "value": "sat",
+        "score": 0.235
+      }, {
+        "valueHash": "6B4F46BE",
+        "value": "ate",
+        "score": 0.21
+      }]
+    }, {
+      "segmentHash": "941674A8",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 30000,
+        "end": 35000
+      },
+      "values": [{
+        "valueHash": "1F83A785",
+        "value": "on",
+        "score": 0.235
+      }, {
+        "valueHash": "017E7B4F",
+        "value": "\u003cunk\u003e",
+        "score": 0.21
+      }]
+    }, {
+      "segmentHash": "FA0FE295",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 40000,
+        "end": 45000
+      },
+      "values": [{
+        "valueHash": "B578A0BB",
+        "value": "the",
+        "score": 0.235
+      }, {
+        "valueHash": "B578A0BB",
+        "value": "the",
+        "score": 0.21
+      }]
+    }, {
+      "segmentHash": "2EB66E6D",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 50000,
+        "end": 55000
+      },
+      "values": [{
+        "valueHash": "76BEE44F",
+        "value": "mat",
+        "score": 0.235
+      }, {
+        "valueHash": "84962936",
+        "value": "gnat",
+        "score": 0.21
+      }]
+    }, {
+      "segmentHash": "E103E6C3",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 60000,
+        "end": 65000
+      },
+      "values": [{
+        "valueHash": "80529ABB",
+        "value": "\u003ceos\u003e",
+        "score": 0.235
+      }, {
+        "valueHash": "80529ABB",
+        "value": "\u003ceos\u003e",
+        "score": 0.21
+      }]
+    }, {
+      "segmentHash": "4FBF9992",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 70000,
+        "end": 75000
+      },
+      "values": [{
+        "valueHash": "B578A0BB",
+        "value": "the",
+        "score": 0.235
+      }, {
+        "valueHash": "B578A0BB",
+        "value": "the",
+        "score": 0.21
+      }]
+    }, {
+      "segmentHash": "6DCE0993",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 80000,
+        "end": 85000
+      },
+      "values": [{
+        "valueHash": "2CE5103A",
+        "value": "cat",
+        "score": 0.235
+      }, {
+        "valueHash": "102EA958",
+        "value": "bat",
+        "score": 0.21
+      }]
+    }, {
+      "segmentHash": "0B2095B4",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 90000,
+        "end": 95000
+      },
+      "values": [{
+        "valueHash": "8E4C5C70",
+        "value": "sat",
+        "score": 0.235
+      }, {
+        "valueHash": "6B4F46BE",
+        "value": "ate",
+        "score": 0.21
+      }]
+    }],
+    "metadata": {
+      "visibility": "PUBLIC",
+      "datatype": "audio",
+      "foo": "bar",
+      "plough": "plover",
+      "shard": "456",
+      "created_date": "2025-10-01T00:00:00Z",
+      "day": "20250405"
+    }
+  }, {
+    "shard": "20250405_456",
+    "dataType": "news",
+    "uid": "-6j7k0l.u7xkz5.-x8hpes",
+    "annotationId": "19C96CBC",
+    "documentId": "000000000006",
+    "annotationType": "tokens",
+    "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+    "source": {
+      "analyticHash": "86226841",
+      "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+      "engine": "inline v6",
+      "model": "GR Supra",
+      "configuration": {
+        "octane": "99",
+        "model_year": "2025"
+      },
+      "metadata": {
+        "visibility": "PUBLIC",
+        "created_date": "2025-10-01T00:00:00Z"
+      }
+    },
+    "segments": [{
+      "segmentHash": "C7B766B9",
+      "boundary": {
+        "boundaryType": "TEXT_CHAR",
+        "start": 0,
+        "end": 3
+      },
+      "values": [{
+        "valueHash": "B578A0BB",
+        "value": "the",
+        "score": 1.0
+      }]
+    }, {
+      "segmentHash": "3885607A",
+      "boundary": {
+        "boundaryType": "TEXT_CHAR",
+        "start": 4,
+        "end": 9
+      },
+      "values": [{
+        "valueHash": "F596B9D2",
+        "value": "quick",
+        "score": 1.0
+      }]
+    }, {
+      "segmentHash": "4F6A58B9",
+      "boundary": {
+        "boundaryType": "TEXT_CHAR",
+        "start": 10,
+        "end": 15
+      },
+      "values": [{
+        "valueHash": "7C1D823B",
+        "value": "brown",
+        "score": 1.0
+      }]
+    }, {
+      "segmentHash": "6FF09C09",
+      "boundary": {
+        "boundaryType": "TEXT_CHAR",
+        "start": 16,
+        "end": 19
+      },
+      "values": [{
+        "valueHash": "29E9B80A",
+        "value": "fox",
+        "score": 1.0
+      }]
+    }, {
+      "segmentHash": "BBE2E40F",
+      "boundary": {
+        "boundaryType": "TEXT_CHAR",
+        "start": 20,
+        "end": 26
+      },
+      "values": [{
+        "valueHash": "F4329C61",
+        "value": "caught",
+        "score": 1.0
+      }]
+    }, {
+      "segmentHash": "FA48289B",
+      "boundary": {
+        "boundaryType": "TEXT_CHAR",
+        "start": 27,
+        "end": 30
+      },
+      "values": [{
+        "valueHash": "B578A0BB",
+        "value": "the",
+        "score": 1.0
+      }]
+    }, {
+      "segmentHash": "32443188",
+      "boundary": {
+        "boundaryType": "TEXT_CHAR",
+        "start": 31,
+        "end": 37
+      },
+      "values": [{
+        "valueHash": "CB78DACF",
+        "value": "rabbit",
+        "score": 1.0
+      }]
+    }, {
+      "segmentHash": "7EBDA0EF",
+      "boundary": {
+        "boundaryType": "TEXT_CHAR",
+        "start": 38,
+        "end": 43
+      },
+      "values": [{
+        "valueHash": "80529ABB",
+        "value": "\u003ceos\u003e",
+        "score": 1.0
+      }]
+    }],
+    "metadata": {
+      "visibility": "PUBLIC",
+      "datatype": "news",
+      "foo": "bar",
+      "plough": "plover",
+      "shard": "456",
+      "created_date": "2025-10-01T00:00:00Z",
+      "day": "20250405"
+    }
+  }, {
+    "shard": "20250405_456",
+    "dataType": "cars",
+    "uid": "sr2ace.-4lv4w6.-begkwn",
+    "annotationId": "32F7C24E",
+    "documentId": "000000000007",
+    "annotationType": "object",
+    "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+    "source": {
+      "analyticHash": "86226841",
+      "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+      "engine": "inline v6",
+      "model": "GR Supra",
+      "configuration": {
+        "octane": "99",
+        "model_year": "2025"
+      },
+      "metadata": {
+        "visibility": "PUBLIC",
+        "created_date": "2025-10-01T00:00:00Z"
+      }
+    },
+    "segments": [{
+      "segmentHash": "A95669D7",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 0,
+          "y": 0,
+          "label": "topLeft"
+        }, {
+          "x": 5,
+          "y": 12,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "valueHash": "A9D3B0A4",
+        "value": "bird",
+        "score": 0.97,
+        "extension": {
+          "version": "alpha"
+        }
+      }, {
+        "valueHash": "B29CBAE1",
+        "value": "crow",
+        "score": 0.86,
+        "extension": {
+          "version": "alpha"
+        }
+      }]
+    }, {
+      "segmentHash": "FFF3BAA1",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 10,
+          "y": 15,
+          "label": "topLeft"
+        }, {
+          "x": 15,
+          "y": 18,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "valueHash": "C21AF472",
+        "value": "car",
+        "score": 0.97,
+        "extension": {
+          "version": "beta"
+        }
+      }, {
+        "valueHash": "A1AECAE0",
+        "value": "truck",
+        "score": 0.86,
+        "extension": {
+          "version": "beta"
+        }
+      }]
+    }, {
+      "segmentHash": "EB77E18D",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 20,
+          "y": 20,
+          "label": "topLeft"
+        }, {
+          "x": 28,
+          "y": 47,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "valueHash": "6A06AA42",
+        "value": "stairs",
+        "score": 0.97,
+        "extension": {
+          "version": "delta"
+        }
+      }]
+    }, {
+      "segmentHash": "A665835E",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 30,
+          "y": 50,
+          "label": "topLeft"
+        }, {
+          "x": 36,
+          "y": 55,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "valueHash": "E4C953FF",
+        "value": "motorcycle",
+        "score": 0.97,
+        "extension": {
+          "version": "beta"
+        }
+      }, {
+        "valueHash": "2B1BA4EB",
+        "value": "bicycle",
+        "score": 0.86,
+        "extension": {
+          "version": "beta"
+        }
+      }]
+    }, {
+      "segmentHash": "A458EEBE",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 60,
+          "y": 70,
+          "label": "topLeft"
+        }, {
+          "x": 70,
+          "y": 78,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "valueHash": "E5A4D3D7",
+        "value": "flashlight",
+        "score": 0.97,
+        "extension": {
+          "version": "beta"
+        }
+      }]
+    }, {
+      "segmentHash": "C894D8DA",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 80,
+          "y": 90,
+          "label": "topLeft"
+        }, {
+          "x": 89,
+          "y": 95,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "valueHash": "0A82F7E9",
+        "value": "dog",
+        "score": 0.97,
+        "extension": {
+          "version": "alpha"
+        }
+      }, {
+        "valueHash": "EB8EC849",
+        "value": "pig",
+        "score": 0.86,
+        "extension": {
+          "version": "alpha"
+        }
+      }]
+    }],
+    "metadata": {
+      "visibility": "PUBLIC",
+      "datatype": "cars",
+      "foo": "bar",
+      "plough": "plover",
+      "shard": "456",
+      "created_date": "2025-10-01T00:00:00Z",
+      "day": "20250405"
+    }
+  }, {
+    "shard": "20250405_456",
+    "dataType": "media",
+    "uid": "9eqwcm.-m86zhv.-mm55jh",
+    "annotationId": "CC2AA8C3",
+    "documentId": "000000000008",
+    "annotationType": "image",
+    "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+    "source": {
+      "analyticHash": "86226841",
+      "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+      "engine": "inline v6",
+      "model": "GR Supra",
+      "configuration": {
+        "octane": "99",
+        "model_year": "2025"
+      },
+      "metadata": {
+        "visibility": "PUBLIC",
+        "created_date": "2025-10-01T00:00:00Z"
+      }
+    },
+    "segments": [{
+      "segmentHash": "B809141A",
+      "boundary": {
+        "boundaryType": "ALL"
+      },
+      "values": [{
+        "valueHash": "BB6D70D3",
+        "value": "landscape",
+        "score": 0.97,
+        "extension": {
+          "version": "charlie"
+        }
+      }, {
+        "valueHash": "F3C97BE0",
+        "value": "underground",
+        "score": 0.86,
+        "extension": {
+          "version": "charlie"
+        }
+      }, {
+        "valueHash": "0CE17D26",
+        "value": "portrait",
+        "score": 0.97,
+        "extension": {
+          "version": "bravo"
+        }
+      }, {
+        "valueHash": "E9416D45",
+        "value": "postcard",
+        "score": 0.86,
+        "extension": {
+          "version": "bravo"
+        }
+      }, {
+        "valueHash": "73A136DF",
+        "value": "scene",
+        "score": 0.97,
+        "extension": {
+          "version": "lima"
+        }
+      }, {
+        "valueHash": "F03AA692",
+        "value": "evening",
+        "score": 0.97,
+        "extension": {
+          "version": "victor"
+        }
+      }, {
+        "valueHash": "C3186504",
+        "value": "afternoon",
+        "score": 0.86,
+        "extension": {
+          "version": "victor"
+        }
+      }, {
+        "valueHash": "C77BBB3D",
+        "value": "astral",
+        "score": 0.97,
+        "extension": {
+          "version": "delta"
+        }
+      }, {
+        "valueHash": "09AF7469",
+        "value": "ethereal",
+        "score": 0.86,
+        "extension": {
+          "version": "delta"
+        }
+      }, {
+        "valueHash": "1C80E5B8",
+        "value": "material",
+        "score": 0.97,
+        "extension": {
+          "version": "micro"
+        }
+      }, {
+        "valueHash": "500A9257",
+        "value": "fabric",
+        "score": 0.86,
+        "extension": {
+          "version": "micro"
+        }
+      }]
+    }],
+    "metadata": {
+      "visibility": "PUBLIC",
+      "datatype": "media",
+      "foo": "bar",
+      "plough": "plover",
+      "shard": "456",
+      "created_date": "2025-10-01T00:00:00Z",
+      "day": "20250405"
+    }
+  }, {
+    "shard": "20250405_789",
+    "dataType": "audio",
+    "uid": "j0cfzn.-4j53im.-d2w0tz",
+    "annotationId": "3FE49853",
+    "documentId": "000000000009",
+    "annotationType": "tts",
+    "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+    "source": {
+      "analyticHash": "86226841",
+      "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+      "engine": "inline v6",
+      "model": "GR Supra",
+      "configuration": {
+        "octane": "99",
+        "model_year": "2025"
+      },
+      "metadata": {
+        "visibility": "PUBLIC",
+        "created_date": "2025-10-01T00:00:00Z"
+      }
+    },
+    "segments": [{
+      "segmentHash": "6BD6F28F",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 0,
+        "end": 5000
+      },
+      "values": [{
+        "valueHash": "B578A0BB",
+        "value": "the",
+        "score": 0.235
+      }, {
+        "valueHash": "B578A0BB",
+        "value": "the",
+        "score": 0.21
+      }]
+    }, {
+      "segmentHash": "71B06C7B",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 10000,
+        "end": 15000
+      },
+      "values": [{
+        "valueHash": "2CE5103A",
+        "value": "cat",
+        "score": 0.235
+      }, {
+        "valueHash": "102EA958",
+        "value": "bat",
+        "score": 0.21
+      }]
+    }, {
+      "segmentHash": "868C6413",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 20000,
+        "end": 25000
+      },
+      "values": [{
+        "valueHash": "8E4C5C70",
+        "value": "sat",
+        "score": 0.235
+      }, {
+        "valueHash": "6B4F46BE",
+        "value": "ate",
+        "score": 0.21
+      }]
+    }, {
+      "segmentHash": "941674A8",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 30000,
+        "end": 35000
+      },
+      "values": [{
+        "valueHash": "1F83A785",
+        "value": "on",
+        "score": 0.235
+      }, {
+        "valueHash": "017E7B4F",
+        "value": "\u003cunk\u003e",
+        "score": 0.21
+      }]
+    }, {
+      "segmentHash": "FA0FE295",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 40000,
+        "end": 45000
+      },
+      "values": [{
+        "valueHash": "B578A0BB",
+        "value": "the",
+        "score": 0.235
+      }, {
+        "valueHash": "B578A0BB",
+        "value": "the",
+        "score": 0.21
+      }]
+    }, {
+      "segmentHash": "2EB66E6D",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 50000,
+        "end": 55000
+      },
+      "values": [{
+        "valueHash": "76BEE44F",
+        "value": "mat",
+        "score": 0.235
+      }, {
+        "valueHash": "84962936",
+        "value": "gnat",
+        "score": 0.21
+      }]
+    }, {
+      "segmentHash": "E103E6C3",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 60000,
+        "end": 65000
+      },
+      "values": [{
+        "valueHash": "80529ABB",
+        "value": "\u003ceos\u003e",
+        "score": 0.235
+      }, {
+        "valueHash": "80529ABB",
+        "value": "\u003ceos\u003e",
+        "score": 0.21
+      }]
+    }, {
+      "segmentHash": "4FBF9992",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 70000,
+        "end": 75000
+      },
+      "values": [{
+        "valueHash": "B578A0BB",
+        "value": "the",
+        "score": 0.235
+      }, {
+        "valueHash": "B578A0BB",
+        "value": "the",
+        "score": 0.21
+      }]
+    }, {
+      "segmentHash": "6DCE0993",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 80000,
+        "end": 85000
+      },
+      "values": [{
+        "valueHash": "2CE5103A",
+        "value": "cat",
+        "score": 0.235
+      }, {
+        "valueHash": "102EA958",
+        "value": "bat",
+        "score": 0.21
+      }]
+    }, {
+      "segmentHash": "0B2095B4",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 90000,
+        "end": 95000
+      },
+      "values": [{
+        "valueHash": "8E4C5C70",
+        "value": "sat",
+        "score": 0.235
+      }, {
+        "valueHash": "6B4F46BE",
+        "value": "ate",
+        "score": 0.21
+      }]
+    }],
+    "metadata": {
+      "visibility": "PUBLIC",
+      "datatype": "audio",
+      "foo": "bar",
+      "plough": "plover",
+      "shard": "789",
+      "created_date": "2025-10-01T00:00:00Z",
+      "day": "20250405"
+    }
+  }, {
+    "shard": "20250405_789",
+    "dataType": "news",
+    "uid": "-ngbobu.-c94tvj.8y2p8a",
+    "annotationId": "CD27BF6E",
+    "documentId": "000000000010",
+    "annotationType": "tokens",
+    "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+    "source": {
+      "analyticHash": "86226841",
+      "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+      "engine": "inline v6",
+      "model": "GR Supra",
+      "configuration": {
+        "octane": "99",
+        "model_year": "2025"
+      },
+      "metadata": {
+        "visibility": "PUBLIC",
+        "created_date": "2025-10-01T00:00:00Z"
+      }
+    },
+    "segments": [{
+      "segmentHash": "C7B766B9",
+      "boundary": {
+        "boundaryType": "TEXT_CHAR",
+        "start": 0,
+        "end": 3
+      },
+      "values": [{
+        "valueHash": "B578A0BB",
+        "value": "the",
+        "score": 1.0
+      }]
+    }, {
+      "segmentHash": "3885607A",
+      "boundary": {
+        "boundaryType": "TEXT_CHAR",
+        "start": 4,
+        "end": 9
+      },
+      "values": [{
+        "valueHash": "F596B9D2",
+        "value": "quick",
+        "score": 1.0
+      }]
+    }, {
+      "segmentHash": "4F6A58B9",
+      "boundary": {
+        "boundaryType": "TEXT_CHAR",
+        "start": 10,
+        "end": 15
+      },
+      "values": [{
+        "valueHash": "7C1D823B",
+        "value": "brown",
+        "score": 1.0
+      }]
+    }, {
+      "segmentHash": "6FF09C09",
+      "boundary": {
+        "boundaryType": "TEXT_CHAR",
+        "start": 16,
+        "end": 19
+      },
+      "values": [{
+        "valueHash": "29E9B80A",
+        "value": "fox",
+        "score": 1.0
+      }]
+    }, {
+      "segmentHash": "BBE2E40F",
+      "boundary": {
+        "boundaryType": "TEXT_CHAR",
+        "start": 20,
+        "end": 26
+      },
+      "values": [{
+        "valueHash": "F4329C61",
+        "value": "caught",
+        "score": 1.0
+      }]
+    }, {
+      "segmentHash": "FA48289B",
+      "boundary": {
+        "boundaryType": "TEXT_CHAR",
+        "start": 27,
+        "end": 30
+      },
+      "values": [{
+        "valueHash": "B578A0BB",
+        "value": "the",
+        "score": 1.0
+      }]
+    }, {
+      "segmentHash": "32443188",
+      "boundary": {
+        "boundaryType": "TEXT_CHAR",
+        "start": 31,
+        "end": 37
+      },
+      "values": [{
+        "valueHash": "CB78DACF",
+        "value": "rabbit",
+        "score": 1.0
+      }]
+    }, {
+      "segmentHash": "7EBDA0EF",
+      "boundary": {
+        "boundaryType": "TEXT_CHAR",
+        "start": 38,
+        "end": 43
+      },
+      "values": [{
+        "valueHash": "80529ABB",
+        "value": "\u003ceos\u003e",
+        "score": 1.0
+      }]
+    }],
+    "metadata": {
+      "visibility": "PUBLIC",
+      "datatype": "news",
+      "foo": "bar",
+      "plough": "plover",
+      "shard": "789",
+      "created_date": "2025-10-01T00:00:00Z",
+      "day": "20250405"
+    }
+  }, {
+    "shard": "20250405_789",
+    "dataType": "cars",
+    "uid": "pz3x7s.o7mcqn.-kj0cpa",
+    "annotationId": "53F057A7",
+    "documentId": "000000000011",
+    "annotationType": "object",
+    "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+    "source": {
+      "analyticHash": "86226841",
+      "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+      "engine": "inline v6",
+      "model": "GR Supra",
+      "configuration": {
+        "octane": "99",
+        "model_year": "2025"
+      },
+      "metadata": {
+        "visibility": "PUBLIC",
+        "created_date": "2025-10-01T00:00:00Z"
+      }
+    },
+    "segments": [{
+      "segmentHash": "A95669D7",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 0,
+          "y": 0,
+          "label": "topLeft"
+        }, {
+          "x": 5,
+          "y": 12,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "valueHash": "A9D3B0A4",
+        "value": "bird",
+        "score": 0.97,
+        "extension": {
+          "version": "alpha"
+        }
+      }, {
+        "valueHash": "B29CBAE1",
+        "value": "crow",
+        "score": 0.86,
+        "extension": {
+          "version": "alpha"
+        }
+      }]
+    }, {
+      "segmentHash": "FFF3BAA1",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 10,
+          "y": 15,
+          "label": "topLeft"
+        }, {
+          "x": 15,
+          "y": 18,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "valueHash": "C21AF472",
+        "value": "car",
+        "score": 0.97,
+        "extension": {
+          "version": "beta"
+        }
+      }, {
+        "valueHash": "A1AECAE0",
+        "value": "truck",
+        "score": 0.86,
+        "extension": {
+          "version": "beta"
+        }
+      }]
+    }, {
+      "segmentHash": "EB77E18D",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 20,
+          "y": 20,
+          "label": "topLeft"
+        }, {
+          "x": 28,
+          "y": 47,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "valueHash": "6A06AA42",
+        "value": "stairs",
+        "score": 0.97,
+        "extension": {
+          "version": "delta"
+        }
+      }]
+    }, {
+      "segmentHash": "A665835E",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 30,
+          "y": 50,
+          "label": "topLeft"
+        }, {
+          "x": 36,
+          "y": 55,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "valueHash": "E4C953FF",
+        "value": "motorcycle",
+        "score": 0.97,
+        "extension": {
+          "version": "beta"
+        }
+      }, {
+        "valueHash": "2B1BA4EB",
+        "value": "bicycle",
+        "score": 0.86,
+        "extension": {
+          "version": "beta"
+        }
+      }]
+    }, {
+      "segmentHash": "A458EEBE",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 60,
+          "y": 70,
+          "label": "topLeft"
+        }, {
+          "x": 70,
+          "y": 78,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "valueHash": "E5A4D3D7",
+        "value": "flashlight",
+        "score": 0.97,
+        "extension": {
+          "version": "beta"
+        }
+      }]
+    }, {
+      "segmentHash": "C894D8DA",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 80,
+          "y": 90,
+          "label": "topLeft"
+        }, {
+          "x": 89,
+          "y": 95,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "valueHash": "0A82F7E9",
+        "value": "dog",
+        "score": 0.97,
+        "extension": {
+          "version": "alpha"
+        }
+      }, {
+        "valueHash": "EB8EC849",
+        "value": "pig",
+        "score": 0.86,
+        "extension": {
+          "version": "alpha"
+        }
+      }]
+    }],
+    "metadata": {
+      "visibility": "PUBLIC",
+      "datatype": "cars",
+      "foo": "bar",
+      "plough": "plover",
+      "shard": "789",
+      "created_date": "2025-10-01T00:00:00Z",
+      "day": "20250405"
+    }
+  }, {
+    "shard": "20250405_789",
+    "dataType": "media",
+    "uid": "-3c0glg.-dedab7.mz17rd",
+    "annotationId": "FB541605",
+    "documentId": "000000000012",
+    "annotationType": "image",
+    "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+    "source": {
+      "analyticHash": "86226841",
+      "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+      "engine": "inline v6",
+      "model": "GR Supra",
+      "configuration": {
+        "octane": "99",
+        "model_year": "2025"
+      },
+      "metadata": {
+        "visibility": "PUBLIC",
+        "created_date": "2025-10-01T00:00:00Z"
+      }
+    },
+    "segments": [{
+      "segmentHash": "B809141A",
+      "boundary": {
+        "boundaryType": "ALL"
+      },
+      "values": [{
+        "valueHash": "BB6D70D3",
+        "value": "landscape",
+        "score": 0.97,
+        "extension": {
+          "version": "charlie"
+        }
+      }, {
+        "valueHash": "F3C97BE0",
+        "value": "underground",
+        "score": 0.86,
+        "extension": {
+          "version": "charlie"
+        }
+      }, {
+        "valueHash": "0CE17D26",
+        "value": "portrait",
+        "score": 0.97,
+        "extension": {
+          "version": "bravo"
+        }
+      }, {
+        "valueHash": "E9416D45",
+        "value": "postcard",
+        "score": 0.86,
+        "extension": {
+          "version": "bravo"
+        }
+      }, {
+        "valueHash": "73A136DF",
+        "value": "scene",
+        "score": 0.97,
+        "extension": {
+          "version": "lima"
+        }
+      }, {
+        "valueHash": "F03AA692",
+        "value": "evening",
+        "score": 0.97,
+        "extension": {
+          "version": "victor"
+        }
+      }, {
+        "valueHash": "C3186504",
+        "value": "afternoon",
+        "score": 0.86,
+        "extension": {
+          "version": "victor"
+        }
+      }, {
+        "valueHash": "C77BBB3D",
+        "value": "astral",
+        "score": 0.97,
+        "extension": {
+          "version": "delta"
+        }
+      }, {
+        "valueHash": "09AF7469",
+        "value": "ethereal",
+        "score": 0.86,
+        "extension": {
+          "version": "delta"
+        }
+      }, {
+        "valueHash": "1C80E5B8",
+        "value": "material",
+        "score": 0.97,
+        "extension": {
+          "version": "micro"
+        }
+      }, {
+        "valueHash": "500A9257",
+        "value": "fabric",
+        "score": 0.86,
+        "extension": {
+          "version": "micro"
+        }
+      }]
+    }],
+    "metadata": {
+      "visibility": "PUBLIC",
+      "datatype": "media",
+      "foo": "bar",
+      "plough": "plover",
+      "shard": "789",
+      "created_date": "2025-10-01T00:00:00Z",
+      "day": "20250405"
+    }
+  }, {
+    "shard": "20250406_123",
+    "dataType": "audio",
+    "uid": "-hyi367.-mgypqf.-fg916b",
+    "annotationId": "8C315CC7",
+    "documentId": "000000000013",
+    "annotationType": "tts",
+    "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+    "source": {
+      "analyticHash": "86226841",
+      "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+      "engine": "inline v6",
+      "model": "GR Supra",
+      "configuration": {
+        "octane": "99",
+        "model_year": "2025"
+      },
+      "metadata": {
+        "visibility": "PUBLIC",
+        "created_date": "2025-10-01T00:00:00Z"
+      }
+    },
+    "segments": [{
+      "segmentHash": "6BD6F28F",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 0,
+        "end": 5000
+      },
+      "values": [{
+        "valueHash": "B578A0BB",
+        "value": "the",
+        "score": 0.235
+      }, {
+        "valueHash": "B578A0BB",
+        "value": "the",
+        "score": 0.21
+      }]
+    }, {
+      "segmentHash": "71B06C7B",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 10000,
+        "end": 15000
+      },
+      "values": [{
+        "valueHash": "2CE5103A",
+        "value": "cat",
+        "score": 0.235
+      }, {
+        "valueHash": "102EA958",
+        "value": "bat",
+        "score": 0.21
+      }]
+    }, {
+      "segmentHash": "868C6413",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 20000,
+        "end": 25000
+      },
+      "values": [{
+        "valueHash": "8E4C5C70",
+        "value": "sat",
+        "score": 0.235
+      }, {
+        "valueHash": "6B4F46BE",
+        "value": "ate",
+        "score": 0.21
+      }]
+    }, {
+      "segmentHash": "941674A8",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 30000,
+        "end": 35000
+      },
+      "values": [{
+        "valueHash": "1F83A785",
+        "value": "on",
+        "score": 0.235
+      }, {
+        "valueHash": "017E7B4F",
+        "value": "\u003cunk\u003e",
+        "score": 0.21
+      }]
+    }, {
+      "segmentHash": "FA0FE295",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 40000,
+        "end": 45000
+      },
+      "values": [{
+        "valueHash": "B578A0BB",
+        "value": "the",
+        "score": 0.235
+      }, {
+        "valueHash": "B578A0BB",
+        "value": "the",
+        "score": 0.21
+      }]
+    }, {
+      "segmentHash": "2EB66E6D",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 50000,
+        "end": 55000
+      },
+      "values": [{
+        "valueHash": "76BEE44F",
+        "value": "mat",
+        "score": 0.235
+      }, {
+        "valueHash": "84962936",
+        "value": "gnat",
+        "score": 0.21
+      }]
+    }, {
+      "segmentHash": "E103E6C3",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 60000,
+        "end": 65000
+      },
+      "values": [{
+        "valueHash": "80529ABB",
+        "value": "\u003ceos\u003e",
+        "score": 0.235
+      }, {
+        "valueHash": "80529ABB",
+        "value": "\u003ceos\u003e",
+        "score": 0.21
+      }]
+    }, {
+      "segmentHash": "4FBF9992",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 70000,
+        "end": 75000
+      },
+      "values": [{
+        "valueHash": "B578A0BB",
+        "value": "the",
+        "score": 0.235
+      }, {
+        "valueHash": "B578A0BB",
+        "value": "the",
+        "score": 0.21
+      }]
+    }, {
+      "segmentHash": "6DCE0993",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 80000,
+        "end": 85000
+      },
+      "values": [{
+        "valueHash": "2CE5103A",
+        "value": "cat",
+        "score": 0.235
+      }, {
+        "valueHash": "102EA958",
+        "value": "bat",
+        "score": 0.21
+      }]
+    }, {
+      "segmentHash": "0B2095B4",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 90000,
+        "end": 95000
+      },
+      "values": [{
+        "valueHash": "8E4C5C70",
+        "value": "sat",
+        "score": 0.235
+      }, {
+        "valueHash": "6B4F46BE",
+        "value": "ate",
+        "score": 0.21
+      }]
+    }],
+    "metadata": {
+      "visibility": "PUBLIC",
+      "datatype": "audio",
+      "foo": "bar",
+      "plough": "plover",
+      "shard": "123",
+      "created_date": "2025-10-01T00:00:00Z",
+      "day": "20250406"
+    }
+  }, {
+    "shard": "20250406_123",
+    "dataType": "news",
+    "uid": "wb1pp4.-wwcije.7resun",
+    "annotationId": "227FDA0F",
+    "documentId": "000000000014",
+    "annotationType": "tokens",
+    "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+    "source": {
+      "analyticHash": "86226841",
+      "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+      "engine": "inline v6",
+      "model": "GR Supra",
+      "configuration": {
+        "octane": "99",
+        "model_year": "2025"
+      },
+      "metadata": {
+        "visibility": "PUBLIC",
+        "created_date": "2025-10-01T00:00:00Z"
+      }
+    },
+    "segments": [{
+      "segmentHash": "C7B766B9",
+      "boundary": {
+        "boundaryType": "TEXT_CHAR",
+        "start": 0,
+        "end": 3
+      },
+      "values": [{
+        "valueHash": "B578A0BB",
+        "value": "the",
+        "score": 1.0
+      }]
+    }, {
+      "segmentHash": "3885607A",
+      "boundary": {
+        "boundaryType": "TEXT_CHAR",
+        "start": 4,
+        "end": 9
+      },
+      "values": [{
+        "valueHash": "F596B9D2",
+        "value": "quick",
+        "score": 1.0
+      }]
+    }, {
+      "segmentHash": "4F6A58B9",
+      "boundary": {
+        "boundaryType": "TEXT_CHAR",
+        "start": 10,
+        "end": 15
+      },
+      "values": [{
+        "valueHash": "7C1D823B",
+        "value": "brown",
+        "score": 1.0
+      }]
+    }, {
+      "segmentHash": "6FF09C09",
+      "boundary": {
+        "boundaryType": "TEXT_CHAR",
+        "start": 16,
+        "end": 19
+      },
+      "values": [{
+        "valueHash": "29E9B80A",
+        "value": "fox",
+        "score": 1.0
+      }]
+    }, {
+      "segmentHash": "BBE2E40F",
+      "boundary": {
+        "boundaryType": "TEXT_CHAR",
+        "start": 20,
+        "end": 26
+      },
+      "values": [{
+        "valueHash": "F4329C61",
+        "value": "caught",
+        "score": 1.0
+      }]
+    }, {
+      "segmentHash": "FA48289B",
+      "boundary": {
+        "boundaryType": "TEXT_CHAR",
+        "start": 27,
+        "end": 30
+      },
+      "values": [{
+        "valueHash": "B578A0BB",
+        "value": "the",
+        "score": 1.0
+      }]
+    }, {
+      "segmentHash": "32443188",
+      "boundary": {
+        "boundaryType": "TEXT_CHAR",
+        "start": 31,
+        "end": 37
+      },
+      "values": [{
+        "valueHash": "CB78DACF",
+        "value": "rabbit",
+        "score": 1.0
+      }]
+    }, {
+      "segmentHash": "7EBDA0EF",
+      "boundary": {
+        "boundaryType": "TEXT_CHAR",
+        "start": 38,
+        "end": 43
+      },
+      "values": [{
+        "valueHash": "80529ABB",
+        "value": "\u003ceos\u003e",
+        "score": 1.0
+      }]
+    }],
+    "metadata": {
+      "visibility": "PUBLIC",
+      "datatype": "news",
+      "foo": "bar",
+      "plough": "plover",
+      "shard": "123",
+      "created_date": "2025-10-01T00:00:00Z",
+      "day": "20250406"
+    }
+  }, {
+    "shard": "20250406_123",
+    "dataType": "cars",
+    "uid": "-ihvcwi.-y2d5ue.-wce8xi",
+    "annotationId": "C4416601",
+    "documentId": "000000000015",
+    "annotationType": "object",
+    "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+    "source": {
+      "analyticHash": "86226841",
+      "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+      "engine": "inline v6",
+      "model": "GR Supra",
+      "configuration": {
+        "octane": "99",
+        "model_year": "2025"
+      },
+      "metadata": {
+        "visibility": "PUBLIC",
+        "created_date": "2025-10-01T00:00:00Z"
+      }
+    },
+    "segments": [{
+      "segmentHash": "A95669D7",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 0,
+          "y": 0,
+          "label": "topLeft"
+        }, {
+          "x": 5,
+          "y": 12,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "valueHash": "A9D3B0A4",
+        "value": "bird",
+        "score": 0.97,
+        "extension": {
+          "version": "alpha"
+        }
+      }, {
+        "valueHash": "B29CBAE1",
+        "value": "crow",
+        "score": 0.86,
+        "extension": {
+          "version": "alpha"
+        }
+      }]
+    }, {
+      "segmentHash": "FFF3BAA1",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 10,
+          "y": 15,
+          "label": "topLeft"
+        }, {
+          "x": 15,
+          "y": 18,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "valueHash": "C21AF472",
+        "value": "car",
+        "score": 0.97,
+        "extension": {
+          "version": "beta"
+        }
+      }, {
+        "valueHash": "A1AECAE0",
+        "value": "truck",
+        "score": 0.86,
+        "extension": {
+          "version": "beta"
+        }
+      }]
+    }, {
+      "segmentHash": "EB77E18D",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 20,
+          "y": 20,
+          "label": "topLeft"
+        }, {
+          "x": 28,
+          "y": 47,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "valueHash": "6A06AA42",
+        "value": "stairs",
+        "score": 0.97,
+        "extension": {
+          "version": "delta"
+        }
+      }]
+    }, {
+      "segmentHash": "A665835E",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 30,
+          "y": 50,
+          "label": "topLeft"
+        }, {
+          "x": 36,
+          "y": 55,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "valueHash": "E4C953FF",
+        "value": "motorcycle",
+        "score": 0.97,
+        "extension": {
+          "version": "beta"
+        }
+      }, {
+        "valueHash": "2B1BA4EB",
+        "value": "bicycle",
+        "score": 0.86,
+        "extension": {
+          "version": "beta"
+        }
+      }]
+    }, {
+      "segmentHash": "A458EEBE",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 60,
+          "y": 70,
+          "label": "topLeft"
+        }, {
+          "x": 70,
+          "y": 78,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "valueHash": "E5A4D3D7",
+        "value": "flashlight",
+        "score": 0.97,
+        "extension": {
+          "version": "beta"
+        }
+      }]
+    }, {
+      "segmentHash": "C894D8DA",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 80,
+          "y": 90,
+          "label": "topLeft"
+        }, {
+          "x": 89,
+          "y": 95,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "valueHash": "0A82F7E9",
+        "value": "dog",
+        "score": 0.97,
+        "extension": {
+          "version": "alpha"
+        }
+      }, {
+        "valueHash": "EB8EC849",
+        "value": "pig",
+        "score": 0.86,
+        "extension": {
+          "version": "alpha"
+        }
+      }]
+    }],
+    "metadata": {
+      "visibility": "PUBLIC",
+      "datatype": "cars",
+      "foo": "bar",
+      "plough": "plover",
+      "shard": "123",
+      "created_date": "2025-10-01T00:00:00Z",
+      "day": "20250406"
+    }
+  }, {
+    "shard": "20250406_123",
+    "dataType": "media",
+    "uid": "voa7p7.83zv2w.-mnif39",
+    "annotationId": "808E32FD",
+    "documentId": "000000000016",
+    "annotationType": "image",
+    "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+    "source": {
+      "analyticHash": "86226841",
+      "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+      "engine": "inline v6",
+      "model": "GR Supra",
+      "configuration": {
+        "octane": "99",
+        "model_year": "2025"
+      },
+      "metadata": {
+        "visibility": "PUBLIC",
+        "created_date": "2025-10-01T00:00:00Z"
+      }
+    },
+    "segments": [{
+      "segmentHash": "B809141A",
+      "boundary": {
+        "boundaryType": "ALL"
+      },
+      "values": [{
+        "valueHash": "BB6D70D3",
+        "value": "landscape",
+        "score": 0.97,
+        "extension": {
+          "version": "charlie"
+        }
+      }, {
+        "valueHash": "F3C97BE0",
+        "value": "underground",
+        "score": 0.86,
+        "extension": {
+          "version": "charlie"
+        }
+      }, {
+        "valueHash": "0CE17D26",
+        "value": "portrait",
+        "score": 0.97,
+        "extension": {
+          "version": "bravo"
+        }
+      }, {
+        "valueHash": "E9416D45",
+        "value": "postcard",
+        "score": 0.86,
+        "extension": {
+          "version": "bravo"
+        }
+      }, {
+        "valueHash": "73A136DF",
+        "value": "scene",
+        "score": 0.97,
+        "extension": {
+          "version": "lima"
+        }
+      }, {
+        "valueHash": "F03AA692",
+        "value": "evening",
+        "score": 0.97,
+        "extension": {
+          "version": "victor"
+        }
+      }, {
+        "valueHash": "C3186504",
+        "value": "afternoon",
+        "score": 0.86,
+        "extension": {
+          "version": "victor"
+        }
+      }, {
+        "valueHash": "C77BBB3D",
+        "value": "astral",
+        "score": 0.97,
+        "extension": {
+          "version": "delta"
+        }
+      }, {
+        "valueHash": "09AF7469",
+        "value": "ethereal",
+        "score": 0.86,
+        "extension": {
+          "version": "delta"
+        }
+      }, {
+        "valueHash": "1C80E5B8",
+        "value": "material",
+        "score": 0.97,
+        "extension": {
+          "version": "micro"
+        }
+      }, {
+        "valueHash": "500A9257",
+        "value": "fabric",
+        "score": 0.86,
+        "extension": {
+          "version": "micro"
+        }
+      }]
+    }],
+    "metadata": {
+      "visibility": "PUBLIC",
+      "datatype": "media",
+      "foo": "bar",
+      "plough": "plover",
+      "shard": "123",
+      "created_date": "2025-10-01T00:00:00Z",
+      "day": "20250406"
+    }
+  }, {
+    "shard": "20250406_456",
+    "dataType": "audio",
+    "uid": "-j9ketf.npng62.u4mw0y",
+    "annotationId": "05EB49D4",
+    "documentId": "000000000017",
+    "annotationType": "tts",
+    "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+    "source": {
+      "analyticHash": "86226841",
+      "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+      "engine": "inline v6",
+      "model": "GR Supra",
+      "configuration": {
+        "octane": "99",
+        "model_year": "2025"
+      },
+      "metadata": {
+        "visibility": "PUBLIC",
+        "created_date": "2025-10-01T00:00:00Z"
+      }
+    },
+    "segments": [{
+      "segmentHash": "6BD6F28F",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 0,
+        "end": 5000
+      },
+      "values": [{
+        "valueHash": "B578A0BB",
+        "value": "the",
+        "score": 0.235
+      }, {
+        "valueHash": "B578A0BB",
+        "value": "the",
+        "score": 0.21
+      }]
+    }, {
+      "segmentHash": "71B06C7B",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 10000,
+        "end": 15000
+      },
+      "values": [{
+        "valueHash": "2CE5103A",
+        "value": "cat",
+        "score": 0.235
+      }, {
+        "valueHash": "102EA958",
+        "value": "bat",
+        "score": 0.21
+      }]
+    }, {
+      "segmentHash": "868C6413",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 20000,
+        "end": 25000
+      },
+      "values": [{
+        "valueHash": "8E4C5C70",
+        "value": "sat",
+        "score": 0.235
+      }, {
+        "valueHash": "6B4F46BE",
+        "value": "ate",
+        "score": 0.21
+      }]
+    }, {
+      "segmentHash": "941674A8",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 30000,
+        "end": 35000
+      },
+      "values": [{
+        "valueHash": "1F83A785",
+        "value": "on",
+        "score": 0.235
+      }, {
+        "valueHash": "017E7B4F",
+        "value": "\u003cunk\u003e",
+        "score": 0.21
+      }]
+    }, {
+      "segmentHash": "FA0FE295",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 40000,
+        "end": 45000
+      },
+      "values": [{
+        "valueHash": "B578A0BB",
+        "value": "the",
+        "score": 0.235
+      }, {
+        "valueHash": "B578A0BB",
+        "value": "the",
+        "score": 0.21
+      }]
+    }, {
+      "segmentHash": "2EB66E6D",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 50000,
+        "end": 55000
+      },
+      "values": [{
+        "valueHash": "76BEE44F",
+        "value": "mat",
+        "score": 0.235
+      }, {
+        "valueHash": "84962936",
+        "value": "gnat",
+        "score": 0.21
+      }]
+    }, {
+      "segmentHash": "E103E6C3",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 60000,
+        "end": 65000
+      },
+      "values": [{
+        "valueHash": "80529ABB",
+        "value": "\u003ceos\u003e",
+        "score": 0.235
+      }, {
+        "valueHash": "80529ABB",
+        "value": "\u003ceos\u003e",
+        "score": 0.21
+      }]
+    }, {
+      "segmentHash": "4FBF9992",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 70000,
+        "end": 75000
+      },
+      "values": [{
+        "valueHash": "B578A0BB",
+        "value": "the",
+        "score": 0.235
+      }, {
+        "valueHash": "B578A0BB",
+        "value": "the",
+        "score": 0.21
+      }]
+    }, {
+      "segmentHash": "6DCE0993",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 80000,
+        "end": 85000
+      },
+      "values": [{
+        "valueHash": "2CE5103A",
+        "value": "cat",
+        "score": 0.235
+      }, {
+        "valueHash": "102EA958",
+        "value": "bat",
+        "score": 0.21
+      }]
+    }, {
+      "segmentHash": "0B2095B4",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 90000,
+        "end": 95000
+      },
+      "values": [{
+        "valueHash": "8E4C5C70",
+        "value": "sat",
+        "score": 0.235
+      }, {
+        "valueHash": "6B4F46BE",
+        "value": "ate",
+        "score": 0.21
+      }]
+    }],
+    "metadata": {
+      "visibility": "PUBLIC",
+      "datatype": "audio",
+      "foo": "bar",
+      "plough": "plover",
+      "shard": "456",
+      "created_date": "2025-10-01T00:00:00Z",
+      "day": "20250406"
+    }
+  }, {
+    "shard": "20250406_456",
+    "dataType": "news",
+    "uid": "aiddza.kdn85e.-wnbwkq",
+    "annotationId": "989FC696",
+    "documentId": "000000000018",
+    "annotationType": "tokens",
+    "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+    "source": {
+      "analyticHash": "86226841",
+      "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+      "engine": "inline v6",
+      "model": "GR Supra",
+      "configuration": {
+        "octane": "99",
+        "model_year": "2025"
+      },
+      "metadata": {
+        "visibility": "PUBLIC",
+        "created_date": "2025-10-01T00:00:00Z"
+      }
+    },
+    "segments": [{
+      "segmentHash": "C7B766B9",
+      "boundary": {
+        "boundaryType": "TEXT_CHAR",
+        "start": 0,
+        "end": 3
+      },
+      "values": [{
+        "valueHash": "B578A0BB",
+        "value": "the",
+        "score": 1.0
+      }]
+    }, {
+      "segmentHash": "3885607A",
+      "boundary": {
+        "boundaryType": "TEXT_CHAR",
+        "start": 4,
+        "end": 9
+      },
+      "values": [{
+        "valueHash": "F596B9D2",
+        "value": "quick",
+        "score": 1.0
+      }]
+    }, {
+      "segmentHash": "4F6A58B9",
+      "boundary": {
+        "boundaryType": "TEXT_CHAR",
+        "start": 10,
+        "end": 15
+      },
+      "values": [{
+        "valueHash": "7C1D823B",
+        "value": "brown",
+        "score": 1.0
+      }]
+    }, {
+      "segmentHash": "6FF09C09",
+      "boundary": {
+        "boundaryType": "TEXT_CHAR",
+        "start": 16,
+        "end": 19
+      },
+      "values": [{
+        "valueHash": "29E9B80A",
+        "value": "fox",
+        "score": 1.0
+      }]
+    }, {
+      "segmentHash": "BBE2E40F",
+      "boundary": {
+        "boundaryType": "TEXT_CHAR",
+        "start": 20,
+        "end": 26
+      },
+      "values": [{
+        "valueHash": "F4329C61",
+        "value": "caught",
+        "score": 1.0
+      }]
+    }, {
+      "segmentHash": "FA48289B",
+      "boundary": {
+        "boundaryType": "TEXT_CHAR",
+        "start": 27,
+        "end": 30
+      },
+      "values": [{
+        "valueHash": "B578A0BB",
+        "value": "the",
+        "score": 1.0
+      }]
+    }, {
+      "segmentHash": "32443188",
+      "boundary": {
+        "boundaryType": "TEXT_CHAR",
+        "start": 31,
+        "end": 37
+      },
+      "values": [{
+        "valueHash": "CB78DACF",
+        "value": "rabbit",
+        "score": 1.0
+      }]
+    }, {
+      "segmentHash": "7EBDA0EF",
+      "boundary": {
+        "boundaryType": "TEXT_CHAR",
+        "start": 38,
+        "end": 43
+      },
+      "values": [{
+        "valueHash": "80529ABB",
+        "value": "\u003ceos\u003e",
+        "score": 1.0
+      }]
+    }],
+    "metadata": {
+      "visibility": "PUBLIC",
+      "datatype": "news",
+      "foo": "bar",
+      "plough": "plover",
+      "shard": "456",
+      "created_date": "2025-10-01T00:00:00Z",
+      "day": "20250406"
+    }
+  }, {
+    "shard": "20250406_456",
+    "dataType": "cars",
+    "uid": "-dwa987.-nmx1jx.g2brsm",
+    "annotationId": "5353CC53",
+    "documentId": "000000000019",
+    "annotationType": "object",
+    "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+    "source": {
+      "analyticHash": "86226841",
+      "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+      "engine": "inline v6",
+      "model": "GR Supra",
+      "configuration": {
+        "octane": "99",
+        "model_year": "2025"
+      },
+      "metadata": {
+        "visibility": "PUBLIC",
+        "created_date": "2025-10-01T00:00:00Z"
+      }
+    },
+    "segments": [{
+      "segmentHash": "A95669D7",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 0,
+          "y": 0,
+          "label": "topLeft"
+        }, {
+          "x": 5,
+          "y": 12,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "valueHash": "A9D3B0A4",
+        "value": "bird",
+        "score": 0.97,
+        "extension": {
+          "version": "alpha"
+        }
+      }, {
+        "valueHash": "B29CBAE1",
+        "value": "crow",
+        "score": 0.86,
+        "extension": {
+          "version": "alpha"
+        }
+      }]
+    }, {
+      "segmentHash": "FFF3BAA1",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 10,
+          "y": 15,
+          "label": "topLeft"
+        }, {
+          "x": 15,
+          "y": 18,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "valueHash": "C21AF472",
+        "value": "car",
+        "score": 0.97,
+        "extension": {
+          "version": "beta"
+        }
+      }, {
+        "valueHash": "A1AECAE0",
+        "value": "truck",
+        "score": 0.86,
+        "extension": {
+          "version": "beta"
+        }
+      }]
+    }, {
+      "segmentHash": "EB77E18D",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 20,
+          "y": 20,
+          "label": "topLeft"
+        }, {
+          "x": 28,
+          "y": 47,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "valueHash": "6A06AA42",
+        "value": "stairs",
+        "score": 0.97,
+        "extension": {
+          "version": "delta"
+        }
+      }]
+    }, {
+      "segmentHash": "A665835E",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 30,
+          "y": 50,
+          "label": "topLeft"
+        }, {
+          "x": 36,
+          "y": 55,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "valueHash": "E4C953FF",
+        "value": "motorcycle",
+        "score": 0.97,
+        "extension": {
+          "version": "beta"
+        }
+      }, {
+        "valueHash": "2B1BA4EB",
+        "value": "bicycle",
+        "score": 0.86,
+        "extension": {
+          "version": "beta"
+        }
+      }]
+    }, {
+      "segmentHash": "A458EEBE",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 60,
+          "y": 70,
+          "label": "topLeft"
+        }, {
+          "x": 70,
+          "y": 78,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "valueHash": "E5A4D3D7",
+        "value": "flashlight",
+        "score": 0.97,
+        "extension": {
+          "version": "beta"
+        }
+      }]
+    }, {
+      "segmentHash": "C894D8DA",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 80,
+          "y": 90,
+          "label": "topLeft"
+        }, {
+          "x": 89,
+          "y": 95,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "valueHash": "0A82F7E9",
+        "value": "dog",
+        "score": 0.97,
+        "extension": {
+          "version": "alpha"
+        }
+      }, {
+        "valueHash": "EB8EC849",
+        "value": "pig",
+        "score": 0.86,
+        "extension": {
+          "version": "alpha"
+        }
+      }]
+    }],
+    "metadata": {
+      "visibility": "PUBLIC",
+      "datatype": "cars",
+      "foo": "bar",
+      "plough": "plover",
+      "shard": "456",
+      "created_date": "2025-10-01T00:00:00Z",
+      "day": "20250406"
+    }
+  }, {
+    "shard": "20250406_456",
+    "dataType": "media",
+    "uid": "-kqa6eu.-35corl.wo67ll",
+    "annotationId": "8C866D2F",
+    "documentId": "000000000020",
+    "annotationType": "image",
+    "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+    "source": {
+      "analyticHash": "86226841",
+      "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+      "engine": "inline v6",
+      "model": "GR Supra",
+      "configuration": {
+        "octane": "99",
+        "model_year": "2025"
+      },
+      "metadata": {
+        "visibility": "PUBLIC",
+        "created_date": "2025-10-01T00:00:00Z"
+      }
+    },
+    "segments": [{
+      "segmentHash": "B809141A",
+      "boundary": {
+        "boundaryType": "ALL"
+      },
+      "values": [{
+        "valueHash": "BB6D70D3",
+        "value": "landscape",
+        "score": 0.97,
+        "extension": {
+          "version": "charlie"
+        }
+      }, {
+        "valueHash": "F3C97BE0",
+        "value": "underground",
+        "score": 0.86,
+        "extension": {
+          "version": "charlie"
+        }
+      }, {
+        "valueHash": "0CE17D26",
+        "value": "portrait",
+        "score": 0.97,
+        "extension": {
+          "version": "bravo"
+        }
+      }, {
+        "valueHash": "E9416D45",
+        "value": "postcard",
+        "score": 0.86,
+        "extension": {
+          "version": "bravo"
+        }
+      }, {
+        "valueHash": "73A136DF",
+        "value": "scene",
+        "score": 0.97,
+        "extension": {
+          "version": "lima"
+        }
+      }, {
+        "valueHash": "F03AA692",
+        "value": "evening",
+        "score": 0.97,
+        "extension": {
+          "version": "victor"
+        }
+      }, {
+        "valueHash": "C3186504",
+        "value": "afternoon",
+        "score": 0.86,
+        "extension": {
+          "version": "victor"
+        }
+      }, {
+        "valueHash": "C77BBB3D",
+        "value": "astral",
+        "score": 0.97,
+        "extension": {
+          "version": "delta"
+        }
+      }, {
+        "valueHash": "09AF7469",
+        "value": "ethereal",
+        "score": 0.86,
+        "extension": {
+          "version": "delta"
+        }
+      }, {
+        "valueHash": "1C80E5B8",
+        "value": "material",
+        "score": 0.97,
+        "extension": {
+          "version": "micro"
+        }
+      }, {
+        "valueHash": "500A9257",
+        "value": "fabric",
+        "score": 0.86,
+        "extension": {
+          "version": "micro"
+        }
+      }]
+    }],
+    "metadata": {
+      "visibility": "PUBLIC",
+      "datatype": "media",
+      "foo": "bar",
+      "plough": "plover",
+      "shard": "456",
+      "created_date": "2025-10-01T00:00:00Z",
+      "day": "20250406"
+    }
+  }, {
+    "shard": "20250406_789",
+    "dataType": "audio",
+    "uid": "-29vx6c.-lwa23c.isbedx",
+    "annotationId": "B852D3DA",
+    "documentId": "000000000021",
+    "annotationType": "tts",
+    "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+    "source": {
+      "analyticHash": "86226841",
+      "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+      "engine": "inline v6",
+      "model": "GR Supra",
+      "configuration": {
+        "octane": "99",
+        "model_year": "2025"
+      },
+      "metadata": {
+        "visibility": "PUBLIC",
+        "created_date": "2025-10-01T00:00:00Z"
+      }
+    },
+    "segments": [{
+      "segmentHash": "6BD6F28F",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 0,
+        "end": 5000
+      },
+      "values": [{
+        "valueHash": "B578A0BB",
+        "value": "the",
+        "score": 0.235
+      }, {
+        "valueHash": "B578A0BB",
+        "value": "the",
+        "score": 0.21
+      }]
+    }, {
+      "segmentHash": "71B06C7B",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 10000,
+        "end": 15000
+      },
+      "values": [{
+        "valueHash": "2CE5103A",
+        "value": "cat",
+        "score": 0.235
+      }, {
+        "valueHash": "102EA958",
+        "value": "bat",
+        "score": 0.21
+      }]
+    }, {
+      "segmentHash": "868C6413",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 20000,
+        "end": 25000
+      },
+      "values": [{
+        "valueHash": "8E4C5C70",
+        "value": "sat",
+        "score": 0.235
+      }, {
+        "valueHash": "6B4F46BE",
+        "value": "ate",
+        "score": 0.21
+      }]
+    }, {
+      "segmentHash": "941674A8",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 30000,
+        "end": 35000
+      },
+      "values": [{
+        "valueHash": "1F83A785",
+        "value": "on",
+        "score": 0.235
+      }, {
+        "valueHash": "017E7B4F",
+        "value": "\u003cunk\u003e",
+        "score": 0.21
+      }]
+    }, {
+      "segmentHash": "FA0FE295",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 40000,
+        "end": 45000
+      },
+      "values": [{
+        "valueHash": "B578A0BB",
+        "value": "the",
+        "score": 0.235
+      }, {
+        "valueHash": "B578A0BB",
+        "value": "the",
+        "score": 0.21
+      }]
+    }, {
+      "segmentHash": "2EB66E6D",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 50000,
+        "end": 55000
+      },
+      "values": [{
+        "valueHash": "76BEE44F",
+        "value": "mat",
+        "score": 0.235
+      }, {
+        "valueHash": "84962936",
+        "value": "gnat",
+        "score": 0.21
+      }]
+    }, {
+      "segmentHash": "E103E6C3",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 60000,
+        "end": 65000
+      },
+      "values": [{
+        "valueHash": "80529ABB",
+        "value": "\u003ceos\u003e",
+        "score": 0.235
+      }, {
+        "valueHash": "80529ABB",
+        "value": "\u003ceos\u003e",
+        "score": 0.21
+      }]
+    }, {
+      "segmentHash": "4FBF9992",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 70000,
+        "end": 75000
+      },
+      "values": [{
+        "valueHash": "B578A0BB",
+        "value": "the",
+        "score": 0.235
+      }, {
+        "valueHash": "B578A0BB",
+        "value": "the",
+        "score": 0.21
+      }]
+    }, {
+      "segmentHash": "6DCE0993",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 80000,
+        "end": 85000
+      },
+      "values": [{
+        "valueHash": "2CE5103A",
+        "value": "cat",
+        "score": 0.235
+      }, {
+        "valueHash": "102EA958",
+        "value": "bat",
+        "score": 0.21
+      }]
+    }, {
+      "segmentHash": "0B2095B4",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 90000,
+        "end": 95000
+      },
+      "values": [{
+        "valueHash": "8E4C5C70",
+        "value": "sat",
+        "score": 0.235
+      }, {
+        "valueHash": "6B4F46BE",
+        "value": "ate",
+        "score": 0.21
+      }]
+    }],
+    "metadata": {
+      "visibility": "PUBLIC",
+      "datatype": "audio",
+      "foo": "bar",
+      "plough": "plover",
+      "shard": "789",
+      "created_date": "2025-10-01T00:00:00Z",
+      "day": "20250406"
+    }
+  }, {
+    "shard": "20250406_789",
+    "dataType": "news",
+    "uid": "ofv6g7.-cb3p6d.-ivgfo9",
+    "annotationId": "30587053",
+    "documentId": "000000000022",
+    "annotationType": "tokens",
+    "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+    "source": {
+      "analyticHash": "86226841",
+      "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+      "engine": "inline v6",
+      "model": "GR Supra",
+      "configuration": {
+        "octane": "99",
+        "model_year": "2025"
+      },
+      "metadata": {
+        "visibility": "PUBLIC",
+        "created_date": "2025-10-01T00:00:00Z"
+      }
+    },
+    "segments": [{
+      "segmentHash": "C7B766B9",
+      "boundary": {
+        "boundaryType": "TEXT_CHAR",
+        "start": 0,
+        "end": 3
+      },
+      "values": [{
+        "valueHash": "B578A0BB",
+        "value": "the",
+        "score": 1.0
+      }]
+    }, {
+      "segmentHash": "3885607A",
+      "boundary": {
+        "boundaryType": "TEXT_CHAR",
+        "start": 4,
+        "end": 9
+      },
+      "values": [{
+        "valueHash": "F596B9D2",
+        "value": "quick",
+        "score": 1.0
+      }]
+    }, {
+      "segmentHash": "4F6A58B9",
+      "boundary": {
+        "boundaryType": "TEXT_CHAR",
+        "start": 10,
+        "end": 15
+      },
+      "values": [{
+        "valueHash": "7C1D823B",
+        "value": "brown",
+        "score": 1.0
+      }]
+    }, {
+      "segmentHash": "6FF09C09",
+      "boundary": {
+        "boundaryType": "TEXT_CHAR",
+        "start": 16,
+        "end": 19
+      },
+      "values": [{
+        "valueHash": "29E9B80A",
+        "value": "fox",
+        "score": 1.0
+      }]
+    }, {
+      "segmentHash": "BBE2E40F",
+      "boundary": {
+        "boundaryType": "TEXT_CHAR",
+        "start": 20,
+        "end": 26
+      },
+      "values": [{
+        "valueHash": "F4329C61",
+        "value": "caught",
+        "score": 1.0
+      }]
+    }, {
+      "segmentHash": "FA48289B",
+      "boundary": {
+        "boundaryType": "TEXT_CHAR",
+        "start": 27,
+        "end": 30
+      },
+      "values": [{
+        "valueHash": "B578A0BB",
+        "value": "the",
+        "score": 1.0
+      }]
+    }, {
+      "segmentHash": "32443188",
+      "boundary": {
+        "boundaryType": "TEXT_CHAR",
+        "start": 31,
+        "end": 37
+      },
+      "values": [{
+        "valueHash": "CB78DACF",
+        "value": "rabbit",
+        "score": 1.0
+      }]
+    }, {
+      "segmentHash": "7EBDA0EF",
+      "boundary": {
+        "boundaryType": "TEXT_CHAR",
+        "start": 38,
+        "end": 43
+      },
+      "values": [{
+        "valueHash": "80529ABB",
+        "value": "\u003ceos\u003e",
+        "score": 1.0
+      }]
+    }],
+    "metadata": {
+      "visibility": "PUBLIC",
+      "datatype": "news",
+      "foo": "bar",
+      "plough": "plover",
+      "shard": "789",
+      "created_date": "2025-10-01T00:00:00Z",
+      "day": "20250406"
+    }
+  }, {
+    "shard": "20250406_789",
+    "dataType": "cars",
+    "uid": "va8jna.-hil636.-9lwvxz",
+    "annotationId": "A2CEF983",
+    "documentId": "000000000023",
+    "annotationType": "object",
+    "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+    "source": {
+      "analyticHash": "86226841",
+      "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+      "engine": "inline v6",
+      "model": "GR Supra",
+      "configuration": {
+        "octane": "99",
+        "model_year": "2025"
+      },
+      "metadata": {
+        "visibility": "PUBLIC",
+        "created_date": "2025-10-01T00:00:00Z"
+      }
+    },
+    "segments": [{
+      "segmentHash": "A95669D7",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 0,
+          "y": 0,
+          "label": "topLeft"
+        }, {
+          "x": 5,
+          "y": 12,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "valueHash": "A9D3B0A4",
+        "value": "bird",
+        "score": 0.97,
+        "extension": {
+          "version": "alpha"
+        }
+      }, {
+        "valueHash": "B29CBAE1",
+        "value": "crow",
+        "score": 0.86,
+        "extension": {
+          "version": "alpha"
+        }
+      }]
+    }, {
+      "segmentHash": "FFF3BAA1",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 10,
+          "y": 15,
+          "label": "topLeft"
+        }, {
+          "x": 15,
+          "y": 18,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "valueHash": "C21AF472",
+        "value": "car",
+        "score": 0.97,
+        "extension": {
+          "version": "beta"
+        }
+      }, {
+        "valueHash": "A1AECAE0",
+        "value": "truck",
+        "score": 0.86,
+        "extension": {
+          "version": "beta"
+        }
+      }]
+    }, {
+      "segmentHash": "EB77E18D",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 20,
+          "y": 20,
+          "label": "topLeft"
+        }, {
+          "x": 28,
+          "y": 47,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "valueHash": "6A06AA42",
+        "value": "stairs",
+        "score": 0.97,
+        "extension": {
+          "version": "delta"
+        }
+      }]
+    }, {
+      "segmentHash": "A665835E",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 30,
+          "y": 50,
+          "label": "topLeft"
+        }, {
+          "x": 36,
+          "y": 55,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "valueHash": "E4C953FF",
+        "value": "motorcycle",
+        "score": 0.97,
+        "extension": {
+          "version": "beta"
+        }
+      }, {
+        "valueHash": "2B1BA4EB",
+        "value": "bicycle",
+        "score": 0.86,
+        "extension": {
+          "version": "beta"
+        }
+      }]
+    }, {
+      "segmentHash": "A458EEBE",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 60,
+          "y": 70,
+          "label": "topLeft"
+        }, {
+          "x": 70,
+          "y": 78,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "valueHash": "E5A4D3D7",
+        "value": "flashlight",
+        "score": 0.97,
+        "extension": {
+          "version": "beta"
+        }
+      }]
+    }, {
+      "segmentHash": "C894D8DA",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 80,
+          "y": 90,
+          "label": "topLeft"
+        }, {
+          "x": 89,
+          "y": 95,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "valueHash": "0A82F7E9",
+        "value": "dog",
+        "score": 0.97,
+        "extension": {
+          "version": "alpha"
+        }
+      }, {
+        "valueHash": "EB8EC849",
+        "value": "pig",
+        "score": 0.86,
+        "extension": {
+          "version": "alpha"
+        }
+      }]
+    }],
+    "metadata": {
+      "visibility": "PUBLIC",
+      "datatype": "cars",
+      "foo": "bar",
+      "plough": "plover",
+      "shard": "789",
+      "created_date": "2025-10-01T00:00:00Z",
+      "day": "20250406"
+    }
+  }, {
+    "shard": "20250406_789",
+    "dataType": "media",
+    "uid": "-rh2s8d.-9zqxoc.-4nrkwu",
+    "annotationId": "966BD4C9",
+    "documentId": "000000000024",
+    "annotationType": "image",
+    "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+    "source": {
+      "analyticHash": "86226841",
+      "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+      "engine": "inline v6",
+      "model": "GR Supra",
+      "configuration": {
+        "octane": "99",
+        "model_year": "2025"
+      },
+      "metadata": {
+        "visibility": "PUBLIC",
+        "created_date": "2025-10-01T00:00:00Z"
+      }
+    },
+    "segments": [{
+      "segmentHash": "B809141A",
+      "boundary": {
+        "boundaryType": "ALL"
+      },
+      "values": [{
+        "valueHash": "BB6D70D3",
+        "value": "landscape",
+        "score": 0.97,
+        "extension": {
+          "version": "charlie"
+        }
+      }, {
+        "valueHash": "F3C97BE0",
+        "value": "underground",
+        "score": 0.86,
+        "extension": {
+          "version": "charlie"
+        }
+      }, {
+        "valueHash": "0CE17D26",
+        "value": "portrait",
+        "score": 0.97,
+        "extension": {
+          "version": "bravo"
+        }
+      }, {
+        "valueHash": "E9416D45",
+        "value": "postcard",
+        "score": 0.86,
+        "extension": {
+          "version": "bravo"
+        }
+      }, {
+        "valueHash": "73A136DF",
+        "value": "scene",
+        "score": 0.97,
+        "extension": {
+          "version": "lima"
+        }
+      }, {
+        "valueHash": "F03AA692",
+        "value": "evening",
+        "score": 0.97,
+        "extension": {
+          "version": "victor"
+        }
+      }, {
+        "valueHash": "C3186504",
+        "value": "afternoon",
+        "score": 0.86,
+        "extension": {
+          "version": "victor"
+        }
+      }, {
+        "valueHash": "C77BBB3D",
+        "value": "astral",
+        "score": 0.97,
+        "extension": {
+          "version": "delta"
+        }
+      }, {
+        "valueHash": "09AF7469",
+        "value": "ethereal",
+        "score": 0.86,
+        "extension": {
+          "version": "delta"
+        }
+      }, {
+        "valueHash": "1C80E5B8",
+        "value": "material",
+        "score": 0.97,
+        "extension": {
+          "version": "micro"
+        }
+      }, {
+        "valueHash": "500A9257",
+        "value": "fabric",
+        "score": 0.86,
+        "extension": {
+          "version": "micro"
+        }
+      }]
+    }],
+    "metadata": {
+      "visibility": "PUBLIC",
+      "datatype": "media",
+      "foo": "bar",
+      "plough": "plover",
+      "shard": "789",
+      "created_date": "2025-10-01T00:00:00Z",
+      "day": "20250406"
+    }
+  }, {
+    "shard": "20250407_123",
+    "dataType": "audio",
+    "uid": "16end8.-vn8vng.-khm2w8",
+    "annotationId": "1574E0B4",
+    "documentId": "000000000025",
+    "annotationType": "tts",
+    "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+    "source": {
+      "analyticHash": "86226841",
+      "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+      "engine": "inline v6",
+      "model": "GR Supra",
+      "configuration": {
+        "octane": "99",
+        "model_year": "2025"
+      },
+      "metadata": {
+        "visibility": "PUBLIC",
+        "created_date": "2025-10-01T00:00:00Z"
+      }
+    },
+    "segments": [{
+      "segmentHash": "6BD6F28F",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 0,
+        "end": 5000
+      },
+      "values": [{
+        "valueHash": "B578A0BB",
+        "value": "the",
+        "score": 0.235
+      }, {
+        "valueHash": "B578A0BB",
+        "value": "the",
+        "score": 0.21
+      }]
+    }, {
+      "segmentHash": "71B06C7B",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 10000,
+        "end": 15000
+      },
+      "values": [{
+        "valueHash": "2CE5103A",
+        "value": "cat",
+        "score": 0.235
+      }, {
+        "valueHash": "102EA958",
+        "value": "bat",
+        "score": 0.21
+      }]
+    }, {
+      "segmentHash": "868C6413",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 20000,
+        "end": 25000
+      },
+      "values": [{
+        "valueHash": "8E4C5C70",
+        "value": "sat",
+        "score": 0.235
+      }, {
+        "valueHash": "6B4F46BE",
+        "value": "ate",
+        "score": 0.21
+      }]
+    }, {
+      "segmentHash": "941674A8",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 30000,
+        "end": 35000
+      },
+      "values": [{
+        "valueHash": "1F83A785",
+        "value": "on",
+        "score": 0.235
+      }, {
+        "valueHash": "017E7B4F",
+        "value": "\u003cunk\u003e",
+        "score": 0.21
+      }]
+    }, {
+      "segmentHash": "FA0FE295",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 40000,
+        "end": 45000
+      },
+      "values": [{
+        "valueHash": "B578A0BB",
+        "value": "the",
+        "score": 0.235
+      }, {
+        "valueHash": "B578A0BB",
+        "value": "the",
+        "score": 0.21
+      }]
+    }, {
+      "segmentHash": "2EB66E6D",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 50000,
+        "end": 55000
+      },
+      "values": [{
+        "valueHash": "76BEE44F",
+        "value": "mat",
+        "score": 0.235
+      }, {
+        "valueHash": "84962936",
+        "value": "gnat",
+        "score": 0.21
+      }]
+    }, {
+      "segmentHash": "E103E6C3",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 60000,
+        "end": 65000
+      },
+      "values": [{
+        "valueHash": "80529ABB",
+        "value": "\u003ceos\u003e",
+        "score": 0.235
+      }, {
+        "valueHash": "80529ABB",
+        "value": "\u003ceos\u003e",
+        "score": 0.21
+      }]
+    }, {
+      "segmentHash": "4FBF9992",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 70000,
+        "end": 75000
+      },
+      "values": [{
+        "valueHash": "B578A0BB",
+        "value": "the",
+        "score": 0.235
+      }, {
+        "valueHash": "B578A0BB",
+        "value": "the",
+        "score": 0.21
+      }]
+    }, {
+      "segmentHash": "6DCE0993",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 80000,
+        "end": 85000
+      },
+      "values": [{
+        "valueHash": "2CE5103A",
+        "value": "cat",
+        "score": 0.235
+      }, {
+        "valueHash": "102EA958",
+        "value": "bat",
+        "score": 0.21
+      }]
+    }, {
+      "segmentHash": "0B2095B4",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 90000,
+        "end": 95000
+      },
+      "values": [{
+        "valueHash": "8E4C5C70",
+        "value": "sat",
+        "score": 0.235
+      }, {
+        "valueHash": "6B4F46BE",
+        "value": "ate",
+        "score": 0.21
+      }]
+    }],
+    "metadata": {
+      "visibility": "PUBLIC",
+      "datatype": "audio",
+      "foo": "bar",
+      "plough": "plover",
+      "shard": "123",
+      "created_date": "2025-10-01T00:00:00Z",
+      "day": "20250407"
+    }
+  }, {
+    "shard": "20250407_123",
+    "dataType": "news",
+    "uid": "-6g8vi5.-m6euyr.cc6sho",
+    "annotationId": "46B19D5A",
+    "documentId": "000000000026",
+    "annotationType": "tokens",
+    "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+    "source": {
+      "analyticHash": "86226841",
+      "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+      "engine": "inline v6",
+      "model": "GR Supra",
+      "configuration": {
+        "octane": "99",
+        "model_year": "2025"
+      },
+      "metadata": {
+        "visibility": "PUBLIC",
+        "created_date": "2025-10-01T00:00:00Z"
+      }
+    },
+    "segments": [{
+      "segmentHash": "C7B766B9",
+      "boundary": {
+        "boundaryType": "TEXT_CHAR",
+        "start": 0,
+        "end": 3
+      },
+      "values": [{
+        "valueHash": "B578A0BB",
+        "value": "the",
+        "score": 1.0
+      }]
+    }, {
+      "segmentHash": "3885607A",
+      "boundary": {
+        "boundaryType": "TEXT_CHAR",
+        "start": 4,
+        "end": 9
+      },
+      "values": [{
+        "valueHash": "F596B9D2",
+        "value": "quick",
+        "score": 1.0
+      }]
+    }, {
+      "segmentHash": "4F6A58B9",
+      "boundary": {
+        "boundaryType": "TEXT_CHAR",
+        "start": 10,
+        "end": 15
+      },
+      "values": [{
+        "valueHash": "7C1D823B",
+        "value": "brown",
+        "score": 1.0
+      }]
+    }, {
+      "segmentHash": "6FF09C09",
+      "boundary": {
+        "boundaryType": "TEXT_CHAR",
+        "start": 16,
+        "end": 19
+      },
+      "values": [{
+        "valueHash": "29E9B80A",
+        "value": "fox",
+        "score": 1.0
+      }]
+    }, {
+      "segmentHash": "BBE2E40F",
+      "boundary": {
+        "boundaryType": "TEXT_CHAR",
+        "start": 20,
+        "end": 26
+      },
+      "values": [{
+        "valueHash": "F4329C61",
+        "value": "caught",
+        "score": 1.0
+      }]
+    }, {
+      "segmentHash": "FA48289B",
+      "boundary": {
+        "boundaryType": "TEXT_CHAR",
+        "start": 27,
+        "end": 30
+      },
+      "values": [{
+        "valueHash": "B578A0BB",
+        "value": "the",
+        "score": 1.0
+      }]
+    }, {
+      "segmentHash": "32443188",
+      "boundary": {
+        "boundaryType": "TEXT_CHAR",
+        "start": 31,
+        "end": 37
+      },
+      "values": [{
+        "valueHash": "CB78DACF",
+        "value": "rabbit",
+        "score": 1.0
+      }]
+    }, {
+      "segmentHash": "7EBDA0EF",
+      "boundary": {
+        "boundaryType": "TEXT_CHAR",
+        "start": 38,
+        "end": 43
+      },
+      "values": [{
+        "valueHash": "80529ABB",
+        "value": "\u003ceos\u003e",
+        "score": 1.0
+      }]
+    }],
+    "metadata": {
+      "visibility": "PUBLIC",
+      "datatype": "news",
+      "foo": "bar",
+      "plough": "plover",
+      "shard": "123",
+      "created_date": "2025-10-01T00:00:00Z",
+      "day": "20250407"
+    }
+  }, {
+    "shard": "20250407_123",
+    "dataType": "cars",
+    "uid": "-hytjod.-nov8f8.-g5zapt",
+    "annotationId": "937738CC",
+    "documentId": "000000000027",
+    "annotationType": "object",
+    "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+    "source": {
+      "analyticHash": "86226841",
+      "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+      "engine": "inline v6",
+      "model": "GR Supra",
+      "configuration": {
+        "octane": "99",
+        "model_year": "2025"
+      },
+      "metadata": {
+        "visibility": "PUBLIC",
+        "created_date": "2025-10-01T00:00:00Z"
+      }
+    },
+    "segments": [{
+      "segmentHash": "A95669D7",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 0,
+          "y": 0,
+          "label": "topLeft"
+        }, {
+          "x": 5,
+          "y": 12,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "valueHash": "A9D3B0A4",
+        "value": "bird",
+        "score": 0.97,
+        "extension": {
+          "version": "alpha"
+        }
+      }, {
+        "valueHash": "B29CBAE1",
+        "value": "crow",
+        "score": 0.86,
+        "extension": {
+          "version": "alpha"
+        }
+      }]
+    }, {
+      "segmentHash": "FFF3BAA1",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 10,
+          "y": 15,
+          "label": "topLeft"
+        }, {
+          "x": 15,
+          "y": 18,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "valueHash": "C21AF472",
+        "value": "car",
+        "score": 0.97,
+        "extension": {
+          "version": "beta"
+        }
+      }, {
+        "valueHash": "A1AECAE0",
+        "value": "truck",
+        "score": 0.86,
+        "extension": {
+          "version": "beta"
+        }
+      }]
+    }, {
+      "segmentHash": "EB77E18D",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 20,
+          "y": 20,
+          "label": "topLeft"
+        }, {
+          "x": 28,
+          "y": 47,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "valueHash": "6A06AA42",
+        "value": "stairs",
+        "score": 0.97,
+        "extension": {
+          "version": "delta"
+        }
+      }]
+    }, {
+      "segmentHash": "A665835E",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 30,
+          "y": 50,
+          "label": "topLeft"
+        }, {
+          "x": 36,
+          "y": 55,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "valueHash": "E4C953FF",
+        "value": "motorcycle",
+        "score": 0.97,
+        "extension": {
+          "version": "beta"
+        }
+      }, {
+        "valueHash": "2B1BA4EB",
+        "value": "bicycle",
+        "score": 0.86,
+        "extension": {
+          "version": "beta"
+        }
+      }]
+    }, {
+      "segmentHash": "A458EEBE",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 60,
+          "y": 70,
+          "label": "topLeft"
+        }, {
+          "x": 70,
+          "y": 78,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "valueHash": "E5A4D3D7",
+        "value": "flashlight",
+        "score": 0.97,
+        "extension": {
+          "version": "beta"
+        }
+      }]
+    }, {
+      "segmentHash": "C894D8DA",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 80,
+          "y": 90,
+          "label": "topLeft"
+        }, {
+          "x": 89,
+          "y": 95,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "valueHash": "0A82F7E9",
+        "value": "dog",
+        "score": 0.97,
+        "extension": {
+          "version": "alpha"
+        }
+      }, {
+        "valueHash": "EB8EC849",
+        "value": "pig",
+        "score": 0.86,
+        "extension": {
+          "version": "alpha"
+        }
+      }]
+    }],
+    "metadata": {
+      "visibility": "PUBLIC",
+      "datatype": "cars",
+      "foo": "bar",
+      "plough": "plover",
+      "shard": "123",
+      "created_date": "2025-10-01T00:00:00Z",
+      "day": "20250407"
+    }
+  }, {
+    "shard": "20250407_123",
+    "dataType": "media",
+    "uid": "-73gdy7.ohlf1z.-wuqj8m",
+    "annotationId": "A9E095FB",
+    "documentId": "000000000028",
+    "annotationType": "image",
+    "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+    "source": {
+      "analyticHash": "86226841",
+      "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+      "engine": "inline v6",
+      "model": "GR Supra",
+      "configuration": {
+        "octane": "99",
+        "model_year": "2025"
+      },
+      "metadata": {
+        "visibility": "PUBLIC",
+        "created_date": "2025-10-01T00:00:00Z"
+      }
+    },
+    "segments": [{
+      "segmentHash": "B809141A",
+      "boundary": {
+        "boundaryType": "ALL"
+      },
+      "values": [{
+        "valueHash": "BB6D70D3",
+        "value": "landscape",
+        "score": 0.97,
+        "extension": {
+          "version": "charlie"
+        }
+      }, {
+        "valueHash": "F3C97BE0",
+        "value": "underground",
+        "score": 0.86,
+        "extension": {
+          "version": "charlie"
+        }
+      }, {
+        "valueHash": "0CE17D26",
+        "value": "portrait",
+        "score": 0.97,
+        "extension": {
+          "version": "bravo"
+        }
+      }, {
+        "valueHash": "E9416D45",
+        "value": "postcard",
+        "score": 0.86,
+        "extension": {
+          "version": "bravo"
+        }
+      }, {
+        "valueHash": "73A136DF",
+        "value": "scene",
+        "score": 0.97,
+        "extension": {
+          "version": "lima"
+        }
+      }, {
+        "valueHash": "F03AA692",
+        "value": "evening",
+        "score": 0.97,
+        "extension": {
+          "version": "victor"
+        }
+      }, {
+        "valueHash": "C3186504",
+        "value": "afternoon",
+        "score": 0.86,
+        "extension": {
+          "version": "victor"
+        }
+      }, {
+        "valueHash": "C77BBB3D",
+        "value": "astral",
+        "score": 0.97,
+        "extension": {
+          "version": "delta"
+        }
+      }, {
+        "valueHash": "09AF7469",
+        "value": "ethereal",
+        "score": 0.86,
+        "extension": {
+          "version": "delta"
+        }
+      }, {
+        "valueHash": "1C80E5B8",
+        "value": "material",
+        "score": 0.97,
+        "extension": {
+          "version": "micro"
+        }
+      }, {
+        "valueHash": "500A9257",
+        "value": "fabric",
+        "score": 0.86,
+        "extension": {
+          "version": "micro"
+        }
+      }]
+    }],
+    "metadata": {
+      "visibility": "PUBLIC",
+      "datatype": "media",
+      "foo": "bar",
+      "plough": "plover",
+      "shard": "123",
+      "created_date": "2025-10-01T00:00:00Z",
+      "day": "20250407"
+    }
+  }, {
+    "shard": "20250407_456",
+    "dataType": "audio",
+    "uid": "pa5nh.-njbvvg.-82pk6f",
+    "annotationId": "91F84ECA",
+    "documentId": "000000000029",
+    "annotationType": "tts",
+    "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+    "source": {
+      "analyticHash": "86226841",
+      "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+      "engine": "inline v6",
+      "model": "GR Supra",
+      "configuration": {
+        "octane": "99",
+        "model_year": "2025"
+      },
+      "metadata": {
+        "visibility": "PUBLIC",
+        "created_date": "2025-10-01T00:00:00Z"
+      }
+    },
+    "segments": [{
+      "segmentHash": "6BD6F28F",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 0,
+        "end": 5000
+      },
+      "values": [{
+        "valueHash": "B578A0BB",
+        "value": "the",
+        "score": 0.235
+      }, {
+        "valueHash": "B578A0BB",
+        "value": "the",
+        "score": 0.21
+      }]
+    }, {
+      "segmentHash": "71B06C7B",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 10000,
+        "end": 15000
+      },
+      "values": [{
+        "valueHash": "2CE5103A",
+        "value": "cat",
+        "score": 0.235
+      }, {
+        "valueHash": "102EA958",
+        "value": "bat",
+        "score": 0.21
+      }]
+    }, {
+      "segmentHash": "868C6413",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 20000,
+        "end": 25000
+      },
+      "values": [{
+        "valueHash": "8E4C5C70",
+        "value": "sat",
+        "score": 0.235
+      }, {
+        "valueHash": "6B4F46BE",
+        "value": "ate",
+        "score": 0.21
+      }]
+    }, {
+      "segmentHash": "941674A8",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 30000,
+        "end": 35000
+      },
+      "values": [{
+        "valueHash": "1F83A785",
+        "value": "on",
+        "score": 0.235
+      }, {
+        "valueHash": "017E7B4F",
+        "value": "\u003cunk\u003e",
+        "score": 0.21
+      }]
+    }, {
+      "segmentHash": "FA0FE295",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 40000,
+        "end": 45000
+      },
+      "values": [{
+        "valueHash": "B578A0BB",
+        "value": "the",
+        "score": 0.235
+      }, {
+        "valueHash": "B578A0BB",
+        "value": "the",
+        "score": 0.21
+      }]
+    }, {
+      "segmentHash": "2EB66E6D",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 50000,
+        "end": 55000
+      },
+      "values": [{
+        "valueHash": "76BEE44F",
+        "value": "mat",
+        "score": 0.235
+      }, {
+        "valueHash": "84962936",
+        "value": "gnat",
+        "score": 0.21
+      }]
+    }, {
+      "segmentHash": "E103E6C3",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 60000,
+        "end": 65000
+      },
+      "values": [{
+        "valueHash": "80529ABB",
+        "value": "\u003ceos\u003e",
+        "score": 0.235
+      }, {
+        "valueHash": "80529ABB",
+        "value": "\u003ceos\u003e",
+        "score": 0.21
+      }]
+    }, {
+      "segmentHash": "4FBF9992",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 70000,
+        "end": 75000
+      },
+      "values": [{
+        "valueHash": "B578A0BB",
+        "value": "the",
+        "score": 0.235
+      }, {
+        "valueHash": "B578A0BB",
+        "value": "the",
+        "score": 0.21
+      }]
+    }, {
+      "segmentHash": "6DCE0993",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 80000,
+        "end": 85000
+      },
+      "values": [{
+        "valueHash": "2CE5103A",
+        "value": "cat",
+        "score": 0.235
+      }, {
+        "valueHash": "102EA958",
+        "value": "bat",
+        "score": 0.21
+      }]
+    }, {
+      "segmentHash": "0B2095B4",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 90000,
+        "end": 95000
+      },
+      "values": [{
+        "valueHash": "8E4C5C70",
+        "value": "sat",
+        "score": 0.235
+      }, {
+        "valueHash": "6B4F46BE",
+        "value": "ate",
+        "score": 0.21
+      }]
+    }],
+    "metadata": {
+      "visibility": "PUBLIC",
+      "datatype": "audio",
+      "foo": "bar",
+      "plough": "plover",
+      "shard": "456",
+      "created_date": "2025-10-01T00:00:00Z",
+      "day": "20250407"
+    }
+  }, {
+    "shard": "20250407_456",
+    "dataType": "news",
+    "uid": "-rjrn67.fih94d.-w0pe6m",
+    "annotationId": "224923C3",
+    "documentId": "000000000030",
+    "annotationType": "tokens",
+    "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+    "source": {
+      "analyticHash": "86226841",
+      "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+      "engine": "inline v6",
+      "model": "GR Supra",
+      "configuration": {
+        "octane": "99",
+        "model_year": "2025"
+      },
+      "metadata": {
+        "visibility": "PUBLIC",
+        "created_date": "2025-10-01T00:00:00Z"
+      }
+    },
+    "segments": [{
+      "segmentHash": "C7B766B9",
+      "boundary": {
+        "boundaryType": "TEXT_CHAR",
+        "start": 0,
+        "end": 3
+      },
+      "values": [{
+        "valueHash": "B578A0BB",
+        "value": "the",
+        "score": 1.0
+      }]
+    }, {
+      "segmentHash": "3885607A",
+      "boundary": {
+        "boundaryType": "TEXT_CHAR",
+        "start": 4,
+        "end": 9
+      },
+      "values": [{
+        "valueHash": "F596B9D2",
+        "value": "quick",
+        "score": 1.0
+      }]
+    }, {
+      "segmentHash": "4F6A58B9",
+      "boundary": {
+        "boundaryType": "TEXT_CHAR",
+        "start": 10,
+        "end": 15
+      },
+      "values": [{
+        "valueHash": "7C1D823B",
+        "value": "brown",
+        "score": 1.0
+      }]
+    }, {
+      "segmentHash": "6FF09C09",
+      "boundary": {
+        "boundaryType": "TEXT_CHAR",
+        "start": 16,
+        "end": 19
+      },
+      "values": [{
+        "valueHash": "29E9B80A",
+        "value": "fox",
+        "score": 1.0
+      }]
+    }, {
+      "segmentHash": "BBE2E40F",
+      "boundary": {
+        "boundaryType": "TEXT_CHAR",
+        "start": 20,
+        "end": 26
+      },
+      "values": [{
+        "valueHash": "F4329C61",
+        "value": "caught",
+        "score": 1.0
+      }]
+    }, {
+      "segmentHash": "FA48289B",
+      "boundary": {
+        "boundaryType": "TEXT_CHAR",
+        "start": 27,
+        "end": 30
+      },
+      "values": [{
+        "valueHash": "B578A0BB",
+        "value": "the",
+        "score": 1.0
+      }]
+    }, {
+      "segmentHash": "32443188",
+      "boundary": {
+        "boundaryType": "TEXT_CHAR",
+        "start": 31,
+        "end": 37
+      },
+      "values": [{
+        "valueHash": "CB78DACF",
+        "value": "rabbit",
+        "score": 1.0
+      }]
+    }, {
+      "segmentHash": "7EBDA0EF",
+      "boundary": {
+        "boundaryType": "TEXT_CHAR",
+        "start": 38,
+        "end": 43
+      },
+      "values": [{
+        "valueHash": "80529ABB",
+        "value": "\u003ceos\u003e",
+        "score": 1.0
+      }]
+    }],
+    "metadata": {
+      "visibility": "PUBLIC",
+      "datatype": "news",
+      "foo": "bar",
+      "plough": "plover",
+      "shard": "456",
+      "created_date": "2025-10-01T00:00:00Z",
+      "day": "20250407"
+    }
+  }, {
+    "shard": "20250407_456",
+    "dataType": "cars",
+    "uid": "-kzyodx.s0n5gw.xn56uj",
+    "annotationId": "B113E121",
+    "documentId": "000000000031",
+    "annotationType": "object",
+    "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+    "source": {
+      "analyticHash": "86226841",
+      "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+      "engine": "inline v6",
+      "model": "GR Supra",
+      "configuration": {
+        "octane": "99",
+        "model_year": "2025"
+      },
+      "metadata": {
+        "visibility": "PUBLIC",
+        "created_date": "2025-10-01T00:00:00Z"
+      }
+    },
+    "segments": [{
+      "segmentHash": "A95669D7",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 0,
+          "y": 0,
+          "label": "topLeft"
+        }, {
+          "x": 5,
+          "y": 12,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "valueHash": "A9D3B0A4",
+        "value": "bird",
+        "score": 0.97,
+        "extension": {
+          "version": "alpha"
+        }
+      }, {
+        "valueHash": "B29CBAE1",
+        "value": "crow",
+        "score": 0.86,
+        "extension": {
+          "version": "alpha"
+        }
+      }]
+    }, {
+      "segmentHash": "FFF3BAA1",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 10,
+          "y": 15,
+          "label": "topLeft"
+        }, {
+          "x": 15,
+          "y": 18,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "valueHash": "C21AF472",
+        "value": "car",
+        "score": 0.97,
+        "extension": {
+          "version": "beta"
+        }
+      }, {
+        "valueHash": "A1AECAE0",
+        "value": "truck",
+        "score": 0.86,
+        "extension": {
+          "version": "beta"
+        }
+      }]
+    }, {
+      "segmentHash": "EB77E18D",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 20,
+          "y": 20,
+          "label": "topLeft"
+        }, {
+          "x": 28,
+          "y": 47,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "valueHash": "6A06AA42",
+        "value": "stairs",
+        "score": 0.97,
+        "extension": {
+          "version": "delta"
+        }
+      }]
+    }, {
+      "segmentHash": "A665835E",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 30,
+          "y": 50,
+          "label": "topLeft"
+        }, {
+          "x": 36,
+          "y": 55,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "valueHash": "E4C953FF",
+        "value": "motorcycle",
+        "score": 0.97,
+        "extension": {
+          "version": "beta"
+        }
+      }, {
+        "valueHash": "2B1BA4EB",
+        "value": "bicycle",
+        "score": 0.86,
+        "extension": {
+          "version": "beta"
+        }
+      }]
+    }, {
+      "segmentHash": "A458EEBE",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 60,
+          "y": 70,
+          "label": "topLeft"
+        }, {
+          "x": 70,
+          "y": 78,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "valueHash": "E5A4D3D7",
+        "value": "flashlight",
+        "score": 0.97,
+        "extension": {
+          "version": "beta"
+        }
+      }]
+    }, {
+      "segmentHash": "C894D8DA",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 80,
+          "y": 90,
+          "label": "topLeft"
+        }, {
+          "x": 89,
+          "y": 95,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "valueHash": "0A82F7E9",
+        "value": "dog",
+        "score": 0.97,
+        "extension": {
+          "version": "alpha"
+        }
+      }, {
+        "valueHash": "EB8EC849",
+        "value": "pig",
+        "score": 0.86,
+        "extension": {
+          "version": "alpha"
+        }
+      }]
+    }],
+    "metadata": {
+      "visibility": "PUBLIC",
+      "datatype": "cars",
+      "foo": "bar",
+      "plough": "plover",
+      "shard": "456",
+      "created_date": "2025-10-01T00:00:00Z",
+      "day": "20250407"
+    }
+  }, {
+    "shard": "20250407_456",
+    "dataType": "media",
+    "uid": "re8nbj.-7k3d0l.iewqfu",
+    "annotationId": "CB26B407",
+    "documentId": "000000000032",
+    "annotationType": "image",
+    "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+    "source": {
+      "analyticHash": "86226841",
+      "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+      "engine": "inline v6",
+      "model": "GR Supra",
+      "configuration": {
+        "octane": "99",
+        "model_year": "2025"
+      },
+      "metadata": {
+        "visibility": "PUBLIC",
+        "created_date": "2025-10-01T00:00:00Z"
+      }
+    },
+    "segments": [{
+      "segmentHash": "B809141A",
+      "boundary": {
+        "boundaryType": "ALL"
+      },
+      "values": [{
+        "valueHash": "BB6D70D3",
+        "value": "landscape",
+        "score": 0.97,
+        "extension": {
+          "version": "charlie"
+        }
+      }, {
+        "valueHash": "F3C97BE0",
+        "value": "underground",
+        "score": 0.86,
+        "extension": {
+          "version": "charlie"
+        }
+      }, {
+        "valueHash": "0CE17D26",
+        "value": "portrait",
+        "score": 0.97,
+        "extension": {
+          "version": "bravo"
+        }
+      }, {
+        "valueHash": "E9416D45",
+        "value": "postcard",
+        "score": 0.86,
+        "extension": {
+          "version": "bravo"
+        }
+      }, {
+        "valueHash": "73A136DF",
+        "value": "scene",
+        "score": 0.97,
+        "extension": {
+          "version": "lima"
+        }
+      }, {
+        "valueHash": "F03AA692",
+        "value": "evening",
+        "score": 0.97,
+        "extension": {
+          "version": "victor"
+        }
+      }, {
+        "valueHash": "C3186504",
+        "value": "afternoon",
+        "score": 0.86,
+        "extension": {
+          "version": "victor"
+        }
+      }, {
+        "valueHash": "C77BBB3D",
+        "value": "astral",
+        "score": 0.97,
+        "extension": {
+          "version": "delta"
+        }
+      }, {
+        "valueHash": "09AF7469",
+        "value": "ethereal",
+        "score": 0.86,
+        "extension": {
+          "version": "delta"
+        }
+      }, {
+        "valueHash": "1C80E5B8",
+        "value": "material",
+        "score": 0.97,
+        "extension": {
+          "version": "micro"
+        }
+      }, {
+        "valueHash": "500A9257",
+        "value": "fabric",
+        "score": 0.86,
+        "extension": {
+          "version": "micro"
+        }
+      }]
+    }],
+    "metadata": {
+      "visibility": "PUBLIC",
+      "datatype": "media",
+      "foo": "bar",
+      "plough": "plover",
+      "shard": "456",
+      "created_date": "2025-10-01T00:00:00Z",
+      "day": "20250407"
+    }
+  }, {
+    "shard": "20250407_789",
+    "dataType": "audio",
+    "uid": "-h8gcvv.2ngwd5.7bbswm",
+    "annotationId": "E997916D",
+    "documentId": "000000000033",
+    "annotationType": "tts",
+    "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+    "source": {
+      "analyticHash": "86226841",
+      "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+      "engine": "inline v6",
+      "model": "GR Supra",
+      "configuration": {
+        "octane": "99",
+        "model_year": "2025"
+      },
+      "metadata": {
+        "visibility": "PUBLIC",
+        "created_date": "2025-10-01T00:00:00Z"
+      }
+    },
+    "segments": [{
+      "segmentHash": "6BD6F28F",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 0,
+        "end": 5000
+      },
+      "values": [{
+        "valueHash": "B578A0BB",
+        "value": "the",
+        "score": 0.235
+      }, {
+        "valueHash": "B578A0BB",
+        "value": "the",
+        "score": 0.21
+      }]
+    }, {
+      "segmentHash": "71B06C7B",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 10000,
+        "end": 15000
+      },
+      "values": [{
+        "valueHash": "2CE5103A",
+        "value": "cat",
+        "score": 0.235
+      }, {
+        "valueHash": "102EA958",
+        "value": "bat",
+        "score": 0.21
+      }]
+    }, {
+      "segmentHash": "868C6413",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 20000,
+        "end": 25000
+      },
+      "values": [{
+        "valueHash": "8E4C5C70",
+        "value": "sat",
+        "score": 0.235
+      }, {
+        "valueHash": "6B4F46BE",
+        "value": "ate",
+        "score": 0.21
+      }]
+    }, {
+      "segmentHash": "941674A8",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 30000,
+        "end": 35000
+      },
+      "values": [{
+        "valueHash": "1F83A785",
+        "value": "on",
+        "score": 0.235
+      }, {
+        "valueHash": "017E7B4F",
+        "value": "\u003cunk\u003e",
+        "score": 0.21
+      }]
+    }, {
+      "segmentHash": "FA0FE295",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 40000,
+        "end": 45000
+      },
+      "values": [{
+        "valueHash": "B578A0BB",
+        "value": "the",
+        "score": 0.235
+      }, {
+        "valueHash": "B578A0BB",
+        "value": "the",
+        "score": 0.21
+      }]
+    }, {
+      "segmentHash": "2EB66E6D",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 50000,
+        "end": 55000
+      },
+      "values": [{
+        "valueHash": "76BEE44F",
+        "value": "mat",
+        "score": 0.235
+      }, {
+        "valueHash": "84962936",
+        "value": "gnat",
+        "score": 0.21
+      }]
+    }, {
+      "segmentHash": "E103E6C3",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 60000,
+        "end": 65000
+      },
+      "values": [{
+        "valueHash": "80529ABB",
+        "value": "\u003ceos\u003e",
+        "score": 0.235
+      }, {
+        "valueHash": "80529ABB",
+        "value": "\u003ceos\u003e",
+        "score": 0.21
+      }]
+    }, {
+      "segmentHash": "4FBF9992",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 70000,
+        "end": 75000
+      },
+      "values": [{
+        "valueHash": "B578A0BB",
+        "value": "the",
+        "score": 0.235
+      }, {
+        "valueHash": "B578A0BB",
+        "value": "the",
+        "score": 0.21
+      }]
+    }, {
+      "segmentHash": "6DCE0993",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 80000,
+        "end": 85000
+      },
+      "values": [{
+        "valueHash": "2CE5103A",
+        "value": "cat",
+        "score": 0.235
+      }, {
+        "valueHash": "102EA958",
+        "value": "bat",
+        "score": 0.21
+      }]
+    }, {
+      "segmentHash": "0B2095B4",
+      "boundary": {
+        "boundaryType": "TIME_MILLI",
+        "start": 90000,
+        "end": 95000
+      },
+      "values": [{
+        "valueHash": "8E4C5C70",
+        "value": "sat",
+        "score": 0.235
+      }, {
+        "valueHash": "6B4F46BE",
+        "value": "ate",
+        "score": 0.21
+      }]
+    }],
+    "metadata": {
+      "visibility": "PUBLIC",
+      "datatype": "audio",
+      "foo": "bar",
+      "plough": "plover",
+      "shard": "789",
+      "created_date": "2025-10-01T00:00:00Z",
+      "day": "20250407"
+    }
+  }, {
+    "shard": "20250407_789",
+    "dataType": "news",
+    "uid": "cvf0v4.-ncjfen.-69rc5w",
+    "annotationId": "FA6A536F",
+    "documentId": "000000000034",
+    "annotationType": "tokens",
+    "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+    "source": {
+      "analyticHash": "86226841",
+      "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+      "engine": "inline v6",
+      "model": "GR Supra",
+      "configuration": {
+        "octane": "99",
+        "model_year": "2025"
+      },
+      "metadata": {
+        "visibility": "PUBLIC",
+        "created_date": "2025-10-01T00:00:00Z"
+      }
+    },
+    "segments": [{
+      "segmentHash": "C7B766B9",
+      "boundary": {
+        "boundaryType": "TEXT_CHAR",
+        "start": 0,
+        "end": 3
+      },
+      "values": [{
+        "valueHash": "B578A0BB",
+        "value": "the",
+        "score": 1.0
+      }]
+    }, {
+      "segmentHash": "3885607A",
+      "boundary": {
+        "boundaryType": "TEXT_CHAR",
+        "start": 4,
+        "end": 9
+      },
+      "values": [{
+        "valueHash": "F596B9D2",
+        "value": "quick",
+        "score": 1.0
+      }]
+    }, {
+      "segmentHash": "4F6A58B9",
+      "boundary": {
+        "boundaryType": "TEXT_CHAR",
+        "start": 10,
+        "end": 15
+      },
+      "values": [{
+        "valueHash": "7C1D823B",
+        "value": "brown",
+        "score": 1.0
+      }]
+    }, {
+      "segmentHash": "6FF09C09",
+      "boundary": {
+        "boundaryType": "TEXT_CHAR",
+        "start": 16,
+        "end": 19
+      },
+      "values": [{
+        "valueHash": "29E9B80A",
+        "value": "fox",
+        "score": 1.0
+      }]
+    }, {
+      "segmentHash": "BBE2E40F",
+      "boundary": {
+        "boundaryType": "TEXT_CHAR",
+        "start": 20,
+        "end": 26
+      },
+      "values": [{
+        "valueHash": "F4329C61",
+        "value": "caught",
+        "score": 1.0
+      }]
+    }, {
+      "segmentHash": "FA48289B",
+      "boundary": {
+        "boundaryType": "TEXT_CHAR",
+        "start": 27,
+        "end": 30
+      },
+      "values": [{
+        "valueHash": "B578A0BB",
+        "value": "the",
+        "score": 1.0
+      }]
+    }, {
+      "segmentHash": "32443188",
+      "boundary": {
+        "boundaryType": "TEXT_CHAR",
+        "start": 31,
+        "end": 37
+      },
+      "values": [{
+        "valueHash": "CB78DACF",
+        "value": "rabbit",
+        "score": 1.0
+      }]
+    }, {
+      "segmentHash": "7EBDA0EF",
+      "boundary": {
+        "boundaryType": "TEXT_CHAR",
+        "start": 38,
+        "end": 43
+      },
+      "values": [{
+        "valueHash": "80529ABB",
+        "value": "\u003ceos\u003e",
+        "score": 1.0
+      }]
+    }],
+    "metadata": {
+      "visibility": "PUBLIC",
+      "datatype": "news",
+      "foo": "bar",
+      "plough": "plover",
+      "shard": "789",
+      "created_date": "2025-10-01T00:00:00Z",
+      "day": "20250407"
+    }
+  }, {
+    "shard": "20250407_789",
+    "dataType": "cars",
+    "uid": "-diuujx.-vthisr.-z7h545",
+    "annotationId": "947C4B3F",
+    "documentId": "000000000035",
+    "annotationType": "object",
+    "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+    "source": {
+      "analyticHash": "86226841",
+      "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+      "engine": "inline v6",
+      "model": "GR Supra",
+      "configuration": {
+        "octane": "99",
+        "model_year": "2025"
+      },
+      "metadata": {
+        "visibility": "PUBLIC",
+        "created_date": "2025-10-01T00:00:00Z"
+      }
+    },
+    "segments": [{
+      "segmentHash": "A95669D7",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 0,
+          "y": 0,
+          "label": "topLeft"
+        }, {
+          "x": 5,
+          "y": 12,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "valueHash": "A9D3B0A4",
+        "value": "bird",
+        "score": 0.97,
+        "extension": {
+          "version": "alpha"
+        }
+      }, {
+        "valueHash": "B29CBAE1",
+        "value": "crow",
+        "score": 0.86,
+        "extension": {
+          "version": "alpha"
+        }
+      }]
+    }, {
+      "segmentHash": "FFF3BAA1",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 10,
+          "y": 15,
+          "label": "topLeft"
+        }, {
+          "x": 15,
+          "y": 18,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "valueHash": "C21AF472",
+        "value": "car",
+        "score": 0.97,
+        "extension": {
+          "version": "beta"
+        }
+      }, {
+        "valueHash": "A1AECAE0",
+        "value": "truck",
+        "score": 0.86,
+        "extension": {
+          "version": "beta"
+        }
+      }]
+    }, {
+      "segmentHash": "EB77E18D",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 20,
+          "y": 20,
+          "label": "topLeft"
+        }, {
+          "x": 28,
+          "y": 47,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "valueHash": "6A06AA42",
+        "value": "stairs",
+        "score": 0.97,
+        "extension": {
+          "version": "delta"
+        }
+      }]
+    }, {
+      "segmentHash": "A665835E",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 30,
+          "y": 50,
+          "label": "topLeft"
+        }, {
+          "x": 36,
+          "y": 55,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "valueHash": "E4C953FF",
+        "value": "motorcycle",
+        "score": 0.97,
+        "extension": {
+          "version": "beta"
+        }
+      }, {
+        "valueHash": "2B1BA4EB",
+        "value": "bicycle",
+        "score": 0.86,
+        "extension": {
+          "version": "beta"
+        }
+      }]
+    }, {
+      "segmentHash": "A458EEBE",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 60,
+          "y": 70,
+          "label": "topLeft"
+        }, {
+          "x": 70,
+          "y": 78,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "valueHash": "E5A4D3D7",
+        "value": "flashlight",
+        "score": 0.97,
+        "extension": {
+          "version": "beta"
+        }
+      }]
+    }, {
+      "segmentHash": "C894D8DA",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [{
+          "x": 80,
+          "y": 90,
+          "label": "topLeft"
+        }, {
+          "x": 89,
+          "y": 95,
+          "label": "bottomRight"
+        }]
+      },
+      "values": [{
+        "valueHash": "0A82F7E9",
+        "value": "dog",
+        "score": 0.97,
+        "extension": {
+          "version": "alpha"
+        }
+      }, {
+        "valueHash": "EB8EC849",
+        "value": "pig",
+        "score": 0.86,
+        "extension": {
+          "version": "alpha"
+        }
+      }]
+    }],
+    "metadata": {
+      "visibility": "PUBLIC",
+      "datatype": "cars",
+      "foo": "bar",
+      "plough": "plover",
+      "shard": "789",
+      "created_date": "2025-10-01T00:00:00Z",
+      "day": "20250407"
+    }
+  }, {
+    "shard": "20250407_789",
+    "dataType": "media",
+    "uid": "wzfohu.-qkr270.jl6f8e",
+    "annotationId": "05E5F3B9",
+    "documentId": "000000000036",
+    "annotationType": "image",
+    "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+    "source": {
+      "analyticHash": "86226841",
+      "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+      "engine": "inline v6",
+      "model": "GR Supra",
+      "configuration": {
+        "octane": "99",
+        "model_year": "2025"
+      },
+      "metadata": {
+        "visibility": "PUBLIC",
+        "created_date": "2025-10-01T00:00:00Z"
+      }
+    },
+    "segments": [{
+      "segmentHash": "B809141A",
+      "boundary": {
+        "boundaryType": "ALL"
+      },
+      "values": [{
+        "valueHash": "BB6D70D3",
+        "value": "landscape",
+        "score": 0.97,
+        "extension": {
+          "version": "charlie"
+        }
+      }, {
+        "valueHash": "F3C97BE0",
+        "value": "underground",
+        "score": 0.86,
+        "extension": {
+          "version": "charlie"
+        }
+      }, {
+        "valueHash": "0CE17D26",
+        "value": "portrait",
+        "score": 0.97,
+        "extension": {
+          "version": "bravo"
+        }
+      }, {
+        "valueHash": "E9416D45",
+        "value": "postcard",
+        "score": 0.86,
+        "extension": {
+          "version": "bravo"
+        }
+      }, {
+        "valueHash": "73A136DF",
+        "value": "scene",
+        "score": 0.97,
+        "extension": {
+          "version": "lima"
+        }
+      }, {
+        "valueHash": "F03AA692",
+        "value": "evening",
+        "score": 0.97,
+        "extension": {
+          "version": "victor"
+        }
+      }, {
+        "valueHash": "C3186504",
+        "value": "afternoon",
+        "score": 0.86,
+        "extension": {
+          "version": "victor"
+        }
+      }, {
+        "valueHash": "C77BBB3D",
+        "value": "astral",
+        "score": 0.97,
+        "extension": {
+          "version": "delta"
+        }
+      }, {
+        "valueHash": "09AF7469",
+        "value": "ethereal",
+        "score": 0.86,
+        "extension": {
+          "version": "delta"
+        }
+      }, {
+        "valueHash": "1C80E5B8",
+        "value": "material",
+        "score": 0.97,
+        "extension": {
+          "version": "micro"
+        }
+      }, {
+        "valueHash": "500A9257",
+        "value": "fabric",
+        "score": 0.86,
+        "extension": {
+          "version": "micro"
+        }
+      }]
+    }],
+    "metadata": {
+      "visibility": "PUBLIC",
+      "datatype": "media",
+      "foo": "bar",
+      "plough": "plover",
+      "shard": "789",
+      "created_date": "2025-10-01T00:00:00Z",
+      "day": "20250407"
+    }
+  }]
+}

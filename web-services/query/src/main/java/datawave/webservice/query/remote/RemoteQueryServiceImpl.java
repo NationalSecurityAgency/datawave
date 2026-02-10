@@ -1,6 +1,8 @@
 package datawave.webservice.query.remote;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.net.SocketTimeoutException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -15,6 +17,7 @@ import org.apache.http.HttpEntity;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.conn.ConnectTimeoutException;
 import org.apache.http.message.BasicNameValuePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,10 +26,12 @@ import org.xbill.DNS.TextParseException;
 import com.fasterxml.jackson.databind.ObjectReader;
 
 import datawave.core.query.remote.RemoteQueryService;
+import datawave.core.query.remote.RemoteTimeoutQueryException;
 import datawave.security.auth.DatawaveAuthenticationMechanism;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.ProxiedUserDetails;
 import datawave.webservice.common.remote.RemoteHttpService;
+import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.GenericResponse;
 import datawave.webservice.result.VoidResponse;
@@ -74,16 +79,19 @@ public class RemoteQueryServiceImpl extends RemoteHttpService implements RemoteQ
     }
 
     @Override
-    public GenericResponse<String> createQuery(String queryLogicName, Map<String,List<String>> queryParameters, ProxiedUserDetails callerObject) {
+    public GenericResponse<String> createQuery(String queryLogicName, Map<String,List<String>> queryParameters, ProxiedUserDetails callerObject)
+                    throws QueryException {
         return query(CREATE, queryLogicName, queryParameters, callerObject);
     }
 
     @Override
-    public GenericResponse<String> planQuery(String queryLogicName, Map<String,List<String>> queryParameters, ProxiedUserDetails callerObject) {
+    public GenericResponse<String> planQuery(String queryLogicName, Map<String,List<String>> queryParameters, ProxiedUserDetails callerObject)
+                    throws QueryException {
         return query(PLAN, queryLogicName, queryParameters, callerObject);
     }
 
-    private GenericResponse<String> query(String endPoint, String queryLogicName, Map<String,List<String>> queryParameters, ProxiedUserDetails callerObject) {
+    private GenericResponse<String> query(String endPoint, String queryLogicName, Map<String,List<String>> queryParameters, ProxiedUserDetails callerObject)
+                    throws QueryException {
         init();
         final DatawavePrincipal principal = getDatawavePrincipal(callerObject);
 
@@ -101,66 +109,89 @@ public class RemoteQueryServiceImpl extends RemoteHttpService implements RemoteQ
         log.info("post body : " + postBody);
 
         final String suffix = String.format(endPoint, queryLogicName);
-        // @formatter:off
-        return executePostMethodWithRuntimeException(
-                suffix,
-                uriBuilder -> { },
-                httpPost -> {
-                    httpPost.setEntity(postBody);
-                    httpPost.setHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON);
-                    httpPost.setHeader(PROXIED_ENTITIES_HEADER, getProxiedEntities(principal));
-                    httpPost.setHeader(PROXIED_ISSUERS_HEADER, getProxiedIssuers(principal));
-                },
-                entity -> {
-                    return readResponse(entity, genericResponseReader);
-                },
-                () -> suffix);
-        // @formatter:on
+        try {
+            // @formatter:off
+            return executePostMethod(
+                    suffix,
+                    uriBuilder -> { },
+                    httpPost -> {
+                        httpPost.setEntity(postBody);
+                        httpPost.setHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON);
+                        httpPost.setHeader(PROXIED_ENTITIES_HEADER, getProxiedEntities(principal));
+                        httpPost.setHeader(PROXIED_ISSUERS_HEADER, getProxiedIssuers(principal));
+                    },
+                    entity -> {
+                        return readResponse(entity, genericResponseReader);
+                    },
+                    () -> suffix);
+            // @formatter:on
+        } catch (SocketTimeoutException | ConnectTimeoutException e) {
+            // also covers ConnectionPoolTimeoutException as a subclass of ConnectTimeoutException
+            throw new RemoteTimeoutQueryException("RemoteQueryService timed out", e);
+        } catch (URISyntaxException | IOException e) {
+            // this mimics what happens up inside RemoteQueryService
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
-    public BaseQueryResponse next(String id, ProxiedUserDetails callerObject) {
+    public BaseQueryResponse next(String id, ProxiedUserDetails callerObject) throws QueryException {
         init();
         final DatawavePrincipal principal = getDatawavePrincipal(callerObject);
 
         final String suffix = String.format(NEXT, id);
-        return executeGetMethodWithRuntimeException(suffix, uriBuilder -> {}, httpGet -> {
-            httpGet.setHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON);
-            httpGet.setHeader(PROXIED_ENTITIES_HEADER, getProxiedEntities(principal));
-            httpGet.setHeader(PROXIED_ISSUERS_HEADER, getProxiedIssuers(principal));
-        }, entity -> {
-            return readResponse(entity, nextQueryResponseReader, baseQueryResponseReader);
-        }, () -> suffix);
+        try {
+            return executeGetMethod(suffix, uriBuilder -> {}, httpGet -> {
+                httpGet.setHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON);
+                httpGet.setHeader(PROXIED_ENTITIES_HEADER, getProxiedEntities(principal));
+                httpGet.setHeader(PROXIED_ISSUERS_HEADER, getProxiedIssuers(principal));
+            }, entity -> readResponse(entity, nextQueryResponseReader, baseQueryResponseReader), () -> suffix);
+        } catch (SocketTimeoutException | ConnectTimeoutException e) {
+            // also covers ConnectionPoolTimeoutException as a subclass of ConnectTimeoutException
+            throw new RemoteTimeoutQueryException("RemoteQueryService timed out", e);
+        } catch (URISyntaxException | IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
-    public VoidResponse close(String id, ProxiedUserDetails callerObject) {
+    public VoidResponse close(String id, ProxiedUserDetails callerObject) throws QueryException {
         init();
         final DatawavePrincipal principal = getDatawavePrincipal(callerObject);
 
         final String suffix = String.format(CLOSE, id);
-        return executePostMethodWithRuntimeException(suffix, uriBuilder -> {}, httpPost -> {
-            httpPost.setHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON);
-            httpPost.setHeader(PROXIED_ENTITIES_HEADER, getProxiedEntities(principal));
-            httpPost.setHeader(PROXIED_ISSUERS_HEADER, getProxiedIssuers(principal));
-        }, entity -> {
-            return readVoidResponse(entity);
-        }, () -> suffix);
+        try {
+            return executePostMethod(suffix, uriBuilder -> {}, httpPost -> {
+                httpPost.setHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON);
+                httpPost.setHeader(PROXIED_ENTITIES_HEADER, getProxiedEntities(principal));
+                httpPost.setHeader(PROXIED_ISSUERS_HEADER, getProxiedIssuers(principal));
+            }, entity -> readVoidResponse(entity), () -> suffix);
+        } catch (SocketTimeoutException | ConnectTimeoutException e) {
+            // also covers ConnectionPoolTimeoutException as a subclass of ConnectTimeoutException
+            throw new RemoteTimeoutQueryException("RemoteQueryService timed out", e);
+        } catch (URISyntaxException | IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
-    public GenericResponse<String> planQuery(String id, ProxiedUserDetails callerObject) {
+    public GenericResponse<String> planQuery(String id, ProxiedUserDetails callerObject) throws QueryException {
         init();
         final DatawavePrincipal principal = getDatawavePrincipal(callerObject);
 
         final String suffix = String.format(PLAN, id);
-        return executePostMethodWithRuntimeException(suffix, uriBuilder -> {}, httpPost -> {
-            httpPost.setHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON);
-            httpPost.setHeader(PROXIED_ENTITIES_HEADER, getProxiedEntities(principal));
-            httpPost.setHeader(PROXIED_ISSUERS_HEADER, getProxiedIssuers(principal));
-        }, entity -> {
-            return readResponse(entity, genericResponseReader);
-        }, () -> suffix);
+        try {
+            return executePostMethod(suffix, uriBuilder -> {}, httpPost -> {
+                httpPost.setHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON);
+                httpPost.setHeader(PROXIED_ENTITIES_HEADER, getProxiedEntities(principal));
+                httpPost.setHeader(PROXIED_ISSUERS_HEADER, getProxiedIssuers(principal));
+            }, entity -> readResponse(entity, genericResponseReader), () -> suffix);
+        } catch (SocketTimeoutException | ConnectTimeoutException e) {
+            // also covers ConnectionPoolTimeoutException as a subclass of ConnectTimeoutException
+            throw new RemoteTimeoutQueryException("RemoteQueryService timed out", e);
+        } catch (URISyntaxException | IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override

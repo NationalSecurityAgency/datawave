@@ -29,7 +29,7 @@
         <version.datawave.dictionary-api>4.0.5</version.datawave.dictionary-api>
         <version.datawave.starter>4.0.5</version.datawave.starter>
         <version.datawave.starter-metadata>3.0.2</version.datawave.starter-metadata>
-        <version.in-memory-accumulo>4.0.0</version.in-memory-accumulo>
+        <version.in-memory-accumulo>4.0.4</version.in-memory-accumulo>
         <version.webjars.datatables>1.11.4</version.webjars.datatables>
         <version.webjars.jquery>3.6.0</version.webjars.jquery>
         <version.webjars.locator>0.50</version.webjars.locator>
