@@ -265,4 +265,18 @@ public class WordsAndScoresTest {
         ws.setOutputScores(true);
         assertEquals("cat(61)", ws.getWordToOutput());
     }
+
+    @Test
+    public void testOnebestOutputWithNoScores() {
+        WordsAndScores ws = new WordsAndScores();
+        ws.setOneBestExcerpt(true);
+        ws.addTerm("im", hitTermsList);
+        ws.addTerm("calling", hitTermsList);
+        ws.addTerm("about", hitTermsList);
+        ws.addTerm("your", hitTermsList);
+        ws.addTerm("cars", hitTermsList);
+        ws.addTerm("extended", hitTermsList);
+        ws.addTerm("warranty", hitTermsList);
+        assertNull(ws.getWordToOutput());
+    }
 }

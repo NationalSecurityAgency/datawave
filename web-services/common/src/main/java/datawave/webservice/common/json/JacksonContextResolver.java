@@ -14,6 +14,13 @@ import com.fasterxml.jackson.databind.introspect.JacksonAnnotationIntrospector;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.module.jaxb.JaxbAnnotationIntrospector;
 
+import datawave.annotation.protobuf.v1.Annotation;
+import datawave.annotation.protobuf.v1.Segment;
+import datawave.annotation.util.v1.JacksonAnnotationDeserializer;
+import datawave.annotation.util.v1.JacksonAnnotationSerializer;
+import datawave.annotation.util.v1.JacksonSegmentDeserializer;
+import datawave.annotation.util.v1.JacksonSegmentSerializer;
+
 /**
  * Configures JSON serialization via Jackson to honor JAXB annotations. This provider must be listed in the value of a {@code resteasy.providers} servlet
  * context parameter in the web.xml for each deployed WAR that is to use this provider (or this class needs to be on the WAR's WEB-INF/lib or WEB-INF/classes
@@ -33,6 +40,13 @@ public class JacksonContextResolver implements ContextResolver<ObjectMapper> {
 
         final SimpleModule simpleModule = new SimpleModule();
         simpleModule.addDeserializer(MultivaluedMap.class, new MultivaluedMapDeserializer());
+
+        // Added for Annotation and Segment serialization and deserialization.
+        simpleModule.addDeserializer(Annotation.class, new JacksonAnnotationDeserializer());
+        simpleModule.addSerializer(Annotation.class, new JacksonAnnotationSerializer());
+        simpleModule.addDeserializer(Segment.class, new JacksonSegmentDeserializer());
+        simpleModule.addSerializer(Segment.class, new JacksonSegmentSerializer());
+
         mapper.registerModule(simpleModule);
     }
 

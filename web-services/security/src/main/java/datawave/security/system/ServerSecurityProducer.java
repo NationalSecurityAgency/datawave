@@ -11,10 +11,8 @@ import javax.enterprise.context.RequestScoped;
 import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
 
-import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.jboss.security.JSSESecurityDomain;
 
-import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUserService;
 import datawave.security.authorization.SubjectIssuerDNPair;
@@ -27,7 +25,6 @@ import datawave.security.user.UserOperationsBean;
  * way, we only name the resource once.
  */
 @ApplicationScoped
-@Exclude(ifProjectStage = DatawaveEmbeddedProjectStageHolder.DatawaveEmbedded.class)
 public class ServerSecurityProducer {
     @Inject
     private JSSESecurityDomain domain;

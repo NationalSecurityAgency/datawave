@@ -95,6 +95,8 @@ public class QueryTestTableHelper {
         PrintUtility.printTable(client, auths, TableName.SHARD);
         PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
         PrintUtility.printTable(client, auths, TableName.SHARD_RINDEX);
+        // Don't print until there's something in there...otherwise you get an error about not specifying a column
+        // PrintUtility.printTable(client, auths, TableName.SHARD_DAY_INDEX);
     }
 
     protected void createTables() throws AccumuloSecurityException, AccumuloException, TableNotFoundException, TableExistsException {
@@ -105,6 +107,7 @@ public class QueryTestTableHelper {
         deleteAndCreateTable(tops, TableName.SHARD);
         deleteAndCreateTable(tops, TableName.SHARD_INDEX);
         deleteAndCreateTable(tops, TableName.SHARD_RINDEX);
+        deleteAndCreateTable(tops, TableName.SHARD_DAY_INDEX);
         deleteAndCreateTable(tops, SHARD_DICT_INDEX_NAME);
         deleteAndCreateTable(tops, MODEL_TABLE_NAME);
     }
@@ -134,6 +137,7 @@ public class QueryTestTableHelper {
         configureAShardRelatedTable(writer, new ShardTableConfigHelper(), ShardedDataTypeHandler.SHARD_TNAME, TableName.SHARD);
         configureAShardRelatedTable(writer, new ShardTableConfigHelper(), ShardedDataTypeHandler.SHARD_GIDX_TNAME, TableName.SHARD_INDEX);
         configureAShardRelatedTable(writer, new ShardTableConfigHelper(), ShardedDataTypeHandler.SHARD_GRIDX_TNAME, TableName.SHARD_RINDEX);
+        configureAShardRelatedTable(writer, new ShardTableConfigHelper(), ShardedDataTypeHandler.SHARD_DAY_INDEX_TABLE_NAME, TableName.SHARD_DAY_INDEX);
         configureAShardRelatedTable(writer, new ShardTableConfigHelper(), ShardedDataTypeHandler.SHARD_DINDX_NAME, SHARD_DICT_INDEX_NAME);
 
         // todo - configure the other tables...

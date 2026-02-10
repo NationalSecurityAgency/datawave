@@ -45,6 +45,7 @@ on:
           - microservices/services/query-executor/service
           - microservices/services/query-metric/api
           - microservices/services/query-metric/service
+          - core/in-memory-accumulo
       finalRelease:
         required: true
         default: false

@@ -274,7 +274,8 @@ public enum DatawaveErrorCode {
     FIELD_NOT_INDEXED(412, 15, "Field name is is not indexed. Query cannot be run as an index query."),
     CURRENT_AND_PREVIOUS_EVENT_ORDER_INVALID(412, 16, "Current event and previous event are not in chronological order"),
     CURRENT_AND_NEXT_EVENT_ORDER_INVALID(412, 17, "Current event and next event are not in chronological order"),
-    FIELD_PHRASE_QUERY_NOT_INDEXED(412, 18, "Field cannot be queried as a phrase since it was not indexed as such.");
+    FIELD_PHRASE_QUERY_NOT_INDEXED(412, 18, "Field cannot be queried as a phrase since it was not indexed as such."),
+    NO_QUERY_VALIDATION_RULES_CONFIGURED(412, 19, "No query validation rules configured for the query logic.");
 
     private String message;
     private int httpCode;
