@@ -1244,10 +1244,12 @@ doc.beans.BaseEventQuery.filterClassNames: baseEventQueryFilterClassNames
 doc.beans.BaseEventQuery.filterOptions: baseEventQueryFilterOptions
 doc.beans.BaseEventQuery.hierarchyFieldOptions: baseEventQueryHierarchyFieldOptions
 doc.beans.BaseEventQuery.ivaratorCacheDirConfigs: baseEventQueryIvaratorCacheDirConfigs
+doc.beans.BaseEventQuery.localIvaratorCacheDirConfigs: baseEventQueryLocalIvaratorCacheDirConfigs
 =======
 doc.beans.BaseEventQuery.filterOptions: BaseEventQueryFilterOptions
 doc.beans.BaseEventQuery.hierarchyFieldOptions: BaseEventQueryHierarchyFieldOptions
 doc.beans.BaseEventQuery.ivaratorCacheDirConfigs: IvaratorCacheDirConfigs
+doc.beans.BaseEventQuery.localIvaratorCacheDirConfigs: LocalIvaratorCacheDirConfigs
 >>>>>>> SECOND
 doc.beans.BaseEventQuery.metadataHelperFactory: metadataHelperFactory
 doc.beans.BaseEventQuery.queryPlanner: DefaultQueryPlanner

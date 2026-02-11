@@ -10,7 +10,7 @@
     <name>${project.artifactId}</name>
     <properties>
         <datawave.webservice.namespace>http://webservice.datawave.nsa/v1</datawave.webservice.namespace>
-        <version.commons-lang3>3.12.0</version.commons-lang3>
+        <version.commons-lang3>3.20.0</version.commons-lang3>
     </properties>
     <dependencyManagement>
         <dependencies>
