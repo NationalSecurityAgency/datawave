@@ -922,7 +922,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
         config.setQueryTree(timedFixNotNullIntent(timers, config.getQueryTree()));
 
-        config.setQueryTree(timedIncludeDateFilters(timers, config.getQueryTree(), config, metadataHelper, scannerFactory, dateIndexHelper, settings));
+        config.setQueryTree(timedIncludeDateFilters(timers, config.getQueryTree(), config, dateIndexHelper, settings));
 
         // note this must be called after we do the date adjustments per the query date type in addDateFilters
         timedCapDateRange(timers, config);
@@ -1563,11 +1563,10 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     }
 
     protected ASTJexlScript timedIncludeDateFilters(QueryStopwatch timers, final ASTJexlScript script, ShardQueryConfiguration config,
-                    MetadataHelper metadataHelper, ScannerFactory scannerFactory, DateIndexHelper dateIndexHelper, Query settings)
-                    throws DatawaveQueryException {
+                    DateIndexHelper dateIndexHelper, Query settings) throws DatawaveQueryException {
         return visitorManager.timedVisit(timers, "Include Date Filters", () -> {
             try {
-                return (addDateFilters(script, scannerFactory, metadataHelper, dateIndexHelper, config, settings));
+                return (addDateFilters(script, dateIndexHelper, config, settings));
             } catch (TableNotFoundException e) {
                 throw new DatawaveQueryException("Unable to resolve date index", e);
             }
@@ -2202,10 +2201,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      *
      * @param queryTree
      *            the query tree
-     * @param scannerFactory
-     *            the scanner factory
-     * @param metadataHelper
-     *            the metadata helper
      * @param config
      *            a config
      * @param dateIndexHelper
@@ -2218,8 +2213,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      * @throws DatawaveQueryException
      *             for issues with running the query
      */
-    public ASTJexlScript addDateFilters(final ASTJexlScript queryTree, ScannerFactory scannerFactory, MetadataHelper metadataHelper,
-                    DateIndexHelper dateIndexHelper, ShardQueryConfiguration config, Query settings) throws TableNotFoundException, DatawaveQueryException {
+    public ASTJexlScript addDateFilters(final ASTJexlScript queryTree, DateIndexHelper dateIndexHelper, ShardQueryConfiguration config, Query settings)
+                    throws TableNotFoundException, DatawaveQueryException {
         String defaultDateType = config.getDefaultDateTypeName();
         String dateType = defaultDateType;
         Parameter dateTypeParameter = settings.findParameter(QueryParameters.DATE_RANGE_TYPE);

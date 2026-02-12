@@ -35,8 +35,7 @@ import datawave.util.time.DateHelper;
 class DefaultQueryPlannerTest {
 
     /**
-     * Contains tests for
-     * {@link DefaultQueryPlanner#addDateFilters(ASTJexlScript, ScannerFactory, MetadataHelper, DateIndexHelper, ShardQueryConfiguration, Query)}
+     * Contains tests for {@link DefaultQueryPlanner#addDateFilters(ASTJexlScript, DateIndexHelper, ShardQueryConfiguration, Query)}
      */
     @Nested
     class DateFilterTests {
@@ -210,7 +209,7 @@ class DefaultQueryPlannerTest {
         }
 
         private ASTJexlScript addDateFilters() throws TableNotFoundException, DatawaveQueryException {
-            return planner.addDateFilters(queryTree, null, null, dateIndexHelper, config, settings);
+            return planner.addDateFilters(queryTree, dateIndexHelper, config, settings);
         }
 
         /**
