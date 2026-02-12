@@ -28,7 +28,7 @@
         <version.datawave>7.33.1</version.datawave>
         <version.datawave.audit-api>4.0.2</version.datawave.audit-api>
         <version.datawave.authorization-api>4.0.2</version.datawave.authorization-api>
-        <version.datawave.hazelcast-client>4.0.3-SNAPSHOT</version.datawave.hazelcast-client>
+        <version.datawave.hazelcast-client>4.0.3</version.datawave.hazelcast-client>
         <version.datawave.hazelcast-common>4.0.3</version.datawave.hazelcast-common>
         <version.datawave.query-api>1.0.1</version.datawave.query-api>
         <version.datawave.starter>4.0.6</version.datawave.starter>
