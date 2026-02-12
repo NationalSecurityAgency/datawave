@@ -8,12 +8,12 @@
         <relativePath>../../../microservice-parent/pom.xml</relativePath>
     </parent>
     <artifactId>dictionary-api</artifactId>
-    <version>4.0.6-SNAPSHOT</version>
+    <version>4.0.6</version>
     <url>https://code.nsa.gov/datawave-dictionary-service</url>
     <scm>
         <connection>scm:git:${project.scm.url}</connection>
         <developerConnection>scm:git:${project.scm.url}</developerConnection>
-        <tag>HEAD</tag>
+        <tag>microservices/services/dictionary/api-4.0.6</tag>
         <url>https://github.com/NationalSecurityAgency/datawave</url>
     </scm>
     <properties>
