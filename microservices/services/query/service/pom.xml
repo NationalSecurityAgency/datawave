@@ -31,10 +31,10 @@
         <version.datawave.query-api>1.0.1</version.datawave.query-api>
         <version.datawave.query-metric-api>4.1.3</version.datawave.query-metric-api>
         <version.datawave.starter>4.0.6</version.datawave.starter>
-        <version.datawave.starter-audit>4.0.3</version.datawave.starter-audit>
+        <version.datawave.starter-audit>4.0.4</version.datawave.starter-audit>
         <version.datawave.starter-cached-results>1.0.11-SNAPSHOT</version.datawave.starter-cached-results>
         <version.datawave.starter-query>1.0.9-SNAPSHOT</version.datawave.starter-query>
-        <version.datawave.starter-query-metric>3.0.4-SNAPSHOT</version.datawave.starter-query-metric>
+        <version.datawave.starter-query-metric>3.0.4</version.datawave.starter-query-metric>
         <version.guava>31.1-jre</version.guava>
         <version.hadoop>3.3.4</version.hadoop>
         <!-- version set in datawave-microservice-parent, but can be overridden here -->
