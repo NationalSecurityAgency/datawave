@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.microservice</groupId>
         <artifactId>mapreduce-query-service-parent</artifactId>
-        <version>1.0.1-SNAPSHOT</version>
+        <version>1.0.1</version>
     </parent>
     <artifactId>mapreduce-query-jobs-build-parent</artifactId>
     <version>1.0.2-SNAPSHOT</version>
