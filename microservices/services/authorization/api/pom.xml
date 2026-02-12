@@ -8,12 +8,12 @@
         <relativePath>../../../microservice-parent/pom.xml</relativePath>
     </parent>
     <artifactId>authorization-api</artifactId>
-    <version>4.0.2</version>
+    <version>4.0.3-SNAPSHOT</version>
     <url>https://code.nsa.gov/datawave-authorization-service</url>
     <scm>
         <connection>scm:git:${project.scm.url}</connection>
         <developerConnection>scm:git:${project.scm.url}</developerConnection>
-        <tag>microservices/services/authorization/api-4.0.2</tag>
+        <tag>HEAD</tag>
         <url>https://github.com/NationalSecurityAgency/datawave</url>
     </scm>
     <properties>
