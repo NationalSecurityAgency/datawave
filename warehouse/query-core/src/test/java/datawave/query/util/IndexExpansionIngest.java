@@ -45,10 +45,10 @@ public class IndexExpansionIngest {
 
     public static void write(AccumuloClient client, Authorizations auths) throws Exception {
         TableOperations tops = client.tableOperations();
-        tops.create(SHARD);
-        tops.create(SHARD_INDEX);
-        tops.create(SHARD_RINDEX);
-        tops.create(METADATA);
+        MacTestUtil.createOrRecreate(tops, SHARD);
+        MacTestUtil.createOrRecreate(tops, SHARD_INDEX);
+        MacTestUtil.createOrRecreate(tops, SHARD_RINDEX);
+        MacTestUtil.createOrRecreate(tops, METADATA);
 
         Map<String,String> additions = new HashMap<>();
         IteratorUtil.IteratorScope[] scopes = IteratorUtil.IteratorScope.values();
