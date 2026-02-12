@@ -1,12 +1,14 @@
 package datawave.query.planner;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Set;
 
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -24,9 +26,7 @@ import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.DatawaveQueryException;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.tables.ScannerFactory;
 import datawave.query.util.DateIndexHelper;
-import datawave.query.util.MetadataHelper;
 import datawave.query.util.MockDateIndexHelper;
 import datawave.query.util.TypeMetadata;
 import datawave.test.JexlNodeAssert;
@@ -75,8 +75,8 @@ class DefaultQueryPlannerTest {
 
             // no hints or date filter required in this case
             JexlNodeAssert.assertThat(actual).isEqualTo("FOO == 'bar'");
-            Assertions.assertEquals(beginDate, config.getBeginDate());
-            Assertions.assertEquals(endDate, config.getEndDate());
+            assertEquals(beginDate, config.getBeginDate());
+            assertEquals(endDate, config.getEndDate());
         }
 
         /**
@@ -104,9 +104,9 @@ class DefaultQueryPlannerTest {
             JexlNodeAssert.assertThat(actual).isEqualTo(
                             "(FOO == 'bar') && filter:betweenDates(FOO, '" + filterFormat.format(beginDate) + "', '" + filterFormat.format(endDate) + "')");
             // begin date is not pushed farther back
-            Assertions.assertEquals(DateIndexUtil.getBeginDate("20241001"), config.getBeginDate());
+            assertEquals(DateIndexUtil.getBeginDate("20241001"), config.getBeginDate());
             // end date not pushed farther back either
-            Assertions.assertEquals(endDate, config.getEndDate());
+            assertEquals(endDate, config.getEndDate());
         }
 
         /**
@@ -128,8 +128,8 @@ class DefaultQueryPlannerTest {
 
             // no hints or date filter required in this case
             JexlNodeAssert.assertThat(actual).isEqualTo("FOO == 'bar'");
-            Assertions.assertEquals(beginDate, config.getBeginDate());
-            Assertions.assertEquals(endDate, config.getEndDate());
+            assertEquals(beginDate, config.getBeginDate());
+            assertEquals(endDate, config.getEndDate());
         }
 
         /**
@@ -154,8 +154,8 @@ class DefaultQueryPlannerTest {
             JexlNodeAssert.assertThat(actual).hasExactQueryString(
                             "(FOO == 'bar') && filter:betweenDates(FOO, '" + filterFormat.format(beginDate) + "', '" + filterFormat.format(endDate) + "')");
             // only the end date is adjusted
-            Assertions.assertEquals(beginDate, config.getBeginDate());
-            Assertions.assertEquals(DateIndexUtil.getEndDate("20241010"), config.getEndDate());
+            assertEquals(beginDate, config.getBeginDate());
+            assertEquals(DateIndexUtil.getEndDate("20241010"), config.getEndDate());
         }
 
         /**
@@ -177,8 +177,8 @@ class DefaultQueryPlannerTest {
 
             // no hints or date filter required in this case
             JexlNodeAssert.assertThat(actual).isEqualTo("FOO == 'bar'");
-            Assertions.assertEquals(beginDate, config.getBeginDate());
-            Assertions.assertEquals(endDate, config.getEndDate());
+            assertEquals(beginDate, config.getBeginDate());
+            assertEquals(endDate, config.getEndDate());
         }
 
         /**
@@ -204,8 +204,8 @@ class DefaultQueryPlannerTest {
             // hints and date filter used in this case
             JexlNodeAssert.assertThat(actual).hasExactQueryString(
                             "(FOO == 'bar') && filter:betweenDates(FOO, '" + filterFormat.format(beginDate) + "', '" + filterFormat.format(endDate) + "')");
-            Assertions.assertEquals(DateIndexUtil.getBeginDate("20241010"), config.getBeginDate());
-            Assertions.assertEquals(DateIndexUtil.getEndDate("20241010"), config.getEndDate());
+            assertEquals(DateIndexUtil.getBeginDate("20241010"), config.getBeginDate());
+            assertEquals(DateIndexUtil.getEndDate("20241010"), config.getEndDate());
         }
 
         private ASTJexlScript addDateFilters() throws TableNotFoundException, DatawaveQueryException {
@@ -247,7 +247,7 @@ class DefaultQueryPlannerTest {
             uniqueFields.put("ROLE", TemporalGranularity.TRUNCATE_TEMPORAL_TO_DAY);
             uniqueFields.put("HIRE_DATE", TemporalGranularity.TRUNCATE_TEMPORAL_TO_DAY);
 
-            Assertions.assertThrows(DatawaveFatalQueryException.class, () -> planner.validateUniqueFields(uniqueFields),
+            assertThrows(DatawaveFatalQueryException.class, () -> planner.validateUniqueFields(uniqueFields),
                             "The following unique fields are not date fields and cannot be used with UNIQUE_BY_X: ROLE");
         }
 
@@ -280,7 +280,7 @@ class DefaultQueryPlannerTest {
 
             GroupFields groupFields = GroupFields.from("NAME,ROLE[DAY],HIRE_DATE[DAY]");
 
-            Assertions.assertThrows(DatawaveFatalQueryException.class, () -> planner.validateGroupFields(groupFields),
+            assertThrows(DatawaveFatalQueryException.class, () -> planner.validateGroupFields(groupFields),
                             "The following group-by fields are not date fields and cannot be used with temporal truncation: ROLE");
         }
     }
