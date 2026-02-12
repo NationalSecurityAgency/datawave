@@ -29,20 +29,12 @@
         <version.datawave.query-metric-api>4.1.3-SNAPSHOT</version.datawave.query-metric-api>
         <version.datawave.starter>4.0.6-SNAPSHOT</version.datawave.starter>
         <version.guava>31.1-jre</version.guava>
-        <version.jackson>2.13.5</version.jackson>
+        <!-- version set in datawave-microservice-parent, but can be overridden here -->
+        <!-- 2.14.X is the maximum version of jackson without snakeyaml version 2 causing spring-boot 2.7.1 conflict -->
+        <version.jackson>2.14.3</version.jackson>
     </properties>
     <dependencyManagement>
         <dependencies>
-            <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-core</artifactId>
-                <version>${version.jackson}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-databind</artifactId>
-                <version>${version.jackson}</version>
-            </dependency>
             <dependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>

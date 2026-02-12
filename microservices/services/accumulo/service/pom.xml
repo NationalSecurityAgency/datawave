@@ -20,7 +20,7 @@
     <properties>
         <start-class>datawave.microservice.accumulo.AccumuloService</start-class>
         <version.accumulo>2.1.4-5792fed3-bulkv2</version.accumulo>
-        <version.commons-codec>1.15</version.commons-codec>
+        <version.commons-codec>1.17.1</version.commons-codec>
         <version.commons-lang3>3.20.0</version.commons-lang3>
         <version.curator>5.2.0</version.curator>
         <version.curator.test>5.2.0</version.curator.test>

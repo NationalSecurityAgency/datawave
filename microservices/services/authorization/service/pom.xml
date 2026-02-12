@@ -26,7 +26,9 @@
         <version.datawave.hazelcast-common>4.0.3-SNAPSHOT</version.datawave.hazelcast-common>
         <version.datawave.starter>4.0.6-SNAPSHOT</version.datawave.starter>
         <version.guava>31.1-jre</version.guava>
-        <version.jackson>2.13.5</version.jackson>
+        <!-- version set in datawave-microservice-parent, but can be overridden here -->
+        <!-- 2.14.X is the maximum version of jackson without snakeyaml version 2 causing spring-boot 2.7.1 conflict -->
+        <version.jackson>2.14.3</version.jackson>
         <version.jakarta>2.3.3</version.jakarta>
         <version.jaxb-impl>2.3.9</version.jaxb-impl>
         <version.jboss-servlet-api>2.0.0.Final</version.jboss-servlet-api>
@@ -39,16 +41,6 @@
     </properties>
     <dependencyManagement>
         <dependencies>
-            <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-databind</artifactId>
-                <version>${version.jackson}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.datatype</groupId>
-                <artifactId>jackson-datatype-guava</artifactId>
-                <version>${version.jackson}</version>
-            </dependency>
             <dependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>

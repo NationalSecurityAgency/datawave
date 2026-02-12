@@ -38,10 +38,12 @@
         <version.hadoop>3.3.4</version.hadoop>
         <version.hazelcast-kubernetes>2.2.3</version.hazelcast-kubernetes>
         <version.in-memory-accumulo>4.0.4</version.in-memory-accumulo>
-        <version.jackson>2.13.5</version.jackson>
+        <!-- version set in datawave-microservice-parent, but can be overridden here -->
+        <!-- 2.14.X is the maximum version of jackson without snakeyaml version 2 causing spring-boot 2.7.1 conflict -->
+        <version.jackson>2.14.3</version.jackson>
         <version.jakarta>2.3.3</version.jakarta>
         <version.jaxb-api>2.3.1</version.jaxb-api>
-        <version.protobuf-java>3.16.3</version.protobuf-java>
+        <version.protobuf-java>3.25.5</version.protobuf-java>
         <version.swagger>2.2.42</version.swagger>
         <version.webjars.bootstrap>5.3.8</version.webjars.bootstrap>
         <version.webjars.jquery>3.7.1</version.webjars.jquery>
@@ -51,26 +53,6 @@
     </properties>
     <dependencyManagement>
         <dependencies>
-            <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-core</artifactId>
-                <version>${version.jackson}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-databind</artifactId>
-                <version>${version.jackson}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.datatype</groupId>
-                <artifactId>jackson-datatype-guava</artifactId>
-                <version>${version.jackson}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.module</groupId>
-                <artifactId>jackson-module-jaxb-annotations</artifactId>
-                <version>${version.jackson}</version>
-            </dependency>
             <dependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>

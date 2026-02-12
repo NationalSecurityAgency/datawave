@@ -37,7 +37,9 @@
         <version.datawave.starter-query-metric>3.0.4-SNAPSHOT</version.datawave.starter-query-metric>
         <version.guava>31.1-jre</version.guava>
         <version.hadoop>3.3.4</version.hadoop>
-        <version.jackson>2.13.5</version.jackson>
+        <!-- version set in datawave-microservice-parent, but can be overridden here -->
+        <!-- 2.14.X is the maximum version of jackson without snakeyaml version 2 causing spring-boot 2.7.1 conflict -->
+        <version.jackson>2.14.3</version.jackson>
         <version.jakarta>2.3.3</version.jakarta>
         <version.jaxb-api>2.3.1</version.jaxb-api>
         <version.jboss-servlet-api>2.0.0.Final</version.jboss-servlet-api>
@@ -45,7 +47,7 @@
         <version.log4j>2.25.3</version.log4j>
         <!-- dependency declared in datawave-microservice-parent, but the version can be overridden here -->
         <version.slf4j>2.0.17</version.slf4j>
-        <version.springframework>5.2.2.RELEASE</version.springframework>
+        <version.springframework>5.3.39</version.springframework>
         <version.swagger>2.2.42</version.swagger>
         <version.webjars.foundation>6.4.3-1</version.webjars.foundation>
         <version.webjars.jquery>3.3.1-1</version.webjars.jquery>
@@ -53,21 +55,6 @@
     </properties>
     <dependencyManagement>
         <dependencies>
-            <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-core</artifactId>
-                <version>${version.jackson}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-databind</artifactId>
-                <version>${version.jackson}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.module</groupId>
-                <artifactId>jackson-module-jaxb-annotations</artifactId>
-                <version>${version.jackson}</version>
-            </dependency>
             <dependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
