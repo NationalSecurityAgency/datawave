@@ -20,7 +20,7 @@
     <properties>
         <version.datawave>7.33.1</version.datawave>
         <version.datawave.mapreduce-layout-factory>1.0.0</version.datawave.mapreduce-layout-factory>
-        <version.datawave.starter-query>1.0.9-SNAPSHOT</version.datawave.starter-query>
+        <version.datawave.starter-query>1.0.9</version.datawave.starter-query>
         <version.zookeeper>3.9.2</version.zookeeper>
     </properties>
     <dependencyManagement>

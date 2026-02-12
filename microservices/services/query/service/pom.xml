@@ -33,7 +33,7 @@
         <version.datawave.starter>4.0.6</version.datawave.starter>
         <version.datawave.starter-audit>4.0.4</version.datawave.starter-audit>
         <version.datawave.starter-cached-results>1.0.11-SNAPSHOT</version.datawave.starter-cached-results>
-        <version.datawave.starter-query>1.0.9-SNAPSHOT</version.datawave.starter-query>
+        <version.datawave.starter-query>1.0.9</version.datawave.starter-query>
         <version.datawave.starter-query-metric>3.0.4</version.datawave.starter-query-metric>
         <version.guava>31.1-jre</version.guava>
         <version.hadoop>3.3.4</version.hadoop>
