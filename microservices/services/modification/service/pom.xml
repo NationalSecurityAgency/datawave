@@ -20,7 +20,7 @@
     <properties>
         <start-class>datawave.microservice.modification.ModificationService</start-class>
         <version.datawave>7.33.1</version.datawave>
-        <version.datawave.authorization-api>4.0.2-SNAPSHOT</version.datawave.authorization-api>
+        <version.datawave.authorization-api>4.0.2</version.datawave.authorization-api>
         <version.datawave.modification-api>1.0.1-SNAPSHOT</version.datawave.modification-api>
         <version.datawave.query-api>1.0.1-SNAPSHOT</version.datawave.query-api>
         <version.datawave.starter>4.0.6-SNAPSHOT</version.datawave.starter>

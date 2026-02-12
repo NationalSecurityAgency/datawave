@@ -27,8 +27,8 @@
         <version.aspectj>1.9.25.1</version.aspectj>
         <version.beanutils>1.9.4</version.beanutils>
         <version.datawave>7.33.1</version.datawave>
-        <version.datawave.authorization-api>4.0.2-SNAPSHOT</version.datawave.authorization-api>
-        <version.datawave.cache-starter>4.0.1-SNAPSHOT</version.datawave.cache-starter>
+        <version.datawave.authorization-api>4.0.2</version.datawave.authorization-api>
+        <version.datawave.cache-starter>4.0.1</version.datawave.cache-starter>
         <version.datawave.metrics-reporter>3.0.0</version.datawave.metrics-reporter>
         <version.guava>31.1-jre</version.guava>
         <version.hamcrest>2.2</version.hamcrest>

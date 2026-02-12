@@ -29,7 +29,7 @@
         <version.commons-lang3>3.12.0</version.commons-lang3>
         <version.curator>5.2.0</version.curator>
         <version.datawave>7.33.1</version.datawave>
-        <version.datawave.authorization-api>4.0.2-SNAPSHOT</version.datawave.authorization-api>
+        <version.datawave.authorization-api>4.0.2</version.datawave.authorization-api>
         <version.datawave.dictionary-api>4.0.6-SNAPSHOT</version.datawave.dictionary-api>
         <version.datawave.starter>4.0.6-SNAPSHOT</version.datawave.starter>
         <version.datawave.starter-metadata>3.0.3-SNAPSHOT</version.datawave.starter-metadata>

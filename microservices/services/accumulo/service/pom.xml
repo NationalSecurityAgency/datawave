@@ -27,7 +27,7 @@
         <version.datawave>7.33.1</version.datawave>
         <version.datawave.accumulo-api>4.0.1-SNAPSHOT</version.datawave.accumulo-api>
         <version.datawave.audit-api>4.0.2-SNAPSHOT</version.datawave.audit-api>
-        <version.datawave.authorization-api>4.0.2-SNAPSHOT</version.datawave.authorization-api>
+        <version.datawave.authorization-api>4.0.2</version.datawave.authorization-api>
         <version.datawave.starter>4.0.6-SNAPSHOT</version.datawave.starter>
         <version.datawave.starter-datawave-audit>4.0.4-SNAPSHOT</version.datawave.starter-datawave-audit>
         <version.guava>31.1-jre</version.guava>
