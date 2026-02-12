@@ -23,8 +23,8 @@
         <version.datawave>7.33.1</version.datawave>
         <version.datawave.authorization-api>4.0.2</version.datawave.authorization-api>
         <version.datawave.hazelcast-client>4.0.3-SNAPSHOT</version.datawave.hazelcast-client>
-        <version.datawave.hazelcast-common>4.0.3-SNAPSHOT</version.datawave.hazelcast-common>
-        <version.datawave.starter>4.0.6-SNAPSHOT</version.datawave.starter>
+        <version.datawave.hazelcast-common>4.0.3</version.datawave.hazelcast-common>
+        <version.datawave.starter>4.0.6</version.datawave.starter>
         <version.guava>31.1-jre</version.guava>
         <!-- version set in datawave-microservice-parent, but can be overridden here -->
         <!-- 2.14.X is the maximum version of jackson without snakeyaml version 2 causing spring-boot 2.7.1 conflict -->

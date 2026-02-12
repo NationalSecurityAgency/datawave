@@ -26,12 +26,12 @@
         <version.commons-collections4>4.3</version.commons-collections4>
         <version.commons-lang3>3.20.0</version.commons-lang3>
         <version.datawave>7.33.1</version.datawave>
-        <version.datawave.audit-api>4.0.2-SNAPSHOT</version.datawave.audit-api>
+        <version.datawave.audit-api>4.0.2</version.datawave.audit-api>
         <version.datawave.authorization-api>4.0.2</version.datawave.authorization-api>
         <version.datawave.hazelcast-client>4.0.3-SNAPSHOT</version.datawave.hazelcast-client>
-        <version.datawave.hazelcast-common>4.0.3-SNAPSHOT</version.datawave.hazelcast-common>
-        <version.datawave.query-api>1.0.1-SNAPSHOT</version.datawave.query-api>
-        <version.datawave.starter>4.0.6-SNAPSHOT</version.datawave.starter>
+        <version.datawave.hazelcast-common>4.0.3</version.datawave.hazelcast-common>
+        <version.datawave.query-api>1.0.1</version.datawave.query-api>
+        <version.datawave.starter>4.0.6</version.datawave.starter>
         <version.datawave.starter-audit>4.0.4-SNAPSHOT</version.datawave.starter-audit>
         <version.datawave.starter-query>1.0.9-SNAPSHOT</version.datawave.starter-query>
         <version.mysql-connector>9.3.0</version.mysql-connector>

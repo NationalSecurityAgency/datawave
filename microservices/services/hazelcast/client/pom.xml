@@ -17,7 +17,7 @@
         <url>https://github.com/NationalSecurityAgency/datawave</url>
     </scm>
     <properties>
-        <version.datawave.hazelcast-common>4.0.3-SNAPSHOT</version.datawave.hazelcast-common>
+        <version.datawave.hazelcast-common>4.0.3</version.datawave.hazelcast-common>
         <version.hazelcast-kubernetes>2.2.3</version.hazelcast-kubernetes>
     </properties>
     <dependencyManagement>

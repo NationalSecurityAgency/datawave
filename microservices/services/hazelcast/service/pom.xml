@@ -19,7 +19,7 @@
     </scm>
     <properties>
         <start-class>datawave.microservice.cached.server.HazelcastService</start-class>
-        <version.datawave.hazelcast-common>4.0.3-SNAPSHOT</version.datawave.hazelcast-common>
+        <version.datawave.hazelcast-common>4.0.3</version.datawave.hazelcast-common>
         <version.hazelcast-kubernetes>2.2.3</version.hazelcast-kubernetes>
         <!-- dependency declared in datawave-microservice-parent, but the version can be overridden here -->
         <version.log4j>2.25.3</version.log4j>

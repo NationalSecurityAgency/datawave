@@ -26,9 +26,9 @@
         <version.aspectj>1.9.25.1</version.aspectj>
         <version.commons-lang3>3.20.0</version.commons-lang3>
         <version.datawave>7.33.1</version.datawave>
-        <version.datawave.audit-api>4.0.1</version.datawave.audit-api>
+        <version.datawave.audit-api>4.0.2</version.datawave.audit-api>
         <version.datawave.authorization-api>4.0.2</version.datawave.authorization-api>
-        <version.datawave.starter>4.0.6-SNAPSHOT</version.datawave.starter>
+        <version.datawave.starter>4.0.6</version.datawave.starter>
         <version.guava>31.1-jre</version.guava>
         <version.hamcrest>2.2</version.hamcrest>
     </properties>

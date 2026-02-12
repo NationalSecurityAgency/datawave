@@ -25,8 +25,8 @@
     <properties>
         <version.accumulo>2.1.4-5792fed3-bulkv2</version.accumulo>
         <version.datawave>7.33.1</version.datawave>
-        <version.datawave.starter>4.0.6-SNAPSHOT</version.datawave.starter>
-        <version.datawave.starter-cache>4.0.1-SNAPSHOT</version.datawave.starter-cache>
+        <version.datawave.starter>4.0.6</version.datawave.starter>
+        <version.datawave.starter-cache>4.0.1</version.datawave.starter-cache>
         <version.swagger>2.2.42</version.swagger>
     </properties>
     <dependencyManagement>

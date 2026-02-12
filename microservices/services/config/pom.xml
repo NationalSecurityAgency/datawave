@@ -25,7 +25,7 @@
     </scm>
     <properties>
         <start-class>datawave.microservice.config.server.ConfigServerApplication</start-class>
-        <version.datawave.starter>4.0.6-SNAPSHOT</version.datawave.starter>
+        <version.datawave.starter>4.0.6</version.datawave.starter>
         <!-- dependency declared in datawave-microservice-parent, but the version can be overridden here -->
         <version.log4j>2.25.3</version.log4j>
         <!-- dependency declared in datawave-microservice-parent, but the version can be overridden here -->

@@ -25,10 +25,10 @@
         <version.curator>5.2.0</version.curator>
         <version.curator.test>5.2.0</version.curator.test>
         <version.datawave>7.33.1</version.datawave>
-        <version.datawave.accumulo-api>4.0.1-SNAPSHOT</version.datawave.accumulo-api>
-        <version.datawave.audit-api>4.0.2-SNAPSHOT</version.datawave.audit-api>
+        <version.datawave.accumulo-api>4.0.1</version.datawave.accumulo-api>
+        <version.datawave.audit-api>4.0.2</version.datawave.audit-api>
         <version.datawave.authorization-api>4.0.2</version.datawave.authorization-api>
-        <version.datawave.starter>4.0.6-SNAPSHOT</version.datawave.starter>
+        <version.datawave.starter>4.0.6</version.datawave.starter>
         <version.datawave.starter-datawave-audit>4.0.4-SNAPSHOT</version.datawave.starter-datawave-audit>
         <version.guava>31.1-jre</version.guava>
         <version.hadoop>3.3.4</version.hadoop>
