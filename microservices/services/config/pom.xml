@@ -8,7 +8,7 @@
         <relativePath>../../microservice-service-parent/pom.xml</relativePath>
     </parent>
     <artifactId>config-service</artifactId>
-    <version>4.0.2</version>
+    <version>4.0.3-SNAPSHOT</version>
     <description>DATAWAVE Configuration Microservice</description>
     <url>https://code.nsa.gov/datawave-config-service</url>
     <licenses>
@@ -20,7 +20,7 @@
     <scm>
         <connection>scm:git:${project.scm.url}</connection>
         <developerConnection>scm:git:${project.scm.url}</developerConnection>
-        <tag>microservices/services/config/-4.0.2</tag>
+        <tag>HEAD</tag>
         <url>https://github.com/NationalSecurityAgency/datawave</url>
     </scm>
     <properties>
