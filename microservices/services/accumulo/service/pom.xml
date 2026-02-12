@@ -29,7 +29,7 @@
         <version.datawave.audit-api>4.0.2</version.datawave.audit-api>
         <version.datawave.authorization-api>4.0.2</version.datawave.authorization-api>
         <version.datawave.starter>4.0.6</version.datawave.starter>
-        <version.datawave.starter-datawave-audit>4.0.4-SNAPSHOT</version.datawave.starter-datawave-audit>
+        <version.datawave.starter-audit>4.0.4</version.datawave.starter-audit>
         <version.guava>31.1-jre</version.guava>
         <version.hadoop>3.3.4</version.hadoop>
         <version.in-memory-accumulo>4.0.4</version.in-memory-accumulo>
@@ -92,7 +92,7 @@
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>spring-boot-starter-datawave-audit</artifactId>
-                <version>${version.datawave.starter-datawave-audit}</version>
+                <version>${version.datawave.starter-audit}</version>
             </dependency>
             <dependency>
                 <groupId>io.swagger.core.v3</groupId>
