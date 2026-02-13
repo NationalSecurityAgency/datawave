@@ -3246,7 +3246,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 isUseTruncatedIndex() == that.isUseTruncatedIndex() &&
                 getTruncatedIndexTableName() == that.getTruncatedIndexTableName() &&
                 Objects.equals(getOriginalJexlQuery(), that.getOriginalJexlQuery()) &&
-                Objects.equals(getAllHitsQueryConfig(), that.getAllHitsQueryConfig());
+                Objects.equals(getAllHitsQueryConfig(), that.getAllHitsQueryConfig()) &&
+                isTserverLoggingActive() == that.isTserverLoggingActive();
         // @formatter:on
     }
 
@@ -3484,7 +3485,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 isUseTruncatedIndex(),
                 getTruncatedIndexTableName(),
                 getOriginalJexlQuery(),
-                getAllHitsQueryConfig()
+                getAllHitsQueryConfig(),
+                isTserverLoggingActive()
         );
         // @formatter:on
     }

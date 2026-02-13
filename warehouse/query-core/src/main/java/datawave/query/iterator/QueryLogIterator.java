@@ -51,27 +51,17 @@ public class QueryLogIterator implements SortedKeyValueIterator<Key,Value>, Opti
      */
     @Override
     public void init(SortedKeyValueIterator<Key,Value> source, Map<String,String> options, IteratorEnvironment env) throws IOException {
-
-        // try {
-        // this.queryID = options.get(QUERY_ID);
-        // this.source = source;
-        // this.env = env;
-        // } catch (Exception e) {
-        // throw new RuntimeException(e);
-        // }
+        this.queryID = options.get(QUERY_ID);
+        this.source = source;
+        this.env = env;
 
         String oldName = Thread.currentThread().getName();
         Thread.currentThread().setName(oldName + " -> " + this.queryID);
         MDC.put("queryID", queryID);
         try {
-            try {
-                this.queryID = options.get(QUERY_ID);
-                this.source = source;
-                this.env = env;
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
+            logStartOf("init()");
         } finally {
+            logEndOf("init()");
             Thread.currentThread().setName(oldName);
             MDC.remove("queryID");
         }

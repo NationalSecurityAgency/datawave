@@ -557,7 +557,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     }
 
     protected CloseableIterable<QueryData> startRangeProcessing(ScannerFactory scannerFactory, MetadataHelper metadataHelper, ShardQueryConfiguration config,
-                                                                Query settings, IteratorSetting cfg) throws DatawaveQueryException {
+                    Query settings, IteratorSetting cfg) throws DatawaveQueryException {
 
         settingFuture = null;
         logSettingFuture = null;
@@ -566,26 +566,10 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
         if (cfg == null && preloadOptions) {
             cfg = getQueryIterator(metadataHelper, config, "", false, true);
-            if (config.isTserverLoggingActive()) {
-                logCfg = getQueryLogIterator(config, settings);
-            }
         }
 
-        try {
-            config.setQueryTree(updateQueryTree(scannerFactory, metadataHelper, dateIndexHelper, config, settings.getQuery(), settings));
-        } catch (StackOverflowError e) {
-            if (log.isTraceEnabled()) {
-                log.trace("Stack trace for overflow " + e);
-            }
-            PreConditionFailedQueryException qe = new PreConditionFailedQueryException(DatawaveErrorCode.QUERY_DEPTH_OR_TERM_THRESHOLD_EXCEEDED, e);
-            log.warn(qe);
-            throw new DatawaveFatalQueryException(qe);
-        } catch (NoResultsException e) {
-            if (log.isTraceEnabled()) {
-                log.trace("Definitively determined that no results exist from the indexes");
-            }
-
-            return DefaultQueryPlanner.emptyCloseableIterator();
+        if (config.isTserverLoggingActive()) {
+            logCfg = getQueryLogIterator(config, settings);
         }
 
         boolean isFullTable = false;
