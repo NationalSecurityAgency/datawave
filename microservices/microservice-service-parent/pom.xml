@@ -22,6 +22,7 @@
         <resource.delimiter>@</resource.delimiter>
         <!-- 2.14.X is the maximum version of jackson without snakeyaml version 2 causing spring-boot 2.7.1 conflict -->
         <version.jackson>2.14.3</version.jackson>
+        <version.log4j>2.25.3</version.log4j>
         <version.slf4j>2.0.17</version.slf4j>
         <version.snakeyaml>1.33</version.snakeyaml>
         <version.spring.boot>2.7.1</version.spring.boot>
@@ -36,6 +37,14 @@
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-bom</artifactId>
                 <version>${version.slf4j}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <!-- override the log4j declarations in spring-boot-dependencies with our own version -->
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-bom</artifactId>
+                <version>${version.log4j}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
