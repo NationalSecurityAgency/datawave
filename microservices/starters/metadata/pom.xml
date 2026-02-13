@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.microservice</groupId>
         <artifactId>datawave-microservice-service-parent</artifactId>
-        <version>5.0.8</version>
+        <version>5.0.9</version>
         <relativePath>../../microservice-service-parent/pom.xml</relativePath>
     </parent>
     <artifactId>spring-boot-starter-datawave-metadata</artifactId>
@@ -25,8 +25,8 @@
     <properties>
         <version.accumulo>2.1.4-5792fed3-bulkv2</version.accumulo>
         <version.datawave>7.33.1</version.datawave>
-        <version.datawave.starter>4.0.6</version.datawave.starter>
-        <version.datawave.starter-cache>4.0.1</version.datawave.starter-cache>
+        <version.datawave.starter>4.0.7</version.datawave.starter>
+        <version.datawave.starter-cache>4.0.2</version.datawave.starter-cache>
         <version.swagger>2.2.42</version.swagger>
     </properties>
     <dependencyManagement>
