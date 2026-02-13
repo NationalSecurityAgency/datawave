@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.microservice</groupId>
         <artifactId>datawave-microservice-service-parent</artifactId>
-        <version>5.0.8</version>
+        <version>5.0.9</version>
         <relativePath>../../../microservice-service-parent/pom.xml</relativePath>
     </parent>
     <artifactId>modification-service</artifactId>
@@ -23,8 +23,8 @@
         <version.datawave.authorization-api>4.0.2</version.datawave.authorization-api>
         <version.datawave.modification-api>1.0.1</version.datawave.modification-api>
         <version.datawave.query-api>1.0.1</version.datawave.query-api>
-        <version.datawave.starter>4.0.6</version.datawave.starter>
-        <version.datawave.starter-metadata>3.0.3</version.datawave.starter-metadata>
+        <version.datawave.starter>4.0.7</version.datawave.starter>
+        <version.datawave.starter-metadata>3.0.4</version.datawave.starter-metadata>
         <version.in-memory-accumulo>4.0.4</version.in-memory-accumulo>
         <!-- dependency declared in datawave-microservice-parent, but the version can be overridden here -->
         <version.log4j>2.25.3</version.log4j>

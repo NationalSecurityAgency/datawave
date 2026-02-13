@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.microservice</groupId>
         <artifactId>datawave-microservice-service-parent</artifactId>
-        <version>5.0.8</version>
+        <version>5.0.9</version>
         <relativePath>../../../microservice-service-parent/pom.xml</relativePath>
     </parent>
     <artifactId>dictionary-service</artifactId>
@@ -31,8 +31,8 @@
         <version.datawave>7.33.1</version.datawave>
         <version.datawave.authorization-api>4.0.2</version.datawave.authorization-api>
         <version.datawave.dictionary-api>4.0.6</version.datawave.dictionary-api>
-        <version.datawave.starter>4.0.6</version.datawave.starter>
-        <version.datawave.starter-metadata>3.0.3</version.datawave.starter-metadata>
+        <version.datawave.starter>4.0.7</version.datawave.starter>
+        <version.datawave.starter-metadata>3.0.4</version.datawave.starter-metadata>
         <version.guava>31.1-jre</version.guava>
         <version.hadoop>3.3.4</version.hadoop>
         <version.in-memory-accumulo>4.0.4</version.in-memory-accumulo>

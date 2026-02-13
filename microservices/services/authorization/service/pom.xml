@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.microservice</groupId>
         <artifactId>datawave-microservice-service-parent</artifactId>
-        <version>5.0.8</version>
+        <version>5.0.9</version>
         <relativePath>../../../microservice-service-parent/pom.xml</relativePath>
     </parent>
     <artifactId>authorization-service</artifactId>
@@ -22,9 +22,9 @@
         <version.commons-lang3>3.12.0</version.commons-lang3>
         <version.datawave>7.33.1</version.datawave>
         <version.datawave.authorization-api>4.0.2</version.datawave.authorization-api>
-        <version.datawave.hazelcast-client>4.0.3</version.datawave.hazelcast-client>
-        <version.datawave.hazelcast-common>4.0.3</version.datawave.hazelcast-common>
-        <version.datawave.starter>4.0.6</version.datawave.starter>
+        <version.datawave.hazelcast-client>4.0.4</version.datawave.hazelcast-client>
+        <version.datawave.hazelcast-common>4.0.4</version.datawave.hazelcast-common>
+        <version.datawave.starter>4.0.7</version.datawave.starter>
         <version.guava>31.1-jre</version.guava>
         <!-- version set in datawave-microservice-parent, but can be overridden here -->
         <!-- 2.14.X is the maximum version of jackson without snakeyaml version 2 causing spring-boot 2.7.1 conflict -->

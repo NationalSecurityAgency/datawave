@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.microservice</groupId>
         <artifactId>datawave-microservice-service-parent</artifactId>
-        <version>5.0.8</version>
+        <version>5.0.9</version>
         <relativePath>../../../microservice-service-parent/pom.xml</relativePath>
     </parent>
     <artifactId>audit-service</artifactId>
@@ -24,9 +24,9 @@
         <version.commons-text>1.9</version.commons-text>
         <version.datawave.audit-api>4.0.2</version.datawave.audit-api>
         <version.datawave.authorization-api>4.0.2</version.datawave.authorization-api>
-        <version.datawave.hazelcast-client>4.0.3</version.datawave.hazelcast-client>
-        <version.datawave.hazelcast-common>4.0.3</version.datawave.hazelcast-common>
-        <version.datawave.starter>4.0.6</version.datawave.starter>
+        <version.datawave.hazelcast-client>4.0.4</version.datawave.hazelcast-client>
+        <version.datawave.hazelcast-common>4.0.4</version.datawave.hazelcast-common>
+        <version.datawave.starter>4.0.7</version.datawave.starter>
         <version.googlecode-findbugs>2.0.3</version.googlecode-findbugs>
         <version.guava>31.1-jre</version.guava>
         <version.hadoop>3.3.4</version.hadoop>
