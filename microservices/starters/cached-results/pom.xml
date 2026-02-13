@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.microservice</groupId>
         <artifactId>datawave-microservice-service-parent</artifactId>
-        <version>5.0.8</version>
+        <version>5.0.9</version>
         <relativePath>../../microservice-service-parent/pom.xml</relativePath>
     </parent>
     <artifactId>spring-boot-starter-datawave-cached-results</artifactId>
@@ -28,12 +28,12 @@
         <version.datawave>7.33.1</version.datawave>
         <version.datawave.audit-api>4.0.2</version.datawave.audit-api>
         <version.datawave.authorization-api>4.0.2</version.datawave.authorization-api>
-        <version.datawave.hazelcast-client>4.0.3</version.datawave.hazelcast-client>
-        <version.datawave.hazelcast-common>4.0.3</version.datawave.hazelcast-common>
+        <version.datawave.hazelcast-client>4.0.4</version.datawave.hazelcast-client>
+        <version.datawave.hazelcast-common>4.0.4</version.datawave.hazelcast-common>
         <version.datawave.query-api>1.0.1</version.datawave.query-api>
-        <version.datawave.starter>4.0.6</version.datawave.starter>
-        <version.datawave.starter-audit>4.0.4</version.datawave.starter-audit>
-        <version.datawave.starter-query>1.0.9</version.datawave.starter-query>
+        <version.datawave.starter>4.0.7</version.datawave.starter>
+        <version.datawave.starter-audit>4.0.5</version.datawave.starter-audit>
+        <version.datawave.starter-query>1.0.10</version.datawave.starter-query>
         <version.mysql-connector>9.3.0</version.mysql-connector>
     </properties>
     <dependencyManagement>
