@@ -8,13 +8,13 @@
         <relativePath>../../../microservice-service-parent/pom.xml</relativePath>
     </parent>
     <artifactId>modification-service</artifactId>
-    <version>1.0.4</version>
+    <version>1.0.5-SNAPSHOT</version>
     <description>DATAWAVE Modification Service</description>
     <url>https://code.nsa.gov/datawave-modification-service</url>
     <scm>
         <connection>scm:git:${project.scm.url}</connection>
         <developerConnection>scm:git:${project.scm.url}</developerConnection>
-        <tag>microservices/services/modification/service-1.0.4</tag>
+        <tag>HEAD</tag>
         <url>https://github.com/NationalSecurityAgency/datawave</url>
     </scm>
     <properties>
