@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.microservice</groupId>
         <artifactId>datawave-microservice-service-parent</artifactId>
-        <version>5.0.8</version>
+        <version>5.0.9</version>
         <relativePath>../../microservice-service-parent/pom.xml</relativePath>
     </parent>
     <artifactId>spring-boot-starter-datawave</artifactId>
@@ -29,7 +29,7 @@
         <version.datawave>7.33.1</version.datawave>
         <version.datawave.authorization-api>4.0.2</version.datawave.authorization-api>
         <version.datawave.metrics-reporter>3.0.0</version.datawave.metrics-reporter>
-        <version.datawave.starter-cache>4.0.1</version.datawave.starter-cache>
+        <version.datawave.starter-cache>4.0.2</version.datawave.starter-cache>
         <version.guava>31.1-jre</version.guava>
         <version.hamcrest>2.2</version.hamcrest>
         <version.in-memory-accumulo>4.0.4</version.in-memory-accumulo>
