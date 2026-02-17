@@ -132,18 +132,24 @@ export function startResize(name: string, e: MouseEvent){
   resizingCol = name
   startX = e.clientX
   startWidth = columnWidths[name]
+  console.log('startResize', name)
+
+  console.log(startX)
+  console.log(startWidth)
 
   document.addEventListener('mousemove', onMouseMove)
   document.addEventListener('mouseup', stopResize)
 }
 
 export function onMouseMove(e: MouseEvent){
+  console.log('mousemove')
   if (!resizingCol) return
   const delta = e.clientX - startX
   columnWidths[resizingCol] = Math.max(MIN_WIDTH, startWidth + delta)
 }
 
 export function stopResize(){
+  console.log('stopResize')
   resizingCol = ''
   document.removeEventListener('mousemove', onMouseMove)
   document.removeEventListener('mouseup',stopResize)
