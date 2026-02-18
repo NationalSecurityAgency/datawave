@@ -68,12 +68,12 @@ class ErrorShardedIngestHelperTest {
         ErrorShardedIngestHelper errorHelper = new ErrorShardedIngestHelper();
         errorHelper.setup(config);
 
-        // With null activeDataType, falls through to super.isIndexedField() which checks error's own base index fields.
-        // No base error index fields are configured in this test, so nothing should be indexed.
+        // With null activeDataType, checks union of ALL per-datatype error configs as a safe fallback.
+        // error.xyz config has {XYZ_ERROR_A, XYZ_A}, so both should match.
         errorHelper.setActiveDataType(null);
         Assertions.assertFalse(errorHelper.isIndexedField("UNINDEXED_FIELD"));
-        Assertions.assertFalse(errorHelper.isIndexedField("XYZ_A")); // not in error's base index fields
-        Assertions.assertFalse(errorHelper.isIndexedField("XYZ_ERROR_A")); // not in error's base index fields
+        Assertions.assertTrue(errorHelper.isIndexedField("XYZ_A")); // in error.xyz config
+        Assertions.assertTrue(errorHelper.isIndexedField("XYZ_ERROR_A")); // in error.xyz config
 
         errorHelper.setActiveDataType(TypeRegistry.getType("xyz"));
         Assertions.assertFalse(errorHelper.isIndexedField("UNINDEXED_FIELD"));
@@ -136,20 +136,19 @@ class ErrorShardedIngestHelperTest {
         errorHelper.setup(config);
 
         // --- NULL DATA TYPE ---
-        // With null activeDataType, falls through to super.isIndexedField() which checks error's own base index fields.
-        // Base error index fields are {GLOB_ERROR_A, GLOB_A} (from "error.data.category.index").
+        // With null activeDataType, checks union of ALL per-datatype error configs plus base error fields.
+        // error.csv config has {CSV_ERROR_A, CSV_A}, error.json config has {JSON_ERROR_A, JSON_A},
+        // base error config has {GLOB_ERROR_A, GLOB_A}.
         errorHelper.setActiveDataType(null);
         Assertions.assertFalse(errorHelper.isIndexedField("UNINDEXED_FIELD"));
 
-        // CSV_A and JSON_A are indexed for their respective datatypes, but NOT in error's base index fields
-        Assertions.assertFalse(errorHelper.isIndexedField("CSV_A"));
-        Assertions.assertFalse(errorHelper.isIndexedField("JSON_A"));
+        // Fields from any per-datatype error config should be indexed
+        Assertions.assertTrue(errorHelper.isIndexedField("CSV_A")); // in error.csv config
+        Assertions.assertTrue(errorHelper.isIndexedField("JSON_A")); // in error.json config
+        Assertions.assertTrue(errorHelper.isIndexedField("CSV_ERROR_A")); // in error.csv config
+        Assertions.assertTrue(errorHelper.isIndexedField("JSON_ERROR_A")); // in error.json config
 
-        // Error-datatype-specific fields are also not in error's base index fields
-        Assertions.assertFalse(errorHelper.isIndexedField("CSV_ERROR_A"));
-        Assertions.assertFalse(errorHelper.isIndexedField("JSON_ERROR_A"));
-
-        // Error's base index fields should be indexed
+        // Base error index fields should also be indexed
         Assertions.assertTrue(errorHelper.isIndexedField("GLOB_A"));
         Assertions.assertTrue(errorHelper.isIndexedField("GLOB_ERROR_A"));
 

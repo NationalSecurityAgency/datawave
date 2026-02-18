@@ -371,6 +371,10 @@ public class ErrorShardedIngestHelper extends BaseIngestHelper {
     public boolean isIndexedField(String fieldName) {
         IndexedFields dataTypeIndexFields = errorIndexedFields.get(getActiveDataType());
         if (dataTypeIndexFields == null) {
+            // Unknown datatype — index if base config or ANY per-datatype config would index it
+            if (getActiveDataType() == null && hasErrorIndexConfig()) {
+                return super.isIndexedField(fieldName) || anyErrorIndexMatch(errorIndexedFields, fieldName);
+            }
             return super.isIndexedField(fieldName);
         }
 
@@ -396,11 +400,27 @@ public class ErrorShardedIngestHelper extends BaseIngestHelper {
     public boolean isReverseIndexedField(String fieldName) {
         IndexedFields dataTypeIndexFields = errorReverseIndexedFields.get(getActiveDataType());
         if (dataTypeIndexFields == null) {
+            // Unknown datatype — reverse index if base config or ANY per-datatype config would reverse index it
+            if (getActiveDataType() == null && hasErrorReverseIndexConfig()) {
+                return super.isReverseIndexedField(fieldName) || anyErrorIndexMatch(errorReverseIndexedFields, fieldName);
+            }
             return super.isReverseIndexedField(fieldName);
         }
 
         return dataTypeIndexFields.hasDisallowList ? !dataTypeIndexFields.unindexedFields.contains(fieldName)
                         : dataTypeIndexFields.indexedFields.contains(fieldName);
+    }
+
+    /**
+     * Checks if any per-datatype error config would index the given field. Used as a safe fallback when the active datatype is unknown (null).
+     */
+    private boolean anyErrorIndexMatch(Map<Type,IndexedFields> configMap, String fieldName) {
+        for (IndexedFields fields : configMap.values()) {
+            if (fields.hasDisallowList ? !fields.unindexedFields.contains(fieldName) : fields.indexedFields.contains(fieldName)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public void setActiveDataType(Type dataType) {
