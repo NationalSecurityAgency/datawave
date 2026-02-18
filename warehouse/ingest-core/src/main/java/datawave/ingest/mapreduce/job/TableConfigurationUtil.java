@@ -82,15 +82,19 @@ public class TableConfigurationUtil {
 
     }
 
+    /**
+     * Get the set of output table names as defined by {@link #JOB_OUTPUT_TABLE_NAMES}
+     *
+     * @param conf
+     *            the hadoop {@link Configuration}
+     * @return the set of output table names
+     */
     public static Set<String> getJobOutputTableNames(Configuration conf) {
-        HashSet tableNames = new HashSet<>();
-
+        Set<String> tableNames = new HashSet<>();
         String[] outputTables = conf.getStrings(JOB_OUTPUT_TABLE_NAMES);
-
-        if (null != outputTables && outputTables.length > 0) {
-            tableNames = new HashSet(Arrays.asList(outputTables));
+        if (outputTables != null && outputTables.length > 0) {
+            tableNames.addAll(Arrays.asList(outputTables));
         }
-
         return tableNames;
     }
 

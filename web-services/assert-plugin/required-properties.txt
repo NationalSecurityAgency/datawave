@@ -75,6 +75,8 @@ table.name.errors.metadata,
 table.name.errors.shard,
 table.name.errors.shardIndex,
 table.name.errors.shardReverseIndex,
+table.name.annotation,
+table.name.annotation.source,
 webapp.transport.guarantee, CONFIDENTIAL for SSL or empty for non-SSL
 trusted.header.login, true or false (true = expect subject and issuer DNs of the user to appear in request headers, false = normal SSL connection)
 zookeeper.hosts, list of ZOOKEEPER hosts for the Accumulo instance

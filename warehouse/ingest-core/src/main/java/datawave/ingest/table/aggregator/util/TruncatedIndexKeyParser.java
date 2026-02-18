@@ -29,7 +29,12 @@ public class TruncatedIndexKeyParser extends AbstractIndexKeyParser {
     public Key convert() {
         if (isStandardKey()) {
             // might want to snag the delete flag as well in the future
-            return new Key(getValue(), getField(), getDate() + NULL_CHAR + getDatatype(), key.getColumnVisibilityParsed(), key.getTimestamp());
+            // use a byte array constructor to avoid expensive parsing of the ColumnVisibility
+            byte[] row = getValue().getBytes();
+            byte[] cf = getField().getBytes();
+            byte[] cq = (getDate() + NULL_CHAR + getDatatype()).getBytes();
+            byte[] cv = key.getColumnVisibilityData().toArray();
+            return new Key(row, cf, cq, cv, key.getTimestamp());
         } else {
             // become a pass-through if the key is already truncated, or is a sharded key
             return key;

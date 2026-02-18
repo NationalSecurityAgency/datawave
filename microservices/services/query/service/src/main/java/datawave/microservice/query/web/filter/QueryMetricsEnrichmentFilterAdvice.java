@@ -5,7 +5,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -34,7 +35,7 @@ import datawave.webservice.result.GenericResponse;
 @ControllerAdvice
 public class QueryMetricsEnrichmentFilterAdvice extends BaseMethodStatsFilter implements ResponseBodyAdvice<Object> {
 
-    private final Logger log = Logger.getLogger(this.getClass());
+    private final Logger log = LoggerFactory.getLogger(this.getClass());
 
     private final QueryLogicFactory queryLogicFactory;
 

@@ -110,6 +110,7 @@ public class ContentCSVIndexingColumnBasedHandlerTest {
         conf.set(ShardedDataTypeHandler.SHARD_GRIDX_TNAME, TableName.SHARD_RINDEX);
         conf.set(ShardedDataTypeHandler.SHARD_DAY_INDEX_TABLE_NAME, TableName.SHARD_DAY_INDEX);
         conf.set(ShardedDataTypeHandler.SHARD_YEAR_INDEX_TABLE_NAME, TableName.SHARD_YEAR_INDEX);
+        conf.set(ShardedDataTypeHandler.BITSET_INDEX_ENABLED, TableName.TRUNCATED_SHARD_INDEX);
     }
 
     @Test

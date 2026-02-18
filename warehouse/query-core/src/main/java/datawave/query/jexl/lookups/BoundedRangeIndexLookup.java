@@ -89,7 +89,7 @@ public class BoundedRangeIndexLookup extends AsyncIndexLookup {
             IteratorSetting fairnessIterator = null;
             if (config.getMaxIndexScanTimeMillis() > 0) {
                 // The fairness iterator solves the problem whereby we have runaway iterators as a result of an evaluation that never finds anything
-                fairnessIterator = new IteratorSetting(1, TimeoutIterator.class);
+                fairnessIterator = new IteratorSetting(5, TimeoutIterator.class);
 
                 long maxTime = config.getMaxIndexScanTimeMillis();
                 if (maxTime < Long.MAX_VALUE / 2)
@@ -130,7 +130,7 @@ public class BoundedRangeIndexLookup extends AsyncIndexLookup {
                 // the 'newScanner' method in the ScannerFactory has no knowledge about the 'expansion' hint, so determine hint here
                 String hintKey = config.getTableHints().containsKey(EXPANSION_HINT_KEY) ? EXPANSION_HINT_KEY : config.getIndexTableName();
 
-                bs = scannerFactory.newScanner(config.getIndexTableName(), config.getAuthorizations(), config.getNumQueryThreads(), config.getQuery(), hintKey);
+                bs = scannerFactory.newScanner(getTableName(), config.getAuthorizations(), config.getNumQueryThreads(), config.getQuery(), hintKey);
 
                 bs.setRanges(Collections.singleton(range));
                 bs.fetchColumnFamily(new Text(literalRange.getFieldName()));
