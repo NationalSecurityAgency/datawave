@@ -154,6 +154,12 @@
         </property>
     </bean>
 
+    <!-- used by the IndexExpansionQueryTest -->
+    <bean id="EventQueryNoRules" scope="prototype"  parent="EventQuery">
+        <property name="logicDescription" value="Event query with no pushdown rules" />
+        <property name="queryPlanner" ref="DefaultQueryPlannerNoRules" />
+    </bean>
+
     <bean id="EventQuery" scope="prototype"  parent="BaseEventQuery">
         <property name="logicDescription" value="Event query" />
         <property name="configuredProfiles" >
@@ -287,6 +293,8 @@
         <!-- property name="accumuloPassword" value="${accumulo.user.password}" />	 -->
         <property name="collapseUids" value="true" />	<!-- was ${query.collapse.uids} -->
         <property name="useEnrichers" value="true" />
+        <property name="useTruncatedIndex" value="false" />
+        <property name="truncatedIndexTableName" value="truncatedShardIndex"/>
         <property name="useShardedIndex" value="false" />
         <property name="dayIndexThreshold" value="17" />
         <property name="contentFieldNames">
@@ -394,10 +402,10 @@
         <property name="tfAggregationThresholdMs" value="-1" />
         <!--   enable per-tablet pruning of certain query options     -->
         <property name="pruneQueryOptions" value="false" />
-        <property name="rebuildDatatypeFilter" value="true" />
+        <property name="rebuildDatatypeFilter" value="false" />
         <property name="rebuildDatatypeFilterPerShard" value="false" />
-        <property name="reduceIngestTypes" value="true"/>
-        <property name="reduceIngestTypesPerShard" value="true"/>
+        <property name="reduceIngestTypes" value="false"/>
+        <property name="reduceIngestTypesPerShard" value="false"/>
         <property name="reduceQueryFields" value="false" />
         <property name="reduceQueryFieldsPerShard" value="false" />
         <property name="reduceTypeMetadata" value="false" />
@@ -573,6 +581,12 @@
         <property name="visitorManager" ref="TimedVisitorManager"/>
     </bean>
 
+    <!-- used by the IndexExpansionQueryTest -->
+    <bean id="DefaultQueryPlannerNoRules" scope="prototype" class="datawave.query.planner.DefaultQueryPlanner" >
+        <!--        <property name="transformRules" ref="transformRuleList" />-->
+        <property name="visitorManager" ref="TimedVisitorManager"/>
+    </bean>
+
     <bean id="TimedVisitorManager" scope="prototype" class="datawave.query.planner.TimedVisitorManager">
         <property name="debugEnabled" value="true"/>
         <property name="validateAst" value="true"/>
@@ -633,6 +647,26 @@
         <property name="maxWork" value="-1" />
         <property name="auditType" value="NONE" />
         <property name="logicDescription" value="Query that returns data from the term frequency query table" />
+    </bean>
+
+    <bean id="KeywordUUIDQuery" parent="baseQueryLogic" scope="prototype" class="datawave.query.tables.keyword.KeywordChainedUUIDQueryLogic">
+        <property name="logic1">
+            <bean scope="prototype" parent="BaseEventQuery">
+                <property name="auditType" value="NONE" />
+                <property name="logicDescription" value="Lucene query for event/document UUIDs" />
+                <property name="mandatoryQuerySyntax">
+                    <util:set>
+                        <value>LUCENE-UUID</value>
+                    </util:set>
+                </property>
+                <property name="connPoolName" value="UUID" />
+            </bean>
+        </property>
+        <property name="logic2" ref="KeywordQuery"/>
+        <property name="auditType" value="NONE"/>
+        <property name="chainStrategy">
+            <bean class="datawave.query.tables.keyword.KeywordUUIDChainStrategy"/>
+        </property>
     </bean>
 
     <!-- Query Logic that returns returnd document keywords -->

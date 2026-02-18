@@ -100,6 +100,8 @@ import datawave.query.index.day.DayIndexStream;
 import datawave.query.index.lookup.IndexStream;
 import datawave.query.index.lookup.QueryPlanStream;
 import datawave.query.index.lookup.RangeStream;
+import datawave.query.index.lookup.TruncatedIndexIterator;
+import datawave.query.index.lookup.TruncatedRangeStream;
 import datawave.query.iterator.CloseableListIterable;
 import datawave.query.iterator.QueryIterator;
 import datawave.query.iterator.QueryOptions;
@@ -1008,7 +1010,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         if (disableBoundedLookup) {
             // protection mechanism. If we disable bounded ranges and have a
             // LT,GT or ER node, we should expand it
-            if (BoundedRangeDetectionVisitor.mustExpandBoundedRange(config, metadataHelper, config.getQueryTree())) {
+            if (BoundedRangeDetectionVisitor.mustExpandBoundedRange(config.getQueryTree(), getNonEventFields())) {
                 disableBoundedLookup = false;
             }
         }
@@ -1882,7 +1884,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         });
     }
 
-    private ASTJexlScript timedExpandRanges(QueryStopwatch timers, String stage, final ASTJexlScript script, ShardQueryConfiguration config,
+    protected ASTJexlScript timedExpandRanges(QueryStopwatch timers, String stage, final ASTJexlScript script, ShardQueryConfiguration config,
                     MetadataHelper metadataHelper, ScannerFactory scannerFactory) throws DatawaveQueryException {
         config.setQueryTree(script);
         TraceStopwatch innerStopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - " + stage);
@@ -3101,6 +3103,10 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
         if (config.isUseShardedIndex()) {
             return getDayIndexStream(config);
+        } else if (config.isUseTruncatedIndex()) {
+            this.rangeStreamClass = TruncatedRangeStream.class.getCanonicalName();
+            this.createUidsIteratorClass = TruncatedIndexIterator.class;
+            return initializeRangeStream(config, scannerFactory, metadataHelper);
         } else {
             return initializeRangeStream(config, scannerFactory, metadataHelper);
         }

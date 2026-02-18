@@ -9,7 +9,7 @@ public class Identity {
     private String hasher = "MD5";
     private MessageDigest md;
     private static final String HEXITS = "0123456789abcdef";
-    private StringBuffer sb = new StringBuffer();
+    private StringBuilder sb = new StringBuilder();
     private static Logger log = Logger.getLogger(Identity.class);
 
     public Identity() {
@@ -44,7 +44,7 @@ public class Identity {
     }
 
     public String toHex(byte[] me) {
-        StringBuffer buf = new StringBuffer(me.length * 2);
+        StringBuilder buf = new StringBuilder(me.length * 2);
 
         for (int i = 0; i < me.length; i++) {
             buf.append(HEXITS.charAt((me[i] >>> 4) & 0xf));

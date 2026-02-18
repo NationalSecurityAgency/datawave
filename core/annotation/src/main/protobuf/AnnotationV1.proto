@@ -1,0 +1,78 @@
+syntax = "proto3";
+
+package datawave.annotation.protobuf.v1;
+
+option java_package = "datawave.annotation.protobuf.v1";
+option java_multiple_files = true;
+
+enum BoundaryType {
+  UNKNOWN = 0;
+  ALL = 1;
+  POINTS = 2;
+  TIME_MILLI = 3;
+  TEXT_CHAR = 4;
+}
+
+message Point { int32 x = 1; int32 y = 2; string label = 3; } // annotations on a point
+
+// segment value, e.g. a label, confidence and source
+message SegmentValue {
+    string valueHash = 1; // the 32-bit value hash used for grouping.
+    string value = 2; // e.g., label
+    float score = 3; // e.g., confidence
+    map<string,string> extension = 4; // type-specific data
+}
+
+message SegmentBoundary {
+    BoundaryType boundaryType = 1; // currently 'ALL', 'POINTS', 'TIME_MILLI', 'TEXT_CHAR'.
+    reserved 2 to 19; // for future growth.
+    optional int32 start = 21; // an start boundary for spans, the unit is implied by the boundaryType (used for TIME and TEXT spans).
+    optional int32 end = 22; // an end boundary for spans, the unit is implied by the boundaryType (used for TIME and TEXT spans).
+    repeated Point points = 23; // zero or more points or polygons.
+    reserved 24 to 50; // add future segment types here.
+}
+
+message Segment {
+    string segmentHash = 1; // the 32-bit hash used for segment identification and grouping.
+    SegmentBoundary boundary = 2; // the boundary for this segment.
+    repeated SegmentValue values = 3;  // multiple values associated with this segment.
+    reserved 4 to 49; // for future growth.
+    map<string, string> metadata = 50;  // optional segment metadata
+}
+
+message Annotation {
+    string shard = 1; // the shard of the record this annotation addresses
+    string dataType = 2; // the datatype of the record this annotation addresses
+    string uid = 3; // the internal id of the record this annotation addresses
+    string annotationId = 4; // the hash that identifies this annotation
+    string documentId = 5; // the external identifier for this annotations source document.
+    string annotationType = 6; // the type of this annotation
+    string analyticSourceHash = 7; // the analytic hash that identifies this annotation's source
+    optional AnnotationSource source = 8; // the source details for this annotation.
+    reserved 9 to 19; // for future growth.
+    repeated Segment segments = 20; // segment data
+    reserved 21 to 49; // for future growth.
+    map<string, string> metadata = 50;
+}
+
+message AnnotationSource {
+    string analyticHash = 1; // the 32-bit hash used for grouping this source
+    string analyticSourceHash = 2; // the 128-bit hash for this source
+    string engine = 3; // a string identifying the engine that produce the annotation
+    string model = 4; // a string identifying the model that produced the annotation
+    map<string, string> configuration = 5; // key value pairs identifying the configuration for the source.
+
+    reserved 6 to 49; // for future growth.
+    map<string, string> metadata = 50;
+}
+
+// Embeddable list/element wrappers that are JSON-friendly.
+message SegmentList {
+    repeated Segment segments = 1;
+    string nextPageToken = 2;
+}
+
+message AnnotationList {
+    repeated Annotation annotations = 1;
+    string nextPageToken = 2;
+}

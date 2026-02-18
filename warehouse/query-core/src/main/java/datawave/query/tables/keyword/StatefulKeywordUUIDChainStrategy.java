@@ -1,5 +1,6 @@
 package datawave.query.tables.keyword;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -15,6 +16,7 @@ import org.apache.log4j.Logger;
 
 import com.google.common.base.Preconditions;
 
+import datawave.core.query.logic.QueryLogic;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
 import datawave.query.DocumentSerialization;
@@ -22,20 +24,32 @@ import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Document;
 import datawave.query.function.deserializer.DocumentDeserializer;
 import datawave.query.tables.chained.strategy.FullChainStrategy;
+import datawave.query.tables.keyword.extractor.TagCloudInputExtractor;
+import datawave.query.tables.keyword.extractor.TagCloudInputExtractorException;
+import datawave.query.tables.keyword.transform.TagCloudInputTransformer;
+import datawave.util.keyword.TagCloudPartition;
 
 /**
  * Strategy for chaining UUID lookup and keyword extraction queries together. Grabs the results of the lookupUUID query and uses these to generate the query
  * terms that are fed into a keyword extraction query.
  */
 public class StatefulKeywordUUIDChainStrategy extends FullChainStrategy<Entry<Key,Value>,Entry<Key,Value>> {
-
     private static final Logger log = Logger.getLogger(StatefulKeywordUUIDChainStrategy.class);
 
     private int batchSize = -1;
     protected DocumentDeserializer deserializer;
+    private final QueryLogic<Entry<Key,Value>> nextLogic;
+    // configured extractors to use on the data from nextLogic
+    private final List<TagCloudInputExtractor> extractors;
+    // will be true when a keyword query should be run, false otherwise
+    private final boolean runKeywordQuery;
 
-    public StatefulKeywordUUIDChainStrategy(Query settings) {
+    public StatefulKeywordUUIDChainStrategy(Query settings, QueryLogic<Entry<Key,Value>> nextLogic, List<TagCloudInputExtractor> extractors,
+                    boolean runKeywordQuery) {
         this.deserializer = DocumentSerialization.getDocumentDeserializer(settings);
+        this.nextLogic = nextLogic;
+        this.extractors = extractors;
+        this.runKeywordQuery = runKeywordQuery;
     }
 
     public int getBatchSize() {
@@ -50,13 +64,20 @@ public class StatefulKeywordUUIDChainStrategy extends FullChainStrategy<Entry<Ke
     protected Query buildLatterQuery(Query initialQuery, Iterator<Entry<Key,Value>> initialQueryResults, String latterLogicName) {
         log.debug("buildLatterQuery() called...");
 
+        log.debug("initializing extractors");
+        for (TagCloudInputExtractor tagCloudInputExtractor : extractors) {
+            tagCloudInputExtractor.initialize(initialQuery);
+        }
+
+        log.debug("building query and extracting data");
         String queryString = captureResultsAndBuildQuery(initialQueryResults, batchSize);
 
         if (log.isDebugEnabled()) {
             log.debug("latter query is " + queryString);
         }
 
-        if (queryString == null || queryString.isBlank()) {
+        // as long as there are extractors it is okay for an empty query string, if neither there is nothing to do
+        if (extractors.isEmpty() && StringUtils.isBlank(queryString)) {
             return null;
         }
 
@@ -67,27 +88,13 @@ public class StatefulKeywordUUIDChainStrategy extends FullChainStrategy<Entry<Ke
         q.setQueryAuthorizations(initialQuery.getQueryAuthorizations());
         q.setUserDN(initialQuery.getUserDN());
 
-        q.addParameter(KeywordQueryLogic.TAG_CLOUD_CREATE, initialQuery.findParameter(KeywordQueryLogic.TAG_CLOUD_CREATE).getParameterValue());
-        q.addParameter(KeywordQueryLogic.PREFERRED_VIEW_NAMES, initialQuery.findParameter(KeywordQueryLogic.PREFERRED_VIEW_NAMES).getParameterValue());
-        q.addParameter(KeywordQueryLogic.TAG_CLOUD_MAX, initialQuery.findParameter(KeywordQueryLogic.TAG_CLOUD_MAX).getParameterValue());
-        q.addParameter(KeywordQueryLogic.TAG_CLOUD_LANGUAGE, initialQuery.findParameter(KeywordQueryLogic.TAG_CLOUD_LANGUAGE).getParameterValue());
-
+        q.setParameters(initialQuery.getParameters());
         return q;
     }
 
+    // TODO-crwill9 better refine this javadoc
     /**
-     * Generates queries for the KeywordQueryLogic. Minimally they will include things like:
-     *
-     * <pre>
-     *      DOCUMENT:row/dataType/uid
-     * </pre>
-     *
-     * But they will also potentially be enriched with the identifier, which appears in the HIT_TERM field of the lookupUUID response, and the LANGUAGE of the
-     * original document, so they will look like:
-     *
-     * <pre>
-     *     DOCUMENT:row/datatype/uid!PAGEID:12345%LANGUAGE:ENGLISH
-     * </pre>
+     * Generates queries for the KeywordQueryLogic and run extractors
      *
      * @param initialQueryResults
      *            the raw results from the lookup uuid query, pre-transformation.
@@ -98,6 +105,7 @@ public class StatefulKeywordUUIDChainStrategy extends FullChainStrategy<Entry<Ke
      */
     public String captureResultsAndBuildQuery(Iterator<Entry<Key,Value>> initialQueryResults, int batchSize) {
         int count = 0;
+
         Set<String> queryTerms = new HashSet<>();
         while (initialQueryResults.hasNext() && (batchSize == -1 || count < batchSize)) {
             Entry<Key,Value> entry = initialQueryResults.next();
@@ -117,41 +125,97 @@ public class StatefulKeywordUUIDChainStrategy extends FullChainStrategy<Entry<Ke
             Document document = documentEntry.getValue();
             final Map<String,Attribute<? extends Comparable<?>>> documentData = document.getDictionary();
 
-            List<String> identifiers = null;
-            List<String> languages = null;
+            String docId = row + "/" + dataType + "/" + uid;
 
-            for (Entry<String,Attribute<? extends Comparable<?>>> data : documentData.entrySet()) {
-                if (data.getKey().equals("LANGUAGE")) {
-                    languages = KeywordQueryUtil.getStringValuesFromAttribute(data.getValue());
-                } else if (data.getKey().equals("HIT_TERM")) {
-                    identifiers = KeywordQueryUtil.getStringValuesFromAttribute(data.getValue());
+            // apply all extractors to the document
+            for (TagCloudInputExtractor extractor : extractors) {
+                try {
+                    extractor.extract(documentKey, documentData);
+                } catch (TagCloudInputExtractorException e) {
+                    throw new RuntimeException("Failed to extractor failed to extract: " + extractor, e);
                 }
             }
 
-            String queryTerm = "DOCUMENT:" + row + "/" + dataType + "/" + uid;
-            String language, identifier;
-            if (((identifier = KeywordQueryUtil.chooseBestIdentifier(identifiers)) != null)) {
-                if (log.isTraceEnabled()) {
-                    log.trace("Chose best identifier '" + identifier + "' from '" + identifiers + "' for query " + queryTerm);
-                }
-                queryTerm += "!" + identifier;
-            } else if (log.isTraceEnabled()) {
-                log.trace("No identifier found for query " + queryTerm);
+            if (runKeywordQuery) {
+                // run query term extraction for next logic if needed
+                queryTerms.add(extractKeywordQueryTerm(docId, documentData));
             }
 
-            if (((language = KeywordQueryUtil.chooseBestLanguage(languages)) != null)) {
-                if (log.isTraceEnabled()) {
-                    log.trace("Chose best language '" + languages + "' from '" + languages + "' for query " + queryTerm);
-                }
-                queryTerm += "%LANGUAGE:" + language;
-            } else if (log.isTraceEnabled()) {
-                log.trace("No language found for query " + queryTerm);
-            }
-
-            queryTerms.add(queryTerm);
             count++;
         }
 
+        if (nextLogic instanceof KeywordQueryLogic) {
+            // get all partitions from configured extractors
+            List<Entry<Key,Value>> encodedData = new ArrayList<>();
+            Set<TagCloudInputTransformer<?>> transformers = new HashSet<>();
+            for (TagCloudInputExtractor extractor : extractors) {
+                TagCloudInputTransformer<TagCloudPartition> transformer = extractor.getInputTransformer();
+                transformers.add(transformer);
+                TagCloudPartition partition = extractor.get();
+                Entry<Key,Value> transformed = transformer.encode(partition);
+
+                encodedData.add(transformed);
+                extractor.clear();
+            }
+
+            KeywordQueryLogic keywordQueryLogic = (KeywordQueryLogic) nextLogic;
+            // pass the extracted partitions on to the keyword query logic
+            keywordQueryLogic.setExternalData(encodedData, transformers);
+        }
+
         return queryTerms.isEmpty() ? null : StringUtils.join(queryTerms, " ");
+    }
+
+    /**
+     * Generates queries for the KeywordQueryLogic. Minimally they will include things like:
+     *
+     * <pre>
+     *      DOCUMENT:row/dataType/uid
+     * </pre>
+     *
+     * But they will also potentially be enriched with the identifier, which appears in the HIT_TERM field of the lookupUUID response, and the LANGUAGE of the
+     * original document, so they will look like:
+     *
+     * <pre>
+     *     DOCUMENT:row/datatype/uid!PAGEID:12345%LANGUAGE:ENGLISH
+     * </pre>
+     *
+     * @param docId
+     * @param documentData
+     * @return
+     */
+    private String extractKeywordQueryTerm(String docId, Map<String,Attribute<? extends Comparable<?>>> documentData) {
+        List<String> identifiers = null;
+        List<String> languages = null;
+
+        for (Entry<String,Attribute<? extends Comparable<?>>> data : documentData.entrySet()) {
+            if (data.getKey().equals("LANGUAGE")) {
+                languages = KeywordQueryUtil.getStringValuesFromAttribute(data.getValue());
+            } else if (data.getKey().equals("HIT_TERM")) {
+                identifiers = KeywordQueryUtil.getStringValuesFromAttribute(data.getValue());
+            }
+        }
+
+        String queryTerm = "DOCUMENT:" + docId;
+        String language, identifier;
+        if (((identifier = KeywordQueryUtil.chooseBestIdentifier(identifiers)) != null)) {
+            if (log.isTraceEnabled()) {
+                log.trace("Chose best identifier '" + identifier + "' from '" + identifiers + "' for query " + queryTerm);
+            }
+            queryTerm += "!" + identifier;
+        } else if (log.isTraceEnabled()) {
+            log.trace("No identifier found for query " + queryTerm);
+        }
+
+        if (((language = KeywordQueryUtil.chooseBestLanguage(languages)) != null)) {
+            if (log.isTraceEnabled()) {
+                log.trace("Chose best language '" + languages + "' from '" + languages + "' for query " + queryTerm);
+            }
+            queryTerm += "%LANGUAGE:" + language;
+        } else if (log.isTraceEnabled()) {
+            log.trace("No language found for query " + queryTerm);
+        }
+
+        return queryTerm;
     }
 }
