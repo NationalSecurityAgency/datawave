@@ -33,20 +33,26 @@ public class UnfieldedRegexIndexLookup extends BaseRegexIndexLookup {
 
     private final Set<String> fields;
 
+    // enforce limits for now
+    private final int keyThreshold;
+    private final int valueThreshold;
+
     public UnfieldedRegexIndexLookup(ShardQueryConfiguration config, ScannerFactory scannerFactory, ExecutorService execService, String pattern, Range range,
                     boolean reverse, Set<String> fields) {
         super(config, scannerFactory, true, execService, pattern, range, reverse);
         this.fields = Objects.requireNonNullElse(fields, Collections.emptySet());
+        this.keyThreshold = config.getMaxUnfieldedExpansionThreshold();
+        this.valueThreshold = config.getMaxValueExpansionThreshold();
         log.info("Created UnfieldedRegexIndexLookup with pattern {}", pattern);
     }
 
     @Override
     public void submit() {
         if (indexLookupMap == null) {
-            indexLookupMap = new IndexLookupMap(Integer.MAX_VALUE, Integer.MAX_VALUE);
+            indexLookupMap = new IndexLookupMap(keyThreshold, valueThreshold);
 
             execService.submit(() -> {
-                String tableName = reverse ? config.getReverseIndexTableName() : config.getIndexTableName();
+                String tableName = reverse ? config.getReverseIndexTableName() : getTableName();
                 try (var scanner = config.getClient().createScanner(tableName, config.getAuthorizations().iterator().next())) {
                     String hintKey = getHintKey(tableName);
                     scanner.setExecutionHints(Map.of(tableName, hintKey));
@@ -72,6 +78,7 @@ public class UnfieldedRegexIndexLookup extends BaseRegexIndexLookup {
 
                         if (TimeoutExceptionIterator.exceededTimedValue(entry)) {
                             indexLookupMap.setTimeoutExceeded(true);
+                            indexLookupMap.clear(); // reset state so that ANYFIELD is marked NOFIELD
                             break;
                         }
 

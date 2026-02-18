@@ -152,6 +152,19 @@ public class RegexIndexExpansionVisitorIT extends BaseIndexExpansionTest {
     }
 
     @Test
+    public void testZeroTimeout() throws Exception {
+        write("bar", "FIELD_A");
+        write("bat", "FIELD_A");
+        write("baz", "FIELD_A");
+        String query = "FIELD_A =~ 'ba.*'";
+        // new index lookups treat zero timeout as 'don't even run the scan'
+        // String expected = "((_Value_ = true) && (FIELD_A =~ 'ba.*'))";
+        String expected = "FIELD_A == 'bar' || FIELD_A == 'bat' || FIELD_A == 'baz'";
+        config.setMaxIndexScanTimeMillis(0L);
+        driveExpansion(query, expected);
+    }
+
+    @Test
     public void testDataTypeNoMatches() throws Exception {
         write("bar", "FIELD_A", DEFAULT_DATE, "datatype-a");
         write("baz", "FIELD_A", DEFAULT_DATE, "datatype-b");

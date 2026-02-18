@@ -335,16 +335,33 @@ public class QueryMetricConsistencyTest extends QueryMetricTestBase {
         QueryMetric storedQueryMetric = (QueryMetric) createMetric();
         storedQueryMetric.addPageTime(10, 500, 500000, 500000);
         QueryMetric updatedQueryMetric = (QueryMetric) storedQueryMetric.duplicate();
+        storedQueryMetric.getPredictions().clear();
         updatedQueryMetric.addPageTime(100, 1000, 5000, 10000);
         updatedQueryMetric.setLifecycle(BaseQueryMetric.Lifecycle.CLOSED);
 
         BaseQueryMetric storedQueryMetricCopy = storedQueryMetric.duplicate();
         BaseQueryMetric updatedQueryMetricCopy = updatedQueryMetric.duplicate();
-        BaseQueryMetric combinedMetric = this.shardTableQueryMetricHandler.combineMetrics(storedQueryMetric, updatedQueryMetric, QueryMetricType.COMPLETE);
+
+        // Test that our specific updates took hold
+        BaseQueryMetric combinedMetric = this.shardTableQueryMetricHandler.combineMetrics(updatedQueryMetric, storedQueryMetric, QueryMetricType.COMPLETE);
         metricAssertEquals("metric should not change", storedQueryMetricCopy, storedQueryMetric);
-        metricAssertEquals("metric should not change", updatedQueryMetricCopy, updatedQueryMetricCopy);
+        metricAssertEquals("metric should not change", updatedQueryMetricCopy, updatedQueryMetric);
         assertEquals(BaseQueryMetric.Lifecycle.CLOSED, combinedMetric.getLifecycle());
         assertEquals(2, combinedMetric.getNumPages());
+        assertEquals(1, combinedMetric.getPredictions().size());
+
+        // Try the combination the other direction, should have the same results
+        BaseQueryMetric combinedMetric2 = this.shardTableQueryMetricHandler.combineMetrics(storedQueryMetric, updatedQueryMetric, QueryMetricType.COMPLETE);
+        metricAssertEquals("metric should not change", storedQueryMetricCopy, storedQueryMetric);
+        metricAssertEquals("metric should not change", updatedQueryMetricCopy, updatedQueryMetric);
+        assertEquals(BaseQueryMetric.Lifecycle.CLOSED, combinedMetric.getLifecycle());
+        metricAssertEquals("The combined metrics should be identical", combinedMetric, combinedMetric2);
+
+        // Check that no side effects happen when the same metric is added/combined
+        combinedMetric = this.shardTableQueryMetricHandler.combineMetrics(updatedQueryMetric, updatedQueryMetricCopy, QueryMetricType.COMPLETE);
+        metricAssertEquals("metric should not change", combinedMetric, updatedQueryMetric);
+        combinedMetric = this.shardTableQueryMetricHandler.combineMetrics(storedQueryMetric, storedQueryMetricCopy, QueryMetricType.COMPLETE);
+        metricAssertEquals("metric should not change", combinedMetric, storedQueryMetric);
     }
 
     @Test

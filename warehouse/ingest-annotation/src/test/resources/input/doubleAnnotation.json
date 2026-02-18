@@ -1,0 +1,198 @@
+{
+  "shard": "20160426_0",
+  "dataType": "annotation",
+  "uid": "2222.2222.-2222",
+  "documentId": "testDocumentId1",
+  "annotationType": "testAnnotationType",
+  "annotationId": "testAnnotationId",
+  "source": {
+    "analyticHash": "testAnalyticHash",
+    "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+    "engine": "testEngine",
+    "model": "6.7",
+    "configuration": {
+      "flagOne": true,
+      "flagTwo": true
+    },
+    "metadata": {
+      "visibility": "PUBLIC",
+      "created_date": "2016-04-26T01:00:53Z"
+    }
+  },
+  "metadata": {
+    "visibility": "PUBLIC",
+    "created_date": "2016-04-26T01:00:53Z"
+  },
+  "segments": [
+    {
+      "segmentHash": "testSegmentId1",
+      "values": [
+        {
+          "value": "test1a",
+          "score": -83737019.1792235
+        },
+        {
+          "value": "test1b",
+          "score": 47053589.7620008
+        },
+        {
+          "value": "test1c",
+          "score": 32235234.64713955
+        },
+        {
+          "value": "test1d",
+          "score": 77675558.93612546
+        },
+        {
+          "value": "test1e",
+          "score": 7012998.240006313
+        }
+      ],
+      "metadata": {
+      },
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [
+          {
+            "x": -78087840,
+            "y": 56815415,
+            "label": "testPointLabel1"
+          }
+        ]
+      }
+    },
+    {
+      "segmentHash": "testSegmentId2",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [
+          {
+            "label": "testPointLabel2a"
+          },
+          {
+            "label": "testPointLabel2b"
+          }
+        ]
+      }
+    },
+    {
+      "segmentHash": "testSegmentId3",
+      "values": [],
+      "metadata": {
+        "testMetadataKey3": "testMetadataValue3"
+      },
+      "boundary": {
+        "boundaryType": "POINTS"
+      }
+    },
+    {
+      "segmentHash": "testSegmentId3",
+      "values": [],
+      "metadata": {
+        "testMetadataKey4": "testMetadataValue4"
+      },
+      "boundary": {
+        "boundaryType": "POINTS"
+      }
+    }
+  ]
+}
+{
+  "shard": "20160426_0",
+  "dataType": "annotation",
+  "uid": "2222.2222.-2222",
+  "documentId": "testDocumentId2",
+  "annotationType": "testAnnotationType",
+  "annotationId": "testAnnotationId",
+  "metadata": {
+    "visibility": "PUBLIC",
+    "created_date": "2016-04-26T01:00:53Z"
+  },
+  "source": {
+    "analyticHash": "testAnalyticHash",
+    "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+    "engine": "testEngine",
+    "model": "6.7",
+    "configuration": {
+      "flagOne": true,
+      "flagTwo": true
+    },
+    "metadata": {
+      "visibility": "PUBLIC",
+      "created_date": "2016-04-26T01:00:53Z"
+    }
+  },
+  "segments": [
+    {
+      "segmentHash": "testSegmentId1",
+      "values": [
+        {
+          "value": "test1a",
+          "score": -83737019.1792235
+        },
+        {
+          "value": "test1b",
+          "score": 47053589.7620008
+        },
+        {
+          "value": "test1c",
+          "score": 32235234.64713955
+        },
+        {
+          "value": "test1d",
+          "score": 77675558.93612546
+        },
+        {
+          "value": "test1e",
+          "score": 7012998.240006313
+        }
+      ],
+      "metadata": {
+      },
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [
+          {
+            "x": -78087840,
+            "y": 56815415,
+            "label": "testPointLabel1"
+          }
+        ]
+      }
+    },
+    {
+      "segmentHash": "testSegmentId2",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [
+          {
+            "label": "testPointLabel2a"
+          },
+          {
+            "label": "testPointLabel2b"
+          }
+        ]
+      }
+    },
+    {
+      "segmentHash": "testSegmentId3",
+      "values": [],
+      "metadata": {
+        "testMetadataKey3": "testMetadataValue3"
+      },
+      "boundary": {
+        "boundaryType": "POINTS"
+      }
+    },
+    {
+      "segmentHash": "testSegmentId3",
+      "values": [],
+      "metadata": {
+        "testMetadataKey4": "testMetadataValue4"
+      },
+      "boundary": {
+        "boundaryType": "POINTS"
+      }
+    }
+  ]
+}

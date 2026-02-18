@@ -8,6 +8,7 @@ import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.TreeSet;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import org.apache.log4j.Logger;
@@ -34,6 +35,16 @@ public class GeoUtils {
      * Setting the precision too high is unnecessary, and will result in occasional computational errors within the JTS library.
      */
     static final GeometryFactory gf = new GeometryFactory(new PrecisionModel(1000000));
+
+    private static final ThreadLocal<NumberFormat> latLonToIndexFormat = ThreadLocal.withInitial(new NumberFormatInstanceSupplier());
+    private static final ThreadLocal<NumberFormat> positionToIndexFormat = ThreadLocal.withInitial(new NumberFormatInstanceSupplier());
+
+    private static class NumberFormatInstanceSupplier implements Supplier<NumberFormat> {
+        @Override
+        public NumberFormat get() {
+            return NumberFormat.getInstance();
+        }
+    }
 
     /**
      * This is a convenience class used when optimizing ranges..
@@ -265,7 +276,7 @@ public class GeoUtils {
         double latShift = latitude + 90.0;
         double lonShift = longitude + 180.0;
 
-        NumberFormat formatter = NumberFormat.getInstance();
+        NumberFormat formatter = latLonToIndexFormat.get();
         formatter.setMaximumIntegerDigits(3);
         formatter.setMinimumIntegerDigits(3);
         formatter.setMaximumFractionDigits(5);
@@ -302,7 +313,7 @@ public class GeoUtils {
      * @return a geo index
      */
     public static String positionToIndex(long position) {
-        NumberFormat formatter = NumberFormat.getInstance();
+        NumberFormat formatter = positionToIndexFormat.get();
         formatter.setMaximumIntegerDigits(16);
         formatter.setMinimumIntegerDigits(16);
         formatter.setGroupingUsed(false);
