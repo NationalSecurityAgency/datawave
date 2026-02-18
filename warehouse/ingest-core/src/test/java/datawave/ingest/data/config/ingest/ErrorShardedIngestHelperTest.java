@@ -6,6 +6,7 @@ import java.util.Set;
 
 import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import datawave.TestBaseIngestHelper;
@@ -16,6 +17,11 @@ import datawave.policy.IngestPolicyEnforcer;
 class ErrorShardedIngestHelperTest {
 
     private static final String DATA_TYPE_NAME = "error";
+
+    @BeforeEach
+    void setUp() {
+        TypeRegistry.reset();
+    }
 
     /*
      * SETH NOTE
@@ -62,11 +68,12 @@ class ErrorShardedIngestHelperTest {
         ErrorShardedIngestHelper errorHelper = new ErrorShardedIngestHelper();
         errorHelper.setup(config);
 
+        // With null activeDataType, falls through to super.isIndexedField() which checks error's own base index fields.
+        // No base error index fields are configured in this test, so nothing should be indexed.
         errorHelper.setActiveDataType(null);
         Assertions.assertFalse(errorHelper.isIndexedField("UNINDEXED_FIELD"));
-        Assertions.assertTrue(errorHelper.isIndexedField("XYZ_A")); // shouldn't this be true since it's an indexed field for xyz, and null results in the
-                                                                    // default isIndexedField()?
-        Assertions.assertFalse(errorHelper.isIndexedField("XYZ_ERROR_A")); // and this should be false since it's error.dt specific
+        Assertions.assertFalse(errorHelper.isIndexedField("XYZ_A")); // not in error's base index fields
+        Assertions.assertFalse(errorHelper.isIndexedField("XYZ_ERROR_A")); // not in error's base index fields
 
         errorHelper.setActiveDataType(TypeRegistry.getType("xyz"));
         Assertions.assertFalse(errorHelper.isIndexedField("UNINDEXED_FIELD"));
@@ -129,19 +136,22 @@ class ErrorShardedIngestHelperTest {
         errorHelper.setup(config);
 
         // --- NULL DATA TYPE ---
+        // With null activeDataType, falls through to super.isIndexedField() which checks error's own base index fields.
+        // Base error index fields are {GLOB_ERROR_A, GLOB_A} (from "error.data.category.index").
         errorHelper.setActiveDataType(null);
-        // dt HAS NOT been set, field IS NOT indexed
         Assertions.assertFalse(errorHelper.isIndexedField("UNINDEXED_FIELD"));
 
-        // The following should use the super.isIndexedField() method instead of the error-datatype specific one in ErrorShardedIngestHelper.
-
-        // dt HAS NOT been set, field IS indexed as normal indexed field
-        Assertions.assertTrue(errorHelper.isIndexedField("CSV_A"));
+        // CSV_A and JSON_A are indexed for their respective datatypes, but NOT in error's base index fields
+        Assertions.assertFalse(errorHelper.isIndexedField("CSV_A"));
         Assertions.assertFalse(errorHelper.isIndexedField("JSON_A"));
 
-        // dt HAS NOT been set, field IS NOT indexed as normal indexed field, only as error indexed field
+        // Error-datatype-specific fields are also not in error's base index fields
         Assertions.assertFalse(errorHelper.isIndexedField("CSV_ERROR_A"));
         Assertions.assertFalse(errorHelper.isIndexedField("JSON_ERROR_A"));
+
+        // Error's base index fields should be indexed
+        Assertions.assertTrue(errorHelper.isIndexedField("GLOB_A"));
+        Assertions.assertTrue(errorHelper.isIndexedField("GLOB_ERROR_A"));
 
         // --- CSV vs JSON DATA TYPE ---
         errorHelper.setActiveDataType(TypeRegistry.getType("csv"));

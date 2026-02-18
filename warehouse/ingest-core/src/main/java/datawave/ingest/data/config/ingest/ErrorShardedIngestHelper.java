@@ -71,9 +71,10 @@ public class ErrorShardedIngestHelper extends BaseIngestHelper {
 
         Map<Type,Map<String,String>> dataTypeSpecificProperties = getDataTypeSpecificProperties(config);
 
-        // if there were no datatype specific properties found
+        // if there were no datatype specific properties found, skip per-datatype error indexing
         if (dataTypeSpecificProperties.isEmpty()) {
-            throw new RuntimeException("No error data types found.");
+            log.warn("No per-datatype error index configurations found. Using base error index fields only.");
+            return;
         }
 
         Collection<Type> typesAbsentFromTypeRegistry = dataTypeSpecificProperties.keySet().stream().filter(t -> !TypeRegistry.getTypes().contains(t))
