@@ -21,7 +21,7 @@ class IvaratorConfigTest {
         conf1.setIvaratorNumRetries(3);
         conf1.setIvaratorPersistVerify(true);
         conf1.setIvaratorPersistVerifyCount(10);
-        conf1.setMaxIvaratorSources(1000L);
+        conf1.setMaxIvaratorSources(1000);
         conf1.setMaxIvaratorSourceWait(15000L);
         conf1.setMaxIvaratorResults(1000000L);
 
@@ -48,7 +48,7 @@ class IvaratorConfigTest {
         conf1.setIvaratorNumRetries(3);
         conf1.setIvaratorPersistVerify(true);
         conf1.setIvaratorPersistVerifyCount(10);
-        conf1.setMaxIvaratorSources(1000L);
+        conf1.setMaxIvaratorSources(1000);
         conf1.setMaxIvaratorSourceWait(15000L);
         conf1.setMaxIvaratorResults(1000000L);
 

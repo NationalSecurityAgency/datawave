@@ -44,7 +44,7 @@ public class IvaratorConfig implements Serializable {
     private int ivaratorNumRetries = 2;
     private boolean ivaratorPersistVerify = true;
     private int ivaratorPersistVerifyCount = 100;
-    private long maxIvaratorSources = 33;
+    private int maxIvaratorSources = 33;
     private long maxIvaratorSourceWait = 1000L * 60 * 30;
     private long maxIvaratorResults = -1;
 
@@ -175,11 +175,11 @@ public class IvaratorConfig implements Serializable {
         return this;
     }
 
-    public long getMaxIvaratorSources() {
+    public int getMaxIvaratorSources() {
         return maxIvaratorSources;
     }
 
-    public IvaratorConfig setMaxIvaratorSources(long maxIvaratorSources) {
+    public IvaratorConfig setMaxIvaratorSources(int maxIvaratorSources) {
         this.maxIvaratorSources = maxIvaratorSources;
         return this;
     }

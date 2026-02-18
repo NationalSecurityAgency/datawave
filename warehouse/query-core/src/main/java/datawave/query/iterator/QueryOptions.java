@@ -1122,6 +1122,30 @@ public class QueryOptions implements OptionDescriber {
         ivaratorConfig.setIvaratorNumRetries(ivaratorNumRetries);
     }
 
+    public boolean isIvaratorPersistVerify() {
+        return getIvaratorConfig().isIvaratorPersistVerify();
+    }
+
+    public void setIvaratorPersistVerify(boolean ivaratorPersistVerify) {
+        ivaratorConfig.setIvaratorPersistVerify(ivaratorPersistVerify);
+    }
+
+    public int getIvaratorPersistVerifyCount() {
+        return getIvaratorConfig().getIvaratorPersistVerifyCount();
+    }
+
+    public void setIvaratorPersistVerifyCount(int ivaratorPersistVerifyCount) {
+        ivaratorConfig.setIvaratorPersistVerifyCount(ivaratorPersistVerifyCount);
+    }
+
+    public String getIvaratorFstHdfsBaseURIs() {
+        return getIvaratorConfig().getIvaratorFstHdfsBaseURIs();
+    }
+
+    public void setIvaratorFstHdfsBaseURIs(String ivaratorFstHdfsBaseURIs) {
+        ivaratorConfig.setIvaratorFstHdfsBaseURIs(ivaratorFstHdfsBaseURIs);
+    }
+
     public FileSortedSet.PersistOptions getIvaratorPersistOptions() {
         return ivaratorPersistOptions;
     }
@@ -1131,7 +1155,7 @@ public class QueryOptions implements OptionDescriber {
     }
 
     public int getMaxIvaratorSources() {
-        return (int) ivaratorConfig.getMaxIvaratorSources();
+        return ivaratorConfig.getMaxIvaratorSources();
     }
 
     public void setMaxIvaratorSources(int maxIvaratorSources) {
