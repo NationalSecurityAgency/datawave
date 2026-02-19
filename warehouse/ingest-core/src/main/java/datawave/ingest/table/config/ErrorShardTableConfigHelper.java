@@ -76,6 +76,8 @@ public class ErrorShardTableConfigHelper extends ShardTableConfigHelper {
             this.tableType = ShardTableType.SHARD;
         } else if (tableName.equals(shardGidxTableName)) {
             this.tableType = ShardTableType.GIDX;
+        } else if (tableName.equals(shardBitsetIndexTableName)) {
+            this.tableType = ShardTableType.GLOBAL_BITSET_INDEX;
         } else if (tableName.equals(shardDayIndexTableName)) {
             this.tableType = ShardTableType.GLOBAL_DAY_INDEX;
         } else if (tableName.equals(shardYearIndexTableName)) {

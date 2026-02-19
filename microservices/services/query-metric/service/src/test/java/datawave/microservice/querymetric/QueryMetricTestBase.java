@@ -19,10 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.inject.Named;
-
 import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.accumulo.core.client.BatchDeleter;
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
@@ -32,8 +29,8 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.commons.lang.RandomStringUtils;
-import org.apache.commons.lang.time.DateUtils;
+import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.commons.lang3.time.DateUtils;
 import org.apache.hadoop.io.Text;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -112,7 +109,7 @@ public class QueryMetricTestBase {
     protected QueryMetricCombiner queryMetricCombiner;
 
     @Autowired
-    @Named("queryMetricCacheManager")
+    @Qualifier("queryMetricCacheManager")
     protected CacheManager cacheManager;
 
     @Autowired
