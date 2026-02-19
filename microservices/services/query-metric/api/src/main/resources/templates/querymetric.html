@@ -66,6 +66,15 @@
         }
     </script>
 
+    <div th:if="${#lists.isEmpty(metricList) and #lists.isEmpty(exceptionList)}">
+        <h3>Metric not found</h3>
+    </div>
+    <div th:if="${not #lists.isEmpty(exceptionList)}">
+        <h3>Error retrieving metric</h3>
+        <div th:each="exception,exceptionIter : ${exceptionList}">
+            <p th:text="${exception.message}"></p>
+        </div>
+    </div>
 
     <div th:each="metric,metricIter : ${metricList}">
         <h3 th:text="${metric.queryId}"/>
@@ -119,7 +128,7 @@
                 <td>Query Plan (<a th:onClick="|toggleVisibility('query-plan', ${metricIter.index + 1})|">hide</a>)</td>
                 <td th:id="'query-plan' + ${metricIter.index + 1}" style="white-space:pre-wrap; overflow-wrap:anywhere;"/>
             </tr>
-            <tr class="highlight"><td>Predictions</td><td th:text="${metric.predictionsStr}"></td></tr>
+            <tr class="highlight"><td>Predictions</td><td th:utext="${metric.predictionsStr}"></td></tr>
             <tr><td>Server</td><td th:text="${metric.host}"></td></tr>
             <tr class="highlight"><td>Elapsed Time</td><td th:text="${metric.elapsedTimeStr}"></td></tr>
             <tr><td>Lifecycle</td><td th:text="${metric.lifecycle}"></td></tr>

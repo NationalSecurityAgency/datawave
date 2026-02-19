@@ -9,6 +9,7 @@ import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.user.SummingCombiner;
+import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
 
@@ -19,6 +20,7 @@ import datawave.data.type.NumberType;
 import datawave.data.type.Type;
 import datawave.ingest.protobuf.Uid;
 import datawave.query.QueryTestTableHelper;
+import datawave.query.index.day.IndexIngestUtil;
 import datawave.util.TableName;
 
 public class GroupingFiltersIngest {
@@ -40,6 +42,10 @@ public class GroupingFiltersIngest {
     public static final String corleoneUID = UID.builder().newId("Corleone".getBytes(), (Date) null).toString();
     public static final String sopranoUID = UID.builder().newId("Soprano".getBytes(), (Date) null).toString();
     public static final String caponeUID = UID.builder().newId("Capone".getBytes(), (Date) null).toString();
+
+    private static final Authorizations auths = new Authorizations("ALL");
+
+    private static final IndexIngestUtil ingestUtil = new IndexIngestUtil();
 
     public static void writeItAll(AccumuloClient client, String range) throws Exception {
         writeItAll(client, Range.valueOf(range));
@@ -416,6 +422,7 @@ public class GroupingFiltersIngest {
             }
         }
 
+        ingestUtil.write(client, auths);
     }
 
     private static Value getValueForBuilderFor(String... in) {

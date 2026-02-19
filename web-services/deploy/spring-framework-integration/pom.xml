@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.webservices</groupId>
         <artifactId>datawave-ws-deploy-parent</artifactId>
-        <version>7.30.0-SNAPSHOT</version>
+        <version>7.35.0-SNAPSHOT</version>
     </parent>
     <artifactId>spring-framework-integration</artifactId>
     <packaging>pom</packaging>
@@ -81,12 +81,6 @@
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.webservices</groupId>
-            <artifactId>datawave-ws-map-reduce</artifactId>
-            <version>${project.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>gov.nsa.datawave.webservices</groupId>
             <artifactId>datawave-ws-query</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
@@ -100,6 +94,11 @@
         <dependency>
             <groupId>javax.enterprise</groupId>
             <artifactId>cdi-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j2-impl</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -156,6 +155,11 @@
         <dependency>
             <groupId>org.picketbox</groupId>
             <artifactId>picketbox</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

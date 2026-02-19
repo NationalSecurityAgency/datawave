@@ -228,7 +228,7 @@ public class ErrorShardedDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends Abstract
         record = record.copy();
 
         // set the event date to now enable keeping track of when this error occurred (determines date for shard)
-        record.setDate(System.currentTimeMillis());
+        record.setTimestamp(System.currentTimeMillis());
 
         // TODO: May want to check validity of record's security markings here and set defaults if necessary
 

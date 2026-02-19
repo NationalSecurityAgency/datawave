@@ -96,6 +96,10 @@ public class TagCloudEntry implements Comparable<TagCloudEntry> {
      */
     public static class Builder {
         final String keyword;
+
+        private Comparator<Double> scoreComparator;
+        private double defaultScore;
+
         final SortedSet<ScoreTuple> sourceScores = new TreeSet<>();
         TagCloudUtils utils = new DefaultTagCloudUtils();
 
@@ -108,12 +112,22 @@ public class TagCloudEntry implements Comparable<TagCloudEntry> {
             return this;
         }
 
-        public void addSourceScore(String source, double score, String language) {
-            sourceScores.add(new ScoreTuple(source, score, language));
+        public Builder withScoreComparator(Comparator<Double> scoreComparator) {
+            this.scoreComparator = scoreComparator;
+            return this;
+        }
+
+        public Builder withDefaultScore(double defaultScore) {
+            this.defaultScore = defaultScore;
+            return this;
+        }
+
+        public void addSourceScore(String source, double score) {
+            sourceScores.add(new ScoreTuple(source, score));
         }
 
         public TagCloudEntry build() {
-            final double score = utils.calculateScore(sourceScores);
+            final double score = utils.calculateScore(sourceScores, scoreComparator, defaultScore);
             final Set<String> sources = utils.calculateSources(sourceScores);
             final int frequency = utils.calculateFrequency(sourceScores);
             return new TagCloudEntry(keyword, score, frequency, sources);
@@ -124,16 +138,10 @@ public class TagCloudEntry implements Comparable<TagCloudEntry> {
     public static class ScoreTuple implements Comparable<ScoreTuple> {
         final String source;
         final double score;
-        final String language;
 
-        public ScoreTuple(String source, double score, String language) {
+        public ScoreTuple(String source, double score) {
             this.source = source;
             this.score = score;
-            this.language = language;
-        }
-
-        public String getLanguage() {
-            return language;
         }
 
         public double getScore() {
@@ -149,12 +157,12 @@ public class TagCloudEntry implements Comparable<TagCloudEntry> {
             if (o == null || getClass() != o.getClass())
                 return false;
             ScoreTuple that = (ScoreTuple) o;
-            return Double.compare(score, that.score) == 0 && Objects.equal(source, that.source) && Objects.equal(language, that.language);
+            return Double.compare(score, that.score) == 0 && Objects.equal(source, that.source);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hashCode(source, score, language);
+            return Objects.hashCode(source, score);
         }
 
         @Override
@@ -165,8 +173,7 @@ public class TagCloudEntry implements Comparable<TagCloudEntry> {
         //@formatter:off
         public static final Comparator<ScoreTuple> naturalOrder = nullsLast(Comparator
                 .comparingDouble(ScoreTuple::getScore)
-                .thenComparing(ScoreTuple::getSource)
-                .thenComparing(ScoreTuple::getLanguage));
+                .thenComparing(ScoreTuple::getSource));
         //@formatter:on
 
         public String toString() {
