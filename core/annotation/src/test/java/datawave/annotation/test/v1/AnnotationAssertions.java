@@ -53,6 +53,7 @@ public class AnnotationAssertions {
         assertEquals(t.getAnnotationType(), a.getAnnotationType());
         assertEquals(t.getAnnotationId(), a.getAnnotationId());
         assertEquals(t.getMetadataMap(), a.getMetadataMap());
+        assertEquals(t.getDocumentId(), a.getDocumentId());
         assertSegmentsEqual(t.getSegmentsList(), a.getSegmentsList());
     }
 

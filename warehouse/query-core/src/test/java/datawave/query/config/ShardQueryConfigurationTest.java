@@ -162,6 +162,8 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("maxIndexScanTimeMillis", 100000L);
         defaultValues.put("maxAnyFieldScanTimeMillis", Long.MAX_VALUE);
         updatedValues.put("maxAnyFieldScanTimeMillis", 100000L);
+        defaultValues.put("useNewIndexLookups", false);
+        updatedValues.put("useNewIndexLookups", true);
         defaultValues.put("parseTldUids", false);
         updatedValues.put("parseTldUids", true);
         defaultValues.put("ignoreNonExistentFields", false);

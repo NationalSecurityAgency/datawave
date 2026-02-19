@@ -1,9 +1,13 @@
 package datawave.query.transformer.annotation;
 
+import static datawave.query.QueryParameters.INCLUDE_GROUPING_CONTEXT;
+import static datawave.query.QueryParameters.RETURN_FIELDS;
+
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -11,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
@@ -21,14 +26,17 @@ import javax.annotation.Nullable;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.commons.jexl3.parser.ParseException;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.Sets;
 
 import datawave.annotation.data.v1.AnnotationDataAccess;
 import datawave.annotation.protobuf.v1.Annotation;
+import datawave.annotation.protobuf.v1.AnnotationSource;
 import datawave.annotation.protobuf.v1.Segment;
 import datawave.annotation.protobuf.v1.SegmentBoundary;
 import datawave.annotation.protobuf.v1.SegmentValue;
@@ -36,12 +44,16 @@ import datawave.data.normalizer.Normalizer;
 import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.Query;
 import datawave.query.attributes.Attribute;
+import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Content;
 import datawave.query.attributes.Document;
+import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.function.RemoveGroupingContext;
+import datawave.query.jexl.JexlASTHelper;
 import datawave.query.parser.JavaRegexAnalyzer;
 import datawave.query.transformer.DocumentTransform;
 import datawave.query.transformer.annotation.model.AllHits;
-import datawave.query.transformer.annotation.model.AllHitsError;
+import datawave.query.util.Tuple2;
 
 /**
  * This Transform will lookup and search annotations for hits as well as provide context
@@ -63,6 +75,12 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
     private static final SegmentValueByScoreComparator SEGMENT_VALUE_BY_SCORE_COMPARATOR = new SegmentValueByScoreComparator();
     private static final BoundaryComparator BOUNDARY_COMPARATOR = new BoundaryComparator();
 
+    /**
+     * Depending on how the query is configured to run by the user, adjustments may need to be made to forcibly enable grouping notation and return fields so
+     * that this transformer will have all the data necessary to fully enrichment responses. These changes will be made transparently to the user, and removed
+     * before the final Document is returned from the transformer. This is only necessary if enrichmentFieldMap is populated.
+     */
+    private final ShardQueryConfiguration shardQueryConfig;
     private final AnnotationDataAccess annotationDataAccess;
     private final AllHitsFactory allHitsFactory;
     private final int maxContextBoundary;
@@ -71,18 +89,27 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
     private final TermExtractor queryTermExtractor;
     private final Normalizer<String> termNormalizer;
     private final String jexlQueryString;
+    /**
+     * Used for merging data about an annotation that may have been stored in the event with hits against that annotation. The key represents the field that
+     * should be searched in the Document. The value is the name of the field to store in the AllHits dynamicFields when found. For each AllHits object that is
+     * generated, check the Document for the presence of these fields and add them to the AllHits response.
+     */
+    private final Map<String,String> enrichmentFieldMap;
 
     private boolean enabled = DEFAULT_ENABLED;
     private int contextSize = DEFAULT_CONTEXT_SIZE;
     private float minScore = DEFAULT_MIN_SCORE;
     private TimeUnit timeUnit = DEFAULT_TIMEUNIT;
+    private boolean forcedGroupingNotation = false;
+    private List<String> forcedReturnFields = new ArrayList<>();
 
     private Set<Pattern> searchHitTerms;
     private ObjectMapper objectMapper;
 
-    public AnnotationHitsTransformer(@Nullable String jexlQueryString, TermExtractor queryTermExtractor, Normalizer<String> termNormalizer,
-                    AnnotationDataAccess annotationDataAccess, AllHitsFactory allHitsFactory, int maxContextBoundary, Set<String> validTypes,
-                    String targetField) {
+    public AnnotationHitsTransformer(ShardQueryConfiguration shardQueryConfig, @Nullable String jexlQueryString, TermExtractor queryTermExtractor,
+                    Normalizer<String> termNormalizer, AnnotationDataAccess annotationDataAccess, AllHitsFactory allHitsFactory, int maxContextBoundary,
+                    Set<String> validTypes, String targetField, Map<String,String> enrichmentFieldMap) {
+        this.shardQueryConfig = shardQueryConfig;
         this.jexlQueryString = jexlQueryString;
         this.queryTermExtractor = queryTermExtractor;
         this.termNormalizer = termNormalizer;
@@ -91,6 +118,7 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
         this.maxContextBoundary = maxContextBoundary;
         this.validTypes = validTypes;
         this.targetField = targetField;
+        this.enrichmentFieldMap = enrichmentFieldMap;
     }
 
     @Override
@@ -165,6 +193,52 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
                 searchHitTerms.add(compileNormalized(termNormalizer.normalize(keyword)));
             }
         }
+
+        // test for changes that need to be made to the query to support field enrichment from the event
+        if (enrichmentFieldMap != null && !enrichmentFieldMap.isEmpty()) {
+            String groupingParameter = settings.findParameter(INCLUDE_GROUPING_CONTEXT).getParameterValue();
+            if ((!Boolean.parseBoolean(groupingParameter))) {
+                // grouping notation not set, apply it
+                shardQueryConfig.setIncludeGroupingContext(true);
+                // capture this, so it can be undone after the transform is complete
+                forcedGroupingNotation = true;
+            }
+
+            // now check that if return.fields are set that the fields required are included
+            String returnFieldsParameter = settings.findParameter(RETURN_FIELDS).getParameterValue();
+            if (returnFieldsParameter != null && !returnFieldsParameter.isBlank()) {
+                // parse the return fields to get the list of missing return fields
+                List<String> missingReturnFields = getMissingReturnFields(returnFieldsParameter);
+
+                if (!missingReturnFields.isEmpty()) {
+                    Set<String> updatedProjectFields = new HashSet<>(shardQueryConfig.getProjectFields());
+                    updatedProjectFields.addAll(missingReturnFields);
+                    shardQueryConfig.setProjectFields(updatedProjectFields);
+                    // capture this to undo what was forced into the query to satisfy the response after processing
+                    forcedReturnFields = missingReturnFields;
+                }
+            }
+        }
+    }
+
+    private List<String> getMissingReturnFields(String returnFieldsParameter) {
+        String[] returnFields = returnFieldsParameter.split(",");
+        // build a list of all the missing return fields that are in the enrichment map
+        List<String> missingReturnFields = new ArrayList<>();
+        for (String eventField : enrichmentFieldMap.keySet()) {
+            boolean found = false;
+            for (String returnField : returnFields) {
+                if (eventField.equals(returnField)) {
+                    found = true;
+                    break;
+                }
+            }
+
+            if (!found) {
+                missingReturnFields.add(eventField);
+            }
+        }
+        return missingReturnFields;
     }
 
     /**
@@ -243,18 +317,127 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
                     if (!orderedHits.isEmpty()) {
                         results = allHitsFactory.create(annotation.getAnnotationId(), orderedHits, sortedSegments, timeUnit);
                     }
+                    enrichAllHitsFromDocument(annotation, results, document);
                     updateDocument(keyDocumentEntry, results);
                 } catch (AllHitsException e) {
                     log.warn("failed to process hit(s) on annotation: " + annotation.getAnnotationId() + " for doc: " + dataType + "\\x00" + uid, e);
-                    AllHitsError error = new AllHitsError();
+                    AllHits error = new AllHits();
                     error.setAnnotationId(annotation.getAnnotationId());
-                    error.setErrorMessage(e.getMessage());
+                    error.addDynamicProperties("error", e.getMessage());
                     updateDocument(keyDocumentEntry, error);
+                } finally {
+                    // strip anything we forced into the Document to complete the query
+                    keyDocumentEntry = stripGroupingNotation(keyDocumentEntry);
+                    keyDocumentEntry = removeForcedFields(keyDocumentEntry);
                 }
             }
         }
 
         return keyDocumentEntry;
+    }
+
+    private Entry<Key,Document> removeForcedFields(Entry<Key,Document> entry) {
+        if (forcedReturnFields.isEmpty()) {
+            return entry;
+        }
+
+        Set<Tuple2<String,Attribute<? extends Comparable<?>>>> toRemove = Sets.newHashSet();
+        for (Entry<String,Attribute<? extends Comparable<?>>> attribute : entry.getValue().entrySet()) {
+            String fieldName = attribute.getKey();
+            String baseFieldName = JexlASTHelper.deconstructIdentifier(fieldName);
+            if (forcedReturnFields.contains(baseFieldName)) {
+                toRemove.add(new Tuple2<>(attribute.getKey(), attribute.getValue()));
+            }
+        }
+
+        // remove everyone with a grouping context
+        for (Tuple2<String,Attribute<? extends Comparable<?>>> goner : toRemove) {
+            entry.getValue().removeAll(goner.first());
+        }
+
+        return entry;
+    }
+
+    private Entry<Key,Document> stripGroupingNotation(Entry<Key,Document> entry) {
+        if (!forcedGroupingNotation) {
+            return entry;
+        }
+
+        RemoveGroupingContext removeGroupingContext = new RemoveGroupingContext();
+        return removeGroupingContext.apply(entry);
+    }
+
+    private void enrichAllHitsFromDocument(Annotation annotation, AllHits allHits, Document document) {
+        if (allHits == null || enrichmentFieldMap.isEmpty()) {
+            return;
+        }
+
+        // this operation may cause an accumulo lookup
+        Optional<AnnotationSource> optionalAnnotationSource = annotationDataAccess.getAnnotationSource(annotation.getAnalyticSourceHash());
+        if (optionalAnnotationSource.isEmpty()) {
+            log.info("could not enrich from event due to missing annotationSource for annotation:" + annotation.getAnnotationId() + " for doc:"
+                            + annotation.getShard() + " " + annotation.getDataType() + " " + annotation.getUid());
+            return;
+        }
+
+        // this hash will match the beginning of grouping notation generated for related fields in the event
+        String annotationSourceHash = optionalAnnotationSource.get().getAnalyticHash();
+
+        // since the document will be in grouping notation, there will not be an exact match on a field, iterate over the Document fields to find those that are
+        // candidates
+        for (String docField : document.getDictionary().keySet()) {
+            String baseFieldName = JexlASTHelper.deconstructIdentifier(docField, false);
+            if (!enrichmentFieldMap.containsKey(baseFieldName)) {
+                // the base name isn't in the enrichment field map skip to the next one
+                continue;
+            }
+
+            String[] groups = docField.split("\\.");
+            // all annotation fields will be in grouping notation of the form FIELD.annotationHash.segmentHash.valueHash
+            if (groups.length != 4) {
+                // doesn't match the required notation of the annotation enriched fields
+                continue;
+            }
+
+            // check the position of the analytic hash with the target value
+            if (!groups[1].equals(annotationSourceHash)) {
+                // doesn't match the annotation source hash from the annotation, not the target value
+                continue;
+            }
+
+            // get any pre-existing value in the map
+            String[] existingSplits = null;
+            String existing = allHits.getDynamicProperties().get(enrichmentFieldMap.get(baseFieldName));
+            if (existing != null && !existing.isBlank()) {
+                existingSplits = existing.split(";");
+            }
+
+            // extract the value for enrichment
+            Attribute<?> attr = document.get(docField);
+            List<String> values = new ArrayList<>();
+            if (existingSplits != null) {
+                values.addAll(Arrays.asList(existingSplits));
+            }
+            boolean updated = false;
+            if (attr instanceof Attributes) {
+                // multi-valued
+                Attributes attrs = (Attributes) attr;
+                Set<Attribute<? extends Comparable<?>>> attrSet = attrs.getAttributes();
+
+                for (Attribute<? extends Comparable<?>> value : attrSet) {
+                    values.add(String.valueOf(value.getData()));
+                }
+                updated = true;
+            } else if (attr != null) {
+                // single value
+                values.add(String.valueOf(attr.getData()));
+                updated = true;
+            }
+
+            if (updated) {
+                allHits.addDynamicProperties(enrichmentFieldMap.get(baseFieldName), StringUtils.join(values, ";"));
+            }
+        }
     }
 
     private void updateDocument(Entry<Key,Document> entry, @Nullable AllHits allHits) {

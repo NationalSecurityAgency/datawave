@@ -2,6 +2,8 @@ package datawave.query.jexl.visitors;
 
 import static org.junit.jupiter.api.Assertions.fail;
 
+import java.io.IOException;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -10,14 +12,19 @@ import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.MutationsRejectedException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.admin.TableOperations;
+import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
+import org.apache.accumulo.minicluster.MiniAccumuloCluster;
+import org.apache.accumulo.minicluster.MiniAccumuloConfig;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.ParseException;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.io.TempDir;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,11 +50,15 @@ public abstract class BaseIndexExpansionTest {
 
     private static final Logger log = LoggerFactory.getLogger(BaseIndexExpansionTest.class);
 
+    @TempDir
+    public static Path folder;
+
     protected static final String DEFAULT_DATE = "20250606";
     protected static final String DEFAULT_DATATYPE = "datatype";
     protected static final Value EMPTY_VALUE = new Value();
 
     private static final Authorizations AUTHS = new Authorizations("ALL");
+    private static final String PASSWORD = "PASSWORD";
 
     protected static AccumuloClient client;
     protected static TableOperations tops;
@@ -60,10 +71,23 @@ public abstract class BaseIndexExpansionTest {
     protected MockMetadataHelper helper;
     protected Map<String,IndexLookup> lookupMap;
 
+    private static final boolean useMAC = true;
+    private static MiniAccumuloCluster mac;
+
     @BeforeAll
     public static void setup() throws Exception {
-        InMemoryInstance instance = new InMemoryInstance();
-        client = new InMemoryAccumuloClient("root", instance);
+        if (useMAC) {
+            MiniAccumuloConfig cfg = new MiniAccumuloConfig(folder.toFile(), PASSWORD);
+            cfg.setNumTservers(1);
+            mac = new MiniAccumuloCluster(cfg);
+            mac.start();
+            client = mac.createAccumuloClient("root", new PasswordToken(PASSWORD));
+            client.securityOperations().changeUserAuthorizations("root", AUTHS);
+        } else {
+            InMemoryInstance instance = new InMemoryInstance();
+            client = new InMemoryAccumuloClient("root", instance);
+        }
+
         tops = client.tableOperations();
     }
 
@@ -84,6 +108,13 @@ public abstract class BaseIndexExpansionTest {
         scannerFactory = new ScannerFactory(client);
         helper = new MockMetadataHelper();
         lookupMap = new HashMap<>();
+    }
+
+    @AfterAll
+    public static void afterAll() throws IOException {
+        if (mac != null) {
+            mac.close();
+        }
     }
 
     /**
