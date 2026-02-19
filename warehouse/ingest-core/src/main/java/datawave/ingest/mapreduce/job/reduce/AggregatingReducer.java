@@ -95,7 +95,7 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
      */
     public void setup(Configuration conf) throws IOException, InterruptedException {
 
-        /**
+        /*
          * Grab the tables that do not require timestamp deduping, but require aggregating
          */
         tcu = new TableConfigurationUtil(conf);
@@ -106,7 +106,7 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
                 noTSDedupTables.add(new Text(table));
             }
         }
-        /**
+        /*
          * Grab tables that will be deduped by timestamp
          */
         tables = conf.getStrings(INGEST_VALUE_DEDUP_BY_TIMESTAMP_KEY);
@@ -147,7 +147,7 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
         // to a map of table => priority list of column=>class mappings. Users can just call the
         // method getAggregator with a key, and get back a list of aggregators that should be applied
         // to the corresponding value. The return list aggregators should be applied in order.
-        Set<String> tables = tcu.getJobOutputTableNames(conf);
+        Set<String> tables = TableConfigurationUtil.getJobOutputTableNames(conf);
         for (String table : tables) {
             Map<Integer,Map<String,String>> priorityOptions = tcu.getTableCombiners(table);
             if (priorityOptions != null) {

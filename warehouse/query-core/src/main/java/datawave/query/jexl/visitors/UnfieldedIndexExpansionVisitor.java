@@ -25,6 +25,7 @@ import com.google.common.base.Preconditions;
 
 import datawave.query.Constants;
 import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.EmptyUnfieldedTermExpansionException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
@@ -168,7 +169,11 @@ public class UnfieldedIndexExpansionVisitor extends RegexIndexExpansionVisitor {
     public Object visit(ASTERNode node, Object data) {
         String field = JexlASTHelper.getIdentifier(node);
         if (field.equals(Constants.ANY_FIELD)) {
-            return buildIndexLookup(node, true, negated, () -> createUnfieldedRegexIndexLookup(node));
+            if (config.isUseNewIndexLookups()) {
+                return buildIndexLookup(node, true, negated, () -> createUnfieldedRegexIndexLookup(node));
+            } else {
+                return buildIndexLookup(node, true, negated, () -> createLookup(node));
+            }
         }
         // in the future a single index expansion visitor could handle all cases
         return copy(node);
@@ -180,7 +185,11 @@ public class UnfieldedIndexExpansionVisitor extends RegexIndexExpansionVisitor {
         try {
             String field = JexlASTHelper.getIdentifier(node);
             if (field.equals(Constants.ANY_FIELD)) {
-                return buildIndexLookup(node, true, negated, () -> createUnfieldedRegexIndexLookup(node));
+                if (config.isUseNewIndexLookups()) {
+                    return buildIndexLookup(node, true, negated, () -> createUnfieldedRegexIndexLookup(node));
+                } else {
+                    return buildIndexLookup(node, true, negated, () -> createLookup(node));
+                }
             }
             // in the future a single index expansion visitor could handle all cases
             return copy(node);
@@ -289,6 +298,17 @@ public class UnfieldedIndexExpansionVisitor extends RegexIndexExpansionVisitor {
         }
 
         return new UnfieldedRegexIndexLookup(config, scannerFactory, executor, pattern, description.range, description.isForReverseIndex, expansionFields);
+    }
+
+    @Override
+    protected IndexLookup createLookup(JexlNode node) {
+        try {
+            // Using the datatype filter when expanding this term isn't really
+            // necessary
+            return ShardIndexQueryTableStaticMethods.expandQueryTerms(node, config, scannerFactory, expansionFields, helper, executor);
+        } catch (TableNotFoundException e) {
+            throw new DatawaveFatalQueryException(e);
+        }
     }
 
     /**
