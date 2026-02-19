@@ -100,8 +100,6 @@ public class KeywordUUIDChainStrategyTest extends EasyMockSupport {
 
         KeywordUUIDChainStrategy strategy = new KeywordUUIDChainStrategy();
 
-        mockLogic.setExternalData(List.of(), Set.of());
-
         replayAll();
 
         Iterator<Entry<Key,Value>> result = strategy.runChainedQuery(mockAccumulo, settings, null, input.iterator(), mockLogic);
@@ -129,7 +127,6 @@ public class KeywordUUIDChainStrategyTest extends EasyMockSupport {
         expect(mockLogic.initialize(eq(mockAccumulo), capture(intermediateSettings), eq(null))).andReturn(mockConfig).once();
         mockLogic.setupQuery(eq(mockConfig));
         expect(mockLogic.iterator()).andReturn(intermediateInput.iterator()).once();
-        mockLogic.setExternalData(List.of(), Set.of());
 
         replayAll();
 
@@ -182,7 +179,6 @@ public class KeywordUUIDChainStrategyTest extends EasyMockSupport {
         expect(mockLogic.initialize(eq(mockAccumulo), capture(intermediateSettings), eq(null))).andReturn(mockConfig).once();
         mockLogic.setupQuery(eq(mockConfig));
         expect(mockLogic.iterator()).andReturn(intermediateInput.iterator()).once();
-        mockLogic.setExternalData(List.of(), Set.of());
 
         replayAll();
 
@@ -248,7 +244,6 @@ public class KeywordUUIDChainStrategyTest extends EasyMockSupport {
         expect(mockLogic.initialize(eq(mockAccumulo), capture(intermediateSettings), eq(null))).andReturn(mockConfig).once();
         mockLogic.setupQuery(eq(mockConfig));
         expect(mockLogic.iterator()).andReturn(intermediateInput.iterator()).once();
-        mockLogic.setExternalData(List.of(), Set.of());
 
         replayAll();
 

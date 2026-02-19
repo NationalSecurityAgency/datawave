@@ -126,6 +126,15 @@ public class KeywordUUIDQueryFunctionalTest {
     }
 
     @Test
+    public void emptyQueryNoHitsExtractorTest() throws Exception {
+        withExtraParameter(CATEGORY_PARAMETER, "name");
+
+        withQuery("UUID:ABC");
+
+        test();
+    }
+
+    @Test
     public void extractorTest() throws Exception {
         // two clouds for gendered-age, subtype gender and subtype age. One cloud for name
         withExtraParameter(CATEGORY_PARAMETER, "gendered-age,name");
