@@ -10,8 +10,11 @@ import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.accumulo.minicluster.MiniAccumuloCluster;
+import org.apache.hadoop.io.Text;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import datawave.accumulo.inmemory.InMemoryTableOperations;
 
 /**
  * A collection of useful utilities for tests that rely on {@link MiniAccumuloCluster}.
@@ -57,6 +60,32 @@ public class MacTestUtil {
                 tops.delete(tableName);
             } catch (AccumuloException | AccumuloSecurityException | TableNotFoundException e) {
                 throw new RuntimeException("Failed to delete table: " + tableName, e);
+            }
+        }
+    }
+
+    /**
+     * Compact the given table
+     *
+     * @param tops
+     *            the {@link TableOperations}
+     * @param tableName
+     *            the table to compact
+     */
+    public static void compactTable(TableOperations tops, String tableName) {
+        if (tops instanceof InMemoryTableOperations) {
+            log.warn("cannot compact {} via InMemoryTableOperations", tableName);
+            return;
+        }
+
+        if (tops.exists(tableName)) {
+            try {
+                Text start = new Text("");
+                Text end = new Text("~");
+                tops.compact(tableName, start, end, true, true);
+                log.info("compacted table: {}", tableName);
+            } catch (TableNotFoundException | AccumuloException | AccumuloSecurityException e) {
+                throw new RuntimeException(e);
             }
         }
     }

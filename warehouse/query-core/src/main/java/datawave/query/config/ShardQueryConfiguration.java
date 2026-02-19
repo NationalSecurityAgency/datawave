@@ -104,6 +104,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private boolean allTermsIndexOnly;
     private long maxIndexScanTimeMillis = Long.MAX_VALUE;
     private long maxAnyFieldScanTimeMillis = Long.MAX_VALUE;
+    private boolean useNewIndexLookups = false;
 
     // Allows this query to parse the root uids from TLD uids found in the global shard index. This effectively ignores hits in child documents.
     private boolean parseTldUids = false;
@@ -628,6 +629,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setAllTermsIndexOnly(other.isAllTermsIndexOnly());
         this.setMaxIndexScanTimeMillis(other.getMaxIndexScanTimeMillis());
         this.setMaxAnyFieldScanTimeMillis(other.getMaxAnyFieldScanTimeMillis());
+        this.setUseNewIndexLookups(other.isUseNewIndexLookups());
         this.setCollapseUids(other.getCollapseUids());
         this.setCollapseUidsThreshold(other.getCollapseUidsThreshold());
         this.setEnforceUniqueTermsWithinExpressions(other.getEnforceUniqueTermsWithinExpressions());
@@ -3223,6 +3225,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 isUseQueryTreeScanHintRules() == that.isUseQueryTreeScanHintRules() &&
                 getMaxLinesToPrint() == that.getMaxLinesToPrint() &&
                 getMaxAnyFieldScanTimeMillis() == that.getMaxAnyFieldScanTimeMillis() &&
+                isUseNewIndexLookups() == that.isUseNewIndexLookups() &&
                 isDisableIteratorUniqueFields() == that.isDisableIteratorUniqueFields() &&
                 isUseShardedIndex() == that.isUseShardedIndex() &&
                 getDayIndexThreshold() == that.getDayIndexThreshold() &&
@@ -3460,6 +3463,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 isUseQueryTreeScanHintRules(),
                 getMaxLinesToPrint(),
                 getMaxAnyFieldScanTimeMillis(),
+                isUseNewIndexLookups(),
                 isDisableIteratorUniqueFields(),
                 isUseShardedIndex(),
                 getDayIndexThreshold(),
@@ -3604,5 +3608,13 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public void setOriginalJexlQuery(String originalJexlQuery) {
         this.originalJexlQuery = originalJexlQuery;
+    }
+
+    public boolean isUseNewIndexLookups() {
+        return useNewIndexLookups;
+    }
+
+    public void setUseNewIndexLookups(boolean useNewIndexLookups) {
+        this.useNewIndexLookups = useNewIndexLookups;
     }
 }

@@ -3,7 +3,8 @@ package datawave.microservice.query.executor.action;
 import java.util.Date;
 
 import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.cloud.bus.event.RemoteQueryRequestEvent;
 
 import datawave.core.common.connection.AccumuloConnectionFactory;
@@ -23,7 +24,7 @@ import datawave.microservice.querymetric.QueryMetricType;
 import datawave.webservice.common.connection.WrappedAccumuloClient;
 
 public class CreateTask extends ExecutorTask {
-    private static final Logger log = Logger.getLogger(CreateTask.class);
+    private static final Logger log = LoggerFactory.getLogger(CreateTask.class);
 
     private final String originService;
     private volatile boolean originNotified = false;
