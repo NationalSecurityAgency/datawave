@@ -1,20 +1,8 @@
 name: Main Repo Tests
 
 on:
-  push:
-    paths-ignore: ['**/*.md', '.github/**', 'CODEOWNERS', 'LICENSE', 'microservices/**']
-    branches:
-    - 'integration'
-    - 'release/version*'
-  pull_request:
-    paths-ignore: ['**/*.md', '.github/**', 'CODEOWNERS', 'LICENSE', 'microservices/**']
-  merge_group:
-  workflow_dispatch:
+  workflow_call:
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
-  
 env:
   JAVA_VERSION: '11'
   JAVA_DISTRIBUTION: 'zulu' #This is the default on v1 of the action for 1.8
@@ -47,11 +35,6 @@ jobs:
     outputs:
       runner:  ${{ steps.set_output_step.outputs.runner }}
       cache_settings:  ${{ steps.set_output_step.outputs.cache_settings }}
-  build-and-test-microservices:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Passing build
-      run: echo "This build executes solely so we can set branch protections on integration to look for build-and-test-microservices"
   build-and-test-main:
     needs: configure-runner
     runs-on: ${{ needs.configure-runner.outputs.runner }}

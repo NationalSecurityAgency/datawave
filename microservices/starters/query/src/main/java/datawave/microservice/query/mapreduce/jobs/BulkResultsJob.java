@@ -16,8 +16,6 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import javax.ws.rs.WebApplicationException;
-
 import org.apache.accumulo.core.client.Accumulo;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriterConfig;
@@ -194,8 +192,8 @@ public class BulkResultsJob extends MapReduceJob {
                 AccumuloOutputFormat.configure().clientProperties(clientProps).createTables(true).defaultTable(tableName).store(job);
                 // formatter:on
             }
-        } catch (WebApplicationException wex) {
-            throw wex;
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
             log.error("Error starting job", e);
             throw new QueryException(DatawaveErrorCode.JOB_STARTING_ERROR, e);

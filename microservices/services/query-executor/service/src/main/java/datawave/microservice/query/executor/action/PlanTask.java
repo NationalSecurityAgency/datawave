@@ -4,7 +4,8 @@ import static datawave.microservice.query.QueryParameters.QUERY_PLAN_EXPAND_FIEL
 import static datawave.microservice.query.QueryParameters.QUERY_PLAN_EXPAND_VALUES;
 
 import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.cloud.bus.event.RemoteQueryRequestEvent;
 
 import datawave.core.common.connection.AccumuloConnectionFactory;
@@ -18,7 +19,7 @@ import datawave.microservice.query.storage.QueryTask;
 import datawave.microservice.query.storage.TaskKey;
 
 public class PlanTask extends ExecutorTask {
-    private static final Logger log = Logger.getLogger(PlanTask.class);
+    private static final Logger log = LoggerFactory.getLogger(PlanTask.class);
 
     private final String originService;
 

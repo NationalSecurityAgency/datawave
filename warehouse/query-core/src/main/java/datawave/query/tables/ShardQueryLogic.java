@@ -837,6 +837,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
                 // since this may be called multiple times always rebuild
                 // @formatter:off
                 ((DocumentTransformer) this.transformerInstance).addTransform(new AnnotationHitsTransformer(
+                        getConfig(),
                         getConfig().getOriginalJexlQuery(),
                         allHitsQueryConfig.getQueryTermExtractor(),
                         allHitsQueryConfig.getTermNormalizer(),
@@ -844,7 +845,8 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
                         getAnnotationHitsFactory(),
                         allHitsQueryConfig.getMaxContextLength(),
                         allHitsQueryConfig.getValidAnnotationTypes(),
-                        allHitsQueryConfig.getTargetField()));
+                        allHitsQueryConfig.getTargetField(),
+                        allHitsQueryConfig.getAnnotationEnrichmentFieldMap()));
                 // @formatter:on
             }
 
@@ -2958,6 +2960,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
     public void setMaxAnyFieldScanTimeMillis(long maxAnyFieldScanTimeMillis) {
         getConfig().setMaxAnyFieldScanTimeMillis(maxAnyFieldScanTimeMillis);
+    }
+
+    public boolean isUseNewIndexLookups() {
+        return getConfig().isUseNewIndexLookups();
+    }
+
+    public void setUseNewIndexLookups(boolean useNewIndexLookups) {
+        getConfig().setUseNewIndexLookups(useNewIndexLookups);
     }
 
     public Function getQueryMacroFunction() {
