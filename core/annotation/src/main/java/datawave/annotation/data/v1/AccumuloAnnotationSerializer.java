@@ -166,7 +166,7 @@ public class AccumuloAnnotationSerializer implements AnnotationSerializer<Iterat
                     if (cqParts.length != 3) {
                         throw new AnnotationSerializationException("Document id column qualifier in key didn't have 3 parts, key: '" + key + "'");
                     }
-                    annotationBuilder.setAnnotationId(cqParts[2]);
+                    annotationBuilder.setDocumentId(cqParts[2]);
                     break;
                 default:
                     throw new AnnotationSerializationException("Column qualifier did not have a valid type, key: '" + key + "'");
