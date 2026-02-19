@@ -375,6 +375,7 @@ doc.beans.BaseEventQuery.eventQueryDataDecoratorTransformer: EventQueryDataDecor
 doc.beans.BaseEventQuery.filterOptions: BaseEventQueryFilterOptions
 doc.beans.BaseEventQuery.hierarchyFieldOptions: BaseEventQueryHierarchyFieldOptions
 doc.beans.BaseEventQuery.ivaratorCacheDirConfigs: IvaratorCacheDirConfigs
+doc.beans.BaseEventQuery.localIvaratorCacheDirConfigs: LocalIvaratorCacheDirConfigs
 doc.beans.BaseEventQuery.metadataHelperFactory: metadataHelperFactory
 doc.beans.BaseEventQuery.queryPlanner: DefaultQueryPlanner
 doc.beans.BaseEventQuery.selectorExtractor: DatawaveSelectorExtractor
