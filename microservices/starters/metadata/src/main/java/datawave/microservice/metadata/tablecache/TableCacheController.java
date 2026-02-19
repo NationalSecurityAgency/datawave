@@ -1,6 +1,7 @@
 package datawave.microservice.metadata.tablecache;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.annotation.Secured;
@@ -24,7 +25,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @RequestMapping(path = "/v1/AccumuloTableCache", produces = MediaType.APPLICATION_JSON_VALUE)
 @ConditionalOnProperty(name = "datawave.table.cache.enabled", havingValue = "true", matchIfMissing = true)
 public class TableCacheController {
-    private final Logger log = Logger.getLogger(TableCacheController.class);
+    private final Logger log = LoggerFactory.getLogger(getClass());
     private final TableCacheReloadService service;
 
     public TableCacheController(TableCacheReloadService service) {

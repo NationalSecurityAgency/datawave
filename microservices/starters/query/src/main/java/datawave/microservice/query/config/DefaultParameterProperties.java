@@ -1,7 +1,7 @@
 package datawave.microservice.query.config;
 
-import javax.annotation.Nonnegative;
 import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.PositiveOrZero;
 
 import org.springframework.validation.annotation.Validated;
 
@@ -9,7 +9,7 @@ import org.springframework.validation.annotation.Validated;
 public class DefaultParameterProperties {
     @NotEmpty
     private String pool = "unassigned";
-    @Nonnegative
+    @PositiveOrZero
     private int maxConcurrentTasks = 8;
 
     public String getPool() {
