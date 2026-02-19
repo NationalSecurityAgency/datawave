@@ -398,7 +398,7 @@ public class DatawaveInterpreter extends Interpreter {
                                                 rightInclusive);
                             }
                         }
-                        addHits(fieldValue);
+                        addHits(evaluation);
                     }
                 }
             }
