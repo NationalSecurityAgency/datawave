@@ -77,7 +77,7 @@ public class StatefulKeywordUUIDChainStrategy extends FullChainStrategy<Entry<Ke
             log.debug("latter query is " + queryString);
         }
 
-        // as long as there are extractors it is okay for an empty query string, if neither there is nothing to do
+        // if there was no extracted data and no query there is nothing to do
         if (!addedExtractedData && StringUtils.isBlank(queryString)) {
             return null;
         }
@@ -153,7 +153,7 @@ public class StatefulKeywordUUIDChainStrategy extends FullChainStrategy<Entry<Ke
                 TagCloudInputTransformer<TagCloudPartition> transformer = extractor.getInputTransformer();
                 transformers.add(transformer);
                 TagCloudPartition partition = extractor.get();
-                if (partition != null) {
+                if (partition != null && !partition.getInputs().isEmpty()) {
                     Entry<Key,Value> transformed = transformer.encode(partition);
 
                     encodedData.add(transformed);
