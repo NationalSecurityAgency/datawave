@@ -85,6 +85,8 @@ public class ShapesTest extends AbstractQueryTest {
 
     private static final Logger log = LoggerFactory.getLogger(ShapesTest.class);
 
+    private static final Authorizations auths = new Authorizations("ALL");
+
     @TempDir
     public static Path folder;
 
@@ -99,6 +101,11 @@ public class ShapesTest extends AbstractQueryTest {
     @Override
     public ShardQueryLogic getLogic() {
         return logic;
+    }
+
+    @Override
+    public Authorizations getAuths() {
+        return auths;
     }
 
     protected static final String PASSWORD = "password";

@@ -108,7 +108,7 @@ jobs:
     steps:
     - name: Report skipped
       if: needs.check-changes.outputs.should_run_main == 'false'
-      run: echo "✓ Skipped - only documentation files changed"
+      run: echo "✓ Skipped - no main code changes"
     
     - name: Report result
       if: needs.check-changes.outputs.should_run_main == 'true'

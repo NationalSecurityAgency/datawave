@@ -154,6 +154,12 @@
         </property>
     </bean>
 
+    <!-- used by the IndexExpansionQueryTest -->
+    <bean id="EventQueryNoRules" scope="prototype"  parent="EventQuery">
+        <property name="logicDescription" value="Event query with no pushdown rules" />
+        <property name="queryPlanner" ref="DefaultQueryPlannerNoRules" />
+    </bean>
+
     <bean id="EventQuery" scope="prototype"  parent="BaseEventQuery">
         <property name="logicDescription" value="Event query" />
         <property name="configuredProfiles" >
@@ -572,6 +578,12 @@
 
     <bean id="DefaultQueryPlanner" scope="prototype" class="datawave.query.planner.DefaultQueryPlanner" >
         <property name="transformRules" ref="transformRuleList" />
+        <property name="visitorManager" ref="TimedVisitorManager"/>
+    </bean>
+
+    <!-- used by the IndexExpansionQueryTest -->
+    <bean id="DefaultQueryPlannerNoRules" scope="prototype" class="datawave.query.planner.DefaultQueryPlanner" >
+        <!--        <property name="transformRules" ref="transformRuleList" />-->
         <property name="visitorManager" ref="TimedVisitorManager"/>
     </bean>
 

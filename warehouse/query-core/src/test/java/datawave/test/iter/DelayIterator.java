@@ -99,6 +99,7 @@ public class DelayIterator implements SortedKeyValueIterator<Key,Value>, OptionD
     public SortedKeyValueIterator<Key,Value> deepCopy(IteratorEnvironment env) {
         DelayIterator copy = new DelayIterator();
         copy.source = source.deepCopy(env);
+        copy.delay = delay;
         return copy;
     }
 
