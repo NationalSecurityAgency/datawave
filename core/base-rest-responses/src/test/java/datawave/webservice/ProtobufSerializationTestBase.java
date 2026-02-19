@@ -3,8 +3,6 @@ package datawave.webservice;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.powermock.api.support.membermodification.MemberMatcher.field;
-import static org.powermock.api.support.membermodification.MemberMatcher.fields;
 
 import java.lang.reflect.Field;
 import java.util.Arrays;
@@ -24,7 +22,7 @@ public class ProtobufSerializationTestBase {
     }
 
     protected <T extends Message<T>> void testFieldNames(String[] fieldNames, Class<T> clazz) {
-        Field[] fields = fields(clazz);
+        Field[] fields = clazz.getDeclaredFields();
         assertEquals("The number of fields in " + clazz.getName() + " has changed.  Please update " + getClass().getName() + ".", fieldNames.length,
                         fields.length);
 
@@ -43,12 +41,18 @@ public class ProtobufSerializationTestBase {
         assertEquals(fieldNames.length, fieldValues.length);
 
         T original = clazz.getDeclaredConstructor().newInstance();
-        for (int i = 0; i < fieldNames.length; ++i)
-            field(clazz, fieldNames[i]).set(original, fieldValues[i]);
+        for (int i = 0; i < fieldNames.length; ++i) {
+            Field field = clazz.getDeclaredField(fieldNames[i]);
+            field.setAccessible(true);
+            field.set(original, fieldValues[i]);
+        }
 
         T reconstructed = roundTrip(original);
-        for (int i = 0; i < fieldNames.length; ++i)
-            assertEquals(fieldValues[i], field(clazz, fieldNames[i]).get(reconstructed));
+        for (int i = 0; i < fieldNames.length; ++i) {
+            Field field = clazz.getDeclaredField(fieldNames[i]);
+            field.setAccessible(true);
+            assertEquals(fieldValues[i], field.get(reconstructed));
+        }
     }
 
     protected <T extends Message<T>> T roundTrip(T message) {
