@@ -82,9 +82,6 @@ public abstract class AbstractQueryTest {
 
     private static final Logger log = LoggerFactory.getLogger(AbstractQueryTest.class);
 
-    protected static Authorizations auths = new Authorizations("ALL");
-    protected static Set<Authorizations> authSet = Collections.singleton(auths);
-
     protected final DateFormat format = new SimpleDateFormat("yyyyMMdd");
     protected final KryoDocumentDeserializer deserializer = new KryoDocumentDeserializer();
 
@@ -107,6 +104,13 @@ public abstract class AbstractQueryTest {
     private boolean queryPlanAssertionEnabled = true;
 
     public abstract ShardQueryLogic getLogic();
+
+    /**
+     * Authorizations may be different depending on the test
+     *
+     * @return some auths
+     */
+    public abstract Authorizations getAuths();
 
     @AfterEach
     public void afterEach() {
@@ -384,7 +388,7 @@ public abstract class AbstractQueryTest {
             settings.setBeginDate(getStartDate());
             settings.setEndDate(getEndDate());
             settings.setPagesize(Integer.MAX_VALUE);
-            settings.setQueryAuthorizations(auths.serialize());
+            settings.setQueryAuthorizations(getAuths().serialize());
             settings.setQuery(getQuery());
             settings.setParameters(parameters);
             settings.setId(UUID.randomUUID());
@@ -394,7 +398,7 @@ public abstract class AbstractQueryTest {
 
             extraConfigurations();
 
-            GenericQueryConfiguration config = logic.initialize(clientForTest, settings, authSet);
+            GenericQueryConfiguration config = logic.initialize(clientForTest, settings, Collections.singleton(getAuths()));
             logic.setupQuery(config);
         } catch (Exception e) {
             log.info("exception while planning query", e);

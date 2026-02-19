@@ -13,6 +13,7 @@ import java.util.Set;
 import java.util.TimeZone;
 
 import org.apache.accumulo.core.client.AccumuloClient;
+import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -54,6 +55,8 @@ public class CompositeFunctionsTest extends AbstractQueryTest {
 
     @TempDir
     public static Path folder;
+
+    private static final Authorizations auths = new Authorizations("ALL");
 
     protected static AccumuloClient client = null;
 
@@ -104,6 +107,11 @@ public class CompositeFunctionsTest extends AbstractQueryTest {
     @Override
     public ShardQueryLogic getLogic() {
         return eventQueryLogic;
+    }
+
+    @Override
+    public Authorizations getAuths() {
+        return auths;
     }
 
     @Override

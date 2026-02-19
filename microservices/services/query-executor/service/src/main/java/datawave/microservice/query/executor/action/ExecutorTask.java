@@ -9,7 +9,8 @@ import java.util.UUID;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.cloud.bus.BusProperties;
 import org.springframework.cloud.bus.event.RemoteQueryRequestEvent;
 import org.springframework.context.ApplicationEventPublisher;
@@ -46,7 +47,7 @@ import datawave.webservice.query.exception.QueryException;
 
 public abstract class ExecutorTask implements Runnable {
 
-    private static final Logger log = Logger.getLogger(ExecutorTask.class);
+    private static final Logger log = LoggerFactory.getLogger(ExecutorTask.class);
 
     protected final QueryExecutor source;
     protected final AccumuloConnectionRequestMap connectionMap;
