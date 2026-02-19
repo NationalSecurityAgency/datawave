@@ -327,4 +327,19 @@ public class MultiNormalizerTest extends AbstractQueryTest {
             ((DefaultQueryPlanner) logic.getQueryPlanner()).setDisableBoundedLookup(false);
         }
     }
+
+    @Test
+    public void testDatawaveInterpreterAndHitListArithmeticWithMultiNormalizedRange() throws Exception {
+        try {
+            ((DefaultQueryPlanner) logic.getQueryPlanner()).setDisableBoundedLookup(true);
+            givenDate("20250709");
+            givenQuery("COLOR == 'blue' && ((_Bounded_ = true) && (SIZE >= '3' && SIZE <= '8'))");
+            expectPlan("COLOR == 'blue' && (((_Bounded_ = true) && (SIZE >= '+aE3' && SIZE <= '+aE8')) || ((_Bounded_ = true) && (SIZE >= '3' && SIZE <= '8')))");
+            expectResultCount(1);
+            expectHitTermsRequiredAllOf("COLOR:blue", "SIZE:5", "SIZE:7");
+            planAndExecuteQuery(); // HIT_TERM SIZE:0 used to be returned, despite not matching either range
+        } finally {
+            ((DefaultQueryPlanner) logic.getQueryPlanner()).setDisableBoundedLookup(false);
+        }
+    }
 }
