@@ -344,6 +344,24 @@ public class ShardedDataTypeHandlerTest {
     }
 
     @Test
+    public void testSimpleForwardIndexWithBitsetIndex() {
+        RawRecordContainer record = createRawRecordContainer();
+        Value value = createValueWithUid();
+        try {
+            enableBitsetIndex();
+            Multimap<BulkIngestKey,Value> values = handler.createTermIndexColumn(record, "FIELD", "value", visibility, null, null, shardId,
+                            handler.getShardIndexTableName(), value, Direction.FORWARD);
+
+            assertEquals(2, values.size());
+            assertBulkIngestKey(values, createExpectedBulkIngestKey(), createValueWithUid());
+            assertBulkIngestKey(values, createExpectedBulkIngestKeyForBitsetIndex(), createBitsetIndexValue());
+            assertTrue(values.isEmpty());
+        } finally {
+            disableBitsetIndex();
+        }
+    }
+
+    @Test
     public void testSimpleForwardIndexWithDayIndex() {
         RawRecordContainer record = createRawRecordContainer();
         Value value = createValueWithUid();
@@ -412,6 +430,26 @@ public class ShardedDataTypeHandlerTest {
         assertBulkIngestKey(values, createExpectedBulkIngestKey(), createValueWithUid());
         assertBulkIngestKey(values, createExpectedBulkIngestKeyMasked(), createValueWithUid());
         assertTrue(values.isEmpty());
+    }
+
+    @Test
+    public void testMaskedSimpleForwardIndexWithBitsetIndex() {
+        RawRecordContainer record = createRawRecordContainer();
+        Value value = createValueWithUid();
+        try {
+            enableBitsetIndex();
+            Multimap<BulkIngestKey,Value> values = handler.createTermIndexColumn(record, "FIELD", "value", visibility, maskedVisibility, maskedFieldHelper,
+                            shardId, handler.getShardIndexTableName(), value, Direction.FORWARD);
+
+            assertEquals(4, values.size());
+            assertBulkIngestKey(values, createExpectedBulkIngestKey(), createValueWithUid());
+            assertBulkIngestKey(values, createExpectedBulkIngestKeyMasked(), createValueWithUid());
+            assertBulkIngestKey(values, createExpectedBulkIngestKeyForBitsetIndex(), createBitsetIndexValue());
+            assertBulkIngestKey(values, createExpectedBulkIngestKeyForBitsetIndexMasked(), createBitsetIndexValue());
+            assertTrue(values.isEmpty());
+        } finally {
+            disableBitsetIndex();
+        }
     }
 
     @Test
@@ -492,6 +530,11 @@ public class ShardedDataTypeHandlerTest {
     }
 
     @Test
+    public void testSimpleReverseIndexWithBitsetIndex() {
+
+    }
+
+    @Test
     public void testSimpleReverseIndexWithDayIndex() {
 
     }
@@ -512,6 +555,11 @@ public class ShardedDataTypeHandlerTest {
     }
 
     @Test
+    public void testMaskedSimpleReverseIndexWithBitsetIndex() {
+
+    }
+
+    @Test
     public void testMaskedSimpleReverseIndexWithDayIndex() {
 
     }
@@ -526,6 +574,26 @@ public class ShardedDataTypeHandlerTest {
         // there is no 'overkill', only 'open fire' and 'reload'
     }
 
+    @Test
+    public void testDisableStandardIndexInFavorOfBitsetIndex() {
+        RawRecordContainer record = createRawRecordContainer();
+        Value value = createValueWithUid();
+        try {
+            disableStandardIndex();
+            enableBitsetIndex();
+
+            Multimap<BulkIngestKey,Value> values = handler.createTermIndexColumn(record, "FIELD", "value", visibility, null, null, shardId,
+                            handler.getShardIndexTableName(), value, Direction.FORWARD);
+
+            assertEquals(1, values.size());
+            assertBulkIngestKey(values, createExpectedBulkIngestKeyForBitsetIndex(), createBitsetIndexValue());
+            assertTrue(values.isEmpty());
+        } finally {
+            enableStandardIndex();
+            disableBitsetIndex();
+        }
+    }
+
     private RawRecordContainer createRawRecordContainer() {
         RawRecordContainer record = new RawRecordContainerImpl();
         record.setDataType(createType());
@@ -535,6 +603,26 @@ public class ShardedDataTypeHandlerTest {
         // time stamp is hard coded so the test framework can reliably remove keys with timestamps
         record.setTimestamp(getTimestamp());
         return record;
+    }
+
+    private void enableStandardIndex() {
+        handler.setShardIndexEnabled(true);
+        handler.setShardIndexTableName(new Text(TableName.SHARD_INDEX));
+    }
+
+    private void disableStandardIndex() {
+        handler.setShardIndexEnabled(false);
+        handler.setShardIndexTableName(null);
+    }
+
+    private void enableBitsetIndex() {
+        handler.setBitsetIndexEnabled(true);
+        handler.setShardBitsetIndexTableName(new Text(TableName.TRUNCATED_SHARD_INDEX));
+    }
+
+    private void disableBitsetIndex() {
+        handler.setBitsetIndexEnabled(false);
+        handler.setShardBitsetIndexTableName(null);
     }
 
     private void enableDayIndex() {
@@ -580,6 +668,16 @@ public class ShardedDataTypeHandlerTest {
         return new BulkIngestKey(new Text("shardReverseIndex"), key);
     }
 
+    private BulkIngestKey createExpectedBulkIngestKeyForBitsetIndex() {
+        Key key = new Key("value", "FIELD", "20250606\0wkt", "PUBLIC", getTimestamp());
+        return new BulkIngestKey(new Text(TableName.TRUNCATED_SHARD_INDEX), key);
+    }
+
+    private BulkIngestKey createExpectedBulkIngestKeyForBitsetIndexMasked() {
+        Key key = new Key("MASKED_VALUE", "FIELD", "20250606\0wkt", "PRIVATE", getTimestamp());
+        return new BulkIngestKey(new Text(TableName.TRUNCATED_SHARD_INDEX), key);
+    }
+
     private BulkIngestKey createExpectedBulkIngestKeyForDayIndex() {
         Key key = new Key("20250606\0value", "FIELD", "wkt", "PUBLIC", getTimestamp());
         return new BulkIngestKey(new Text(TableName.SHARD_DAY_INDEX), key);
@@ -607,6 +705,10 @@ public class ShardedDataTypeHandlerTest {
     private Value createValueWithUid(String uid) {
         Uid.List list = Uid.List.newBuilder().setIGNORE(false).setCOUNT(1).addUID(uid).build();
         return new Value(list.toByteArray());
+    }
+
+    private Value createBitsetIndexValue() {
+        return createDayIndexValue();
     }
 
     private Value createDayIndexValue() {

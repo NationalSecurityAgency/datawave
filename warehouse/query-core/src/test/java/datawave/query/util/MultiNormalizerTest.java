@@ -3,6 +3,7 @@ package datawave.query.util;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.apache.accumulo.core.client.AccumuloClient;
+import org.apache.accumulo.core.security.Authorizations;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -42,6 +43,8 @@ public class MultiNormalizerTest extends AbstractQueryTest {
 
     private static final Logger log = LoggerFactory.getLogger(MultiNormalizerTest.class);
 
+    private static final Authorizations auths = new Authorizations("ALL");
+
     @Autowired
     @Qualifier("EventQuery")
     protected ShardQueryLogic logic;
@@ -49,6 +52,11 @@ public class MultiNormalizerTest extends AbstractQueryTest {
     @Override
     public ShardQueryLogic getLogic() {
         return logic;
+    }
+
+    @Override
+    public Authorizations getAuths() {
+        return auths;
     }
 
     private static final InMemoryInstance instance = new InMemoryInstance(MultiNormalizerTest.class.getName());
