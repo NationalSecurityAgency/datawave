@@ -23,11 +23,11 @@
         <url>https://github.com/NationalSecurityAgency/datawave</url>
     </scm>
     <properties>
-        <version.commons-io>2.6</version.commons-io>
+        <version.commons-io>2.18.0</version.commons-io>
         <version.dropwizard-metrics>4.1.2</version.dropwizard-metrics>
         <version.httpclient>4.5.10</version.httpclient>
         <version.javastatsd>3.1.0</version.javastatsd>
-        <version.slf4j>2.0.12</version.slf4j>
+        <version.slf4j>2.0.17</version.slf4j>
     </properties>
     <dependencyManagement>
         <dependencies>

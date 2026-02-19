@@ -1,6 +1,7 @@
 package datawave.query;
 
 import org.apache.accumulo.core.client.AccumuloClient;
+import org.apache.accumulo.core.security.Authorizations;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -44,6 +45,8 @@ public class SizesTest extends AbstractQueryTest {
     private static AccumuloClient clientForSetup;
     private static SizesIngest ingest;
 
+    private static final Authorizations auths = new Authorizations("ALL");
+
     // utility for writing different index table structures
     private static final IndexIngestUtil ingestUtil = new IndexIngestUtil();
 
@@ -54,6 +57,11 @@ public class SizesTest extends AbstractQueryTest {
     @Override
     public ShardQueryLogic getLogic() {
         return logic;
+    }
+
+    @Override
+    public Authorizations getAuths() {
+        return auths;
     }
 
     @BeforeAll

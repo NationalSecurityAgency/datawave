@@ -6,7 +6,8 @@ import java.util.Set;
 import java.util.UUID;
 
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
@@ -24,7 +25,7 @@ import datawave.webservice.query.exception.QueryException;
 @ConditionalOnProperty(name = "datawave.query.storage.cache.enabled", havingValue = "true", matchIfMissing = true)
 public class QueryStorageCacheImpl implements QueryStorageCache {
 
-    private static final Logger log = Logger.getLogger(QueryStorageCacheImpl.class);
+    private final Logger log = LoggerFactory.getLogger(this.getClass());
 
     private final QueryStatusCache queryStatusCache;
     private final TaskStatesCache taskStatesCache;
