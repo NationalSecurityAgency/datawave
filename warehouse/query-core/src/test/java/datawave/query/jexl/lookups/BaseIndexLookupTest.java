@@ -4,7 +4,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -31,6 +33,7 @@ import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.util.MockMetadataHelper;
+import datawave.test.MacTestUtil;
 import datawave.util.TableName;
 import datawave.util.time.DateHelper;
 
@@ -95,6 +98,84 @@ public abstract class BaseIndexLookupTest {
     @AfterEach
     public void afterEach() {
         executor.shutdownNow();
+    }
+
+    protected void addDelayIterator(int delay) {
+        Map<String,String> properties = new HashMap<>();
+        properties.put("table.iterator.scan.delay", "1,datawave.test.iter.DelayIterator");
+        properties.put("table.iterator.scan.delay.opt.delay", String.valueOf(delay));
+        MacTestUtil.addPropertiesAndWait(tops, TableName.SHARD_INDEX, properties);
+    }
+
+    protected void removeDelayIterator() {
+        Set<String> properties = new HashSet<>();
+        properties.add("table.iterator.scan.delay");
+        properties.add("table.iterator.scan.delay.opt.delay");
+        MacTestUtil.removePropertiesAndWait(tops, TableName.SHARD_INDEX, properties);
+    }
+
+    protected void addRuntimeExceptionIterator(String clazz, String msg, String when) {
+        Map<String,String> properties = new HashMap<>();
+        properties.put("table.iterator.scan.rex", "2,datawave.test.iter.RuntimeExceptionIterator");
+        properties.put("table.iterator.scan.rex.opt.exception.class", String.valueOf(clazz));
+        properties.put("table.iterator.scan.rex.opt.exception.message", String.valueOf(msg));
+        switch (when) {
+            case "seek":
+                properties.put("table.iterator.scan.rex.opt.fireOnSeek", "true");
+                break;
+            case "next":
+                properties.put("table.iterator.scan.rex.opt.fireOnNext", "true");
+                break;
+            case "random":
+                properties.put("table.iterator.scan.rex.opt.fireRandomly", "true");
+                break;
+            default:
+                throw new IllegalStateException("unknown state: " + when);
+        }
+        MacTestUtil.addPropertiesAndWait(tops, TableName.SHARD_INDEX, properties);
+    }
+
+    protected void removeRuntimeExceptionIterator() {
+        Set<String> properties = new HashSet<>();
+        properties.add("table.iterator.scan.rex");
+        properties.add("table.iterator.scan.rex.opt.exception.class");
+        properties.add("table.iterator.scan.rex.opt.exception.message");
+        properties.add("table.iterator.scan.rex.opt.fireOnSeek");
+        properties.add("table.iterator.scan.rex.opt.fireOnNext");
+        properties.add("table.iterator.scan.rex.opt.fireRandomly");
+        MacTestUtil.removePropertiesAndWait(tops, TableName.SHARD_INDEX, properties);
+    }
+
+    protected void addIOExceptionIterator(String clazz, String msg, String when) {
+        Map<String,String> properties = new HashMap<>();
+        properties.put("table.iterator.scan.ioex", "3,datawave.test.iter.IOExceptionIterator");
+        properties.put("table.iterator.scan.ioex.opt.exception.class", String.valueOf(clazz));
+        properties.put("table.iterator.scan.ioex.opt.exception.message", String.valueOf(msg));
+        switch (when) {
+            case "seek":
+                properties.put("table.iterator.scan.ioex.opt.fireOnSeek", "true");
+                break;
+            case "next":
+                properties.put("table.iterator.scan.ioex.opt.fireOnNext", "true");
+                break;
+            case "random":
+                properties.put("table.iterator.scan.ioex.opt.fireRandomly", "true");
+                break;
+            default:
+                throw new IllegalStateException("unknown state: " + when);
+        }
+        MacTestUtil.addPropertiesAndWait(tops, TableName.SHARD_INDEX, properties);
+    }
+
+    protected void removeIOExceptionIterator() {
+        Set<String> properties = new HashSet<>();
+        properties.add("table.iterator.scan.ioex");
+        properties.add("table.iterator.scan.ioex.opt.exception.class");
+        properties.add("table.iterator.scan.ioex.opt.exception.message");
+        properties.add("table.iterator.scan.ioex.opt.fireOnSeek");
+        properties.add("table.iterator.scan.ioex.opt.fireOnNext");
+        properties.add("table.iterator.scan.ioex.opt.fireRandomly");
+        MacTestUtil.removePropertiesAndWait(tops, TableName.SHARD_INDEX, properties);
     }
 
     public void write(String value, String field) {
