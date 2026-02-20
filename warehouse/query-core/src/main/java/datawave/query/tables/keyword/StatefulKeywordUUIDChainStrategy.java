@@ -43,6 +43,7 @@ public class StatefulKeywordUUIDChainStrategy extends FullChainStrategy<Entry<Ke
     private final List<TagCloudInputExtractor> extractors;
     // will be true when a keyword query should be run, false otherwise
     private final boolean runKeywordQuery;
+    private boolean addedExtractedData = false;
 
     public StatefulKeywordUUIDChainStrategy(Query settings, QueryLogic<Entry<Key,Value>> nextLogic, List<TagCloudInputExtractor> extractors,
                     boolean runKeywordQuery) {
@@ -76,8 +77,8 @@ public class StatefulKeywordUUIDChainStrategy extends FullChainStrategy<Entry<Ke
             log.debug("latter query is " + queryString);
         }
 
-        // as long as there are extractors it is okay for an empty query string, if neither there is nothing to do
-        if (extractors.isEmpty() && StringUtils.isBlank(queryString)) {
+        // if there was no extracted data and no query there is nothing to do
+        if (!addedExtractedData && StringUtils.isBlank(queryString)) {
             return null;
         }
 
@@ -152,15 +153,20 @@ public class StatefulKeywordUUIDChainStrategy extends FullChainStrategy<Entry<Ke
                 TagCloudInputTransformer<TagCloudPartition> transformer = extractor.getInputTransformer();
                 transformers.add(transformer);
                 TagCloudPartition partition = extractor.get();
-                Entry<Key,Value> transformed = transformer.encode(partition);
+                if (partition != null && !partition.getInputs().isEmpty()) {
+                    Entry<Key,Value> transformed = transformer.encode(partition);
 
-                encodedData.add(transformed);
-                extractor.clear();
+                    encodedData.add(transformed);
+                    extractor.clear();
+                }
             }
 
             KeywordQueryLogic keywordQueryLogic = (KeywordQueryLogic) nextLogic;
-            // pass the extracted partitions on to the keyword query logic
-            keywordQueryLogic.setExternalData(encodedData, transformers);
+            if (!encodedData.isEmpty()) {
+                // pass the extracted partitions on to the keyword query logic
+                keywordQueryLogic.setExternalData(encodedData, transformers);
+                addedExtractedData = true;
+            }
         }
 
         return queryTerms.isEmpty() ? null : StringUtils.join(queryTerms, " ");
