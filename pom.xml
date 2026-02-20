@@ -56,7 +56,6 @@
         <version.arquillian-weld-ee-embedded>1.0.0.Final</version.arquillian-weld-ee-embedded>
         <version.assertj>3.20.2</version.assertj>
         <version.avro>1.11.4</version.avro>
-        <version.byte-buddy>1.14.11</version.byte-buddy>
         <version.caffeine>3.1.0</version.caffeine>
         <version.commons-beanutils>1.9.4</version.commons-beanutils>
         <version.commons-cli>1.4</version.commons-cli>
@@ -127,10 +126,10 @@
         <version.lucene>7.5.0</version.lucene>
         <version.metrics-cdi>1.6.0</version.metrics-cdi>
         <version.minlog>1.2</version.minlog>
-        <version.mockito>4.11.0</version.mockito>
+        <version.mockito>2.23.0</version.mockito>
         <version.mysql-connector>9.3.0</version.mysql-connector>
         <version.netty>4.1.42.Final</version.netty>
-        <version.objenesis>3.3</version.objenesis>
+        <version.objenesis>2.1</version.objenesis>
         <version.picketbox>5.0.3.Final</version.picketbox>
         <version.powermock>2.0.9</version.powermock>
         <version.proto-google-common-protos>2.61.0</version.proto-google-common-protos>
@@ -1426,10 +1425,10 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <!-- Upgraded for Java 17 compatibility -->
+                <!-- old version of bytebuddy was making it onto the classpath and was incompatible with mockito -->
                 <groupId>net.bytebuddy</groupId>
                 <artifactId>byte-buddy</artifactId>
-                <version>${version.byte-buddy}</version>
+                <version>1.10.5</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
@@ -1526,12 +1525,6 @@
             <dependency>
                 <groupId>org.mockito</groupId>
                 <artifactId>mockito-core</artifactId>
-                <version>${version.mockito}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.mockito</groupId>
-                <artifactId>mockito-junit-jupiter</artifactId>
                 <version>${version.mockito}</version>
                 <scope>test</scope>
             </dependency>
