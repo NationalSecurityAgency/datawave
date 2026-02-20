@@ -1094,10 +1094,6 @@ public class QueryOptions implements OptionDescriber {
         ivaratorConfig.setIvaratorCacheScanTimeout(ivaratorCacheScanTimeout);
     }
 
-    public void setivaratorCacheScanPersistThreshold(long ivaratorCacheScanPersistThreshold) {
-        ivaratorConfig.setIvaratorCacheScanPersistThreshold(ivaratorCacheScanPersistThreshold);
-    }
-
     public int getMaxFieldIndexRangeSplit() {
         return getIvaratorConfig().getMaxFieldIndexRangeSplit();
     }
@@ -1877,7 +1873,7 @@ public class QueryOptions implements OptionDescriber {
         }
 
         if (options.containsKey(RESULT_TIMEOUT)) {
-            this.setivaratorCacheScanPersistThreshold(Long.parseLong(options.get(RESULT_TIMEOUT)));
+            this.setResultTimeout(Long.parseLong(options.get(RESULT_TIMEOUT)));
         }
 
         if (options.containsKey(MAX_INDEX_RANGE_SPLIT)) {

@@ -3003,6 +3003,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     }
 
     public IvaratorConfig getIvaratorConfig() {
+        if (ivaratorConfig == null) {
+            ivaratorConfig = new IvaratorConfig();
+        }
         return this.ivaratorConfig;
     }
 
