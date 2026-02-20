@@ -28,17 +28,10 @@ public class ErrorShardedIngestHelper extends BaseIngestHelper {
     private static final Logger log = LoggerFactory.getLogger(ErrorShardedIngestHelper.class);
 
     /**
-     * <p>
-     * Configuration inserted between the <datatype> and the <field-constant> for explicit error parsing.
-     * </p>
-     * <p>
-     * For example:
-     * </p>
-     * <p>
-     * {@code String target = <some-datatype> + DATATYPE_ERROR + INDEX_FIELDS;}
-     * </p>
+     * Configuration prefix for per-datatype error index properties. Properties follow the pattern: {@code error.<datatype>.data.name.<suffix>}
      */
     private static final String ERROR = "error";
+
     private IngestHelperInterface delegate = null;
 
     private final Map<Type,IndexedFields> errorIndexedFields = new HashMap<>();
@@ -50,18 +43,32 @@ public class ErrorShardedIngestHelper extends BaseIngestHelper {
         private final Set<String> indexedFields = new HashSet<>();
         private final Map<String,Pattern> patterns = new HashMap<>();
         private final Set<String> unindexedFields = new HashSet<>();
-        public boolean hasDisallowList = false;
-    }
+        private boolean hasDisallowList = false;
 
-    /*
-     * SETH NOTE
-     *
-     * tests for the setup method
-     * https://github.com/NationalSecurityAgency/datawave/pull/2864/files#diff-86d9d0c6cfcff5b686be27e01ab927c38f6c347f59faeebdedd2ccbf96834d70 1. Verify if no
-     * global or datatype specific i/ri configs given, setup does not throw exception. 2. Verify if global i/ri given, setup does not throw exception. Verify
-     * datatype specific is still parsed. 3. Verify if global i/ri given, but not datatype specific, setup does not throw exception. 4. Verify that if both
-     * allow list and disallow list given for datatype specific, error is thrown.
-     */
+        void addAllowlistFields(Collection<String> fields) {
+            hasDisallowList = false;
+            if (fields == null || fields.isEmpty()) {
+                return;
+            }
+            for (String entry : fields) {
+                indexedFields.add(entry.trim());
+            }
+        }
+
+        void addDisallowlistFields(Collection<String> fields) {
+            hasDisallowList = true;
+            if (fields == null || fields.isEmpty()) {
+                return;
+            }
+            for (String entry : fields) {
+                unindexedFields.add(entry.trim());
+            }
+        }
+
+        boolean matches(String fieldName) {
+            return hasDisallowList ? !unindexedFields.contains(fieldName) : indexedFields.contains(fieldName);
+        }
+    }
 
     @Override
     public void setup(Configuration config) {
@@ -71,7 +78,6 @@ public class ErrorShardedIngestHelper extends BaseIngestHelper {
 
         Map<Type,Map<String,String>> dataTypeSpecificProperties = getDataTypeSpecificProperties(config);
 
-        // if there were no datatype specific properties found, skip per-datatype error indexing
         if (dataTypeSpecificProperties.isEmpty()) {
             log.warn("No per-datatype error index configurations found. Using base error index fields only.");
             return;
@@ -80,108 +86,99 @@ public class ErrorShardedIngestHelper extends BaseIngestHelper {
         Collection<Type> typesAbsentFromTypeRegistry = dataTypeSpecificProperties.keySet().stream().filter(t -> !TypeRegistry.getTypes().contains(t))
                         .collect(Collectors.toList());
 
-        // if any datatypes found in the configuration are not found in the TypeRegistry
         if (!typesAbsentFromTypeRegistry.isEmpty()) {
             throw new RuntimeException("Error Datatype found in configuration does not exist in TypeRegistry." + " Types: " + typesAbsentFromTypeRegistry);
         }
 
-        // each datatype (Type Key) will have a map (Map Value) of post-datatype-suffixes (String Key) and their associated values (String Value).
         for (Map.Entry<Type,Map<String,String>> dataTypeEntry : dataTypeSpecificProperties.entrySet()) {
 
             Type type = dataTypeEntry.getKey();
             Map<String,String> properties = dataTypeEntry.getValue();
+            String prefix = ERROR + "." + type.typeName();
 
-            setActiveDataType(type);
+            validateNoConflictingLists(type, properties, config, prefix);
 
-            if (properties.containsKey(INDEX_FIELDS) && properties.containsKey(DISALLOWLIST_INDEX_FIELDS)) {
-                throw new RuntimeException("Configuration contains Disallowlist and Allowlist for error indexed fields, it specifies both." + " Type: "
-                                + type.typeName() + ", " + " Parameters: " + config.get(ERROR + "." + type.typeName() + INDEX_FIELDS) + " | "
-                                + config.get(ERROR + "." + type.typeName() + DISALLOWLIST_INDEX_FIELDS));
-            }
-
-            if (properties.containsKey(REVERSE_INDEX_FIELDS) && properties.containsKey(DISALLOWLIST_REVERSE_INDEX_FIELDS)) {
-                throw new RuntimeException("Configuration contains Disallowlist and Allowlist for error reverse indexed fields, it specifies both." + " Type: "
-                                + type.typeName() + ", " + " Parameters: " + config.get(ERROR + "." + type.typeName() + REVERSE_INDEX_FIELDS) + " | "
-                                + config.get(ERROR + "." + type.typeName() + DISALLOWLIST_REVERSE_INDEX_FIELDS));
-            }
-
-            // --- INDEX HANDLING ---
-
-            // check each property for those related to index fields
-            // they will always have either INDEX_FIELDS (inclusive) or DISALLOWLIST_INDEX_FIELDS (exclusive), never entries for both.
-            // "error.<datatype>.<possible-index-information>"
-            properties.forEach((propKey, propVal) -> {
-
-                // for some reason, none of the fie.lds are getting written from cfg to the internal map
-                if (propKey.equals(INDEX_FIELDS)) {
-
-                    handleIndexFields(config.getStringCollection(ERROR + "." + type.typeName() + INDEX_FIELDS));
-
-                } else if (propKey.equals(DISALLOWLIST_INDEX_FIELDS)) {
-
-                    handleDisallowListIndexFields(config.getStringCollection(ERROR + "." + type.typeName() + DISALLOWLIST_INDEX_FIELDS));
-
-                } else {
-                    log.warn("No error index fields or error disallowlist fields specified, not generating index fields for {}", type.typeName());
-                }
-
-                // same thing, but for reverse
-                if (propKey.equals(REVERSE_INDEX_FIELDS)) {
-
-                    handleReverseIndexFields(config.getStringCollection(ERROR + "." + type.typeName() + REVERSE_INDEX_FIELDS));
-
-                } else if (propKey.equals(DISALLOWLIST_REVERSE_INDEX_FIELDS)) {
-
-                    handleDisallowListReverseIndexFields(config.getStringCollection(ERROR + "." + type.typeName() + DISALLOWLIST_REVERSE_INDEX_FIELDS));
-
-                } else {
-                    log.warn("No error reverse index fields or error disallowlist reverse index fields specified, not generating reverse index fields for {}",
-                                    type.typeName());
-                }
-
-            });
-
+            processFieldConfig(type, properties, config, prefix, INDEX_FIELDS, DISALLOWLIST_INDEX_FIELDS, errorIndexedFields);
+            processFieldConfig(type, properties, config, prefix, REVERSE_INDEX_FIELDS, DISALLOWLIST_REVERSE_INDEX_FIELDS, errorReverseIndexedFields);
         }
 
-        // add the trimmed indexed fields to the main index field lists.
+        // add the trimmed indexed fields to the main index field lists
         for (Type type : TypeRegistry.getTypes()) {
             Collection<String> indexedStrings = config.getStringCollection(ERROR + "." + type.typeName() + INDEX_FIELDS);
             if (null != indexedStrings && !indexedStrings.isEmpty()) {
                 for (String indexedString : indexedStrings) {
-                    String indexedTrimmedString = indexedString.trim();
-                    allIndexFields.add(indexedTrimmedString);
+                    allIndexFields.add(indexedString.trim());
                 }
             }
             Collection<String> reverseIndexedStrings = config.getStringCollection(ERROR + "." + type.typeName() + REVERSE_INDEX_FIELDS);
             if (null != reverseIndexedStrings && !reverseIndexedStrings.isEmpty()) {
                 for (String reverseIndexedString : reverseIndexedStrings) {
-                    String reverseIndexedTrimmedString = reverseIndexedString.trim();
-                    allReverseIndexFields.add(reverseIndexedTrimmedString);
+                    allReverseIndexFields.add(reverseIndexedString.trim());
                 }
             }
         }
+    }
 
-        setActiveDataType(null);
+    private void validateNoConflictingLists(Type type, Map<String,String> properties, Configuration config, String prefix) {
+        if (properties.containsKey(INDEX_FIELDS) && properties.containsKey(DISALLOWLIST_INDEX_FIELDS)) {
+            throw new RuntimeException("Configuration contains Disallowlist and Allowlist for error indexed fields, it specifies both." + " Type: "
+                            + type.typeName() + ", " + " Parameters: " + config.get(prefix + INDEX_FIELDS) + " | "
+                            + config.get(prefix + DISALLOWLIST_INDEX_FIELDS));
+        }
 
+        if (properties.containsKey(REVERSE_INDEX_FIELDS) && properties.containsKey(DISALLOWLIST_REVERSE_INDEX_FIELDS)) {
+            throw new RuntimeException("Configuration contains Disallowlist and Allowlist for error reverse indexed fields, it specifies both." + " Type: "
+                            + type.typeName() + ", " + " Parameters: " + config.get(prefix + REVERSE_INDEX_FIELDS) + " | "
+                            + config.get(prefix + DISALLOWLIST_REVERSE_INDEX_FIELDS));
+        }
+    }
+
+    private void processFieldConfig(Type type, Map<String,String> properties, Configuration config, String prefix, String allowlistSuffix,
+                    String disallowlistSuffix, Map<Type,IndexedFields> targetMap) {
+
+        if (properties.containsKey(allowlistSuffix)) {
+            if (fieldConfigHelper != null && log.isInfoEnabled()) {
+                log.info("Using error field config helper for {}", type.typeName());
+                return;
+            }
+            IndexedFields fields = targetMap.computeIfAbsent(type, k -> new IndexedFields());
+            fields.addAllowlistFields(config.getStringCollection(prefix + allowlistSuffix));
+            this.moveToPatternMap(fields.indexedFields, fields.patterns);
+        } else if (properties.containsKey(disallowlistSuffix)) {
+            IndexedFields fields = targetMap.computeIfAbsent(type, k -> new IndexedFields());
+            fields.addDisallowlistFields(config.getStringCollection(prefix + disallowlistSuffix));
+            this.moveToPatternMap(fields.unindexedFields, fields.patterns);
+        }
     }
 
     private Map<Type,Map<String,String>> getDataTypeSpecificProperties(Configuration config) {
         Map<Type,Map<String,String>> dataTypeSpecificProperties = new HashMap<>();
 
-        // strips the "error." from the props. Keep this in mind for the rest of the loop!
+        // strips the "error." from the props
         Map<String,String> errorProperties = config.getPropsWithPrefix((ERROR + "."));
         for (Map.Entry<String,String> entry : errorProperties.entrySet()) {
             String property = entry.getKey();
-            // Check if the property is one that allows for configuring index/reverse index fields.
             if (isIndexProperty(property)) {
-                // If the third segment of the original property name is 'data', then the first segment contains a datatype. Offset to account for the stripping
-                // of "error."
-                String[] parts = property.split("\\.");
-                if (parts[1].equals("data")) {
-                    Type dataType = TypeRegistry.getType(parts[0]);
-                    // Get the property suffix without the 'error.<datatype>' portion.
-                    String propertySuffix = getPropertySuffix(property);
+                // Property format after stripping "error." is: <datatype>.data.name.<suffix>
+                // The datatype is everything before the first ".data.name." occurrence
+                String propertySuffix = getPropertySuffix(property);
+                if (propertySuffix == null) {
+                    continue;
+                }
+                // Strip the suffix to get the datatype portion
+                String datatypePortion = property.substring(0, property.length() - propertySuffix.length());
+                if (datatypePortion.isEmpty() || datatypePortion.endsWith(".")) {
+                    continue;
+                }
+                // Remove trailing dot if present
+                if (datatypePortion.endsWith(".")) {
+                    datatypePortion = datatypePortion.substring(0, datatypePortion.length() - 1);
+                }
+                try {
+                    Type dataType = TypeRegistry.getType(datatypePortion);
                     dataTypeSpecificProperties.computeIfAbsent(dataType, k -> new HashMap<>()).put(propertySuffix, entry.getValue());
+                } catch (Exception e) {
+                    log.debug("Skipping property with unrecognized datatype portion: {}", property);
                 }
             }
         }
@@ -194,131 +191,22 @@ public class ErrorShardedIngestHelper extends BaseIngestHelper {
     }
 
     private String getPropertySuffix(String property) {
-        if (property.endsWith(INDEX_FIELDS)) {
-            return INDEX_FIELDS;
+        if (property.endsWith(DISALLOWLIST_REVERSE_INDEX_FIELDS)) {
+            return DISALLOWLIST_REVERSE_INDEX_FIELDS;
         } else if (property.endsWith(DISALLOWLIST_INDEX_FIELDS)) {
             return DISALLOWLIST_INDEX_FIELDS;
         } else if (property.endsWith(REVERSE_INDEX_FIELDS)) {
             return REVERSE_INDEX_FIELDS;
-        } else if (property.endsWith(DISALLOWLIST_REVERSE_INDEX_FIELDS)) {
-            return DISALLOWLIST_REVERSE_INDEX_FIELDS;
-        } else {
-            throw new IllegalArgumentException("Unhandled property: " + property);
+        } else if (property.endsWith(INDEX_FIELDS)) {
+            return INDEX_FIELDS;
         }
-    }
-
-    private void handleIndexFields(Collection<String> errorIndexedStrings) {
-
-        // if we're using fieldConfigHelper, we don't need to do anything here.
-        // SETH NOTE: Not sure if this needs to be in all of them or not. question to ask!
-        if (fieldConfigHelper != null && log.isInfoEnabled()) {
-            log.info("Using error field config helper for {}", getActiveDataType().typeName());
-            return;
-        }
-
-        log.debug("ErrorIndexedFields specified.");
-
-        // create an instance of the ErrorIndexFields for this datatype
-        this.errorIndexedFields.computeIfAbsent(getActiveDataType(), (k) -> new IndexedFields()).hasDisallowList = false;
-
-        // if something wonky happened with the errorIndexedStrings, drop a warning.
-        if (errorIndexedStrings == null || errorIndexedStrings.isEmpty()) {
-            log.warn("{} not specified.", ERROR + "." + getActiveDataType().typeName() + "." + INDEX_FIELDS);
-            return;
-        }
-
-        // add the indexed fields to this datatype's ErrorIndexFields instance
-        for (String entry : errorIndexedStrings) {
-            this.errorIndexedFields.get(getActiveDataType()).indexedFields.add(entry.trim());
-        }
-
-        // move em to the pattern map!!
-        this.moveToPatternMap(this.errorIndexedFields.get(getActiveDataType()).indexedFields, this.errorIndexedFields.get(getActiveDataType()).patterns);
-
-    }
-
-    private void handleDisallowListIndexFields(Collection<String> errorUnindexedStrings) {
-
-        log.debug("ErrorDisallowListIndexedFields specified.");
-
-        // create an instance of the ErrorIndexFields for this datatype
-        this.errorIndexedFields.putIfAbsent(getActiveDataType(), new IndexedFields());
-        this.errorIndexedFields.get(getActiveDataType()).hasDisallowList = true;
-
-        // if something wonky happened with the errorDisallowIndexedStrings, drop a warning.
-        if (errorUnindexedStrings == null || errorUnindexedStrings.isEmpty()) {
-            log.warn("{} not specified.", ERROR + "." + getActiveDataType().typeName() + "." + DISALLOWLIST_INDEX_FIELDS);
-            return;
-        }
-
-        // add the indexed fields to this datatype's ErrorIndexFields instance
-        for (String entry : errorUnindexedStrings) {
-            this.errorIndexedFields.get(getActiveDataType()).unindexedFields.add(entry.trim());
-        }
-
-        // move em to the pattern map!!
-        this.moveToPatternMap(this.errorIndexedFields.get(getActiveDataType()).unindexedFields, this.errorIndexedFields.get(getActiveDataType()).patterns);
-
-    }
-
-    private void handleReverseIndexFields(Collection<String> errorReverseIndexedStrings) {
-
-        log.debug("ErrorReverseIndexedFields specified.");
-
-        // create an instance of the ErrorIndexFields for this datatype
-        this.errorReverseIndexedFields.computeIfAbsent(getActiveDataType(), (k) -> new IndexedFields()).hasDisallowList = false;
-
-        // if something wonky happened with the errorIndexedStrings, drop a warning.
-        if (errorReverseIndexedStrings == null || errorReverseIndexedStrings.isEmpty()) {
-            log.warn("{} not specified.", ERROR + "." + getActiveDataType().typeName() + "." + REVERSE_INDEX_FIELDS);
-            return;
-        }
-
-        // add the indexed fields to this datatype's ErrorReverseIndexFields instance
-        for (String entry : errorReverseIndexedStrings) {
-            this.errorReverseIndexedFields.get(getActiveDataType()).indexedFields.add(entry.trim());
-        }
-
-        // move em to the pattern map!!
-        this.moveToPatternMap(this.errorReverseIndexedFields.get(getActiveDataType()).indexedFields,
-                        this.errorReverseIndexedFields.get(getActiveDataType()).patterns);
-
-    }
-
-    private void handleDisallowListReverseIndexFields(Collection<String> errorReverseUnindexedStrings) {
-
-        log.debug("ErrorDisallowListReverseIndexedFields specified.");
-
-        // create an instance of the ErrorIndexFields for this datatype
-        this.errorReverseIndexedFields.putIfAbsent(getActiveDataType(), new IndexedFields());
-        this.errorReverseIndexedFields.get(getActiveDataType()).hasDisallowList = true;
-
-        // if something wonky happened with the errorDisallowIndexedStrings, drop a warning.
-        if (errorReverseUnindexedStrings == null || errorReverseUnindexedStrings.isEmpty()) {
-            log.warn("{} not specified.", ERROR + "." + getActiveDataType().typeName() + "." + DISALLOWLIST_REVERSE_INDEX_FIELDS);
-            return;
-        }
-
-        // add the indexed fields to this datatype's ErrorIndexFields instance
-        for (String entry : errorReverseUnindexedStrings) {
-            this.errorReverseIndexedFields.get(getActiveDataType()).unindexedFields.add(entry.trim());
-        }
-
-        // move em to the pattern map!!
-        this.moveToPatternMap(this.errorReverseIndexedFields.get(getActiveDataType()).unindexedFields,
-                        this.errorReverseIndexedFields.get(getActiveDataType()).patterns);
-
+        return null;
     }
 
     public void setDelegateHelper(IngestHelperInterface delegate) {
         this.delegate = delegate;
     }
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see datawave.ingest.data.config.ingest.AbstractIngestHelper#getEventFields(datawave.ingest.data.Event)
-     */
     @Override
     public Multimap<String,NormalizedContentInterface> getEventFields(RawRecordContainer event) {
         // we need to do this safely, make our best attempt to get some fields
@@ -329,9 +217,6 @@ public class ErrorShardedIngestHelper extends BaseIngestHelper {
         }
     }
 
-    /**
-     * Override to provide access to the data type handler
-     */
     @Override
     public Multimap<String,NormalizedContentInterface> normalizeMap(Multimap<String,NormalizedContentInterface> fields) {
         return super.normalizeMap(fields);
@@ -342,44 +227,25 @@ public class ErrorShardedIngestHelper extends BaseIngestHelper {
         return null;
     }
 
-    /**
-     * Checks if error-index-fields have been initialized yet.
-     *
-     * @return FALSE if errorIndexedFields is empty, TRUE if it's not.
-     */
     private boolean hasErrorIndexConfig() {
         return !errorIndexedFields.isEmpty();
     }
 
-    /**
-     * Checks if error-reverse-index-fields have been initialized yet.
-     *
-     * @return FALSE if errorReverseIndexedFields.get(configProperty) is empty, TRUE if it's not.
-     */
     private boolean hasErrorReverseIndexConfig() {
         return !errorReverseIndexedFields.isEmpty();
-
     }
-
-    /**
-     * Checks if the {@code fieldName} has been indexed in either the index-field map or the error-index-field map.
-     *
-     * @return TRUE if {@code fieldName} has been indexed, FALSE if not.
-     */
 
     @Override
     public boolean isIndexedField(String fieldName) {
         IndexedFields dataTypeIndexFields = errorIndexedFields.get(getActiveDataType());
         if (dataTypeIndexFields == null) {
-            // Unknown datatype — index if base config or ANY per-datatype config would index it
             if (getActiveDataType() == null && hasErrorIndexConfig()) {
                 return super.isIndexedField(fieldName) || anyErrorIndexMatch(errorIndexedFields, fieldName);
             }
             return super.isIndexedField(fieldName);
         }
 
-        return dataTypeIndexFields.hasDisallowList ? !dataTypeIndexFields.unindexedFields.contains(fieldName)
-                        : dataTypeIndexFields.indexedFields.contains(fieldName);
+        return dataTypeIndexFields.matches(fieldName);
     }
 
     public Set<String> getIndexedFields(Type dataType) {
@@ -390,33 +256,22 @@ public class ErrorShardedIngestHelper extends BaseIngestHelper {
         return errorReverseIndexedFields.containsKey(dataType) ? errorReverseIndexedFields.get(dataType).indexedFields : Set.of();
     }
 
-    /**
-     * Checks if the {@code fieldName} has been indexed in either the reverse-index-field map or the error-reverse-index-field map.
-     *
-     * @return TRUE if {@code fieldName} has been indexed, FALSE if not.
-     */
-
     @Override
     public boolean isReverseIndexedField(String fieldName) {
         IndexedFields dataTypeIndexFields = errorReverseIndexedFields.get(getActiveDataType());
         if (dataTypeIndexFields == null) {
-            // Unknown datatype — reverse index if base config or ANY per-datatype config would reverse index it
             if (getActiveDataType() == null && hasErrorReverseIndexConfig()) {
                 return super.isReverseIndexedField(fieldName) || anyErrorIndexMatch(errorReverseIndexedFields, fieldName);
             }
             return super.isReverseIndexedField(fieldName);
         }
 
-        return dataTypeIndexFields.hasDisallowList ? !dataTypeIndexFields.unindexedFields.contains(fieldName)
-                        : dataTypeIndexFields.indexedFields.contains(fieldName);
+        return dataTypeIndexFields.matches(fieldName);
     }
 
-    /**
-     * Checks if any per-datatype error config would index the given field. Used as a safe fallback when the active datatype is unknown (null).
-     */
     private boolean anyErrorIndexMatch(Map<Type,IndexedFields> configMap, String fieldName) {
         for (IndexedFields fields : configMap.values()) {
-            if (fields.hasDisallowList ? !fields.unindexedFields.contains(fieldName) : fields.indexedFields.contains(fieldName)) {
+            if (fields.matches(fieldName)) {
                 return true;
             }
         }
