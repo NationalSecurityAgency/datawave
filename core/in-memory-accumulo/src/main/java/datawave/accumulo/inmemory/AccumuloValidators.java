@@ -16,7 +16,6 @@
  */
 package datawave.accumulo.inmemory;
 
-import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
 /**
@@ -28,19 +27,34 @@ public final class AccumuloValidators {
         throw new UnsupportedOperationException();
     }
 
+    private static final int MAX_NAME_LENGTH = 1024;
+
     // Pattern for valid namespace/table name characters
     private static final Pattern VALID_NAME_PATTERN = Pattern.compile("\\w+");
 
     /**
-     * Validator for new table names. Checks that the name is non-null, non-empty, and contains only valid characters.
+     * Validator for new table names. Checks that the name is non-null, non-empty, does not start with a dot, is not longer than 1024 characters, and contains
+     * only valid characters. For qualified names (namespace.table), both parts must be non-blank and match the valid name pattern.
      */
     public static final Validator NEW_TABLE_NAME = new Validator("new table name", name -> {
         if (name == null || name.isEmpty()) {
             return false;
         }
-        // Allow fully qualified names with dots (namespace.table)
-        String tablePart = name.contains(".") ? name.substring(name.lastIndexOf('.') + 1) : name;
-        return VALID_NAME_PATTERN.matcher(tablePart).matches();
+        if (name.startsWith(".")) {
+            return false;
+        }
+        if (name.length() > MAX_NAME_LENGTH) {
+            return false;
+        }
+        if (name.contains(".")) {
+            String namespacePart = name.substring(0, name.lastIndexOf('.'));
+            String tablePart = name.substring(name.lastIndexOf('.') + 1);
+            if (namespacePart.isEmpty() || tablePart.isEmpty()) {
+                return false;
+            }
+            return VALID_NAME_PATTERN.matcher(namespacePart).matches() && VALID_NAME_PATTERN.matcher(tablePart).matches();
+        }
+        return VALID_NAME_PATTERN.matcher(name).matches();
     });
 
     /**
@@ -48,6 +62,9 @@ public final class AccumuloValidators {
      */
     public static final Validator NEW_NAMESPACE_NAME = new Validator("new namespace name", name -> {
         if (name == null || name.isEmpty()) {
+            return false;
+        }
+        if (name.length() > MAX_NAME_LENGTH) {
             return false;
         }
         return VALID_NAME_PATTERN.matcher(name).matches();
@@ -64,33 +81,9 @@ public final class AccumuloValidators {
         if (name.isEmpty()) {
             return true;
         }
+        if (name.length() > MAX_NAME_LENGTH) {
+            return false;
+        }
         return VALID_NAME_PATTERN.matcher(name).matches();
     });
-
-    /**
-     * A simple validator that checks a predicate and throws IllegalArgumentException if validation fails.
-     */
-    public static class Validator {
-        private final String description;
-        private final Predicate<String> predicate;
-
-        Validator(String description, Predicate<String> predicate) {
-            this.description = description;
-            this.predicate = predicate;
-        }
-
-        /**
-         * Validates the given value.
-         *
-         * @param value
-         *            the value to validate
-         * @throws IllegalArgumentException
-         *             if validation fails
-         */
-        public void validate(String value) {
-            if (!predicate.test(value)) {
-                throw new IllegalArgumentException("Invalid " + description + ": " + value);
-            }
-        }
-    }
 }
