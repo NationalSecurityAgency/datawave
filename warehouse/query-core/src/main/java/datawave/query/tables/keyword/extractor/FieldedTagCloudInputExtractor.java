@@ -144,6 +144,10 @@ public class FieldedTagCloudInputExtractor implements TagCloudInputExtractor {
 
     private String getDocIdFromHitTerm(Map<String,Attribute<? extends Comparable<?>>> documentData) {
         Attribute<?> hitTermAttribute = documentData.get(HIT_TERM_FIELD);
+        if (hitTermAttribute == null) {
+            return null;
+        }
+
         List<String> identifiers = KeywordQueryUtil.getStringValuesFromAttribute(hitTermAttribute);
         return KeywordQueryUtil.chooseBestIdentifier(identifiers);
     }
