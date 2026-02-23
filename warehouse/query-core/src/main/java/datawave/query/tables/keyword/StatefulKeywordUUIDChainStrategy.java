@@ -153,6 +153,7 @@ public class StatefulKeywordUUIDChainStrategy extends FullChainStrategy<Entry<Ke
                 TagCloudInputTransformer<TagCloudPartition> transformer = extractor.getInputTransformer();
                 transformers.add(transformer);
                 TagCloudPartition partition = extractor.get();
+
                 if (partition != null && !partition.getInputs().isEmpty()) {
                     Entry<Key,Value> transformed = transformer.encode(partition);
 
