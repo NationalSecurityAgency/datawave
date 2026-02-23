@@ -96,7 +96,7 @@ public class KeywordQueryLogicTest {
     }
 
     @Test
-    public void setupQueryWithViewNameSetsIteratorSetting() throws Exception {
+    public void setupQueryWithViewNameSetsIteratorSettingTest() throws Exception {
         Query settings = new QueryImpl();
         settings.setQuery("not null");
         when(mockKeywordConfig.getQuery()).thenReturn(settings);
@@ -106,7 +106,7 @@ public class KeywordQueryLogicTest {
     }
 
     @Test
-    public void setupQueryTableNotFoundThrowsRuntimeException() throws Exception {
+    public void setupQueryTableNotFoundThrowsRuntimeExceptionTest() throws Exception {
         Query settings = new QueryImpl();
         settings.setQuery("not null");
         when(mockKeywordConfig.getQuery()).thenReturn(settings);
@@ -115,13 +115,13 @@ public class KeywordQueryLogicTest {
     }
 
     @Test
-    public void setupNoQuery() throws Exception {
+    public void setupNoQueryTest() throws Exception {
         keywordQueryLogic.setupQuery(mockKeywordConfig);
         assertFalse(keywordQueryLogic.iterator().hasNext());
     }
 
     @Test
-    public void setupExternalDataQuery() throws Exception {
+    public void setupExternalDataQueryTest() throws Exception {
         keywordQueryLogic.setExternalData(List.of(Map.entry(new Key("externalKey"), new Value("externalValue"))), Set.of());
         keywordQueryLogic.setupQuery(mockKeywordConfig);
         Iterator<Entry<Key,Value>> itr = keywordQueryLogic.iterator();
