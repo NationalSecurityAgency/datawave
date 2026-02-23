@@ -256,7 +256,7 @@ public class BoundedRangeIndexLookup extends AsyncIndexLookup {
                     startLatch.await();
                 } catch (Exception e) {
                     // any exception at this stage marks the range as value exceeded
-                    markExceeded();
+                    markExceeded("start");
                 }
                 break;
             default:
@@ -273,7 +273,7 @@ public class BoundedRangeIndexLookup extends AsyncIndexLookup {
                     stopLatch.await();
                 } catch (Exception e) {
                     // any exception at this stage marks the range as value exceeded
-                    markExceeded();
+                    markExceeded("executing");
                 }
                 break;
             default:
@@ -281,8 +281,8 @@ public class BoundedRangeIndexLookup extends AsyncIndexLookup {
         }
     }
 
-    protected void markExceeded() {
-        log.debug("marking range as exceeded");
+    protected void markExceeded(String context) {
+        log.debug("marking range as exceeded: {}", context);
         indexLookupMap.put(field, "");
         indexLookupMap.get(field).setThresholdExceeded();
     }
