@@ -246,42 +246,38 @@ public class BoundedRangeIndexLookup extends AsyncIndexLookup {
      */
     protected void await() {
 
-        synchronized (startLatch) {
-            switch ((int) startLatch.getCount()) {
-                case 0:
-                    // scan task already started, fall through to stop latch
-                    break;
-                case 1:
-                    // scan task submitted but not running yet
-                    try {
-                        startLatch.await();
-                    } catch (Exception e) {
-                        // any exception at this stage marks the range as value exceeded
-                        markExceeded();
-                    }
-                    break;
-                default:
-                    throw new IllegalStateException("start latch count should be zero or one, but was: " + startLatch.getCount());
-            }
+        switch ((int) startLatch.getCount()) {
+            case 0:
+                // scan task already started, fall through to stop latch
+                break;
+            case 1:
+                // scan task submitted but not running yet
+                try {
+                    startLatch.await();
+                } catch (Exception e) {
+                    // any exception at this stage marks the range as value exceeded
+                    markExceeded();
+                }
+                break;
+            default:
+                throw new IllegalStateException("start latch count should be zero or one, but was: " + startLatch.getCount());
         }
 
-        synchronized (stopLatch) {
-            switch ((int) stopLatch.getCount()) {
-                case 0:
-                    // scan task completed prior to calling await(), nothing left to do
-                    break;
-                case 1:
-                    // scan task executing, wait for completion
-                    try {
-                        stopLatch.await();
-                    } catch (Exception e) {
-                        // any exception at this stage marks the range as value exceeded
-                        markExceeded();
-                    }
-                    break;
-                default:
-                    throw new IllegalStateException("stop latch count should be zero or one, but was: " + stopLatch.getCount());
-            }
+        switch ((int) stopLatch.getCount()) {
+            case 0:
+                // scan task completed prior to calling await(), nothing left to do
+                break;
+            case 1:
+                // scan task executing, wait for completion
+                try {
+                    stopLatch.await();
+                } catch (Exception e) {
+                    // any exception at this stage marks the range as value exceeded
+                    markExceeded();
+                }
+                break;
+            default:
+                throw new IllegalStateException("stop latch count should be zero or one, but was: " + stopLatch.getCount());
         }
     }
 
