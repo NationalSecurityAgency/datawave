@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import org.apache.accumulo.core.data.Key;
@@ -25,6 +26,7 @@ public class FieldedTagCloudInputExtractor implements TagCloudInputExtractor {
     private static final double DEFAULT_MIN_SCORE = .6;
 
     private String category;
+    private String subType;
     private List<String> fields;
     private Map<String,String> fieldToScoreField = new HashMap<>();
     // TODO-crwill9 ehh
@@ -67,10 +69,20 @@ public class FieldedTagCloudInputExtractor implements TagCloudInputExtractor {
             }
         }
 
-        TagCloudInput tagCloudInput = new TagCloudInput(docId, source.getColumnVisibility().toString(), extractedFields, Map.of("type", category));
+        Map<String,String> metadata = new HashMap<>();
+        metadata.put("type", category);
+        if (subType != null) {
+            metadata.put("subType", subType);
+        }
+
+        TagCloudInput tagCloudInput = new TagCloudInput(docId, source.getColumnVisibility().toString(), extractedFields, metadata);
 
         if (this.partition == null) {
-            this.partition = new TagCloudPartition(this.category, this.category, TagCloudPartition.ScoreType.HIGHER_IS_BETTER, new ArrayList<>());
+            String logicalPartition = category;
+            if (subType != null) {
+                logicalPartition += "." + subType;
+            }
+            this.partition = new TagCloudPartition(logicalPartition, this.category, TagCloudPartition.ScoreType.HIGHER_IS_BETTER, new ArrayList<>());
         }
 
         this.partition.addInput(tagCloudInput);
@@ -94,6 +106,25 @@ public class FieldedTagCloudInputExtractor implements TagCloudInputExtractor {
     @Override
     public TagCloudInputTransformer<TagCloudPartition> getInputTransformer() {
         return TagCloudPartitionTransformer.getInstance();
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (!(other instanceof FieldedTagCloudInputExtractor)) {
+            return false;
+        }
+
+        // partition excluded because it is transient
+        return Objects.equals(fields, ((FieldedTagCloudInputExtractor) other).fields)
+                        && Objects.equals(fieldToScoreField, ((FieldedTagCloudInputExtractor) other).fieldToScoreField)
+                        && Objects.equals(minScore, ((FieldedTagCloudInputExtractor) other).minScore)
+                        && Objects.equals(category, ((FieldedTagCloudInputExtractor) other).category)
+                        && Objects.equals(subType, ((FieldedTagCloudInputExtractor) other).subType);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(fields, fieldToScoreField, minScore, category, subType);
     }
 
     /**
@@ -177,5 +208,13 @@ public class FieldedTagCloudInputExtractor implements TagCloudInputExtractor {
 
     public double getMinScore() {
         return minScore;
+    }
+
+    public String getSubType() {
+        return subType;
+    }
+
+    public void setSubType(String subType) {
+        this.subType = subType;
     }
 }
