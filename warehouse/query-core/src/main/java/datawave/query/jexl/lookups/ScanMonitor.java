@@ -1,10 +1,7 @@
 package datawave.query.jexl.lookups;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 
 import org.slf4j.Logger;
@@ -39,16 +36,12 @@ public class ScanMonitor implements Runnable {
      *            the timeout
      */
     public void registerTask(Future<?> future, long timeout) {
-        synchronized (tasks) {
-            log.info("registering task: {}", taskID);
-            tasks.put(String.valueOf(taskID++), new IndexScanTask(future, timeout));
-        }
-    }
+        log.info("registering task: {}", taskID);
+        String id = String.valueOf(taskID++);
+        IndexScanTask task = new IndexScanTask(future, timeout);
 
-    public void registerTask(Future<?> future, CountDownLatch latch, long timeout) {
         synchronized (tasks) {
-            log.info("registering task: {}", taskID);
-            tasks.put(String.valueOf(taskID++), new IndexScanTask(future, latch, timeout));
+            tasks.put(id, task);
         }
     }
 
@@ -64,16 +57,14 @@ public class ScanMonitor implements Runnable {
 
             synchronized (tasks) {
                 long currentTime = System.currentTimeMillis();
-                Set<String> keys = new HashSet<>(tasks.keySet());
-                for (String key : keys) {
+                var iter = tasks.keySet().iterator();
+                while (iter.hasNext()) {
+                    String key = iter.next();
                     IndexScanTask task = tasks.get(key);
                     if (task.isDone(currentTime)) {
                         log.info("closing task {}", key);
                         task.cancelFuture();
-                        synchronized (tasks) {
-                            log.info("removing task {}", key);
-                            tasks.remove(key);
-                        }
+                        iter.remove();
                     }
                 }
             }
@@ -81,8 +72,8 @@ public class ScanMonitor implements Runnable {
             try {
                 Thread.sleep(monitorIntervalMillis);
             } catch (InterruptedException e) {
-                log.warn("interrupted");
-                // break;
+                log.info("thread interrupted, stopping");
+                break;
             }
         }
     }
@@ -93,19 +84,10 @@ public class ScanMonitor implements Runnable {
         private final long start;
         private final long timeout;
 
-        private CountDownLatch latch;
-
         public IndexScanTask(Future<?> future, long timeout) {
             this.future = future;
             this.start = System.currentTimeMillis();
             this.timeout = timeout;
-        }
-
-        public IndexScanTask(Future<?> future, CountDownLatch latch, long timeout) {
-            this.future = future;
-            this.start = System.currentTimeMillis();
-            this.timeout = timeout;
-            this.latch = latch;
         }
 
         public boolean isDone(long current) {
@@ -115,9 +97,6 @@ public class ScanMonitor implements Runnable {
 
         public void cancelFuture() {
             if (future != null && !future.isCancelled()) {
-                if (latch != null) {
-                    latch.countDown();
-                }
                 future.cancel(true);
             }
         }
