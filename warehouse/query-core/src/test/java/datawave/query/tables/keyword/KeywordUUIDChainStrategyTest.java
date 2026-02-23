@@ -11,6 +11,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -73,6 +74,8 @@ public class KeywordUUIDChainStrategyTest extends EasyMockSupport {
         d.put("HIT_TERM", new Content(identifier, documentKey, true));
         d.put("FOO", new TypeAttribute<>(new NoOpType("x"), documentKey, true));
         d.put("BAR", new TypeAttribute<>(new NoOpType("y"), documentKey, true));
+        d.put("FOO2", new TypeAttribute<>(new NoOpType("xx"), documentKey, true));
+        d.put("BAR2", new TypeAttribute<>(new NoOpType("yy"), documentKey, true));
 
         Entry<Key,Document> entry = Map.entry(documentKey, d);
 
@@ -96,8 +99,6 @@ public class KeywordUUIDChainStrategyTest extends EasyMockSupport {
         List<Entry<Key,Value>> input = Collections.emptyList();
 
         KeywordUUIDChainStrategy strategy = new KeywordUUIDChainStrategy();
-
-        mockLogic.setExternalData(List.of(), Set.of());
 
         replayAll();
 
@@ -126,7 +127,6 @@ public class KeywordUUIDChainStrategyTest extends EasyMockSupport {
         expect(mockLogic.initialize(eq(mockAccumulo), capture(intermediateSettings), eq(null))).andReturn(mockConfig).once();
         mockLogic.setupQuery(eq(mockConfig));
         expect(mockLogic.iterator()).andReturn(intermediateInput.iterator()).once();
-        mockLogic.setExternalData(List.of(), Set.of());
 
         replayAll();
 
@@ -179,7 +179,6 @@ public class KeywordUUIDChainStrategyTest extends EasyMockSupport {
         expect(mockLogic.initialize(eq(mockAccumulo), capture(intermediateSettings), eq(null))).andReturn(mockConfig).once();
         mockLogic.setupQuery(eq(mockConfig));
         expect(mockLogic.iterator()).andReturn(intermediateInput.iterator()).once();
-        mockLogic.setExternalData(List.of(), Set.of());
 
         replayAll();
 
@@ -245,7 +244,6 @@ public class KeywordUUIDChainStrategyTest extends EasyMockSupport {
         expect(mockLogic.initialize(eq(mockAccumulo), capture(intermediateSettings), eq(null))).andReturn(mockConfig).once();
         mockLogic.setupQuery(eq(mockConfig));
         expect(mockLogic.iterator()).andReturn(intermediateInput.iterator()).once();
-        mockLogic.setExternalData(List.of(), Set.of());
 
         replayAll();
 
@@ -356,4 +354,76 @@ public class KeywordUUIDChainStrategyTest extends EasyMockSupport {
         assertEquals(expectedEntites, tagCloudInput.getEntities());
     }
 
+    @Test
+    public void multipleNamedExtractorsTest() throws Exception {
+        settings.addParameter(CATEGORY_PARAMETER, "external");
+
+        List<Entry<Key,Value>> input = List.of(createDocument("20250412", "test", "-cvy0gj.tlf59s.-duxzua", "ENGLISH", "PAGE_ID:12345"));
+
+        KeywordUUIDChainStrategy strategy = new KeywordUUIDChainStrategy();
+        FieldedTagCloudInputExtractor fieldedExtractor = new FieldedTagCloudInputExtractor();
+        fieldedExtractor.setFields(List.of("FOO", "BAR"));
+        fieldedExtractor.setCategory("external");
+
+        FieldedTagCloudInputExtractor fieldedExtractor2 = new FieldedTagCloudInputExtractor();
+        fieldedExtractor2.setFields(List.of("FOO2", "BAR2"));
+        fieldedExtractor2.setCategory("external");
+
+        strategy.setExtractors(List.of(fieldedExtractor, fieldedExtractor2));
+        Capture<List<Entry<Key,Value>>> externalData = newCapture();
+        Capture<Set<TagCloudInputTransformer<?>>> transformers = newCapture();
+        mockLogic.setExternalData(capture(externalData), capture(transformers));
+
+        Capture<Query> intermediateSettings = Capture.newInstance();
+        expect(mockLogic.initialize(eq(mockAccumulo), capture(intermediateSettings), eq(null))).andReturn(mockConfig).once();
+        mockLogic.setupQuery(eq(mockConfig));
+        // this response is meaningless here
+        List<Entry<Key,Value>> responseData = new ArrayList<>();
+        expect(mockLogic.iterator()).andReturn(responseData.iterator());
+
+        replayAll();
+
+        // because the internals are all mocked the output isn't valuable
+        strategy.runChainedQuery(mockAccumulo, settings, null, input.iterator(), mockLogic);
+
+        verifyAll();
+
+        // look at the captures to verify the right things were passed in
+        Set<TagCloudInputTransformer<?>> capturedTransformers = transformers.getValue();
+        assertNotNull(capturedTransformers);
+        // both extractors use the same transformer
+        assertEquals(1, capturedTransformers.size());
+        List<Entry<Key,Value>> capturedExternalData = externalData.getValue();
+        assertNotNull(capturedExternalData);
+        assertEquals(2, capturedExternalData.size());
+        TagCloudInputTransformer theTransformer = capturedTransformers.iterator().next();
+        // first extractors data
+        TagCloudPartition partition = theTransformer.decode(capturedExternalData.get(0));
+        assertNotNull(partition);
+        assertEquals("external", partition.getPartition());
+        assertEquals("external", partition.getLabel());
+        assertEquals(TagCloudPartition.ScoreType.HIGHER_IS_BETTER, partition.getScoreType());
+        assertEquals(1, partition.getInputs().size());
+        TagCloudInput tagCloudInput = partition.getInputs().get(0);
+        assertNotNull(tagCloudInput);
+        assertEquals("20250412/test/-cvy0gj.tlf59s.-duxzua", tagCloudInput.getSource());
+        assertEquals("ALL", tagCloudInput.getVisibility());
+        assertEquals(2, tagCloudInput.getEntities().size());
+        Map<String,Double> expectedEntites = Map.of("x", 1d, "y", 1d);
+        assertEquals(expectedEntites, tagCloudInput.getEntities());
+        // second extractors data
+        partition = theTransformer.decode(capturedExternalData.get(1));
+        assertNotNull(partition);
+        assertEquals("external", partition.getPartition());
+        assertEquals("external", partition.getLabel());
+        assertEquals(TagCloudPartition.ScoreType.HIGHER_IS_BETTER, partition.getScoreType());
+        assertEquals(1, partition.getInputs().size());
+        tagCloudInput = partition.getInputs().get(0);
+        assertNotNull(tagCloudInput);
+        assertEquals("20250412/test/-cvy0gj.tlf59s.-duxzua", tagCloudInput.getSource());
+        assertEquals("ALL", tagCloudInput.getVisibility());
+        assertEquals(2, tagCloudInput.getEntities().size());
+        expectedEntites = Map.of("xx", 1d, "yy", 1d);
+        assertEquals(expectedEntites, tagCloudInput.getEntities());
+    }
 }
