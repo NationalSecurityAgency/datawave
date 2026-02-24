@@ -1,20 +1,16 @@
 package datawave.webservice.annotation;
 
-import datawave.annotation.data.transform.TimestampTransformer;
-import datawave.annotation.data.transform.VisibilityTransformer;
 import datawave.core.common.connection.AccumuloConnectionFactory;
+import datawave.query.config.annotation.AnnotationConfig;
 import datawave.query.tables.ShardQueryLogic;
 
 public class AnnotationManagerConfig {
-    private String annotationTableName;
-    private String annotationSourceTableName;
+    private AnnotationConfig annotationConfig;
     private String connPoolName;
     private boolean enableInternalIdLookup = false;
     private ShardQueryLogic lookupUUIDQueryLogic;
     private LookupUUIDServiceConfig lookupUUIDServiceConfig;
     private AccumuloConnectionFactory.Priority priority = AccumuloConnectionFactory.Priority.LOW;
-    private VisibilityTransformer visibilityTransformer;
-    private TimestampTransformer timestampTransformer;
 
     public String getConnPoolName() {
         return connPoolName;
@@ -48,43 +44,19 @@ public class AnnotationManagerConfig {
         this.priority = priority;
     }
 
-    public String getAnnotationTableName() {
-        return annotationTableName;
-    }
-
-    public void setAnnotationTableName(String annotationTableName) {
-        this.annotationTableName = annotationTableName;
-    }
-
-    public String getAnnotationSourceTableName() {
-        return annotationSourceTableName;
-    }
-
-    public void setAnnotationSourceTableName(String annotationSourceTableName) {
-        this.annotationSourceTableName = annotationSourceTableName;
-    }
-
-    public TimestampTransformer getTimestampTransformer() {
-        return timestampTransformer;
-    }
-
-    public void setTimestampTransformer(TimestampTransformer timestampTransformer) {
-        this.timestampTransformer = timestampTransformer;
-    }
-
-    public VisibilityTransformer getVisibilityTransformer() {
-        return visibilityTransformer;
-    }
-
-    public void setVisibilityTransformer(VisibilityTransformer visibilityTransformer) {
-        this.visibilityTransformer = visibilityTransformer;
-    }
-
     public boolean isEnableInternalIdLookup() {
         return enableInternalIdLookup;
     }
 
     public void setEnableInternalIdLookup(boolean enableInternalIdLookup) {
         this.enableInternalIdLookup = enableInternalIdLookup;
+    }
+
+    public AnnotationConfig getAnnotationConfig() {
+        return annotationConfig;
+    }
+
+    public void setAnnotationConfig(AnnotationConfig annotationConfig) {
+        this.annotationConfig = annotationConfig;
     }
 }
