@@ -2,9 +2,9 @@ package datawave.query.tables.keyword;
 
 import static datawave.query.tables.keyword.KeywordQueryLogic.TAG_CLOUD_VERSION;
 import static datawave.query.tables.keyword.KeywordUUIDChainStrategy.CATEGORY_PARAMETER;
-import static datawave.query.tables.keyword.TagCloudTestUtil.CAPONE_SOURCE;
-import static datawave.query.tables.keyword.TagCloudTestUtil.CORLEONE_SOURCE;
-import static datawave.query.tables.keyword.TagCloudTestUtil.SOPRANO_SOURCE;
+import static datawave.query.tables.keyword.TagCloudTestUtil.CAPONE_UUID;
+import static datawave.query.tables.keyword.TagCloudTestUtil.CORLEONE_UUID;
+import static datawave.query.tables.keyword.TagCloudTestUtil.SOPRANO_UUID;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -143,29 +143,29 @@ public class KeywordUUIDQueryFunctionalTest {
         // three tag clouds expected, one for each category/subtype
         // @formatter:off
         withExpectedResult(tagCloudTestUtil.getExpectedCloud("2", Map.of("type", "gendered-age", "subType", "age"),
-                List.of(tagCloudTestUtil.createTagCloudEntry("16", 1.0, 1, List.of(SOPRANO_SOURCE)),
-                        tagCloudTestUtil.createTagCloudEntry("18", 1.0, 1, List.of(SOPRANO_SOURCE)),
-                        tagCloudTestUtil.createTagCloudEntry("20", 1.0, 1, List.of(CAPONE_SOURCE)),
-                        tagCloudTestUtil.createTagCloudEntry("30", 1.0, 1, List.of(CAPONE_SOURCE)),
-                        tagCloudTestUtil.createTagCloudEntry("34", 1.0, 1, List.of(CAPONE_SOURCE)),
-                        tagCloudTestUtil.createTagCloudEntry("40", 1.0, 1, List.of(CAPONE_SOURCE)))
+                List.of(tagCloudTestUtil.createTagCloudEntry("16", 1.0, 1, List.of(SOPRANO_UUID)),
+                        tagCloudTestUtil.createTagCloudEntry("18", 1.0, 1, List.of(SOPRANO_UUID)),
+                        tagCloudTestUtil.createTagCloudEntry("20", 1.0, 1, List.of(CAPONE_UUID)),
+                        tagCloudTestUtil.createTagCloudEntry("30", 1.0, 1, List.of(CAPONE_UUID)),
+                        tagCloudTestUtil.createTagCloudEntry("34", 1.0, 1, List.of(CAPONE_UUID)),
+                        tagCloudTestUtil.createTagCloudEntry("40", 1.0, 1, List.of(CAPONE_UUID)))
         ));
         withExpectedResult(tagCloudTestUtil.getExpectedCloud("2", Map.of("type", "gendered-age", "subType", "gender"),
-                List.of(tagCloudTestUtil.createTagCloudEntry("MALE", 1.0, 2, List.of(CAPONE_SOURCE, SOPRANO_SOURCE)),
-                        tagCloudTestUtil.createTagCloudEntry("FEMALE", 1.0, 1, List.of(SOPRANO_SOURCE)))
+                List.of(tagCloudTestUtil.createTagCloudEntry("MALE", 1.0, 2, List.of(SOPRANO_UUID, CAPONE_UUID)),
+                        tagCloudTestUtil.createTagCloudEntry("FEMALE", 1.0, 1, List.of(SOPRANO_UUID)))
         ));
         withExpectedResult(tagCloudTestUtil.getExpectedCloud("2", Map.of("type", "name"),
-                List.of(tagCloudTestUtil.createTagCloudEntry("MICHAEL", 1.0, 2, List.of(CORLEONE_SOURCE, CAPONE_SOURCE)),
-                        tagCloudTestUtil.createTagCloudEntry("ALPHONSE", 1.0, 1, List.of(CAPONE_SOURCE)),
-                        tagCloudTestUtil.createTagCloudEntry("ANTHONY", 1.0, 1, List.of(SOPRANO_SOURCE)),
-                        tagCloudTestUtil.createTagCloudEntry("CONSTANZIA", 1.0, 1, List.of(CORLEONE_SOURCE)),
-                        tagCloudTestUtil.createTagCloudEntry("FRANK", 1.0, 1, List.of(CAPONE_SOURCE)),
-                        tagCloudTestUtil.createTagCloudEntry("FREDO", 1.0, 1, List.of(CORLEONE_SOURCE)),
-                        tagCloudTestUtil.createTagCloudEntry("LUCA", 1.0, 1, List.of(CORLEONE_SOURCE)),
-                        tagCloudTestUtil.createTagCloudEntry("MEADOW", 1.0, 1, List.of(SOPRANO_SOURCE)),
-                        tagCloudTestUtil.createTagCloudEntry("RALPH", 1.0, 1, List.of(CAPONE_SOURCE)),
-                        tagCloudTestUtil.createTagCloudEntry("SANTINO", 1.0, 1, List.of(CORLEONE_SOURCE)),
-                        tagCloudTestUtil.createTagCloudEntry("VINCENT", 1.0, 1, List.of(CORLEONE_SOURCE)))
+                List.of(tagCloudTestUtil.createTagCloudEntry("MICHAEL", 1.0, 2, List.of(CORLEONE_UUID, CAPONE_UUID)),
+                        tagCloudTestUtil.createTagCloudEntry("ALPHONSE", 1.0, 1, List.of(CAPONE_UUID)),
+                        tagCloudTestUtil.createTagCloudEntry("ANTHONY", 1.0, 1, List.of(SOPRANO_UUID)),
+                        tagCloudTestUtil.createTagCloudEntry("CONSTANZIA", 1.0, 1, List.of(CORLEONE_UUID)),
+                        tagCloudTestUtil.createTagCloudEntry("FRANK", 1.0, 1, List.of(CAPONE_UUID)),
+                        tagCloudTestUtil.createTagCloudEntry("FREDO", 1.0, 1, List.of(CORLEONE_UUID)),
+                        tagCloudTestUtil.createTagCloudEntry("LUCA", 1.0, 1, List.of(CORLEONE_UUID)),
+                        tagCloudTestUtil.createTagCloudEntry("MEADOW", 1.0, 1, List.of(SOPRANO_UUID)),
+                        tagCloudTestUtil.createTagCloudEntry("RALPH", 1.0, 1, List.of(CAPONE_UUID)),
+                        tagCloudTestUtil.createTagCloudEntry("SANTINO", 1.0, 1, List.of(CORLEONE_UUID)),
+                        tagCloudTestUtil.createTagCloudEntry("VINCENT", 1.0, 1, List.of(CORLEONE_UUID)))
         ));
         // @formatter:on
 
