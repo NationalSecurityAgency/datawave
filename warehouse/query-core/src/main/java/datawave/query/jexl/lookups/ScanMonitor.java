@@ -1,30 +1,83 @@
 package datawave.query.jexl.lookups;
 
+import static java.lang.Thread.currentThread;
+import static java.lang.Thread.sleep;
+
+import java.io.Closeable;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.ThreadFactory;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
+
 /**
- * A simple runnable that registers futures and cancels them when the timeout is exceeded.
+ * A simple runnable that registers futures and cancels them when the timeout is exceeded. Monitoring happens in an internal executor.
+ * <p>
+ * No further configuration is necessary after calling {@link ScanMonitor#of(String, QueryUncaughtExceptionHandler)}
  */
-public class ScanMonitor implements Runnable {
+public class ScanMonitor implements Runnable, Closeable {
 
     private static final Logger log = LoggerFactory.getLogger(ScanMonitor.class);
 
-    private final Map<String,IndexScanTask> tasks = new HashMap<>();
+    private static final long DEFAULT_INTERVAL_MILLIS = 25L;
 
     private int taskID = 0;
-    private final long monitorIntervalMillis;
+    private final Map<String,IndexScanTask> tasks = new HashMap<>();
 
-    public ScanMonitor() {
-        this(5L);
+    private final long monitorIntervalMillis;
+    private final ExecutorService executor;
+
+    /**
+     * Static entrypoint that creates a {@link ScanMonitor} for a given query id and exception handler. This constructor uses the
+     * {@link #DEFAULT_INTERVAL_MILLIS} of 25 milliseconds.
+     *
+     * @param id
+     *            the query id
+     * @param handler
+     *            the uncaught exception handler
+     * @return a {@link ScanMonitor}
+     */
+    public static ScanMonitor of(String id, QueryUncaughtExceptionHandler handler) {
+        return new ScanMonitor(DEFAULT_INTERVAL_MILLIS, id, handler);
     }
 
-    public ScanMonitor(long monitorIntervalMillis) {
+    /**
+     * Static entrypoint that creates a {@link ScanMonitor} for a given monitor interval, query id and exception handler
+     *
+     * @param monitorIntervalMillis
+     *            the interval between monitoring checks in milliseconds
+     * @param id
+     *            the query id
+     * @param handler
+     *            the uncaught exception handler
+     * @return a {@link ScanMonitor}
+     */
+    public static ScanMonitor of(long monitorIntervalMillis, String id, QueryUncaughtExceptionHandler handler) {
+        return new ScanMonitor(monitorIntervalMillis, id, handler);
+    }
+
+    /**
+     * Private constructor creates a thread factory, executor and submits this runnable
+     *
+     * @param monitorIntervalMillis
+     *            the interval between monitoring checks
+     * @param id
+     *            the query id
+     * @param handler
+     *            the uncaught exception handler
+     */
+    private ScanMonitor(long monitorIntervalMillis, String id, QueryUncaughtExceptionHandler handler) {
         this.monitorIntervalMillis = monitorIntervalMillis;
+
+        ScanMonitorThreadFactory threadFactory = new ScanMonitorThreadFactory(id, handler);
+        this.executor = Executors.newSingleThreadExecutor(threadFactory);
+        this.executor.submit(this);
     }
 
     /**
@@ -50,7 +103,7 @@ public class ScanMonitor implements Runnable {
         while (true) {
 
             // always check for interrupts first
-            if (Thread.currentThread().isInterrupted()) {
+            if (currentThread().isInterrupted()) {
                 log.info("thread interrupted, stopping");
                 break;
             }
@@ -70,11 +123,18 @@ public class ScanMonitor implements Runnable {
             }
 
             try {
-                Thread.sleep(monitorIntervalMillis);
+                sleep(monitorIntervalMillis);
             } catch (InterruptedException e) {
                 log.info("thread interrupted, stopping");
                 break;
             }
+        }
+    }
+
+    @Override
+    public void close() {
+        if (executor != null && !executor.isShutdown()) {
+            executor.shutdownNow();
         }
     }
 
@@ -102,4 +162,26 @@ public class ScanMonitor implements Runnable {
         }
     }
 
+    /**
+     * A simple thread factory for the {@link ScanMonitor}
+     */
+    protected static class ScanMonitorThreadFactory implements ThreadFactory {
+        private final String queryId;
+        private final QueryUncaughtExceptionHandler uncaughtExceptionHandler;
+        private final ThreadFactory threadFactory = Executors.defaultThreadFactory();
+
+        public ScanMonitorThreadFactory(String queryId, QueryUncaughtExceptionHandler uncaughtExceptionHandler) {
+            this.queryId = queryId;
+            this.uncaughtExceptionHandler = uncaughtExceptionHandler;
+        }
+
+        @Override
+        public Thread newThread(Runnable r) {
+            Thread thread = threadFactory.newThread(r);
+            thread.setName(queryId + " monitor");
+            thread.setDaemon(true);
+            thread.setUncaughtExceptionHandler(uncaughtExceptionHandler);
+            return thread;
+        }
+    }
 }

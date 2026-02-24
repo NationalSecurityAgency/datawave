@@ -73,7 +73,6 @@ public class BoundedRangeIndexLookupTest extends EasyMockSupport {
     private ScannerFactory largeScannerFactory;
 
     private ScanMonitor monitor;
-    private ExecutorService monitorExecutor;
 
     @BeforeClass
     public static void setupClass() throws Exception {
@@ -100,15 +99,13 @@ public class BoundedRangeIndexLookupTest extends EasyMockSupport {
         largeConfig = new ShardQueryConfiguration();
         largeScannerFactory = createMock(ScannerFactory.class);
 
-        monitor = new ScanMonitor(25_000);
-        monitorExecutor = Executors.newFixedThreadPool(1);
-        monitorExecutor.execute(monitor);
+        monitor = ScanMonitor.of(25_000, "test", null);
     }
 
     @After
     public void teardown() {
         executorService.shutdownNow();
-        monitorExecutor.shutdownNow();
+        monitor.close();
     }
 
     public static void writeData() throws Exception {

@@ -58,8 +58,7 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
     protected Map<String,IndexLookup> lookupMap;
     protected List<FutureJexlNode> futureJexlNodes;
 
-    protected ScanMonitor monitor = new ScanMonitor();
-    private ExecutorService monitorExecutor;
+    protected ScanMonitor monitor;
 
     protected String stage = "default";
 
@@ -99,19 +98,18 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
         }
     }
 
-    protected void setupMonitorExecutor() {
+    protected void setupScanMonitor() {
         String id = "(unknown)";
         if (config.getQuery() != null && config.getQuery().getId() != null) {
             id = config.getQuery().getId().toString();
         }
-        this.monitorExecutor = Executors.newSingleThreadExecutor(new ScanMonitorThreadFactory(id, config.getQuery().getUncaughtExceptionHandler()));
-        this.monitorExecutor.submit(monitor);
+
+        QueryUncaughtExceptionHandler handler = config.getQuery().getUncaughtExceptionHandler();
+        monitor = ScanMonitor.of(id, handler);
     }
 
-    protected void shutdownMonitorExecutor() {
-        if (monitorExecutor != null) {
-            monitorExecutor.shutdownNow();
-        }
+    protected void shutdownMonitor() {
+        monitor.close();
     }
 
     /**
@@ -126,7 +124,7 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
     @SuppressWarnings("unchecked")
     protected <T extends JexlNode> T expand(T script) {
         setupExecutor();
-        setupMonitorExecutor();
+        setupScanMonitor();
         try {
             if (null == config.getQueryFieldsDatatypes()) {
                 QueryException qe = new QueryException(DatawaveErrorCode.DATATYPESFORINDEXFIELDS_MULTIMAP_MISSING);
@@ -140,7 +138,7 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
             return rebuiltScript;
         } finally {
             shutdownExecutor();
-            shutdownMonitorExecutor();
+            shutdownMonitor();
         }
     }
 
@@ -341,28 +339,4 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
             return thread;
         }
     }
-
-    /**
-     * A simple thread factory for the {@link ScanMonitor}
-     */
-    protected static class ScanMonitorThreadFactory implements ThreadFactory {
-        private final String queryId;
-        private final QueryUncaughtExceptionHandler uncaughtExceptionHandler;
-        private final ThreadFactory threadFactory = Executors.defaultThreadFactory();
-
-        public ScanMonitorThreadFactory(String queryId, QueryUncaughtExceptionHandler uncaughtExceptionHandler) {
-            this.queryId = queryId;
-            this.uncaughtExceptionHandler = uncaughtExceptionHandler;
-        }
-
-        @Override
-        public Thread newThread(Runnable r) {
-            Thread thread = threadFactory.newThread(r);
-            thread.setName(queryId + " monitor");
-            thread.setDaemon(true);
-            thread.setUncaughtExceptionHandler(uncaughtExceptionHandler);
-            return thread;
-        }
-    }
-
 }
