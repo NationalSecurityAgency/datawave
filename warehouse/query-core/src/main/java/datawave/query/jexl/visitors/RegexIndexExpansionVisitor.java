@@ -5,7 +5,6 @@ import static datawave.query.jexl.JexlASTHelper.isLiteralEquality;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DELAYED;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DROPPED;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EVALUATION_ONLY;
-import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_TERM;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_VALUE;
 import static org.apache.commons.jexl3.parser.JexlNodes.id;
 
@@ -198,15 +197,12 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
         if (markedParents != null) {
             boolean evalOnly = false;
             boolean exceededValueMarker = false;
-            boolean exceededTermMarker = false;
             for (JexlNode markedParent : markedParents) {
                 QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(markedParent);
                 if (instance.isAnyTypeOf(EVALUATION_ONLY, DROPPED)) {
                     evalOnly = true;
                 } else if (instance.isType(EXCEEDED_VALUE)) {
                     exceededValueMarker = true;
-                } else if (instance.isType(EXCEEDED_TERM)) {
-                    exceededTermMarker = true;
                 }
             }
 
@@ -217,9 +213,9 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
                 throw new DatawaveFatalQueryException(e);
             }
 
-            if (evalOnly && !exceededValueMarker && !exceededTermMarker && nonEvent) {
+            if (evalOnly && !exceededValueMarker && nonEvent) {
                 return QueryPropertyMarker.create(node, EXCEEDED_VALUE);
-            } else if (exceededValueMarker || exceededTermMarker) {
+            } else if (exceededValueMarker) {
                 // already did this expansion
                 return node;
             } else if (!nonEvent && evalOnly) {
