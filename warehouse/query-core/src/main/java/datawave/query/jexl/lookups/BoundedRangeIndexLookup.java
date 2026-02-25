@@ -116,17 +116,21 @@ public class BoundedRangeIndexLookup extends AsyncIndexLookup {
 
                 for (Map.Entry<Key,Value> entry : scanner) {
                     Key key = entry.getKey();
-                    log.info("tk: {}", key.toStringNoTime());
+                    if (log.isTraceEnabled()) {
+                        log.trace("tk: {}", key.toStringNoTime());
+                    }
                     indexLookupMap.put(field, key.getRow().toString());
                 }
 
             } catch (Exception e) {
-                log.error("Exception seen");
+                log.error("Exception seen: {}", e.getMessage());
                 // mark the field as threshold exceeded regardless of the exception type
                 indexLookupMap.put(field, "");
                 indexLookupMap.get(field).setThresholdExceeded();
             } finally {
-                log.info("closing scanner");
+                if (log.isTraceEnabled()) {
+                    log.trace("closing scanner");
+                }
                 stopLatch.countDown();
             }
         };
@@ -188,7 +192,9 @@ public class BoundedRangeIndexLookup extends AsyncIndexLookup {
             throw new IllegalRangeArgumentException(qe);
         }
 
-        log.debug("Range: {}", range);
+        if (log.isDebugEnabled()) {
+            log.debug("Range: {}", range);
+        }
         return range;
     }
 

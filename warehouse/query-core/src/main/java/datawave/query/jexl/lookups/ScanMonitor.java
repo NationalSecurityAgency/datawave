@@ -89,7 +89,9 @@ public class ScanMonitor implements Runnable, Closeable {
      *            the timeout
      */
     public void registerTask(Future<?> future, long timeout) {
-        log.info("registering task: {}", taskID);
+        if (log.isTraceEnabled()) {
+            log.trace("registering task: {}", taskID);
+        }
         String id = String.valueOf(taskID++);
         IndexScanTask task = new IndexScanTask(future, timeout);
 
@@ -104,7 +106,9 @@ public class ScanMonitor implements Runnable, Closeable {
 
             // always check for interrupts first
             if (currentThread().isInterrupted()) {
-                log.info("thread interrupted, stopping");
+                if (log.isDebugEnabled()) {
+                    log.debug("thread interrupted, stopping");
+                }
                 break;
             }
 
@@ -115,7 +119,9 @@ public class ScanMonitor implements Runnable, Closeable {
                     String key = iter.next();
                     IndexScanTask task = tasks.get(key);
                     if (task.isDone(currentTime)) {
-                        log.info("closing task {}", key);
+                        if (log.isDebugEnabled()) {
+                            log.debug("closing task {}", key);
+                        }
                         task.cancelFuture();
                         iter.remove();
                     }
@@ -125,7 +131,9 @@ public class ScanMonitor implements Runnable, Closeable {
             try {
                 sleep(monitorIntervalMillis);
             } catch (InterruptedException e) {
-                log.info("thread interrupted, stopping");
+                if (log.isDebugEnabled()) {
+                    log.debug("thread interrupted, stopping");
+                }
                 break;
             }
         }
@@ -151,8 +159,7 @@ public class ScanMonitor implements Runnable, Closeable {
         }
 
         public boolean isDone(long current) {
-            long elapsed = current - start;
-            return elapsed >= timeout;
+            return future.isDone() || future.isCancelled() || (current - start >= timeout);
         }
 
         public void cancelFuture() {
