@@ -88,7 +88,7 @@ public class AnnotationManagerBean implements AnnotationManager {
     @SpringBean(name = "AnnotationManagerConfig")
     private AnnotationManagerConfig config;
 
-    // Per-request stateful variables, managed internally.
+    // Per-request stateful variables, managed internally. Reset via resetRequestState().
     private Set<Authorizations> authorizations;
     private AccumuloClient client;
     private LookupUUIDService lookupUUIDService;
@@ -168,6 +168,19 @@ public class AnnotationManagerBean implements AnnotationManager {
         }
     }
 
+    /**
+     * Reset all per-request stateful variables. This must be called at the end of every request to prevent state from leaking across requests in this
+     * pooled @Stateless EJB.
+     */
+    private void resetRequestState() {
+        returnAccumuloClient();
+        authorizations = null;
+        client = null;
+        lookupUUIDService = null;
+        annotationDataAccess = null;
+        retrievedSourcesCache.clear();
+    }
+
     public LookupUUIDService initializeLookupUUIDService() throws QueryException {
         if (lookupUUIDService == null) {
             final AccumuloClient client = initializeAccumuloClient();
@@ -207,7 +220,7 @@ public class AnnotationManagerBean implements AnnotationManager {
             log.error(message, e);
             return jsonError(message);
         } finally {
-            returnAccumuloClient();
+            resetRequestState();
         }
 
     }
@@ -240,7 +253,7 @@ public class AnnotationManagerBean implements AnnotationManager {
             log.error(message, e);
             return jsonError(message);
         } finally {
-            returnAccumuloClient();
+            resetRequestState();
         }
     }
 
@@ -274,7 +287,7 @@ public class AnnotationManagerBean implements AnnotationManager {
             log.error(message, e);
             return jsonError(message);
         } finally {
-            returnAccumuloClient();
+            resetRequestState();
         }
     }
 
@@ -309,7 +322,7 @@ public class AnnotationManagerBean implements AnnotationManager {
             log.error(message, e);
             return jsonError(message);
         } finally {
-            returnAccumuloClient();
+            resetRequestState();
         }
     }
 
@@ -342,7 +355,7 @@ public class AnnotationManagerBean implements AnnotationManager {
             log.error(message, e);
             return jsonError(message);
         } finally {
-            returnAccumuloClient();
+            resetRequestState();
         }
     }
 
@@ -406,7 +419,7 @@ public class AnnotationManagerBean implements AnnotationManager {
             log.error(message, e);
             return jsonError(message);
         } finally {
-            returnAccumuloClient();
+            resetRequestState();
         }
     }
 
@@ -470,7 +483,7 @@ public class AnnotationManagerBean implements AnnotationManager {
             log.error(message, e);
             return jsonError(message);
         } finally {
-            returnAccumuloClient();
+            resetRequestState();
         }
     }
 
@@ -520,7 +533,7 @@ public class AnnotationManagerBean implements AnnotationManager {
             log.error(message, e);
             return jsonError(message);
         } finally {
-            returnAccumuloClient();
+            resetRequestState();
         }
     }
 
@@ -559,7 +572,7 @@ public class AnnotationManagerBean implements AnnotationManager {
             log.error(message, e);
             return jsonError(message);
         } finally {
-            returnAccumuloClient();
+            resetRequestState();
         }
     }
 
