@@ -54,7 +54,7 @@ public abstract class BaseRegexIndexLookup extends AsyncIndexLookup {
 
     protected IteratorSetting createTimeoutIterator() {
         long maxTime = (long) (config.getMaxIndexScanTimeMillis() * 1.25);
-        IteratorSetting iterator = new IteratorSetting(1, TimeoutIterator.class);
+        IteratorSetting iterator = new IteratorSetting(5, TimeoutIterator.class);
         iterator.addOption(TimeoutIterator.MAX_SESSION_TIME, Long.valueOf(maxTime).toString());
         return iterator;
     }

@@ -4,7 +4,6 @@ import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.BOUNDED_R
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DROPPED;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EVALUATION_ONLY;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_OR;
-import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_TERM;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_VALUE;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.INDEX_HOLE;
 
@@ -76,7 +75,7 @@ public class BoundedRangeIndexExpansionVisitor extends BaseIndexExpansionVisitor
         QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(node);
 
         // don't traverse delayed nodes
-        if (instance.isAnyTypeOf(INDEX_HOLE, EVALUATION_ONLY, DROPPED, EXCEEDED_VALUE, EXCEEDED_TERM, EXCEEDED_OR)) {
+        if (instance.isAnyTypeOf(INDEX_HOLE, EVALUATION_ONLY, DROPPED, EXCEEDED_VALUE, EXCEEDED_OR)) {
             return RebuildingVisitor.copy(node);
         }
         // handle bounded range

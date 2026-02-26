@@ -82,7 +82,6 @@ public class PushdownUnindexedFieldsVisitor extends RebuildingVisitor {
                 case DROPPED:
                 case LENIENT:
                 case STRICT:
-                case EXCEEDED_TERM:
                 default:
                     return super.visit(node, data);
             }
