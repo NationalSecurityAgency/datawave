@@ -5,7 +5,6 @@ import static datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods.EXPA
 import java.text.MessageFormat;
 import java.util.Collections;
 import java.util.Map;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
@@ -44,8 +43,6 @@ public class BoundedRangeIndexLookup extends AsyncIndexLookup {
 
     private final LiteralRange<?> literalRange;
     protected final String field;
-    protected final CountDownLatch startLatch;
-    protected final CountDownLatch stopLatch;
 
     // variables to support range creation
     private final String startDay;
@@ -54,6 +51,8 @@ public class BoundedRangeIndexLookup extends AsyncIndexLookup {
     private final String upper;
 
     private final Range scanRange;
+
+    protected Future<?> future;
 
     /**
      *
@@ -71,8 +70,6 @@ public class BoundedRangeIndexLookup extends AsyncIndexLookup {
         this.literalRange = literalRange;
         this.fields = Collections.singleton(literalRange.getFieldName());
         this.field = literalRange.getFieldName();
-        this.startLatch = new CountDownLatch(1);
-        this.stopLatch = new CountDownLatch(1);
 
         // setup variables for creating scan ranges
         this.startDay = DateHelper.format(config.getBeginDate());
@@ -91,7 +88,8 @@ public class BoundedRangeIndexLookup extends AsyncIndexLookup {
             indexLookupMap = new IndexLookupMap(config.getMaxUnfieldedExpansionThreshold(), config.getMaxValueExpansionThreshold());
 
             Runnable runnable = createRunnable(getTableName(), config.getAuthorizations().iterator().next());
-            Future<?> future = execService.submit(runnable);
+            future = execService.submit(runnable);
+
             Preconditions.checkNotNull(monitor, "BoundedRange index expansion requires a ScanMonitor");
             monitor.registerTask(future, config.getMaxIndexScanTimeMillis());
         }
@@ -99,7 +97,6 @@ public class BoundedRangeIndexLookup extends AsyncIndexLookup {
 
     protected Runnable createRunnable(String tableName, Authorizations auths) {
         return () -> {
-            startLatch.countDown();
             try (var scanner = config.getClient().createScanner(tableName, auths)) {
                 String hintKey = config.getTableHints().containsKey(EXPANSION_HINT_KEY) ? EXPANSION_HINT_KEY : config.getIndexTableName();
                 scanner.setExecutionHints(Map.of(tableName, hintKey));
@@ -131,7 +128,6 @@ public class BoundedRangeIndexLookup extends AsyncIndexLookup {
                 if (log.isTraceEnabled()) {
                     log.trace("closing scanner");
                 }
-                stopLatch.countDown();
             }
         };
     }
@@ -251,44 +247,16 @@ public class BoundedRangeIndexLookup extends AsyncIndexLookup {
      * Wait for the future to complete before returning the {@link IndexLookupMap}
      */
     protected void await() {
-
-        switch ((int) startLatch.getCount()) {
-            case 0:
-                // scan task already started, fall through to stop latch
-                break;
-            case 1:
-                // scan task submitted but not running yet
-                try {
-                    startLatch.await();
-                } catch (Exception e) {
-                    // any exception at this stage marks the range as value exceeded
-                    markExceeded("start");
-                }
-                break;
-            default:
-                throw new IllegalStateException("start latch count should be zero or one, but was: " + startLatch.getCount());
-        }
-
-        switch ((int) stopLatch.getCount()) {
-            case 0:
-                // scan task completed prior to calling await(), nothing left to do
-                break;
-            case 1:
-                // scan task executing, wait for completion
-                try {
-                    stopLatch.await();
-                } catch (Exception e) {
-                    // any exception at this stage marks the range as value exceeded
-                    markExceeded("executing");
-                }
-                break;
-            default:
-                throw new IllegalStateException("stop latch count should be zero or one, but was: " + stopLatch.getCount());
+        try {
+            future.get();
+        } catch (Exception e) {
+            // any exception causes the range to marked as value exceeded
+            markExceeded();
         }
     }
 
-    protected void markExceeded(String context) {
-        log.debug("marking range as exceeded: {}", context);
+    protected void markExceeded() {
+        log.debug("marking range as exceeded");
         indexLookupMap.put(field, "");
         indexLookupMap.get(field).setThresholdExceeded();
     }
