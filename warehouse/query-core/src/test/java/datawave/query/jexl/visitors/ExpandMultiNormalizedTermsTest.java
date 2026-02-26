@@ -3,7 +3,6 @@ package datawave.query.jexl.visitors;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DELAYED;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EVALUATION_ONLY;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_OR;
-import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_TERM;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_VALUE;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.INDEX_HOLE;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.LENIENT;
@@ -514,14 +513,14 @@ public class ExpandMultiNormalizedTermsTest {
 
         config.setQueryFieldsDatatypes(dataTypes);
 
-        List<String> markers = Arrays.asList(new String[] {INDEX_HOLE.getLabel(), DELAYED.getLabel(), EXCEEDED_OR.getLabel(), EVALUATION_ONLY.getLabel()});
+        List<String> markers = Arrays.asList(INDEX_HOLE.getLabel(), DELAYED.getLabel(), EXCEEDED_OR.getLabel(), EVALUATION_ONLY.getLabel());
         for (String marker : markers) {
             String original = "((" + marker + " = true) && (FOO == 'Bar'))";
             String expected = "((" + marker + " = true) && (FOO == 'bar'))";
             expandTerms(original, expected);
         }
 
-        markers = Arrays.asList(new String[] {EXCEEDED_TERM.getLabel(), EXCEEDED_VALUE.getLabel()});
+        markers = Collections.singletonList(EXCEEDED_VALUE.getLabel());
         for (String marker : markers) {
             String original = "((" + marker + " = true) && (FOO == 'Bar'))";
             String expected = "((" + marker + " = true) && (FOO == 'Bar'))";

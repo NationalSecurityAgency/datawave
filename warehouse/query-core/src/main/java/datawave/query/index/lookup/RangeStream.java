@@ -8,7 +8,6 @@ import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DELAYED;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DROPPED;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EVALUATION_ONLY;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_OR;
-import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_TERM;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_VALUE;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.INDEX_HOLE;
 import static datawave.query.util.ValueSerializerType.KRYO;
@@ -425,10 +424,7 @@ public class RangeStream extends BaseVisitor implements QueryPlanStream {
     @Override
     public IndexStream visit(ASTAndNode node, Object data) {
         QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(node);
-        // if we have a term threshold marker, then we simply could not expand an _ANYFIELD_ identifier, so return EXCEEDED_THRESHOLD
-        if (instance.isType(EXCEEDED_TERM)) {
-            return ScannerStream.delayed(node);
-        } else if (instance.isAnyTypeOf(EXCEEDED_VALUE, EXCEEDED_OR)) {
+        if (instance.isAnyTypeOf(EXCEEDED_VALUE, EXCEEDED_OR)) {
             try {
                 // When we exceeded the expansion threshold for a regex, the field is an index-only field, and we can't
                 // hook up the hdfs-sorted-set iterator (Ivarator), we can't run the query via the index or
@@ -1089,8 +1085,7 @@ public class RangeStream extends BaseVisitor implements QueryPlanStream {
         Iterator<ASTIdentifier> iter = identifiers.iterator();
         while (iter.hasNext()) {
             ASTIdentifier id = iter.next();
-            if (EXCEEDED_VALUE.getLabel().equals(id.getName()) || EXCEEDED_TERM.getLabel().equals(id.getName())
-                            || EXCEEDED_OR.getLabel().equals(id.getName())) {
+            if (EXCEEDED_VALUE.getLabel().equals(id.getName()) || EXCEEDED_OR.getLabel().equals(id.getName())) {
                 iter.remove();
             }
         }
