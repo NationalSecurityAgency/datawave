@@ -83,6 +83,9 @@ public class BoundedRangeIndexLookup extends AsyncIndexLookup {
         this.scanRange = createScanRange(lower, upper, endDay);
     }
 
+    /**
+     * This method is responsible for creating a Runnable, submitting it to the executor and registering the future with the {@link ScanMonitor}.
+     */
     @Override
     public synchronized void submit() {
         if (indexLookupMap == null) {
@@ -96,6 +99,18 @@ public class BoundedRangeIndexLookup extends AsyncIndexLookup {
         }
     }
 
+    /**
+     * The created runnable handles everything with configuring a scanner, parsing results and putting them into the {@link #indexLookupMap} and handling
+     * exceptions.
+     * <p>
+     * Note: it is critical that any scanner created here is used with a try-with-resources block.
+     *
+     * @param tableName
+     *            the table to be scanned
+     * @param auths
+     *            the authorizations
+     * @return a Runnable that wraps a scanner
+     */
     protected Runnable createRunnable(String tableName, Authorizations auths) {
         return () -> {
             try (Scanner scanner = config.getClient().createScanner(tableName, auths)) {
@@ -123,8 +138,7 @@ public class BoundedRangeIndexLookup extends AsyncIndexLookup {
             } catch (Exception e) {
                 log.error("Exception seen: {}", e.getMessage());
                 // mark the field as threshold exceeded regardless of the exception type
-                indexLookupMap.put(field, "");
-                indexLookupMap.get(field).setThresholdExceeded();
+                markExceeded();
             } finally {
                 if (log.isTraceEnabled()) {
                     log.trace("closing scanner");
@@ -258,6 +272,9 @@ public class BoundedRangeIndexLookup extends AsyncIndexLookup {
         }
     }
 
+    /**
+     * Manipulates the {@link #indexLookupMap} so the bounded range term will be wrapped with an exceeded value marker.
+     */
     protected void markExceeded() {
         log.debug("marking range as exceeded");
         indexLookupMap.put(field, "");
