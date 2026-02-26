@@ -1,7 +1,6 @@
 package datawave.ingest.mapreduce.job.reduce;
 
 import static datawave.ingest.mapreduce.job.TableConfigurationUtil.ITERATOR_CLASS_MARKER;
-import static datawave.ingest.mapreduce.job.TableConfigurationUtil.JOB_OUTPUT_TABLE_NAMES;
 import static datawave.ingest.mapreduce.job.reduce.AggregatingReducer.MILLISPERDAY;
 import static datawave.ingest.mapreduce.job.reduce.AggregatingReducer.USE_AGGREGATOR_PROPERTY;
 import static datawave.ingest.mapreduce.job.reduce.BulkIngestKeyAggregatingReducer.CONTEXT_WRITER_CLASS;
@@ -33,11 +32,13 @@ import org.apache.hadoop.mapreduce.TaskID;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 import org.apache.hadoop.mapreduce.TaskType;
 import org.apache.hadoop.mapreduce.counters.GenericCounter;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.MockedConstruction;
+import org.junit.runner.RunWith;
 import org.mockito.Mockito;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableSet;
@@ -49,9 +50,12 @@ import datawave.ingest.mapreduce.job.writer.BulkContextWriter;
 import datawave.ingest.mapreduce.job.writer.ContextWriter;
 import datawave.ingest.metric.IngestOutput;
 
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({AggregatingReducer.class, TableConfigurationUtil.class})
 public class BulkIngestKeyAggregatingReducerTest {
 
     private Set<String> tables = ImmutableSet.of("table1", "table2", "table3", "table4");
+    private Map<String,String> confMap;
     private Multimap<BulkIngestKey,Value> output;
     private Multimap<BulkIngestKey,Value> expected;
     private BulkIngestKeyAggregatingReducer<BulkIngestKey,Value> reducer;
@@ -60,8 +64,6 @@ public class BulkIngestKeyAggregatingReducerTest {
     private TaskInputOutputContext<BulkIngestKey,Value,BulkIngestKey,Value> context;
     private TableConfigurationUtil tcu;
     private Random rand = new Random();
-
-    private MockedConstruction<TableConfigurationUtil> tcuConstruction;
 
     private Counter duplicateKey;
     private Counter r1Counter;
@@ -92,9 +94,9 @@ public class BulkIngestKeyAggregatingReducerTest {
         NO_VALUE, FIRST_VALUE, COMBINED_VALUES, ALL_VALUES
     }
 
-    @SuppressWarnings("unchecked")
     @Before
     public void setup() throws Exception {
+        confMap = new HashMap();
         expected = ArrayListMultimap.create();
         output = ArrayListMultimap.create();
         duplicateKey = (Counter) new GenericCounter();
@@ -120,44 +122,32 @@ public class BulkIngestKeyAggregatingReducerTest {
         expectedNegativeTimestampCounter = 0;
         expectedDupCounter = 0;
 
-        // Use a real Configuration and set properties as needed
-        conf = new Configuration(false);
-        conf.setStrings(JOB_OUTPUT_TABLE_NAMES, tables.toArray(new String[0]));
-        conf.setBoolean(CONTEXT_WRITER_OUTPUT_TABLE_COUNTERS, false);
-        conf.setClass(CONTEXT_WRITER_CLASS, BulkContextWriter.class, ContextWriter.class);
+        conf = (Configuration) PowerMockito.mock(Configuration.class);
+        PowerMockito.whenNew(Configuration.class).withAnyArguments().thenReturn(conf);
+        PowerMockito.when(conf.iterator()).thenReturn(confMap.entrySet().iterator());
+        PowerMockito.when(conf.getBoolean(Mockito.eq(CONTEXT_WRITER_OUTPUT_TABLE_COUNTERS), Mockito.eq(false))).thenReturn(false);
+        PowerMockito.doReturn(BulkContextWriter.class).when(conf).getClass(Mockito.eq(CONTEXT_WRITER_CLASS), Mockito.any(), Mockito.any());
 
-        // Default all tables to NOT use aggregators (original mock behavior returned false for unstubbed calls)
-        for (String table : tables) {
-            conf.setBoolean(table + USE_AGGREGATOR_PROPERTY, false);
+        tcu = PowerMockito.mock(TableConfigurationUtil.class);
+        PowerMockito.whenNew(TableConfigurationUtil.class).withAnyArguments().thenReturn(tcu);
+        PowerMockito.doNothing().when(tcu).setTableItersPrioritiesAndOpts();
+
+        PowerMockito.mockStatic(TableConfigurationUtil.class, new Class[0]);
+        PowerMockito.when(TableConfigurationUtil.getJobOutputTableNames((Configuration) Mockito.any(Configuration.class))).thenReturn(tables);
+
+        context = (TaskInputOutputContext<BulkIngestKey,Value,BulkIngestKey,Value>) PowerMockito.mock(TaskInputOutputContext.class);
+        if (null != context.getCounter(IngestOutput.DUPLICATE_KEY)) {
+            context.getCounter(IngestOutput.DUPLICATE_KEY).setValue(0L);
         }
-
-        // Create tcu mock eagerly so helpers can configure stubs before reducer.setup()
-        tcu = Mockito.mock(TableConfigurationUtil.class);
-
-        // Mock TableConfigurationUtil construction so new TableConfigurationUtil(conf) delegates to our tcu mock
-        tcuConstruction = Mockito.mockConstruction(TableConfigurationUtil.class, (mock, ctx) -> {
-            Mockito.when(mock.getTableCombiners(Mockito.anyString())).thenAnswer(inv -> tcu.getTableCombiners(inv.getArgument(0)));
-            Mockito.when(mock.getTableAggregators(Mockito.anyString())).thenAnswer(inv -> tcu.getTableAggregators(inv.getArgument(0)));
-        });
-
-        context = (TaskInputOutputContext<BulkIngestKey,Value,BulkIngestKey,Value>) Mockito.mock(TaskInputOutputContext.class);
-        Mockito.doAnswer(invocation -> {
+        PowerMockito.doAnswer(invocation -> {
             BulkIngestKey k = invocation.getArgument(0);
             Value v = invocation.getArgument(1);
             output.put(k, v);
             return null;
         }).when(context).write(Mockito.any(BulkIngestKey.class), Mockito.any(Value.class));
-        Mockito.when(context.getCounter(IngestOutput.DUPLICATE_KEY)).thenReturn(duplicateKey);
-        Mockito.when(context.getConfiguration()).thenReturn(conf);
+        PowerMockito.when(context.getCounter(IngestOutput.DUPLICATE_KEY)).thenReturn(duplicateKey);
 
         reducer = new BulkIngestKeyAggregatingReducer<>();
-    }
-
-    @After
-    public void tearDown() {
-        if (tcuConstruction != null) {
-            tcuConstruction.close();
-        }
     }
 
     private void setupVerboseCounters() {
@@ -165,10 +155,10 @@ public class BulkIngestKeyAggregatingReducerTest {
         tab2Counter = (Counter) new GenericCounter();
         tab3Counter = (Counter) new GenericCounter();
 
-        conf.setBoolean(VERBOSE_COUNTERS, true);
-        Mockito.when(context.getCounter(Mockito.eq("TABLE.KEY.VALUElen"), Mockito.startsWith("table1 reducer"))).thenReturn(tab1Counter);
-        Mockito.when(context.getCounter(Mockito.eq("TABLE.KEY.VALUElen"), Mockito.startsWith("table2 reducer"))).thenReturn(tab2Counter);
-        Mockito.when(context.getCounter(Mockito.eq("TABLE.KEY.VALUElen"), Mockito.startsWith("table3 reducer"))).thenReturn(tab3Counter);
+        PowerMockito.when(conf.getBoolean(Mockito.eq(VERBOSE_COUNTERS), Mockito.eq(false))).thenReturn(true);
+        PowerMockito.when(context.getCounter(Mockito.eq("TABLE.KEY.VALUElen"), Mockito.startsWith("table1 reducer"))).thenReturn(tab1Counter);
+        PowerMockito.when(context.getCounter(Mockito.eq("TABLE.KEY.VALUElen"), Mockito.startsWith("table2 reducer"))).thenReturn(tab2Counter);
+        PowerMockito.when(context.getCounter(Mockito.eq("TABLE.KEY.VALUElen"), Mockito.startsWith("table3 reducer"))).thenReturn(tab3Counter);
     }
 
     private void setupVerbosePartitioningCounters() {
@@ -179,30 +169,30 @@ public class BulkIngestKeyAggregatingReducerTest {
         tab2Counter = (Counter) new GenericCounter();
         tab3Counter = (Counter) new GenericCounter();
 
-        conf.setBoolean(VERBOSE_PARTITIONING_COUNTERS, true);
+        PowerMockito.when(conf.getBoolean(Mockito.eq(VERBOSE_PARTITIONING_COUNTERS), Mockito.eq(false))).thenReturn(true);
 
-        Mockito.when(context.getCounter(Mockito.eq("REDUCER 1"), Mockito.startsWith("TABLE table"))).thenReturn(r1Counter);
-        Mockito.when(context.getCounter(Mockito.eq("REDUCER 2"), Mockito.startsWith("TABLE table"))).thenReturn(r2Counter);
-        Mockito.when(context.getCounter(Mockito.eq("REDUCER 3"), Mockito.startsWith("TABLE table"))).thenReturn(r3Counter);
+        PowerMockito.when(context.getCounter(Mockito.eq("REDUCER 1"), Mockito.startsWith("TABLE table"))).thenReturn(r1Counter);
+        PowerMockito.when(context.getCounter(Mockito.eq("REDUCER 2"), Mockito.startsWith("TABLE table"))).thenReturn(r2Counter);
+        PowerMockito.when(context.getCounter(Mockito.eq("REDUCER 3"), Mockito.startsWith("TABLE table"))).thenReturn(r3Counter);
 
-        Mockito.when(context.getCounter(Mockito.eq("TABLE table1"), Mockito.startsWith("REDUCER"))).thenReturn(tab1Counter);
-        Mockito.when(context.getCounter(Mockito.eq("TABLE table2"), Mockito.startsWith("REDUCER"))).thenReturn(tab2Counter);
-        Mockito.when(context.getCounter(Mockito.eq("TABLE table3"), Mockito.startsWith("REDUCER"))).thenReturn(tab3Counter);
+        PowerMockito.when(context.getCounter(Mockito.eq("TABLE table1"), Mockito.startsWith("REDUCER"))).thenReturn(tab1Counter);
+        PowerMockito.when(context.getCounter(Mockito.eq("TABLE table2"), Mockito.startsWith("REDUCER"))).thenReturn(tab2Counter);
+        PowerMockito.when(context.getCounter(Mockito.eq("TABLE table3"), Mockito.startsWith("REDUCER"))).thenReturn(tab3Counter);
 
-        taskAttemptID = Mockito.mock(TaskAttemptID.class);
-        taskID = Mockito.mock(TaskID.class);
-        Mockito.when(taskAttemptID.getTaskID()).thenReturn(taskID);
-        Mockito.when(taskAttemptID.getTaskType()).thenReturn(TaskType.REDUCE);
+        taskAttemptID = PowerMockito.mock(TaskAttemptID.class);
+        taskID = PowerMockito.mock(TaskID.class);
+        PowerMockito.when(taskAttemptID.getTaskID()).thenReturn(taskID);
+        PowerMockito.when(taskAttemptID.getTaskType()).thenReturn(TaskType.REDUCE);
 
-        Mockito.when(context.getTaskAttemptID()).thenReturn(taskAttemptID);
+        PowerMockito.when(context.getTaskAttemptID()).thenReturn(taskAttemptID);
 
     }
 
     private void setupTimestampDedup() {
-        conf.setBoolean("table1" + USE_AGGREGATOR_PROPERTY, true);
-        conf.setBoolean("table2" + USE_AGGREGATOR_PROPERTY, true);
-        conf.setBoolean("table3" + USE_AGGREGATOR_PROPERTY, true);
-        Mockito.when(context.getCounter(IngestOutput.TIMESTAMP_DUPLICATE)).thenReturn(dupCounter);
+        PowerMockito.when(conf.getBoolean(Mockito.eq("table1" + USE_AGGREGATOR_PROPERTY), Mockito.eq(true))).thenReturn(true);
+        PowerMockito.when(conf.getBoolean(Mockito.eq("table2" + USE_AGGREGATOR_PROPERTY), Mockito.eq(true))).thenReturn(true);
+        PowerMockito.when(conf.getBoolean(Mockito.eq("table3" + USE_AGGREGATOR_PROPERTY), Mockito.eq(true))).thenReturn(true);
+        PowerMockito.when(context.getCounter(IngestOutput.TIMESTAMP_DUPLICATE)).thenReturn(dupCounter);
 
         reducer.TSDedupTables.addAll(Arrays.asList(new Text("table1"), new Text("table2"), new Text("table3")));
 
@@ -212,23 +202,23 @@ public class BulkIngestKeyAggregatingReducerTest {
 
         Map<Integer,Map<String,String>> table1CombinerMap = new HashMap<>();
         table1CombinerMap.put(1, optMap);
-        Mockito.when(tcu.getTableCombiners(Mockito.eq("table1"))).thenReturn(table1CombinerMap);
+        PowerMockito.when(tcu.getTableCombiners(Mockito.eq("table1"))).thenReturn(table1CombinerMap);
 
         Map<Integer,Map<String,String>> table2CombinerMap = new HashMap<>();
         optMap.put(ITERATOR_CLASS_MARKER, "datawave.ingest.mapreduce.job.reduce.BulkIngestKeyAggregatingReducerTest$testCombiner");
         table2CombinerMap.put(1, optMap);
 
-        Mockito.when(tcu.getTableCombiners(Mockito.eq("table2"))).thenReturn(table2CombinerMap);
+        PowerMockito.when(tcu.getTableCombiners(Mockito.eq("table2"))).thenReturn(table2CombinerMap);
     }
 
     private void setupUsingCombiner() {
         combinerCounter = new GenericCounter();
 
-        conf.setBoolean("table1" + USE_AGGREGATOR_PROPERTY, true);
-        conf.setBoolean("table2" + USE_AGGREGATOR_PROPERTY, true);
-        conf.setBoolean("table3" + USE_AGGREGATOR_PROPERTY, true);
-        conf.setBoolean(BulkIngestKeyDedupeCombiner.USING_COMBINER, true);
-        Mockito.when(context.getCounter(IngestOutput.MERGED_VALUE)).thenReturn(combinerCounter);
+        PowerMockito.when(conf.getBoolean(Mockito.eq("table1" + USE_AGGREGATOR_PROPERTY), Mockito.eq(true))).thenReturn(true);
+        PowerMockito.when(conf.getBoolean(Mockito.eq("table2" + USE_AGGREGATOR_PROPERTY), Mockito.eq(true))).thenReturn(true);
+        PowerMockito.when(conf.getBoolean(Mockito.eq("table3" + USE_AGGREGATOR_PROPERTY), Mockito.eq(true))).thenReturn(true);
+        PowerMockito.when(conf.getBoolean(Mockito.eq(BulkIngestKeyDedupeCombiner.USING_COMBINER), Mockito.eq(false))).thenReturn(true);
+        PowerMockito.when(context.getCounter(IngestOutput.MERGED_VALUE)).thenReturn(combinerCounter);
 
         Map<String,String> optMap;
         optMap = new HashMap<>();
@@ -237,12 +227,12 @@ public class BulkIngestKeyAggregatingReducerTest {
 
         Map<Integer,Map<String,String>> table1CombinerMap = new HashMap<>();
         table1CombinerMap.put(1, optMap);
-        Mockito.when(tcu.getTableCombiners(Mockito.eq("table1"))).thenReturn(table1CombinerMap);
+        PowerMockito.when(tcu.getTableCombiners(Mockito.eq("table1"))).thenReturn(table1CombinerMap);
 
         Map<Integer,Map<String,String>> table3CombinerMap = new HashMap<>();
         table3CombinerMap.put(1, optMap);
 
-        Mockito.when(tcu.getTableCombiners(Mockito.eq("table3"))).thenReturn(table3CombinerMap);
+        PowerMockito.when(tcu.getTableCombiners(Mockito.eq("table3"))).thenReturn(table3CombinerMap);
     }
 
     private void checkCounterValues() {
@@ -259,7 +249,7 @@ public class BulkIngestKeyAggregatingReducerTest {
 
     @Test
     public void testDedupKeysOneTable() throws Exception {
-        conf.setBoolean("table1" + USE_AGGREGATOR_PROPERTY, true);
+        PowerMockito.when(conf.getBoolean(Mockito.eq("table1" + USE_AGGREGATOR_PROPERTY), Mockito.eq(true))).thenReturn(true);
         reducer.setup(conf);
 
         performDoReduce("table1", "r1", 4, ExpectedValueType.FIRST_VALUE);
@@ -277,8 +267,8 @@ public class BulkIngestKeyAggregatingReducerTest {
 
     @Test
     public void testDedupKeysTwoTables() throws Exception {
-        conf.setBoolean("table1" + USE_AGGREGATOR_PROPERTY, true);
-        conf.setBoolean("table2" + USE_AGGREGATOR_PROPERTY, true);
+        PowerMockito.when(conf.getBoolean(Mockito.eq("table1" + USE_AGGREGATOR_PROPERTY), Mockito.eq(true))).thenReturn(true);
+        PowerMockito.when(conf.getBoolean(Mockito.eq("table2" + USE_AGGREGATOR_PROPERTY), Mockito.eq(true))).thenReturn(true);
         reducer.setup(conf);
 
         performDoReduce("table1", "r1", 4, ExpectedValueType.FIRST_VALUE);
@@ -317,8 +307,8 @@ public class BulkIngestKeyAggregatingReducerTest {
     @Test
     public void testDedupKeysWithVerboseCounters() throws Exception {
         setupVerboseCounters();
-        conf.setBoolean("table1" + USE_AGGREGATOR_PROPERTY, true);
-        conf.setBoolean("table2" + USE_AGGREGATOR_PROPERTY, true);
+        PowerMockito.when(conf.getBoolean(Mockito.eq("table1" + USE_AGGREGATOR_PROPERTY), Mockito.eq(true))).thenReturn(true);
+        PowerMockito.when(conf.getBoolean(Mockito.eq("table2" + USE_AGGREGATOR_PROPERTY), Mockito.eq(true))).thenReturn(true);
         reducer.setup(conf);
 
         performDoReduce("table1", "r1", 4, ExpectedValueType.FIRST_VALUE);
@@ -342,19 +332,19 @@ public class BulkIngestKeyAggregatingReducerTest {
         setupVerbosePartitioningCounters();
         reducer.setup(conf);
 
-        Mockito.when(taskID.getId()).thenReturn(1);
+        PowerMockito.when(taskID.getId()).thenReturn(1);
         performDoReduce("table1", "r1", 4, ExpectedValueType.ALL_VALUES);
-        Mockito.when(taskID.getId()).thenReturn(1);
+        PowerMockito.when(taskID.getId()).thenReturn(1);
         performDoReduce("table1", "r2", 3, ExpectedValueType.ALL_VALUES);
-        Mockito.when(taskID.getId()).thenReturn(2);
+        PowerMockito.when(taskID.getId()).thenReturn(2);
         performDoReduce("table1", "r3", 1, ExpectedValueType.ALL_VALUES);
-        Mockito.when(taskID.getId()).thenReturn(2);
+        PowerMockito.when(taskID.getId()).thenReturn(2);
         performDoReduce("table2", "r1", 2, ExpectedValueType.ALL_VALUES);
-        Mockito.when(taskID.getId()).thenReturn(2);
+        PowerMockito.when(taskID.getId()).thenReturn(2);
         performDoReduce("table2", "r2", 0, ExpectedValueType.ALL_VALUES);
-        Mockito.when(taskID.getId()).thenReturn(3);
+        PowerMockito.when(taskID.getId()).thenReturn(3);
         performDoReduce("table2", "r3", 3, ExpectedValueType.ALL_VALUES);
-        Mockito.when(taskID.getId()).thenReturn(3);
+        PowerMockito.when(taskID.getId()).thenReturn(3);
         performDoReduce("table3", "r2", 3, ExpectedValueType.ALL_VALUES);
 
         expectedR1Counter = 2;
@@ -370,19 +360,19 @@ public class BulkIngestKeyAggregatingReducerTest {
     @Test
     public void testDedupKeysWithVerbosePartitioningCounters() throws Exception {
         setupVerbosePartitioningCounters();
-        conf.setBoolean("table1" + USE_AGGREGATOR_PROPERTY, true);
-        conf.setBoolean("table2" + USE_AGGREGATOR_PROPERTY, true);
+        PowerMockito.when(conf.getBoolean(Mockito.eq("table1" + USE_AGGREGATOR_PROPERTY), Mockito.eq(true))).thenReturn(true);
+        PowerMockito.when(conf.getBoolean(Mockito.eq("table2" + USE_AGGREGATOR_PROPERTY), Mockito.eq(true))).thenReturn(true);
 
         reducer.setup(conf);
 
-        Mockito.when(taskID.getId()).thenReturn(1);
+        PowerMockito.when(taskID.getId()).thenReturn(1);
         performDoReduce("table1", "r1", 4, ExpectedValueType.FIRST_VALUE);
         performDoReduce("table1", "r2", 3, ExpectedValueType.FIRST_VALUE);
-        Mockito.when(taskID.getId()).thenReturn(2);
+        PowerMockito.when(taskID.getId()).thenReturn(2);
         performDoReduce("table1", "r3", 1, ExpectedValueType.FIRST_VALUE);
         performDoReduce("table2", "r1", 2, ExpectedValueType.FIRST_VALUE);
         performDoReduce("table2", "r2", 0, ExpectedValueType.ALL_VALUES);
-        Mockito.when(taskID.getId()).thenReturn(3);
+        PowerMockito.when(taskID.getId()).thenReturn(3);
         performDoReduce("table2", "r3", 3, ExpectedValueType.FIRST_VALUE);
         performDoReduce("table3", "r2", 3, ExpectedValueType.ALL_VALUES);
 
@@ -454,17 +444,17 @@ public class BulkIngestKeyAggregatingReducerTest {
         setupVerbosePartitioningCounters();
         reducer.setup(conf);
 
-        Mockito.when(taskID.getId()).thenReturn(1);
+        PowerMockito.when(taskID.getId()).thenReturn(1);
         performDoReduce("table1", "r1", 4, 3 * MILLISPERDAY + MILLISPERDAY / 2, ExpectedValueType.FIRST_VALUE);
         performDoReduce("table1", "r1", 3, 3 * MILLISPERDAY + MILLISPERDAY / 3, ExpectedValueType.FIRST_VALUE);
         performDoReduce("table1", "r2", 3, 3 * MILLISPERDAY + MILLISPERDAY / 2, ExpectedValueType.FIRST_VALUE);
         performDoReduce("table1", "r2", 2, 3 * MILLISPERDAY + MILLISPERDAY / 3, ExpectedValueType.FIRST_VALUE);
-        Mockito.when(taskID.getId()).thenReturn(2);
+        PowerMockito.when(taskID.getId()).thenReturn(2);
         performDoReduce("table1", "r3", 1, 3 * MILLISPERDAY, ExpectedValueType.FIRST_VALUE);
         performDoReduce("table2", "r1", 2, 3 * MILLISPERDAY, ExpectedValueType.FIRST_VALUE);
         performDoReduce("table2", "r2", 0, 3 * MILLISPERDAY + MILLISPERDAY / 2, ExpectedValueType.NO_VALUE);
         performDoReduce("table2", "r2", 0, 3 * MILLISPERDAY + MILLISPERDAY / 3, ExpectedValueType.NO_VALUE);
-        Mockito.when(taskID.getId()).thenReturn(3);
+        PowerMockito.when(taskID.getId()).thenReturn(3);
         performDoReduce("table2", "r3", 3, 4 * MILLISPERDAY, ExpectedValueType.FIRST_VALUE);
         performDoReduce("table3", "r2", 3, 3 * MILLISPERDAY, ExpectedValueType.FIRST_VALUE);
 
@@ -530,14 +520,14 @@ public class BulkIngestKeyAggregatingReducerTest {
         setupVerbosePartitioningCounters();
         reducer.setup(conf);
 
-        Mockito.when(taskID.getId()).thenReturn(1);
+        PowerMockito.when(taskID.getId()).thenReturn(1);
         performDoReduce("table1", "r1", 4, ExpectedValueType.COMBINED_VALUES);
         performDoReduce("table1", "r2", 3, ExpectedValueType.COMBINED_VALUES);
-        Mockito.when(taskID.getId()).thenReturn(2);
+        PowerMockito.when(taskID.getId()).thenReturn(2);
         performDoReduce("table1", "r3", 1, ExpectedValueType.COMBINED_VALUES);
         performDoReduce("table2", "r1", 2, ExpectedValueType.FIRST_VALUE);
         performDoReduce("table2", "r2", 0, ExpectedValueType.ALL_VALUES);
-        Mockito.when(taskID.getId()).thenReturn(3);
+        PowerMockito.when(taskID.getId()).thenReturn(3);
         performDoReduce("table2", "r3", 3, ExpectedValueType.FIRST_VALUE);
         performDoReduce("table3", "r1", 3, ExpectedValueType.COMBINED_VALUES);
         performDoReduce("table3", "r2", 0, ExpectedValueType.COMBINED_VALUES);

@@ -186,13 +186,6 @@ public class PushdownNegationVisitorTest {
     }
 
     @Test
-    public void testExceededTermPropertyMarkerPropagate() {
-        String query = "!((_Term_ = true) && (F1 == 'v1' || F2 == 'v2'))";
-        String expected = "!((_Term_ = true) && (F1 == 'v1' || F2 == 'v2'))";
-        test(query, expected);
-    }
-
-    @Test
     public void testBoundedRangeNoPropagation() {
         String query = "F3 == 'v3' || !((_Bounded_ = true) && (F1 >= 'v1' && F1 <= 'v2'))";
         String expected = "F3 == 'v3' || !((_Bounded_ = true) && (F1 >= 'v1' && F1 <= 'v2'))";
@@ -210,20 +203,6 @@ public class PushdownNegationVisitorTest {
     public void testMixedBoundedRanges() {
         String query = "(F3 == 'v3' || !(((_Bounded_ = true) && (F1 >= 'v1' && F2 <= 'v2')) || !((_Bounded_ = true) && (F1 >= 'v1' && F1 <= 'v2'))))";
         String expected = "(F3 == 'v3' || (!((_Bounded_ = true) && (F1 >= 'v1' && F2 <= 'v2')) && ((_Bounded_ = true) && (F1 >= 'v1' && F1 <= 'v2'))))";
-        test(query, expected);
-    }
-
-    @Test
-    public void testMixedMarkers() {
-        String query = "!((_Delayed_ = true) && (F1 == 'v1' && ((_Term_ = true) && (F2 == 'v2'))))";
-        String expected = "((_Delayed_ = true) && (!(F1 == 'v1') || !((_Term_ = true) && (F2 == 'v2'))))";
-        test(query, expected);
-    }
-
-    @Test
-    public void testMixedMarkersInverted() {
-        String query = "!((_Term_ = true) && (F1 == 'v1' && ((_Delayed_ = true) && (F2 == 'v2'))))";
-        String expected = "!((_Term_ = true) && (F1 == 'v1' && ((_Delayed_ = true) && (F2 == 'v2'))))";
         test(query, expected);
     }
 

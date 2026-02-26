@@ -19,6 +19,7 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.powermock.api.easymock.PowerMock;
 
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 
@@ -51,7 +52,7 @@ public class MetadataTableConfigHelperTest {
         tableProperties = new HashMap<>();
         localityGroups = new HashMap<>();
 
-        TableOperations mock = EasyMock.createMock(TableOperations.class);
+        TableOperations mock = PowerMock.createMock(TableOperations.class);
 
         mock.getProperties(EasyMock.anyObject(String.class));
         EasyMock.expectLastCall().andAnswer(() -> {
@@ -124,7 +125,7 @@ public class MetadataTableConfigHelperTest {
         }).anyTimes();
 
         // prepare it for use...
-        EasyMock.replay(mock);
+        PowerMock.replay(mock);
 
         return mock;
     }
@@ -136,7 +137,7 @@ public class MetadataTableConfigHelperTest {
             configuration = new HashMap<>();
         }
 
-        Configuration mock = EasyMock.createMock(Configuration.class);
+        Configuration mock = PowerMock.createMock(Configuration.class);
 
         mock.get(EasyMock.anyObject(String.class), EasyMock.anyObject(String.class));
         EasyMock.expectLastCall().andAnswer(() -> {
@@ -170,14 +171,14 @@ public class MetadataTableConfigHelperTest {
             return results;
         }).anyTimes();
 
-        EasyMock.replay(mock);
+        PowerMock.replay(mock);
 
         return mock;
     }
 
     protected Logger createMockLogger() {
 
-        Logger log = EasyMock.createMock(Logger.class);
+        Logger log = PowerMock.createMock(Logger.class);
 
         if (null == debugMessages) {
 
@@ -209,7 +210,7 @@ public class MetadataTableConfigHelperTest {
             return null;
         }).anyTimes();
 
-        EasyMock.replay(log);
+        PowerMock.replay(log);
 
         return log;
     }
