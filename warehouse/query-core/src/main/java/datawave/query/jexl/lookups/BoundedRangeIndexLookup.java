@@ -9,6 +9,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
 import org.apache.accumulo.core.client.IteratorSetting;
+import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
@@ -97,7 +98,7 @@ public class BoundedRangeIndexLookup extends AsyncIndexLookup {
 
     protected Runnable createRunnable(String tableName, Authorizations auths) {
         return () -> {
-            try (var scanner = config.getClient().createScanner(tableName, auths)) {
+            try (Scanner scanner = config.getClient().createScanner(tableName, auths)) {
                 String hintKey = config.getTableHints().containsKey(EXPANSION_HINT_KEY) ? EXPANSION_HINT_KEY : config.getIndexTableName();
                 scanner.setExecutionHints(Map.of(tableName, hintKey));
                 scanner.setRange(scanRange);
@@ -248,7 +249,9 @@ public class BoundedRangeIndexLookup extends AsyncIndexLookup {
      */
     protected void await() {
         try {
-            future.get();
+            if (future != null) {
+                future.get();
+            }
         } catch (Exception e) {
             // any exception causes the range to marked as value exceeded
             markExceeded();

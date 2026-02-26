@@ -4,8 +4,9 @@ import static java.lang.Thread.currentThread;
 import static java.lang.Thread.sleep;
 
 import java.io.Closeable;
-import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -28,7 +29,7 @@ public class ScanMonitor implements Runnable, Closeable {
     private static final long DEFAULT_INTERVAL_MILLIS = 25L;
 
     private int taskID = 0;
-    private final Map<String,IndexScanTask> tasks = new HashMap<>();
+    private final Map<String,IndexScanTask> tasks = new ConcurrentHashMap<>();
 
     private final long monitorIntervalMillis;
     private final ExecutorService executor;
@@ -94,10 +95,7 @@ public class ScanMonitor implements Runnable, Closeable {
         }
         String id = String.valueOf(taskID++);
         IndexScanTask task = new IndexScanTask(future, timeout);
-
-        synchronized (tasks) {
-            tasks.put(id, task);
-        }
+        tasks.put(id, task);
     }
 
     @Override
@@ -112,19 +110,17 @@ public class ScanMonitor implements Runnable, Closeable {
                 break;
             }
 
-            synchronized (tasks) {
-                long currentTime = System.currentTimeMillis();
-                var iter = tasks.keySet().iterator();
-                while (iter.hasNext()) {
-                    String key = iter.next();
-                    IndexScanTask task = tasks.get(key);
-                    if (task.isDone(currentTime)) {
-                        if (log.isDebugEnabled()) {
-                            log.debug("closing task {}", key);
-                        }
-                        task.cancelFuture();
-                        iter.remove();
+            long currentTime = System.currentTimeMillis();
+            Iterator<String> iter = tasks.keySet().iterator();
+            while (iter.hasNext()) {
+                String key = iter.next();
+                IndexScanTask task = tasks.get(key);
+                if (task.isComplete(currentTime)) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("closing task {}", key);
                     }
+                    task.cancelFuture();
+                    iter.remove();
                 }
             }
 
@@ -146,22 +142,43 @@ public class ScanMonitor implements Runnable, Closeable {
         }
     }
 
+    /**
+     * A utility class that associates a future with a timeout
+     */
     private static class IndexScanTask {
 
         private final Future<?> future;
-        private final long start;
-        private final long timeout;
+        private final long startMillis;
+        private final long timeoutMillis;
 
-        public IndexScanTask(Future<?> future, long timeout) {
+        /**
+         * Simple constructor that accepts a future and a timeout
+         *
+         * @param future
+         *            the future
+         * @param timeoutMillis
+         *            the timeout in milliseconds
+         */
+        public IndexScanTask(Future<?> future, long timeoutMillis) {
             this.future = future;
-            this.start = System.currentTimeMillis();
-            this.timeout = timeout;
+            this.startMillis = System.currentTimeMillis();
+            this.timeoutMillis = timeoutMillis;
         }
 
-        public boolean isDone(long current) {
-            return future.isDone() || future.isCancelled() || (current - start >= timeout);
+        /**
+         * A task is complete if the future is done or canceled, or if the timeout is exceeded
+         *
+         * @param currentMillis
+         *            the current time since the task was registered
+         * @return true if the task is complete
+         */
+        public boolean isComplete(long currentMillis) {
+            return future.isDone() || future.isCancelled() || (currentMillis - startMillis >= timeoutMillis);
         }
 
+        /**
+         * Cancels the future if it exists and is not already canceled
+         */
         public void cancelFuture() {
             if (future != null && !future.isCancelled()) {
                 future.cancel(true);
