@@ -31,16 +31,16 @@ import datawave.util.time.DateHelper;
 /**
  * An {@link IndexLookup} that wraps {@link FieldExpansionIterator}.
  */
-public class FieldExpansionIndexLookup extends AsyncIndexLookup {
+public class UnfieldedLiteralIndexLookup extends AsyncIndexLookup {
 
-    private static final Logger log = LoggerFactory.getLogger(FieldExpansionIndexLookup.class);
+    private static final Logger log = LoggerFactory.getLogger(UnfieldedLiteralIndexLookup.class);
 
     protected String term;
     protected Range range;
 
     private Future<?> future;
 
-    public FieldExpansionIndexLookup(ShardQueryConfiguration config, ScannerFactory scannerFactory, String term, Set<String> fields,
+    public UnfieldedLiteralIndexLookup(ShardQueryConfiguration config, ScannerFactory scannerFactory, String term, Set<String> fields,
                     ExecutorService execService) {
         super(config, scannerFactory, true, execService);
         this.term = term;
