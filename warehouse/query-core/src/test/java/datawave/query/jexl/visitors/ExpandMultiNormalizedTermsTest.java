@@ -262,6 +262,23 @@ public class ExpandMultiNormalizedTermsTest {
         expandTerms(original, expected);
     }
 
+    // Accumulo will throw an exception when creating a range with a lower bound of '4' and an upper bound of '10'
+    @Test
+    public void testBoundedMultiNormalizedBoundsIllegalRange() throws ParseException {
+        Multimap<String,Type<?>> dataTypes = HashMultimap.create();
+        dataTypes.putAll("FOO", Sets.newHashSet(new TrimLeadingZerosType(), new StringType()));
+
+        helper.setIndexedFields(dataTypes.keySet());
+        helper.setIndexOnlyFields(dataTypes.keySet());
+        helper.addTermFrequencyFields(dataTypes.keySet());
+
+        config.setQueryFieldsDatatypes(dataTypes);
+
+        String original = "((_Bounded_ = true) && (FOO > 4 && FOO < 10))";
+        String expected = "((_Bounded_ = true) && (FOO > '4' && FOO < '10'))";
+        expandTerms(original, expected);
+    }
+
     @Test
     public void testBoundedMultiNormalizedBounds3() throws ParseException {
         Multimap<String,Type<?>> dataTypes = HashMultimap.create();
