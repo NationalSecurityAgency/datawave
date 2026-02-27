@@ -43,14 +43,17 @@ public class StatefulKeywordUUIDChainStrategy extends FullChainStrategy<Entry<Ke
     private final List<TagCloudInputExtractor> extractors;
     // will be true when a keyword query should be run, false otherwise
     private final boolean runKeywordQuery;
+    // used to filter keyword results that don't match the given language. Stored in uppercase
+    private final Set<String> requiredLanguages;
     private boolean addedExtractedData = false;
 
     public StatefulKeywordUUIDChainStrategy(Query settings, QueryLogic<Entry<Key,Value>> nextLogic, List<TagCloudInputExtractor> extractors,
-                    boolean runKeywordQuery) {
+                    boolean runKeywordQuery, Set<String> requiredLanguages) {
         this.deserializer = DocumentSerialization.getDocumentDeserializer(settings);
         this.nextLogic = nextLogic;
         this.extractors = extractors;
         this.runKeywordQuery = runKeywordQuery;
+        this.requiredLanguages = requiredLanguages;
     }
 
     public int getBatchSize() {
@@ -137,12 +140,12 @@ public class StatefulKeywordUUIDChainStrategy extends FullChainStrategy<Entry<Ke
                 }
             }
 
-            if (runKeywordQuery) {
+            if (runKeywordQuery && hasRequiredLanguage(documentData)) {
                 // run query term extraction for next logic if needed
                 queryTerms.add(extractKeywordQueryTerm(docId, documentData));
-            }
 
-            count++;
+                count++;
+            }
         }
 
         if (nextLogic instanceof KeywordQueryLogic) {
@@ -171,6 +174,30 @@ public class StatefulKeywordUUIDChainStrategy extends FullChainStrategy<Entry<Ke
         }
 
         return queryTerms.isEmpty() ? null : StringUtils.join(queryTerms, " ");
+    }
+
+    /**
+     * If requiredLanguages have been specified, return true if at least one language matches a required language
+     *
+     * @param documentData
+     * @return true if there are no required languages, or the document matches at least one required language
+     */
+    private boolean hasRequiredLanguage(Map<String,Attribute<? extends Comparable<?>>> documentData) {
+        if (requiredLanguages.isEmpty()) {
+            return true;
+        }
+
+        Attribute<?> langaugeAttribute = documentData.get("LANGUAGE");
+        if (langaugeAttribute != null) {
+            List<String> languages = KeywordQueryUtil.getStringValuesFromAttribute(langaugeAttribute);
+            for (String language : languages) {
+                if (requiredLanguages.contains(language.toUpperCase())) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -214,7 +241,7 @@ public class StatefulKeywordUUIDChainStrategy extends FullChainStrategy<Entry<Ke
             log.trace("No identifier found for query " + queryTerm);
         }
 
-        if (((language = KeywordQueryUtil.chooseBestLanguage(languages)) != null)) {
+        if (((language = KeywordQueryUtil.chooseBestLanguage(languages, requiredLanguages)) != null)) {
             if (log.isTraceEnabled()) {
                 log.trace("Chose best language '" + languages + "' from '" + languages + "' for query " + queryTerm);
             }

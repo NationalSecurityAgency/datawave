@@ -28,6 +28,8 @@ public interface TagCloudInputExtractor {
 
     String getName();
 
+    String getSubType();
+
     void extract(Key source, Map<String,Attribute<? extends Comparable<?>>> documentData) throws TagCloudInputExtractorException;
 
     TagCloudPartition get();

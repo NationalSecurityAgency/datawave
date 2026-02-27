@@ -3,7 +3,9 @@ package datawave.query.tables.keyword;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Queue;
+import java.util.Set;
 
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
@@ -31,14 +33,18 @@ public class KeywordQueryUtil {
      *
      * @param languages
      *            a list to choose from
+     * @param preferredLanguages
      * @return the best identifier or null.
      */
-    public static String chooseBestLanguage(List<String> languages) {
+    public static String chooseBestLanguage(List<String> languages, Set<String> preferredLanguages) {
         if (languages == null || languages.isEmpty()) {
             return null;
         }
 
         for (String language : languages) {
+            if (preferredLanguages != null && !preferredLanguages.isEmpty() && !preferredLanguages.contains(language.toUpperCase())) {
+                continue;
+            }
             // if the language can't be found in the language registry, the language
             // registry will return English. So, if the language name returned by the
             // registry and the input language name match - it confirms we have
@@ -52,7 +58,12 @@ public class KeywordQueryUtil {
 
         // if we get here, we couldn't find an ideal language, just return the first value, yake will default
         // to processing the data as if it were English.
-        return languages.get(0);
+        if (preferredLanguages == null || preferredLanguages.isEmpty()) {
+            return languages.get(0);
+        } else {
+            Optional<String> first = languages.stream().filter(preferredLanguages::contains).findFirst();
+            return first.orElseGet(() -> preferredLanguages.iterator().next());
+        }
     }
 
     /**

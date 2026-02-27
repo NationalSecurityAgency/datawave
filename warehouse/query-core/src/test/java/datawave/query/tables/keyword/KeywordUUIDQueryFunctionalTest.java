@@ -174,6 +174,55 @@ public class KeywordUUIDQueryFunctionalTest {
         test();
     }
 
+    @Test
+    public void extractorSubTypeTest() throws Exception {
+        // two clouds for gendered-age, subtype gender and subtype age. One cloud for name
+        withExtraParameter(CATEGORY_PARAMETER, "gendered-age.age");
+        withExtraParameter(TAG_CLOUD_VERSION, "2");
+
+        // three tag clouds expected, one for each category/subtype
+        // @formatter:off
+        withExpectedResult(tagCloudTestUtil.getExpectedCloud("2", Map.of("type", "gendered-age", "subType", "age"),
+                List.of(tagCloudTestUtil.createTagCloudEntry("16", 1.0, 1, List.of(SOPRANO_UUID)),
+                        tagCloudTestUtil.createTagCloudEntry("18", 1.0, 1, List.of(SOPRANO_UUID)),
+                        tagCloudTestUtil.createTagCloudEntry("20", 1.0, 1, List.of(CAPONE_UUID)),
+                        tagCloudTestUtil.createTagCloudEntry("30", 1.0, 1, List.of(CAPONE_UUID)),
+                        tagCloudTestUtil.createTagCloudEntry("34", 1.0, 1, List.of(CAPONE_UUID)),
+                        tagCloudTestUtil.createTagCloudEntry("40", 1.0, 1, List.of(CAPONE_UUID)))
+        ));
+        // @formatter:on
+
+        withQuery("UUID:CAPONE OR UUID:CORLEONE OR UUID: SOPRANO");
+
+        test();
+    }
+
+    @Test
+    public void keywordSubTypeTest() throws Exception {
+        withExtraParameter(CATEGORY_PARAMETER, "keyword.sicilian");
+        withExtraParameter(TAG_CLOUD_VERSION, "2");
+
+        // set the threshold so something can come back (higher is worse)
+        KeywordQueryLogic kql = (KeywordQueryLogic) logic.getLogic2();
+        kql.setMaxScore(1);
+
+        // three tag clouds expected, one for each category/subtype
+        // @formatter:off
+        withExpectedResult(tagCloudTestUtil.getExpectedCloud("2", Map.of("type", "keyword", "language", "SICILIAN", "view", "CONTENT"),
+                List.of(tagCloudTestUtil.createTagCloudEntry("cant", 0.7494, 1, List.of(CORLEONE_UUID)),
+                        tagCloudTestUtil.createTagCloudEntry("gonna", 0.8807, 1, List.of(CORLEONE_UUID)),
+                        tagCloudTestUtil.createTagCloudEntry("im", 0.6041, 1, List.of(CORLEONE_UUID)),
+                        tagCloudTestUtil.createTagCloudEntry("make", 0.7494, 1, List.of(CORLEONE_UUID)),
+                        tagCloudTestUtil.createTagCloudEntry("offer", 0.7494, 1, List.of(CORLEONE_UUID)),
+                        tagCloudTestUtil.createTagCloudEntry("refuse", 0.7494, 1, List.of(CORLEONE_UUID)))
+        ));
+        // @formatter:on
+
+        withQuery("UUID:CORLEONE");
+
+        test();
+    }
+
     private void test() throws Exception {
         QueryImpl settings = new QueryImpl();
         settings.setPagesize(Integer.MAX_VALUE);
