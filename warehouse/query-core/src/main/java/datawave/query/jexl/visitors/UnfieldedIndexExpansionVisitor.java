@@ -269,7 +269,9 @@ public class UnfieldedIndexExpansionVisitor extends RegexIndexExpansionVisitor {
                 return new EmptyIndexLookup(config);
             }
 
-            return new FieldExpansionIndexLookup(config, scannerFactory, term, fields, executor);
+            AsyncIndexLookup lookup = new FieldExpansionIndexLookup(config, scannerFactory, term, fields, executor);
+            lookup.setScanMonitor(monitor);
+            return lookup;
         } catch (TableNotFoundException e) {
             throw new RuntimeException(e);
         }

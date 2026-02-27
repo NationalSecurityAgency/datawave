@@ -1,13 +1,12 @@
 package datawave.query.jexl.lookups;
 
+import static datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods.EXPANSION_HINT_KEY;
+
 import java.util.HashSet;
-import java.util.Map.Entry;
+import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.Scanner;
@@ -15,6 +14,7 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.security.Authorizations;
 import org.apache.hadoop.io.Text;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,6 +24,7 @@ import com.google.common.base.Preconditions;
 
 import datawave.core.iterators.FieldExpansionIterator;
 import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.tables.ScannerFactory;
 import datawave.util.time.DateHelper;
 
@@ -35,12 +36,9 @@ public class FieldExpansionIndexLookup extends AsyncIndexLookup {
     private static final Logger log = LoggerFactory.getLogger(FieldExpansionIndexLookup.class);
 
     protected String term;
-    protected Future<Boolean> timedScanFuture;
-    protected AtomicLong lookupStartTimeMillis = new AtomicLong(Long.MAX_VALUE);
-    protected CountDownLatch lookupStartedLatch;
-    protected CountDownLatch lookupStoppedLatch;
+    protected Range range;
 
-    private Scanner scanner;
+    private Future<?> future;
 
     public FieldExpansionIndexLookup(ShardQueryConfiguration config, ScannerFactory scannerFactory, String term, Set<String> fields,
                     ExecutorService execService) {
@@ -50,6 +48,7 @@ public class FieldExpansionIndexLookup extends AsyncIndexLookup {
         if (fields != null) {
             this.fields.addAll(fields);
         }
+        this.range = getScanRange();
     }
 
     @Override
@@ -57,10 +56,31 @@ public class FieldExpansionIndexLookup extends AsyncIndexLookup {
         if (indexLookupMap == null) {
             indexLookupMap = new IndexLookupMap(config.getMaxUnfieldedExpansionThreshold(), config.getMaxValueExpansionThreshold());
 
-            try {
-                scanner = scannerFactory.newSingleScanner(getTableName(), config.getAuthorizations(), config.getQuery());
+            Preconditions.checkNotNull(monitor, "FieldExpansionIndexLookup requires a ScanMonitor");
+            Runnable runnable = createRunnable(getTableName(), config.getAuthorizations().iterator().next());
 
-                Range range = getScanRange();
+            future = execService.submit(runnable);
+            monitor.registerTask(future, config.getMaxAnyFieldScanTimeMillis());
+        }
+    }
+
+    /**
+     * The created runnable handles everything with configuring a scanner, parsing results and putting them into the {@link #indexLookupMap} and handling
+     * exceptions.
+     * <p>
+     * Note: it is critical that any scanner created here is used with a try-with-resources block.
+     *
+     * @param tableName
+     *            the table to be scanned
+     * @param auths
+     *            the authorizations
+     * @return a Runnable that wraps a scanner
+     */
+    protected Runnable createRunnable(String tableName, Authorizations auths) {
+        return () -> {
+            try (Scanner scanner = config.getClient().createScanner(tableName, auths)) {
+                String hintKey = config.getTableHints().containsKey(EXPANSION_HINT_KEY) ? EXPANSION_HINT_KEY : config.getIndexTableName();
+                scanner.setExecutionHints(Map.of(tableName, hintKey));
                 scanner.setRange(range);
 
                 for (String field : fields) {
@@ -70,16 +90,25 @@ public class FieldExpansionIndexLookup extends AsyncIndexLookup {
                 IteratorSetting setting = createIteratorSetting();
                 scanner.addScanIterator(setting);
 
-                timedScanFuture = execService.submit(createTimedCallable(scanner));
+                for (Map.Entry<Key,Value> entry : scanner) {
+                    Key key = entry.getKey();
+                    if (log.isTraceEnabled()) {
+                        log.trace("tk: {}", key.toStringNoTime());
+                    }
+                    String field = key.getColumnFamily().toString();
+                    String value = key.getRow().toString();
+                    indexLookupMap.put(field, value);
+                }
+
             } catch (Exception e) {
-                log.error("Error expanding term into discrete fields", e);
-                // close scanner in case of an exception prior to execution of future
-                scannerFactory.close(scanner);
-                throw new RuntimeException(e);
+                log.error("Exception seen while expanding unfielded literal:", e);
+                handleException();
+            } finally {
+                if (log.isTraceEnabled()) {
+                    log.trace("closing scanner");
+                }
             }
-            // Note: scanners should never be closed here in a 'finally' block. The createTimedCallable
-            // method will close the scanner via scannerFactory.close(scanner)
-        }
+        };
     }
 
     private Range getScanRange() {
@@ -108,67 +137,26 @@ public class FieldExpansionIndexLookup extends AsyncIndexLookup {
 
     @Override
     public IndexLookupMap lookup() {
-        try {
-            timedScanWait(timedScanFuture, lookupStartedLatch, lookupStoppedLatch, lookupStartTimeMillis, config.getMaxAnyFieldScanTimeMillis());
-        } finally {
-            if (scanner != null) {
-                scannerFactory.close(scanner);
-            }
-        }
-
+        await();
         return indexLookupMap;
     }
 
-    protected Callable<Boolean> createTimedCallable(final Scanner scanner) {
-        lookupStartedLatch = new CountDownLatch(1);
-        lookupStoppedLatch = new CountDownLatch(1);
-
-        return () -> {
-            try {
-                lookupStartTimeMillis.set(System.currentTimeMillis());
-                lookupStartedLatch.countDown();
-
-                final Text holder = new Text();
-
-                try {
-                    for (Entry<Key,Value> entry : scanner) {
-                        // check for interrupt which may be triggered by closing the batch scanner
-                        if (Thread.interrupted()) {
-                            throw new InterruptedException();
-                        }
-
-                        if (log.isTraceEnabled()) {
-                            log.trace("Index entry: {}", entry.getKey());
-                        }
-
-                        entry.getKey().getRow(holder);
-                        String row = holder.toString();
-
-                        entry.getKey().getColumnFamily(holder);
-                        String columnFamily = holder.toString();
-
-                        // We are only returning a mapping of field name to field value, no need to
-                        // determine cardinality and such at this point.
-                        if (log.isTraceEnabled()) {
-                            log.trace("put {}:{}", columnFamily, row);
-                        }
-                        indexLookupMap.put(columnFamily, row);
-
-                        // if we passed the term expansion threshold, then simply return
-                        if (indexLookupMap.isKeyThresholdExceeded()) {
-                            break;
-                        }
-                    }
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                } finally {
-                    scannerFactory.close(scanner);
-                }
-
-                return true;
-            } finally {
-                lookupStoppedLatch.countDown();
+    protected void await() {
+        try {
+            if (future != null) {
+                future.get();
             }
-        };
+        } catch (Exception e) {
+            handleException();
+        }
+    }
+
+    /**
+     * Any exception indicates a failure to expand the unfielded literal and should fail the query.
+     * <p>
+     * A {@link DatawaveFatalQueryException} is thrown instead of a raw exception.
+     */
+    protected void handleException() {
+        throw new DatawaveFatalQueryException("Failed to expand unfielded literal");
     }
 }
