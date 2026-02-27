@@ -38,6 +38,8 @@ public abstract class AsyncIndexLookup extends IndexLookup {
     protected final AtomicBoolean exceededValueThreshold = new AtomicBoolean(false);
     protected final AtomicBoolean exceptionSeen = new AtomicBoolean(false);
 
+    protected ScanMonitor monitor;
+
     public AsyncIndexLookup(ShardQueryConfiguration config, ScannerFactory scannerFactory, boolean unfieldedLookup, ExecutorService execService) {
         super(config, scannerFactory);
         this.unfieldedLookup = unfieldedLookup;
@@ -45,6 +47,10 @@ public abstract class AsyncIndexLookup extends IndexLookup {
 
         this.maxUnfieldedExpansionThreshold = config.getMaxUnfieldedExpansionThreshold();
         this.maxValueExpansionThreshold = config.getMaxValueExpansionThreshold();
+    }
+
+    public void setScanMonitor(ScanMonitor monitor) {
+        this.monitor = monitor;
     }
 
     /**

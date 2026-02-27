@@ -18,9 +18,10 @@ import datawave.query.exceptions.IllegalRangeArgumentException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.LiteralRange;
+import datawave.query.jexl.lookups.AsyncIndexLookup;
+import datawave.query.jexl.lookups.BoundedRangeIndexLookup;
 import datawave.query.jexl.lookups.IndexLookup;
 import datawave.query.jexl.lookups.IndexLookupMap;
-import datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.util.MetadataHelper;
@@ -105,7 +106,9 @@ public class BoundedRangeIndexExpansionVisitor extends BaseIndexExpansionVisitor
     }
 
     protected IndexLookup createLookup(LiteralRange<?> range) {
-        return ShardIndexQueryTableStaticMethods.expandRange(config, scannerFactory, range, executor);
+        AsyncIndexLookup lookup = new BoundedRangeIndexLookup(config, scannerFactory, range, executor);
+        lookup.setScanMonitor(monitor);
+        return lookup;
     }
 
     @Override
