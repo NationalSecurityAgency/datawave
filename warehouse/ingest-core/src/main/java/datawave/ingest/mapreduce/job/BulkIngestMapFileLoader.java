@@ -33,13 +33,7 @@ import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
-import org.apache.accumulo.core.clientImpl.ClientContext;
 import org.apache.accumulo.core.data.LoadPlan;
-import org.apache.accumulo.core.manager.thrift.ManagerClientService;
-import org.apache.accumulo.core.manager.thrift.ManagerMonitorInfo;
-import org.apache.accumulo.core.master.thrift.TableInfo;
-import org.apache.accumulo.core.rpc.ThriftUtil;
-import org.apache.accumulo.core.rpc.clients.ThriftClientTypes;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
@@ -67,6 +61,7 @@ import org.apache.log4j.Logger;
 import com.google.common.base.Objects;
 import com.google.common.collect.Lists;
 
+import datawave.core.common.connection.AccumuloTableInfoFetcher;
 import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.mapreduce.StandaloneStatusReporter;
 import datawave.util.cli.PasswordConverter;
@@ -715,30 +710,13 @@ public final class BulkIngestMapFileLoader implements Runnable {
     }
 
     private int getMajorCompactionCount() {
-        int majC = 0;
-
-        ManagerClientService.Client client = null;
-        ClientContext context = (ClientContext) accumuloClient;
         try {
-            client = ThriftClientTypes.MANAGER.getConnection(context);
-            ManagerMonitorInfo mmi = client.getManagerStats(null, context.rpcCreds());
-            Map<String,TableInfo> tableStats = mmi.getTableMap();
-
-            for (java.util.Map.Entry<String,TableInfo> e : tableStats.entrySet()) {
-                majC += e.getValue().getMajors().getQueued();
-                majC += e.getValue().getMajors().getRunning();
-            }
+            AccumuloTableInfoFetcher fetcher = new AccumuloTableInfoFetcher(accumuloClient);
+            return fetcher.getMajorCompactionCount();
         } catch (Exception e) {
-            // Accumulo API changed, catch exception for now until we redeploy
-            // accumulo on lightning.
             log.error("Unable to retrieve major compaction stats: " + e.getMessage());
-        } finally {
-            if (client != null) {
-                ThriftUtil.close(client, context);
-            }
+            return 0;
         }
-
-        return majC;
     }
 
     /**

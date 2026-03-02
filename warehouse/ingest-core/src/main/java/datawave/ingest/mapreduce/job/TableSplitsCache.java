@@ -14,18 +14,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.SortedMap;
 import java.util.TreeMap;
-import java.util.stream.Collectors;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.accumulo.core.clientImpl.ClientContext;
+import org.apache.accumulo.core.client.admin.Locations;
+import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.data.TabletId;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.dataImpl.KeyExtent;
-import org.apache.accumulo.core.metadata.MetadataServicer;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
@@ -38,6 +36,7 @@ import org.apache.log4j.Logger;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Maps;
 
+import datawave.core.common.connection.AccumuloTableInfoFetcher;
 import datawave.ingest.config.BaseHdfsFileCacheUtil;
 import datawave.ingest.mapreduce.partition.BalancedShardPartitioner;
 import datawave.ingest.mapreduce.partition.DelegatePartitioner;
@@ -82,13 +81,19 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
     private PartitionerCache partitionerCache;
 
     private Map<Text,String> getSplitsWithLocation(String table) throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
-        SortedMap<KeyExtent,String> tabletLocations = new TreeMap<>();
-
         AccumuloClient client = accumuloHelper.newClient();
-        MetadataServicer.forTableName((ClientContext) client, table).getTabletLocations(tabletLocations);
-
-        return tabletLocations.entrySet().stream().filter(k -> k.getKey().endRow() != null).collect(
-                        Collectors.toMap(e -> e.getKey().endRow(), e -> e.getValue() == null ? NO_LOCATION : e.getValue(), (o1, o2) -> o1, TreeMap::new));
+        AccumuloTableInfoFetcher fetcher = new AccumuloTableInfoFetcher(client);
+        Locations locations = fetcher.getTabletLocations(table, Collections.singletonList(new Range()));
+        Map<Text,String> result = new TreeMap<>();
+        for (Map.Entry<TabletId,List<Range>> entry : locations.groupByTablet().entrySet()) {
+            TabletId tabletId = entry.getKey();
+            Text endRow = tabletId.getEndRow();
+            if (endRow != null) {
+                String location = locations.getTabletLocation(tabletId);
+                result.put(endRow, location == null ? NO_LOCATION : location);
+            }
+        }
+        return result;
     }
 
     /**

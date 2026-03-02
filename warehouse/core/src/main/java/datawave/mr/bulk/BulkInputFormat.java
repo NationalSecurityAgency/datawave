@@ -16,7 +16,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Properties;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.UUID;
@@ -36,29 +35,24 @@ import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.TableDeletedException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.TableOfflineException;
+import org.apache.accumulo.core.client.admin.Locations;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
-import org.apache.accumulo.core.clientImpl.ClientConfConverter;
-import org.apache.accumulo.core.clientImpl.ClientContext;
-import org.apache.accumulo.core.clientImpl.ClientInfo;
-import org.apache.accumulo.core.clientImpl.TabletLocator;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.TableId;
+import org.apache.accumulo.core.data.TabletId;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.dataImpl.KeyExtent;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.user.RegExFilter;
 import org.apache.accumulo.core.iterators.user.VersioningIterator;
-import org.apache.accumulo.core.manager.state.tables.TableState;
 import org.apache.accumulo.core.metadata.MetadataTable;
 import org.apache.accumulo.core.metadata.schema.MetadataSchema;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.accumulo.core.security.TablePermission;
-import org.apache.accumulo.core.singletons.SingletonManager;
 import org.apache.accumulo.core.util.format.DateFormatSupplier;
-import org.apache.accumulo.core.util.threads.Threads;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.hadoop.conf.Configuration;
@@ -83,8 +77,8 @@ import com.google.common.collect.Multimap;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
-import datawave.accumulo.inmemory.impl.InMemoryTabletLocator;
 import datawave.common.util.ArgumentChecker;
+import datawave.core.common.connection.AccumuloTableInfoFetcher;
 import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.mr.bulk.split.DefaultLocationStrategy;
 import datawave.mr.bulk.split.DefaultSplitStrategy;
@@ -1048,29 +1042,6 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
     }
 
     /**
-     * Initializes an Accumulo {@link TabletLocator} based on the configuration.
-     *
-     * @param conf
-     *            the Hadoop configuration object
-     * @return an accumulo tablet locator
-     * @throws TableNotFoundException
-     *             if the table name set on the configuration doesn't exist
-     * @throws IOException
-     *             if the input format is unable to read the password file from the FileSystem
-     */
-    protected static TabletLocator getTabletLocator(Configuration conf) throws TableNotFoundException, IOException {
-        if (conf.getBoolean(MOCK, false))
-            return new InMemoryTabletLocator();
-        String tableName = getTablename(conf);
-        Properties props = Accumulo.newClientProperties().to(conf.get(INSTANCE_NAME), conf.get(ZOOKEEPERS))
-                        .as(getUsername(conf), new PasswordToken(getPassword(conf))).build();
-        ClientInfo info = ClientInfo.from(props);
-        ClientContext context = new ClientContext(SingletonManager.getClientReservation(), info, ClientConfConverter.toAccumuloConf(info.getProperties()),
-                        Threads.UEH);
-        return TabletLocator.getLocator(context, context.getTableId(tableName));
-    }
-
-    /**
      * Read the metadata table to get tablets and match up ranges to them.
      */
     public List<InputSplit> getSplits(JobContext job) throws IOException {
@@ -1090,7 +1061,6 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
 
         // get the metadata information for these ranges
         Map<String,Map<KeyExtent,List<Range>>> binnedRanges = new HashMap<>();
-        TabletLocator tl;
         try {
             if (isOfflineScan(job.getConfiguration())) {
                 binnedRanges = binOfflineTable(job, tableName, ranges);
@@ -1101,28 +1071,18 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
                 }
             } else {
                 try (AccumuloClient client = getClient(job.getConfiguration())) {
-                    TableId tableId = null;
-                    tl = getTabletLocator(job.getConfiguration());
-                    // its possible that the cache could contain complete, but old information about a tables tablets... so clear it
-                    tl.invalidateCache();
-                    ClientInfo info = ClientInfo.from(cbHelper.newClientProperties());
-                    ClientContext context = new ClientContext(SingletonManager.getClientReservation(), info,
-                                    ClientConfConverter.toAccumuloConf(info.getProperties()), Threads.UEH);
-                    while (!tl.binRanges(context, ranges, binnedRanges).isEmpty()) {
-                        if (!(client instanceof InMemoryAccumuloClient)) {
-                            if (tableId == null)
-                                tableId = context.getTableId(tableName);
-                            if (!context.tableNodeExists(tableId))
-                                throw new TableDeletedException(tableId.canonical());
-                            if (context.getTableState(tableId) == TableState.OFFLINE)
-                                throw new TableOfflineException("Table (" + tableId.canonical() + ") is offline");
-                        }
-                        binnedRanges.clear();
-                        log.warn("Unable to locate bins for specified ranges. Retrying.");
-                        TimeUnit.MILLISECONDS.sleep(ThreadLocalRandom.current().nextInt(100, 200));
-                        tl.invalidateCache();
+                    AccumuloTableInfoFetcher fetcher = new AccumuloTableInfoFetcher(client);
+                    // Validate table state
+                    if (!(client instanceof InMemoryAccumuloClient)) {
+                        if (!fetcher.tableExists(tableName))
+                            throw new TableDeletedException(tableName);
+                        if (!fetcher.isTableOnline(tableName))
+                            throw new TableOfflineException("Table " + tableName + " is offline");
                     }
-
+                    // Locate tablets for ranges using public API
+                    Locations locations = fetcher.getTabletLocations(tableName, ranges);
+                    // Convert to binnedRanges structure
+                    binnedRanges = buildBinnedRanges(locations);
                     clipRanges(binnedRanges);
                 }
             }
@@ -1199,6 +1159,20 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
         binnedRanges.clear();
         binnedRanges.putAll(binnedRanges2);
 
+    }
+
+    private Map<String,Map<KeyExtent,List<Range>>> buildBinnedRanges(Locations locations) {
+        Map<String,Map<KeyExtent,List<Range>>> binnedRanges = new HashMap<>();
+        for (Entry<TabletId,List<Range>> entry : locations.groupByTablet().entrySet()) {
+            TabletId tabletId = entry.getKey();
+            String location = locations.getTabletLocation(tabletId);
+            if (location == null)
+                location = "";
+            // Convert TabletId to KeyExtent (still needed for binOfflineTable compatibility and clipRanges)
+            KeyExtent extent = new KeyExtent(tabletId.getTable(), tabletId.getEndRow(), tabletId.getPrevEndRow());
+            binnedRanges.computeIfAbsent(location, k -> new HashMap<>()).put(extent, entry.getValue());
+        }
+        return binnedRanges;
     }
 
     /**
