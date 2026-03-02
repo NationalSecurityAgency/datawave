@@ -122,19 +122,6 @@ public class UnfieldedRegexIndexLookup extends BaseRegexIndexLookup {
     }
 
     /**
-     * Wait for the future to complete before returning the {@link IndexLookupMap}
-     */
-    protected void await() {
-        try {
-            if (future != null) {
-                future.get();
-            }
-        } catch (Exception e) {
-            handleException();
-        }
-    }
-
-    /**
      * An exception while expanding an unfielded regex clears the entire index lookup map.
      */
     @Override
