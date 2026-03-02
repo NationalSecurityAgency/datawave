@@ -1,6 +1,5 @@
 package datawave.ingest.table.config;
 
-import java.lang.reflect.Method;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -13,6 +12,7 @@ import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
+import org.powermock.reflect.Whitebox;
 
 import com.google.common.collect.Sets;
 
@@ -29,7 +29,8 @@ public class LoadDateTableConfigHelperTest extends MockTableTest {
     public void testGetLoadDatesLocalityGroupParsing() throws Exception {
         String localityGroups = "LACS:LAC\u0000shard;LAC\u0000protobufedge;LAC\u0000knowledgeShard;LAC\u0000errorShard";
 
-        Map<String,Set<Text>> actual = invokeCreateMapOfLocalityGroups(createConfigurationWithLocalityGroups(localityGroups));
+        Map<String,Set<Text>> actual = Whitebox.invokeMethod(new LoadDateTableConfigHelper(), "createMapOfLocalityGroups",
+                        createConfigurationWithLocalityGroups(localityGroups));
 
         assertKeyAndColFamilies(actual, "LACS", EXPECTED_LAC_COL_FAMILIES);
 
@@ -40,7 +41,8 @@ public class LoadDateTableConfigHelperTest extends MockTableTest {
     public void testGetLoadDatesLocalityGroupsParsing() throws Exception {
         String localityGroups = "LACS:LAC\u0000shard;LAC\u0000protobufedge;LAC\u0000knowledgeShard;LAC\u0000errorShard," + "JAM:band;es;mies";
 
-        Map<String,Set<Text>> actual = invokeCreateMapOfLocalityGroups(createConfigurationWithLocalityGroups(localityGroups));
+        Map<String,Set<Text>> actual = Whitebox.invokeMethod(new LoadDateTableConfigHelper(), "createMapOfLocalityGroups",
+                        createConfigurationWithLocalityGroups(localityGroups));
 
         assertKeyAndColFamilies(actual, "LACS", EXPECTED_LAC_COL_FAMILIES);
 
@@ -54,7 +56,8 @@ public class LoadDateTableConfigHelperTest extends MockTableTest {
     public void testGetLoadDatesLocalityGroupParsingWithParsedNullByte() throws Exception {
         String localityGroups = "LACS:LAC\\u0000shard;LAC\\u0000protobufedge;LAC\\u0000knowledgeShard;LAC\\u0000errorShard";
 
-        Map<String,Set<Text>> actual = invokeCreateMapOfLocalityGroups(createConfigurationWithLocalityGroups(localityGroups));
+        Map<String,Set<Text>> actual = Whitebox.invokeMethod(new LoadDateTableConfigHelper(), "createMapOfLocalityGroups",
+                        createConfigurationWithLocalityGroups(localityGroups));
 
         assertKeyAndColFamilies(actual, "LACS", EXPECTED_LAC_COL_FAMILIES);
 
@@ -90,12 +93,5 @@ public class LoadDateTableConfigHelperTest extends MockTableTest {
         String propertyName = "metadata.loaddates.table.locality.groups";
         conf.set(propertyName, localityGroups);
         return conf;
-    }
-
-    @SuppressWarnings("unchecked")
-    private Map<String,Set<Text>> invokeCreateMapOfLocalityGroups(Configuration conf) throws Exception {
-        Method method = LoadDateTableConfigHelper.class.getDeclaredMethod("createMapOfLocalityGroups", Configuration.class);
-        method.setAccessible(true);
-        return (Map<String,Set<Text>>) method.invoke(new LoadDateTableConfigHelper(), conf);
     }
 }

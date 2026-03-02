@@ -18,7 +18,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
-import java.lang.reflect.Method;
 import java.net.ServerSocket;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -70,7 +69,6 @@ import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.easymock.EasyMock;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -82,6 +80,8 @@ import org.junit.Test;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
+import org.powermock.api.easymock.PowerMock;
+import org.powermock.reflect.Whitebox;
 
 import com.google.common.collect.Multimap;
 
@@ -744,18 +744,18 @@ public class BulkIngestMapFileLoaderTest {
 
     protected FileStatus createMockFileStatus() {
 
-        FileStatus mocked = EasyMock.createMock(FileStatus.class);
-        EasyMock.replay(mocked);
+        FileStatus mocked = PowerMock.createMock(FileStatus.class);
+        PowerMock.replay(mocked);
 
         return mocked;
     }
 
     protected FileStatus createMockFileStatus(Path path) throws Exception {
 
-        FileStatus mocked = EasyMock.createMock(FileStatus.class);
-        EasyMock.expect(mocked.getPath()).andReturn(path);
+        FileStatus mocked = PowerMock.createMock(FileStatus.class);
+        PowerMock.expectPrivate(mocked, "getPath").andReturn(path);
 
-        EasyMock.replay(mocked);
+        PowerMock.replay(mocked);
 
         return mocked;
     }
@@ -778,12 +778,6 @@ public class BulkIngestMapFileLoaderTest {
 
     protected List<String> retrieveUUTLogs() throws IOException {
         return logCollector.getMessages();
-    }
-
-    private static void addFileSystemForTesting(URI uri, Configuration conf, FileSystem fs) throws Exception {
-        Method method = FileSystem.class.getDeclaredMethod("addFileSystemForTesting", URI.class, Configuration.class, FileSystem.class);
-        method.setAccessible(true);
-        method.invoke(null, uri, conf, fs);
     }
 
     @Before
@@ -1847,7 +1841,7 @@ public class BulkIngestMapFileLoaderTest {
             BulkIngestMapFileLoaderTest.WrappedLocalFileSystem fs = new BulkIngestMapFileLoaderTest.WrappedLocalFileSystem(createMockInputStream(), null, true,
                             true, false, false, null, false, false);
 
-            addFileSystemForTesting(BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
+            Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
 
             Path mapFilesDir = createNewPath(url);
 
@@ -1875,7 +1869,7 @@ public class BulkIngestMapFileLoaderTest {
 
         } finally {
 
-            addFileSystemForTesting(BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, null, null);
+            Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, null, null);
 
             BulkIngestMapFileLoaderTest.logger.info("testCleanUpJobDirectoryUnableToMakeDirectory completed.");
         }
@@ -1899,7 +1893,7 @@ public class BulkIngestMapFileLoaderTest {
                             false, false, false, new HashMap<>(), false, false);
 
             try {
-                addFileSystemForTesting(BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
+                Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
             } catch (IOException ioException) {
                 Assert.fail(ioException.getMessage());
             } catch (Exception e) {
@@ -1924,7 +1918,7 @@ public class BulkIngestMapFileLoaderTest {
 
         } finally {
 
-            addFileSystemForTesting(BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, null, null);
+            Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, null, null);
 
             BulkIngestMapFileLoaderTest.logger.info("testCleanUpJobDirectoryMakesDirectory completed.");
         }
@@ -1948,7 +1942,7 @@ public class BulkIngestMapFileLoaderTest {
                             createMockInputStream(new String[] {"/dummy/entry"}), null, false, false, false, false, null, false, false);
 
             try {
-                addFileSystemForTesting(BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
+                Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
             } catch (Exception e) {
                 Assert.fail(e.getMessage());
             }
@@ -1972,7 +1966,7 @@ public class BulkIngestMapFileLoaderTest {
 
         } finally {
 
-            addFileSystemForTesting(BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, null, null);
+            Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, null, null);
 
             BulkIngestMapFileLoaderTest.logger.info("testCleanUpJobDirectoryUnableToMakeDirectory completed.");
         }
@@ -1995,7 +1989,7 @@ public class BulkIngestMapFileLoaderTest {
             BulkIngestMapFileLoaderTest.WrappedLocalFileSystem fs = new BulkIngestMapFileLoaderTest.WrappedLocalFileSystem(createMockInputStream(),
                             new FileStatus[0], false, false, false, false, null, false, false);
             try {
-                addFileSystemForTesting(BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
+                Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
             } catch (Exception e) {
                 Assert.fail(e.getMessage());
             }
@@ -2019,7 +2013,7 @@ public class BulkIngestMapFileLoaderTest {
 
         } finally {
 
-            addFileSystemForTesting(BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, null, null);
+            Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, null, null);
 
             BulkIngestMapFileLoaderTest.logger.info("testCleanUpJobDirectoryJobSuccess completed.");
         }
@@ -2042,7 +2036,7 @@ public class BulkIngestMapFileLoaderTest {
             BulkIngestMapFileLoaderTest.WrappedLocalFileSystem fs = new BulkIngestMapFileLoaderTest.WrappedLocalFileSystem(createMockInputStream(),
                             new FileStatus[] {createMockFileStatus()}, false, false, false, false, null, false, false);
 
-            addFileSystemForTesting(BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
+            Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
 
             Path mapFilesDir = createNewPath(url);
 
@@ -2071,7 +2065,7 @@ public class BulkIngestMapFileLoaderTest {
 
         } finally {
 
-            addFileSystemForTesting(BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, null, null);
+            Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, null, null);
 
             BulkIngestMapFileLoaderTest.logger.info("testCleanUpJobDirectoryWithFailedJobAndFailedCreateNewFile completed.");
         }
@@ -2094,7 +2088,7 @@ public class BulkIngestMapFileLoaderTest {
             BulkIngestMapFileLoaderTest.WrappedLocalFileSystem fs = new BulkIngestMapFileLoaderTest.WrappedLocalFileSystem(createMockInputStream(),
                             new FileStatus[] {createMockFileStatus()}, false, false, false, true, null, false, false);
 
-            addFileSystemForTesting(BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
+            Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
 
             Path mapFilesDir = createNewPath(url);
 
@@ -2121,7 +2115,7 @@ public class BulkIngestMapFileLoaderTest {
 
         } finally {
 
-            addFileSystemForTesting(BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, null, null);
+            Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, null, null);
 
             BulkIngestMapFileLoaderTest.logger.info("testCleanUpJobDirectoryWithFailedJobAndFailedRenames completed.");
         }
@@ -2144,7 +2138,7 @@ public class BulkIngestMapFileLoaderTest {
             BulkIngestMapFileLoaderTest.WrappedLocalFileSystem fs = new BulkIngestMapFileLoaderTest.WrappedLocalFileSystem(createMockInputStream(),
                             new FileStatus[] {createMockFileStatus()}, false, true, false, true, null, false, false);
 
-            addFileSystemForTesting(BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
+            Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
 
             Path mapFilesDir = createNewPath(url);
 
@@ -2168,7 +2162,7 @@ public class BulkIngestMapFileLoaderTest {
 
         } finally {
 
-            addFileSystemForTesting(BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, null, null);
+            Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, null, null);
 
             BulkIngestMapFileLoaderTest.logger.info("testCleanUpJobDirectoryWithFailedJob completed.");
         }
@@ -2198,7 +2192,7 @@ public class BulkIngestMapFileLoaderTest {
             BulkIngestMapFileLoaderTest.WrappedLocalFileSystem fs = new BulkIngestMapFileLoaderTest.WrappedLocalFileSystem(createMockInputStream(),
                             new FileStatus[] {createMockFileStatus()}, false, true, false, false, exists, false, false);
 
-            addFileSystemForTesting(BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
+            Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
 
             Path jobDirectory = createNewPath(url);
 
@@ -2218,7 +2212,7 @@ public class BulkIngestMapFileLoaderTest {
                             processOutputContains(calls, "FileSystem#exists("));
         } finally {
 
-            addFileSystemForTesting(BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, null, null);
+            Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, null, null);
 
             BulkIngestMapFileLoaderTest.logger.info("testTakeOwnershipJobDirectoryHappyPath completed.");
         }
@@ -2246,7 +2240,7 @@ public class BulkIngestMapFileLoaderTest {
             BulkIngestMapFileLoaderTest.WrappedLocalFileSystem fs = new BulkIngestMapFileLoaderTest.WrappedLocalFileSystem(createMockInputStream(),
                             new FileStatus[] {createMockFileStatus()}, false, true, false, false, existsResults, false, false);
 
-            addFileSystemForTesting(BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
+            Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
 
             Path jobDirectory = createNewPath(url);
 
@@ -2268,7 +2262,7 @@ public class BulkIngestMapFileLoaderTest {
                             processOutputContains(calls, "FileSystem#exists("));
         } finally {
 
-            addFileSystemForTesting(BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, null, null);
+            Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, null, null);
 
             BulkIngestMapFileLoaderTest.logger.info("testTakeOwnershipJobDirectoryFailedOwnershipExchangeLoading completed.");
         }
@@ -2297,7 +2291,7 @@ public class BulkIngestMapFileLoaderTest {
             BulkIngestMapFileLoaderTest.WrappedLocalFileSystem fs = new BulkIngestMapFileLoaderTest.WrappedLocalFileSystem(createMockInputStream(),
                             new FileStatus[] {createMockFileStatus()}, false, true, false, false, existsResults, false, false);
 
-            addFileSystemForTesting(BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
+            Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
 
             Path jobDirectory = createNewPath(url);
 
@@ -2319,7 +2313,7 @@ public class BulkIngestMapFileLoaderTest {
                             processOutputContains(calls, "FileSystem#exists("));
         } finally {
 
-            addFileSystemForTesting(BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, null, null);
+            Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, null, null);
 
             BulkIngestMapFileLoaderTest.logger.info("testTakeOwnershipJobDirectoryFailedOwnershipExchangeComplete completed.");
         }
@@ -2346,7 +2340,7 @@ public class BulkIngestMapFileLoaderTest {
             BulkIngestMapFileLoaderTest.WrappedLocalFileSystem fs = new BulkIngestMapFileLoaderTest.WrappedLocalFileSystem(createMockInputStream(),
                             new FileStatus[] {createMockFileStatus()}, false, false, false, false, existsResults, false, false);
 
-            addFileSystemForTesting(BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
+            Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
 
             Path jobDirectory = createNewPath(url);
 
@@ -2368,7 +2362,7 @@ public class BulkIngestMapFileLoaderTest {
                             processOutputContains(calls, "FileSystem#exists("));
         } finally {
 
-            addFileSystemForTesting(BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, null, null);
+            Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, null, null);
 
             BulkIngestMapFileLoaderTest.logger.info("testTakeOwnershipJobDirectoryFailedRenameLoadedExists completed.");
         }
@@ -2396,7 +2390,7 @@ public class BulkIngestMapFileLoaderTest {
             BulkIngestMapFileLoaderTest.WrappedLocalFileSystem fs = new BulkIngestMapFileLoaderTest.WrappedLocalFileSystem(createMockInputStream(),
                             new FileStatus[] {createMockFileStatus()}, false, false, false, false, existsResults, false, false);
 
-            addFileSystemForTesting(BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
+            Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
 
             Path jobDirectory = createNewPath(url);
 
@@ -2418,7 +2412,7 @@ public class BulkIngestMapFileLoaderTest {
                             processOutputContains(calls, "FileSystem#exists("));
         } finally {
 
-            addFileSystemForTesting(BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, null, null);
+            Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, null, null);
 
             BulkIngestMapFileLoaderTest.logger.info("testTakeOwnershipJobDirectoryFailedRenameLoadedDoesNotExists completed.");
         }
@@ -2446,7 +2440,7 @@ public class BulkIngestMapFileLoaderTest {
             BulkIngestMapFileLoaderTest.WrappedLocalFileSystem fs = new BulkIngestMapFileLoaderTest.WrappedLocalFileSystem(createMockInputStream(),
                             new FileStatus[] {createMockFileStatus()}, false, false, false, false, existsResults, true, false);
 
-            addFileSystemForTesting(BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
+            Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
 
             Path jobDirectory = createNewPath(url);
 
@@ -2466,7 +2460,7 @@ public class BulkIngestMapFileLoaderTest {
                             processOutputContains(calls, "FileSystem#exists("));
         } finally {
 
-            addFileSystemForTesting(BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, null, null);
+            Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, null, null);
 
             BulkIngestMapFileLoaderTest.logger.info("testTakeOwnershipJobDirectoryRenameThrowsException completed.");
         }
@@ -2494,7 +2488,7 @@ public class BulkIngestMapFileLoaderTest {
             BulkIngestMapFileLoaderTest.WrappedLocalFileSystem fs = new BulkIngestMapFileLoaderTest.WrappedLocalFileSystem(createMockInputStream(),
                             new FileStatus[] {createMockFileStatus()}, false, false, false, false, existsResults, false, true);
 
-            addFileSystemForTesting(BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
+            Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
 
             Path jobDirectory = createNewPath(url);
 
@@ -2516,7 +2510,7 @@ public class BulkIngestMapFileLoaderTest {
                             processOutputContains(calls, "FileSystem#exists("));
         } finally {
 
-            addFileSystemForTesting(BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, null, null);
+            Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, null, null);
 
             BulkIngestMapFileLoaderTest.logger.info("testTakeOwnershipJobDirectoryExistsThrowsException completed.");
         }
@@ -2715,7 +2709,7 @@ public class BulkIngestMapFileLoaderTest {
             BulkIngestMapFileLoaderTest.WrappedLocalFileSystem fs = new BulkIngestMapFileLoaderTest.WrappedLocalFileSystem(null, null, false, false, false,
                             false, null, false, false);
 
-            addFileSystemForTesting(BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
+            Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
 
             Path jobDirectory = createNewPath(url);
 
@@ -2735,7 +2729,7 @@ public class BulkIngestMapFileLoaderTest {
                             processOutputContains(calls, "FileSystem#createNewFile("));
         } finally {
 
-            addFileSystemForTesting(BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, null, null);
+            Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, null, null);
 
             BulkIngestMapFileLoaderTest.logger.info("testMarkJobDirectoryFailedFailedRenameAndCreate completed.");
         }
@@ -2758,7 +2752,7 @@ public class BulkIngestMapFileLoaderTest {
             BulkIngestMapFileLoaderTest.WrappedLocalFileSystem fs = new BulkIngestMapFileLoaderTest.WrappedLocalFileSystem(null, null, false, false, false,
                             true, null, false, false);
 
-            addFileSystemForTesting(BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
+            Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
 
             Path jobDirectory = createNewPath(url);
 
@@ -2773,7 +2767,7 @@ public class BulkIngestMapFileLoaderTest {
                             processOutputContains(calls, "FileSystem#createNewFile("));
         } finally {
 
-            addFileSystemForTesting(BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, null, null);
+            Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, null, null);
 
             BulkIngestMapFileLoaderTest.logger.info("testMarkJobDirectoryFailedFailedRename completed.");
         }
@@ -2796,7 +2790,7 @@ public class BulkIngestMapFileLoaderTest {
             BulkIngestMapFileLoaderTest.WrappedLocalFileSystem fs = new BulkIngestMapFileLoaderTest.WrappedLocalFileSystem(null, null, false, true, false,
                             false, null, false, false);
 
-            addFileSystemForTesting(BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
+            Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
 
             Path jobDirectory = createNewPath(url);
 
@@ -2809,7 +2803,7 @@ public class BulkIngestMapFileLoaderTest {
                             processOutputContains(calls, "FileSystem#rename("));
         } finally {
 
-            addFileSystemForTesting(BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, null, null);
+            Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, null, null);
 
             BulkIngestMapFileLoaderTest.logger.info("testMarkJobDirectoryFailedHappyPath completed.");
         }
@@ -2832,7 +2826,7 @@ public class BulkIngestMapFileLoaderTest {
             BulkIngestMapFileLoaderTest.WrappedLocalFileSystem fs = new BulkIngestMapFileLoaderTest.WrappedLocalFileSystem(null, null, false, false, false,
                             false, null, true, false);
 
-            addFileSystemForTesting(BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
+            Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
 
             Path jobDirectory = createNewPath(url);
 
@@ -2848,7 +2842,7 @@ public class BulkIngestMapFileLoaderTest {
                             processOutputContains(fs.callsLogs(), "FileSystem#rename("));
         } finally {
 
-            addFileSystemForTesting(BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, null, null);
+            Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, null, null);
 
             BulkIngestMapFileLoaderTest.logger.info("testMarkJobDirectoryFailedHandlesThrownException completed.");
         }
@@ -2877,7 +2871,7 @@ public class BulkIngestMapFileLoaderTest {
             BulkIngestMapFileLoaderTest.WrappedLocalFileSystem fs = new BulkIngestMapFileLoaderTest.WrappedLocalFileSystem(createMockInputStream(),
                             new FileStatus[] {createMockFileStatus()}, false, true, false, false, exists, false, false);
 
-            addFileSystemForTesting(BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
+            Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
 
             Path jobDirectory = createNewPath(url);
 
@@ -2886,7 +2880,7 @@ public class BulkIngestMapFileLoaderTest {
             Assert.assertTrue("BulkIngestMapFileLoader#markDirectoryForCleanup failed to return true as expected.", results);
         } finally {
 
-            addFileSystemForTesting(BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, null, null);
+            Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, null, null);
 
             BulkIngestMapFileLoaderTest.logger.info("testMarkJobCleanup completed.");
         }
@@ -2917,7 +2911,7 @@ public class BulkIngestMapFileLoaderTest {
             BulkIngestMapFileLoaderTest.WrappedLocalFileSystem fs = new BulkIngestMapFileLoaderTest.WrappedLocalFileSystem(createMockInputStream(),
                             new FileStatus[] {createMockFileStatus(new Path(url.toString() + "/job.cleaning"))}, true, true, true, false, exists, false, false);
 
-            addFileSystemForTesting(BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
+            Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
 
             List<String> calls = fs.callsLogs();
 
@@ -2932,7 +2926,7 @@ public class BulkIngestMapFileLoaderTest {
 
         } finally {
 
-            addFileSystemForTesting(BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, null, null);
+            Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, null, null);
 
             BulkIngestMapFileLoaderTest.logger.info("testMarkJobCleanupOnStartup completed.");
         }

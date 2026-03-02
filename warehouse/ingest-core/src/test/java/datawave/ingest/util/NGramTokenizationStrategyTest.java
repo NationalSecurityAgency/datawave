@@ -1,10 +1,10 @@
 package datawave.ingest.util;
 
+import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.isA;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -13,33 +13,53 @@ import java.util.Vector;
 import org.apache.log4j.Logger;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
+import org.junit.runner.RunWith;
+import org.powermock.api.easymock.PowerMock;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
 import com.google.common.hash.BloomFilter;
 
 import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.NormalizedFieldAndValue;
+import datawave.ingest.mapreduce.MemberShipTest;
 import datawave.ingest.util.DiskSpaceStarvationStrategy.LowDiskSpaceException;
 import datawave.ingest.util.MemoryStarvationStrategy.LowMemoryException;
 import datawave.ingest.util.TimeoutStrategy.TimeoutException;
 
-@SuppressWarnings("unchecked")
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({ResourceAvailabilityUtil.class, Logger.class, MemberShipTest.class, BloomFilter.class})
 public class NGramTokenizationStrategyTest {
 
     BloomFilter<String> filter;
 
     Logger logger;
 
+    @SuppressWarnings("unchecked")
     @Before
     public void setup() throws Exception {
-        filter = Mockito.mock(BloomFilter.class);
-        logger = Mockito.mock(Logger.class);
+        filter = PowerMock.createMock(BloomFilter.class);
+        logger = PowerMock.createMock(Logger.class);
     }
 
+    /**
+     * Unverified expectations were bleeding over from other tests, such as the MainServletTest or MultiThreadedEventSequenceFileCombiningPollManagerTest. Since
+     * the developer was not familiar with the unrelated, yet interfering test classes, this test method was added here to handle the other tests' "unfulfilled"
+     * expectations, swallow their misleading errors, and prevent this test class from blowing up.
+     */
     @Test
     public void testNothingReally_ButPreventMisleadingVerificationErrorsFromInterferingTestClasses() {
-        // This test was a PowerMock workaround; kept as a no-op for test count stability
+        try {
+            PowerMock.replayAll();
+        } catch (Throwable e) {
+            // No op
+        }
+
+        try {
+            PowerMock.verifyAll();
+        } catch (Throwable e) {
+            // No op
+        }
     }
 
     private NormalizedFieldAndValue createNormalizedFieldAndValue(int counter, int length) {
@@ -66,12 +86,13 @@ public class NGramTokenizationStrategyTest {
         int expectedNGramCount = BloomFilterUtil.predictNGramCount(fieldValue, NGramTokenizationStrategy.DEFAULT_MAX_NGRAM_LENGTH);
 
         // Set expectations
-        Mockito.when(this.filter.apply(anyString())).thenReturn(true);
+        expect(this.filter.apply(isA(String.class))).andReturn(true).times(expectedNGramCount);
 
         // Run the test
+        PowerMock.replayAll();
         NGramTokenizationStrategy subject = new NGramTokenizationStrategy(this.filter);
         int result1 = subject.tokenize(nci, NGramTokenizationStrategy.DEFAULT_MAX_NGRAM_LENGTH);
-        Mockito.verify(this.filter, Mockito.times(expectedNGramCount)).apply(anyString());
+        PowerMock.verifyAll();
 
         // Verify results
         assertEquals("Should have tokenized and applied " + expectedNGramCount + " n-grams to the bloom filter", expectedNGramCount, result1);
@@ -87,12 +108,13 @@ public class NGramTokenizationStrategyTest {
         int expectedNGramCount = BloomFilterUtil.predictNGramCount(fieldValue, AbstractNGramTokenizationStrategy.DEFAULT_MAX_NGRAM_LENGTH);
 
         // Set expectations
-        Mockito.when(this.filter.apply(anyString())).thenReturn(true);
+        expect(this.filter.apply(isA(String.class))).andReturn(true).times(expectedNGramCount);
 
         // Run the test
+        PowerMock.replayAll();
         NGramTokenizationStrategy subject = new NGramTokenizationStrategy(this.filter);
         int result1 = subject.tokenize(nci, AbstractNGramTokenizationStrategy.DEFAULT_MAX_NGRAM_LENGTH);
-        Mockito.verify(this.filter, Mockito.times(expectedNGramCount)).apply(anyString());
+        PowerMock.verifyAll();
 
         // Verify results
         assertEquals("Should have tokenized and applied " + expectedNGramCount + " n-grams to the bloom filter", expectedNGramCount, result1);
@@ -107,22 +129,25 @@ public class NGramTokenizationStrategyTest {
         final String fieldValue = nci.getIndexedFieldValue();
         int expectedNGramCount = BloomFilterUtil.predictNGramCount(fieldValue, MemoryStarvationStrategy.DEFAULT_MAX_NGRAM_LENGTH);
 
-        // Run the test with static mocks
-        try (MockedStatic<Logger> loggerMock = Mockito.mockStatic(Logger.class);
-                        MockedStatic<ResourceAvailabilityUtil> resourceMock = Mockito.mockStatic(ResourceAvailabilityUtil.class)) {
-            loggerMock.when(() -> Logger.getLogger(any(Class.class))).thenReturn(this.logger);
-            resourceMock.when(() -> ResourceAvailabilityUtil.isMemoryAvailable(.05f)).thenReturn(false);
+        // Set expectations
+        PowerMock.mockStaticPartial(Logger.class, "getLogger");
+        expect(Logger.getLogger(isA(Class.class))).andReturn(this.logger).anyTimes();
+        PowerMock.mockStaticPartial(ResourceAvailabilityUtil.class, "isMemoryAvailable");
+        expect(ResourceAvailabilityUtil.isMemoryAvailable(.05f)).andReturn(true);
+        PowerMock.mockStaticPartial(ResourceAvailabilityUtil.class, "isMemoryAvailable");
+        expect(ResourceAvailabilityUtil.isMemoryAvailable(.05f)).andReturn(false);
+        this.logger.warn(isA(String.class), isA(LowMemoryException.class));
 
-            MemoryStarvationStrategy subject = new MemoryStarvationStrategy(this.filter, .05f);
-            NGramTokenizationStrategy strategy = new NGramTokenizationStrategy(subject);
+        // Run the test
+        PowerMock.replayAll();
+        MemoryStarvationStrategy subject = new MemoryStarvationStrategy(this.filter, .05f);
+        NGramTokenizationStrategy strategy = new NGramTokenizationStrategy(subject);
 
-            int result1 = strategy.tokenize(nci, MemoryStarvationStrategy.DEFAULT_MAX_NGRAM_LENGTH);
+        int result1 = strategy.tokenize(nci, MemoryStarvationStrategy.DEFAULT_MAX_NGRAM_LENGTH);
+        PowerMock.verifyAll();
 
-            Mockito.verify(this.logger).warn(anyString(), any(LowMemoryException.class));
-
-            // Verify results
-            assertEquals("Strategy should have logged a low memory exception but still tokenized n-grams", expectedNGramCount, result1);
-        }
+        // Verify results
+        assertEquals("Strategy should have logged a low memory exception but still tokenized n-grams", expectedNGramCount, result1);
     }
 
     @Test
@@ -134,21 +159,24 @@ public class NGramTokenizationStrategyTest {
         final String fieldValue = nci.getIndexedFieldValue();
         int expectedNGramCount = BloomFilterUtil.predictNGramCount(fieldValue, DiskSpaceStarvationStrategy.DEFAULT_MAX_NGRAM_LENGTH);
 
-        // Run the test with static mocks
-        try (MockedStatic<Logger> loggerMock = Mockito.mockStatic(Logger.class);
-                        MockedStatic<ResourceAvailabilityUtil> resourceMock = Mockito.mockStatic(ResourceAvailabilityUtil.class)) {
-            loggerMock.when(() -> Logger.getLogger(any(Class.class))).thenReturn(this.logger);
-            resourceMock.when(() -> ResourceAvailabilityUtil.isDiskAvailable("/", .05f)).thenReturn(false);
+        // Set expectations
+        PowerMock.mockStaticPartial(Logger.class, "getLogger");
+        expect(Logger.getLogger(isA(Class.class))).andReturn(this.logger).anyTimes();
+        PowerMock.mockStaticPartial(ResourceAvailabilityUtil.class, "isDiskAvailable");
+        expect(ResourceAvailabilityUtil.isDiskAvailable("/", .05f)).andReturn(true);
+        PowerMock.mockStaticPartial(ResourceAvailabilityUtil.class, "isDiskAvailable");
+        expect(ResourceAvailabilityUtil.isDiskAvailable("/", .05f)).andReturn(false);
+        this.logger.warn(isA(String.class), isA(LowDiskSpaceException.class));
 
-            DiskSpaceStarvationStrategy subject = new DiskSpaceStarvationStrategy(this.filter, .05f, "/");
-            NGramTokenizationStrategy strategy = new NGramTokenizationStrategy(subject);
-            int result1 = strategy.tokenize(nci, DiskSpaceStarvationStrategy.DEFAULT_MAX_NGRAM_LENGTH);
+        // Run the test
+        PowerMock.replayAll();
+        DiskSpaceStarvationStrategy subject = new DiskSpaceStarvationStrategy(this.filter, .05f, "/");
+        NGramTokenizationStrategy strategy = new NGramTokenizationStrategy(subject);
+        int result1 = strategy.tokenize(nci, DiskSpaceStarvationStrategy.DEFAULT_MAX_NGRAM_LENGTH);
+        PowerMock.verifyAll();
 
-            Mockito.verify(this.logger).warn(anyString(), any(LowDiskSpaceException.class));
-
-            // Verify results
-            assertEquals("Strategy should have logged a low disk exception but still tokenized n-grams", expectedNGramCount, result1);
-        }
+        // Verify results
+        assertEquals("Strategy should have logged a low disk exception but still tokenized n-grams", expectedNGramCount, result1);
     }
 
     @Test
@@ -157,9 +185,12 @@ public class NGramTokenizationStrategyTest {
         final NormalizedContentInterface nci = new NormalizedFieldAndValue("TEST", "test");
 
         // Set expectations
-        Mockito.when(this.filter.apply(anyString())).thenReturn(true);
+        expect(this.filter.apply(isA(String.class))).andReturn(true); // Only first token is applied before a thread sleep
+                                                                      // in the substrategy triggers a TimeoutException to be
+                                                                      // thrown by the parent TimeoutTokenizationStrategy
 
         // Run the test
+        PowerMock.replayAll();
         SimulatedProcessingDelayStrategy delayStrategy = new SimulatedProcessingDelayStrategy(this.filter, 0);
         TimeoutStrategy subject = new TimeoutStrategy(delayStrategy, System.currentTimeMillis(), 200);
         NGramTokenizationStrategy strategy = new NGramTokenizationStrategy(subject);
@@ -169,6 +200,7 @@ public class NGramTokenizationStrategyTest {
         } catch (TimeoutException e) {
             result1 = e;
         }
+        PowerMock.verifyAll();
 
         // Verify results
         assertNotNull("Strategy should have thrown a timeout exception", result1);
@@ -199,9 +231,10 @@ public class NGramTokenizationStrategyTest {
         }
 
         // Set expectations
-        Mockito.when(this.filter.apply(anyString())).thenReturn(true);
+        expect(this.filter.apply(isA(String.class))).andReturn(true).times(expectedNGramCount);
 
         // Run the test
+        PowerMock.replayAll();
         WeightedValuePruningStrategy subject = new WeightedValuePruningStrategy(maxAllowedNgrams);
         for (final NormalizedContentInterface nci : ncis) {
             if (nci.getIndexedFieldValue().length() == 2) {
@@ -221,7 +254,7 @@ public class NGramTokenizationStrategyTest {
             result2 += tokenized;
             result3.put(nci.getIndexedFieldName(), tokenized);
         }
-        Mockito.verify(this.filter, Mockito.times(expectedNGramCount)).apply(anyString());
+        PowerMock.verifyAll();
 
         // Verify results
         assertNotNull("Should have created a non-null filter", result1);
@@ -256,9 +289,10 @@ public class NGramTokenizationStrategyTest {
         expectedNGramCount = (expectedNGramCount > maxAllowedNgrams) ? maxAllowedNgrams : expectedNGramCount;
 
         // Set expectations
-        Mockito.when(this.filter.apply(anyString())).thenReturn(true);
+        expect(this.filter.apply(isA(String.class))).andReturn(true).times(expectedNGramCount - 4, idealFilterSize); // Allow for rounding errors
 
         // Run the test
+        PowerMock.replayAll();
         WeightedValuePruningStrategy subject = new WeightedValuePruningStrategy(maxAllowedNgrams);
         for (final NormalizedContentInterface nci : ncis) {
             if (nci.getIndexedFieldValue().length() == 2) {
@@ -278,8 +312,7 @@ public class NGramTokenizationStrategyTest {
             result2 += tokenized;
             result3.put(nci.getIndexedFieldName(), tokenized);
         }
-        Mockito.verify(this.filter, Mockito.atLeast(expectedNGramCount - 4)).apply(anyString());
-        Mockito.verify(this.filter, Mockito.atMost(idealFilterSize)).apply(anyString());
+        PowerMock.verifyAll();
 
         // Verify results
         assertNotNull("Should have created a non-null filter", result1);
@@ -342,9 +375,10 @@ public class NGramTokenizationStrategyTest {
         expectedNGramCount = (expectedNGramCount > maxAllowedNgrams) ? maxAllowedNgrams : expectedNGramCount;
 
         // Set expectations
-        Mockito.when(this.filter.apply(anyString())).thenReturn(true);
+        expect(this.filter.apply(isA(String.class))).andReturn(true).times(expectedNGramCount - 4, idealFilterSize); // Allow for rounding errors
 
         // Run the test
+        PowerMock.replayAll();
         WeightedValuePruningStrategy subject = new WeightedValuePruningStrategy(maxAllowedNgrams);
         for (final NormalizedContentInterface nci : ncis) {
             if (nci.getIndexedFieldValue().length() == 2) {
@@ -364,8 +398,7 @@ public class NGramTokenizationStrategyTest {
             result2 += tokenized;
             result3.put(nci.getIndexedFieldName(), tokenized);
         }
-        Mockito.verify(this.filter, Mockito.atLeast(expectedNGramCount - 4)).apply(anyString());
-        Mockito.verify(this.filter, Mockito.atMost(idealFilterSize)).apply(anyString());
+        PowerMock.verifyAll();
 
         // Verify results
         assertNotNull("Should have created a non-null filter", result1);
@@ -415,9 +448,10 @@ public class NGramTokenizationStrategyTest {
         expectedNGramCount = (expectedNGramCount > maxAllowedNgrams) ? maxAllowedNgrams : expectedNGramCount;
 
         // Set expectations
-        Mockito.when(this.filter.apply(anyString())).thenReturn(true);
+        expect(this.filter.apply(isA(String.class))).andReturn(true).times(expectedNGramCount - 10, idealFilterSize); // Allow for rounding errors
 
         // Run the test
+        PowerMock.replayAll();
         WeightedValuePruningStrategy subject = new WeightedValuePruningStrategy(maxAllowedNgrams);
         for (final NormalizedContentInterface nci : ncis) {
             if (nci.getIndexedFieldValue().length() == 2) {
@@ -437,8 +471,7 @@ public class NGramTokenizationStrategyTest {
             result2 += tokenized;
             result3.put(nci.getIndexedFieldName(), tokenized);
         }
-        Mockito.verify(this.filter, Mockito.atLeast(expectedNGramCount - 10)).apply(anyString());
-        Mockito.verify(this.filter, Mockito.atMost(idealFilterSize)).apply(anyString());
+        PowerMock.verifyAll();
 
         // Verify results
         assertNotNull("Should have created a non-null filter", result1);
@@ -475,53 +508,55 @@ public class NGramTokenizationStrategyTest {
         // Determine n-gram at which to introduce timeout
         int timeoutAfterNGramCount = BloomFilterUtil.predictNGramCount(ncis.iterator().next().getIndexedFieldValue());
 
-        // Run the test with static mocks
-        Mockito.when(this.filter.apply(anyString())).thenReturn(true);
+        // Set expectations
+        PowerMock.mockStaticPartial(Logger.class, "getLogger");
+        expect(Logger.getLogger(isA(Class.class))).andReturn(this.logger).anyTimes();
+        PowerMock.mockStaticPartial(ResourceAvailabilityUtil.class, "isDiskAvailable");
+        expect(ResourceAvailabilityUtil.isDiskAvailable("/", .05f)).andReturn(true).times(1);
+        expect(ResourceAvailabilityUtil.isDiskAvailable("/", .05f)).andReturn(false).times(1);
+        expect(this.filter.apply(isA(String.class))).andReturn(true).anyTimes(); // Allow for timeout
+        this.logger.warn(isA(String.class), isA(LowDiskSpaceException.class));
 
-        try (MockedStatic<Logger> loggerMock = Mockito.mockStatic(Logger.class);
-                        MockedStatic<ResourceAvailabilityUtil> resourceMock = Mockito.mockStatic(ResourceAvailabilityUtil.class)) {
-            loggerMock.when(() -> Logger.getLogger(any(Class.class))).thenReturn(this.logger);
-            resourceMock.when(() -> ResourceAvailabilityUtil.isDiskAvailable("/", .05f)).thenReturn(true, false);
-
-            WeightedValuePruningStrategy subject = new WeightedValuePruningStrategy(maxAllowedNgrams);
-            for (final NormalizedContentInterface nci : ncis) {
-                if (nci.getIndexedFieldValue().length() == 2) {
-                    subject.applyFieldValue(nci.getIndexedFieldValue(), true); // Apply with weighting recalculation
-                } else {
-                    subject.applyFieldValue(nci.getIndexedFieldValue()); // Apply without weighting recalculation
-                }
+        // Run the test
+        PowerMock.replayAll();
+        WeightedValuePruningStrategy subject = new WeightedValuePruningStrategy(maxAllowedNgrams);
+        for (final NormalizedContentInterface nci : ncis) {
+            if (nci.getIndexedFieldValue().length() == 2) {
+                subject.applyFieldValue(nci.getIndexedFieldValue(), true); // Apply with weighting recalculation
+            } else {
+                subject.applyFieldValue(nci.getIndexedFieldValue()); // Apply without weighting recalculation
             }
-
-            int result1 = subject.getExpectedNGramCount(); // Create filter, which forces weighting calculation
-
-            SimulatedProcessingDelayStrategy delayStrategy = new SimulatedProcessingDelayStrategy(this.filter, timeoutAfterNGramCount);
-            TimeoutStrategy timeoutStrategy = new TimeoutStrategy(delayStrategy, System.currentTimeMillis(), 200);
-            MemoryStarvationStrategy memoryStrategy = new MemoryStarvationStrategy(timeoutStrategy, .05f);
-            DiskSpaceStarvationStrategy diskSpaceStrategy = new DiskSpaceStarvationStrategy(memoryStrategy, .05f, "/");
-            subject.setSourceStrategy(diskSpaceStrategy);
-            subject.setFilter(this.filter); // Set the new filter
-
-            int result2 = 0;
-            Map<String,Integer> result3 = new HashMap<>();
-            Exception result4 = null;
-            try {
-                for (final NormalizedContentInterface nci : ncis) { // Tokenize each field value
-                    int tokenized = subject.tokenize(nci, AbstractNGramTokenizationStrategy.DEFAULT_MAX_NGRAM_LENGTH);
-                    result2 += tokenized;
-                    result3.put(nci.getIndexedFieldName(), tokenized);
-                }
-            } catch (TimeoutException e) {
-                result4 = e;
-            }
-            Mockito.verify(this.logger).warn(anyString(), any(LowDiskSpaceException.class));
-
-            // Verify results
-            assertEquals("Predicted n-grams should not have been pruned", expectedNGramCount, result1);
-
-            assertEquals("Should have applied " + timeoutAfterNGramCount + " n-grams to the bloom filter", timeoutAfterNGramCount, result2);
-
-            assertNotNull("Should have caught a timeout exception", result4);
         }
+
+        int result1 = subject.getExpectedNGramCount(); // Create filter, which forces weighting calculation
+
+        SimulatedProcessingDelayStrategy delayStrategy = new SimulatedProcessingDelayStrategy(this.filter, timeoutAfterNGramCount);
+        TimeoutStrategy timeoutStrategy = new TimeoutStrategy(delayStrategy, System.currentTimeMillis(), 200);
+        MemoryStarvationStrategy memoryStrategy = new MemoryStarvationStrategy(timeoutStrategy, .05f);
+        DiskSpaceStarvationStrategy diskSpaceStrategy = new DiskSpaceStarvationStrategy(memoryStrategy, .05f, "/");
+        subject.setSourceStrategy(diskSpaceStrategy);
+        subject.setFilter(this.filter); // Set the new filter
+
+        int result2 = 0;
+        Map<String,Integer> result3 = new HashMap<>();
+        Exception result4 = null;
+        try {
+            for (final NormalizedContentInterface nci : ncis) { // Tokenize each field value
+                int tokenized = subject.tokenize(nci, AbstractNGramTokenizationStrategy.DEFAULT_MAX_NGRAM_LENGTH);
+                result2 += tokenized;
+                result3.put(nci.getIndexedFieldName(), tokenized);
+            }
+        } catch (TimeoutException e) {
+            result4 = e;
+        }
+        PowerMock.verifyAll();
+
+        // Verify results
+        assertEquals("Predicted n-grams should not have been pruned", expectedNGramCount, result1);
+
+        assertEquals("Should have applied " + timeoutAfterNGramCount + " n-grams to the bloom filter", timeoutAfterNGramCount, result2);
+
+        assertNotNull("Should have caught a timeout exception", result4);
     }
 
     private class SimulatedProcessingDelayStrategy extends AbstractNGramTokenizationStrategy {
