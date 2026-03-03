@@ -56,7 +56,7 @@ public class UnfieldedLiteralIndexLookup extends AsyncIndexLookup {
         if (indexLookupMap == null) {
             indexLookupMap = new IndexLookupMap(config.getMaxUnfieldedExpansionThreshold(), config.getMaxValueExpansionThreshold());
 
-            Preconditions.checkNotNull(monitor, "FieldExpansionIndexLookup requires a ScanMonitor");
+            Preconditions.checkNotNull(monitor, "UnfieldedLiteralIndexLookup requires a ScanMonitor");
             Runnable runnable = createRunnable(getTableName(), config.getAuthorizations().iterator().next());
 
             future = execService.submit(runnable);
@@ -101,8 +101,7 @@ public class UnfieldedLiteralIndexLookup extends AsyncIndexLookup {
                 }
 
             } catch (Exception e) {
-                log.error("Exception seen while expanding unfielded literal:", e);
-                handleException();
+                handleException(e);
             } finally {
                 if (log.isTraceEnabled()) {
                     log.trace("closing scanner");
@@ -147,7 +146,7 @@ public class UnfieldedLiteralIndexLookup extends AsyncIndexLookup {
                 future.get();
             }
         } catch (Exception e) {
-            handleException();
+            handleException(e);
         }
     }
 
@@ -155,8 +154,13 @@ public class UnfieldedLiteralIndexLookup extends AsyncIndexLookup {
      * Any exception indicates a failure to expand the unfielded literal and should fail the query.
      * <p>
      * A {@link DatawaveFatalQueryException} is thrown instead of a raw exception.
+     *
+     * @param e
+     *            the exception
      */
-    protected void handleException() {
+    protected void handleException(Exception e) {
+        log.warn("UnfieldedLiteralIndexLookup saw exception: {}", e.getMessage());
+        log.debug("unfielded literal expansion failed, failing the query");
         throw new DatawaveFatalQueryException("Failed to expand unfielded literal");
     }
 }
