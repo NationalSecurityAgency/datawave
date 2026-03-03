@@ -6,7 +6,6 @@ import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DELAYED;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DROPPED;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EVALUATION_ONLY;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_OR;
-import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_TERM;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_VALUE;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.INDEX_HOLE;
 import static datawave.query.jexl.visitors.JexlStringBuildingVisitor.buildQuery;
@@ -107,7 +106,6 @@ public class QueryPropertyMarkerTest {
         assertFalse(QueryPropertyMarker.Instance.of().isType(DELAYED));
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     public void testInstance_isAnyTypeOf() throws ParseException {
         QueryPropertyMarker.Instance instance = QueryPropertyMarker.Instance.of(DELAYED, parseJexlQuery("FOO == 'a'"));
@@ -122,7 +120,6 @@ public class QueryPropertyMarkerTest {
         assertThrows(NullPointerException.class, () -> instance.isAnyTypeOf((Collection<QueryPropertyMarker.MarkerType>) null));
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     public void testInstance_isAnyTypeExcept() throws ParseException {
         QueryPropertyMarker.Instance instance = QueryPropertyMarker.Instance.of(DELAYED, Lists.newArrayList(parseJexlQuery("FOO == 'a'")));
@@ -136,7 +133,6 @@ public class QueryPropertyMarkerTest {
         assertThrows(NullPointerException.class, () -> instance.isAnyTypeExcept((Collection<QueryPropertyMarker.MarkerType>) null));
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     public void testInstance_isNotAnyTypeOf() throws ParseException {
         QueryPropertyMarker.Instance instance = QueryPropertyMarker.Instance.of(DELAYED, Lists.newArrayList(parseJexlQuery("FOO == 'a'")));
@@ -159,8 +155,6 @@ public class QueryPropertyMarkerTest {
         assertTrue(QueryPropertyMarker.Instance.of(DELAYED, (List<JexlNode>) null).isDelayedPredicate());
         assertTrue(QueryPropertyMarker.Instance.of(EVALUATION_ONLY, (List<JexlNode>) null).isDelayedPredicate());
         assertTrue(QueryPropertyMarker.Instance.of(EXCEEDED_OR, (List<JexlNode>) null).isDelayedPredicate());
-        assertTrue(QueryPropertyMarker.Instance.of(EXCEEDED_TERM, (List<JexlNode>) null).isDelayedPredicate());
-        assertTrue(QueryPropertyMarker.Instance.of(EXCEEDED_TERM, (List<JexlNode>) null).isDelayedPredicate());
 
         assertFalse(QueryPropertyMarker.Instance.of(BOUNDED_RANGE, (List<JexlNode>) null).isDelayedPredicate());
     }
@@ -168,8 +162,6 @@ public class QueryPropertyMarkerTest {
     @Test
     public void testInstance_isIvarator() {
         assertTrue(QueryPropertyMarker.Instance.of(EXCEEDED_OR, (List<JexlNode>) null).isIvarator());
-        assertTrue(QueryPropertyMarker.Instance.of(EXCEEDED_TERM, (List<JexlNode>) null).isIvarator());
-        assertTrue(QueryPropertyMarker.Instance.of(EXCEEDED_TERM, (List<JexlNode>) null).isIvarator());
 
         assertFalse(QueryPropertyMarker.Instance.of(INDEX_HOLE, (List<JexlNode>) null).isIvarator());
         assertFalse(QueryPropertyMarker.Instance.of(DELAYED, (List<JexlNode>) null).isIvarator());
@@ -182,13 +174,6 @@ public class QueryPropertyMarkerTest {
         JexlNode source = JexlNodeFactory.buildERNode("FOO", "ba.*");
         String expected = "((_List_ = true) && (FOO =~ 'ba.*'))";
         testApplyMarkerMultipleTimes(source, expected, EXCEEDED_OR);
-    }
-
-    @Test
-    public void testNoDoubleMarks_ExceededTerm() {
-        JexlNode source = JexlNodeFactory.buildERNode("FOO", "ba.*");
-        String expected = "((_Term_ = true) && (FOO =~ 'ba.*'))";
-        testApplyMarkerMultipleTimes(source, expected, EXCEEDED_TERM);
     }
 
     @Test

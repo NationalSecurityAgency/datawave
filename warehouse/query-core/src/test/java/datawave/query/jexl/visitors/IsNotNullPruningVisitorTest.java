@@ -569,12 +569,6 @@ public class IsNotNullPruningVisitorTest {
 
         query = "((_List_ = true) && (FOO_USER >= '09021f44' && FOO_USER <= '09021f47'))";
         test(query, query);
-
-        query = "((_Term_ = true) && (FOO == 'bar'))";
-        test(query, query);
-
-        query = "((_Delayed_ = true) && (!(F1 == 'v1') || !((_Term_ = true) && (F2 == 'v2'))))";
-        test(query, query);
     }
 
     @Test

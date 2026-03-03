@@ -3099,7 +3099,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         });
     }
 
-    private QueryPlanStream getQueryPlanStream(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper metadataHelper) {
+    protected QueryPlanStream getQueryPlanStream(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper metadataHelper) {
 
         if (config.isUseShardedIndex()) {
             return getDayIndexStream(config);
