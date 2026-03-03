@@ -458,7 +458,7 @@ class QueryLimiterConcurrencyTest {
                     QueryLimiter queryLimiter = serversToLimiters.get(request.system);
 
                     // Check if a limit has been met.
-                    QueryLimiterResponse limiterResponse = queryLimiter.checkForLimits(request.userDn, request.queryLogic);
+                    QueryLimiterResponse limiterResponse = queryLimiter.checkForLimits(request.userDn, request.system, request.queryLogic);
 
                     // If a limit has been met, record it.
                     if (limiterResponse.metLimit()) {
@@ -467,7 +467,7 @@ class QueryLimiterConcurrencyTest {
                     } else {
                         // Otherwise 'create' a query and store the heartbeat to keep it alive until stopped.
                         String queryId = UUID.randomUUID().toString();
-                        queryLimiter.countQueryTowardsLimits(queryId, request.userDn, request.queryLogic);
+                        queryLimiter.countQueryTowardsLimits(queryId, request.userDn, request.system, request.queryLogic);
                         log.trace("Created query " + queryId);
                         attempts.add(QueryCreationAttempt.succeeded(request, queryId));
                     }
@@ -588,7 +588,6 @@ class QueryLimiterConcurrencyTest {
             limiter.setConfiguration(this.limitConfig);
             limiter.setHeartbeatCache(new QueryHeartbeatCache());
             limiter.setup();
-            limiter.setHostnameProvider(() -> system);
             serversToLimiters.put(system, limiter);
         }
     }

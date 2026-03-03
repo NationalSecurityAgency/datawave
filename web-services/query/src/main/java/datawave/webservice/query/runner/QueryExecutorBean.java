@@ -728,7 +728,7 @@ public class QueryExecutorBean implements QueryExecutor {
             response.setHasResults(true);
 
             // Check if submitting a new query would exceed any configured concurrent query limits.
-            checkForQueryLimits(response, qd.userDn, queryLogicName);
+            checkForQueryLimits(response, qd.userDn, queryParameters.getFirst(QueryParameters.QUERY_SYSTEM_FROM), queryLogicName);
 
             AuditType auditType = qd.logic.getAuditType(null);
             try {
@@ -779,7 +779,7 @@ public class QueryExecutorBean implements QueryExecutor {
             }
 
             // Consider this query to be active when determining query limits.
-            markQueryAsActive(q.getId().toString(), qd.userDn, q.getQueryLogicName());
+            markQueryAsActive(q.getId().toString(), qd.userDn, q.getSystemFrom(), q.getQueryLogicName());
 
             boolean shouldTraceQuery = shouldTraceQuery(qp.getQuery(), qd.userid, qp.isTrace());
             if (shouldTraceQuery) {
@@ -1291,7 +1291,7 @@ public class QueryExecutorBean implements QueryExecutor {
 
             // Check if submitting a new query would exceed any configured concurrent query limits.
             Query settings = query.getSettings();
-            checkForQueryLimits(response, settings.getUserDN(), settings.getQueryLogicName());
+            checkForQueryLimits(response, settings.getUserDN(), settings.getSystemFrom(), settings.getQueryLogicName());
 
             // We did not allocate a connection when we looked up the query. If
             // there's a connection when we get here, then we know it can only be
@@ -1351,7 +1351,7 @@ public class QueryExecutorBean implements QueryExecutor {
             }
 
             // Consider this query to be active when determining query limits.
-            markQueryAsActive(id, settings.getUserDN(), settings.getQueryLogicName());
+            markQueryAsActive(id, settings.getUserDN(), settings.getSystemFrom(), settings.getQueryLogicName());
 
             query.setClient(client);
             CreateQuerySessionIDFilter.QUERY_ID.set(id);
@@ -3976,15 +3976,17 @@ public class QueryExecutorBean implements QueryExecutor {
      *            the response to update
      * @param userDn
      *            the user DN
+     * @param systemFrom
+     *            the query system from
      * @param queryLogicName
      *            the query logic
      * @throws QueryException
      *             if an error occurs
      */
-    private void checkForQueryLimits(BaseResponse response, String userDn, String queryLogicName) throws QueryException {
+    private void checkForQueryLimits(BaseResponse response, String userDn, String systemFrom, String queryLogicName) throws QueryException {
         try {
             // Check if submitting a new query would exceed any configured concurrent query limits.
-            QueryLimiterResponse limiterResponse = queryLimiter.checkForLimits(userDn, queryLogicName);
+            QueryLimiterResponse limiterResponse = queryLimiter.checkForLimits(userDn, systemFrom, queryLogicName);
             if (limiterResponse.metLimit()) {
                 BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.CONCURRENT_QUERY_LIMIT_EXCEEDED, limiterResponse.getMessage());
                 response.addException(qe);
@@ -4009,9 +4011,9 @@ public class QueryExecutorBean implements QueryExecutor {
      *            the query logic
      * @throws Exception
      */
-    private void markQueryAsActive(String queryId, String userDn, String queryLogicName) throws Exception {
+    private void markQueryAsActive(String queryId, String userDn, String system, String queryLogicName) throws Exception {
         try {
-            queryLimiter.countQueryTowardsLimits(queryId, userDn, queryLogicName);
+            queryLimiter.countQueryTowardsLimits(queryId, userDn, system, queryLogicName);
         } catch (Exception e) {
             log.error("Failed to mark query " + queryId + " as active", e);
             throw e;

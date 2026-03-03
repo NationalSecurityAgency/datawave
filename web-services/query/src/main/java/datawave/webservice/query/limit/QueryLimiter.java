@@ -17,9 +17,6 @@ public class QueryLimiter {
 
     private static final Logger log = Logger.getLogger(QueryLimiter.class);
 
-    // Default to using InetAddress
-    private HostnameProvider hostnameProvider = HostnameProvider.getInetAddressProvider();
-
     // The string to use to connect to zookeeper.
     private String zookeeperConfig;
 
@@ -40,6 +37,8 @@ public class QueryLimiter {
 
     // The tracker responsible for interfacing with Zookeeper.
     private ActiveQueryTracker activeQueryTracker;
+
+    public static final String EMPTY_SYSTEM_FROM = "EMPTY_SYSTEM_FROM";
 
     /**
      * Return the zookeeper connection string.
@@ -139,33 +138,29 @@ public class QueryLimiter {
     }
 
     /**
-     * Set the hostname provider to use for this {@link QueryLimiter}. Provided for testing purposes.
-     *
-     * @param hostnameProvider
-     *            the hostname provider
-     */
-    public void setHostnameProvider(HostnameProvider hostnameProvider) {
-        this.hostnameProvider = hostnameProvider;
-    }
-
-    /**
      * Check if the user is allowed to create another query based on the given query logic on the current system.
      *
      * @param userDn
      *            the user DN
+     * @param system
+     *            the query system
      * @param queryLogic
      *            the query logic
      * @return the response
      * @throws Exception
      *             if an exception occurs
      */
-    public QueryLimiterResponse checkForLimits(String userDn, String queryLogic) throws Exception {
+    public QueryLimiterResponse checkForLimits(String userDn, String system, String queryLogic) throws Exception {
         // Cast the user DN to lowercase to ensure a consistent format.
         userDn = userDn.trim().toLowerCase();
 
         // Do not cast the system or query logic to lowercase, they will be getting matched against regex patterns.
-        String system = hostnameProvider.getCanonicalHostname();
         queryLogic = queryLogic.trim();
+
+        // Ensure the system is non-null if empty
+        if (system == null || system.isBlank()) {
+            system = EMPTY_SYSTEM_FROM;
+        }
 
         if (log.isDebugEnabled()) {
             log.debug("Checking limits - userDn: " + userDn + ", system: " + system + ", queryLogic: " + queryLogic);
@@ -182,30 +177,34 @@ public class QueryLimiter {
     }
 
     /**
-     * Track the following information for the given query on Zookeeper for the current system, and count it towards any configured query limits. The system
-     * will be identified by the canonical hostname.
+     * Track the following information for the given query on Zookeeper for the current system, and count it towards any configured query limits.
      *
      * @param queryId
      *            the query ID
      * @param userDn
      *            the userDN of the user who submitted the query
+     * @param system
+     *            the system from
      * @param queryLogic
      *            the queryLogic the query is based on
      * @throws Exception
      *             if an error occurs
      */
-    public void countQueryTowardsLimits(String queryId, String userDn, String queryLogic) throws Exception {
+    public void countQueryTowardsLimits(String queryId, String userDn, String system, String queryLogic) throws Exception {
         if (log.isDebugEnabled()) {
             log.debug("Start counting query " + queryId + " towards limits");
         }
 
         userDn = userDn.trim().toLowerCase();
         queryLogic = queryLogic.trim();
-        String system = hostnameProvider.getCanonicalHostname();
+        // Ensure the system is non-null if empty
+        if (system == null || system.isBlank()) {
+            system = EMPTY_SYSTEM_FROM;
+        }
+
         boolean systemCountsTowardsUserLimits = systemLimitProvider.countsAgainstUserLimit(system);
 
-        QueryHeartbeat heartbeat = getActiveQueryTracker().trackQuery(queryId, userDn, hostnameProvider.getCanonicalHostname(), queryLogic,
-                        systemCountsTowardsUserLimits);
+        QueryHeartbeat heartbeat = getActiveQueryTracker().trackQuery(queryId, userDn, system, queryLogic, systemCountsTowardsUserLimits);
         // Store the heartbeat into the cache. This acts as a means to keep the connection to Zookeeper alive for the ephemeral nodes stored in the heartbeat.
         heartbeatCache.put(heartbeat);
     }

@@ -484,7 +484,6 @@ class QueryLimiterTest {
             QueryLimiter limiter = new QueryLimiter();
             limiter.setZookeeperConfig(server.getConnectString());
             limiter.setConfiguration(config);
-            limiter.setHostnameProvider(() -> system);
             limiter.setHeartbeatCache(heartbeatCache);
             limiter.setup();
             systemToLimiter.put(system, limiter);
@@ -497,7 +496,7 @@ class QueryLimiterTest {
         QueryLimiter limiter = getLimiter(system);
         for (int i = 0; i < numQueries; i++) {
             String queryId = UUID.randomUUID().toString();
-            limiter.countQueryTowardsLimits(queryId, userDn, queryLogic);
+            limiter.countQueryTowardsLimits(queryId, userDn, system, queryLogic);
             queryIds.add(queryId);
         }
         return queryIds;
@@ -505,14 +504,14 @@ class QueryLimiterTest {
 
     private void assertLimitNotMet(String userDn, String system, String queryLogic) throws Exception {
         QueryLimiter limiter = getLimiter(system);
-        QueryLimiterResponse response = limiter.checkForLimits(userDn, queryLogic);
+        QueryLimiterResponse response = limiter.checkForLimits(userDn, system, queryLogic);
         assertThat(response.getMessage()).isNull();
         assertThat(response.metLimit()).isFalse();
     }
 
     private void assertLimitMet(String userDn, String system, String queryLogic, String message) throws Exception {
         QueryLimiter limiter = getLimiter(system);
-        QueryLimiterResponse response = limiter.checkForLimits(userDn, queryLogic);
+        QueryLimiterResponse response = limiter.checkForLimits(userDn, system, queryLogic);
         assertThat(response.getMessage()).isEqualTo(message);
         assertThat(response.metLimit()).isTrue();
     }

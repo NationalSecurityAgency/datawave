@@ -386,7 +386,8 @@ public class CachedResultsBean {
                 try {
                     // Check if submitting a new query would exceed any configured concurrent query limits.
                     Query settings = rq.getSettings();
-                    QueryLimiterResponse limiterResponse = queryLimiter.checkForLimits(settings.getUserDN(), settings.getQueryLogicName());
+                    QueryLimiterResponse limiterResponse = queryLimiter.checkForLimits(settings.getUserDN(), settings.getSystemFrom(),
+                                    settings.getQueryLogicName());
                     if (limiterResponse.metLimit()) {
                         BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.CONCURRENT_QUERY_LIMIT_EXCEEDED,
                                         limiterResponse.getMessage());
@@ -507,7 +508,7 @@ public class CachedResultsBean {
                     query.setMetric(queryMetric);
                     query.setQueryMetrics(metrics);
                     query.setClient(client);
-                    queryLimiter.countQueryTowardsLimits(q.getId().toString(), userDn, logic.getLogicName());
+                    queryLimiter.countQueryTowardsLimits(q.getId().toString(), userDn, q.getSystemFrom(), logic.getLogicName());
                 } finally {
                     qlCache.poll(q.getId().toString());
                 }

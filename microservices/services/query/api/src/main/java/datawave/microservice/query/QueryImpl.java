@@ -898,7 +898,7 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
         }
 
         if (this.systemFrom != null) {
-            p.set("systemFrom", this.systemFrom);
+            p.set(SYSTEM_FROM, this.systemFrom);
         }
 
         if (this.parameters != null) {
@@ -968,6 +968,10 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
                     break;
                 case POOL:
                     setPool(map.get(key).get(0));
+                    break;
+                case SYSTEM_FROM:
+                    setSystemFrom(map.get(key).get(0));
+                    break;
                 default:
                     addParameter(key, map.get(key).get(0));
                     break;

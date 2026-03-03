@@ -375,7 +375,7 @@ public class QueryExecutorBeanTest {
         List<String> dnList = Arrays.asList(dns);
 
         PowerMock.resetAll();
-        EasyMock.expect(queryLimiter.checkForLimits(userDN.toLowerCase(), queryLogicName)).andReturn(QueryLimiterResponse.hasNotMetLimit());
+        EasyMock.expect(queryLimiter.checkForLimits(userDN.toLowerCase(), null, queryLogicName)).andReturn(QueryLimiterResponse.hasNotMetLimit());
 
         EasyMock.expect(ctx.getCallerPrincipal()).andReturn(principal).anyTimes();
         suppress(constructor(DefaultQueryParameters.class));
@@ -683,9 +683,9 @@ public class QueryExecutorBeanTest {
         MultivaluedMap<String,String> optionalParameters = createNewQueryParameters(q, queryParameters);
 
         PowerMock.resetAll();
-        EasyMock.expect(queryLimiter.checkForLimits(userDN.toLowerCase(), queryLogicName)).andReturn(QueryLimiterResponse.hasNotMetLimit()).anyTimes();
+        EasyMock.expect(queryLimiter.checkForLimits(userDN.toLowerCase(), null, queryLogicName)).andReturn(QueryLimiterResponse.hasNotMetLimit()).anyTimes();
 
-        queryLimiter.countQueryTowardsLimits(q.getId().toString(), userDN.toLowerCase(), queryLogicName);
+        queryLimiter.countQueryTowardsLimits(q.getId().toString(), userDN.toLowerCase(), null, queryLogicName);
         EasyMock.expectLastCall().anyTimes();
 
         queryLimiter.stopCountingQueryTowardsLimits(q.getId().toString());
