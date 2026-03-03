@@ -61,7 +61,7 @@
     <!--
     Sample configuration for systems.
 
-        - systemPattern: A regex pattern matching the canonical hostnames of systems (typically k8 pod names).
+        - systemPattern: A regex pattern matching the canonical names of systems (typically k8 pod names).
         - queryLimit: The maximum number of active queries allowed to be concurrently running on the system. A value
             less than zero will indicate that there is no limit for the system. When there is no limit for the system,
             the total queries for the system will not be aggregated when checking query limits, resulting in a faster

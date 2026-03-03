@@ -33,7 +33,7 @@ Custom limits for users, systems, and query logic groups are created by defining
   - The user's concurrent query limit. Overrides the default limit.
   - The user's concurrent query limit for different query logic groups. Overrides the default limits for the groups. Regex matching against group names is supported. Pattern uniqueness per user is enforced.
 - [SystemLimitConfiguration](SystemLimitConfiguration.java) - supports specifying:
-  - The system hostnames. Regex matching is supported, pattern uniqueness is enforced.
+  - The system supplied via the `systemFrom` query parameter. Regex matching is supported, pattern uniqueness is enforced.
   - The systems' concurrent query limit. Overrides the default value. A negative value implies no limit.
   - The systems' concurrent query limit for different query logic groups. Regex matching against group names is supported. Pattern uniqueness per system config is enforced.
 - [QueryLogicGroupLimitConfiguration](QueryLogicGroupLimitConfiguration.java) - supports specifying:
