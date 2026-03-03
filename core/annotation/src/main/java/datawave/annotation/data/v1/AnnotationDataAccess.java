@@ -48,7 +48,6 @@ public class AnnotationDataAccess {
     public static final char NULL = '\u0000';
     public static final char MAX = '\uFFFF';
 
-    // TODO: add some logging
     protected static final Logger log = LoggerFactory.getLogger(AnnotationDataAccess.class);
 
     final AccumuloClient accumuloClient;
@@ -57,6 +56,10 @@ public class AnnotationDataAccess {
     final String annotationSourceTableName;
     final AnnotationSerializer<Iterator<Map.Entry<Key,Value>>,Annotation> annotationSerializer;
     final AnnotationSerializer<Iterator<Map.Entry<Key,Value>>,AnnotationSource> annotationSourceSerializer;
+
+    // TODO: feature flags for now.
+    boolean blockAnnotationSourceOverwrites = false;
+    boolean blockAnnotationOverwrites = false;
 
     /**
      * Create the annotation data access object
@@ -81,6 +84,22 @@ public class AnnotationDataAccess {
         this.annotationSourceTableName = annotationSourceTableName;
         this.annotationSerializer = annotationSerializer;
         this.annotationSourceSerializer = annotationSourceSerializer;
+    }
+
+    public boolean isBlockAnnotationOverwrites() {
+        return blockAnnotationOverwrites;
+    }
+
+    public void setBlockAnnotationOverwrites(boolean blockAnnotationOverwrites) {
+        this.blockAnnotationOverwrites = blockAnnotationOverwrites;
+    }
+
+    public boolean isBlockAnnotationSourceOverwrites() {
+        return blockAnnotationSourceOverwrites;
+    }
+
+    public void setBlockAnnotationSourceOverwrites(boolean blockAnnotationSourceOverwrites) {
+        this.blockAnnotationSourceOverwrites = blockAnnotationSourceOverwrites;
     }
 
     public Optional<AnnotationSource> getAnnotationSource(String analyticHash) {
@@ -294,7 +313,7 @@ public class AnnotationDataAccess {
             writer.addMutation(m);
             return Optional.of(addedAnnotationSource);
         } catch (TableNotFoundException | MutationsRejectedException | AnnotationSerializationException e) {
-            throw new AnnotationWriteException(e.getClass().getSimpleName() + " saving annotation " + addedAnnotationSource, e);
+            throw new AnnotationWriteException(e.getClass().getSimpleName() + " saving annotation source " + addedAnnotationSource, e);
         }
     }
 
@@ -318,52 +337,35 @@ public class AnnotationDataAccess {
     }
 
     /**
-     * Update an annotation.
+     * Update an annotation. This isn't a deletion of the old annotation and an add of the new annotation, instead we maintain both versions of the annotation
+     * and link them together via metadata. We will not perform any update unless the new data is valid and the existing annotationId exists.
      *
+     * @param targetAnnotationId
+     *            the identifier for the annotation we are providing an update for.
      * @param annotation
-     *            the annotation to save.
+     *            the annotation that contains the updated annotation.
      * @return an Optional containing the updated annotation if the update was successful.
      */
-    public Optional<Annotation> updateAnnotation(Annotation annotation) {
-
-        // TODO: validate the annotation
-
+    public Optional<Annotation> updateAnnotation(String targetAnnotationId, Annotation annotation) {
         String shard = annotation.getShard();
         String datatype = annotation.getDataType();
         String uid = annotation.getUid();
-        String annotationId = annotation.getAnnotationId();
 
-        try (Scanner scanner = ScannerHelper.createScanner(accumuloClient, annotationTableName, authorizations)) {
-            final String columnFamily = datatype + NULL + uid + NULL;
-            final String columnFamilyRegex = columnFamily + ".*";
-            final String columnQualifierRegex = annotationId + NULL + ".*";
-
-            final Key startKey = new Key(shard, columnFamily);
-            final Key endKey = new Key(shard, columnFamily + MAX);
-            final Range range = new Range(startKey, true, endKey, false);
-            scanner.setRange(range);
-
-            final IteratorSetting cfg = new IteratorSetting(50, "AnnotationDataAccess#getAnnotation", RegExFilter.class);
-            RegExFilter.setRegexs(cfg, shard, columnFamilyRegex, columnQualifierRegex, null, false, false);
-            scanner.addScanIterator(cfg);
-
-            Iterator<Map.Entry<Key,Value>> it = scanner.iterator(); // these contain the entries for which we need to generate delete mutations.
-            List<Annotation> annotations = extractAnnotationsFromIterator(it);
-            if (annotations.isEmpty()) {
-                throw new AnnotationUpdateException("Unable to find annotation to update for document: " + shard + "/" + datatype + "/" + uid
-                                + " and annotation id: " + annotationId);
-            } else if (annotations.size() > 1) {
-                throw new AnnotationUpdateException("Can't choose annotation to update, multiple annotations (" + annotations.size()
-                                + ") are present for document: " + shard + "/" + datatype + "/" + uid + " and annotation id: " + annotationId);
-            }
-
-            // TODO: implement update logic here.
-
-            return Optional.of(annotation);
-        } catch (TableNotFoundException | AnnotationSerializationException e) {
-            throw new AnnotationUpdateException(e.getClass().getSimpleName() + " when updating annotationId " + annotationId + " for document: " + shard + "/"
-                            + datatype + "/" + uid, e);
+        Optional<Annotation> targetAnnotation = getAnnotation(shard, datatype, uid, targetAnnotationId);
+        if (targetAnnotation.isEmpty()) {
+            throw new AnnotationUpdateException("Unable to find annotation to update for document: " + shard + "/" + datatype + "/" + uid
+                            + " and annotation id: " + targetAnnotationId);
         }
+
+        Annotation referenceAnnotation = AnnotationUtils.injectUpdateReference(annotation, targetAnnotationId);
+
+        Optional<Annotation> addedAnnotation = addAnnotation(referenceAnnotation);
+        if (addedAnnotation.isEmpty()) {
+            throw new AnnotationUpdateException(
+                            "Unable to add annotation for document: " + shard + "/" + datatype + "/" + uid + " and annotation id: " + targetAnnotationId);
+        }
+
+        return addedAnnotation;
     }
 
     /**
@@ -390,7 +392,7 @@ public class AnnotationDataAccess {
             final Range range = new Range(startKey, true, endKey, false);
             scanner.setRange(range);
 
-            final IteratorSetting cfg = new IteratorSetting(50, "AnnotationDataAccess#getAnnotation", RegExFilter.class);
+            final IteratorSetting cfg = new IteratorSetting(50, "AnnotationDataAccess#deleteAnnotation", RegExFilter.class);
             RegExFilter.setRegexs(cfg, shard, columnFamilyRegex, columnQualifierRegex, null, false, false);
             scanner.addScanIterator(cfg);
 
@@ -496,10 +498,10 @@ public class AnnotationDataAccess {
     }
 
     /**
-     * Check the annotation source for conflicts
+     * Check the annotation source for conflicts. if we allow this annotation to be written.
      * <ol>
      * <li>source id is assigned</li>
-     * <li>no annotation source exists with the same id</li> <!-- TODO: validate whether we need to do this -->
+     * <li>optional: no annotation source exists with the same id</li>
      * </ol>
      *
      * @param annotationSource
@@ -516,9 +518,13 @@ public class AnnotationDataAccess {
 
         Optional<AnnotationSource> conflicting = getAnnotationSource(annotationSource.getAnalyticHash());
         if (conflicting.isPresent()) {
-            throw new AnnotationWriteException("Cannot add annotation because an annotation with the same id already exists. New annotation: "
-                            + annotationSource + ", Existing annotation: " + conflicting.get());
+            if (blockAnnotationSourceOverwrites) {
+                throw new AnnotationWriteException("Cannot add annotation source because an annotation source with the same id already exists.");
+            } else {
+                log.debug("Allowing annotation source overwrite: {}", annotationSourceString(annotationSource));
+            }
         }
+
     }
 
     /**
@@ -553,12 +559,12 @@ public class AnnotationDataAccess {
      */
     protected void validateAnnotationForAdd(Annotation annotation) {
         if (StringUtils.isNotBlank(annotation.getAnnotationId())) {
-            throw new AnnotationWriteException("Cannot add segment because it already has an id assigned " + annotationIdContext(annotation));
+            throw new AnnotationWriteException("Cannot add annotation because it already has an id assigned " + annotationIdContext(annotation));
         }
         for (Segment segment : annotation.getSegmentsList()) {
             if (StringUtils.isNotBlank(segment.getSegmentHash())) {
                 throw new AnnotationWriteException(
-                                "Cannot add segment because it already has an id assigned " + segmentWithAnnotationContext(segment, annotation));
+                                "Cannot add segment for annotation because it already has an id assigned " + segmentWithAnnotationContext(segment, annotation));
             }
         }
     }
@@ -568,7 +574,7 @@ public class AnnotationDataAccess {
      * <ol>
      * <li>annotation id is assigned</li>
      * <li>all segment ids are assigned and there are no duplicates</li>
-     * <li>no annotation exists with the same id</li> <!-- TODO: validate whether we need to do this -->
+     * <li>optional: no annotation exists with the same id if overwrites are disabled</li>
      * </ol>
      *
      * @param annotation
@@ -594,11 +600,13 @@ public class AnnotationDataAccess {
                 throw new AnnotationWriteException("Cannot add annotation because it contains multiple segments with the same id " + annotation);
             }
         }
-
         Optional<Annotation> conflicting = getAnnotation(annotation.getShard(), annotation.getDataType(), annotation.getUid(), annotation.getAnnotationId());
         if (conflicting.isPresent()) {
-            throw new AnnotationWriteException("Cannot add annotation because an annotation with the same id already exists. New annotation: " + annotation
-                            + ", Existing annotation: " + conflicting.get());
+            if (blockAnnotationOverwrites) {
+                throw new AnnotationWriteException("Cannot add annotation because an annotation with the same id already exists.");
+            } else {
+                log.debug("Allowing annotation overwrite: {}", annotationIdContext(conflicting.get()));
+            }
         }
     }
 

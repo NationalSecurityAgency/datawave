@@ -19,9 +19,9 @@ import datawave.annotation.protobuf.v1.SegmentBoundary;
 import datawave.annotation.protobuf.v1.SegmentValue;
 import datawave.annotation.test.v1.AnnotationTestDataUtil;
 
-public class SegmentUtilsJsonTest {
+public class AnnotationJsonUtilsSegmentTest {
 
-    private static final Logger log = LoggerFactory.getLogger(SegmentUtilsJsonTest.class);
+    private static final Logger log = LoggerFactory.getLogger(AnnotationJsonUtilsSegmentTest.class);
 
     //@formatter:off
     final String testJson = "{\n" +
@@ -70,8 +70,8 @@ public class SegmentUtilsJsonTest {
         String json = AnnotationJsonUtils.segmentToJson(s);
         log.info(json);
         assertTrue(json.contains("\"boundaryType\": \"TIME_MILLI\""));
-        assertTrue(json.contains("\"start\": 1540"));
-        assertTrue(json.contains("\"end\": 5200"));
+        assertTrue(json.contains("\"start\": 1230"));
+        assertTrue(json.contains("\"end\": 1500"));
 
     }
 
@@ -123,7 +123,6 @@ public class SegmentUtilsJsonTest {
                 () -> AnnotationJsonUtils.segmentFromJson(testMalformedJsonOne),
                 "Expected an exception from malformed json");
         //@formatter:on
-        System.out.println(e.getMessage());
         assertTrue(e.getMessage().contains("Expect an array"));
 
     }
@@ -136,8 +135,6 @@ public class SegmentUtilsJsonTest {
                 () -> AnnotationJsonUtils.segmentFromJson(testMalformedJsonTwo),
                 "Expected an exception from malformed json");
         //@formatter:on
-
-        System.out.println(e.getMessage());
         assertTrue(e.getMessage().contains("Expect message object"));
     }
 }

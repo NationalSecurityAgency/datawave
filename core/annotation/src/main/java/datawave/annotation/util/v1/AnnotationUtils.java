@@ -31,7 +31,18 @@ public class AnnotationUtils {
     }
 
     /**
-     * Calculate and assign all necessary hashes to annotations, segments and segment values.
+     * Calculate and assign all necessary hashes to annotation sources.
+     *
+     * @param annotationSource
+     *            the annotation sources to assign identifiers to.
+     * @return the modified annotation source with identifiers injected.
+     */
+    public static AnnotationSource injectAllHashes(AnnotationSource annotationSource) {
+        return injectAnnotationSourceHashes(annotationSource);
+    }
+
+    /**
+     * Calculate and assign all necessary hashes to annotations, annotation sources, segments and segment values.
      *
      * @param annotation
      *            the annotation to assign identifiers to.
@@ -41,20 +52,38 @@ public class AnnotationUtils {
         // first assign segment ids and collect the updated segments
         final List<Segment> updatedSegments = new ArrayList<>();
         for (Segment segment : annotation.getSegmentsList()) {
-            final List<SegmentValue> updatedSegmentValues = new ArrayList<>();
-            for (SegmentValue value : segment.getValuesList()) {
-                SegmentValue hashedValue = injectSegmentValueHash(value);
-                updatedSegmentValues.add(hashedValue);
-            }
-            Segment segmentHashedValues = segment.toBuilder().clearValues().addAllValues(updatedSegmentValues).build();
-            Segment hashedSegment = AnnotationUtils.injectSegmentHash(segmentHashedValues);
+            Segment hashedSegment = injectAllHashes(segment);
             updatedSegments.add(hashedSegment);
         }
         // next, add the updated segments to a new annotation
-        final Annotation updatedAnnotation = annotation.toBuilder().clearSegments().addAllSegments(updatedSegments).build();
+        Annotation updatedAnnotation = annotation.toBuilder().clearSegments().addAllSegments(updatedSegments).build();
+
+        // if an annotation source is present, assign the hashes and ids and update the annotation.
+        if (updatedAnnotation.hasSource()) {
+            AnnotationSource baseSource = updatedAnnotation.getSource();
+            AnnotationSource updatedSource = AnnotationUtils.injectAllHashes(baseSource);
+            updatedAnnotation = updatedAnnotation.toBuilder().clearSource().setSource(updatedSource).build();
+        }
 
         // finally, generate the annotation id for the updated annotation
         return AnnotationUtils.injectAnnotationHash(updatedAnnotation);
+    }
+
+    /**
+     * Calculate and assign all necessary hashes to segments and segment values.
+     *
+     * @param segment
+     *            the segment to assign identifiers to.
+     * @return the modified segment with identifiers injected.
+     */
+    public static Segment injectAllHashes(Segment segment) {
+        final List<SegmentValue> updatedSegmentValues = new ArrayList<>();
+        for (SegmentValue value : segment.getValuesList()) {
+            SegmentValue hashedValue = injectSegmentValueHash(value);
+            updatedSegmentValues.add(hashedValue);
+        }
+        Segment segmentHashedValues = segment.toBuilder().clearValues().addAllValues(updatedSegmentValues).build();
+        return AnnotationUtils.injectSegmentHash(segmentHashedValues);
     }
 
     /**
@@ -106,6 +135,21 @@ public class AnnotationUtils {
     public static SegmentValue injectSegmentValueHash(SegmentValue segmentValue) {
         final String hash = calculateSegmentValueHash(segmentValue);
         return segmentValue.toBuilder().setValueHash(hash).build();
+    }
+
+    /**
+     * Inject a reference to another annotation into an annotation's metadata table. This is used for updates, where both the original and update are kept, and
+     * these references are used to maintain linkages between the two annotations.
+     *
+     * @param update
+     *            the annotation updating the target
+     * @param updateTargetId
+     *            the identifier of the target being updated.
+     * @return
+     */
+    public static Annotation injectUpdateReference(Annotation update, String updateTargetId) {
+        // TODO: implement me - currently a no-op
+        return update;
     }
 
     /**
