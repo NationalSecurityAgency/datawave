@@ -4,7 +4,6 @@ import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.BOUNDED_R
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DELAYED;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EVALUATION_ONLY;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_OR;
-import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_TERM;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_VALUE;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.INDEX_HOLE;
 import static org.junit.Assert.assertEquals;
@@ -307,11 +306,6 @@ public class NodeTypeCountVisitorTest {
     @Test
     public void testExceededOrThresholdMarkerJexlNode() throws ParseException {
         assertEquals(1, count("((_List_ = true) && (FOO == 1 && FOO == 3))").getTotal(EXCEEDED_OR));
-    }
-
-    @Test
-    public void testExceededTermThresholdMarkerJexlNode() throws ParseException {
-        assertEquals(1, count("((_Term_ = true) && (FOO == 1 && FOO == 3))").getTotal(EXCEEDED_TERM));
     }
 
     @Test

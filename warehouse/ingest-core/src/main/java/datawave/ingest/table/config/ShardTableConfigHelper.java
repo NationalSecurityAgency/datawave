@@ -58,13 +58,14 @@ public class ShardTableConfigHelper extends AbstractTableConfigHelper {
     protected Logger log;
 
     public enum ShardTableType {
-        SHARD, GIDX, GRIDX, GLOBAL_DAY_INDEX, GLOBAL_YEAR_INDEX, DINDX
+        SHARD, GIDX, GRIDX, GLOBAL_BITSET_INDEX, GLOBAL_DAY_INDEX, GLOBAL_YEAR_INDEX, DINDX
     }
 
     protected Configuration conf;
     protected String tableName;
     protected String shardTableName; // shard table
     protected String shardGidxTableName; // global index
+    protected String shardBitsetIndexTableName;
     protected String shardDayIndexTableName; // global day index
     protected String shardYearIndexTableName; // global year index
     protected String shardGridxTableName; // global reverse index
@@ -79,6 +80,7 @@ public class ShardTableConfigHelper extends AbstractTableConfigHelper {
 
         shardTableName = conf.get(ShardedDataTypeHandler.SHARD_TNAME, null);
         shardGidxTableName = conf.get(ShardedDataTypeHandler.SHARD_GIDX_TNAME, null);
+        shardBitsetIndexTableName = conf.get(ShardedDataTypeHandler.SHARD_BITSET_INDEX_TABLE_NAME, null);
         shardDayIndexTableName = conf.get(ShardedDataTypeHandler.SHARD_DAY_INDEX_TABLE_NAME, null);
         shardYearIndexTableName = conf.get(ShardedDataTypeHandler.SHARD_YEAR_INDEX_TABLE_NAME, null);
         shardGridxTableName = conf.get(ShardedDataTypeHandler.SHARD_GRIDX_TNAME, null);
@@ -86,8 +88,8 @@ public class ShardTableConfigHelper extends AbstractTableConfigHelper {
         markingsSetupIteratorEnabled = conf.getBoolean(MARKINGS_SETUP_ITERATOR_ENABLED, markingsSetupIteratorEnabled);
         markingsSetupIteratorConfig = conf.get(MARKINGS_SETUP_ITERATOR_CONFIG, markingsSetupIteratorConfig);
 
-        if (shardTableName == null && shardGidxTableName == null && shardGridxTableName == null && shardDayIndexTableName == null
-                        && shardYearIndexTableName == null && shardDictionaryTableName == null) {
+        if (shardTableName == null && shardGidxTableName == null && shardGridxTableName == null && shardBitsetIndexTableName == null
+                        && shardDayIndexTableName == null && shardYearIndexTableName == null && shardDictionaryTableName == null) {
             throw new IllegalArgumentException("No Shard Tables Defined");
         }
 
@@ -138,6 +140,8 @@ public class ShardTableConfigHelper extends AbstractTableConfigHelper {
             this.tableType = ShardTableType.GIDX;
         } else if (tableName.equals(shardGridxTableName)) {
             this.tableType = ShardTableType.GRIDX;
+        } else if (tableName.equals(shardBitsetIndexTableName)) {
+            this.tableType = ShardTableType.GLOBAL_BITSET_INDEX;
         } else if (tableName.equals(shardDayIndexTableName)) {
             this.tableType = ShardTableType.GLOBAL_DAY_INDEX;
         } else if (tableName.equals(shardYearIndexTableName)) {
@@ -163,6 +167,7 @@ public class ShardTableConfigHelper extends AbstractTableConfigHelper {
             case GRIDX:
                 configureGridxTable(tops);
                 break;
+            case GLOBAL_BITSET_INDEX:
             case GLOBAL_DAY_INDEX:
             case GLOBAL_YEAR_INDEX:
                 configureBitSetTable(tops);

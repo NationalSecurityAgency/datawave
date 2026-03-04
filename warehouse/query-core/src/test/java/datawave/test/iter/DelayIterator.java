@@ -81,6 +81,7 @@ public class DelayIterator implements SortedKeyValueIterator<Key,Value>, OptionD
                 Thread.sleep(delay);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
+                throw new RuntimeException("Interrupted delay iterator", e);
             }
         }
     }
@@ -99,6 +100,7 @@ public class DelayIterator implements SortedKeyValueIterator<Key,Value>, OptionD
     public SortedKeyValueIterator<Key,Value> deepCopy(IteratorEnvironment env) {
         DelayIterator copy = new DelayIterator();
         copy.source = source.deepCopy(env);
+        copy.delay = delay;
         return copy;
     }
 

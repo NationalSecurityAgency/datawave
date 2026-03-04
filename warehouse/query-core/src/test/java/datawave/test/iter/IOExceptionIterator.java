@@ -108,7 +108,7 @@ public class IOExceptionIterator implements SortedKeyValueIterator<Key,Value>, O
 
     @Override
     public void next() throws IOException {
-        if (fireOnNext) {
+        if (fireOnNext() || fireRandomly()) {
             fireException();
         }
         tk = null;
@@ -118,21 +118,27 @@ public class IOExceptionIterator implements SortedKeyValueIterator<Key,Value>, O
             tv = source.getTopValue();
             source.next();
         }
-        if (fireRandomly && random.nextInt(10) == 0) {
-            fireException();
-        }
     }
 
     @Override
     public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
-        if (fireOnSeek) {
+        if (fireOnSeek() || fireRandomly()) {
             fireException();
         }
         source.seek(range, columnFamilies, inclusive);
-        if (fireRandomly && random.nextInt(10) == 0) {
-            fireException();
-        }
         next();
+    }
+
+    private boolean fireOnSeek() {
+        return fireOnSeek;
+    }
+
+    private boolean fireOnNext() {
+        return fireOnNext;
+    }
+
+    private boolean fireRandomly() {
+        return fireRandomly && random.nextInt(3) == 0;
     }
 
     private void fireException() throws IOException {
@@ -158,6 +164,11 @@ public class IOExceptionIterator implements SortedKeyValueIterator<Key,Value>, O
     public SortedKeyValueIterator<Key,Value> deepCopy(IteratorEnvironment env) {
         IOExceptionIterator copy = new IOExceptionIterator();
         copy.source = source.deepCopy(env);
+        copy.exceptionClazz = exceptionClazz;
+        copy.exceptionMsg = exceptionMsg;
+        copy.fireOnSeek = fireOnSeek;
+        copy.fireOnNext = fireOnNext;
+        copy.fireRandomly = fireRandomly;
         return copy;
     }
 
