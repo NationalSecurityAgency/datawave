@@ -84,7 +84,7 @@ public class CardinalityVisitor extends ShortCircuitBaseVisitor {
     public Object visit(ASTAndNode node, Object data) {
 
         Instance instance = QueryPropertyMarker.findInstance(node);
-        if (instance.isAnyTypeOf(MarkerType.EXCEEDED_TERM, MarkerType.EXCEEDED_VALUE, MarkerType.EXCEEDED_OR, MarkerType.BOUNDED_RANGE)) {
+        if (instance.isAnyTypeOf(MarkerType.EXCEEDED_VALUE, MarkerType.EXCEEDED_OR, MarkerType.BOUNDED_RANGE)) {
             return Long.MAX_VALUE;
         } else if (instance.isAnyType()) {
             return 0L;

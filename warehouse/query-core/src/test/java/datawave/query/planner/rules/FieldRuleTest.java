@@ -1,228 +1,140 @@
 package datawave.query.planner.rules;
 
-import java.text.DateFormat;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
-import java.util.TimeZone;
-import java.util.UUID;
-
-import javax.inject.Inject;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.jexl3.parser.ASTFunctionNode;
-import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.log4j.Logger;
-import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.junit.Arquillian;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.asset.StringAsset;
-import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import datawave.configuration.spring.SpringBean;
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
+import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.core.query.configuration.GenericQueryConfiguration;
-import datawave.helpers.PrintUtility;
-import datawave.ingest.data.TypeRegistry;
-import datawave.microservice.query.QueryImpl;
-import datawave.query.QueryTestTableHelper;
-import datawave.query.RebuildingScannerTestHelper;
-import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.tables.ShardQueryLogic;
-import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
+import datawave.query.util.AbstractQueryTest;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.VisibilityWiseGuysIngestWithModel;
-import datawave.test.JexlNodeAssert;
-import datawave.util.TableName;
-import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 
-public abstract class FieldRuleTest {
-
-    @RunWith(Arquillian.class)
-    public static class ShardRange extends FieldRuleTest {
-
-        @Override
-        protected VisibilityWiseGuysIngestWithModel.WhatKindaRange getRange() {
-            return VisibilityWiseGuysIngestWithModel.WhatKindaRange.SHARD;
-        }
-    }
-
-    @RunWith(Arquillian.class)
-    public static class DocumentRange extends FieldRuleTest {
-
-        @Override
-        protected VisibilityWiseGuysIngestWithModel.WhatKindaRange getRange() {
-            return VisibilityWiseGuysIngestWithModel.WhatKindaRange.DOCUMENT;
-        }
-    }
-
-    @Rule
-    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+@ExtendWith(SpringExtension.class)
+@ComponentScan(basePackages = "datawave.query")
+// @formatter:off
+@ContextConfiguration(locations = {
+        "classpath:datawave/query/QueryLogicFactory.xml",
+        "classpath:beanRefContext.xml",
+        "classpath:MarkingFunctionsContext.xml",
+        "classpath:MetadataHelperContext.xml",
+        "classpath:CacheContext.xml"})
+// @formatter:on
+public class FieldRuleTest extends AbstractQueryTest {
 
     private static final Logger log = Logger.getLogger(FieldRuleTest.class);
     private static final Authorizations auths = new Authorizations("ALL", "E", "I");
-
-    @Inject
-    @SpringBean(name = "EventQuery")
-    protected ShardQueryLogic logic;
     protected Set<Authorizations> authSet = Collections.singleton(auths);
-    protected KryoDocumentDeserializer deserializer;
 
-    private final DateFormat format = new SimpleDateFormat("yyyyMMdd");
-    private final Map<String,String> queryParameters = new HashMap<>();
-    private Date startDate;
-    private Date endDate;
-    private String query;
-    private String expectedPlan;
+    private static AccumuloClient clientForTest;
 
-    @Deployment
-    public static JavaArchive createDeployment() {
-        return ShrinkWrap.create(JavaArchive.class)
-                        .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.query", "org.jboss.logging",
-                                        "datawave.webservice.query.result.event")
-                        .deleteClass(DefaultEdgeEventQueryLogic.class).deleteClass(RemoteEdgeDictionary.class)
-                        .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class)
-                        .addAsManifestResource(new StringAsset(
-                                        "<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>" + "</alternatives>"),
-                                        "beans.xml");
+    @Autowired
+    @Qualifier("EventQuery")
+    protected ShardQueryLogic logic;
+
+    @Override
+    public ShardQueryLogic getLogic() {
+        return logic;
     }
 
-    @AfterClass
-    public static void teardown() {
-        TypeRegistry.reset();
+    @Override
+    public Authorizations getAuths() {
+        return auths;
     }
 
-    @Before
+    @Override
+    protected void extraConfigurations() {
+        // no-op
+    }
+
+    @Override
+    protected void extraAssertions() {
+        // no-op
+    }
+
+    @BeforeAll
+    public static void beforeAll() throws Exception {
+        InMemoryInstance instance = new InMemoryInstance(FieldRuleTest.class.getSimpleName());
+        clientForTest = new InMemoryAccumuloClient("", instance);
+        VisibilityWiseGuysIngestWithModel.writeItAll(clientForTest);
+    }
+
+    @BeforeEach
     public void setup() throws ParseException {
-        TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
-
         this.logic.setFullTableScanEnabled(true);
         this.logic.setMaxEvaluationPipelines(1);
         this.logic.setQueryExecutionForPageTimeout(300000000000000L);
-        this.deserializer = new KryoDocumentDeserializer();
-        this.startDate = format.parse("20091231");
-        this.endDate = format.parse("20150101");
-    }
+        setClientForTest(clientForTest);
 
-    @After
-    public void tearDown() {
-        queryParameters.clear();
-    }
-
-    protected abstract VisibilityWiseGuysIngestWithModel.WhatKindaRange getRange();
-
-    private void runTestQuery() throws Exception {
-        log.debug("test plan against expected plan");
-
-        QueryImpl settings = new QueryImpl();
-        settings.setBeginDate(this.startDate);
-        settings.setEndDate(this.endDate);
-        settings.setPagesize(Integer.MAX_VALUE);
-        settings.setQueryAuthorizations(auths.serialize());
-        settings.setQuery(this.query);
-        settings.setParameters(this.queryParameters);
-        settings.setId(UUID.randomUUID());
-
-        log.debug("query: " + settings.getQuery());
-        log.debug("logic: " + settings.getQueryLogicName());
-
-        AccumuloClient client = createClient();
-        ShardQueryConfiguration config = (ShardQueryConfiguration) logic.initialize(client, settings, authSet);
-        config.setFieldRuleClassName(FieldRuleTest.NoSoupForYouRule.class.getName());
-
-        logic.setupQuery(config);
-
-        String plan = logic.getPlan(client, settings, authSet, true, true);
-
-        // order of terms in planned script is arbitrary, fall back to comparing the jexl trees
-        ASTJexlScript plannedScript = JexlASTHelper.parseJexlQuery(plan);
-        ASTJexlScript expectedScript = JexlASTHelper.parseJexlQuery(this.expectedPlan);
-        JexlNodeAssert.assertThat(plannedScript).isEqualTo(expectedScript);
-    }
-
-    private AccumuloClient createClient() throws Exception {
-        AccumuloClient client = new QueryTestTableHelper(getClass().getName(), log, RebuildingScannerTestHelper.TEARDOWN.NEVER,
-                        RebuildingScannerTestHelper.INTERRUPT.NEVER).client;
-        VisibilityWiseGuysIngestWithModel.writeItAll(client, getRange());
-        PrintUtility.printTable(client, auths, TableName.SHARD);
-        PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
-        PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
-        return client;
-    }
-
-    private void givenQuery(String query) {
-        this.query = query;
-    }
-
-    private void givenExpectedPlan(String expectedPlan) {
-        this.expectedPlan = expectedPlan;
+        givenDate("20091231", "20150101");
+        getLogic().getConfig().setFieldRuleClassName(FieldRuleTest.NoSoupForYouRule.class.getName());
     }
 
     @Test
     public void testNoEffect() throws Exception {
         givenQuery("COLOR == 'blue'");
-        givenExpectedPlan("COLOR == 'blue' || HUE == 'blue'");
-
-        runTestQuery();
+        expectPlan("COLOR == 'blue' || HUE == 'blue'");
+        planAndExecuteQuery();
     }
 
     @Test
     public void testNoSoupForYou() throws Exception {
         givenQuery("COLOR == 'blue' || SOUP == 'chicken noodle'");
-        givenExpectedPlan("COLOR == 'blue' || HUE == 'blue'");
-
-        runTestQuery();
+        expectPlan("COLOR == 'blue' || HUE == 'blue'");
+        planAndExecuteQuery();
     }
 
     @Test
     public void testNoSoupForYouEither() throws Exception {
         givenQuery("COLOR == 'blue' || FOOD == 'soup'");
-        givenExpectedPlan("COLOR == 'blue' || HUE == 'blue'");
-
-        runTestQuery();
+        expectPlan("COLOR == 'blue' || HUE == 'blue'");
+        planAndExecuteQuery();
     }
 
     @Test
     public void testNegatedSoup() throws Exception {
         // allow it because the query is self-enforcing a rule
         givenQuery("COLOR == 'blue' && FOOD != 'soup'");
-        givenExpectedPlan("(COLOR == 'blue' || HUE == 'blue') && !(FOOD == 'soup')");
-
-        runTestQuery();
+        expectPlan("(COLOR == 'blue' || HUE == 'blue') && !(FOOD == 'soup')");
+        planAndExecuteQuery();
     }
 
     @Test
     public void testNoSoupForYouAND() throws Exception {
         givenQuery("COLOR == 'blue' && SOUP == 'chicken noodle'");
-        givenExpectedPlan("false");
-
-        runTestQuery();
+        expectPlan("false");
+        planAndExecuteQuery();
     }
 
     @Test
     public void testSoupNotIncluded() throws Exception {
         givenQuery("COLOR == 'blue' && filter:includeRegex(SOUP, 'chicken nood*')");
-        givenExpectedPlan("false");
-
-        runTestQuery();
+        expectPlan("false");
+        planAndExecuteQuery();
     }
 
     public static class NoSoupForYouRule extends FieldRule {
