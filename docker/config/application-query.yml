@@ -475,7 +475,7 @@ datawave:
         fieldName: 'EVENT_ID'
         queryLogics:
           'default': 'LuceneUUIDEventQuery'
-        allowedWildcardAfter: 28
+        allowWildcardAfter: 28
       'UUID':
         fieldName: 'UUID'
         queryLogics:

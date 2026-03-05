@@ -307,7 +307,6 @@ public class DocIdIteratorVisitor extends BaseVisitor {
                 return data;
             case EVALUATION_ONLY:
             case DELAYED:
-            case EXCEEDED_TERM:
             case DROPPED:
             case STRICT:
             case LENIENT:

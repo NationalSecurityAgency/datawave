@@ -13,7 +13,7 @@ public class ThreadConfigurableLogger extends Logger {
     private final Logger log;
     private static ThreadLocal<Map<String,Level>> logToLevelMap = ThreadLocal.withInitial(HashMap::new);
 
-    public static Logger getLogger(final Class<?> clazz) {
+    public static Logger getLogger(final Class clazz) {
         return new ThreadConfigurableLogger(Logger.getLogger(clazz));
     }
 

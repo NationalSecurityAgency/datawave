@@ -117,6 +117,8 @@ public class FieldExpansionIndexLookupTest extends BaseIndexLookupTest {
 
     private AsyncIndexLookup createLookup(String value) {
         ScannerFactory scannerFactory = new ScannerFactory(client);
-        return new FieldExpansionIndexLookup(config, scannerFactory, value, indexedFields, executor);
+        AsyncIndexLookup lookup = new FieldExpansionIndexLookup(config, scannerFactory, value, indexedFields, executor);
+        lookup.setScanMonitor(monitor);
+        return lookup;
     }
 }

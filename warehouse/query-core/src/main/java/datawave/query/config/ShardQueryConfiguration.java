@@ -52,6 +52,7 @@ import datawave.query.attributes.ExcerptFields;
 import datawave.query.attributes.SummaryOptions;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.common.grouping.GroupFields;
+import datawave.query.config.annotation.AllHitsQueryConfig;
 import datawave.query.function.DocumentPermutation;
 import datawave.query.iterator.QueryIterator;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
@@ -103,6 +104,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private boolean allTermsIndexOnly;
     private long maxIndexScanTimeMillis = Long.MAX_VALUE;
     private long maxAnyFieldScanTimeMillis = Long.MAX_VALUE;
+    private boolean useNewIndexLookups = false;
 
     // Allows this query to parse the root uids from TLD uids found in the global shard index. This effectively ignores hits in child documents.
     private boolean parseTldUids = false;
@@ -569,6 +571,10 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      */
     private int maxLinesToPrint = -1;
 
+    private String originalJexlQuery;
+
+    private AllHitsQueryConfig allHitsQueryConfig;
+
     /**
      * Flag that controls usage of a truncated shard index. This table has a different key structure that requires different scanner configuration.
      */
@@ -623,6 +629,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setAllTermsIndexOnly(other.isAllTermsIndexOnly());
         this.setMaxIndexScanTimeMillis(other.getMaxIndexScanTimeMillis());
         this.setMaxAnyFieldScanTimeMillis(other.getMaxAnyFieldScanTimeMillis());
+        this.setUseNewIndexLookups(other.isUseNewIndexLookups());
         this.setCollapseUids(other.getCollapseUids());
         this.setCollapseUidsThreshold(other.getCollapseUidsThreshold());
         this.setEnforceUniqueTermsWithinExpressions(other.getEnforceUniqueTermsWithinExpressions());
@@ -847,6 +854,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setDayIndexThreshold(other.getDayIndexThreshold());
         this.setUseTruncatedIndex(other.isUseTruncatedIndex());
         this.setTruncatedIndexTableName(other.getTruncatedIndexTableName());
+        this.setOriginalJexlQuery(other.getOriginalJexlQuery());
+        this.setAllHitsQueryConfig(other.getAllHitsQueryConfig());
     }
 
     /**
@@ -994,15 +1003,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      */
     public boolean canHandleExceededValueThreshold() {
         return this.hdfsSiteConfigURLs != null && (null != this.ivaratorCacheDirConfigs && !this.ivaratorCacheDirConfigs.isEmpty());
-    }
-
-    /**
-     * A convenience method that determines whether we can handle when we have exceeded the term threshold on some node. Currently we cannot.
-     *
-     * @return if we can handle exceeding the term threshold
-     */
-    public boolean canHandleExceededTermThreshold() {
-        return false;
     }
 
     public String getShardTableName() {
@@ -3216,11 +3216,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 isUseQueryTreeScanHintRules() == that.isUseQueryTreeScanHintRules() &&
                 getMaxLinesToPrint() == that.getMaxLinesToPrint() &&
                 getMaxAnyFieldScanTimeMillis() == that.getMaxAnyFieldScanTimeMillis() &&
+                isUseNewIndexLookups() == that.isUseNewIndexLookups() &&
                 isDisableIteratorUniqueFields() == that.isDisableIteratorUniqueFields() &&
                 isUseShardedIndex() == that.isUseShardedIndex() &&
                 getDayIndexThreshold() == that.getDayIndexThreshold() &&
                 isUseTruncatedIndex() == that.isUseTruncatedIndex() &&
-                getTruncatedIndexTableName() == that.getTruncatedIndexTableName();
+                getTruncatedIndexTableName() == that.getTruncatedIndexTableName() &&
+                Objects.equals(getOriginalJexlQuery(), that.getOriginalJexlQuery()) &&
+                Objects.equals(getAllHitsQueryConfig(), that.getAllHitsQueryConfig());
         // @formatter:on
     }
 
@@ -3451,11 +3454,15 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 isUseQueryTreeScanHintRules(),
                 getMaxLinesToPrint(),
                 getMaxAnyFieldScanTimeMillis(),
+                isUseNewIndexLookups(),
                 isDisableIteratorUniqueFields(),
                 isUseShardedIndex(),
                 getDayIndexThreshold(),
                 isUseTruncatedIndex(),
-                getTruncatedIndexTableName());
+                getTruncatedIndexTableName(),
+                getOriginalJexlQuery(),
+                getAllHitsQueryConfig()
+        );
         // @formatter:on
     }
 
@@ -3576,5 +3583,29 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public void setTruncatedIndexTableName(String truncatedIndexTableName) {
         this.truncatedIndexTableName = truncatedIndexTableName;
+    }
+
+    public AllHitsQueryConfig getAllHitsQueryConfig() {
+        return allHitsQueryConfig;
+    }
+
+    public void setAllHitsQueryConfig(AllHitsQueryConfig allHitsQueryConfig) {
+        this.allHitsQueryConfig = allHitsQueryConfig;
+    }
+
+    public String getOriginalJexlQuery() {
+        return originalJexlQuery;
+    }
+
+    public void setOriginalJexlQuery(String originalJexlQuery) {
+        this.originalJexlQuery = originalJexlQuery;
+    }
+
+    public boolean isUseNewIndexLookups() {
+        return useNewIndexLookups;
+    }
+
+    public void setUseNewIndexLookups(boolean useNewIndexLookups) {
+        this.useNewIndexLookups = useNewIndexLookups;
     }
 }
