@@ -87,14 +87,13 @@ public class BoundedRangeIndexLookup extends AsyncIndexLookup {
      * This method is responsible for creating a Runnable, submitting it to the executor and registering the future with the {@link ScanMonitor}.
      */
     @Override
-    public synchronized void submit() {
+    public void submit() {
         if (indexLookupMap == null) {
+            Preconditions.checkNotNull(monitor, "BoundedRangeIndexLookup requires a ScanMonitor");
             indexLookupMap = new IndexLookupMap(config.getMaxUnfieldedExpansionThreshold(), config.getMaxValueExpansionThreshold());
 
             Runnable runnable = createRunnable(getTableName(), config.getAuthorizations().iterator().next());
             future = execService.submit(runnable);
-
-            Preconditions.checkNotNull(monitor, "BoundedRange index expansion requires a ScanMonitor");
             monitor.registerTask(future, config.getMaxIndexScanTimeMillis());
         }
     }

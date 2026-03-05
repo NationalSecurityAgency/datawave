@@ -40,6 +40,7 @@ import datawave.query.exceptions.DoNotPerformOptimizedQueryException;
 import datawave.query.exceptions.EmptyUnfieldedTermExpansionException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
+import datawave.query.jexl.lookups.AsyncIndexLookup;
 import datawave.query.jexl.lookups.FieldedRegexIndexLookup;
 import datawave.query.jexl.lookups.IndexLookup;
 import datawave.query.jexl.lookups.IndexLookupMap;
@@ -690,6 +691,10 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
             logResult(currentNode, fieldsToTerms);
         }
 
+        if (fieldsToTerms.isUnfieldedTimeoutSeen()) {
+            throw new DatawaveFatalQueryException("Failed to expand unfielded term");
+        }
+
         if (futureJexlNode.isIgnoreComposites()) {
             // composites should be removed prior to building the index expansion iterators
             // and should never be returned to the webservice
@@ -699,6 +704,7 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
         JexlNode newNode;
 
         // If we have no children, it's impossible to find any records, so this query returns no results
+        // unless the expansion is unfielded in which case throw an exception. handle that case above.
         if (fieldsToTerms.isEmpty()) {
             // if there was no field expansion then replace _ANYFIELD_ with _NOFIELD_, the RangeStream will drop
             // this term from the query
@@ -738,7 +744,10 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
         validatePattern(pattern);
 
         RefactoredRangeDescription description = getRegexRange(field, pattern);
-        return new FieldedRegexIndexLookup(config, scannerFactory, executor, field, pattern, description.range, description.isForReverseIndex);
+        AsyncIndexLookup lookup = new FieldedRegexIndexLookup(config, scannerFactory, executor, field, pattern, description.range,
+                        description.isForReverseIndex);
+        lookup.setScanMonitor(monitor);
+        return lookup;
     }
 
     /**

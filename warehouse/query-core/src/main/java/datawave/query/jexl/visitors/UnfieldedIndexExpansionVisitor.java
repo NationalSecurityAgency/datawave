@@ -29,6 +29,7 @@ import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.EmptyUnfieldedTermExpansionException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
+import datawave.query.jexl.lookups.AsyncIndexLookup;
 import datawave.query.jexl.lookups.EmptyIndexLookup;
 import datawave.query.jexl.lookups.FieldExpansionIndexLookup;
 import datawave.query.jexl.lookups.IndexLookup;
@@ -297,7 +298,10 @@ public class UnfieldedIndexExpansionVisitor extends RegexIndexExpansionVisitor {
             return new EmptyIndexLookup(config);
         }
 
-        return new UnfieldedRegexIndexLookup(config, scannerFactory, executor, pattern, description.range, description.isForReverseIndex, expansionFields);
+        AsyncIndexLookup lookup = new UnfieldedRegexIndexLookup(config, scannerFactory, executor, pattern, description.range, description.isForReverseIndex,
+                        expansionFields);
+        lookup.setScanMonitor(monitor);
+        return lookup;
     }
 
     @Override

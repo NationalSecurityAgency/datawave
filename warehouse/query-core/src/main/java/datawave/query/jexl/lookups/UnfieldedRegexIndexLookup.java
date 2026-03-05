@@ -7,6 +7,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
 import org.apache.accumulo.core.client.IteratorSetting;
+import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
@@ -15,8 +16,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Joiner;
+import com.google.common.base.Preconditions;
 
-import datawave.core.iterators.TimeoutExceptionIterator;
 import datawave.core.iterators.UnfieldedRegexExpansionIterator;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.tables.ScannerFactory;
@@ -51,53 +52,53 @@ public class UnfieldedRegexIndexLookup extends BaseRegexIndexLookup {
         if (indexLookupMap == null) {
             indexLookupMap = new IndexLookupMap(keyThreshold, valueThreshold);
 
-            execService.submit(() -> {
-                String tableName = reverse ? config.getReverseIndexTableName() : getTableName();
-                try (var scanner = config.getClient().createScanner(tableName, config.getAuthorizations().iterator().next())) {
-                    String hintKey = getHintKey(tableName);
-                    scanner.setExecutionHints(Map.of(tableName, hintKey));
+            Preconditions.checkNotNull(monitor, "UnfieldedRegexIndexLookup requires a ScanMonitor");
+            Runnable runnable = createRunnable();
 
-                    // use a different timeout threshold for unfielded expansions
-                    IteratorSetting timeoutIterator = createTimeoutIterator();
-                    scanner.addScanIterator(timeoutIterator);
-
-                    IteratorSetting regexIterator = createRegexIterator();
-                    scanner.addScanIterator(regexIterator);
-
-                    IteratorSetting timeoutExceptionIterator = createTimeoutExceptionIterator();
-                    scanner.addScanIterator(timeoutExceptionIterator);
-
-                    scanner.setRange(range);
-
-                    for (String field : fields) {
-                        scanner.fetchColumnFamily(new Text(field));
-                    }
-
-                    for (Map.Entry<Key,Value> entry : scanner) {
-                        Key key = entry.getKey();
-
-                        if (TimeoutExceptionIterator.exceededTimedValue(entry)) {
-                            indexLookupMap.setTimeoutExceeded(true);
-                            indexLookupMap.clear(); // reset state so that ANYFIELD is marked NOFIELD
-                            break;
-                        }
-
-                        String value = key.getRow().toString();
-                        String field = key.getColumnFamily().toString();
-                        if (reverse) {
-                            value = reverse(value);
-                        }
-                        indexLookupMap.put(field, value);
-                    }
-
-                } catch (Exception e) {
-                    indexLookupMap.setExceptionSeen(true);
-                    log.error(e.getMessage(), e);
-                } finally {
-                    latch.countDown();
-                }
-            });
+            future = execService.submit(runnable);
+            monitor.registerTask(future, config.getMaxAnyFieldScanTimeMillis());
         }
+    }
+
+    /**
+     * The created runnable handles everything with configuring a scanner, parsing results and putting them into the {@link #indexLookupMap} and handling
+     * exceptions.
+     * <p>
+     * Note: it is critical that any scanner created here is used with a try-with-resources block.
+     *
+     */
+    protected Runnable createRunnable() {
+        return () -> {
+            String tableName = reverse ? config.getReverseIndexTableName() : getTableName();
+            try (Scanner scanner = config.getClient().createScanner(tableName, config.getAuthorizations().iterator().next())) {
+                String hintKey = getHintKey(tableName);
+                scanner.setExecutionHints(Map.of(tableName, hintKey));
+
+                IteratorSetting regexIterator = createRegexIterator();
+                scanner.addScanIterator(regexIterator);
+
+                scanner.setRange(range);
+
+                for (String field : fields) {
+                    scanner.fetchColumnFamily(new Text(field));
+                }
+
+                for (Map.Entry<Key,Value> entry : scanner) {
+                    Key key = entry.getKey();
+                    String value = key.getRow().toString();
+                    String field = key.getColumnFamily().toString();
+                    if (reverse) {
+                        value = reverse(value);
+                    }
+                    indexLookupMap.put(field, value);
+                }
+
+            } catch (Exception e) {
+                // assume any exception is indicative of a timeout
+                handleException();
+                log.error(e.getMessage(), e);
+            }
+        };
     }
 
     @Override
@@ -118,5 +119,16 @@ public class UnfieldedRegexIndexLookup extends BaseRegexIndexLookup {
     public IndexLookupMap lookup() {
         await();
         return indexLookupMap;
+    }
+
+    /**
+     * An exception while expanding an unfielded regex clears the entire index lookup map.
+     */
+    @Override
+    protected void handleException() {
+        indexLookupMap.setExceptionSeen(true);
+        indexLookupMap.setTimeoutExceeded(true);
+        indexLookupMap.setUnfieldedTimeoutSeen();
+        indexLookupMap.clear();
     }
 }
