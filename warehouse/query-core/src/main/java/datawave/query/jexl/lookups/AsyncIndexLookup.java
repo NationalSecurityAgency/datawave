@@ -7,7 +7,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.log4j.Logger;
@@ -32,11 +31,6 @@ public abstract class AsyncIndexLookup extends IndexLookup {
 
     // flag for unfielded lookups
     protected final boolean unfieldedLookup;
-
-    // track state for common index expansion failures
-    protected final AtomicBoolean exceededTimeoutThreshold = new AtomicBoolean(false);
-    protected final AtomicBoolean exceededValueThreshold = new AtomicBoolean(false);
-    protected final AtomicBoolean exceptionSeen = new AtomicBoolean(false);
 
     protected ScanMonitor monitor;
 

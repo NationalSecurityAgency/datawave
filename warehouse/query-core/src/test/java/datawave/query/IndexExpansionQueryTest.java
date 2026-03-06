@@ -106,7 +106,7 @@ public class IndexExpansionQueryTest extends AbstractQueryTest {
     private static final boolean useMAC = false;
 
     // switch between old code and new code
-    private final boolean useNewIndexLookups = false;
+    private final boolean useNewIndexLookups = true;
 
     // 10 values per prefix, low expansion thresholds, low scan thresholds
     // using this tests can simulate exceptions or timeouts on initial seek vs. next calls
