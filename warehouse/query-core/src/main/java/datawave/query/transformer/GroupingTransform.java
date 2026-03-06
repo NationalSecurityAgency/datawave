@@ -1,5 +1,6 @@
 package datawave.query.transformer;
 
+import static datawave.query.iterator.waitwindow.WaitWindowObserver.WAIT_WINDOW_OVERRUN;
 import static org.slf4j.LoggerFactory.getLogger;
 
 import java.util.LinkedList;
@@ -90,6 +91,14 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
             // If this is a final document, bail without adding to the keys, countingMap or fieldVisibilities.
             if (FinalDocumentTrackingIterator.isFinalDocumentKey(keyDocumentEntry.getKey())) {
                 log.debug("GroupingTransform saw {} documents producing {} groups", documentCount, groups.getGroups().size());
+                return keyDocumentEntry;
+            }
+
+            Document document = keyDocumentEntry.getValue();
+            if (document != null && document.containsKey(WAIT_WINDOW_OVERRUN)) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Got a WAIT_WINDOW_OVERRUN key in group transform: " + keyDocumentEntry.getKey());
+                }
                 return keyDocumentEntry;
             }
 
