@@ -87,7 +87,7 @@ public class AccumuloCacheStoreConfigurationBuilder
 
     @Override
     public AccumuloCacheStoreConfiguration create() {
-        return new AccumuloCacheStoreConfiguration(attributes.protect(), async.create(), singletonStore.create());
+        return new AccumuloCacheStoreConfiguration(attributes.protect(), async.create());
     }
 
     @Override
