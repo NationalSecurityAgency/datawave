@@ -676,8 +676,7 @@ public class IndexExpansionQueryTest extends AbstractQueryTest {
         try {
             addRuntimeExceptionIterator(NullPointerException.class.getName(), "NPE for test", "seek");
             givenQuery("_ANYFIELD_ == 'a1b2c3'");
-            // This should be a DatawaveFatalException. We should not be passing up raw runtime exceptions.
-            assertThrows(RuntimeException.class, this::planAndExecuteQuery);
+            assertThrows(DatawaveFatalQueryException.class, this::planAndExecuteQuery);
         } finally {
             removeRuntimeExceptionIterator();
         }
@@ -688,8 +687,7 @@ public class IndexExpansionQueryTest extends AbstractQueryTest {
         try {
             addRuntimeExceptionIterator(NullPointerException.class.getName(), "NPE for test", "next");
             givenQuery("_ANYFIELD_ == 'a1b2c3'");
-            // This should be a DatawaveFatalException. We should not be passing up raw runtime exceptions.
-            assertThrows(RuntimeException.class, this::planAndExecuteQuery);
+            assertThrows(DatawaveFatalQueryException.class, this::planAndExecuteQuery);
         } finally {
             removeRuntimeExceptionIterator();
         }
@@ -700,8 +698,7 @@ public class IndexExpansionQueryTest extends AbstractQueryTest {
         try {
             addRuntimeExceptionIterator(NullPointerException.class.getName(), "NPE for test", "random");
             givenQuery("_ANYFIELD_ == 'a1b2c3'");
-            // This should be a DatawaveFatalException. We should not be passing up raw runtime exceptions.
-            assertThrows(RuntimeException.class, this::planAndExecuteQuery);
+            assertThrows(DatawaveFatalQueryException.class, this::planAndExecuteQuery);
         } finally {
             removeRuntimeExceptionIterator();
         }
@@ -713,8 +710,7 @@ public class IndexExpansionQueryTest extends AbstractQueryTest {
         try {
             addRuntimeExceptionIterator(IterationInterruptedException.class.getName(), "IIE for test", "seek");
             givenQuery("_ANYFIELD_ == 'a1b2c3'");
-            // This should be a DatawaveFatalException. We should not be passing up raw runtime exceptions.
-            assertThrows(RuntimeException.class, this::planAndExecuteQuery);
+            assertThrows(DatawaveFatalQueryException.class, this::planAndExecuteQuery);
         } finally {
             removeRuntimeExceptionIterator();
         }
@@ -726,8 +722,7 @@ public class IndexExpansionQueryTest extends AbstractQueryTest {
         try {
             addRuntimeExceptionIterator(IterationInterruptedException.class.getName(), "IIE for test", "next");
             givenQuery("_ANYFIELD_ == 'a1b2c3'");
-            // This should be a DatawaveFatalException. We should not be passing up raw runtime exceptions.
-            assertThrows(RuntimeException.class, this::planAndExecuteQuery);
+            assertThrows(DatawaveFatalQueryException.class, this::planAndExecuteQuery);
         } finally {
             removeRuntimeExceptionIterator();
         }
@@ -739,8 +734,7 @@ public class IndexExpansionQueryTest extends AbstractQueryTest {
         try {
             addIOExceptionIterator(IteratorTimeoutException.class.getName(), "next");
             givenQuery("_ANYFIELD_ == 'a1b2c3'");
-            // This should be a DatawaveFatalException. We should not be passing up raw runtime exceptions.
-            assertThrows(RuntimeException.class, this::planAndExecuteQuery);
+            assertThrows(DatawaveFatalQueryException.class, this::planAndExecuteQuery);
         } finally {
             removeIOExceptionIterator();
         }
@@ -752,8 +746,7 @@ public class IndexExpansionQueryTest extends AbstractQueryTest {
         try {
             addIOExceptionIterator(IteratorTimeoutException.class.getName(), "random");
             givenQuery("_ANYFIELD_ == 'a1b2c3'");
-            // This should be a DatawaveFatalException. We should not be passing up raw runtime exceptions.
-            assertThrows(RuntimeException.class, this::planAndExecuteQuery);
+            assertThrows(DatawaveFatalQueryException.class, this::planAndExecuteQuery);
         } finally {
             removeIOExceptionIterator();
         }
@@ -765,8 +758,7 @@ public class IndexExpansionQueryTest extends AbstractQueryTest {
         try {
             addRuntimeExceptionIterator(IterationInterruptedException.class.getName(), "IIE for test", "random");
             givenQuery("_ANYFIELD_ == 'a1b2c3'");
-            // This should be a DatawaveFatalException. We should not be passing up raw runtime exceptions.
-            assertThrows(RuntimeException.class, this::planAndExecuteQuery);
+            assertThrows(DatawaveFatalQueryException.class, this::planAndExecuteQuery);
         } finally {
             removeRuntimeExceptionIterator();
         }
