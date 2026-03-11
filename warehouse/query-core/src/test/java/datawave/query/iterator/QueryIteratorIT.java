@@ -18,6 +18,7 @@ import static datawave.query.iterator.QueryOptions.SERIAL_EVALUATION_PIPELINE;
 import static datawave.query.iterator.QueryOptions.START_TIME;
 import static datawave.query.iterator.QueryOptions.TERM_FREQUENCIES_REQUIRED;
 import static datawave.query.iterator.QueryOptions.TERM_FREQUENCY_FIELDS;
+import static datawave.query.iterator.QueryOptions.UNIQUE_FIELDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -63,6 +64,7 @@ import datawave.data.type.Type;
 import datawave.ingest.protobuf.TermWeight;
 import datawave.ingest.protobuf.TermWeightPosition;
 import datawave.query.Constants;
+import datawave.query.QueryParameters;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Document;
@@ -181,7 +183,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         tempPath.toFile().deleteOnExit();
     }
 
-    protected List<Map.Entry<Key,Value>> addIndexedField(String row, String dataType, String uid, String field, String value) {
+    protected List<Map.Entry<Key,Value>> addIndexedField(String row, String dataType, String uid, String field, String value, long eventTimestamp) {
         List<Map.Entry<Key,Value>> listSource = new ArrayList<>();
 
         listSource.add(new AbstractMap.SimpleEntry<>(getEvent(row, field, value, dataType, uid, eventTimestamp), EMPTY_VALUE));
@@ -196,61 +198,65 @@ public class QueryIteratorIT extends EasyMockSupport {
     }
 
     protected List<Map.Entry<Key,Value>> addEvent(String uid) {
-        return addEvent(DEFAULT_ROW, DEFAULT_DATATYPE, uid);
+        return addEvent(DEFAULT_ROW, DEFAULT_DATATYPE, uid, eventTimestamp);
     }
 
-    protected List<Map.Entry<Key,Value>> addEvent(String row, String dataType, String uid) {
+    protected List<Map.Entry<Key,Value>> addEvent(String uid, long eventTimestamp) {
+        return addEvent(DEFAULT_ROW, DEFAULT_DATATYPE, uid, eventTimestamp);
+    }
+
+    protected List<Map.Entry<Key,Value>> addEvent(String row, String dataType, String uid, long eventTimestamp) {
         List<Map.Entry<Key,Value>> listSource = new ArrayList<>();
 
         // indexed
-        listSource.addAll(addIndexedField(row, dataType, uid, "EVENT_FIELD1", "a"));
+        listSource.addAll(addIndexedField(row, dataType, uid, "EVENT_FIELD1", "a", eventTimestamp));
         // unindexed
-        listSource.add(new AbstractMap.SimpleEntry<>(getEvent(row, "EVENT_FIELD2", "b", dataType, uid), EMPTY_VALUE));
-        listSource.add(new AbstractMap.SimpleEntry<>(getEvent(row, "EVENT_FIELD3", "c", dataType, uid), EMPTY_VALUE));
+        listSource.add(new AbstractMap.SimpleEntry<>(getEvent(row, "EVENT_FIELD2", "b", dataType, uid, eventTimestamp), EMPTY_VALUE));
+        listSource.add(new AbstractMap.SimpleEntry<>(getEvent(row, "EVENT_FIELD3", "c", dataType, uid, eventTimestamp), EMPTY_VALUE));
         // indexed
-        listSource.addAll(addIndexedField(row, dataType, uid, "EVENT_FIELD4", "d"));
+        listSource.addAll(addIndexedField(row, dataType, uid, "EVENT_FIELD4", "d", eventTimestamp));
 
         // unindexed
-        listSource.add(new AbstractMap.SimpleEntry<>(getEvent(row, "EVENT_FIELD5", "e", dataType, uid), EMPTY_VALUE));
+        listSource.add(new AbstractMap.SimpleEntry<>(getEvent(row, "EVENT_FIELD5", "e", dataType, uid, eventTimestamp), EMPTY_VALUE));
         // indexed
-        listSource.addAll(addIndexedField(row, dataType, uid, "EVENT_FIELD6", "f"));
+        listSource.addAll(addIndexedField(row, dataType, uid, "EVENT_FIELD6", "f", eventTimestamp));
 
         // add some indexed TF fields
-        listSource.add(new AbstractMap.SimpleEntry<>(getEvent(DEFAULT_ROW, "TF_FIELD1", "a,, b,,, c,,", dataType, uid), EMPTY_VALUE));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD1", "a b c", dataType, uid), EMPTY_VALUE));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD1", "a", dataType, uid), EMPTY_VALUE));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD1", "b", dataType, uid), EMPTY_VALUE));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD1", "c", dataType, uid), EMPTY_VALUE));
-        listSource.add(new AbstractMap.SimpleEntry<>(getTF(row, "TF_FIELD1", "a", dataType, uid), getTFValue(0)));
-        listSource.add(new AbstractMap.SimpleEntry<>(getTF(row, "TF_FIELD1", "b", dataType, uid), getTFValue(1)));
-        listSource.add(new AbstractMap.SimpleEntry<>(getTF(row, "TF_FIELD1", "c", dataType, uid), getTFValue(2)));
+        listSource.add(new AbstractMap.SimpleEntry<>(getEvent(DEFAULT_ROW, "TF_FIELD1", "a,, b,,, c,,", dataType, uid, eventTimestamp), EMPTY_VALUE));
+        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD1", "a b c", dataType, uid, eventTimestamp), EMPTY_VALUE));
+        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD1", "a", dataType, uid, eventTimestamp), EMPTY_VALUE));
+        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD1", "b", dataType, uid, eventTimestamp), EMPTY_VALUE));
+        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD1", "c", dataType, uid, eventTimestamp), EMPTY_VALUE));
+        listSource.add(new AbstractMap.SimpleEntry<>(getTF(row, "TF_FIELD1", "a", dataType, uid, eventTimestamp), getTFValue(0)));
+        listSource.add(new AbstractMap.SimpleEntry<>(getTF(row, "TF_FIELD1", "b", dataType, uid, eventTimestamp), getTFValue(1)));
+        listSource.add(new AbstractMap.SimpleEntry<>(getTF(row, "TF_FIELD1", "c", dataType, uid, eventTimestamp), getTFValue(2)));
 
-        listSource.add(new AbstractMap.SimpleEntry<>(getEvent(row, "TF_FIELD2", ",x, ,y, ,z,", dataType, uid), EMPTY_VALUE));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD2", "x y z", dataType, uid), EMPTY_VALUE));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD2", "x", dataType, uid), EMPTY_VALUE));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD2", "y", dataType, uid), EMPTY_VALUE));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD2", "z", dataType, uid), EMPTY_VALUE));
-        listSource.add(new AbstractMap.SimpleEntry<>(getTF(row, "TF_FIELD2", "x", dataType, uid), getTFValue(23)));
-        listSource.add(new AbstractMap.SimpleEntry<>(getTF(row, "TF_FIELD2", "y", dataType, uid), getTFValue(24)));
-        listSource.add(new AbstractMap.SimpleEntry<>(getTF(row, "TF_FIELD2", "z", dataType, uid), getTFValue(25)));
+        listSource.add(new AbstractMap.SimpleEntry<>(getEvent(row, "TF_FIELD2", ",x, ,y, ,z,", dataType, uid, eventTimestamp), EMPTY_VALUE));
+        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD2", "x y z", dataType, uid, eventTimestamp), EMPTY_VALUE));
+        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD2", "x", dataType, uid, eventTimestamp), EMPTY_VALUE));
+        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD2", "y", dataType, uid, eventTimestamp), EMPTY_VALUE));
+        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD2", "z", dataType, uid, eventTimestamp), EMPTY_VALUE));
+        listSource.add(new AbstractMap.SimpleEntry<>(getTF(row, "TF_FIELD2", "x", dataType, uid, eventTimestamp), getTFValue(23)));
+        listSource.add(new AbstractMap.SimpleEntry<>(getTF(row, "TF_FIELD2", "y", dataType, uid, eventTimestamp), getTFValue(24)));
+        listSource.add(new AbstractMap.SimpleEntry<>(getTF(row, "TF_FIELD2", "z", dataType, uid, eventTimestamp), getTFValue(25)));
 
         // add an index only TF
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD4", "d", dataType, uid), getTFValue(3)));
-        listSource.add(new AbstractMap.SimpleEntry<>(getTF(row, "TF_FIELD4", "d", dataType, uid), getTFValue(3)));
+        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD4", "d", dataType, uid, eventTimestamp), getTFValue(3)));
+        listSource.add(new AbstractMap.SimpleEntry<>(getTF(row, "TF_FIELD4", "d", dataType, uid, eventTimestamp), getTFValue(3)));
 
         // add some index only field data
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "INDEX_ONLY_FIELD1", "apple", dataType, uid), EMPTY_VALUE));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "INDEX_ONLY_FIELD1", "pear", dataType, uid), EMPTY_VALUE));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "INDEX_ONLY_FIELD1", "orange", dataType, uid), EMPTY_VALUE));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "INDEX_ONLY_FIELD2", "beef", dataType, uid), EMPTY_VALUE));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "INDEX_ONLY_FIELD2", "chicken", dataType, uid), EMPTY_VALUE));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "INDEX_ONLY_FIELD2", "pork", dataType, uid), EMPTY_VALUE));
+        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "INDEX_ONLY_FIELD1", "apple", dataType, uid, eventTimestamp), EMPTY_VALUE));
+        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "INDEX_ONLY_FIELD1", "pear", dataType, uid, eventTimestamp), EMPTY_VALUE));
+        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "INDEX_ONLY_FIELD1", "orange", dataType, uid, eventTimestamp), EMPTY_VALUE));
+        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "INDEX_ONLY_FIELD2", "beef", dataType, uid, eventTimestamp), EMPTY_VALUE));
+        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "INDEX_ONLY_FIELD2", "chicken", dataType, uid, eventTimestamp), EMPTY_VALUE));
+        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "INDEX_ONLY_FIELD2", "pork", dataType, uid, eventTimestamp), EMPTY_VALUE));
 
         return listSource;
     }
 
     protected List<Map.Entry<Key,Value>> configureTestData(long eventTime) {
-        return new ArrayList<>(addEvent("123.345.456"));
+        return new ArrayList<>(addEvent("123.345.456", eventTime));
     }
 
     protected Range getDocumentRange(String uid) {
@@ -1213,10 +1219,10 @@ public class QueryIteratorIT extends EasyMockSupport {
         String query = "grouping:matchesInGroup(EVENT_FIELD1,'a1',EVENT_FIELD1,'a2')";
 
         List<Map.Entry<Key,Value>> groupingData = new ArrayList<>();
-        groupingData.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.567", "EVENT_FIELD1.A.B.C.0", "a1"));
-        groupingData.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.567", "EVENT_FIELD1.B.B.C.1", "a2"));
-        groupingData.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.567", "EVENT_FIELD1.C.B.C.2", "b1"));
-        groupingData.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.567", "EVENT_FIELD1.D.B.C.3", "b2"));
+        groupingData.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.567", "EVENT_FIELD1.A.B.C.0", "a1", eventTimestamp));
+        groupingData.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.567", "EVENT_FIELD1.B.B.C.1", "a2", eventTimestamp));
+        groupingData.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.567", "EVENT_FIELD1.C.B.C.2", "b1", eventTimestamp));
+        groupingData.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.567", "EVENT_FIELD1.D.B.C.3", "b2", eventTimestamp));
 
         options.put(INCLUDE_GROUPING_CONTEXT, "true");
 
@@ -1229,10 +1235,10 @@ public class QueryIteratorIT extends EasyMockSupport {
         String query = "grouping:matchesInGroup(EVENT_FIELD1,'a1',EVENT_FIELD1,'a2')";
 
         List<Map.Entry<Key,Value>> groupingData = new ArrayList<>();
-        groupingData.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.567", "EVENT_FIELD1.A.B.C.0", "a1"));
-        groupingData.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.567", "EVENT_FIELD1.X.Y.Z.0", "a2"));
-        groupingData.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.567", "EVENT_FIELD1.C.B.C.1", "b1"));
-        groupingData.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.567", "EVENT_FIELD1.D.B.C.1", "b2"));
+        groupingData.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.567", "EVENT_FIELD1.A.B.C.0", "a1", eventTimestamp));
+        groupingData.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.567", "EVENT_FIELD1.X.Y.Z.0", "a2", eventTimestamp));
+        groupingData.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.567", "EVENT_FIELD1.C.B.C.1", "b1", eventTimestamp));
+        groupingData.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.567", "EVENT_FIELD1.D.B.C.1", "b2", eventTimestamp));
 
         Map.Entry<Key,Map<String,List<String>>> expectedEvent = new AbstractMap.SimpleEntry<>(getHitKey(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.567"),
                         new HashMap<>());
@@ -1253,10 +1259,10 @@ public class QueryIteratorIT extends EasyMockSupport {
         String query = "grouping:matchesInGroupLeft(EVENT_FIELD1,'a1',EVENT_FIELD1,'a2', 0)";
 
         List<Map.Entry<Key,Value>> groupingData = new ArrayList<>();
-        groupingData.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.567", "EVENT_FIELD1.A.B.C.0", "a1"));
-        groupingData.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.567", "EVENT_FIELD1.X.Y.Z.0", "a2"));
-        groupingData.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.567", "EVENT_FIELD1.C.B.C.1", "b1"));
-        groupingData.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.567", "EVENT_FIELD1.D.B.C.1", "b2"));
+        groupingData.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.567", "EVENT_FIELD1.A.B.C.0", "a1", eventTimestamp));
+        groupingData.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.567", "EVENT_FIELD1.X.Y.Z.0", "a2", eventTimestamp));
+        groupingData.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.567", "EVENT_FIELD1.C.B.C.1", "b1", eventTimestamp));
+        groupingData.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.567", "EVENT_FIELD1.D.B.C.1", "b2", eventTimestamp));
 
         Map.Entry<Key,Map<String,List<String>>> expectedEvent = new AbstractMap.SimpleEntry<>(getHitKey(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.567"),
                         new HashMap<>());
@@ -1278,10 +1284,10 @@ public class QueryIteratorIT extends EasyMockSupport {
         String query = "grouping:matchesInGroup(EVENT_FIELD1,'a1',EVENT_FIELD1,'a2')";
 
         List<Map.Entry<Key,Value>> groupingData = new ArrayList<>();
-        groupingData.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.567", "EVENT_FIELD1.A.B.C.0", "a1"));
-        groupingData.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.567", "EVENT_FIELD1.B.B.C.0", "a2"));
-        groupingData.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.567", "EVENT_FIELD1.C.B.C.1", "b1"));
-        groupingData.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.567", "EVENT_FIELD1.D.B.C.1", "b2"));
+        groupingData.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.567", "EVENT_FIELD1.A.B.C.0", "a1", eventTimestamp));
+        groupingData.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.567", "EVENT_FIELD1.B.B.C.0", "a2", eventTimestamp));
+        groupingData.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.567", "EVENT_FIELD1.C.B.C.1", "b1", eventTimestamp));
+        groupingData.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.567", "EVENT_FIELD1.D.B.C.1", "b2", eventTimestamp));
 
         Map.Entry<Key,Map<String,List<String>>> expectedEvent = new AbstractMap.SimpleEntry<>(getHitKey(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.567"),
                         new HashMap<>());
@@ -1301,10 +1307,10 @@ public class QueryIteratorIT extends EasyMockSupport {
         String query = "EVENT_FIELD1 == 'b1' && grouping:matchesInGroup(EVENT_FIELD1,'a1',EVENT_FIELD1,'a2', 1)";
 
         List<Map.Entry<Key,Value>> groupingData = new ArrayList<>();
-        groupingData.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.567", "EVENT_FIELD1.A.B.C.0", "a1"));
-        groupingData.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.567", "EVENT_FIELD1.A.B.C.0", "a2"));
-        groupingData.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.567", "EVENT_FIELD1.A.B.C.1", "b1"));
-        groupingData.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.567", "EVENT_FIELD1.A.B.C.1", "b2"));
+        groupingData.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.567", "EVENT_FIELD1.A.B.C.0", "a1", eventTimestamp));
+        groupingData.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.567", "EVENT_FIELD1.A.B.C.0", "a2", eventTimestamp));
+        groupingData.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.567", "EVENT_FIELD1.A.B.C.1", "b1", eventTimestamp));
+        groupingData.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.567", "EVENT_FIELD1.A.B.C.1", "b2", eventTimestamp));
 
         Map.Entry<Key,Map<String,List<String>>> expectedEvent = new AbstractMap.SimpleEntry<>(getHitKey(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.567"),
                         new HashMap<>());
@@ -1320,8 +1326,31 @@ public class QueryIteratorIT extends EasyMockSupport {
         groupingNotation_test(seekRange, query, false, groupingData, Collections.singletonList(expectedEvent));
     }
 
+    @Test
+    public void most_recent_unique() throws IOException {
+        List<Map.Entry<Key,Value>> otherData = new ArrayList<>();
+        // uid=123.345.456 at ts=11 will be added during event_test
+        // add three events at timestamp 11, 12, 13; we should get the most recent event with unique EVENT_FIELD2
+        otherData.addAll(addEvent("123.345.457", 12));
+        otherData.addAll(addEvent("123.345.458", 13));
+
+        Map.Entry<Key,Map<String,List<String>>> hitOverride = getBaseExpectedEvent("123.345.458");
+
+        Map<String,String> additionalOptions = new HashMap<>();
+        additionalOptions.put(UNIQUE_FIELDS, "EVENT_FIELD2[ALL]");
+        additionalOptions.put(QueryParameters.MOST_RECENT_UNIQUE, "true");
+        Range seekRange = getShardRange();
+        String query = "EVENT_FIELD1 == 'a' && EVENT_FIELD4 == 'd' && EVENT_FIELD6 == 'f' && f:most_recent_unique('EVENT_FIELD2')";
+        event_test(seekRange, query, false, hitOverride, otherData, Collections.EMPTY_LIST, additionalOptions);
+    }
+
     protected void configureIterator() {
         lookupTask.setTypeMetadata(typeMetadata);
+    }
+
+    protected void event_test(Range seekRange, String query, boolean miss, Map.Entry<Key,Map<String,List<String>>> hitOverride,
+                    List<Map.Entry<Key,Value>> otherData, List<Map.Entry<Key,Map<String,List<String>>>> otherHits) throws IOException {
+        event_test(seekRange, query, miss, hitOverride, otherData, otherHits, Collections.EMPTY_MAP);
     }
 
     /**
@@ -1333,7 +1362,8 @@ public class QueryIteratorIT extends EasyMockSupport {
      *             IOException for issues with read/write
      */
     protected void event_test(Range seekRange, String query, boolean miss, Map.Entry<Key,Map<String,List<String>>> hitOverride,
-                    List<Map.Entry<Key,Value>> otherData, List<Map.Entry<Key,Map<String,List<String>>>> otherHits) throws IOException {
+                    List<Map.Entry<Key,Value>> otherData, List<Map.Entry<Key,Map<String,List<String>>>> otherHits, Map<String,String> additionalOptions)
+                    throws IOException {
         // configure source
         List<Map.Entry<Key,Value>> listSource = configureTestData(11);
         listSource.addAll(otherData);
@@ -1346,6 +1376,8 @@ public class QueryIteratorIT extends EasyMockSupport {
         options.put(QUERY, query);
         // none
         options.put(INDEX_ONLY_FIELDS, "");
+
+        options.putAll(additionalOptions);
 
         replayAll();
 
@@ -1688,11 +1720,11 @@ public class QueryIteratorIT extends EasyMockSupport {
     }
 
     // support methods
-    protected Key getTF(String field, String value, String uid) {
-        return getTF(DEFAULT_ROW, field, value, DEFAULT_DATATYPE, uid);
+    protected Key getTF(String field, String value, String uid, long eventTimestamp) {
+        return getTF(DEFAULT_ROW, field, value, DEFAULT_DATATYPE, uid, eventTimestamp);
     }
 
-    protected Key getTF(String row, String field, String value, String dataType, String uid) {
+    protected Key getTF(String row, String field, String value, String dataType, String uid, long eventTimestamp) {
         // CQ = dataType\0UID\0Normalized field value\0Field name
         return new Key(row, "tf", dataType + Constants.NULL_BYTE_STRING + uid + Constants.NULL_BYTE_STRING + value + Constants.NULL_BYTE_STRING + field,
                         eventTimestamp);
@@ -1705,8 +1737,8 @@ public class QueryIteratorIT extends EasyMockSupport {
         return new Value(info.toByteArray());
     }
 
-    protected Key getFI(String field, String value, String uid) {
-        return getFI(DEFAULT_ROW, field, value, DEFAULT_DATATYPE, uid);
+    protected Key getFI(String field, String value, String uid, long eventTimestamp) {
+        return getFI(DEFAULT_ROW, field, value, DEFAULT_DATATYPE, uid, eventTimestamp);
     }
 
     protected Key getFI(String row, String field, String value, String dataType, String uid) {
@@ -1718,15 +1750,11 @@ public class QueryIteratorIT extends EasyMockSupport {
                         value + Constants.NULL_BYTE_STRING + dataType + Constants.NULL_BYTE_STRING + uid, ts);
     }
 
-    protected Key getEvent(String field, String value, String uid) {
-        return getEvent(DEFAULT_ROW, field, value, DEFAULT_DATATYPE, uid);
+    protected Key getEvent(String field, String value, String uid, long eventTimestamp) {
+        return getEvent(DEFAULT_ROW, field, value, DEFAULT_DATATYPE, uid, eventTimestamp);
     }
 
-    protected Key getEvent(String row, String field, String value, String dataType, String uid) {
-        return getEvent(row, field, value, dataType, uid, eventTimestamp);
-    }
-
-    protected Key getEvent(String row, String field, String value, String dataType, String uid, long ts) {
-        return new Key(row, dataType + Constants.NULL + uid, field + Constants.NULL + value, ts);
+    protected Key getEvent(String row, String field, String value, String dataType, String uid, long eventTimestamp) {
+        return new Key(row, dataType + Constants.NULL + uid, field + Constants.NULL + value, eventTimestamp);
     }
 }
