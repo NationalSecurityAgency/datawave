@@ -4,6 +4,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.commons.lang3.mutable.MutableLong;
+
 /**
  * A simple utility class for counting occurrences of keys. Replacement for non-public org.apache.accumulo.core.util.MapCounter.
  *
@@ -12,7 +14,7 @@ import java.util.Set;
  */
 public class MapCounter<K> {
 
-    private final Map<K,Long> counts = new HashMap<>();
+    private final Map<K,MutableLong> counts = new HashMap<>();
 
     /**
      * Increment the count for the given key.
@@ -24,9 +26,9 @@ public class MapCounter<K> {
      * @return the new count for the key
      */
     public long increment(K key, long amount) {
-        long newValue = counts.getOrDefault(key, 0L) + amount;
-        counts.put(key, newValue);
-        return newValue;
+        MutableLong value = counts.computeIfAbsent(key, k -> new MutableLong(0L));
+        value.add(amount);
+        return value.longValue();
     }
 
     /**
@@ -37,7 +39,8 @@ public class MapCounter<K> {
      * @return the count for the key, or 0 if not present
      */
     public long get(K key) {
-        return counts.getOrDefault(key, 0L);
+        MutableLong value = counts.get(key);
+        return value != null ? value.longValue() : 0L;
     }
 
     /**
