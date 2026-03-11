@@ -24,7 +24,6 @@ import org.apache.accumulo.core.client.MutationsRejectedException;
 import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Range;
@@ -35,9 +34,7 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.hadoop.io.Text;
 import org.infinispan.commons.configuration.ConfiguredBy;
 import org.infinispan.commons.io.ByteBufferFactory;
-import org.infinispan.filter.KeyFilter;
 import org.infinispan.marshall.core.MarshalledEntry;
-import org.infinispan.persistence.TaskContextImpl;
 import org.infinispan.persistence.spi.AdvancedLoadWriteStore;
 import org.infinispan.persistence.spi.InitializationContext;
 import org.infinispan.persistence.spi.PersistenceException;
@@ -280,39 +277,5 @@ public class AccumuloCacheStore<K extends Serializable,V> implements AdvancedLoa
     @Override
     public void purge(Executor threadPool, PurgeListener<? super K> listener) {
         // This is a no-op since we use an age-off iterator on the cache entries
-    }
-
-    @Override
-    public void process(KeyFilter<? super K> filter, CacheLoaderTask<K,V> task, Executor executor, boolean fetchValue, boolean fetchMetadata) {
-        try (BatchScanner batchScanner = accumuloClient.createBatchScanner(tableName, authorizations, 5)) {
-
-            batchScanner.setRanges(Collections.singleton(new Range()));
-            try {
-                TaskContext taskContext = new TaskContextImpl();
-                for (Map.Entry<Key,Value> entry : batchScanner) {
-                    if (taskContext.isStopped())
-                        break;
-
-                    try {
-                        ByteSequence rowData = entry.getKey().getRowData();
-                        @SuppressWarnings("unchecked")
-                        K key = (K) ctx.getMarshaller().objectFromByteBuffer(rowData.getBackingArray(), rowData.offset(), rowData.length());
-                        if (filter.accept(key)) {
-                            MarshalledEntry<K,V> marshalledEntry = decodeEntry(entry, key, fetchValue, fetchMetadata);
-                            task.processEntry(marshalledEntry, taskContext);
-                        }
-                    } catch (Exception e) {
-                        if (e instanceof InterruptedException) {
-                            Thread.currentThread().interrupt();
-                        }
-                        throw new PersistenceException(e);
-                    }
-                }
-            } finally {
-                batchScanner.close();
-            }
-        } catch (TableNotFoundException e) {
-            throw new PersistenceException("Unable to calculate size of Accumulo cache table " + tableName, e);
-        }
     }
 }
