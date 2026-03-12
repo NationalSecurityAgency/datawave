@@ -237,15 +237,8 @@ public class Cost implements Comparable<Cost> {
         return result;
     }
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see java.lang.Comparable#compareTo(java.lang.Object)
-     */
     @Override
-    public int compareTo(Cost otherCostObj) {
-        Long me = getERCost() + getOtherCost();
-        Long other = otherCostObj.getERCost() + otherCostObj.getOtherCost();
-        return me.compareTo(other);
+    public int compareTo(Cost other) {
+        return Long.compare(totalCost(), other.totalCost());
     }
 }
