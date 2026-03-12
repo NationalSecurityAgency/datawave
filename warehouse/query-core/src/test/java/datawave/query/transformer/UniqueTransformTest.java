@@ -532,7 +532,7 @@ public class UniqueTransformTest {
         Transformer<Document,Map.Entry<Key,Document>> docToEntry = document -> Maps.immutableEntry(document.getMetadata(), document);
         TransformIterator<Document,Map.Entry<Key,Document>> inputIterator = new TransformIterator<>(documents.iterator(), docToEntry);
         UniqueTransform uniqueTransform = getUniqueTransform();
-        Iterator<Map.Entry<Key,Document>> resultIterator = uniqueTransform.getIterator(inputIterator);
+        Iterator<Map.Entry<Key,Document>> resultIterator = uniqueTransform.getIterator(inputIterator, null);
         return StreamSupport.stream(Spliterators.spliteratorUnknownSize(resultIterator, Spliterator.ORDERED), false).filter(Objects::nonNull)
                         .map(Map.Entry::getValue).collect(Collectors.toList());
     }
@@ -541,7 +541,7 @@ public class UniqueTransformTest {
         Transformer<Document,Map.Entry<Key,Document>> docToEntry = document -> Maps.immutableEntry(document.getMetadata(), document);
         TransformIterator<Document,Map.Entry<Key,Document>> inputIterator = new TransformIterator<>(documents.iterator(), docToEntry);
         UniqueTransform uniqueTransform = getUniqueTransform();
-        Iterator<Map.Entry<Key,Document>> resultIterator = uniqueTransform.getIterator(inputIterator);
+        Iterator<Map.Entry<Key,Document>> resultIterator = uniqueTransform.getIterator(inputIterator, null);
         ArrayList<Document> docs = new ArrayList<>();
         while (resultIterator.hasNext()) {
             Map.Entry<Key,Document> next = resultIterator.next();

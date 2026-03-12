@@ -1005,15 +1005,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         return this.hdfsSiteConfigURLs != null && (null != this.ivaratorCacheDirConfigs && !this.ivaratorCacheDirConfigs.isEmpty());
     }
 
-    /**
-     * A convenience method that determines whether we can handle when we have exceeded the term threshold on some node. Currently we cannot.
-     *
-     * @return if we can handle exceeding the term threshold
-     */
-    public boolean canHandleExceededTermThreshold() {
-        return false;
-    }
-
     public String getShardTableName() {
         return shardTableName;
     }
