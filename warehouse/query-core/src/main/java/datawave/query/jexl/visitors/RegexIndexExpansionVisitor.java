@@ -631,7 +631,7 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
     public boolean shouldProcessRegexByCostWithChildren(List<JexlNode> children, Cost regexCost) {
         Preconditions.checkArgument(!children.isEmpty(), "We found an empty list of children for an AND which should at least contain an ERnode");
 
-        Cost c = new Cost();
+        Cost c = Cost.zero();
 
         for (JexlNode child : children) {
             Cost childCost = costAnalysis.computeCostForSubtree(child);
