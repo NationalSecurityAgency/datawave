@@ -489,7 +489,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             // now apply the unique iterator if requested
             UniqueTransform uniquify = getUniqueTransform();
             if (uniquify != null) {
-                pipelineDocuments = uniquify.getIterator(pipelineDocuments);
+                pipelineDocuments = uniquify.getIterator(pipelineDocuments, this.yieldCallback);
             }
 
             // apply the grouping iterator if requested and if the batch size is greater than zero
