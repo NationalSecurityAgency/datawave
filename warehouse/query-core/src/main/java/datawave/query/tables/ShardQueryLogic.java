@@ -1908,14 +1908,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         getConfig().setDisableIteratorUniqueFields(disableIteratorUniqueFields);
     }
 
-    public boolean isDisableIteratorMostRecentUniqueFields() {
-        return getConfig().isDisableIteratorMostRecentUniqueFields();
-    }
-
-    public void setDisableIteratorMostRecentUniqueFields(boolean disableIteratorMostRecentUniqueFields) {
-        getConfig().setDisableIteratorMostRecentUniqueFields(disableIteratorMostRecentUniqueFields);
-    }
-
     public UniqueFields getUniqueFields() {
         return getConfig().getUniqueFields();
     }

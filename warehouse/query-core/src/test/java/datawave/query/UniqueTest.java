@@ -402,87 +402,39 @@ public abstract class UniqueTest {
     }
 
     @Test
-    public void testMostRecentUniquenessWebServerOnly() throws Exception {
-        boolean originalSetting = logic.isDisableIteratorMostRecentUniqueFields();
-        try {
-            logic.setDisableIteratorMostRecentUniqueFields(true);
-            Map<String,String> extraParameters = new HashMap<>();
-            extraParameters.put("include.grouping.context", "true");
-            extraParameters.put(QueryParameters.MOST_RECENT_UNIQUE, "true");
+    public void testMostRecentUniqueness() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+        extraParameters.put(QueryParameters.MOST_RECENT_UNIQUE, "true");
 
-            Date startDate = format.parse("20091231");
-            Date endDate = format.parse("20150101");
+        Date startDate = format.parse("20091231");
+        Date endDate = format.parse("20150101");
 
-            String queryString = "UUID =~ '^[CS].*'";
+        String queryString = "UUID =~ '^[CS].*'";
 
-            Set<Set<String>> expected = new HashSet<>();
-            expected.add(Sets.newHashSet(WiseGuysIngest.caponeUID));
-            extraParameters.put("unique.fields", "DEATH_DATE,$MAGIC");
-            runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
+        Set<Set<String>> expected = new HashSet<>();
+        expected.add(Sets.newHashSet(WiseGuysIngest.caponeUID));
+        extraParameters.put("unique.fields", "DEATH_DATE,$MAGIC");
+        runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
 
-            expected.clear();
-            expected.add(Sets.newHashSet(WiseGuysIngest.caponeUID));
-            extraParameters.put("unique.fields", "death_date,$magic");
-            runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
+        expected.clear();
+        expected.add(Sets.newHashSet(WiseGuysIngest.caponeUID));
+        extraParameters.put("unique.fields", "death_date,$magic");
+        runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
 
-            expected.clear();
-            expected.add(Sets.newHashSet(WiseGuysIngest.sopranoUID));
-            expected.add(Sets.newHashSet(WiseGuysIngest.corleoneUID));
-            expected.add(Sets.newHashSet(WiseGuysIngest.caponeUID));
-            extraParameters.put("unique.fields", "$DEATH_DATE,BIRTH_DATE");
-            runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
+        expected.clear();
+        expected.add(Sets.newHashSet(WiseGuysIngest.sopranoUID));
+        expected.add(Sets.newHashSet(WiseGuysIngest.corleoneUID));
+        expected.add(Sets.newHashSet(WiseGuysIngest.caponeUID));
+        extraParameters.put("unique.fields", "$DEATH_DATE,BIRTH_DATE");
+        runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
 
-            expected.clear();
-            expected.add(Sets.newHashSet(WiseGuysIngest.sopranoUID));
-            expected.add(Sets.newHashSet(WiseGuysIngest.corleoneUID));
-            expected.add(Sets.newHashSet(WiseGuysIngest.caponeUID));
-            extraParameters.put("unique.fields", "death_date,birth_date");
-            runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
-        } finally {
-            logic.setDisableIteratorMostRecentUniqueFields(originalSetting);
-        }
-    }
-
-    @Test
-    public void testMostRecentUniquenessWithIterator() throws Exception {
-        boolean originalSetting = logic.isDisableIteratorMostRecentUniqueFields();
-        try {
-            logic.setDisableIteratorMostRecentUniqueFields(false);
-            Map<String,String> extraParameters = new HashMap<>();
-            extraParameters.put("include.grouping.context", "true");
-            extraParameters.put(QueryParameters.MOST_RECENT_UNIQUE, "true");
-
-            Date startDate = format.parse("20091231");
-            Date endDate = format.parse("20150101");
-
-            String queryString = "UUID =~ '^[CS].*'";
-
-            Set<Set<String>> expected = new HashSet<>();
-            expected.add(Sets.newHashSet(WiseGuysIngest.caponeUID));
-            extraParameters.put("unique.fields", "DEATH_DATE,$MAGIC");
-            runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
-
-            expected.clear();
-            expected.add(Sets.newHashSet(WiseGuysIngest.caponeUID));
-            extraParameters.put("unique.fields", "death_date,$magic");
-            runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
-
-            expected.clear();
-            expected.add(Sets.newHashSet(WiseGuysIngest.sopranoUID));
-            expected.add(Sets.newHashSet(WiseGuysIngest.corleoneUID));
-            expected.add(Sets.newHashSet(WiseGuysIngest.caponeUID));
-            extraParameters.put("unique.fields", "$DEATH_DATE,BIRTH_DATE");
-            runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
-
-            expected.clear();
-            expected.add(Sets.newHashSet(WiseGuysIngest.sopranoUID));
-            expected.add(Sets.newHashSet(WiseGuysIngest.corleoneUID));
-            expected.add(Sets.newHashSet(WiseGuysIngest.caponeUID));
-            extraParameters.put("unique.fields", "death_date,birth_date");
-            runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
-        } finally {
-            logic.setDisableIteratorMostRecentUniqueFields(originalSetting);
-        }
+        expected.clear();
+        expected.add(Sets.newHashSet(WiseGuysIngest.sopranoUID));
+        expected.add(Sets.newHashSet(WiseGuysIngest.corleoneUID));
+        expected.add(Sets.newHashSet(WiseGuysIngest.caponeUID));
+        extraParameters.put("unique.fields", "death_date,birth_date");
+        runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
     }
 
     @Test

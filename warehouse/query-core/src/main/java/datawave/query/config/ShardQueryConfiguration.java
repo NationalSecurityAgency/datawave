@@ -407,7 +407,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private boolean accrueStats = false;
 
     private boolean disableIteratorUniqueFields = false;
-    private boolean disableIteratorMostRecentUniqueFields = true;
     private UniqueFields uniqueFields = new UniqueFields();
     private boolean cacheModel = false;
     /**
@@ -800,7 +799,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setGroupFieldsBatchSize(other.getGroupFieldsBatchSize());
         this.setAccrueStats(other.getAccrueStats());
         this.setDisableIteratorUniqueFields(other.isDisableIteratorUniqueFields());
-        this.setDisableIteratorMostRecentUniqueFields(other.isDisableIteratorMostRecentUniqueFields());
         this.setUniqueFields(other.getUniqueFields());
         log.info("Checkpointing with " + getUniqueFields());
         this.setUniqueCacheBufferSize(other.getUniqueCacheBufferSize());
@@ -2020,14 +2018,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.disableIteratorUniqueFields = disableIteratorUniqueFields;
     }
 
-    public boolean isDisableIteratorMostRecentUniqueFields() {
-        return disableIteratorMostRecentUniqueFields;
-    }
-
-    public void setDisableIteratorMostRecentUniqueFields(boolean disableIteratorMostRecentUniqueFields) {
-        this.disableIteratorMostRecentUniqueFields = disableIteratorMostRecentUniqueFields;
-    }
-
     public UniqueFields getUniqueFields() {
         return uniqueFields;
     }
@@ -3228,7 +3218,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getMaxAnyFieldScanTimeMillis() == that.getMaxAnyFieldScanTimeMillis() &&
                 isUseNewIndexLookups() == that.isUseNewIndexLookups() &&
                 isDisableIteratorUniqueFields() == that.isDisableIteratorUniqueFields() &&
-                isDisableIteratorMostRecentUniqueFields() == that.isDisableIteratorMostRecentUniqueFields() &&
                 isUseShardedIndex() == that.isUseShardedIndex() &&
                 getDayIndexThreshold() == that.getDayIndexThreshold() &&
                 isUseTruncatedIndex() == that.isUseTruncatedIndex() &&
@@ -3467,7 +3456,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getMaxAnyFieldScanTimeMillis(),
                 isUseNewIndexLookups(),
                 isDisableIteratorUniqueFields(),
-                isDisableIteratorMostRecentUniqueFields(),
                 isUseShardedIndex(),
                 getDayIndexThreshold(),
                 isUseTruncatedIndex(),
