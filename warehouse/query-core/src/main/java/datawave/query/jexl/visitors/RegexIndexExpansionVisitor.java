@@ -652,7 +652,7 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
             }
         }
 
-        return (regexCost.getERCost() + regexCost.getOtherCost()) < (c.getERCost() + c.getOtherCost());
+        return (regexCost.getRegexCost() + regexCost.getOtherCost()) < (c.getRegexCost() + c.getOtherCost());
     }
 
     private void onlyRetainFieldNamesInTheModelForwardMapping(IndexLookupMap fieldsToValues) {

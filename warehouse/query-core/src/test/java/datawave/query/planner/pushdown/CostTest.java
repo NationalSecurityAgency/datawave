@@ -30,10 +30,10 @@ public class CostTest {
         long regexCost = 123456L;
         long expectedRegexCost = regexCost * 2;
         Cost cost = Cost.regex(regexCost);
-        assertEquals(expectedRegexCost, cost.getERCost(), "If this test fails then the ER_COST_MULTIPLIER was updated");
+        assertEquals(expectedRegexCost, cost.getRegexCost(), "If this test fails then the ER_COST_MULTIPLIER was updated");
 
         Cost infinitePositive = Cost.regex(Long.MAX_VALUE);
-        assertEquals(Long.MAX_VALUE, infinitePositive.getERCost());
+        assertEquals(Long.MAX_VALUE, infinitePositive.getRegexCost());
 
         assertThrows(IllegalArgumentException.class, () -> Cost.regex(Long.MIN_VALUE));
     }
@@ -73,7 +73,7 @@ public class CostTest {
     public void testRegexConstructorLongOverflow() {
         long costThatWillOverflow = (Long.MAX_VALUE / 3) * 2;
         Cost cost = Cost.regex(costThatWillOverflow);
-        assertEquals(Long.MAX_VALUE, cost.getERCost());
+        assertEquals(Long.MAX_VALUE, cost.getRegexCost());
     }
 
     @Test
@@ -85,7 +85,7 @@ public class CostTest {
         sum.incrementBy(regex);
         sum.incrementBy(other);
 
-        assertEquals(regex.getERCost(), sum.getERCost());
+        assertEquals(regex.getRegexCost(), sum.getRegexCost());
         assertEquals(other.getOtherCost(), sum.getOtherCost());
     }
 
@@ -98,30 +98,30 @@ public class CostTest {
         sum.incrementBy(regex);
         sum.incrementBy(other);
 
-        assertEquals(Long.MAX_VALUE, sum.getERCost());
+        assertEquals(Long.MAX_VALUE, sum.getRegexCost());
         assertEquals(Long.MAX_VALUE, sum.getOtherCost());
     }
 
     @Test
-    public void testIncrementERCost() {
+    public void testIncrementRegexCost() {
         long third = Long.MAX_VALUE / 3;
         Cost regex = Cost.regex(third);
-        assertEquals(third * 2, regex.getERCost());
+        assertEquals(third * 2, regex.getRegexCost());
 
-        regex.incrementERCost(third);
-        assertEquals(third * 3, regex.getERCost());
+        regex.incrementRegexCost(third);
+        assertEquals(third * 3, regex.getRegexCost());
 
-        regex.incrementERCost(third);
-        assertEquals(Long.MAX_VALUE, regex.getERCost());
+        regex.incrementRegexCost(third);
+        assertEquals(Long.MAX_VALUE, regex.getRegexCost());
     }
 
     @Test
-    public void testIncrementERCostWithNegativeValue() {
+    public void testIncrementRegexCostWithNegativeValue() {
         long cost = Long.MAX_VALUE / 2;
         Cost regex = Cost.regex(cost);
 
-        regex.incrementERCost(Long.MIN_VALUE);
-        assertEquals(Long.MAX_VALUE, regex.getERCost());
+        regex.incrementRegexCost(Long.MIN_VALUE);
+        assertEquals(Long.MAX_VALUE, regex.getRegexCost());
     }
 
     @Test
@@ -152,24 +152,24 @@ public class CostTest {
     @Test
     public void testSetMaxValue() {
         Cost cost = Cost.zero();
-        cost.setERCost(Long.MAX_VALUE);
+        cost.setRegexCost(Long.MAX_VALUE);
         cost.setOtherCost(Long.MAX_VALUE);
 
-        assertEquals(Long.MAX_VALUE, cost.getERCost());
+        assertEquals(Long.MAX_VALUE, cost.getRegexCost());
         assertEquals(Long.MAX_VALUE, cost.getOtherCost());
     }
 
     @Test
     public void testSetMinValue() {
         Cost cost = Cost.zero();
-        assertThrows(IllegalArgumentException.class, () -> cost.setERCost(Long.MIN_VALUE));
+        assertThrows(IllegalArgumentException.class, () -> cost.setRegexCost(Long.MIN_VALUE));
     }
 
     @Test
     public void testGetTotalCost() {
         long twoThirdsMax = (Long.MAX_VALUE / 3) * 2;
         Cost cost = Cost.zero();
-        cost.setERCost(twoThirdsMax);
+        cost.setRegexCost(twoThirdsMax);
         cost.setOtherCost(twoThirdsMax);
         assertEquals(Long.MAX_VALUE, cost.totalCost());
 

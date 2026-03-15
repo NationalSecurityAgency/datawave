@@ -12,7 +12,7 @@ public class Cost implements Comparable<Cost> {
     private long regexCost = 0L;
     private long otherCost = 0L;
 
-    private static final long ER_COST_MULTIPLIER = 2;
+    private static final long REGEX_COST_MULTIPLIER = 2;
 
     /**
      * Create a zero {@link Cost}
@@ -42,7 +42,7 @@ public class Cost implements Comparable<Cost> {
     }
 
     /**
-     * Create a {@link Cost} for a regex using the {@link #ER_COST_MULTIPLIER}
+     * Create a {@link Cost} for a regex using the {@link #REGEX_COST_MULTIPLIER}
      *
      * @param value
      *            the estimated value
@@ -85,7 +85,7 @@ public class Cost implements Comparable<Cost> {
      *            the standard cost
      */
     private Cost(long regexCost, long otherCost) {
-        setERCost(regexCost);
+        setRegexCost(regexCost);
         setOtherCost(otherCost);
     }
 
@@ -114,7 +114,7 @@ public class Cost implements Comparable<Cost> {
      *            the other cost
      */
     public void incrementBy(Cost other) {
-        incrementERCost(other.getERCost());
+        incrementRegexCost(other.getRegexCost());
         incrementOtherCost(other.getOtherCost());
     }
 
@@ -124,7 +124,7 @@ public class Cost implements Comparable<Cost> {
      * @param other
      *            the other regex cost
      */
-    public void incrementERCost(long other) {
+    public void incrementRegexCost(long other) {
         long next = regexCost + other;
 
         if (next < 0) {
@@ -140,12 +140,12 @@ public class Cost implements Comparable<Cost> {
      * @param newCost
      *            the new regex cost
      */
-    public void setERCost(long newCost) {
+    public void setRegexCost(long newCost) {
         if (newCost < 0) {
             throw new IllegalArgumentException("newCost must be >= 0");
         }
 
-        long weightedCost = newCost * ER_COST_MULTIPLIER;
+        long weightedCost = newCost * REGEX_COST_MULTIPLIER;
         if (weightedCost < 0) {
             regexCost = Long.MAX_VALUE;
         } else {
@@ -158,7 +158,7 @@ public class Cost implements Comparable<Cost> {
      *
      * @return the regex cost
      */
-    public long getERCost() {
+    public long getRegexCost() {
         return regexCost;
     }
 
@@ -217,14 +217,14 @@ public class Cost implements Comparable<Cost> {
 
     @Override
     public String toString() {
-        return "Regex cost: " + getERCost() + ", Other cost: " + getOtherCost();
+        return "Regex cost: " + getRegexCost() + ", Other cost: " + getOtherCost();
     }
 
     @Override
     public boolean equals(Object o) {
         if (o instanceof Cost) {
             Cost other = (Cost) o;
-            return getERCost() == other.getERCost() && getOtherCost() == other.getOtherCost();
+            return getRegexCost() == other.getRegexCost() && getOtherCost() == other.getOtherCost();
         }
 
         return false;
