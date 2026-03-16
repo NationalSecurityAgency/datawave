@@ -20,7 +20,7 @@ import datawave.core.query.cachedresults.CacheableLogic;
 import datawave.core.query.logic.BaseQueryLogic;
 import datawave.core.query.logic.BaseQueryLogicTransformer;
 import datawave.marking.MarkingFunctions;
-import datawave.marking.MarkingFunctions.Exception;
+import datawave.marking.Markings;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
 import datawave.query.model.QueryModel;
@@ -37,7 +37,7 @@ public class DiscoveryTransformer extends BaseQueryLogicTransformer<DiscoveredTh
     private List<String> variableFieldList = null;
     private final BaseQueryLogic<DiscoveredThing> logic;
     private QueryModel myQueryModel;
-    private MarkingFunctions markingFunctions;
+    private MarkingFunctions<?> markingFunctions;
     private final ResponseObjectFactory responseObjectFactory;
     private boolean valuesOnly = false;
 
@@ -53,7 +53,7 @@ public class DiscoveryTransformer extends BaseQueryLogicTransformer<DiscoveredTh
     /**
      * Variant of a field list that contains only a value field.
      */
-    BiFunction<DiscoveredThing,Map<String,String>,List<FieldBase>> generateValuesOnlyFieldList = (x, y) -> {
+    BiFunction<DiscoveredThing,Markings<?>,List<FieldBase>> generateValuesOnlyFieldList = (x, y) -> {
         List<FieldBase> fields = new ArrayList<>();
 
         fields.add(this.makeField("VALUE", y, "", 0L, x.getTerm()));
@@ -64,7 +64,7 @@ public class DiscoveryTransformer extends BaseQueryLogicTransformer<DiscoveredTh
     /**
      * Variant of field list that contains a standard, default set of fields.
      */
-    BiFunction<DiscoveredThing,Map<String,String>,List<FieldBase>> generateFieldList = (x, y) -> {
+    BiFunction<DiscoveredThing,Markings<?>,List<FieldBase>> generateFieldList = (x, y) -> {
         List<FieldBase> fields = new ArrayList<>();
 
         fields.add(this.makeField("VALUE", y, "", 0L, x.getTerm()));
@@ -80,13 +80,13 @@ public class DiscoveryTransformer extends BaseQueryLogicTransformer<DiscoveredTh
         // If requested return counts separated by colvis, all counts by colvis could be > total record count
         if (x.getCountsByColumnVisibility() != null && !x.getCountsByColumnVisibility().isEmpty()) {
             for (Map.Entry<Writable,Writable> entry : x.getCountsByColumnVisibility().entrySet()) {
+                Markings<?> recordCountMarkings;
                 try {
-                    this.markingFunctions.translateFromColumnVisibility(new ColumnVisibility(entry.getKey().toString()));
-                    fields.add(this.makeField("RECORD COUNT", new HashMap<>(), entry.getKey().toString(), 0L, entry.getValue().toString()));
-                } catch (Exception e) {
+                    recordCountMarkings = markingFunctions.translateFromColumnVisibility(new ColumnVisibility(entry.getKey().toString()));
+                } catch (MarkingFunctions.Exception e) {
                     throw new RuntimeException("could not parse to markings: " + x.getColumnVisibility());
                 }
-
+                fields.add(this.makeField("RECORD COUNT", recordCountMarkings, entry.getKey().toString(), 0L, entry.getValue().toString()));
             }
         } else {
             fields.add(this.makeField("RECORD COUNT", y, "", 0L, Long.toString(x.getCount())));
@@ -94,7 +94,7 @@ public class DiscoveryTransformer extends BaseQueryLogicTransformer<DiscoveredTh
         return fields;
     };
 
-    final Map<String,BiFunction<DiscoveredThing,Map<String,String>,List<FieldBase>>> mapMapGenerator = new HashMap<>();
+    final Map<String,BiFunction<DiscoveredThing,Markings<?>,List<FieldBase>>> mapMapGenerator = new HashMap<>();
     {
         mapMapGenerator.put("VALUES_ONLY", generateValuesOnlyFieldList);
         mapMapGenerator.put("STANDARD", generateFieldList);
@@ -106,7 +106,7 @@ public class DiscoveryTransformer extends BaseQueryLogicTransformer<DiscoveredTh
      * @param isValuesOnly
      * @return
      */
-    BiFunction<DiscoveredThing,Map<String,String>,List<FieldBase>> getMapGenerator(boolean isValuesOnly) {
+    BiFunction<DiscoveredThing,Markings<?>,List<FieldBase>> getMapGenerator(boolean isValuesOnly) {
         return mapMapGenerator.get(isValuesOnly ? "VALUES_ONLY" : "STANDARD");
     }
 
@@ -117,7 +117,7 @@ public class DiscoveryTransformer extends BaseQueryLogicTransformer<DiscoveredTh
 
         EventBase event = this.responseObjectFactory.getEvent();
 
-        Map<String,String> markings = markingsFromVisibility.apply(thing.getColumnVisibility());
+        Markings<?> markings = markingsFromVisibility.apply(thing.getColumnVisibility());
         event.setMarkings(markings);
 
         List<FieldBase> fields = getMapGenerator(valuesOnly).apply(thing, markings);
@@ -135,7 +135,7 @@ public class DiscoveryTransformer extends BaseQueryLogicTransformer<DiscoveredTh
     }
 
     @SuppressWarnings({"rawtypes"})
-    protected FieldBase makeField(String name, Map<String,String> markings, String columnVisibility, Long timestamp, Object value) {
+    protected FieldBase makeField(String name, Markings<?> markings, String columnVisibility, Long timestamp, Object value) {
         FieldBase field = this.responseObjectFactory.getField();
         field.setName(name);
         field.setMarkings(markings);
@@ -186,7 +186,7 @@ public class DiscoveryTransformer extends BaseQueryLogicTransformer<DiscoveredTh
         if (this.variableFieldList == null) {
             this.variableFieldList = cacheableQueryRow.getVariableColumnNames();
         }
-        Map<String,String> markings = cacheableQueryRow.getMarkings();
+        Markings<?> markings = cacheableQueryRow.getMarkings();
         String dataType = cacheableQueryRow.getDataType();
         String internalId = cacheableQueryRow.getEventId();
         String row = cacheableQueryRow.getRow();
@@ -209,7 +209,7 @@ public class DiscoveryTransformer extends BaseQueryLogicTransformer<DiscoveredTh
             String columnValue = entry.getValue();
             String columnVisibility = cacheableQueryRow.getColumnVisibility(columnName);
             Long columnTimestamp = cacheableQueryRow.getColumnTimestamp(columnName);
-            Map<String,String> columnMarkings = cacheableQueryRow.getColumnMarkings(columnName);
+            Markings<?> columnMarkings = cacheableQueryRow.getColumnMarkings(columnName);
             FieldBase field = this.responseObjectFactory.getField();
             field.setName(columnName);
             field.setMarkings(columnMarkings);
@@ -222,7 +222,7 @@ public class DiscoveryTransformer extends BaseQueryLogicTransformer<DiscoveredTh
         return event;
     }
 
-    Function<String,Map<String,String>> markingsFromVisibility = x -> {
+    Function<String,Markings<?>> markingsFromVisibility = x -> {
         try {
             return this.markingFunctions.translateFromColumnVisibility(new ColumnVisibility(x));
         } catch (Exception e) {

@@ -1,5 +1,7 @@
 package datawave.ingest.mapreduce.handler.error;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
@@ -7,6 +9,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
+import org.apache.accumulo.access.AccessExpression;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configurable;
@@ -41,7 +44,7 @@ import datawave.ingest.mapreduce.handler.shard.AbstractColumnBasedHandler;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.writer.ContextWriter;
-import datawave.marking.MarkingFunctions;
+import datawave.marking.AccessExpressionUtil;
 import datawave.table.constants.ColumnFamilyConstants;
 
 /**
@@ -156,10 +159,11 @@ public class ErrorShardedDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends Abstract
         tableName = conf.get(ERROR_PROP_PREFIX + SHARD_DINDX_NAME);
         setShardDictionaryIndexTableName(tableName == null ? null : new Text(tableName));
 
-        try {
-            defaultVisibility = flatten(markingFunctions.translateToColumnVisibility(markingsHelper.getDefaultMarkings()));
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Failed to parse security marking configuration", e);
+        if (markingsHelper != null && markingsHelper.getDefaultMarkings() != null) {
+            AccessExpression ae = markingsHelper.getDefaultMarkings().toAccessExpression();
+            if (ae != null) {
+                defaultVisibility = ae.getExpression().getBytes(UTF_8);
+            }
         }
 
         log.info("ShardedErrorDataTypeHandler configured.");
@@ -347,12 +351,7 @@ public class ErrorShardedDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends Abstract
     public byte[] getVisibility(RawRecordContainer event, NormalizedContentInterface value) {
         byte[] visibility;
         if (value != null && value.getMarkings() != null && !value.getMarkings().isEmpty()) {
-            try {
-                visibility = flatten(markingFunctions.translateToColumnVisibility(value.getMarkings()));
-            } catch (MarkingFunctions.Exception e) {
-                log.error("Failed to create visibility from markings, using default", e);
-                visibility = defaultVisibility;
-            }
+            visibility = flatten(value.getMarkings().toColumnVisibility());
         } else if (event.getVisibility() != null) {
             visibility = flatten(event.getVisibility());
         } else {

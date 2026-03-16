@@ -71,6 +71,11 @@
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.core</groupId>
+                <artifactId>datawave-core-common-util</artifactId>
+                <version>${version.datawave}</version>
+            </dependency>
+            <dependency>
+                <groupId>gov.nsa.datawave.core</groupId>
                 <artifactId>type-utils</artifactId>
                 <version>${version.datawave}</version>
             </dependency>
@@ -228,6 +233,10 @@
         <dependency>
             <groupId>gov.nsa.datawave.core</groupId>
             <artifactId>base-rest-responses</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.core</groupId>
+            <artifactId>datawave-core-common-util</artifactId>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.core</groupId>

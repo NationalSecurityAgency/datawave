@@ -2,13 +2,12 @@ package datawave.query.attributes;
 
 import java.io.Serializable;
 import java.util.Collection;
+import java.util.stream.Collectors;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.lang.mutable.MutableLong;
 import org.apache.log4j.Logger;
-
-import com.google.common.collect.Sets;
 
 import datawave.marking.MarkingFunctions;
 import datawave.marking.MarkingFunctions.Exception;
@@ -19,11 +18,15 @@ public abstract class AttributeBag<T extends Comparable<T>> extends Attribute<T>
     private static final Logger log = Logger.getLogger(AttributeBag.class);
     protected long shardTimestamp = Long.MAX_VALUE;
     protected boolean validMetadata = false;
+    protected MarkingFunctions<?> markingFunctions;
 
     private static final long ONE_DAY_MS = 1000l * 60 * 60 * 24;
 
-    public MarkingFunctions getMarkingFunctions() {
-        return MarkingFunctions.Factory.createMarkingFunctions();
+    public MarkingFunctions<?> getMarkingFunctions() {
+        if (null == markingFunctions) {
+            markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
+        }
+        return markingFunctions;
     }
 
     protected AttributeBag() {
@@ -42,8 +45,8 @@ public abstract class AttributeBag<T extends Comparable<T>> extends Attribute<T>
         this.validMetadata = false;
     }
 
-    public boolean isValidMetadata() {
-        return (this.validMetadata && isMetadataSet());
+    public boolean isNotValidMetadata() {
+        return (!this.validMetadata || !isMetadataSet());
     }
 
     public abstract Collection<Attribute<? extends Comparable<?>>> getAttributes();
@@ -53,14 +56,14 @@ public abstract class AttributeBag<T extends Comparable<T>> extends Attribute<T>
     @Override
     public long getTimestamp() {
         // calling isMetadataSet first to update the metadata as needed
-        if (isValidMetadata() == false)
+        if (isNotValidMetadata())
             this.updateMetadata();
         return super.getTimestamp();
     }
 
     @Override
     public ColumnVisibility getColumnVisibility() {
-        if (isValidMetadata() == false)
+        if (isNotValidMetadata())
             this.updateMetadata();
         return super.getColumnVisibility();
     }
@@ -78,11 +81,9 @@ public abstract class AttributeBag<T extends Comparable<T>> extends Attribute<T>
     }
 
     protected ColumnVisibility combineAndSetColumnVisibilities(Collection<Attribute<? extends Comparable<?>>> attributes) throws Exception {
-        Collection<ColumnVisibility> columnVisibilities = Sets.newHashSet();
-        for (Attribute<?> attr : attributes) {
-            columnVisibilities.add(attr.getColumnVisibility());
-        }
-        return MarkingFunctions.Factory.createMarkingFunctions().combine(columnVisibilities);
+        Collection<ColumnVisibility> visibilities = attributes.stream().map(Attribute::getColumnVisibility).collect(Collectors.toList());
+        markingFunctions = getMarkingFunctions();
+        return markingFunctions.combineVisibilities(visibilities);
     }
 
     private long updateTimestamps() {
