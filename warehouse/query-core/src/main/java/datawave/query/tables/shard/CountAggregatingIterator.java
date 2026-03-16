@@ -12,6 +12,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -119,7 +120,7 @@ public class CountAggregatingIterator extends TransformIterator {
      */
     private static class CountEntryAggregator {
 
-        private long count = 0L;
+        private final AtomicLong count = new AtomicLong(0L);
         private final Set<ColumnVisibility> cvs = new HashSet<>();
 
         private final Transformer transformer;
@@ -131,7 +132,7 @@ public class CountAggregatingIterator extends TransformIterator {
         }
 
         public void addCount(long count) {
-            this.count += count;
+            this.count.addAndGet(count);
         }
 
         public void addColumnVisibility(ColumnVisibility cv) {
@@ -140,12 +141,12 @@ public class CountAggregatingIterator extends TransformIterator {
 
         @SuppressWarnings("unchecked")
         public Object getAggregatedEvent() {
-            if (cvs.isEmpty() && count == 0L) {
+            if (cvs.isEmpty() && count.get() == 0L) {
                 cvs.add(new ColumnVisibility(""));
             }
 
             ColumnVisibility cv = getCombinedColumnVisibility();
-            return transformer.transform(Maps.immutableEntry(count, cv));
+            return transformer.transform(Maps.immutableEntry(count.get(), cv));
         }
 
         private ColumnVisibility getCombinedColumnVisibility() {
