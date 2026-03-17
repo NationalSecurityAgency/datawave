@@ -278,6 +278,9 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         try {
             this.logic = (ShardQueryLogic) (logicFactory.getQueryLogic("EventQuery", principal));
             this.countLogic = (CountingShardQueryLogic) (logicFactory.getQueryLogic("CountQuery", principal));
+            // this test is fundamentally broken because it does not handle intermediate results, which are now
+            // supported by the CountQuery
+            this.countLogic.setPageWaitTimeMillis(3600000);
         } catch (CloneNotSupportedException | QueryException e) {
             throw new RuntimeException("Unable to create query logics", e);
         }
