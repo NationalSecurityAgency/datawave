@@ -305,13 +305,13 @@ public class BufferedFileBackedSortedMap<K,V> implements SortedMap<K,V>, Rewrita
 
             // compact it
             if (log.isDebugEnabled()) {
-                log.debug("Starting compaction for " + mapToCompact);
+                log.debug("Starting compaction for " + mapsPerCompaction + " maps");
             }
             long start = System.currentTimeMillis();
             FileSortedMap<K,V> compaction = compact(mapToCompact);
             if (log.isDebugEnabled()) {
                 long delta = System.currentTimeMillis() - start;
-                log.debug("Compacted " + mapToCompact + " -> " + compaction + " in " + delta + "ms");
+                log.debug("Compacted " + mapsPerCompaction + " maps in " + delta + "ms");
             }
 
             // add the compacted map to our final multimap
