@@ -344,13 +344,13 @@ public class BufferedFileBackedSortedSet<E> implements SortedSet<E> {
 
             // compact it
             if (log.isDebugEnabled()) {
-                log.debug("Starting compaction for " + setToCompact);
+                log.debug("Starting compaction for " + setsPerCompaction + " sets");
             }
             long start = System.currentTimeMillis();
             FileSortedSet<E> compaction = compact(setToCompact);
             if (log.isDebugEnabled()) {
                 long delta = System.currentTimeMillis() - start;
-                log.debug("Compacted " + setToCompact + " -> " + compaction + " in " + delta + "ms");
+                log.debug("Compacted " + setsPerCompaction + " sets in " + delta + "ms");
             }
 
             // add the compacted set to our final multiset
