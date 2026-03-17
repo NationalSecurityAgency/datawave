@@ -10,6 +10,7 @@ import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.IteratorSetting.Column;
 import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.client.sample.SamplerConfiguration;
+import org.apache.accumulo.core.clientImpl.ScannerOptions;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
@@ -148,6 +149,11 @@ public class ScannerBaseDelegate implements ScannerBase {
 
     @Override
     public void clearScanIterators() {
+        // NOTE: ScannerOptions is a non-public Accumulo API. This instanceof check is intentionally retained as a
+        // safety guard until all usages of ScannerOptions as a delegate are fully replaced (e.g. with SessionOptions).
+        if (!(delegate instanceof ScannerOptions)) {
+            throw new UnsupportedOperationException("Cannot clear scan iterators on a non-ScannerOptions class! (" + delegate.getClass() + ")");
+        }
         // Remove all user iterators (tracked locally), preserving system iterators
         for (String iteratorName : userIteratorNames) {
             delegate.removeScanIterator(iteratorName);
