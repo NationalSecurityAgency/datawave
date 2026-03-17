@@ -17,7 +17,7 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.spi.common.ServiceEnvironment;
 import org.apache.commons.lang.NotImplementedException;
 
-import datawave.test.AccumuloConfigurationWrapper;
+import datawave.accumulo.core.util.AccumuloConfigurationWrapper;
 
 public class ConfigurableIteratorEnvironment implements IteratorEnvironment {
 

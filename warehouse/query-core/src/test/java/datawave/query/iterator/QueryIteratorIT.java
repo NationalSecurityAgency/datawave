@@ -71,7 +71,7 @@ import datawave.query.function.JexlEvaluation;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.util.TypeMetadata;
-import datawave.test.AccumuloConfigurationWrapper;
+import datawave.accumulo.core.util.AccumuloConfigurationWrapper;
 
 /**
  * Integration tests for the QueryIterator

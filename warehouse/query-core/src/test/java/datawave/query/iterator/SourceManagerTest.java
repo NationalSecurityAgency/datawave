@@ -44,7 +44,7 @@ import org.junit.Test;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
-import datawave.test.AccumuloConfigurationWrapper;
+import datawave.accumulo.core.util.AccumuloConfigurationWrapper;
 
 public class SourceManagerTest {
     private static final SimpleDateFormat shardFormatter = new SimpleDateFormat("yyyyMMdd HHmmss");

@@ -1,4 +1,4 @@
-package datawave.test;
+package datawave.accumulo.core.util;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -10,7 +10,7 @@ import org.apache.accumulo.core.client.PluginEnvironment;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
 
 /**
- * A test utility class that wraps an AccumuloConfiguration and implements PluginEnvironment.Configuration. This replaces the non-public
+ * A utility class that wraps an AccumuloConfiguration and implements PluginEnvironment.Configuration. This replaces the non-public
  * org.apache.accumulo.core.util.ConfigurationImpl class.
  */
 public class AccumuloConfigurationWrapper implements PluginEnvironment.Configuration {
@@ -69,7 +69,6 @@ public class AccumuloConfigurationWrapper implements PluginEnvironment.Configura
 
     @Override
     public <T> Supplier<T> getDerived(Function<PluginEnvironment.Configuration,T> computeDerivedValue) {
-        // For test purposes, compute the value immediately and return a supplier that returns it
         T value = computeDerivedValue.apply(this);
         return () -> value;
     }
