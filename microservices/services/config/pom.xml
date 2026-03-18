@@ -26,6 +26,8 @@
     <properties>
         <start-class>datawave.microservice.config.server.ConfigServerApplication</start-class>
         <version.datawave.starter>4.0.7</version.datawave.starter>
+        <version.jgit>5.13.5.202508271544-r</version.jgit>
+        <version.jsch>0.2.26</version.jsch>
         <!-- dependency declared in datawave-microservice-parent, but the version can be overridden here -->
         <version.log4j>2.25.3</version.log4j>
         <!-- dependency declared in datawave-microservice-parent, but the version can be overridden here -->
@@ -42,8 +44,9 @@
     </dependencyManagement>
     <dependencies>
         <dependency>
-            <groupId>com.jcraft</groupId>
+            <groupId>com.github.mwiede</groupId>
             <artifactId>jsch</artifactId>
+            <version>${version.jsch}</version>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>
@@ -52,10 +55,23 @@
         <dependency>
             <groupId>org.eclipse.jgit</groupId>
             <artifactId>org.eclipse.jgit</artifactId>
+            <version>${version.jgit}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.jgit</groupId>
+            <artifactId>org.eclipse.jgit.http.apache</artifactId>
+            <version>${version.jgit}</version>
         </dependency>
         <dependency>
             <groupId>org.eclipse.jgit</groupId>
             <artifactId>org.eclipse.jgit.ssh.jsch</artifactId>
+            <version>${version.jgit}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.jcraft</groupId>
+                    <artifactId>jsch</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.springframework</groupId>
