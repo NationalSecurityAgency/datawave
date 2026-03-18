@@ -143,7 +143,7 @@ public class XmlRuleProcessor {
      * @return the new merged RuleConfig or null if no merging was done
      */
     RuleConfig mergeChildIntoParent(RuleConfig additionalRule, RuleConfig combinedRule) {
-        if (additionalRule.getIsMerge()) {
+        if (additionalRule.isMerge()) {
             // Merge parent and child extended options
             Map<String,String> mergedExtendedOptions = new HashMap<>(combinedRule.getExtendedOptions());
             mergedExtendedOptions.putAll(additionalRule.getExtendedOptions());
@@ -154,7 +154,7 @@ public class XmlRuleProcessor {
                     .setTtlUnits(combinedRule.getTtlUnits())
                     .setMatchPattern(combinedRule.getMatchPattern())
                     .setLabel(combinedRule.getLabel())
-                    .setIsMerge(combinedRule.getIsMerge())
+                    .setMerge(combinedRule.isMerge())
                     .setExtendedOptions(mergedExtendedOptions);
             // @formatter:on
 
@@ -244,7 +244,7 @@ public class XmlRuleProcessor {
                 .setTtlUnits(ttlUnits)
                 .setMatchPattern(matchPattern)
                 .setLabel(label)
-                .setIsMerge(isMerge)
+                .setMerge(isMerge)
                 .setExtendedOptions(extendedOptions)
                 .build();
         // @formatter:on

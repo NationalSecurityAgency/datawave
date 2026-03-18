@@ -54,7 +54,7 @@ public class AgeOffRuleFormatter {
         // @formatter:off
         RuleConfig.Builder builder = new RuleConfig.Builder(configuration.getFilterClass().getName(), index++)
                 .setLabel(configuration.getRuleLabel())
-                .setIsMerge(configuration.shouldMerge())
+                .setMerge(configuration.shouldMerge())
                 .setTtlValue(configuration.getTtlDuration())
                 .setTtlUnits(configuration.getTtlUnits())
                 .setMatchPattern(buildMatchPattern(configuration, configuration.getIndentation()))

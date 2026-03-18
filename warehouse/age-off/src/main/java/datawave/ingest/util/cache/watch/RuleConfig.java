@@ -54,7 +54,7 @@ public class RuleConfig {
         return label;
     }
 
-    public boolean getIsMerge() {
+    public boolean isMerge() {
         return isMerge;
     }
 
@@ -105,7 +105,7 @@ public class RuleConfig {
             return this;
         }
 
-        public Builder setIsMerge(boolean isMerge) {
+        public Builder setMerge(boolean isMerge) {
             this.isMerge = isMerge;
             return this;
         }
@@ -122,10 +122,6 @@ public class RuleConfig {
 
         public RuleConfig build() {
             return new RuleConfig(this);
-        }
-
-        public String getLabel() {
-            return label;
         }
     }
 }

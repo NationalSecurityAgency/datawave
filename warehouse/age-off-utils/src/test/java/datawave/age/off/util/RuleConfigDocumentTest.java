@@ -71,7 +71,7 @@ public class RuleConfigDocumentTest {
     public void includesMerge() throws IOException {
         // @formatter:off
         RuleConfig.Builder builder = new RuleConfig.Builder("myclass", 1)
-                .setIsMerge(true);
+                .setMerge(true);
         String actual = transformToXmlString(builder.build());
 
         String expected = "<rule mode=\"merge\">\n" +
@@ -122,7 +122,7 @@ public class RuleConfigDocumentTest {
                 .setTtlUnits("h")
                 .setTtlValue("2468")
                 .setMatchPattern("1234\n")
-                .setIsMerge(true)
+                .setMerge(true)
                 .setCustomElements(elements)
                 .setLabel("tag");
         String actual = transformToXmlString(builder.build());

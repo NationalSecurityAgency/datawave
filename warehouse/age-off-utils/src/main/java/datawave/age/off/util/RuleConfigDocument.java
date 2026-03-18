@@ -45,7 +45,7 @@ public class RuleConfigDocument extends DocumentImpl {
             rule.setAttribute(LABEL_ATTRIBUTE_NAME, this.ruleConfig.getLabel());
         }
 
-        if (this.ruleConfig.getIsMerge()) {
+        if (this.ruleConfig.isMerge()) {
             rule.setAttribute(MODE_ATTRIBUTE_NAME, MERGE_ATTRIBUTE_VALUE);
         }
         return rule;
