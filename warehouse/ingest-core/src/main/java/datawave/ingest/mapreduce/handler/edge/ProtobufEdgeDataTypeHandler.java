@@ -123,7 +123,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
 
     private Map<String,Map<String,String>> edgeTypeLookup = new HashMap<>();
 
-    private Map<String, Set<String>> disallowlistFieldLookup = new HashMap<>();
+    private Map<String,Set<String>> disallowlistFieldLookup = new HashMap<>();
     private Map<String,Set<String>> disallowlistValueLookup = new HashMap<>();
     private boolean enableDisallowlist = false;
 
