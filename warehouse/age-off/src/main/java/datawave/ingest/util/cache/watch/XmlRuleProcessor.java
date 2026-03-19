@@ -34,7 +34,7 @@ public class XmlRuleProcessor {
         this.loaderConfig = loaderConfig;
     }
 
-    protected List<RuleConfig> loadRuleConfigs(InputStream in) throws IOException {
+    public List<RuleConfig> loadRuleConfigs(InputStream in) throws IOException {
         List<RuleConfig> ruleConfigs = new ArrayList<>();
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         DocumentBuilder docBuilder;
