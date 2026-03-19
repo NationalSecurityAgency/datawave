@@ -1,7 +1,6 @@
 package datawave.ingest.mapreduce.handler.edge.define;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -38,7 +37,7 @@ public class EdgeDefinitionConfigurationHelper {
         this.edges = edges;
     }
 
-    public void init(HashSet<String> edgeRelationships, HashSet<String> collectionType) {
+    public void init() {
         // Sanity check before we continue
         validateRequiredVariablesSet();
 
@@ -50,29 +49,16 @@ public class EdgeDefinitionConfigurationHelper {
                 int nPieces = edgeNodes.size();
                 for (int ii = 0; ii < nPieces - 1; ii++) {
                     for (int jj = ii + 1; jj < nPieces; jj++) {
-
-                        if (validateEdgeNode(edgeNodes.get(ii), edgeRelationships, collectionType)
-                                        && validateEdgeNode(edgeNodes.get(jj), edgeRelationships, collectionType)) {
-
                             EdgeDefinition edgePair = buildEdgePair(edgeDefinition, edgeNodes.get(ii), edgeNodes.get(jj));
-
                             realEdges.add(edgePair);
-                        }
-
                     }
                 }
             } else if (edgeDefinition.getGroupPairs() != null) {
 
                 for (EdgeNode group1 : edgeDefinition.getGroupPairs().getGroup1()) {
                     for (EdgeNode group2 : edgeDefinition.getGroupPairs().getGroup2()) {
-
-                        if (validateEdgeNode(group1, edgeRelationships, collectionType) && validateEdgeNode(group2, edgeRelationships, collectionType)) {
-
                             EdgeDefinition groupPair = buildEdgePair(edgeDefinition, group1, group2);
-
                             realEdges.add(groupPair);
-                        }
-
                     }
                 }
             } else {
@@ -128,16 +114,6 @@ public class EdgeDefinitionConfigurationHelper {
         edgePair.setIsGroupAware(edgeDefinition.isGroupAware());
 
         return edgePair;
-    }
-
-    private boolean validateEdgeNode(EdgeNode node, HashSet<String> edgeRelationships, HashSet<String> collectionType) {
-        if (edgeRelationships.contains(node.getRelationship()) && collectionType.contains(node.getCollection())) {
-            return true;
-        } else {
-            log.error("Edge Definition in config file does not have a matching edge relationship and collection type for Relationship: "
-                            + node.getRelationship() + " and Collection: " + node.getCollection());
-            return false;
-        }
     }
 
     // Sanity checks to make sure configuration was set up properly

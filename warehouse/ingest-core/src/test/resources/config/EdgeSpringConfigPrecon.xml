@@ -34,21 +34,17 @@ http://www.springframework.org/schema/util/spring-util-4.0.xsd">
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
                                 <!-- (data-driven key component) for a given CSV record, use its EDGE_VERTEX_FROM value for the "SOURCE" component of the DataWave edge key  -->
                                 <property name="selector" value="FELINE.PET"/>
-                                <!-- (config-driven key component) use this value to denote how this vertex is related to the "SINK" vertex,
-                                     defined by 'protobufedge.table.relationships' bean below -->
+                                <!-- (config-driven key component) use this value to denote how this vertex is related to the "SINK" vertex -->
                                 <property name="relationship" value="FROM"/>
-                                <!-- (config-driven key component) use this value to identify the origin or taxonomy of the datasource,
-                                     defined by 'protobufedge.table.collections' bean below-->
+                                <!-- (config-driven key component) use this value to identify the origin or taxonomy of the datasource -->
                                 <property name="collection" value="MY_CSV_DATA"/>
                             </bean>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
                                 <!-- (data-driven key component) for a given CSV record, use its EDGE_VERTEX_TO value for the "SINK" component of the DataWave edge key  -->
                                 <property name="selector" value="FISH.PET"/>
-                                <!-- (config-driven key component) use this value to denote how this vertex is related to the "SOURCE" vertex,
-                                     defined by 'protobufedge.table.relationships' bean below -->
+                                <!-- (config-driven key component) use this value to denote how this vertex is related to the "SOURCE" vertex -->
                                 <property name="relationship" value="TO"/>
-                                <!-- (config-driven key component) use this value to identify the origin or taxonomy of the datasource,
-                                     defined by 'protobufedge.table.collections' bean below-->
+                                <!-- (config-driven key component) use this value to identify the origin or taxonomy of the datasource -->
                                 <property name="collection" value="MY_CSV_DATA"/>
                             </bean>
                         </list>
@@ -67,21 +63,17 @@ http://www.springframework.org/schema/util/spring-util-4.0.xsd">
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
                                 <!-- (data-driven key component) for a given CSV record, use its EDGE_VERTEX_FROM value for the "SOURCE" component of the DataWave edge key  -->
                                 <property name="selector" value="FELINE.PET"/>
-                                <!-- (config-driven key component) use this value to denote how this vertex is related to the "SINK" vertex,
-                                     defined by 'protobufedge.table.relationships' bean below -->
+                                <!-- (config-driven key component) use this value to denote how this vertex is related to the "SINK" vertex -->
                                 <property name="relationship" value="FROM"/>
-                                <!-- (config-driven key component) use this value to identify the origin or taxonomy of the datasource,
-                                     defined by 'protobufedge.table.collections' bean below-->
+                                <!-- (config-driven key component) use this value to identify the origin or taxonomy of the datasource -->
                                 <property name="collection" value="MY_CSV_DATA"/>
                             </bean>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
                                 <!-- (data-driven key component) for a given CSV record, use its EDGE_VERTEX_TO value for the "SINK" component of the DataWave edge key  -->
                                 <property name="selector" value="FISH.WILD"/>
-                                <!-- (config-driven key component) use this value to denote how this vertex is related to the "SOURCE" vertex,
-                                     defined by 'protobufedge.table.relationships' bean below -->
+                                <!-- (config-driven key component) use this value to denote how this vertex is related to the "SOURCE" vertex -->
                                 <property name="relationship" value="TO"/>
-                                <!-- (config-driven key component) use this value to identify the origin or taxonomy of the datasource,
-                                     defined by 'protobufedge.table.collections' bean below-->
+                                <!-- (config-driven key component) use this value to identify the origin or taxonomy of the datasource -->
                                 <property name="collection" value="MY_CSV_DATA"/>
                             </bean>
                         </list>
@@ -100,21 +92,17 @@ http://www.springframework.org/schema/util/spring-util-4.0.xsd">
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
                                 <!-- (data-driven key component) for a given CSV record, use its EDGE_VERTEX_FROM value for the "SOURCE" component of the DataWave edge key  -->
                                 <property name="selector" value="CANINE.PET"/>
-                                <!-- (config-driven key component) use this value to denote how this vertex is related to the "SINK" vertex,
-                                     defined by 'protobufedge.table.relationships' bean below -->
+                                <!-- (config-driven key component) use this value to denote how this vertex is related to the "SINK" vertex -->
                                 <property name="relationship" value="FROM"/>
-                                <!-- (config-driven key component) use this value to identify the origin or taxonomy of the datasource,
-                                     defined by 'protobufedge.table.collections' bean below-->
+                                <!-- (config-driven key component) use this value to identify the origin or taxonomy of the datasource -->
                                 <property name="collection" value="MY_CSV_DATA"/>
                             </bean>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
                                 <!-- (data-driven key component) for a given CSV record, use its EDGE_VERTEX_TO value for the "SINK" component of the DataWave edge key  -->
                                 <property name="selector" value="ACTIVITY.THING"/>
-                                <!-- (config-driven key component) use this value to denote how this vertex is related to the "SOURCE" vertex,
-                                     defined by 'protobufedge.table.relationships' bean below -->
+                                <!-- (config-driven key component) use this value to denote how this vertex is related to the "SOURCE" vertex -->
                                 <property name="relationship" value="TO"/>
-                                <!-- (config-driven key component) use this value to identify the origin or taxonomy of the datasource,
-                                     defined by 'protobufedge.table.collections' bean below-->
+                                <!-- (config-driven key component) use this value to identify the origin or taxonomy of the datasource -->
                                 <property name="collection" value="MY_CSV_DATA"/>
                             </bean>
                         </list>
@@ -133,21 +121,17 @@ http://www.springframework.org/schema/util/spring-util-4.0.xsd">
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
                                 <!-- (data-driven key component) for a given CSV record, use its EDGE_VERTEX_FROM value for the "SOURCE" component of the DataWave edge key  -->
                                 <property name="selector" value="CHEESE.FOOD"/>
-                                <!-- (config-driven key component) use this value to denote how this vertex is related to the "SINK" vertex,
-                                                                          defined by 'protobufedge.table.relationships' bean below -->
+                                <!-- (config-driven key component) use this value to denote how this vertex is related to the "SINK" vertex -->
                                 <property name="relationship" value="FROM"/>
-                                <!-- (config-driven key component) use this value to identify the origin or taxonomy of the datasource,
-                                                                          defined by 'protobufedge.table.collections' bean below-->
+                                <!-- (config-driven key component) use this value to identify the origin or taxonomy of the datasource -->
                                 <property name="collection" value="MY_CSV_DATA"/>
                             </bean>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
                                 <!-- (data-driven key component) for a given CSV record, use its EDGE_VERTEX_TO value for the "SINK" component of the DataWave edge key  -->
                                 <property name="selector" value="WINE.FOOD"/>
-                                <!-- (config-driven key component) use this value to denote how this vertex is related to the "SOURCE" vertex,
-                                                                          defined by 'protobufedge.table.relationships' bean below -->
+                                <!-- (config-driven key component) use this value to denote how this vertex is related to the "SOURCE" vertex -->
                                 <property name="relationship" value="TO"/>
-                                <!-- (config-driven key component) use this value to identify the origin or taxonomy of the datasource,
-                                                                          defined by 'protobufedge.table.collections' bean below-->
+                                <!-- (config-driven key component) use this value to identify the origin or taxonomy of the datasource -->
                                 <property name="collection" value="MY_CSV_DATA"/>
                             </bean>
                         </list>
@@ -166,21 +150,17 @@ http://www.springframework.org/schema/util/spring-util-4.0.xsd">
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
                                 <!-- (data-driven key component) for a given CSV record, use its EDGE_VERTEX_FROM value for the "SOURCE" component of the DataWave edge key  -->
                                 <property name="selector" value="BREAD.FOOD"/>
-                                <!-- (config-driven key component) use this value to denote how this vertex is related to the "SINK" vertex,
-                                                                          defined by 'protobufedge.table.relationships' bean below -->
+                                <!-- (config-driven key component) use this value to denote how this vertex is related to the "SINK" vertex -->
                                 <property name="relationship" value="FROM"/>
-                                <!-- (config-driven key component) use this value to identify the origin or taxonomy of the datasource,
-                                                                          defined by 'protobufedge.table.collections' bean below-->
+                                <!-- (config-driven key component) use this value to identify the origin or taxonomy of the datasource -->
                                 <property name="collection" value="MY_CSV_DATA"/>
                             </bean>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
                                 <!-- (data-driven key component) for a given CSV record, use its EDGE_VERTEX_TO value for the "SINK" component of the DataWave edge key  -->
                                 <property name="selector" value="SANDWICH.FOOD"/>
-                                <!-- (config-driven key component) use this value to denote how this vertex is related to the "SOURCE" vertex,
-                                                                          defined by 'protobufedge.table.relationships' bean below -->
+                                <!-- (config-driven key component) use this value to denote how this vertex is related to the "SOURCE" vertex -->
                                 <property name="relationship" value="TO"/>
-                                <!-- (config-driven key component) use this value to identify the origin or taxonomy of the datasource,
-                                                                          defined by 'protobufedge.table.collections' bean below-->
+                                <!-- (config-driven key component) use this value to identify the origin or taxonomy of the datasource -->
                                 <property name="collection" value="MY_CSV_DATA"/>
                             </bean>
                         </list>
@@ -199,21 +179,17 @@ http://www.springframework.org/schema/util/spring-util-4.0.xsd">
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
                                 <!-- (data-driven key component) for a given CSV record, use its EDGE_VERTEX_FROM value for the "SOURCE" component of the DataWave edge key  -->
                                 <property name="selector" value="FRUIT.FOOD"/>
-                                <!-- (config-driven key component) use this value to denote how this vertex is related to the "SINK" vertex,
-                                                                          defined by 'protobufedge.table.relationships' bean below -->
+                                <!-- (config-driven key component) use this value to denote how this vertex is related to the "SINK" vertex -->
                                 <property name="relationship" value="FROM"/>
-                                <!-- (config-driven key component) use this value to identify the origin or taxonomy of the datasource,
-                                                                          defined by 'protobufedge.table.collections' bean below-->
+                                <!-- (config-driven key component) use this value to identify the origin or taxonomy of the datasource -->
                                 <property name="collection" value="MY_CSV_DATA"/>
                             </bean>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
                                 <!-- (data-driven key component) for a given CSV record, use its EDGE_VERTEX_TO value for the "SINK" component of the DataWave edge key  -->
                                 <property name="selector" value="WINE.FOOD"/>
-                                <!-- (config-driven key component) use this value to denote how this vertex is related to the "SOURCE" vertex,
-                                                                          defined by 'protobufedge.table.relationships' bean below -->
+                                <!-- (config-driven key component) use this value to denote how this vertex is related to the "SOURCE" vertex -->
                                 <property name="relationship" value="TO"/>
-                                <!-- (config-driven key component) use this value to identify the origin or taxonomy of the datasource,
-                                                                          defined by 'protobufedge.table.collections' bean below-->
+                                <!-- (config-driven key component) use this value to identify the origin or taxonomy of the datasource -->
                                 <property name="collection" value="MY_CSV_DATA"/>
                             </bean>
                         </list>
@@ -232,21 +208,17 @@ http://www.springframework.org/schema/util/spring-util-4.0.xsd">
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
                                 <!-- (data-driven key component) for a given CSV record, use its EDGE_VERTEX_FROM value for the "SOURCE" component of the DataWave edge key  -->
                                 <property name="selector" value="CANINE.PET"/>
-                                <!-- (config-driven key component) use this value to denote how this vertex is related to the "SINK" vertex,
-                                     defined by 'protobufedge.table.relationships' bean below -->
+                                <!-- (config-driven key component) use this value to denote how this vertex is related to the "SINK" vertex -->
                                 <property name="relationship" value="FROM"/>
-                                <!-- (config-driven key component) use this value to identify the origin or taxonomy of the datasource,
-                                     defined by 'protobufedge.table.collections' bean below-->
+                                <!-- (config-driven key component) use this value to identify the origin or taxonomy of the datasource -->
                                 <property name="collection" value="MY_CSV_DATA"/>
                             </bean>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
                                 <!-- (data-driven key component) for a given CSV record, use its EDGE_VERTEX_TO value for the "SINK" component of the DataWave edge key  -->
                                 <property name="selector" value="FISH.PET"/>
-                                <!-- (config-driven key component) use this value to denote how this vertex is related to the "SOURCE" vertex,
-                                     defined by 'protobufedge.table.relationships' bean below -->
+                                <!-- (config-driven key component) use this value to denote how this vertex is related to the "SOURCE" vertex -->
                                 <property name="relationship" value="TO"/>
-                                <!-- (config-driven key component) use this value to identify the origin or taxonomy of the datasource,
-                                     defined by 'protobufedge.table.collections' bean below-->
+                                <!-- (config-driven key component) use this value to identify the origin or taxonomy of the datasource -->
                                 <property name="collection" value="MY_CSV_DATA"/>
                             </bean>
                         </list>
@@ -265,21 +237,17 @@ http://www.springframework.org/schema/util/spring-util-4.0.xsd">
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
                                 <!-- (data-driven key component) for a given CSV record, use its EDGE_VERTEX_FROM value for the "SOURCE" component of the DataWave edge key  -->
                                 <property name="selector" value="SPECIES.TREE"/>
-                                <!-- (config-driven key component) use this value to denote how this vertex is related to the "SINK" vertex,
-                                     defined by 'protobufedge.table.relationships' bean below -->
+                                <!-- (config-driven key component) use this value to denote how this vertex is related to the "SINK" vertex -->
                                 <property name="relationship" value="FROM"/>
-                                <!-- (config-driven key component) use this value to identify the origin or taxonomy of the datasource,
-                                     defined by 'protobufedge.table.collections' bean below-->
+                                <!-- (config-driven key component) use this value to identify the origin or taxonomy of the datasource -->
                                 <property name="collection" value="MY_CSV_DATA"/>
                             </bean>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
                                 <!-- (data-driven key component) for a given CSV record, use its EDGE_VERTEX_TO value for the "SINK" component of the DataWave edge key  -->
                                 <property name="selector" value="SPECIES.ANIMAL"/>
-                                <!-- (config-driven key component) use this value to denote how this vertex is related to the "SOURCE" vertex,
-                                     defined by 'protobufedge.table.relationships' bean below -->
+                                <!-- (config-driven key component) use this value to denote how this vertex is related to the "SOURCE" vertex -->
                                 <property name="relationship" value="TO"/>
-                                <!-- (config-driven key component) use this value to identify the origin or taxonomy of the datasource,
-                                     defined by 'protobufedge.table.collections' bean below-->
+                                <!-- (config-driven key component) use this value to identify the origin or taxonomy of the datasource -->
                                 <property name="collection" value="MY_CSV_DATA"/>
                             </bean>
                         </list>
@@ -298,21 +266,17 @@ http://www.springframework.org/schema/util/spring-util-4.0.xsd">
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
                                 <!-- (data-driven key component) for a given CSV record, use its EDGE_VERTEX_FROM value for the "SOURCE" component of the DataWave edge key  -->
                                 <property name="selector" value="PERSON.PROFESSION"/>
-                                <!-- (config-driven key component) use this value to denote how this vertex is related to the "SINK" vertex,
-                                     defined by 'protobufedge.table.relationships' bean below -->
+                                <!-- (config-driven key component) use this value to denote how this vertex is related to the "SINK" vertex -->
                                 <property name="relationship" value="FROM"/>
-                                <!-- (config-driven key component) use this value to identify the origin or taxonomy of the datasource,
-                                     defined by 'protobufedge.table.collections' bean below-->
+                                <!-- (config-driven key component) use this value to identify the origin or taxonomy of the datasource -->
                                 <property name="collection" value="MY_CSV_DATA"/>
                             </bean>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
                                 <!-- (data-driven key component) for a given CSV record, use its EDGE_VERTEX_TO value for the "SINK" component of the DataWave edge key  -->
                                 <property name="selector" value="IMPLEMENT.TOOL"/>
-                                <!-- (config-driven key component) use this value to denote how this vertex is related to the "SOURCE" vertex,
-                                     defined by 'protobufedge.table.relationships' bean below -->
+                                <!-- (config-driven key component) use this value to denote how this vertex is related to the "SOURCE" vertex -->
                                 <property name="relationship" value="TO"/>
-                                <!-- (config-driven key component) use this value to identify the origin or taxonomy of the datasource,
-                                     defined by 'protobufedge.table.collections' bean below-->
+                                <!-- (config-driven key component) use this value to identify the origin or taxonomy of the datasource -->
                                 <property name="collection" value="MY_CSV_DATA"/>
                             </bean>
                         </list>
@@ -331,21 +295,17 @@ http://www.springframework.org/schema/util/spring-util-4.0.xsd">
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
                                 <!-- (data-driven key component) for a given CSV record, use its EDGE_VERTEX_FROM value for the "SOURCE" component of the DataWave edge key  -->
                                 <property name="selector" value="ENGINE.CAR"/>
-                                <!-- (config-driven key component) use this value to denote how this vertex is related to the "SINK" vertex,
-                                     defined by 'protobufedge.table.relationships' bean below -->
+                                <!-- (config-driven key component) use this value to denote how this vertex is related to the "SINK" vertex -->
                                 <property name="relationship" value="FROM"/>
-                                <!-- (config-driven key component) use this value to identify the origin or taxonomy of the datasource,
-                                     defined by 'protobufedge.table.collections' bean below-->
+                                <!-- (config-driven key component) use this value to identify the origin or taxonomy of the datasource -->
                                 <property name="collection" value="MY_CSV_DATA"/>
                             </bean>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
                                 <!-- (data-driven key component) for a given CSV record, use its EDGE_VERTEX_TO value for the "SINK" component of the DataWave edge key  -->
                                 <property name="selector" value="MAKE.CAR"/>
-                                <!-- (config-driven key component) use this value to denote how this vertex is related to the "SOURCE" vertex,
-                                     defined by 'protobufedge.table.relationships' bean below -->
+                                <!-- (config-driven key component) use this value to denote how this vertex is related to the "SOURCE" vertex -->
                                 <property name="relationship" value="TO"/>
-                                <!-- (config-driven key component) use this value to identify the origin or taxonomy of the datasource,
-                                     defined by 'protobufedge.table.collections' bean below-->
+                                <!-- (config-driven key component) use this value to identify the origin or taxonomy of the datasource -->
                                 <property name="collection" value="MY_CSV_DATA"/>
                             </bean>
                         </list>
@@ -363,21 +323,17 @@ http://www.springframework.org/schema/util/spring-util-4.0.xsd">
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
                                 <!-- (data-driven key component) for a given CSV record, use its EDGE_VERTEX_FROM value for the "SOURCE" component of the DataWave edge key  -->
                                 <property name="selector" value="DISH.FOOD"/>
-                                <!-- (config-driven key component) use this value to denote how this vertex is related to the "SINK" vertex,
-                                     defined by 'protobufedge.table.relationships' bean below -->
+                                <!-- (config-driven key component) use this value to denote how this vertex is related to the "SINK" vertex -->
                                 <property name="relationship" value="FROM"/>
-                                <!-- (config-driven key component) use this value to identify the origin or taxonomy of the datasource,
-                                     defined by 'protobufedge.table.collections' bean below-->
+                                <!-- (config-driven key component) use this value to identify the origin or taxonomy of the datasource -->
                                 <property name="collection" value="MY_CSV_DATA"/>
                             </bean>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
                                 <!-- (data-driven key component) for a given CSV record, use its EDGE_VERTEX_TO value for the "SINK" component of the DataWave edge key  -->
                                 <property name="selector" value="CAR.ATTR"/>
-                                <!-- (config-driven key component) use this value to denote how this vertex is related to the "SOURCE" vertex,
-                                     defined by 'protobufedge.table.relationships' bean below -->
+                                <!-- (config-driven key component) use this value to denote how this vertex is related to the "SOURCE" vertex -->
                                 <property name="relationship" value="TO"/>
-                                <!-- (config-driven key component) use this value to identify the origin or taxonomy of the datasource,
-                                     defined by 'protobufedge.table.collections' bean below-->
+                                <!-- (config-driven key component) use this value to identify the origin or taxonomy of the datasource -->
                                 <property name="collection" value="MY_CSV_DATA"/>
                             </bean>
                         </list>
@@ -395,21 +351,17 @@ http://www.springframework.org/schema/util/spring-util-4.0.xsd">
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
                                 <!-- (data-driven key component) for a given CSV record, use its EDGE_VERTEX_FROM value for the "SOURCE" component of the DataWave edge key  -->
                                 <property name="selector" value="CANINE.PET"/>
-                                <!-- (config-driven key component) use this value to denote how this vertex is related to the "SINK" vertex,
-                                     defined by 'protobufedge.table.relationships' bean below -->
+                                <!-- (config-driven key component) use this value to denote how this vertex is related to the "SINK" vertex -->
                                 <property name="relationship" value="FROM"/>
-                                <!-- (config-driven key component) use this value to identify the origin or taxonomy of the datasource,
-                                     defined by 'protobufedge.table.collections' bean below-->
+                                <!-- (config-driven key component) use this value to identify the origin or taxonomy of the datasource -->
                                 <property name="collection" value="MY_CSV_DATA"/>
                             </bean>
                             <bean class="datawave.ingest.mapreduce.handler.edge.define.EdgeNode">
                                 <!-- (data-driven key component) for a given CSV record, use its EDGE_VERTEX_TO value for the "SINK" component of the DataWave edge key  -->
                                 <property name="selector" value="ACTIVITY.PET"/>
-                                <!-- (config-driven key component) use this value to denote how this vertex is related to the "SOURCE" vertex,
-                                     defined by 'protobufedge.table.relationships' bean below -->
+                                <!-- (config-driven key component) use this value to denote how this vertex is related to the "SOURCE" vertex -->
                                 <property name="relationship" value="TO"/>
-                                <!-- (config-driven key component) use this value to identify the origin or taxonomy of the datasource,
-                                     defined by 'protobufedge.table.collections' bean below-->
+                                <!-- (config-driven key component) use this value to identify the origin or taxonomy of the datasource -->
                                 <property name="collection" value="MY_CSV_DATA"/>
                             </bean>
                         </list>
@@ -418,28 +370,5 @@ http://www.springframework.org/schema/util/spring-util-4.0.xsd">
             </list>
         </property>
     </bean>
-
-   <!-- Define the set of valid 'relationship' values -->
-   <bean id="protobufedge.table.relationships" class="org.springframework.beans.factory.config.SetFactoryBean">
-        <property name="targetSetClass" value="java.util.HashSet"/>
-        <property name="sourceSet">
-            <set>
-                <value>TO</value>
-                <value>FROM</value>
-            </set>
-        </property>
-    </bean>
-
-    <!-- Define the set of valid 'collection' values -->
-    <bean id="protobufedge.table.collections" class="org.springframework.beans.factory.config.SetFactoryBean">
-        <property name="targetSetClass" value="java.util.HashSet"/>
-        <property name="sourceSet">
-            <set>
-                <value>MY_CSV_DATA</value>
-                <value>UNKNOWN</value>
-            </set>
-        </property>
-    </bean>
-
 </beans>
 

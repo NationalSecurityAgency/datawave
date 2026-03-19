@@ -103,9 +103,6 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
 
     public static final String EDGE_SPRING_CONFIG = "protobufedge.spring.config";
 
-    public static final String EDGE_SPRING_RELATIONSHIPS = "protobufedge.table.relationships";
-    public static final String EDGE_SPRING_COLLECTIONS = "protobufedge.table.collections";
-
     public static final String EDGE_SETUP_FAILURE_POLICY = "protobufedge.setup.default.failurepolicy";
     public static final String EDGE_PROCESS_FAILURE_POLICY = "protobufedge.process.default.failurepolicy";
 
@@ -126,7 +123,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
 
     private Map<String,Map<String,String>> edgeTypeLookup = new HashMap<>();
 
-    private Map<String,Set<String>> disallowlistFieldLookup = new HashMap<>();
+    private Map<String, Set<String>> disallowlistFieldLookup = new HashMap<>();
     private Map<String,Set<String>> disallowlistValueLookup = new HashMap<>();
     private boolean enableDisallowlist = false;
 
@@ -151,9 +148,6 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
     protected FailurePolicy processFailurePolicy = FailurePolicy.FAIL_JOB;
 
     protected EdgeKeyVersioningCache versioningCache = null;
-
-    protected HashSet<String> edgeRelationships = new HashSet<>();
-    protected HashSet<String> collectionType = new HashSet<>();
 
     long futureDelta, pastDelta;
     long newFormatStartDate;
@@ -250,27 +244,13 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
 
         registry.put(EDGE_DEFAULT_DATA_TYPE, null);
 
-        // HashSet<String> edgeRelationships, collectionType;
-
-        if (ctx.containsBean(EDGE_SPRING_RELATIONSHIPS) && ctx.containsBean(EDGE_SPRING_COLLECTIONS)) {
-            edgeRelationships.addAll((HashSet<String>) ctx.getBean(EDGE_SPRING_RELATIONSHIPS));
-            collectionType.addAll((HashSet<String>) ctx.getBean(EDGE_SPRING_COLLECTIONS));
-        } else {
-            log.error("Edge relationships and or collection types are not configured correctly. Cannot build edge definitions");
-            if (setUpFailurePolicy == FailurePolicy.FAIL_JOB) {
-                throw new RuntimeException("Missing some spring configurations");
-            } else {
-                return; // no edges will be created but the ingest job will continue
-            }
-        }
-
         for (Entry<String,Type> entry : registry.entrySet()) {
             if (ctx.containsBean(entry.getKey())) {
                 EdgeDefinitionConfigurationHelper thing = (EdgeDefinitionConfigurationHelper) ctx.getBean(entry.getKey());
 
-                // Always call init first before getting getting edge defs. This performs validation on the config file
+                // Always call init first before getting edge defs. This performs validation on the config file
                 // and builds the edge pairs/groups
-                thing.init(edgeRelationships, collectionType);
+                thing.init();
 
                 edges.put(entry.getKey(), thing);
                 if (thing.getEnrichmentTypeMappings() != null) {
@@ -428,14 +408,6 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
 
     public void setEdges(Map<String,EdgeDefinitionConfigurationHelper> edges) {
         this.edges = edges;
-    }
-
-    public Map<String,Set<String>> getDisallowlistFieldLookup() {
-        return disallowlistFieldLookup;
-    }
-
-    public Map<String,Set<String>> getDisallowlistValueLookup() {
-        return disallowlistValueLookup;
     }
 
     private boolean isDisallowlistField(String dataType, String fieldName) {
@@ -1440,9 +1412,5 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
     public RawRecordMetadata getMetadata() {
         // TODO Auto-generated method stub
         return null;
-    }
-
-    public void setVersioningCache(EdgeKeyVersioningCache versioningCache) {
-        this.versioningCache = versioningCache;
     }
 }
