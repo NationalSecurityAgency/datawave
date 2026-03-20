@@ -49,16 +49,16 @@ public class EdgeDefinitionConfigurationHelper {
                 int nPieces = edgeNodes.size();
                 for (int ii = 0; ii < nPieces - 1; ii++) {
                     for (int jj = ii + 1; jj < nPieces; jj++) {
-                            EdgeDefinition edgePair = buildEdgePair(edgeDefinition, edgeNodes.get(ii), edgeNodes.get(jj));
-                            realEdges.add(edgePair);
+                        EdgeDefinition edgePair = buildEdgePair(edgeDefinition, edgeNodes.get(ii), edgeNodes.get(jj));
+                        realEdges.add(edgePair);
                     }
                 }
             } else if (edgeDefinition.getGroupPairs() != null) {
 
                 for (EdgeNode group1 : edgeDefinition.getGroupPairs().getGroup1()) {
                     for (EdgeNode group2 : edgeDefinition.getGroupPairs().getGroup2()) {
-                            EdgeDefinition groupPair = buildEdgePair(edgeDefinition, group1, group2);
-                            realEdges.add(groupPair);
+                        EdgeDefinition groupPair = buildEdgePair(edgeDefinition, group1, group2);
+                        realEdges.add(groupPair);
                     }
                 }
             } else {
