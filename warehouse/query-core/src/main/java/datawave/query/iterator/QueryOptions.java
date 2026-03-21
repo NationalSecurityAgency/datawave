@@ -67,6 +67,7 @@ import datawave.query.common.grouping.GroupFields;
 import datawave.query.composite.CompositeMetadata;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.function.ConfiguredFunction;
+import datawave.query.function.DocumentMatchContext;
 import datawave.query.function.DocumentPermutation;
 import datawave.query.function.Equality;
 import datawave.query.function.GetStartKey;
@@ -284,6 +285,10 @@ public class QueryOptions implements OptionDescriber {
 
     public static final String TERM_FREQUENCY_AGGREGATION_THRESHOLD_MS = "tf.agg.threshold";
 
+    public static final String DOCUMENT_MATCH_CONTEXT_REQUIRED = "document.match.context.required";
+    public static final String DOCUMENT_MATCH_MAX_ENCODED_SIZE = "document.match.max.encoded.size";
+    public static final String DOCUMENT_MATCH_MAX_DECODED_SIZE = "document.match.max.decoded.size";
+
     public static final String FIELD_COUNTS = "field.counts";
     public static final String TERM_COUNTS = "term.counts";
     public static final String CARDINALITY_THRESHOLD = "cardinality.threshold";
@@ -339,6 +344,7 @@ public class QueryOptions implements OptionDescriber {
     protected EventDataQueryFilter eventEvaluationFilter;
     // filter specifically for event keys. required when performing a seeking aggregation
     protected EventDataQueryFilter eventFilter;
+    protected boolean retainDocumentColumnFamily = false;
 
     protected int maxEvaluationPipelines = 25;
     protected int maxPipelineCachedResults = 25;
@@ -405,6 +411,7 @@ public class QueryOptions implements OptionDescriber {
     protected Map<String,Set<String>> nonIndexedDataTypeMap = Maps.newHashMap();
 
     protected boolean termFrequenciesRequired = false;
+    protected boolean documentMatchContextRequired = false;
     protected Set<String> termFrequencyFields = Collections.emptySet();
     protected Set<String> contentExpansionFields;
 
@@ -467,6 +474,8 @@ public class QueryOptions implements OptionDescriber {
     // aggregation thresholds
     private int docAggregationThresholdMs = -1;
     private int tfAggregationThresholdMs = -1;
+    private int documentMatchMaxEncodedSize = DocumentMatchContext.DEFAULT_MAX_ENCODED_SIZE;
+    private int documentMatchMaxDecodedSize = DocumentMatchContext.DEFAULT_MAX_DECODED_SIZE;
 
     private CountMap fieldCounts;
     private CountMap termCounts;
@@ -533,6 +542,8 @@ public class QueryOptions implements OptionDescriber {
         this.evaluationFilter = other.evaluationFilter;
         this.fiEvaluationFilter = other.fiEvaluationFilter;
         this.eventEvaluationFilter = other.eventEvaluationFilter;
+        this.eventFilter = other.eventFilter;
+        this.retainDocumentColumnFamily = other.retainDocumentColumnFamily;
 
         this.ivaratorCacheDirConfigs = (other.ivaratorCacheDirConfigs == null) ? null : new ArrayList<>(other.ivaratorCacheDirConfigs);
         this.hdfsSiteConfigURLs = other.hdfsSiteConfigURLs;
@@ -563,6 +574,7 @@ public class QueryOptions implements OptionDescriber {
         this.sortedUIDs = other.sortedUIDs;
 
         this.termFrequenciesRequired = other.termFrequenciesRequired;
+        this.documentMatchContextRequired = other.documentMatchContextRequired;
         this.termFrequencyFields = other.termFrequencyFields;
         this.contentExpansionFields = other.contentExpansionFields;
 
@@ -592,6 +604,8 @@ public class QueryOptions implements OptionDescriber {
 
         this.docAggregationThresholdMs = other.docAggregationThresholdMs;
         this.tfAggregationThresholdMs = other.tfAggregationThresholdMs;
+        this.documentMatchMaxEncodedSize = other.documentMatchMaxEncodedSize;
+        this.documentMatchMaxDecodedSize = other.documentMatchMaxDecodedSize;
 
         this.fieldCounts = other.fieldCounts;
         this.termCounts = other.termCounts;
@@ -870,11 +884,23 @@ public class QueryOptions implements OptionDescriber {
             //  @formatter:off
             eventFilter = new EventDataQueryFieldFilter()
                             .withFields(fields)
-                            .withMaxNextCount(getEventNextSeek());
+                            .withMaxNextCount(getEventNextSeek())
+                            .withDocumentColumnFamily(retainDocumentColumnFamily);
             //  @formatter:on
         }
 
         return eventFilter == null ? null : eventFilter.clone();
+    }
+
+    public void setRetainDocumentColumnFamily(boolean retainDocumentColumnFamily) {
+        if (this.retainDocumentColumnFamily != retainDocumentColumnFamily) {
+            this.retainDocumentColumnFamily = retainDocumentColumnFamily;
+            // invalidate the cached filters to force them to be rebuilt instead of
+            // caching stale clones created under the old settings.
+            this.eventFilter = null;
+            this.evaluationFilter = null;
+            this.eventEvaluationFilter = null;
+        }
     }
 
     /**
@@ -1435,6 +1461,9 @@ public class QueryOptions implements OptionDescriber {
         options.put(TF_NEXT_SEEK, "The number of next calls made by a Term Frequency data filter or aggregator before a seek is issued");
         options.put(DOC_AGGREGATION_THRESHOLD_MS, "Document aggregations that exceed this threshold are logged as a warning");
         options.put(TERM_FREQUENCY_AGGREGATION_THRESHOLD_MS, "TermFrequency aggregations that exceed this threshold are logged as a warning");
+        options.put(DOCUMENT_MATCH_CONTEXT_REQUIRED, "Whether the query requires gathering document-match context");
+        options.put(DOCUMENT_MATCH_MAX_ENCODED_SIZE, "Maximum encoded d-column payload size, in bytes, to inspect for document:match evaluation");
+        options.put(DOCUMENT_MATCH_MAX_DECODED_SIZE, "Maximum decoded d-column payload size, in bytes, to inspect for document:match evaluation");
         options.put(FIELD_COUNTS, "Map of field counts from the global index");
         options.put(TERM_COUNTS, "Map of term counts from the global index");
         return new IteratorOptions(getClass().getSimpleName(), "Runs a query against the DATAWAVE tables", options, null);
@@ -1653,6 +1682,18 @@ public class QueryOptions implements OptionDescriber {
 
         if (options.containsKey(TERM_FREQUENCY_AGGREGATION_THRESHOLD_MS)) {
             this.tfAggregationThresholdMs = Integer.parseInt(options.get(TERM_FREQUENCY_AGGREGATION_THRESHOLD_MS));
+        }
+
+        if (options.containsKey(DOCUMENT_MATCH_CONTEXT_REQUIRED)) {
+            this.documentMatchContextRequired = Boolean.parseBoolean(options.get(DOCUMENT_MATCH_CONTEXT_REQUIRED));
+        }
+
+        if (options.containsKey(DOCUMENT_MATCH_MAX_ENCODED_SIZE)) {
+            this.documentMatchMaxEncodedSize = Integer.parseInt(options.get(DOCUMENT_MATCH_MAX_ENCODED_SIZE));
+        }
+
+        if (options.containsKey(DOCUMENT_MATCH_MAX_DECODED_SIZE)) {
+            this.documentMatchMaxDecodedSize = Integer.parseInt(options.get(DOCUMENT_MATCH_MAX_DECODED_SIZE));
         }
 
         if (options.containsKey(DATATYPE_FILTER)) {
@@ -2460,6 +2501,34 @@ public class QueryOptions implements OptionDescriber {
 
     public void setTfAggregationThresholdMs(int tfAggregationThresholdMs) {
         this.tfAggregationThresholdMs = tfAggregationThresholdMs;
+    }
+
+    public int getDocumentMatchMaxEncodedSize() {
+        return documentMatchMaxEncodedSize;
+    }
+
+    public void setDocumentMatchMaxEncodedSize(int documentMatchMaxEncodedSize) {
+        this.documentMatchMaxEncodedSize = documentMatchMaxEncodedSize;
+    }
+
+    public int getDocumentMatchMaxDecodedSize() {
+        return documentMatchMaxDecodedSize;
+    }
+
+    public void setDocumentMatchMaxDecodedSize(int documentMatchMaxDecodedSize) {
+        this.documentMatchMaxDecodedSize = documentMatchMaxDecodedSize;
+    }
+
+    public boolean isDocumentMatchContextRequired() {
+        return documentMatchContextRequired;
+    }
+
+    public void setDocumentMatchContextRequired(boolean documentMatchContextRequired) {
+        this.documentMatchContextRequired = documentMatchContextRequired;
+    }
+
+    protected DocumentMatchContext.Limits getDocumentMatchLimits() {
+        return new DocumentMatchContext.Limits(documentMatchMaxEncodedSize, documentMatchMaxDecodedSize);
     }
 
     /**

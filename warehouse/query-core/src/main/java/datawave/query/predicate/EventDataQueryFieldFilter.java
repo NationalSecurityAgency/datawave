@@ -21,6 +21,7 @@ import datawave.query.jexl.JexlASTHelper;
  * This filter only operates on event keys.
  */
 public class EventDataQueryFieldFilter implements EventDataQueryFilter {
+    private static final String DOCUMENT_COLUMN_FAMILY = "d";
 
     private Key document = null;
     // the number of times next is called before issuing a seek
@@ -33,6 +34,7 @@ public class EventDataQueryFieldFilter implements EventDataQueryFilter {
     // the set of fields to retain
     private TreeSet<String> fields;
     private final EventKey parser;
+    private boolean retainDocumentColumnFamily = false;
 
     /**
      * Default constructor
@@ -53,6 +55,7 @@ public class EventDataQueryFieldFilter implements EventDataQueryFilter {
         }
         this.maxNextCount = other.maxNextCount;
         this.fields = new TreeSet<>(other.fields);
+        this.retainDocumentColumnFamily = other.retainDocumentColumnFamily;
         // need to create a separate parser as the parser is not thread safe
         this.parser = new EventKey();
         // do not copy nextCount or currentField because that is internal state
@@ -81,6 +84,11 @@ public class EventDataQueryFieldFilter implements EventDataQueryFilter {
      */
     public EventDataQueryFieldFilter withMaxNextCount(int maxNextCount) {
         this.maxNextCount = maxNextCount;
+        return this;
+    }
+
+    public EventDataQueryFieldFilter withDocumentColumnFamily(boolean retainDocumentColumnFamily) {
+        this.retainDocumentColumnFamily = retainDocumentColumnFamily;
         return this;
     }
 
@@ -126,6 +134,12 @@ public class EventDataQueryFieldFilter implements EventDataQueryFilter {
      * @return true if the key should be retained
      */
     private boolean apply(Key key, boolean update) {
+        if (retainDocumentColumnFamily && DOCUMENT_COLUMN_FAMILY.equals(key.getColumnFamily().toString())) {
+            nextCount = 0;
+            currentField = null;
+            return true;
+        }
+
         parser.parse(key);
         String field = parser.getField();
         field = JexlASTHelper.deconstructIdentifier(field);

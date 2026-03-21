@@ -11,6 +11,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.junit.Test;
 
 import com.google.common.collect.Maps;
@@ -24,7 +26,11 @@ import datawave.query.attributes.Document;
 import datawave.query.attributes.Numeric;
 import datawave.query.jexl.DatawaveJexlContext;
 import datawave.query.jexl.HitListArithmetic;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.functions.DocumentFunctions;
 import datawave.query.jexl.functions.TermFrequencyList;
+import datawave.query.jexl.visitors.DocumentMatchFunctionRebuildingVisitor;
+import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.postprocessing.tf.TermOffsetMap;
 import datawave.query.util.Tuple3;
 
@@ -193,6 +199,61 @@ public class JexlEvaluationTest {
     }
 
     @Test
+    public void testDocumentMatchAddsDocumentAttribute() {
+        String query = "FOO == 'bar' && document:match('car')";
+        Key docKey = new Key("shard", "datatype\0uid");
+        Document d = new Document();
+        d.put("FOO", new Content("bar", docKey, true));
+
+        DatawaveJexlContext context = new DatawaveJexlContext();
+        d.visit(Collections.singleton("FOO"), context);
+        context.set(DocumentFunctions.DOCUMENT_MATCH_CONTEXT_JEXL_VARIABLE_NAME,
+                        new DocumentMatchContext(List.of(Maps.immutableEntry(new Key("row", "d", "datatype\0uid\0BODY", "A"),
+                                        new org.apache.accumulo.core.data.Value(buildEncodedValue("scar car")))), 1024));
+
+        assertEvaluation(query, docKey, d, context);
+        assertEquals("{\"car\":{\"BODY\":[1,5]}}", ((Content) d.get(DocumentFunctions.DOCUMENT_MATCHES)).getContent());
+        assertEquals(new ColumnVisibility("A"), d.get(DocumentFunctions.DOCUMENT_MATCHES).getColumnVisibility());
+    }
+
+    @Test
+    public void testDocumentMatchMergesDocumentAttributeAcrossCalls() {
+        String query = "FOO == 'bar' && document:match('BODY', 'car') && document:match('CONTENT2', 'lawyer')";
+        Key docKey = new Key("shard", "datatype\0uid");
+        Document d = new Document();
+        d.put("FOO", new Content("bar", docKey, true));
+
+        DatawaveJexlContext context = new DatawaveJexlContext();
+        d.visit(Collections.singleton("FOO"), context);
+        context.set(DocumentFunctions.DOCUMENT_MATCH_CONTEXT_JEXL_VARIABLE_NAME,
+                        new DocumentMatchContext(List.of(
+                                        Maps.immutableEntry(new Key("row", "d", "datatype\0uid\0BODY", "A"),
+                                                        new org.apache.accumulo.core.data.Value(buildEncodedValue("scar car"))),
+                                        Maps.immutableEntry(new Key("row", "d", "datatype\0uid\0CONTENT2", "A"),
+                                                        new org.apache.accumulo.core.data.Value(buildEncodedValue("lawyer car")))),
+                                        1024));
+
+        assertEvaluation(query, docKey, d, context);
+        assertEquals("{\"car\":{\"BODY\":[1,5]},\"lawyer\":{\"CONTENT2\":[0]}}", ((Content) d.get(DocumentFunctions.DOCUMENT_MATCHES)).getContent());
+        assertEquals(new ColumnVisibility("A"), d.get(DocumentFunctions.DOCUMENT_MATCHES).getColumnVisibility());
+    }
+
+    private byte[] buildEncodedValue(String content) {
+        try {
+            java.io.ByteArrayOutputStream bos = new java.io.ByteArrayOutputStream();
+            java.io.OutputStream b64s = java.util.Base64.getEncoder().wrap(bos);
+            java.util.zip.GZIPOutputStream gzip = new java.util.zip.GZIPOutputStream(b64s);
+            gzip.write(content.getBytes());
+            gzip.close();
+            b64s.close();
+            bos.close();
+            return bos.toByteArray();
+        } catch (java.io.IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Test
     public void testCompareFunction() {
         // eq op
         String query = "FOO == 'bar' && filter:compare(FIELD_A,'==','all',FIELD_B)";
@@ -298,13 +359,25 @@ public class JexlEvaluationTest {
     }
 
     private void assertEvaluation(String query, Key key, Document d, DatawaveJexlContext context, boolean expected) {
-        JexlEvaluation evaluation = new JexlEvaluation(query);
+        JexlEvaluation evaluation = new JexlEvaluation(rewriteDocumentMatchFunctions(query));
         boolean result = evaluation.apply(new Tuple3<>(key, d, context));
         assertEquals(expected, result);
 
-        evaluation = new JexlEvaluation(query, new HitListArithmetic());
+        evaluation = new JexlEvaluation(rewriteDocumentMatchFunctions(query), new HitListArithmetic());
         result = evaluation.apply(new Tuple3<>(key, d, context));
         assertEquals(expected, result);
+    }
+
+    private String rewriteDocumentMatchFunctions(String query) {
+        try {
+            ASTJexlScript script = JexlASTHelper.parseAndFlattenJexlQuery(query);
+            if (!DocumentMatchFunctionRebuildingVisitor.requiresDocumentMatchContext(script)) {
+                return query;
+            }
+            return JexlStringBuildingVisitor.buildQueryWithoutParse(DocumentMatchFunctionRebuildingVisitor.rewrite(script));
+        } catch (org.apache.commons.jexl3.parser.ParseException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private TermFrequencyList buildTfList(String field, int... offsets) {

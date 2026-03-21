@@ -3447,6 +3447,22 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         getConfig().setTfAggregationThresholdMs(tfAggregationThresholdMs);
     }
 
+    public int getDocumentMatchMaxEncodedSize() {
+        return getConfig().getDocumentMatchMaxEncodedSize();
+    }
+
+    public void setDocumentMatchMaxEncodedSize(int documentMatchMaxEncodedSize) {
+        getConfig().setDocumentMatchMaxEncodedSize(documentMatchMaxEncodedSize);
+    }
+
+    public int getDocumentMatchMaxDecodedSize() {
+        return getConfig().getDocumentMatchMaxDecodedSize();
+    }
+
+    public void setDocumentMatchMaxDecodedSize(int documentMatchMaxDecodedSize) {
+        getConfig().setDocumentMatchMaxDecodedSize(documentMatchMaxDecodedSize);
+    }
+
     public boolean getPruneQueryOptions() {
         return getConfig().getPruneQueryOptions();
     }

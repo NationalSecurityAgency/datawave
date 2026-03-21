@@ -27,6 +27,8 @@ import com.google.common.base.Predicates;
 
 import datawave.query.attributes.AttributeFactory;
 import datawave.query.attributes.Document;
+import datawave.query.function.DocumentMatchConfig;
+import datawave.query.function.DocumentMatchFactory;
 import datawave.query.function.Equality;
 import datawave.query.function.RangeProvider;
 import datawave.query.function.TLDEquality;
@@ -264,6 +266,13 @@ public class TLDQueryIterator extends QueryIterator {
     protected Function<Tuple2<Key,Document>,Tuple3<Key,Document,Map<String,Object>>> buildTfFunction(TermFrequencyConfig tfConfig) {
         tfConfig.setTld(true);
         return TFFactory.getFunction(tfConfig);
+    }
+
+    @Override
+    protected Function<Tuple3<Key,Document,Map<String,Object>>,Tuple3<Key,Document,Map<String,Object>>> buildDocumentMatchFunction(
+                    DocumentMatchConfig documentMatchConfig) {
+        documentMatchConfig.setTld(true);
+        return DocumentMatchFactory.getFunction(documentMatchConfig);
     }
 
     /**

@@ -28,6 +28,7 @@
         <bean class="datawave.query.language.functions.jexl.AtomValuesMatchFunction"/>
         <bean class="datawave.query.language.functions.jexl.Options"/>
         <bean class="datawave.query.language.functions.jexl.Rename"/>
+        <bean class="datawave.query.language.functions.jexl.DocumentMatch"/>
         <bean class="datawave.query.language.functions.jexl.GroupBy"/>
         <bean class="datawave.query.language.functions.jexl.GroupByMillisecond"/>
         <bean class="datawave.query.language.functions.jexl.GroupBySecond"/>
@@ -400,6 +401,8 @@
         <!--    control when to log warnings for long aggregations    -->
         <property name="docAggregationThresholdMs" value="-1" />
         <property name="tfAggregationThresholdMs" value="-1" />
+        <property name="documentMatchMaxEncodedSize" value="268435456" />
+        <property name="documentMatchMaxDecodedSize" value="402653184" />
         <!--   enable per-tablet pruning of certain query options     -->
         <property name="pruneQueryOptions" value="false" />
         <property name="rebuildDatatypeFilter" value="false" />

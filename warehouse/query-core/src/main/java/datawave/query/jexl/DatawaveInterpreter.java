@@ -51,6 +51,7 @@ import datawave.query.attributes.Attributes;
 import datawave.query.attributes.ValueTuple;
 import datawave.query.collections.FunctionalSet;
 import datawave.query.jexl.functions.ContentFunctionsDescriptor;
+import datawave.query.jexl.functions.DocumentFunctions;
 import datawave.query.jexl.functions.QueryFunctions;
 import datawave.query.jexl.nodes.ExceededOr;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
@@ -128,6 +129,16 @@ public class DatawaveInterpreter extends Interpreter {
 
         addHits(result);
 
+        if (isDocumentMatchFunction(nodeString) && result instanceof String) {
+            if (hasSiblings(node)) {
+                resultMap.put(nodeString, result);
+                return result;
+            }
+            boolean matched = !((String) result).isEmpty();
+            resultMap.put(nodeString, matched);
+            return matched;
+        }
+
         // if the function stands alone, then it needs to return ag boolean
         // if the function is paired with a method that is called on its results (like 'size') then the
         // actual results must be returned.
@@ -137,6 +148,10 @@ public class DatawaveInterpreter extends Interpreter {
         }
         resultMap.put(nodeString, result instanceof Collection ? !((Collection) result).isEmpty() : result);
         return result instanceof Collection ? !((Collection) result).isEmpty() : result;
+    }
+
+    private boolean isDocumentMatchFunction(String nodeString) {
+        return nodeString.startsWith(DocumentFunctions.DOCUMENT_FUNCTION_NAMESPACE + ":" + DocumentFunctions.DOCUMENT_MATCH_FUNCTION_NAME);
     }
 
     /**

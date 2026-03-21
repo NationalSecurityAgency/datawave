@@ -119,6 +119,7 @@ import datawave.query.jexl.visitors.BoundedRangeIndexExpansionVisitor;
 import datawave.query.jexl.visitors.ConjunctionEliminationVisitor;
 import datawave.query.jexl.visitors.DepthVisitor;
 import datawave.query.jexl.visitors.DisjunctionEliminationVisitor;
+import datawave.query.jexl.visitors.DocumentMatchFunctionRebuildingVisitor;
 import datawave.query.jexl.visitors.ExecutableDeterminationVisitor;
 import datawave.query.jexl.visitors.ExecutableDeterminationVisitor.STATE;
 import datawave.query.jexl.visitors.ExecutableExpansionVisitor;
@@ -720,6 +721,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         addOption(cfg, QueryOptions.HIT_LIST, Boolean.toString(config.isHitList()), false);
         addOption(cfg, QueryOptions.TERM_FREQUENCY_FIELDS, Joiner.on(',').join(config.getQueryTermFrequencyFields()), false);
         addOption(cfg, QueryOptions.TERM_FREQUENCIES_REQUIRED, Boolean.toString(config.isTermFrequenciesRequired()), false);
+        addOption(cfg, QueryOptions.DOCUMENT_MATCH_CONTEXT_REQUIRED, Boolean.toString(config.isDocumentMatchContextRequired()), false);
         addOption(cfg, QueryOptions.QUERY, newQueryString, false);
         addOption(cfg, QueryOptions.QUERY_ID, config.getQuery().getId().toString(), false);
         addOption(cfg, QueryOptions.FULL_TABLE_SCAN_ONLY, Boolean.toString(isFullTable), false);
@@ -1510,6 +1512,12 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 logQuery(config.getQueryTree(),
                                 "Computed that the query " + (contentFunctions.isEmpty() ? " does not require " : "requires") + " term frequency lookup");
             }
+        }
+
+        config.setDocumentMatchContextRequired(DocumentMatchFunctionRebuildingVisitor.requiresDocumentMatchContext(config.getQueryTree()));
+        if (log.isDebugEnabled()) {
+            logQuery(config.getQueryTree(), "Computed that the query " + (config.isDocumentMatchContextRequired() ? "requires" : "does not require")
+                            + " document-match context lookup");
         }
 
         stopwatch.stop();
@@ -2432,6 +2440,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             addOption(cfg, QueryOptions.MAX_PIPELINE_CACHED_RESULTS, Integer.toString(config.getMaxPipelineCachedResults()), false);
             addOption(cfg, QueryOptions.MAX_IVARATOR_SOURCES, Integer.toString(config.getMaxIvaratorSources()), false);
             addOption(cfg, QueryOptions.MAX_IVARATOR_SOURCE_WAIT, Long.toString(config.getMaxIvaratorSourceWait()), false);
+            addOption(cfg, QueryOptions.DOCUMENT_MATCH_MAX_ENCODED_SIZE, Integer.toString(config.getDocumentMatchMaxEncodedSize()), false);
+            addOption(cfg, QueryOptions.DOCUMENT_MATCH_MAX_DECODED_SIZE, Integer.toString(config.getDocumentMatchMaxDecodedSize()), false);
 
             if (config.getYieldThresholdMs() != Long.MAX_VALUE && config.getYieldThresholdMs() > 0) {
                 addOption(cfg, QueryOptions.YIELD_THRESHOLD_MS, Long.toString(config.getYieldThresholdMs()), false);

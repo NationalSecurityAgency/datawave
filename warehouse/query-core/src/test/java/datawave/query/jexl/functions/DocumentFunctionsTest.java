@@ -1,0 +1,306 @@
+package datawave.query.jexl.functions;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+import java.io.ByteArrayOutputStream;
+import java.io.OutputStream;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.zip.GZIPOutputStream;
+
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.log4j.AppenderSkeleton;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+import org.apache.log4j.spi.LoggingEvent;
+import org.junit.Test;
+
+import datawave.query.function.DocumentMatchContext;
+
+/**
+ * Unit tests for {@link DocumentFunctions} covering view selection, matching semantics, payload limits, merged results, and visibility handling.
+ */
+public class DocumentFunctionsTest {
+    private final Logger logger = Logger.getLogger(DocumentFunctions.class);
+
+    /**
+     * Verifies that {@code document:match(STRING)} searches all available views and records offsets per view beneath the matched-string key.
+     */
+    @Test
+    public void testMatchAcrossAllViews() throws Exception {
+        DocumentMatchContext context = new DocumentMatchContext(List.of(entry("test\0uid\0BODY", "scar car"), entry("test\0uid\0META", "carpet")), 1024);
+
+        String result = DocumentFunctions.match(context, "car");
+
+        assertEquals("{\"car\":{\"BODY\":[1,5],\"META\":[0]}}", result);
+        assertEquals(result, DocumentFunctions.toJson(context.getMergedMatches()));
+    }
+
+    /**
+     * Verifies that a trailing {@code *} in the requested view name performs prefix matching across views.
+     */
+    @Test
+    public void testWildcardViewMatch() throws Exception {
+        DocumentMatchContext context = new DocumentMatchContext(
+                        List.of(entry("test\0uid\0BODY", "car"), entry("test\0uid\0BODY_TEXT", "car car"), entry("test\0uid\0META", "car")), 1024);
+
+        String result = DocumentFunctions.match("BODY*", context, "car");
+
+        assertEquals("{\"car\":{\"BODY\":[0],\"BODY_TEXT\":[0,4]}}", result);
+    }
+
+    /**
+     * Verifies that overlapping substring matches are reported with all starting offsets.
+     */
+    @Test
+    public void testOverlappingMatches() throws Exception {
+        DocumentMatchContext context = new DocumentMatchContext(List.of(entry("test\0uid\0BODY", "banana")), 1024);
+
+        String result = DocumentFunctions.match("BODY", context, "ana");
+
+        assertEquals("{\"ana\":{\"BODY\":[1,3]}}", result);
+    }
+
+    /**
+     * Verifies that matching is case-sensitive.
+     */
+    @Test
+    public void testCaseSensitiveMatch() throws Exception {
+        DocumentMatchContext context = new DocumentMatchContext(List.of(entry("test\0uid\0BODY", "scar car")), 1024);
+
+        assertTrue(DocumentFunctions.match(context, "Car").isEmpty());
+    }
+
+    /**
+     * Verifies that encoded payloads larger than the configured limit are skipped as non-matching.
+     */
+    @Test
+    public void testOversizedPayloadIsNonMatch() throws Exception {
+        Map.Entry<Key,Value> entry = entry("test\0uid\0BODY", "scar car");
+        DocumentMatchContext context = new DocumentMatchContext(List.of(entry), entry.getValue().get().length - 1);
+
+        assertTrue(DocumentFunctions.match(context, "car").isEmpty());
+    }
+
+    /**
+     * Verifies that decoded payloads larger than the configured limit are skipped as non-matching.
+     */
+    @Test
+    public void testOversizedDecodedPayloadIsNonMatch() throws Exception {
+        DocumentMatchContext context = new DocumentMatchContext(List.of(entry("test\0uid\0BODY", "scar car")), 1024, 3);
+
+        assertTrue(DocumentFunctions.match(context, "car").isEmpty());
+    }
+
+    /**
+     * Verifies that an empty {@code d}-entry set yields no match.
+     */
+    @Test
+    public void testNoDocumentEntriesIsNonMatch() {
+        assertTrue(DocumentFunctions.match(new DocumentMatchContext(List.of(), 1024), "car").isEmpty());
+    }
+
+    /**
+     * Verifies that undecodable payloads are treated as non-matching rather than failing evaluation.
+     */
+    @Test
+    public void testDecodeFailureIsNonMatch() {
+        DocumentMatchContext context = new DocumentMatchContext(List.of(Map.entry(new Key("row", "d", "test\0uid\0BODY"), new Value("not-base64".getBytes()))),
+                        1024);
+
+        assertTrue(DocumentFunctions.match(context, "car").isEmpty());
+    }
+
+    /**
+     * Verifies that MIME-style base64 payloads with trailing CRLF line breaks still decode and match correctly.
+     */
+    @Test
+    public void testMatchWithBase64LineBreaks() throws Exception {
+        DocumentMatchContext context = new DocumentMatchContext(List.of(entryWithEncodedSuffix("test\0uid\0BODY", "/* Origins */  Fix.", "\r\n")), 1024);
+
+        String result = DocumentFunctions.match("BODY", context, "Origins");
+
+        assertEquals("{\"Origins\":{\"BODY\":[3]}}", result);
+    }
+
+    /**
+     * Verifies that payloads stored as plain base64-encoded UTF-8 text still decode and match when gzip expansion is not possible.
+     */
+    @Test
+    public void testMatchWithBase64OnlyPayload() {
+        DocumentMatchContext context = new DocumentMatchContext(List.of(base64OnlyEntry("test\0uid\0BODY", "/* Origins */  Fix.")), 1024);
+
+        String result = DocumentFunctions.match("BODY", context, "Origins");
+
+        assertEquals("{\"Origins\":{\"BODY\":[3]}}", result);
+    }
+
+    /**
+     * Verifies that multiple {@code document:match(...)} calls merge their offsets into the document-wide result set.
+     */
+    @Test
+    public void testMatchMergesResultsAcrossCalls() throws Exception {
+        DocumentMatchContext context = new DocumentMatchContext(List.of(entry("test\0uid\0BODY", "scar car"), entry("test\0uid\0CONTENT2", "lawyer car")),
+                        1024);
+
+        assertEquals("{\"car\":{\"BODY\":[1,5]}}", DocumentFunctions.match("BODY", context, "car"));
+        assertEquals("{\"lawyer\":{\"CONTENT2\":[0]}}", DocumentFunctions.match("CONTENT2", context, "lawyer"));
+        assertEquals("{\"car\":{\"BODY\":[1,5]},\"lawyer\":{\"CONTENT2\":[0]}}", DocumentFunctions.toJson(context.getMergedMatches()));
+    }
+
+    /**
+     * Verifies that repeated {@code document:match(...)} calls for the same string merge under one top-level match-string key.
+     */
+    @Test
+    public void testMatchMergesSameSearchAcrossCalls() throws Exception {
+        DocumentMatchContext context = new DocumentMatchContext(List.of(entry("test\0uid\0BODY", "scar car"), entry("test\0uid\0CONTENT2", "lawyer car")),
+                        1024);
+
+        assertEquals("{\"car\":{\"BODY\":[1,5]}}", DocumentFunctions.match("BODY", context, "car"));
+        assertEquals("{\"car\":{\"CONTENT2\":[7]}}", DocumentFunctions.match("CONTENT2", context, "car"));
+        assertEquals("{\"car\":{\"BODY\":[1,5],\"CONTENT2\":[7]}}", DocumentFunctions.toJson(context.getMergedMatches()));
+    }
+
+    /**
+     * Verifies that the first matched {@code d}-column visibility is retained and that a later mismatch produces a single info-level log message.
+     */
+    @Test
+    public void testMatchLogsVisibilityMismatchAndKeepsFirstVisibility() throws Exception {
+        TestAppender appender = new TestAppender();
+        Level originalLevel = logger.getLevel();
+        logger.addAppender(appender);
+        logger.setLevel(Level.INFO);
+        try {
+            DocumentMatchContext context = new DocumentMatchContext(
+                            List.of(entry("test\0uid\0BODY", "scar car", "A"), entry("test\0uid\0CONTENT2", "lawyer car", "B")), 1024);
+
+            assertEquals("{\"car\":{\"BODY\":[1,5]}}", DocumentFunctions.match("BODY", context, "car"));
+            assertEquals("{\"lawyer\":{\"CONTENT2\":[0]}}", DocumentFunctions.match("CONTENT2", context, "lawyer"));
+            assertEquals(new ColumnVisibility("A"), context.getFirstMatchingColumnVisibility());
+            assertEquals(1, appender.infoMessages.size());
+            assertTrue(appender.infoMessages.get(0).contains("differing d-column visibilities"));
+        } finally {
+            logger.removeAppender(appender);
+            logger.setLevel(originalLevel);
+        }
+    }
+
+    /**
+     * Builds a test {@code d}-column entry with an empty visibility.
+     *
+     * @param cq
+     *            column qualifier to use
+     * @param content
+     *            decoded content to encode into the value
+     * @return encoded test entry
+     * @throws Exception
+     *             if test payload creation fails
+     */
+    private Map.Entry<Key,Value> entry(String cq, String content) throws Exception {
+        return entry(cq, content, "");
+    }
+
+    /**
+     * Builds a test {@code d}-column entry with caller-supplied visibility and gzip+base64 encoded content.
+     *
+     * @param cq
+     *            column qualifier to use
+     * @param content
+     *            decoded content to encode into the value
+     * @param visibility
+     *            column visibility to attach to the key
+     * @return encoded test entry
+     * @throws Exception
+     *             if test payload creation fails
+     */
+    private Map.Entry<Key,Value> entry(String cq, String content, String visibility) throws Exception {
+        return entryWithEncodedSuffix(cq, content, visibility, "");
+    }
+
+    /**
+     * Builds a test {@code d}-column entry with caller-supplied visibility and an optional suffix appended to the encoded payload.
+     *
+     * @param cq
+     *            column qualifier to use
+     * @param content
+     *            decoded content to encode into the value
+     * @param visibility
+     *            column visibility to attach to the key
+     * @param encodedSuffix
+     *            suffix bytes to append after base64 encoding, such as {@code \r\n}
+     * @return encoded test entry
+     * @throws Exception
+     *             if test payload creation fails
+     */
+    private Map.Entry<Key,Value> entryWithEncodedSuffix(String cq, String content, String visibility, String encodedSuffix) throws Exception {
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        OutputStream b64s = java.util.Base64.getEncoder().wrap(bos);
+        GZIPOutputStream gzip = new GZIPOutputStream(b64s);
+        gzip.write(content.getBytes());
+        gzip.close();
+        b64s.close();
+        if (!encodedSuffix.isEmpty()) {
+            bos.write(encodedSuffix.getBytes());
+        }
+        bos.close();
+        return new AbstractMap.SimpleEntry<>(new Key("row", "d", cq, visibility), new Value(bos.toByteArray()));
+    }
+
+    /**
+     * Builds a test {@code d}-column entry with an empty visibility and an optional suffix appended to the encoded payload.
+     *
+     * @param cq
+     *            column qualifier to use
+     * @param content
+     *            decoded content to encode into the value
+     * @param encodedSuffix
+     *            suffix bytes to append after base64 encoding, such as {@code \r\n}
+     * @return encoded test entry
+     * @throws Exception
+     *             if test payload creation fails
+     */
+    private Map.Entry<Key,Value> entryWithEncodedSuffix(String cq, String content, String encodedSuffix) throws Exception {
+        return entryWithEncodedSuffix(cq, content, "", encodedSuffix);
+    }
+
+    /**
+     * Builds a test {@code d}-column entry whose value is only base64-encoded UTF-8 text.
+     *
+     * @param cq
+     *            column qualifier to use
+     * @param content
+     *            decoded content to encode into the value
+     * @return encoded test entry
+     */
+    private Map.Entry<Key,Value> base64OnlyEntry(String cq, String content) {
+        byte[] encoded = java.util.Base64.getEncoder().encode(content.getBytes());
+        return new AbstractMap.SimpleEntry<>(new Key("row", "d", cq), new Value(encoded));
+    }
+
+    /**
+     * Minimal log4j appender used to capture info-level visibility-mismatch messages.
+     */
+    private static class TestAppender extends AppenderSkeleton {
+        private final List<String> infoMessages = new ArrayList<>();
+
+        @Override
+        protected void append(LoggingEvent event) {
+            if (Level.INFO.equals(event.getLevel())) {
+                infoMessages.add(event.getRenderedMessage());
+            }
+        }
+
+        @Override
+        public void close() {}
+
+        @Override
+        public boolean requiresLayout() {
+            return false;
+        }
+    }
+}

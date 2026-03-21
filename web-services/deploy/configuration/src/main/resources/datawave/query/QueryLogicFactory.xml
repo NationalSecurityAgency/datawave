@@ -24,6 +24,7 @@
         <bean class="datawave.query.language.functions.jexl.IsNotNull"/>
         <bean class="datawave.query.language.functions.jexl.Include"/>
         <bean class="datawave.query.language.functions.jexl.Exclude"/>
+        <bean class="datawave.query.language.functions.jexl.DocumentMatch"/>
         <bean class="datawave.query.language.functions.jexl.Text"/>
         <bean class="datawave.query.language.functions.jexl.GeoFunction"/>
         <bean class="datawave.query.language.functions.jexl.Loaded"/>
@@ -410,6 +411,8 @@
         <!--    control when to log warnings for long aggregations    -->
         <property name="docAggregationThresholdMs" value="-1" />
         <property name="tfAggregationThresholdMs" value="-1" />
+        <property name="documentMatchMaxEncodedSize" value="268435456" />
+        <property name="documentMatchMaxDecodedSize" value="402653184" />
         <property name="summaryFieldName" value="SUMMARY" />
         <property name="validationRules">
             <list value-type="datawave.query.rules.QueryRule">

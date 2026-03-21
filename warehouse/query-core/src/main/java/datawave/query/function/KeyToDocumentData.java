@@ -214,7 +214,7 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
 
             while (docAttrKey != null) {
                 boolean seeked = false;
-                if (equality.partOf(documentStartKey, docAttrKey.get())) {
+                if (isPartOfDocument(documentStartKey, docAttrKey.get())) {
                     if (filter == null || filter.keep(docAttrKey.get())) {
                         docKeys.add(getDocKey(docAttrKey.get()));
                     }
@@ -254,13 +254,50 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
         return documentAttributes;
     }
 
+    private boolean isPartOfDocument(Key documentStartKey, Key candidateKey) {
+        return equality.partOf(documentStartKey, candidateKey);
+    }
+
     // map the key to the dockey (only shard, datatype, uid)
     public static Key getDocKey(Key key) {
         final ByteSequence row = key.getRowData();
-        final ByteSequence cf = key.getColumnFamilyData();
+        final ByteSequence cf = getDocColumnFamily(key);
         final ByteSequence cv = key.getColumnVisibilityData();
         return new Key(row.getBackingArray(), row.offset(), row.length(), cf.getBackingArray(), cf.offset(), cf.length(), EMPTY_BYTE_SEQUENCE.getBackingArray(),
                         EMPTY_BYTE_SEQUENCE.offset(), EMPTY_BYTE_SEQUENCE.length(), cv.getBackingArray(), cv.offset(), cv.length(), key.getTimestamp());
+    }
+
+    /**
+     * extracts the proper column family byte sequence from a key regardless of whether it is an event key or a 'd' column key.
+     *
+     * @param key
+     *            the key to process
+     * @return the column family, consisting of datatype and uid.
+     */
+    private static ByteSequence getDocColumnFamily(Key key) {
+        final ByteSequence cf = key.getColumnFamilyData();
+        if (!"d".equals(key.getColumnFamily().toString())) {
+            return cf;
+        }
+
+        ByteSequence cq = key.getColumnQualifierData();
+        int firstNull = -1;
+        int secondNull = -1;
+        for (int i = 0; i < cq.length(); i++) {
+            if (cq.byteAt(i) == 0x00) {
+                if (firstNull < 0) {
+                    firstNull = i;
+                } else {
+                    secondNull = i;
+                    break;
+                }
+            }
+        }
+        if (firstNull < 0) {
+            return cf;
+        }
+        int end = (secondNull < 0) ? cq.length() : secondNull;
+        return cq.subSequence(0, end);
     }
 
     private static List<Entry<Key,Value>> appendHierarchyFields(List<Entry<Key,Value>> documentAttributes, Key key, Range seekRange,

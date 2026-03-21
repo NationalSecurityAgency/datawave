@@ -85,8 +85,10 @@ import datawave.microservice.query.QueryImpl;
 import datawave.query.QueryParameters;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.RebuildingScannerTestHelper;
+import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.config.annotation.AllHitsQueryConfig;
 import datawave.query.config.annotation.AnnotationConfig;
+import datawave.query.function.DocumentMatchContext;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.planner.TimedVisitorManager;
@@ -255,6 +257,55 @@ public abstract class ShardQueryLogicTest {
         this.queryParameters.clear();
         this.startDate = null;
         this.endDate = null;
+    }
+
+    /**
+     * Verifies that the Spring-configured {@link ShardQueryLogic} bean exposes the document-match limits through its accessor surface.
+     */
+    @Test
+    public void testDocumentMatchLimitsDefaultFromSpringConfig() {
+        assertEquals(DocumentMatchContext.DEFAULT_MAX_ENCODED_SIZE, logic.getDocumentMatchMaxEncodedSize());
+        assertEquals(DocumentMatchContext.DEFAULT_MAX_DECODED_SIZE, logic.getDocumentMatchMaxDecodedSize());
+    }
+
+    /**
+     * Verifies that the bean-style setters update both the top-level logic and its backing configuration.
+     */
+    @Test
+    public void testDocumentMatchLimitSettersUpdateLogicAndConfig() {
+        int encoded = 1024;
+        int decoded = 2048;
+
+        logic.setDocumentMatchMaxEncodedSize(encoded);
+        logic.setDocumentMatchMaxDecodedSize(decoded);
+
+        assertEquals(encoded, logic.getDocumentMatchMaxEncodedSize());
+        assertEquals(decoded, logic.getDocumentMatchMaxDecodedSize());
+        assertEquals(encoded, logic.getConfig().getDocumentMatchMaxEncodedSize());
+        assertEquals(decoded, logic.getConfig().getDocumentMatchMaxDecodedSize());
+    }
+
+    /**
+     * Verifies that document-match limit overrides survive {@link ShardQueryLogic#initialize(AccumuloClient, Query, Set)} and appear on the per-query config.
+     */
+    @Test
+    public void testDocumentMatchLimitsPropagateThroughInitialize() throws Exception {
+        int encoded = 4096;
+        int decoded = 8192;
+
+        logic.setDocumentMatchMaxEncodedSize(encoded);
+        logic.setDocumentMatchMaxDecodedSize(decoded);
+
+        this.query = "UUID == '" + caponeUID + "'";
+        this.startDate = dateFormat.parse("20091231");
+        this.endDate = dateFormat.parse("20150101");
+
+        Query settings = createSettings();
+        AccumuloClient client = createClient();
+        ShardQueryConfiguration config = (ShardQueryConfiguration) logic.initialize(client, settings, authSet);
+
+        assertEquals(encoded, config.getDocumentMatchMaxEncodedSize());
+        assertEquals(decoded, config.getDocumentMatchMaxDecodedSize());
     }
 
     private AccumuloClient createClient() throws Exception {
