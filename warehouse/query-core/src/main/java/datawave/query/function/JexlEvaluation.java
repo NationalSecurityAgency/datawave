@@ -24,6 +24,7 @@ import datawave.query.jexl.DatawaveJexlEngine;
 import datawave.query.jexl.DefaultArithmetic;
 import datawave.query.jexl.DelayedNonEventIndexContext;
 import datawave.query.jexl.HitListArithmetic;
+import datawave.query.jexl.functions.DocumentFunctions;
 import datawave.query.postprocessing.tf.PhraseIndexes;
 import datawave.query.postprocessing.tf.TermOffsetMap;
 import datawave.query.transformer.ExcerptTransform;
@@ -97,7 +98,12 @@ public class JexlEvaluation implements Predicate<Tuple3<Key,Document,DatawaveJex
             log.trace("Evaluating " + query + " against document " + input.second().getMetadata() + " with context " + input.third());
         }
 
-        Object o = script.execute(input.third());
+        DocumentMatchContext documentMatchContext = (DocumentMatchContext) input.third().get(DocumentFunctions.DOCUMENT_MATCH_CONTEXT_JEXL_VARIABLE_NAME);
+        if (documentMatchContext != null) {
+            documentMatchContext.clearMergedMatches();
+        }
+        Object o;
+        o = script.execute(input.third());
 
         if (log.isTraceEnabled()) {
             log.trace("Evaluation of " + query + " against document " + input.second().getMetadata() + " returned " + o);
@@ -108,6 +114,16 @@ public class JexlEvaluation implements Predicate<Tuple3<Key,Document,DatawaveJex
         // Add delayed info to document
         if (matched && input.third() instanceof DelayedNonEventIndexContext) {
             ((DelayedNonEventIndexContext) input.third()).populateDocument(input.second());
+        }
+
+        String documentMatches = (documentMatchContext == null) ? "" : DocumentFunctions.toJson(documentMatchContext.getMergedMatches());
+        if (matched && !documentMatches.isEmpty()) {
+            Document document = input.second();
+            Content matchesAttribute = new Content(documentMatches, document.getMetadata(), document.isToKeep());
+            if (documentMatchContext != null && documentMatchContext.getFirstMatchingColumnVisibility() != null) {
+                matchesAttribute.setColumnVisibility(documentMatchContext.getFirstMatchingColumnVisibility());
+            }
+            document.put(DocumentFunctions.DOCUMENT_MATCHES, matchesAttribute);
         }
 
         if (arithmetic instanceof HitListArithmetic) {

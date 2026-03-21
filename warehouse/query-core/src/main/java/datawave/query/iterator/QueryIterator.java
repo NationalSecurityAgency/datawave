@@ -68,6 +68,8 @@ import datawave.query.attributes.ValueTuple;
 import datawave.query.composite.CompositeMetadata;
 import datawave.query.function.Aggregation;
 import datawave.query.function.DataTypeAsField;
+import datawave.query.function.DocumentMatchConfig;
+import datawave.query.function.DocumentMatchFactory;
 import datawave.query.function.DocumentMetadata;
 import datawave.query.function.DocumentPermutation;
 import datawave.query.function.DocumentProjection;
@@ -98,13 +100,16 @@ import datawave.query.iterator.profile.QuerySpanCollector;
 import datawave.query.iterator.profile.SourceTrackingIterator;
 import datawave.query.iterator.waitwindow.WaitWindowObserver;
 import datawave.query.iterator.waitwindow.WaitWindowOverseerIterator;
+import datawave.query.jexl.ArithmeticJexlEngines;
 import datawave.query.jexl.DatawaveJexlContext;
 import datawave.query.jexl.StatefulArithmetic;
 import datawave.query.jexl.functions.FieldIndexAggregator;
 import datawave.query.jexl.functions.IdentityAggregator;
 import datawave.query.jexl.functions.KeyAdjudicator;
 import datawave.query.jexl.visitors.DelayedNonEventSubTreeVisitor;
+import datawave.query.jexl.visitors.DocumentMatchFunctionRebuildingVisitor;
 import datawave.query.jexl.visitors.IteratorBuildingVisitor;
+import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.visitors.SatisfactionVisitor;
 import datawave.query.jexl.visitors.VariableNameVisitor;
 import datawave.query.postprocessing.tf.TFFactory;
@@ -256,6 +261,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
 
         this.exceededOrEvaluationCache = new HashMap<>();
         this.myEvaluationFunction = getJexlEvaluation(this.getQuery(), arithmetic);
+        this.setRetainDocumentColumnFamily(false);
 
         this.documentOptions = options;
         this.myEnvironment = env;
@@ -975,7 +981,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
 
             // get the function we use for the tf functionality. Note we are
             // getting an additional source deep copy for this function
-            final Iterator<Tuple3<Key,Document,Map<String,Object>>> itrWithContext;
+            Iterator<Tuple3<Key,Document,Map<String,Object>>> itrWithContext;
             // TODO: this should be dynamic based on the query fields, not a flag passed to the iterator
             if (this.isTermFrequenciesRequired()) {
 
@@ -995,6 +1001,17 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 itrWithContext = TraceIterators.transform(tupleItr, tfFunction, "Term Frequency Lookup");
             } else {
                 itrWithContext = Iterators.transform(tupleItr, new EmptyContext<>());
+            }
+
+            if (shouldCollectDocumentMatchContext(documentSource)) {
+                SortedKeyValueIterator<Key,Value> documentMatchSource = getSourceDeepCopy("document-match context");
+                DocumentMatchConfig documentMatchConfig = new DocumentMatchConfig();
+                documentMatchConfig.setSource(documentMatchSource);
+                documentMatchConfig.setTimeFilter(getTimeFilter());
+                documentMatchConfig.setLimits(getDocumentMatchLimits());
+                Function<Tuple3<Key,Document,Map<String,Object>>,Tuple3<Key,Document,Map<String,Object>>> documentMatchFunction = buildDocumentMatchFunction(
+                                documentMatchConfig);
+                itrWithContext = TraceIterators.transform(itrWithContext, documentMatchFunction, "Document Match Context Lookup");
             }
 
             try {
@@ -1041,6 +1058,19 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         return TFFactory.getFunction(tfConfig);
     }
 
+    /**
+     * This method exists so that extending classes can implement specific versions of the document-match context function. Specifically, so the
+     * {@link datawave.query.tld.TLDQueryIterator} can mark document-match collection as TLD-aware.
+     *
+     * @param documentMatchConfig
+     *            a document-match configuration
+     * @return a document-match context function
+     */
+    protected Function<Tuple3<Key,Document,Map<String,Object>>,Tuple3<Key,Document,Map<String,Object>>> buildDocumentMatchFunction(
+                    DocumentMatchConfig documentMatchConfig) {
+        return DocumentMatchFactory.getFunction(documentMatchConfig);
+    }
+
     private Range getDocumentRange(NestedQueryIterator<Key> documentSource) {
         if (null == documentSource) {
             return range;
@@ -1076,16 +1106,18 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             arithmetic = getArithmetic();
         }
 
+        String rewrittenQuery = rewriteDocumentMatchFunctions(query, arithmetic);
+
         if (null == documentSource) {
-            jexlEvaluationFunction = new JexlEvaluation(query, arithmetic);
+            jexlEvaluationFunction = new JexlEvaluation(rewrittenQuery, arithmetic);
         } else {
             NestedQuery<Key> nestedQuery = documentSource.getNestedQuery();
             if (null == nestedQuery) {
-                jexlEvaluationFunction = new JexlEvaluation(query, arithmetic);
+                jexlEvaluationFunction = new JexlEvaluation(rewrittenQuery, arithmetic);
             } else {
                 jexlEvaluationFunction = nestedQuery.getEvaluation();
                 if (null == jexlEvaluationFunction) {
-                    jexlEvaluationFunction = new JexlEvaluation(query, arithmetic);
+                    jexlEvaluationFunction = new JexlEvaluation(rewriteDocumentMatchFunctions(nestedQuery.getQuery(), arithmetic), arithmetic);
                 }
             }
         }
@@ -1098,6 +1130,29 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         }
 
         return jexlEvaluationFunction;
+    }
+
+    private String rewriteDocumentMatchFunctions(String query, JexlArithmetic arithmetic) {
+        ASTJexlScript parsedQuery = ArithmeticJexlEngines.getEngine(arithmetic).parse(query);
+        if (!DocumentMatchFunctionRebuildingVisitor.requiresDocumentMatchContext(parsedQuery)) {
+            return query;
+        }
+        return JexlStringBuildingVisitor.buildQueryWithoutParse(DocumentMatchFunctionRebuildingVisitor.rewrite(parsedQuery));
+    }
+
+    protected boolean shouldCollectDocumentMatchContext(NestedQueryIterator<Key> documentSource) {
+        if (!isDocumentMatchContextRequired()) {
+            return false;
+        }
+        if (documentSource == null) {
+            return true;
+        }
+        NestedQuery<Key> nestedQuery = documentSource.getNestedQuery();
+        if (nestedQuery == null || nestedQuery.getQuery() == null) {
+            return true;
+        }
+        ASTJexlScript nestedScript = ArithmeticJexlEngines.getEngine(getArithmetic()).parse(nestedQuery.getQuery());
+        return DocumentMatchFunctionRebuildingVisitor.requiresDocumentMatchContext(nestedScript);
     }
 
     protected LimitFields getLimitFields() {
