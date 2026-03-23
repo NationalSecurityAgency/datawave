@@ -32,7 +32,6 @@ import org.apache.accumulo.core.client.IsolatedScanner;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.RowIterator;
 import org.apache.accumulo.core.client.Scanner;
-import org.apache.accumulo.core.client.TableDeletedException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.TableOfflineException;
 import org.apache.accumulo.core.client.admin.Locations;
@@ -1075,7 +1074,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
                     // Validate table state
                     if (!(client instanceof InMemoryAccumuloClient)) {
                         if (!fetcher.tableExists(tableName))
-                            throw new TableDeletedException(tableName);
+                            throw new TableNotFoundException(null, tableName, "Table does not exist");
                         if (!fetcher.isTableOnline(tableName))
                             throw new TableOfflineException("Table " + tableName + " is offline");
                     }

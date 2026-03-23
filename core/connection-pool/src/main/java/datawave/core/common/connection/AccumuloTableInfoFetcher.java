@@ -30,7 +30,7 @@ public class AccumuloTableInfoFetcher {
     }
 
     /**
-     * Get the TableId for a table name using the public {@code tableIdMap()} API.
+     * Get the TableId for a table name.
      *
      * @param tableName
      *            the table name
@@ -47,7 +47,7 @@ public class AccumuloTableInfoFetcher {
     }
 
     /**
-     * Check if a table exists using the public {@code exists()} API.
+     * Check if a table exists.
      *
      * @param tableName
      *            the table name
@@ -58,7 +58,7 @@ public class AccumuloTableInfoFetcher {
     }
 
     /**
-     * Check if a table is online using the public {@code isOnline()} API.
+     * Check if a table is online.
      *
      * @param tableName
      *            the table name
@@ -73,7 +73,7 @@ public class AccumuloTableInfoFetcher {
     }
 
     /**
-     * Get tablet locations for the given ranges using the public {@code locate()} API.
+     * Get tablet locations for the given ranges.
      *
      * @param tableName
      *            the table name
@@ -93,7 +93,7 @@ public class AccumuloTableInfoFetcher {
     }
 
     /**
-     * Get the count of running major compactions across all tablet servers using the public {@code getActiveCompactions()} API.
+     * Get the count of running major compactions across all tablet servers.
      * <p>
      * Note: This counts only running compactions (not queued), which differs slightly from the original Thrift-based implementation that also counted queued
      * compactions. This is acceptable because the MAJC_THRESHOLD default is 3000 (a high safety margin) and this is polled on each bulk load cycle.
