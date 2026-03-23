@@ -90,7 +90,7 @@ public class FieldExistenceRule extends ShardQueryRule {
             Set<String> missingFields = FieldMissingFromDateRangeVisitor.getNonIngestedFields(ruleConfig.getMetadataHelper(), jexlQuery, Collections.emptySet(),
                             getSpecialFields(), settings.getBeginDate(), settings.getEndDate());
             if (!missingFields.isEmpty()) {
-                result.addMessage("There is no data in the following fields " + missingFields + " for the entire date range "
+                result.addMessage("There is no data in the following fields " + missingFields + " for the entire query date range "
                                 + DateHelper.format(settings.getBeginDate()) + " to " + DateHelper.format(settings.getEndDate()) + ".");
             }
         } catch (Exception e) {
