@@ -87,14 +87,13 @@ public class BoundedRangeIndexLookup extends AsyncIndexLookup {
      * This method is responsible for creating a Runnable, submitting it to the executor and registering the future with the {@link ScanMonitor}.
      */
     @Override
-    public synchronized void submit() {
+    public void submit() {
         if (indexLookupMap == null) {
+            Preconditions.checkNotNull(monitor, "BoundedRangeIndexLookup requires a ScanMonitor");
             indexLookupMap = new IndexLookupMap(config.getMaxUnfieldedExpansionThreshold(), config.getMaxValueExpansionThreshold());
 
             Runnable runnable = createRunnable(getTableName(), config.getAuthorizations().iterator().next());
             future = execService.submit(runnable);
-
-            Preconditions.checkNotNull(monitor, "BoundedRange index expansion requires a ScanMonitor");
             monitor.registerTask(future, config.getMaxIndexScanTimeMillis());
         }
     }
@@ -136,9 +135,7 @@ public class BoundedRangeIndexLookup extends AsyncIndexLookup {
                 }
 
             } catch (Exception e) {
-                log.error("Exception seen: {}", e.getMessage());
-                // mark the field as threshold exceeded regardless of the exception type
-                markExceeded();
+                handleException(e);
             } finally {
                 if (log.isTraceEnabled()) {
                     log.trace("closing scanner");
@@ -268,15 +265,19 @@ public class BoundedRangeIndexLookup extends AsyncIndexLookup {
             }
         } catch (Exception e) {
             // any exception causes the range to marked as value exceeded
-            markExceeded();
+            handleException(e);
         }
     }
 
     /**
      * Manipulates the {@link #indexLookupMap} so the bounded range term will be wrapped with an exceeded value marker.
+     *
+     * @param e
+     *            the exception
      */
-    protected void markExceeded() {
-        log.debug("marking range as exceeded");
+    protected void handleException(Exception e) {
+        log.warn("BoundedRangeIndexLookup saw exception: {}", e.getMessage());
+        log.debug("marking bounded range as value exceeded");
         indexLookupMap.put(field, "");
         indexLookupMap.get(field).setThresholdExceeded();
     }

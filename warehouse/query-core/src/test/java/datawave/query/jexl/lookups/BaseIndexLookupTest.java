@@ -64,6 +64,9 @@ public abstract class BaseIndexLookupTest {
 
     private final StringBuilder sb = new StringBuilder();
 
+    protected ScanMonitor monitor;
+    private ExecutorService monitorExecutor;
+
     @BeforeAll
     public static void setup() throws Exception {
         InMemoryInstance instance = new InMemoryInstance();
@@ -93,11 +96,16 @@ public abstract class BaseIndexLookupTest {
         query = null;
         result = null;
         executor = Executors.newFixedThreadPool(5);
+
+        monitor = ScanMonitor.of("query-id", null);
+        monitorExecutor = Executors.newSingleThreadExecutor();
+        monitorExecutor.submit(monitor);
     }
 
     @AfterEach
     public void afterEach() {
         executor.shutdownNow();
+        monitorExecutor.shutdownNow();
     }
 
     protected void addDelayIterator(int delay) {
