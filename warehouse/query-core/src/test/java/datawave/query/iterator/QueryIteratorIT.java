@@ -58,6 +58,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
+import datawave.accumulo.core.util.AccumuloConfigurationWrapper;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.Type;
 import datawave.ingest.protobuf.TermWeight;
@@ -71,7 +72,6 @@ import datawave.query.function.JexlEvaluation;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.util.TypeMetadata;
-import datawave.accumulo.core.util.AccumuloConfigurationWrapper;
 
 /**
  * Integration tests for the QueryIterator
