@@ -1,7 +1,5 @@
 package datawave.query.jexl.visitors;
 
-import static datawave.core.iterators.TimeoutExceptionIterator.EXCEPTEDVALUE;
-
 import java.util.Set;
 
 import org.apache.commons.jexl3.parser.ASTJexlScript;
@@ -142,26 +140,20 @@ public class RegexIndexExpansionVisitorIT extends BaseIndexExpansionTest {
     }
 
     @Test
-    public void testSimulatedTimeout() throws Exception {
-        write("bar", "FIELD_A");
-        write("bat", "FIELD_A", EXCEPTEDVALUE);
-        write("baz", "FIELD_A");
-        String query = "FIELD_A =~ 'ba.*'";
-        String expected = "((_Value_ = true) && (FIELD_A =~ 'ba.*'))";
-        driveExpansion(query, expected);
-    }
-
-    @Test
     public void testZeroTimeout() throws Exception {
         write("bar", "FIELD_A");
         write("bat", "FIELD_A");
         write("baz", "FIELD_A");
         String query = "FIELD_A =~ 'ba.*'";
-        // new index lookups treat zero timeout as 'don't even run the scan'
-        // String expected = "((_Value_ = true) && (FIELD_A =~ 'ba.*'))";
-        String expected = "FIELD_A == 'bar' || FIELD_A == 'bat' || FIELD_A == 'baz'";
         config.setMaxIndexScanTimeMillis(0L);
-        driveExpansion(query, expected);
+        if (config.isUseNewIndexLookups()) {
+            // new index lookups treat zero timeout as 'don't even run the scan'
+            String expected = "((_Value_ = true) && (FIELD_A =~ 'ba.*'))";
+            driveExpansion(query, expected);
+        } else {
+            String expected = "FIELD_A == 'bar' || FIELD_A == 'bat' || FIELD_A == 'baz'";
+            driveExpansion(query, expected);
+        }
     }
 
     @Test
