@@ -1109,6 +1109,36 @@ public class AllFieldMetadataHelper {
     }
 
     /**
+     * Fetch the Set of all fields marked as being hidden, {@link ColumnFamilyConstants#COLF_H}. Returns a multimap of datatype to field
+     *
+     * @return a multimap of datatypes to hidden fields
+     * @throws TableNotFoundException
+     *             if no table exists
+     */
+    @Cacheable(value = "loadHiddenFields", key = "{#root.target.auths,#root.target.metadataTableName}", cacheManager = "metadataHelperCacheManager",
+                    sync = true)
+    public Multimap<String,String> loadHiddenFields() throws TableNotFoundException {
+        log.debug("cache fault for loadHiddenFields({}, {})", this.auths, this.metadataTableName);
+
+        if (log.isTraceEnabled()) {
+            log.trace("loadHiddenFields from table: {}", metadataTableName);
+        }
+
+        Multimap<String,String> fields = HashMultimap.create();
+
+        try (Scanner bs = ScannerHelper.createScanner(accumuloClient, metadataTableName, auths)) {
+            bs.setRange(new Range());
+            bs.fetchColumnFamily(ColumnFamilyConstants.COLF_H);
+
+            for (Entry<Key,Value> entry : bs) {
+                fields.put(getDatatype(entry.getKey()), entry.getKey().getRow().toString());
+            }
+        }
+
+        return Multimaps.unmodifiableMultimap(fields);
+    }
+
+    /**
      * Fetch the Set of all fields marked as being reverse indexed, {@link ColumnFamilyConstants#COLF_RI}. Returns a multimap of datatype to field
      *
      * @return the multimap of datatypes to reverse indexed fields
