@@ -718,6 +718,31 @@ public class MetadataHelper {
     }
 
     /**
+     * Get the set of hidden fields for the provided ingest type filter. A null or empty filter indicates all hidden fields should be returned.
+     *
+     * @param ingestTypeFilter
+     *            the ingest type filter
+     * @return the set of hidden fields given the provided ingest type filter
+     * @throws TableNotFoundException
+     *             if the table does not exist
+     */
+    @Cacheable(value = "getHiddenFields", key = "{#root.target.auths,#root.target.metadataTableName}", cacheManager = "metadataHelperCacheManager", sync = true)
+    public Set<String> getHiddenFields(Set<String> ingestTypeFilter) throws TableNotFoundException {
+
+        Multimap<String,String> hiddenFields = this.allFieldMetadataHelper.loadHiddenFields();
+
+        Set<String> fields = new HashSet<>();
+        if (ingestTypeFilter == null || ingestTypeFilter.isEmpty()) {
+            fields.addAll(hiddenFields.values());
+        } else {
+            for (String datatype : ingestTypeFilter) {
+                fields.addAll(hiddenFields.get(datatype));
+            }
+        }
+        return Collections.unmodifiableSet(fields);
+    }
+
+    /**
      * Returns a Set of all TextNormalizers in use by any type in Accumulo
      *
      * @param table
@@ -2155,5 +2180,4 @@ public class MetadataHelper {
         RegExFilter.setRegexs(cqRegex, null, null, regex, null, false);
         return cqRegex;
     }
-
 }
