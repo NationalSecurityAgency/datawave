@@ -293,14 +293,14 @@ public class Scan implements Callable<Scan> {
             if (isScanTimedOutException(e)) {
                 // this is okay. This means that we are being timesliced.
                 myScan.addRange(currentRange);
-                return this;
-            }
-            if (isInterruptedException(e)) {
-                log.info("Scan interrupted");
             } else {
-                log.error("Scan failed", e);
+                if (isInterruptedException(e)) {
+                    log.info("Scan interrupted");
+                } else {
+                    log.error("Scan failed", e);
+                }
+                throw e;
             }
-            throw e;
         } finally {
             if (null != delegatedResource) {
                 delegatorReference.close(delegatedResource);
