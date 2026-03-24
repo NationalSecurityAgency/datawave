@@ -31,6 +31,6 @@ public class IterationInterruptedCheck {
      * @return true if t is an IterationInterruptedException
      */
     public static boolean isIterationInterruptedException(Throwable t) {
-        return t != null && IIE_CLASS.isInstance(t);
+        return t != null && t.getClass().equals(IIE_CLASS);
     }
 }
