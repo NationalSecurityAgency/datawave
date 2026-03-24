@@ -25,6 +25,7 @@ import datawave.next.async.RunnableWithContext;
 import datawave.next.stats.DocIdQueryIteratorStats;
 import datawave.next.stats.DocumentIteratorStats;
 import datawave.query.iterator.QueryOptions;
+import datawave.query.util.IterationInterruptedCheck;
 
 /**
  * A runnable that handles async scanning of a tablet to find document candidates.
@@ -65,6 +66,9 @@ public class DocumentIdProducer implements RunnableWithContext {
                     executeScan();
                     executing = false;
                 } catch (RuntimeException e) {
+                    if (!IterationInterruptedCheck.isIterationInterruptedException(e)) {
+                        throw e;
+                    }
                     log.warn("time sliced, resubmitting scan for {}", getContext());
                 }
             }

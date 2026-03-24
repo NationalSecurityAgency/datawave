@@ -17,6 +17,7 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
+import org.apache.accumulo.core.iteratorsImpl.system.IterationInterruptedException;
 import org.apache.accumulo.core.iteratorsImpl.system.SortedMapIterator;
 import org.apache.hadoop.io.Text;
 import org.junit.jupiter.api.Test;
@@ -45,7 +46,7 @@ class IndexIteratorTest {
     @Test
     void testIterationInterrupted() {
         IndexIterator itr = createInterruptibleIndexIterator("FIELD_A", uids);
-        assertThrows(RuntimeException.class, () -> driveIterator(itr, uids, "FIELD_A"));
+        assertThrows(IterationInterruptedException.class, () -> driveIterator(itr, uids, "FIELD_A"));
     }
 
     @Test
@@ -57,7 +58,7 @@ class IndexIteratorTest {
         itr.next();
 
         assertTrue(itr.hasTop());
-        assertThrows(RuntimeException.class, itr::next);
+        assertThrows(IterationInterruptedException.class, itr::next);
     }
 
     @Test
@@ -208,7 +209,7 @@ class IndexIteratorTest {
     }
 
     /**
-     * Helper class that will throw a {@link RuntimeException} after reaching the preconfigured number of max iterations.
+     * Helper class that will throw an {@link IterationInterruptedException} after reaching the preconfigured number of max iterations.
      * <p>
      * When using this class be sure that the backing data contains at least three elements.
      */
@@ -246,7 +247,7 @@ class IndexIteratorTest {
             super.next();
 
             if (++count > maxIterations) {
-                throw new RuntimeException("throwing exception for tests");
+                throw new IterationInterruptedException("throwing exception for tests");
             }
         }
     }

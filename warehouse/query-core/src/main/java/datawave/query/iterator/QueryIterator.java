@@ -118,6 +118,7 @@ import datawave.query.transformer.SummaryTransform;
 import datawave.query.transformer.UniqueTransform;
 import datawave.query.util.EmptyContext;
 import datawave.query.util.EntryToTuple;
+import datawave.query.util.IterationInterruptedCheck;
 import datawave.query.util.TraceIterators;
 import datawave.query.util.Tuple2;
 import datawave.query.util.Tuple3;
@@ -567,8 +568,8 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     }
 
     /**
-     * Handle an exception returned from seek or next. This will silently ignore RuntimeException as that happens when the underlying iterator was interrupted
-     * because the client is no longer listening.
+     * Handle an exception returned from seek or next. This will silently ignore IterationInterruptedException as that happens when the underlying iterator was
+     * interrupted because the client is no longer listening.
      *
      * @param e
      *            the exception to handle
@@ -578,29 +579,29 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     private void handleException(Exception e) throws IOException {
         Throwable reason = e;
 
-        // We need to pass IOException, RuntimeException, and TabletClosedExceptions up to the Tablet as they are
+        // We need to pass IOException, IterationInterruptedException, and TabletClosedExceptions up to the Tablet as they are
         // handled specially to ensure that the client will retry the scan elsewhere
         IOException ioe = null;
-        RuntimeException re = null;
+        RuntimeException iie = null;
         TabletClosedException tce = null;
         if (reason instanceof IOException) {
             ioe = (IOException) reason;
         }
-        if (reason instanceof RuntimeException) {
-            re = (RuntimeException) reason;
+        if (IterationInterruptedCheck.isIterationInterruptedException(reason)) {
+            iie = (RuntimeException) reason;
         }
         if (reason instanceof TabletClosedException) {
             tce = (TabletClosedException) reason;
         }
 
         int depth = 1;
-        while (re == null && reason.getCause() != null && reason.getCause() != reason && depth < 100) {
+        while (iie == null && reason.getCause() != null && reason.getCause() != reason && depth < 100) {
             reason = reason.getCause();
             if (reason instanceof IOException) {
                 ioe = (IOException) reason;
             }
-            if (reason instanceof RuntimeException) {
-                re = (RuntimeException) reason;
+            if (IterationInterruptedCheck.isIterationInterruptedException(reason)) {
+                iie = (RuntimeException) reason;
             }
             if (reason instanceof TabletClosedException) {
                 tce = (TabletClosedException) reason;
@@ -610,9 +611,9 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
 
         // NOTE: Only logging debug (for the most part) here because the Tablet/LookupTask will log the exception
         // as a WARN if we actually have a problem here
-        if (re != null) {
+        if (iie != null) {
             log.debug("Query interrupted " + queryId, e);
-            throw re;
+            throw iie;
         } else if (tce != null) {
             log.debug("Query tablet closed " + queryId, e);
             throw tce;

@@ -30,6 +30,7 @@ import datawave.next.retrieval.DocumentIterator;
 import datawave.next.retrieval.DocumentIteratorOptions;
 import datawave.next.stats.ScanTimeStats;
 import datawave.query.iterator.QueryOptions;
+import datawave.query.util.IterationInterruptedCheck;
 
 /**
  * Retrieves the document specified by the {@link KeyWithContext}.
@@ -95,6 +96,9 @@ public class DocumentRangeScan implements RunnableWithContext {
                     }
                     executing = false;
                 } catch (RuntimeException e) {
+                    if (!IterationInterruptedCheck.isIterationInterruptedException(e)) {
+                        throw e;
+                    }
                     log.warn("time sliced, resubmitting scan for {}", getContext());
                 }
             }

@@ -31,6 +31,7 @@ import datawave.data.hash.UID;
 import datawave.data.hash.UIDConstants;
 import datawave.query.Constants;
 import datawave.query.iterator.QueryOptions;
+import datawave.query.util.IterationInterruptedCheck;
 import datawave.query.util.Tuple3;
 
 /**
@@ -327,7 +328,10 @@ public class DescendantCountFunction implements SourcedFunction<Tuple3<Range,Key
             // and return the count
             return uids.size();
         } catch (RuntimeException e) {
-            // Re-throw RuntimeException as-is since this is an expected event from
+            if (!IterationInterruptedCheck.isIterationInterruptedException(e)) {
+                throw e;
+            }
+            // Re-throw IterationInterruptedException as-is since this is an expected event from
             // a client going away. Re-throwing as an IOException will cause the tserver
             // to catch the exception and log a warning. Re-throwing as-is will let the
             // tserver catch and ignore it as intended.
@@ -425,7 +429,10 @@ public class DescendantCountFunction implements SourcedFunction<Tuple3<Range,Key
             result.setSkippedDescendants(skippedSomeDescendants);
             return result;
         } catch (RuntimeException e) {
-            // Re-throw RuntimeException as-is since this is an expected event from
+            if (!IterationInterruptedCheck.isIterationInterruptedException(e)) {
+                throw e;
+            }
+            // Re-throw IterationInterruptedException as-is since this is an expected event from
             // a client going away. Re-throwing as an IOException will cause the tserver
             // to catch the exception and log a warning. Re-throwing as-is will let the
             // tserver catch and ignore it as intended.

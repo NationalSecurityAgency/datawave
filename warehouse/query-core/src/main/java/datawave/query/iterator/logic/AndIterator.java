@@ -28,6 +28,7 @@ import datawave.query.iterator.NestedIterator;
 import datawave.query.iterator.Util;
 import datawave.query.iterator.Util.Transformer;
 import datawave.query.iterator.waitwindow.WaitWindowObserver;
+import datawave.query.util.IterationInterruptedCheck;
 
 /**
  * Performs a merge join of the child iterators. It is expected that all child iterators return values in sorted order.
@@ -383,7 +384,10 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
                     log.debug(id + ": AndIterator.seek() passing through WaitWindowOverrunException: " + e.getMessage());
                     throw e;
                 } catch (RuntimeException e2) {
-                    // throw RuntimeExceptions as-is with no modifications so the QueryIterator can handle it
+                    if (!IterationInterruptedCheck.isIterationInterruptedException(e2)) {
+                        throw e2;
+                    }
+                    // throw IterationInterruptedException as-is with no modifications so the QueryIterator can handle it
                     throw e2;
                 } catch (Exception e2) {
                     if (child.isNonEventField()) {
@@ -404,7 +408,10 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
                 // key because the uids of the sources need to be equal to return a match
                 this.waitWindowObserver.propagateException(null, true, false, e);
             } catch (RuntimeException re) {
-                // allow the QueryIterator to handle these exceptions
+                if (!IterationInterruptedCheck.isIterationInterruptedException(re)) {
+                    throw re;
+                }
+                // allow the QueryIterator to handle IterationInterruptedExceptions
                 throw re;
             } catch (Exception e) {
                 include.remove();
@@ -543,7 +550,10 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
                 log.debug(id + ": AndIterator.advanceIterators() passing through WaitWindowOverrunException: " + wwoe.getMessage());
                 throw wwoe;
             } catch (RuntimeException re) {
-                // allow the QueryIterator to handle these exceptions
+                if (!IterationInterruptedCheck.isIterationInterruptedException(re)) {
+                    throw re;
+                }
+                // allow the QueryIterator to handle IterationInterruptedExceptions
                 throw re;
             } catch (Exception e) {
                 seenException = true;

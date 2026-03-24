@@ -28,6 +28,7 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
+import org.apache.accumulo.core.iteratorsImpl.system.IterationInterruptedException;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.hadoop.io.Text;
 
@@ -127,7 +128,7 @@ public class RebuildingScannerTestHelper {
         @Override
         public void next() throws IOException {
             if (initialized && interruptListener != null && interruptListener.interrupt(source.getTopKey())) {
-                throw new RuntimeException("testing next interrupt");
+                throw new IterationInterruptedException("testing next interrupt");
             }
 
             source.next();
@@ -136,7 +137,7 @@ public class RebuildingScannerTestHelper {
         @Override
         public void seek(Range range, Collection<ByteSequence> collection, boolean inclusive) throws IOException {
             if (interruptListener != null && interruptListener.interrupt(null)) {
-                throw new RuntimeException("testing seek interrupt");
+                throw new IterationInterruptedException("testing seek interrupt");
             }
 
             source.seek(range, collection, inclusive);
@@ -413,7 +414,7 @@ public class RebuildingScannerTestHelper {
                     }
                     // reset interrupted flag
                     interrupted = false;
-                } catch (RuntimeException e) {
+                } catch (IterationInterruptedException e) {
                     interrupted = true;
                     interruptListener.processedInterrupt(true);
                     interruptCount++;
