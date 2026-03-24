@@ -26,10 +26,6 @@ import datawave.util.TableName;
 
 public class VisibilityWiseGuysIngest {
 
-    public enum WhatKindaRange {
-        SHARD, DOCUMENT;
-    }
-
     private static final Type<?> lcNoDiacriticsType = new LcNoDiacriticsType();
     private static final Type<?> numberType = new NumberType();
     private static final Type<?> dateType = new DateType();
@@ -49,15 +45,11 @@ public class VisibilityWiseGuysIngest {
 
     private static final IndexIngestUtil ingestUtil = new IndexIngestUtil();
 
-    public static void writeItAll(AccumuloClient client, String range) throws Exception {
-        writeItAll(client, WhatKindaRange.valueOf(range));
-    }
-
-    public static void writeItAll(AccumuloClient client, WhatKindaRange range) throws Exception {
+    public static void writeItAll(AccumuloClient client) throws Exception {
 
         BatchWriter bw = null;
         BatchWriterConfig bwConfig = new BatchWriterConfig().setMaxMemory(1000L).setMaxLatency(1, TimeUnit.SECONDS).setMaxWriteThreads(1);
-        Mutation mutation = null;
+        Mutation mutation;
 
         try {
             // write the shard table :
@@ -148,123 +140,97 @@ public class VisibilityWiseGuysIngest {
             // corleones
             // uuid
             mutation = new Mutation(lcNoDiacriticsType.normalize("CORLEONE"));
-            mutation.put("UUID".toUpperCase(), shard + "\u0000" + datatype, columnVisibilityItalian, timeStamp,
-                            range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(corleoneUID));
+            mutation.put("UUID".toUpperCase(), shard + "\u0000" + datatype, columnVisibilityItalian, timeStamp, getValue(corleoneUID));
             bw.addMutation(mutation);
 
             // sopranos
             // uuid
             mutation = new Mutation(lcNoDiacriticsType.normalize("SOPRANO"));
-            mutation.put("UUID".toUpperCase(), shard + "\u0000" + datatype, columnVisibilityEnglish, timeStamp,
-                            range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(sopranoUID));
+            mutation.put("UUID".toUpperCase(), shard + "\u0000" + datatype, columnVisibilityEnglish, timeStamp, getValue(sopranoUID));
             bw.addMutation(mutation);
             // capones
             // uuid
             mutation = new Mutation(lcNoDiacriticsType.normalize("CAPONE"));
-            mutation.put("UUID".toUpperCase(), shard + "\u0000" + datatype, columnVisibilityEnglish, timeStamp,
-                            range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(caponeUID));
+            mutation.put("UUID".toUpperCase(), shard + "\u0000" + datatype, columnVisibilityEnglish, timeStamp, getValue(caponeUID));
             bw.addMutation(mutation);
 
             // corleone names
             mutation = new Mutation(lcNoDiacriticsType.normalize("SANTINO"));
-            mutation.put("NAME".toUpperCase(), shard + "\u0000" + datatype, columnVisibilityItalian, timeStamp,
-                            range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(corleoneUID));
+            mutation.put("NAME".toUpperCase(), shard + "\u0000" + datatype, columnVisibilityItalian, timeStamp, getValue(corleoneUID));
             bw.addMutation(mutation);
             mutation = new Mutation(lcNoDiacriticsType.normalize("FREDO"));
-            mutation.put("NAME".toUpperCase(), shard + "\u0000" + datatype, columnVisibilityItalian, timeStamp,
-                            range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(corleoneUID));
+            mutation.put("NAME".toUpperCase(), shard + "\u0000" + datatype, columnVisibilityItalian, timeStamp, getValue(corleoneUID));
             bw.addMutation(mutation);
             mutation = new Mutation(lcNoDiacriticsType.normalize("MICHAEL"));
-            mutation.put("NAME".toUpperCase(), shard + "\u0000" + datatype, columnVisibilityItalian, timeStamp,
-                            range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(corleoneUID, caponeUID));
+            mutation.put("NAME".toUpperCase(), shard + "\u0000" + datatype, columnVisibilityItalian, timeStamp, getValue(corleoneUID, caponeUID));
             bw.addMutation(mutation);
             mutation = new Mutation(lcNoDiacriticsType.normalize("CONSTANZIA"));
-            mutation.put("NAME".toUpperCase(), shard + "\u0000" + datatype, columnVisibilityItalian, timeStamp,
-                            range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(corleoneUID));
+            mutation.put("NAME".toUpperCase(), shard + "\u0000" + datatype, columnVisibilityItalian, timeStamp, getValue(corleoneUID));
             bw.addMutation(mutation);
             mutation = new Mutation(lcNoDiacriticsType.normalize("LUCA"));
-            mutation.put("NAME".toUpperCase(), shard + "\u0000" + datatype, columnVisibilityItalian, timeStamp,
-                            range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(corleoneUID));
+            mutation.put("NAME".toUpperCase(), shard + "\u0000" + datatype, columnVisibilityItalian, timeStamp, getValue(corleoneUID));
             bw.addMutation(mutation);
             mutation = new Mutation(lcNoDiacriticsType.normalize("VINCENT"));
-            mutation.put("NAME".toUpperCase(), shard + "\u0000" + datatype, columnVisibilityItalian, timeStamp,
-                            range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(corleoneUID));
+            mutation.put("NAME".toUpperCase(), shard + "\u0000" + datatype, columnVisibilityItalian, timeStamp, getValue(corleoneUID));
             bw.addMutation(mutation);
 
             // soprano names
             mutation = new Mutation(lcNoDiacriticsType.normalize("ANTHONY"));
-            mutation.put("NAME".toUpperCase(), shard + "\u0000" + datatype, columnVisibilityEnglish, timeStamp,
-                            range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(sopranoUID));
+            mutation.put("NAME".toUpperCase(), shard + "\u0000" + datatype, columnVisibilityEnglish, timeStamp, getValue(sopranoUID));
             bw.addMutation(mutation);
             mutation = new Mutation(lcNoDiacriticsType.normalize("MEADOW"));
-            mutation.put("NAME".toUpperCase(), shard + "\u0000" + datatype, columnVisibilityEnglish, timeStamp,
-                            range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(sopranoUID));
+            mutation.put("NAME".toUpperCase(), shard + "\u0000" + datatype, columnVisibilityEnglish, timeStamp, getValue(sopranoUID));
             bw.addMutation(mutation);
 
             // capone names
             mutation = new Mutation(lcNoDiacriticsType.normalize("ALPHONSE"));
-            mutation.put("NAME".toUpperCase(), shard + "\u0000" + datatype, columnVisibilityEnglish, timeStamp,
-                            range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(caponeUID));
+            mutation.put("NAME".toUpperCase(), shard + "\u0000" + datatype, columnVisibilityEnglish, timeStamp, getValue(caponeUID));
             bw.addMutation(mutation);
             mutation = new Mutation(lcNoDiacriticsType.normalize("FRANK"));
-            mutation.put("NAME".toUpperCase(), shard + "\u0000" + datatype, columnVisibilityEnglish, timeStamp,
-                            range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(caponeUID));
+            mutation.put("NAME".toUpperCase(), shard + "\u0000" + datatype, columnVisibilityEnglish, timeStamp, getValue(caponeUID));
             bw.addMutation(mutation);
             mutation = new Mutation(lcNoDiacriticsType.normalize("RALPH"));
-            mutation.put("NAME".toUpperCase(), shard + "\u0000" + datatype, columnVisibilityEnglish, timeStamp,
-                            range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(caponeUID));
+            mutation.put("NAME".toUpperCase(), shard + "\u0000" + datatype, columnVisibilityEnglish, timeStamp, getValue(caponeUID));
             bw.addMutation(mutation);
 
             // genders
             mutation = new Mutation(lcNoDiacriticsType.normalize("MALE"));
-            mutation.put("GENDER".toUpperCase(), shard + "\u0000" + datatype, columnVisibilityEnglish, timeStamp,
-                            range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(sopranoUID, caponeUID, corleoneUID));
+            mutation.put("GENDER".toUpperCase(), shard + "\u0000" + datatype, columnVisibilityEnglish, timeStamp, getValue(sopranoUID, caponeUID, corleoneUID));
             bw.addMutation(mutation);
             mutation = new Mutation(lcNoDiacriticsType.normalize("FEMALE"));
-            mutation.put("GENDER".toUpperCase(), shard + "\u0000" + datatype, columnVisibilityEnglish, timeStamp,
-                            range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(sopranoUID, corleoneUID));
+            mutation.put("GENDER".toUpperCase(), shard + "\u0000" + datatype, columnVisibilityEnglish, timeStamp, getValue(sopranoUID, corleoneUID));
             bw.addMutation(mutation);
 
             // ages
             mutation = new Mutation(numberType.normalize("24"));
-            mutation.put("AGE".toUpperCase(), shard + "\u0000" + datatype, columnVisibilityItalian, timeStamp,
-                            range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(corleoneUID));
+            mutation.put("AGE".toUpperCase(), shard + "\u0000" + datatype, columnVisibilityItalian, timeStamp, getValue(corleoneUID));
             bw.addMutation(mutation);
             mutation = new Mutation(numberType.normalize("22"));
-            mutation.put("AGE".toUpperCase(), shard + "\u0000" + datatype, columnVisibilityItalian, timeStamp,
-                            range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(corleoneUID));
+            mutation.put("AGE".toUpperCase(), shard + "\u0000" + datatype, columnVisibilityItalian, timeStamp, getValue(corleoneUID));
             bw.addMutation(mutation);
             mutation = new Mutation(numberType.normalize("20"));
-            mutation.put("AGE".toUpperCase(), shard + "\u0000" + datatype, columnVisibilityEnglish, timeStamp,
-                            range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(caponeUID));
-            mutation.put("AGE".toUpperCase(), shard + "\u0000" + datatype, columnVisibilityItalian, timeStamp,
-                            range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(corleoneUID));
+            mutation.put("AGE".toUpperCase(), shard + "\u0000" + datatype, columnVisibilityEnglish, timeStamp, getValue(caponeUID));
+            mutation.put("AGE".toUpperCase(), shard + "\u0000" + datatype, columnVisibilityItalian, timeStamp, getValue(corleoneUID));
             bw.addMutation(mutation);
             mutation = new Mutation(numberType.normalize("18"));
-            mutation.put("AGE".toUpperCase(), shard + "\u0000" + datatype, columnVisibilityEnglish, timeStamp,
-                            range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(sopranoUID, corleoneUID));
+            mutation.put("AGE".toUpperCase(), shard + "\u0000" + datatype, columnVisibilityEnglish, timeStamp, getValue(sopranoUID, corleoneUID));
             bw.addMutation(mutation);
             mutation = new Mutation(numberType.normalize("40"));
-            mutation.put("AGE".toUpperCase(), shard + "\u0000" + datatype, columnVisibilityItalian, timeStamp,
-                            range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(corleoneUID, caponeUID));
+            mutation.put("AGE".toUpperCase(), shard + "\u0000" + datatype, columnVisibilityItalian, timeStamp, getValue(corleoneUID, caponeUID));
             bw.addMutation(mutation);
 
             mutation = new Mutation(numberType.normalize("16"));
-            mutation.put("AGE".toUpperCase(), shard + "\u0000" + datatype, columnVisibilityEnglish, timeStamp,
-                            range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(sopranoUID));
+            mutation.put("AGE".toUpperCase(), shard + "\u0000" + datatype, columnVisibilityEnglish, timeStamp, getValue(sopranoUID));
             bw.addMutation(mutation);
 
             mutation = new Mutation(numberType.normalize("30"));
-            mutation.put("AGE".toUpperCase(), shard + "\u0000" + datatype, columnVisibilityEnglish, timeStamp,
-                            range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(caponeUID));
+            mutation.put("AGE".toUpperCase(), shard + "\u0000" + datatype, columnVisibilityEnglish, timeStamp, getValue(caponeUID));
             bw.addMutation(mutation);
             mutation = new Mutation(numberType.normalize("34"));
-            mutation.put("AGE".toUpperCase(), shard + "\u0000" + datatype, columnVisibilityEnglish, timeStamp,
-                            range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(caponeUID));
+            mutation.put("AGE".toUpperCase(), shard + "\u0000" + datatype, columnVisibilityEnglish, timeStamp, getValue(caponeUID));
             bw.addMutation(mutation);
             mutation = new Mutation(numberType.normalize("20"));
-            mutation.put("AGE".toUpperCase(), shard + "\u0000" + datatype, columnVisibilityEnglish, timeStamp,
-                            range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(caponeUID));
+            mutation.put("AGE".toUpperCase(), shard + "\u0000" + datatype, columnVisibilityEnglish, timeStamp, getValue(caponeUID));
             bw.addMutation(mutation);
 
         } finally {
@@ -449,20 +415,13 @@ public class VisibilityWiseGuysIngest {
         ingestUtil.write(client, auths);
     }
 
-    private static Value getValueForBuilderFor(String... in) {
+    private static Value getValue(String... uids) {
         Uid.List.Builder builder = Uid.List.newBuilder();
-        for (String s : in) {
+        for (String s : uids) {
             builder.addUID(s);
         }
-        builder.setCOUNT(in.length);
+        builder.setCOUNT(uids.length);
         builder.setIGNORE(false);
-        return new Value(builder.build().toByteArray());
-    }
-
-    private static Value getValueForNuthinAndYourHitsForFree() {
-        Uid.List.Builder builder = Uid.List.newBuilder();
-        builder.setCOUNT(50); // better not be zero!!!!
-        builder.setIGNORE(true); // better be true!!!
         return new Value(builder.build().toByteArray());
     }
 }

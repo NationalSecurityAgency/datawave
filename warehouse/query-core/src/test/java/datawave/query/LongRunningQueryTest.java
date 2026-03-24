@@ -72,7 +72,7 @@ public class LongRunningQueryTest {
         client = testTableHelper.client;
 
         // Load data for the test
-        VisibilityWiseGuysIngest.writeItAll(client, VisibilityWiseGuysIngest.WhatKindaRange.DOCUMENT);
+        VisibilityWiseGuysIngest.writeItAll(client);
         PrintUtility.printTable(client, auths, TableName.SHARD);
         PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
         PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
@@ -93,7 +93,7 @@ public class LongRunningQueryTest {
 
     /**
      * A groupBy query is one type of query that is allowed to be "long running", so that type of query is used in this test.
-     *
+     * <p>
      * A long running query will return a ResultsPage with zero results if it has not completed within the query execution page timeout. This test expects at
      * least 2 pages (the exact number will depend on cpu speed). All but the lsat page should have 0 results and be marked as PARTIAL. The last page should
      * have 8 results and have a status of COMPLETE.

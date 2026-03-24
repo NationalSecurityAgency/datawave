@@ -5,6 +5,8 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -23,7 +25,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.powermock.reflect.Whitebox;
 import org.slf4j.LoggerFactory;
 
 import datawave.accumulo.inmemory.InMemoryInstance;
@@ -52,12 +53,12 @@ public class AccumuloConnectionFactoryTest extends EasyMockSupport {
     @Before
     public void setup() throws Exception {
 
-        MyAccumuloClientPoolFactory warehouseFactory = Whitebox.newInstance(MyAccumuloClientPoolFactory.class);
-        Whitebox.setInternalState(warehouseFactory, "username", "root");
-        Whitebox.setInternalState(warehouseFactory, "password", "");
-        MyAccumuloClientPoolFactory metricsFactory = Whitebox.newInstance(MyAccumuloClientPoolFactory.class);
-        Whitebox.setInternalState(metricsFactory, "username", "root");
-        Whitebox.setInternalState(metricsFactory, "password", "");
+        MyAccumuloClientPoolFactory warehouseFactory = newInstance(MyAccumuloClientPoolFactory.class);
+        setField(warehouseFactory, "username", "root");
+        setField(warehouseFactory, "password", "");
+        MyAccumuloClientPoolFactory metricsFactory = newInstance(MyAccumuloClientPoolFactory.class);
+        setField(metricsFactory, "username", "root");
+        setField(metricsFactory, "password", "");
         warehouseFactory.setClient(warehouseClient);
         metricsFactory.setClient(metricsClient);
 
@@ -65,8 +66,8 @@ public class AccumuloConnectionFactoryTest extends EasyMockSupport {
         configs.put("WAREHOUSE", null);
         configs.put("METRICS", null);
         ConnectionPoolsProperties conf = new ConnectionPoolsProperties();
-        Whitebox.setInternalState(conf, "defaultPool", "WAREHOUSE");
-        Whitebox.setInternalState(conf, "pools", configs);
+        setField(conf, "defaultPool", "WAREHOUSE");
+        setField(conf, "pools", configs);
 
         HashMap<String,Map<AccumuloConnectionFactory.Priority,AccumuloClientPool>> pools = new HashMap<>();
         MyAccumuloClientPool warehousePool = new MyAccumuloClientPool(warehouseFactory);
@@ -90,11 +91,11 @@ public class AccumuloConnectionFactoryTest extends EasyMockSupport {
             p.put(AccumuloConnectionFactory.Priority.LOW, acp);
             pools.put(entry.getKey(), Collections.unmodifiableMap(p));
         }
-        Whitebox.setInternalState(factory, "log", LoggerFactory.getLogger(AccumuloConnectionFactoryImpl.class));
-        Whitebox.setInternalState(factory, ConnectionPoolsProperties.class, conf);
-        Whitebox.setInternalState(factory, "defaultPoolName", conf.getDefaultPool());
-        Whitebox.setInternalState(factory, "pools", pools);
-        Whitebox.setInternalState(factory, "cache", cache);
+        setField(factory, "log", LoggerFactory.getLogger(AccumuloConnectionFactoryImpl.class));
+        setField(factory, "connectionPoolsConfiguration", conf);
+        setField(factory, "defaultPoolName", conf.getDefaultPool());
+        setField(factory, "pools", pools);
+        setField(factory, "cache", cache);
     }
 
     @After
@@ -111,7 +112,7 @@ public class AccumuloConnectionFactoryTest extends EasyMockSupport {
         verifyAll();
         assertNotNull(con);
         assertEquals(warehouseClient, ((WrappedAccumuloClient) con).getReal());
-        assertNull("scannerClassLoaderContext was set when it shouldn't have been", Whitebox.getInternalState(con, "scannerClassLoaderContext"));
+        assertNull("scannerClassLoaderContext was set when it shouldn't have been", getField(con, "scannerClassLoaderContext"));
     }
 
     @Test
@@ -135,7 +136,7 @@ public class AccumuloConnectionFactoryTest extends EasyMockSupport {
         verifyAll();
         assertNotNull(con);
         assertEquals(warehouseClient, ((WrappedAccumuloClient) con).getReal());
-        assertEquals("alternateContext", Whitebox.getInternalState(con, "scannerClassLoaderContext"));
+        assertEquals("alternateContext", getField(con, "scannerClassLoaderContext"));
     }
 
     @Test
@@ -152,6 +153,11 @@ public class AccumuloConnectionFactoryTest extends EasyMockSupport {
     public static class MyAccumuloClientPoolFactory extends AccumuloClientPoolFactory {
 
         private AccumuloClient c = null;
+
+        // No-arg constructor for reflection-based instantiation in tests
+        private MyAccumuloClientPoolFactory() {
+            super(null, null, null, null);
+        }
 
         public MyAccumuloClientPoolFactory(String username, String password, String zookeepers, String instanceName) {
             super(username, password, zookeepers, instanceName);
@@ -189,5 +195,42 @@ public class AccumuloConnectionFactoryTest extends EasyMockSupport {
 
         @Override
         public void returnObject(AccumuloClient connector) {}
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T> T getField(Object target, String fieldName) throws Exception {
+        Class<?> clazz = target.getClass();
+        while (clazz != null) {
+            try {
+                Field field = clazz.getDeclaredField(fieldName);
+                field.setAccessible(true);
+                return (T) field.get(target);
+            } catch (NoSuchFieldException e) {
+                clazz = clazz.getSuperclass();
+            }
+        }
+        throw new NoSuchFieldException(fieldName);
+    }
+
+    private void setField(Object target, String fieldName, Object value) throws Exception {
+        Class<?> clazz = target.getClass();
+        while (clazz != null) {
+            try {
+                Field field = clazz.getDeclaredField(fieldName);
+                field.setAccessible(true);
+                field.set(target, value);
+                return;
+            } catch (NoSuchFieldException e) {
+                clazz = clazz.getSuperclass();
+            }
+        }
+        throw new NoSuchFieldException(fieldName);
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T> T newInstance(Class<T> clazz) throws Exception {
+        Constructor<T> constructor = clazz.getDeclaredConstructor();
+        constructor.setAccessible(true);
+        return constructor.newInstance();
     }
 }
