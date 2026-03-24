@@ -16,6 +16,7 @@
  */
 package datawave.accumulo.inmemory;
 
+import java.util.Optional;
 import java.util.regex.Pattern;
 
 /**
@@ -37,37 +38,56 @@ public final class AccumuloValidators {
      * only valid characters. For qualified names (namespace.table), both parts must be non-blank and match the valid name pattern.
      */
     public static final Validator NEW_TABLE_NAME = new Validator("new table name", name -> {
-        if (name == null || name.isEmpty()) {
-            return false;
+        if (name == null) {
+            return Optional.of("name is null");
+        }
+        if (name.isEmpty()) {
+            return Optional.of("name is empty");
         }
         if (name.startsWith(".")) {
-            return false;
+            return Optional.of("name must not start with a dot: " + name);
         }
         if (name.length() > MAX_NAME_LENGTH) {
-            return false;
+            return Optional.of("name exceeds maximum length of " + MAX_NAME_LENGTH + " characters: " + name.length());
         }
         if (name.contains(".")) {
             String namespacePart = name.substring(0, name.lastIndexOf('.'));
             String tablePart = name.substring(name.lastIndexOf('.') + 1);
-            if (namespacePart.isEmpty() || tablePart.isEmpty()) {
-                return false;
+            if (namespacePart.isBlank()) {
+                return Optional.of("namespace part must not be blank in qualified name: " + name);
             }
-            return VALID_NAME_PATTERN.matcher(namespacePart).matches() && VALID_NAME_PATTERN.matcher(tablePart).matches();
+            if (tablePart.isBlank()) {
+                return Optional.of("table part must not be blank in qualified name: " + name);
+            }
+            if (!VALID_NAME_PATTERN.matcher(namespacePart).matches()) {
+                return Optional.of("namespace part contains invalid characters: " + namespacePart);
+            }
+            if (!VALID_NAME_PATTERN.matcher(tablePart).matches()) {
+                return Optional.of("table part contains invalid characters: " + tablePart);
+            }
+        } else if (!VALID_NAME_PATTERN.matcher(name).matches()) {
+            return Optional.of("name contains invalid characters: " + name);
         }
-        return VALID_NAME_PATTERN.matcher(name).matches();
+        return Optional.empty();
     });
 
     /**
      * Validator for new namespace names.
      */
     public static final Validator NEW_NAMESPACE_NAME = new Validator("new namespace name", name -> {
-        if (name == null || name.isEmpty()) {
-            return false;
+        if (name == null) {
+            return Optional.of("name is null");
+        }
+        if (name.isEmpty()) {
+            return Optional.of("name is empty");
         }
         if (name.length() > MAX_NAME_LENGTH) {
-            return false;
+            return Optional.of("name exceeds maximum length of " + MAX_NAME_LENGTH + " characters: " + name.length());
         }
-        return VALID_NAME_PATTERN.matcher(name).matches();
+        if (!VALID_NAME_PATTERN.matcher(name).matches()) {
+            return Optional.of("name contains invalid characters: " + name);
+        }
+        return Optional.empty();
     });
 
     /**
@@ -75,15 +95,18 @@ public final class AccumuloValidators {
      */
     public static final Validator EXISTING_NAMESPACE_NAME = new Validator("existing namespace name", name -> {
         if (name == null) {
-            return false;
+            return Optional.of("name is null");
         }
         // Empty string is valid (default namespace)
         if (name.isEmpty()) {
-            return true;
+            return Optional.empty();
         }
         if (name.length() > MAX_NAME_LENGTH) {
-            return false;
+            return Optional.of("name exceeds maximum length of " + MAX_NAME_LENGTH + " characters: " + name.length());
         }
-        return VALID_NAME_PATTERN.matcher(name).matches();
+        if (!VALID_NAME_PATTERN.matcher(name).matches()) {
+            return Optional.of("name contains invalid characters: " + name);
+        }
+        return Optional.empty();
     });
 }

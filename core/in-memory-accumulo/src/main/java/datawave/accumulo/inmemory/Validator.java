@@ -16,18 +16,20 @@
  */
 package datawave.accumulo.inmemory;
 
-import java.util.function.Predicate;
+import java.util.Optional;
+import java.util.function.Function;
 
 /**
- * A simple validator that checks a predicate and throws IllegalArgumentException if validation fails.
+ * A validator that checks a value and throws IllegalArgumentException with a detailed error description if validation fails. Modeled after Accumulo's internal
+ * Validator pattern.
  */
 public class Validator {
     private final String description;
-    private final Predicate<String> predicate;
+    private final Function<String,Optional<String>> validation;
 
-    Validator(String description, Predicate<String> predicate) {
+    Validator(String description, Function<String,Optional<String>> validation) {
         this.description = description;
-        this.predicate = predicate;
+        this.validation = validation;
     }
 
     /**
@@ -36,11 +38,12 @@ public class Validator {
      * @param value
      *            the value to validate
      * @throws IllegalArgumentException
-     *             if validation fails
+     *             if validation fails, with a detailed error description
      */
     public void validate(String value) {
-        if (!predicate.test(value)) {
-            throw new IllegalArgumentException("Invalid " + description + ": " + value);
+        Optional<String> error = validation.apply(value);
+        if (error.isPresent()) {
+            throw new IllegalArgumentException("Invalid " + description + ": " + error.get());
         }
     }
 }

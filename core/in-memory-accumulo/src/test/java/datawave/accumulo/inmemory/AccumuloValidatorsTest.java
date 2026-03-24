@@ -2,6 +2,7 @@ package datawave.accumulo.inmemory;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
@@ -154,15 +155,42 @@ public class AccumuloValidatorsTest {
         assertThrows(IllegalArgumentException.class, () -> AccumuloValidators.EXISTING_NAMESPACE_NAME.validate("my-namespace"));
     }
 
-    // Validator class tests
+    // Validator class tests - verify detailed error messages
 
     @Test
-    public void testValidatorThrowsWithDescriptiveMessage() {
-        try {
-            AccumuloValidators.NEW_TABLE_NAME.validate("");
-        } catch (IllegalArgumentException e) {
-            assert e.getMessage().contains("new table name");
-        }
+    public void testValidatorThrowsWithDescriptiveMessageForNull() {
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> AccumuloValidators.NEW_TABLE_NAME.validate(null));
+        assertTrue(e.getMessage().contains("name is null"), "Expected 'name is null' in: " + e.getMessage());
+    }
+
+    @Test
+    public void testValidatorThrowsWithDescriptiveMessageForEmpty() {
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> AccumuloValidators.NEW_TABLE_NAME.validate(""));
+        assertTrue(e.getMessage().contains("name is empty"), "Expected 'name is empty' in: " + e.getMessage());
+    }
+
+    @Test
+    public void testValidatorThrowsWithDescriptiveMessageForDot() {
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> AccumuloValidators.NEW_TABLE_NAME.validate(".foo"));
+        assertTrue(e.getMessage().contains("must not start with a dot"), "Expected dot message in: " + e.getMessage());
+    }
+
+    @Test
+    public void testValidatorThrowsWithDescriptiveMessageForTooLong() {
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> AccumuloValidators.NEW_TABLE_NAME.validate("a".repeat(1025)));
+        assertTrue(e.getMessage().contains("exceeds maximum length"), "Expected length message in: " + e.getMessage());
+    }
+
+    @Test
+    public void testValidatorThrowsWithDescriptiveMessageForInvalidChars() {
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> AccumuloValidators.NEW_TABLE_NAME.validate("my-table"));
+        assertTrue(e.getMessage().contains("invalid characters"), "Expected invalid chars message in: " + e.getMessage());
+    }
+
+    @Test
+    public void testValidatorThrowsWithDescriptiveMessageForBlankTablePart() {
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> AccumuloValidators.NEW_TABLE_NAME.validate("namespace."));
+        assertTrue(e.getMessage().contains("table part must not be blank"), "Expected blank table part message in: " + e.getMessage());
     }
 
     // Constructor test
