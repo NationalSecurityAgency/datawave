@@ -23,7 +23,7 @@ import datawave.query.util.Tuple2;
 
 /**
  * Purpose: Rule that pulls up top level delayed predicates based upon cost
- *
+ * <p>
  * Assumption: We will not do further evaluation on cost, beyond what occurs, below. Therefore, if any complex analysis is needed for cost, it should be
  * performed elsewhere.
  */
@@ -66,7 +66,7 @@ public class DelayedPredicatePushDown extends PushDownRule {
     @Override
     public Object visit(ASTAndNode node, Object data) {
         // we are a top level And
-        SortedSet<Tuple2<JexlNode,Cost>> costEstimates = new TreeSet<>(new CostCompartor());
+        SortedSet<Tuple2<JexlNode,Cost>> costEstimates = new TreeSet<>(new CostComparator());
         Preconditions.checkNotNull(costEstimator);
         for (int i = 0; i < node.jjtGetNumChildren(); i++) {
             JexlNode child = node.jjtGetChild(i);
@@ -100,7 +100,7 @@ public class DelayedPredicatePushDown extends PushDownRule {
         return newAnd;
     }
 
-    protected class CostCompartor implements Comparator<Tuple2<JexlNode,Cost>> {
+    protected static class CostComparator implements Comparator<Tuple2<JexlNode,Cost>> {
 
         /*
          * (non-Javadoc)
@@ -112,8 +112,8 @@ public class DelayedPredicatePushDown extends PushDownRule {
             int compareTo = arg0.second().compareTo(arg1.second());
 
             if (compareTo == 0) {
-                Integer i = Integer.valueOf(arg0.first().hashCode());
-                Integer b = Integer.valueOf(arg1.first().hashCode());
+                Integer i = arg0.first().hashCode();
+                Integer b = arg1.first().hashCode();
                 compareTo = i.compareTo(b);
 
             }
@@ -130,7 +130,7 @@ public class DelayedPredicatePushDown extends PushDownRule {
      */
     @Override
     public Cost getCost(JexlNode node) {
-        return Cost.UNEVALUATED;
+        return Cost.zero();
     }
 
 }

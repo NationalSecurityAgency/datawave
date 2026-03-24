@@ -29,12 +29,19 @@
         <version.junit5.platform>1.12.0</version.junit5.platform>
         <version.log4j>2.25.3</version.log4j>
         <version.slf4j>2.0.17</version.slf4j>
+        <version.snakeyaml>1.33</version.snakeyaml>
         <version.spring.boot>2.7.1</version.spring.boot>
     </properties>
     <dependencyManagement>
         <dependencies>
             <!-- Don't sort the import scope dependencies. The first declared version of a dependency in dependencyManagement will prevail. -->
             <?SORTPOM IGNORE?>
+            <!-- snakeyaml >= 1.33 needed for jackson-dataformat-yaml 2.14.X -->
+            <dependency>
+                <groupId>org.yaml</groupId>
+                <artifactId>snakeyaml</artifactId>
+                <version>${version.snakeyaml}</version>
+            </dependency>
             <!-- jackson-bom import to override the versions of jackson dependencies used in spring-boot -->
             <dependency>
                 <groupId>com.fasterxml.jackson</groupId>
