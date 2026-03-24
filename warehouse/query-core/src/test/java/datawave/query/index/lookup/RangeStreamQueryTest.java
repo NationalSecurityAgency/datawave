@@ -214,13 +214,6 @@ public class RangeStreamQueryTest {
     }
 
     @Test
-    public void testQueriesWithExceededTermMarkers() throws Exception {
-        test("((_Term_ = true) && (FOO =~ 'ba.*'))", DELAYED);
-        test("(((_Term_ = true) && (FOO =~ 'ba.*')) && ((_Term_ = true) && (FOO2 =~ 'ba.*')))", DELAYED_INTERSECT);
-        test("(((_Term_ = true) && (FOO =~ 'ba.*')) || ((_Term_ = true) && (FOO2 =~ 'ba.*')))", DELAYED_UNION);
-    }
-
-    @Test
     public void testQueriesWithDelayedRegexNodes() throws Exception {
         test("((_Delayed_ = true) && (FOO =~ 'ba.*'))", DELAYED);
         test("(((_Delayed_ = true) && (FOO =~ 'ba.*')) && ((_Delayed_ = true) && (FOO2 =~ 'ba.*')))", DELAYED_INTERSECT);
@@ -248,13 +241,10 @@ public class RangeStreamQueryTest {
 
     @Test
     public void testQueriesWithMixedMarkers() throws Exception {
-        // intersection of delayed markers is all delayed
-        test("(((_Term_ = true) && (FOO =~ 'ba.*')) && ((_Delayed_ = true) && (FOO2 =~ 'ba.*')))", DELAYED_INTERSECT);
         // presence of value exceeded makes this an anchor
         test("(((_Value_ = true) && (FOO =~ 'ba.*')) && ((_Delayed_ = true) && (FOO2 =~ 'ba.*')))", ANCHOR_INTERSECT);
 
         // value exceeded or not, union is always delayed if at least one term is delayed
-        test("(((_Term_ = true) && (FOO =~ 'ba.*')) || ((_Delayed_ = true) && (FOO2 =~ 'ba.*')))", DELAYED_UNION);
         test("(((_Value_ = true) && (FOO =~ 'ba.*')) || ((_Delayed_ = true) && (FOO2 =~ 'ba.*')))", DELAYED_UNION);
     }
 

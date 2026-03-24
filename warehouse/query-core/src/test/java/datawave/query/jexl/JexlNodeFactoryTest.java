@@ -128,10 +128,8 @@ public class JexlNodeFactoryTest {
         assertTrue(lookupMap.isKeyThresholdExceeded());
 
         // Convert FOO to a conjunction of FOO[1,3]
-        JexlNode node = JexlNodeFactory.createNodeTreeFromFieldsToValues(JexlNodeFactory.ContainerType.OR_NODE, false, erNode, lookupMap, true, true, false);
-
-        assertEquals("((_Term_ = true) && (_ANYFIELD_ =~ 'bar.*'))", JexlStringBuildingVisitor.buildQueryWithoutParse(node));
-        assertTrue(JexlASTHelper.validateLineage(node, false));
+        // should upgrade to JUnit5 and use assertThrows..
+        JexlNodeFactory.createNodeTreeFromFieldsToValues(JexlNodeFactory.ContainerType.OR_NODE, false, erNode, lookupMap, true, true, false);
     }
 
     @Test

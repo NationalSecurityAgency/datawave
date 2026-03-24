@@ -407,6 +407,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private boolean accrueStats = false;
 
     private boolean disableIteratorUniqueFields = false;
+    private boolean disableIteratorMostRecentUniqueFields = true;
     private UniqueFields uniqueFields = new UniqueFields();
     private boolean cacheModel = false;
     /**
@@ -799,6 +800,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setGroupFieldsBatchSize(other.getGroupFieldsBatchSize());
         this.setAccrueStats(other.getAccrueStats());
         this.setDisableIteratorUniqueFields(other.isDisableIteratorUniqueFields());
+        this.setDisableIteratorMostRecentUniqueFields(other.isDisableIteratorMostRecentUniqueFields());
         this.setUniqueFields(other.getUniqueFields());
         log.info("Checkpointing with " + getUniqueFields());
         this.setUniqueCacheBufferSize(other.getUniqueCacheBufferSize());
@@ -1003,15 +1005,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      */
     public boolean canHandleExceededValueThreshold() {
         return this.hdfsSiteConfigURLs != null && (null != this.ivaratorCacheDirConfigs && !this.ivaratorCacheDirConfigs.isEmpty());
-    }
-
-    /**
-     * A convenience method that determines whether we can handle when we have exceeded the term threshold on some node. Currently we cannot.
-     *
-     * @return if we can handle exceeding the term threshold
-     */
-    public boolean canHandleExceededTermThreshold() {
-        return false;
     }
 
     public String getShardTableName() {
@@ -2025,6 +2018,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public void setDisableIteratorUniqueFields(boolean disableIteratorUniqueFields) {
         this.disableIteratorUniqueFields = disableIteratorUniqueFields;
+    }
+
+    public boolean isDisableIteratorMostRecentUniqueFields() {
+        return disableIteratorMostRecentUniqueFields;
+    }
+
+    public void setDisableIteratorMostRecentUniqueFields(boolean disableIteratorMostRecentUniqueFields) {
+        this.disableIteratorMostRecentUniqueFields = disableIteratorMostRecentUniqueFields;
     }
 
     public UniqueFields getUniqueFields() {
@@ -3227,6 +3228,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getMaxAnyFieldScanTimeMillis() == that.getMaxAnyFieldScanTimeMillis() &&
                 isUseNewIndexLookups() == that.isUseNewIndexLookups() &&
                 isDisableIteratorUniqueFields() == that.isDisableIteratorUniqueFields() &&
+                isDisableIteratorMostRecentUniqueFields() == that.isDisableIteratorMostRecentUniqueFields() &&
                 isUseShardedIndex() == that.isUseShardedIndex() &&
                 getDayIndexThreshold() == that.getDayIndexThreshold() &&
                 isUseTruncatedIndex() == that.isUseTruncatedIndex() &&
@@ -3465,6 +3467,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getMaxAnyFieldScanTimeMillis(),
                 isUseNewIndexLookups(),
                 isDisableIteratorUniqueFields(),
+                isDisableIteratorMostRecentUniqueFields(),
                 isUseShardedIndex(),
                 getDayIndexThreshold(),
                 isUseTruncatedIndex(),

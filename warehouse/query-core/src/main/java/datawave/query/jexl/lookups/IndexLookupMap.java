@@ -22,6 +22,7 @@ public class IndexLookupMap implements Map<String,ValueSet>, Serializable {
     // recorded state about the index lookup operation
     private boolean exceptionSeen = false;
     private boolean timeoutExceeded = false;
+    private boolean unfieldedTimeoutSeen = false;
 
     public IndexLookupMap(int keyThreshold, int valueThreshold) {
         this.keyThreshold = keyThreshold;
@@ -30,6 +31,14 @@ public class IndexLookupMap implements Map<String,ValueSet>, Serializable {
 
     public boolean isKeyThresholdExceeded() {
         return this.exceededKeyThreshold;
+    }
+
+    public boolean isUnfieldedTimeoutSeen() {
+        return this.unfieldedTimeoutSeen;
+    }
+
+    public void setUnfieldedTimeoutSeen() {
+        this.unfieldedTimeoutSeen = true;
     }
 
     public int size() {
