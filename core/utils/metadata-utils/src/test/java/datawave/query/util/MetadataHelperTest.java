@@ -1,6 +1,7 @@
 package datawave.query.util;
 
 import static datawave.data.ColumnFamilyConstants.COLF_F;
+import static datawave.data.ColumnFamilyConstants.COLF_H;
 import static datawave.query.util.TestUtils.createDateFrequencyMap;
 import static org.apache.accumulo.core.iterators.LongCombiner.VAR_LEN_ENCODER;
 
@@ -101,6 +102,12 @@ public class MetadataHelperTest {
     private void givenMutation(String row, String columnFamily, String columnQualifier, Value value) {
         Mutation mutation = new Mutation(row);
         mutation.put(columnFamily, columnQualifier, value);
+        givenMutation(mutation);
+    }
+
+    private void givenHiddenField(String row, String datatype) {
+        Mutation mutation = new Mutation(row);
+        mutation.put(COLF_H, new Text(datatype), new Value());
         givenMutation(mutation);
     }
 
@@ -391,5 +398,21 @@ public class MetadataHelperTest {
             Assertions.assertEquals(DateHelper.parse("20200101"), helper.getEarliestOccurrenceOfFieldWithType("NAME", null, accumuloClient, null));
             Assertions.assertEquals(DateHelper.parse("20200103"), helper.getEarliestOccurrenceOfFieldWithType("NAME", "maze", accumuloClient, null));
         }
+    }
+
+    /**
+     * Test against a table with hidden entries.
+     */
+    @Test
+    void testHiddenEntry() throws TableNotFoundException {
+        givenHiddenField("NAME", "csv");
+        givenHiddenField("NAME", "wiki");
+        givenHiddenField("EVENT_DATE", "maze");
+        writeMutations();
+
+        Assertions.assertTrue(helper.getHiddenFields(Set.of("csv")).contains("NAME"));
+        Assertions.assertTrue(helper.getHiddenFields(Set.of()).contains("EVENT_DATE"));
+        Assertions.assertFalse(helper.getHiddenFields(Set.of("foo")).contains("NAME"));
+        Assertions.assertFalse(helper.getHiddenFields(Set.of()).contains("FOO"));
     }
 }
