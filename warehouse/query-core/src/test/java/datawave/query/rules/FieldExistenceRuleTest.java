@@ -14,8 +14,9 @@ import datawave.query.util.MockMetadataHelper;
 
 public class FieldExistenceRuleTest extends ShardQueryRuleTest {
 
-    private static final Set<String> ALL_FIELDS = Set.of("FOO", "BAR", "BAT");
+    private static final Set<String> ALL_FIELDS = Set.of("FOO", "BAR", "BAT", "HIDDEN_FIELD");
     private static final String ANYFIELD = "_ANYFIELD_";
+    private static final Set<String> hiddenFields = Set.of("HIDDEN_FIELD");
     private static final MockMetadataHelper defaultMetadataHelper = new MockMetadataHelper();
 
     private final Set<String> fieldExceptions = new HashSet<>();
@@ -23,6 +24,7 @@ public class FieldExistenceRuleTest extends ShardQueryRuleTest {
     @BeforeAll
     public static void beforeClass() throws Exception {
         defaultMetadataHelper.addFields(ALL_FIELDS);
+        defaultMetadataHelper.setHiddenFields(hiddenFields);
     }
 
     @BeforeEach
@@ -49,6 +51,16 @@ public class FieldExistenceRuleTest extends ShardQueryRuleTest {
     public void testNonExistentFields() throws Exception {
         givenQuery("TOMFOOLERY == 'abc' || CHAOS =~ 'abc' || filter:includeRegex(SHENANIGANS, '45.8') || FOO == 'aa'");
         expectMessage("Fields not found in data dictionary: TOMFOOLERY, CHAOS, SHENANIGANS");
+        assertResult();
+    }
+
+    /**
+     * Test a query with a hidden field.
+     */
+    @Test
+    public void testHiddenFields() throws Exception {
+        givenQuery("FOO == 'abc' || BAR =~ 'abc' || filter:includeRegex(SHENANIGANS, '45.8') || HIDDEN_FIELD == 'aa'");
+        expectMessage("Fields not found in data dictionary: SHENANIGANS, HIDDEN_FIELD");
         assertResult();
     }
 
