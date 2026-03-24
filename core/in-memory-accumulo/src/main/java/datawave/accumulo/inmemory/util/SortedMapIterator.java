@@ -1,4 +1,4 @@
-package datawave.test.util;
+package datawave.accumulo.inmemory.util;
 
 import java.io.IOException;
 import java.util.Collection;

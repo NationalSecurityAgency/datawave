@@ -18,9 +18,9 @@ import org.junit.Test;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
+import datawave.accumulo.inmemory.util.SortedMapIterator;
 import datawave.ingest.protobuf.Uid;
 import datawave.query.util.SortedKeyValueIteratorToIterator;
-import datawave.test.util.SortedMapIterator;
 
 public class ShardLimitingIteratorTest {
 

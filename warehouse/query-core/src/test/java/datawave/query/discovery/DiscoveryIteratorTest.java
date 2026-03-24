@@ -35,8 +35,8 @@ import com.google.common.collect.Sets;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.accumulo.inmemory.util.SortedMapIterator;
 import datawave.ingest.protobuf.Uid;
-import datawave.test.util.SortedMapIterator;
 
 public class DiscoveryIteratorTest {
 

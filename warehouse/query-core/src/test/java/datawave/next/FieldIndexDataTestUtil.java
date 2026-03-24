@@ -18,9 +18,9 @@ import org.apache.commons.jexl3.parser.ASTJexlScript;
 
 import com.google.common.base.Preconditions;
 
+import datawave.accumulo.inmemory.util.SortedMapIterator;
 import datawave.next.stats.DocumentIteratorStats;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.test.util.SortedMapIterator;
 
 /**
  * Test utility with common methods for writing data asserting results.

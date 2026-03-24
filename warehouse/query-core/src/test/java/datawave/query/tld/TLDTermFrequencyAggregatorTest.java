@@ -26,6 +26,7 @@ import org.junit.Test;
 
 import com.google.common.collect.Maps;
 
+import datawave.accumulo.inmemory.util.SortedMapIterator;
 import datawave.query.Constants;
 import datawave.query.attributes.AttributeFactory;
 import datawave.query.attributes.Document;
@@ -34,7 +35,6 @@ import datawave.query.data.parsers.DatawaveKey;
 import datawave.query.predicate.EventDataQueryFieldFilter;
 import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.util.TypeMetadata;
-import datawave.test.util.SortedMapIterator;
 
 public class TLDTermFrequencyAggregatorTest {
     private TLDTermFrequencyAggregator aggregator;

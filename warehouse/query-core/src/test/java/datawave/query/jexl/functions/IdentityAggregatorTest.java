@@ -16,8 +16,8 @@ import org.junit.Test;
 
 import com.google.common.collect.Maps;
 
+import datawave.accumulo.inmemory.util.SortedMapIterator;
 import datawave.query.Constants;
-import datawave.test.util.SortedMapIterator;
 
 public class IdentityAggregatorTest {
     private IdentityAggregator aggregator;

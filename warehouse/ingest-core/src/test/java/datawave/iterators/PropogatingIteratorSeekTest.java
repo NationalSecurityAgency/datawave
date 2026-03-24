@@ -24,8 +24,8 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import datawave.accumulo.inmemory.util.SortedMapIterator;
 import datawave.ingest.table.aggregator.PropogatingCombiner;
-import datawave.test.util.SortedMapIterator;
 
 public class PropogatingIteratorSeekTest {
     public static final String FIELD_NO_AGGREGATION = "a";

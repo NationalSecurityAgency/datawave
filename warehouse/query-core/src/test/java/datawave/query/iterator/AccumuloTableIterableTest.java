@@ -17,9 +17,9 @@ import org.junit.Test;
 
 import com.google.common.base.Predicates;
 
+import datawave.accumulo.inmemory.util.SortedMapIterator;
 import datawave.query.attributes.Document;
 import datawave.query.iterator.aggregation.DocumentData;
-import datawave.test.util.SortedMapIterator;
 
 public class AccumuloTableIterableTest {
 

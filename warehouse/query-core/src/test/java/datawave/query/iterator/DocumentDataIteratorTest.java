@@ -17,7 +17,7 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import datawave.test.util.SortedMapIterator;
+import datawave.accumulo.inmemory.util.SortedMapIterator;
 
 public class DocumentDataIteratorTest {
 

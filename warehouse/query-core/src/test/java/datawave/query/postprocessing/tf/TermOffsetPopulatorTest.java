@@ -16,12 +16,12 @@ import org.junit.jupiter.api.Test;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
+import datawave.accumulo.inmemory.util.SortedMapIterator;
 import datawave.ingest.protobuf.TermWeight;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Document;
 import datawave.query.jexl.functions.TermFrequencyList;
-import datawave.test.util.SortedMapIterator;
 
 class TermOffsetPopulatorTest {
 

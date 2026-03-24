@@ -17,10 +17,10 @@ import org.apache.accumulo.core.data.Value;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import datawave.accumulo.inmemory.util.SortedMapIterator;
 import datawave.ingest.protobuf.Uid;
 import datawave.ingest.table.aggregator.TruncatedIndexConversionIterator;
 import datawave.query.iterator.SourceManagerTest.MockIteratorEnvironment;
-import datawave.test.util.SortedMapIterator;
 
 class TruncatedIndexConversionIteratorTest implements IndexConversionTests {
 

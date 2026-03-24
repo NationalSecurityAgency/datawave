@@ -24,8 +24,8 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import datawave.accumulo.inmemory.util.SortedMapIterator;
 import datawave.query.iterator.SourceManagerTest.MockIteratorEnvironment;
-import datawave.test.util.SortedMapIterator;
 
 /**
  * Note: because this class doesn't use combiners each key must be distinct

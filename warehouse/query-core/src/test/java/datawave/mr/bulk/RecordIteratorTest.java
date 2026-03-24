@@ -28,10 +28,10 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.powermock.reflect.Whitebox;
 
+import datawave.accumulo.inmemory.util.SortedMapIterator;
 import datawave.mr.bulk.split.FileRangeSplit;
 import datawave.mr.bulk.split.TabletSplitSplit;
 import datawave.security.iterator.ConfigurableVisibilityFilter;
-import datawave.test.util.SortedMapIterator;
 
 public class RecordIteratorTest {
 

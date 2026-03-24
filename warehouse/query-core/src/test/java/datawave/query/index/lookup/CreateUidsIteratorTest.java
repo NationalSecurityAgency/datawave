@@ -24,9 +24,9 @@ import org.apache.commons.jexl3.parser.JexlNode;
 import org.junit.Before;
 import org.junit.Test;
 
+import datawave.accumulo.inmemory.util.SortedMapIterator;
 import datawave.ingest.protobuf.Uid;
 import datawave.query.util.ValueSerializer;
-import datawave.test.util.SortedMapIterator;
 
 public class CreateUidsIteratorTest {
     private ValueSerializer<IndexInfo> valueSerializer;

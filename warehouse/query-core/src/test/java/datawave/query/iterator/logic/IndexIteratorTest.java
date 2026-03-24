@@ -21,9 +21,9 @@ import org.apache.accumulo.core.iteratorsImpl.system.IterationInterruptedExcepti
 import org.apache.hadoop.io.Text;
 import org.junit.jupiter.api.Test;
 
+import datawave.accumulo.inmemory.util.SortedMapIterator;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Document;
-import datawave.test.util.SortedMapIterator;
 
 class IndexIteratorTest {
 

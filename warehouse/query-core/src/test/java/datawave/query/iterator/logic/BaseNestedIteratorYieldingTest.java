@@ -24,11 +24,11 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Preconditions;
 
+import datawave.accumulo.inmemory.util.SortedMapIterator;
 import datawave.query.exceptions.WaitWindowOverrunException;
 import datawave.query.iterator.NestedIterator;
 import datawave.query.iterator.waitwindow.WaitWindowObserver;
 import datawave.query.jexl.JexlNodeFactory;
-import datawave.test.util.SortedMapIterator;
 
 /**
  * Collection of core methods used by {@link NestedIterator} tests that exercise yielding

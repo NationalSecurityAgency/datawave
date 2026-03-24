@@ -16,9 +16,9 @@ import org.apache.commons.jexl3.parser.ParseException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import datawave.accumulo.inmemory.util.SortedMapIterator;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.LiteralRange;
-import datawave.test.util.SortedMapIterator;
 
 public class RangeFilterIteratorTest {
 

@@ -18,10 +18,10 @@ import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.junit.jupiter.api.Test;
 
+import datawave.accumulo.inmemory.util.SortedMapIterator;
 import datawave.query.iterator.QueryOptions;
 import datawave.query.iterator.SourceManagerTest.MockIteratorEnvironment;
 import datawave.query.util.TypeMetadata;
-import datawave.test.util.SortedMapIterator;
 
 public class DocumentIteratorTest {
 

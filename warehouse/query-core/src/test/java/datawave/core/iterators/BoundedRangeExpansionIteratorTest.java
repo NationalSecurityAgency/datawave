@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Test;
 
 import com.google.common.base.Joiner;
 
-import datawave.test.util.SortedMapIterator;
+import datawave.accumulo.inmemory.util.SortedMapIterator;
 
 public class BoundedRangeExpansionIteratorTest {
 

@@ -18,13 +18,13 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.junit.Test;
 
+import datawave.accumulo.inmemory.util.SortedMapIterator;
 import datawave.core.query.configuration.Result;
 import datawave.ingest.protobuf.Uid;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.util.Tuple2;
 import datawave.query.util.ValueSerializerType;
-import datawave.test.util.SortedMapIterator;
 
 public class EntryParserTest {
     private final static ValueSerializerType SERIALIZER_TYPE = ValueSerializerType.WRITABLE;

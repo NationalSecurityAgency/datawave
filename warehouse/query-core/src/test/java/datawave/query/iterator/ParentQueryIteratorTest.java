@@ -20,6 +20,7 @@ import org.junit.Test;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
+import datawave.accumulo.inmemory.util.SortedMapIterator;
 import datawave.query.Constants;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
@@ -29,7 +30,6 @@ import datawave.query.function.deserializer.DocumentDeserializer;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.predicate.ParentRangeProvider;
 import datawave.query.predicate.TimeFilter;
-import datawave.test.util.SortedMapIterator;
 
 public class ParentQueryIteratorTest {
 

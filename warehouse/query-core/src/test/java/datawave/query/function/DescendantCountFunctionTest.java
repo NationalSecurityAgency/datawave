@@ -27,10 +27,10 @@ import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.Lists;
 
+import datawave.accumulo.inmemory.util.SortedMapIterator;
 import datawave.data.hash.UID;
 import datawave.query.iterator.QueryOptions;
 import datawave.query.util.Tuple3;
-import datawave.test.util.SortedMapIterator;
 
 /**
  * Tests for the {@link DescendantCountFunction}

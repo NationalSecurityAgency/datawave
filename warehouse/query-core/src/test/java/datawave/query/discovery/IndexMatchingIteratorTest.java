@@ -22,8 +22,8 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Sets;
 
+import datawave.accumulo.inmemory.util.SortedMapIterator;
 import datawave.query.Constants;
-import datawave.test.util.SortedMapIterator;
 
 public class IndexMatchingIteratorTest {
     static Set<Pair<String,String>> terms;

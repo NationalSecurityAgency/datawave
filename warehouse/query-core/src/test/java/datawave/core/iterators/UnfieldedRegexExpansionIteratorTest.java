@@ -20,8 +20,8 @@ import org.junit.jupiter.api.Test;
 
 import com.google.common.base.Joiner;
 
+import datawave.accumulo.inmemory.util.SortedMapIterator;
 import datawave.query.data.parsers.ShardIndexKey;
-import datawave.test.util.SortedMapIterator;
 
 /**
  * Unit tests for the {@link UnfieldedRegexExpansionIterator}

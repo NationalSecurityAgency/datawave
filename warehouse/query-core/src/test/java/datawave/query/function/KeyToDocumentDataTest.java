@@ -17,12 +17,12 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.junit.jupiter.api.Test;
 
+import datawave.accumulo.inmemory.util.SortedMapIterator;
 import datawave.query.attributes.Document;
 import datawave.query.data.parsers.EventKey;
 import datawave.query.iterator.aggregation.DocumentData;
 import datawave.query.predicate.EventDataQueryFieldFilter;
 import datawave.query.predicate.EventDataQueryFilter;
-import datawave.test.util.SortedMapIterator;
 
 public class KeyToDocumentDataTest {
 

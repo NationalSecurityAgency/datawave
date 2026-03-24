@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test;
 
 import com.google.common.base.Preconditions;
 
-import datawave.test.util.SortedMapIterator;
+import datawave.accumulo.inmemory.util.SortedMapIterator;
 
 public class RegexFilterIteratorTest {
 

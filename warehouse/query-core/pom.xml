@@ -57,10 +57,6 @@
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave</groupId>
-            <artifactId>datawave-common-test</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-core</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -266,6 +262,11 @@
             <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-edge-dictionary-core</artifactId>
             <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave</groupId>
+            <artifactId>datawave-in-memory-accumulo</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
