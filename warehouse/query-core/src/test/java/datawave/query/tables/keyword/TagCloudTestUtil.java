@@ -16,6 +16,10 @@ public class TagCloudTestUtil {
     public static final String CAPONE_SOURCE = "20130101_0/test/-cvy0gj.tlf59s.-duxzua";
     public static final String CORLEONE_SOURCE = "20130101_0/test/-d5uxna.msizfm.-oxy0iu";
 
+    public static final String SOPRANO_UUID = "UUID:SOPRANO";
+    public static final String CAPONE_UUID = "UUID:CAPONE";
+    public static final String CORLEONE_UUID = "UUID:CORLEONE";
+
     public DefaultTagCloud getExpectedCloud(String version, Map<String,String> metadata, List<DefaultTagCloudEntry> entries) {
         DefaultTagCloud expectedCloud = new DefaultTagCloud();
         if (version.equals("1")) {

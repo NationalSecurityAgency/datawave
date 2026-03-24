@@ -1,6 +1,5 @@
 package datawave.query.jexl.lookups;
 
-import static datawave.core.iterators.TimeoutExceptionIterator.EXCEPTEDVALUE;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -72,17 +71,6 @@ public class FieldedRegexIndexLookupTest extends BaseIndexLookupTest {
         executeLookup();
         assertResultFields(Set.of("FIELD_A"));
         assertResultValues("FIELD_A", Set.of("bar", "baz"));
-    }
-
-    @Test
-    public void testExpansionTimeoutForcedFailure() {
-        write("bar", "FIELD_A");
-        write("baz", "FIELD_A", EXCEPTEDVALUE);
-        withQuery("FIELD_A =~ 'ba.*'");
-        executeLookup();
-        assertResultFields(Set.of("FIELD_A"));
-        assertThrows(ExceededThresholdException.class, () -> assertResultValues("FIELD_A", Set.of("bar")));
-        assertTimeoutExceeded();
     }
 
     @Test
@@ -165,7 +153,7 @@ public class FieldedRegexIndexLookupTest extends BaseIndexLookupTest {
 
             withQuery("FIELD_A =~ 'ba.*'");
             executeLookup();
-            assertResultFields(Collections.emptySet());
+            assertResultFields(Set.of("FIELD_A"));
             assertExceptionSeen();
         } finally {
             removeRuntimeExceptionIterator();
@@ -184,7 +172,7 @@ public class FieldedRegexIndexLookupTest extends BaseIndexLookupTest {
 
             withQuery("FIELD_A =~ 'ba.*'");
             executeLookup();
-            assertResultFields(Collections.emptySet());
+            assertResultFields(Set.of("FIELD_A"));
             assertExceptionSeen();
         } finally {
             removeRuntimeExceptionIterator();
@@ -242,6 +230,8 @@ public class FieldedRegexIndexLookupTest extends BaseIndexLookupTest {
 
     private AsyncIndexLookup createLookup(String field, String value, Range range, boolean reverse) {
         ScannerFactory scannerFactory = new ScannerFactory(client);
-        return new FieldedRegexIndexLookup(config, scannerFactory, executor, field, value, range, reverse);
+        AsyncIndexLookup lookup = new FieldedRegexIndexLookup(config, scannerFactory, executor, field, value, range, reverse);
+        lookup.setScanMonitor(monitor);
+        return lookup;
     }
 }

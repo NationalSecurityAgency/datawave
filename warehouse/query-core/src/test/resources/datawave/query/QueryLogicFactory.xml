@@ -702,12 +702,20 @@
         <property name="extractors" ref="tagCloudExtractors" />
     </bean>
 
-    <!-- Query Logic that returns returnd document keywords -->
+    <!-- Query Logic that returns document keywords -->
     <bean id="KeywordQuery" parent="baseQueryLogic" scope="prototype"  class="datawave.query.tables.keyword.KeywordQueryLogic">
         <property name="tableName" value="shard" />
         <property name="maxResults" value="-1" />
         <property name="maxWork" value="-1" />
         <property name="auditType" value="NONE" />
         <property name="logicDescription" value="Query that returns keywords from content" />
+    </bean>
+
+    <bean id="CountQuery" parent="BaseEventQuery" scope="prototype" class="datawave.query.tables.CountingShardQueryLogic">
+        <property name="logicDescription" value="Executes an EventQuery but returns a count of matching events"/>
+        <property name="collapseUids" value="true"/>
+        <property name="useDocumentScheduler" value="false" />
+        <!-- default timeout of one hour -->
+        <property name="pageWaitTimeMillis" value="3600000"/>
     </bean>
 </beans>

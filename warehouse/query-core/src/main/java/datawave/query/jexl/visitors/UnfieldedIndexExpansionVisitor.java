@@ -29,11 +29,12 @@ import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.EmptyUnfieldedTermExpansionException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
+import datawave.query.jexl.lookups.AsyncIndexLookup;
 import datawave.query.jexl.lookups.EmptyIndexLookup;
-import datawave.query.jexl.lookups.FieldExpansionIndexLookup;
 import datawave.query.jexl.lookups.IndexLookup;
 import datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods;
 import datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods.RefactoredRangeDescription;
+import datawave.query.jexl.lookups.UnfieldedLiteralIndexLookup;
 import datawave.query.jexl.lookups.UnfieldedRegexIndexLookup;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.tables.ScannerFactory;
@@ -152,14 +153,14 @@ public class UnfieldedIndexExpansionVisitor extends RegexIndexExpansionVisitor {
 
     @Override
     public Object visit(ASTEQNode node, Object data) {
-        return buildIndexLookup(node, true, negated, () -> createFieldNameIndexLookup(node));
+        return buildIndexLookup(node, true, negated, () -> createUnfieldedLiteralIndexLookup(node));
     }
 
     @Override
     public Object visit(ASTNENode node, Object data) {
         toggleNegation();
         try {
-            return buildIndexLookup(node, true, negated, () -> createFieldNameIndexLookup(node));
+            return buildIndexLookup(node, true, negated, () -> createUnfieldedLiteralIndexLookup(node));
         } finally {
             toggleNegation();
         }
@@ -249,9 +250,9 @@ public class UnfieldedIndexExpansionVisitor extends RegexIndexExpansionVisitor {
      *
      * @param node
      *            the JexlNode
-     * @return a {@link FieldExpansionIndexLookup}
+     * @return a {@link UnfieldedLiteralIndexLookup}
      */
-    protected IndexLookup createFieldNameIndexLookup(JexlNode node) {
+    protected IndexLookup createUnfieldedLiteralIndexLookup(JexlNode node) {
         String term = (String) JexlASTHelper.getLiteralValue(node);
 
         Preconditions.checkNotNull(term);
@@ -268,7 +269,9 @@ public class UnfieldedIndexExpansionVisitor extends RegexIndexExpansionVisitor {
                 return new EmptyIndexLookup(config);
             }
 
-            return new FieldExpansionIndexLookup(config, scannerFactory, term, fields, executor);
+            AsyncIndexLookup lookup = new UnfieldedLiteralIndexLookup(config, scannerFactory, term, fields, executor);
+            lookup.setScanMonitor(monitor);
+            return lookup;
         } catch (TableNotFoundException e) {
             throw new RuntimeException(e);
         }
@@ -297,7 +300,10 @@ public class UnfieldedIndexExpansionVisitor extends RegexIndexExpansionVisitor {
             return new EmptyIndexLookup(config);
         }
 
-        return new UnfieldedRegexIndexLookup(config, scannerFactory, executor, pattern, description.range, description.isForReverseIndex, expansionFields);
+        AsyncIndexLookup lookup = new UnfieldedRegexIndexLookup(config, scannerFactory, executor, pattern, description.range, description.isForReverseIndex,
+                        expansionFields);
+        lookup.setScanMonitor(monitor);
+        return lookup;
     }
 
     @Override
