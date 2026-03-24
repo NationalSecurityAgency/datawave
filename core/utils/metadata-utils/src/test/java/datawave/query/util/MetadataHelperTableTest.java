@@ -88,6 +88,7 @@ public class MetadataHelperTableTest {
             write(bw, "SHAPE", "e", "datatype-a", EMPTY_VALUE);
             write(bw, "SHAPE", "i", "datatype-a", EMPTY_VALUE);
             write(bw, "SHAPE", "ri", "datatype-a", EMPTY_VALUE);
+            write(bw, "SHAPE", "h", "datatype-a", EMPTY_VALUE);
             write(bw, "SHAPE", "f", "datatype-a\u000020240301", createValue(23L));
             write(bw, "SHAPE", "f", "datatype-a\u000020240302", createValue(14));
             write(bw, "SHAPE", "f", "datatype-a\u000020240303", createValue(72));
@@ -98,6 +99,7 @@ public class MetadataHelperTableTest {
 
             write(bw, "COLOR", "e", "datatype-b", EMPTY_VALUE);
             write(bw, "COLOR", "i", "datatype-b", EMPTY_VALUE);
+            write(bw, "COLOR", "h", "datatype-b", EMPTY_VALUE);
             write(bw, "COLOR", "f", "datatype-b\u000020240306", createValue(66));
             write(bw, "COLOR", "f", "datatype-b\u000020240307", createValue(77));
             write(bw, "COLOR", "f", "datatype-b\u000020240308", createValue(55));
@@ -165,7 +167,9 @@ public class MetadataHelperTableTest {
             // Make sure the model fields appear when fetching all fields.
             write(bw, "EVENT_DATE", "i", "datatype-a", EMPTY_VALUE);
             write(bw, "UUID", "i", "datatype-a", EMPTY_VALUE);
+            write(bw, "UUID", "h", "datatype-a", EMPTY_VALUE);
             write(bw, "TITLE", "i", "datatype-a", EMPTY_VALUE);
+            write(bw, "TITLE", "h", "datatype-a", EMPTY_VALUE);
             write(bw, "HEADER", "i", "datatype-a", EMPTY_VALUE);
             write(bw, "DESIGNATION", "i", "datatype-a", EMPTY_VALUE);
         }
@@ -602,6 +606,16 @@ public class MetadataHelperTableTest {
         assertEquals(Set.of("SHAPE", "DEFINITION", "EVENT_DATE", "TITLE", "UUID", "HEADER", "DESIGNATION"), helper.getIndexedFields(Set.of("datatype-a")));
         assertEquals(Set.of("COLOR", "DEFINITION"), helper.getIndexedFields(Set.of("datatype-b")));
         assertEquals(Collections.emptySet(), helper.getIndexedFields(Set.of("datatype-c")));
+    }
+
+    @Test
+    public void testGetHiddenFields() throws Exception {
+        Set<String> hiddenFields = Set.of("SHAPE", "COLOR", "TITLE", "UUID");
+        assertEquals(hiddenFields, helper.getHiddenFields(null));
+        assertEquals(hiddenFields, helper.getHiddenFields(Collections.emptySet()));
+        assertEquals(Set.of("SHAPE", "TITLE", "UUID"), helper.getHiddenFields(Set.of("datatype-a")));
+        assertEquals(Set.of("COLOR"), helper.getHiddenFields(Set.of("datatype-b")));
+        assertEquals(Collections.emptySet(), helper.getHiddenFields(Set.of("datatype-c")));
     }
 
     @Test
