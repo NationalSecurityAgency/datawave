@@ -28,6 +28,7 @@ public class FieldExistenceRuleTest extends ShardQueryRuleTest {
     private static final String beginDate = "20201231";
     private static final String endDate = "20251231";
     private static final Set<String> specialFields = Set.of(ANY_FIELD, NO_FIELD);
+    private static final Set<String> hiddenFields = Set.of("HIDDEN_FIELD");
 
     @Mock
     private MetadataHelper helper;
@@ -128,6 +129,23 @@ public class FieldExistenceRuleTest extends ShardQueryRuleTest {
         EasyMock.verify(settings, helper);
     }
 
+    /**
+     * Test a query with a hidden field.
+     */
+    @Test
+    public void testHiddenFields() throws Exception {
+        givenQuery("FOO == 'abc' || BAR =~ 'abc' || filter:includeRegex(SHENANIGANS, '45.8') || HIDDEN_FIELD == 'aa'");
+        expectMessage("Fields not found in data dictionary: SHENANIGANS, HIDDEN_FIELD");
+
+        givenExistingFields("FOO", "BAR");
+        expectFoundFields("FOO", "BAR", "SHENANIGANS", "HIDDEN_FIELD");
+        givenMissingFields("SHENANIGANS", "HIDDEN_FIELD");
+
+        assertResult();
+
+        EasyMock.verify(settings, helper);
+    }
+
     @Override
     protected Object parseQuery() throws Exception {
         return parseQueryToJexl();
@@ -140,6 +158,7 @@ public class FieldExistenceRuleTest extends ShardQueryRuleTest {
         givenQuerySettings(settings);
 
         try {
+            EasyMock.expect(helper.getHiddenFields(Collections.emptySet())).andReturn(hiddenFields);
             EasyMock.expect(helper.getAllFields(Collections.emptySet())).andReturn(existingFields);
         } catch (TableNotFoundException e) {
             throw new RuntimeException(e);
