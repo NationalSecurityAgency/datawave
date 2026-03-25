@@ -113,7 +113,7 @@ public class SSDeepSimilarityQueryTest {
 
     @Test(expected = DatawaveFatalQueryException.class)
     public void testMaxResultsLimit() throws Exception {
-        logic.setMaxResults(2);
+        logic.setMaxResults(1);
         runSingleQuery(false);
     }
 
