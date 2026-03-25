@@ -400,7 +400,7 @@ public class RunningQueryTest {
                     } else if (usePageOverride) {
                         getConfig().setQueryString(pageOverride);
                     }
-                    return input;
+                    return new Object();
                 }
 
                 @Override
