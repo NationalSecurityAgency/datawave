@@ -61,22 +61,23 @@ export function maxSubstring(str: any, colName: any): any {
     return;
   }
 
-  switch (colName) {
-    case 'fieldName':
-    case 'internalFieldName':
-      return str.length > 32 ? str.substring(0, 30) + ' ...' : str;
-    case 'Types':
-      // Types is offset by 2 to prevent overlapping in 'Tokenized' Column
-      return str.length > 14 ? str.substring(0, 9) + ' ...' : str;
-    case 'Descriptions':
-      return str.length > 24 ? str.substring(0, 22) + ' ...' : str;
-    case 'CopyPaste':
-      return str.length > 42 ? str.substring(0, 40) + ' ...' : str;
-    case 'dataType':
-      return str.length > 12 ? str.substring(0, 10) + ' ...' : str;
-    default:
-      return str;
-  }
+  // switch (colName) {
+  //   case 'fieldName':
+  //   case 'internalFieldName':
+  //     return str.length > 32 ? str.substring(0, 30) + ' ...' : str;
+  //   case 'Types':
+  //     // Types is offset by 2 to prevent overlapping in 'Tokenized' Column
+  //     return str.length > 14 ? str.substring(0, 9) + ' ...' : str;
+  //   case 'Descriptions':
+  //     return str.length > 24 ? str.substring(0, 22) + ' ...' : str;
+  //   case 'CopyPaste':
+  //     return str.length > 42 ? str.substring(0, 40) + ' ...' : str;
+  //   case 'dataType':
+  //     return str.length > 12 ? str.substring(0, 10) + ' ...' : str;
+  //   default:
+  //     return str;
+  // }
+  return str;
 }
 
 // Defines how the expandability is parsed on the table.

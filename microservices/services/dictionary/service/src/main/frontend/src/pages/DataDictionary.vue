@@ -47,6 +47,8 @@
         dense
         style="font-size: smaller; height: 100%; width: 100%;"
         class="datawave-dictionary-sticky-sass dark"
+        sticky-header
+        table-style="table-layout: fixed; width: 100%;"
         :rows-per-page-options="[]"
       >
         <template v-slot:top-left>
@@ -94,6 +96,7 @@
               v-for="col in props.cols"
               :key="col.name"
               :props="props"
+              :style="{ width: colWidths[col.name] + 'px', position: 'relative' }"
             >
               <div class="tooltip-wrapper row items-center no-wrap">
                 <span class="q-mr-xs">
@@ -171,6 +174,10 @@
                   </q-btn>
                 </template>
               </div>
+                <div
+                  class="resize-handle"
+                  @mousedown.stop.prevent="startResizing(col.name, $event)"
+                />
             </q-th>
           </q-tr>
         </template>
@@ -287,6 +294,9 @@ const paginationFront = ref({
   rowsPerPage: 200,
   sortBy: 'fieldName',
 });
+const resizingCol = ref<string | null>(null);
+const startX = ref(0);
+const colWidths = ref<Record<string, number>>({});
 
 // API - Defines all the Nececssary API calls for the user, and filters.
 // Note that to run the endpoint in DEV mode, you must build the project at least once first.
@@ -362,6 +372,14 @@ onMounted(() => {
 
   if (changeFilter.value) {
     queryTable();
+  }
+
+  if (columns) {
+    columns.forEach(col => {
+      if (col.name) {
+        colWidths.value[col.name] = 150;
+      }
+    });
   }
 });
 
@@ -455,6 +473,39 @@ async function queryTable(priorDays?: any) {
 // Query 2 - Awaits for the user to change or add something.
 function waitUp() {
   filter.value = changeFilter.value;
+}
+
+function startResizing(colName: string, evt: MouseEvent) {
+  resizingCol.value = colName;
+  startX.value = evt.pageX;
+
+  document.addEventListener('mousemove', handleResize);
+  document.addEventListener('mouseup', stopResizing);
+}
+
+function handleResize(evt: MouseEvent) {
+  if (!resizingCol.value) return;
+  const diff = evt.pageX - startX.value;
+  startX.value = evt.pageX;
+
+  const allCols = Object.keys(colWidths.value);
+  const dragged = resizingCol.value;
+  const otherCols = allCols.filter(c => c !== dragged);
+
+  colWidths.value[dragged] += diff;
+  otherCols.forEach(c => {
+    colWidths.value[c] -= diff / otherCols.length;
+    if (colWidths.value[c] < 0) colWidths.value[c] = 0;
+  });
+
+  // force update so sticky header adjusts
+  table.value?.refresh();
+}
+
+function stopResizing() {
+  document.removeEventListener('mousemove', handleResize);
+  document.removeEventListener('mouseup', stopResizing);
+  resizingCol.value = null;
 }
 
 // Customization - Sets the Dark Mode Toggle for the User.

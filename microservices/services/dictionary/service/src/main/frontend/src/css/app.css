@@ -56,6 +56,30 @@
   text-align: center;
 }
 
+.q-table th,
+.q-table td {
+  white-space: nowrap !important;    /* don’t wrap text */
+  overflow: hidden !important;       /* hide overflowing content */
+  text-overflow: clip !important;    /* don’t add ellipsis, just cut */
+  min-width: 0 !important;           /* allow zero width */
+}
+
+.resize-handle {
+  cursor: col-resize;
+  width: 6px;
+  height: 100%;
+  position: absolute;
+  right: 0;
+  top: 0;
+  background-color: rgba(0, 188, 212, 0.3);
+  z-index: 10;
+}
+
+/* show something on hover */
+.resize-handle:hover {
+  background-color: rgba(0, 188, 212, 0.5); /* bright blue on hover */
+}
+
 ::-webkit-scrollbar {
     height: 12px;
     width: 14px;
