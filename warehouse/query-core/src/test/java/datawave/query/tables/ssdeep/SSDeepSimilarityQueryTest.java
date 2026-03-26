@@ -113,9 +113,7 @@ public class SSDeepSimilarityQueryTest {
 
     @Test(expected = DatawaveFatalQueryException.class)
     public void testMaxResultsLimit() throws Exception {
-        // with asynchronous results gathering we could fetch an additional result before triggering
-        // the exception
-        logic.setMaxResults(1);
+        logic.setMaxResults(2);
         runSingleQuery(false);
     }
 
