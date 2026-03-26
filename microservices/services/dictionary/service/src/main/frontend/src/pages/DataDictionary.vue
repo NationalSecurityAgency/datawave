@@ -475,9 +475,13 @@ function waitUp() {
   filter.value = changeFilter.value;
 }
 
+const initialWidth = ref(0);
 function startResizing(colName: string, evt: MouseEvent) {
   resizingCol.value = colName;
   startX.value = evt.pageX;
+
+  // store initial width of this column
+  initialWidth.value = colWidths.value[colName];
 
   document.addEventListener('mousemove', handleResize);
   document.addEventListener('mouseup', stopResizing);
@@ -485,20 +489,20 @@ function startResizing(colName: string, evt: MouseEvent) {
 
 function handleResize(evt: MouseEvent) {
   if (!resizingCol.value) return;
-  const diff = evt.pageX - startX.value;
-  startX.value = evt.pageX;
 
-  const allCols = Object.keys(colWidths.value);
   const dragged = resizingCol.value;
-  const otherCols = allCols.filter(c => c !== dragged);
 
-  colWidths.value[dragged] += diff;
-  otherCols.forEach(c => {
-    colWidths.value[c] -= diff / otherCols.length;
-    if (colWidths.value[c] < 0) colWidths.value[c] = 0;
-  });
+  // TOTAL distance from where drag started
+  const totalDiff = evt.pageX - startX.value;
 
-  // force update so sticky header adjusts
+  // apply directly (no accumulation lag)
+  colWidths.value[dragged] = initialWidth.value + totalDiff * 2;
+
+  // clamp so it doesn’t collapse
+  if (colWidths.value[dragged] < 20) {
+    colWidths.value[dragged] = 20;
+  }
+
   table.value?.refresh();
 }
 
