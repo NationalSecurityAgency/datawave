@@ -72,7 +72,7 @@ jobs:
       packages: write
     steps:
     - name: Checkout DataWave
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         fetch-depth: 0
         token: ${{ secrets.GHCR_WRITE_ACCESS_TOKEN }}
