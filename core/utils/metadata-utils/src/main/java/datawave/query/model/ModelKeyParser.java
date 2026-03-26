@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
+import java.util.function.LongSupplier;
 import java.util.stream.Collectors;
 
 import org.apache.accumulo.core.data.Key;
@@ -48,6 +49,9 @@ public class ModelKeyParser {
 
     public static final String NULL_BYTE = "\0";
     public static final Value NULL_VALUE = new Value(new byte[0]);
+
+    // Package-private to allow test override
+    static LongSupplier clock = System::currentTimeMillis;
 
     @Deprecated
     public static final String INDEX_ONLY = "index_only";
@@ -133,7 +137,7 @@ public class ModelKeyParser {
                             modelName + dataType, // ColFam
                             outName + NULL_BYTE + mapping.getDirection().getValue(), // ColQual
                             cv, // Visibility
-                            System.currentTimeMillis() // Timestamp
+                            clock.getAsLong() // Timestamp
             );
         } else {
             String fieldName = mapping.getModelFieldName() == null ? ModelKeyParser.MODEL : mapping.getModelFieldName();
@@ -142,7 +146,7 @@ public class ModelKeyParser {
                             modelName + dataType, // ColFam
                             attr, // ColQ
                             cv, // Visibility
-                            System.currentTimeMillis() // Timestamp
+                            clock.getAsLong() // Timestamp
             );
         }
     }
@@ -189,17 +193,16 @@ public class ModelKeyParser {
             if (Direction.REVERSE.equals(mapping.getDirection())) {
                 // Reverse mappings should not have indexOnly designators. If they do, scrub it off.
                 m = new Mutation(mapping.getFieldName());
-                m.put(modelName + dataType, mapping.getModelFieldName() + NULL_BYTE + mapping.getDirection().getValue(), cv, System.currentTimeMillis(),
-                                NULL_VALUE);
+                m.put(modelName + dataType, mapping.getModelFieldName() + NULL_BYTE + mapping.getDirection().getValue(), cv, clock.getAsLong(), NULL_VALUE);
             } else {
                 m = new Mutation(mapping.getModelFieldName());
-                m.put(modelName + dataType, mapping.getFieldName() + NULL_BYTE + mapping.getDirection().getValue(), cv, System.currentTimeMillis(), NULL_VALUE);
+                m.put(modelName + dataType, mapping.getFieldName() + NULL_BYTE + mapping.getDirection().getValue(), cv, clock.getAsLong(), NULL_VALUE);
             }
         } else {
             String fieldName = mapping.getModelFieldName() == null ? ModelKeyParser.MODEL : mapping.getModelFieldName();
             String[] attr = getAttrCqValue(mapping.getAttributes());
             m = new Mutation(fieldName);
-            m.put(modelName + dataType, attr[0], cv, System.currentTimeMillis(), new Value(attr[1]));
+            m.put(modelName + dataType, attr[0], cv, clock.getAsLong(), new Value(attr[1]));
         }
         return m;
     }
@@ -212,24 +215,24 @@ public class ModelKeyParser {
         if (mapping.isFieldMapping()) {
             if (Direction.REVERSE.equals(mapping.getDirection())) {
                 m = new Mutation(mapping.getFieldName());
-                m.putDelete(modelName + dataType, mapping.getModelFieldName() + NULL_BYTE + mapping.getDirection().getValue(), cv, System.currentTimeMillis());
+                m.putDelete(modelName + dataType, mapping.getModelFieldName() + NULL_BYTE + mapping.getDirection().getValue(), cv, clock.getAsLong());
             } else {
                 m = new Mutation(mapping.getModelFieldName());
-                m.putDelete(modelName + dataType, mapping.getFieldName() + NULL_BYTE + mapping.getDirection().getValue(), cv, System.currentTimeMillis());
+                m.putDelete(modelName + dataType, mapping.getFieldName() + NULL_BYTE + mapping.getDirection().getValue(), cv, clock.getAsLong());
                 m.putDelete(modelName + dataType, mapping.getFieldName() + NULL_BYTE + INDEX_ONLY + NULL_BYTE + mapping.getDirection().getValue(), cv,
-                                System.currentTimeMillis());
+                                clock.getAsLong());
             }
         } else {
             String fieldName = mapping.getModelFieldName() == null ? ModelKeyParser.MODEL : mapping.getModelFieldName();
             m = new Mutation(fieldName);
-            m.putDelete(modelName + dataType, ATTRIBUTES, cv, System.currentTimeMillis());
+            m.putDelete(modelName + dataType, ATTRIBUTES, cv, clock.getAsLong());
             if (mapping.getAttributes().isEmpty()) {
-                m.putDelete(modelName + dataType, "", cv, System.currentTimeMillis());
+                m.putDelete(modelName + dataType, "", cv, clock.getAsLong());
             } else {
                 for (String attr : mapping.getAttributes()) {
-                    m.putDelete(modelName + dataType, attr, cv, System.currentTimeMillis());
+                    m.putDelete(modelName + dataType, attr, cv, clock.getAsLong());
                     if (attr.indexOf('=') >= 0) {
-                        m.putDelete(modelName + dataType, attr.substring(0, attr.indexOf('=')), cv, System.currentTimeMillis());
+                        m.putDelete(modelName + dataType, attr.substring(0, attr.indexOf('=')), cv, clock.getAsLong());
                     }
                 }
             }

@@ -64,18 +64,6 @@
             <artifactId>type-utils</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.easymock</groupId>
-            <artifactId>easymock</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.powermock</groupId>
-            <artifactId>powermock-api-easymock</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.powermock</groupId>
-            <artifactId>powermock-module-junit4</artifactId>
-        </dependency>
-        <dependency>
             <groupId>commons-collections</groupId>
             <artifactId>commons-collections</artifactId>
             <scope>test</scope>
