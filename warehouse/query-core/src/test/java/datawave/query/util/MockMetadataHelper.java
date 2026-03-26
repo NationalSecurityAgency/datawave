@@ -46,6 +46,7 @@ import datawave.util.TableName;
 public class MockMetadataHelper extends MetadataHelper {
     protected final Metadata metadata = new Metadata();
     private Set<String> indexOnlyFields = new HashSet<>();
+    private Set<String> hiddenFields = new HashSet<>();
     private Set<String> expansionFields = new HashSet<>();
     private Set<String> contentFields = new HashSet<>();
     private Set<String> riFields = new HashSet<>();
@@ -177,6 +178,11 @@ public class MockMetadataHelper extends MetadataHelper {
     @Override
     public Set<String> getIndexOnlyFields(Set<String> ingestTypeFilter) throws TableNotFoundException {
         return indexOnlyFields;
+    }
+
+    @Override
+    public Set<String> getHiddenFields(Set<String> ingestTypeFilter) throws TableNotFoundException {
+        return hiddenFields;
     }
 
     @Override
@@ -403,6 +409,10 @@ public class MockMetadataHelper extends MetadataHelper {
 
     public void setIndexOnlyFields(Set<String> indexOnlyFields) {
         this.indexOnlyFields = indexOnlyFields;
+    }
+
+    public void setHiddenFields(Set<String> hiddenFields) {
+        this.hiddenFields = hiddenFields;
     }
 
     public void setNormalizedFields(Set<String> normalizedFields) {

@@ -123,10 +123,6 @@ public class SatisfactionVisitor extends BaseVisitor {
                 case EVALUATION_ONLY:
                     isQueryFullySatisfied = false;
                     return null;
-                case EXCEEDED_TERM:
-                    log.warn("cannot support exceeded term marker");
-                    isQueryFullySatisfied = false;
-                    return null;
                 case STRICT:
                 case LENIENT:
                 case DROPPED:
