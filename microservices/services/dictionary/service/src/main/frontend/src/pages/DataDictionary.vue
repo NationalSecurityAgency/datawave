@@ -100,7 +100,6 @@
                 width: colWidths[col.name] + 'px',
                 minWidth: colWidths[col.name] + 'px',
                 maxWidth: colWidths[col.name] + 'px',
-                position: 'relative'
                 }"
             >
               <div class="tooltip-wrapper row items-center no-wrap">
