@@ -30,9 +30,7 @@ public class ReloadFilesFromLoadedJob {
 
             FileSystem hdfs = FileSystem.get(context.getConfiguration());
 
-            String hdfsBaseDir = context
-                    .getConfiguration()
-                    .get("reload.files.hdfs.base.dir", "/data");
+            String hdfsBaseDir = context.getConfiguration().get("reload.files.hdfs.base.dir", "/data");
 
             String[] parts = value.toString().split("/");
             String datatype = parts[3];
@@ -53,8 +51,6 @@ public class ReloadFilesFromLoadedJob {
             boolean har = false;
 
             String hourAndFileName = hour + "/" + filename;
-
-
 
             boolean errorOnNotFound = context.getConfiguration().getBoolean("reload.files.error.on.not.found", true);
 
@@ -99,8 +95,7 @@ public class ReloadFilesFromLoadedJob {
                 } catch (Exception e) {
                     log.error("Failed to rename: {}/{} to {}", loadedPath, hourAndFileName, outputPath);
                     if (errorOnNotFound) {
-                        throw new RuntimeException(loadedPath + "/" + hourAndFileName + " not found in either " +
-                                "archive directory or raw loaded directory ",
+                        throw new RuntimeException(loadedPath + "/" + hourAndFileName + " not found in either " + "archive directory or raw loaded directory ",
                                         e);
                     }
                 }
@@ -110,8 +105,9 @@ public class ReloadFilesFromLoadedJob {
     }
 
     public static void main(String[] args) throws Exception {
-        if (args.length < 3 || args.length > 4 ) {
-            System.err.println("Usage: datawave.ingest.mapreduce.job.reload.ReloadFilesFromLoadedJob <input path> <lines per map> <error on file not found> [<hdfs base dir defaults to /data>]");
+        if (args.length < 3 || args.length > 4) {
+            System.err.println(
+                            "Usage: datawave.ingest.mapreduce.job.reload.ReloadFilesFromLoadedJob <input path> <lines per map> <error on file not found> [<hdfs base dir defaults to /data>]");
             System.err.println("NOTE: FLAG MAKERS MUST BE STOPPED WHILE RUNNING");
             System.err.println(
                             "File at <input path> should consist paths to loaded files in the format /data/flagged|loaded/<datatype>/<year>/<month>/<day>/<hour>/<filename>");
@@ -120,7 +116,7 @@ public class ReloadFilesFromLoadedJob {
 
         Configuration conf = new Configuration();
         conf.set("reload.files.error.on.not.found", args[2]);
-        if(args.length >= 4) {
+        if (args.length >= 4) {
             conf.set("reload.files.hdfs.base.dir", args[3]);
         }
 
