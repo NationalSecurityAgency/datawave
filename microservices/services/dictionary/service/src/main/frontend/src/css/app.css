@@ -61,7 +61,6 @@
   white-space: nowrap !important;    /* don’t wrap text */
   overflow: hidden !important;       /* hide overflowing content */
   text-overflow: clip !important;    /* don’t add ellipsis, just cut */
-  min-width: 0 !important;           /* allow zero width */
 }
 
 .resize-handle {
@@ -108,6 +107,7 @@
 /* Sets a fixed height for the table container */
 .datawave-dictionary-sticky-sass {
   height: 310px;
+  overflow-y: auto;
 }
 
 /* Applies a blur effect to the first row's headers for a frosted look */

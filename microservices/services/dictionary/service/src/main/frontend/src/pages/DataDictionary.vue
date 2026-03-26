@@ -96,7 +96,12 @@
               v-for="col in props.cols"
               :key="col.name"
               :props="props"
-              :style="{ width: colWidths[col.name] + 'px', position: 'relative' }"
+              :style="{
+                width: colWidths[col.name] + 'px',
+                minWidth: colWidths[col.name] + 'px',
+                maxWidth: colWidths[col.name] + 'px',
+                position: 'relative'
+                }"
             >
               <div class="tooltip-wrapper row items-center no-wrap">
                 <span class="q-mr-xs">
