@@ -207,7 +207,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             this.logic.setupQuery(configuration);
             this.iter = this.logic.getTransformIterator(this.settings);
             this.allowIntermediateEmptyPages = logic.isLongRunningQuery();
-            // force us to use asynchronous results thread to allowing intermediate empty pages
+            // force us to use asynchronous results thread to allow intermediate empty pages
             if (this.allowIntermediateEmptyPages) {
                 this.useResultsThread = true;
             }
