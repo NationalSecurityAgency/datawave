@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.accumulo.core.client.AccumuloClient;
@@ -27,12 +28,20 @@ import datawave.microservice.query.QueryImpl;
 import datawave.security.authorization.AuthorizationException;
 
 public class CompositeQueryLogicResultsIteratorTest {
+
+    private CompositeQueryLogic compositeLogic;
+
     @Test
     public void countDownLatchShortCircuitTest() throws Exception {
         final long pollTime = 1000;
         final long delay = 0;
 
         CompositeQueryLogicResultsIterator iterator = setup(pollTime, delay);
+
+        // wait for threads to complete before testing the short-circuit behavior
+        CountDownLatch latch = compositeLogic.getCompletionLatch();
+        assertTrue("completion latch did not count down in time", latch.await(5, TimeUnit.SECONDS));
+
         long start = System.currentTimeMillis();
         iterator.hasNext();
 
@@ -61,6 +70,7 @@ public class CompositeQueryLogicResultsIteratorTest {
 
     private CompositeQueryLogicResultsIterator setup(long pollTime, long delay) throws Exception {
         CompositeQueryLogic logic = new StrippedCompositeQueryLogic();
+        this.compositeLogic = logic;
         Map<String,QueryLogic<?>> logicMap = new HashMap<>();
         logicMap.put("alfred", new StubbedQueryLogic(delay));
         logicMap.put("ben", new StubbedQueryLogic(delay));
@@ -76,9 +86,6 @@ public class CompositeQueryLogicResultsIteratorTest {
 
         ArrayBlockingQueue queue = new ArrayBlockingQueue(1);
         CompositeQueryLogicResultsIterator iterator = new CompositeQueryLogicResultsIterator(logic, queue, pollTime, TimeUnit.MILLISECONDS);
-
-        // small sleep to guarantee any init in the threads is finished for consistent test results
-        Thread.sleep(25);
 
         return iterator;
     }
