@@ -1,9 +1,18 @@
 package datawave.query.tables.shard;
 
+import static datawave.core.iterators.ResultCountingIterator.ResultCountTuple;
+
 import java.io.ByteArrayInputStream;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -15,89 +24,194 @@ import org.apache.log4j.Logger;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
 
-import datawave.core.iterators.ResultCountingIterator;
 import datawave.marking.MarkingFunctions;
+import datawave.webservice.query.result.event.DefaultEvent;
 
 /**
- *
+ * A transformer that aggregates query results into a count.
+ * <p>
+ * Aggregation happens in a separate thread so that an intermediate result can be returned to the RunningQuery.
  */
 public class CountAggregatingIterator extends TransformIterator {
     private static final Logger log = Logger.getLogger(CountAggregatingIterator.class);
 
-    private Long count = 0l;
-    private boolean firstTime = true;
+    private static final long DEFAULT_PAGE_WAIT_TIME_MILLIS = 3_600_000L;
 
-    protected Set<ColumnVisibility> columnVisibilities = Sets.newHashSet();
+    private boolean done = false;
+    private final AtomicBoolean executing = new AtomicBoolean(true);
+    private final CountDownLatch latch = new CountDownLatch(1);
 
-    private final MarkingFunctions markingFunctions;
+    private final long pageWaitTimeMillis;
 
-    private Kryo kryo = new Kryo();
+    private final CountEntryAggregator aggregator;
+    private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
+    /**
+     * Constructor with that uses {@link #DEFAULT_PAGE_WAIT_TIME_MILLIS}
+     *
+     * @param iterator
+     *            the iterator
+     * @param transformer
+     *            the transformer
+     * @param markingFunctions
+     *            the marking functions
+     */
     public CountAggregatingIterator(Iterator<Entry<Key,Value>> iterator, Transformer transformer, MarkingFunctions markingFunctions) {
+        this(iterator, transformer, markingFunctions, DEFAULT_PAGE_WAIT_TIME_MILLIS);
+    }
+
+    /**
+     * Constructor that uses provided page wait time millis
+     *
+     * @param iterator
+     *            the iterator
+     * @param transformer
+     *            the transformer
+     * @param markingFunctions
+     *            the marking functions
+     * @param pageWaitTimeMillis
+     *            the time to wait for the next page
+     */
+    @SuppressWarnings("unchecked")
+    public CountAggregatingIterator(Iterator<Entry<Key,Value>> iterator, Transformer transformer, MarkingFunctions markingFunctions, long pageWaitTimeMillis) {
         super(iterator, transformer);
-        this.markingFunctions = markingFunctions;
+        this.aggregator = new CountEntryAggregator(transformer, markingFunctions);
+        this.pageWaitTimeMillis = pageWaitTimeMillis;
+
+        CountAggregatingRunnable runnable = new CountAggregatingRunnable(iterator, aggregator, executing, latch);
+        executor.execute(runnable);
     }
 
     @Override
     public boolean hasNext() {
-        if (count == -1) {
-            return false;
-        }
-
-        boolean hasNext = false;
-        if (getIterator().hasNext()) {
-            hasNext = true;
-            do {
-                @SuppressWarnings("unchecked")
-                Entry<Key,Value> entry = (Entry<Key,Value>) getIterator().next();
-
-                if (null == entry || entry.getKey() == null || entry.getValue() == null) {
-                    hasNext = false;
-                    break;
-                }
-
-                // Unpack the kryo serialized object, it contains the count and the accumulated visibility
-                ResultCountingIterator.ResultCountTuple tuple = unpackValue(entry.getValue());
-
-                // Merge the columnVisibilities
-                this.columnVisibilities.add(tuple.getVisibility());
-
-                this.count += tuple.getCount();
-            } while (getIterator().hasNext());
-        } else if (firstTime) {
-            firstTime = false;
-            count = 0l;
-
-            columnVisibilities.add(new ColumnVisibility(""));
-
-            return true;
-        }
-
-        return hasNext;
-    }
-
-    private ResultCountingIterator.ResultCountTuple unpackValue(Value value) {
-        ByteArrayInputStream bais = new ByteArrayInputStream(value.get());
-        Input input = new Input(bais);
-        return kryo.readObject(input, ResultCountingIterator.ResultCountTuple.class);
+        return !done;
     }
 
     @Override
     public Object next() {
-        ColumnVisibility cv = null;
-
         try {
-            // Calculate the columnVisibility for this key from the combination.
-            cv = markingFunctions.combine(columnVisibilities);
+            latch.await(pageWaitTimeMillis, TimeUnit.MILLISECONDS);
         } catch (Exception e) {
-            log.error("Could not create combined columnVisibilities for the count", e);
-            return null;
+            // nope
         }
 
-        Object obj = getTransformer().transform(Maps.immutableEntry(count, cv));
-        count = -1l;
-        return obj;
+        if (executing.get()) {
+            return getIntermediateEvent();
+        } else {
+            done = true;
+            return aggregator.getAggregatedEvent();
+        }
+    }
+
+    /**
+     * Build a {@link DefaultEvent} with the intermediate result flag set to true
+     *
+     * @return an intermediate result
+     */
+    private Object getIntermediateEvent() {
+        DefaultEvent event = new DefaultEvent();
+        event.setIntermediateResult(true);
+        return event;
+    }
+
+    /**
+     * Encapsulate aggregation logic here
+     */
+    private static class CountEntryAggregator {
+
+        private final AtomicLong count = new AtomicLong(0L);
+        private final Set<ColumnVisibility> cvs = new HashSet<>();
+
+        private final Transformer transformer;
+        private final MarkingFunctions markingFunctions;
+
+        public CountEntryAggregator(Transformer transformer, MarkingFunctions markingFunctions) {
+            this.transformer = transformer;
+            this.markingFunctions = markingFunctions;
+        }
+
+        public void addCount(long count) {
+            this.count.addAndGet(count);
+        }
+
+        public void addColumnVisibility(ColumnVisibility cv) {
+            this.cvs.add(cv);
+        }
+
+        @SuppressWarnings("unchecked")
+        public Object getAggregatedEvent() {
+            if (cvs.isEmpty() && count.get() == 0L) {
+                cvs.add(new ColumnVisibility(""));
+            }
+
+            ColumnVisibility cv = getCombinedColumnVisibility();
+            return transformer.transform(Maps.immutableEntry(count.get(), cv));
+        }
+
+        private ColumnVisibility getCombinedColumnVisibility() {
+            try {
+                return markingFunctions.combine(cvs);
+            } catch (Exception e) {
+                log.error("Could not combine columnVisibilities for the count", e);
+                return null;
+            }
+        }
+    }
+
+    /**
+     * A runnable that pulls {@link ResultCountTuple} from the iterator and passes them to the {@link CountEntryAggregator}
+     */
+    private static class CountAggregatingRunnable implements Runnable {
+        private final Kryo kryo = new Kryo();
+
+        private final Iterator<Entry<Key,Value>> iterator;
+        private final CountEntryAggregator aggregator;
+        private final AtomicBoolean executing;
+        private final CountDownLatch latch;
+
+        public CountAggregatingRunnable(Iterator<Entry<Key,Value>> iterator, CountEntryAggregator aggregator, AtomicBoolean executing, CountDownLatch latch) {
+            this.iterator = iterator;
+            this.aggregator = aggregator;
+            this.executing = executing;
+            this.latch = latch;
+        }
+
+        @Override
+        public void run() {
+            try {
+                log.info("Beginning count aggregation");
+                while (iterator.hasNext()) {
+                    Entry<Key,Value> entry = iterator.next();
+                    if (null == entry || entry.getKey() == null || entry.getValue() == null) {
+                        continue;
+                    }
+
+                    // Unpack the kryo serialized object, it contains the count and the accumulated visibility
+                    ResultCountTuple tuple = unpackValue(entry.getValue());
+                    aggregator.addColumnVisibility(tuple.getVisibility());
+                    aggregator.addCount(tuple.getCount());
+                }
+            } finally {
+                log.info("Finished count aggregation");
+                executing.set(false);
+                latch.countDown();
+            }
+        }
+
+        /**
+         * Deserialize the value
+         *
+         * @param value
+         *            the value
+         * @return a {@link ResultCountTuple}
+         */
+        private ResultCountTuple unpackValue(Value value) {
+            try (ByteArrayInputStream bais = new ByteArrayInputStream(value.get()); Input input = new Input(bais)) {
+                return kryo.readObject(input, ResultCountTuple.class);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 }

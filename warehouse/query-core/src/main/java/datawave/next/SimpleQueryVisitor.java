@@ -101,7 +101,6 @@ public class SimpleQueryVisitor extends BaseVisitor {
                 case INDEX_HOLE:
                 case EVALUATION_ONLY:
                 case DELAYED:
-                case EXCEEDED_TERM:
                 case DROPPED:
                 case STRICT:
                 case LENIENT:

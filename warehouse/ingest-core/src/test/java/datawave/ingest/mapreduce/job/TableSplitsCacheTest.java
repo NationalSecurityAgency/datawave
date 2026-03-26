@@ -2,6 +2,7 @@ package datawave.ingest.mapreduce.job;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.net.URI;
 import java.net.URL;
 import java.text.SimpleDateFormat;
@@ -32,8 +33,6 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.powermock.api.easymock.PowerMock;
-import org.powermock.reflect.Whitebox;
 
 import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.ingest.util.ShardLocationTrieMap;
@@ -133,7 +132,7 @@ public class TableSplitsCacheTest {
         fs.setConf(conf);
         fs.initialize(URI.create("file:///localhost"), conf);
 
-        Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", FileSystem.getDefaultUri(conf), conf, fs);
+        addFileSystemForTesting(FileSystem.getDefaultUri(conf), conf, fs);
 
     }
 
@@ -189,7 +188,13 @@ public class TableSplitsCacheTest {
     @AfterClass
     public static void teardownClass() throws Exception {
 
-        Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", URI.create("file:///localhost"), null, null);
+        addFileSystemForTesting(URI.create("file:///localhost"), null, null);
+    }
+
+    private static void addFileSystemForTesting(URI uri, Configuration conf, FileSystem fs) throws Exception {
+        Method method = FileSystem.class.getDeclaredMethod("addFileSystemForTesting", URI.class, Configuration.class, FileSystem.class);
+        method.setAccessible(true);
+        method.invoke(null, uri, conf, fs);
     }
 
     protected Map<String,String> mockConfiguration = new HashMap<>();
@@ -208,7 +213,7 @@ public class TableSplitsCacheTest {
     }
 
     protected JobConf createMockJobConf() {
-        JobConf mocked = PowerMock.createMock(JobConf.class);
+        JobConf mocked = EasyMock.createMock(JobConf.class);
 
         EasyMock.expect(mocked.getTrimmed("fs.defaultFS", "file:///")).andReturn("file:///").anyTimes();
 
@@ -319,7 +324,7 @@ public class TableSplitsCacheTest {
             return results;
         }).anyTimes();
 
-        PowerMock.replay(mocked);
+        EasyMock.replay(mocked);
 
         return mocked;
     }

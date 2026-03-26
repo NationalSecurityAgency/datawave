@@ -1,11 +1,12 @@
 package datawave.microservice.query.executor.task;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.microservice.query.executor.QueryExecutor;
 
 public class ExecutorStatusLogger {
-    private Logger log = Logger.getLogger(ExecutorStatusLogger.class);
+    private Logger log = LoggerFactory.getLogger(ExecutorStatusLogger.class);
     private String lastThreadPoolStatus = "";
     private volatile long lastThreadPoolStatusUpdate = 0;
 

@@ -837,6 +837,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
                 // since this may be called multiple times always rebuild
                 // @formatter:off
                 ((DocumentTransformer) this.transformerInstance).addTransform(new AnnotationHitsTransformer(
+                        getConfig(),
                         getConfig().getOriginalJexlQuery(),
                         allHitsQueryConfig.getQueryTermExtractor(),
                         allHitsQueryConfig.getTermNormalizer(),
@@ -844,7 +845,8 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
                         getAnnotationHitsFactory(),
                         allHitsQueryConfig.getMaxContextLength(),
                         allHitsQueryConfig.getValidAnnotationTypes(),
-                        allHitsQueryConfig.getTargetField()));
+                        allHitsQueryConfig.getTargetField(),
+                        allHitsQueryConfig.getAnnotationEnrichmentFieldMap()));
                 // @formatter:on
             }
 
@@ -1904,6 +1906,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
     public void setDisableIteratorUniqueFields(boolean disableIteratorUniqueFields) {
         getConfig().setDisableIteratorUniqueFields(disableIteratorUniqueFields);
+    }
+
+    public boolean isDisableIteratorMostRecentUniqueFields() {
+        return getConfig().isDisableIteratorMostRecentUniqueFields();
+    }
+
+    public void setDisableIteratorMostRecentUniqueFields(boolean disableIteratorMostRecentUniqueFields) {
+        getConfig().setDisableIteratorMostRecentUniqueFields(disableIteratorMostRecentUniqueFields);
     }
 
     public UniqueFields getUniqueFields() {
