@@ -1,13 +1,4 @@
-package datawave.query.language.builder.lucene;
-
-import org.apache.lucene.queryparser.flexible.core.QueryNodeException;
-import org.apache.lucene.queryparser.flexible.core.builders.QueryBuilder;
-import org.apache.lucene.queryparser.flexible.core.builders.QueryTreeBuilder;
-import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
-import org.apache.lucene.queryparser.flexible.core.nodes.SlopQueryNode;
-import org.apache.lucene.search.Query;
-
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -23,6 +14,15 @@ import org.apache.lucene.search.Query;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package datawave.query.language.builder.lucene;
+
+import org.apache.lucene.queryparser.flexible.core.QueryNodeException;
+import org.apache.lucene.queryparser.flexible.core.builders.QueryBuilder;
+import org.apache.lucene.queryparser.flexible.core.builders.QueryTreeBuilder;
+import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
+import org.apache.lucene.queryparser.flexible.core.nodes.SlopQueryNode;
+import org.apache.lucene.search.Query;
+
 import datawave.query.language.tree.AdjNode;
 import datawave.query.language.tree.SelectorNode;
 import datawave.query.language.tree.WithinNode;
