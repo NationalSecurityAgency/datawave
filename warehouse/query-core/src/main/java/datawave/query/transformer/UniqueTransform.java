@@ -1,5 +1,7 @@
 package datawave.query.transformer;
 
+import static datawave.query.iterator.waitwindow.WaitWindowObserver.WAIT_WINDOW_OVERRUN;
+
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -18,6 +20,7 @@ import java.util.TreeSet;
 import javax.annotation.Nullable;
 
 import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.iterators.YieldCallback;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
@@ -119,8 +122,8 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
      *            the iterator source
      * @return an iterator that will supply the enriched documents
      */
-    public Iterator<Entry<Key,Document>> getIterator(final Iterator<Entry<Key,Document>> in) {
-        return new UniqueTransformIterator(in);
+    public Iterator<Entry<Key,Document>> getIterator(final Iterator<Entry<Key,Document>> in, final YieldCallback yieldCallback) {
+        return new UniqueTransformIterator(in, yieldCallback);
     }
 
     /**
@@ -135,6 +138,13 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
     public Entry<Key,Document> apply(@Nullable Entry<Key,Document> keyDocumentEntry) {
         if (keyDocumentEntry != null) {
             if (FinalDocumentTrackingIterator.isFinalDocumentKey(keyDocumentEntry.getKey())) {
+                return keyDocumentEntry;
+            }
+            Document document = keyDocumentEntry.getValue();
+            if (document != null && document.containsKey(WAIT_WINDOW_OVERRUN)) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Got a WAIT_WINDOW_OVERRUN key in unique transform: " + keyDocumentEntry.getKey());
+                }
                 return keyDocumentEntry;
             }
 
@@ -213,6 +223,7 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
                             throw new DatawaveFatalQueryException("Unable to persist the unique count maps", ioe);
                         }
                         // If countMap is not null, execute the following when both documentMap and countMap are synchronized.
+                        // If we are yielding, then avoid doing any additional work
                         if (setIterator == null) {
                             setupIterator();
                         }
@@ -222,6 +233,7 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
                     }
                 } else {
                     // Otherwise, just synchronize on documentMap.
+                    // If we are yielding, then avoid doing any additional work
                     if (setIterator == null) {
                         setupIterator();
                     }
@@ -421,10 +433,12 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
      * An iterator of documents for this unique transform given an underlying iterator of documents.
      */
     public class UniqueTransformIterator implements Iterator<Map.Entry<Key,Document>> {
+        private final YieldCallback yieldCallback;
         private final Iterator<Map.Entry<Key,Document>> iterator;
         private Map.Entry<Key,Document> next = null;
 
-        public UniqueTransformIterator(Iterator<Map.Entry<Key,Document>> iterator) {
+        public UniqueTransformIterator(Iterator<Map.Entry<Key,Document>> iterator, YieldCallback yieldCallback) {
+            this.yieldCallback = yieldCallback;
             this.iterator = iterator;
         }
 
@@ -455,7 +469,20 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
             }
             // see if there are any results cached by the transform
             if (o == null) {
-                o = flush();
+                // if yielding, then simply persist the set to be used for the next round
+                if (yieldCallback != null && yieldCallback.hasYielded()) {
+                    if (documentMap != null) {
+                        synchronized (documentMap) {
+                            try {
+                                documentMap.persist();
+                            } catch (IOException e) {
+                                log.error(e.getMessage(), e);
+                            }
+                        }
+                    }
+                } else {
+                    o = flush();
+                }
             }
             return o;
         }
