@@ -102,8 +102,7 @@ public class JexlEvaluation implements Predicate<Tuple3<Key,Document,DatawaveJex
         if (documentMatchContext != null) {
             documentMatchContext.clearMergedMatches();
         }
-        Object o;
-        o = script.execute(input.third());
+        Object o = script.execute(input.third());
 
         if (log.isTraceEnabled()) {
             log.trace("Evaluation of " + query + " against document " + input.second().getMetadata() + " returned " + o);

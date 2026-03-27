@@ -13,6 +13,7 @@ import java.util.Set;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.log4j.Logger;
 
 import com.google.common.base.Function;
@@ -32,6 +33,7 @@ import datawave.query.util.Tuples;
 public class DocumentMatchContextFunction implements Function<Tuple3<Key,Document,Map<String,Object>>,Tuple3<Key,Document,Map<String,Object>>> {
     private static final Logger log = Logger.getLogger(DocumentMatchContextFunction.class);
     private final DocumentMatchConfig config;
+    private final SortedKeyValueIterator<Key,Value> source;
 
     /**
      * Creates a context-populating function from the supplied document-match configuration.
@@ -41,6 +43,7 @@ public class DocumentMatchContextFunction implements Function<Tuple3<Key,Documen
      */
     public DocumentMatchContextFunction(DocumentMatchConfig config) {
         this.config = config;
+        this.source = config.getSource(); // let's keep things clean.
     }
 
     @Override
@@ -77,25 +80,24 @@ public class DocumentMatchContextFunction implements Function<Tuple3<Key,Documen
         String row = documentKey.getRow().toString();
         String datatypeAndUid = documentKey.getColumnFamily().toString();
         Key startKey = new Key(row, "d", datatypeAndUid + '\0');
-        Key endKey = new Key(row, "d", datatypeAndUid + '\uffff');
+        Key endKey = config.isTld() ? new Key(row, "d", datatypeAndUid + '\uffff') : new Key(row, "d", datatypeAndUid + '.');
         Range documentColumnRange = new Range(startKey, true, endKey, false);
         if (log.isDebugEnabled()) {
             log.debug("Seeking d-column range " + documentColumnRange + " for document key " + documentKey);
         }
 
-        config.getSource().seek(documentColumnRange, Collections.emptyList(), false);
+        source.seek(documentColumnRange, Collections.emptyList(), false);
 
-        while (config.getSource().hasTop() && isDocumentColumn(config.getSource().getTopKey(), documentKey)) {
+        while (source.hasTop() && isDocumentColumn(source.getTopKey(), documentKey)) {
             if (log.isDebugEnabled()) {
-                log.debug("Collected d-column entry " + config.getSource().getTopKey() + " for document key " + documentKey);
+                log.debug("Collected d-column entry " + source.getTopKey() + " for document key " + documentKey);
             }
-            documentColumns.add(Maps.immutableEntry(config.getSource().getTopKey(), config.getSource().getTopValue()));
-            config.getSource().next();
+            documentColumns.add(Maps.immutableEntry(source.getTopKey(), source.getTopValue()));
+            source.next();
         }
 
         if (log.isDebugEnabled()) {
-            log.debug("Finished d-column scan for document key " + documentKey + "; next top key is "
-                            + (config.getSource().hasTop() ? config.getSource().getTopKey() : "<none>"));
+            log.debug("Finished d-column scan for document key " + documentKey + "; next top key is " + (source.hasTop() ? source.getTopKey() : "<none>"));
         }
     }
 
