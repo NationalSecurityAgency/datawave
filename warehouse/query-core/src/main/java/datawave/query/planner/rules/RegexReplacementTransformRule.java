@@ -49,7 +49,7 @@ public class RegexReplacementTransformRule implements NodeTransformRule {
     private String processPattern(String regex) {
         boolean changed = false;
         Matcher matcher = pattern.matcher(regex);
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         while (matcher.find()) {
             matcher.appendReplacement(sb, replacement);
             changed = true;

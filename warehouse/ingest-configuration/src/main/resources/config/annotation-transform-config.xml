@@ -1,0 +1,59 @@
+<xsl:stylesheet version="3.0"
+                xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+                xmlns:map="http://www.w3.org/2005/xpath-functions/map"
+                xmlns:array="http://www.w3.org/2005/xpath-functions/array"
+                xmlns:local="http://local-functions"
+                exclude-result-prefixes="local">
+    <xsl:output method="json" indent="yes"/>
+
+    <!-- Template for the top-level JSON object -->
+    <xsl:template match=".[. instance of map(*)]">
+        <xsl:variable name="annotation" as="map(*)" select="."/>
+        <xsl:map>
+            <xsl:for-each select="map:keys(.)">
+                <xsl:variable name="key" select="."/>
+                <xsl:if test="$key != 'segments'">
+                    <xsl:map-entry key="$key" select="$annotation($key)"/>
+                </xsl:if>
+                <xsl:if test="$key = 'segments'">
+                    <xsl:map-entry key="'segments'">
+                        <xsl:sequence select="local:transform-segments($annotation($key))"/>
+                    </xsl:map-entry>
+                </xsl:if>
+            </xsl:for-each>
+        </xsl:map>
+    </xsl:template>
+
+    <!-- Function to transform segments array -->
+    <xsl:function name="local:transform-segments">
+        <xsl:param name="segments" as="array(*)"/>
+        <xsl:sequence select="array {
+            for $segment in (1 to array:size($segments))
+            return local:transform-segment($segments($segment))
+        }"/>
+    </xsl:function>
+
+    <!-- Function to transform individual segment -->
+    <xsl:function name="local:transform-segment">
+        <xsl:param name="segment" as="map(*)"/>
+        <xsl:map>
+            <!-- Copy segmentId -->
+            <xsl:if test="map:contains($segment, 'segmentId')">
+                <xsl:map-entry key="'segmentId'" select="$segment('segmentId')"/>
+            </xsl:if>
+
+            <!-- Rename bounds to boundary -->
+            <xsl:if test="map:contains($segment, 'bounds')">
+                <xsl:map-entry key="'boundary'" select="$segment('bounds')"/>
+            </xsl:if>
+
+            <!-- Copy any other fields that might exist -->
+            <xsl:for-each select="map:keys($segment)">
+                <xsl:variable name="key" select="."/>
+                <xsl:if test="$key != 'segmentId' and $key != 'bounds'">
+                    <xsl:map-entry key="$key" select="$segment($key)"/>
+                </xsl:if>
+            </xsl:for-each>
+        </xsl:map>
+    </xsl:function>
+</xsl:stylesheet>

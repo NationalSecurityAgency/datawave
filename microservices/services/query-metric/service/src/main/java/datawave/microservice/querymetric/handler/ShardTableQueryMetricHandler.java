@@ -1,6 +1,6 @@
 package datawave.microservice.querymetric.handler;
 
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -29,8 +29,8 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.time.DateUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.DateUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.JobID;
@@ -380,7 +380,7 @@ public abstract class ShardTableQueryMetricHandler<T extends BaseQueryMetric> ex
         event.setRawRecordNumber(1000L);
         event.addAltId(updatedQueryMetric.getQueryId());
 
-        event.setId(uidBuilder.newId(updatedQueryMetric.getQueryId().getBytes(Charset.forName("UTF-8")), (Date) null));
+        event.setId(uidBuilder.newId(updatedQueryMetric.getQueryId().getBytes(StandardCharsets.UTF_8), (Date) null));
 
         final Multimap<String,NormalizedContentInterface> fields;
 

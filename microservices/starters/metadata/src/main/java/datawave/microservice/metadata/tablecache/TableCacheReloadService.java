@@ -1,6 +1,7 @@
 package datawave.microservice.metadata.tablecache;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cloud.bus.BusProperties;
 import org.springframework.cloud.bus.event.TableCacheReloadRequestEvent;
@@ -13,7 +14,7 @@ import datawave.microservice.metadata.remote.TableCacheReloadRequestHandler;
 @Service
 @ConditionalOnProperty(name = "datawave.table.cache.enabled", havingValue = "true", matchIfMissing = true)
 public class TableCacheReloadService implements TableCacheReloadRequestHandler {
-    private final Logger log = Logger.getLogger(TableCacheReloadService.class);
+    private final Logger log = LoggerFactory.getLogger(getClass());
     private final AccumuloTableCache cache;
     private final BusProperties busProperties;
     private final ApplicationEventPublisher publisher;

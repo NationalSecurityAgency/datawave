@@ -32,6 +32,9 @@ import datawave.query.transformer.ShardQueryCountTableTransformer;
 public class CountingShardQueryLogic extends ShardQueryLogic {
     private static final Logger log = Logger.getLogger(CountingShardQueryLogic.class);
 
+    // the time to wait before returning an intermediate result
+    private long pageWaitTimeMillis = 0L;
+
     public CountingShardQueryLogic() {
         super();
     }
@@ -59,7 +62,7 @@ public class CountingShardQueryLogic extends ShardQueryLogic {
 
     @Override
     public TransformIterator getTransformIterator(Query settings) {
-        return new CountAggregatingIterator(this.iterator(), getTransformer(settings), this.markingFunctions);
+        return new CountAggregatingIterator(this.iterator(), getTransformer(settings), this.markingFunctions, getPageWaitTimeMillis());
     }
 
     @Override
@@ -86,4 +89,21 @@ public class CountingShardQueryLogic extends ShardQueryLogic {
         return scheduler;
     }
 
+    /**
+     * This query logic always supports intermediate results
+     *
+     * @return true
+     */
+    @Override
+    public boolean isLongRunningQuery() {
+        return true;
+    }
+
+    public long getPageWaitTimeMillis() {
+        return pageWaitTimeMillis;
+    }
+
+    public void setPageWaitTimeMillis(long pageWaitTimeMillis) {
+        this.pageWaitTimeMillis = pageWaitTimeMillis;
+    }
 }

@@ -5,13 +5,19 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.BitSet;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorUtil;
 import org.junit.jupiter.api.Test;
+
+import datawave.test.MacTestUtil;
 
 public class TruncatedIndexTest extends IndexConversionUtils implements IndexConversionTests {
 
@@ -250,20 +256,28 @@ public class TruncatedIndexTest extends IndexConversionUtils implements IndexCon
     @Override
     protected void configureClonedTable(TableOperations tops, String tableName) {
         try {
+            // remove the aggregator options
+            Set<String> removals = new HashSet<>();
             for (var scope : IteratorUtil.IteratorScope.values()) {
                 String name = "table.iterator." + scope.name() + ".agg";
                 String opt = "table.iterator." + scope.name() + ".agg.opt.*";
-                tops.removeProperty(tableName, name);
-                tops.removeProperty(tableName, opt);
+                removals.add(name);
+                removals.add(opt);
+            }
+            MacTestUtil.removePropertiesAndWait(tops, tableName, removals);
 
+            // add the conversion iterator and the bitset combiner
+            Map<String,String> additions = new HashMap<>();
+            for (var scope : IteratorUtil.IteratorScope.values()) {
                 String truncatedName = "table.iterator." + scope.name() + ".truncate";
-                tops.setProperty(tableName, truncatedName, "18,datawave.ingest.table.aggregator.TruncatedIndexConversionIterator");
+                additions.put(truncatedName, "18,datawave.ingest.table.aggregator.TruncatedIndexConversionIterator");
 
                 String combinerName = "table.iterator." + scope.name() + ".bits";
                 String combinerOpt = "table.iterator." + scope.name() + ".bits.opt.all";
-                tops.setProperty(tableName, combinerName, "19,datawave.ingest.table.aggregator.BitSetCombiner");
-                tops.setProperty(tableName, combinerOpt, "true");
+                additions.put(combinerName, "19,datawave.ingest.table.aggregator.BitSetCombiner");
+                additions.put(combinerOpt, "true");
             }
+            MacTestUtil.addPropertiesAndWait(tops, tableName, additions);
         } catch (Exception e) {
             fail("Failed to configure shard index", e);
         }

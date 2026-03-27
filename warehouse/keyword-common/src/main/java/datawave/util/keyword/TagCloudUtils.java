@@ -1,6 +1,7 @@
 package datawave.util.keyword;
 
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.Map;
 import java.util.Set;
 
@@ -19,51 +20,24 @@ public interface TagCloudUtils {
     Map<String,String> generateCombinedVisibility(Set<String> visibilities);
 
     /**
-     * find the index key from the keyword results and keyword. Usually,the index key just the keyword, but when we're partitioning by language, we'll add the
-     * language at the beginning of the key and use this for dividing into multiple tag clouds later.
+     * Aggregate metadata from multiple sources, combining multi-valued entries into a flattened string
      *
-     * @param results
-     *            the keyword results to drive key creation
-     * @param keyword
-     *            the keyword to drive key creation
-     * @param partitionOnLanguage
-     *            whether we should partition tag clouds on language
-     * @return the index key for the results entries.
+     * @param metadata
+     *            the metadata to combine
+     * @return a flattened map of metadata
      */
-    String computeIndexKey(KeywordResults results, String keyword, boolean partitionOnLanguage);
-
-    /**
-     * find the key to use for the visibility map. We have one set of visibilities for every partition. The key produced here should be identical to the
-     * computePartitionKey for the same input.
-     *
-     * @param results
-     *            the keyword results to drive key creation.
-     * @param partitionOnLanguage
-     *            whether we should partition tag clouds on language
-     * @return the key to use for tracking visibility sets.
-     */
-    String computeVisibilityKey(KeywordResults results, boolean partitionOnLanguage);
-
-    /**
-     * find the partition key from the index entry. If we're partitioning by language this will be the language, otherwise this will return an empty string.
-     * This can be used for both the visibilities map and tag cloud names.
-     *
-     * @param entry
-     *            the entry to use to determine the partition key
-     * @param partitionOnLanguage
-     *            whether we should partition tag clouds on language
-     * @return the partition key.
-     */
-    String computePartitionKey(Map.Entry<String,TagCloudEntry.Builder> entry, boolean partitionOnLanguage);
+    Map<String,String> generateCombinedMetadata(Map<String,Set<String>> metadata);
 
     /**
      * given a set of ScoreTuples, calculate the resulting score for the keyword entry
      *
      * @param sourceScores
      *            a list of scores
+     * @param comparator
+     *            the comparator for the scores
      * @return the final keyword score
      */
-    double calculateScore(Collection<TagCloudEntry.ScoreTuple> sourceScores);
+    double calculateScore(Collection<TagCloudEntry.ScoreTuple> sourceScores, Comparator<Double> comparator, double defaultScore);
 
     /**
      * given a set of ScoreTuples, calculate the resulting source set for the keyword entry

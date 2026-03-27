@@ -22,7 +22,6 @@ import org.apache.accumulo.core.client.admin.CloneConfiguration;
 import org.apache.accumulo.core.client.admin.CompactionConfig;
 import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
-import org.apache.accumulo.core.clientImpl.CloneConfigurationImpl;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Range;
@@ -46,6 +45,7 @@ import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.ingest.protobuf.Uid;
+import datawave.test.MacTestUtil;
 import datawave.util.TableName;
 
 /**
@@ -94,8 +94,8 @@ public abstract class IndexConversionUtils {
 
     @BeforeEach
     public void beforeEach() {
-        recreateTable(imaTops, SHARD_INDEX);
-        recreateTable(macTops, SHARD_INDEX);
+        MacTestUtil.createOrRecreate(imaTops, SHARD_INDEX);
+        MacTestUtil.createOrRecreate(macTops, SHARD_INDEX);
         configureShardIndex(imaTops);
         configureShardIndex(macTops);
         expected.clear();
@@ -103,33 +103,8 @@ public abstract class IndexConversionUtils {
 
     @AfterEach
     public void afterEach() {
-        deleteTable(imaTops, getCloneTableName());
-        deleteTable(macTops, getCloneTableName());
-    }
-
-    protected void recreateTable(TableOperations tops, String tableName) {
-        if (tops.exists(tableName)) {
-            try {
-                tops.delete(tableName);
-            } catch (AccumuloException | AccumuloSecurityException | TableNotFoundException e) {
-                fail("Failed to delete: " + tableName, e);
-            }
-        }
-        try {
-            tops.create(tableName);
-        } catch (AccumuloException | AccumuloSecurityException | TableExistsException e) {
-            fail("Failed to create: " + tableName, e);
-        }
-    }
-
-    protected void deleteTable(TableOperations tops, String tableName) {
-        if (tops.exists(tableName)) {
-            try {
-                tops.delete(tableName);
-            } catch (AccumuloException | AccumuloSecurityException | TableNotFoundException e) {
-                fail("Failed to delete: " + tableName, e);
-            }
-        }
+        MacTestUtil.deleteTable(imaTops, getCloneTableName());
+        MacTestUtil.deleteTable(macTops, getCloneTableName());
     }
 
     protected void configureShardIndex(TableOperations tops) {
@@ -235,7 +210,7 @@ public abstract class IndexConversionUtils {
     protected void cloneAndCompactMac(TableOperations tops, String tableName) {
         try {
             //  @formatter:off
-            CloneConfiguration cloneConfiguration = new CloneConfigurationImpl()
+            CloneConfiguration cloneConfiguration = CloneConfiguration.builder()
                     .setFlush(true)
                     .setKeepOffline(false)
                     .build();
@@ -268,7 +243,7 @@ public abstract class IndexConversionUtils {
      * The configured iterator at scan time simulates a compaction and should match the output of {@link #cloneAndCompactMac()}
      */
     protected void cloneAndCopyIma() {
-        recreateTable(imaTops, getCloneTableName());
+        MacTestUtil.createOrRecreate(imaTops, getCloneTableName());
         configureClonedTable(imaTops, getCloneTableName());
 
         try (var scanner = imaClient.createScanner(SHARD_INDEX, auths); var writer = imaClient.createBatchWriter(getCloneTableName())) {

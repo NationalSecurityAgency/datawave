@@ -15,7 +15,6 @@ import java.util.concurrent.Future;
 import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.accumulo.core.util.BadArgumentException;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.Test;
@@ -60,9 +59,9 @@ public class CVCacheIT {
             try {
                 cache.get(sequence);
             } catch (Exception e) {
-                boolean isBadArgumentException = e instanceof BadArgumentException;
+                boolean isIllegalArgumentException = e instanceof IllegalArgumentException;
                 boolean isUncheckedExecutionException = e instanceof UncheckedExecutionException;
-                assertTrue(isBadArgumentException || isUncheckedExecutionException);
+                assertTrue(isIllegalArgumentException || isUncheckedExecutionException);
             }
             count++;
         }

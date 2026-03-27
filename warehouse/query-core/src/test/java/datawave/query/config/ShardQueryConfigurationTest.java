@@ -45,6 +45,7 @@ import datawave.query.attributes.ExcerptFields;
 import datawave.query.attributes.SummaryOptions;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.common.grouping.GroupFields;
+import datawave.query.config.annotation.AllHitsQueryConfig;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.iterator.logic.ContentSummaryIterator;
 import datawave.query.iterator.logic.TermFrequencyExcerptIterator;
@@ -161,6 +162,8 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("maxIndexScanTimeMillis", 100000L);
         defaultValues.put("maxAnyFieldScanTimeMillis", Long.MAX_VALUE);
         updatedValues.put("maxAnyFieldScanTimeMillis", 100000L);
+        defaultValues.put("useNewIndexLookups", false);
+        updatedValues.put("useNewIndexLookups", true);
         defaultValues.put("parseTldUids", false);
         updatedValues.put("parseTldUids", true);
         defaultValues.put("ignoreNonExistentFields", false);
@@ -460,6 +463,8 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("compositeFilterFunctionsEnabled", true);
         defaultValues.put("disableIteratorUniqueFields", false);
         updatedValues.put("disableIteratorUniqueFields", true);
+        defaultValues.put("disableIteratorMostRecentUniqueFields", true);
+        updatedValues.put("disableIteratorMostRecentUniqueFields", false);
         defaultValues.put("uniqueFields", new UniqueFields());
         updatedValues.put("uniqueFields", UniqueFields.from("FIELD_U,FIELD_V"));
         defaultValues.put("uniqueCacheBufferSize", 100);
@@ -655,6 +660,11 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("useTruncatedIndex", true);
         defaultValues.put("truncatedIndexTableName", TableName.TRUNCATED_SHARD_INDEX);
         updatedValues.put("truncatedIndexTableName", "datawave." + TableName.TRUNCATED_SHARD_INDEX);
+
+        defaultValues.put("allHitsQueryConfig", null);
+        updatedValues.put("allHitsQueryConfig", new AllHitsQueryConfig());
+        defaultValues.put("originalJexlQuery", null);
+        updatedValues.put("originalJexlQuery", "FIELD == 'VALUE'");
     }
 
     private Query createQuery(String query) {

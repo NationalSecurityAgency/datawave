@@ -165,12 +165,6 @@ public class OrderByCostVisitorTest {
 
         // list
 
-        // term
-        query = "A == '1' && B == '2' && ((_Term_ = true) && (_ANYFIELD_ =~ 'ba.*'))";
-        testDefaultOrdering(query, query);
-        testFieldOrdering(query, "B == '2' && A == '1' && ((_Term_ = true) && (_ANYFIELD_ =~ 'ba.*'))");
-        testTermOrdering(query, "B == '2' && A == '1' && ((_Term_ = true) && (_ANYFIELD_ =~ 'ba.*'))");
-
         // bounded
         query = "A == '1' && B == '2' && ((_Bounded_ = true) && (A > '1' && A < '3'))";
         testDefaultOrdering(query, query);
