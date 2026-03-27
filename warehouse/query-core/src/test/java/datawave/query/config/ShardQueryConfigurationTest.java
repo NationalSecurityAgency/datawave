@@ -162,6 +162,8 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("maxIndexScanTimeMillis", 100000L);
         defaultValues.put("maxAnyFieldScanTimeMillis", Long.MAX_VALUE);
         updatedValues.put("maxAnyFieldScanTimeMillis", 100000L);
+        defaultValues.put("useNewIndexLookups", false);
+        updatedValues.put("useNewIndexLookups", true);
         defaultValues.put("parseTldUids", false);
         updatedValues.put("parseTldUids", true);
         defaultValues.put("ignoreNonExistentFields", false);
@@ -461,6 +463,8 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("compositeFilterFunctionsEnabled", true);
         defaultValues.put("disableIteratorUniqueFields", false);
         updatedValues.put("disableIteratorUniqueFields", true);
+        defaultValues.put("disableIteratorMostRecentUniqueFields", true);
+        updatedValues.put("disableIteratorMostRecentUniqueFields", false);
         defaultValues.put("uniqueFields", new UniqueFields());
         updatedValues.put("uniqueFields", UniqueFields.from("FIELD_U,FIELD_V"));
         defaultValues.put("uniqueCacheBufferSize", 100);
