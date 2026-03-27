@@ -161,9 +161,11 @@ public class InMemoryScannerBase extends ScannerOptions {
         SortedKeyValueIterator<Key,Value> injectedIterators = applyInjectedIterators(wrappedFilter);
         IteratorBuilder.IteratorBuilderEnv iterLoad = IteratorConfigUtil.loadIterConf(IteratorScope.scan, serverSideIteratorList, serverSideIteratorOptions,
                         conf);
-        SortedKeyValueIterator<Key,Value> result = iterEnv
-                        .getTopLevelIterator(IteratorConfigUtil.loadIterators(injectedIterators, iterLoad.env(iterEnv).build()));
-        return result;
+        try {
+            return iterEnv.getTopLevelIterator(IteratorConfigUtil.loadIterators(injectedIterators, iterLoad.env(iterEnv).build()));
+        } catch (Exception e) {
+            throw new IOException(e);
+        }
     }
 
     @Override

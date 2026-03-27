@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave</groupId>
         <artifactId>datawave-parent</artifactId>
-        <version>7.33.0-SNAPSHOT</version>
+        <version>7.37.0-SNAPSHOT</version>
     </parent>
     <artifactId>coverage</artifactId>
     <name>Datawave Code Coverage Aggregate Report</name>
@@ -63,8 +63,8 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>gov.nsa.datawave</groupId>
-            <artifactId>datawave-annotation-core</artifactId>
+            <groupId>gov.nsa.datawave.core</groupId>
+            <artifactId>datawave-core-annotation</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

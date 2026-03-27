@@ -6,7 +6,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -17,7 +18,7 @@ import datawave.core.common.cache.AccumuloTableCacheProperties;
 @Component
 @ConditionalOnProperty(name = "datawave.table.cache.enabled", havingValue = "true", matchIfMissing = true)
 public class TableCacheReloadMonitor {
-    private final Logger log = Logger.getLogger(TableCacheReloadMonitor.class);
+    private final Logger log = LoggerFactory.getLogger(getClass());
     private final AccumuloTableCache cache;
     private final AccumuloTableCacheProperties properties;
 

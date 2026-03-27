@@ -3,7 +3,8 @@ package datawave.microservice.query.executor.action;
 import java.util.Set;
 
 import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.cloud.bus.event.RemoteQueryRequestEvent;
 
 import datawave.core.query.predict.QueryPredictor;
@@ -16,7 +17,7 @@ import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.microservice.querymetric.QueryMetric;
 
 public class PredictTask extends ExecutorTask {
-    private static final Logger log = Logger.getLogger(PredictTask.class);
+    private static final Logger log = LoggerFactory.getLogger(PredictTask.class);
 
     private final String originService;
     private final QueryPredictor predictor;

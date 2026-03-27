@@ -26,11 +26,13 @@ import datawave.query.jexl.lookups.AsyncIndexLookup;
 import datawave.query.jexl.lookups.ExceededThresholdException;
 import datawave.query.jexl.lookups.IndexLookup;
 import datawave.query.jexl.lookups.IndexLookupMap;
+import datawave.query.jexl.lookups.ScanMonitor;
 import datawave.query.planner.pushdown.CostEstimator;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.util.MetadataHelper;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
+import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
 
 /**
  * Abstract class which provides a framework for visitors which perform index lookups based on the contents of the Jexl tree
@@ -55,6 +57,8 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
     protected ExecutorService executor;
     protected Map<String,IndexLookup> lookupMap;
     protected List<FutureJexlNode> futureJexlNodes;
+
+    protected ScanMonitor monitor;
 
     protected String stage = "default";
 
@@ -94,6 +98,20 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
         }
     }
 
+    protected void setupScanMonitor() {
+        String id = "(unknown)";
+        if (config.getQuery() != null && config.getQuery().getId() != null) {
+            id = config.getQuery().getId().toString();
+        }
+
+        QueryUncaughtExceptionHandler handler = config.getQuery().getUncaughtExceptionHandler();
+        monitor = ScanMonitor.of(id, handler);
+    }
+
+    protected void shutdownMonitor() {
+        monitor.close();
+    }
+
     /**
      * The expand method is the entrypoint which should be called to run index expansion on a given Jexl tree.
      *
@@ -106,6 +124,7 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
     @SuppressWarnings("unchecked")
     protected <T extends JexlNode> T expand(T script) {
         setupExecutor();
+        setupScanMonitor();
         try {
             if (null == config.getQueryFieldsDatatypes()) {
                 QueryException qe = new QueryException(DatawaveErrorCode.DATATYPESFORINDEXFIELDS_MULTIMAP_MISSING);
@@ -119,6 +138,7 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
             return rebuiltScript;
         } finally {
             shutdownExecutor();
+            shutdownMonitor();
         }
     }
 

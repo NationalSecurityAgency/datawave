@@ -100,6 +100,8 @@ import datawave.query.index.day.DayIndexStream;
 import datawave.query.index.lookup.IndexStream;
 import datawave.query.index.lookup.QueryPlanStream;
 import datawave.query.index.lookup.RangeStream;
+import datawave.query.index.lookup.TruncatedIndexIterator;
+import datawave.query.index.lookup.TruncatedRangeStream;
 import datawave.query.iterator.CloseableListIterable;
 import datawave.query.iterator.QueryIterator;
 import datawave.query.iterator.QueryOptions;
@@ -707,7 +709,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         addOption(cfg, QueryOptions.MATCHING_FIELD_SETS, config.getMatchingFieldSetsAsString(), false);
         addOption(cfg, QueryOptions.GROUP_FIELDS, config.getGroupFields().toString(), true);
         addOption(cfg, QueryOptions.GROUP_FIELDS_BATCH_SIZE, config.getGroupFieldsBatchSizeAsString(), true);
-        if (!config.isDisableIteratorUniqueFields()) {
+        if (!config.isDisableIteratorUniqueFields() && !(config.isDisableIteratorMostRecentUniqueFields() && config.getUniqueFields().isMostRecent())) {
             addOption(cfg, QueryOptions.UNIQUE_FIELDS, config.getUniqueFields().toString(), true);
             if (config.getUniqueFields().isMostRecent()) {
                 // this may be redundant with the uniqueFields.toString(), but other code relies on this explicitly being set
@@ -1008,7 +1010,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         if (disableBoundedLookup) {
             // protection mechanism. If we disable bounded ranges and have a
             // LT,GT or ER node, we should expand it
-            if (BoundedRangeDetectionVisitor.mustExpandBoundedRange(config, metadataHelper, config.getQueryTree())) {
+            if (BoundedRangeDetectionVisitor.mustExpandBoundedRange(config.getQueryTree(), getNonEventFields())) {
                 disableBoundedLookup = false;
             }
         }
@@ -1882,7 +1884,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         });
     }
 
-    private ASTJexlScript timedExpandRanges(QueryStopwatch timers, String stage, final ASTJexlScript script, ShardQueryConfiguration config,
+    protected ASTJexlScript timedExpandRanges(QueryStopwatch timers, String stage, final ASTJexlScript script, ShardQueryConfiguration config,
                     MetadataHelper metadataHelper, ScannerFactory scannerFactory) throws DatawaveQueryException {
         config.setQueryTree(script);
         TraceStopwatch innerStopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - " + stage);
@@ -3004,18 +3006,19 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
             // count the terms
             int termCount = TermCountingVisitor.countTerms(queryTree);
+            int indexedEqualityTerms = IndexedTermCountingVisitor.countTerms(config.getQueryTree(), config.getIndexedFields());
+
+            log.info("term count: " + termCount + " indexed terms: " + indexedEqualityTerms);
 
             if (config.getIntermediateMaxTermThreshold() > 0 && termCount > config.getIntermediateMaxTermThreshold()) {
-                throw new DatawaveFatalQueryException(
-                                "Query with " + termCount + " exceeds the initial max term threshold of " + config.getIntermediateMaxTermThreshold());
+                String msg = "Query with " + termCount + " exceeds the initial max term threshold of " + config.getIntermediateMaxTermThreshold();
+                throw new DatawaveFatalQueryException(msg);
             }
 
-            if (config.getIndexedMaxTermThreshold() > 0) {
-                int indexedEqualityTerms = IndexedTermCountingVisitor.countTerms(config.getQueryTree(), config.getIndexedFields());
-                if (indexedEqualityTerms > config.getIndexedMaxTermThreshold()) {
-                    throw new DatawaveQueryException("Query with " + indexedEqualityTerms + " indexed EQ nodes exceeds the indexedMaxTermThreshold of "
-                                    + config.getIndexedMaxTermThreshold());
-                }
+            if (config.getIndexedMaxTermThreshold() > 0 && indexedEqualityTerms > config.getIndexedMaxTermThreshold()) {
+                String msg = "Query with " + indexedEqualityTerms + " indexed EQ nodes exceeds the indexedMaxTermThreshold of "
+                                + config.getIndexedMaxTermThreshold();
+                throw new DatawaveQueryException(msg);
             }
 
             if (termCount >= pushdownThreshold) {
@@ -3097,10 +3100,14 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         });
     }
 
-    private QueryPlanStream getQueryPlanStream(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper metadataHelper) {
+    protected QueryPlanStream getQueryPlanStream(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper metadataHelper) {
 
         if (config.isUseShardedIndex()) {
             return getDayIndexStream(config);
+        } else if (config.isUseTruncatedIndex()) {
+            this.rangeStreamClass = TruncatedRangeStream.class.getCanonicalName();
+            this.createUidsIteratorClass = TruncatedIndexIterator.class;
+            return initializeRangeStream(config, scannerFactory, metadataHelper);
         } else {
             return initializeRangeStream(config, scannerFactory, metadataHelper);
         }

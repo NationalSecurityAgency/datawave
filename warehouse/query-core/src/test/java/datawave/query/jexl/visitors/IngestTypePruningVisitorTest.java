@@ -329,7 +329,6 @@ public class IngestTypePruningVisitorTest {
                         "A == '1' && ((_Delayed_ = true) && (A == '1' && B == '2'))",
                         "A == '1' && ((_Eval_ = true) && (B == '2'))",
                         "A == '1' && ((_List_ = true) && ((id = 'some-bogus-id') && (field = 'B') && (params = '{\"values\":[\"a\",\"b\",\"c\"]}')))",
-                        "A == '1' && ((_Term_ = true) && (B == '2'))",
                         "A == '1' && ((_Value_ = true) && (B =~ 'ba.*'))",
                         "A == '1' && ((_Value_ = true) && (A =~ 'ab.*' || B =~ 'ba.*'))",
                         "A == '1' && ((_Value_ = true) && (A =~ 'ab.*' && B =~ 'ba.*'))"
@@ -347,7 +346,6 @@ public class IngestTypePruningVisitorTest {
                         "A == '1' && ((_Delayed_ = true) && (C == '2'))",
                         "A == '1' && ((_Eval_ = true) && (C == '2'))",
                         "A == '1' && ((_List_ = true) && ((id = 'some-bogus-id') && (field = 'C') && (params = '{\"values\":[\"a\",\"b\",\"c\"]}')))",
-                        "A == '1' && ((_Term_ = true) && (C == '2'))",
                         "A == '1' && ((_Value_ = true) && (C =~ 'ba.*'))"
         };
         //  @formatter:on
@@ -406,16 +404,6 @@ public class IngestTypePruningVisitorTest {
 
         // C term drives pruning of double nested marker
         query = "C == '1' && ((_Delayed_ = true) && ((_List_ = true) && ((id = 'some-bogus-id') && (field = 'A') && (params = '{\"values\":[\"a\",\"b\",\"c\"]}'))))";
-        test(query, null);
-    }
-
-    @Test
-    public void testDelayedTermMarker() {
-        String query = "((_Delayed_ = true) && ((_Term_ = true) && (A =~ 'ba.*')))";
-        test(query, query);
-
-        // C term drives pruning of double nested marker
-        query = "C == '1' && ((_Delayed_ = true) && ((_Term_ = true) && (A =~ 'ba.*')))";
         test(query, null);
     }
 
