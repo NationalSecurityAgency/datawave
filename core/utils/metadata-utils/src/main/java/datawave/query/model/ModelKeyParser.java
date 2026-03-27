@@ -13,6 +13,7 @@ import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.datasketches.common.SuppressFBWarnings;
 import org.apache.log4j.Logger;
 
 import com.google.common.base.Joiner;
@@ -51,6 +52,7 @@ public class ModelKeyParser {
     public static final Value NULL_VALUE = new Value(new byte[0]);
 
     /** Visible for testing. Override to control timestamps in tests. */
+    @SuppressFBWarnings(value = "MS_SHOULD_BE_FINAL", justification = "non-final to allow test override")
     public static LongSupplier clock = System::currentTimeMillis;
 
     @Deprecated
