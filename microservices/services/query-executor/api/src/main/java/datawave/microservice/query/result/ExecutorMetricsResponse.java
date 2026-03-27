@@ -17,7 +17,7 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
 
-import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.lang3.StringEscapeUtils;
 
 import datawave.core.common.result.Connection;
 import datawave.core.common.result.ConnectionPool;
@@ -263,7 +263,7 @@ public class ExecutorMetricsResponse extends BaseResponse implements HtmlProvide
                                 builder.append("<td></td>");
                                 builder.append("<td></td>");
                                 builder.append("<td></td>");
-                                builder.append("<td class=\"allBorders\">").append(StringEscapeUtils.escapeHtml(name)).append("</td>");
+                                builder.append("<td class=\"allBorders\">").append(StringEscapeUtils.escapeHtml4(name)).append("</td>");
                                 if (name.equals("query.id") && queryUser != null) {
                                     if (queryMetricsUrlPrefix != null && !queryMetricsUrlPrefix.isEmpty()) {
                                         builder.append("<td class=\"allBorders\"><a href=\"").append(queryMetricsUrlPrefix).append(value).append("/")
@@ -272,7 +272,7 @@ public class ExecutorMetricsResponse extends BaseResponse implements HtmlProvide
                                         builder.append("<td>").append(value).append("</td>");
                                     }
                                 } else {
-                                    builder.append("<td class=\"allBorders\">").append(StringEscapeUtils.escapeHtml(e.getValue().toString())).append("</td>");
+                                    builder.append("<td class=\"allBorders\">").append(StringEscapeUtils.escapeHtml4(e.getValue().toString())).append("</td>");
                                 }
                                 builder.append("</tr>");
                             }

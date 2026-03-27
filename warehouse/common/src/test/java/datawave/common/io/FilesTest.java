@@ -208,6 +208,7 @@ public class FilesTest {
         expect(src.exists()).andReturn(true).anyTimes();
         expect(src.isDirectory()).andReturn(false).anyTimes();
         expect(src.canRead()).andReturn(true);
+        expect(src.isFile()).andReturn(true);
         expect(src.renameTo(dest)).andReturn(true);
         replay(src);
 
@@ -264,6 +265,7 @@ public class FilesTest {
         expect(src.exists()).andReturn(true).anyTimes();
         expect(src.isDirectory()).andReturn(false).anyTimes();
         expect(src.canRead()).andReturn(true);
+        expect(src.isFile()).andReturn(true);
         expect(src.renameTo(dest)).andReturn(true);
         replay(src);
 

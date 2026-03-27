@@ -1,5 +1,6 @@
 package datawave.query.jexl.functions;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Objects;
@@ -107,15 +108,19 @@ public class QueryFunctions {
     }
 
     public static Collection<?> between(Iterable<?> values, String left, boolean leftInclusive, String right, boolean rightInclusive) {
-        if (values != null) {
-            for (Object value : values) {
-                Collection<?> matches = between(value, left, leftInclusive, right, rightInclusive);
-                if (!matches.isEmpty()) {
-                    return matches;
-                }
+        if (values == null) {
+            return Collections.emptySet();
+        }
+
+        Collection<Object> between = new ArrayList<>();
+        for (Object value : values) {
+            Collection<?> matches = between(value, left, leftInclusive, right, rightInclusive);
+            if (!matches.isEmpty()) {
+                // do not add the matches. The value is the ValueTuple, the matches is the hit term string
+                between.add(value);
             }
         }
-        return Collections.emptySet();
+        return between;
     }
 
     public static Collection<?> between(Object field, float left, float right) {
