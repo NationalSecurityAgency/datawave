@@ -1627,6 +1627,31 @@
         <pluginManagement>
             <plugins>
                 <plugin>
+                    <groupId>com.diffplug.spotless</groupId>
+                    <artifactId>spotless-maven-plugin</artifactId>
+                    <version>2.43.0</version>
+                    <configuration>
+                        <java>
+                            <removeUnusedImports />
+                            <importOrder>
+                                <order>\#java,\#javax,\#,java,javax,org,com,</order>
+                            </importOrder>
+                            <excludes>
+                                <exclude>**/thrift/*.java</exclude>
+                                <exclude>**/tokenize/StandardLexer.java</exclude>
+                            </excludes>
+                        </java>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>apply</goal>
+                            </goals>
+                            <phase>process-sources</phase>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
                     <groupId>com.github.ekryd.sortpom</groupId>
                     <artifactId>sortpom-maven-plugin</artifactId>
                     <version>4.0.0</version>
@@ -1731,27 +1756,6 @@
                             <goals>
                                 <goal>revision</goal>
                             </goals>
-                        </execution>
-                    </executions>
-                </plugin>
-                <plugin>
-                    <groupId>net.revelc.code</groupId>
-                    <artifactId>impsort-maven-plugin</artifactId>
-                    <version>1.9.0</version>
-                    <configuration>
-                        <groups>java.,javax.,org.,com.</groups>
-                        <staticGroups>java,*</staticGroups>
-                        <excludes>
-                            <exclude>**/thrift/*.java</exclude>
-                        </excludes>
-                    </configuration>
-                    <executions>
-                        <execution>
-                            <id>sort-imports</id>
-                            <goals>
-                                <goal>sort</goal>
-                            </goals>
-                            <phase>process-sources</phase>
                         </execution>
                     </executions>
                 </plugin>
@@ -2117,12 +2121,12 @@
             <build>
                 <plugins>
                     <plugin>
-                        <groupId>com.github.ekryd.sortpom</groupId>
-                        <artifactId>sortpom-maven-plugin</artifactId>
+                        <groupId>com.diffplug.spotless</groupId>
+                        <artifactId>spotless-maven-plugin</artifactId>
                     </plugin>
                     <plugin>
-                        <groupId>net.revelc.code</groupId>
-                        <artifactId>impsort-maven-plugin</artifactId>
+                        <groupId>com.github.ekryd.sortpom</groupId>
+                        <artifactId>sortpom-maven-plugin</artifactId>
                     </plugin>
                     <plugin>
                         <groupId>net.revelc.code.formatter</groupId>
@@ -2406,24 +2410,8 @@
             <build>
                 <plugins>
                     <plugin>
-                        <groupId>net.revelc.code</groupId>
-                        <artifactId>impsort-maven-plugin</artifactId>
-                        <configuration>
-                            <groups>java.,javax.,org.,com.</groups>
-                            <staticGroups>java,*</staticGroups>
-                            <excludes>
-                                <exclude>**/thrift/*.java</exclude>
-                            </excludes>
-                        </configuration>
-                        <executions>
-                            <execution>
-                                <id>sort-imports</id>
-                                <goals>
-                                    <goal>sort</goal>
-                                    <!-- runs at process-sources phase by default -->
-                                </goals>
-                            </execution>
-                        </executions>
+                        <groupId>com.diffplug.spotless</groupId>
+                        <artifactId>spotless-maven-plugin</artifactId>
                     </plugin>
                 </plugins>
             </build>
