@@ -11,20 +11,29 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.accumulo.core.client.PluginEnvironment;
+import org.apache.accumulo.core.client.sample.SamplerConfiguration;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.data.TableId;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
+import org.apache.accumulo.core.iterators.IteratorUtil;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
+import org.apache.accumulo.core.security.Authorizations;
+import org.apache.accumulo.core.spi.common.ServiceEnvironment;
 import org.apache.commons.jexl3.parser.ASTEQNode;
 import org.apache.commons.jexl3.parser.ASTERNode;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.commons.jexl3.parser.ParseException;
 import org.junit.Assert;
+import org.junit.ClassRule;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
+import datawave.core.iterators.filesystem.FileSystemCache;
 import datawave.query.Constants;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Document;
@@ -32,6 +41,8 @@ import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.iterator.NestedIterator;
 import datawave.query.iterator.SeekableNestedIterator;
 import datawave.query.iterator.SortedListKeyValueIterator;
+import datawave.query.iterator.ivarator.IvaratorCacheDir;
+import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.LiteralRange;
@@ -40,12 +51,70 @@ import datawave.query.util.TypeMetadata;
 
 public class IteratorBuildingVisitorTest {
 
+    @ClassRule
+    public static TemporaryFolder temporaryFolder = new TemporaryFolder();
+
     private IteratorBuildingVisitor getDefault() {
         IteratorBuildingVisitor visitor = new IteratorBuildingVisitor();
         visitor.setSource(new SourceFactory(Collections.emptyIterator()), new TestIteratorEnvironment());
         visitor.setTypeMetadata(new TypeMetadata());
         visitor.setTimeFilter(TimeFilter.alwaysTrue());
         return visitor;
+    }
+
+    @Test
+    public void rangeToDocumentTest() {
+        IteratorBuildingVisitor visitor = getDefault();
+        String shard = "20250101_01";
+        String dt = "dt";
+        String uid = "2fe9872hg.1908h21f.10398hff1";
+        Key start = new Key(shard, dt + '\u0000' + uid + '\u0000');
+        Key end = new Key(shard, dt + '\u0000' + uid + new String(Character.toChars(Character.MAX_CODE_POINT)));
+        Range range = new Range(start, false, end, false);
+        String doc = visitor.getDocument(range);
+        Assert.assertEquals(dt + '_' + uid, doc);
+
+        end = new Key(shard, new String(Character.toChars(Character.MAX_CODE_POINT)) + "YIELD_BEGIN");
+        range = new Range(start, false, end, false);
+        doc = visitor.getDocument(range);
+        Assert.assertEquals(null, doc);
+
+        start = new Key(shard);
+        end = new Key(shard + '\u0000');
+        range = new Range(start, false, end, false);
+        doc = visitor.getDocument(range);
+        Assert.assertEquals(null, doc);
+
+        doc = visitor.getDocument(null);
+        Assert.assertEquals(null, doc);
+    }
+
+    @Test
+    public void ivaratorCacheDirTest() throws IOException {
+        IteratorBuildingVisitor visitor = getDefault();
+        String folder = temporaryFolder.newFolder().toURI().toString();
+        List<IvaratorCacheDirConfig> configs = Collections.singletonList(new IvaratorCacheDirConfig(folder));
+        visitor.setIvaratorCacheDirConfigs(configs);
+        visitor.setQueryId("QID_1");
+        visitor.setHdfsFileSystem(new FileSystemCache(null));
+        String expected = folder + "QID_1/_term_1_field_field_valueHash_" + "value".hashCode();
+
+        List<IvaratorCacheDir> dirs = visitor.getIvaratorCacheDirs(1, null, "field", "value");
+
+        IvaratorCacheDir config = dirs.get(0);
+        Assert.assertEquals(expected, config.getPathURI().toString());
+
+        String shard = "20250101_01";
+        String dt = "dt";
+        String uid = "2fe9872hg.1908h21f.10398hff1";
+        Key start = new Key(shard, dt + '\u0000' + uid + '\u0000');
+        Key end = new Key(shard, dt + '\u0000' + uid + new String(Character.toChars(Character.MAX_CODE_POINT)));
+        Range range = new Range(start, false, end, false);
+        dirs = visitor.getIvaratorCacheDirs(1, range, "field", "value");
+
+        config = dirs.get(0);
+        // make sure we now have the document in the path
+        Assert.assertEquals(expected + "_doc_" + dt + '_' + uid, config.getPathURI().toString());
     }
 
     /**
@@ -1003,8 +1072,63 @@ public class IteratorBuildingVisitorTest {
     }
 
     private static class TestIteratorEnvironment implements IteratorEnvironment {
+        @Override
+        public SortedKeyValueIterator<Key,Value> reserveMapFileReader(String s) throws IOException {
+            return null;
+        }
+
+        @Override
+        public IteratorUtil.IteratorScope getIteratorScope() {
+            return null;
+        }
+
+        @Override
+        public boolean isFullMajorCompaction() {
+            return false;
+        }
+
+        @Override
+        public void registerSideChannel(SortedKeyValueIterator<Key,Value> sortedKeyValueIterator) {
+
+        }
+
+        @Override
+        public Authorizations getAuthorizations() {
+            return null;
+        }
+
+        @Override
+        public IteratorEnvironment cloneWithSamplingEnabled() {
+            return null;
+        }
+
         public boolean isSamplingEnabled() {
             return false;
+        }
+
+        @Override
+        public SamplerConfiguration getSamplerConfiguration() {
+            return null;
+        }
+
+        @Override
+        public boolean isUserCompaction() {
+            return false;
+        }
+
+        @Override
+        public ServiceEnvironment getServiceEnv() {
+            return null;
+        }
+
+        @Override
+        public PluginEnvironment getPluginEnv() {
+            return null;
+        }
+
+        @Override
+        public TableId getTableId() {
+            return null;
         }
     }
 }

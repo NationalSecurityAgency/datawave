@@ -4,7 +4,6 @@ import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.BOUNDED_R
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DROPPED;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EVALUATION_ONLY;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_OR;
-import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_TERM;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_VALUE;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.INDEX_HOLE;
 
@@ -19,9 +18,10 @@ import datawave.query.exceptions.IllegalRangeArgumentException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.LiteralRange;
+import datawave.query.jexl.lookups.AsyncIndexLookup;
+import datawave.query.jexl.lookups.BoundedRangeIndexLookup;
 import datawave.query.jexl.lookups.IndexLookup;
 import datawave.query.jexl.lookups.IndexLookupMap;
-import datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.util.MetadataHelper;
@@ -76,7 +76,7 @@ public class BoundedRangeIndexExpansionVisitor extends BaseIndexExpansionVisitor
         QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(node);
 
         // don't traverse delayed nodes
-        if (instance.isAnyTypeOf(INDEX_HOLE, EVALUATION_ONLY, DROPPED, EXCEEDED_VALUE, EXCEEDED_TERM, EXCEEDED_OR)) {
+        if (instance.isAnyTypeOf(INDEX_HOLE, EVALUATION_ONLY, DROPPED, EXCEEDED_VALUE, EXCEEDED_OR)) {
             return RebuildingVisitor.copy(node);
         }
         // handle bounded range
@@ -106,7 +106,9 @@ public class BoundedRangeIndexExpansionVisitor extends BaseIndexExpansionVisitor
     }
 
     protected IndexLookup createLookup(LiteralRange<?> range) {
-        return ShardIndexQueryTableStaticMethods.expandRange(config, scannerFactory, range, executor);
+        AsyncIndexLookup lookup = new BoundedRangeIndexLookup(config, scannerFactory, range, executor);
+        lookup.setScanMonitor(monitor);
+        return lookup;
     }
 
     @Override

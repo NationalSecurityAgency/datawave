@@ -13,10 +13,12 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.regex.Pattern;
 
+import org.apache.accumulo.core.client.PluginEnvironment;
 import org.apache.accumulo.core.client.SampleNotPresentException;
 import org.apache.accumulo.core.client.sample.SamplerConfiguration;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
 import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.TableId;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.Combiner;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
@@ -25,6 +27,7 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iteratorsImpl.conf.ColumnSet;
 import org.apache.accumulo.core.iteratorsImpl.conf.ColumnToClassMapping;
 import org.apache.accumulo.core.security.Authorizations;
+import org.apache.accumulo.core.spi.common.ServiceEnvironment;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
@@ -92,7 +95,7 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
      */
     public void setup(Configuration conf) throws IOException, InterruptedException {
 
-        /**
+        /*
          * Grab the tables that do not require timestamp deduping, but require aggregating
          */
         tcu = new TableConfigurationUtil(conf);
@@ -103,7 +106,7 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
                 noTSDedupTables.add(new Text(table));
             }
         }
-        /**
+        /*
          * Grab tables that will be deduped by timestamp
          */
         tables = conf.getStrings(INGEST_VALUE_DEDUP_BY_TIMESTAMP_KEY);
@@ -144,7 +147,7 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
         // to a map of table => priority list of column=>class mappings. Users can just call the
         // method getAggregator with a key, and get back a list of aggregators that should be applied
         // to the corresponding value. The return list aggregators should be applied in order.
-        Set<String> tables = tcu.getJobOutputTableNames(conf);
+        Set<String> tables = TableConfigurationUtil.getJobOutputTableNames(conf);
         for (String table : tables) {
             Map<Integer,Map<String,String>> priorityOptions = tcu.getTableCombiners(table);
             if (priorityOptions != null) {
@@ -505,6 +508,21 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
             @Override
             public boolean isUserCompaction() {
                 return false;
+            }
+
+            @Override
+            public ServiceEnvironment getServiceEnv() {
+                return null;
+            }
+
+            @Override
+            public PluginEnvironment getPluginEnv() {
+                return null;
+            }
+
+            @Override
+            public TableId getTableId() {
+                return null;
             }
 
             @Override

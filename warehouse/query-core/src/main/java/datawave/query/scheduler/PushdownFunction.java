@@ -6,7 +6,6 @@ import java.util.Collections;
 import java.util.List;
 
 import org.apache.accumulo.core.client.IteratorSetting;
-import org.apache.accumulo.core.clientImpl.TabletLocator;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.TableId;
 import org.apache.hadoop.io.Text;
@@ -41,13 +40,8 @@ public class PushdownFunction implements Function<QueryData,List<ScannerChunk>> 
     // table id, used to apply execution hints
     protected TableId tableId;
 
-    @Deprecated
-    public PushdownFunction(TabletLocator tabletLocator, ImmutableShardQueryConfiguration config, Collection<IteratorSetting> settings, TableId tableId) {
-        this(config, settings, tableId);
-    }
-
     /**
-     * Preferred constructor
+     * Constructor
      *
      * @param config
      *            the config
@@ -74,7 +68,7 @@ public class PushdownFunction implements Function<QueryData,List<ScannerChunk>> 
         for (Range range : qd.getRanges()) {
 
             SessionOptions options = new SessionOptions();
-            options.setQueryConfig(this.config);
+            options.setQueryConfiguration(this.config);
 
             // fetch column families
             for (String cf : qd.getColumnFamilies()) {

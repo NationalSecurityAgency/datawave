@@ -32,6 +32,7 @@ import org.apache.accumulo.core.crypto.CryptoFactoryLoader;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.data.TableId;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.file.FileOperations;
 import org.apache.accumulo.core.file.FileSKVIterator;
@@ -175,6 +176,11 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
         }
 
         @Override
+        public SortedKeyValueIterator<Key,Value> reserveMapFileReader(String s) throws IOException {
+            return null;
+        }
+
+        @Override
         public AccumuloConfiguration getConfig() {
             return conf;
         }
@@ -187,6 +193,11 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
         @Override
         public boolean isFullMajorCompaction() {
             throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void registerSideChannel(SortedKeyValueIterator<Key,Value> sortedKeyValueIterator) {
+
         }
 
         @Override
@@ -221,6 +232,11 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
 
         @Override
         public PluginEnvironment getPluginEnv() {
+            return null;
+        }
+
+        @Override
+        public TableId getTableId() {
             return null;
         }
     }
@@ -404,7 +420,12 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
             SortedKeyValueIterator<Key,Value> visFilter = VisibilityFilter.wrap(topIter, auths, defaultSecurityLabel);
             IteratorBuilder.IteratorBuilderEnv iterLoad = IteratorConfigUtil.loadIterConf(IteratorScope.scan, Collections.emptyList(), Collections.emptyMap(),
                             acuTableConf);
-            return IteratorConfigUtil.loadIterators(visFilter, iterLoad.env(iterEnv).build());
+            try {
+                return IteratorConfigUtil.loadIterators(visFilter, iterLoad.env(iterEnv).build());
+            } catch (Exception e) {
+                log.error(e.getMessage(), e);
+                throw new IOException(e);
+            }
         }
 
         return topIter;

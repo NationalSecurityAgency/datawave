@@ -25,6 +25,7 @@ import datawave.query.attributes.ExcerptFields;
 import datawave.query.attributes.SummaryOptions;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.common.grouping.GroupFields;
+import datawave.query.config.annotation.AllHitsQueryConfig;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.model.QueryModel;
 import datawave.query.util.QueryStopwatch;
@@ -122,10 +123,8 @@ public interface ImmutableShardQueryConfiguration extends ImmutableGenericQueryC
 
     Set<String> getUnevaluatedFields();
 
-    @Deprecated(since = "7.1.0", forRemoval = true)
     int getEventPerDayThreshold();
 
-    @Deprecated(since = "7.1.0", forRemoval = true)
     int getShardsPerDayThreshold();
 
     int getInitialMaxTermThreshold();
@@ -143,6 +142,10 @@ public interface ImmutableShardQueryConfiguration extends ImmutableGenericQueryC
     int getMaxUnfieldedExpansionThreshold();
 
     boolean isExpandValues();
+
+    boolean isExpandUnfieldedValues();
+
+    List<Type<?>> getExcludeUnfieldedTypes();
 
     int getMaxValueExpansionThreshold();
 
@@ -257,6 +260,8 @@ public interface ImmutableShardQueryConfiguration extends ImmutableGenericQueryC
     String getGroupFieldsBatchSizeAsString();
 
     boolean isDisableIteratorUniqueFields();
+
+    boolean isDisableIteratorMostRecentUniqueFields();
 
     UniqueFields getUniqueFields();
 
@@ -388,6 +393,8 @@ public interface ImmutableShardQueryConfiguration extends ImmutableGenericQueryC
 
     long getYieldThresholdMs();
 
+    int getMaxYields();
+
     boolean isTrackSizes();
 
     List<String> getContentFieldNames();
@@ -494,6 +501,23 @@ public interface ImmutableShardQueryConfiguration extends ImmutableGenericQueryC
 
     boolean canHandleExceededValueThreshold();
 
-    boolean canHandleExceededTermThreshold();
+    boolean isDeferPushdownPullup();
 
+    String getDayIndexTableName();
+
+    String getYearIndexTableName();
+
+    boolean isUseShardedIndex();
+
+    int getDayIndexThreshold();
+
+    boolean isUseTruncatedIndex();
+
+    String getTruncatedIndexTableName();
+
+    AllHitsQueryConfig getAllHitsQueryConfig();
+
+    String getOriginalJexlQuery();
+
+    boolean isUseNewIndexLookups();
 }

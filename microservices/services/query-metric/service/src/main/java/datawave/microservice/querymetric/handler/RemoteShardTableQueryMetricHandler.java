@@ -6,15 +6,13 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.stream.Collectors;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpHeaders;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
 import org.springframework.web.reactive.function.client.WebClient;
 
-import datawave.core.common.connection.AccumuloClientPool;
+import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.marking.MarkingFunctions;
 import datawave.microservice.authorization.user.DatawaveUserDetails;
 import datawave.microservice.query.DefaultQueryParameters;
@@ -40,11 +38,12 @@ public class RemoteShardTableQueryMetricHandler<T extends BaseQueryMetric> exten
     private final WebClient authWebClient;
     private final JWTTokenHandler jwtTokenHandler;
 
-    public RemoteShardTableQueryMetricHandler(QueryMetricHandlerProperties queryMetricHandlerProperties, @Qualifier("warehouse") AccumuloClientPool clientPool,
+    public RemoteShardTableQueryMetricHandler(QueryMetricHandlerProperties queryMetricHandlerProperties, AccumuloConnectionFactory connectionFactory,
                     QueryMetricQueryLogicFactory logicFactory, QueryMetricFactory metricFactory, MarkingFunctions markingFunctions,
                     QueryMetricCombiner queryMetricCombiner, LuceneToJexlQueryParser luceneToJexlQueryParser, ResponseObjectFactory responseObjectFactory,
                     WebClient.Builder webClientBuilder, JWTTokenHandler jwtTokenHandler, DnUtils dnUtils) {
-        super(queryMetricHandlerProperties, clientPool, logicFactory, metricFactory, markingFunctions, queryMetricCombiner, luceneToJexlQueryParser, dnUtils);
+        super(queryMetricHandlerProperties, connectionFactory, logicFactory, metricFactory, markingFunctions, queryMetricCombiner, luceneToJexlQueryParser,
+                        dnUtils);
 
         this.responseObjectFactory = responseObjectFactory;
 

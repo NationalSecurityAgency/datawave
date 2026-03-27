@@ -28,5 +28,18 @@ public abstract class IndexLookup {
         this.scannerFactory = scannerFactory;
     }
 
+    /**
+     * Get the correct index table name. Either the shard index or the truncated shard index.
+     *
+     * @return the index table name
+     */
+    protected String getTableName() {
+        if (config.isUseTruncatedIndex()) {
+            return config.getTruncatedIndexTableName();
+        } else {
+            return config.getIndexTableName();
+        }
+    }
+
     public abstract IndexLookupMap lookup();
 }

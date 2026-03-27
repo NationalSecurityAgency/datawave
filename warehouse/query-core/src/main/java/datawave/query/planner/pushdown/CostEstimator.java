@@ -50,12 +50,12 @@ public class CostEstimator {
 
                     // if the term is _ANYFIELD_ (could not expand), then treat as 0 cost
                     if (fieldName.equals(Constants.ANY_FIELD) || fieldName.equals(Constants.NO_FIELD)) {
-                        return new Cost(0l, 0l);
+                        return Cost.zero();
                     }
 
                     // If this is a disallowed pattern, it has infinite cost
                     if (config.getDisallowedRegexPatterns().contains(pattern)) {
-                        return new Cost(Long.MAX_VALUE, 0l);
+                        return Cost.infiniteRegex();
                     }
 
                     try {
@@ -63,7 +63,7 @@ public class CostEstimator {
 
                         // If we can't run this query against our indices, it has infinite cost
                         if (regex.isNgram()) {
-                            return new Cost(Long.MAX_VALUE, 0l);
+                            return Cost.infiniteRegex();
                         }
                     } catch (JavaRegexParseException e) {
                         if (log.isTraceEnabled()) {
@@ -71,11 +71,11 @@ public class CostEstimator {
                         }
                     }
 
-                    return new Cost(helper.getCountsByFieldForDays(fieldName, config.getBeginDate(), config.getEndDate(), config.getDatatypeFilter())
-                                    * Cost.ER_COST_MULTIPLIER, 0l);
+                    long regexCost = helper.getCountsByFieldForDays(fieldName, config.getBeginDate(), config.getEndDate(), config.getDatatypeFilter());
+                    return Cost.regex(regexCost);
                 } catch (NoSuchElementException e) {
                     log.trace("Could not find field name for ER node, ignoring for cost");
-                    return new Cost();
+                    return Cost.zero();
                 }
             }
             case ParserTreeConstants.JJTEQNODE: {
@@ -84,60 +84,59 @@ public class CostEstimator {
 
                     // if the term is _ANYFIELD_ (could not expand), then treat as 0 cost
                     if (fieldName.equals(Constants.ANY_FIELD) || fieldName.equals(Constants.NO_FIELD)) {
-                        return new Cost(0l, 0l);
+                        return Cost.zero();
                     }
 
                     // If the term is not indexed (could be _ANYFIELD_), treat it as infinite cost
                     try {
                         if (!helper.isIndexed(fieldName, config.getDatatypeFilter())) {
-                            return new Cost(0l, Long.MAX_VALUE);
+                            return Cost.infiniteOther();
                         }
                     } catch (TableNotFoundException e) {
                         log.error("Could not find metadata table", e);
                     }
 
-                    return new Cost(0l, helper.getCountsByFieldForDays(fieldName, config.getBeginDate(), config.getEndDate(), config.getDatatypeFilter()));
+                    long cost = helper.getCountsByFieldForDays(fieldName, config.getBeginDate(), config.getEndDate(), config.getDatatypeFilter());
+                    return Cost.other(cost);
                 } catch (NoSuchElementException e) {
                     log.trace("Could not find field name for EQ node, ignoring for cost");
-                    return new Cost();
+                    return Cost.zero();
                 }
             }
             case ParserTreeConstants.JJTANDNODE: {
-                Cost andCost = null;
+                Cost total = null;
                 for (int i = 0; i < node.jjtGetNumChildren(); i++) {
                     Cost childCost = computeCostForSubtree(node.jjtGetChild(i));
 
                     // Retain the least-costly child in an AND
-                    if (null == andCost) {
-                        andCost = childCost;
-                    } else if (0l == childCost.getERCost() && 0l == childCost.getOtherCost()) {
+                    if (null == total) {
+                        total = childCost;
+                    } else if (childCost.isZeroCost()) {
                         // We don't care to do anything if we got the default costs
-                    } else if (andCost.totalCost() > childCost.totalCost()) {
-                        andCost = childCost;
+                    } else if (total.totalCost() > childCost.totalCost()) {
+                        total = childCost;
                     }
                 }
 
-                if (null == andCost) {
-                    return new Cost();
+                if (null == total) {
+                    return Cost.zero();
                 }
 
-                return andCost;
+                return total;
             }
             case ParserTreeConstants.JJTORNODE: {
-                Cost orCost = new Cost();
+                Cost total = Cost.zero();
                 for (int i = 0; i < node.jjtGetNumChildren(); i++) {
                     Cost childCost = computeCostForSubtree(node.jjtGetChild(i));
-
-                    orCost.incrementBy(childCost);
+                    total.incrementBy(childCost);
                 }
-
-                return orCost;
+                return total;
             }
             default: {
                 if (1 == node.jjtGetNumChildren()) {
                     return computeCostForSubtree(node.jjtGetChild(0));
                 } else {
-                    return new Cost();
+                    return Cost.zero();
                 }
             }
         }

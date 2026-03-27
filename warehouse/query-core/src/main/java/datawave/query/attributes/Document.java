@@ -43,17 +43,14 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.predicate.ValueToAttributes;
 import datawave.query.util.TypeMetadata;
-import datawave.query.util.cache.ClassCache;
 import datawave.util.time.DateHelper;
 
 public class Document extends AttributeBag<Document> implements Serializable {
-    private static final long serialVersionUID = -377226620954754934L;
+    private static final long serialVersionUID = -7939658996525050446L;
 
     private static final Logger log = Logger.getLogger(Document.class);
 
     public static final String DOCKEY_FIELD_NAME = "RECORD_ID";
-
-    private static final ClassCache classCache = new ClassCache();
 
     //  @formatter:off
     private static final LoadingCache<Text, Long> timestampCache = CacheBuilder.newBuilder()
@@ -69,9 +66,6 @@ public class Document extends AttributeBag<Document> implements Serializable {
 
     private int _count = 0;
     long _bytes = 0;
-    private static final long ONE_HUNDRED_M = 1024L * 1000 * 100;
-    private static final long ONE_M = 1024L * 1000;
-    private static final long FIVE_HUNDRED_K = 1024L * 500;
     TreeMap<String,Attribute<? extends Comparable<?>>> dict;
 
     /**
@@ -133,6 +127,16 @@ public class Document extends AttributeBag<Document> implements Serializable {
     @Override
     public Collection<Attribute<? extends Comparable<?>>> getAttributes() {
         return Collections.unmodifiableCollection(this.dict.values());
+    }
+
+    /**
+     * Access the raw values similar to {@link #getAttributes()} but without a collection copy
+     *
+     * @return the raw values
+     */
+    @Override
+    protected Collection<Attribute<? extends Comparable<?>>> getRawAttributes() {
+        return this.dict.values();
     }
 
     public Map<String,Attribute<? extends Comparable<?>>> getDictionary() {
@@ -857,7 +861,7 @@ public class Document extends AttributeBag<Document> implements Serializable {
         Class<?> clz;
         try {
             // Get the Class for the name of the class of the concrete Attribute
-            clz = classCache.get(clazzName);
+            clz = classCache.get().get(clazzName);
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
         }

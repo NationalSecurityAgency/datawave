@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 
 import javax.xml.bind.annotation.XmlAccessOrder;
 import javax.xml.bind.annotation.XmlAccessType;
@@ -174,4 +175,27 @@ public class DefaultTagCloudEntry extends TagCloudEntryBase<DefaultTagCloudEntry
             fieldMap.put("sources", 5);
         }
     };
+
+    @Override
+    public boolean equals(Object other) {
+        if (super.equals(other)) {
+            return true;
+        }
+
+        if (!(other instanceof DefaultTagCloudEntry)) {
+            return false;
+        }
+
+        DefaultTagCloudEntry otherEntry = (DefaultTagCloudEntry) other;
+
+        // @formatter: off
+        return Objects.equals(frequency, otherEntry.frequency) && Objects.equals(term, otherEntry.term) && Objects.equals(score, otherEntry.score)
+                        && Objects.equals(sources, otherEntry.sources);
+        // @formatter: on
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(frequency, term, score, sources);
+    }
 }

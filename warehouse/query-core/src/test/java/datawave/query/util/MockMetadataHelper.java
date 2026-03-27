@@ -46,10 +46,12 @@ import datawave.util.TableName;
 public class MockMetadataHelper extends MetadataHelper {
     protected final Metadata metadata = new Metadata();
     private Set<String> indexOnlyFields = new HashSet<>();
+    private Set<String> hiddenFields = new HashSet<>();
     private Set<String> expansionFields = new HashSet<>();
     private Set<String> contentFields = new HashSet<>();
     private Set<String> riFields = new HashSet<>();
     private Set<String> nonEventFields = new HashSet<>();
+    private Multimap<String,String> compositeToFieldMap = HashMultimap.create();
     private Multimap<String,String> fieldsToDatatype = HashMultimap.create();
     protected Multimap<String,Type<?>> dataTypes = HashMultimap.create();
     protected Map<String,Map<String,MetadataCardinalityCounts>> termCounts = new HashMap<>();
@@ -179,6 +181,11 @@ public class MockMetadataHelper extends MetadataHelper {
     }
 
     @Override
+    public Set<String> getHiddenFields(Set<String> ingestTypeFilter) throws TableNotFoundException {
+        return hiddenFields;
+    }
+
+    @Override
     public QueryModel getQueryModel(String modelTableName, String modelName, Collection<String> unevaluatedFields) throws TableNotFoundException {
         return models.get(modelName);
     }
@@ -192,6 +199,19 @@ public class MockMetadataHelper extends MetadataHelper {
     @Override
     public boolean isReverseIndexed(String fieldName, Set<String> ingestTypeFilter) {
         return this.riFields.contains(fieldName);
+    }
+
+    @Override
+    public Set<String> getReverseIndexedFields(Set<String> ingestTypeFilter) {
+        return this.riFields;
+    }
+
+    public void setCompositeToFieldMap(Multimap<String,String> compositeToFieldMap) {
+        this.compositeToFieldMap = compositeToFieldMap;
+    }
+
+    public Multimap<String,String> getCompositeToFieldMap() throws TableNotFoundException {
+        return this.compositeToFieldMap;
     }
 
     @Override
@@ -345,7 +365,8 @@ public class MockMetadataHelper extends MetadataHelper {
             return 0L;
         }
 
-        Iterable<Map.Entry<String,Long>> filteredByType = Iterables.filter(countsByType.entrySet(), input -> datatypes.contains(input.getKey()));
+        Iterable<Map.Entry<String,Long>> filteredByType = Iterables.filter(countsByType.entrySet(),
+                        input -> datatypes.isEmpty() || datatypes.contains(input.getKey()));
 
         long sum = 0;
         for (Map.Entry<String,Long> entry : filteredByType) {
@@ -388,6 +409,10 @@ public class MockMetadataHelper extends MetadataHelper {
 
     public void setIndexOnlyFields(Set<String> indexOnlyFields) {
         this.indexOnlyFields = indexOnlyFields;
+    }
+
+    public void setHiddenFields(Set<String> hiddenFields) {
+        this.hiddenFields = hiddenFields;
     }
 
     public void setNormalizedFields(Set<String> normalizedFields) {

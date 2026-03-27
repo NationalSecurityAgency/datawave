@@ -1,7 +1,6 @@
 package datawave.query.jexl.visitors;
 
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_OR;
-import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_TERM;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_VALUE;
 
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -80,7 +79,7 @@ public class EvaluationRendering extends BaseVisitor {
     }
 
     protected boolean isDelayedPredicate(JexlNode currNode) {
-        return QueryPropertyMarker.findInstance(currNode).isAnyTypeOf(EXCEEDED_TERM, EXCEEDED_OR, EXCEEDED_VALUE);
+        return QueryPropertyMarker.findInstance(currNode).isAnyTypeOf(EXCEEDED_OR, EXCEEDED_VALUE);
     }
 
     @Override

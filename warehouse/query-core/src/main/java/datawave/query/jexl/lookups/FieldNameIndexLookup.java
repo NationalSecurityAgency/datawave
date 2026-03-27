@@ -33,6 +33,7 @@ import datawave.query.tables.ScannerSession;
  * An asynchronous index lookup which Looks up field names from the index which match the provided set of terms, and optionally limits them to the specified
  * fields
  */
+@Deprecated
 public class FieldNameIndexLookup extends AsyncIndexLookup {
     private static final Logger log = Logger.getLogger(FieldNameIndexLookup.class);
 
@@ -86,11 +87,11 @@ public class FieldNameIndexLookup extends AsyncIndexLookup {
                         Set<Range> ranges = Collections.singleton(ShardIndexQueryTableStaticMethods.getLiteralRange(term));
                         if (config.getLimitAnyFieldLookups()) {
                             log.trace("Creating configureTermMatchOnly");
-                            bs = ShardIndexQueryTableStaticMethods.configureTermMatchOnly(config, scannerFactory, config.getIndexTableName(), ranges,
+                            bs = ShardIndexQueryTableStaticMethods.configureTermMatchOnly(config, scannerFactory, getTableName(), ranges,
                                             Collections.singleton(term), Collections.emptySet(), false, true);
                         } else {
                             log.trace("Creating configureLimitedDiscovery");
-                            bs = ShardIndexQueryTableStaticMethods.configureLimitedDiscovery(config, scannerFactory, config.getIndexTableName(), ranges,
+                            bs = ShardIndexQueryTableStaticMethods.configureLimitedDiscovery(config, scannerFactory, getTableName(), ranges,
                                             Collections.singleton(term), Collections.emptySet(), false, true);
                         }
 

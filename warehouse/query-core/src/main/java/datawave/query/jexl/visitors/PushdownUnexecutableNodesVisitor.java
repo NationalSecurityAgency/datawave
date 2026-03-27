@@ -146,7 +146,7 @@ public class PushdownUnexecutableNodesVisitor extends BaseVisitor {
 
     @Override
     public Object visit(ASTOrNode node, Object data) {
-        // if not executable, then we may be able to resolve this by fixing the children children
+        // if not executable, then we may be able to resolve this by fixing the children
         if (!ExecutableDeterminationVisitor.isExecutable(node, config, indexedFields, indexOnlyFields, nonEventFields, forFieldIndex, null, helper)) {
             if (ExecutableDeterminationVisitor.isNegated(data)) {
                 // this is a negated Or so for executability needs to be treated like an AND

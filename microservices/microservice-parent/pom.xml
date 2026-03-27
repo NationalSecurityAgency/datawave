@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>gov.nsa.datawave.microservice</groupId>
     <artifactId>datawave-microservice-parent</artifactId>
-    <version>4.0.8-SNAPSHOT</version>
+    <version>4.0.9-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>DataWave Microservices Parent</name>
     <description>DataWave mircoservices provide functionality previously contained in the DataWave
@@ -54,22 +54,34 @@
         <spotbugs.excludes.file />
         <surefire.forkCount>1C</surefire.forkCount>
         <version.hadoop>3.3.4</version.hadoop>
-        <version.jackson>2.13.2</version.jackson>
+        <!-- 2.14.X is the maximum version of jackson without snakeyaml version 2 causing spring-boot 2.7.1 conflict -->
+        <version.jackson>2.14.3</version.jackson>
         <version.junit4>4.13.2</version.junit4>
         <version.junit5>5.12.0</version.junit5>
         <version.junit5.platform>1.12.0</version.junit5.platform>
-        <version.log4j.bom>2.17.2</version.log4j.bom>
+        <version.log4j>2.25.3</version.log4j>
         <version.lombok>1.18.36</version.lombok>
+        <version.slf4j>2.0.17</version.slf4j>
     </properties>
     <dependencyManagement>
         <dependencies>
+            <!-- Don't sort the import scope dependencies. The first declared version of a dependency in dependencyManagement will prevail. -->
+            <?SORTPOM IGNORE?>
             <dependency>
-                <groupId>org.apache.logging.log4j</groupId>
-                <artifactId>log4j-bom</artifactId>
-                <version>${version.log4j.bom}</version>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-bom</artifactId>
+                <version>${version.slf4j}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-bom</artifactId>
+                <version>${version.log4j}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <?SORTPOM RESUME?>
             <dependency>
                 <groupId>org.apache.hadoop</groupId>
                 <artifactId>hadoop-yarn-client</artifactId>
@@ -196,6 +208,16 @@
         </dependencies>
     </dependencyManagement>
     <dependencies>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j2-impl</artifactId>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <scope>compile</scope>
+        </dependency>
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>

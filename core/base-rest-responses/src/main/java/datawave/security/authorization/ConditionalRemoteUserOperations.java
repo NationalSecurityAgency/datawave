@@ -51,7 +51,7 @@ public class ConditionalRemoteUserOperations implements UserOperations {
             return delegate.listEffectiveAuthorizations(callerObject);
         } else {
             AuthorizationsListBase response = authorizationsListBaseSupplier.get();
-            response.setUserAuths(callerObject.getPrimaryUser().getDn().subjectDN(), callerObject.getPrimaryUser().getDn().issuerDN(), Collections.EMPTY_LIST);
+            response.setUserAuths(callerObject.getPrimaryUser().getDn().subjectDN(), callerObject.getPrimaryUser().getDn().issuerDN(), Collections.emptyList());
             return response;
         }
     }

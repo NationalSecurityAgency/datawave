@@ -1,6 +1,7 @@
 package datawave.query.transformer;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
@@ -531,7 +532,7 @@ public class UniqueTransformTest {
         Transformer<Document,Map.Entry<Key,Document>> docToEntry = document -> Maps.immutableEntry(document.getMetadata(), document);
         TransformIterator<Document,Map.Entry<Key,Document>> inputIterator = new TransformIterator<>(documents.iterator(), docToEntry);
         UniqueTransform uniqueTransform = getUniqueTransform();
-        Iterator<Map.Entry<Key,Document>> resultIterator = uniqueTransform.getIterator(inputIterator);
+        Iterator<Map.Entry<Key,Document>> resultIterator = uniqueTransform.getIterator(inputIterator, null);
         return StreamSupport.stream(Spliterators.spliteratorUnknownSize(resultIterator, Spliterator.ORDERED), false).filter(Objects::nonNull)
                         .map(Map.Entry::getValue).collect(Collectors.toList());
     }
@@ -540,7 +541,7 @@ public class UniqueTransformTest {
         Transformer<Document,Map.Entry<Key,Document>> docToEntry = document -> Maps.immutableEntry(document.getMetadata(), document);
         TransformIterator<Document,Map.Entry<Key,Document>> inputIterator = new TransformIterator<>(documents.iterator(), docToEntry);
         UniqueTransform uniqueTransform = getUniqueTransform();
-        Iterator<Map.Entry<Key,Document>> resultIterator = uniqueTransform.getIterator(inputIterator);
+        Iterator<Map.Entry<Key,Document>> resultIterator = uniqueTransform.getIterator(inputIterator, null);
         ArrayList<Document> docs = new ArrayList<>();
         while (resultIterator.hasNext()) {
             Map.Entry<Key,Document> next = resultIterator.next();
@@ -610,11 +611,17 @@ public class UniqueTransformTest {
 
         InputDocumentBuilder(String cq, long ts) {
             Key key = new Key("shardid", "datatype\u0000" + getUid(), cq, ts);
+            Key key2 = new Key("shardid", "datatype\u0000" + getUid() + ".1", cq, ts);
+            Key key3 = new Key("shardid", "datatype\u0000" + getUid() + ".5", cq, ts);
             this.document = new Document(key, true);
             inputDocuments.add(document);
             this.document.getMetadata().set(key);
             Attribute<?> docKeyAttributes = new DocumentKey(key, true);
+            Attribute<?> docKeyAttributes2 = new DocumentKey(key2, true);
+            Attribute<?> docKeyAttributes3 = new DocumentKey(key3, true);
             this.document.put(Document.DOCKEY_FIELD_NAME, docKeyAttributes);
+            this.document.put(Document.DOCKEY_FIELD_NAME, docKeyAttributes2);
+            this.document.put(Document.DOCKEY_FIELD_NAME, docKeyAttributes3);
         }
 
         String getUid() {
@@ -694,6 +701,19 @@ public class UniqueTransformTest {
             }
         }
 
+    }
+
+    @Test
+    public void testRootDocKeyAttr() {
+        givenInputDocument();
+        givenInputDocument();
+        givenInputDocument();
+        givenInputDocument();
+        for (Document d : inputDocuments) {
+            Attribute a = UniqueTransform.getRootDocKeyAttr(d);
+            String cf = a.getMetadata().getColumnFamily().toString();
+            assertFalse(cf.contains("."));
+        }
     }
 
 }

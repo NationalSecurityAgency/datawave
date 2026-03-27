@@ -14,8 +14,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.commons.jexl3.parser.ASTAndNode;
-import org.apache.commons.jexl3.parser.ASTReferenceExpression;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
 import org.slf4j.Logger;
@@ -28,11 +26,13 @@ import datawave.query.jexl.lookups.AsyncIndexLookup;
 import datawave.query.jexl.lookups.ExceededThresholdException;
 import datawave.query.jexl.lookups.IndexLookup;
 import datawave.query.jexl.lookups.IndexLookupMap;
+import datawave.query.jexl.lookups.ScanMonitor;
 import datawave.query.planner.pushdown.CostEstimator;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.util.MetadataHelper;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
+import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
 
 /**
  * Abstract class which provides a framework for visitors which perform index lookups based on the contents of the Jexl tree
@@ -57,6 +57,8 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
     protected ExecutorService executor;
     protected Map<String,IndexLookup> lookupMap;
     protected List<FutureJexlNode> futureJexlNodes;
+
+    protected ScanMonitor monitor;
 
     protected String stage = "default";
 
@@ -96,6 +98,20 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
         }
     }
 
+    protected void setupScanMonitor() {
+        String id = "(unknown)";
+        if (config.getQuery() != null && config.getQuery().getId() != null) {
+            id = config.getQuery().getId().toString();
+        }
+
+        QueryUncaughtExceptionHandler handler = config.getQuery().getUncaughtExceptionHandler();
+        monitor = ScanMonitor.of(id, handler);
+    }
+
+    protected void shutdownMonitor() {
+        monitor.close();
+    }
+
     /**
      * The expand method is the entrypoint which should be called to run index expansion on a given Jexl tree.
      *
@@ -108,6 +124,7 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
     @SuppressWarnings("unchecked")
     protected <T extends JexlNode> T expand(T script) {
         setupExecutor();
+        setupScanMonitor();
         try {
             if (null == config.getQueryFieldsDatatypes()) {
                 QueryException qe = new QueryException(DatawaveErrorCode.DATATYPESFORINDEXFIELDS_MULTIMAP_MISSING);
@@ -121,6 +138,7 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
             return rebuiltScript;
         } finally {
             shutdownExecutor();
+            shutdownMonitor();
         }
     }
 
@@ -187,24 +205,6 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
             JexlNode node = futureJexlNode.getOrigNode();
             JexlNodes.swap(node.jjtGetParent(), node, futureJexlNode.getRebuiltNode());
         }
-    }
-
-    /**
-     * Check for a wrapped junction. This matters when only a single matching term is found because we're left with oddly formed queries like
-     * <code>(term)</code> and a Jexl structure where an {@link ASTAndNode} has a single child which is not proper.
-     *
-     * @param node
-     *            the node
-     * @return true if the node is a wrapped junction
-     */
-    private boolean isWrappedJunction(JexlNode node) {
-        if (node instanceof ASTAndNode) {
-            JexlNode parent = node.jjtGetParent();
-            if (parent instanceof ASTReferenceExpression) {
-                return parent.jjtGetParent() != null;
-            }
-        }
-        return false;
     }
 
     /**
@@ -333,7 +333,7 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
         @Override
         public Thread newThread(Runnable r) {
             Thread thread = dtf.newThread(r);
-            thread.setName(name + " Session " + threadIdentifier + " -" + threadNum++);
+            thread.setName(name + " " + threadIdentifier + " -" + threadNum++);
             thread.setDaemon(true);
             thread.setUncaughtExceptionHandler(config.getQuery().getUncaughtExceptionHandler());
             return thread;
