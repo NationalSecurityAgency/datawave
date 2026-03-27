@@ -114,7 +114,7 @@ public class DocumentMatchQueryTest extends AbstractQueryTest {
         logic.setIvaratorCacheDirConfigs(Collections.singletonList(new IvaratorCacheDirConfig(folder.toUri().toString())));
         logic.setMaxFieldIndexRangeSplit(1);
         logic.setCollapseUids(false);
-        logic.setFullTableScanEnabled(true);
+        logic.setFullTableScanEnabled(false);
         logic.setDocumentMatchMaxDecodedSize(DocumentMatchContext.DEFAULT_MAX_DECODED_SIZE);
 
         givenParameter(QueryParameters.HIT_LIST, "true");

@@ -5,6 +5,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ParseException;
 import org.junit.Test;
 
 import datawave.query.jexl.JexlASTHelper;
@@ -30,26 +31,39 @@ public class DocumentMatchFunctionRebuildingVisitorTest {
     /**
      * Verifies that the one-argument form is rewritten to include the reserved context variable as the first argument.
      *
-     * @throws Exception
+     * @throws ParseException
      *             if parsing fails
      */
     @Test
-    public void testRewriteSingleArgumentFunction() throws Exception {
-        ASTJexlScript script = JexlASTHelper.parseAndFlattenJexlQuery("document:match('car')");
-        String rewritten = JexlStringBuildingVisitor.buildQueryWithoutParse(DocumentMatchFunctionRebuildingVisitor.rewrite(script));
-        assertEquals("document:match(documentMatchContext, 'car')", rewritten);
+    public void testRewriteSingleArgumentFunction() throws ParseException {
+        assertRewrite("document:match(documentMatchContext, 'car')", "document:match('car')");
+
     }
 
     /**
      * Verifies that the two-argument form keeps the view selector first and inserts the reserved context variable before the search string.
      *
-     * @throws Exception
+     * @throws ParseException
      *             if parsing fails
      */
     @Test
-    public void testRewriteTwoArgumentFunction() throws Exception {
-        ASTJexlScript script = JexlASTHelper.parseAndFlattenJexlQuery("document:match('BODY', 'car')");
+    public void testRewriteTwoArgumentFunction() throws ParseException {
+        assertRewrite("document:match('BODY', documentMatchContext, 'car')", "document:match('BODY', 'car')");
+    }
+
+    /**
+     * Verifies that the input form is rewritten the expected input.
+     *
+     * @param expected
+     *            the expected re-written form
+     * @param input
+     *            the input to rewrite
+     * @throws ParseException
+     *             if parsing fails
+     */
+    private static void assertRewrite(String expected, String input) throws ParseException {
+        ASTJexlScript script = JexlASTHelper.parseAndFlattenJexlQuery(input);
         String rewritten = JexlStringBuildingVisitor.buildQueryWithoutParse(DocumentMatchFunctionRebuildingVisitor.rewrite(script));
-        assertEquals("document:match('BODY', documentMatchContext, 'car')", rewritten);
+        assertEquals(expected, rewritten);
     }
 }

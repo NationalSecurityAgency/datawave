@@ -216,7 +216,7 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
                 boolean seeked = false;
                 if (isPartOfDocument(documentStartKey, docAttrKey.get())) {
                     if (filter == null || filter.keep(docAttrKey.get())) {
-                        docKeys.add(getDocKey(docAttrKey.get()));
+                        docKeys.add(getDocumentKey(docAttrKey.get()));
                     }
 
                     if (filter == null || filter.apply(Maps.immutableEntry(docAttrKey.get(), StringUtils.EMPTY))) {
@@ -258,10 +258,10 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
         return equality.partOf(documentStartKey, candidateKey);
     }
 
-    // map the key to the dockey (only shard, datatype, uid)
-    public static Key getDocKey(Key key) {
+    // map the key to the document key (only shard, datatype, uid)
+    public static Key getDocumentKey(Key key) {
         final ByteSequence row = key.getRowData();
-        final ByteSequence cf = getDocColumnFamily(key);
+        final ByteSequence cf = getDocumentColumnFamily(key);
         final ByteSequence cv = key.getColumnVisibilityData();
         return new Key(row.getBackingArray(), row.offset(), row.length(), cf.getBackingArray(), cf.offset(), cf.length(), EMPTY_BYTE_SEQUENCE.getBackingArray(),
                         EMPTY_BYTE_SEQUENCE.offset(), EMPTY_BYTE_SEQUENCE.length(), cv.getBackingArray(), cv.offset(), cv.length(), key.getTimestamp());
@@ -274,7 +274,7 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
      *            the key to process
      * @return the column family, consisting of datatype and uid.
      */
-    private static ByteSequence getDocColumnFamily(Key key) {
+    private static ByteSequence getDocumentColumnFamily(Key key) {
         final ByteSequence cf = key.getColumnFamilyData();
         if (!"d".equals(key.getColumnFamily().toString())) {
             return cf;
