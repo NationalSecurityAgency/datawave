@@ -50,8 +50,8 @@ public class ModelKeyParser {
     public static final String NULL_BYTE = "\0";
     public static final Value NULL_VALUE = new Value(new byte[0]);
 
-    // Package-private to allow test override
-    static LongSupplier clock = System::currentTimeMillis;
+    /** Visible for testing. Override to control timestamps in tests. */
+    public static LongSupplier clock = System::currentTimeMillis;
 
     @Deprecated
     public static final String INDEX_ONLY = "index_only";

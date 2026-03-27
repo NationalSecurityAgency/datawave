@@ -113,7 +113,7 @@ public class ModelBeanTest {
         MODEL_TWO = (datawave.webservice.model.Model) u.unmarshal(m2Url);
 
         Logger.getLogger(ModelBean.class).setLevel(Level.OFF);
-        PowerMock.mockStatic(System.class, System.class.getMethod("currentTimeMillis"));
+        ModelKeyParser.clock = () -> TIMESTAMP;
     }
 
     public void printTable(String tableName) throws Exception {
@@ -125,6 +125,7 @@ public class ModelBeanTest {
 
     @After
     public void tearDown() {
+        ModelKeyParser.clock = System::currentTimeMillis;
         try {
             client.tableOperations().delete(ModelBean.DEFAULT_MODEL_TABLE_NAME);
         } catch (Exception e) {}
@@ -156,10 +157,7 @@ public class ModelBeanTest {
         EasyMock.expect(connectionFactory.getTrackingMap((StackTraceElement[]) EasyMock.anyObject())).andReturn(trackingMap);
         EasyMock.expect(connectionFactory.getClient(EasyMock.eq(userDN.toLowerCase()), EasyMock.eq(null), EasyMock.eq(AccumuloConnectionFactory.Priority.LOW),
                         EasyMock.eq(trackingMap))).andReturn(client);
-        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
         connectionFactory.returnClient(client);
-        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
-        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
         cache.reloadTableCache(ModelBean.DEFAULT_MODEL_TABLE_NAME);
         PowerMock.replayAll();
 
@@ -175,11 +173,7 @@ public class ModelBeanTest {
         EasyMock.expect(connectionFactory.getTrackingMap((StackTraceElement[]) EasyMock.anyObject())).andReturn(trackingMap);
         EasyMock.expect(connectionFactory.getClient(EasyMock.eq(userDN.toLowerCase()), EasyMock.eq(null), EasyMock.eq(AccumuloConnectionFactory.Priority.LOW),
                         EasyMock.eq(trackingMap))).andReturn(client);
-        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
         connectionFactory.returnClient(client);
-        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
-        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
-        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
         cache.reloadTableCache(ModelBean.DEFAULT_MODEL_TABLE_NAME);
         PowerMock.replayAll();
 
@@ -246,14 +240,8 @@ public class ModelBeanTest {
         EasyMock.expect(connectionFactory.getTrackingMap((StackTraceElement[]) EasyMock.anyObject())).andReturn(trackingMap);
         EasyMock.expect(connectionFactory.getClient(EasyMock.eq(userDN.toLowerCase()), EasyMock.eq(null), EasyMock.eq(AccumuloConnectionFactory.Priority.LOW),
                         EasyMock.eq(trackingMap))).andReturn(client);
-        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
-        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
-        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
         connectionFactory.returnClient(client);
         cache.reloadTableCache(ModelBean.DEFAULT_MODEL_TABLE_NAME);
-        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
-        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
-        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
         PowerMock.replayAll();
 
         bean.deleteModel(MODEL_TWO.getName(), (String) null);
@@ -326,10 +314,7 @@ public class ModelBeanTest {
         EasyMock.expect(connectionFactory.getClient(EasyMock.eq(userDN.toLowerCase()), EasyMock.eq(null), EasyMock.eq(AccumuloConnectionFactory.Priority.LOW),
                         EasyMock.eq(trackingMap))).andReturn(client);
         cache.reloadTableCache(ModelBean.DEFAULT_MODEL_TABLE_NAME);
-        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
         connectionFactory.returnClient(client);
-        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
-        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
         PowerMock.replayAll();
 
         bean.cloneModel(MODEL_ONE.getName(), "MODEL2", (String) null);
