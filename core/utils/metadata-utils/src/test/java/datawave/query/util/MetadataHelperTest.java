@@ -415,4 +415,100 @@ public class MetadataHelperTest {
         Assertions.assertFalse(helper.getHiddenFields(Set.of("foo")).contains("NAME"));
         Assertions.assertFalse(helper.getHiddenFields(Set.of()).contains("FOO"));
     }
+
+    /**
+     * Tests for {@link MetadataHelper#getMissingFieldsInDateRange(Set, Set, String, String, Set)}.
+     */
+    @Nested
+    public class GetMissingFieldsInDateRangeTest {
+        /**
+         * Test against a table that has only non-aggregated entries as matches.
+         */
+        @Test
+        void testNonAggregatedEntriesOnly() throws TableNotFoundException {
+            givenNonAggregatedFrequencyRows("NAME", COLF_F, "csv", "20200103", "20200120", 1L);
+            givenNonAggregatedFrequencyRows("NAME", COLF_F, "wiki", "20200101", "20200120", 2L);
+            givenNonAggregatedFrequencyRows("NAME", COLF_F, "maze", "20200105", "20200120", 3L);
+            givenNonAggregatedFrequencyRows("NAME", COLF_F, "data", "20200107", "20200102", 3L);
+            givenNonAggregatedFrequencyRows("EVENT_DATE", COLF_F, "csv", "20200101", "20200120", 4L);
+            givenNonAggregatedFrequencyRows("EVENT_DATE", COLF_F, "wiki", "20200101", "20200120", 5L);
+            givenNonAggregatedFrequencyRows("EVENT_DATE", COLF_F, "maze", "20200101", "20200120", 6L);
+            writeMutations();
+
+            // No DataTypes
+            Assertions.assertEquals(Collections.emptySet(), helper.getMissingFieldsInDateRange(Set.of("NAME", "EVENT_DATE"), Collections.emptySet(), "20200101",
+                            "20200120", Collections.emptySet()));
+            // Using DataTypes
+            Assertions.assertEquals(Set.of("EVENT_DATE"),
+                            helper.getMissingFieldsInDateRange(Set.of("NAME", "EVENT_DATE"), Set.of("data"), "20200101", "20200120", Collections.emptySet()));
+            // Fictitious field
+            Assertions.assertEquals(Set.of("FOO"), helper.getMissingFieldsInDateRange(Set.of("NAME", "EVENT_DATE", "FOO"),
+                            Set.of("wiki", "data", "csv", "maze"), "20200101", "20200120", Collections.emptySet()));
+            // Missing because of date range
+            Assertions.assertEquals(Set.of("NAME", "EVENT_DATE"), helper.getMissingFieldsInDateRange(Set.of("NAME", "EVENT_DATE"), Set.of("wiki", "data"),
+                            "20190101", "20191231", Collections.emptySet()));
+        }
+
+        /**
+         * Test against a table that has only aggregated entries as matches.
+         */
+        @Test
+        void testAggregatedEntriesOnly() throws TableNotFoundException {
+            givenAggregatedFrequencyRow("NAME", COLF_F, "csv", createDateFrequencyMap("20200113", 1L, "20200115", 5L, "20200116", 3L));
+            givenAggregatedFrequencyRow("NAME", COLF_F, "wiki", createDateFrequencyMap("20200111", 1L, "20200112", 15L, "20200113", 3L));
+            givenAggregatedFrequencyRow("NAME", COLF_F, "maze", createDateFrequencyMap("20200102", 1L, "20200104", 55L, "20200105", 3L));
+            givenAggregatedFrequencyRow("NAME", COLF_F, "data", createDateFrequencyMap("20200101", 1L, "20200103", 3L));
+            givenAggregatedFrequencyRow("EVENT_DATE", COLF_F, "csv", createDateFrequencyMap("20200101", 2L, "20200102", 3L, "20200103", 4L));
+            givenAggregatedFrequencyRow("EVENT_DATE", COLF_F, "wiki", createDateFrequencyMap("20200101", 2L, "20200102", 3L, "20200103", 4L));
+            givenAggregatedFrequencyRow("EVENT_DATE", COLF_F, "maze", createDateFrequencyMap("20200101", 2L, "20200102", 3L, "20200103", 4L));
+            writeMutations();
+
+            // No DataTypes
+            Assertions.assertEquals(Collections.emptySet(), helper.getMissingFieldsInDateRange(Set.of("NAME", "EVENT_DATE"), Collections.emptySet(), "20200101",
+                            "20200120", Collections.emptySet()));
+            // Using DataTypes
+            Assertions.assertEquals(Set.of("EVENT_DATE"),
+                            helper.getMissingFieldsInDateRange(Set.of("NAME", "EVENT_DATE"), Set.of("data"), "20200101", "20200120", Collections.emptySet()));
+            // Fictitious field
+            Assertions.assertEquals(Set.of("FOO"), helper.getMissingFieldsInDateRange(Set.of("NAME", "EVENT_DATE", "FOO"),
+                            Set.of("wiki", "data", "csv", "maze"), "20200101", "20200120", Collections.emptySet()));
+            // Missing because of date range
+            Assertions.assertEquals(Set.of("NAME", "EVENT_DATE"), helper.getMissingFieldsInDateRange(Set.of("NAME", "EVENT_DATE"), Set.of("wiki", "data"),
+                            "20190101", "20191231", Collections.emptySet()));
+        }
+
+        /**
+         * Test against a table that has both aggregated and non-aggregated entries as matches.
+         */
+        @Test
+        void testMixedEntryFormats() throws TableNotFoundException {
+            givenAggregatedFrequencyRow("NAME", COLF_F, "csv", createDateFrequencyMap("20200111", 1L, "20200112", 5L, "20200113", 3L));
+            givenNonAggregatedFrequencyRows("NAME", COLF_F, "csv", "20200111", "20200120", 1L);
+            givenAggregatedFrequencyRow("NAME", COLF_F, "wiki", createDateFrequencyMap("20200111", 1L, "20200112", 15L, "20200113", 3L));
+            givenAggregatedFrequencyRow("NAME", COLF_F, "maze", createDateFrequencyMap("20200111", 1L, "20200112", 55L, "20200113", 3L));
+            givenNonAggregatedFrequencyRows("NAME", COLF_F, "maze", "20200103", "20200120", 3L);
+            givenAggregatedFrequencyRow("NAME", COLF_F, "data", createDateFrequencyMap("20200111", 1L, "20200113", 3L));
+            givenNonAggregatedFrequencyRows("NAME", COLF_F, "data", "20200101", "20200115", 3L);
+            givenAggregatedFrequencyRow("EVENT_DATE", COLF_F, "csv", createDateFrequencyMap("20200101", 2L, "20200102", 3L, "20200103", 4L));
+            givenAggregatedFrequencyRow("EVENT_DATE", COLF_F, "wiki", createDateFrequencyMap("20200101", 2L, "20200102", 3L, "20200103", 4L));
+            givenAggregatedFrequencyRow("EVENT_DATE", COLF_F, "maze", createDateFrequencyMap("20200101", 2L, "20200102", 3L, "20200103", 4L));
+            givenNonAggregatedFrequencyRows("EVENT_DATE", COLF_F, "csv", "20200101", "20200120", 4L);
+            givenNonAggregatedFrequencyRows("EVENT_DATE", COLF_F, "wiki", "20200101", "20200120", 5L);
+            givenNonAggregatedFrequencyRows("EVENT_DATE", COLF_F, "maze", "20200101", "20200120", 6L);
+            writeMutations();
+
+            // No DataTypes
+            Assertions.assertEquals(Collections.emptySet(), helper.getMissingFieldsInDateRange(Set.of("NAME", "EVENT_DATE"), Collections.emptySet(), "20200101",
+                            "20200120", Collections.emptySet()));
+            // Using DataTypes
+            Assertions.assertEquals(Set.of("EVENT_DATE"),
+                            helper.getMissingFieldsInDateRange(Set.of("NAME", "EVENT_DATE"), Set.of("data"), "20200101", "20200120", Collections.emptySet()));
+            // Fictitious field
+            Assertions.assertEquals(Set.of("FOO"), helper.getMissingFieldsInDateRange(Set.of("NAME", "EVENT_DATE", "FOO"),
+                            Set.of("wiki", "data", "csv", "maze"), "20200101", "20200120", Collections.emptySet()));
+            // Missing because of date range
+            Assertions.assertEquals(Set.of("NAME", "EVENT_DATE"), helper.getMissingFieldsInDateRange(Set.of("NAME", "EVENT_DATE"), Set.of("wiki", "data"),
+                            "20190101", "20191231", Collections.emptySet()));
+        }
+    }
 }
