@@ -5,8 +5,9 @@ import java.util.UUID;
 
 import javax.servlet.http.Cookie;
 
-import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -25,11 +26,10 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
 import datawave.Constants;
 import datawave.microservice.query.web.annotation.ClearQuerySessionId;
 import datawave.microservice.query.web.annotation.GenerateQuerySessionId;
-import datawave.microservice.query.web.filter.QueryMetricsEnrichmentFilterAdvice;
 
 @ControllerAdvice
 public class QuerySessionIdAdvice implements ResponseBodyAdvice<Object> {
-    private final Logger log = Logger.getLogger(QuerySessionIdAdvice.class);
+    private final Logger log = LoggerFactory.getLogger(this.getClass());
 
     // Note: QuerySessionIdContext needs to be request scoped
     private final QuerySessionIdContext querySessionIdContext;

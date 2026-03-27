@@ -1471,7 +1471,7 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
         this.documentKey = CityField.EVENT_ID.name();
     }
 
-    private static class DelayedClient implements AccumuloClient {
+    public static class DelayedClient implements AccumuloClient {
         private final AccumuloClient client;
         private long delay;
 
@@ -1705,6 +1705,15 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
                 this.delegateScanner.addScanIterator(iteratorSetting);
             } else if (this.delegateBatchScanner != null) {
                 this.delegateBatchScanner.addScanIterator(iteratorSetting);
+            }
+        }
+
+        @Override
+        public void setExecutionHints(Map<String,String> hints) {
+            if (delegateScanner != null) {
+                delegateScanner.setExecutionHints(hints);
+            } else if (delegateBatchScanner != null) {
+                delegateBatchScanner.setExecutionHints(hints);
             }
         }
 

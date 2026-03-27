@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave</groupId>
         <artifactId>datawave-parent</artifactId>
-        <version>7.35.0-SNAPSHOT</version>
+        <version>7.37.0-SNAPSHOT</version>
     </parent>
     <groupId>gov.nsa.datawave.webservices</groupId>
     <artifactId>datawave-ws-parent</artifactId>
@@ -29,8 +29,6 @@
         <module>annotations</module>
     </modules>
     <properties>
-        <accumulo.scope>provided</accumulo.scope>
-        <accumulo.version>${version.accumulo}</accumulo.version>
         <build.properties.0>default</build.properties.0>
         <!-- Control the rpm release number, for a final release change the rpm.release.number from the timestamp property to the number 1 -->
         <maven.build.timestamp.format>yyyyMMddHHmmss</maven.build.timestamp.format>

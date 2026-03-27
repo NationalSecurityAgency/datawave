@@ -30,6 +30,7 @@ import datawave.query.attributes.UniqueFields;
 import datawave.query.common.grouping.GroupFields;
 import datawave.query.jexl.functions.QueryFunctions;
 import datawave.query.language.functions.jexl.GroupByDate;
+import datawave.query.util.EmptyTreeChecker;
 
 /**
  * Visits the query tree and extracts the parameters from any options functions present and adds them to the provided data {@link Map}. Any options function
@@ -107,10 +108,16 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
                     QueryFunctions.RENAME_FUNCTION);
     // @formatter:on
 
+    private QueryOptionsFromQueryVisitor() {
+        // enforce static access
+    }
+
     @SuppressWarnings("unchecked")
     public static <T extends JexlNode> T collect(T node, Object data) {
         QueryOptionsFromQueryVisitor visitor = new QueryOptionsFromQueryVisitor();
-        return (T) node.jjtAccept(visitor, data);
+        T result = (T) node.jjtAccept(visitor, data);
+        EmptyTreeChecker.check(result);
+        return result;
     }
 
     /**
