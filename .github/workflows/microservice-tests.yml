@@ -46,7 +46,7 @@ jobs:
           sudo chown -R $(whoami) . ~/.m2 || true
         fi
     - name: Checkout Code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       # Clean up free space
     - uses: ./.github/actions/free-space
       with:
