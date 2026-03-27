@@ -144,6 +144,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
     public static final String SHARD_ININDEX_BLOOM_OPTIMUM_MAX_FILTER_SIZE = "shard.table.index.bloom.optimum.max.filter.size"; // Bytes
     public static final String SHARD_STATS_TNAME = "shard.stats.table.name";
     public static final String SHARD_GIDX_TNAME = "shard.global.index.table.name";
+    public static final String SHARD_BITSET_INDEX_TABLE_NAME = "shard.bitset.index.table.name";
     public static final String SHARD_DAY_INDEX_TABLE_NAME = "shard.global.day.index.table.name";
     public static final String SHARD_YEAR_INDEX_TABLE_NAME = "shard.global.year.index.table.name";
     public static final String SHARD_GRIDX_TNAME = "shard.global.rindex.table.name";
@@ -156,8 +157,10 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
     public static final String IS_REINDEX_ENABLED = "ingest.reindex.enabled";
     public static final String FIELDS_TO_REINDEX = "ingest.reindex.fields";
 
-    public static final String DAY_INDEX_ENABLED = "year.index.enabled";
-    public static final String YEAR_INDEX_ENABLED = "day.index.enabled";
+    public static final String SHARD_INDEX_ENABLED = "shard.index.enabled";
+    public static final String BITSET_INDEX_ENABLED = "bitset.index.enabled";
+    public static final String DAY_INDEX_ENABLED = "day.index.enabled";
+    public static final String YEAR_INDEX_ENABLED = "year.index.enabled";
 
     /**
      * name of ACCUMULO table to store DATAWAVE metadata
@@ -205,6 +208,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
     private float bloomFilteringTimeoutThreshold;
     private Text shardTableName = null;
     private Text shardIndexTableName = null;
+    private Text shardBitsetIndexTableName = null;
     private Text shardDayIndexTableName = null;
     private Text shardYearIndexTableName = null;
     private Text indexStatsTableName = null;
@@ -218,8 +222,12 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
     protected MarkingFunctions markingFunctions;
     protected IngestConfiguration ingestConfig = IngestConfigurationFactory.getIngestConfiguration();
 
+    // default setting is a standard index with uid and event keys
+    private boolean shardIndexEnabled = true;
     private boolean shardIndexCreateUids = true;
     private boolean suppressEventKeys = false;
+    // alternate global index implementations
+    private boolean bitsetIndexEnabled = false;
     private boolean dayIndexEnabled = false;
     private boolean yearIndexEnabled = false;
 
@@ -256,11 +264,26 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
             setProduceStats(true);
         }
 
-        tableName = conf.get(SHARD_GIDX_TNAME, null);
-        if (null == tableName)
-            log.warn(SHARD_GIDX_TNAME + " not specified, no global index mutations will be created.");
-        else
-            setShardIndexTableName(new Text(tableName));
+        shardIndexEnabled = conf.getBoolean(SHARD_INDEX_ENABLED, true);
+        if (shardIndexEnabled) {
+            tableName = conf.get(SHARD_GIDX_TNAME, null);
+            if (null == tableName) {
+                log.warn(SHARD_GIDX_TNAME + " not specified, no global index mutations will be created.");
+            } else {
+                setShardIndexTableName(new Text(tableName));
+            }
+        }
+
+        bitsetIndexEnabled = conf.getBoolean(BITSET_INDEX_ENABLED, false);
+        if (bitsetIndexEnabled) {
+            tableName = conf.get(SHARD_BITSET_INDEX_TABLE_NAME, null);
+            if (tableName == null) {
+                log.warn(SHARD_BITSET_INDEX_TABLE_NAME + " not specified, setting to default value");
+                setShardBitsetIndexTableName(new Text(TableName.TRUNCATED_SHARD_INDEX));
+            } else {
+                setShardBitsetIndexTableName(new Text(tableName));
+            }
+        }
 
         dayIndexEnabled = conf.getBoolean(DAY_INDEX_ENABLED, false);
         if (dayIndexEnabled) {
@@ -370,6 +393,11 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
         tableName = conf.get(SHARD_GRIDX_TNAME, null);
         if (null != tableName)
             tableNames.add(tableName);
+
+        tableName = conf.get(SHARD_BITSET_INDEX_TABLE_NAME, null);
+        if (null != tableName) {
+            tableNames.add(tableName);
+        }
 
         tableName = conf.get(SHARD_DAY_INDEX_TABLE_NAME, null);
         if (null != tableName) {
@@ -776,10 +804,39 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
         if (log.isTraceEnabled()) {
             log.trace("Create index column " + tableName);
         }
-        if (null == tableName) {
-            return values;
+
+        if (!shardIndexEnabled && !bitsetIndexEnabled && !dayIndexEnabled && !yearIndexEnabled) {
+            log.warn("no index table enabled");
         }
 
+        if (shardIndexEnabled) {
+            if (tableName == null) {
+                if (log.isTraceEnabled()) {
+                    log.trace("Index table name is null, not creating index keys");
+                }
+            } else {
+                writeStandardIndexKey(values, event, column, fieldValue, visibility, maskedVisibility, maskedFieldHelper, shardId, direction, tableName,
+                                indexValue);
+            }
+        }
+
+        if (bitsetIndexEnabled) {
+            writeBitsetIndexKey(values, event, column, fieldValue, visibility, maskedVisibility, maskedFieldHelper, shardId, direction);
+        }
+
+        if (dayIndexEnabled) {
+            writeShardDayIndexKey(values, event, column, fieldValue, visibility, maskedVisibility, maskedFieldHelper, shardId, direction);
+        }
+
+        if (yearIndexEnabled) {
+            writeShardYearIndexKeyBitSet(values, event, column, fieldValue, visibility, maskedVisibility, maskedFieldHelper, shardId, direction);
+        }
+
+        return values;
+    }
+
+    public void writeStandardIndexKey(Multimap<BulkIngestKey,Value> values, RawRecordContainer event, String column, String fieldValue, byte[] visibility,
+                    byte[] maskedVisibility, MaskedFieldHelper maskedFieldHelper, byte[] shardId, Direction direction, Text tableName, Value indexValue) {
         // hold on to the helper
         IngestHelperInterface helper = this.getHelper(event.getDataType());
         boolean deleteMode = helper.getDeleteMode();
@@ -831,18 +888,58 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
             Key k = this.createIndexKey(fieldValue.getBytes(), colf, colq, refVisibility, event.getTimestamp(), deleteMode);
             BulkIngestKey bkey = new BulkIngestKey(tableName, k);
             values.put(bkey, indexValue);
-
         }
+    }
 
-        if (dayIndexEnabled) {
-            writeShardDayIndexKey(values, event, column, fieldValue, visibility, maskedVisibility, maskedFieldHelper, shardId, direction);
+    /**
+     * Write index key for the {@link TableName#TRUNCATED_SHARD_INDEX}
+     *
+     * <pre>
+     * value FIELD:datatype0x00yyyyMMdd (bitset denoting shard offsets)
+     * </pre>
+     *
+     * @param values
+     *            the multimap of bulk ingest keys to values
+     * @param event
+     *            the event
+     * @param field
+     *            the field
+     * @param value
+     *            the value
+     * @param visibility
+     *            the visibility bytes
+     * @param maskedVisibility
+     *            the masked visibility bytes
+     * @param maskedFieldHelper
+     *            the {@link MaskedFieldHelper}
+     * @param shardId
+     *            the shard id bytes
+     * @param direction
+     *            the direction
+     */
+    public void writeBitsetIndexKey(Multimap<BulkIngestKey,Value> values, RawRecordContainer event, String field, String value, byte[] visibility,
+                    byte[] maskedVisibility, MaskedFieldHelper maskedFieldHelper, byte[] shardId, Direction direction) {
+        if (shardId != null && value != null && field != null && visibility != null) {
+            String fullShard = new String(shardId);
+            String cq = fullShard.substring(0, 8) + '\u0000' + event.getDataType().outputName();
+            String viz = new String(visibility);
+            long ts = getIndexTimestamp(event.getTimestamp());
+
+            Key key = new Key(value, field, cq, viz, ts);
+            BulkIngestKey bulkIngestKey = new BulkIngestKey(getShardBitsetIndexTableName(), key);
+            Value bitSetValue = getValueForBitsetIndex(fullShard);
+            values.put(bulkIngestKey, bitSetValue);
+
+            if (maskedFieldHelper != null && maskedFieldHelper.contains(field)) {
+                // write both the masked value and masked visibility
+                // and the original value at the masked visibility
+                String maskedValue = maskedFieldHelper.get(field);
+                String maskedViz = new String(maskedVisibility);
+                Key maskedKey = new Key(maskedValue, field, cq, maskedViz, ts);
+                BulkIngestKey maskedBulkIngestKey = new BulkIngestKey(getShardBitsetIndexTableName(), maskedKey);
+                values.put(maskedBulkIngestKey, bitSetValue);
+            }
         }
-
-        if (yearIndexEnabled) {
-            writeShardYearIndexKeyBitSet(values, event, column, fieldValue, visibility, maskedVisibility, maskedFieldHelper, shardId, direction);
-        }
-
-        return values;
     }
 
     /**
@@ -896,6 +993,23 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
                 values.put(maskedBulkIngestKey, bitSetValue);
             }
         }
+    }
+
+    /**
+     * Constructs a {@link Value} that contains a {@link BitSet}'s backing byte array. The bitset index is set to the shard offset.
+     *
+     * @param shard
+     *            the full shard
+     * @return a Value containing a BitSet
+     */
+    public Value getValueForBitsetIndex(String shard) {
+        int underscoreIndex = shard.indexOf('_');
+        Preconditions.checkArgument(underscoreIndex > 0, "shard did not contain an underscore: " + shard);
+        String shardId = shard.substring(underscoreIndex + 1);
+        int offset = Integer.parseInt(shardId);
+        BitSet bitset = new BitSet();
+        bitset.set(offset);
+        return new Value(bitset.toByteArray());
     }
 
     public Value getValueForDayIndex(String shardId) {
@@ -1703,6 +1817,14 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
         this.shardIndexTableName = shardIndexTableName;
     }
 
+    public Text getShardBitsetIndexTableName() {
+        return shardBitsetIndexTableName;
+    }
+
+    public void setShardBitsetIndexTableName(Text shardBitsetIndexTableName) {
+        this.shardBitsetIndexTableName = shardBitsetIndexTableName;
+    }
+
     public Text getShardDayIndexTableName() {
         return shardDayIndexTableName;
     }
@@ -1829,8 +1951,32 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
         return suppressEventKeys;
     }
 
+    public void setSuppressEventKeys(boolean suppressEventKeys) {
+        this.suppressEventKeys = suppressEventKeys;
+    }
+
+    public boolean isShardIndexEnabled() {
+        return shardIndexEnabled;
+    }
+
+    public void setShardIndexEnabled(boolean shardIndexEnabled) {
+        this.shardIndexEnabled = shardIndexEnabled;
+    }
+
     public boolean getShardIndexCreateUids() {
         return shardIndexCreateUids;
+    }
+
+    public void setShardIndexCreateUids(boolean shardIndexCreateUids) {
+        this.shardIndexCreateUids = shardIndexCreateUids;
+    }
+
+    public boolean getBitSetIndexEnabled() {
+        return bitsetIndexEnabled;
+    }
+
+    public void setBitsetIndexEnabled(boolean bitsetIndexEnabled) {
+        this.bitsetIndexEnabled = bitsetIndexEnabled;
     }
 
     public boolean getDayIndexEnabled() {

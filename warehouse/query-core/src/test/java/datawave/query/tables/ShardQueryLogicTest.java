@@ -5,6 +5,7 @@ import static datawave.query.transformer.annotation.AnnotationHitsTransformer.EN
 import static datawave.query.transformer.annotation.AnnotationHitsTransformer.KEYWORDS_PARAMETER;
 import static datawave.query.transformer.annotation.AnnotationHitsTransformer.MIN_SCORE_PARAMETER;
 import static datawave.query.transformer.annotation.AnnotationHitsTransformer.TIMEUNIT_PARAMETER;
+import static datawave.query.util.WiseGuysIngest.caponeUID;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -22,6 +23,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.TreeMap;
@@ -34,11 +36,14 @@ import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.BatchWriter;
+import org.apache.accumulo.core.client.MutationsRejectedException;
 import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
+import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.log4j.Logger;
 import org.jboss.arquillian.container.test.api.Deployment;
@@ -64,6 +69,7 @@ import datawave.annotation.data.v1.AccumuloAnnotationSerializer;
 import datawave.annotation.data.v1.AccumuloAnnotationSourceSerializer;
 import datawave.annotation.data.v1.AnnotationDataAccess;
 import datawave.annotation.protobuf.v1.Annotation;
+import datawave.annotation.protobuf.v1.AnnotationSource;
 import datawave.annotation.protobuf.v1.BoundaryType;
 import datawave.annotation.protobuf.v1.Segment;
 import datawave.annotation.protobuf.v1.SegmentBoundary;
@@ -171,8 +177,11 @@ public abstract class ShardQueryLogicTest {
     private Date endDate;
 
     private List<Annotation> annotations = new ArrayList<>();
+    private List<AnnotationSource> annotationSources = new ArrayList<>();
     private Map<String,Map<String,String>> expectedFields = new HashMap<>();
     private Map<String,List<String>> expectNoField = new HashMap<>();
+
+    private Map<String,List<Entry<Key,Value>>> extraData = new HashMap<>();
 
     protected abstract String getRange();
 
@@ -235,6 +244,8 @@ public abstract class ShardQueryLogicTest {
         this.expectedFields = new HashMap<>();
         this.expectNoField = new HashMap<>();
         this.annotations = new ArrayList<>();
+        this.annotationSources = new ArrayList<>();
+        this.extraData = new HashMap<>();
     }
 
     @After
@@ -277,6 +288,7 @@ public abstract class ShardQueryLogicTest {
 
         AccumuloClient client = createClient();
         setupAnnotationsTables(client);
+        addExtraEventData(client);
         GenericQueryConfiguration config = logic.initialize(client, settings, authSet);
         logic.setupQuery(config);
 
@@ -319,7 +331,7 @@ public abstract class ShardQueryLogicTest {
 
                         int foundCount = 0;
                         for (DefaultField field : (List<DefaultField>) event.getFields()) {
-                            for (Map.Entry<String,String> fieldValue : expectedFieldsForDoc.entrySet()) {
+                            for (Entry<String,String> fieldValue : expectedFieldsForDoc.entrySet()) {
                                 if (field.getName().equals(fieldValue.getKey())) {
                                     assertEquals(fieldValue.getValue(), field.getValueString());
                                     foundCount++;
@@ -353,7 +365,7 @@ public abstract class ShardQueryLogicTest {
         Set<Set<String>> expected = new HashSet<>();
         expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.sopranoUID, "MAGIC_COPY:18"));
         expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.corleoneUID, "MAGIC_COPY:18"));
-        expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID, "MAGIC_COPY:18"));
+        expected.add(Sets.newHashSet("UID:" + caponeUID, "MAGIC_COPY:18"));
         runTestQuery(expected);
     }
 
@@ -393,7 +405,7 @@ public abstract class ShardQueryLogicTest {
         givenEndDate("20150101");
 
         Set<Set<String>> expected = new HashSet<>();
-        expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID));
+        expected.add(Sets.newHashSet("UID:" + caponeUID));
 
         runTestQuery(expected);
     }
@@ -428,7 +440,7 @@ public abstract class ShardQueryLogicTest {
         givenEndDate("20150101");
 
         Set<Set<String>> expected = new HashSet<>();
-        expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID));
+        expected.add(Sets.newHashSet("UID:" + caponeUID));
 
         runTestQuery(expected);
     }
@@ -441,7 +453,7 @@ public abstract class ShardQueryLogicTest {
         givenEndDate("20150101");
 
         Set<Set<String>> expected = new HashSet<>();
-        expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID));
+        expected.add(Sets.newHashSet("UID:" + caponeUID));
 
         runTestQuery(expected);
     }
@@ -454,7 +466,7 @@ public abstract class ShardQueryLogicTest {
         givenEndDate("20150101");
 
         Set<Set<String>> expected = new HashSet<>();
-        expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID));
+        expected.add(Sets.newHashSet("UID:" + caponeUID));
 
         runTestQuery(expected);
     }
@@ -467,7 +479,7 @@ public abstract class ShardQueryLogicTest {
         givenEndDate("20150101");
 
         Set<Set<String>> expected = new HashSet<>();
-        expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID));
+        expected.add(Sets.newHashSet("UID:" + caponeUID));
 
         runTestQuery(expected);
     }
@@ -542,10 +554,10 @@ public abstract class ShardQueryLogicTest {
         givenStartDate("20091231");
         givenEndDate("20150101");
 
-        expectNoField(WiseGuysIngest.caponeUID, "ALL_HITS_RESULTS");
+        expectNoField(caponeUID, "ALL_HITS_RESULTS");
 
         Set<Set<String>> expected = new HashSet<>();
-        expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID));
+        expected.add(Sets.newHashSet("UID:" + caponeUID));
         runTestQuery(expected);
     }
 
@@ -565,10 +577,10 @@ public abstract class ShardQueryLogicTest {
         AllHits hits = getExpectedAnnotationHits("03AE6355", List.of(hit), context);
         String expectedAnnotationHits = getExpectedALlHitsRollup(hits);
 
-        expectField(WiseGuysIngest.caponeUID, "ALL_HITS_RESULTS", expectedAnnotationHits);
+        expectField(caponeUID, "ALL_HITS_RESULTS", expectedAnnotationHits);
 
         Set<Set<String>> expected = new HashSet<>();
-        expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID));
+        expected.add(Sets.newHashSet("UID:" + caponeUID));
         runTestQuery(expected);
     }
 
@@ -584,10 +596,10 @@ public abstract class ShardQueryLogicTest {
         givenStartDate("20091231");
         givenEndDate("20150101");
 
-        expectNoField(WiseGuysIngest.caponeUID, "ALL_HITS_RESULTS");
+        expectNoField(caponeUID, "ALL_HITS_RESULTS");
 
         Set<Set<String>> expected = new HashSet<>();
-        expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID));
+        expected.add(Sets.newHashSet("UID:" + caponeUID));
         runTestQuery(expected);
     }
 
@@ -602,10 +614,10 @@ public abstract class ShardQueryLogicTest {
         givenStartDate("20091231");
         givenEndDate("20150101");
 
-        expectNoField(WiseGuysIngest.caponeUID, "ALL_HITS_RESULTS");
+        expectNoField(caponeUID, "ALL_HITS_RESULTS");
 
         Set<Set<String>> expected = new HashSet<>();
-        expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID));
+        expected.add(Sets.newHashSet("UID:" + caponeUID));
         runTestQuery(expected);
     }
 
@@ -620,10 +632,10 @@ public abstract class ShardQueryLogicTest {
         givenStartDate("20091231");
         givenEndDate("20150101");
 
-        expectNoField(WiseGuysIngest.caponeUID, "ALL_HITS_RESULTS");
+        expectNoField(caponeUID, "ALL_HITS_RESULTS");
 
         Set<Set<String>> expected = new HashSet<>();
-        expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID));
+        expected.add(Sets.newHashSet("UID:" + caponeUID));
         runTestQuery(expected);
     }
 
@@ -643,9 +655,9 @@ public abstract class ShardQueryLogicTest {
         AllHits hits = getExpectedAnnotationHits("565A3AED", List.of(hit), context);
         String expectedAnnotationHits = getExpectedALlHitsRollup(hits);
 
-        expectField(WiseGuysIngest.caponeUID, "ALL_HITS_RESULTS", expectedAnnotationHits);
+        expectField(caponeUID, "ALL_HITS_RESULTS", expectedAnnotationHits);
         Set<Set<String>> expected = new HashSet<>();
-        expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID));
+        expected.add(Sets.newHashSet("UID:" + caponeUID));
         runTestQuery(expected);
     }
 
@@ -665,10 +677,10 @@ public abstract class ShardQueryLogicTest {
         AllHits hits = getExpectedAnnotationHits("1D6AAA19", List.of(hit), context);
         String expectedAnnotationHits = getExpectedALlHitsRollup(hits);
 
-        expectField(WiseGuysIngest.caponeUID, "ALL_HITS_RESULTS", expectedAnnotationHits);
+        expectField(caponeUID, "ALL_HITS_RESULTS", expectedAnnotationHits);
 
         Set<Set<String>> expected = new HashSet<>();
-        expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID));
+        expected.add(Sets.newHashSet("UID:" + caponeUID));
         runTestQuery(expected);
     }
 
@@ -688,10 +700,10 @@ public abstract class ShardQueryLogicTest {
         AllHits hits = getExpectedAnnotationHits("816EDD11", List.of(hit), context);
         String expectedAnnotationHits = getExpectedALlHitsRollup(hits);
 
-        expectField(WiseGuysIngest.caponeUID, "ALL_HITS_RESULTS", expectedAnnotationHits);
+        expectField(caponeUID, "ALL_HITS_RESULTS", expectedAnnotationHits);
 
         Set<Set<String>> expected = new HashSet<>();
-        expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID));
+        expected.add(Sets.newHashSet("UID:" + caponeUID));
         runTestQuery(expected);
     }
 
@@ -712,10 +724,10 @@ public abstract class ShardQueryLogicTest {
         String expectedAnnotationHits = getExpectedALlHitsRollup(hits);
 
         // omit segment 5 because it is beyond the window
-        expectField(WiseGuysIngest.caponeUID, "ALL_HITS_RESULTS", expectedAnnotationHits);
+        expectField(caponeUID, "ALL_HITS_RESULTS", expectedAnnotationHits);
 
         Set<Set<String>> expected = new HashSet<>();
-        expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID));
+        expected.add(Sets.newHashSet("UID:" + caponeUID));
         runTestQuery(expected);
     }
 
@@ -735,10 +747,10 @@ public abstract class ShardQueryLogicTest {
         String expectedAnnotationHits = getExpectedALlHitsRollup(hits);
 
         // omit edge segments beyond the window
-        expectField(WiseGuysIngest.caponeUID, "ALL_HITS_RESULTS", expectedAnnotationHits);
+        expectField(caponeUID, "ALL_HITS_RESULTS", expectedAnnotationHits);
 
         Set<Set<String>> expected = new HashSet<>();
-        expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID));
+        expected.add(Sets.newHashSet("UID:" + caponeUID));
         runTestQuery(expected);
     }
 
@@ -759,10 +771,10 @@ public abstract class ShardQueryLogicTest {
         AllHits hits = getExpectedAnnotationHits("40AD77A3", List.of(hit1, hit2), context);
         String expectedAnnotationHits = getExpectedALlHitsRollup(hits);
 
-        expectField(WiseGuysIngest.caponeUID, "ALL_HITS_RESULTS", expectedAnnotationHits);
+        expectField(caponeUID, "ALL_HITS_RESULTS", expectedAnnotationHits);
 
         Set<Set<String>> expected = new HashSet<>();
-        expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID));
+        expected.add(Sets.newHashSet("UID:" + caponeUID));
         runTestQuery(expected);
     }
 
@@ -785,10 +797,10 @@ public abstract class ShardQueryLogicTest {
         AllHits hits = getExpectedAnnotationHits("40AD77A3", List.of(hit2, hit1, hit3), context);
         String expectedAnnotationHits = getExpectedALlHitsRollup(hits);
 
-        expectField(WiseGuysIngest.caponeUID, "ALL_HITS_RESULTS", expectedAnnotationHits);
+        expectField(caponeUID, "ALL_HITS_RESULTS", expectedAnnotationHits);
 
         Set<Set<String>> expected = new HashSet<>();
-        expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID));
+        expected.add(Sets.newHashSet("UID:" + caponeUID));
         runTestQuery(expected);
     }
 
@@ -810,10 +822,10 @@ public abstract class ShardQueryLogicTest {
         AllHits hits = getExpectedAnnotationHits("40AD77A3", List.of(hit2, hit3), context);
         String expectedAnnotationHits = getExpectedALlHitsRollup(hits);
 
-        expectField(WiseGuysIngest.caponeUID, "ALL_HITS_RESULTS", expectedAnnotationHits);
+        expectField(caponeUID, "ALL_HITS_RESULTS", expectedAnnotationHits);
 
         Set<Set<String>> expected = new HashSet<>();
-        expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID));
+        expected.add(Sets.newHashSet("UID:" + caponeUID));
         runTestQuery(expected);
     }
 
@@ -835,10 +847,10 @@ public abstract class ShardQueryLogicTest {
         AllHits hits = getExpectedAnnotationHits("40AD77A3", List.of(hit2, hit3), context);
         String expectedAnnotationHits = getExpectedALlHitsRollup(hits);
 
-        expectField(WiseGuysIngest.caponeUID, "ALL_HITS_RESULTS", expectedAnnotationHits);
+        expectField(caponeUID, "ALL_HITS_RESULTS", expectedAnnotationHits);
 
         Set<Set<String>> expected = new HashSet<>();
-        expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID));
+        expected.add(Sets.newHashSet("UID:" + caponeUID));
         runTestQuery(expected);
     }
 
@@ -861,10 +873,10 @@ public abstract class ShardQueryLogicTest {
         AllHits hits = getExpectedAnnotationHits("40AD77A3", List.of(hit2, hit3), context);
         String expectedAnnotationHits = getExpectedALlHitsRollup(hits);
 
-        expectField(WiseGuysIngest.caponeUID, "ALL_HITS_RESULTS", expectedAnnotationHits);
+        expectField(caponeUID, "ALL_HITS_RESULTS", expectedAnnotationHits);
 
         Set<Set<String>> expected = new HashSet<>();
-        expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID));
+        expected.add(Sets.newHashSet("UID:" + caponeUID));
         runTestQuery(expected);
     }
 
@@ -889,10 +901,10 @@ public abstract class ShardQueryLogicTest {
         AllHits hits = getExpectedAnnotationHits("40AD77A3", List.of(hit2, hit3), context);
         String expectedAnnotationHits = getExpectedALlHitsRollup(hits);
 
-        expectField(WiseGuysIngest.caponeUID, "ALL_HITS_RESULTS", expectedAnnotationHits);
+        expectField(caponeUID, "ALL_HITS_RESULTS", expectedAnnotationHits);
 
         Set<Set<String>> expected = new HashSet<>();
-        expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID));
+        expected.add(Sets.newHashSet("UID:" + caponeUID));
         runTestQuery(expected);
     }
 
@@ -914,10 +926,10 @@ public abstract class ShardQueryLogicTest {
         AllHits hits = getExpectedAnnotationHits("40AD77A3", List.of(hit2), context);
         String expectedAnnotationHits = getExpectedALlHitsRollup(hits);
 
-        expectField(WiseGuysIngest.caponeUID, "ALL_HITS_RESULTS", expectedAnnotationHits);
+        expectField(caponeUID, "ALL_HITS_RESULTS", expectedAnnotationHits);
 
         Set<Set<String>> expected = new HashSet<>();
-        expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID));
+        expected.add(Sets.newHashSet("UID:" + caponeUID));
         runTestQuery(expected);
     }
 
@@ -938,10 +950,10 @@ public abstract class ShardQueryLogicTest {
         AllHits hits = getExpectedAnnotationHits("71D4C8BE", List.of(hit), context);
         String expectedAnnotationHits = getExpectedALlHitsRollup(hits);
 
-        expectField(WiseGuysIngest.caponeUID, "ALL_HITS_RESULTS", expectedAnnotationHits);
+        expectField(caponeUID, "ALL_HITS_RESULTS", expectedAnnotationHits);
 
         Set<Set<String>> expected = new HashSet<>();
-        expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID));
+        expected.add(Sets.newHashSet("UID:" + caponeUID));
         runTestQuery(expected);
     }
 
@@ -962,10 +974,10 @@ public abstract class ShardQueryLogicTest {
         AllHits hits = getExpectedAnnotationHits("71D4C8BE", List.of(hit), context);
         String expectedAnnotationHits = getExpectedALlHitsRollup(hits);
 
-        expectField(WiseGuysIngest.caponeUID, "ALL_HITS_RESULTS", expectedAnnotationHits);
+        expectField(caponeUID, "ALL_HITS_RESULTS", expectedAnnotationHits);
 
         Set<Set<String>> expected = new HashSet<>();
-        expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID));
+        expected.add(Sets.newHashSet("UID:" + caponeUID));
         runTestQuery(expected);
     }
 
@@ -986,10 +998,10 @@ public abstract class ShardQueryLogicTest {
         AllHits hits = getExpectedAnnotationHits("71D4C8BE", List.of(hit), context);
         String expectedAnnotationHits = getExpectedALlHitsRollup(hits);
 
-        expectField(WiseGuysIngest.caponeUID, "ALL_HITS_RESULTS", expectedAnnotationHits);
+        expectField(caponeUID, "ALL_HITS_RESULTS", expectedAnnotationHits);
 
         Set<Set<String>> expected = new HashSet<>();
-        expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID));
+        expected.add(Sets.newHashSet("UID:" + caponeUID));
         runTestQuery(expected);
     }
 
@@ -1004,11 +1016,11 @@ public abstract class ShardQueryLogicTest {
         givenStartDate("20091231");
         givenEndDate("20150101");
 
-        expectField(WiseGuysIngest.caponeUID, "ALL_HITS_RESULTS",
-                        "[{\"annotationId\":\"71D4C8BE\",\"maxTermHitConfidence\":0.0,\"keywordResultList\":[],\"errorMessage\":\"test failure\"}]");
+        expectField(caponeUID, "ALL_HITS_RESULTS",
+                        "[{\"annotationId\":\"71D4C8BE\",\"maxTermHitConfidence\":0.0,\"keywordResultList\":[],\"error\":\"test failure\"}]");
 
         Set<Set<String>> expected = new HashSet<>();
-        expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID));
+        expected.add(Sets.newHashSet("UID:" + caponeUID));
         runTestQuery(expected);
     }
 
@@ -1021,10 +1033,10 @@ public abstract class ShardQueryLogicTest {
         givenStartDate("20091231");
         givenEndDate("20150101");
 
-        expectNoField(WiseGuysIngest.caponeUID, "ALL_HITS_RESULTS");
+        expectNoField(caponeUID, "ALL_HITS_RESULTS");
 
         Set<Set<String>> expected = new HashSet<>();
-        expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID));
+        expected.add(Sets.newHashSet("UID:" + caponeUID));
         runTestQuery(expected);
     }
 
@@ -1050,10 +1062,10 @@ public abstract class ShardQueryLogicTest {
 
         String expectedAnnotationHits = getExpectedALlHitsRollup(hits1, hits2);
 
-        expectField(WiseGuysIngest.caponeUID, "ALL_HITS_RESULTS", expectedAnnotationHits);
+        expectField(caponeUID, "ALL_HITS_RESULTS", expectedAnnotationHits);
 
         Set<Set<String>> expected = new HashSet<>();
-        expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID));
+        expected.add(Sets.newHashSet("UID:" + caponeUID));
         runTestQuery(expected);
     }
 
@@ -1074,10 +1086,10 @@ public abstract class ShardQueryLogicTest {
         AllHits hits1 = getExpectedAnnotationHits("03AE6355", List.of(hit1), context);
         String expectedAnnotationHits = getExpectedALlHitsRollup(hits1);
 
-        expectField(WiseGuysIngest.caponeUID, "ALL_HITS_RESULTS", expectedAnnotationHits);
+        expectField(caponeUID, "ALL_HITS_RESULTS", expectedAnnotationHits);
 
         Set<Set<String>> expected = new HashSet<>();
-        expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID));
+        expected.add(Sets.newHashSet("UID:" + caponeUID));
         runTestQuery(expected);
     }
 
@@ -1105,10 +1117,10 @@ public abstract class ShardQueryLogicTest {
         AllHits hits1 = getExpectedAnnotationHits("5F8B7BC3", List.of(hit1, hit2), context);
         String expectedAnnotationHits = getExpectedALlHitsRollup(hits1);
 
-        expectField(WiseGuysIngest.caponeUID, "ALL_HITS_RESULTS", expectedAnnotationHits);
+        expectField(caponeUID, "ALL_HITS_RESULTS", expectedAnnotationHits);
 
         Set<Set<String>> expected = new HashSet<>();
-        expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID));
+        expected.add(Sets.newHashSet("UID:" + caponeUID));
         runTestQuery(expected);
     }
 
@@ -1133,10 +1145,10 @@ public abstract class ShardQueryLogicTest {
         AllHits hits1 = factory.create("03AE6355", List.of(hit1), context, TimeUnit.SECONDS);
         String expectedAnnotationHits = getExpectedALlHitsRollup(hits1);
 
-        expectField(WiseGuysIngest.caponeUID, "ALL_HITS_RESULTS", expectedAnnotationHits);
+        expectField(caponeUID, "ALL_HITS_RESULTS", expectedAnnotationHits);
 
         Set<Set<String>> expected = new HashSet<>();
-        expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID));
+        expected.add(Sets.newHashSet("UID:" + caponeUID));
         runTestQuery(expected);
     }
 
@@ -1161,15 +1173,15 @@ public abstract class ShardQueryLogicTest {
         AllHits hits1 = factory.create("03AE6355", List.of(hit1), context, TimeUnit.MICROSECONDS);
         String expectedAnnotationHits = getExpectedALlHitsRollup(hits1);
 
-        expectField(WiseGuysIngest.caponeUID, "ALL_HITS_RESULTS", expectedAnnotationHits);
+        expectField(caponeUID, "ALL_HITS_RESULTS", expectedAnnotationHits);
 
         Set<Set<String>> expected = new HashSet<>();
-        expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID));
+        expected.add(Sets.newHashSet("UID:" + caponeUID));
         runTestQuery(expected);
     }
 
     @Test
-    public void luceneUnfieldedTest() throws Exception {
+    public void annotationHitsLuceneUnfieldedTest() throws Exception {
         withAnnotationHits();
         logic.getAllHitsQueryConfig().setQueryTermExtractor(new TermExtractor(Set.of("_ANYFIELD_")));
         disableQueryTreeValidation();
@@ -1191,15 +1203,15 @@ public abstract class ShardQueryLogicTest {
         AllHits hits1 = factory.create("03AE6355", List.of(hit1), context, TimeUnit.MICROSECONDS);
         String expectedAnnotationHits = getExpectedALlHitsRollup(hits1);
 
-        expectField(WiseGuysIngest.caponeUID, "ALL_HITS_RESULTS", expectedAnnotationHits);
+        expectField(caponeUID, "ALL_HITS_RESULTS", expectedAnnotationHits);
 
         Set<Set<String>> expected = new HashSet<>();
-        expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID));
+        expected.add(Sets.newHashSet("UID:" + caponeUID));
         runTestQuery(expected);
     }
 
     @Test
-    public void luceneFieldedTest() throws Exception {
+    public void annotationHitsLuceneFieldedTest() throws Exception {
         withAnnotationHits();
         logic.getAllHitsQueryConfig().setQueryTermExtractor(new TermExtractor(Set.of("_ANYFIELD_", "UUID")));
         disableQueryTreeValidation();
@@ -1221,16 +1233,85 @@ public abstract class ShardQueryLogicTest {
         AllHits hits1 = factory.create("03AE6355", List.of(hit1), context, TimeUnit.MICROSECONDS);
         String expectedAnnotationHits = getExpectedALlHitsRollup(hits1);
 
-        expectField(WiseGuysIngest.caponeUID, "ALL_HITS_RESULTS", expectedAnnotationHits);
+        expectField(caponeUID, "ALL_HITS_RESULTS", expectedAnnotationHits);
 
         Set<Set<String>> expected = new HashSet<>();
-        expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID));
+        expected.add(Sets.newHashSet("UID:" + caponeUID));
+        runTestQuery(expected);
+    }
+
+    @Test
+    public void annotationHitsEnrichmentFieldTest() throws Exception {
+        withAnnotationHits();
+        logic.getAllHitsQueryConfig().getAnnotationEnrichmentFieldMap().put("FAVORITE_FOOD", "favoriteFoods");
+        logic.getAllHitsQueryConfig().getAnnotationEnrichmentFieldMap().put("FAVORITE_COLOR", "favoriteColors");
+
+        // make sure the source and annotation match sourceHashes. This is a chicken and egg problem for the test because it isn't pre-stored so have to hard
+        // code
+        givenAnnotation(buildAnnotation("ANNO1", "CAPONE", "084B04750A629E7F058CC976ECCE2235", S5, S2, S3, S4, S1));
+        givenAnnotationSource(AnnotationSource.newBuilder().setEngine("engine").setModel("model").putMetadata("visibility", "ALL")
+                        .putMetadata("created_date", "2026-02-04T00:00:00Z").build());
+
+        // add a little data into the event to match on the enrichment field
+        givenExtraEventData(new Key("20130101_0", "test" + '\u0000' + caponeUID, "FAVORITE_FOOD.8180F09F.12333.213" + '\u0000' + "ziti",
+                        new ColumnVisibility("ALL"), 1356998400000L), new Value());
+        givenExtraEventData(new Key("20130101_0", "test" + '\u0000' + caponeUID, "FAVORITE_FOOD.8180F09F.12333.213" + '\u0000' + "meatballs",
+                        new ColumnVisibility("ALL"), 1356998400000L), new Value());
+        givenExtraEventData(new Key("20130101_0", "test" + '\u0000' + caponeUID, "FAVORITE_FOOD.333.12333.213" + '\u0000' + "turkey",
+                        new ColumnVisibility("ALL"), 1356998400000L), new Value());
+        givenExtraEventData(
+                        new Key("20130101_0", "test" + '\u0000' + caponeUID, "FAVORITE_FOOD" + '\u0000' + "taco", new ColumnVisibility("ALL"), 1356998400000L),
+                        new Value());
+
+        givenExtraEventData(new Key("20130101_0", "test" + '\u0000' + caponeUID, "FAVORITE_COLOR.8180F09F.12333.213" + '\u0000' + "purple",
+                        new ColumnVisibility("ALL"), 1356998400000L), new Value());
+        givenExtraEventData(new Key("20130101_0", "test" + '\u0000' + caponeUID, "FAVORITE_COLOR.222.12333.213" + '\u0000' + "orange",
+                        new ColumnVisibility("ALL"), 1356998400000L), new Value());
+        givenExtraEventData(new Key("20130101_0", "test" + '\u0000' + caponeUID, "FAVORITE_COLOR" + '\u0000' + "yellow", new ColumnVisibility("ALL"),
+                        1356998400000L), new Value());
+
+        givenQuery("UUID=='CAPONE'");
+        givenStartDate("20091231");
+        givenEndDate("20150101");
+
+        AnnotationHitsTransformer.SegmentHit hit = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), S1.getBoundary(), 0);
+        hit.setContextEnd(S4.getBoundary());
+        TreeMap<SegmentBoundary,List<SegmentValue>> context = buildSortedContext(S1, S2, S3, S4, S5, S6, S7, S8, S9);
+        AllHits hits = getExpectedAnnotationHits("8382B062", List.of(hit), context);
+        hits.addDynamicProperties("favoriteFoods", "meatballs;ziti");
+        hits.addDynamicProperties("favoriteColors", "purple");
+        String expectedAnnotationHits = getExpectedALlHitsRollup(hits);
+
+        // omit segment 5 because it is beyond the window
+        expectField(caponeUID, "ALL_HITS_RESULTS", expectedAnnotationHits);
+
+        Set<Set<String>> expected = new HashSet<>();
+        expected.add(Sets.newHashSet("UID:" + caponeUID));
         runTestQuery(expected);
     }
 
     private void disableQueryTreeValidation() {
         TimedVisitorManager visitorManager = ((DefaultQueryPlanner) logic.getQueryPlanner()).getVisitorManager();
         visitorManager.setValidateAst(false);
+    }
+
+    private void addExtraEventData(AccumuloClient client) {
+        try {
+            BatchWriter bw = client.createBatchWriter("shard");
+
+            for (String row : extraData.keySet()) {
+                Mutation m = new Mutation(row);
+                for (Entry<Key,Value> kv : extraData.get(row)) {
+                    Key key = kv.getKey();
+                    m.put(key.getColumnFamily(), key.getColumnQualifier(), key.getColumnVisibilityParsed(), key.getTimestamp(), kv.getValue());
+                }
+                bw.addMutation(m);
+            }
+            bw.flush();
+            bw.close();
+        } catch (TableNotFoundException | MutationsRejectedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private void setupAnnotationsTables(AccumuloClient client) {
@@ -1252,20 +1333,18 @@ public abstract class ShardQueryLogicTest {
             client.tableOperations().create("annotation");
             client.tableOperations().create("annotationSource");
 
-            BatchWriter writer = client.createBatchWriter("annotation");
-            AnnotationSerializer<Iterator<Map.Entry<Key,Value>>,Annotation> serializer = new AccumuloAnnotationSerializer();
+            AnnotationSerializer<Iterator<Entry<Key,Value>>,Annotation> serializer = new AccumuloAnnotationSerializer();
             AccumuloAnnotationSourceSerializer sourceSerializer = new AccumuloAnnotationSourceSerializer();
             AnnotationDataAccess dataAccess = new AnnotationDataAccess(client, authSet, "annotation", "annotationSource", serializer, sourceSerializer);
             for (Annotation annotation : annotations) {
-                // if we really want to validate the annotation id matches pull it here
                 dataAccess.addAnnotation(annotation);
             }
-            writer.flush();
-            writer.close();
-        } catch (AccumuloException | AccumuloSecurityException | TableExistsException | TableNotFoundException e) {
+            for (AnnotationSource annotationSource : annotationSources) {
+                dataAccess.addAnnotationSource(annotationSource);
+            }
+        } catch (AccumuloException | AccumuloSecurityException | TableExistsException e) {
             throw new RuntimeException(e);
         }
-
     }
 
     private void withAnnotationHits() {
@@ -1313,7 +1392,7 @@ public abstract class ShardQueryLogicTest {
         return Annotation.newBuilder()
                 .setShard("20130101_0")
                 .setDataType("test")
-                .setUid(WiseGuysIngest.caponeUID)
+                .setUid(caponeUID)
                 .setAnnotationType(annotationType)
                 .setDocumentId(documentId)
                 .setAnalyticSourceHash(sourceHash)
@@ -1329,6 +1408,15 @@ public abstract class ShardQueryLogicTest {
 
     private void givenAnnotation(Annotation annotation) {
         annotations.add(annotation);
+    }
+
+    private void givenAnnotationSource(AnnotationSource annotationSource) {
+        annotationSources.add(annotationSource);
+    }
+
+    private void givenExtraEventData(Key key, Value value) {
+        List<Entry<Key,Value>> existing = extraData.computeIfAbsent(key.getRow().toString(), x -> new ArrayList<>());
+        existing.add(Map.entry(key, value));
     }
 
     private void expectNoField(String id, String field) {

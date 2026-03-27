@@ -154,6 +154,12 @@
         </property>
     </bean>
 
+    <!-- used by the IndexExpansionQueryTest -->
+    <bean id="EventQueryNoRules" scope="prototype"  parent="EventQuery">
+        <property name="logicDescription" value="Event query with no pushdown rules" />
+        <property name="queryPlanner" ref="DefaultQueryPlannerNoRules" />
+    </bean>
+
     <bean id="EventQuery" scope="prototype"  parent="BaseEventQuery">
         <property name="logicDescription" value="Event query" />
         <property name="configuredProfiles" >
@@ -575,6 +581,12 @@
         <property name="visitorManager" ref="TimedVisitorManager"/>
     </bean>
 
+    <!-- used by the IndexExpansionQueryTest -->
+    <bean id="DefaultQueryPlannerNoRules" scope="prototype" class="datawave.query.planner.DefaultQueryPlanner" >
+        <!--        <property name="transformRules" ref="transformRuleList" />-->
+        <property name="visitorManager" ref="TimedVisitorManager"/>
+    </bean>
+
     <bean id="TimedVisitorManager" scope="prototype" class="datawave.query.planner.TimedVisitorManager">
         <property name="debugEnabled" value="true"/>
         <property name="validateAst" value="true"/>
@@ -637,6 +649,36 @@
         <property name="logicDescription" value="Query that returns data from the term frequency query table" />
     </bean>
 
+    <util:list id="tagCloudExtractors" value-type="datawave.query.tables.keyword.extractor.FieldedTagCloudInputExtractor">
+        <bean class="datawave.query.tables.keyword.extractor.FieldedTagCloudInputExtractor">
+            <property name="category" value="gendered-age" />
+            <property name="subType" value="gender" />
+            <property name="fields">
+                <util:list value-type="java.lang.String">
+                    <value>GENDER</value>
+                </util:list>
+            </property>
+        </bean>
+        <bean class="datawave.query.tables.keyword.extractor.FieldedTagCloudInputExtractor">
+            <property name="category" value="name" />
+            <property name="fields">
+                <util:list value-type="java.lang.String">
+                    <value>NAME</value>
+                    <value>NOME</value>
+                </util:list>
+            </property>
+        </bean>
+        <bean class="datawave.query.tables.keyword.extractor.FieldedTagCloudInputExtractor">
+            <property name="category" value="gendered-age" />
+            <property name="subType" value="age" />
+            <property name="fields">
+                <util:list value-type="java.lang.String">
+                    <value>AGE</value>
+                </util:list>
+            </property>
+        </bean>
+    </util:list>
+
     <bean id="KeywordUUIDQuery" parent="baseQueryLogic" scope="prototype" class="datawave.query.tables.keyword.KeywordChainedUUIDQueryLogic">
         <property name="logic1">
             <bean scope="prototype" parent="BaseEventQuery">
@@ -653,16 +695,27 @@
         <property name="logic2" ref="KeywordQuery"/>
         <property name="auditType" value="NONE"/>
         <property name="chainStrategy">
-            <bean class="datawave.query.tables.keyword.KeywordUUIDChainStrategy"/>
+            <bean class="datawave.query.tables.keyword.KeywordUUIDChainStrategy">
+                <property name="extractors" ref="tagCloudExtractors" />
+            </bean>
         </property>
+        <property name="extractors" ref="tagCloudExtractors" />
     </bean>
 
-    <!-- Query Logic that returns returnd document keywords -->
+    <!-- Query Logic that returns document keywords -->
     <bean id="KeywordQuery" parent="baseQueryLogic" scope="prototype"  class="datawave.query.tables.keyword.KeywordQueryLogic">
         <property name="tableName" value="shard" />
         <property name="maxResults" value="-1" />
         <property name="maxWork" value="-1" />
         <property name="auditType" value="NONE" />
         <property name="logicDescription" value="Query that returns keywords from content" />
+    </bean>
+
+    <bean id="CountQuery" parent="BaseEventQuery" scope="prototype" class="datawave.query.tables.CountingShardQueryLogic">
+        <property name="logicDescription" value="Executes an EventQuery but returns a count of matching events"/>
+        <property name="collapseUids" value="true"/>
+        <property name="useDocumentScheduler" value="false" />
+        <!-- default timeout of one hour -->
+        <property name="pageWaitTimeMillis" value="3600000"/>
     </bean>
 </beans>

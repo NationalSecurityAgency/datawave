@@ -8,10 +8,6 @@ on:
         required: true
         type: boolean
 
-concurrency:
-  group: ${{ github.workflow }}-${{ inputs.allow-snapshots }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
-
 jobs:
   configure-runner:
     runs-on: ubuntu-latest
