@@ -74,7 +74,6 @@ import com.google.common.collect.Multimap;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.common.util.ArgumentChecker;
-import datawave.core.common.connection.AccumuloTableInfoFetcher;
 import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.mr.bulk.split.DefaultLocationStrategy;
 import datawave.mr.bulk.split.DefaultSplitStrategy;
@@ -1064,16 +1063,15 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
                 }
             } else {
                 try (AccumuloClient client = getClient(job.getConfiguration())) {
-                    AccumuloTableInfoFetcher fetcher = new AccumuloTableInfoFetcher(client);
-                    // Validate table state
+                    // Validate table state using public API
                     if (!(client instanceof InMemoryAccumuloClient)) {
-                        if (!fetcher.tableExists(tableName))
+                        if (!client.tableOperations().exists(tableName))
                             throw new TableNotFoundException(null, tableName, "Table does not exist");
-                        if (!fetcher.isTableOnline(tableName))
+                        if (!client.tableOperations().isOnline(tableName))
                             throw new TableOfflineException("Table " + tableName + " is offline");
                     }
                     // Locate tablets for ranges using public API
-                    Locations locations = fetcher.getTabletLocations(tableName, ranges);
+                    Locations locations = client.tableOperations().locate(tableName, ranges);
                     // Convert to binnedRanges structure
                     binnedRanges = buildBinnedRanges(locations);
                     clipRanges(binnedRanges);

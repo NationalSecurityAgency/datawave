@@ -36,7 +36,6 @@ import org.apache.log4j.Logger;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Maps;
 
-import datawave.core.common.connection.AccumuloTableInfoFetcher;
 import datawave.ingest.config.BaseHdfsFileCacheUtil;
 import datawave.ingest.mapreduce.partition.BalancedShardPartitioner;
 import datawave.ingest.mapreduce.partition.DelegatePartitioner;
@@ -82,8 +81,7 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
 
     private Map<Text,String> getSplitsWithLocation(String table) throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
         AccumuloClient client = accumuloHelper.newClient();
-        AccumuloTableInfoFetcher fetcher = new AccumuloTableInfoFetcher(client);
-        Locations locations = fetcher.getTabletLocations(table, Collections.singletonList(new Range()));
+        Locations locations = client.tableOperations().locate(table, Collections.singletonList(new Range()));
         Map<Text,String> result = new TreeMap<>();
         for (Map.Entry<TabletId,List<Range>> entry : locations.groupByTablet().entrySet()) {
             TabletId tabletId = entry.getKey();
