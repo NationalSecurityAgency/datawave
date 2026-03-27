@@ -46,15 +46,23 @@ public class TypeFactoryTest {
         TypeFactory factory = new TypeFactory(1, 15);
 
         Type<?> typeOne = factory.createType(LcType.class.getName());
-        Type<?> typeTwo = factory.createType(IpAddressType.class.getName());
-        Type<?> typeThree = factory.createType(IpAddressType.class.getName());
-        Type<?> typeFour = factory.createType(LcType.class.getName());
 
+        Type<?> left = factory.createType(IpAddressType.class.getName());
+        Type<?> right = factory.createType(IpAddressType.class.getName());
         // same type created in a row with a cache size of one will return the same type instance
-        assertSame(typeTwo, typeThree);
+        assertSame(left, right);
 
-        // same type created with other types between will return different instances
+        // at this point the cache could contain both the LcType and the IpAddressType if the eviction thread
+        // has not run. Triggering the eviction thread will evict the oldest type (the LcType) leaving just
+        // the IpAddressType. This sets the condition for creating a new instance of the LcType below.
+        factory.cleanup();
+
+        // creating a new LcType should return a new instance due to the low cache size
+        Type<?> typeFour = factory.createType(LcType.class.getName());
         assertNotSame(typeOne, typeFour);
+
+        // trigger maintenance tasks (i.e., eviction of old entries)
+        factory.cleanup();
 
         assertEquals(1, factory.getCacheSize());
     }

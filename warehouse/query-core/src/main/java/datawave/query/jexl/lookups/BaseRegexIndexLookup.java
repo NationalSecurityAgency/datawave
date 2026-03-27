@@ -2,16 +2,14 @@ package datawave.query.jexl.lookups;
 
 import static datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods.EXPANSION_HINT_KEY;
 
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.data.Range;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import datawave.core.iterators.TimeoutExceptionIterator;
-import datawave.core.iterators.TimeoutIterator;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.tables.ScannerFactory;
 
@@ -26,7 +24,7 @@ public abstract class BaseRegexIndexLookup extends AsyncIndexLookup {
     protected final Range range;
     protected final boolean reverse;
 
-    protected final CountDownLatch latch;
+    protected Future<?> future;
 
     // used when scanning the shard reverse index
     private final StringBuilder sb = new StringBuilder();
@@ -37,22 +35,18 @@ public abstract class BaseRegexIndexLookup extends AsyncIndexLookup {
         this.pattern = pattern;
         this.range = range;
         this.reverse = reverse;
-        this.latch = new CountDownLatch(1);
     }
 
     protected String getTableName() {
-        return reverse ? config.getReverseIndexTableName() : config.getIndexTableName();
+        if (reverse) {
+            // there is only one supported reverse index
+            return config.getReverseIndexTableName();
+        }
+        return super.getTableName();
     }
 
     protected String getHintKey(String tableName) {
         return config.getTableHints().containsKey(EXPANSION_HINT_KEY) ? EXPANSION_HINT_KEY : tableName;
-    }
-
-    protected IteratorSetting createTimeoutIterator() {
-        long maxTime = (long) (config.getMaxIndexScanTimeMillis() * 1.25);
-        IteratorSetting iterator = new IteratorSetting(1, TimeoutIterator.class);
-        iterator.addOption(TimeoutIterator.MAX_SESSION_TIME, Long.valueOf(maxTime).toString());
-        return iterator;
     }
 
     /**
@@ -62,26 +56,26 @@ public abstract class BaseRegexIndexLookup extends AsyncIndexLookup {
      */
     protected abstract IteratorSetting createRegexIterator();
 
-    protected IteratorSetting createTimeoutExceptionIterator() {
-        return new IteratorSetting(config.getBaseIteratorPriority() + 100, TimeoutExceptionIterator.class);
-    }
-
     /**
      * Waits for the future to complete before returning the index lookup map
      */
     protected void await() {
-        synchronized (latch) {
-            if (latch.getCount() == 1) {
-                try {
-                    latch.await();
-                } catch (InterruptedException e) {
-                    log.error(e.getMessage(), e);
-                    Thread.currentThread().interrupt();
-                    throw new RuntimeException(e);
-                }
+        try {
+            if (future != null) {
+                future.get();
             }
+        } catch (Exception e) {
+            handleException(e);
         }
     }
+
+    /**
+     * Extending classes deal with exceptions differently
+     *
+     * @param e
+     *            the exception
+     */
+    protected abstract void handleException(Exception e);
 
     /**
      * Reverses the value coming off the shard reverse index

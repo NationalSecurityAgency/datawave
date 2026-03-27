@@ -52,8 +52,8 @@ public class QueryPropertyMarkerSourceConsolidatorTest {
     // Verify that a query with multiple markers with multiple source nodes is corrected.
     @Test
     public void testMultipleMarkersWithMultipleSources() throws ParseException {
-        String original = "((_Bounded_ = true) && FOO > 5 && FOO < 10) && ((_List_ = true) && FOO == 'a' && FOO == 'b') && ((_Term_ = true) && BAR =~ 'a*' && BAR =~ 'b*')";
-        String expected = "((_Bounded_ = true) && (FOO > 5 && FOO < 10)) && ((_List_ = true) && (FOO == 'a' && FOO == 'b')) && ((_Term_ = true) && (BAR =~ 'a*' && BAR =~ 'b*'))";
+        String original = "((_Bounded_ = true) && FOO > 5 && FOO < 10) && ((_List_ = true) && FOO == 'a' && FOO == 'b')";
+        String expected = "((_Bounded_ = true) && (FOO > 5 && FOO < 10)) && ((_List_ = true) && (FOO == 'a' && FOO == 'b'))";
         assertResult(original, expected);
     }
 

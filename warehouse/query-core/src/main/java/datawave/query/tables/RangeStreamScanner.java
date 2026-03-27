@@ -671,12 +671,12 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
                 ((RfileScanner) baseScanner).setRanges(Collections.singleton(currentRange));
 
             for (Column family : options.getFetchedColumns()) {
-                if (family.columnQualifier != null)
-                    baseScanner.fetchColumn(new Text(family.columnFamily), new Text(family.columnQualifier));
+                if (family.getColumnQualifier() != null)
+                    baseScanner.fetchColumn(new Text(family.getColumnFamily()), new Text(family.getColumnQualifier()));
                 else {
                     if (log.isTraceEnabled())
-                        log.trace("Setting column family " + new Text(family.columnFamily));
-                    baseScanner.fetchColumnFamily(new Text(family.columnFamily));
+                        log.trace("Setting column family " + new Text(family.getColumnFamily()));
+                    baseScanner.fetchColumnFamily(new Text(family.getColumnFamily()));
                 }
             }
             for (IteratorSetting setting : options.getIterators()) {

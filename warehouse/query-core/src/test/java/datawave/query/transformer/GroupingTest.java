@@ -1,13 +1,11 @@
 package datawave.query.transformer;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 
-import java.text.DateFormat;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
@@ -19,112 +17,78 @@ import java.util.SortedSet;
 import java.util.TimeZone;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import java.util.UUID;
-import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
-
-import javax.inject.Inject;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.log4j.Logger;
-import org.assertj.core.api.Assertions;
 import org.assertj.core.util.Sets;
-import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.junit.Arquillian;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.asset.StringAsset;
-import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.cache.CacheManager;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.MapperFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 
-import datawave.configuration.spring.SpringBean;
-import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.iterator.DatawaveTransformIterator;
 import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
-import datawave.microservice.query.QueryImpl;
 import datawave.query.QueryParameters;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.RebuildingScannerTestHelper;
 import datawave.query.common.grouping.AggregateOperation;
 import datawave.query.common.grouping.DocumentGrouper;
-import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.iterator.QueryOptions;
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.query.tables.ShardQueryLogic;
-import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
+import datawave.query.util.AbstractQueryTest;
+import datawave.query.util.TestIndexTableNames;
 import datawave.query.util.VisibilityWiseGuysIngest;
 import datawave.query.util.VisibilityWiseGuysIngestWithModel;
 import datawave.query.util.VisibilityWiseGuysNoGroupingIngestWithModel;
 import datawave.util.TableName;
-import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
 import datawave.webservice.result.DefaultEventQueryResponse;
 
 /**
  * Applies grouping to queries.
+ * <p>
+ * This test extensively modifies the flow of {@link AbstractQueryTest}.
  */
-public abstract class GroupingTest {
-
-    @RunWith(Arquillian.class)
-    public static class ShardRange extends GroupingTest {
-
-        @Before
-        public void setup() throws ParseException {
-            super.setup();
-            logic.setCollapseUids(true);
-        }
-
-        @Override
-        protected String getRange() {
-            return "SHARD";
-        }
-    }
-
-    @RunWith(Arquillian.class)
-    public static class DocumentRange extends GroupingTest {
-
-        @Before
-        public void setup() throws ParseException {
-            super.setup();
-            logic.setCollapseUids(false);
-        }
-
-        @Override
-        protected String getRange() {
-            return "DOCUMENT";
-        }
-    }
+@ExtendWith(SpringExtension.class)
+@ComponentScan(basePackages = "datawave.query")
+// @formatter:off
+@ContextConfiguration(locations = {
+        "classpath:datawave/query/QueryLogicFactory.xml",
+        "classpath:MarkingFunctionsContext.xml",
+        "classpath:MetadataHelperContext.xml",
+        "classpath:CacheContext.xml"})
+// @formatter:on
+public class GroupingTest extends AbstractQueryTest {
 
     private static class QueryResult {
-        private static final ObjectWriter writer = new ObjectMapper().enable(MapperFeature.USE_WRAPPER_NAME_AS_PROPERTY_NAME).writerWithDefaultPrettyPrinter();
 
         private final RebuildingScannerTestHelper.TEARDOWN teardown;
         private final RebuildingScannerTestHelper.INTERRUPT interrupt;
         private final DefaultEventQueryResponse response;
-        private final String json;
 
-        private QueryResult(RebuildingScannerTestHelper.TEARDOWN teardown, RebuildingScannerTestHelper.INTERRUPT interrupt, DefaultEventQueryResponse response)
-                        throws JsonProcessingException {
+        private QueryResult(RebuildingScannerTestHelper.TEARDOWN teardown, RebuildingScannerTestHelper.INTERRUPT interrupt,
+                        DefaultEventQueryResponse response) {
             this.teardown = teardown;
             this.interrupt = interrupt;
             this.response = response;
-            this.json = writer.writeValueAsString(response);
         }
     }
 
@@ -260,79 +224,94 @@ public abstract class GroupingTest {
     private static final EnumSet<RebuildingScannerTestHelper.INTERRUPT> INTERRUPTS = EnumSet.allOf(RebuildingScannerTestHelper.INTERRUPT.class);
     private static final Set<Authorizations> authSet = Collections.singleton(auths);
 
-    @Inject
-    @SpringBean(name = "metadataHelperCacheManager")
+    @Autowired
+    @Qualifier("metadataHelperCacheManager")
     private CacheManager cacheManager;
 
-    @Inject
-    @SpringBean(name = "EventQuery")
+    @Autowired
+    @Qualifier("EventQuery")
     protected ShardQueryLogic logic;
-    protected KryoDocumentDeserializer deserializer;
 
-    private final DateFormat format = new SimpleDateFormat("yyyyMMdd");
-    private final Map<String,String> queryParameters = new HashMap<>();
+    @Override
+    public ShardQueryLogic getLogic() {
+        return logic;
+    }
+
+    @Override
+    public Authorizations getAuths() {
+        return auths;
+    }
+
+    @Override
+    protected void extraConfigurations() {
+        // no-op
+    }
+
+    /**
+     * Configure the provided {@link QueryParameters#GROUP_FIELDS}
+     *
+     * @param option
+     *            the option value
+     */
+    private void givenGroupFields(String option) {
+        givenParameter(QueryParameters.GROUP_FIELDS, option);
+    }
+
+    /**
+     * Configure the provided {@link QueryParameters#GROUP_FIELDS_BATCH_SIZE}
+     *
+     * @param option
+     *            the option value
+     */
+    private void givenGroupFieldsBatchSize(String option) {
+        givenParameter(QueryParameters.GROUP_FIELDS_BATCH_SIZE, option);
+    }
+
+    @Override
+    protected void extraAssertions() {
+        // no-op
+    }
+
+    @Override
+    public List<String> getIndexTableNames() {
+        return List.of(TableName.SHARD_INDEX, TestIndexTableNames.NO_UID_INDEX);
+    }
+
     private final Map<SortedSet<String>,Group> expectedGroups = new HashMap<>();
     private final List<QueryResult> queryResults = new ArrayList<>();
 
-    private String query;
-    private Date startDate;
-    private Date endDate;
-    private BiConsumer<AccumuloClient,String> dataWriter;
+    private Consumer<AccumuloClient> dataWriter;
 
-    @Deployment
-    public static JavaArchive createDeployment() {
-        return ShrinkWrap.create(JavaArchive.class)
-                        .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.query", "org.jboss.logging",
-                                        "datawave.webservice.query.result.event")
-                        .deleteClass(DefaultEdgeEventQueryLogic.class).deleteClass(RemoteEdgeDictionary.class)
-                        .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class)
-                        .addAsManifestResource(new StringAsset(
-                                        "<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>" + "</alternatives>"),
-                                        "beans.xml");
-    }
-
-    @BeforeClass
-    public static void beforeClass() {
+    @BeforeAll
+    public static void beforeAll() {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
     }
 
-    @Before
-    public void setup() throws ParseException {
+    @BeforeEach
+    public void beforeEach() throws ParseException {
         this.logic.setFullTableScanEnabled(true);
         this.logic.setMaxEvaluationPipelines(1);
         this.logic.setQueryExecutionForPageTimeout(300000000000000L);
-        this.deserializer = new KryoDocumentDeserializer();
-        this.startDate = format.parse("20091231");
-        this.endDate = format.parse("20150101");
+
+        givenDate("20091231", "20150101");
+
+        // every query eventually has the same query plan
+        expectPlan("UUID == 'capone' || UUID == 'corleone' || UUID == 'soprano'");
 
         // clear any cache updates from previous tests
         cacheManager.getCacheNames().forEach(name -> cacheManager.getCache(name).clear());
     }
 
-    @After
-    public void tearDown() {
-        this.queryParameters.clear();
-        this.query = null;
-        this.startDate = null;
-        this.endDate = null;
+    @AfterEach
+    public void afterEach() {
         this.expectedGroups.clear();
         this.queryResults.clear();
         this.dataWriter = null;
     }
 
-    @AfterClass
-    public static void teardown() {
+    @AfterAll
+    public static void afterAll() {
         TypeRegistry.reset();
-    }
-
-    protected abstract String getRange();
-
-    private void givenQuery(String query) {
-        this.query = query;
-    }
-
-    private void givenQueryParameter(String key, String value) {
-        this.queryParameters.put(key, value);
     }
 
     private void expectGroup(Group group) {
@@ -344,9 +323,9 @@ public abstract class GroupingTest {
     }
 
     private void givenNonModelData() {
-        dataWriter = (client, range) -> {
+        dataWriter = (client) -> {
             try {
-                VisibilityWiseGuysIngest.writeItAll(client, range);
+                VisibilityWiseGuysIngest.writeItAll(client);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -354,9 +333,9 @@ public abstract class GroupingTest {
     }
 
     private void givenModelData() {
-        dataWriter = (client, range) -> {
+        dataWriter = (client) -> {
             try {
-                VisibilityWiseGuysIngestWithModel.writeItAll(client, range);
+                VisibilityWiseGuysIngestWithModel.writeItAll(client);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -364,9 +343,9 @@ public abstract class GroupingTest {
     }
 
     private void givenNonGroupedModelData() {
-        dataWriter = (client, range) -> {
+        dataWriter = (client) -> {
             try {
-                VisibilityWiseGuysNoGroupingIngestWithModel.writeItAll(client, range);
+                VisibilityWiseGuysNoGroupingIngestWithModel.writeItAll(client);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -445,48 +424,52 @@ public abstract class GroupingTest {
         // @formatter:on
     }
 
+    private RebuildingScannerTestHelper.TEARDOWN currentTeardown = null;
+    private RebuildingScannerTestHelper.INTERRUPT currentInterrupt = null;
+
     private void collectQueryResults() throws Exception {
         for (RebuildingScannerTestHelper.TEARDOWN teardown : TEARDOWNS) {
             for (RebuildingScannerTestHelper.INTERRUPT interrupt : INTERRUPTS) {
-                queryResults.add(getQueryResult(teardown, interrupt));
+                currentTeardown = teardown;
+                currentInterrupt = interrupt;
+
+                AccumuloClient client = createClient(teardown, interrupt);
+                setClientForTest(client);
+
+                planAndExecuteQuery();
             }
         }
     }
 
-    private QueryResult getQueryResult(RebuildingScannerTestHelper.TEARDOWN teardown, RebuildingScannerTestHelper.INTERRUPT interrupt) throws Exception {
-        // Initialize the query settings.
-        QueryImpl settings = new QueryImpl();
-        settings.setBeginDate(this.startDate);
-        settings.setEndDate(this.endDate);
-        settings.setPagesize(Integer.MAX_VALUE);
-        settings.setQueryAuthorizations(auths.serialize());
-        settings.setQuery(this.query);
-        settings.setParameters(this.queryParameters);
-        settings.setId(UUID.randomUUID());
+    /**
+     * This method is overridden because of special result handling logic.
+     *
+     * @param logic
+     *            the query logic
+     */
+    @Override
+    protected void executeQuery(ShardQueryLogic logic) throws Exception {
+        try {
+            // Run the query and retrieve the response.
+            DocumentTransformer transformer = (DocumentTransformer) (logic.getTransformer(getSettings()));
+            List<Object> eventList = Lists.newArrayList(new DatawaveTransformIterator<>(logic.iterator(), transformer));
+            DefaultEventQueryResponse response = ((DefaultEventQueryResponse) transformer.createResponse(eventList));
 
-        log.debug("query: " + settings.getQuery());
-        log.debug("queryLogicName: " + settings.getQueryLogicName());
-
-        // Initialize the query logic.
-        AccumuloClient client = createClient(teardown, interrupt);
-        GenericQueryConfiguration config = logic.initialize(client, settings, authSet);
-        logic.setupQuery(config);
-
-        // Run the query and retrieve the response.
-        DocumentTransformer transformer = (DocumentTransformer) (logic.getTransformer(settings));
-        List<Object> eventList = Lists.newArrayList(new DatawaveTransformIterator<>(logic.iterator(), transformer));
-        DefaultEventQueryResponse response = ((DefaultEventQueryResponse) transformer.createResponse(eventList));
-
-        // Return the test result.
-        return new QueryResult(teardown, interrupt, response);
+            // Return the test result.
+            QueryResult queryResult = new QueryResult(currentTeardown, currentInterrupt, response);
+            queryResults.add(queryResult);
+        } finally {
+            logic.close();
+        }
     }
 
     private AccumuloClient createClient(RebuildingScannerTestHelper.TEARDOWN teardown, RebuildingScannerTestHelper.INTERRUPT interrupt) throws Exception {
+        // TODO: use normal client for this
         AccumuloClient client = new QueryTestTableHelper(getClass().toString(), log, teardown, interrupt).client;
-        dataWriter.accept(client, getRange());
+        dataWriter.accept(client);
         PrintUtility.printTable(client, auths, TableName.SHARD);
         PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
-        PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
+        PrintUtility.printTable(client, auths, TableName.METADATA);
         return client;
     }
 
@@ -494,10 +477,9 @@ public abstract class GroupingTest {
     public void testGroupByAgeAndGenderWithBatchSizeOfSix() throws Exception {
         givenNonModelData();
 
+        givenGroupFields("AGE,$GENDER");
+        givenGroupFieldsBatchSize("6");
         givenQuery("UUID =~ '^[CS].*'");
-
-        givenQueryParameter(QueryParameters.GROUP_FIELDS, "AGE,$GENDER");
-        givenQueryParameter(QueryParameters.GROUP_FIELDS_BATCH_SIZE, "6");
 
         expectGroup(Group.of("FEMALE", "18").withCount(2));
         expectGroup(Group.of("MALE", "30").withCount(1));
@@ -510,8 +492,6 @@ public abstract class GroupingTest {
 
         // Run the test queries and collect their results.
         collectQueryResults();
-
-        // Verify the results.
         assertGroups();
         assertResponseEventsAreIdenticalForAllTestResults();
     }
@@ -523,10 +503,9 @@ public abstract class GroupingTest {
     public void testGroupByAgeWithBatchSizeOfSix() throws Exception {
         givenNonModelData();
 
+        givenGroupFields("AGE");
+        givenGroupFieldsBatchSize("6");
         givenQuery("UUID =~ '^[CS].*'");
-
-        givenQueryParameter(QueryParameters.GROUP_FIELDS, "AGE");
-        givenQueryParameter(QueryParameters.GROUP_FIELDS_BATCH_SIZE, "6");
 
         expectGroup(Group.of("18").withCount(2));
         expectGroup(Group.of("30").withCount(1));
@@ -538,7 +517,6 @@ public abstract class GroupingTest {
         expectGroup(Group.of("22").withCount(2));
 
         collectQueryResults();
-
         assertGroups();
     }
 
@@ -549,18 +527,15 @@ public abstract class GroupingTest {
     public void testGroupByGenderWithBatchSizeOfZero() throws Exception {
         givenNonModelData();
 
+        givenGroupFields("GENDER");
+        givenGroupFieldsBatchSize("0");
         givenQuery("UUID =~ '^[CS].*'");
-
-        givenQueryParameter(QueryParameters.GROUP_FIELDS, "GENDER");
-        givenQueryParameter(QueryParameters.GROUP_FIELDS_BATCH_SIZE, "0");
 
         expectGroup(Group.of("MALE").withCount(10));
         expectGroup(Group.of("FEMALE").withCount(2));
 
         // Run the test queries and collect their results.
         collectQueryResults();
-
-        // Verify the results.
         assertGroups();
     }
 
@@ -571,18 +546,15 @@ public abstract class GroupingTest {
     public void testGroupByGenderWithBatchSizeOfSix() throws Exception {
         givenNonModelData();
 
+        givenGroupFields("GENDER");
+        givenGroupFieldsBatchSize("6");
         givenQuery("UUID =~ '^[CS].*'");
-
-        givenQueryParameter(QueryParameters.GROUP_FIELDS, "GENDER");
-        givenQueryParameter(QueryParameters.GROUP_FIELDS_BATCH_SIZE, "6");
 
         expectGroup(Group.of("MALE").withCount(10));
         expectGroup(Group.of("FEMALE").withCount(2));
 
         // Run the test queries and collect their results.
         collectQueryResults();
-
-        // Verify the results.
         assertGroups();
     }
 
@@ -593,19 +565,16 @@ public abstract class GroupingTest {
     public void testGroupByWithReducedResponse() throws Exception {
         givenNonModelData();
 
+        givenParameter(QueryOptions.REDUCED_RESPONSE, "true");
+        givenGroupFields("GENDER");
+        givenGroupFieldsBatchSize("0");
         givenQuery("UUID =~ '^[CS].*'");
-
-        givenQueryParameter(QueryOptions.REDUCED_RESPONSE, "true");
-        givenQueryParameter(QueryParameters.GROUP_FIELDS, "GENDER");
-        givenQueryParameter(QueryParameters.GROUP_FIELDS_BATCH_SIZE, "0");
 
         expectGroup(Group.of("MALE").withCount(10));
         expectGroup(Group.of("FEMALE").withCount(2));
 
         // Run the test queries and collect their results.
         collectQueryResults();
-
-        // Verify the results.
         assertGroups();
 
         // Verify that the column visibility was appropriately reduced
@@ -631,9 +600,8 @@ public abstract class GroupingTest {
     public void testGroupByRecord() throws Exception {
         givenNonModelData();
 
+        givenGroupFields("RECORD");
         givenQuery("UUID =~ '^[CS].*'");
-
-        givenQueryParameter(QueryParameters.GROUP_FIELDS, "RECORD");
 
         expectGroup(Group.of("1").withCount(3));
         expectGroup(Group.of("2").withCount(3));
@@ -641,8 +609,6 @@ public abstract class GroupingTest {
 
         // Run the test queries and collect their results.
         collectQueryResults();
-
-        // Verify the results.
         assertGroups();
     }
 
@@ -653,9 +619,8 @@ public abstract class GroupingTest {
     public void testGroupByGenderAndRecord() throws Exception {
         givenNonModelData();
 
+        givenGroupFields("GENDER,RECORD");
         givenQuery("UUID =~ '^[CS].*'");
-
-        givenQueryParameter(QueryParameters.GROUP_FIELDS, "GENDER,RECORD");
 
         expectGroup(Group.of("FEMALE", "1").withCount(2));
         expectGroup(Group.of("FEMALE", "2").withCount(2));
@@ -665,8 +630,6 @@ public abstract class GroupingTest {
 
         // Run the test queries and collect their results.
         collectQueryResults();
-
-        // Verify the results.
         assertGroups();
     }
 
@@ -677,9 +640,8 @@ public abstract class GroupingTest {
     public void testGroupByJexlFunction() throws Exception {
         givenNonModelData();
 
+        givenGroupFieldsBatchSize("6");
         givenQuery("UUID =~ '^[CS].*' && f:groupby('$AGE','GENDER')");
-
-        givenQueryParameter(QueryParameters.GROUP_FIELDS_BATCH_SIZE, "6");
 
         expectGroup(Group.of("FEMALE", "18").withCount(2));
         expectGroup(Group.of("MALE", "30").withCount(1));
@@ -692,8 +654,6 @@ public abstract class GroupingTest {
 
         // Run the test queries and collect their results.
         collectQueryResults();
-
-        // Verify the results.
         assertGroups();
     }
 
@@ -703,14 +663,17 @@ public abstract class GroupingTest {
     @Test
     public void testGroupBySingleField() throws Exception {
         givenNonModelData();
-        givenQuery("(UUID:C* or UUID:S* ) and #GROUPBY(AGE)");
-        givenQueryParameter(QueryParameters.RETURN_FIELDS, "AGE");
-        givenQueryParameter(QueryParameters.HIT_LIST, "true");
-        givenQueryParameter(QueryParameters.INCLUDE_GROUPING_CONTEXT, "true");
-        givenQueryParameter(QueryParameters.LIMIT_FIELDS, "_ANYFIELD_=100");
-        givenQueryParameter(QueryOptions.REDUCED_RESPONSE, "true");
-        logic.setCollectTimingDetails(true);
+
+        givenParameter(QueryParameters.RETURN_FIELDS, "AGE");
+        givenParameter(QueryParameters.HIT_LIST, "true");
+        givenParameter(QueryParameters.INCLUDE_GROUPING_CONTEXT, "true");
+        givenParameter(QueryParameters.LIMIT_FIELDS, "_ANYFIELD_=100");
+        givenParameter(QueryOptions.REDUCED_RESPONSE, "true");
         givenLuceneParserForLogic();
+        givenQuery("(UUID:C* or UUID:S* ) and #GROUPBY(AGE)");
+        expectPlan("(((_Eval_ = true) && (UUID =~ 'c.*?')) || ((_Eval_ = true) && (UUID =~ 's.*?')))");
+
+        logic.setCollectTimingDetails(true);
 
         expectGroup(Group.of("16").withCount(1));
         expectGroup(Group.of("18").withCount(2));
@@ -723,8 +686,6 @@ public abstract class GroupingTest {
 
         // Run the test queries and collect their results.
         collectQueryResults();
-
-        // Verify the results.
         assertGroups();
     }
 
@@ -735,11 +696,10 @@ public abstract class GroupingTest {
     public void testGroupByLuceneFunction() throws Exception {
         givenNonModelData();
 
-        givenQuery("(UUID:C* or UUID:S* ) and #GROUPBY('AGE','$GENDER')");
-
-        givenQueryParameter(QueryParameters.GROUP_FIELDS_BATCH_SIZE, "6");
-
+        givenGroupFieldsBatchSize("6");
         givenLuceneParserForLogic();
+        givenQuery("(UUID:C* or UUID:S* ) and #GROUPBY('AGE','$GENDER')");
+        expectPlan("(((_Eval_ = true) && (UUID =~ 'c.*?')) || ((_Eval_ = true) && (UUID =~ 's.*?')))");
 
         expectGroup(Group.of("FEMALE", "18").withCount(2));
         expectGroup(Group.of("MALE", "30").withCount(1));
@@ -752,8 +712,6 @@ public abstract class GroupingTest {
 
         // Run the test queries and collect their results.
         collectQueryResults();
-
-        // Verify the results.
         assertGroups();
     }
 
@@ -764,11 +722,10 @@ public abstract class GroupingTest {
     public void testGroupByLuceneFunctionWithDuplicateValues() throws Exception {
         givenNonModelData();
 
-        givenQuery("(UUID:CORLEONE) and #GROUPBY('AGE','BIRTHDAY')");
-
-        givenQueryParameter(QueryParameters.GROUP_FIELDS_BATCH_SIZE, "6");
-
+        givenGroupFieldsBatchSize("6");
         givenLuceneParserForLogic();
+        givenQuery("(UUID:CORLEONE) and #GROUPBY('AGE','BIRTHDAY')");
+        expectPlan("UUID == 'corleone'");
 
         expectGroup(Group.of("4", "18").withCount(1));
         expectGroup(Group.of("5", "40").withCount(1));
@@ -779,8 +736,6 @@ public abstract class GroupingTest {
 
         // Run the test queries and collect their results.
         collectQueryResults();
-
-        // Verify the results.
         assertGroups();
     }
 
@@ -788,15 +743,14 @@ public abstract class GroupingTest {
     public void testGroupingByGenderAndAllAgeMetrics() throws Exception {
         givenNonModelData();
 
+        givenParameter(QueryParameters.MAX_FIELDS, "AGE");
+        givenParameter(QueryParameters.MIN_FIELDS, "AGE");
+        givenParameter(QueryParameters.SUM_FIELDS, "AGE");
+        givenParameter(QueryParameters.AVERAGE_FIELDS, "AGE");
+        givenParameter(QueryParameters.COUNT_FIELDS, "AGE");
+        givenGroupFields("GENDER");
+        givenGroupFieldsBatchSize("6");
         givenQuery("UUID =~ '^[CS].*'");
-
-        givenQueryParameter(QueryParameters.GROUP_FIELDS, "GENDER");
-        givenQueryParameter(QueryParameters.MAX_FIELDS, "AGE");
-        givenQueryParameter(QueryParameters.MIN_FIELDS, "AGE");
-        givenQueryParameter(QueryParameters.SUM_FIELDS, "AGE");
-        givenQueryParameter(QueryParameters.AVERAGE_FIELDS, "AGE");
-        givenQueryParameter(QueryParameters.COUNT_FIELDS, "AGE");
-        givenQueryParameter(QueryParameters.GROUP_FIELDS_BATCH_SIZE, "6");
 
         expectGroup(Group.of("MALE").withCount(10)
                         .withAggregate(Aggregate.of("AGE").withCount("10").withMax("40").withMin("16").withSum("268").withAverage("26.8")));
@@ -805,8 +759,6 @@ public abstract class GroupingTest {
 
         // Run the test queries and collect their results.
         collectQueryResults();
-
-        // Verify the results.
         assertGroups();
     }
 
@@ -823,8 +775,6 @@ public abstract class GroupingTest {
 
         // Run the test queries and collect their results.
         collectQueryResults();
-
-        // Verify the results.
         assertGroups();
     }
 
@@ -832,8 +782,9 @@ public abstract class GroupingTest {
     public void testGroupingByGenderAndAllAgeMetricsUsingLuceneFunction() throws Exception {
         givenNonModelData();
 
-        givenQuery("(UUID:C* or UUID:S* ) and #GROUPBY('$GENDER') and #SUM('AGE') and #MAX('AGE') and #MIN('AGE') and #AVERAGE('AGE') and #COUNT('AGE')");
         givenLuceneParserForLogic();
+        givenQuery("(UUID:C* or UUID:S* ) and #GROUPBY('$GENDER') and #SUM('AGE') and #MAX('AGE') and #MIN('AGE') and #AVERAGE('AGE') and #COUNT('AGE')");
+        expectPlan("(((_Eval_ = true) && (UUID =~ 'c.*?')) || ((_Eval_ = true) && (UUID =~ 's.*?')))");
 
         expectGroup(Group.of("MALE").withCount(10)
                         .withAggregate(Aggregate.of("AGE").withCount("10").withMax("40").withMin("16").withSum("268").withAverage("26.8")));
@@ -842,8 +793,6 @@ public abstract class GroupingTest {
 
         // Run the test queries and collect their results.
         collectQueryResults();
-
-        // Verify the results.
         assertGroups();
     }
 
@@ -851,10 +800,9 @@ public abstract class GroupingTest {
     public void testGroupByAgeAndGenderWithBatchSizeOfSixUsingModel() throws Exception {
         givenModelData();
 
+        givenGroupFields("AG,GEN");
+        givenGroupFieldsBatchSize("6");
         givenQuery("UUID =~ '^[CS].*'");
-
-        givenQueryParameter(QueryParameters.GROUP_FIELDS, "AG,GEN");
-        givenQueryParameter(QueryParameters.GROUP_FIELDS_BATCH_SIZE, "6");
 
         expectGroup(Group.of("FEMALE", "18").withCount(2));
         expectGroup(Group.of("MALE", "30").withCount(1));
@@ -867,8 +815,6 @@ public abstract class GroupingTest {
 
         // Run the test queries and collect their results.
         collectQueryResults();
-
-        // Verify the results.
         assertGroups();
         assertResponseEventsAreIdenticalForAllTestResults();
     }
@@ -878,10 +824,9 @@ public abstract class GroupingTest {
         // Set up the test.
         givenModelData();
 
+        givenGroupFields("AG");
+        givenGroupFieldsBatchSize("6");
         givenQuery("UUID =~ '^[CS].*'");
-
-        givenQueryParameter(QueryParameters.GROUP_FIELDS, "AG");
-        givenQueryParameter(QueryParameters.GROUP_FIELDS_BATCH_SIZE, "6");
 
         expectGroup(Group.of("18").withCount(2));
         expectGroup(Group.of("30").withCount(1));
@@ -894,8 +839,6 @@ public abstract class GroupingTest {
 
         // Run the test queries and collect their results.
         collectQueryResults();
-
-        // Verify the results.
         assertGroups();
     }
 
@@ -903,16 +846,14 @@ public abstract class GroupingTest {
     public void testGroupByGenderWithBatchSizeOfSixUsingModel() throws Exception {
         givenModelData();
 
+        givenGroupFields("GEN");
+        givenGroupFieldsBatchSize("6");
         givenQuery("UUID =~ '^[CS].*'");
-
-        givenQueryParameter(QueryParameters.GROUP_FIELDS, "GEN");
-        givenQueryParameter(QueryParameters.GROUP_FIELDS_BATCH_SIZE, "6");
 
         expectGroup(Group.of("MALE").withCount(10));
         expectGroup(Group.of("FEMALE").withCount(2));
 
         collectQueryResults();
-
         assertGroups();
     }
 
@@ -920,16 +861,14 @@ public abstract class GroupingTest {
     public void testGroupByGenderWithBatchSizeOfZeroUsingModel() throws Exception {
         givenModelData();
 
+        givenGroupFields("GEN");
+        givenGroupFieldsBatchSize("0");
         givenQuery("UUID =~ '^[CS].*'");
-
-        givenQueryParameter(QueryParameters.GROUP_FIELDS, "GEN");
-        givenQueryParameter(QueryParameters.GROUP_FIELDS_BATCH_SIZE, "0");
 
         expectGroup(Group.of("MALE").withCount(10));
         expectGroup(Group.of("FEMALE").withCount(2));
 
         collectQueryResults();
-
         assertGroups();
     }
 
@@ -937,9 +876,8 @@ public abstract class GroupingTest {
     public void testGroupByJexlFunctionsUsingModel() throws Exception {
         givenModelData();
 
+        givenGroupFieldsBatchSize("6");
         givenQuery("UUID =~ '^[CS].*' && f:groupby('AG','GEN')");
-
-        givenQueryParameter(QueryParameters.GROUP_FIELDS_BATCH_SIZE, "6");
 
         expectGroup(Group.of("FEMALE", "18").withCount(2));
         expectGroup(Group.of("MALE", "30").withCount(1));
@@ -951,7 +889,6 @@ public abstract class GroupingTest {
         expectGroup(Group.of("MALE", "22").withCount(2));
 
         collectQueryResults();
-
         assertGroups();
     }
 
@@ -959,11 +896,10 @@ public abstract class GroupingTest {
     public void testGroupByLuceneFunctionUsingModel() throws Exception {
         givenModelData();
 
-        givenQuery("(UUID:C* or UUID:S* ) and #GROUPBY('AG','GEN')");
-
-        givenQueryParameter(QueryParameters.GROUP_FIELDS_BATCH_SIZE, "6");
-
+        givenGroupFieldsBatchSize("6");
         givenLuceneParserForLogic();
+        givenQuery("(UUID:C* or UUID:S* ) and #GROUPBY('AG','GEN')");
+        expectPlan("(((_Eval_ = true) && (UUID =~ 'c.*?')) || ((_Eval_ = true) && (UUID =~ 's.*?')))");
 
         expectGroup(Group.of("FEMALE", "18").withCount(2));
         expectGroup(Group.of("MALE", "30").withCount(1));
@@ -975,7 +911,6 @@ public abstract class GroupingTest {
         expectGroup(Group.of("MALE", "22").withCount(2));
 
         collectQueryResults();
-
         assertGroups();
     }
 
@@ -983,15 +918,15 @@ public abstract class GroupingTest {
     public void testGroupingByGenderAndAllAgeMetricsUsingModel() throws Exception {
         givenModelData();
 
-        givenQuery("UUID =~ '^[CS].*'");
+        givenGroupFields("GEN");
+        givenGroupFieldsBatchSize("6");
+        givenParameter(QueryParameters.MAX_FIELDS, "AG");
+        givenParameter(QueryParameters.MIN_FIELDS, "AG");
+        givenParameter(QueryParameters.SUM_FIELDS, "AG");
+        givenParameter(QueryParameters.AVERAGE_FIELDS, "AG");
+        givenParameter(QueryParameters.COUNT_FIELDS, "AG");
 
-        givenQueryParameter(QueryParameters.GROUP_FIELDS, "GEN");
-        givenQueryParameter(QueryParameters.MAX_FIELDS, "AG");
-        givenQueryParameter(QueryParameters.MIN_FIELDS, "AG");
-        givenQueryParameter(QueryParameters.SUM_FIELDS, "AG");
-        givenQueryParameter(QueryParameters.AVERAGE_FIELDS, "AG");
-        givenQueryParameter(QueryParameters.COUNT_FIELDS, "AG");
-        givenQueryParameter(QueryParameters.GROUP_FIELDS_BATCH_SIZE, "6");
+        givenQuery("UUID =~ '^[CS].*'");
 
         expectGroup(Group.of("MALE").withCount(10)
                         .withAggregate(Aggregate.of("AG").withCount("10").withMax("40").withMin("16").withSum("268").withAverage("26.8")));
@@ -1000,8 +935,6 @@ public abstract class GroupingTest {
 
         // Run the test queries and collect their results.
         collectQueryResults();
-
-        // Verify the results.
         assertGroups();
     }
 
@@ -1012,9 +945,8 @@ public abstract class GroupingTest {
     public void testGroupByRecordWithAggregation() throws Exception {
         givenNonModelData();
 
+        givenGroupFields("RECORD");
         givenQuery("UUID =~ '^[CS].*' && f:sum('AGE') && f:min('GENDER') && f:max('GENDER') && f:average('BIRTHDAY') && f:count('GENDER', 'AGE', 'BIRTHDAY')");
-
-        givenQueryParameter(QueryParameters.GROUP_FIELDS, "RECORD");
 
         // @formatter:off
         expectGroup(Group.of("1").withCount(3)
@@ -1032,8 +964,6 @@ public abstract class GroupingTest {
         // @formatter:on
         // Run the test queries and collect their results.
         collectQueryResults();
-
-        // Verify the results.
         assertGroups();
     }
 
@@ -1044,12 +974,10 @@ public abstract class GroupingTest {
     public void testSummingNonNumericalValue() {
         givenNonModelData();
 
+        givenGroupFields("RECORD");
         givenQuery("UUID =~ '^[CS].*' && f:sum('GENDER')");
 
-        givenQueryParameter(QueryParameters.GROUP_FIELDS, "RECORD");
-
-        Assertions.assertThatIllegalArgumentException().isThrownBy(this::collectQueryResults)
-                        .withMessage("Unable to calculate a sum with non-numerical value 'MALE'");
+        assertThatIllegalArgumentException().isThrownBy(this::collectQueryResults).withMessage("Unable to calculate a sum with non-numerical value 'MALE'");
     }
 
     /**
@@ -1059,11 +987,10 @@ public abstract class GroupingTest {
     public void testAveragingNonNumericalValue() {
         givenNonModelData();
 
+        givenGroupFields("RECORD");
         givenQuery("UUID =~ '^[CS].*' && f:average('GENDER')");
 
-        givenQueryParameter(QueryParameters.GROUP_FIELDS, "RECORD");
-
-        Assertions.assertThatIllegalArgumentException().isThrownBy(this::collectQueryResults)
+        assertThatIllegalArgumentException().isThrownBy(this::collectQueryResults)
                         .withMessage("Character M is neither a decimal digit number, decimal point, nor \"e\" notation exponential mark.");
     }
 
@@ -1071,8 +998,10 @@ public abstract class GroupingTest {
     public void testGroupingWithModelByGenderAndAllAgeMetricsUsingLuceneFunction() throws Exception {
         givenModelData();
 
-        givenQuery("(UUID:C* or UUID:S* ) and #GROUPBY('GEN') and #SUM('AG') and #MAX('AG') and #MIN('AG') and #AVERAGE('AG') and #COUNT('AG')");
         givenLuceneParserForLogic();
+
+        givenQuery("(UUID:C* or UUID:S* ) and #GROUPBY('GEN') and #SUM('AG') and #MAX('AG') and #MIN('AG') and #AVERAGE('AG') and #COUNT('AG')");
+        expectPlan("(((_Eval_ = true) && (UUID =~ 'c.*?')) || ((_Eval_ = true) && (UUID =~ 's.*?')))");
 
         expectGroup(Group.of("MALE").withCount(10)
                         .withAggregate(Aggregate.of("AG").withCount("10").withMax("40").withMin("16").withSum("268").withAverage("26.8")));
@@ -1081,8 +1010,6 @@ public abstract class GroupingTest {
 
         // Run the test queries and collect their results.
         collectQueryResults();
-
-        // Verify the results.
         assertGroups();
     }
 
@@ -1095,8 +1022,9 @@ public abstract class GroupingTest {
         // Contains entries with identical values for fields that will be mapped to the same model mapping.
         givenNonGroupedModelData();
 
-        givenQuery("(UUID:C* or UUID:S* ) and #GROUPBY('GEN') and #SUM('AG') and #MAX('AG') and #MIN('AG') and #AVERAGE('AG') and #COUNT('AG')");
         givenLuceneParserForLogic();
+        givenQuery("(UUID:C* or UUID:S* ) and #GROUPBY('GEN') and #SUM('AG') and #MAX('AG') and #MIN('AG') and #AVERAGE('AG') and #COUNT('AG')");
+        expectPlan("(((_Eval_ = true) && (UUID =~ 'c.*?')) || ((_Eval_ = true) && (UUID =~ 's.*?')))");
 
         expectGroup(Group.of("MALE").withCount(2).withAggregate(Aggregate.of("AG").withCount("2").withMax("40").withMin("24").withSum("64").withAverage("32")));
         expectGroup(Group.of("FEMALE").withCount(1)
@@ -1104,8 +1032,6 @@ public abstract class GroupingTest {
 
         // Run the test queries and collect their results.
         collectQueryResults();
-
-        // Verify the results.
         assertGroups();
     }
 
@@ -1116,11 +1042,10 @@ public abstract class GroupingTest {
     public void testGroupingWhileTruncatingToYearViaLucene() throws Exception {
         givenNonModelData();
 
-        givenQuery("(UUID:CORLEONE) and #GROUPBY('GENDER','BIRTH_DATE[YEAR]')");
-
-        givenQueryParameter(QueryParameters.GROUP_FIELDS_BATCH_SIZE, "6");
-
+        givenGroupFieldsBatchSize("6");
         givenLuceneParserForLogic();
+        givenQuery("(UUID:CORLEONE) and #GROUPBY('GENDER','BIRTH_DATE[YEAR]')");
+        expectPlan("UUID == 'corleone'");
 
         expectGroup(Group.of("1925-00-00T00:00:00.000", "FEMALE").withCount(1));
         expectGroup(Group.of("1925-00-00T00:00:00.000", "MALE").withCount(1));
@@ -1128,8 +1053,6 @@ public abstract class GroupingTest {
 
         // Run the test queries and collect their results.
         collectQueryResults();
-
-        // Verify the results.
         assertGroups();
     }
 
@@ -1140,9 +1063,9 @@ public abstract class GroupingTest {
     public void testGroupingWhileTruncatingToYearViaJexl() throws Exception {
         givenNonModelData();
 
+        givenGroupFieldsBatchSize("6");
         givenQuery("UUID =~ 'CORLEONE' && f:groupby('GENDER','BIRTH_DATE[YEAR]')");
-
-        givenQueryParameter(QueryParameters.GROUP_FIELDS_BATCH_SIZE, "6");
+        expectPlan("UUID == 'corleone'");
 
         expectGroup(Group.of("1925-00-00T00:00:00.000", "FEMALE").withCount(1));
         expectGroup(Group.of("1925-00-00T00:00:00.000", "MALE").withCount(1));
@@ -1150,8 +1073,6 @@ public abstract class GroupingTest {
 
         // Run the test queries and collect their results.
         collectQueryResults();
-
-        // Verify the results.
         assertGroups();
     }
 
@@ -1162,10 +1083,10 @@ public abstract class GroupingTest {
     public void testGroupingWhileTruncatingToYearViaQueryParameter() throws Exception {
         givenNonModelData();
 
+        givenGroupFields("GENDER,BIRTH_DATE[YEAR]");
+        givenGroupFieldsBatchSize("6");
         givenQuery("UUID =~ 'CORLEONE'");
-
-        givenQueryParameter(QueryParameters.GROUP_FIELDS, "GENDER,BIRTH_DATE[YEAR]");
-        givenQueryParameter(QueryParameters.GROUP_FIELDS_BATCH_SIZE, "6");
+        expectPlan("UUID == 'corleone'");
 
         expectGroup(Group.of("1925-00-00T00:00:00.000", "FEMALE").withCount(1));
         expectGroup(Group.of("1925-00-00T00:00:00.000", "MALE").withCount(1));
@@ -1173,8 +1094,6 @@ public abstract class GroupingTest {
 
         // Run the test queries and collect their results.
         collectQueryResults();
-
-        // Verify the results.
         assertGroups();
     }
 }

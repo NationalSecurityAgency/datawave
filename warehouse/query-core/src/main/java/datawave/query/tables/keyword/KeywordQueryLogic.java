@@ -1,8 +1,11 @@
 package datawave.query.tables.keyword;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -20,6 +23,7 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
+import org.apache.commons.collections4.iterators.IteratorChain;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -41,8 +45,10 @@ import datawave.query.QueryParameters;
 import datawave.query.config.KeywordQueryConfiguration;
 import datawave.query.iterator.logic.KeywordExtractingIterator;
 import datawave.query.tables.ScannerFactory;
+import datawave.query.tables.keyword.transform.KeywordResultsTransformer;
+import datawave.query.tables.keyword.transform.TagCloudInputTransformer;
 import datawave.query.transformer.TagCloudTransformer;
-import datawave.util.keyword.KeywordResults;
+import datawave.util.keyword.TagCloudPartition;
 import datawave.util.keyword.TagCloudUtils;
 import datawave.webservice.query.exception.QueryException;
 
@@ -71,6 +77,10 @@ import datawave.webservice.query.exception.QueryException;
  */
 @SuppressWarnings("unused")
 public class KeywordQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements CheckpointableQueryLogic {
+    /**
+     * Used to allow a request to have a specific version response
+     */
+    public static final String TAG_CLOUD_VERSION = "tag.cloud.version";
 
     /**
      * Used to specify that a tag cloud should consist of merged results for all documents or for individual results for individual documents.
@@ -109,6 +119,10 @@ public class KeywordQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
 
     private KeywordQueryConfiguration config;
 
+    private Set<TagCloudInputTransformer<?>> transformers = new HashSet<>();
+    private List<Entry<Key,Value>> externalData = new ArrayList<>();
+    private String responseVersion;
+
     public KeywordQueryLogic() {
         super();
     }
@@ -118,6 +132,9 @@ public class KeywordQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
         this.queryThreads = keywordQueryLogic.queryThreads;
         this.scannerFactory = keywordQueryLogic.scannerFactory;
         this.config = new KeywordQueryConfiguration(keywordQueryLogic.config);
+        this.externalData = keywordQueryLogic.externalData;
+        this.transformers = keywordQueryLogic.transformers;
+        this.responseVersion = keywordQueryLogic.responseVersion;
     }
 
     /**
@@ -177,6 +194,7 @@ public class KeywordQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
         // add the views from the config with lower priority.
         preferredViews.addAll(getPreferredViews());
 
+        // TODO-crwill9 do we need to support this for field extraction too? probably
         // Determine whether we include the content of child events
         String end;
         p = settings.findParameter(QueryParameters.CONTENT_VIEW_ALL);
@@ -208,15 +226,27 @@ public class KeywordQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
             log.warn("Could not parse parameter " + TAG_CLOUD_MAX + " (value: " + maxCloudTagsString + " as integer, ignoring.");
         }
 
-        // Execute the query logic.
-        final Collection<String> queryTerms = extractQueryTerms(settings);
+        String responseVersion = settings.findParameter(TAG_CLOUD_VERSION).getParameterValue().trim();
+        setResponseVersion(responseVersion);
 
-        // Populate the identifier and language maps based on the data included for each document in the query.
-        extractIdentifiersAndLanguages(queryTerms, state.getIdentifierMap(), state.getLanguageMap());
+        if (settings.getQuery() != null && !settings.getQuery().isEmpty()) {
+            // Execute the query logic.
+            final Collection<String> queryTerms = extractQueryTerms(settings);
 
-        // Configure ranges for finding content.
-        final Collection<Range> ranges = createRanges(queryTerms, end);
-        state.setRanges(ranges);
+            // Populate the identifier and language maps based on the data included for each document in the query.
+            extractIdentifiersAndLanguages(queryTerms, state.getIdentifierMap(), state.getLanguageMap());
+
+            // Configure ranges for finding content.
+            final Collection<Range> ranges = createRanges(queryTerms, end);
+            state.setRanges(ranges);
+
+            // TODO-crwill9 not sure how I feel about this setup... probably should happen elsewhere
+            // since this iterator will be returning KeywordResults, setup a transformer
+            KeywordResultsTransformer transformer = new KeywordResultsTransformer();
+            transformer.setLanguagePartitioned(config.getState().isLanguagePartitioned());
+            transformer.setIdentifierMap(state.getIdentifierMap());
+            transformers.add(transformer);
+        }
 
         return config;
     }
@@ -234,18 +264,28 @@ public class KeywordQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
         this.config = (KeywordQueryConfiguration) genericConfig;
 
         try {
-            final BatchScanner scanner = this.scannerFactory.newScanner(config.getTableName(), config.getAuthorizations(), this.queryThreads,
-                            config.getQuery());
-            scanner.setRanges(config.getState().getRanges());
+            final IteratorChain<Entry<Key,Value>> iteratorChain = new IteratorChain<>();
 
-            final IteratorSetting cfg = new IteratorSetting(60, "keyword-extractor", KeywordExtractingIterator.class);
-            KeywordExtractingIterator.setOptions(cfg, config.getMinNgrams(), config.getMaxNgrams(), config.getMaxKeywords(), config.getMaxScore(),
-                            config.getMaxContentChars(), config.getState().getPreferredViews(), config.getState().getLanguageMap());
-            scanner.addScanIterator(cfg);
+            if (genericConfig.getQuery() != null && genericConfig.getQuery().getQuery() != null && !genericConfig.getQuery().getQuery().isEmpty()) {
+                final BatchScanner scanner = this.scannerFactory.newScanner(config.getTableName(), config.getAuthorizations(), this.queryThreads,
+                                config.getQuery());
+                scanner.setRanges(config.getState().getRanges());
 
-            this.iterator = scanner.iterator();
-            this.scanner = scanner;
+                final IteratorSetting cfg = new IteratorSetting(60, "keyword-extractor", KeywordExtractingIterator.class);
+                KeywordExtractingIterator.setOptions(cfg, config.getMinNgrams(), config.getMaxNgrams(), config.getMaxKeywords(), config.getMaxScore(),
+                                config.getMaxContentChars(), config.getState().getPreferredViews(), config.getState().getLanguageMap());
+                scanner.addScanIterator(cfg);
 
+                // wrap the scanIterator in case there is nothing there and we have external content that needs to be transformed
+                final Iterator<Entry<Key,Value>> scanIterator = scanner.iterator();
+                iteratorChain.addIterator(scanIterator);
+                this.scanner = scanner;
+            }
+            if (this.externalData != null && !this.externalData.isEmpty()) {
+                iteratorChain.addIterator(this.externalData.iterator());
+            }
+
+            this.iterator = iteratorChain;
         } catch (TableNotFoundException e) {
             throw new RuntimeException("Table not found: " + this.getTableName(), e);
         }
@@ -360,8 +400,8 @@ public class KeywordQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
     }
 
     @Override
-    public QueryLogicTransformer<Entry<Key,Value>,KeywordResults> getTransformer(Query settings) {
-        return new TagCloudTransformer(settings, config.getState(), this.markingFunctions, this.responseObjectFactory);
+    public QueryLogicTransformer<Entry<Key,Value>,TagCloudPartition> getTransformer(Query settings) {
+        return new TagCloudTransformer(responseVersion, settings, config.getState(), this.markingFunctions, this.responseObjectFactory, transformers);
     }
 
     @Override
@@ -504,6 +544,20 @@ public class KeywordQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
     }
 
     /**
+     * Allows inclusion of extracted data externally to be included in the tag clouds generated from this logic. This data will be combined with all data
+     * collected from this logic and returned together
+     *
+     * @param externalData
+     *            data that should be included in the iterator provided from an external source
+     * @param transformers
+     *            the transformers that can decode the external data
+     */
+    public void setExternalData(List<Entry<Key,Value>> externalData, Set<TagCloudInputTransformer<?>> transformers) {
+        this.externalData = externalData;
+        this.transformers.addAll(transformers);
+    }
+
+    /**
      * Extract optional identifiers and languages from query terms. Expected query format is:
      * <p>
      * 'DOCUMENT:shard/datatype/uid!optionalIdentifier1 DOCUMENT:shard/datatype/uid!optionalIdentifier2 ... DOCUMENT:shard/datatype/uid!optionalIdentifier3'
@@ -549,6 +603,12 @@ public class KeywordQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
                 identifierMap.put(key, identifier);
                 log.debug("Added identifier " + identifier + "for key: " + key);
             }
+        }
+    }
+
+    public void setResponseVersion(String responseVersion) {
+        if (!responseVersion.isBlank()) {
+            this.responseVersion = responseVersion;
         }
     }
 }

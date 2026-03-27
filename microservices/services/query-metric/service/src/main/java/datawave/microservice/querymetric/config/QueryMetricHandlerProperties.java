@@ -1,6 +1,6 @@
 package datawave.microservice.querymetric.config;
 
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
@@ -16,7 +16,7 @@ import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.Positive;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
 
@@ -167,8 +167,8 @@ public class QueryMetricHandlerProperties {
         p.put("AccumuloRecordWriter.instanceName", instanceName);
         p.put("AccumuloRecordWriter.username", username);
         // encode the password because that's how the AccumuloRecordWriter expects it
-        byte[] encodedPassword = Base64.getEncoder().encode(password.getBytes(Charset.forName("UTF-8")));
-        p.put("AccumuloRecordWriter.password", new String(encodedPassword, Charset.forName("UTF-8")));
+        byte[] encodedPassword = Base64.getEncoder().encode(password.getBytes(StandardCharsets.UTF_8));
+        p.put("AccumuloRecordWriter.password", new String(encodedPassword, StandardCharsets.UTF_8));
         p.put("AccumuloRecordWriter.createtables", Boolean.toString(createTables));
         p.put(shardTableName + ".table.config.class", ShardTableConfigHelper.class.getCanonicalName());
         p.put(indexTableName + ".table.config.class", ShardTableConfigHelper.class.getCanonicalName());

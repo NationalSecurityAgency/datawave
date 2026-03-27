@@ -1,13 +1,9 @@
 package datawave.query;
 
-import static datawave.query.util.AbstractQueryTest.RangeType;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import org.apache.accumulo.core.client.AccumuloClient;
@@ -36,12 +32,13 @@ public class MultiNormalizerIngest {
 
     private static final String OLD_ROW = "20250707_0";
     private static final String NEW_ROW = "20250708_0";
+    private static final String SPECIAL_ROW = "20250709_0";
 
     private static final ColumnVisibility cv = new ColumnVisibility("ALL");
     private static final String datatype = "dt";
     private static final Value EMPTY_VALUE = new Value();
 
-    private final Map<String,Normalizer<?>> normalizerMap = new HashMap<>();
+    private final Multimap<String,Normalizer<?>> normalizerMap = HashMultimap.create();
     private final Set<String> indexedFields = Set.of("COLOR", "SIZE");
 
     private final AccumuloClient client;
@@ -55,12 +52,15 @@ public class MultiNormalizerIngest {
         normalizerMap.put("SIZE" + NEW_ROW, new NumberNormalizer());
         normalizerMap.put("COLOR" + OLD_ROW, new LcNoDiacriticsNormalizer());
         normalizerMap.put("COLOR" + NEW_ROW, new LcNoDiacriticsNormalizer());
+        normalizerMap.put("SIZE" + SPECIAL_ROW, new LcNoDiacriticsNormalizer());
+        normalizerMap.put("SIZE" + SPECIAL_ROW, new NumberNormalizer());
+        normalizerMap.put("COLOR" + SPECIAL_ROW, new LcNoDiacriticsNormalizer());
     }
 
-    public void write(RangeType type) throws Exception {
+    public void write() throws Exception {
         createTables();
         loadMetadata();
-        writeEvents(type);
+        writeEvents();
     }
 
     private void createTables() throws Exception {
@@ -114,19 +114,83 @@ public class MultiNormalizerIngest {
         }
     }
 
-    private Normalizer<?> normalizerForField(String field, String row) {
+    private List<Normalizer<?>> normalizerForField(String field, String row) {
         String key = field + row;
-        Normalizer<?> normalizer = normalizerMap.get(key);
-        if (normalizer == null) {
+        Collection<Normalizer<?>> normalizers = normalizerMap.get(key);
+        if (normalizers.isEmpty()) {
             throw new IllegalArgumentException("No normalizer found for key: " + key);
+        } else {
+            return new ArrayList<>(normalizers);
         }
-        return normalizer;
     }
 
-    private void writeEvents(RangeType type) throws Exception {
+    private void writeEvents() throws Exception {
         createEvents();
-        writeEventsForShard(OLD_ROW, type);
-        writeEventsForShard(NEW_ROW, type);
+        writeEventsForShard(OLD_ROW);
+        writeEventsForShard(NEW_ROW);
+        writeSpecialEvent(SPECIAL_ROW);
+    }
+
+    private void writeSpecialEvent(String row) throws Exception {
+        try (BatchWriter bw = client.createBatchWriter(TableName.METADATA)) {
+            // write metadata for indexed fields
+            Mutation m = new Mutation("SIZE");
+            m.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\0" + LcNoDiacriticsType.class.getName()), EMPTY_VALUE);
+            m.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\0" + NumberType.class.getName()), EMPTY_VALUE);
+            bw.addMutation(m);
+        }
+
+        Multimap<String,String> event = HashMultimap.create();
+        event.put("COLOR", "blue");
+        event.put("COUNTER", String.valueOf(1234567));
+        event.putAll("SIZE", List.of("0", "5", "7"));
+
+        long ts = DateHelper.parse(row).getTime();
+        try (BatchWriter bw = client.createBatchWriter(TableName.SHARD_INDEX)) {
+            Multimap<String,String> inverted = invert(event, row);
+            for (String value : inverted.keySet()) {
+                Mutation m = new Mutation(value);
+                Collection<String> fields = inverted.get(value);
+                for (String field : fields) {
+                    String uid = uidForEvent(row, event.get("COUNTER").iterator().next());
+                    m.put(field, row + "\0" + datatype, cv, ts, getValue(uid));
+                    bw.addMutation(m);
+                }
+            }
+        }
+
+        try (BatchWriter bw = client.createBatchWriter(TableName.SHARD)) {
+            Mutation m = new Mutation(row);
+            String uid = uidForEvent(row, event.get("COUNTER").iterator().next());
+            // each indexed field is in every event, for now
+            for (String field : indexedFields) {
+                List<Normalizer<?>> normalizers = normalizerForField(field, row);
+                for (Normalizer<?> normalizer : normalizers) {
+                    Collection<String> values = event.get(field);
+                    for (String value : values) {
+                        String normalizedValue = normalizer.normalize(value);
+                        String cf = "fi\0" + field;
+                        String cq = normalizedValue + "\0" + datatype + "\0" + uid;
+                        m.put(cf, cq, cv, ts, EMPTY_VALUE);
+                    }
+                }
+            }
+            bw.addMutation(m);
+        }
+
+        try (BatchWriter bw = client.createBatchWriter(TableName.SHARD)) {
+            Mutation m = new Mutation(row);
+            String uid = uidForEvent(row, event.get("COUNTER").iterator().next());
+            String cf = datatype + "\0" + uid;
+            // all fields
+            for (String field : event.keySet()) {
+                for (String value : event.get(field)) {
+                    String cq = field + "\0" + value;
+                    m.put(cf, cq, cv, ts, EMPTY_VALUE);
+                }
+            }
+            bw.addMutation(m);
+        }
     }
 
     private void createEvents() {
@@ -142,13 +206,13 @@ public class MultiNormalizerIngest {
         }
     }
 
-    private void writeEventsForShard(String shard, RangeType type) throws Exception {
-        writeShardIndex(shard, type);
+    private void writeEventsForShard(String shard) throws Exception {
+        writeShardIndex(shard);
         writeFieldIndex(shard);
         writeEvent(shard);
     }
 
-    private void writeShardIndex(String shard, RangeType type) throws Exception {
+    private void writeShardIndex(String shard) throws Exception {
         long ts = DateHelper.parse(shard).getTime();
         try (BatchWriter bw = client.createBatchWriter(TableName.SHARD_INDEX)) {
             for (Multimap<String,String> event : events) {
@@ -158,7 +222,7 @@ public class MultiNormalizerIngest {
                     Collection<String> fields = inverted.get(value);
                     for (String field : fields) {
                         String uid = uidForEvent(shard, event.get("COUNTER").iterator().next());
-                        m.put(field, shard + "\0" + datatype, cv, ts, getValue(type, uid));
+                        m.put(field, shard + "\0" + datatype, cv, ts, getValue(uid));
                         bw.addMutation(m);
                     }
                 }
@@ -174,13 +238,15 @@ public class MultiNormalizerIngest {
                 String uid = uidForEvent(shard, event.get("COUNTER").iterator().next());
                 // each indexed field is in every event, for now
                 for (String field : indexedFields) {
-                    Normalizer<?> normalizer = normalizerForField(field, shard);
-                    Collection<String> values = event.get(field);
-                    for (String value : values) {
-                        String normalizedValue = normalizer.normalize(value);
-                        String cf = "fi\0" + field;
-                        String cq = normalizedValue + "\0" + datatype + "\0" + uid;
-                        m.put(cf, cq, cv, ts, EMPTY_VALUE);
+                    List<Normalizer<?>> normalizers = normalizerForField(field, shard);
+                    for (Normalizer<?> normalizer : normalizers) {
+                        Collection<String> values = event.get(field);
+                        for (String value : values) {
+                            String normalizedValue = normalizer.normalize(value);
+                            String cf = "fi\0" + field;
+                            String cq = normalizedValue + "\0" + datatype + "\0" + uid;
+                            m.put(cf, cq, cv, ts, EMPTY_VALUE);
+                        }
                     }
                 }
             }
@@ -225,27 +291,24 @@ public class MultiNormalizerIngest {
         Multimap<String,String> inverted = HashMultimap.create();
         for (String key : event.keySet()) {
             if (indexedFields.contains(key)) {
-                Normalizer<?> normalizer = normalizerForField(key, row);
-                Collection<String> values = event.get(key);
-                for (String value : values) {
-                    String normalizedValue = normalizer.normalize(value);
-                    inverted.put(normalizedValue, key);
+                List<Normalizer<?>> normalizers = normalizerForField(key, row);
+                for (Normalizer<?> normalizer : normalizers) {
+                    Collection<String> values = event.get(key);
+                    for (String value : values) {
+                        String normalizedValue = normalizer.normalize(value);
+                        inverted.put(normalizedValue, key);
+                    }
                 }
             }
         }
         return inverted;
     }
 
-    private static Value getValue(RangeType type, String uid) {
+    private static Value getValue(String uid) {
         Uid.List.Builder builder = Uid.List.newBuilder();
-        if (type.equals(RangeType.DOCUMENT)) {
-            builder.setIGNORE(false);
-            builder.setCOUNT(1L);
-            builder.addUID(uid);
-        } else {
-            builder.setIGNORE(true);
-            builder.setCOUNT(17L); // arbitrary prime number below the 20 max uid limit
-        }
+        builder.setIGNORE(false);
+        builder.setCOUNT(1L);
+        builder.addUID(uid);
         return new Value(builder.build().toByteArray());
     }
 }

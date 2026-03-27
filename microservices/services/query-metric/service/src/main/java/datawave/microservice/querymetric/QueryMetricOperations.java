@@ -24,15 +24,15 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.annotation.PreDestroy;
 import javax.annotation.security.PermitAll;
-import javax.inject.Named;
 
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.accumulo.core.security.VisibilityEvaluator;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.http.MediaType;
@@ -140,7 +140,7 @@ public class QueryMetricOperations {
      *            the dnUtils
      */
     @Autowired
-    public QueryMetricOperations(@Named("queryMetricCacheManager") CacheManager cacheManager, ShardTableQueryMetricHandler handler,
+    public QueryMetricOperations(@Qualifier("queryMetricCacheManager") CacheManager cacheManager, ShardTableQueryMetricHandler handler,
                     QueryGeometryHandler geometryHandler, MarkingFunctions markingFunctions, QueryMetricResponseFactory queryMetricResponseFactory,
                     MergeLockLifecycleListener mergeLock, Correlator correlator, MetricUpdateEntryProcessorFactory entryProcessorFactory,
                     QueryMetricOperationsStats stats, QueryMetricClient queryMetricClient, DnUtils dnUtils) {
