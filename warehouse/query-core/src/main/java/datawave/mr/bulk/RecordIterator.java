@@ -418,7 +418,12 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
             SortedKeyValueIterator<Key,Value> visFilter = VisibilityFilter.wrap(topIter, auths, defaultSecurityLabel);
             IteratorBuilder.IteratorBuilderEnv iterLoad = IteratorConfigUtil.loadIterConf(IteratorScope.scan, Collections.emptyList(), Collections.emptyMap(),
                             acuTableConf);
-            return IteratorConfigUtil.loadIterators(visFilter, iterLoad.env(iterEnv).build());
+            try {
+                return IteratorConfigUtil.loadIterators(visFilter, iterLoad.env(iterEnv).build());
+            } catch (Exception e) {
+                log.error(e.getMessage(), e);
+                throw new IOException(e);
+            }
         }
 
         return topIter;
