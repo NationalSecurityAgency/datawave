@@ -271,11 +271,22 @@
                             <importOrder>
                                 <order>\#java,\#javax,\#,java,javax,org,com,</order>
                             </importOrder>
+                            <eclipse>
+                                <file>eclipse/Eclipse-Datawave-Codestyle.xml</file>
+                            </eclipse>
                             <excludes>
                                 <exclude>**/thrift/*.java</exclude>
+                                <exclude>**/tokenize/StandardLexer.java</exclude>
                             </excludes>
                         </java>
                     </configuration>
+                    <dependencies>
+                        <dependency>
+                            <groupId>gov.nsa.datawave</groupId>
+                            <artifactId>datawave-code-style</artifactId>
+                            <version>1.0.1</version>
+                        </dependency>
+                    </dependencies>
                     <executions>
                         <execution>
                             <goals>
@@ -353,33 +364,6 @@
                         <execution>
                             <goals>
                                 <goal>revision</goal>
-                            </goals>
-                        </execution>
-                    </executions>
-                </plugin>
-                <plugin>
-                    <groupId>net.revelc.code.formatter</groupId>
-                    <artifactId>formatter-maven-plugin</artifactId>
-                    <version>2.23.0</version>
-                    <configuration>
-                        <configFile>eclipse/Eclipse-Datawave-Codestyle.xml</configFile>
-                        <lineEnding>LF</lineEnding>
-                        <removeTrailingWhitespace>true</removeTrailingWhitespace>
-                        <compilerSource>${maven.compiler.source}</compilerSource>
-                        <compilerCompliance>${maven.compiler.source}</compilerCompliance>
-                        <compilerTargetPlatform>${maven.compiler.target}</compilerTargetPlatform>
-                    </configuration>
-                    <dependencies>
-                        <dependency>
-                            <groupId>gov.nsa.datawave</groupId>
-                            <artifactId>datawave-code-style</artifactId>
-                            <version>1.0.1</version>
-                        </dependency>
-                    </dependencies>
-                    <executions>
-                        <execution>
-                            <goals>
-                                <goal>format</goal>
                             </goals>
                         </execution>
                     </executions>
@@ -620,10 +604,6 @@
                     <plugin>
                         <groupId>com.github.ekryd.sortpom</groupId>
                         <artifactId>sortpom-maven-plugin</artifactId>
-                    </plugin>
-                    <plugin>
-                        <groupId>net.revelc.code.formatter</groupId>
-                        <artifactId>formatter-maven-plugin</artifactId>
                     </plugin>
                 </plugins>
             </build>
