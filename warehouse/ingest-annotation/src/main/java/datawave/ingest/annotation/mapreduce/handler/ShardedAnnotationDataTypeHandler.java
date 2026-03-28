@@ -67,7 +67,7 @@ public class ShardedAnnotationDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends Abs
         super.processBulk(key, event, eventFields, new ContextWrappedStatusReporter(getContext(context)));
         StatusReporter reporter = new ContextWrappedStatusReporter(getContext(context));
 
-        byte[] shardId = getShardId(event);
+        byte[] shardId = getShardId(event, eventFields);
         UID uid = event.getId();
         byte[] visibility = event.getVisibility().flatten();
 

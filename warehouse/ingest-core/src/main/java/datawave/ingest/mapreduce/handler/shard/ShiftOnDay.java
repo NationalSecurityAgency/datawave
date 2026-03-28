@@ -8,14 +8,17 @@ import java.util.StringJoiner;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 
+import com.google.common.collect.Multimap;
+
 import datawave.ingest.data.RawRecordContainer;
+import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.util.time.DateHelper;
 
 /**
  * Implementation of {@link ShardIdGenerator} that will shift the partition of a baseline shard ID for a record by the max number of shards. Given some shard id
  * {@code 20240110_2}, and a max shards of 10, the shard id will become {@code 20240110_12}. A {@link ShiftOnDay} can be configured with a set of data types, a
- * beginning date (inclusive), and an end date (inclusive). These attributes will be used by {@link ShiftOnDay#isApplicable(RawRecordContainer)} to determine if
- * the default shard id for that particular record should be replaced by {@link ShiftOnDay#getShardId(RawRecordContainer, String, int)}.
+ * beginning date (inclusive), and an end date (inclusive). These attributes will be used by {@link ShiftOnDay#isApplicable(RawRecordContainer, Multimap)} to
+ * determine if the default shard id for that particular record should be replaced by {@link ShiftOnDay#getShardId(RawRecordContainer, Multimap, String, int)}.
  */
 public class ShiftOnDay implements ShardIdGenerator {
 
@@ -52,9 +55,23 @@ public class ShiftOnDay implements ShardIdGenerator {
 
         // Parse the date range.
         String beginStr = conf.get((property + "." + BEGIN));
-        begin = StringUtils.isBlank(beginStr) ? null : DateHelper.parse(beginStr);
+        if (!StringUtils.isBlank(beginStr)) {
+            if (beginStr.length() == 8) {
+                beginStr = beginStr + "000000";
+            }
+            begin = DateHelper.parseTimeExactToSeconds(beginStr);
+        } else {
+            begin = null;
+        }
         String endStr = conf.get((property + "." + END));
-        end = StringUtils.isBlank(endStr) ? null : DateHelper.parse(endStr);
+        if (!StringUtils.isBlank(endStr)) {
+            if (endStr.length() == 8) {
+                endStr = endStr + "235959";
+            }
+            end = DateHelper.parseTimeExactToSeconds(endStr);
+        } else {
+            end = null;
+        }
 
         // Validate the date range.
         validateDateRange(begin, end);
@@ -86,12 +103,14 @@ public class ShiftOnDay implements ShardIdGenerator {
      *
      * @param record
      *            the event record
+     * @param eventFields
+     *            the event fields
      * @return true if this {@link ShiftOnDay} is considered applicable for the given record, or false otherwise.
      */
     @Override
-    public boolean isApplicable(RawRecordContainer record) {
+    public boolean isApplicable(RawRecordContainer record, Multimap<String,NormalizedContentInterface> eventFields) {
         // Check the data type.
-        if (!dataTypes.isEmpty() && !dataTypes.contains(record.getDataType().typeName())) {
+        if (!dataTypes.isEmpty() && !dataTypes.contains(record.getDataType().typeName()) && !dataTypes.contains(record.getDataType().outputName())) {
             return false;
         }
 
@@ -118,6 +137,8 @@ public class ShiftOnDay implements ShardIdGenerator {
      *
      * @param record
      *            the record
+     * @param eventFields
+     *            the event fields
      * @param baseShardId
      *            the base shard id
      * @param numShards
@@ -125,7 +146,7 @@ public class ShiftOnDay implements ShardIdGenerator {
      * @return the modified shard id
      */
     @Override
-    public String getShardId(RawRecordContainer record, String baseShardId, int numShards) {
+    public String getShardId(RawRecordContainer record, Multimap<String,NormalizedContentInterface> eventFields, String baseShardId, int numShards) {
         String[] parts = datawave.util.StringUtils.split(baseShardId, '_');
         // Shift the partition portion of the shard ID by the max number of shards.
         int partition = Integer.parseInt(parts[1]) + numShards;

@@ -245,7 +245,7 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
                     throws IOException, InterruptedException {
 
         // Hold some event-specific variables to avoid re-processing
-        this.shardId = getShardId(event);
+        this.shardId = getShardId(event, eventFields);
 
         if (tokenHelper.isVerboseShardCounters()) {
             context.getCounter("EVENT_SHARD_ID", new String(this.shardId)).increment(1);

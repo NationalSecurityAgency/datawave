@@ -7,8 +7,11 @@ import java.util.List;
 
 import org.apache.hadoop.conf.Configuration;
 
+import com.google.common.collect.Multimap;
+
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.config.ConfigurationHelper;
+import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.util.time.DateHelper;
 
 public class ShardIdFactory {
@@ -31,8 +34,8 @@ public class ShardIdFactory {
      *            the record container
      * @return Shard id
      */
-    public byte[] getShardIdBytes(RawRecordContainer record) {
-        return getShardId(record).getBytes();
+    public byte[] getShardIdBytes(RawRecordContainer record, Multimap<String,NormalizedContentInterface> eventFields) {
+        return getShardId(record, eventFields).getBytes();
     }
 
     /**
@@ -66,15 +69,15 @@ public class ShardIdFactory {
      *            the event record
      * @return the shard id
      */
-    public String getShardId(RawRecordContainer record) {
+    public String getShardId(RawRecordContainer record, Multimap<String,NormalizedContentInterface> eventFields) {
         String shardId = record.getShardId();
 
         if (shardId == null) {
             shardId = getBaseShardId(record);
             for (ShardIdGenerator generator : generators) {
-                if (generator.isApplicable(record)) {
+                if (generator.isApplicable(record, eventFields)) {
                     int numShards = getNumShards(record.getDate());
-                    shardId = generator.getShardId(record, shardId, numShards);
+                    shardId = generator.getShardId(record, eventFields, shardId, numShards);
                     break;
                 }
             }
@@ -91,10 +94,23 @@ public class ShardIdFactory {
      * @return the shard id
      */
     public String getBaseShardId(RawRecordContainer record) {
+        return getBaseShardId(record, getNumShards(record.getDate()));
+    }
+
+    /**
+     * A base shard id calculator that can be used externally to this class.
+     *
+     * @param record
+     *            the event record
+     * @param numShards
+     *            the number of shards
+     * @return the shard id
+     */
+    public static String getBaseShardId(RawRecordContainer record, int numShards) {
         StringBuilder buf = new StringBuilder();
         buf.append(DateHelper.format(record.getDate()));
         buf.append("_");
-        int partition = (Integer.MAX_VALUE & record.getId().getShardedPortion().hashCode()) % getNumShards(record.getDate());
+        int partition = (Integer.MAX_VALUE & record.getId().getShardedPortion().hashCode()) % numShards;
         buf.append(partition);
         return buf.toString();
     }

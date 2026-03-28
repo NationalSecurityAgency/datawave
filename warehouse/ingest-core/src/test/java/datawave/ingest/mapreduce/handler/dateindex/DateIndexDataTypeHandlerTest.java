@@ -75,11 +75,12 @@ public class DateIndexDataTypeHandlerTest {
         // create a sample event
         String data = "00000000-0000-0000-0000-000000000000,UUID,FOO,null,2013-04-30T11:53:11Z,2013-04-29T11:53:10Z";
         RawRecordContainer event = getEvent(data);
-        String shardId = new ShardIdFactory(conf).getShardId(event);
-        int shard1 = ShardIdFactory.getShard(shardId);
 
         // create some fields
         Multimap<String,NormalizedContentInterface> eventFields = helper.getEventFields(event);
+
+        String shardId = new ShardIdFactory(conf).getShardId(event, eventFields);
+        int shard1 = ShardIdFactory.getShard(shardId);
 
         // add a load date
         NormalizedContentInterface loadDate = new NormalizedFieldAndValue("LOAD_DATE", "2014-01-01T13:39:39Z");
@@ -131,11 +132,12 @@ public class DateIndexDataTypeHandlerTest {
         // create a sample event
         String data = "00000000-0000-0000-0000-000000000000,UUID,FOO,null,2013-04-30T11:53:11Z,2013-04-29T11:53:10Z";
         RawRecordContainer event = getEvent(data);
-        String shardId = new ShardIdFactory(conf).getShardId(event);
-        int shard1 = ShardIdFactory.getShard(shardId);
 
         // create some fields
         Multimap<String,NormalizedContentInterface> eventFields = helper.getEventFields(event);
+
+        String shardId = new ShardIdFactory(conf).getShardId(event, eventFields);
+        int shard1 = ShardIdFactory.getShard(shardId);
 
         // add a load date
         NormalizedContentInterface loadDate = new NormalizedFieldAndValue("LOAD_DATE", "2014-01-01T13:39:39Z");
@@ -150,9 +152,9 @@ public class DateIndexDataTypeHandlerTest {
         // create a second sample event
         data = "00000000-0000-0000-0000-000000000000,UUID,FOO,null,2013-04-30T00:00:00Z,2013-04-29T11:11:11Z";
         event = getEvent(data);
-        shardId = new ShardIdFactory(conf).getShardId(event);
-        int shard2 = ShardIdFactory.getShard(shardId);
         eventFields = helper.getEventFields(event);
+        shardId = new ShardIdFactory(conf).getShardId(event, eventFields);
+        int shard2 = ShardIdFactory.getShard(shardId);
         // do not put the load date in this one: eventFields.put("LOAD_DATE", loadDate);
 
         // ensure we have a different shard for testing purposes
