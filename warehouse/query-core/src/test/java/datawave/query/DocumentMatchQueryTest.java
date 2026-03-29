@@ -43,6 +43,12 @@ import datawave.query.tables.ShardQueryLogic;
 import datawave.query.util.AbstractQueryTest;
 import datawave.query.util.WiseGuysIngest;
 
+/**
+ * MiniAccumulo-backed integration tests for {@code document:match(...)}.
+ * <p>
+ * These tests exercise the full query path, including query parsing, planner wiring, shard-table document materialization, evaluation-phase document matching,
+ * and publication of the {@code DOCUMENT_MATCHES} attribute on returned documents.
+ */
 @ExtendWith(SpringExtension.class)
 @ComponentScan(basePackages = "datawave.query")
 // @formatter:off
@@ -53,12 +59,6 @@ import datawave.query.util.WiseGuysIngest;
         "classpath:MetadataHelperContext.xml",
         "classpath:CacheContext.xml"})
 // @formatter:on
-/**
- * MiniAccumulo-backed integration tests for {@code document:match(...)}.
- * <p>
- * These tests exercise the full query path, including query parsing, planner wiring, shard-table document materialization, evaluation-phase document matching,
- * and publication of the {@code DOCUMENT_MATCHES} attribute on returned documents.
- */
 public class DocumentMatchQueryTest extends AbstractQueryTest {
 
     private static final Logger log = Logger.getLogger(DocumentMatchQueryTest.class);
@@ -174,8 +174,8 @@ public class DocumentMatchQueryTest extends AbstractQueryTest {
      */
     @Test
     public void testDocumentMatchJexlAllViews() throws Exception {
-        disableQueryPlanAssertion();
         givenQuery("UUID == 'CAPONE' && document:match('can')");
+        expectPlan("UUID == 'capone' && document:match(documentMatchContext, 'can')");
         expectedDocumentMatchContextRequired = true;
         expectResultCount(1);
         expectUUIDs(java.util.Set.of("CAPONE"));
@@ -188,8 +188,8 @@ public class DocumentMatchQueryTest extends AbstractQueryTest {
      */
     @Test
     public void testDocumentMatchJexlSpecificView() throws Exception {
-        disableQueryPlanAssertion();
         givenQuery("UUID == 'CAPONE' && document:match('CONTENT2', 'lawyer')");
+        expectPlan("UUID == 'capone' && document:match('CONTENT2', documentMatchContext, 'lawyer')");
         expectedDocumentMatchContextRequired = true;
         expectResultCount(1);
         expectUUIDs(java.util.Set.of("CAPONE"));
@@ -202,8 +202,8 @@ public class DocumentMatchQueryTest extends AbstractQueryTest {
      */
     @Test
     public void testDocumentMatchJexlMergesMatchesAcrossCalls() throws Exception {
-        disableQueryPlanAssertion();
         givenQuery("UUID == 'CAPONE' && document:match('CONTENT', 'can') && document:match('CONTENT2', 'lawyer')");
+        expectPlan("UUID == 'capone' && document:match('CONTENT', documentMatchContext, 'can') && document:match('CONTENT2', documentMatchContext, 'lawyer')");
         expectedDocumentMatchContextRequired = true;
         expectResultCount(1);
         expectUUIDs(java.util.Set.of("CAPONE"));
@@ -216,9 +216,9 @@ public class DocumentMatchQueryTest extends AbstractQueryTest {
      */
     @Test
     public void testDocumentMatchLuceneWildcardView() throws Exception {
-        disableQueryPlanAssertion();
         givenParameter(QueryParameters.QUERY_SYNTAX, "LUCENE");
         givenQuery("UUID:CAPONE AND #DOCUMENT_MATCH(CONTENT*,can)");
+        expectPlan("UUID == 'capone' && document:match('CONTENT*', documentMatchContext, 'can')");
         expectedDocumentMatchContextRequired = true;
         expectResultCount(1);
         expectUUIDs(java.util.Set.of("CAPONE"));
@@ -231,8 +231,8 @@ public class DocumentMatchQueryTest extends AbstractQueryTest {
      */
     @Test
     public void testDocumentMatchNoMatchFiltersDocument() throws Exception {
-        disableQueryPlanAssertion();
         givenQuery("UUID == 'CAPONE' && document:match('missing')");
+        expectPlan("UUID == 'capone' && document:match(documentMatchContext, 'missing')");
         expectedDocumentMatchContextRequired = true;
         expectResultCount(0);
         planAndExecuteQuery();
@@ -243,8 +243,8 @@ public class DocumentMatchQueryTest extends AbstractQueryTest {
      */
     @Test
     public void testDocumentMatchIsCaseSensitive() throws Exception {
-        disableQueryPlanAssertion();
         givenQuery("UUID == 'CAPONE' && document:match('Can')");
+        expectPlan("UUID == 'capone' && document:match(documentMatchContext, 'Can')");
         expectedDocumentMatchContextRequired = true;
         expectResultCount(0);
         planAndExecuteQuery();
@@ -255,9 +255,9 @@ public class DocumentMatchQueryTest extends AbstractQueryTest {
      */
     @Test
     public void testDocumentMatchOversizedDecodedPayloadIsSkipped() throws Exception {
-        disableQueryPlanAssertion();
         logic.setDocumentMatchMaxDecodedSize(8);
         givenQuery("UUID == 'CAPONE' && document:match('can')");
+        expectPlan("UUID == 'capone' && document:match(documentMatchContext, 'can')");
         expectedDocumentMatchContextRequired = true;
         expectResultCount(0);
         planAndExecuteQuery();
@@ -268,8 +268,8 @@ public class DocumentMatchQueryTest extends AbstractQueryTest {
      */
     @Test
     public void testQueryWithoutDocumentMatchDoesNotRequireContext() throws Exception {
-        disableQueryPlanAssertion();
         givenQuery("UUID == 'CAPONE'");
+        expectPlan("UUID == 'capone'");
         expectedDocumentMatchContextRequired = false;
         expectResultCount(1);
         expectUUIDs(java.util.Set.of("CAPONE"));
