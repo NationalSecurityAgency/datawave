@@ -29,7 +29,7 @@ import datawave.query.jexl.HitListArithmetic;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.DocumentFunctions;
 import datawave.query.jexl.functions.TermFrequencyList;
-import datawave.query.jexl.visitors.DocumentMatchFunctionRebuildingVisitor;
+import datawave.query.jexl.visitors.DocumentMatchFunctionVisitor;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.postprocessing.tf.TermOffsetMap;
 import datawave.query.util.Tuple3;
@@ -371,10 +371,10 @@ public class JexlEvaluationTest {
     private String rewriteDocumentMatchFunctions(String query) {
         try {
             ASTJexlScript script = JexlASTHelper.parseAndFlattenJexlQuery(query);
-            if (!DocumentMatchFunctionRebuildingVisitor.requiresDocumentMatchContext(script)) {
+            if (!DocumentMatchFunctionVisitor.rewrite(script)) {
                 return query;
             }
-            return JexlStringBuildingVisitor.buildQueryWithoutParse(DocumentMatchFunctionRebuildingVisitor.rewrite(script));
+            return JexlStringBuildingVisitor.buildQueryWithoutParse(script);
         } catch (org.apache.commons.jexl3.parser.ParseException e) {
             throw new RuntimeException(e);
         }

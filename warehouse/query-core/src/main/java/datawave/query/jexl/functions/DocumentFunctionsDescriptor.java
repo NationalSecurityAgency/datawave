@@ -97,7 +97,7 @@ public class DocumentFunctionsDescriptor implements JexlFunctionArgumentDescript
                             "Unexpected function class " + functionClass);
             throw new IllegalArgumentException(qe);
         }
-        if (!DocumentFunctions.DOCUMENT_MATCH_FUNCTION_NAME.equals(visitor.name()) || visitor.args().isEmpty() || visitor.args().size() > 2) {
+        if (!DocumentFunctions.DOCUMENT_MATCH_FUNCTION_NAME.equals(visitor.name()) || visitor.args().isEmpty() || visitor.args().size() > 3) {
             BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.WRONG_NUMBER_OF_ARGUMENTS,
                             "Wrong number of arguments to document:match");
             throw new IllegalArgumentException(qe);

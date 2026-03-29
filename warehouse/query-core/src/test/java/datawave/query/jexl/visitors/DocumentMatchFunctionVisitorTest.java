@@ -11,9 +11,9 @@ import org.junit.Test;
 import datawave.query.jexl.JexlASTHelper;
 
 /**
- * Focused tests for {@link DocumentMatchFunctionRebuildingVisitor}.
+ * Focused tests for {@link DocumentMatchFunctionVisitor}.
  */
-public class DocumentMatchFunctionRebuildingVisitorTest {
+public class DocumentMatchFunctionVisitorTest {
 
     /**
      * Verifies that the visitor reports when a query needs the reserved document-match context variable.
@@ -22,10 +22,15 @@ public class DocumentMatchFunctionRebuildingVisitorTest {
      *             if parsing fails
      */
     @Test
+    public void testRewriteReportsWhetherDocumentMatchContextIsRequired() throws Exception {
+        assertFalse(DocumentMatchFunctionVisitor.rewrite(JexlASTHelper.parseAndFlattenJexlQuery("FOO == 'bar'")));
+        assertTrue(DocumentMatchFunctionVisitor.rewrite(JexlASTHelper.parseAndFlattenJexlQuery("FOO == 'bar' && document:match('car')")));
+    }
+
+    @Test
     public void testRequiresDocumentMatchContext() throws Exception {
-        assertFalse(DocumentMatchFunctionRebuildingVisitor.requiresDocumentMatchContext(JexlASTHelper.parseAndFlattenJexlQuery("FOO == 'bar'")));
-        assertTrue(DocumentMatchFunctionRebuildingVisitor
-                        .requiresDocumentMatchContext(JexlASTHelper.parseAndFlattenJexlQuery("FOO == 'bar' && document:match('car')")));
+        assertFalse(DocumentMatchFunctionVisitor.requiresDocumentMatchContext(JexlASTHelper.parseAndFlattenJexlQuery("FOO == 'bar'")));
+        assertTrue(DocumentMatchFunctionVisitor.requiresDocumentMatchContext(JexlASTHelper.parseAndFlattenJexlQuery("FOO == 'bar' && document:match('car')")));
     }
 
     /**
@@ -37,7 +42,6 @@ public class DocumentMatchFunctionRebuildingVisitorTest {
     @Test
     public void testRewriteSingleArgumentFunction() throws ParseException {
         assertRewrite("document:match(documentMatchContext, 'car')", "document:match('car')");
-
     }
 
     /**
@@ -49,6 +53,13 @@ public class DocumentMatchFunctionRebuildingVisitorTest {
     @Test
     public void testRewriteTwoArgumentFunction() throws ParseException {
         assertRewrite("document:match('BODY', documentMatchContext, 'car')", "document:match('BODY', 'car')");
+    }
+
+    @Test
+    public void testRewriteMutatesOriginalScript() throws ParseException {
+        ASTJexlScript script = JexlASTHelper.parseAndFlattenJexlQuery("document:match('car')");
+        assertTrue(DocumentMatchFunctionVisitor.rewrite(script));
+        assertEquals("document:match(documentMatchContext, 'car')", JexlStringBuildingVisitor.buildQueryWithoutParse(script));
     }
 
     /**
@@ -63,7 +74,8 @@ public class DocumentMatchFunctionRebuildingVisitorTest {
      */
     private static void assertRewrite(String expected, String input) throws ParseException {
         ASTJexlScript script = JexlASTHelper.parseAndFlattenJexlQuery(input);
-        String rewritten = JexlStringBuildingVisitor.buildQueryWithoutParse(DocumentMatchFunctionRebuildingVisitor.rewrite(script));
+        DocumentMatchFunctionVisitor.rewrite(script);
+        String rewritten = JexlStringBuildingVisitor.buildQueryWithoutParse(script);
         assertEquals(expected, rewritten);
     }
 }
