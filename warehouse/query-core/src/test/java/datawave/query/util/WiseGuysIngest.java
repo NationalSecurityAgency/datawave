@@ -7,6 +7,7 @@ import java.util.Base64;
 import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import java.util.zip.GZIPOutputStream;
 
 import org.apache.accumulo.core.client.AccumuloClient;
@@ -18,6 +19,7 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.user.SummingCombiner;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.hadoop.io.Text;
 
 import datawave.data.ColumnFamilyConstants;
@@ -322,7 +324,8 @@ public class WiseGuysIngest {
             bw.addMutation(mutation);
 
             // geo
-            for (String normalized : ((OneToManyNormalizerType<Geometry>) geoType).normalizeToMany("POINT(10 10)")) {
+            for (String normalized : ((OneToManyNormalizerType<Geometry>) geoType).normalizeToMany("POINT(10 10)").stream().map(Pair::getLeft)
+                            .collect(Collectors.toList())) {
                 mutation = new Mutation(normalized);
                 mutation.put("GEO".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp,
                                 range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(corleoneUID));
@@ -359,7 +362,8 @@ public class WiseGuysIngest {
             bw.addMutation(mutation);
 
             // geo
-            for (String normalized : ((OneToManyNormalizerType<Geometry>) geoType).normalizeToMany("POINT(20 20)")) {
+            for (String normalized : ((OneToManyNormalizerType<Geometry>) geoType).normalizeToMany("POINT(20 20)").stream().map(Pair::getLeft)
+                            .collect(Collectors.toList())) {
                 mutation = new Mutation(normalized);
                 mutation.put("GEO".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp,
                                 range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(sopranoUID));
@@ -417,7 +421,8 @@ public class WiseGuysIngest {
             bw.addMutation(mutation);
 
             // geo
-            for (String normalized : ((OneToManyNormalizerType<Geometry>) geoType).normalizeToMany("POINT(30 30)")) {
+            for (String normalized : ((OneToManyNormalizerType<Geometry>) geoType).normalizeToMany("POINT(30 30)").stream().map(Pair::getLeft)
+                            .collect(Collectors.toList())) {
                 mutation = new Mutation(normalized);
                 mutation.put("GEO".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp,
                                 range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(caponeUID));
@@ -753,7 +758,8 @@ public class WiseGuysIngest {
                             emptyValue);
 
             // geo
-            for (String normalized : ((OneToManyNormalizerType<Geometry>) geoType).normalizeToMany("POINT(10 10)")) {
+            for (String normalized : ((OneToManyNormalizerType<Geometry>) geoType).normalizeToMany("POINT(10 10)").stream().map(Pair::getLeft)
+                            .collect(Collectors.toList())) {
                 mutation.put("fi\u0000" + "GEO", normalized + "\u0000" + datatype + "\u0000" + corleoneUID, columnVisibility,
                                 timeStamp + corleoneTimeStampDelta, emptyValue);
             }
@@ -779,7 +785,8 @@ public class WiseGuysIngest {
                             timeStamp + sopranoTimeStampDelta, emptyValue);
 
             // geo
-            for (String normalized : ((OneToManyNormalizerType<Geometry>) geoType).normalizeToMany("POINT(20 20)")) {
+            for (String normalized : ((OneToManyNormalizerType<Geometry>) geoType).normalizeToMany("POINT(20 20)").stream().map(Pair::getLeft)
+                            .collect(Collectors.toList())) {
                 mutation.put("fi\u0000" + "GEO", normalized + "\u0000" + datatype + "\u0000" + sopranoUID, columnVisibility, timeStamp + sopranoTimeStampDelta,
                                 emptyValue);
             }
@@ -817,7 +824,8 @@ public class WiseGuysIngest {
                             timeStamp + caponeTimeStampDelta, emptyValue);
 
             // geo
-            for (String normalized : ((OneToManyNormalizerType<Geometry>) geoType).normalizeToMany("POINT(30 30)")) {
+            for (String normalized : ((OneToManyNormalizerType<Geometry>) geoType).normalizeToMany("POINT(30 30)").stream().map(Pair::getLeft)
+                            .collect(Collectors.toList())) {
                 mutation.put("fi\u0000" + "GEO", normalized + "\u0000" + datatype + "\u0000" + caponeUID, columnVisibility, timeStamp + caponeTimeStampDelta,
                                 emptyValue);
             }

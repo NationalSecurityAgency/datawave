@@ -14,6 +14,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -729,9 +730,10 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
         List<NormalizedContentInterface> list = Lists.newArrayList();
         // copy it
         NormalizedContentInterface copy = new NormalizedFieldAndValue(normalizedContent);
-        for (String one : datawaveType.normalizeToMany(copy.getIndexedFieldValue())) {
+        for (Pair<String,datawave.data.type.Type.Category> one : datawaveType.normalizeToMany(copy.getIndexedFieldValue())) {
             try {
-                copy.setIndexedFieldValue(one);
+                copy.setIndexedFieldValue(one.getLeft());
+                copy.setTypeCategory(one.getRight());
                 list.add(copy);
                 copy = new NormalizedFieldAndValue(normalizedContent);
             } catch (Exception ex) {

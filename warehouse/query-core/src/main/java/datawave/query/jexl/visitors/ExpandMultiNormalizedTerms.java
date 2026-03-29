@@ -16,6 +16,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl3.parser.ASTAndNode;
@@ -33,6 +34,7 @@ import org.apache.commons.jexl3.parser.ASTReferenceExpression;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.commons.jexl3.parser.ParserTreeConstants;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.log4j.Logger;
 
 import com.google.common.base.Joiner;
@@ -357,6 +359,7 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
                                     if (log.isDebugEnabled()) {
                                         log.debug("normalizedTerm = " + normTerm);
                                     }
+
                                     normalizedTerms.add(normTerm);
                                     JexlNode normalizedNode = JexlNodeFactory.buildUntypedNode(node, fieldName, normTerm);
                                     // if not index only, and we have a lossy normalized regex, then add the original regex as eval only
@@ -381,7 +384,7 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
                                     }
                                 }
                             } else if ((normalizer instanceof OneToManyNormalizerType) && ((OneToManyNormalizerType<?>) normalizer).expandAtQueryTime()) {
-                                List<String> normTerms = ((OneToManyNormalizerType<?>) normalizer).normalizeToMany(term);
+                                List<String> normTerms = ((OneToManyNormalizerType<?>) normalizer).normalizeToMany(term).stream().map(Pair::getLeft).collect(Collectors.toList());
                                 String normTerm = Joiner.on(", ").join(normTerms);
                                 if (!normalizedTerms.contains(normTerm)) {
                                     if (log.isDebugEnabled()) {

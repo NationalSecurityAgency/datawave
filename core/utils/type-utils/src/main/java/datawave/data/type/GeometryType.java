@@ -1,6 +1,9 @@
 package datawave.data.type;
 
 import java.util.List;
+import java.util.stream.Collectors;
+
+import org.apache.commons.lang3.tuple.Pair;
 
 import datawave.data.normalizer.Normalizer;
 import datawave.data.normalizer.OneToManyNormalizer;
@@ -18,7 +21,8 @@ public class GeometryType extends AbstractGeometryType<Geometry> implements OneT
         super(Normalizer.GEOMETRY_NORMALIZER);
     }
 
-    public List<String> normalizeToMany(String in) {
+    public List<Pair<String,Category>> normalizeToMany(String in) {
+
         return ((OneToManyNormalizer<Geometry>) normalizer).normalizeToMany(in);
     }
 
@@ -29,7 +33,8 @@ public class GeometryType extends AbstractGeometryType<Geometry> implements OneT
 
     @Override
     public void normalizeAndSetNormalizedValue(Geometry valueToNormalize) {
-        setNormalizedValues(((OneToManyNormalizer<Geometry>) normalizer).normalizeDelegateTypeToMany(valueToNormalize));
+        setNormalizedValues(((OneToManyNormalizer<Geometry>) normalizer).normalizeDelegateTypeToMany(valueToNormalize).stream().map(Pair::getLeft)
+                        .collect(Collectors.toList()));
     }
 
     public List<String> getNormalizedValues() {

@@ -8,6 +8,8 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import datawave.data.type.Type;
+
 public class EdgeDefinitionConfigurationHelper {
 
     private static final Logger log = LoggerFactory.getLogger(EdgeDefinitionConfigurationHelper.class);
@@ -23,6 +25,8 @@ public class EdgeDefinitionConfigurationHelper {
     private Map<String,String> enrichmentTypeMappings;
 
     private boolean initialized = false;
+
+    private List<Type.Category> allowedTypeCategories;
 
     public List<EdgeDefinition> getEdges() {
         if (initialized) {
@@ -184,5 +188,13 @@ public class EdgeDefinitionConfigurationHelper {
 
     public void setEnrichmentTypeMappings(Map<String,String> enrichmentTypeMappings) {
         this.enrichmentTypeMappings = enrichmentTypeMappings;
+    }
+
+    public List<Type.Category> getAllowedTypeCategories() {
+        return allowedTypeCategories;
+    }
+
+    public void setAllowedTypeCategories(List<Type.Category> categories) {
+        this.allowedTypeCategories = categories;
     }
 }

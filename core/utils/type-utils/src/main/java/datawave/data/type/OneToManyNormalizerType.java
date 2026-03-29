@@ -2,9 +2,11 @@ package datawave.data.type;
 
 import java.util.List;
 
+import org.apache.commons.lang3.tuple.Pair;
+
 public interface OneToManyNormalizerType<T extends Comparable<T>> extends Type<T> {
 
-    List<String> normalizeToMany(String in);
+    List<Pair<String,Category>> normalizeToMany(String in);
 
     List<String> getNormalizedValues();
 

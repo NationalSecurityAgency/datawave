@@ -58,4 +58,8 @@ public interface Type<T extends Comparable<T>> extends Comparable<Type<T>>, Kryo
             }
         }
     }
+
+    enum Category {
+        FULL, PART, GEOHASH, LIST_ELEMENT
+    }
 }

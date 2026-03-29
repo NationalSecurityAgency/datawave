@@ -24,6 +24,9 @@ public class BaseNormalizedContent implements NormalizedContentInterface, Clonea
     /** The security markings for the field value pair. */
     protected Map<String,String> _markings = null;
 
+    /** type category from normalization */
+    protected Type.Category _typeCategory = null;
+
     /** The field processing error if any. */
     protected Throwable error = null;
 
@@ -208,5 +211,16 @@ public class BaseNormalizedContent implements NormalizedContentInterface, Clonea
         } catch (Exception e) {
             this.setError(e);
         }
+    }
+
+    @Override
+    public void setTypeCategory(Type.Category t) {
+        this._typeCategory = t;
+
+    }
+
+    @Override
+    public Type.Category getTypeCategory() {
+        return _typeCategory;
     }
 }

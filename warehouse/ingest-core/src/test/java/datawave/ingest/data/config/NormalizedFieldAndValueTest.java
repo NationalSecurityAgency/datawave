@@ -22,6 +22,8 @@ public class NormalizedFieldAndValueTest {
         private Map<String,String> _markings;
         private Throwable _error;
 
+        private Type.Category _typeCategory;
+
         protected NonGroupedInstance() {
             _fieldName = "TestNonGroupedInstance";
 
@@ -123,6 +125,16 @@ public class NormalizedFieldAndValueTest {
                 this.setError(e);
             }
         }
+
+        @Override
+        public void setTypeCategory(Type.Category t) {
+            _typeCategory = t;
+        }
+
+        @Override
+        public Type.Category getTypeCategory() {
+            return _typeCategory;
+        }
     }
 
     public static class GroupedInstance implements GroupedNormalizedContentInterface {
@@ -141,6 +153,8 @@ public class NormalizedFieldAndValueTest {
 
         private String _group;
         private String _subGroup;
+
+        private Type.Category _typeCategory;
 
         protected GroupedInstance() {
             _fieldName = "TestNonGroupedInstance";
@@ -289,6 +303,16 @@ public class NormalizedFieldAndValueTest {
             } catch (Exception e) {
                 this.setError(e);
             }
+        }
+
+        @Override
+        public void setTypeCategory(Type.Category t) {
+            _typeCategory = t;
+        }
+
+        @Override
+        public Type.Category getTypeCategory() {
+            return _typeCategory;
         }
     }
 
