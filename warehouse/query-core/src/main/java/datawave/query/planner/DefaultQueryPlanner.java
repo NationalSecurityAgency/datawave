@@ -119,7 +119,7 @@ import datawave.query.jexl.visitors.BoundedRangeIndexExpansionVisitor;
 import datawave.query.jexl.visitors.ConjunctionEliminationVisitor;
 import datawave.query.jexl.visitors.DepthVisitor;
 import datawave.query.jexl.visitors.DisjunctionEliminationVisitor;
-import datawave.query.jexl.visitors.DocumentMatchFunctionRebuildingVisitor;
+import datawave.query.jexl.visitors.DocumentMatchFunctionVisitor;
 import datawave.query.jexl.visitors.ExecutableDeterminationVisitor;
 import datawave.query.jexl.visitors.ExecutableDeterminationVisitor.STATE;
 import datawave.query.jexl.visitors.ExecutableExpansionVisitor;
@@ -1186,6 +1186,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             expandPushdownPullup(config, metadataHelper, timers, scannerFactory);
         }
 
+        // rewrite document:match() functions to include the documentMatchContext variable.
+        config.setQueryTree(timedRewriteDocumentMatchFunctions(timers, config));
+
         return config.getQueryTree();
     }
 
@@ -1514,12 +1517,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             }
         }
 
-        config.setDocumentMatchContextRequired(DocumentMatchFunctionRebuildingVisitor.requiresDocumentMatchContext(config.getQueryTree()));
-        if (log.isDebugEnabled()) {
-            logQuery(config.getQueryTree(), "Computed that the query " + (config.isDocumentMatchContextRequired() ? "requires" : "does not require")
-                            + " document-match context lookup");
-        }
-
         stopwatch.stop();
     }
 
@@ -1645,6 +1642,19 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
     protected ASTJexlScript timedRewriteNullFunctions(QueryStopwatch timers, ASTJexlScript queryTree) throws DatawaveQueryException {
         return visitorManager.timedVisit(timers, "Rewrite Null Functions", () -> RewriteNullFunctionsVisitor.rewriteNullFunctions(queryTree));
+    }
+
+    protected ASTJexlScript timedRewriteDocumentMatchFunctions(QueryStopwatch timers, ShardQueryConfiguration config) throws DatawaveQueryException {
+        return visitorManager.timedVisit(timers, "Rewrite Document Match Functions", () -> {
+            ASTJexlScript queryTree = config.getQueryTree();
+            DocumentMatchFunctionVisitor.rewrite(queryTree);
+            config.setDocumentMatchContextRequired(DocumentMatchFunctionVisitor.requiresDocumentMatchContext(queryTree));
+            if (log.isDebugEnabled()) {
+                logQuery(queryTree, "Computed that the query " + (config.isDocumentMatchContextRequired() ? "requires" : "does not require")
+                                + " document-match context lookup");
+            }
+            return queryTree;
+        });
     }
 
     protected ASTJexlScript timedEnforceUniqueTermsWithinExpressions(QueryStopwatch timers, final ASTJexlScript script) throws DatawaveQueryException {

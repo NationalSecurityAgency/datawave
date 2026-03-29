@@ -107,9 +107,8 @@ import datawave.query.jexl.functions.FieldIndexAggregator;
 import datawave.query.jexl.functions.IdentityAggregator;
 import datawave.query.jexl.functions.KeyAdjudicator;
 import datawave.query.jexl.visitors.DelayedNonEventSubTreeVisitor;
-import datawave.query.jexl.visitors.DocumentMatchFunctionRebuildingVisitor;
+import datawave.query.jexl.visitors.DocumentMatchFunctionVisitor;
 import datawave.query.jexl.visitors.IteratorBuildingVisitor;
-import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.visitors.SatisfactionVisitor;
 import datawave.query.jexl.visitors.VariableNameVisitor;
 import datawave.query.postprocessing.tf.TFFactory;
@@ -1106,18 +1105,16 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             arithmetic = getArithmetic();
         }
 
-        String rewrittenQuery = rewriteDocumentMatchFunctions(query, arithmetic);
-
         if (null == documentSource) {
-            jexlEvaluationFunction = new JexlEvaluation(rewrittenQuery, arithmetic);
+            jexlEvaluationFunction = new JexlEvaluation(query, arithmetic);
         } else {
             NestedQuery<Key> nestedQuery = documentSource.getNestedQuery();
             if (null == nestedQuery) {
-                jexlEvaluationFunction = new JexlEvaluation(rewrittenQuery, arithmetic);
+                jexlEvaluationFunction = new JexlEvaluation(query, arithmetic);
             } else {
                 jexlEvaluationFunction = nestedQuery.getEvaluation();
                 if (null == jexlEvaluationFunction) {
-                    jexlEvaluationFunction = new JexlEvaluation(rewriteDocumentMatchFunctions(nestedQuery.getQuery(), arithmetic), arithmetic);
+                    jexlEvaluationFunction = new JexlEvaluation(nestedQuery.getQuery(), arithmetic);
                 }
             }
         }
@@ -1132,18 +1129,25 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         return jexlEvaluationFunction;
     }
 
-    private String rewriteDocumentMatchFunctions(String query, JexlArithmetic arithmetic) {
-        ASTJexlScript parsedQuery = ArithmeticJexlEngines.getEngine(arithmetic).parse(query);
-        if (!DocumentMatchFunctionRebuildingVisitor.requiresDocumentMatchContext(parsedQuery)) {
-            return query;
-        }
-        return JexlStringBuildingVisitor.buildQueryWithoutParse(DocumentMatchFunctionRebuildingVisitor.rewrite(parsedQuery));
-    }
-
+    /**
+     * Determines whether the current evaluation pass needs document-match context.
+     * <p>
+     * The top-level iterator option tells us whether the planned query requires document-match context anywhere. When a nested query is being evaluated, this
+     * method narrows that decision to the nested query so we only collect document-match context when the query actually being evaluated still contains
+     * {@code document:match(...)}.
+     *
+     * @param documentSource
+     *            the nested query source for the current evaluation pass, if any
+     * @return true if document-match context should be collected for the current evaluation
+     */
     protected boolean shouldCollectDocumentMatchContext(NestedQueryIterator<Key> documentSource) {
         if (!isDocumentMatchContextRequired()) {
             return false;
         }
+
+        // At this point the planned query requires document-match context. If there is no nested source, or no nested
+        // query payload to inspect, we cannot narrow that requirement to a smaller subquery, so we conservatively keep
+        // document-match context collection enabled and return true in these cases.
         if (documentSource == null) {
             return true;
         }
@@ -1151,8 +1155,12 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         if (nestedQuery == null || nestedQuery.getQuery() == null) {
             return true;
         }
-        ASTJexlScript nestedScript = ArithmeticJexlEngines.getEngine(getArithmetic()).parse(nestedQuery.getQuery());
-        return DocumentMatchFunctionRebuildingVisitor.requiresDocumentMatchContext(nestedScript);
+
+        ASTJexlScript nestedScript = nestedQuery.getScript();
+        if (nestedScript == null) {
+            nestedScript = ArithmeticJexlEngines.getEngine(getArithmetic()).parse(nestedQuery.getQuery());
+        }
+        return DocumentMatchFunctionVisitor.requiresDocumentMatchContext(nestedScript);
     }
 
     protected LimitFields getLimitFields() {
