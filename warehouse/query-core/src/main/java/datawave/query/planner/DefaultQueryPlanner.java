@@ -721,12 +721,14 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         addOption(cfg, QueryOptions.HIT_LIST, Boolean.toString(config.isHitList()), false);
         addOption(cfg, QueryOptions.TERM_FREQUENCY_FIELDS, Joiner.on(',').join(config.getQueryTermFrequencyFields()), false);
         addOption(cfg, QueryOptions.TERM_FREQUENCIES_REQUIRED, Boolean.toString(config.isTermFrequenciesRequired()), false);
-        addOption(cfg, QueryOptions.DOCUMENT_MATCH_CONTEXT_REQUIRED, Boolean.toString(config.isDocumentMatchContextRequired()), false);
         addOption(cfg, QueryOptions.QUERY, newQueryString, false);
         addOption(cfg, QueryOptions.QUERY_ID, config.getQuery().getId().toString(), false);
         addOption(cfg, QueryOptions.FULL_TABLE_SCAN_ONLY, Boolean.toString(isFullTable), false);
         addOption(cfg, QueryOptions.TRACK_SIZES, Boolean.toString(config.isTrackSizes()), false);
         addOption(cfg, QueryOptions.ACTIVE_QUERY_LOG_NAME, config.getActiveQueryLogName(), false);
+
+        // Add the thresholds for document matching if required
+        configureDocumentMatchOptions(config, cfg);
 
         // Set the start and end dates
         configureTypeMappings(config, cfg, metadataHelper, getCompressOptionMappings(), false);
@@ -2403,6 +2405,15 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         // no-op
     }
 
+    protected void configureDocumentMatchOptions(ShardQueryConfiguration config, IteratorSetting cfg) {
+        boolean documentMatchContextRequired = config.isDocumentMatchContextRequired();
+        addOption(cfg, QueryOptions.DOCUMENT_MATCH_CONTEXT_REQUIRED, Boolean.toString(documentMatchContextRequired), false);
+        if (documentMatchContextRequired) {
+            addOption(cfg, QueryOptions.DOCUMENT_MATCH_MAX_ENCODED_SIZE, Integer.toString(config.getDocumentMatchMaxEncodedSize()), false);
+            addOption(cfg, QueryOptions.DOCUMENT_MATCH_MAX_DECODED_SIZE, Integer.toString(config.getDocumentMatchMaxDecodedSize()), false);
+        }
+    }
+
     protected Future<IteratorSetting> loadQueryIterator(final MetadataHelper metadataHelper, final ShardQueryConfiguration config, final Boolean isFullTable,
                     boolean isPreload) {
 
@@ -2450,8 +2461,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             addOption(cfg, QueryOptions.MAX_PIPELINE_CACHED_RESULTS, Integer.toString(config.getMaxPipelineCachedResults()), false);
             addOption(cfg, QueryOptions.MAX_IVARATOR_SOURCES, Integer.toString(config.getMaxIvaratorSources()), false);
             addOption(cfg, QueryOptions.MAX_IVARATOR_SOURCE_WAIT, Long.toString(config.getMaxIvaratorSourceWait()), false);
-            addOption(cfg, QueryOptions.DOCUMENT_MATCH_MAX_ENCODED_SIZE, Integer.toString(config.getDocumentMatchMaxEncodedSize()), false);
-            addOption(cfg, QueryOptions.DOCUMENT_MATCH_MAX_DECODED_SIZE, Integer.toString(config.getDocumentMatchMaxDecodedSize()), false);
 
             if (config.getYieldThresholdMs() != Long.MAX_VALUE && config.getYieldThresholdMs() > 0) {
                 addOption(cfg, QueryOptions.YIELD_THRESHOLD_MS, Long.toString(config.getYieldThresholdMs()), false);
