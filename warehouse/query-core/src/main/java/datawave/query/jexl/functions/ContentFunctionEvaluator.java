@@ -14,6 +14,7 @@ import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Lists;
 
 import datawave.ingest.protobuf.TermWeightPosition;
+import datawave.query.jexl.JexlASTHelper;
 import datawave.query.postprocessing.tf.TermOffsetMap;
 
 /**
@@ -190,7 +191,7 @@ public abstract class ContentFunctionEvaluator {
 
                 // Iterate over each collection of offsets (grouped by field) and try to find one that satisfies the phrase/adjacency
                 for (String field : offsetsByField.keySet()) {
-                    if (!fields.isEmpty() && !fields.contains(field)) {
+                    if ((fields == null || !fields.isEmpty()) && !isRelevantField(field)) {
                         continue;
                     }
                     List<List<TermWeightPosition>> offsets = offsetsByField.get(field);
@@ -242,6 +243,23 @@ public abstract class ContentFunctionEvaluator {
         }
 
         return Collections.emptySet();
+    }
+
+    /**
+     * Return whether the candidate field should be considered during content-function evaluation. This accepts exact field matches and grouped variants of a
+     * queried base field, e.g. {@code CONTENT} matching {@code CONTENT.1}.
+     *
+     * @param candidateField
+     *            the field found in the term-frequency data
+     * @return true if the field is relevant for evaluation
+     */
+    protected boolean isRelevantField(String candidateField) {
+        for (String field : fields) {
+            if (field.equals(candidateField) || JexlASTHelper.isGroupedFieldMatch(field, candidateField)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override

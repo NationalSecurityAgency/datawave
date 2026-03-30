@@ -6,7 +6,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
 
-import datawave.ingest.data.tokenize.TokenizationHelper;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Value;
@@ -39,6 +38,7 @@ import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.NormalizedFieldAndValue;
 import datawave.ingest.data.config.ingest.BaseIngestHelper;
 import datawave.ingest.data.config.ingest.ContentBaseIngestHelper;
+import datawave.ingest.data.tokenize.TokenizationHelper;
 import datawave.ingest.input.reader.EventRecordReader;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.policy.IngestPolicyEnforcer;
@@ -176,10 +176,10 @@ public class ContentIndexingColumnBasedHandlerTest {
                         tokenizedExpectedFieldsWithSpace, tokenizedExpectedIndexWithSpace, tokenizedExpectedReverseWithSpace,
                         tokenizedExpectedTfValuesWithSpace);
         SetExpectedMap(ALPHANUM_LIST + TOKEN_DESIGNATOR + ".kir5i4", tokenizeAlphanumResultsWithSpace, tokenizeAlphanumReverseResultsWithSpace,
-                tokenizedExpectedFieldsWithContext, tokenizedExpectedIndexWithContext, tokenizedExpectedReverseWithContext,
-                tokenizedExpectedTfValuesWithContext);
+                        tokenizedExpectedFieldsWithContext, tokenizedExpectedIndexWithContext, tokenizedExpectedReverseWithContext,
+                        tokenizedExpectedTfValuesWithContext);
         SetExpectedMap(ALPHANUM_LIST, listAlphanumResults, listAlphanumReverseResults, listExpectedAlphanumFields, listExpectedAlphanumIndex,
-                listExpectedAlphanumReverse, listExpectedAlphanumTfValues);
+                        listExpectedAlphanumReverse, listExpectedAlphanumTfValues);
         SetExpectedMap(NUMERIC_LIST, listNumericResults, listNumericReverseResults, listExpectedNumericFields, listExpectedNumericIndex,
                         listExpectedNumericReverse, listExpectedNumericTfValues);
     }
@@ -250,7 +250,7 @@ public class ContentIndexingColumnBasedHandlerTest {
 
         helper.setup(ctx.getConfiguration());
         testProcessing(handler, ALPHANUM_LIST, LIST_VALUE_WITH_SPACE, tokenizedExpectedFieldsWithContext, tokenizedExpectedIndexWithContext,
-                tokenizedExpectedReverseWithContext, tokenizedExpectedTfValuesWithContext, true);
+                        tokenizedExpectedReverseWithContext, tokenizedExpectedTfValuesWithContext, true);
     }
 
     @Test

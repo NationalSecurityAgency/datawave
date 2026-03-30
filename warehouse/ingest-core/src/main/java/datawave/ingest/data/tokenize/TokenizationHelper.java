@@ -4,14 +4,14 @@ import static org.apache.lucene.analysis.core.StopAnalyzer.ENGLISH_STOP_WORDS_SE
 
 import java.io.IOException;
 
-import datawave.data.hash.HashUID;
-import datawave.data.hash.UID;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.CharArraySet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import datawave.data.hash.HashUID;
+import datawave.data.hash.UID;
 import datawave.ingest.data.config.DataTypeHelper;
 import datawave.util.ObjectFactory;
 
@@ -397,9 +397,12 @@ public class TokenizationHelper {
         return stopWords;
     }
 
-    /** Obtains a Mumur hash for the specified content. Appended to the field name, so that distinct fields are
-     *  produced based on the content value - and that proximity queries across content contexts don't match.
-     * @param content the content for which to generate the hash
+    /**
+     * Obtains a Mumur hash for the specified content. Appended to the field name, so that distinct fields are produced based on the content value - and that
+     * proximity queries across content contexts don't match.
+     *
+     * @param content
+     *            the content for which to generate the hash
      * @return the string version of the hash. Only the first portion of the HashUID is returned.
      */
     public String getContentContextHash(String content) {
