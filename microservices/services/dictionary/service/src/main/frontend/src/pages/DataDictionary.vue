@@ -500,7 +500,7 @@ function handleResize(evt: MouseEvent) {
   const totalDiff = evt.pageX - startX.value;
 
   // apply directly (no accumulation lag)
-  colWidths.value[dragged] = initialWidth.value + totalDiff * 2;
+  colWidths.value[dragged] = initialWidth.value + totalDiff;
 
   // clamp so it doesn’t collapse
   if (colWidths.value[dragged] < 20) {
