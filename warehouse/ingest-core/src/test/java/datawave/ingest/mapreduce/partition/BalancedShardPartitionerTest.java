@@ -88,12 +88,17 @@ public class BalancedShardPartitionerTest {
     @Test
     public void testTwoTablesAreOffsetted() throws Exception {
         // create another split files for this test that contains two tables. register the tables names for both shard and error shard
-        new TestShardGenerator(conf, Files.createDirectory(temporaryFolder.resolve("test-two-tables")).toFile(), NUM_DAYS, SHARDS_PER_DAY, TOTAL_TSERVERS,
-                        TableName.SHARD, TableName.ERROR_SHARD);
+        Path twoTablesDir = Files.createDirectory(temporaryFolder.resolve("test-two-tables"));
+        new TestShardGenerator(conf, twoTablesDir.toFile(), NUM_DAYS, SHARDS_PER_DAY, TOTAL_TSERVERS, TableName.SHARD, TableName.ERROR_SHARD);
         conf.set(ShardedDataTypeHandler.SHARDED_TNAMES, "errorShard,shard");
+        conf.set("datawave.ingest.splits.cache.dir", twoTablesDir.toString());
+        conf.set("datawave.ingest.splits.cache.file", "all-splits.txt");
+
+        TableSplitsCache.clear();
+        SplitsCacheFactory.clearInstance();
+        conf.setBoolean(TableSplitsCache.REFRESH_SPLITS, true);
 
         partitioner.setConf(conf);
-
         // For a shard from today, we can assume that they're well balanced.
         // If offsetting is working, they will not go to the same partitions
         String today = formatDay(0);
@@ -188,7 +193,7 @@ public class BalancedShardPartitionerTest {
         // hashing is the default implementation, so null is passed in
         String tableName = "shard3";
 
-        simulateDifferentNumberShardsPerDay(null, tableName);
+        simulateDifferentNumberShardsPerDay("hash", tableName);
 
         // 1 day ago should get SHARDS_PER_DAY partitions
         assertPartitionsForDay(partitioner, tableName, 1, SHARDS_PER_DAY);
@@ -214,13 +219,9 @@ public class BalancedShardPartitionerTest {
     }
 
     private void simulateDifferentNumberShardsPerDay(String missingShardStrategy, String tableName) throws IOException {
-        // This emulates today, yesterday and the day before have SHARDS_PER_DAY splits and
-        // 3 days ago and 4 days ago only have 2 splits, _0 and _1.
-
         SortedMap<Text,String> locations = new TreeMap<>();
         long now = System.currentTimeMillis();
         int tserverId = 1;
-        Text prevEndRow = new Text();
         for (int daysAgo = 0; daysAgo <= 2; daysAgo++) {
             String day = DateHelper.format(now - (daysAgo * DateUtils.MILLIS_PER_DAY));
             for (int currShard = 0; currShard < SHARDS_PER_DAY; currShard++) {
@@ -233,14 +234,25 @@ public class BalancedShardPartitionerTest {
                 locations.put(new Text(day + "_" + currShard), Integer.toString(tserverId++));
             }
         }
-        new TestShardGenerator(conf, Files.createDirectory(temporaryFolder.resolve("simulated-diff")).toFile(), locations, tableName);
+
+        Path simulatedDiffDir = Files.createDirectory(temporaryFolder.resolve("simulated-diff"));
+        new TestShardGenerator(conf, simulatedDiffDir.toFile(), locations, tableName);
         conf.set(ShardedDataTypeHandler.SHARDED_TNAMES, tableName);
+        conf.set("datawave.ingest.splits.cache.dir", simulatedDiffDir.toString());
+        conf.set("datawave.ingest.splits.cache.file", "all-splits.txt");
+        conf.set(BalancedShardPartitioner.MISSING_SHARD_STRATEGY_PROP, missingShardStrategy);
+
+        // Clear stale cache and force a reload
+        TableSplitsCache.clear();
+        SplitsCacheFactory.clearInstance();
+        conf.setBoolean(TableSplitsCache.REFRESH_SPLITS, true);
+
         partitioner.setConf(conf);
         if (missingShardStrategy != null) {
             conf.set(BalancedShardPartitioner.MISSING_SHARD_STRATEGY_PROP, missingShardStrategy);
         }
-        // check we made enough tservers
-        assertEquals(SHARDS_PER_DAY * 3 + 2 + 2, tserverId - 1); // since it already ++'d for next one
+
+        assertEquals(SHARDS_PER_DAY * 3 + 2 + 2, tserverId - 1);
     }
 
     private void assertPartitionsForDay(BalancedShardPartitioner partioner, String tableName, int daysAgo, int expectedNumOfPartitions) {

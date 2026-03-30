@@ -1,5 +1,7 @@
 package datawave.ingest.mapreduce.job;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -59,7 +61,7 @@ public class SplitsFileTest {
 
         writeBaseSplitsFile(splits, conf, tableName);
         long actualCount = splits.size();
-        Assertions.assertEquals(expectedNumRows, actualCount, "IngestJob#writeSplitsFile failed to create the expected number of rows");
+        assertEquals(expectedNumRows, actualCount, "IngestJob#writeSplitsFile failed to create the expected number of rows");
     }
 
     private void writeBaseSplitsFile(Map<Text,String> locations, Configuration conf, String tableName) throws IOException {

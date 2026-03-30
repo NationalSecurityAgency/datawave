@@ -627,6 +627,9 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
                     if (generateMapFilePerShardLocation) {
                         // Look up the shard location (tablet server serving shard ID rowKey)
                         // If we don't have a location, then just use the rowKey itself.
+                        // in the case we have a shard id that has no split. Let's put this in one "extra" file, if not defined by row key (unit testing).
+                        String fallback = conf.get("shard.fallback.name." + rowKey.toString(), "extra");
+                        shardLocation = splitsCache.getExactLocation(tableName, rowKey, () -> fallback);
                         // in the case we have a shard id that has no split. Lets put this in one "extra" file
                         shardLocation = splitsCache.getExactLocation(tableName, rowKey, () -> "extra");
                     }
