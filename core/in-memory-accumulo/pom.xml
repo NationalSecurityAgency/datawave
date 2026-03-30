@@ -150,7 +150,6 @@
                             </eclipse>
                             <excludes>
                                 <exclude>**/thrift/*.java</exclude>
-                                <exclude>**/tokenize/StandardLexer.java</exclude>
                             </excludes>
                         </java>
                     </configuration>
