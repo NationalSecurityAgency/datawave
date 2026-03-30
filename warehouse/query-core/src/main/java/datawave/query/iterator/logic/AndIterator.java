@@ -383,13 +383,11 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
                 } catch (WaitWindowOverrunException e) {
                     log.debug(id + ": AndIterator.seek() passing through WaitWindowOverrunException: " + e.getMessage());
                     throw e;
-                } catch (RuntimeException e2) {
-                    if (!IterationInterruptedCheck.isIterationInterruptedException(e2)) {
-                        throw e2;
-                    }
-                    // throw IterationInterruptedException as-is with no modifications so the QueryIterator can handle it
-                    throw e2;
                 } catch (Exception e2) {
+                    if (IterationInterruptedCheck.isIterationInterruptedException(e2)) {
+                        // throw IterationInterruptedException as-is with no modifications so the QueryIterator can handle it
+                        throw (RuntimeException) e2;
+                    }
                     if (child.isNonEventField()) {
                         // dropping a non-event term from the query means that the accuracy of the query
                         // cannot be guaranteed. Thus, a fatal exception.
@@ -407,13 +405,11 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
                 // When comparing possible yield keys in the AndIterator, we choose the highest
                 // key because the uids of the sources need to be equal to return a match
                 this.waitWindowObserver.propagateException(null, true, false, e);
-            } catch (RuntimeException re) {
-                if (!IterationInterruptedCheck.isIterationInterruptedException(re)) {
-                    throw re;
-                }
-                // allow the QueryIterator to handle IterationInterruptedExceptions
-                throw re;
             } catch (Exception e) {
+                if (IterationInterruptedCheck.isIterationInterruptedException(e)) {
+                    // allow the QueryIterator to handle IterationInterruptedExceptions
+                    throw (RuntimeException) e;
+                }
                 include.remove();
                 if (includes.isEmpty() || e instanceof DatawaveFatalQueryException) {
                     throw e;
@@ -549,13 +545,11 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
             } catch (WaitWindowOverrunException wwoe) {
                 log.debug(id + ": AndIterator.advanceIterators() passing through WaitWindowOverrunException: " + wwoe.getMessage());
                 throw wwoe;
-            } catch (RuntimeException re) {
-                if (!IterationInterruptedCheck.isIterationInterruptedException(re)) {
-                    throw re;
-                }
-                // allow the QueryIterator to handle IterationInterruptedExceptions
-                throw re;
             } catch (Exception e) {
+                if (IterationInterruptedCheck.isIterationInterruptedException(e)) {
+                    // allow the QueryIterator to handle IterationInterruptedExceptions
+                    throw (RuntimeException) e;
+                }
                 seenException = true;
                 if (itr.isNonEventField()) {
                     // dropping a non-event term from the query means that the accuracy of the query
