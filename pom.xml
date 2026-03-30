@@ -1905,6 +1905,22 @@
                                 <fail>true</fail>
                             </configuration>
                         </execution>
+                        <execution>
+                            <id>enforce-junit-conventions</id>
+                            <goals>
+                                <goal>enforce</goal>
+                            </goals>
+                            <phase>process-sources</phase>
+                            <configuration>
+                                <rules>
+                                    <restrictImports>
+                                        <!-- Do not allow qualified static access in code, i.e. Assertions.assertEquals -->
+                                        <reason>Use static imports for JUnit assertions</reason>
+                                        <bannedImport>org.junit.jupiter.api.Assertions</bannedImport>
+                                    </restrictImports>
+                                </rules>
+                            </configuration>
+                        </execution>
                     </executions>
                 </plugin>
                 <plugin>

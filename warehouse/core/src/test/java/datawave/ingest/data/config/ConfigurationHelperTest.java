@@ -1,10 +1,14 @@
 package datawave.ingest.data.config;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.util.List;
 import java.util.Objects;
 
 import org.apache.hadoop.conf.Configuration;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 class ConfigurationHelperTest {
@@ -16,7 +20,7 @@ class ConfigurationHelperTest {
     void testGetIncrementalInstancesWithNoMatchFound() {
         Configuration conf = new Configuration();
         List<TestInterface> actual = ConfigurationHelper.getIndexedInstances(conf, "test.instance", TestInterface.class, 1);
-        Assertions.assertTrue(actual.isEmpty());
+        assertTrue(actual.isEmpty());
     }
 
     /**
@@ -34,7 +38,7 @@ class ConfigurationHelperTest {
 
         List<TestInterface> expected = List.of(new ValidImpl("FOO"), new ValidImpl("BAR"), new ValidImpl("HAT"));
         List<TestInterface> actual = ConfigurationHelper.getIndexedInstances(conf, "test.instance", TestInterface.class, 1);
-        Assertions.assertEquals(expected, actual);
+        assertEquals(expected, actual);
     }
 
     /**
@@ -54,7 +58,7 @@ class ConfigurationHelperTest {
 
         List<TestInterface> expected = List.of(new ValidImpl("HAT"), new ValidImpl("BOT"));
         List<TestInterface> actual = ConfigurationHelper.getIndexedInstances(conf, "test.instance", TestInterface.class, 3);
-        Assertions.assertEquals(expected, actual);
+        assertEquals(expected, actual);
     }
 
     /**
@@ -66,9 +70,9 @@ class ConfigurationHelperTest {
         conf.set("test.instance.1", String.class.getName());
         conf.set("test.instance.1.name", "BAR");
 
-        RuntimeException exception = Assertions.assertThrows(RuntimeException.class,
+        RuntimeException exception = assertThrows(RuntimeException.class,
                         () -> ConfigurationHelper.getIndexedInstances(conf, "test.instance", TestInterface.class, 1));
-        Assertions.assertEquals("class java.lang.String cannot be cast to interface datawave.ingest.data.config.ConfigurationHelperTest$TestInterface",
+        assertEquals("class java.lang.String cannot be cast to interface datawave.ingest.data.config.ConfigurationHelperTest$TestInterface",
                         exception.getMessage());
     }
 
@@ -82,11 +86,11 @@ class ConfigurationHelperTest {
         conf.set("test.instance.1", MissingConstructorImpl.class.getName());
         conf.set("test.instance.1.name", "FOO");
 
-        RuntimeException exception = Assertions.assertThrows(RuntimeException.class,
+        RuntimeException exception = assertThrows(RuntimeException.class,
                         () -> ConfigurationHelper.getIndexedInstances(conf, "test.instance", TestInterface.class, 1));
-        Assertions.assertEquals("Failed to invoke constructor MissingConstructorImpl(class org.apache.hadoop.conf.Configuration, class java.lang.String)",
+        assertEquals("Failed to invoke constructor MissingConstructorImpl(class org.apache.hadoop.conf.Configuration, class java.lang.String)",
                         exception.getMessage());
-        Assertions.assertInstanceOf(NoSuchMethodException.class, exception.getCause());
+        assertInstanceOf(NoSuchMethodException.class, exception.getCause());
     }
 
     /**
