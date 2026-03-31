@@ -294,10 +294,7 @@ const system = ref<System>();
 const helpMenu = ref<Menu>();
 const search = ref('');
 let rows: QTableProps['rows'] = [];
-const paginationFront = ref({
-  rowsPerPage: 200,
-  sortBy: 'fieldName',
-});
+const paginationFront = ref({ rowsPerPage: 200, sortBy: 'fieldName', });
 const resizingCol = ref<string | null>(null);
 const startX = ref(0);
 const colWidths = ref<Record<string, number>>({});
@@ -479,37 +476,45 @@ function waitUp() {
   filter.value = changeFilter.value;
 }
 
+// Resizing Logic - Handles the column resizing by tracking mouse movements and adjusting column widths.
 const initialWidth = ref(0);
 function startResizing(colName: string, evt: MouseEvent) {
+  // 1 - Set the column being resized and the initial mouse position
   resizingCol.value = colName;
   startX.value = evt.pageX;
 
-  // store initial width of this column
+  // 2 - Store the initial width of the column being resized
   initialWidth.value = colWidths.value[colName];
 
+  // 3 - Add event listeners to track mouse movement and when the user releases the mouse button
   document.addEventListener('mousemove', handleResize);
   document.addEventListener('mouseup', stopResizing);
 }
 
+// Resizing Handler - This function is called whenever the mouse moves while resizing a column.
 function handleResize(evt: MouseEvent) {
   if (!resizingCol.value) return;
 
+  // 1 - Determines which column is being dragged
   const dragged = resizingCol.value;
 
-  // TOTAL distance from where drag started
+  // 2 - Calculate how far the mouse has moved from the initial position
+  // Quick Note: This can be multiplied by a factor (e.g. 0.5 or 2) to slow down or increase the resizing speed.
   const totalDiff = evt.pageX - startX.value;
 
-  // apply directly (no accumulation lag)
+  // 3 - Update the width of dragged column based on initial width (no accumulation lag)
   colWidths.value[dragged] = initialWidth.value + totalDiff;
 
-  // clamp so it doesn’t collapse
+  // 4 - Clamp the column width to a minimum value (e.g. 20px) to prevent it from becoming too small
   if (colWidths.value[dragged] < 20) {
     colWidths.value[dragged] = 20;
   }
 
+  // 5 - Trigger a refresh of the table to apply the new column widths
   table.value?.refresh();
 }
 
+// Stop Resizing - Called when the user releases the mouse button (they have finished resizing the column).
 function stopResizing() {
   document.removeEventListener('mousemove', handleResize);
   document.removeEventListener('mouseup', stopResizing);

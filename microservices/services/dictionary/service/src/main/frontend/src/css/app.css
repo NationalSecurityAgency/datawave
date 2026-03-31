@@ -56,13 +56,15 @@
   text-align: center;
 }
 
+/* This allows text overflow and wrapping (for long descriptions) */
 .q-table th,
 .q-table td {
-  white-space: nowrap !important;    /* don’t wrap text */
-  overflow: hidden !important;       /* hide overflowing content */
-  text-overflow: clip !important;    /* don’t add ellipsis, just cut */
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: clip !important;
 }
 
+/* Styles for the resizable column handle and the hovering effect */
 .resize-handle {
   cursor: col-resize;
   width: 6px;
@@ -74,9 +76,8 @@
   z-index: 10;
 }
 
-/* show something on hover */
 .resize-handle:hover {
-  background-color: rgba(0, 188, 212, 0.5); /* bright blue on hover */
+  background-color: rgba(0, 188, 212, 0.5);
 }
 
 ::-webkit-scrollbar {
