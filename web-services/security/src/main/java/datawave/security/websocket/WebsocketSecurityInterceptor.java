@@ -71,7 +71,7 @@ public class WebsocketSecurityInterceptor {
     }
 
     protected void setSubjectInfo(final Principal principal, final Subject subject, final Object credential) {
-        log.trace("enter: setSubjectInfo(Principal, Subject, Object)");
+        log.trace("enter: setSubjectInfo(Principal, Subject, Object), principal=" + principal + ", subject=" + subject + ", credential=" + credential);
         SecurityContext securityContext = SecurityContextAssociation.getSecurityContext();
         Role roleGroup = getRoleGroup(subject);
         Identity identity = CredentialIdentityFactory.createIdentity(principal, credential, roleGroup);

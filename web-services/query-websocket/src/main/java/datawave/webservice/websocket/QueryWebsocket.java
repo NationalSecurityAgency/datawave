@@ -63,16 +63,21 @@ public class QueryWebsocket {
 
     @OnOpen
     public void openConnection(@PathParam("logic-name") String logicName, Session session) throws IOException {
+        log.trace("enter: openConnection({}, {})", logicName, session.getId());
         session.getUserProperties().put(LOGIC_NAME, logicName);
+        log.trace("exit: openConnection({})", session.getId());
     }
 
     @OnClose
     public void closeConnection(Session session) throws IOException {
+        log.trace("enter: closeConnection({})", session.getId());
         cancelActiveQuery(session);
+        log.trace("exit: closeConnection({})", session.getId());
     }
 
     @OnMessage
     public void handleMessage(final Session session, QueryMessage message) {
+        log.trace("enter: handleMessage({}, {})", session.getId(), message.getType());
         switch (message.getType()) {
             case CREATE: {
                 if (session.getUserProperties().get(ACTIVE_QUERY_FUTURE) != null) {
@@ -101,6 +106,7 @@ public class QueryWebsocket {
             }
                 break;
         }
+        log.trace("exit: handleMessage({})", session.getId());
     }
 
     protected void cancelActiveQuery(Session session) {
