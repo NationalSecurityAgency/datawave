@@ -89,16 +89,19 @@ public class UniqueTransformMaxUniqueCountTest extends UniqueTransformTest {
     @Test
     public void testMaxCountOfThree() {
         uniqueFields.setMaxCount(3);
-
-        givenInputDocument().withKeyValue("ATTR0", randomValues.get(0)).isExpectedToBeUnique();
+        
+        // The following combinations should not be included in results because they occur more than 3 times:
+        // attr4 - value 4
+        
+        givenInputDocument().withKeyValue("ATTR0", randomValues.get(0)).isExpectedToBeUnique(); // The first one should be returned.
         givenInputDocument().withKeyValue("ATTR0", randomValues.get(0));
-        givenInputDocument().withKeyValue("ATTR0", randomValues.get(1)).isExpectedToBeUnique();
-        givenInputDocument().withKeyValue("Attr1", randomValues.get(2)).isExpectedToBeUnique();
+        givenInputDocument().withKeyValue("ATTR0", randomValues.get(1)).isExpectedToBeUnique(); // The first one should be returned.
+        givenInputDocument().withKeyValue("Attr1", randomValues.get(2)).isExpectedToBeUnique(); // The first one should be returned.
         givenInputDocument().withKeyValue("Attr1", randomValues.get(2));
         givenInputDocument().withKeyValue("Attr1", randomValues.get(2));
-        givenInputDocument().withKeyValue("Attr1", randomValues.get(3)).isExpectedToBeUnique();
-        givenInputDocument().withKeyValue("attr2", randomValues.get(0)).isExpectedToBeUnique();
-        givenInputDocument().withKeyValue("attr2", randomValues.get(4)); // Should not be included in results.
+        givenInputDocument().withKeyValue("Attr1", randomValues.get(3)).isExpectedToBeUnique();  // The first one should be returned.
+        givenInputDocument().withKeyValue("attr2", randomValues.get(0)).isExpectedToBeUnique();  // The first one should be returned.
+        givenInputDocument().withKeyValue("attr2", randomValues.get(4));
         givenInputDocument().withKeyValue("attr2", randomValues.get(4));
         givenInputDocument().withKeyValue("attr2", randomValues.get(4));
         givenInputDocument().withKeyValue("attr2", randomValues.get(4));
@@ -107,7 +110,36 @@ public class UniqueTransformMaxUniqueCountTest extends UniqueTransformTest {
 
         assertUniqueDocuments();
     }
-
+    
+    /**
+     * Verify that when the max count is set to one, and we specify most recent unique, only truly unique records are included in the final result, and it is
+     * always the most recent unique document.
+     */
+    @Test
+    public void testMaxCountOfOneCombinedWithMostRecentUnique() {
+        uniqueFields.setMaxCount(1);
+        uniqueFields.setMostRecent(true);
+        
+        // The following combinations should not be included in results because they occur more than once:
+        // ATTR0 - value 0
+        // Attr1 - value 2
+        // attr2 - value 4
+        
+        givenInputDocument(1).withKeyValue("ATTR0", randomValues.get(0));
+        givenInputDocument(2).withKeyValue("ATTR0", randomValues.get(0));
+        givenInputDocument(3).withKeyValue("ATTR0", randomValues.get(1)).isExpectedToBeUnique(); // The most recent one should be returned.
+        givenInputDocument(1).withKeyValue("Attr1", randomValues.get(2));
+        givenInputDocument(2).withKeyValue("Attr1", randomValues.get(2));
+        givenInputDocument(3).withKeyValue("Attr1", randomValues.get(3)).isExpectedToBeUnique(); // The most recent one should be returned.
+        givenInputDocument(1).withKeyValue("attr2", randomValues.get(0)).isExpectedToBeUnique(); // The most recent one should be returned.
+        givenInputDocument(2).withKeyValue("attr2", randomValues.get(4));
+        givenInputDocument(3).withKeyValue("attr2", randomValues.get(4));
+        
+        givenValueTransformerForFields(TemporalGranularity.ALL, "attr0", "Attr1", "ATTR2");
+        
+        assertUniqueDocuments();
+    }
+    
     /**
      * Verify that we have a max count, and we specify most recent unique, that only the most recent unique document is included.
      */
@@ -116,18 +148,29 @@ public class UniqueTransformMaxUniqueCountTest extends UniqueTransformTest {
         uniqueFields.setMaxCount(3);
         uniqueFields.setMostRecent(true);
 
+        // The following combinations should not be included in results because they occur more than 3 times:
+        // ATTR0 - value 0
+        // Attr1 - value 2
+        // attr2 - value 4
+        
         givenInputDocument(1).withKeyValue("ATTR0", randomValues.get(0));
-        givenInputDocument(2).withKeyValue("ATTR0", randomValues.get(0)).isExpectedToBeUnique();
-        givenInputDocument(3).withKeyValue("ATTR0", randomValues.get(1)).isExpectedToBeUnique();
+        givenInputDocument(2).withKeyValue("ATTR0", randomValues.get(1));
+        givenInputDocument(3).withKeyValue("ATTR0", randomValues.get(1));
+        givenInputDocument(4).withKeyValue("ATTR0", randomValues.get(0)).isExpectedToBeUnique(); // The most recent one should be returned.
+        givenInputDocument(5).withKeyValue("ATTR0", randomValues.get(1));
+        givenInputDocument(6).withKeyValue("ATTR0", randomValues.get(1));
         givenInputDocument(1).withKeyValue("Attr1", randomValues.get(2));
         givenInputDocument(2).withKeyValue("Attr1", randomValues.get(2));
-        givenInputDocument(3).withKeyValue("Attr1", randomValues.get(2)).isExpectedToBeUnique();
-        givenInputDocument(4).withKeyValue("Attr1", randomValues.get(3)).isExpectedToBeUnique();
+        givenInputDocument(3).withKeyValue("Attr1", randomValues.get(2));
+        givenInputDocument(4).withKeyValue("Attr1", randomValues.get(3));
+        givenInputDocument(5).withKeyValue("Attr1", randomValues.get(2));
+        givenInputDocument(6).withKeyValue("Attr1", randomValues.get(2));
+        givenInputDocument(7).withKeyValue("Attr1", randomValues.get(3)).isExpectedToBeUnique(); // The most recent one should be returned.
         givenInputDocument(1).withKeyValue("attr2", randomValues.get(4));
         givenInputDocument(2).withKeyValue("attr2", randomValues.get(4));
-        givenInputDocument(3).withKeyValue("attr2", randomValues.get(0)).isExpectedToBeUnique();
+        givenInputDocument(3).withKeyValue("attr2", randomValues.get(0)).isExpectedToBeUnique(); // The most recent one should be returned.
         givenInputDocument(4).withKeyValue("attr2", randomValues.get(4));
-        givenInputDocument(5).withKeyValue("attr2", randomValues.get(4)); // Should not be included in results.
+        givenInputDocument(5).withKeyValue("attr2", randomValues.get(4));
 
         givenValueTransformerForFields(TemporalGranularity.ALL, "attr0", "Attr1", "ATTR2");
 
