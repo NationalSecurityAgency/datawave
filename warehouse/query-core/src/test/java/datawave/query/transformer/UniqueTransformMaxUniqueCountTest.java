@@ -89,18 +89,18 @@ public class UniqueTransformMaxUniqueCountTest extends UniqueTransformTest {
     @Test
     public void testMaxCountOfThree() {
         uniqueFields.setMaxCount(3);
-        
+
         // The following combinations should not be included in results because they occur more than 3 times:
         // attr4 - value 4
-        
+
         givenInputDocument().withKeyValue("ATTR0", randomValues.get(0)).isExpectedToBeUnique(); // The first one should be returned.
         givenInputDocument().withKeyValue("ATTR0", randomValues.get(0));
         givenInputDocument().withKeyValue("ATTR0", randomValues.get(1)).isExpectedToBeUnique(); // The first one should be returned.
         givenInputDocument().withKeyValue("Attr1", randomValues.get(2)).isExpectedToBeUnique(); // The first one should be returned.
         givenInputDocument().withKeyValue("Attr1", randomValues.get(2));
         givenInputDocument().withKeyValue("Attr1", randomValues.get(2));
-        givenInputDocument().withKeyValue("Attr1", randomValues.get(3)).isExpectedToBeUnique();  // The first one should be returned.
-        givenInputDocument().withKeyValue("attr2", randomValues.get(0)).isExpectedToBeUnique();  // The first one should be returned.
+        givenInputDocument().withKeyValue("Attr1", randomValues.get(3)).isExpectedToBeUnique(); // The first one should be returned.
+        givenInputDocument().withKeyValue("attr2", randomValues.get(0)).isExpectedToBeUnique(); // The first one should be returned.
         givenInputDocument().withKeyValue("attr2", randomValues.get(4));
         givenInputDocument().withKeyValue("attr2", randomValues.get(4));
         givenInputDocument().withKeyValue("attr2", randomValues.get(4));
@@ -110,7 +110,7 @@ public class UniqueTransformMaxUniqueCountTest extends UniqueTransformTest {
 
         assertUniqueDocuments();
     }
-    
+
     /**
      * Verify that when the max count is set to one, and we specify most recent unique, only truly unique records are included in the final result, and it is
      * always the most recent unique document.
@@ -119,12 +119,12 @@ public class UniqueTransformMaxUniqueCountTest extends UniqueTransformTest {
     public void testMaxCountOfOneCombinedWithMostRecentUnique() {
         uniqueFields.setMaxCount(1);
         uniqueFields.setMostRecent(true);
-        
+
         // The following combinations should not be included in results because they occur more than once:
         // ATTR0 - value 0
         // Attr1 - value 2
         // attr2 - value 4
-        
+
         givenInputDocument(1).withKeyValue("ATTR0", randomValues.get(0));
         givenInputDocument(2).withKeyValue("ATTR0", randomValues.get(0));
         givenInputDocument(3).withKeyValue("ATTR0", randomValues.get(1)).isExpectedToBeUnique(); // The most recent one should be returned.
@@ -134,12 +134,12 @@ public class UniqueTransformMaxUniqueCountTest extends UniqueTransformTest {
         givenInputDocument(1).withKeyValue("attr2", randomValues.get(0)).isExpectedToBeUnique(); // The most recent one should be returned.
         givenInputDocument(2).withKeyValue("attr2", randomValues.get(4));
         givenInputDocument(3).withKeyValue("attr2", randomValues.get(4));
-        
+
         givenValueTransformerForFields(TemporalGranularity.ALL, "attr0", "Attr1", "ATTR2");
-        
+
         assertUniqueDocuments();
     }
-    
+
     /**
      * Verify that we have a max count, and we specify most recent unique, that only the most recent unique document is included.
      */
@@ -152,7 +152,7 @@ public class UniqueTransformMaxUniqueCountTest extends UniqueTransformTest {
         // ATTR0 - value 0
         // Attr1 - value 2
         // attr2 - value 4
-        
+
         givenInputDocument(1).withKeyValue("ATTR0", randomValues.get(0));
         givenInputDocument(2).withKeyValue("ATTR0", randomValues.get(1));
         givenInputDocument(3).withKeyValue("ATTR0", randomValues.get(1));
