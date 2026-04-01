@@ -4,6 +4,8 @@ import static datawave.data.ColumnFamilyConstants.COLF_F;
 import static datawave.query.util.TestUtils.createDateFrequencyMap;
 import static datawave.query.util.TestUtils.createRangedDateFrequencyMap;
 import static org.apache.accumulo.core.iterators.LongCombiner.VAR_LEN_ENCODER;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
@@ -36,7 +38,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableUtils;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -192,7 +193,7 @@ class IndexFieldHoleTest {
 
             HashMap<String,Long> actual = helper.getCountsByFieldInDayWithTypes(new AbstractMap.SimpleEntry<>("NAME", "20200110"));
 
-            Assertions.assertEquals(expected, actual);
+            assertEquals(expected, actual);
         }
 
         /**
@@ -216,7 +217,7 @@ class IndexFieldHoleTest {
 
             HashMap<String,Long> actual = helper.getCountsByFieldInDayWithTypes(new AbstractMap.SimpleEntry<>("NAME", "20200102"));
 
-            Assertions.assertEquals(expected, actual);
+            assertEquals(expected, actual);
         }
 
         /**
@@ -246,7 +247,7 @@ class IndexFieldHoleTest {
 
             HashMap<String,Long> actual = helper.getCountsByFieldInDayWithTypes(new AbstractMap.SimpleEntry<>("NAME", "20200102"));
 
-            Assertions.assertEquals(expected, actual);
+            assertEquals(expected, actual);
         }
     }
 
@@ -346,7 +347,7 @@ class IndexFieldHoleTest {
 
             // Verify that no index holes were found.
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
-            Assertions.assertTrue(IndexFieldHoles.isEmpty());
+            assertTrue(IndexFieldHoles.isEmpty());
         }
 
         /**
@@ -364,7 +365,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(createIndexFieldHole("NAME", "wiki", dateRange("20200101", "20200105")));
             // @formatter:off
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -383,7 +384,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(createIndexFieldHole("NAME", "wiki", dateRange("20200101", "20200105")));
             // @formatter:off
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -402,7 +403,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(createIndexFieldHole("NAME", "wiki", dateRange("20200101", "20200103")));
             // @formatter:off
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -423,7 +424,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(createIndexFieldHole("NAME", "wiki", dateRange("20200101", "20200103")));
             // @formatter:off
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -442,7 +443,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(createIndexFieldHole("NAME", "wiki", dateRange("20200103", "20200105")));
             // @formatter:off
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -463,7 +464,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(createIndexFieldHole("NAME", "wiki", dateRange("20200103", "20200105")));
             // @formatter:off
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -485,7 +486,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(createIndexFieldHole("NAME", "wiki", dateRange("20200101", "20200109")));
             // @formatter:off
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -507,7 +508,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(createIndexFieldHole("NAME", "wiki", dateRange("20200104", "20200106")));
             // @formatter:off
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -529,7 +530,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(createIndexFieldHole("NAME", "wiki", dateRange("20200104", "20200106")));
             // @formatter:off
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -551,7 +552,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(createIndexFieldHole("NAME", "wiki", dateRange("20200104", "20200106")));
             // @formatter:off
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         @ParameterizedTest
@@ -569,7 +570,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(createIndexFieldHole("NAME", "wiki", dateRange("20200104", "20200106")));
             // @formatter:off
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -603,7 +604,7 @@ class IndexFieldHoleTest {
                     createIndexFieldHole("URI", "maze", dateRange("20200221", "20200221"), dateRange("20200303", "20200303"),
                             dateRange("20200316", "20200316")));
             // @formatter:on
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -625,7 +626,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(createIndexFieldHole("NAME", "wiki", dateRange("20200104", "20200106")));
             // @formatter:off
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -648,7 +649,7 @@ class IndexFieldHoleTest {
                                             dateRange("20200114", "20200116"),
                                             dateRange("20200119", "20200120")));
             // @formatter:on
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -675,7 +676,7 @@ class IndexFieldHoleTest {
                                             dateRange("20200114", "20200116"),
                                             dateRange("20200119", "20200120")));
             // @formatter:on
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -696,7 +697,7 @@ class IndexFieldHoleTest {
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(
                             createIndexFieldHole("NAME", "wiki", dateRange("20200103", "20200105")));
             // @formatter:on
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -718,7 +719,7 @@ class IndexFieldHoleTest {
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(
                             createIndexFieldHole("NAME", "wiki", dateRange("20200103", "20200105")));
             // @formatter:on
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -738,7 +739,7 @@ class IndexFieldHoleTest {
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(
                             createIndexFieldHole("NAME", "wiki", dateRange("20200104", "20200112")));
             // @formatter:on
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -760,7 +761,7 @@ class IndexFieldHoleTest {
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(
                             createIndexFieldHole("NAME", "wiki", dateRange("20200104", "20200112")));
             // @formatter:on
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -783,7 +784,7 @@ class IndexFieldHoleTest {
                             createIndexFieldHole("EVENT_DATE", "wiki", dateRange("20200120", "20200125")),
                             createIndexFieldHole("URI", "maze", dateRange("20200216", "20200328")));
             // @formatter:on
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -810,7 +811,7 @@ class IndexFieldHoleTest {
                             createIndexFieldHole("EVENT_DATE", "wiki", dateRange("20200120", "20200125")),
                             createIndexFieldHole("URI", "maze", dateRange("20200216", "20200328")));
             // @formatter:on
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -848,7 +849,7 @@ class IndexFieldHoleTest {
                             createIndexFieldHole("URI", "maze", dateRange("20200221", "20200221"), dateRange("20200303", "20200303"),
                                             dateRange("20200316", "20200316")));
             // @formatter:on
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -894,7 +895,7 @@ class IndexFieldHoleTest {
                             createIndexFieldHole("URI", "maze", dateRange("20200221", "20200221"), dateRange("20200303", "20200303"),
                                             dateRange("20200316", "20200316")));
             // @formatter:on
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -937,7 +938,7 @@ class IndexFieldHoleTest {
                             createIndexFieldHole("URI", "maze", dateRange("20200221", "20200221"), dateRange("20200303", "20200303"),
                                             dateRange("20200316", "20200316")));
             // @formatter:on
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -982,7 +983,7 @@ class IndexFieldHoleTest {
                             createIndexFieldHole("URI", "maze", dateRange("20200221", "20200221"), dateRange("20200303", "20200303"),
                                             dateRange("20200316", "20200316")));
             // @formatter:on
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -1025,7 +1026,7 @@ class IndexFieldHoleTest {
                             createIndexFieldHole("NAME", "wiki", dateRange("20200103", "20200103"), dateRange("20200105", "20200105")),
                             createIndexFieldHole("NAME", "csv", dateRange("20200110", "20200110"), dateRange("20200113", "20200113")));
             // @formatter:on
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -1077,7 +1078,7 @@ class IndexFieldHoleTest {
                             createIndexFieldHole("URI", "maze", dateRange("20200221", "20200221"), dateRange("20200303", "20200303"),
                                             dateRange("20200316", "20200316")));
             // @formatter:on
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -1146,7 +1147,7 @@ class IndexFieldHoleTest {
                             createIndexFieldHole("EVENT_DATE", "wiki", dateRange("20200122", "20200122")),
                             createIndexFieldHole("ZETA", "csv", dateRange("20200122", "20200122")));
             // @formatter:on
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -1215,7 +1216,7 @@ class IndexFieldHoleTest {
                             createIndexFieldHole("NAME", "wiki", dateRange("20200103", "20200103"), dateRange("20200105", "20200105")),
                             createIndexFieldHole("ZETA", "csv", dateRange("20200122", "20200122")));
             // @formatter:on
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
     }
 
@@ -1249,7 +1250,7 @@ class IndexFieldHoleTest {
 
             // Verify that no index holes were found.
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
-            Assertions.assertTrue(IndexFieldHoles.isEmpty());
+            assertTrue(IndexFieldHoles.isEmpty());
         }
 
         /**
@@ -1267,7 +1268,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(createIndexFieldHole("NAME", "wiki", dateRange("20200101", "20200105")));
             // @formatter:off
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -1286,7 +1287,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(createIndexFieldHole("NAME", "wiki", dateRange("20200101", "20200105")));
             // @formatter:off
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -1305,7 +1306,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(createIndexFieldHole("NAME", "wiki", dateRange("20200101", "20200103")));
             // @formatter:off
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -1325,7 +1326,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(createIndexFieldHole("NAME", "wiki", dateRange("20200101", "20200103")));
             // @formatter:off
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -1344,7 +1345,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(createIndexFieldHole("NAME", "wiki", dateRange("20200103", "20200105")));
             // @formatter:off
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -1364,7 +1365,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(createIndexFieldHole("NAME", "wiki", dateRange("20200103", "20200105")));
             // @formatter:off
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -1386,7 +1387,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(createIndexFieldHole("NAME", "wiki", dateRange("20200101", "20200109")));
             // @formatter:off
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -1408,7 +1409,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(createIndexFieldHole("NAME", "wiki", dateRange("20200104", "20200106")));
             // @formatter:off
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -1430,7 +1431,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(createIndexFieldHole("NAME", "wiki", dateRange("20200104", "20200106")));
             // @formatter:off
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -1452,7 +1453,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(createIndexFieldHole("NAME", "wiki", dateRange("20200104", "20200106")));
             // @formatter:off
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         @ParameterizedTest
@@ -1470,7 +1471,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(createIndexFieldHole("NAME", "wiki", dateRange("20200104", "20200106")));
             // @formatter:off
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -1489,7 +1490,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(createIndexFieldHole("NAME", "wiki", dateRange("20200104", "20200106")));
             // @formatter:off
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -1509,7 +1510,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(createIndexFieldHole("NAME", "wiki", dateRange("20200104", "20200106")));
             // @formatter:off
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -1529,7 +1530,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(createIndexFieldHole("NAME", "wiki", dateRange("20200104", "20200106")));
             // @formatter:off
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -1550,7 +1551,7 @@ class IndexFieldHoleTest {
                                             dateRange("20200114", "20200116"),
                                             dateRange("20200119", "20200120")));
             // @formatter:on
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -1572,7 +1573,7 @@ class IndexFieldHoleTest {
                                             dateRange("20200114", "20200116"),
                                             dateRange("20200119", "20200120")));
             // @formatter:on
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -1593,7 +1594,7 @@ class IndexFieldHoleTest {
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(
                             createIndexFieldHole("NAME", "wiki", dateRange("20200103", "20200105")));
             // @formatter:on
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -1614,7 +1615,7 @@ class IndexFieldHoleTest {
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(
                             createIndexFieldHole("NAME", "wiki", dateRange("20200103", "20200105")));
             // @formatter:on
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -1632,7 +1633,7 @@ class IndexFieldHoleTest {
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(
                             createIndexFieldHole("NAME", "wiki", dateRange("20200104", "20200112")));
             // @formatter:on
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -1651,7 +1652,7 @@ class IndexFieldHoleTest {
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(
                             createIndexFieldHole("NAME", "wiki", dateRange("20200104", "20200112")));
             // @formatter:on
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -1674,7 +1675,7 @@ class IndexFieldHoleTest {
                             createIndexFieldHole("EVENT_DATE", "wiki", dateRange("20200120", "20200125")),
                             createIndexFieldHole("URI", "maze", dateRange("20200216", "20200328")));
             // @formatter:on
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -1701,7 +1702,7 @@ class IndexFieldHoleTest {
                             createIndexFieldHole("EVENT_DATE", "wiki", dateRange("20200120", "20200125")),
                             createIndexFieldHole("URI", "maze", dateRange("20200216", "20200328")));
             // @formatter:on
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -1734,7 +1735,7 @@ class IndexFieldHoleTest {
                             createIndexFieldHole("URI", "maze", dateRange("20200221", "20200221"), dateRange("20200303", "20200303"),
                                             dateRange("20200316", "20200316")));
             // @formatter:on
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -1770,7 +1771,7 @@ class IndexFieldHoleTest {
                             createIndexFieldHole("URI", "maze", dateRange("20200221", "20200221"), dateRange("20200303", "20200303"),
                                             dateRange("20200316", "20200316")));
             // @formatter:on
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -1806,7 +1807,7 @@ class IndexFieldHoleTest {
                             createIndexFieldHole("URI", "maze", dateRange("20200221", "20200221"), dateRange("20200303", "20200303"),
                                             dateRange("20200316", "20200316")));
             // @formatter:on
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -1844,7 +1845,7 @@ class IndexFieldHoleTest {
                             createIndexFieldHole("URI", "maze", dateRange("20200221", "20200221"), dateRange("20200303", "20200303"),
                                             dateRange("20200316", "20200316")));
             // @formatter:on
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -1880,7 +1881,7 @@ class IndexFieldHoleTest {
                             createIndexFieldHole("NAME", "wiki", dateRange("20200103", "20200103"), dateRange("20200105", "20200105")),
                             createIndexFieldHole("NAME", "csv", dateRange("20200110", "20200110"), dateRange("20200113", "20200113")));
             // @formatter:on
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -1921,7 +1922,7 @@ class IndexFieldHoleTest {
                             createIndexFieldHole("URI", "maze", dateRange("20200221", "20200221"), dateRange("20200303", "20200303"),
                                             dateRange("20200316", "20200316")));
             // @formatter:on
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -1975,7 +1976,7 @@ class IndexFieldHoleTest {
                             createIndexFieldHole("EVENT_DATE", "wiki", dateRange("20200122", "20200122")),
                             createIndexFieldHole("ZETA", "csv", dateRange("20200122", "20200122")));
             // @formatter:on
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -2029,7 +2030,7 @@ class IndexFieldHoleTest {
                             createIndexFieldHole("NAME", "wiki", dateRange("20200103", "20200103"), dateRange("20200105", "20200105")),
                             createIndexFieldHole("ZETA", "csv", dateRange("20200122", "20200122")));
             // @formatter:on
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
     }
 
@@ -2065,7 +2066,7 @@ class IndexFieldHoleTest {
 
             // Verify that no index holes were found.
             Map<String,Map<String,IndexFieldHole>> IndexFieldHoles = getIndexHoleFunction(cf).get();
-            Assertions.assertTrue(IndexFieldHoles.isEmpty());
+            assertTrue(IndexFieldHoles.isEmpty());
         }
 
         /**
@@ -2084,7 +2085,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(createIndexFieldHole("NAME", "wiki", dateRange("20200101", "20200105")));
             // @formatter:off
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -2104,7 +2105,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(createIndexFieldHole("NAME", "wiki", dateRange("20200101", "20200105")));
             // @formatter:off
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -2124,7 +2125,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(createIndexFieldHole("NAME", "wiki", dateRange("20200101", "20200103")));
             // @formatter:off
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -2145,7 +2146,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(createIndexFieldHole("NAME", "wiki", dateRange("20200101", "20200103")));
             // @formatter:off
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -2164,7 +2165,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(createIndexFieldHole("NAME", "wiki", dateRange("20200103", "20200105")));
             // @formatter:off
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -2185,7 +2186,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(createIndexFieldHole("NAME", "wiki", dateRange("20200103", "20200105")));
             // @formatter:off
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -2207,7 +2208,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(createIndexFieldHole("NAME", "wiki", dateRange("20200101", "20200109")));
             // @formatter:off
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -2229,7 +2230,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(createIndexFieldHole("NAME", "wiki", dateRange("20200104", "20200106")));
             // @formatter:off
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -2251,7 +2252,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(createIndexFieldHole("NAME", "wiki", dateRange("20200104", "20200106")));
             // @formatter:off
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -2273,7 +2274,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(createIndexFieldHole("NAME", "wiki", dateRange("20200104", "20200106")));
             // @formatter:off
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         @ParameterizedTest
@@ -2291,7 +2292,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(createIndexFieldHole("NAME", "wiki", dateRange("20200104", "20200106")));
             // @formatter:off
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -2311,7 +2312,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(createIndexFieldHole("NAME", "wiki", dateRange("20200104", "20200106")));
             // @formatter:off
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -2332,7 +2333,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(createIndexFieldHole("NAME", "wiki", dateRange("20200104", "20200106")));
             // @formatter:off
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -2354,7 +2355,7 @@ class IndexFieldHoleTest {
             // @formatter:on
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(createIndexFieldHole("NAME", "wiki", dateRange("20200104", "20200106")));
             // @formatter:off
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -2378,7 +2379,7 @@ class IndexFieldHoleTest {
                                             dateRange("20200114", "20200116"),
                                             dateRange("20200119", "20200120")));
             // @formatter:on
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -2403,7 +2404,7 @@ class IndexFieldHoleTest {
                                             dateRange("20200114", "20200116"),
                                             dateRange("20200119", "20200120")));
             // @formatter:on
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -2424,7 +2425,7 @@ class IndexFieldHoleTest {
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(
                             createIndexFieldHole("NAME", "wiki", dateRange("20200103", "20200105")));
             // @formatter:on
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -2446,7 +2447,7 @@ class IndexFieldHoleTest {
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(
                             createIndexFieldHole("NAME", "wiki", dateRange("20200103", "20200105")));
             // @formatter:on
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -2466,7 +2467,7 @@ class IndexFieldHoleTest {
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(
                             createIndexFieldHole("NAME", "wiki", dateRange("20200104", "20200112")));
             // @formatter:on
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -2486,7 +2487,7 @@ class IndexFieldHoleTest {
             Map<String,Map<String,IndexFieldHole>> expected = createIndexFieldHoleMap(
                             createIndexFieldHole("NAME", "wiki", dateRange("20200104", "20200112")));
             // @formatter:on
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -2509,7 +2510,7 @@ class IndexFieldHoleTest {
                             createIndexFieldHole("EVENT_DATE", "wiki", dateRange("20200120", "20200125")),
                             createIndexFieldHole("URI", "maze", dateRange("20200216", "20200328")));
             // @formatter:on
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -2536,7 +2537,7 @@ class IndexFieldHoleTest {
                             createIndexFieldHole("EVENT_DATE", "wiki", dateRange("20200120", "20200125")),
                             createIndexFieldHole("URI", "maze", dateRange("20200216", "20200328")));
             // @formatter:on
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -2572,7 +2573,7 @@ class IndexFieldHoleTest {
                             createIndexFieldHole("URI", "maze", dateRange("20200221", "20200221"), dateRange("20200303", "20200303"),
                                             dateRange("20200316", "20200316")));
             // @formatter:on
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -2609,7 +2610,7 @@ class IndexFieldHoleTest {
                             createIndexFieldHole("URI", "maze", dateRange("20200221", "20200221"), dateRange("20200303", "20200303"),
                                             dateRange("20200316", "20200316")));
             // @formatter:on
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -2646,7 +2647,7 @@ class IndexFieldHoleTest {
                             createIndexFieldHole("URI", "maze", dateRange("20200221", "20200221"), dateRange("20200303", "20200303"),
                                             dateRange("20200316", "20200316")));
             // @formatter:on
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -2685,7 +2686,7 @@ class IndexFieldHoleTest {
                             createIndexFieldHole("URI", "maze", dateRange("20200221", "20200221"), dateRange("20200303", "20200303"),
                                             dateRange("20200316", "20200316")));
             // @formatter:on
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -2722,7 +2723,7 @@ class IndexFieldHoleTest {
                             createIndexFieldHole("NAME", "wiki", dateRange("20200103", "20200103"), dateRange("20200105", "20200105")),
                             createIndexFieldHole("NAME", "csv", dateRange("20200110", "20200110"), dateRange("20200113", "20200113")));
             // @formatter:on
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -2766,7 +2767,7 @@ class IndexFieldHoleTest {
                             createIndexFieldHole("URI", "maze", dateRange("20200221", "20200221"), dateRange("20200303", "20200303"),
                                             dateRange("20200316", "20200316")));
             // @formatter:on
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -2824,7 +2825,7 @@ class IndexFieldHoleTest {
                             createIndexFieldHole("EVENT_DATE", "wiki", dateRange("20200122", "20200122")),
                             createIndexFieldHole("ZETA", "csv", dateRange("20200122", "20200122")));
             // @formatter:on
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
 
         /**
@@ -2880,7 +2881,7 @@ class IndexFieldHoleTest {
                             createIndexFieldHole("NAME", "wiki", dateRange("20200103", "20200103"), dateRange("20200105", "20200105")),
                             createIndexFieldHole("ZETA", "csv", dateRange("20200122", "20200122")));
             // @formatter:on
-            Assertions.assertEquals(expected, IndexFieldHoles);
+            assertEquals(expected, IndexFieldHoles);
         }
     }
 }

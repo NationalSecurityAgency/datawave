@@ -9,6 +9,8 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.Arrays;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.junit.After;
@@ -190,7 +192,7 @@ public class RemoteEventQueryLogicIT {
                 if (t1.getState() == Thread.State.WAITING || t2.getState() == Thread.State.WAITING) {
                     done = true;
                 }
-                t1.join(100);
+                Thread.sleep(100);
             } catch (InterruptedException e) {
                 // no-op
             }
@@ -224,8 +226,11 @@ public class RemoteEventQueryLogicIT {
 
         // create two threads that both access the forever handler
         // execute this in a thread so it can be interrupted
+        CountDownLatch exceptionLatch = new CountDownLatch(1);
         RemoteQueryServiceTestUtil.QueryRunnable r1 = new RemoteQueryServiceTestUtil.QueryRunnable(logic);
+        r1.setExceptionLatch(exceptionLatch);
         RemoteQueryServiceTestUtil.QueryRunnable r2 = new RemoteQueryServiceTestUtil.QueryRunnable(logic);
+        r2.setExceptionLatch(exceptionLatch);
 
         // start both threads
         Thread t1 = new Thread(r1);
@@ -234,12 +239,10 @@ public class RemoteEventQueryLogicIT {
         t2.start();
 
         // wait until the exception is caught
-        while (!r1.isCaught().get() && !r2.isCaught().get()) {
-            try {
-                t1.join(100);
-            } catch (InterruptedException e) {
-                // no-op
-            }
+        try {
+            assertTrue("Timed out waiting for connection pool timeout", exceptionLatch.await(35, TimeUnit.SECONDS));
+        } catch (InterruptedException e) {
+            throw new AssertionError("Interrupted while waiting for connection pool timeout", e);
         }
 
         assertFalse(r1.isSetup().get());
