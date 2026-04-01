@@ -8,6 +8,7 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.hadoop.io.Text;
 
 import datawave.query.iterator.logic.IndexIterator;
+import datawave.query.iterator.waitwindow.WaitWindowObserver;
 
 public class TLDIndexIterator extends IndexIterator {
 
@@ -48,7 +49,9 @@ public class TLDIndexIterator extends IndexIterator {
         }
 
         // if the start key is not inclusive, and we have a datatype/0UID, then move the start past the children thereof
-        if (!r.isStartKeyInclusive() && !startCf.isEmpty()) {
+        // Skip this logic if this is part of a yield where we are trying to restart at the beginning of a particular
+        // event key or shard range.
+        if (!r.isStartKeyInclusive() && !startCf.isEmpty() && !WaitWindowObserver.hasBeginMarker(r.getStartKey())) {
             // we need to bump append 0xff to that byte array because we want to skip the children
             String row = start.getRow().toString();
 

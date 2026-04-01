@@ -10,12 +10,14 @@ import java.util.Map;
 import java.util.Random;
 import java.util.TreeMap;
 
-import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
+
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 
 import datawave.ingest.mapreduce.job.SplitsConstants;
 import datawave.ingest.mapreduce.job.TableSplitsCache;
@@ -53,12 +55,11 @@ public class TestShardGenerator {
         FileSystem fs = new Path(tmpDir.getAbsolutePath()).getFileSystem(conf);
         // constructor that takes a created list of locations
         try (PrintStream out = new PrintStream(new BufferedOutputStream(fs.create(splitsPath)))) {
+            TableSplitsCache.getCurrentCache(conf).writeHeaderLine(out, Sets.newHashSet(tableNames));
 
             for (String table : tableNames) {
 
-                for (Map.Entry<Text,String> entry : sortedLocations.entrySet()) {
-                    out.println(table + "\t" + new String(Base64.encodeBase64(entry.getKey().toString().getBytes())).trim() + "\t" + entry.getValue());
-                }
+                TableSplitsCache.getCurrentCache(conf).writeLocations(out, table, Lists.newArrayList(sortedLocations.keySet()), sortedLocations);
             }
         }
     }
@@ -74,11 +75,12 @@ public class TestShardGenerator {
         Map<Text,String> sortedLocations = TableSplitsCache.getCurrentCache(conf).reverseSortByShardIds(locations);
 
         try (PrintStream out = new PrintStream(new BufferedOutputStream(fs.create(splitsPath)))) {
+            TableSplitsCache.getCurrentCache(conf).writeHeaderLine(out, Sets.newHashSet(tableNames));
+
             for (String table : tableNames) {
 
-                for (Map.Entry<Text,String> entry : sortedLocations.entrySet()) {
-                    out.println(table + "\t" + new String(Base64.encodeBase64(entry.getKey().toString().getBytes())) + "\t" + entry.getValue());
-                }
+                TableSplitsCache.getCurrentCache(conf).writeLocations(out, table, Lists.newArrayList(sortedLocations.keySet()), sortedLocations);
+
             }
         }
         conf.set(SplitsConstants.SPLITS_CACHE_DIR, tmpDir.getAbsolutePath());

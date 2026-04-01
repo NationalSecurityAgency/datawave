@@ -17,17 +17,24 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.mapreduce.Mapper;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import datawave.ingest.config.TableConfigCache;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 
 public class StatsHyperLogMapperTest {
-    private static final Logger log = LoggerFactory.getLogger(StatsHyperLogMapperTest.class);
+    private static final Logger log = Logger.getLogger(StatsHyperLogMapperTest.class);
+
+    static {
+        Logger.getLogger(StatsHyperLogMapper.class).setLevel(Level.DEBUG);
+        Logger.getLogger(StatsHyperLogSummary.class).setLevel(Level.DEBUG);
+        Logger.getLogger(StatsHyperLogMapperTest.class).setLevel(Level.DEBUG);
+        Logger.getLogger(StatsTestData.class).setLevel(Level.DEBUG);
+    }
 
     @Test
     public void testOneValue() throws IOException, InterruptedException {
@@ -79,6 +86,7 @@ public class StatsHyperLogMapperTest {
         // set output table name
         Configuration conf = driver.getConfiguration();
         conf.set(StatsJob.OUTPUT_TABLE_NAME, TEST_TABLE);
+        conf.set(StatsHyperLogMapper.STATS_MAPPER_LOG_LEVEL, Level.DEBUG.toString());
         conf.set(StatsHyperLogMapper.STATS_MAPPER_INPUT_INTERVAL, "10");
         conf.set(StatsHyperLogMapper.STATS_MAPPER_OUTPUT_INTERVAL, "4");
         conf.set(StatsHyperLogMapper.STATS_MAPPER_UNIQUE_COUNT, "true");
@@ -99,7 +107,7 @@ public class StatsHyperLogMapperTest {
         // generate input and output entries
         List<Key> inputKeys = StatsTestData.generateMapperInput(entries);
         for (Key key : inputKeys) {
-            log.debug("key( {} )", key);
+            log.debug("key(" + key + ")");
             driver.addInput(key, EMPTY_VALUE);
         }
 
@@ -133,7 +141,7 @@ public class StatsHyperLogMapperTest {
             Assert.assertNotNull(oKey);
             Value rVal = entry.value;
             StatsHyperLogSummary stats = new StatsHyperLogSummary(rVal);
-            log.debug("key( {} ) value( {} )", oKey.getKey(), stats);
+            log.debug("key(" + oKey.getKey() + ") value(" + stats + ")");
             Assert.assertEquals("key(" + oKey.getKey() + ")", summary.get(oKey), stats);
 
             // for small sample size cardinality should math real value

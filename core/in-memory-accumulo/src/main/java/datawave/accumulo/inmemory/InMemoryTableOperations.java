@@ -33,7 +33,6 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.function.Consumer;
 
-import org.apache.accumulo.core.classloader.ClassLoaderUtil;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.IteratorSetting;
@@ -55,6 +54,7 @@ import org.apache.accumulo.core.crypto.CryptoFactoryLoader;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.data.TableId;
 import org.apache.accumulo.core.data.TabletId;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.dataImpl.KeyExtent;
@@ -77,9 +77,7 @@ import org.apache.hadoop.io.Text;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import datawave.accumulo.inmemory.impl.InMemoryTabletLocator;
-
-class InMemoryTableOperations extends TableOperationsHelper {
+public class InMemoryTableOperations extends TableOperationsHelper {
     private static final Logger log = LoggerFactory.getLogger(InMemoryTableOperations.class);
     private static final byte[] ZERO = {0};
     private final InMemoryAccumulo acu;
@@ -173,9 +171,28 @@ class InMemoryTableOperations extends TableOperationsHelper {
     @Override
     public void rename(String oldTableName, String newTableName)
                     throws AccumuloSecurityException, TableNotFoundException, AccumuloException, TableExistsException {
+        rename(oldTableName, newTableName, false);
+    }
+
+    /**
+     * Rename a table. If the force flag is used, then the existence of the new table prior to renaming will not halt the operation, and will allow for
+     * atomically replacing the table.
+     *
+     * @param oldTableName
+     *            The table to rename
+     * @param newTableName
+     *            The new table name
+     * @param force
+     *            A flag to allow for renaming the table even if the new table name already exists
+     * @throws TableNotFoundException
+     *             Thrown is the table to rename does not exist
+     * @throws TableExistsException
+     *             Thrown if the new table already exists (unless force is specified as true)
+     */
+    public void rename(String oldTableName, String newTableName, boolean force) throws TableNotFoundException, TableExistsException {
         if (!exists(oldTableName))
             throw new TableNotFoundException(oldTableName, oldTableName, "");
-        if (exists(newTableName))
+        if ((!force) && exists(newTableName))
             throw new TableExistsException(newTableName, newTableName, "");
         InMemoryTable t = acu.tables.remove(oldTableName);
         String namespace = TableNameUtil.qualify(newTableName).getFirst();
@@ -514,8 +531,8 @@ class InMemoryTableOperations extends TableOperationsHelper {
     public boolean testClassLoad(String tableName, String className, String asTypeName)
                     throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
         try {
-            ClassLoaderUtil.loadClass(className, Class.forName(asTypeName));
-        } catch (ClassNotFoundException e) {
+            Class.forName(className).asSubclass(Class.forName(asTypeName));
+        } catch (ClassNotFoundException | ClassCastException e) {
             log.warn("Could not load class '" + className + "' with type name '" + asTypeName + "' in testClassLoad().", e);
             return false;
         }
@@ -541,9 +558,13 @@ class InMemoryTableOperations extends TableOperationsHelper {
     @Override
     public Locations locate(String tableName, Collection<Range> ranges) throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
         Map<String,Map<KeyExtent,List<Range>>> binnedRanges = new HashMap<>();
-        InMemoryTabletLocator locator = new InMemoryTabletLocator();
-        List<Range> ignore = locator.binRanges(null, new ArrayList<>(ranges), binnedRanges);
+        List<Range> ignore = binRanges(new ArrayList<>(ranges), binnedRanges);
         return new LocationsImpl(binnedRanges);
+    }
+
+    private List<Range> binRanges(ArrayList<Range> ranges, Map<String,Map<KeyExtent,List<Range>>> binnedRanges) {
+        binnedRanges.put("", Collections.singletonMap(new KeyExtent(TableId.of(""), null, null), ranges));
+        return Collections.emptyList();
     }
 
     private static class LocationsImpl implements Locations {

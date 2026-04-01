@@ -77,7 +77,7 @@ public abstract class QueryFunctionQueryTest {
             File tempDir = temporaryFolder.newFolder("TempDirForCompositeFunctionsTestShardRange");
             System.setProperty("type.metadata.dir", tempDir.getCanonicalPath());
 
-            QueryTestTableHelper qtth = new QueryTestTableHelper(CompositeFunctionsTest.ShardRange.class.toString(), log);
+            QueryTestTableHelper qtth = new QueryTestTableHelper(QueryFunctionQueryTest.ShardRange.class.toString(), log);
             client = qtth.client;
 
             WiseGuysIngest.writeItAll(client, WiseGuysIngest.WhatKindaRange.SHARD);
@@ -122,7 +122,7 @@ public abstract class QueryFunctionQueryTest {
             File tempDir = temporaryFolder.newFolder("TempDirForCompositeFunctionsTestDocumentRange");
             System.setProperty("type.metadata.dir", tempDir.getCanonicalPath());
 
-            QueryTestTableHelper qtth = new QueryTestTableHelper(CompositeFunctionsTest.DocumentRange.class.toString(), log);
+            QueryTestTableHelper qtth = new QueryTestTableHelper(QueryFunctionQueryTest.DocumentRange.class.toString(), log);
             client = qtth.client;
 
             WiseGuysIngest.writeItAll(client, WiseGuysIngest.WhatKindaRange.DOCUMENT);

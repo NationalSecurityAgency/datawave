@@ -1,4 +1,7 @@
-import { Ref, WritableComputedRef, computed, defineComponent, ref } from 'vue';
+import { Ref, ref } from 'vue';
+import { LocationQueryValue } from 'vue-router';
+
+const regexDataType = /^[1-9]\d*\s+types?$/;
 
 interface Entry {
   key: string;
@@ -10,7 +13,7 @@ interface Markings {
 }
 
 interface Record {
-  decription: string;
+  description: string;
   markings: Markings;
 }
 
@@ -21,7 +24,7 @@ interface Record {
 *  Specifically, for the descriptions block, it checks to see if the value is undefined/null (doesn't have a description).
 *  Or if the description value has a length of 0 (if something was pulled incorrectly in the JSON).
 */
-export function parseVal(colName: string, colValue: any) : string {
+export function parseVal(colName: string, colValue: any, colDataTypeCount?: any) : string {
   if (colName === 'Types') {
     if (colValue == undefined) {
       return '';
@@ -42,9 +45,11 @@ export function parseVal(colName: string, colValue: any) : string {
 
     const marking = markingsEntry.length > 0 ? markingsEntry[0].value : '';
     const markingAccess = markingsEntry.length > 1 ? markingsEntry[1].value : '';
-    const description = firstEntry.decription || '';
+    const description = firstEntry.description || '';
 
     return `${marking} ${markingAccess} ${description}`;
+  } else if (colName === 'dataType' && regexDataType.test(colDataTypeCount)) {
+    return colDataTypeCount;
   } else {
     return colValue.toString();
   }
@@ -75,8 +80,8 @@ export function maxSubstring(str: any, colName: any): any {
 }
 
 // Defines how the expandability is parsed on the table.
-export function buttonParse(col: any, row: any): boolean {
-  return row.button == 1;
+export function buttonParse(row: any): boolean {
+  return row.button && row.priorDays;
 }
 
 // Toggles how the row collapses based on the DOM. Filters visible rows.
@@ -85,16 +90,27 @@ export function toggleVisibility(row: any) {
 }
 
 // Set the Visibility in DOM, sorts and filters by lastUpdated, and the respective row to render button.
-export function setVisibility(rows: readonly any[]) {
+export function setVisibility(rows: readonly any[], priorDays?: any) {
   const fieldVisibility: Map<string, Ref<boolean>> = new Map<
     string,
     Ref<boolean>
   >();
   const buttonValues: Map<string, number> = new Map<string, number>();
+  const countValues: Map<string, number> = new Map<string, number>();
 
   for (const row of rows) {
     let rowMostRecentUpdated: number = row.lastUpdated;
     const currentRowInternalFieldName: any = row.internalFieldName;
+    const currentRowDataType: any = row.dataType;
+
+    const meetsDateFilter = priorDays === undefined || row.lastUpdated >= getDateCode(priorDays);
+    row['priorDays'] = meetsDateFilter;
+
+    if (currentRowDataType && meetsDateFilter) {
+      let currentValue = countValues.get(currentRowInternalFieldName) || 0;
+      countValues.set(currentRowInternalFieldName, ++currentValue);
+    }
+
     for (const scan of rows) {
       if (currentRowInternalFieldName === scan.internalFieldName && rowMostRecentUpdated < scan.lastUpdated) {
         rowMostRecentUpdated = scan.lastUpdated;
@@ -107,11 +123,14 @@ export function setVisibility(rows: readonly any[]) {
   for (const row of rows) {
     // Checks to Render button
     if (
-      buttonValues.has(row.internalFieldName) &&
-      row.lastUpdated == buttonValues.get(row.internalFieldName)
+      (buttonValues.has(row.internalFieldName) &&
+      row.lastUpdated == buttonValues.get(row.internalFieldName)) && (countValues.get(row.internalFieldName)! > 1)
     ) {
-      row['duplicate'] = 0;
+      row['duplicate'] = 1;
       row['button'] = true;
+      row['dataTypeCount'] = countValues.get(row.internalFieldName) + ' types';
+
+      buttonValues.set(row.internalFieldName, -1); // This ensures only one button per internalFieldName (no duplicate buttons)
     }
     // Checks to Render Collapsible Row - Refreshes on Search
     else if (
@@ -120,11 +139,15 @@ export function setVisibility(rows: readonly any[]) {
     ) {
       row['duplicate'] = 1;
       row['button'] = false;
+
+      row['dataTypeCount'] = 0 + ' types';
     }
     // Renders a Normal Row (No Button, not Collapsible)
     else {
       row['duplicate'] = 0;
       row['button'] = false;
+
+      row['dataTypeCount'] = 0 + ' types';
     }
 
     const internalFieldName = row.internalFieldName;
@@ -145,5 +168,29 @@ export function setVisibility(rows: readonly any[]) {
 
 // Lets the DOM know what is visible and what is not based on setVisibility filters.
 export function isVisible(row: any) {
-  return row.duplicate == 0 || row.isVisible.value;
+ return (row.duplicate == 0 || row.isVisible.value) && row.priorDays;
+}
+
+export function getDateCode(daysPrior = Infinity): number {
+  if (!isFinite(daysPrior)) {
+    return 0; // return earliest possible dateCode (match all)
+  }
+
+  const date = new Date();
+  date.setDate(date.getDate() - daysPrior);
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return Number(`${y}${m}${d}000000`);
+}
+
+// Filters the URL Search Bar to handle Edge Cases and only queries 1 item.
+export function filterSearch(searchVal: LocationQueryValue | LocationQueryValue[], searchValNew: string): string {
+  if (Array.isArray(searchVal)) {
+    searchValNew = searchVal[0] || '';
+  } else if (searchVal !== null && searchVal !== undefined) {
+    searchValNew = searchVal;
+  }
+
+  return searchValNew;
 }

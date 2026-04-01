@@ -337,7 +337,7 @@ public class WikipediaRecordReader extends AggregatingRecordReader {
 
             try {
                 Date eventDate = DateHelper.parse(date);
-                event.setDate(eventDate.getTime());
+                event.setTimestamp(eventDate.getTime());
             } catch (DateTimeParseException e) {
                 throw new IllegalArgumentException("Could not parse date from filename " + date);
             }

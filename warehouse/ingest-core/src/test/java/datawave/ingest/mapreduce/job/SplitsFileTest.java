@@ -7,11 +7,11 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.net.URI;
+import java.util.Collections;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
-import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
@@ -23,6 +23,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+
+import com.google.common.collect.Lists;
 
 import datawave.ingest.mapreduce.handler.shard.ShardIdFactory;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
@@ -70,12 +72,12 @@ public class SplitsFileTest {
 
         Path splitsPath = new Path(tmpBaseSplitDir.getAbsolutePath() + "/" + splitsFile);
         FileSystem fs = new Path(tmpBaseSplitDir.getAbsolutePath()).getFileSystem(conf);
+        conf.set(SplitsConstants.SPLITS_CACHE_DIR, tmpBaseSplitDir.getAbsolutePath());
+
         // constructor that takes a created list of locations
         try (PrintStream out = new PrintStream(new BufferedOutputStream(fs.create(splitsPath)))) {
-
-            for (Map.Entry<Text,String> e : locations.entrySet()) {
-                out.println(tableName + '\t' + new String(Base64.encodeBase64(e.getKey().toString().getBytes())) + '\t' + e.getValue());
-            }
+            TableSplitsCache.getCurrentCache(conf).writeHeaderLine(out, Collections.singleton(tableName));
+            TableSplitsCache.getCurrentCache(conf).writeLocations(out, tableName, Lists.newArrayList(locations.keySet()), locations);
         }
         Assertions.assertTrue(fs.exists(splitsPath));
 

@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>gov.nsa.datawave.microservice</groupId>
     <artifactId>datawave-microservice-parent</artifactId>
-    <version>4.0.3-SNAPSHOT</version>
+    <version>4.0.9-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>DataWave Microservices Parent</name>
     <description>DataWave mircoservices provide functionality previously contained in the DataWave
@@ -17,8 +17,8 @@
         </license>
     </licenses>
     <scm>
-        <connection>scm:git:https://github.com/NationalSecurityAgency/datawave.git</connection>
-        <developerConnection>scm:git:git@github.com:NationalSecurityAgency/datawave.git</developerConnection>
+        <connection>scm:git:${project.scm.url}</connection>
+        <developerConnection>scm:git:${project.scm.url}</developerConnection>
         <tag>HEAD</tag>
         <url>https://github.com/NationalSecurityAgency/datawave</url>
     </scm>
@@ -30,16 +30,21 @@
         </repository>
     </distributionManagement>
     <properties>
-        <docker.image.prefix>datawave/</docker.image.prefix>
+        <container.registry>ghcr.io</container.registry>
+        <image.prefix>datawave/</image.prefix>
         <java.version>11</java.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
+        <maven.release.arguments>-Ddist</maven.release.arguments>
+        <maven.release.profiles>dist</maven.release.profiles>
         <project.artifactId>${project.artifactId}</project.artifactId>
         <project.build.finalName>${project.build.finalName}</project.build.finalName>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.description>${project.description}</project.description>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <project.scm.id>github-datawave</project.scm.id>
         <project.version>${project.version}</project.version>
+        <registry.namespace>nationalsecurityagency/</registry.namespace>
         <skipITs>${skipTests}</skipITs>
         <skipTests>false</skipTests>
         <skipUTs>${skipTests}</skipUTs>
@@ -49,22 +54,34 @@
         <spotbugs.excludes.file />
         <surefire.forkCount>1C</surefire.forkCount>
         <version.hadoop>3.3.4</version.hadoop>
-        <version.jackson>2.13.2</version.jackson>
+        <!-- 2.14.X is the maximum version of jackson without snakeyaml version 2 causing spring-boot 2.7.1 conflict -->
+        <version.jackson>2.14.3</version.jackson>
         <version.junit4>4.13.2</version.junit4>
         <version.junit5>5.12.0</version.junit5>
         <version.junit5.platform>1.12.0</version.junit5.platform>
-        <version.log4j.bom>2.17.2</version.log4j.bom>
+        <version.log4j>2.25.3</version.log4j>
         <version.lombok>1.18.36</version.lombok>
+        <version.slf4j>2.0.17</version.slf4j>
     </properties>
     <dependencyManagement>
         <dependencies>
+            <!-- Don't sort the import scope dependencies. The first declared version of a dependency in dependencyManagement will prevail. -->
+            <?SORTPOM IGNORE?>
             <dependency>
-                <groupId>org.apache.logging.log4j</groupId>
-                <artifactId>log4j-bom</artifactId>
-                <version>${version.log4j.bom}</version>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-bom</artifactId>
+                <version>${version.slf4j}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-bom</artifactId>
+                <version>${version.log4j}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <?SORTPOM RESUME?>
             <dependency>
                 <groupId>org.apache.hadoop</groupId>
                 <artifactId>hadoop-yarn-client</artifactId>
@@ -192,6 +209,16 @@
     </dependencyManagement>
     <dependencies>
         <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j2-impl</artifactId>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <scope>test</scope>
@@ -234,6 +261,30 @@
     <build>
         <pluginManagement>
             <plugins>
+                <plugin>
+                    <groupId>com.diffplug.spotless</groupId>
+                    <artifactId>spotless-maven-plugin</artifactId>
+                    <version>2.43.0</version>
+                    <configuration>
+                        <java>
+                            <removeUnusedImports />
+                            <importOrder>
+                                <order>\#java,\#javax,\#,java,javax,org,com,</order>
+                            </importOrder>
+                            <excludes>
+                                <exclude>**/thrift/*.java</exclude>
+                            </excludes>
+                        </java>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>apply</goal>
+                            </goals>
+                            <phase>process-sources</phase>
+                        </execution>
+                    </executions>
+                </plugin>
                 <plugin>
                     <groupId>com.github.ekryd.sortpom</groupId>
                     <artifactId>sortpom-maven-plugin</artifactId>
@@ -307,27 +358,6 @@
                     </executions>
                 </plugin>
                 <plugin>
-                    <groupId>net.revelc.code</groupId>
-                    <artifactId>impsort-maven-plugin</artifactId>
-                    <version>1.9.0</version>
-                    <configuration>
-                        <groups>java.,javax.,org.,com.</groups>
-                        <staticGroups>java,*</staticGroups>
-                        <excludes>
-                            <exclude>**/thrift/*.java</exclude>
-                        </excludes>
-                    </configuration>
-                    <executions>
-                        <execution>
-                            <id>sort-imports</id>
-                            <goals>
-                                <goal>sort</goal>
-                            </goals>
-                            <phase>process-sources</phase>
-                        </execution>
-                    </executions>
-                </plugin>
-                <plugin>
                     <groupId>net.revelc.code.formatter</groupId>
                     <artifactId>formatter-maven-plugin</artifactId>
                     <version>2.23.0</version>
@@ -343,7 +373,7 @@
                         <dependency>
                             <groupId>gov.nsa.datawave</groupId>
                             <artifactId>datawave-code-style</artifactId>
-                            <version>1.0</version>
+                            <version>1.0.1</version>
                         </dependency>
                     </dependencies>
                     <executions>
@@ -413,8 +443,8 @@
                     <version>3.1.1</version>
                     <configuration>
                         <tagNameFormat>@{project.version}</tagNameFormat>
-                        <releaseProfiles>dist</releaseProfiles>
-                        <arguments>-Ddist</arguments>
+                        <releaseProfiles>${maven.release.profiles}</releaseProfiles>
+                        <arguments>${maven.release.arguments}</arguments>
                     </configuration>
                 </plugin>
                 <plugin>
@@ -465,19 +495,16 @@
                     <version>1.18.1</version>
                     <configuration>
                         <verbose>true</verbose>
+                        <pushRegistry>${container.registry}</pushRegistry>
                         <images>
                             <image>
-                                <name>${docker.image.prefix}${project.artifactId}</name>
+                                <name>${registry.namespace}${image.prefix}${project.artifactId}:${project.version}</name>
                                 <build>
                                     <!-- defaults to ${project.basedir}/src/main/docker when using relative paths -->
                                     <contextDir>.</contextDir>
                                     <buildOptions>
                                         <memory>8589934592</memory>
                                     </buildOptions>
-                                    <tags>
-                                        <tag>latest</tag>
-                                        <tag>${project.version}</tag>
-                                    </tags>
                                     <assembly>
                                         <name>/</name>
                                         <excludeFinalOutputArtifact>true</excludeFinalOutputArtifact>
@@ -587,12 +614,12 @@
             <build>
                 <plugins>
                     <plugin>
-                        <groupId>com.github.ekryd.sortpom</groupId>
-                        <artifactId>sortpom-maven-plugin</artifactId>
+                        <groupId>com.diffplug.spotless</groupId>
+                        <artifactId>spotless-maven-plugin</artifactId>
                     </plugin>
                     <plugin>
-                        <groupId>net.revelc.code</groupId>
-                        <artifactId>impsort-maven-plugin</artifactId>
+                        <groupId>com.github.ekryd.sortpom</groupId>
+                        <artifactId>sortpom-maven-plugin</artifactId>
                     </plugin>
                     <plugin>
                         <groupId>net.revelc.code.formatter</groupId>

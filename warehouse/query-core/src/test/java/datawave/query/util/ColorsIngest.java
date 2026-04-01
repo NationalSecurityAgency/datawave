@@ -35,18 +35,16 @@ import datawave.util.time.DateHelper;
  */
 public class ColorsIngest {
 
-    public enum RangeType {
-        SHARD, DOCUMENT
-    }
-
     private static final String startDay = "20250301";
     private static final String endDay = "20250331";
 
-    private static final int NUM_SHARDS = 1;
+    private static final int NUM_SHARDS = 10;
     private static final int NUM_DAYS = 31;
 
-    private static final int NEW_SHARDS = 2;
+    private static final int NEW_SHARDS = 20;
     private static final String NEW_SHARDS_START = "20250327";
+
+    private static final int EVENTS_PER_DAY = 1;
 
     private static final String datatype = "colors";
     private static final ColumnVisibility cv = new ColumnVisibility("ALL");
@@ -57,6 +55,7 @@ public class ColorsIngest {
     protected static String normalizerForField(String field) {
         switch (field) {
             case "COLOR":
+            case "ID":
             default:
                 return LcNoDiacriticsType.class.getName();
         }
@@ -90,7 +89,7 @@ public class ColorsIngest {
         return endDay;
     }
 
-    public static void writeData(AccumuloClient client, RangeType type) throws Exception {
+    public static void writeData(AccumuloClient client) throws Exception {
         TableOperations tops = client.tableOperations();
         tops.create(TableName.SHARD);
         tops.create(TableName.SHARD_INDEX);
@@ -110,7 +109,7 @@ public class ColorsIngest {
 
         while (start.compareTo(stop) < 0) {
             String day = DateHelper.format(start.getTime());
-            writeEventsForDay(client, type, day, events);
+            writeEventsForDay(client, day, events);
             start.add(Calendar.DAY_OF_YEAR, 1);
         }
     }
@@ -125,7 +124,7 @@ public class ColorsIngest {
         return cal;
     }
 
-    protected static void writeEventsForDay(AccumuloClient client, RangeType type, String day, List<Multimap<String,String>> events) throws Exception {
+    protected static void writeEventsForDay(AccumuloClient client, String day, List<Multimap<String,String>> events) throws Exception {
         int numShards = getNumShardsForDay(day);
 
         // shard index data
@@ -147,7 +146,7 @@ public class ColorsIngest {
                     for (int offset = 0; offset < numShards; offset++) {
                         String shard = day + "_" + offset;
                         String uid = uidForEvent(shard, field, value);
-                        m.put(field, shard + "\0" + datatype, cv, ts, getValue(type, uid));
+                        m.put(field, shard + "\0" + datatype, cv, ts, getValue(uid));
                     }
                 }
                 bw.addMutation(m);
@@ -213,6 +212,13 @@ public class ColorsIngest {
             m.put(ColumnFamilyConstants.COLF_I, new Text(datatype), EMPTY_VALUE);
             m.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\0" + normalizerForField("COLOR")), EMPTY_VALUE);
             bw.addMutation(m);
+
+            m = new Mutation("ID");
+            m.put(ColumnFamilyConstants.COLF_E, new Text(datatype), EMPTY_VALUE);
+            // skipping F column for now
+            // skip I column
+            m.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\0" + normalizerForField("ID")), EMPTY_VALUE);
+            bw.addMutation(m);
         }
 
         try (BatchWriter bw = client.createBatchWriter(TableName.METADATA)) {
@@ -228,16 +234,11 @@ public class ColorsIngest {
         return UID.builder().newId(data.getBytes(), (Date) null).toString();
     }
 
-    private static Value getValue(RangeType type, String uid) {
+    private static Value getValue(String uid) {
         Uid.List.Builder builder = Uid.List.newBuilder();
-        if (type.equals(RangeType.DOCUMENT)) {
-            builder.setIGNORE(false);
-            builder.setCOUNT(1L);
-            builder.addUID(uid);
-        } else {
-            builder.setIGNORE(true);
-            builder.setCOUNT(17L); // arbitrary prime number below the 20 max uid limit
-        }
+        builder.setIGNORE(false);
+        builder.setCOUNT(1L);
+        builder.addUID(uid);
         return new Value(builder.build().toByteArray());
     }
 

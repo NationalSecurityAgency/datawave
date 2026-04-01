@@ -13,7 +13,6 @@ import com.google.common.collect.Maps;
 import datawave.query.attributes.Cardinality;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.FieldValueCardinality;
-import datawave.util.StringUtils;
 
 public class FacetTableFunction implements Function<Entry<Key,Value>,Entry<Key,Document>> {
 
@@ -23,8 +22,8 @@ public class FacetTableFunction implements Function<Entry<Key,Value>,Entry<Key,D
         Document newDoc = new Document();
         try {
 
-            String[] fields = StringUtils.split(key.getColumnFamily().toString(), "\u0000");
-            String[] fieldValues = StringUtils.split(key.getRow().toString(), "\u0000");
+            String[] fields = key.getColumnFamily().toString().split("\u0000");
+            String[] fieldValues = key.getRow().toString().split("\u0000");
 
             FieldValueCardinality fvc = new FieldValueCardinality(HyperLogLogPlus.Builder.build(input.getValue().get()));
             fvc.setFieldName(fields[1]);

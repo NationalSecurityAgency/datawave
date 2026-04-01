@@ -47,8 +47,11 @@ public class Geometry extends Attribute<Geometry> implements Serializable {
 
     @Override
     public long sizeInBytes() {
-        return ObjectSizeOf.Sizer.getObjectSize(geometry) + super.sizeInBytes(4);
-        // 4 for geometry reference
+        if (sizeInBytes == Long.MIN_VALUE) {
+            // 4 for geometry reference
+            sizeInBytes = ObjectSizeOf.Sizer.getObjectSize(geometry) + super.sizeInBytes(4);
+        }
+        return sizeInBytes;
     }
 
     private byte[] write() {
@@ -128,10 +131,15 @@ public class Geometry extends Attribute<Geometry> implements Serializable {
 
     @Override
     public int hashCode() {
-        HashCodeBuilder hcb = new HashCodeBuilder(163, 157);
-        hcb.append(super.hashCode()).append(geometry);
-
-        return hcb.toHashCode();
+        if (hashcode == Integer.MIN_VALUE) {
+            //  @formatter:off
+            hashcode = new HashCodeBuilder(163, 157)
+                    .append(super.hashCode())
+                    .append(geometry)
+                    .toHashCode();
+            //  @formatter:on
+        }
+        return hashcode;
     }
 
     @Override

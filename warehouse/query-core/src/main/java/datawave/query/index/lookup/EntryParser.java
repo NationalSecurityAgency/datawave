@@ -2,12 +2,9 @@ package datawave.query.index.lookup;
 
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DELAYED;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_OR;
-import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_TERM;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_VALUE;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.INDEX_HOLE;
 
-import java.io.ByteArrayInputStream;
-import java.io.DataInputStream;
 import java.io.IOException;
 import java.util.Set;
 
@@ -23,15 +20,21 @@ import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.util.Tuple2;
 import datawave.query.util.Tuples;
+import datawave.query.util.ValueSerializer;
+import datawave.query.util.ValueSerializerType;
 
 /**
  * Parses entries returned from an index lookup, see {@link RangeStream#visit(ASTEQNode, Object)}.
- *
+ * <p>
  * An entry is defined as a Tuple of the key's column qualifier and it's {@link IndexInfo}
  *
  * A delayed predicate node is build if the IndexInfo does not have any document ids or if the column qualifier indicates a day range.
  */
 public class EntryParser implements Function<Result,Tuple2<String,IndexInfo>> {
+    private final static ValueSerializerType DEFAULT_SERIALIZER = ValueSerializerType.KRYO;
+
+    protected ValueSerializer<IndexInfo> valueSerializer;
+
     protected ASTEQNode currNode;
 
     protected String fieldName;
@@ -43,31 +46,42 @@ public class EntryParser implements Function<Result,Tuple2<String,IndexInfo>> {
     private Set<String> indexOnlyFields = null;
     private static final Logger log = Logger.getLogger(EntryParser.class);
 
-    public EntryParser(ASTEQNode node, String fieldName, String literal) {
+    public EntryParser(ASTEQNode node, String fieldName, String literal, ValueSerializerType serializerType) {
         currNode = node;
         this.fieldName = fieldName;
         this.literal = literal;
         this.skipNodeDelay = false;
+        this.valueSerializer = ValueSerializer.newSerializer(IndexInfo.class, serializerType);
     }
 
     public EntryParser(String fieldName, String literal, boolean skipNodeDelay) {
-        this((ASTEQNode) JexlNodeFactory.buildEQNode(fieldName, literal), fieldName, literal);
+        this(fieldName, literal, skipNodeDelay, DEFAULT_SERIALIZER);
+    }
+
+    public EntryParser(String fieldName, String literal, boolean skipNodeDelay, ValueSerializerType serializerType) {
+        this((ASTEQNode) JexlNodeFactory.buildEQNode(fieldName, literal), fieldName, literal, serializerType);
         this.skipNodeDelay = skipNodeDelay;
     }
 
     public EntryParser(ASTEQNode node, String fieldName, String literal, Set<String> indexOnlyFields) {
-        this(node, fieldName, literal);
+        this(node, fieldName, literal, indexOnlyFields, DEFAULT_SERIALIZER);
+
+    }
+
+    public EntryParser(ASTEQNode node, String fieldName, String literal, Set<String> indexOnlyFields, ValueSerializerType serializerType) {
+        this(node, fieldName, literal, serializerType);
         this.indexOnlyFields = indexOnlyFields;
     }
 
     @Override
     public Tuple2<String,IndexInfo> apply(Result entry) {
-        IndexInfo info = new IndexInfo();
+        IndexInfo info;
         try {
-            info.readFields(new DataInputStream(new ByteArrayInputStream(entry.getValue().get())));
+            info = valueSerializer.deserialize(entry.getValue(), IndexInfo::new);
         } catch (IOException e) {
             return null;
         }
+
         String date = entry.getKey().getColumnQualifier().toString();
 
         if (log.isTraceEnabled()) {
@@ -107,6 +121,6 @@ public class EntryParser implements Function<Result,Tuple2<String,IndexInfo>> {
     }
 
     protected boolean isDelayedPredicate(JexlNode currNode) {
-        return QueryPropertyMarker.findInstance(currNode).isAnyTypeOf(INDEX_HOLE, DELAYED, EXCEEDED_OR, EXCEEDED_TERM, EXCEEDED_VALUE);
+        return QueryPropertyMarker.findInstance(currNode).isAnyTypeOf(INDEX_HOLE, DELAYED, EXCEEDED_OR, EXCEEDED_VALUE);
     }
 }

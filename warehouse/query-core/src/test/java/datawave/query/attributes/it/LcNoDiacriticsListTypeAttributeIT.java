@@ -65,8 +65,9 @@ public class LcNoDiacriticsListTypeAttributeIT extends TypeAttributeIT {
         // serializing full type name: 60, 63
         // serializing type name index: 20, 23
         // kryo optimization: 27, 30
-        verifyKryoPreservesValue(createNormalizedAttribute(), 27);
-        verifyKryoPreservesValue(createNonNormalizedAttribute(), 30);
+        // serialize hash code: 31, 35
+        verifyKryoPreservesValue(createNormalizedAttribute(), 31);
+        verifyKryoPreservesValue(createNonNormalizedAttribute(), 35);
     }
 
     @Test

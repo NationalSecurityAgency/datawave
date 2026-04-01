@@ -34,6 +34,11 @@
   margin-top: 0.5vh;
 }
 
+.cell-spacing {
+  width: 60px;
+  min-width: 60px
+}
+
 .subtable {
   font-size: x-small;
   margin-bottom: 1em;

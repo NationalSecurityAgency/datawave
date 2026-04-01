@@ -183,16 +183,16 @@ public class TreeFlatteningRebuilder {
 
             // if this node has children, create copies of them
             if (poppedNode.jjtGetNumChildren() > 0) {
-                List<JexlNode> copiedChildren = new ArrayList<>();
                 List<JexlNode> children;
                 if (poppedNode instanceof ASTAndNode || poppedNode instanceof ASTOrNode) {
                     children = getAndOrLeaves(poppedNode);
                 } else {
-                    children = new ArrayList<>();
+                    children = new ArrayList<>(poppedNode.jjtGetNumChildren());
                     for (int i = 0; i < poppedNode.jjtGetNumChildren(); i++) {
                         children.add(poppedNode.jjtGetChild(i));
                     }
                 }
+                List<JexlNode> copiedChildren = new ArrayList<>(children.size());
                 for (JexlNode child : children) {
                     if (child != null) {
 

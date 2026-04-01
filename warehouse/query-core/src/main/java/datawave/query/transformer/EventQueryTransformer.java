@@ -1,7 +1,7 @@
 package datawave.query.transformer;
 
 import java.io.ByteArrayInputStream;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -23,7 +23,6 @@ import datawave.microservice.query.Query;
 import datawave.query.Constants;
 import datawave.query.parser.EventFields;
 import datawave.query.parser.EventFields.FieldValue;
-import datawave.util.StringUtils;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
 import datawave.webservice.query.result.event.Metadata;
@@ -103,7 +102,7 @@ public class EventQueryTransformer extends EventQueryTransformerSupport<Entry<Ke
                 visibilitiesToMerge.add(fv.getVisibility());
                 try {
                     Map<String,String> fieldMarkings = this.markingFunctions.translateFromColumnVisibility(fv.getVisibility());
-                    String value = new String(fv.getValue(), Charset.forName("UTF-8"));
+                    String value = new String(fv.getValue(), StandardCharsets.UTF_8);
                     // if this is a content field name, then replace the value with the uid
                     if (getContentFieldNames().contains(fieldName)) {
                         value = baseUid;
@@ -125,7 +124,7 @@ public class EventQueryTransformer extends EventQueryTransformerSupport<Entry<Ke
         event.setFields(new ArrayList<>(values));
 
         Metadata metadata = new Metadata();
-        String[] colfParts = StringUtils.split(colf, '\0');
+        String[] colfParts = colf.split("\0");
         if (colfParts.length >= 1) {
             metadata.setDataType(colfParts[0]);
         }

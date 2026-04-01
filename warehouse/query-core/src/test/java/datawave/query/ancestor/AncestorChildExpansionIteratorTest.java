@@ -76,14 +76,14 @@ class AncestorChildExpansionIteratorTest {
 
     @Test
     void testSeekEnablesHasTop() throws IOException {
-        iterator.seek(new Range(), Collections.emptySet(), false);
+        iterator.seek(new Range(new Key(FI_ROW), null), Collections.emptySet(), false);
         assertFalse(iterator.hasTop());
     }
 
     @Test
     void testNoTopGetTopKeyError() {
         assertThrows(NoSuchElementException.class, () -> {
-            iterator.seek(new Range(), Collections.emptySet(), false);
+            iterator.seek(new Range(new Key(FI_ROW), null), Collections.emptySet(), false);
             assertFalse(iterator.hasTop(), ".hasTop() returned true on EMPTY_LIST");
             iterator.getTopKey();
         });
@@ -92,7 +92,7 @@ class AncestorChildExpansionIteratorTest {
     @Test
     void testNoTopGetTopValueError() {
         assertThrows(NoSuchElementException.class, () -> {
-            iterator.seek(new Range(), Collections.emptySet(), false);
+            iterator.seek(new Range(new Key(FI_ROW), null), Collections.emptySet(), false);
             assertFalse(iterator.hasTop(), ".hasTop() returned true on EMPTY_LIST");
             iterator.getTopValue();
         });
@@ -101,7 +101,7 @@ class AncestorChildExpansionIteratorTest {
     @Test
     void testNoTopNextError() {
         assertThrows(NoSuchElementException.class, () -> {
-            iterator.seek(new Range(), Collections.emptySet(), false);
+            iterator.seek(new Range(new Key(FI_ROW), null), Collections.emptySet(), false);
             assertFalse(iterator.hasTop(), ".hasTop() returned true on EMPTY_LIST");
             iterator.next();
         });
@@ -138,7 +138,7 @@ class AncestorChildExpansionIteratorTest {
         baseIterator = new IteratorToSortedKeyValueIterator(baseValues.iterator());
         iterator = new AncestorChildExpansionIterator(baseIterator, children, equality);
 
-        iterator.seek(new Range(), Collections.emptySet(), false);
+        iterator.seek(new Range(new Key(FI_ROW), null), Collections.emptySet(), false);
 
         assertTrue(iterator.hasTop());
         Key topKey = iterator.getTopKey();
@@ -156,7 +156,7 @@ class AncestorChildExpansionIteratorTest {
         baseIterator = new IteratorToSortedKeyValueIterator(baseValues.iterator());
         iterator = new AncestorChildExpansionIterator(baseIterator, children, equality);
 
-        iterator.seek(new Range(), Collections.emptySet(), false);
+        iterator.seek(new Range(new Key(FI_ROW), null), Collections.emptySet(), false);
 
         assertTrue(iterator.hasTop());
         Key topKey = iterator.getTopKey();
@@ -197,7 +197,7 @@ class AncestorChildExpansionIteratorTest {
         baseIterator = new IteratorToSortedKeyValueIterator(baseValues.iterator());
         iterator = new AncestorChildExpansionIterator(baseIterator, children, equality);
 
-        iterator.seek(new Range(), Collections.emptySet(), false);
+        iterator.seek(new Range(new Key(FI_ROW), null), Collections.emptySet(), false);
 
         assertTrue(iterator.hasTop());
         Key topKey = iterator.getTopKey();
@@ -237,7 +237,7 @@ class AncestorChildExpansionIteratorTest {
         baseIterator = new IteratorToSortedKeyValueIterator(baseValues.iterator());
         iterator = new AncestorChildExpansionIterator(baseIterator, children, equality);
 
-        iterator.seek(new Range(), Collections.emptySet(), false);
+        iterator.seek(new Range(new Key(FI_ROW), null), Collections.emptySet(), false);
 
         assertTrue(iterator.hasTop());
         Key topKey = iterator.getTopKey();
@@ -279,7 +279,7 @@ class AncestorChildExpansionIteratorTest {
         baseIterator = new IteratorToSortedKeyValueIterator(baseValues.iterator());
         iterator = new AncestorChildExpansionIterator(baseIterator, children, equality);
 
-        iterator.seek(new Range(), Collections.emptySet(), false);
+        iterator.seek(new Range(new Key(FI_ROW), null), Collections.emptySet(), false);
 
         assertTrue(iterator.hasTop());
         Key topKey = iterator.getTopKey();

@@ -108,7 +108,7 @@ public class TaskCache {
     public List<QueryTask> getTasks(String queryId) {
         List<QueryTask> tasks = (List<QueryTask>) cacheInspector.listMatching(CACHE_NAME, QueryTask.class, QueryKey.toUUIDKey(queryId));
         if (tasks == null) {
-            tasks = Collections.EMPTY_LIST;
+            tasks = Collections.emptyList();
         }
         if (log.isDebugEnabled()) {
             log.debug("Retrieved " + tasks.size() + " tasks for queryId " + queryId);
@@ -126,7 +126,7 @@ public class TaskCache {
     public List<QueryTask> getTasks(QueryKey queryKey) {
         List<QueryTask> tasks = (List<QueryTask>) cacheInspector.listMatching(CACHE_NAME, QueryTask.class, queryKey.toKey());
         if (tasks == null) {
-            tasks = Collections.EMPTY_LIST;
+            tasks = Collections.emptyList();
         }
         if (log.isDebugEnabled()) {
             log.debug("Retrieved " + tasks.size() + " tasks for queryId " + queryKey);

@@ -132,6 +132,17 @@ public class PushdownLargeFieldedListsVisitor extends RebuildingVisitor {
         SortedSet<String> fields = new TreeSet<>(eqNodesByField.keySet());
         fields.addAll(rangeNodesByField.keySet());
 
+        // capture the thresholds
+        int maxOrExpansionFstThreshold = config.getMaxOrExpansionFstThreshold();
+        int maxOrExpansionThreshold = config.getMaxOrExpansionThreshold();
+        int maxOrRangeThreshold = config.getMaxOrRangeThreshold();
+
+        // if specific fields were requested, then reduce the thresholds
+        if (this.fields != null) {
+            maxOrExpansionThreshold = 2;
+            maxOrRangeThreshold = 2;
+        }
+
         for (String field : fields) {
             // if fields is not specified or the current field is in fields it can be reduced
             boolean canReduce = (this.fields == null || this.fields.contains(field));
@@ -145,9 +156,9 @@ public class PushdownLargeFieldedListsVisitor extends RebuildingVisitor {
             if (canReduce &&
                     !Constants.ANY_FIELD.equals(field) &&
                     !Constants.NO_FIELD.equals(field) &&
-                    (eqNodes.size() >= config.getMaxOrExpansionFstThreshold() ||
-                            eqNodes.size() >= config.getMaxOrExpansionThreshold() ||
-                            rangeNodes.size() >= config.getMaxOrRangeThreshold()
+                    (eqNodes.size() >= maxOrExpansionFstThreshold ||
+                            eqNodes.size() >= maxOrExpansionThreshold ||
+                            rangeNodes.size() >= maxOrRangeThreshold
                     ) &&
                     isIndexed(field)) {
                 // @formatter:on
@@ -164,17 +175,17 @@ public class PushdownLargeFieldedListsVisitor extends RebuildingVisitor {
 
                 try {
                     // if we have an hdfs cache directory and if past the fst/list threshold, then create the fst/list and replace the list with an assignment
-                    if (fstHdfsUri != null && (eqNodes.size() >= config.getMaxOrExpansionFstThreshold())) {
+                    if (fstHdfsUri != null && (eqNodes.size() >= maxOrExpansionFstThreshold)) {
                         URI fstPath = createFst(values);
                         markers.add(QueryPropertyMarker.create(new ExceededOr(field, fstPath).getJexlNode(), EXCEEDED_OR));
                         eqNodes = null;
-                    } else if (eqNodes.size() >= config.getMaxOrExpansionThreshold()) {
+                    } else if (eqNodes.size() >= maxOrExpansionThreshold) {
                         markers.add(QueryPropertyMarker.create(new ExceededOr(field, values).getJexlNode(), EXCEEDED_OR));
                         eqNodes = null;
                     }
 
                     // handle range nodes separately
-                    if (rangeNodes.size() >= config.getMaxOrRangeThreshold()) {
+                    if (rangeNodes.size() >= maxOrRangeThreshold) {
                         TreeMap<Range,JexlNode> ranges = new TreeMap<>();
                         rangeNodes.forEach(rangeNode -> ranges.put(rangeNodeToRange(rangeNode), rangeNode));
 

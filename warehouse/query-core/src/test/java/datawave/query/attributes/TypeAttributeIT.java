@@ -12,7 +12,6 @@ import java.io.DataOutput;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 import org.apache.accumulo.core.data.Key;
 import org.slf4j.Logger;
@@ -24,6 +23,7 @@ import com.esotericsoftware.kryo.io.Output;
 
 import datawave.data.type.ListType;
 import datawave.data.type.Type;
+import datawave.next.stats.StatUtil;
 
 /**
  * A base test class that provides support for integration testing of performance of TypeAttribute serialization and deserialization using either Kryo or Data
@@ -104,7 +104,7 @@ public abstract class TypeAttributeIT {
             attribute.write(kryo, output);
             elapsed += System.nanoTime() - start;
         }
-        return TimeUnit.NANOSECONDS.toMillis(elapsed);
+        return elapsed;
     }
 
     /**
@@ -134,7 +134,7 @@ public abstract class TypeAttributeIT {
                 elapsed += System.nanoTime() - start;
             }
         }
-        return TimeUnit.NANOSECONDS.toMillis(elapsed);
+        return elapsed;
     }
 
     /**
@@ -194,9 +194,9 @@ public abstract class TypeAttributeIT {
      *            the attribute
      */
     protected void testKryoReadWriteTimes(String context, TypeAttribute<?> attribute) {
-        long writeMillis = writeKryo(attribute);
-        long readMillis = readKryo(attribute);
-        log.info("{} kryo {} read: {} write: {} ms", getTypeShortName(), context, readMillis, writeMillis);
+        long writeNanos = writeKryo(attribute);
+        long readNanos = readKryo(attribute);
+        log.info("{} kryo {} read: {} write: {}", getTypeShortName(), context, StatUtil.formatNanos(readNanos), StatUtil.formatNanos(writeNanos));
     }
 
     /**
@@ -208,9 +208,9 @@ public abstract class TypeAttributeIT {
      *            the attribute
      */
     protected void testDataReadWriteTimes(String context, TypeAttribute<?> attribute) {
-        long readMillis = readDataInput(attribute);
-        long writeMillis = writeDataOutput(attribute);
-        log.info("{} data {} read: {} write: {} ms", getTypeShortName(), context, readMillis, writeMillis);
+        long readNanos = readDataInput(attribute);
+        long writeNanos = writeDataOutput(attribute);
+        log.info("{} data {} read: {} write: {}", getTypeShortName(), context, StatUtil.formatNanos(readNanos), StatUtil.formatNanos(writeNanos));
     }
 
     /**
@@ -235,7 +235,7 @@ public abstract class TypeAttributeIT {
                 throw new RuntimeException(e);
             }
         }
-        return TimeUnit.NANOSECONDS.toMillis(elapsed);
+        return elapsed;
     }
 
     /**
@@ -267,7 +267,7 @@ public abstract class TypeAttributeIT {
                 deserialized.readFields(in);
                 elapsed += System.nanoTime() - start;
             }
-            return TimeUnit.NANOSECONDS.toMillis(elapsed);
+            return elapsed;
         } catch (IOException e) {
             fail("Failed to read attribute: " + attribute, e);
             throw new RuntimeException(e);

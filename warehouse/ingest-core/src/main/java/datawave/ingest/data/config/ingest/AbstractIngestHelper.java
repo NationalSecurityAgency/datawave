@@ -5,7 +5,8 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.TreeSet;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.data.normalizer.NormalizationException;
 import datawave.data.type.Type;
@@ -17,7 +18,7 @@ import datawave.ingest.data.config.MaskedFieldHelper;
  * fields values from the datatypes that they represent.
  */
 public abstract class AbstractIngestHelper extends DataTypeHelperImpl implements IngestHelperInterface {
-    private static final Logger log = Logger.getLogger(AbstractIngestHelper.class);
+    private static final Logger log = LoggerFactory.getLogger(AbstractIngestHelper.class);
 
     protected boolean deleteMode = false;
     protected boolean replaceMalformedUTF8 = false;
@@ -64,7 +65,7 @@ public abstract class AbstractIngestHelper extends DataTypeHelperImpl implements
                 final Set<String> normalizedValues = normalizeFieldValue(fieldName.toUpperCase(), value);
                 return normalizedValues.iterator().next();
             } catch (final Exception ex) {
-                log.warn(this.getType().typeName() + ": Unable to normalize masked value of '" + value + "' for " + fieldName, ex);
+                log.warn("{}: Unable to normalize masked value of {} for {}", this.getType().typeName(), value, fieldName, ex);
                 return value;
             }
         }
@@ -145,7 +146,7 @@ public abstract class AbstractIngestHelper extends DataTypeHelperImpl implements
             if (!s.toUpperCase().equals(s)) {
                 removeList.add(s);
                 addList.add(s.toUpperCase());
-                log.warn(" has a value " + s + "that was converted to uppercase.");
+                log.warn(" has a value {} that was converted to uppercase.", s);
             }
         }
         input.removeAll(removeList);

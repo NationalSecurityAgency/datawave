@@ -6,15 +6,10 @@ import java.io.Serializable;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 
-import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Document;
-import datawave.query.function.KryoCVAwareSerializableSerializer;
 
 /**
  * Transform Kryo-serialized bytes back into a Document. Ordering of Attributes is <b>not</b> guaranteed across serialization.
- *
- *
- *
  */
 public class KryoDocumentDeserializer extends DocumentDeserializer implements Serializable {
     private static final long serialVersionUID = -657326925013465794L;
@@ -22,20 +17,16 @@ public class KryoDocumentDeserializer extends DocumentDeserializer implements Se
     final transient Kryo kryo = new Kryo();
 
     public KryoDocumentDeserializer() {
-        kryo.addDefaultSerializer(Attribute.class, new KryoCVAwareSerializableSerializer(true));
+        // empty constructor
     }
 
     @Override
     public Document deserialize(InputStream data) {
-        Input input = new Input(data);
-        Document document = kryo.readObject(input, Document.class);
-
-        if (null == document) {
-            throw new RuntimeException("Deserialized null Document");
+        Document document;
+        try (var input = new Input(data)) {
+            document = new Document();
+            document.read(kryo, input);
         }
-
-        input.close();
-
         return document;
     }
 

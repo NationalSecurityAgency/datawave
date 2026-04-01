@@ -1,5 +1,7 @@
 package datawave.query.transformer;
 
+import static datawave.query.iterator.waitwindow.WaitWindowObserver.WAIT_WINDOW_OVERRUN;
+
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -18,6 +20,7 @@ import java.util.TreeSet;
 import javax.annotation.Nullable;
 
 import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.iterators.YieldCallback;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
@@ -33,7 +36,6 @@ import datawave.core.iterators.filesystem.FileSystemCache;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Document;
-import datawave.query.attributes.DocumentKey;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.iterator.ivarator.IvaratorCacheDir;
@@ -116,8 +118,8 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
      *            the iterator source
      * @return an iterator that will supply the enriched documents
      */
-    public Iterator<Entry<Key,Document>> getIterator(final Iterator<Entry<Key,Document>> in) {
-        return new UniqueTransformIterator(in);
+    public Iterator<Entry<Key,Document>> getIterator(final Iterator<Entry<Key,Document>> in, final YieldCallback yieldCallback) {
+        return new UniqueTransformIterator(in, yieldCallback);
     }
 
     /**
@@ -132,6 +134,13 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
     public Entry<Key,Document> apply(@Nullable Entry<Key,Document> keyDocumentEntry) {
         if (keyDocumentEntry != null) {
             if (FinalDocumentTrackingIterator.isFinalDocumentKey(keyDocumentEntry.getKey())) {
+                return keyDocumentEntry;
+            }
+            Document document = keyDocumentEntry.getValue();
+            if (document != null && document.containsKey(WAIT_WINDOW_OVERRUN)) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Got a WAIT_WINDOW_OVERRUN key in unique transform: " + keyDocumentEntry.getKey());
+                }
                 return keyDocumentEntry;
             }
 
@@ -179,6 +188,7 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
                 } catch (IOException ioe) {
                     throw new DatawaveFatalQueryException("Unable to persist the most recent unique maps", ioe);
                 }
+                // if we are yielding, then avoid doing any additional work
                 if (setIterator == null) {
                     setupIterator();
                 }
@@ -377,10 +387,12 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
      * An iterator of documents for this unique transform given an underlying iterator of documents.
      */
     public class UniqueTransformIterator implements Iterator<Map.Entry<Key,Document>> {
+        private final YieldCallback yieldCallback;
         private final Iterator<Map.Entry<Key,Document>> iterator;
         private Map.Entry<Key,Document> next = null;
 
-        public UniqueTransformIterator(Iterator<Map.Entry<Key,Document>> iterator) {
+        public UniqueTransformIterator(Iterator<Map.Entry<Key,Document>> iterator, YieldCallback yieldCallback) {
+            this.yieldCallback = yieldCallback;
             this.iterator = iterator;
         }
 
@@ -411,7 +423,20 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
             }
             // see if there are any results cached by the transform
             if (o == null) {
-                o = flush();
+                // if yielding, then simply persist the set to be used for the next round
+                if (yieldCallback != null && yieldCallback.hasYielded()) {
+                    if (map != null) {
+                        synchronized (map) {
+                            try {
+                                map.persist();
+                            } catch (IOException e) {
+                                log.error(e.getMessage(), e);
+                            }
+                        }
+                    }
+                } else {
+                    o = flush();
+                }
             }
             return o;
         }
@@ -566,15 +591,28 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
     }
 
     private static long getTimestamp(Document doc) {
-        return getDocKeyAttr(doc).getTimestamp();
+        return getRootDocKeyAttr(doc).getTimestamp();
     }
 
-    private static DocumentKey getDocKeyAttr(Document doc) {
-        return (DocumentKey) (doc.get(Document.DOCKEY_FIELD_NAME));
+    public static Attribute getRootDocKeyAttr(Document doc) {
+        Attribute<?> attr = doc.get(Document.DOCKEY_FIELD_NAME);
+        if (attr instanceof Attributes) {
+            // if the attr is an instanceof Attributes, then we need to find the one that best describes
+            // the root or TLD document which should be the one with the smallest CF (datatype\x00uid)
+            Attribute smallest = null;
+            for (Attribute<?> child : ((Attributes) attr).getAttributes()) {
+                if (smallest == null || child.getMetadata().getColumnFamily().getLength() < smallest.getMetadata().getColumnFamily().getLength()) {
+                    smallest = child;
+                }
+            }
+            return smallest;
+        } else {
+            return attr;
+        }
     }
 
     private static Key getDocKey(Document doc) {
-        return getDocKeyAttr(doc).getDocKey();
+        return getRootDocKeyAttr(doc).getMetadata();
     }
 
 }

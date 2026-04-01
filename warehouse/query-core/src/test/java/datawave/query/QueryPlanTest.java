@@ -18,6 +18,7 @@ import datawave.microservice.querymetric.QueryMetric;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveAsyncOperationException;
 import datawave.query.exceptions.DatawaveFatalQueryException;
+import datawave.query.exceptions.DatawaveQueryException;
 import datawave.query.exceptions.DoNotPerformOptimizedQueryException;
 import datawave.query.exceptions.FullTableScansDisallowedException;
 import datawave.query.exceptions.InvalidQueryException;
@@ -109,8 +110,8 @@ public class QueryPlanTest extends AbstractFunctionalQuery {
         this.logic.setIndexTableName("missing");
         try {
             runTest(query, query);
-            fail("Expected RuntimeException.");
-        } catch (RuntimeException e) {
+            fail("Expected DatawaveQueryException.");
+        } catch (DatawaveQueryException e) {
             assertEquals(expectedPlan, metric.getPlan());
         }
     }
@@ -122,8 +123,8 @@ public class QueryPlanTest extends AbstractFunctionalQuery {
         this.logic.setIndexTableName("missing");
         try {
             runTest(query, query);
-            fail("Expected RuntimeException.");
-        } catch (RuntimeException e) {
+            fail("Expected DatawaveQueryException.");
+        } catch (DatawaveQueryException e) {
             assertEquals(expectedPlan, metric.getPlan());
         }
     }

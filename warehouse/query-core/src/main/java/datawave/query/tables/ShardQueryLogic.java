@@ -4,6 +4,7 @@ import static datawave.query.jexl.functions.QueryFunctions.GROUPBY_FUNCTION;
 import static datawave.query.jexl.functions.QueryFunctions.UNIQUE_FUNCTION;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -43,9 +44,16 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import com.google.common.collect.TreeMultimap;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 
+import datawave.annotation.data.AnnotationSerializer;
+import datawave.annotation.data.v1.AccumuloAnnotationSerializer;
+import datawave.annotation.data.v1.AccumuloAnnotationSourceSerializer;
+import datawave.annotation.data.v1.AnnotationDataAccess;
+import datawave.annotation.protobuf.v1.Annotation;
+import datawave.annotation.protobuf.v1.AnnotationSource;
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.core.query.configuration.GenericQueryConfiguration;
@@ -61,7 +69,6 @@ import datawave.data.type.Type;
 import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl.Parameter;
-import datawave.next.SimpleQueryVisitor;
 import datawave.next.scanner.DocumentScannerConfig;
 import datawave.next.scanner.DocumentScheduler;
 import datawave.query.CloseableIterable;
@@ -70,6 +77,7 @@ import datawave.query.DocumentSerialization;
 import datawave.query.QueryParameters;
 import datawave.query.attributes.ExcerptFields;
 import datawave.query.attributes.SummaryOptions;
+import datawave.query.attributes.TemporalGranularity;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.cardinality.CardinalityConfiguration;
 import datawave.query.common.grouping.GroupFields;
@@ -77,6 +85,7 @@ import datawave.query.config.IndexValueHole;
 import datawave.query.config.Profile;
 import datawave.query.config.ScanHintRule;
 import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.config.annotation.AllHitsQueryConfig;
 import datawave.query.enrich.DataEnricher;
 import datawave.query.enrich.EnrichingMaster;
 import datawave.query.exceptions.DatawaveFatalQueryException;
@@ -117,6 +126,8 @@ import datawave.query.transformer.FieldRenameTransform;
 import datawave.query.transformer.GroupingTransform;
 import datawave.query.transformer.QueryValidationResultTransformer;
 import datawave.query.transformer.UniqueTransform;
+import datawave.query.transformer.annotation.AllHitsFactory;
+import datawave.query.transformer.annotation.AnnotationHitsTransformer;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.DateIndexHelperFactory;
 import datawave.query.util.MetadataHelper;
@@ -125,6 +136,7 @@ import datawave.query.util.QueryStopwatch;
 import datawave.query.util.ShardQueryUtils;
 import datawave.query.util.sortedset.FileSortedSet;
 import datawave.util.time.TraceStopwatch;
+import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
@@ -312,6 +324,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
                             + (this.getSettings() == null ? "empty" : this.getSettings().getId()) + ')');
         this.config.setExpandFields(true);
         this.config.setExpandValues(true);
+        this.config.setExpandUnfieldedValues(true);
         this.config.setGeneratePlanOnly(false);
         initialize(config, client, settings, auths);
         return config;
@@ -326,6 +339,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
                             + (this.getSettings() == null ? "empty" : this.getSettings().getId()) + ')');
         this.config.setExpandFields(expandFields);
         this.config.setExpandValues(expandValues);
+        this.config.setExpandUnfieldedValues(expandValues);
         // if we are not generating the full plan, then set the flag such that we avoid checking for final executability/full table scan
         if (!expandFields || !expandValues) {
             this.config.setGeneratePlanOnly(true);
@@ -450,6 +464,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
             throw new IllegalArgumentException("Query cannot be null");
         } else {
             config.setQueryString(jexlQueryString);
+            config.setOriginalJexlQuery(jexlQueryString);
         }
 
         final Date beginDate = settings.getBeginDate();
@@ -517,6 +532,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
             config.setQueriesIter(this.queries.iterator());
         }
 
+        // set the config's query string.
         config.setQueryString(getQueryPlanner().getPlannedScript());
 
         stopwatch.stop();
@@ -768,12 +784,71 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
     }
 
     /**
+     *
+     * @return a configured AnnotationDataAccess object given the table names
+     */
+    private AnnotationDataAccess getAnnotationDataAccess() {
+        AnnotationSerializer<Iterator<Entry<Key,Value>>,Annotation> annotationSerializer = new AccumuloAnnotationSerializer(
+                        getAllHitsQueryConfig().getAnnotationConfig().getVisibilityTransformer(),
+                        getAllHitsQueryConfig().getAnnotationConfig().getTimestampTransformer());
+        AnnotationSerializer<Iterator<Entry<Key,Value>>,AnnotationSource> annotationSourceSerializer = new AccumuloAnnotationSourceSerializer(
+                        getAllHitsQueryConfig().getAnnotationConfig().getVisibilityTransformer(),
+                        getAllHitsQueryConfig().getAnnotationConfig().getTimestampTransformer());
+        // @formatter:off
+        return new AnnotationDataAccess(
+                getConfig().getClient(),
+                getConfig().getAuthorizations(),
+                getAllHitsQueryConfig().getAnnotationConfig().getAnnotationTableName(),
+                getAllHitsQueryConfig().getAnnotationConfig().getAnnotationSourceTableName(),
+                annotationSerializer,
+                annotationSourceSerializer);
+        // @formatter:on
+    }
+
+    /**
+     * Construct a configured AllHitsFactory class using a no-arg constructor
+     *
+     * @return
+     * @throws QueryException
+     */
+    private AllHitsFactory getAnnotationHitsFactory() throws QueryException {
+        AllHitsFactory allHitsFactory;
+        try {
+            Class<?> annotationHitsFactoryClass = Class.forName(getAllHitsQueryConfig().getAllHitsFactoryClass());
+            Class<? extends AllHitsFactory> subClass = annotationHitsFactoryClass.asSubclass(AllHitsFactory.class);
+            allHitsFactory = subClass.getDeclaredConstructor().newInstance();
+        } catch (ClassNotFoundException | InvocationTargetException | InstantiationException | IllegalAccessException | NoSuchMethodException e) {
+            throw new QueryException("cannot instantiate allHitsFactory", e);
+        }
+
+        return allHitsFactory;
+    }
+
+    /**
      * If the configuration didn't exist, OR IT CHANGED, we need to create or update the transformers that have been added.
      */
     private void addConfigBasedTransformers() throws QueryException {
         if (getConfig() != null) {
             ((DocumentTransformer) this.transformerInstance).setProjectFields(getConfig().getProjectFields());
             ((DocumentTransformer) this.transformerInstance).setDisallowlistedFields(getConfig().getDisallowlistedFields());
+
+            AllHitsQueryConfig allHitsQueryConfig = getAllHitsQueryConfig();
+            if (allHitsQueryConfig != null && allHitsQueryConfig.isEnabled()) {
+                // since this may be called multiple times always rebuild
+                // @formatter:off
+                ((DocumentTransformer) this.transformerInstance).addTransform(new AnnotationHitsTransformer(
+                        getConfig(),
+                        getConfig().getOriginalJexlQuery(),
+                        allHitsQueryConfig.getQueryTermExtractor(),
+                        allHitsQueryConfig.getTermNormalizer(),
+                        getAnnotationDataAccess(),
+                        getAnnotationHitsFactory(),
+                        allHitsQueryConfig.getMaxContextLength(),
+                        allHitsQueryConfig.getValidAnnotationTypes(),
+                        allHitsQueryConfig.getTargetField(),
+                        allHitsQueryConfig.getAnnotationEnrichmentFieldMap()));
+                // @formatter:on
+            }
 
             if (getConfig().getUniqueFields() != null && !getConfig().getUniqueFields().isEmpty()) {
                 DocumentTransform alreadyExists = ((DocumentTransformer) this.transformerInstance).containsTransform(UniqueTransform.class);
@@ -868,7 +943,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
                 this.setReducedResponse(false);
                 config.setReducedResponse(false);
                 // clear the content field names to prevent content field transformations (see DocumentTransformer)
-                this.setContentFieldNames(Collections.EMPTY_LIST);
+                this.setContentFieldNames(Collections.emptyList());
                 // clear the model name to avoid field name translations
                 this.setModelName(null);
                 config.setModelName(null);
@@ -949,7 +1024,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         String transformContentStr = settings.findParameter(QueryParameters.TRANSFORM_CONTENT_TO_UID).getParameterValue().trim();
         if (StringUtils.isNotBlank(transformContentStr)) {
             if (!Boolean.valueOf(transformContentStr)) {
-                setContentFieldNames(Collections.EMPTY_LIST);
+                setContentFieldNames(Collections.emptyList());
             }
         }
 
@@ -1010,12 +1085,12 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         // Get the GROUP_FIELDS parameter if given
         String groupFieldsParam = settings.findParameter(QueryParameters.GROUP_FIELDS).getParameterValue().trim();
         if (StringUtils.isNotBlank(groupFieldsParam)) {
-            String[] groupFields = StringUtils.split(groupFieldsParam, Constants.PARAM_VALUE_SEP);
+            TreeMultimap<String,TemporalGranularity> groupByFieldMap = GroupFields.parseGroupByFields(groupFieldsParam);
 
             // Only set the group fields if we were actually given some.
-            if (groupFields.length > 0) {
+            if (!groupByFieldMap.isEmpty()) {
                 GroupFields groupByFields = config.getGroupFields();
-                groupByFields.setGroupByFields(Sets.newHashSet(groupFields));
+                groupByFields.setGroupByFieldMap(groupByFieldMap);
 
                 // Update the sum fields if given.
                 String sumFieldsParam = settings.findParameter(QueryParameters.SUM_FIELDS).getParameterValue().trim();
@@ -1369,14 +1444,9 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
             QueryPlanner queryPlanner = getQueryPlanner();
             if (planner instanceof DefaultQueryPlanner) {
                 DefaultQueryPlanner dqp = (DefaultQueryPlanner) queryPlanner;
-                boolean simple = SimpleQueryVisitor.validate(config.getQueryTree(), dqp.getIndexedFields(), dqp.getIndexOnlyFields());
-                if (simple) {
-                    DocumentScheduler documentScheduler = new DocumentScheduler(config);
-                    documentScheduler.setVisitorFunction(getVisitorFunction(dqp.getMetadataHelper()));
-                    return documentScheduler;
-                } else {
-                    log.warn("Query was not simple: " + simple + " or scheduler config was null:" + (config.getDocumentScannerConfig() == null));
-                }
+                DocumentScheduler documentScheduler = new DocumentScheduler(config);
+                documentScheduler.setVisitorFunction(getVisitorFunction(dqp.getMetadataHelper()));
+                return documentScheduler;
             }
         }
 
@@ -1496,10 +1566,9 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
                             + (this.getSettings() == null ? "empty" : this.getSettings().getId()) + ')');
         }
 
-        // Delegate to the super class if no validation rules were configured.
+        // If no validation rules were configured, return no results.
         if (validationRules == null || validationRules.isEmpty()) {
-            log.trace("No validation rules configured");
-            return super.validateQuery(client, settings, auths);
+            throw new BadRequestQueryException(DatawaveErrorCode.NO_QUERY_VALIDATION_RULES_CONFIGURED);
         }
 
         // Set the connector and authorizations for the config object.
@@ -1839,6 +1908,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         getConfig().setDisableIteratorUniqueFields(disableIteratorUniqueFields);
     }
 
+    public boolean isDisableIteratorMostRecentUniqueFields() {
+        return getConfig().isDisableIteratorMostRecentUniqueFields();
+    }
+
+    public void setDisableIteratorMostRecentUniqueFields(boolean disableIteratorMostRecentUniqueFields) {
+        getConfig().setDisableIteratorMostRecentUniqueFields(disableIteratorMostRecentUniqueFields);
+    }
+
     public UniqueFields getUniqueFields() {
         return getConfig().getUniqueFields();
     }
@@ -2143,6 +2220,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         getConfig().setYieldThresholdMs(yieldThresholdMs);
     }
 
+    public int getMaxYields() {
+        return getConfig().getMaxYields();
+    }
+
+    public void setMaxYields(int maxYields) {
+        getConfig().setMaxYields(maxYields);
+    }
+
     public boolean isCleanupShardsAndDaysQueryHints() {
         return getConfig().isCleanupShardsAndDaysQueryHints();
     }
@@ -2189,6 +2274,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
     public void setIndexStatsTableName(String indexStatsTableName) {
         getConfig().setIndexStatsTableName(indexStatsTableName);
+    }
+
+    public String getDayIndexTableName() {
+        return getConfig().getDayIndexTableName();
+    }
+
+    public void setDayIndexTableName(String dayIndexTableName) {
+        getConfig().setDayIndexTableName(dayIndexTableName);
     }
 
     public String getModelTableName() {
@@ -2285,6 +2378,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
     public void setFilterClassNames(List<String> filterClassNames) {
         getConfig().setFilterClassNames(filterClassNames);
+    }
+
+    public String getFieldRuleClassName() {
+        return getConfig().getFieldRuleClassName();
+    }
+
+    public void setFieldRuleClassName(String fieldRuleClassName) {
+        getConfig().setFieldRuleClassName(fieldRuleClassName);
     }
 
     public List<String> getIndexFilteringClassNames() {
@@ -2406,6 +2507,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
     public void setIvaratorCacheScanTimeoutMinutes(long hdfsCacheScanTimeoutMinutes) {
         getConfig().setIvaratorCacheScanTimeout(hdfsCacheScanTimeoutMinutes * 1000 * 60);
+    }
+
+    public List<Type<?>> getExcludeUnfieldedTypes() {
+        return getConfig().getExcludeUnfieldedTypes();
+    }
+
+    public void setExcludeUnfieldedTypes(List<Type<?>> excludeUnfieldedTypes) {
+        getConfig().setExcludeUnfieldedTypes(excludeUnfieldedTypes);
     }
 
     public String getHdfsSiteConfigURLs() {
@@ -2859,6 +2968,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
     public void setMaxAnyFieldScanTimeMillis(long maxAnyFieldScanTimeMillis) {
         getConfig().setMaxAnyFieldScanTimeMillis(maxAnyFieldScanTimeMillis);
+    }
+
+    public boolean isUseNewIndexLookups() {
+        return getConfig().isUseNewIndexLookups();
+    }
+
+    public void setUseNewIndexLookups(boolean useNewIndexLookups) {
+        getConfig().setUseNewIndexLookups(useNewIndexLookups);
     }
 
     public Function getQueryMacroFunction() {
@@ -3480,5 +3597,61 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
     public void setDateIndexIterator(boolean dateIndexIterator) {
         getConfig().setDateIndexIterator(dateIndexIterator);
+    }
+
+    public int getMaxLinesToPrint() {
+        return getConfig().getMaxLinesToPrint();
+    }
+
+    public void setMaxLinesToPrint(int maxLinesToPrint) {
+        getConfig().setMaxLinesToPrint(maxLinesToPrint);
+    }
+
+    public boolean isUseShardedIndex() {
+        return getConfig().isUseShardedIndex();
+    }
+
+    public void setUseShardedIndex(boolean useShardedIndex) {
+        getConfig().setUseShardedIndex(useShardedIndex);
+    }
+
+    public int getDayIndexThreshold() {
+        return getConfig().getDayIndexThreshold();
+    }
+
+    public void setDayIndexThreshold(int dayIndexThreshold) {
+        getConfig().setDayIndexThreshold(dayIndexThreshold);
+    }
+
+    public boolean isExpandUnfieldedValues() {
+        return getConfig().isExpandUnfieldedValues();
+    }
+
+    public void setExpandUnfieldedValues(boolean expand) {
+        getConfig().setExpandUnfieldedValues(expand);
+    }
+
+    public boolean isUseTruncatedIndex() {
+        return getConfig().isUseTruncatedIndex();
+    }
+
+    public void setUseTruncatedIndex(boolean useTruncatedIndex) {
+        getConfig().setUseTruncatedIndex(useTruncatedIndex);
+    }
+
+    public String getTruncatedIndexTableName() {
+        return getConfig().getTruncatedIndexTableName();
+    }
+
+    public void setTruncatedIndexTableName(String truncatedIndexTableName) {
+        getConfig().setTruncatedIndexTableName(truncatedIndexTableName);
+    }
+
+    public AllHitsQueryConfig getAllHitsQueryConfig() {
+        return getConfig().getAllHitsQueryConfig();
+    }
+
+    public void setAllHitsQueryConfig(AllHitsQueryConfig allHitsQueryConfig) {
+        getConfig().setAllHitsQueryConfig(allHitsQueryConfig);
     }
 }

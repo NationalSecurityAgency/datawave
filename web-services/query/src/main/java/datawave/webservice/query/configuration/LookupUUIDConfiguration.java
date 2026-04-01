@@ -20,8 +20,20 @@ public class LookupUUIDConfiguration {
     protected Map<String,String> contentLookupTypes = null;
 
     protected int batchLookupUpperLimit = LookupUUIDConstants.DEFAULT_BATCH_LOOKUP_UPPER_LIMIT;
+
+    protected int tagCloudLookupUpperLimit = LookupUUIDConstants.DEFAULT_TAG_CLOUD_LOOKUP_UPPER_LIMIT;
+
     protected String beginDate = null;
     protected String columnVisibility;
+
+    /**
+     * Returns the maximum number of UUIDs allowed for tag cloud id lookup. A zero or negative value is interpreted as unlimited. The default value is 500.
+     *
+     * @return the maximum number of UUIDs allowed for tag cloud id lookup
+     */
+    public int getTagCloudLookupUpperLimit() {
+        return this.tagCloudLookupUpperLimit;
+    }
 
     /**
      * Returns the maximum number of UUIDs allowed for batch lookup. A zero or negative value is interpreted as unlimited. The default value is 100.
@@ -56,6 +68,16 @@ public class LookupUUIDConfiguration {
      */
     public void setBatchLookupUpperLimit(int batchLookupUpperLimit) {
         this.batchLookupUpperLimit = batchLookupUpperLimit;
+    }
+
+    /**
+     * Sets the maximum number of UUIDs allowed for tag cloud id lookup. A zero or negative value is interpreted as unlimited.
+     *
+     * @param tagCloudLookupUpperLimit
+     *            the maximum number of UUIDs allowed for tag cloud lookup
+     */
+    public void setTagCloudLookupUpperLimit(int tagCloudLookupUpperLimit) {
+        this.tagCloudLookupUpperLimit = tagCloudLookupUpperLimit;
     }
 
     public void setBeginDate(String beginDate) {

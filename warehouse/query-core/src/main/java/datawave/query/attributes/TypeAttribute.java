@@ -24,18 +24,17 @@ import datawave.data.type.OneToManyNormalizerType;
 import datawave.data.type.Type;
 import datawave.query.collections.FunctionalSet;
 import datawave.query.jexl.DatawaveJexlContext;
-import datawave.query.util.cache.ClassCache;
 import datawave.webservice.query.data.ObjectSizeOf;
 
 public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttribute<T>> implements Serializable {
 
-    private static final long serialVersionUID = 7264249641813898860L;
+    private static final long serialVersionUID = -6108667228858778287L;
 
     private static final Logger log = Logger.getLogger(TypeAttribute.class);
 
-    private static final ClassCache classCache = new ClassCache();
-
     private Type<T> datawaveType;
+
+    private String delegateString = null;
 
     protected TypeAttribute() {
         super(null, true);
@@ -48,8 +47,11 @@ public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttrib
 
     @Override
     public long sizeInBytes() {
-        return ObjectSizeOf.Sizer.getObjectSize(datawaveType) + super.sizeInBytes(4);
-        // 4 for datawaveType reference
+        if (sizeInBytes == Long.MIN_VALUE) {
+            // 4 for datawaveType reference
+            sizeInBytes = ObjectSizeOf.Sizer.getObjectSize(datawaveType) + super.sizeInBytes(4);
+        }
+        return sizeInBytes;
     }
 
     public Type<T> getType() {
@@ -94,7 +96,7 @@ public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttrib
         }
         readMetadata(in);
         if (datawaveType == null) {
-            datawaveType = (Type) new NoOpType();
+            datawaveType = (Type<T>) new NoOpType();
         }
         this.datawaveType.setDelegateFromString(WritableUtils.readString(in));
         this.toKeep = WritableUtils.readVInt(in) != 0;
@@ -119,7 +121,7 @@ public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttrib
         }
 
         if (o instanceof TypeAttribute) {
-            TypeAttribute other = (TypeAttribute) o;
+            TypeAttribute<T> other = (TypeAttribute<T>) o;
             return this.getType().equals(other.getType()) && (0 == this.compareMetadata(other));
         }
 
@@ -128,9 +130,15 @@ public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttrib
 
     @Override
     public int hashCode() {
-        HashCodeBuilder hcb = new HashCodeBuilder(2099, 2129);
-        hcb.append(datawaveType.getDelegateAsString()).append(super.hashCode());
-        return hcb.toHashCode();
+        if (hashcode == Integer.MIN_VALUE) {
+            //  @formatter:off
+            hashcode = new HashCodeBuilder(2099, 2129)
+                    .append(datawaveType.getDelegateAsString())
+                    .append(super.hashCode())
+                    .toHashCode();
+            //  @formatter:on
+        }
+        return hashcode;
     }
 
     @Override
@@ -156,6 +164,7 @@ public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttrib
         super.writeMetadata(kryo, output);
         this.datawaveType.write(kryo, output);
         output.writeBoolean(this.toKeep);
+        output.writeInt(hashCode(), true);
     }
 
     @Override
@@ -176,16 +185,18 @@ public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttrib
         }
         super.readMetadata(kryo, input);
         if (datawaveType == null) {
-            datawaveType = (Type) new NoOpType();
+            datawaveType = (Type<T>) new NoOpType();
         }
         this.datawaveType.read(kryo, input);
         this.toKeep = input.readBoolean();
+        this.hashcode = input.readInt(true);
     }
 
+    @SuppressWarnings("unchecked")
     private void setDatawaveType(String datawaveTypeString)
                     throws InstantiationException, IllegalAccessException, ClassNotFoundException, NoSuchMethodException, InvocationTargetException {
-        Class<?> clazz = classCache.get(datawaveTypeString);
-        Constructor<Type> constructor = (Constructor<Type>) clazz.getDeclaredConstructor();
+        Class<?> clazz = classCache.get().get(datawaveTypeString);
+        Constructor<Type<T>> constructor = (Constructor<Type<T>>) clazz.getDeclaredConstructor();
         this.datawaveType = constructor.newInstance();
     }
 
@@ -195,14 +206,17 @@ public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttrib
      * @see Attribute#deepCopy()
      */
     @Override
-    public TypeAttribute copy() {
-        return new TypeAttribute(this.getType(), this.getMetadata(), this.isToKeep());
+    public TypeAttribute<T> copy() {
+        return new TypeAttribute<>(this.getType(), this.getMetadata(), this.isToKeep());
     }
 
     @Override
     public String toString() {
         if (datawaveType.getDelegate() != null) {
-            return datawaveType.getDelegateAsString();
+            if (delegateString == null) {
+                delegateString = datawaveType.getDelegateAsString();
+            }
+            return delegateString;
         } else {
             return this.getClass() + " with null delegate";
         }

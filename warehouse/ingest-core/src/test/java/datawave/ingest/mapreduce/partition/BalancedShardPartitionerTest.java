@@ -99,6 +99,7 @@ public class BalancedShardPartitionerTest {
         conf.setBoolean(TableSplitsCache.REFRESH_SPLITS, true);
 
         partitioner.setConf(conf);
+
         // For a shard from today, we can assume that they're well balanced.
         // If offsetting is working, they will not go to the same partitions
         String today = formatDay(0);
@@ -251,8 +252,8 @@ public class BalancedShardPartitionerTest {
         if (missingShardStrategy != null) {
             conf.set(BalancedShardPartitioner.MISSING_SHARD_STRATEGY_PROP, missingShardStrategy);
         }
-
-        assertEquals(SHARDS_PER_DAY * 3 + 2 + 2, tserverId - 1);
+        // check we made enough tservers
+        assertEquals(SHARDS_PER_DAY * 3 + 2 + 2, tserverId - 1); // since it already ++'d for next one
     }
 
     private void assertPartitionsForDay(BalancedShardPartitioner partioner, String tableName, int daysAgo, int expectedNumOfPartitions) {

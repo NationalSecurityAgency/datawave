@@ -67,6 +67,10 @@
         <!-- property name="accumuloPassword" value="${accumulo.user.password}" />	 -->
         <property name="collapseUids" value="false" />	<!-- was ${query.collapse.uids} -->
         <property name="useEnrichers" value="true" />
+        <property name="useTruncatedIndex" value="false" />
+        <property name="truncatedIndexTableName" value="truncatedShardIndex"/>
+        <property name="useShardedIndex" value="true" />
+        <property name="dayIndexThreshold" value="17" />
         <property name="contentFieldNames">
             <list value-type="java.lang.String">
                 <value>CONTENT</value>
@@ -127,6 +131,7 @@
             </map>
         </property>
         <property name="queryPlanner" ref="DefaultQueryPlanner" />
+        <property name="maxLinesToPrint" value="100"/>
         <!--<property name="queryMacroFunction" ref="queryMacroFunction" />-->
         <property name="markingFunctions" ref="markingFunctions" />
         <!--   reduce type metadata     -->
@@ -217,7 +222,7 @@
         <property name="resultQueuePollTimeMillis" value="5"/>
         <property name="scanTimeoutMillis" value="10000"/>
         <property name="allowPartialIntersections" value="true" />
-        <property name="useQueryIterator" value="true" />
+        <property name="useQueryIterator" value="false" />
         <!-- execution hints and consistency levels -->
         <property name="searchScanHintTable" value="shard"/>
         <property name="searchScanHintPool" value="shardTablePool"/>

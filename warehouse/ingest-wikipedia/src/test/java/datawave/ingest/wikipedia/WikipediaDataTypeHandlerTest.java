@@ -1,6 +1,5 @@
 package datawave.ingest.wikipedia;
 
-import java.io.IOException;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -18,7 +17,6 @@ import com.google.common.collect.Multimap;
 
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.config.NormalizedContentInterface;
-import datawave.ingest.data.config.ingest.VirtualIngest;
 import datawave.ingest.mapreduce.StandaloneStatusReporter;
 import datawave.ingest.mapreduce.StandaloneTaskAttemptContext;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
@@ -33,12 +31,11 @@ public class WikipediaDataTypeHandlerTest extends WikipediaTestBed {
 
     protected static WikipediaDataTypeHandler<Text,BulkIngestKey,Value> handler = null;
 
-    public class MyCachingContextWriter extends AbstractContextWriter<BulkIngestKey,Value> {
-        private Multimap<BulkIngestKey,Value> cache = HashMultimap.create();
+    public static class MyCachingContextWriter extends AbstractContextWriter<BulkIngestKey,Value> {
+        private final Multimap<BulkIngestKey,Value> cache = HashMultimap.create();
 
         @Override
-        protected void flush(Multimap<BulkIngestKey,Value> entries, TaskInputOutputContext<?,?,BulkIngestKey,Value> context)
-                        throws IOException, InterruptedException {
+        protected void flush(Multimap<BulkIngestKey,Value> entries, TaskInputOutputContext<?,?,BulkIngestKey,Value> context) {
             for (Map.Entry<BulkIngestKey,Value> entry : entries.entries()) {
                 cache.put(entry.getKey(), entry.getValue());
             }
@@ -72,8 +69,7 @@ public class WikipediaDataTypeHandlerTest extends WikipediaTestBed {
         helper.setup(conf);
 
         Multimap<String,NormalizedContentInterface> eventFields = helper.getEventFields(e);
-
-        Multimap<String,NormalizedContentInterface> virtualFields = ((VirtualIngest) helper).getVirtualFields(eventFields);
+        Multimap<String,NormalizedContentInterface> virtualFields = helper.getVirtualFields(eventFields);
         for (Entry<String,NormalizedContentInterface> v : virtualFields.entries()) {
             eventFields.put(v.getKey(), v.getValue());
         }
@@ -102,12 +98,30 @@ public class WikipediaDataTypeHandlerTest extends WikipediaTestBed {
         Assert.assertEquals(38, tableToKey.get(TableName.SHARD_INDEX).size());
         Assert.assertEquals(25, tableToKey.get(TableName.SHARD_RINDEX).size());
 
+        Assert.assertEquals(handler.getDayIndexEnabled(), tableToKey.containsKey(TableName.SHARD_DAY_INDEX));
+        if (tableToKey.containsKey(TableName.SHARD_DAY_INDEX)) {
+            Assert.assertEquals(40, tableToKey.get(TableName.SHARD_DAY_INDEX).size());
+        }
+
+        Assert.assertEquals(handler.getYearIndexEnabled(), tableToKey.containsKey(TableName.SHARD_YEAR_INDEX));
+        if (tableToKey.containsKey(TableName.SHARD_YEAR_INDEX)) {
+            Assert.assertEquals(25, tableToKey.get(TableName.SHARD_YEAR_INDEX).size());
+        }
+
         // These are only the *_TERM_COUNT things. The rest are handled via EventMapper's EventMetadata instance
         int numberOfLoadDateEntries = 14;
         int numberOfDatawaveMetadataEntries = 18;
         Assert.assertEquals(numberOfDatawaveMetadataEntries, tableToKey.get(TableName.METADATA).size());
 
-        Assert.assertEquals(137 + numberOfDatawaveMetadataEntries + numberOfLoadDateEntries, results.size());
+        int expected = 137 + numberOfDatawaveMetadataEntries + numberOfLoadDateEntries;
+        if (handler.getDayIndexEnabled()) {
+            expected += 40;
+        }
+        if (handler.getYearIndexEnabled()) {
+            expected += 40;
+        }
+
+        Assert.assertEquals(expected, results.size());
 
         contextWriter = new MyCachingContextWriter();
 
@@ -118,7 +132,7 @@ public class WikipediaDataTypeHandlerTest extends WikipediaTestBed {
         e = reader.getEvent();
 
         eventFields = helper.getEventFields(e);
-        virtualFields = ((VirtualIngest) helper).getVirtualFields(eventFields);
+        virtualFields = helper.getVirtualFields(eventFields);
         for (Entry<String,NormalizedContentInterface> v : virtualFields.entries()) {
             eventFields.put(v.getKey(), v.getValue());
         }
@@ -145,10 +159,28 @@ public class WikipediaDataTypeHandlerTest extends WikipediaTestBed {
         Assert.assertEquals(4890, tableToKey.get(TableName.SHARD_INDEX).size());
         Assert.assertEquals(4877, tableToKey.get(TableName.SHARD_RINDEX).size());
 
+        Assert.assertEquals(handler.getDayIndexEnabled(), tableToKey.containsKey(TableName.SHARD_DAY_INDEX));
+        if (tableToKey.containsKey(TableName.SHARD_DAY_INDEX)) {
+            Assert.assertEquals(5219, tableToKey.get(TableName.SHARD_DAY_INDEX).size());
+        }
+
+        Assert.assertEquals(handler.getYearIndexEnabled(), tableToKey.containsKey(TableName.SHARD_YEAR_INDEX));
+        if (tableToKey.containsKey(TableName.SHARD_YEAR_INDEX)) {
+            Assert.assertEquals(5204, tableToKey.get(TableName.SHARD_YEAR_INDEX).size());
+        }
+
         // These are only the *_TERM_COUNT things. The rest are handled via EventMapper's EventMetadata instance
         Assert.assertEquals(numberOfDatawaveMetadataEntries, tableToKey.get(TableName.METADATA).size());
 
-        Assert.assertEquals(22766 + numberOfDatawaveMetadataEntries + numberOfLoadDateEntries, results.size());
+        int resultSize = results.size();
+        expected = 22798;
+        if (handler.getDayIndexEnabled()) {
+            expected += 5219;
+        }
+        if (handler.getYearIndexEnabled()) {
+            expected += 5219;
+        }
+        Assert.assertEquals(expected, resultSize);
     }
 
 }

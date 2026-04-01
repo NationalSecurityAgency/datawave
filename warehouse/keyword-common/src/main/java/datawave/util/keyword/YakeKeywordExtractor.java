@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,6 +19,7 @@ import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.ibm.icu.text.BreakIterator;
 
 import datawave.util.keyword.language.BaseYakeLanguage;
@@ -54,6 +56,12 @@ public class YakeKeywordExtractor {
     public static final int DEFAULT_MAX_CONTENT_LENGTH = 32768;
 
     private static final Logger log = LoggerFactory.getLogger(YakeKeywordExtractor.class);
+
+    /** A set of common number separators used in various locales */
+    private static final Set<Character> COMMON_NUMBER_SEPARATORS = new HashSet<Character>(Arrays.asList('.', ',', ' ', '\u00a0', // non-breaking space
+                    '\'', // apostrophe
+                    '\u202F' // narrow non-breaking space
+    ));
 
     /** minimum length for extracted keywords which are typically composed of multiple words/tokens */
     private final int minNGrams;
@@ -228,11 +236,9 @@ public class YakeKeywordExtractor {
      * @return the tag for the word.
      */
     protected static String calculateTag(String word, int position) {
-        try {
-            String word2 = word.replace(",", "");
-            Float.parseFloat(word2);
+        if (isNumber(word)) {
             return "d";
-        } catch (NumberFormatException e) {
+        } else {
             int wordLength = word.length();
             int digitCount = countDigits(word, wordLength);
             int alphaCount = countLetters(word, wordLength);
@@ -251,6 +257,39 @@ public class YakeKeywordExtractor {
 
             return "p";
         }
+    }
+
+    /**
+     * Checks a string to see if it is numeric, allows a leading sign plus digits, decimal points and commas.
+     *
+     * @param word
+     *            the word to check
+     * @return true if the word is a number, false otherwise - including null or empty strings.
+     */
+    @VisibleForTesting
+    protected static boolean isNumber(String word) {
+        if (word == null || word.isEmpty()) {
+            return false;
+        }
+
+        // allow leading positive or negative sign.
+        int startIndex = (word.charAt(0) == '-' || word.charAt(0) == '+') ? 1 : 0;
+
+        // allow digits, decimal or comma separators.
+        final int length = word.length();
+        boolean hasDigits = false;
+        for (int i = startIndex; i < length; i++) {
+            char c = word.charAt(i);
+            if (Character.isDigit(c)) {
+                hasDigits = true;
+            } else if (!COMMON_NUMBER_SEPARATORS.contains(c)) {
+                // anything else that isn't in the common number separators list we don't allow.
+                return false;
+            }
+        }
+
+        // must have at least one digit.
+        return hasDigits;
     }
 
     /**
@@ -455,7 +494,8 @@ public class YakeKeywordExtractor {
         final double count = tokenMap.size();
         final double avg = sum / count;
         final double std = Math.sqrt(IntStream.of(tokenFrequencies).mapToDouble(a -> Math.pow(((double) a) - avg, 2)).sum() / count);
-        final double maxTF = IntStream.of(tokenFrequencies).mapToDouble(x -> (double) x).max().orElse(0);
+        final double maxTF = IntStream.of(tokenFrequencies).max().orElse(0);
+
         final int numSentences = basicStats.stream().mapToInt(TokenValue::getValue).max().orElse(0) + 1;
 
         if (log.isDebugEnabled()) {
@@ -505,40 +545,53 @@ public class YakeKeywordExtractor {
      * @return a Map of candidate keywords - the keyword is the key, the score is the value
      */
     protected Map<String,Long> calculateCandidateKeywords(List<TaggedToken> sentences) {
-        final Map<Integer,List<TaggedToken>> sentenceStream = sentences.stream().collect(Collectors.groupingBy(TaggedToken::getSentenceId)); // group by
-                                                                                                                                             // sentences
-
         final Set<String> stopwords = this.getStopwords();
 
-        return sentenceStream.values().stream().map(value -> {
-            final int valueSize = value.size();
+        // group tokens by sentences to prevent forming ngrams across sentences.
+        final Map<Integer,List<TaggedToken>> tokensBySentence = sentences.stream().collect(Collectors.groupingBy(TaggedToken::getSentenceId));
 
-            final Stream<List<Integer>> ngramPositions = IntStream.range(minNGrams, maxNGrams + 1) // for each window size
-                            .mapToObj(size -> IntStream.range(0, valueSize).mapToObj(start -> { // for each start token in entry
-                                int end = start + size;
-                                if (end > valueSize) {
-                                    return IntStream.empty();
-                                }
-                                return IntStream.range(start, end); // generate a stream of positions for that window size
-                            })).reduce(Stream.empty(), Stream::concat).map(k -> k.boxed().collect(Collectors.toList())).filter(s -> !s.isEmpty());
+        // build candidate keywords from ranges of tokens using sliding ngram windows
+        final List<String> candidateKeywords = new ArrayList<>();
+        for (List<TaggedToken> sentenceTokens : tokensBySentence.values()) {
+            final int limit = sentenceTokens.size();
+            for (int start = 0; start < limit; start++) { // for each token in sentence
+                NGRAM_SIZE: for (int length = minNGrams; length <= maxNGrams; length++) { // for each desired ngram size
+                    int end = findEnd(start, length, limit);
+                    if (end > start) {
+                        // skip candidate keywords that start with a stopword.
+                        if (stopwords.contains(sentenceTokens.get(start).getLowercaseToken())) {
+                            continue;
+                        }
 
-            // convert positions lists to actual ngrams.
-            final Stream<List<TaggedToken>> ngrams = ngramPositions.map(k -> k.stream().map(value::get).collect(Collectors.toList()));
+                        // skip candidate keywords that end with a stopword
+                        if (stopwords.contains(sentenceTokens.get(end - 1).getLowercaseToken())) {
+                            continue;
+                        }
 
-            return ngrams.filter(y -> {
-                // remove any candidates that contain a 'u' or 'd' token.
-                final List<String> tagList = y.stream().map(TaggedToken::getTag).collect(Collectors.toList());
-                return !(tagList.contains("u") || tagList.contains("d"));
-            }).filter(y -> {
-                // remove any candidates where the first or last word is a stopwords
-                final String firstWord = y.get(0).getLowercaseToken();
-                final String lastWord = y.get(y.size() - 1).getLowercaseToken();
-                return !(stopwords.contains(firstWord) || stopwords.contains(lastWord));
-            })
-                            // transform remaining candidates into a comma-delimited string
-                            .map(y -> y.stream().map(TaggedToken::getToken).map(String::toLowerCase).collect(Collectors.joining(",")));
+                        // skip candidate keywords that contain a 'u' or 'd' token
+                        for (int pos = start; pos < end; pos++) {
+                            TaggedToken t = sentenceTokens.get(pos);
+                            if (t.getTag().equals("u") || t.getTag().equals("d")) {
+                                continue NGRAM_SIZE;
+                            }
+                        }
 
-        }).reduce(Stream.empty(), Stream::concat).collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+                        // build the candidate keyword string (comma-delimited tokens)
+                        final StringBuilder b = new StringBuilder();
+                        for (int pos = start; pos < end; pos++) {
+                            b.append(sentenceTokens.get(pos).getLowercaseToken()).append(",");
+                        }
+                        if (b.length() > 0) {
+                            b.setLength(b.length() - 1);
+                        }
+                        candidateKeywords.add(b.toString());
+                    }
+                }
+            }
+        }
+
+        // group candidate keywords by frequency
+        return candidateKeywords.stream().collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
     }
 
     /**

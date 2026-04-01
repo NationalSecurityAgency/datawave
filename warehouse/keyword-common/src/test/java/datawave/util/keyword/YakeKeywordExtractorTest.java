@@ -115,4 +115,17 @@ public class YakeKeywordExtractorTest {
         assertEquals(4, keywords.size());
         assertEquals(EXPECTED_NEWS_OUTPUT, keywords);
     }
+
+    @Test
+    public void testIsNumber() {
+        //@formatter:off
+        String[] testInput = { "123", "-456", "+789", "12.34", "56,78", ".5", "5.", ",5", "5,", "-0.123", "abc", "123a", "1.2.3", "", null, ".", "+", "-"};
+        boolean[] expected = {  true,  true,   true,   true,    true,    true, true, true, true, true,     false, false,  true,    false, false, false, false, false};
+        //@formatter:on
+
+        for (int i = 0; i < testInput.length; i++) {
+            final String message = "Expected " + testInput[i] + " to be " + expected[i];
+            assertEquals(expected[i], YakeKeywordExtractor.isNumber(testInput[i]), message);
+        }
+    }
 }

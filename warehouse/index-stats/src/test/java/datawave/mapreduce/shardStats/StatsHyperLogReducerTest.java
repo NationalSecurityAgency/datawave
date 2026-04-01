@@ -18,10 +18,10 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.mapreduce.Reducer;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.clearspring.analytics.stream.cardinality.HyperLogLogPlus;
 
@@ -32,7 +32,14 @@ import datawave.ingest.mapreduce.job.TableConfigurationUtil;
 
 public class StatsHyperLogReducerTest {
 
-    private static final Logger log = LoggerFactory.getLogger(StatsHyperLogReducerTest.class);
+    private static final Logger log = Logger.getLogger(StatsHyperLogReducerTest.class);
+
+    static {
+        Logger.getLogger(StatsHyperLogReducer.class).setLevel(Level.DEBUG);
+        Logger.getLogger(StatsHyperLogSummary.class).setLevel(Level.DEBUG);
+        Logger.getLogger(StatsHyperLogReducerTest.class).setLevel(Level.DEBUG);
+        Logger.getLogger(StatsTestData.class).setLevel(Level.DEBUG);
+    }
 
     @Test
     public void testOneValue() throws IOException, InterruptedException {
@@ -79,6 +86,7 @@ public class StatsHyperLogReducerTest {
         Configuration conf = driver.getConfiguration();
 
         conf.set(StatsJob.OUTPUT_TABLE_NAME, StatsInit.TEST_TABLE);
+        conf.set(StatsHyperLogReducer.STATS_REDUCER_LOG_LEVEL, Level.DEBUG.toString());
         conf.set(StatsHyperLogReducer.STATS_REDUCER_VALUE_INTERVAL, "5");
         conf.set("accumulo.username", "user");
         conf.set("accumulo.password", "user");
@@ -113,7 +121,7 @@ public class StatsHyperLogReducerTest {
                 summary.add(entry.getValue());
             }
 
-            log.debug("key( {} ) value( {} )", inKey.getKey(), summary);
+            log.debug("key(" + inKey.getKey() + ") value(" + summary.toString() + ")");
             driver.addInput(inKey, values);
             output.put(inKey, summary.toStatsCounters());
         }
@@ -121,7 +129,7 @@ public class StatsHyperLogReducerTest {
         log.debug("=====  EXPECTED REDUCER OUTPUT  =====");
         // generate output data
         for (Map.Entry<BulkIngestKey,StatsCounters> entry : output.entrySet()) {
-            log.debug("key( {} ) value( {} )", entry.getKey().getKey(), entry.getValue());
+            log.debug("key(" + entry.getKey().getKey() + ") value(" + entry.getValue() + ")");
         }
 
         List<MRPair<BulkIngestKey,Value>> fullResults = driver.run();
@@ -141,7 +149,7 @@ public class StatsHyperLogReducerTest {
                 DataInput is = new DataInputStream(bis);
                 counts.readFields(is);
             }
-            log.debug("key( {} ) value( {} )", key, counts);
+            log.debug("key(" + key + ") value(" + counts.toString() + ")");
 
             // iterate output to find matching BulkIngestKey
             for (BulkIngestKey oKey : output.keySet()) {

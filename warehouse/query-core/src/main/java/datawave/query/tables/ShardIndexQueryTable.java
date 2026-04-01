@@ -269,7 +269,7 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> implem
         if (log.isTraceEnabled()) {
             log.trace("fetching dataTypes from FetchDataTypesVisitor");
         }
-        Multimap<String,Type<?>> fieldToDataTypeMap = FetchDataTypesVisitor.fetchDataTypes(metadataHelper, getConfig().getDatatypeFilter(), script);
+        Multimap<String,Type<?>> fieldToDataTypeMap = FetchDataTypesVisitor.fetchDataTypes(metadataHelper, dataTypes, script);
         getConfig().setDataTypes(fieldToDataTypeMap);
         getConfig().setQueryFieldsDatatypes(fieldToDataTypeMap);
 

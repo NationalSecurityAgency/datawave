@@ -54,8 +54,9 @@ public class NumberTypeAttributeIT extends TypeAttributeIT {
         // serializing full type name: 42
         // serializing type name index: 14
         // post kryo optimization: 20
-        verifyKryoPreservesValue(createNormalizedAttribute(), 20);
-        verifyKryoPreservesValue(createNonNormalizedAttribute(), 20);
+        // serialize hash code: 25
+        verifyKryoPreservesValue(createNormalizedAttribute(), 25);
+        verifyKryoPreservesValue(createNonNormalizedAttribute(), 25);
     }
 
     @Test

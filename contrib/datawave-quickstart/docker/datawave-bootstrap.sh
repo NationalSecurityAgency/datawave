@@ -57,25 +57,15 @@ done
 [ "${START_WEB_DEBUG}" == true ] && datawaveWebStart --debug
 
 if [ "${START_TEST}" == true ] ; then
-    datawaveWebStart
-    status=$?
-
-    if [ "$status" != "0" ] ; then
-        echo "datawaveWebStart Failed"
+    datawaveWebTest --blacklist-files QueryMetrics
+    return_code=$?
+    # Check the return value
+    if [ ! $return_code -eq 0 ]; then
+        echo "datawaveWebTest Failed"
         cat ${WILDFLY_HOME}/standalone/log/server.log
-        exit $status
-    else
-        datawaveWebTest --blacklist-files QueryMetrics
-        status=$?
-
-        if [ "$status" != "0" ] ; then
-            echo "datawaveWebTest Failed"
-            cat ${WILDFLY_HOME}/standalone/log/server.log
-        fi
-
-        allStop
-        exit $status
     fi
+
+    exit $return_code
 fi
 
 if [ "${START_AS_DAEMON}" == true ] ; then
