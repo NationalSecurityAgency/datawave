@@ -555,6 +555,7 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
         FileOutputCommitter committer = (FileOutputCommitter) getOutputCommitter(context);
         workDir = committer.getWorkPath();
         conf = context.getConfiguration();
+        splitsCache = SplitsCache.getInstance(conf);
 
         setTableIdsAndConfigs();
 
