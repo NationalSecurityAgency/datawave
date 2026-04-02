@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout Code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
     - name: Set up JDK ${{env.JAVA_VERSION}}
       uses: actions/setup-java@v4
       with:
@@ -42,7 +42,8 @@ jobs:
     - name: Format code
       run: |
         if [[ "${{ github.event_name }}" != "merge_group" ]]; then
-          mvn --show-version --batch-mode --errors --no-transfer-progress "-Dstyle.color=always" clean formatter:format sortpom:sort impsort:sort -Dmaven.build.cache.enabled=false -Pautoformat -Dutils -Dservices -Dstarters
+          # re-enable after microservice parents are released with the new plugin changes
+          # mvn --show-version --batch-mode --errors --no-transfer-progress "-Dstyle.color=always" clean sortpom:sort spotless:apply -Dmaven.build.cache.enabled=false -Pautoformat -Dutils -Dservices -Dstarters
           if ! git diff-index --quiet HEAD; then
             echo "Code formatting issues detected. Please format locally.";
             exit 1;

@@ -400,12 +400,13 @@ public abstract class AbstractQueryTest {
      */
     private void planQuery(ShardQueryLogic logic) throws Exception {
         try {
+            // query parameters need to be set before the call to getSettings()
+            extraConfigurations();
+
             QueryImpl settings = getSettings();
 
             logic.setMaxEvaluationPipelines(1);
             logic.setHitList(true); // always ask for HIT_TERMs
-
-            extraConfigurations();
 
             GenericQueryConfiguration config = logic.initialize(clientForTest, settings, Collections.singleton(getAuths()));
             logic.setupQuery(config);

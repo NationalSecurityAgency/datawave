@@ -136,6 +136,40 @@
         <pluginManagement>
             <plugins>
                 <plugin>
+                    <groupId>com.diffplug.spotless</groupId>
+                    <artifactId>spotless-maven-plugin</artifactId>
+                    <version>2.43.0</version>
+                    <configuration>
+                        <java>
+                            <removeUnusedImports />
+                            <importOrder>
+                                <order>\#java,\#javax,\#,java,javax,org,com,</order>
+                            </importOrder>
+                            <eclipse>
+                                <file>eclipse/Eclipse-Datawave-Codestyle.xml</file>
+                            </eclipse>
+                            <excludes>
+                                <exclude>**/thrift/*.java</exclude>
+                            </excludes>
+                        </java>
+                    </configuration>
+                    <dependencies>
+                        <dependency>
+                            <groupId>gov.nsa.datawave</groupId>
+                            <artifactId>datawave-code-style</artifactId>
+                            <version>1.0.1</version>
+                        </dependency>
+                    </dependencies>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>apply</goal>
+                            </goals>
+                            <phase>process-sources</phase>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
                     <groupId>com.github.ekryd.sortpom</groupId>
                     <artifactId>sortpom-maven-plugin</artifactId>
                     <version>4.0.0</version>
@@ -157,54 +191,6 @@
                                 <goal>sort</goal>
                             </goals>
                             <phase>process-sources</phase>
-                        </execution>
-                    </executions>
-                </plugin>
-                <plugin>
-                    <groupId>net.revelc.code</groupId>
-                    <artifactId>impsort-maven-plugin</artifactId>
-                    <version>1.9.0</version>
-                    <configuration>
-                        <groups>java.,javax.,org.,com.</groups>
-                        <staticGroups>java,*</staticGroups>
-                        <excludes>
-                            <exclude>**/thrift/*.java</exclude>
-                        </excludes>
-                    </configuration>
-                    <executions>
-                        <execution>
-                            <id>sort-imports</id>
-                            <goals>
-                                <goal>sort</goal>
-                            </goals>
-                            <phase>process-sources</phase>
-                        </execution>
-                    </executions>
-                </plugin>
-                <plugin>
-                    <groupId>net.revelc.code.formatter</groupId>
-                    <artifactId>formatter-maven-plugin</artifactId>
-                    <version>2.23.0</version>
-                    <configuration>
-                        <configFile>eclipse/Eclipse-Datawave-Codestyle.xml</configFile>
-                        <lineEnding>LF</lineEnding>
-                        <removeTrailingWhitespace>true</removeTrailingWhitespace>
-                        <compilerSource>${maven.compiler.source}</compilerSource>
-                        <compilerCompliance>${maven.compiler.source}</compilerCompliance>
-                        <compilerTargetPlatform>${maven.compiler.target}</compilerTargetPlatform>
-                    </configuration>
-                    <dependencies>
-                        <dependency>
-                            <groupId>gov.nsa.datawave</groupId>
-                            <artifactId>datawave-code-style</artifactId>
-                            <version>1.0.1</version>
-                        </dependency>
-                    </dependencies>
-                    <executions>
-                        <execution>
-                            <goals>
-                                <goal>format</goal>
-                            </goals>
                         </execution>
                     </executions>
                 </plugin>
@@ -311,16 +297,12 @@
             <build>
                 <plugins>
                     <plugin>
+                        <groupId>com.diffplug.spotless</groupId>
+                        <artifactId>spotless-maven-plugin</artifactId>
+                    </plugin>
+                    <plugin>
                         <groupId>com.github.ekryd.sortpom</groupId>
                         <artifactId>sortpom-maven-plugin</artifactId>
-                    </plugin>
-                    <plugin>
-                        <groupId>net.revelc.code</groupId>
-                        <artifactId>impsort-maven-plugin</artifactId>
-                    </plugin>
-                    <plugin>
-                        <groupId>net.revelc.code.formatter</groupId>
-                        <artifactId>formatter-maven-plugin</artifactId>
                     </plugin>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
