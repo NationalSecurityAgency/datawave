@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.microservice</groupId>
         <artifactId>datawave-microservice-parent</artifactId>
-        <version>4.0.9</version>
+        <version>4.0.10</version>
         <relativePath>../microservice-parent</relativePath>
     </parent>
     <artifactId>datawave-microservice-service-parent</artifactId>
@@ -165,30 +165,6 @@
         </resources>
         <pluginManagement>
             <plugins>
-                <plugin>
-                    <groupId>com.diffplug.spotless</groupId>
-                    <artifactId>spotless-maven-plugin</artifactId>
-                    <version>2.43.0</version>
-                    <configuration>
-                        <java>
-                            <removeUnusedImports />
-                            <importOrder>
-                                <order>\#java,\#javax,\#,java,javax,org,com,</order>
-                            </importOrder>
-                            <excludes>
-                                <exclude>**/thrift/*.java</exclude>
-                            </excludes>
-                        </java>
-                    </configuration>
-                    <executions>
-                        <execution>
-                            <goals>
-                                <goal>apply</goal>
-                            </goals>
-                            <phase>process-sources</phase>
-                        </execution>
-                    </executions>
-                </plugin>
                 <!-- Apply more sensible defaults for user projects -->
                 <plugin>
                     <artifactId>maven-compiler-plugin</artifactId>
