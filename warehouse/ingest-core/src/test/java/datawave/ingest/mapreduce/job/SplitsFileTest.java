@@ -64,7 +64,7 @@ public class SplitsFileTest {
 
         writeBaseSplitsFile(splits, conf, tableName);
         long actualCount = splits.size();
-        assertEquals(expectedNumRows == actualCount, "IngestJob#writeSplitsFile failed to create the expected number of rows");
+        assertEquals(expectedNumRows, actualCount, "IngestJob#writeSplitsFile failed to create the expected number of rows");
     }
 
     private void writeBaseSplitsFile(Map<Text,String> locations, Configuration conf, String tableName) throws IOException {
