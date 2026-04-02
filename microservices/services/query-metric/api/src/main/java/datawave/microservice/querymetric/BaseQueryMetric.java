@@ -37,6 +37,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl.Parameter;
+import datawave.webservice.query.exception.DatawaveErrorCode;
+import datawave.webservice.query.exception.NoResultsQueryException;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.result.event.HasMarkings;
 import io.protostuff.Input;
