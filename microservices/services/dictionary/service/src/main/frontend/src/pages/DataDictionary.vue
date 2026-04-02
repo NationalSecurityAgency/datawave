@@ -177,6 +177,15 @@
                     </q-menu>
                   </q-btn>
                 </template>
+                <template v-if="col.name === 'Descriptions'">
+                  <q-checkbox
+                    size="36px"
+                    color="cyan-8"
+                    style="margin-bottom: 1.5px;"
+                    dense
+                    v-model="wrapDescriptions"
+                  />
+                </template>
               </div>
                 <div
                   class="resize-handle"
@@ -282,6 +291,7 @@ import * as Feature from '../functions/features';
 import HelpMenu from './HelpMenu.vue';
 
 // Defines the Table References, loading for axios, search filter, and pagination to sort.
+// This also defines API calls for banner, system name, and help menu along with toggles for text wrapping.
 const $q = useQuasar();
 const table = ref();
 const loading = ref(true);
@@ -298,6 +308,7 @@ const paginationFront = ref({ rowsPerPage: 200, sortBy: 'fieldName', });
 const resizingCol = ref<string | null>(null);
 const startX = ref(0);
 const colWidths = ref<Record<string, number>>({});
+const wrapDescriptions  = ref(true);
 
 // API - Defines all the Nececssary API calls for the user, and filters.
 // Note that to run the endpoint in DEV mode, you must build the project at least once first.
