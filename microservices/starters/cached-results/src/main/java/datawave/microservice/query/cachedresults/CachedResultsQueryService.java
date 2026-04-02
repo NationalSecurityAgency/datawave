@@ -58,6 +58,7 @@ import datawave.microservice.config.RequestScopeBeanSupplier;
 import datawave.microservice.query.cachedresults.config.CachedResultsQueryProperties;
 import datawave.microservice.query.cachedresults.status.CachedResultsQueryStatus;
 import datawave.microservice.query.cachedresults.status.cache.CachedResultsQueryCache;
+import datawave.microservice.query.cachedresults.status.cache.util.CacheUpdater;
 import datawave.microservice.query.storage.QueryStatus;
 import datawave.microservice.query.storage.QueryStorageCache;
 import datawave.security.authorization.ProxiedUserDetails;
