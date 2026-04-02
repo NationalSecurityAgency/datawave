@@ -34,6 +34,7 @@ import com.google.common.collect.Multimap;
 import datawave.microservice.querymetric.config.QueryMetricTransportType;
 import datawave.microservice.querymetric.handler.ContentQueryMetricsIngestHelper;
 import datawave.microservice.querymetric.persistence.AccumuloMapStore;
+import datawave.util.StringUtils;
 import datawave.webservice.query.result.event.DefaultEvent;
 import datawave.webservice.query.result.event.DefaultField;
 import datawave.webservice.query.result.event.EventBase;

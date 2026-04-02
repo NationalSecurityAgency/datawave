@@ -2,6 +2,7 @@ package datawave.microservice.query.cachedresults;
 
 import java.text.MessageFormat;
 import java.time.Duration;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.http.HttpHeaders;
 import org.slf4j.Logger;

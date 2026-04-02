@@ -1,5 +1,6 @@
 package datawave.webservice.request.objects;
 
+import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 
 import javax.xml.bind.annotation.XmlAccessOrder;
