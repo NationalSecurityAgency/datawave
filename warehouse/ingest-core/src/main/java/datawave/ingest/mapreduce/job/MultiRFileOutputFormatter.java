@@ -276,7 +276,6 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
         var builder = org.apache.accumulo.core.client.rfile.RFile.newWriter().to(filename).withFileSystem(fs).withTableProperties(tableConf);
         if(this.loadPlanningEnabled) {
             SplitsCache splits = SplitsCache.getInstance(conf);
-            //SplitsFile file = (SplitsFile) SplitsCacheFactory.getSplitsCache(conf);
             LoadPlan.SplitResolver splitResolver = row->{
                 try {
                     return findContainingSplits(row,((SplitsFile) splits).getSplits(conf, table));
@@ -389,17 +388,6 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
 
         return new LoadPlan.TableSplits(prevRow, endRow);
     }
-
-    /*
-     * public static class CustomSplitsResolver implements LoadPlan.SplitResolver { private SplitsCache cache;
-     *
-     * public CustomSplitsResolver(SplitsCache cache) { this.cache = cache; }
-     *
-     * public LoadPlan.TableSplits apply(Text row) { SplitsFile file = SplitsCacheFactory.getSplitsCache(); SplitsFile f = new SplitsFile(); f.init(conf);
-     * cache.getSplits(); //LoadPlan.TableSplits splits = new LoadPlan.TableSplits(st.begin, toString().endsWith()); }
-     *
-     * }
-     */
 
     public static class SizeTrackingWriter {
         private RFileWriter delegate;

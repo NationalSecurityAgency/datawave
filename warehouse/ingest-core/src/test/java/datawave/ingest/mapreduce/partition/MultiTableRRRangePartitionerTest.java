@@ -5,6 +5,8 @@
 package datawave.ingest.mapreduce.partition;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -22,7 +24,6 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.mapreduce.task.MapContextImpl;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -74,8 +75,8 @@ public class MultiTableRRRangePartitionerTest {
         int resultFour = instance.calculateIndex(indexFour, numPartitions, tableName, cutPointArrayLength);
         assertEquals(result, resultTwo);
         assertEquals(result, expectedResult);
-        Assertions.assertEquals(4, resultThree);
-        Assertions.assertEquals(0, resultFour);
+        assertEquals(4, resultThree);
+        assertEquals(0, resultFour);
     }
 
     @Test
@@ -85,7 +86,7 @@ public class MultiTableRRRangePartitionerTest {
         mockContextForLocalCacheFile(url);
         configuration.set(SplitsConstants.SPLITS_CACHE_DIR, url.getPath().substring(0, url.getPath().lastIndexOf('/')));
         configuration.set(SplitsConstants.SPLITS_CACHE_FILE, filename);
-        Assertions.assertThrows(RuntimeException.class, () -> getPartition("23432"));
+        assertThrows(RuntimeException.class, () -> getPartition("23432"));
     }
 
     @Test
@@ -103,7 +104,7 @@ public class MultiTableRRRangePartitionerTest {
             }
         });
 
-        Assertions.assertThrows(RuntimeException.class, () -> getPartition("23432"));
+        assertThrows(RuntimeException.class, () -> getPartition("23432"));
     }
 
     private URL createUrl(String fileName) {
@@ -145,7 +146,7 @@ public class MultiTableRRRangePartitionerTest {
             String rowStr = Character.toString((char) ("a".codePointAt(0) + i));
             int resultRow = partitioner.getPartition(getBulkIngestKey(rowStr), new Value(), numPartitions);
 
-            Assertions.assertEquals(resultRow, resultForPrecedingRow,
+            assertTrue(resultRow == resultForPrecedingRow,
                             "These should have matched: resultRow: " + resultRow + " , resultForPrecedingRow: " + resultForPrecedingRow);
         }
     }
@@ -158,8 +159,8 @@ public class MultiTableRRRangePartitionerTest {
         MultiTableRRRangePartitioner partitioner = new MultiTableRRRangePartitioner();
         for (int i = -1 * cutPointArrayLength - 1; i < cutPointArrayLength; i++) {
             int result = partitioner.calculateIndex(i, numPartitions, "someTableName", cutPointArrayLength);
-            Assertions.assertTrue(0 <= result, "i: " + i + " result: " + result);
-            Assertions.assertTrue(result < numPartitions, "i: " + i + " result: " + result);
+            assertTrue(0 <= result, "i: " + i + " result: " + result);
+            assertTrue(result < numPartitions, "i: " + i + " result: " + result);
         }
     }
 
@@ -180,15 +181,15 @@ public class MultiTableRRRangePartitionerTest {
         for (int i = 0; i < numSplits; i++) {
             String rowStr = Character.toString((char) ("a".codePointAt(0) + i));
             int result = partitioner.getPartition(getBulkIngestKey(rowStr), new Value(), numPartitions);
-            Assertions.assertTrue(numPartitions - numSplits - 1 <= result, "rowStr: " + rowStr + " partition: " + result);
-            Assertions.assertTrue(result < numPartitions, "rowStr: " + rowStr + " partition: " + result);
+            assertTrue(numPartitions - numSplits - 1 <= result, "rowStr: " + rowStr + " partition: " + result);
+            assertTrue(result < numPartitions, "rowStr: " + rowStr + " partition: " + result);
         }
 
         // test rows before and after each split
         for (int i = -1; i < numSplits + 1; i++) {
             int result = partitioner.getPartition(getBulkIngestKey(Character.toString((char) ("a".codePointAt(0) + i)) + "_"), new Value(), numPartitions);
-            Assertions.assertTrue(numPartitions - numSplits - 1 <= result, "i: " + i + " partition: " + result);
-            Assertions.assertTrue(result < numPartitions, "i: " + i + " partition: " + result);
+            assertTrue(numPartitions - numSplits - 1 <= result, "i: " + i + " partition: " + result);
+            assertTrue(result < numPartitions, "i: " + i + " partition: " + result);
         }
     }
 
@@ -201,12 +202,11 @@ public class MultiTableRRRangePartitionerTest {
         // first split is a, last is z
         countPartitions(numberTimesPartitionSeen, numPartitions, partitioner);
 
-        Assertions.assertEquals(27, numberTimesPartitionSeen.size(),
+        assertTrue(27 == numberTimesPartitionSeen.size(),
                         "Should have seen a total of 27 different partitions.  There is a split for each letter of the alphabet and the null split which is not in the file");
         for (Map.Entry<Integer,Integer> partitionAndNumSeen : numberTimesPartitionSeen.entrySet()) {
-            Assertions.assertEquals(2, partitionAndNumSeen.getValue().intValue(),
-                            "We haven't used the partition space so they should all be even, but partition " + partitionAndNumSeen.getKey().intValue()
-                                            + " did not see 2.");
+            assertTrue(2 == partitionAndNumSeen.getValue().intValue(), "We haven't used the partition space so they should all be even, but partition "
+                            + partitionAndNumSeen.getKey().intValue() + " did not see 2.");
         }
     }
 
@@ -219,15 +219,15 @@ public class MultiTableRRRangePartitionerTest {
         // first split is a, last is z
         countPartitions(numberTimesPartitionSeen, numPartitions, partitioner);
 
-        Assertions.assertEquals(10, numberTimesPartitionSeen.size(), "Should have seen a total of 10 different partitions given the small reducer space");
+        assertTrue(numberTimesPartitionSeen.size() == 10, "Should have seen a total of 10 different partitions given the small reducer space");
         System.out.println(numberTimesPartitionSeen);
         // we partitioned 27 splits
         // over a space of 10 partitioners
         // so each partitioners should have 2 splits or 3 splits assigned to it
         // we partitioned two rows per split, so each partition should have seen 4 or 6 rows
         for (Map.Entry<Integer,Integer> partitionAndNumSeen : numberTimesPartitionSeen.entrySet()) {
-            Assertions.assertTrue(4 <= partitionAndNumSeen.getValue().intValue(), partitionAndNumSeen.toString());
-            Assertions.assertTrue(partitionAndNumSeen.getValue().intValue() <= 6, partitionAndNumSeen.toString());
+            assertTrue(4 <= partitionAndNumSeen.getValue().intValue(), partitionAndNumSeen.toString());
+            assertTrue(partitionAndNumSeen.getValue().intValue() <= 6, partitionAndNumSeen.toString());
         }
     }
 
@@ -242,7 +242,7 @@ public class MultiTableRRRangePartitionerTest {
             String row = Character.toString((char) ("a".codePointAt(0) + i));
             partitionsFound.add(partitioner.getPartition(getBulkIngestKey(row), new Value(), numPartitions));
         }
-        Assertions.assertEquals(10, partitionsFound.size());
+        assertEquals(10, partitionsFound.size());
 
         // k - t go to different partitions
         partitionsFound.clear();
@@ -250,7 +250,7 @@ public class MultiTableRRRangePartitionerTest {
             String row = Character.toString((char) ("a".codePointAt(0) + i));
             partitionsFound.add(partitioner.getPartition(getBulkIngestKey(row), new Value(), numPartitions));
         }
-        Assertions.assertEquals(10, partitionsFound.size());
+        assertEquals(10, partitionsFound.size());
     }
 
     @Test
@@ -265,7 +265,7 @@ public class MultiTableRRRangePartitionerTest {
         int previousCount = 0;
         for (Map.Entry<Integer,Integer> partitionAndNumSeen : numberTimesPartitionSeen.entrySet()) {
             int currentCount = partitionAndNumSeen.getValue().intValue();
-            Assertions.assertTrue(previousCount <= currentCount, partitionAndNumSeen.toString());
+            assertTrue(previousCount <= currentCount, partitionAndNumSeen.toString());
             previousCount = currentCount;
         }
     }

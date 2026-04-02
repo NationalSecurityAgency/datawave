@@ -1,6 +1,8 @@
 package datawave.ingest.mapreduce.job;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -18,7 +20,6 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -63,7 +64,7 @@ public class SplitsFileTest {
 
         writeBaseSplitsFile(splits, conf, tableName);
         long actualCount = splits.size();
-        assertEquals(expectedNumRows, actualCount, "IngestJob#writeSplitsFile failed to create the expected number of rows");
+        assertEquals(expectedNumRows == actualCount, "IngestJob#writeSplitsFile failed to create the expected number of rows");
     }
 
     private void writeBaseSplitsFile(Map<Text,String> locations, Configuration conf, String tableName) throws IOException {
@@ -79,7 +80,7 @@ public class SplitsFileTest {
             TableSplitsCache.getCurrentCache(conf).writeHeaderLine(out, Collections.singleton(tableName));
             TableSplitsCache.getCurrentCache(conf).writeLocations(out, tableName, Lists.newArrayList(locations.keySet()), locations);
         }
-        Assertions.assertTrue(fs.exists(splitsPath));
+        assertTrue(fs.exists(splitsPath));
 
         conf.set(SplitsConstants.SPLITS_CACHE_DIR, tmpBaseSplitDir.getAbsolutePath());
 
@@ -106,7 +107,7 @@ public class SplitsFileTest {
 
         uut.init(conf);
 
-        Assertions.assertThrows(IOException.class, () -> uut.setupJob(Job.getInstance(conf)));
+        assertThrows(IOException.class, () -> uut.setupJob(Job.getInstance(conf)));
     }
 
     @Test
@@ -134,7 +135,7 @@ public class SplitsFileTest {
 
         Map<Text,String> locations = uut.getSplitsAndLocations(conf, tableName);
         // three days of splits, today should be invalid, which makes the rest bad too
-        Assertions.assertThrows(IllegalStateException.class, () -> uut.validateShardIdLocations(conf, tableName, 0, locations));
+        assertThrows(IllegalStateException.class, () -> uut.validateShardIdLocations(conf, tableName, 0, locations));
     }
 
     @Test
@@ -147,7 +148,7 @@ public class SplitsFileTest {
 
         Map<Text,String> locations = uut.getSplitsAndLocations(conf, tableName);
         // three days of splits, today should be invalid, which makes the rest bad too
-        Assertions.assertThrows(IllegalStateException.class, () -> uut.validateShardIdLocations(conf, tableName, 0, locations));
+        assertThrows(IllegalStateException.class, () -> uut.validateShardIdLocations(conf, tableName, 0, locations));
     }
 
     @Test
@@ -159,12 +160,12 @@ public class SplitsFileTest {
         uut.init(conf);
 
         Map<Text,String> locations = uut.getSplitsAndLocations(conf, tableName);
-        Assertions.assertEquals(splits.size(), locations.size());
+        assertEquals(splits.size(), locations.size());
         // three days of splits, today should be valid
         // yesterday and all other days invalid
         uut.validateShardIdLocations(conf, tableName, 0, locations);
         // this should cause the exception
-        Assertions.assertThrows(IllegalStateException.class, () -> uut.validateShardIdLocations(conf, tableName, 1, locations));
+        assertThrows(IllegalStateException.class, () -> uut.validateShardIdLocations(conf, tableName, 1, locations));
     }
 
     @Test
@@ -180,7 +181,7 @@ public class SplitsFileTest {
         // yesterday and all other days invalid
         uut.validateShardIdLocations(conf, tableName, 0, locations);
         // this should cause the exception
-        Assertions.assertThrows(IllegalStateException.class, () -> uut.validateShardIdLocations(conf, tableName, 1, locations));
+        assertThrows(IllegalStateException.class, () -> uut.validateShardIdLocations(conf, tableName, 1, locations));
     }
 
     @Test
@@ -194,7 +195,7 @@ public class SplitsFileTest {
 
         Map<Text,String> locations = uut.getSplitsAndLocations(conf, tableName);
         // this should cause the exception
-        Assertions.assertThrows(IllegalStateException.class, () -> uut.validateShardIdLocations(conf, tableName, 0, locations));
+        assertThrows(IllegalStateException.class, () -> uut.validateShardIdLocations(conf, tableName, 0, locations));
     }
 
     @Test
