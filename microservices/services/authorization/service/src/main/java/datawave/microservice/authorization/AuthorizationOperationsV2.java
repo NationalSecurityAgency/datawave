@@ -1,10 +1,8 @@
 package datawave.microservice.authorization;
 
-import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.bus.BusProperties;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Service;

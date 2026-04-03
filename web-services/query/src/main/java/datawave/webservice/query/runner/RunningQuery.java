@@ -75,13 +75,15 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
     private ExecutorService executor = null;
     private volatile Future<Object> future = null;
     private final BlockingQueue<Object> resultsThreadQueue = new ArrayBlockingQueue<>(1);
+    private volatile Exception resultsThreadException = null;
     private final AtomicInteger hasNext = new AtomicInteger(0);
     private final AtomicInteger gotNext = new AtomicInteger(0);
     private final AtomicBoolean running = new AtomicBoolean(false);
     private QueryPredictor predictor = null;
     private long maxResults = 0;
     private int currentTimeoutcount = 0;
-    private boolean allowShortCircuitTimeouts = false;
+    private boolean allowIntermediateEmptyPages = false;
+    private boolean useResultsThread = true;
 
     public RunningQuery() {
         super(new QueryMetricFactoryImpl());
@@ -204,7 +206,11 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             this.lastPageNumber = 0;
             this.logic.setupQuery(configuration);
             this.iter = this.logic.getTransformIterator(this.settings);
-            this.allowShortCircuitTimeouts = logic.isLongRunningQuery();
+            this.allowIntermediateEmptyPages = logic.isLongRunningQuery();
+            // force us to use asynchronous results thread to allow intermediate empty pages
+            if (this.allowIntermediateEmptyPages) {
+                this.useResultsThread = true;
+            }
             // the configuration query string should now hold the initial planned query
             this.getMetric().setPlan(configuration.getQueryString());
             this.getMetric().setSetupTime((System.currentTimeMillis() - start));
@@ -276,17 +282,16 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                 }
             }
         } catch (Exception e) {
+            resultsThreadException = e;
             if (settings.getUncaughtExceptionHandler() != null) {
                 settings.getUncaughtExceptionHandler().uncaughtException(Thread.currentThread(), e);
-            } else {
-                running.set(false);
-                synchronized (hasNext) {
-                    hasNext.notifyAll();
-                }
-                synchronized (gotNext) {
-                    gotNext.notifyAll();
-                }
-                throw new RuntimeException(e);
+            }
+            running.set(false);
+            synchronized (hasNext) {
+                hasNext.notifyAll();
+            }
+            synchronized (gotNext) {
+                gotNext.notifyAll();
             }
         }
 
@@ -301,6 +306,14 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         return running;
     }
 
+    public boolean isUseResultsThread() {
+        return useResultsThread;
+    }
+
+    public void setUseResultsThread(boolean useResultsThread) {
+        this.useResultsThread = useResultsThread;
+    }
+
     /**
      * This method is used to determine if we have a next result. This will throw a timeout exception if the page short circuit limit is reached.
      *
@@ -311,7 +324,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
      *             if there is a timeout
      */
     private boolean hasNext(long pageStartTime) throws TimeoutException {
-        if (allowShortCircuitTimeouts) {
+        if (useResultsThread) {
             synchronized (hasNext) {
                 if (hasNext.get() == 0 && running.get() && !this.finished && !this.canceled) {
                     long timeout = (timing != null ? Math.max(1, (timing.getPageShortCircuitTimeoutMs() - (System.currentTimeMillis() - pageStartTime)))
@@ -321,6 +334,13 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                     } catch (InterruptedException e) {
                         // if we got interrupted, then just return false
                         return false;
+                    }
+                    if (resultsThreadException != null) {
+                        if (resultsThreadException instanceof RuntimeException) {
+                            throw (RuntimeException) resultsThreadException;
+                        } else {
+                            throw new RuntimeException(resultsThreadException);
+                        }
                     }
                     if (running.get() && (hasNext.get() == 0)) {
                         throw new TimeoutException("hasNext timed out");
@@ -354,7 +374,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
      *             if there is a timeout
      */
     private Object getNext(long pageStartTime) throws TimeoutException {
-        if (allowShortCircuitTimeouts) {
+        if (useResultsThread) {
             synchronized (gotNext) {
                 if (gotNext.get() == 0 && running.get() && !this.finished && !this.canceled) {
                     long timeout = (timing != null ? Math.max(1, (timing.getPageShortCircuitTimeoutMs() - (System.currentTimeMillis() - pageStartTime)))
@@ -426,7 +446,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             testForUncaughtException(resultList.size());
 
             // start up the results thread if needed
-            if (this.allowShortCircuitTimeouts && future == null && !this.canceled && !this.finished) {
+            if (useResultsThread && future == null && !this.canceled && !this.finished) {
                 running.set(true);
                 future = executor.submit(() -> getResultsThread());
             }
@@ -518,7 +538,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                 // This means the iter.hasNext() call didn't return within the allotted time. If this is a long running query,
                 // then we want to signal that the caller should call next to keep going (as opposed to just returning the
                 // page as COMPLETE)
-                if (allowShortCircuitTimeouts) {
+                if (allowIntermediateEmptyPages) {
                     log.info("Short circuiting the long running query");
                     hitShortCircuitForLongRunningQuery = true;
                 } else if (resultList.isEmpty()) {
@@ -789,4 +809,5 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             }
         }
     }
+
 }

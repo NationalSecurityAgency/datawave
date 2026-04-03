@@ -280,21 +280,24 @@
                 </executions>
             </plugin>
             <plugin>
-                <groupId>net.revelc.code</groupId>
-                <artifactId>impsort-maven-plugin</artifactId>
-                <version>1.9.0</version>
+                <groupId>com.diffplug.spotless</groupId>
+                <artifactId>spotless-maven-plugin</artifactId>
+                <version>2.43.0</version>
                 <configuration>
-                    <groups>java.,javax.,org.,com.</groups>
-                    <staticGroups>java,*</staticGroups>
-                    <excludes>
-                        <exclude>**/thrift/*.java</exclude>
-                    </excludes>
+                    <java>
+                        <removeUnusedImports />
+                        <importOrder>
+                            <order>\#java,\#javax,\#,java,javax,org,com,</order>
+                        </importOrder>
+                        <excludes>
+                            <exclude>**/thrift/*.java</exclude>
+                        </excludes>
+                    </java>
                 </configuration>
                 <executions>
                     <execution>
-                        <id>sort-imports</id>
                         <goals>
-                            <goal>sort</goal>
+                            <goal>apply</goal>
                         </goals>
                         <phase>process-sources</phase>
                     </execution>

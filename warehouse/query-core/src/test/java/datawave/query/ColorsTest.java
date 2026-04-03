@@ -115,7 +115,7 @@ public class ColorsTest extends AbstractQueryTest {
         Preconditions.checkNotNull(hadoopConfig);
         logic.setHdfsSiteConfigURLs(hadoopConfig.toExternalForm());
 
-        IvaratorCacheDirConfig config = new IvaratorCacheDirConfig(folder.toFile().toString());
+        IvaratorCacheDirConfig config = new IvaratorCacheDirConfig(folder.toUri().toString());
         logic.setIvaratorCacheDirConfigs(Collections.singletonList(config));
 
         logic.setMaxFieldIndexRangeSplit(1); // keep things simple

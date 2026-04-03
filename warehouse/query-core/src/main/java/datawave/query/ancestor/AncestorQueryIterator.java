@@ -268,7 +268,8 @@ public class AncestorQueryIterator extends QueryIterator {
 
     @Override
     protected IteratorBuildingVisitor createIteratorBuildingVisitor(final Range documentRange, boolean isQueryFullySatisfied, boolean sortedUIDs)
-                    throws MalformedURLException, ConfigException, InstantiationException, IllegalAccessException {
+                    throws MalformedURLException, ConfigException, InstantiationException, IllegalAccessException, NoSuchMethodException,
+                    InvocationTargetException {
         IteratorBuildingVisitor v = createIteratorBuildingVisitor(AncestorIndexBuildingVisitor.class, documentRange, isQueryFullySatisfied, sortedUIDs)
                         .setIteratorBuilder(AncestorIndexIteratorBuilder.class);
         return ((AncestorIndexBuildingVisitor) v).setEquality(getEquality());
