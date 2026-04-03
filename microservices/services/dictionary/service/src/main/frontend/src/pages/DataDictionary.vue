@@ -178,13 +178,24 @@
                   </q-btn>
                 </template>
                 <template v-if="col.name === 'Descriptions'">
-                  <q-checkbox
-                    size="36px"
-                    color="cyan-8"
-                    style="margin-bottom: 1.5px;"
-                    dense
-                    v-model="wrapDescriptions"
-                  />
+                  <span class="description-checkbox-wrapper">
+                    <q-checkbox
+                      size="36px"
+                      color="cyan-8"
+                      style="margin-bottom: 1.5px;"
+                      dense
+                      v-model="wrapDescriptions"
+                    >
+                      <q-tooltip
+                        class="tooltip-text"
+                        anchor="bottom middle"
+                        self="top middle"
+                        :offset="[60, 8]"
+                      >
+                        {{ wrapDescriptions ? 'Disable' : 'Enable' }} Description Wrapping?
+                      </q-tooltip>
+                    </q-checkbox>
+                  </span>
                 </template>
               </div>
                 <div
@@ -218,21 +229,33 @@
               v-for="col in props.cols"
               :key="col.name"
               :props="props"
-              :class="{ 'text-bold': col.name === 'dataType'}"
+              :class="[
+                { 'text-bold': col.name === 'dataType' },
+                col.name === 'Descriptions'
+                  ? (wrapDescriptions ? 'description-wrap-cell' : 'description-nowrap-cell')
+                  : ''
+              ]"
               style="font-size: 13px;"
               @click="Feature.copyLabel(col.name, col.value, props.row.dataTypeCount)"
+            >
+              <label
+                :class="col.name === 'Descriptions'
+                  ? (wrapDescriptions ? 'description-wrap-text' : 'description-nowrap-text')
+                  : ''"
+                style="cursor: pointer;"
               >
-                <label style="cursor: pointer;">
-                  {{
-                    Formatters.maxSubstring(
-                      Formatters.parseVal(col.name, col.value, props.row.dataTypeCount), col.name
-                    )
-                  }}
-                  <q-tooltip class="tooltip-text" anchor="bottom middle" self="top middle" :offset="[0, 5]">
-                    {{ Formatters.parseVal(col.name, col.value, props.row.dataTypeCount) }}
-                  </q-tooltip>
-                </label>
-              </q-td>
+                {{
+                  col.name === 'Descriptions'
+                    ? 'This is a very long sample description used for testing word wrapping behavior in the Description column. It should continue across multiple lines instead of forcing the column to expand horizontally.'
+                    : Formatters.maxSubstring(
+                        Formatters.parseVal(col.name, col.value, props.row.dataTypeCount), col.name
+                      )
+                }}
+                <q-tooltip class="tooltip-text" anchor="bottom middle" self="top middle" :offset="[0, 5]">
+                  {{ Formatters.parseVal(col.name, col.value, props.row.dataTypeCount) }}
+                </q-tooltip>
+              </label>
+            </q-td>
           </q-tr>
           <q-tr
             :props="props"
@@ -251,14 +274,24 @@
               v-for="col in props.cols"
               :key="col.name"
               :props="props"
+              :class="col.name === 'Descriptions'
+                ? (wrapDescriptions ? 'description-wrap-cell' : 'description-nowrap-cell')
+                : ''"
               style="font-size: 13px;"
               @click="Feature.copyLabel(col.name, col.value, null)"
             >
-              <label style="cursor: pointer;">
+              <label
+                :class="col.name === 'Descriptions'
+                  ? (wrapDescriptions ? 'description-wrap-text' : 'description-nowrap-text')
+                  : ''"
+                style="cursor: pointer;"
+              >
                 {{
-                  Formatters.maxSubstring(
-                    Formatters.parseVal(col.name, col.value), col.name
-                  )
+                  col.name === 'Descriptions'
+                    ? 'This is another sample description for testing. When wrapping is enabled this text should break onto several lines and stay inside the Description column width.'
+                    : Formatters.maxSubstring(
+                        Formatters.parseVal(col.name, col.value), col.name
+                      )
                 }}
                 <q-tooltip class="tooltip-text" anchor="bottom middle" self="top middle" :offset="[0, 5]">
                   {{ Formatters.parseVal(col.name, col.value) }}
@@ -308,7 +341,7 @@ const paginationFront = ref({ rowsPerPage: 200, sortBy: 'fieldName', });
 const resizingCol = ref<string | null>(null);
 const startX = ref(0);
 const colWidths = ref<Record<string, number>>({});
-const wrapDescriptions  = ref(true);
+const wrapDescriptions  = ref(false);
 
 // API - Defines all the Nececssary API calls for the user, and filters.
 // Note that to run the endpoint in DEV mode, you must build the project at least once first.
