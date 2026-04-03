@@ -67,6 +67,7 @@ public class BalancedShardPartitionerTest {
                         TableName.SHARD);
         conf.setBoolean(TableSplitsCache.REFRESH_SPLITS, false);
         conf.set(ShardedDataTypeHandler.SHARDED_TNAMES, "shard");
+        
         shardIdFactory = new ShardIdFactory(conf);
         partitioner.setConf(conf);
 
@@ -99,7 +100,6 @@ public class BalancedShardPartitionerTest {
         conf.setBoolean(TableSplitsCache.REFRESH_SPLITS, true);
 
         partitioner.setConf(conf);
-
         // For a shard from today, we can assume that they're well balanced.
         // If offsetting is working, they will not go to the same partitions
         String today = formatDay(0);

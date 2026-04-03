@@ -505,6 +505,9 @@ public class MultiRFileOutputFormatterTest {
 
     @Test
     public void testTableSeparationWithFilePerShardLoc() throws IOException, InterruptedException {
+        conf.set("shard.fallback.name.20100101_1", "server1");
+        conf.set("shard.fallback.name.20100101_2", "server2");
+
         MultiRFileOutputFormatter.setGenerateMapFilePerShardLocation(conf, true);
         RecordWriter<BulkIngestKey,Value> writer = createWriter(formatter, conf);
         writeShardPairs(writer, 2);
@@ -532,6 +535,9 @@ public class MultiRFileOutputFormatterTest {
 
     @Test
     public void testRFileFileSizeLimitWithFilePerShardLoc() throws IOException, InterruptedException {
+        conf.set("shard.fallback.name.20100101_1", "server1");
+        conf.set("shard.fallback.name.20100101_2", "server2");
+
         MultiRFileOutputFormatter.setGenerateMapFilePerShardLocation(conf, true);
         // each key we write is 16 characters total, so a limit of 32 should allow two keys per file
         MultiRFileOutputFormatter.setRFileLimits(conf, 0, 32);
@@ -558,6 +564,9 @@ public class MultiRFileOutputFormatterTest {
 
     @Test
     public void testRFileEntrySizeLimitWithFilePerShardLoc() throws IOException, InterruptedException {
+        conf.set("shard.fallback.name.20100101_1", "server1");
+        conf.set("shard.fallback.name.20100101_2", "server2");
+
         MultiRFileOutputFormatter.setRFileLimits(conf, 1, 0);
         MultiRFileOutputFormatter.setGenerateMapFilePerShardLocation(conf, true);
         RecordWriter<BulkIngestKey,Value> writer = createWriter(formatter, conf);
