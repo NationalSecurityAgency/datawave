@@ -375,7 +375,7 @@ public class DocIdIteratorVisitor extends BaseVisitor {
 
     /**
      * Determines if the field is indexed. The field should be found in the identifier.
-     * 
+     *
      * @param node
      *            the JexlNode
      * @return true if the field is indexed
@@ -387,7 +387,7 @@ public class DocIdIteratorVisitor extends BaseVisitor {
 
     /**
      * Determines if the field is indexed. The field should be found in the identifier.
-     * 
+     *
      * @return true if the field is indexed
      */
     private boolean isFieldIndexed(String field) {
