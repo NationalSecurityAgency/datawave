@@ -245,11 +245,9 @@
                 style="cursor: pointer;"
               >
                 {{
-                  col.name === 'Descriptions'
-                    ? 'This is a very long sample description used for testing word wrapping behavior in the Description column. It should continue across multiple lines instead of forcing the column to expand horizontally.'
-                    : Formatters.maxSubstring(
-                        Formatters.parseVal(col.name, col.value, props.row.dataTypeCount), col.name
-                      )
+                  Formatters.maxSubstring(
+                    Formatters.parseVal(col.name, col.value, props.row.dataTypeCount), col.name
+                  )
                 }}
                 <q-tooltip class="tooltip-text" anchor="bottom middle" self="top middle" :offset="[0, 5]">
                   {{ Formatters.parseVal(col.name, col.value, props.row.dataTypeCount) }}
@@ -287,11 +285,9 @@
                 style="cursor: pointer;"
               >
                 {{
-                  col.name === 'Descriptions'
-                    ? 'This is another sample description for testing. When wrapping is enabled this text should break onto several lines and stay inside the Description column width.'
-                    : Formatters.maxSubstring(
-                        Formatters.parseVal(col.name, col.value), col.name
-                      )
+                  Formatters.maxSubstring(
+                    Formatters.parseVal(col.name, col.value), col.name
+                  )
                 }}
                 <q-tooltip class="tooltip-text" anchor="bottom middle" self="top middle" :offset="[0, 5]">
                   {{ Formatters.parseVal(col.name, col.value) }}
