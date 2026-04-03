@@ -67,7 +67,7 @@ public class BalancedShardPartitionerTest {
                         TableName.SHARD);
         conf.setBoolean(TableSplitsCache.REFRESH_SPLITS, false);
         conf.set(ShardedDataTypeHandler.SHARDED_TNAMES, "shard");
-        
+
         shardIdFactory = new ShardIdFactory(conf);
         partitioner.setConf(conf);
 

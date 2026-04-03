@@ -40,10 +40,10 @@ public class SplitsFile implements SplitsCache {
     public static final String CONFIGURED_SHARDED_TABLE_NAMES = ShardedDataTypeHandler.SHARDED_TNAMES + ".configured";
     public static final String DIST_CACHE_LABEL = "splitsFile";
 
-    private static final int NUMBER_MILLIS_BACK = 0;
-    private static final String TODAY = DateHelper.format(NUMBER_MILLIS_BACK);
+    private static final long NOW = System.currentTimeMillis();
+    private static final String TODAY = formatDay(0);
 
-    private final ConcurrentHashMap<String,Map<Text,Integer>> shardPartitionsByTable;
+    private ConcurrentHashMap<String,Map<Text,Integer>> shardPartitionsByTable;
     private TableSplitsCache instance;
     private Configuration conf;
 
@@ -323,6 +323,10 @@ public class SplitsFile implements SplitsCache {
             return true;
         }
         return shardIdStr.substring(0, 8).compareTo(TODAY) > 0;
+    }
+
+    private static String formatDay(int numDaysBack) {
+        return DateHelper.format(NOW - (DateUtils.MILLIS_PER_DAY * numDaysBack));
     }
 
     private HashMap<Text,Integer> getShardIdAssignments(Map<Text,String> shardIdsToTservers, HashMap<String,Integer> partitionsByTServer) {
