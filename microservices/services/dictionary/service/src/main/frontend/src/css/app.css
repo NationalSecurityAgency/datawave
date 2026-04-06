@@ -80,6 +80,32 @@
   background-color: rgba(0, 188, 212, 0.5);
 }
 
+/* Styles for the description column to allow wrapping and proper display of long text */
+.description-nowrap-cell {
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.description-nowrap-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+}
+
+.description-wrap-cell {
+  white-space: normal;
+  vertical-align: top;
+}
+
+.description-wrap-text {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  display: block;
+  line-height: 1.3;
+}
+
 ::-webkit-scrollbar {
     height: 12px;
     width: 14px;

@@ -177,6 +177,26 @@
                     </q-menu>
                   </q-btn>
                 </template>
+                <template v-if="col.name === 'Descriptions'">
+                  <span class="description-checkbox-wrapper">
+                    <q-checkbox
+                      size="36px"
+                      color="cyan-8"
+                      style="margin-bottom: 1.5px;"
+                      dense
+                      v-model="wrapDescriptions"
+                    >
+                      <q-tooltip
+                        class="tooltip-text"
+                        anchor="bottom middle"
+                        self="top middle"
+                        :offset="[60, 8]"
+                      >
+                        {{ wrapDescriptions ? 'Disable' : 'Enable' }} Description Wrapping?
+                      </q-tooltip>
+                    </q-checkbox>
+                  </span>
+                </template>
               </div>
                 <div
                   class="resize-handle"
@@ -209,21 +229,31 @@
               v-for="col in props.cols"
               :key="col.name"
               :props="props"
-              :class="{ 'text-bold': col.name === 'dataType'}"
+              :class="[
+                { 'text-bold': col.name === 'dataType' },
+                col.name === 'Descriptions'
+                  ? (wrapDescriptions ? 'description-wrap-cell' : 'description-nowrap-cell')
+                  : ''
+              ]"
               style="font-size: 13px;"
               @click="Feature.copyLabel(col.name, col.value, props.row.dataTypeCount)"
+            >
+              <label
+                :class="col.name === 'Descriptions'
+                  ? (wrapDescriptions ? 'description-wrap-text' : 'description-nowrap-text')
+                  : ''"
+                style="cursor: pointer;"
               >
-                <label style="cursor: pointer;">
-                  {{
-                    Formatters.maxSubstring(
-                      Formatters.parseVal(col.name, col.value, props.row.dataTypeCount), col.name
-                    )
-                  }}
-                  <q-tooltip class="tooltip-text" anchor="bottom middle" self="top middle" :offset="[0, 5]">
-                    {{ Formatters.parseVal(col.name, col.value, props.row.dataTypeCount) }}
-                  </q-tooltip>
-                </label>
-              </q-td>
+                {{
+                  Formatters.maxSubstring(
+                    Formatters.parseVal(col.name, col.value, props.row.dataTypeCount), col.name
+                  )
+                }}
+                <q-tooltip class="tooltip-text" anchor="bottom middle" self="top middle" :offset="[0, 5]">
+                  {{ Formatters.parseVal(col.name, col.value, props.row.dataTypeCount) }}
+                </q-tooltip>
+              </label>
+            </q-td>
           </q-tr>
           <q-tr
             :props="props"
@@ -242,10 +272,18 @@
               v-for="col in props.cols"
               :key="col.name"
               :props="props"
+              :class="col.name === 'Descriptions'
+                ? (wrapDescriptions ? 'description-wrap-cell' : 'description-nowrap-cell')
+                : ''"
               style="font-size: 13px;"
               @click="Feature.copyLabel(col.name, col.value, null)"
             >
-              <label style="cursor: pointer;">
+              <label
+                :class="col.name === 'Descriptions'
+                  ? (wrapDescriptions ? 'description-wrap-text' : 'description-nowrap-text')
+                  : ''"
+                style="cursor: pointer;"
+              >
                 {{
                   Formatters.maxSubstring(
                     Formatters.parseVal(col.name, col.value), col.name
@@ -282,6 +320,7 @@ import * as Feature from '../functions/features';
 import HelpMenu from './HelpMenu.vue';
 
 // Defines the Table References, loading for axios, search filter, and pagination to sort.
+// This also defines API calls for banner, system name, and help menu along with toggles for text wrapping.
 const $q = useQuasar();
 const table = ref();
 const loading = ref(true);
@@ -298,6 +337,7 @@ const paginationFront = ref({ rowsPerPage: 200, sortBy: 'fieldName', });
 const resizingCol = ref<string | null>(null);
 const startX = ref(0);
 const colWidths = ref<Record<string, number>>({});
+const wrapDescriptions  = ref(false);
 
 // API - Defines all the Nececssary API calls for the user, and filters.
 // Note that to run the endpoint in DEV mode, you must build the project at least once first.
