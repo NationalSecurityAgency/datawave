@@ -711,8 +711,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
 
     private int getMajorCompactionCount() {
         try {
-            AccumuloTableInfoFetcher fetcher = new AccumuloTableInfoFetcher(accumuloClient);
-            return fetcher.getMajorCompactionCount();
+            return AccumuloTableInfoFetcher.getMajorCompactionCount(accumuloClient);
         } catch (Exception e) {
             log.error("Unable to retrieve major compaction stats: " + e.getMessage());
             return 0;

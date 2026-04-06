@@ -1,63 +1,129 @@
 package datawave.core.common.connection;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
-// @formatter:off
-// ============================================================================================
-// NON-PUBLIC ACCUMULO API FACADE (Issue #2443)
-// ============================================================================================
-// The following imports use non-public Accumulo APIs. They are intentionally isolated in this
-// facade class so that callers throughout Datawave never reference non-public APIs directly.
-//
-// WHY THIS EXISTS:
-//   There is no public Accumulo API for queued compaction counts (only running compactions
-//   via getActiveCompactions()). The Thrift RPC below is the only way to get queued + running
-//   counts. See: https://github.com/apache/accumulo/issues/5965
-//
-// HOW TO SWAP OUT INCREMENTALLY:
-//   Each method in this class that uses non-public APIs is marked with a
-//   "NON-PUBLIC API" comment block. When a public API alternative becomes available
-//   (e.g., in Accumulo 4.0):
-//     1. Replace the method body with the public API equivalent
-//     2. Remove the non-public imports that are no longer used
-//     3. Update the import-control-accumulo.xml if the non-public class was allowed there
-//
-// HOW TO KNOW WHEN THIS FACADE CAN BE REMOVED:
-//   When ALL methods in this class use only public APIs (no "NON-PUBLIC API" markers remain):
-//     1. Remove these non-public imports
-//     2. Remove this comment block
-//     3. Inline the method(s) back into callers — the facade is no longer load-bearing
-//     4. Verify by running: grep -r 'NON-PUBLIC API' AccumuloTableInfoFetcher.java
-//        — if no results, the migration is complete
-// ============================================================================================
-// @formatter:on
+import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.accumulo.core.client.admin.Locations;
 import org.apache.accumulo.core.clientImpl.ClientContext;
+import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.data.TableId;
+import org.apache.accumulo.core.data.TabletId;
+import org.apache.accumulo.core.dataImpl.KeyExtent;
 import org.apache.accumulo.core.manager.thrift.ManagerClientService;
 import org.apache.accumulo.core.manager.thrift.ManagerMonitorInfo;
 import org.apache.accumulo.core.master.thrift.TableInfo;
 import org.apache.accumulo.core.rpc.ThriftUtil;
 import org.apache.accumulo.core.rpc.clients.ThriftClientTypes;
+import org.apache.hadoop.io.Text;
 
 /**
- * Facade that isolates non-public Accumulo API usage behind a clean interface.
+ * Utility class that centralizes Accumulo table metadata operations.
  * <p>
- * This class exists solely to contain Accumulo internals that have no public API equivalent. Operations that can use public APIs (e.g., table existence, online
- * status, tablet locations) should call {@link org.apache.accumulo.core.client.admin.TableOperations} or
- * {@link org.apache.accumulo.core.client.admin.InstanceOperations} directly — they do not belong here.
- * <p>
- * See the import block above for the incremental migration plan.
+ * This class replaces direct usage of non-public Accumulo internals ({@code ClientContext}, {@code MetadataServicer}, {@code TabletLocator}, etc.) with public
+ * API equivalents where possible. Methods that still require non-public APIs are marked with {@code NON-PUBLIC API} comments.
  *
  * @see <a href="https://github.com/NationalSecurityAgency/datawave/issues/2443">Issue #2443</a>
  */
-public class AccumuloTableInfoFetcher {
+public final class AccumuloTableInfoFetcher {
 
-    private final AccumuloClient client;
+    private AccumuloTableInfoFetcher() {
+        // utility class
+    }
 
-    public AccumuloTableInfoFetcher(AccumuloClient client) {
-        this.client = client;
+    /**
+     * Get the {@link TableId} for a table by name.
+     *
+     * @param client
+     *            the Accumulo client
+     * @param tableName
+     *            the table name to look up
+     * @return the TableId, or {@code null} if the table does not exist
+     */
+    public static TableId getTableId(AccumuloClient client, String tableName) {
+        String id = client.tableOperations().tableIdMap().get(tableName);
+        return id == null ? null : TableId.of(id);
+    }
+
+    /**
+     * Locate tablets for the given ranges and return them grouped by tablet server location, keyed by {@link KeyExtent}.
+     * <p>
+     * This replaces the {@code TabletLocator.binRanges()} pattern. The returned structure maps tablet server location strings to a map of {@link KeyExtent} to
+     * the ranges assigned to that extent, matching the structure expected by downstream consumers like {@code clipRanges()}.
+     *
+     * @param client
+     *            the Accumulo client
+     * @param tableName
+     *            the table to locate tablets for
+     * @param ranges
+     *            the ranges to bin into tablet locations
+     * @return a map of location -> (extent -> ranges)
+     * @throws AccumuloException
+     *             if a general Accumulo error occurs
+     * @throws AccumuloSecurityException
+     *             if a security error occurs
+     * @throws TableNotFoundException
+     *             if the table does not exist
+     */
+    // NON-PUBLIC API: Return type uses KeyExtent (org.apache.accumulo.core.dataImpl) which is non-public.
+    // This is required for compatibility with downstream consumers (clipRanges, binOfflineTable).
+    // When callers are migrated to use TabletId (public API), this method can be updated.
+    //
+    // REVIEW: The original TabletLocator.binRanges() used a retry loop for partial binning failures.
+    // The public locate() API may handle this internally. Verify retry semantics are equivalent.
+    public static Map<String,Map<KeyExtent,List<Range>>> locateTablets(AccumuloClient client, String tableName, List<Range> ranges)
+                    throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
+        Locations locations = client.tableOperations().locate(tableName, ranges);
+        Map<String,Map<KeyExtent,List<Range>>> binnedRanges = new HashMap<>();
+        for (Map.Entry<TabletId,List<Range>> entry : locations.groupByTablet().entrySet()) {
+            TabletId tabletId = entry.getKey();
+            String location = locations.getTabletLocation(tabletId);
+            if (location == null) {
+                location = "";
+            }
+            KeyExtent extent = KeyExtent.fromTabletId(tabletId);
+            binnedRanges.computeIfAbsent(location, k -> new HashMap<>()).put(extent, entry.getValue());
+        }
+        return binnedRanges;
+    }
+
+    /**
+     * Get the split points and their tablet server locations for a table.
+     * <p>
+     * Returns a sorted map of end-row to tablet server location for each tablet. Tablets with no end-row (the last tablet) are excluded. This replaces the
+     * {@code MetadataServicer.getTabletLocations()} pattern.
+     *
+     * @param client
+     *            the Accumulo client
+     * @param tableName
+     *            the table name
+     * @return a sorted map of split point (end-row) to tablet server location
+     * @throws AccumuloException
+     *             if a general Accumulo error occurs
+     * @throws AccumuloSecurityException
+     *             if a security error occurs
+     * @throws TableNotFoundException
+     *             if the table does not exist
+     */
+    public static Map<Text,String> getSplitsWithLocations(AccumuloClient client, String tableName)
+                    throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
+        Locations locations = client.tableOperations().locate(tableName, Collections.singletonList(new Range()));
+        Map<Text,String> result = new TreeMap<>();
+        for (Map.Entry<TabletId,List<Range>> entry : locations.groupByTablet().entrySet()) {
+            TabletId tabletId = entry.getKey();
+            Text endRow = tabletId.getEndRow();
+            if (endRow != null) {
+                String location = locations.getTabletLocation(tabletId);
+                result.put(endRow, location == null ? "" : location);
+            }
+        }
+        return result;
     }
 
     // NON-PUBLIC API: Uses Thrift RPC to get queued + running compaction counts.
@@ -69,13 +135,13 @@ public class AccumuloTableInfoFetcher {
     /**
      * Get the count of queued and running major compactions across all tablet servers.
      *
+     * @param client
+     *            the Accumulo client
      * @return the number of queued and running major compactions
      * @throws AccumuloException
      *             if a general Accumulo error occurs
-     * @throws AccumuloSecurityException
-     *             if a security error occurs
      */
-    public int getMajorCompactionCount() throws AccumuloException, AccumuloSecurityException {
+    public static int getMajorCompactionCount(AccumuloClient client) throws AccumuloException {
         int majC = 0;
 
         ClientContext context = (ClientContext) client;

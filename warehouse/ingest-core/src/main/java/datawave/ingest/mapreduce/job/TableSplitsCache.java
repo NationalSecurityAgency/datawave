@@ -20,9 +20,6 @@ import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.accumulo.core.client.admin.Locations;
-import org.apache.accumulo.core.data.Range;
-import org.apache.accumulo.core.data.TabletId;
 import org.apache.accumulo.core.data.Value;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.hadoop.conf.Configuration;
@@ -36,6 +33,7 @@ import org.apache.log4j.Logger;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Maps;
 
+import datawave.core.common.connection.AccumuloTableInfoFetcher;
 import datawave.ingest.config.BaseHdfsFileCacheUtil;
 import datawave.ingest.mapreduce.partition.BalancedShardPartitioner;
 import datawave.ingest.mapreduce.partition.DelegatePartitioner;
@@ -81,17 +79,10 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
 
     private Map<Text,String> getSplitsWithLocation(String table) throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
         AccumuloClient client = accumuloHelper.newClient();
-        Locations locations = client.tableOperations().locate(table, Collections.singletonList(new Range()));
-        Map<Text,String> result = new TreeMap<>();
-        for (Map.Entry<TabletId,List<Range>> entry : locations.groupByTablet().entrySet()) {
-            TabletId tabletId = entry.getKey();
-            Text endRow = tabletId.getEndRow();
-            if (endRow != null) {
-                String location = locations.getTabletLocation(tabletId);
-                result.put(endRow, location == null ? NO_LOCATION : location);
-            }
-        }
-        return result;
+        Map<Text,String> locations = AccumuloTableInfoFetcher.getSplitsWithLocations(client, table);
+        // Replace empty-string locations with NO_LOCATION sentinel
+        locations.replaceAll((k, v) -> v.isEmpty() ? NO_LOCATION : v);
+        return locations;
     }
 
     /**

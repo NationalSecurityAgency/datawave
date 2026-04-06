@@ -32,13 +32,11 @@ import org.apache.accumulo.core.client.RowIterator;
 import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.TableOfflineException;
-import org.apache.accumulo.core.client.admin.Locations;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.TableId;
-import org.apache.accumulo.core.data.TabletId;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.dataImpl.KeyExtent;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
@@ -74,6 +72,7 @@ import com.google.common.collect.Multimap;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.common.util.ArgumentChecker;
+import datawave.core.common.connection.AccumuloTableInfoFetcher;
 import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.mr.bulk.split.DefaultLocationStrategy;
 import datawave.mr.bulk.split.DefaultSplitStrategy;
@@ -1065,15 +1064,15 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
                 try (AccumuloClient client = getClient(job.getConfiguration())) {
                     // Validate table state using public API
                     if (!(client instanceof InMemoryAccumuloClient)) {
-                        if (!client.tableOperations().exists(tableName))
+                        if (!client.tableOperations().exists(tableName)) {
                             throw new TableNotFoundException(null, tableName, "Table does not exist");
-                        if (!client.tableOperations().isOnline(tableName))
+                        }
+                        if (!client.tableOperations().isOnline(tableName)) {
                             throw new TableOfflineException("Table " + tableName + " is offline");
+                        }
                     }
-                    // Locate tablets for ranges using public API
-                    Locations locations = client.tableOperations().locate(tableName, ranges);
-                    // Convert to binnedRanges structure
-                    binnedRanges = buildBinnedRanges(locations);
+                    // REVIEW: retry semantics differ from original TabletLocator.binRanges() loop
+                    binnedRanges = AccumuloTableInfoFetcher.locateTablets(client, tableName, ranges);
                     clipRanges(binnedRanges);
                 }
             }
@@ -1150,20 +1149,6 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
         binnedRanges.clear();
         binnedRanges.putAll(binnedRanges2);
 
-    }
-
-    private Map<String,Map<KeyExtent,List<Range>>> buildBinnedRanges(Locations locations) {
-        Map<String,Map<KeyExtent,List<Range>>> binnedRanges = new HashMap<>();
-        for (Entry<TabletId,List<Range>> entry : locations.groupByTablet().entrySet()) {
-            TabletId tabletId = entry.getKey();
-            String location = locations.getTabletLocation(tabletId);
-            if (location == null)
-                location = "";
-            // Convert TabletId to KeyExtent (still needed for binOfflineTable compatibility and clipRanges)
-            KeyExtent extent = new KeyExtent(tabletId.getTable(), tabletId.getEndRow(), tabletId.getPrevEndRow());
-            binnedRanges.computeIfAbsent(location, k -> new HashMap<>()).put(extent, entry.getValue());
-        }
-        return binnedRanges;
     }
 
     /**
