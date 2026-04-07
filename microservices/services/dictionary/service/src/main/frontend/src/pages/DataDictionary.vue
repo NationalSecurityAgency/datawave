@@ -179,22 +179,22 @@
                 </template>
                 <template v-if="col.name === 'Descriptions'">
                   <span class="description-checkbox-wrapper">
-                    <q-checkbox
-                      size="36px"
-                      color="cyan-8"
-                      style="margin-bottom: 1.5px;"
+                    <q-btn
                       dense
-                      v-model="wrapDescriptions"
+                      color="cyan-8"
+                      :label="wrapDescriptions ? 'Disable Wrap' : 'Enable Wrap'"
+                      @click="wrapDescriptions = !wrapDescriptions"
+                      style="font-size: 9px; padding: 1px 6px 0px; margin-left: 6px; margin-bottom: 1.5px;"
                     >
                       <q-tooltip
                         class="tooltip-text"
                         anchor="bottom middle"
                         self="top middle"
-                        :offset="[60, 8]"
+                        :offset="[0, 5]"
                       >
-                        {{ wrapDescriptions ? 'Disable' : 'Enable' }} Description Wrapping?
+                        {{ wrapDescriptions ? 'Disable' : 'Enable' }} Description Wrapping
                       </q-tooltip>
-                    </q-checkbox>
+                    </q-btn>
                   </span>
                 </template>
               </div>
