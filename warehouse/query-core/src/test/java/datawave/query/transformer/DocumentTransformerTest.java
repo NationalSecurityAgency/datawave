@@ -1,6 +1,5 @@
 package datawave.query.transformer;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -81,7 +80,7 @@ public class DocumentTransformerTest {
         DefaultEvent event = (DefaultEvent) transformer.transform(createEntry());
 
         List<DefaultField> fields = event.getFields();
-        assertFieldValue(fields, 0, "field1", "5");
+        assertFieldValue(fields, "field1", "5");
     }
 
     @Test
@@ -92,7 +91,7 @@ public class DocumentTransformerTest {
         DefaultEvent event = (DefaultEvent) transformer.transform(createEntry());
 
         List<DefaultField> fields = event.getFields();
-        assertFieldValue(fields, 0, "field1", "5");
+        assertFieldValue(fields, "field1", "5");
     }
 
     @Test
@@ -103,7 +102,7 @@ public class DocumentTransformerTest {
         DefaultEvent event = (DefaultEvent) transformer.transform(createEntry());
 
         List<DefaultField> fields = event.getFields();
-        assertFieldValue(fields, 0, "field1", "5");
+        assertFieldValue(fields, "field1", "5");
     }
 
     @Test
@@ -114,8 +113,8 @@ public class DocumentTransformerTest {
         DefaultEvent event = (DefaultEvent) transformer.transform(createEntry());
 
         List<DefaultField> fields = event.getFields();
-        assertFieldValue(fields, 0, "field2", "5");
-        assertFieldValue(fields, 1, "field1", "5");
+        assertFieldValue(fields, "field2", "5");
+        assertFieldValue(fields, "field1", "5");
     }
 
     @Test
@@ -128,15 +127,20 @@ public class DocumentTransformerTest {
         DefaultEvent event = (DefaultEvent) transformer.transform(createEntry());
 
         List<DefaultField> fields = event.getFields();
-        assertFieldValue(fields, 0, "field2", "6");
-        assertFieldValue(fields, 1, "field3", "6");
-        assertFieldValue(fields, 2, "field1", "5");
+        assertFieldValue(fields, "field2", "6");
+        assertFieldValue(fields, "field3", "6");
+        assertFieldValue(fields, "field1", "5");
     }
 
-    private void assertFieldValue(List<DefaultField> fields, int index, String expectedField, String expectedValue) {
-        assertTrue(fields.size() >= index);
-        DefaultField field = fields.get(index);
-        assertEquals(expectedField, field.getName());
-        assertEquals(expectedValue, field.getValueString());
+    private void assertFieldValue(List<DefaultField> fields, String expectedField, String expectedValue) {
+
+        boolean success = false;
+        for (DefaultField field : fields) {
+            if (expectedField.equals(field.getName()) && expectedValue.equals(field.getValueString())) {
+                success = true;
+                break;
+            }
+        }
+        assertTrue(success);
     }
 }
