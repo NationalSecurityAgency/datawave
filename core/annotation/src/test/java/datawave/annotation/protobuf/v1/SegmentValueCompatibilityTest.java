@@ -13,12 +13,21 @@ import datawave.annotation.util.v1.AnnotationUtils;
 public class SegmentValueCompatibilityTest {
 
     @Test
+    /**
+     * {@code legacySegmentValueBase64} is the Base64-encoded protobuf binary produced by the previous version, where the {@code score} field in
+     * {@code SegmentValue} was not explicitly declared {@code optional}.
+     *
+     * <p>
+     * The following two statements produced the same serialized output because the default score value {@code 0.0f} was not written to the protobuf:
+     *
+     * <pre>{@code
+     * SegmentValue segmentValue = SegmentValue.newBuilder().setValue("horse").setScore(0.0f).build();
+     * SegmentValue segmentValue = SegmentValue.newBuilder().setValue("horse").build();
+     * segmentValue = AnnotationUtils.injectSegmentValueHash(segmentValue);
+     * String legacySegmentValueBase64 = Base64.getEncoder().encodeToString(segmentValue.toByteArray());
+     * }</pre>
+     */
     public void testLegacyZeroScoreDeserializationWithOptionalScore() throws Exception {
-        // Serialized before `score` was explicitly optional, both methods produce same output:
-        // SegmentValue segmentValue = SegmentValue.newBuilder().setValue("horse").setScore(0.0f).build();
-        // SegmentValue segmentValue = SegmentValue.newBuilder().setValue("horse").build();
-        // segmentValue = AnnotationUtils.injectSegmentValueHash(segmentValue);
-        // String legacySegmentValueBase64 = Base64.getEncoder().encodeToString(segmentValue.toByteArray());
         final String legacySegmentValueBase64 = "Cgg3N0JGQjVCNxIFaG9yc2U=";
         final String legacySegmentValueHash = "77BFB5B7";
 
