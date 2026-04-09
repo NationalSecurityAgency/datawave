@@ -1,10 +1,12 @@
 package datawave.annotation.util.v1;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -201,6 +203,51 @@ public class JacksonJsonSerializationTest {
                     parsedAnnotations.add(aas);
                 }
             }
+        } catch (IOException e) {
+            log.debug("Reached end of file?", e);
+        }
+        assertEquals(36, parsedAnnotations.size());
+        // TODO more validation
+    }
+
+    /**
+     * Checks that the current serialized form matches the baseline, if not please update <code>src/test/resources/annotation_baseline.bin</code> once you can
+     * explain why this broke
+     */
+    @Test
+    @ResourceLock(value = "annotation_baseline_bin", mode = ResourceAccessMode.READ)
+    public void testProtobufSerializationBaselineBinary() throws Exception {
+        Path expectedPath = Path.of("src/test/resources/annotation_baseline.bin");
+        byte[] expectedBytes = Files.readAllBytes(expectedPath);
+
+        Path outputPath = Path.of("target/annotation_baseline.bin");
+        try (FileOutputStream out = new FileOutputStream(outputPath.toFile())) {
+            //@formatter:off
+            // boundary type and segment id generation are usually taken care of by the dao layer, we add them
+            // here to create a simulation of that behavior.
+            List<Annotation> testAnnotations = AnnotationTestDataUtil.generateManyTestAnnotations().stream()
+                    .map(AnnotationUtils::injectAllHashes)
+                    .collect(Collectors.toList());
+            //@formatter:on
+            AnnotationList annotationList = AnnotationList.newBuilder().addAllAnnotations(testAnnotations).build();
+            annotationList.writeTo(out);
+        }
+        byte[] outputBytes = Files.readAllBytes(outputPath);
+        assertArrayEquals(expectedBytes, outputBytes);
+    }
+
+    /**
+     * Checks that the baseline serialized form can be decoded without errors, if this fails someone made a breaking change to the protobuf definition. Do not
+     * roll out code with a broken test here unless a migration plan is in place
+     */
+    @Test
+    @ResourceLock(value = "annotation_baseline_bin", mode = ResourceAccessMode.READ)
+    public void testProtobufDeserializationBaselineBinary() throws Exception {
+        Path p = Path.of("src/test/resources/annotation_baseline.bin");
+        List<Annotation> parsedAnnotations = new ArrayList<>();
+        // idiomatic approach for reading annotations in ndjson format.
+        try (FileInputStream is = new FileInputStream(p.toFile())) {
+            parsedAnnotations.addAll(AnnotationList.parseFrom(is).getAnnotationsList());
         } catch (IOException e) {
             log.debug("Reached end of file?", e);
         }
