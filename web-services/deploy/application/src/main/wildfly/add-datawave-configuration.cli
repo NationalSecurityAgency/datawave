@@ -237,6 +237,7 @@ jms-queue add --queue-address=AccumuloTableCacheDLQ --entries=queue/AccumuloTabl
 /subsystem=logging/periodic-rotating-file-handler=DISTRIBUTED_QUERY_LOG/:add(level=TRACE,suffix=".yyyy-MM-dd",append=true,autoflush=true,named-formatter=PATTERN,file={relative-to=>"jboss.server.log.dir", path=>"DistributedQueryService.log"})
 /subsystem=logging/periodic-rotating-file-handler=RESTEASY_LOG/:add(level=TRACE,suffix=".yyyy-MM-dd",append=true,autoflush=true,named-formatter=PATTERN,file={relative-to=>"jboss.server.log.dir", path=>"RestEasy.log"})
 /subsystem=logging/periodic-rotating-file-handler=JBOSS_LOG/:add(level=TRACE,suffix=".yyyy-MM-dd",append=true,autoflush=true,named-formatter=PATTERN,file={relative-to=>"jboss.server.log.dir", path=>"JBoss.log"})
+/subsystem=logging/periodic-rotating-file-handler=ACTIVEMQ_LOG/:add(level=TRACE,suffix=".yyyy-MM-dd",append=true,autoflush=true,named-formatter=PATTERN,file={relative-to=>"jboss.server.log.dir", path=>"ActiveMQ.log"})
 
 /subsystem=logging/logger=datawave.query:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=DEBUG)
 /subsystem=logging/logger=datawave.webservice.common.cache.SharedCacheCoordinator:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=INFO)
@@ -251,8 +252,8 @@ jms-queue add --queue-address=AccumuloTableCacheDLQ --entries=queue/AccumuloTabl
 /subsystem=logging/logger=datawave.query.parser:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=INFO)
 /subsystem=logging/logger=datawave.query.metrics.AccumuloRecordWriter:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=INFO)
 /subsystem=logging/logger=datawave.webservice.query.interceptor:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=INFO)
-/subsystem=logging/logger=datawave.webservice.query.database.CachedResultsCleanupBean:add(use-parent-handlers=false,handlers=["CACHED_LOG"],level=INFO)
-/subsystem=logging/logger=datawave.webservice.query.cache.CachedResultsExpirationBean:add(use-parent-handlers=false,handlers=["CACHED_LOG"],level=INFO)
+/subsystem=logging/logger=datawave.webservice.query.database.CachedResultsCleanupBean:add(use-parent-handlers=false,handlers=["CACHED_LOG"],level=TRACE)
+/subsystem=logging/logger=datawave.webservice.query.cache.CachedResultsExpirationBean:add(use-parent-handlers=false,handlers=["CACHED_LOG"],level=TRACE)
 /subsystem=logging/logger=datawave.webservice.results.cached:add(use-parent-handlers=false,handlers=["CACHED_LOG"],level=INFO)
 /subsystem=logging/logger=datawave.webservice.query.cachedresults:add(use-parent-handlers=false,handlers=["CACHED_LOG"],level=INFO)
 /subsystem=logging/logger=datawave.security:add(use-parent-handlers=false,handlers=["SECURITY_LOG"])
@@ -271,10 +272,12 @@ jms-queue add --queue-address=AccumuloTableCacheDLQ --entries=queue/AccumuloTabl
 /subsystem=logging/logger=org.jboss.resteasy.plugins.server:add(use-parent-handlers=false,handlers=["RESTEASY_LOG"])
 /subsystem=logging/logger=org.jboss.resteasy.specimpl:add(use-parent-handlers=false,handlers=["RESTEASY_LOG"])
 /subsystem=logging/logger=datawave.resteasy.interceptor:add(use-parent-handlers=false,handlers=["RESTEASY_LOG"])
+/subsystem=logging/logger=org.apache.activemq:add(use-parent-handlers=false,handlers=["ACTIVEMQ_LOG"])
+/subsystem=logging/logger=com.arjuna:write-attribute(name=level, value=TRACE)
+/subsystem=logging/logger=com.arjuna:write-attribute(name=handlers, value=["ACTIVEMQ_LOG"])
 
 # Add trace logging for JBoss module class loading. Uncomment this only when you need to debug JBoss/Wildfly classloading issues.
-/subsystem=logging/logger=org.jboss.modules:add(use-parent-handlers=false, handlers=["JBOSS_LOG"])
-
+# /subsystem=logging/logger=org.jboss.modules:add(use-parent-handlers=false, handlers=["JBOSS_LOG"])
 
 # Custom log levels
 /subsystem=logging/logger=httpclient.wire:add(level=TRACE)
