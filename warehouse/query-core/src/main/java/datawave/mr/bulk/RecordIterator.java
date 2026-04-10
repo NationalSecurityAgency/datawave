@@ -2,6 +2,7 @@ package datawave.mr.bulk;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.Collections;
@@ -385,7 +386,7 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
         try {
             globalIter = applyTableIterators(topIter, conf);
             globalIter = buildTopIterators(globalIter, conf);
-        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
             throw new IOException(e);
         }
 
@@ -446,8 +447,8 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
      * @throws IOException
      *             for read/write issues
      */
-    protected SortedKeyValueIterator<Key,Value> buildTopIterators(SortedKeyValueIterator<Key,Value> topIter, Configuration conf)
-                    throws ClassNotFoundException, InstantiationException, IllegalAccessException, IOException {
+    protected SortedKeyValueIterator<Key,Value> buildTopIterators(SortedKeyValueIterator<Key,Value> topIter, Configuration conf) throws ClassNotFoundException,
+                    InstantiationException, IllegalAccessException, IOException, InvocationTargetException, NoSuchMethodException {
 
         List<AccumuloIterator> iterators = BulkInputFormat.getIterators(conf);
         List<AccumuloIteratorOption> options = BulkInputFormat.getIteratorOptions(conf);
@@ -479,7 +480,7 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
 
             Class<? extends SortedKeyValueIterator> iter = Class.forName(settings.getIteratorClass()).asSubclass(SortedKeyValueIterator.class);
 
-            SortedKeyValueIterator<Key,Value> newInstance = iter.newInstance();
+            SortedKeyValueIterator<Key,Value> newInstance = iter.getDeclaredConstructor().newInstance();
 
             newInstance.init(newIter, settings.getOptions(), myData);
 
