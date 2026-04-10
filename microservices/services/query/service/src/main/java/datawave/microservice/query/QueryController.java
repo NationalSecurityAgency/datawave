@@ -48,7 +48,6 @@ import datawave.microservice.query.lookup.LookupService;
 import datawave.microservice.query.stream.StreamingProperties;
 import datawave.microservice.query.stream.StreamingService;
 import datawave.microservice.query.stream.listener.CountingResponseBodyEmitterListener;
-import datawave.microservice.query.stream.listener.StreamingResponseListener;
 import datawave.microservice.query.translateid.TranslateIdService;
 import datawave.microservice.query.web.QuerySessionIdAdvice;
 import datawave.microservice.query.web.annotation.ClearQuerySessionId;

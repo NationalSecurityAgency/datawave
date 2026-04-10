@@ -1,5 +1,7 @@
 package datawave.query.jexl.visitors;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -7,7 +9,6 @@ import java.util.Set;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ParseException;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -220,7 +221,7 @@ class FieldsWithNumericRangeValuesVisitorTest {
             PrintingVisitor.printQuery(script);
         }
         Set<String> actual = FieldsWithNumericRangeValuesVisitor.getFields(script);
-        Assertions.assertEquals(expectedFields, actual);
+        assertEquals(expectedFields, actual);
     }
 
     private void assertLuceneResult() throws ParseException {
@@ -240,7 +241,7 @@ class FieldsWithNumericRangeValuesVisitorTest {
 
             // Visitor under test
             Set<String> actual = FieldsWithNumericRangeValuesVisitor.getFields(jexlScript);
-            Assertions.assertEquals(expectedFields, actual, "Lucene: " + luceneQuery + "  JEXL: " + jexl);
+            assertEquals(expectedFields, actual, "Lucene: " + luceneQuery + "  JEXL: " + jexl);
         } catch (datawave.query.language.parser.ParseException e) {
             throw new RuntimeException(e);
         }
