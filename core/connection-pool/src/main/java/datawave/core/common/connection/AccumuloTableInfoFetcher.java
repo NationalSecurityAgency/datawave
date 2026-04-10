@@ -63,7 +63,7 @@ public final class AccumuloTableInfoFetcher {
      *            the table to locate tablets for
      * @param ranges
      *            the ranges to bin into tablet locations
-     * @return a map of location -> (extent -> ranges)
+     * @return a map of {@code location -> (extent -> ranges)}
      * @throws AccumuloException
      *             if a general Accumulo error occurs
      * @throws AccumuloSecurityException
