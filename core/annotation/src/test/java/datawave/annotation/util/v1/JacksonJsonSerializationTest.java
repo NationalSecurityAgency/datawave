@@ -1,6 +1,7 @@
 package datawave.annotation.util.v1;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.FileInputStream;
@@ -9,6 +10,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -18,12 +20,15 @@ import java.util.stream.Collectors;
 import org.apache.commons.collections4.IteratorUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.ResourceAccessMode;
 import org.junit.jupiter.api.parallel.ResourceLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import com.google.gson.stream.JsonReader;
@@ -32,6 +37,7 @@ import com.google.protobuf.util.JsonFormat;
 
 import datawave.annotation.protobuf.v1.Annotation;
 import datawave.annotation.protobuf.v1.AnnotationList;
+import datawave.annotation.protobuf.v1.SegmentValue;
 import datawave.annotation.test.v1.AnnotationAssertions;
 import datawave.annotation.test.v1.AnnotationTestDataUtil;
 
@@ -125,6 +131,28 @@ public class JacksonJsonSerializationTest {
     }
 
     @Test
+    @ResourceLock(value = "annotation_baseline", mode = ResourceAccessMode.READ)
+    public void testProtobufDeserializationListBaselineWithZeroScore() throws Exception {
+        JsonFormat.Parser parser = AnnotationJsonUtils.getParser();
+        AnnotationList parsed = parseAnnotationListWithBaselineSegmentValueMutations(true, false, parser);
+        SegmentValue value = parsed.getAnnotations(0).getSegments(0).getValues(0);
+
+        assertEquals(0.0f, value.getScore(), 0.0f);
+        assertTrue(value.hasScore());
+    }
+
+    @Test
+    @ResourceLock(value = "annotation_baseline", mode = ResourceAccessMode.READ)
+    public void testProtobufDeserializationListBaselineWithMissingScore() throws Exception {
+        JsonFormat.Parser parser = AnnotationJsonUtils.getParser();
+        AnnotationList parsed = parseAnnotationListWithBaselineSegmentValueMutations(false, true, parser);
+        SegmentValue value = parsed.getAnnotations(0).getSegments(0).getValues(1);
+
+        assertEquals(0.0f, value.getScore(), 0.0f);
+        assertFalse(value.hasScore());
+    }
+
+    @Test
     @ResourceLock("annotation_baseline_ndjson")
     public void testProtobufSerializationBaselineNdJson() throws Exception {
         JsonFormat.Printer printer = AnnotationJsonUtils.getPrinter();
@@ -178,5 +206,23 @@ public class JacksonJsonSerializationTest {
         }
         assertEquals(36, parsedAnnotations.size());
         // TODO more validation
+    }
+
+    private AnnotationList parseAnnotationListWithBaselineSegmentValueMutations(boolean setFirstScoreToZero, boolean removeSecondScore,
+                    JsonFormat.Parser parser) throws Exception {
+        Path p = Path.of("src/test/resources/annotation_baseline.json");
+        ObjectNode root = (ObjectNode) objectMapper.readTree(Files.readString(p));
+        ArrayNode values = root.withArray("annotations").get(0).withArray("segments").get(0).withArray("values");
+
+        if (setFirstScoreToZero) {
+            ((ObjectNode) values.get(0)).put("score", 0.0);
+        }
+        if (removeSecondScore) {
+            ((ObjectNode) values.get(1)).remove("score");
+        }
+
+        AnnotationList.Builder builder = AnnotationList.newBuilder();
+        parser.merge(objectMapper.writeValueAsString(root), builder);
+        return builder.build();
     }
 }
