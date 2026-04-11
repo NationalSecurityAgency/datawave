@@ -1,5 +1,10 @@
 package datawave.query.language.functions.lucene;
 
+import static datawave.query.language.functions.jexl.DocumentMatch.DOCUMENT_FIELD;
+import static datawave.query.language.functions.jexl.DocumentMatch.DOCUMENT_MATCH_FUNCTION;
+import static datawave.query.language.functions.jexl.DocumentMatch.DOCUMENT_NAMESPACE;
+import static datawave.query.language.functions.jexl.DocumentMatch.MATCH_FUNCTION;
+
 import java.text.MessageFormat;
 import java.util.ArrayList;
 
@@ -22,9 +27,9 @@ public class DocumentMatch extends LuceneQueryFunction {
 
         DocumentMatchFilter(String selector) {
             super(true, WildcardFieldedFilter.BooleanType.AND);
-            setField("document");
+            setField(DOCUMENT_FIELD);
             setSelector(selector);
-            this.renderedQuery = "document:" + selector;
+            this.renderedQuery = DOCUMENT_NAMESPACE + selector;
             this.query = renderedQuery;
         }
 
@@ -35,7 +40,7 @@ public class DocumentMatch extends LuceneQueryFunction {
     }
 
     public DocumentMatch() {
-        super("DOCUMENT_MATCH", new ArrayList<>());
+        super(DOCUMENT_MATCH_FUNCTION, new ArrayList<>());
     }
 
     /**
@@ -81,7 +86,7 @@ public class DocumentMatch extends LuceneQueryFunction {
      */
     private String buildSelector() {
         StringBuilder sb = new StringBuilder();
-        sb.append("match(");
+        sb.append(MATCH_FUNCTION + "(");
         for (int i = 0; i < parameterList.size(); i++) {
             if (i > 0) {
                 sb.append(", ");

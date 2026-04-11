@@ -129,11 +129,7 @@ public class DatawaveInterpreter extends Interpreter {
 
         addHits(result);
 
-        if (isDocumentMatchFunction(nodeString) && result instanceof String) {
-            if (hasSiblings(node)) {
-                resultMap.put(nodeString, result);
-                return result;
-            }
+        if (isDocumentMatchFunction(nodeString) && result instanceof String && !hasSiblings(node)) {
             boolean matched = !((String) result).isEmpty();
             resultMap.put(nodeString, matched);
             return matched;

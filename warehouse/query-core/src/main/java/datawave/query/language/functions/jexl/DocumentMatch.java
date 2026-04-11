@@ -14,8 +14,14 @@ import datawave.webservice.query.exception.DatawaveErrorCode;
  * two-argument forms and renders the canonical JEXL syntax consumed by the runtime query planner.
  */
 public class DocumentMatch extends JexlQueryFunction {
+
+    public static final String DOCUMENT_MATCH_FUNCTION = "DOCUMENT_MATCH";
+    public static final String DOCUMENT_FIELD = "document";
+    public static final String DOCUMENT_NAMESPACE = DOCUMENT_FIELD + ":";
+    public static final String MATCH_FUNCTION = "match";
+
     public DocumentMatch() {
-        super("DOCUMENT_MATCH", new ArrayList<>());
+        super(DOCUMENT_MATCH_FUNCTION, new ArrayList<>());
     }
 
     /**
@@ -40,7 +46,7 @@ public class DocumentMatch extends JexlQueryFunction {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("document:match(");
+        sb.append(DOCUMENT_NAMESPACE + MATCH_FUNCTION + "(");
         for (int i = 0; i < parameterList.size(); i++) {
             if (i > 0) {
                 sb.append(", ");
