@@ -24,6 +24,7 @@ import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.DocumentKey;
 import datawave.query.jexl.functions.DocumentFunctions;
+import datawave.query.predicate.TimeFilter;
 import datawave.query.util.Tuple3;
 import datawave.query.util.Tuples;
 
@@ -70,13 +71,17 @@ public class DocumentMatchContextFunction implements Function<Tuple3<Key,Documen
 
     private List<Entry<Key,Value>> collectDocumentColumnAttributes(Set<Key> documentKeys) throws IOException {
         List<Entry<Key,Value>> documentColumns = new ArrayList<>();
+        long retainedBytes = 0L;
         for (Key documentKey : documentKeys) {
-            collectDocumentColumnAttributes(documentKey, documentColumns);
+            retainedBytes = collectDocumentColumnAttributes(documentKey, documentColumns, retainedBytes);
+            if (retainedBytes >= config.getLimits().getMaxEncodedContextSize()) {
+                break;
+            }
         }
         return documentColumns;
     }
 
-    private void collectDocumentColumnAttributes(Key documentKey, List<Entry<Key,Value>> documentColumns) throws IOException {
+    private long collectDocumentColumnAttributes(Key documentKey, List<Entry<Key,Value>> documentColumns, long retainedBytes) throws IOException {
         String row = documentKey.getRow().toString();
         String datatypeAndUid = documentKey.getColumnFamily().toString();
         Key startKey = new Key(row, "d", datatypeAndUid + '\0');
@@ -89,16 +94,56 @@ public class DocumentMatchContextFunction implements Function<Tuple3<Key,Documen
         source.seek(documentColumnRange, Collections.emptyList(), false);
 
         while (source.hasTop() && isDocumentColumn(source.getTopKey(), documentKey)) {
-            if (log.isDebugEnabled()) {
-                log.debug("Collected d-column entry " + source.getTopKey() + " for document key " + documentKey);
+            Entry<Key,Value> entry = Maps.immutableEntry(source.getTopKey(), source.getTopValue());
+            if (!shouldRetainDocumentColumn(entry, documentKey)) {
+                source.next();
+                continue;
             }
-            documentColumns.add(Maps.immutableEntry(source.getTopKey(), source.getTopValue()));
+
+            int encodedLength = entry.getValue().get().length;
+            long retainedBytesWithEntry = retainedBytes + encodedLength;
+            if (retainedBytesWithEntry > config.getLimits().getMaxEncodedContextSize()) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Reached aggregate encoded document-match context limit of " + config.getLimits().getMaxEncodedContextSize()
+                                    + " bytes while collecting d-column entry " + entry.getKey() + " for document key " + documentKey
+                                    + "; skipping this and remaining d-column entries");
+                }
+                return config.getLimits().getMaxEncodedContextSize();
+            }
+
+            if (log.isDebugEnabled()) {
+                log.debug("Collected d-column entry " + entry.getKey() + " for document key " + documentKey);
+            }
+            documentColumns.add(entry);
+            retainedBytes = retainedBytesWithEntry;
             source.next();
         }
 
         if (log.isDebugEnabled()) {
             log.debug("Finished d-column scan for document key " + documentKey + "; next top key is " + (source.hasTop() ? source.getTopKey() : "<none>"));
         }
+        return retainedBytes;
+    }
+
+    private boolean shouldRetainDocumentColumn(Entry<Key,Value> entry, Key documentKey) {
+        TimeFilter timeFilter = config.getTimeFilter();
+        if (timeFilter != null && !timeFilter.apply(entry)) {
+            if (log.isDebugEnabled()) {
+                log.debug("Skipping d-column entry " + entry.getKey() + " for document key " + documentKey + " because it did not match the time filter");
+            }
+            return false;
+        }
+
+        int encodedLength = entry.getValue().get().length;
+        if (encodedLength > config.getLimits().getMaxEncodedValueSize()) {
+            if (log.isDebugEnabled()) {
+                log.debug("Skipping oversized d-column entry " + entry.getKey() + " for document key " + documentKey + " because encoded payload size "
+                                + encodedLength + " exceeds configured limit of " + config.getLimits().getMaxEncodedValueSize() + " bytes");
+            }
+            return false;
+        }
+
+        return true;
     }
 
     private Set<Key> getDocumentKeys(Key tupleKey, Document document) {

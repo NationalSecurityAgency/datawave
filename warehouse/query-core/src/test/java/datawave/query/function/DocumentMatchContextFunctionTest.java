@@ -39,7 +39,7 @@ public class DocumentMatchContextFunctionTest {
 
         DocumentMatchConfig config = new DocumentMatchConfig();
         config.setSource(new ListBackedIterator(entries));
-        config.setLimits(new DocumentMatchContext.Limits(1234, 5678));
+        config.setLimits(new DocumentMatchContext.Limits(1234, 5678, 9012));
         DocumentMatchContextFunction function = new DocumentMatchContextFunction(config);
 
         Tuple3<Key,Document,Map<String,Object>> result = function
@@ -49,6 +49,7 @@ public class DocumentMatchContextFunctionTest {
         assertEquals(2, context.getdEntries().size());
         assertEquals(1234, context.getMaxEncodedValueSize());
         assertEquals(5678, context.getMaxDecodedValueSize());
+        assertEquals(9012, context.getMaxEncodedContextSize());
     }
 
     /**
@@ -58,7 +59,7 @@ public class DocumentMatchContextFunctionTest {
     public void testCollectsEmptyContextWhenNoDocumentColumnsExist() {
         DocumentMatchConfig config = new DocumentMatchConfig();
         config.setSource(new ListBackedIterator(Collections.emptyList()));
-        config.setLimits(new DocumentMatchContext.Limits(10, 20));
+        config.setLimits(new DocumentMatchContext.Limits(10, 20, 30));
         DocumentMatchContextFunction function = new DocumentMatchContextFunction(config);
 
         Tuple3<Key,Document,Map<String,Object>> result = function
@@ -79,7 +80,7 @@ public class DocumentMatchContextFunctionTest {
 
         DocumentMatchConfig config = new DocumentMatchConfig();
         config.setSource(new ListBackedIterator(entries));
-        config.setLimits(new DocumentMatchContext.Limits(10, 20));
+        config.setLimits(new DocumentMatchContext.Limits(10, 20, 30));
         config.setTld(true);
         DocumentMatchContextFunction function = new DocumentMatchContextFunction(config);
 
@@ -92,6 +93,28 @@ public class DocumentMatchContextFunctionTest {
         DocumentMatchContext context = (DocumentMatchContext) result.third().get(DocumentFunctions.DOCUMENT_MATCH_CONTEXT_JEXL_VARIABLE_NAME);
 
         assertEquals(2, context.getdEntries().size());
+    }
+
+    /**
+     * Verifies that collection skips individually oversized payloads and stops once the retained encoded bytes would exceed the configured aggregate limit.
+     */
+    @Test
+    public void testCollectsOnlyEntriesWithinAggregateEncodedContextLimit() {
+        List<Map.Entry<Key,Value>> entries = Lists.newArrayList(Map.entry(new Key("20240101_0", "d", "datatype\0uid\0BODY"), new Value("1234".getBytes())),
+                        Map.entry(new Key("20240101_0", "d", "datatype\0uid\0META"), new Value("12345".getBytes())),
+                        Map.entry(new Key("20240101_0", "d", "datatype\0uid\0TAIL"), new Value("12".getBytes())));
+
+        DocumentMatchConfig config = new DocumentMatchConfig();
+        config.setSource(new ListBackedIterator(entries));
+        config.setLimits(new DocumentMatchContext.Limits(10, 20, 4));
+        DocumentMatchContextFunction function = new DocumentMatchContextFunction(config);
+
+        Tuple3<Key,Document,Map<String,Object>> result = function
+                        .apply(Tuples.tuple(new Key("20240101_0", "datatype\0uid"), new Document(), Collections.emptyMap()));
+        DocumentMatchContext context = (DocumentMatchContext) result.third().get(DocumentFunctions.DOCUMENT_MATCH_CONTEXT_JEXL_VARIABLE_NAME);
+
+        assertEquals(1, context.getdEntries().size());
+        assertEquals("datatype\0uid\0BODY", context.getdEntries().get(0).getKey().getColumnQualifier().toString());
     }
 
     private static class ListBackedIterator implements SortedKeyValueIterator<Key,Value> {

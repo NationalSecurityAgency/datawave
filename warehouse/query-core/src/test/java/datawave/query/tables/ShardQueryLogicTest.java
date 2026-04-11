@@ -326,6 +326,7 @@ public class ShardQueryLogicTest extends AbstractQueryTest {
     public void testDocumentMatchLimitsDefaultFromSpringConfig() {
         assertEquals(DocumentMatchContext.DEFAULT_MAX_ENCODED_SIZE, logic.getDocumentMatchMaxEncodedSize());
         assertEquals(DocumentMatchContext.DEFAULT_MAX_DECODED_SIZE, logic.getDocumentMatchMaxDecodedSize());
+        assertEquals(DocumentMatchContext.DEFAULT_MAX_ENCODED_CONTEXT_SIZE, logic.getDocumentMatchMaxEncodedContextSize());
     }
 
     /**
@@ -335,14 +336,18 @@ public class ShardQueryLogicTest extends AbstractQueryTest {
     public void testDocumentMatchLimitSettersUpdateLogicAndConfig() {
         int encoded = 1024;
         int decoded = 2048;
+        int encodedContext = 4096;
 
         logic.setDocumentMatchMaxEncodedSize(encoded);
         logic.setDocumentMatchMaxDecodedSize(decoded);
+        logic.setDocumentMatchMaxEncodedContextSize(encodedContext);
 
         assertEquals(encoded, logic.getDocumentMatchMaxEncodedSize());
         assertEquals(decoded, logic.getDocumentMatchMaxDecodedSize());
+        assertEquals(encodedContext, logic.getDocumentMatchMaxEncodedContextSize());
         assertEquals(encoded, logic.getConfig().getDocumentMatchMaxEncodedSize());
         assertEquals(decoded, logic.getConfig().getDocumentMatchMaxDecodedSize());
+        assertEquals(encodedContext, logic.getConfig().getDocumentMatchMaxEncodedContextSize());
     }
 
     /**
@@ -352,9 +357,11 @@ public class ShardQueryLogicTest extends AbstractQueryTest {
     public void testDocumentMatchLimitsPropagateThroughInitialize() throws Exception {
         int encoded = 4096;
         int decoded = 8192;
+        int encodedContext = 16384;
 
         logic.setDocumentMatchMaxEncodedSize(encoded);
         logic.setDocumentMatchMaxDecodedSize(decoded);
+        logic.setDocumentMatchMaxEncodedContextSize(encodedContext);
 
         givenQuery("UUID == '" + caponeUID + "'");
         givenDate("20091231", "20150101");
@@ -363,6 +370,7 @@ public class ShardQueryLogicTest extends AbstractQueryTest {
 
         assertEquals(encoded, config.getDocumentMatchMaxEncodedSize());
         assertEquals(decoded, config.getDocumentMatchMaxDecodedSize());
+        assertEquals(encodedContext, config.getDocumentMatchMaxEncodedContextSize());
     }
 
     @Test

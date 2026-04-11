@@ -33,7 +33,9 @@ public class DocumentFunctionsTest {
      */
     @Test
     public void testMatchAcrossAllViews() throws Exception {
-        DocumentMatchContext context = new DocumentMatchContext(List.of(entry("test\0uid\0BODY", "scar car"), entry("test\0uid\0META", "carpet")), 1024);
+        DocumentMatchContext context = new DocumentMatchContext(List.of(entry("test\0uid\0BODY", "scar car"), entry("test\0uid\0META", "carpet")),
+                        new DocumentMatchContext.Limits(1024, DocumentMatchContext.DEFAULT_MAX_DECODED_SIZE,
+                                        DocumentMatchContext.DEFAULT_MAX_ENCODED_CONTEXT_SIZE));
 
         String result = DocumentFunctions.match(context, "car");
 
@@ -47,7 +49,9 @@ public class DocumentFunctionsTest {
     @Test
     public void testWildcardViewMatch() throws Exception {
         DocumentMatchContext context = new DocumentMatchContext(
-                        List.of(entry("test\0uid\0BODY", "car"), entry("test\0uid\0BODY_TEXT", "car car"), entry("test\0uid\0META", "car")), 1024);
+                        List.of(entry("test\0uid\0BODY", "car"), entry("test\0uid\0BODY_TEXT", "car car"), entry("test\0uid\0META", "car")),
+                        new DocumentMatchContext.Limits(1024, DocumentMatchContext.DEFAULT_MAX_DECODED_SIZE,
+                                        DocumentMatchContext.DEFAULT_MAX_ENCODED_CONTEXT_SIZE));
 
         String result = DocumentFunctions.match("BODY*", context, "car");
 
@@ -59,7 +63,8 @@ public class DocumentFunctionsTest {
      */
     @Test
     public void testOverlappingMatches() throws Exception {
-        DocumentMatchContext context = new DocumentMatchContext(List.of(entry("test\0uid\0BODY", "banana")), 1024);
+        DocumentMatchContext context = new DocumentMatchContext(List.of(entry("test\0uid\0BODY", "banana")), new DocumentMatchContext.Limits(1024,
+                        DocumentMatchContext.DEFAULT_MAX_DECODED_SIZE, DocumentMatchContext.DEFAULT_MAX_ENCODED_CONTEXT_SIZE));
 
         String result = DocumentFunctions.match("BODY", context, "ana");
 
@@ -71,7 +76,8 @@ public class DocumentFunctionsTest {
      */
     @Test
     public void testCaseSensitiveMatch() throws Exception {
-        DocumentMatchContext context = new DocumentMatchContext(List.of(entry("test\0uid\0BODY", "scar car")), 1024);
+        DocumentMatchContext context = new DocumentMatchContext(List.of(entry("test\0uid\0BODY", "scar car")), new DocumentMatchContext.Limits(1024,
+                        DocumentMatchContext.DEFAULT_MAX_DECODED_SIZE, DocumentMatchContext.DEFAULT_MAX_ENCODED_CONTEXT_SIZE));
 
         assertTrue(DocumentFunctions.match(context, "Car").isEmpty());
     }
@@ -82,7 +88,8 @@ public class DocumentFunctionsTest {
     @Test
     public void testOversizedPayloadIsNonMatch() throws Exception {
         Map.Entry<Key,Value> entry = entry("test\0uid\0BODY", "scar car");
-        DocumentMatchContext context = new DocumentMatchContext(List.of(entry), entry.getValue().get().length - 1);
+        DocumentMatchContext context = new DocumentMatchContext(List.of(entry), new DocumentMatchContext.Limits(entry.getValue().get().length - 1,
+                        DocumentMatchContext.DEFAULT_MAX_DECODED_SIZE, DocumentMatchContext.DEFAULT_MAX_ENCODED_CONTEXT_SIZE));
 
         assertTrue(DocumentFunctions.match(context, "car").isEmpty());
     }
@@ -92,7 +99,8 @@ public class DocumentFunctionsTest {
      */
     @Test
     public void testOversizedDecodedPayloadIsNonMatch() throws Exception {
-        DocumentMatchContext context = new DocumentMatchContext(List.of(entry("test\0uid\0BODY", "scar car")), 1024, 3);
+        DocumentMatchContext context = new DocumentMatchContext(List.of(entry("test\0uid\0BODY", "scar car")),
+                        new DocumentMatchContext.Limits(1024, 3, DocumentMatchContext.DEFAULT_MAX_ENCODED_CONTEXT_SIZE));
 
         assertTrue(DocumentFunctions.match(context, "car").isEmpty());
     }
@@ -102,7 +110,8 @@ public class DocumentFunctionsTest {
      */
     @Test
     public void testNoDocumentEntriesIsNonMatch() {
-        assertTrue(DocumentFunctions.match(new DocumentMatchContext(List.of(), 1024), "car").isEmpty());
+        assertTrue(DocumentFunctions.match(new DocumentMatchContext(List.of(), new DocumentMatchContext.Limits(1024,
+                        DocumentMatchContext.DEFAULT_MAX_DECODED_SIZE, DocumentMatchContext.DEFAULT_MAX_ENCODED_CONTEXT_SIZE)), "car").isEmpty());
     }
 
     /**
@@ -111,7 +120,8 @@ public class DocumentFunctionsTest {
     @Test
     public void testDecodeFailureIsNonMatch() {
         DocumentMatchContext context = new DocumentMatchContext(List.of(Map.entry(new Key("row", "d", "test\0uid\0BODY"), new Value("not-base64".getBytes()))),
-                        1024);
+                        new DocumentMatchContext.Limits(1024, DocumentMatchContext.DEFAULT_MAX_DECODED_SIZE,
+                                        DocumentMatchContext.DEFAULT_MAX_ENCODED_CONTEXT_SIZE));
 
         assertTrue(DocumentFunctions.match(context, "car").isEmpty());
     }
@@ -121,7 +131,9 @@ public class DocumentFunctionsTest {
      */
     @Test
     public void testMatchWithBase64LineBreaks() throws Exception {
-        DocumentMatchContext context = new DocumentMatchContext(List.of(entryWithEncodedSuffix("test\0uid\0BODY", "/* Origins */  Fix.", "\r\n")), 1024);
+        DocumentMatchContext context = new DocumentMatchContext(List.of(entryWithEncodedSuffix("test\0uid\0BODY", "/* Origins */  Fix.", "\r\n")),
+                        new DocumentMatchContext.Limits(1024, DocumentMatchContext.DEFAULT_MAX_DECODED_SIZE,
+                                        DocumentMatchContext.DEFAULT_MAX_ENCODED_CONTEXT_SIZE));
 
         String result = DocumentFunctions.match("BODY", context, "Origins");
 
@@ -133,7 +145,9 @@ public class DocumentFunctionsTest {
      */
     @Test
     public void testMatchWithBase64OnlyPayload() {
-        DocumentMatchContext context = new DocumentMatchContext(List.of(base64OnlyEntry("test\0uid\0BODY", "/* Origins */  Fix.")), 1024);
+        DocumentMatchContext context = new DocumentMatchContext(List.of(base64OnlyEntry("test\0uid\0BODY", "/* Origins */  Fix.")),
+                        new DocumentMatchContext.Limits(1024, DocumentMatchContext.DEFAULT_MAX_DECODED_SIZE,
+                                        DocumentMatchContext.DEFAULT_MAX_ENCODED_CONTEXT_SIZE));
 
         String result = DocumentFunctions.match("BODY", context, "Origins");
 
@@ -146,7 +160,8 @@ public class DocumentFunctionsTest {
     @Test
     public void testMatchMergesResultsAcrossCalls() throws Exception {
         DocumentMatchContext context = new DocumentMatchContext(List.of(entry("test\0uid\0BODY", "scar car"), entry("test\0uid\0CONTENT2", "lawyer car")),
-                        1024);
+                        new DocumentMatchContext.Limits(1024, DocumentMatchContext.DEFAULT_MAX_DECODED_SIZE,
+                                        DocumentMatchContext.DEFAULT_MAX_ENCODED_CONTEXT_SIZE));
 
         assertEquals("{\"car\":{\"BODY\":[1,5]}}", DocumentFunctions.match("BODY", context, "car"));
         assertEquals("{\"lawyer\":{\"CONTENT2\":[0]}}", DocumentFunctions.match("CONTENT2", context, "lawyer"));
@@ -159,7 +174,8 @@ public class DocumentFunctionsTest {
     @Test
     public void testMatchMergesSameSearchAcrossCalls() throws Exception {
         DocumentMatchContext context = new DocumentMatchContext(List.of(entry("test\0uid\0BODY", "scar car"), entry("test\0uid\0CONTENT2", "lawyer car")),
-                        1024);
+                        new DocumentMatchContext.Limits(1024, DocumentMatchContext.DEFAULT_MAX_DECODED_SIZE,
+                                        DocumentMatchContext.DEFAULT_MAX_ENCODED_CONTEXT_SIZE));
 
         assertEquals("{\"car\":{\"BODY\":[1,5]}}", DocumentFunctions.match("BODY", context, "car"));
         assertEquals("{\"car\":{\"CONTENT2\":[7]}}", DocumentFunctions.match("CONTENT2", context, "car"));
@@ -177,7 +193,9 @@ public class DocumentFunctionsTest {
         logger.setLevel(Level.INFO);
         try {
             DocumentMatchContext context = new DocumentMatchContext(
-                            List.of(entry("test\0uid\0BODY", "scar car", "A"), entry("test\0uid\0CONTENT2", "lawyer car", "B")), 1024);
+                            List.of(entry("test\0uid\0BODY", "scar car", "A"), entry("test\0uid\0CONTENT2", "lawyer car", "B")),
+                            new DocumentMatchContext.Limits(1024, DocumentMatchContext.DEFAULT_MAX_DECODED_SIZE,
+                                            DocumentMatchContext.DEFAULT_MAX_ENCODED_CONTEXT_SIZE));
 
             assertEquals("{\"car\":{\"BODY\":[1,5]}}", DocumentFunctions.match("BODY", context, "car"));
             assertEquals("{\"lawyer\":{\"CONTENT2\":[0]}}", DocumentFunctions.match("CONTENT2", context, "lawyer"));

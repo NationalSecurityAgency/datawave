@@ -208,8 +208,11 @@ public class JexlEvaluationTest {
         DatawaveJexlContext context = new DatawaveJexlContext();
         d.visit(Collections.singleton("FOO"), context);
         context.set(DocumentFunctions.DOCUMENT_MATCH_CONTEXT_JEXL_VARIABLE_NAME,
-                        new DocumentMatchContext(List.of(Maps.immutableEntry(new Key("row", "d", "datatype\0uid\0BODY", "A"),
-                                        new org.apache.accumulo.core.data.Value(buildEncodedValue("scar car")))), 1024));
+                        new DocumentMatchContext(
+                                        List.of(Maps.immutableEntry(new Key("row", "d", "datatype\0uid\0BODY", "A"),
+                                                        new org.apache.accumulo.core.data.Value(buildEncodedValue("scar car")))),
+                                        new DocumentMatchContext.Limits(1024, DocumentMatchContext.DEFAULT_MAX_DECODED_SIZE,
+                                                        DocumentMatchContext.DEFAULT_MAX_ENCODED_CONTEXT_SIZE)));
 
         assertEvaluation(query, docKey, d, context);
         assertEquals("{\"car\":{\"BODY\":[1,5]}}", ((Content) d.get(DocumentFunctions.DOCUMENT_MATCHES)).getContent());
@@ -226,12 +229,13 @@ public class JexlEvaluationTest {
         DatawaveJexlContext context = new DatawaveJexlContext();
         d.visit(Collections.singleton("FOO"), context);
         context.set(DocumentFunctions.DOCUMENT_MATCH_CONTEXT_JEXL_VARIABLE_NAME,
-                        new DocumentMatchContext(List.of(
-                                        Maps.immutableEntry(new Key("row", "d", "datatype\0uid\0BODY", "A"),
+                        new DocumentMatchContext(
+                                        List.of(Maps.immutableEntry(new Key("row", "d", "datatype\0uid\0BODY", "A"),
                                                         new org.apache.accumulo.core.data.Value(buildEncodedValue("scar car"))),
-                                        Maps.immutableEntry(new Key("row", "d", "datatype\0uid\0CONTENT2", "A"),
-                                                        new org.apache.accumulo.core.data.Value(buildEncodedValue("lawyer car")))),
-                                        1024));
+                                                        Maps.immutableEntry(new Key("row", "d", "datatype\0uid\0CONTENT2", "A"),
+                                                                        new org.apache.accumulo.core.data.Value(buildEncodedValue("lawyer car")))),
+                                        new DocumentMatchContext.Limits(1024, DocumentMatchContext.DEFAULT_MAX_DECODED_SIZE,
+                                                        DocumentMatchContext.DEFAULT_MAX_ENCODED_CONTEXT_SIZE)));
 
         assertEvaluation(query, docKey, d, context);
         assertEquals("{\"car\":{\"BODY\":[1,5]},\"lawyer\":{\"CONTENT2\":[0]}}", ((Content) d.get(DocumentFunctions.DOCUMENT_MATCHES)).getContent());
