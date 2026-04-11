@@ -1,16 +1,11 @@
 package datawave.query.jexl.functions;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.zip.GZIPInputStream;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -19,6 +14,7 @@ import org.apache.log4j.Logger;
 import com.google.gson.Gson;
 
 import datawave.query.function.DocumentMatchContext;
+import datawave.query.table.parser.ContentKeyValueFactory;
 
 /**
  * Evaluation-phase JEXL functions for inspecting decoded shard-table {@code d}-column content.
@@ -36,7 +32,6 @@ public class DocumentFunctions {
     public static final String DOCUMENT_MATCH_FUNCTION_NAME = "match";
     public static final String DOCUMENT_MATCH_CONTEXT_JEXL_VARIABLE_NAME = "documentMatchContext";
     public static final String DOCUMENT_MATCHES = "DOCUMENT_MATCHES";
-    private static final int DECODE_BUFFER_SIZE = 4096;
 
     /**
      * Evaluates the internal form of {@code document:match(STRING)} across all eligible views for the current document.
@@ -176,31 +171,7 @@ public class DocumentFunctions {
      *             if the payload cannot be decoded or if the decoded size exceeds the configured limit
      */
     static String decode(byte[] encoded, int maxDecodedValueSize) throws IOException {
-        byte[] decodedBytes;
-        try (ByteArrayInputStream bais = new ByteArrayInputStream(encoded)) {
-            decodedBytes = Base64.getMimeDecoder().decode(bais.readAllBytes());
-        }
-
-        try (ByteArrayInputStream decodedInput = new ByteArrayInputStream(decodedBytes);
-                        GZIPInputStream gzipInputStream = new GZIPInputStream(decodedInput);
-                        ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
-            byte[] buffer = new byte[DECODE_BUFFER_SIZE];
-            int read;
-            int totalRead = 0;
-            while ((read = gzipInputStream.read(buffer)) >= 0) {
-                totalRead += read;
-                if (totalRead > maxDecodedValueSize) {
-                    throw new IOException("Decoded d-column payload exceeded configured limit of " + maxDecodedValueSize + " bytes");
-                }
-                baos.write(buffer, 0, read);
-            }
-            return baos.toString(StandardCharsets.UTF_8);
-        } catch (IOException e) {
-            if (decodedBytes.length > maxDecodedValueSize) {
-                throw new IOException("Decoded d-column payload exceeded configured limit of " + maxDecodedValueSize + " bytes", e);
-            }
-            return new String(decodedBytes, StandardCharsets.UTF_8);
-        }
+        return ContentKeyValueFactory.decodeAndDecompressContentAsString(encoded, maxDecodedValueSize);
     }
 
     /**

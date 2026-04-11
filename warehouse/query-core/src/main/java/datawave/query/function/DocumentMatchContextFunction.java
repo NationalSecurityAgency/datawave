@@ -33,6 +33,9 @@ import datawave.query.util.Tuples;
  */
 public class DocumentMatchContextFunction implements Function<Tuple3<Key,Document,Map<String,Object>>,Tuple3<Key,Document,Map<String,Object>>> {
     private static final Logger log = Logger.getLogger(DocumentMatchContextFunction.class);
+    private static final String DOCUMENT_COLUMN_FAMILY_STRING = "d";
+    private static final char DOCUMENT_COLUMN_FAMILY_CHAR = 'd';
+    private static final char NULL = '\0';
     private final DocumentMatchConfig config;
     private final SortedKeyValueIterator<Key,Value> source;
 
@@ -84,8 +87,9 @@ public class DocumentMatchContextFunction implements Function<Tuple3<Key,Documen
     private long collectDocumentColumnAttributes(Key documentKey, List<Entry<Key,Value>> documentColumns, long retainedBytes) throws IOException {
         String row = documentKey.getRow().toString();
         String datatypeAndUid = documentKey.getColumnFamily().toString();
-        Key startKey = new Key(row, "d", datatypeAndUid + '\0');
-        Key endKey = config.isTld() ? new Key(row, "d", datatypeAndUid + '\uffff') : new Key(row, "d", datatypeAndUid + '.');
+        Key startKey = new Key(row, DOCUMENT_COLUMN_FAMILY_STRING, datatypeAndUid + NULL);
+        Key endKey = config.isTld() ? new Key(row, DOCUMENT_COLUMN_FAMILY_STRING, datatypeAndUid + '\uffff')
+                        : new Key(row, DOCUMENT_COLUMN_FAMILY_STRING, datatypeAndUid + '.');
         Range documentColumnRange = new Range(startKey, true, endKey, false);
         if (log.isDebugEnabled()) {
             log.debug("Seeking d-column range " + documentColumnRange + " for document key " + documentKey);
@@ -190,8 +194,8 @@ public class DocumentMatchContextFunction implements Function<Tuple3<Key,Documen
     private boolean isDocumentColumn(Key documentContentKey, Key documentKey) {
         // A document key's column family is datatype\0uid, and a d-column qualifier begins with that same datatype\0uid
         // followed by \0view. This prefix comparison ties the d-column back to the document represented by the event key.
-        return documentContentKey.getColumnFamilyData().length() == 1 && documentContentKey.getColumnFamilyData().byteAt(0) == 'd'
+        return documentContentKey.getColumnFamilyData().length() == 1 && documentContentKey.getColumnFamilyData().byteAt(0) == DOCUMENT_COLUMN_FAMILY_CHAR
                         && documentContentKey.getRow().equals(documentKey.getRow())
-                        && documentContentKey.getColumnQualifier().toString().startsWith(documentKey.getColumnFamily().toString() + '\0');
+                        && documentContentKey.getColumnQualifier().toString().startsWith(documentKey.getColumnFamily().toString() + NULL);
     }
 }
