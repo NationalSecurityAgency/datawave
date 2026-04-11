@@ -7,7 +7,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.concurrent.TimeUnit;
 
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
@@ -28,6 +27,7 @@ import com.google.common.base.Splitter;
 
 import datawave.next.stats.DocIdQueryIteratorStats;
 import datawave.next.stats.DocumentIteratorStats;
+import datawave.next.stats.StatUtil;
 import datawave.query.iterator.QueryOptions;
 import datawave.query.jexl.JexlASTHelper;
 
@@ -244,8 +244,7 @@ public class DocIdQueryIterator implements SortedKeyValueIterator<Key,Value> {
 
             if (log.isDebugEnabled()) {
                 long elapsedNS = timingStats.getScanTime();
-                long elapsedMS = TimeUnit.NANOSECONDS.toMillis(elapsedNS);
-                log.debug("scanned {} ids in {} ns or {} ms", docIds.size(), elapsedNS, elapsedMS);
+                log.debug("scanned {} ids in {}", docIds.size(), StatUtil.formatNanos(elapsedNS));
             }
             iteratorStats.merge(visitor.getStats());
             timingStats.incrementTotalDocumentIds(docIds.size());

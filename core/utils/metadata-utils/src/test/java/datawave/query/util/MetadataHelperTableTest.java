@@ -24,7 +24,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NoSuchElementException;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriter;
@@ -34,7 +33,6 @@ import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.LongCombiner;
 import org.apache.accumulo.core.security.Authorizations;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -90,6 +88,7 @@ public class MetadataHelperTableTest {
             write(bw, "SHAPE", "e", "datatype-a", EMPTY_VALUE);
             write(bw, "SHAPE", "i", "datatype-a", EMPTY_VALUE);
             write(bw, "SHAPE", "ri", "datatype-a", EMPTY_VALUE);
+            write(bw, "SHAPE", "h", "datatype-a", EMPTY_VALUE);
             write(bw, "SHAPE", "f", "datatype-a\u000020240301", createValue(23L));
             write(bw, "SHAPE", "f", "datatype-a\u000020240302", createValue(14));
             write(bw, "SHAPE", "f", "datatype-a\u000020240303", createValue(72));
@@ -100,6 +99,7 @@ public class MetadataHelperTableTest {
 
             write(bw, "COLOR", "e", "datatype-b", EMPTY_VALUE);
             write(bw, "COLOR", "i", "datatype-b", EMPTY_VALUE);
+            write(bw, "COLOR", "h", "datatype-b", EMPTY_VALUE);
             write(bw, "COLOR", "f", "datatype-b\u000020240306", createValue(66));
             write(bw, "COLOR", "f", "datatype-b\u000020240307", createValue(77));
             write(bw, "COLOR", "f", "datatype-b\u000020240308", createValue(55));
@@ -167,7 +167,9 @@ public class MetadataHelperTableTest {
             // Make sure the model fields appear when fetching all fields.
             write(bw, "EVENT_DATE", "i", "datatype-a", EMPTY_VALUE);
             write(bw, "UUID", "i", "datatype-a", EMPTY_VALUE);
+            write(bw, "UUID", "h", "datatype-a", EMPTY_VALUE);
             write(bw, "TITLE", "i", "datatype-a", EMPTY_VALUE);
+            write(bw, "TITLE", "h", "datatype-a", EMPTY_VALUE);
             write(bw, "HEADER", "i", "datatype-a", EMPTY_VALUE);
             write(bw, "DESIGNATION", "i", "datatype-a", EMPTY_VALUE);
         }
@@ -607,6 +609,16 @@ public class MetadataHelperTableTest {
     }
 
     @Test
+    public void testGetHiddenFields() throws Exception {
+        Set<String> hiddenFields = Set.of("SHAPE", "COLOR", "TITLE", "UUID");
+        assertEquals(hiddenFields, helper.getHiddenFields(null));
+        assertEquals(hiddenFields, helper.getHiddenFields(Collections.emptySet()));
+        assertEquals(Set.of("SHAPE", "TITLE", "UUID"), helper.getHiddenFields(Set.of("datatype-a")));
+        assertEquals(Set.of("COLOR"), helper.getHiddenFields(Set.of("datatype-b")));
+        assertEquals(Collections.emptySet(), helper.getHiddenFields(Set.of("datatype-c")));
+    }
+
+    @Test
     public void testGetReverseIndexedFields() throws Exception {
         Set<String> reverseIndexedFields = Set.of("SHAPE", "DEFINITION");
         assertEquals(reverseIndexedFields, helper.getReverseIndexedFields(null));
@@ -702,13 +714,13 @@ public class MetadataHelperTableTest {
     public void testGetCountsByFieldForDaysWithIngestTypeFilter() {
         // range of single day
         assertThrows(NullPointerException.class, () -> helper.getCountsByFieldForDays("SHAPE", getDate("20240301"), getDate("20240301"), null));
-        assertEquals(0L, helper.getCountsByFieldForDays("SHAPE", getDate("20240301"), getDate("20240301"), Collections.emptySet()));
+        assertEquals(23L, helper.getCountsByFieldForDays("SHAPE", getDate("20240301"), getDate("20240301"), Collections.emptySet()));
         assertEquals(23L, helper.getCountsByFieldForDays("SHAPE", getDate("20240301"), getDate("20240301"), Set.of("datatype-a")));
         assertEquals(0L, helper.getCountsByFieldForDays("SHAPE", getDate("20240301"), getDate("20240301"), Set.of("datatype-b")));
 
         // full range
         assertThrows(NullPointerException.class, () -> helper.getCountsByFieldForDays("SHAPE", getDate("20240301"), getDate("20240305"), null));
-        assertEquals(0L, helper.getCountsByFieldForDays("SHAPE", getDate("20240301"), getDate("20240305"), Collections.emptySet()));
+        assertEquals(559L, helper.getCountsByFieldForDays("SHAPE", getDate("20240301"), getDate("20240305"), Collections.emptySet()));
         // 559 is wrong. Full count is 658.
         assertEquals(559L, helper.getCountsByFieldForDays("SHAPE", getDate("20240301"), getDate("20240305"), Set.of("datatype-a")));
         assertEquals(0L, helper.getCountsByFieldForDays("SHAPE", getDate("20240301"), getDate("20240305"), Set.of("datatype-b")));
@@ -723,7 +735,7 @@ public class MetadataHelperTableTest {
     @Test
     public void testGetCountsByFieldInDayWithTypes() {
         assertThrows(NullPointerException.class, () -> helper.getCountsByFieldInDayWithTypes("SHAPE", "20240301", null));
-        assertEquals(0L, helper.getCountsByFieldInDayWithTypes("SHAPE", "20240301", Collections.emptySet()));
+        assertEquals(23L, helper.getCountsByFieldInDayWithTypes("SHAPE", "20240301", Collections.emptySet()));
         assertEquals(23L, helper.getCountsByFieldInDayWithTypes("SHAPE", "20240301", Set.of("datatype-a")));
         assertEquals(0L, helper.getCountsByFieldInDayWithTypes("SHAPE", "20240315", Set.of("datatype-a")));
     }
@@ -907,21 +919,21 @@ public class MetadataHelperTableTest {
     }
 
     @Test
-    public void testGetQueryModel() throws TableNotFoundException, ExecutionException {
+    public void testGetQueryModel() throws TableNotFoundException {
         QueryModel queryModel = helper.getQueryModel(METADATA_TABLE_NAME, "TEST_MODEL");
 
         // Assert the forward mappings.
         Multimap<String,String> forwardMappings = queryModel.getForwardQueryMapping();
-        Assertions.assertTrue(forwardMappings.containsEntry("start-time", "EVENT_DATE"));
-        Assertions.assertTrue(forwardMappings.containsEntry("unique-id", "UUID"));
-        Assertions.assertTrue(forwardMappings.containsEntry("title", "TITLE"));
-        Assertions.assertTrue(forwardMappings.containsEntry("title", "HEADER"));
-        Assertions.assertTrue(forwardMappings.containsEntry("title", "DESIGNATION"));
+        assertTrue(forwardMappings.containsEntry("start-time", "EVENT_DATE"));
+        assertTrue(forwardMappings.containsEntry("unique-id", "UUID"));
+        assertTrue(forwardMappings.containsEntry("title", "TITLE"));
+        assertTrue(forwardMappings.containsEntry("title", "HEADER"));
+        assertTrue(forwardMappings.containsEntry("title", "DESIGNATION"));
 
         // Assert the reverse mappings.
         Map<String,String> reverseMappings = queryModel.getReverseQueryMapping();
-        Assertions.assertEquals(reverseMappings.get("EVENT_DATE"), "start-time");
-        Assertions.assertEquals(reverseMappings.get("UUID"), "unique-id");
+        assertEquals("start-time", reverseMappings.get("EVENT_DATE"));
+        assertEquals("unique-id", reverseMappings.get("UUID"));
     }
 
     /**

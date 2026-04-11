@@ -1,5 +1,10 @@
 package datawave.configuration.spring;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.util.Locale;
@@ -12,7 +17,6 @@ import org.easymock.EasyMock;
 import org.easymock.EasyMockExtension;
 import org.easymock.EasyMockSupport;
 import org.easymock.IMocksControl;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -563,14 +567,14 @@ class ThreadSafeClassPathXmlApplicationContextTest extends EasyMockSupport {
         replayAll();
 
         // Call the method under test and assert that it throws a RuntimeException.
-        Exception exception = Assertions.assertThrows(RuntimeException.class, () -> threadSafeContext.getResources("locationPattern"));
+        Exception exception = assertThrows(RuntimeException.class, () -> threadSafeContext.getResources("locationPattern"));
 
         verifyAll();
 
         // Assert the exception is not suppressed and the cause is the original exception.
         Throwable cause = exception.getCause();
-        Assertions.assertInstanceOf(IOException.class, cause);
-        Assertions.assertEquals("test exception", cause.getMessage());
+        assertInstanceOf(IOException.class, cause);
+        assertEquals("test exception", cause.getMessage());
     }
 
     /**
@@ -664,7 +668,7 @@ class ThreadSafeClassPathXmlApplicationContextTest extends EasyMockSupport {
 
         replayAll();
         T actual = methodUnderTest.get();
-        Assertions.assertSame(expected, actual);
+        assertSame(expected, actual);
 
         // Verify the order of method calls and that the read lock was obtained and released.
         verifyAll();

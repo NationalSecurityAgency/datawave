@@ -25,9 +25,6 @@ import java.util.function.Predicate;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 
-import org.apache.accumulo.core.client.AccumuloException;
-import org.apache.accumulo.core.client.AccumuloSecurityException;
-import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.TableId;
 import org.apache.accumulo.core.data.TabletId;
 import org.apache.accumulo.core.dataImpl.KeyExtent;
@@ -44,7 +41,6 @@ import org.apache.hadoop.io.Text;
 import org.easymock.EasyMock;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.jupiter.api.Assertions;
 
 import com.google.common.base.Preconditions;
 
@@ -58,9 +54,9 @@ public class ShardRendezvousHostBalancerTest {
             tservers.add(tsi);
         }
 
-        public void removeTservers(Predicate<TabletServerId> tserverPedicate) {
-            tservers.removeIf(tserverPedicate);
-            tabletLocs.values().removeIf(tserverPedicate);
+        public void removeTServers(Predicate<TabletServerId> tserverPredicate) {
+            tservers.removeIf(tserverPredicate);
+            tabletLocs.values().removeIf(tserverPredicate);
 
         }
 
@@ -117,8 +113,8 @@ public class ShardRendezvousHostBalancerTest {
         }
     }
 
-    private AtomicReference<LocalDate> today = new AtomicReference<>();
-    private List<TabletId> tablets = new ArrayList<>();
+    private final AtomicReference<LocalDate> today = new AtomicReference<>();
+    private final List<TabletId> tablets = new ArrayList<>();
     private final TableId tableId = TableId.of("1");
     private final TestTServers testTServers = new TestTServers();
     private final Map<String,String> tableProps = new TreeMap<>();
@@ -212,6 +208,17 @@ public class ShardRendezvousHostBalancerTest {
         public List<TabletMigration> migrationsOut() {
             return migrationsOut;
         }
+
+        @Override
+        public String partitionName() {
+            return "Null Partition";
+        }
+
+        @Override
+        public Map<String,TableId> getTablesToBalance() {
+            return Map.of();
+        }
+
     }
 
     @Test
@@ -232,13 +239,13 @@ public class ShardRendezvousHostBalancerTest {
 
         // nothing changed so should not migrate anything
         balancer.balance(new TestBalanceParams(testTServers.getCurrent(), Set.of(), migrations));
-        Assertions.assertEquals(0, migrations.size());
+        assertEquals(0, migrations.size());
 
         // move forward by one day, should cause tablets to move
         today.set(parseDay("20010131"));
         balancer.balance(new TestBalanceParams(testTServers.getCurrent(), Set.of(), migrations));
         // should migrate all shards in a single day
-        Assertions.assertEquals(31, migrations.size());
+        assertEquals(31, migrations.size());
         testTServers.applyMigrations(migrations);
         // The first set of tservers should loose a day
         shardStats = ShardStats.compute(filter("host0000.*", testTServers.getLocationProvider()));
@@ -270,7 +277,7 @@ public class ShardRendezvousHostBalancerTest {
         // remove a tablet server for case where there are more shards per day than tservers
         var tabletsOnH09 = testTServers.getLocationProvider().values().stream().filter(tabletServerId -> tabletServerId.getHost().equals("host00009")).count();
         assertTrue(tabletsOnH09 > 0);
-        testTServers.removeTservers(tabletServerId -> tabletServerId.getHost().equals("host00009"));
+        testTServers.removeTServers(tabletServerId -> tabletServerId.getHost().equals("host00009"));
         migrations.clear();
         balancer.balance(new TestBalanceParams(testTServers.getCurrent(), Set.of(), migrations));
         // balancing will not migrate unassigned tablet, so this should be a noop
@@ -297,7 +304,7 @@ public class ShardRendezvousHostBalancerTest {
         // remove a tablet server for case where there are more tservers than shards per day
         var tabletsOnH19 = testTServers.getLocationProvider().values().stream().filter(tabletServerId -> tabletServerId.getHost().equals("host00019")).count();
         assertTrue(tabletsOnH19 > 0);
-        testTServers.removeTservers(tabletServerId -> tabletServerId.getHost().equals("host00019"));
+        testTServers.removeTServers(tabletServerId -> tabletServerId.getHost().equals("host00019"));
         migrations.clear();
         balancer.balance(new TestBalanceParams(testTServers.getCurrent(), Set.of(), migrations));
         // balancing will not migrate unassigned tablet, so this should be a noop
@@ -434,9 +441,9 @@ public class ShardRendezvousHostBalancerTest {
 
         tableProps.clear();
 
-        Assertions.assertThrows(IllegalStateException.class,
+        assertThrows(IllegalStateException.class,
                         () -> balancer.getAssignments(new TestAssignmentParams(testTServers.getCurrent(), testTServers.getUnassigned(tablets), aout)));
-        Assertions.assertThrows(IllegalStateException.class, () -> balancer.balance(new TestBalanceParams(testTServers.getCurrent(), Set.of(), migrations)));
+        assertThrows(IllegalStateException.class, () -> balancer.balance(new TestBalanceParams(testTServers.getCurrent(), Set.of(), migrations)));
 
         // set the config and it should start working
         tableProps.put("table.custom.volume.tier.names", "t1,t2");
@@ -584,7 +591,7 @@ public class ShardRendezvousHostBalancerTest {
         generateTabletServers(0, 29, 3).forEach(testTServers::addTServer);
         generateTabletServers(30, 3, 1).forEach(testTServers::addTServer);
 
-        // Configure a tier for really old data
+        // Configure a tier for much older data
         tableProps.put("table.custom.volume.tier.names", "t1,t2,t3");
         tableProps.put("table.custom.volume.tiered.t1.days.back", "0");
         tableProps.put("table.custom.volume.tiered.t1.tservers", "host0000.*");
@@ -606,7 +613,7 @@ public class ShardRendezvousHostBalancerTest {
         shardStats.check(20, 31, 10, 3);
         shardStats = ShardStats.compute(filter("host000[12].*", testTServers.getLocationProvider()));
         shardStats.check(10, 31, 19, 3);
-        // The three bad tablets should all group into the tier for really old data
+        // The three bad tablets should all group into the tier for much older data
         shardStats = ShardStats.compute(filter("host0003.*", testTServers.getLocationProvider()));
         shardStats.check(1, 3, 3, 1);
 
@@ -734,7 +741,7 @@ public class ShardRendezvousHostBalancerTest {
         assertEquals(Map.of(), filter(regex, testTServers.getLocationProvider()));
         // check the regex used above
         assertEquals(2, testTServers.getCurrent().keySet().stream().filter(tabletServerId -> tabletServerId.getHost().matches(regex)).count());
-        assertEquals(502, testTServers.getCurrent().keySet().size());
+        assertEquals(502, testTServers.getCurrent().size());
 
         // Add 98 host with 1 tserver. For the 31 shards per day the should now partition as round(500/600*31)=26 and round(100/600*31)=5.
         generateTabletServers(202, 98, 1).forEach(testTServers::addTServer);
@@ -878,7 +885,7 @@ public class ShardRendezvousHostBalancerTest {
     private static class MyBalancerEnvironment implements BalancerEnvironment {
         private final TableId tableId;
         private final List<TabletId> tablets;
-        private final TestTServers testTServers;;
+        private final TestTServers testTServers;
         private final Map<String,String> tableProps;
 
         public MyBalancerEnvironment(TableId tableId, List<TabletId> tablets, TestTServers testTServers, Map<String,String> tableProps) {
@@ -897,24 +904,24 @@ public class ShardRendezvousHostBalancerTest {
         public Configuration getConfiguration(TableId tableId) {
             Configuration mock = EasyMock.mock(ServiceEnvironment.Configuration.class);
             EasyMock.expect(mock.get(EasyMock.anyString())).andAnswer(() -> tableProps.get((String) EasyMock.getCurrentArgument(0))).anyTimes();
-            EasyMock.expect(mock.getTableCustom(EasyMock.anyString()))
-                            .andAnswer(() -> tableProps.get("table.custom." + (String) EasyMock.getCurrentArgument(0))).anyTimes();
+            EasyMock.expect(mock.getTableCustom(EasyMock.anyString())).andAnswer(() -> tableProps.get("table.custom." + EasyMock.getCurrentArgument(0)))
+                            .anyTimes();
             EasyMock.replay(mock);
             return mock;
         }
 
         @Override
-        public String getTableName(TableId tableId) throws TableNotFoundException {
+        public String getTableName(TableId tableId) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public <T> T instantiate(String className, Class<T> base) throws Exception {
+        public <T> T instantiate(String className, Class<T> base) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public <T> T instantiate(TableId tableId, String className, Class<T> base) throws Exception {
+        public <T> T instantiate(TableId tableId, String className, Class<T> base) {
             throw new UnsupportedOperationException();
         }
 
@@ -938,8 +945,7 @@ public class ShardRendezvousHostBalancerTest {
         }
 
         @Override
-        public List<TabletStatistics> listOnlineTabletsForTable(TabletServerId tabletServerId, TableId tableId)
-                        throws AccumuloException, AccumuloSecurityException {
+        public List<TabletStatistics> listOnlineTabletsForTable(TabletServerId tabletServerId, TableId tableId) {
             throw new UnsupportedOperationException();
         }
 

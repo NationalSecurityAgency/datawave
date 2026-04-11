@@ -31,7 +31,6 @@ public class QueryPropertyMarker {
         EVALUATION_ONLY("_Eval_", false, true),
         DROPPED("_Drop_", false, true),
         EXCEEDED_OR("_List_", true, true),
-        EXCEEDED_TERM("_Term_", true, true),
         EXCEEDED_VALUE("_Value_", true, true),
         BOUNDED_RANGE("_Bounded_", false, false),
         LENIENT("_Lenient_", false, false),
@@ -120,7 +119,7 @@ public class QueryPropertyMarker {
 
         JexlNode finalNode = andNode;
         if (!(parent instanceof ASTReferenceExpression)) {
-            // wrap the and node with an expression (see JexlNodeFactory.createAndNode)
+            // wrap the f with an expression (see JexlNodeFactory.createAndNode)
             finalNode = JexlNodes.makeRefExp();
 
             andNode.jjtSetParent(finalNode);
@@ -146,7 +145,7 @@ public class QueryPropertyMarker {
     /**
      * Determine if one the source node's ancestors is already marked. This method does not check the source node for markers (see
      * {@link #isSourceMarked(JexlNode, MarkerType)}).
-     *
+     * <p>
      * Note: This method will recursively ascend the entire Jexl query tree to find a marked node. This imposes a non-zero cost for trees that are excessively
      * deep or unflattened.
      *

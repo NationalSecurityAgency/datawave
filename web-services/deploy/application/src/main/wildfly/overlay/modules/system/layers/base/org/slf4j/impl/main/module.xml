@@ -1,0 +1,15 @@
+<module name="org.slf4j.impl" xmlns="urn:jboss:module:1.6">
+
+    <properties>
+        <property name="jboss.api" value="private"/>
+    </properties>
+
+    <resources>
+        <resource-root path="slf4j-jboss-logmanager-${version.slf4j-jboss-logmanager}.jar"/>
+    </resources>
+
+    <dependencies>
+        <module name="org.slf4j"/>
+        <module name="org.jboss.logmanager"/>
+    </dependencies>
+</module>

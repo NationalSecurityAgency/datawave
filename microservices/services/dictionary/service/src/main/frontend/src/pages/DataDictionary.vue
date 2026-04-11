@@ -20,7 +20,8 @@
       class="icon"
       :src="'icons/favicon-32x32.png'"
       spinner-color="white"
-    />
+      />
+      <HelpMenu v-if="helpMenu" :menu="helpMenu" />
     </div>
     <div class="row" style="width: 100%; height: 80%">
       <p class="information">
@@ -46,6 +47,8 @@
         dense
         style="font-size: smaller; height: 100%; width: 100%;"
         class="datawave-dictionary-sticky-sass dark"
+        sticky-header
+        table-style="table-layout: fixed; width: 100%;"
         :rows-per-page-options="[]"
       >
         <template v-slot:top-left>
@@ -72,7 +75,6 @@
           <q-input
             borderless
             dense
-            debounce="300"
             v-model="changeFilter"
             placeholder="Search"
             @keydown.enter.prevent="queryTable"
@@ -83,7 +85,6 @@
                 size="12px"
                 color="cyan-8"
                 icon="search"
-                round
                 dense
                 @click="queryTable"
               />
@@ -91,20 +92,123 @@
         <template v-slot:header="props">
           <q-tr :props="props">
             <q-th />
-            <q-th v-for="col in props.cols" :key="col.name" :props="props">
-              <div class="tooltip-wrapper">
-                {{ col.label }}
-                <q-tooltip class="tooltip-text" anchor="bottom middle" self="top middle" :offset="[0, 5]">
-                  {{ Feature.toolTipGen(col.name) }}
-                </q-tooltip>
+            <q-th
+              v-for="col in props.cols"
+              :key="col.name"
+              :props="props"
+              :style="{
+                width: colWidths[col.name] + 'px',
+                minWidth: colWidths[col.name] + 'px',
+                maxWidth: colWidths[col.name] + 'px',
+                }"
+            >
+              <div class="tooltip-wrapper row items-center no-wrap">
+                <span class="q-mr-xs">
+                  <span class="cursor-pointer">
+                    {{ col.label }}
+                    <q-tooltip
+                      class="tooltip-text"
+                      anchor="bottom middle"
+                      self="top middle"
+                      :offset="[0, 5]"
+                    >
+                      {{ Feature.toolTipGen(col.name) }}
+                    </q-tooltip>
+                  </span>
+                </span>
+                <template v-if="col.name === 'lastUpdated'">
+                  <q-btn
+                    size="7px"
+                    color="cyan-8"
+                    icon="bi-funnel-fill"
+                    style="padding: 2.5px; margin-bottom: 1.5px;"
+                    dense
+                    ref="buttonRef"
+                  >
+                    <q-menu
+                      anchor="bottom right"
+                      self="top right"
+                      :offset="[0, 5]"
+                    >
+                      <q-card
+                        style="max-width: 205px; padding: 5px; box-shadow: 0 0 12px rgba(0, 188, 212, 0.6);"
+                        class="q-pa-sm"
+                      >
+                        <q-card-section class="text-center text-subtitle1" style="font-weight: 550;">
+                          FILTER DAYS
+                        </q-card-section>
+                        <q-separator />
+                        <q-card-section class="q-gutter-sm">
+                          <div class="row items-center q-col-gutter-sm">
+                            <q-input
+                              dense
+                              color="cyan-8"
+                              v-model="search"
+                              placeholder="30"
+                              @keyup.enter="queryTable(search)"
+                              style="width: 50px; margin-left: 15px;"
+                              input-class="text-center"
+                            />
+                            <q-item-label style="font-weight: 450;"> DAY(S) PRIOR</q-item-label>
+                          </div>
+                        </q-card-section>
+                        <q-separator />
+                        <q-card-section class="q-pt-none">
+                          <div class="row items-center q-gutter-sm" style="margin-top: 15px;">
+                            <q-btn
+                              dense
+                              style="padding: 5px;"
+                              size="12px"
+                              label="Apply"
+                              color="cyan-8"
+                              @click="queryTable(search)"
+                            />
+                            <q-btn
+                              dense
+                              style="padding: 5px;"
+                              size="12px"
+                              label="Clear Filter"
+                              color="cyan-8"
+                              @click="queryTable()"
+                            />
+                          </div>
+                        </q-card-section>
+                      </q-card>
+                    </q-menu>
+                  </q-btn>
+                </template>
+                <template v-if="col.name === 'Descriptions'">
+                  <span class="description-checkbox-wrapper">
+                    <q-checkbox
+                      size="36px"
+                      color="cyan-8"
+                      style="margin-bottom: 1.5px;"
+                      dense
+                      v-model="wrapDescriptions"
+                    >
+                      <q-tooltip
+                        class="tooltip-text"
+                        anchor="bottom middle"
+                        self="top middle"
+                        :offset="[60, 8]"
+                      >
+                        {{ wrapDescriptions ? 'Disable' : 'Enable' }} Description Wrapping?
+                      </q-tooltip>
+                    </q-checkbox>
+                  </span>
+                </template>
               </div>
+                <div
+                  class="resize-handle"
+                  @mousedown.stop.prevent="startResizing(col.name, $event)"
+                />
             </q-th>
           </q-tr>
         </template>
         <template v-slot:body="props">
           <q-tr
             :props="props"
-            v-if="Formatters.buttonParse(props.cols, props.row)"
+            v-if="Formatters.buttonParse(props.row)"
           >
             <q-td class="cell-spacing">
               <q-btn
@@ -125,21 +229,31 @@
               v-for="col in props.cols"
               :key="col.name"
               :props="props"
-              :class="{ 'text-bold': col.name === 'dataType'}"
+              :class="[
+                { 'text-bold': col.name === 'dataType' },
+                col.name === 'Descriptions'
+                  ? (wrapDescriptions ? 'description-wrap-cell' : 'description-nowrap-cell')
+                  : ''
+              ]"
               style="font-size: 13px;"
               @click="Feature.copyLabel(col.name, col.value, props.row.dataTypeCount)"
+            >
+              <label
+                :class="col.name === 'Descriptions'
+                  ? (wrapDescriptions ? 'description-wrap-text' : 'description-nowrap-text')
+                  : ''"
+                style="cursor: pointer;"
               >
-                <label style="cursor: pointer;">
-                  {{
-                    Formatters.maxSubstring(
-                      Formatters.parseVal(col.name, col.value, props.row.dataTypeCount), col.name
-                    )
-                  }}
-                  <q-tooltip class="tooltip-text" anchor="bottom middle" self="top middle" :offset="[0, 5]">
-                    {{ Formatters.parseVal(col.name, col.value, props.row.dataTypeCount) }}
-                  </q-tooltip>
-                </label>
-              </q-td>
+                {{
+                  Formatters.maxSubstring(
+                    Formatters.parseVal(col.name, col.value, props.row.dataTypeCount), col.name
+                  )
+                }}
+                <q-tooltip class="tooltip-text" anchor="bottom middle" self="top middle" :offset="[0, 5]">
+                  {{ Formatters.parseVal(col.name, col.value, props.row.dataTypeCount) }}
+                </q-tooltip>
+              </label>
+            </q-td>
           </q-tr>
           <q-tr
             :props="props"
@@ -158,10 +272,18 @@
               v-for="col in props.cols"
               :key="col.name"
               :props="props"
+              :class="col.name === 'Descriptions'
+                ? (wrapDescriptions ? 'description-wrap-cell' : 'description-nowrap-cell')
+                : ''"
               style="font-size: 13px;"
               @click="Feature.copyLabel(col.name, col.value, null)"
             >
-              <label style="cursor: pointer;">
+              <label
+                :class="col.name === 'Descriptions'
+                  ? (wrapDescriptions ? 'description-wrap-text' : 'description-nowrap-text')
+                  : ''"
+                style="cursor: pointer;"
+              >
                 {{
                   Formatters.maxSubstring(
                     Formatters.parseVal(col.name, col.value), col.name
@@ -191,12 +313,14 @@ import { useRoute, useRouter } from 'vue-router';
 import { QTable, QTableProps, exportFile, useQuasar, Notify } from 'quasar';
 import { useToggle, useDark } from '@vueuse/core';
 import { api } from '../boot/axios';
-import { Banner, columns, System } from '../functions/components';
+import { Banner, Menu, columns, System } from '../functions/components';
 import * as Formatters from '../functions/formatters';
 import * as Wrapper from '../functions/csvWrapper';
 import * as Feature from '../functions/features';
+import HelpMenu from './HelpMenu.vue';
 
 // Defines the Table References, loading for axios, search filter, and pagination to sort.
+// This also defines API calls for banner, system name, and help menu along with toggles for text wrapping.
 const $q = useQuasar();
 const table = ref();
 const loading = ref(true);
@@ -206,11 +330,14 @@ const router = useRouter();
 const changeFilter = ref<string>('');
 const banner = ref<Banner>();
 const system = ref<System>();
+const helpMenu = ref<Menu>();
+const search = ref('');
 let rows: QTableProps['rows'] = [];
-const paginationFront = ref({
-  rowsPerPage: 200,
-  sortBy: 'fieldName',
-});
+const paginationFront = ref({ rowsPerPage: 200, sortBy: 'fieldName', });
+const resizingCol = ref<string | null>(null);
+const startX = ref(0);
+const colWidths = ref<Record<string, number>>({});
+const wrapDescriptions  = ref(false);
 
 // API - Defines all the Nececssary API calls for the user, and filters.
 // Note that to run the endpoint in DEV mode, you must build the project at least once first.
@@ -218,10 +345,12 @@ onMounted(() => {
   let endpointData = '';
   let bannerData = 'banner';
   let systemData = 'system';
+  let helpMenuData = 'menu';
   if (process.env.DEV) {
     endpointData = 'data/v2/'
     bannerData = 'data/v2/banner/'
     systemData = 'data/v2/system/'
+    helpMenuData = 'data/v2/menu/'
   }
 
   api
@@ -231,6 +360,14 @@ onMounted(() => {
   })
   .catch((reason) => {
     console.error('Could not fetch banner: ' + reason);
+  });
+
+  api.get(helpMenuData)
+  .then((response) => {
+    helpMenu.value = response.data as Menu;
+  })
+  .catch((reason) => {
+    console.error('Could not fetch help menu: ' + reason);
   });
 
   api
@@ -261,7 +398,10 @@ onMounted(() => {
         return b.lastUpdated - a.lastUpdated;
       }
     });
-    rows = Formatters.setVisibility(rows);
+    rows = changeFilter.value
+      ? Formatters.setVisibility(rows) // if searched through URL bar, it removes 30 day filter.
+      : Formatters.setVisibility(rows, 30); // default at 30 days when loaded without '?search=<val>' query.
+
     loading.value = false;
   })
   .catch((reason) => {
@@ -273,6 +413,14 @@ onMounted(() => {
 
   if (changeFilter.value) {
     queryTable();
+  }
+
+  if (columns) {
+    columns.forEach(col => {
+      if (col.name) {
+        colWidths.value[col.name] = 150;
+      }
+    });
   }
 });
 
@@ -333,8 +481,7 @@ function exportTable(this: any) {
 }
 
 // Query - Runs through a Search Process as it waits for the user.
-async function queryTable(this: any) {
-  // Wait Until User Enters...
+async function queryTable(priorDays?: any) {
   await waitUp();
 
   // Handles the URL change to reflect when the user searches.
@@ -353,20 +500,65 @@ async function queryTable(this: any) {
   const originalRows = rows;
   const triggerRefresh = paginationFront.value.rowsPerPage;
 
-  // 3 - Set the Current Rows to Filtered Value
-  rows = Formatters.setVisibility(rowsToExport);
+  // 3 - Set filtered rows with visibility flags updated
+  rows = Formatters.setVisibility(rowsToExport, priorDays);
 
-  // 4 - Trigger the Refresh
+  // 4 - Refresh pagination to trigger table update
   paginationFront.value.rowsPerPage = 100;
   paginationFront.value.rowsPerPage = triggerRefresh;
 
-  // 5 - Restore Original Rows for Next Query
+  // 5 - Restore original rows for next queries
   rows = originalRows;
 }
 
 // Query 2 - Awaits for the user to change or add something.
 function waitUp() {
   filter.value = changeFilter.value;
+}
+
+// Resizing Logic - Handles the column resizing by tracking mouse movements and adjusting column widths.
+const initialWidth = ref(0);
+function startResizing(colName: string, evt: MouseEvent) {
+  // 1 - Set the column being resized and the initial mouse position
+  resizingCol.value = colName;
+  startX.value = evt.pageX;
+
+  // 2 - Store the initial width of the column being resized
+  initialWidth.value = colWidths.value[colName];
+
+  // 3 - Add event listeners to track mouse movement and when the user releases the mouse button
+  document.addEventListener('mousemove', handleResize);
+  document.addEventListener('mouseup', stopResizing);
+}
+
+// Resizing Handler - This function is called whenever the mouse moves while resizing a column.
+function handleResize(evt: MouseEvent) {
+  if (!resizingCol.value) return;
+
+  // 1 - Determines which column is being dragged
+  const dragged = resizingCol.value;
+
+  // 2 - Calculate how far the mouse has moved from the initial position
+  // Quick Note: This can be multiplied by a factor (e.g. 0.5 or 2) to slow down or increase the resizing speed.
+  const totalDiff = evt.pageX - startX.value;
+
+  // 3 - Update the width of dragged column based on initial width (no accumulation lag)
+  colWidths.value[dragged] = initialWidth.value + totalDiff;
+
+  // 4 - Clamp the column width to a minimum value (e.g. 20px) to prevent it from becoming too small
+  if (colWidths.value[dragged] < 20) {
+    colWidths.value[dragged] = 20;
+  }
+
+  // 5 - Trigger a refresh of the table to apply the new column widths
+  table.value?.refresh();
+}
+
+// Stop Resizing - Called when the user releases the mouse button (they have finished resizing the column).
+function stopResizing() {
+  document.removeEventListener('mousemove', handleResize);
+  document.removeEventListener('mouseup', stopResizing);
+  resizingCol.value = null;
 }
 
 // Customization - Sets the Dark Mode Toggle for the User.

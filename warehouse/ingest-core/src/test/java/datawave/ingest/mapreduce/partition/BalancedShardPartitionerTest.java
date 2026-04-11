@@ -85,7 +85,7 @@ public class BalancedShardPartitionerTest {
     @Test
     public void testTwoTablesAreOffsetted() throws Exception {
         // create another split files for this test that contains two tables. register the tables names for both shard and error shard
-        new TestShardGenerator(conf, temporaryFolder.newFolder(), NUM_DAYS, SHARDS_PER_DAY, TOTAL_TSERVERS, TableName.SHARD, TableName.ERROR_SHARD);
+        new TestShardGenerator(conf, temporaryFolder.newFolder(), NUM_DAYS, SHARDS_PER_DAY, TOTAL_TSERVERS, TableName.ERROR_SHARD, TableName.SHARD);
         conf.set(ShardedDataTypeHandler.SHARDED_TNAMES, "errorShard,shard");
 
         partitioner.setConf(conf);

@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Maps;
@@ -305,6 +305,20 @@ public class DataDictionaryControllerLogic<DESC extends DescriptionBase<DESC>,DI
         return dataDictionaryConfiguration.getBanner();
     }
 
+    /**
+     * Sets the Help menu Options for the Data Dictionary.
+     *
+     * @return the default Help Menu for Data Dictionary
+     */
+    public DataDictionaryProperties.HelpMenu retrieveMenu() {
+        return dataDictionaryConfiguration.getHelpMenu();
+    }
+
+    /**
+     * Sets the System for the Data Dictionary.
+     *
+     * @return the default system for Data Dictionary
+     */
     public DictionaryServiceProperties.System retrieveSystem() {
         return dictionaryServiceConfiguration.getSystem();
     }

@@ -27,11 +27,6 @@ DataWave Quickstart installation instructions are [here](https://code.nsa.gov/da
 --- 
 ### A note on building:
 
-You can specify to use maven to fetch the DataWave, Hadoop, Accumulo, ZooKeeper tar.gz files
-by using the `-Dquickstart-maven` flag with your mvn command.  This will use maven to 
-download the tar files to your local repository then copy them to the appropriate directory
-after downloading.
-
 In order to deploy a new dependency, you can use a command similar to the following, using
 Acccumulo-2.1.3 as an example. The command must be run from the same directory as the tar file.
 

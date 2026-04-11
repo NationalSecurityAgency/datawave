@@ -35,12 +35,11 @@ import datawave.ingest.data.Type;
 import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.data.config.DataTypeHelperImpl;
 import datawave.ingest.data.config.FieldConfigHelper;
+import datawave.ingest.data.config.FieldConfigHelperConstants;
 import datawave.ingest.data.config.MarkingsHelper;
 import datawave.ingest.data.config.MaskedFieldHelper;
 import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.NormalizedFieldAndValue;
-import datawave.ingest.data.config.XMLFieldConfigHelper;
-import datawave.util.StringUtils;
 
 /**
  * Specialization of the Helper type that validates the configuration for Ingest purposes. These helper classes also have the logic to parse the field names and
@@ -137,7 +136,10 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
      */
     public static final String FIELD_FAILED_NORMALIZATION_POLICY = ".data.field.normalization.failure.policy";
 
-    public static final String FIELD_CONFIG_FILE = ".data.category.field.config.file";
+    /**
+     * Backwards compatible property. Duplicated from the field config helper constants.
+     */
+    public static final String FIELD_CONFIG_FILE = FieldConfigHelperConstants.FIELD_CONFIG_FILE;
 
     private static final String PROPERTY_MALFORMED = " property malformed: ";
     private static final Logger log = LoggerFactory.getLogger(BaseIngestHelper.class);
@@ -254,12 +256,9 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
         String configProperty = null;
 
         // Load the field helper, which takes precedence over the individual field configurations
-        final String fieldConfigFile = config.get(this.getType().typeName() + FIELD_CONFIG_FILE);
-        if (fieldConfigFile != null) {
-            if (log.isDebugEnabled()) {
-                log.debug("Field config file {} specified for: {}", fieldConfigFile, this.getType().typeName() + FIELD_CONFIG_FILE);
-            }
-            this.fieldConfigHelper = XMLFieldConfigHelper.load(fieldConfigFile, this);
+        this.fieldConfigHelper = ingestConfiguration.getFieldConfigHelper(config, getType(), this);
+        if (this.fieldConfigHelper != null && log.isDebugEnabled()) {
+            log.debug("Field config specified: {}", this.fieldConfigHelper.describeSource());
         }
 
         // Process the indexed fields
@@ -417,7 +416,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
         shardExclusions.clear();
         String exclusionsList = config.get(this.getType().typeName() + SHARD_FIELD_EXCLUSIONS);
         if (exclusionsList != null) {
-            String[] exclusions = StringUtils.split(exclusionsList, ',');
+            String[] exclusions = exclusionsList.split(",");
             if (exclusions != null && exclusions.length > 0) {
                 for (String exclusionFieldName : exclusions) {
 

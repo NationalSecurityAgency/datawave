@@ -153,25 +153,27 @@ function configure() {
              PRETTY_PRINT=true
              ;;
           --help | -h)
-             usage && exit 0
+             usage
+             exit 0
              ;;
           *)
              fatal "Invalid argument passed to $( basename "$0" ): ${1}"
+             exit 1
        esac
        shift
     done
 
     # Misc....
 
-    datawaveWebIsInstalled || fatal "DataWave Web must be installed and running"
+    datawaveWebIsInstalled || ( fatal "DataWave Web must be installed and running" && exit 1 )
 
-    datawaveWebIsRunning || fatal "DataWave Web must be running"
+    datawaveWebIsRunning || ( fatal "DataWave Web must be running" && exit 1 )
 
-    CURL="$( which curl )" && [ -z "${CURL}" ] && fatal "Curl executable not found!"
+    CURL="$( which curl )" && [ -z "${CURL}" ] && fatal "Curl executable not found!" && exit 1
 
     TEST_COUNTER=0
 
-    configureUserIdentity || fatal "Failed to configure PKI"
+    configureUserIdentity || ( fatal "Failed to configure PKI" && exit 1 )
 }
 
 function cleanup() {

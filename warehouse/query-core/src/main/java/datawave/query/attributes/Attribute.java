@@ -1,8 +1,11 @@
 package datawave.query.attributes;
 
+import static datawave.query.Constants.EMPTY_BYTES;
+
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collection;
 
 import org.apache.accumulo.core.data.ArrayByteSequence;
@@ -21,6 +24,8 @@ import com.esotericsoftware.kryo.KryoSerializable;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 
+import datawave.core.cache.CaffeineClassCache;
+import datawave.core.cache.ClassCache;
 import datawave.query.Constants;
 import datawave.query.jexl.DatawaveJexlContext;
 
@@ -28,6 +33,7 @@ public abstract class Attribute<T extends Comparable<T>> implements WritableComp
 
     private static final Logger log = Logger.getLogger(Attribute.class);
     private static final Text EMPTY_TEXT = new Text();
+    private static final ByteSequence EMPTY_BYTE_SEQUENCE = new ArrayByteSequence(new byte[0]);
 
     /**
      * The metadata for this attribute. Really only the column visibility and timestamp are preserved in this metadata when serializing and deserializing.
@@ -40,6 +46,9 @@ public abstract class Attribute<T extends Comparable<T>> implements WritableComp
     // cache computation to avoid repeated calculation
     protected int hashcode = Integer.MIN_VALUE;
     protected long sizeInBytes = Long.MIN_VALUE;
+
+    // used by Document, Attributes and TypeAttribute
+    protected static final ThreadLocal<ClassCache> classCache = ThreadLocal.withInitial(CaffeineClassCache::new);
 
     public Attribute() {}
 
@@ -57,6 +66,20 @@ public abstract class Attribute<T extends Comparable<T>> implements WritableComp
             return metadata.getColumnVisibilityParsed();
         }
         return Constants.EMPTY_VISIBILITY;
+    }
+
+    /**
+     * Get a copy byte array that backs the {@link ColumnVisibility}. This avoids the expensive parse call found in the default constructor for the
+     * ColumnVisibility.
+     *
+     * @return a copy of the byte array that backs the column visibility
+     */
+    public byte[] getColumnVisibilityBytes() {
+        if (isMetadataSet()) {
+            byte[] data = metadata.getColumnVisibilityData().toArray();
+            return Arrays.copyOf(data, data.length);
+        }
+        return EMPTY_BYTES;
     }
 
     public void setColumnVisibility(ColumnVisibility columnVisibility) {
@@ -94,7 +117,22 @@ public abstract class Attribute<T extends Comparable<T>> implements WritableComp
         }
     }
 
-    private static final ByteSequence EMPTY_BYTE_SEQUENCE = new ArrayByteSequence(new byte[0]);
+    /**
+     * Set the metadata for this attribute. This method allows a trusted caller to directly set the column visibility via a byte array. Assumes that the bytes
+     * came from a {@link ColumnVisibility} object which has already parsed, verified and flattened the visibility string.
+     *
+     * @param vis
+     *            the column visibility bytes
+     * @param ts
+     *            the timestamp
+     */
+    protected void setMetadata(byte[] vis, long ts) {
+        if (metadata != null) {
+            metadata = new Key(metadata.getRow().getBytes(), metadata.getColumnFamily().getBytes(), metadata.getColumnQualifier().getBytes(), vis, ts);
+        } else {
+            metadata = new Key(EMPTY_BYTES, EMPTY_BYTES, EMPTY_BYTES, vis, ts);
+        }
+    }
 
     /*
      * Given a key, set the metadata. Expected input keys can be an event key, an fi key, or a tf key. Expected metadata is row=shardid, cf = type\0uid; cq =
@@ -168,7 +206,7 @@ public abstract class Attribute<T extends Comparable<T>> implements WritableComp
     protected void writeMetadata(DataOutput out) throws IOException {
         out.writeBoolean(isMetadataSet());
         if (isMetadataSet()) {
-            byte[] cvBytes = getColumnVisibility().getExpression();
+            byte[] cvBytes = getColumnVisibilityBytes();
 
             WritableUtils.writeVInt(out, cvBytes.length);
 
@@ -180,7 +218,7 @@ public abstract class Attribute<T extends Comparable<T>> implements WritableComp
     protected void writeMetadata(Kryo kryo, Output output) {
         output.writeBoolean(isMetadataSet());
         if (isMetadataSet()) {
-            byte[] cvBytes = getColumnVisibility().getExpression();
+            byte[] cvBytes = getColumnVisibilityBytes();
             output.writeInt(cvBytes.length, true);
             output.writeBytes(cvBytes);
             output.writeLong(getTimestamp());
@@ -204,8 +242,10 @@ public abstract class Attribute<T extends Comparable<T>> implements WritableComp
     protected void readMetadata(Kryo kryo, Input input) {
         if (input.readBoolean()) {
             int size = input.readInt(true);
-
-            this.setMetadata(new ColumnVisibility(input.readBytes(size)), input.readLong());
+            byte[] cvBytes = input.readBytes(size);
+            long timestamp = input.readLong();
+            // trust the column visibility from the payload
+            setMetadata(cvBytes, timestamp);
         } else {
             this.clearMetadata();
         }
@@ -238,7 +278,7 @@ public abstract class Attribute<T extends Comparable<T>> implements WritableComp
         if (!(o instanceof Attribute)) {
             return false;
         }
-        Attribute other = (Attribute) o;
+        Attribute<?> other = (Attribute<?>) o;
         EqualsBuilder equals = new EqualsBuilder().append(this.isMetadataSet(), other.isMetadataSet());
         if (this.isMetadataSet()) {
             equals.append(this.getMetadata(), other.getMetadata());

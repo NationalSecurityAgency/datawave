@@ -1,6 +1,7 @@
 package datawave.query.iterator;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -44,7 +45,6 @@ import datawave.query.jexl.functions.IdentityAggregator;
 import datawave.query.jexl.visitors.IteratorBuildingVisitor;
 import datawave.query.jexl.visitors.SatisfactionVisitor;
 import datawave.query.predicate.TimeFilter;
-import datawave.util.StringUtils;
 
 /**
  *
@@ -140,7 +140,7 @@ public class FieldIndexOnlyQueryIterator extends QueryIterator {
         if (options.containsKey(DATATYPE_FILTER)) {
             String filterCsv = options.get(DATATYPE_FILTER);
             if (filterCsv != null && !filterCsv.isEmpty()) {
-                HashSet<String> set = Sets.newHashSet(StringUtils.split(filterCsv, ','));
+                HashSet<String> set = Sets.newHashSet(filterCsv.split(","));
                 Iterable<Text> tformed = Iterables.transform(set, new StringToText());
                 if (options.containsKey(FI_NEXT_SEEK)) {
                     this.fieldIndexKeyDataTypeFilter = new FieldIndexKeyDataTypeFilter(tformed, getFiNextSeek());
@@ -225,7 +225,7 @@ public class FieldIndexOnlyQueryIterator extends QueryIterator {
     }
 
     protected void createAndSeekIndexIterator(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive)
-                    throws IOException, ConfigException, IllegalAccessException, InstantiationException {
+                    throws IOException, ConfigException, IllegalAccessException, InstantiationException, NoSuchMethodException, InvocationTargetException {
         boolean isQueryFullySatisfiedInitialState = true;
         String hitListOptionString = documentOptions.get("hit.list");
 
@@ -283,7 +283,7 @@ public class FieldIndexOnlyQueryIterator extends QueryIterator {
     }
 
     public Iterator<Entry<Key,Document>> getDocumentIterator(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive)
-                    throws IOException, ConfigException, InstantiationException, IllegalAccessException {
+                    throws IOException, ConfigException, InstantiationException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
         createAndSeekIndexIterator(range, columnFamilies, inclusive);
 
         // Take the document Keys and transform it into Entry<Key,Document>, removing Attributes for this Document
@@ -308,6 +308,10 @@ public class FieldIndexOnlyQueryIterator extends QueryIterator {
         } catch (IllegalAccessException e) {
             throw new IOException("Unable to create document iterator", e);
         } catch (InstantiationException e) {
+            throw new IOException("Unable to create document iterator", e);
+        } catch (NoSuchMethodException e) {
+            throw new IOException("Unable to create document iterator", e);
+        } catch (InvocationTargetException e) {
             throw new IOException("Unable to create document iterator", e);
         }
 

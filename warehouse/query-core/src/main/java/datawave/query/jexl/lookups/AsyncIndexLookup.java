@@ -23,14 +23,28 @@ import datawave.query.tables.ScannerFactory;
 public abstract class AsyncIndexLookup extends IndexLookup {
     private static final Logger log = ThreadConfigurableLogger.getLogger(AsyncIndexLookup.class);
 
-    protected boolean unfieldedLookup;
-
     protected ExecutorService execService;
+
+    // specific lookups may use this threshold
+    protected final int maxUnfieldedExpansionThreshold;
+    protected final int maxValueExpansionThreshold;
+
+    // flag for unfielded lookups
+    protected final boolean unfieldedLookup;
+
+    protected ScanMonitor monitor;
 
     public AsyncIndexLookup(ShardQueryConfiguration config, ScannerFactory scannerFactory, boolean unfieldedLookup, ExecutorService execService) {
         super(config, scannerFactory);
         this.unfieldedLookup = unfieldedLookup;
         this.execService = execService;
+
+        this.maxUnfieldedExpansionThreshold = config.getMaxUnfieldedExpansionThreshold();
+        this.maxValueExpansionThreshold = config.getMaxValueExpansionThreshold();
+    }
+
+    public void setScanMonitor(ScanMonitor monitor) {
+        this.monitor = monitor;
     }
 
     /**

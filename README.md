@@ -87,5 +87,13 @@ NOTE: The util modules, starters, and services are actually tagged and deployed 
 
 For more information about deploying the datawave quickstart and microservices, check out the [Docker Readme](docker/README.md#usage)
 
+### Key Binaries
+Accumulo, Zookeeper, Hadoop, and Wildfly are the key binaries used throughout this repository. Ideally,
+the versions used should be the same but many of the microservices use different versions.
+
+Additionally, there are upgrade issues with the MiniAccumuloCluster that is used in several tests so the
+Accumulo version is set to 2.1.2 in the root pom.xml. Because of this projects such as Quickstart must override
+<version.accumulo> to use a more current version.
+
 [li]: http://img.shields.io/badge/license-ASL-blue.svg
 [ll]: https://www.apache.org/licenses/LICENSE-2.0

@@ -859,5 +859,36 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
 
         BulkIngestKey bKey = new BulkIngestKey(tableName, k);
         contextWriter.write(bKey, val, context);
+
+        if (getBitSetIndexEnabled()) {
+            String shard = new String(shardId);
+            String cq = shard.substring(0, 8) + '\u0000' + event.getDataType().outputName();
+            Key key = new Key(nFV.getEventFieldValue().getBytes(), nFV.getEventFieldName().getBytes(), cq.getBytes(), visibility, event.getTimestamp());
+            Value value = getValueForBitsetIndex(shard);
+            BulkIngestKey bik = new BulkIngestKey(getShardBitsetIndexTableName(), key);
+            contextWriter.write(bik, value, context);
+        }
+
+        if (getDayIndexEnabled() || getYearIndexEnabled()) {
+            String shard = new String(shardId);
+            String cq = event.getDataType().outputName();
+            String viz = new String(visibility);
+
+            if (getDayIndexEnabled()) {
+                String rowForDay = shard.substring(0, 8) + '\u0000' + nFV.getEventFieldValue();
+                Key key = new Key(rowForDay, nFV.getEventFieldName(), cq, viz);
+                Value value = getValueForDayIndex(shard);
+                BulkIngestKey bulkIngestKey = new BulkIngestKey(getShardDayIndexTableName(), key);
+                contextWriter.write(bulkIngestKey, value, context);
+            }
+
+            if (getYearIndexEnabled()) {
+                String rowForYear = shard.substring(0, 4) + '\u0000' + nFV.getEventFieldValue();
+                Key key = new Key(rowForYear, nFV.getEventFieldName(), cq, viz);
+                Value value = getValueForYearIndex(shard);
+                BulkIngestKey bulkIngestKey = new BulkIngestKey(getShardYearIndexTableName(), key);
+                contextWriter.write(bulkIngestKey, value, context);
+            }
+        }
     }
 }

@@ -42,7 +42,7 @@ public class TestLookupTask<T extends QueryIterator> {
     private QueryIterator init(SortedKeyValueIterator<Key,Value> source, Map<String,String> options, IteratorEnvironment env, YieldCallback yield)
                     throws IOException {
         try {
-            QueryIterator iter = this.iteratorClass.newInstance();
+            QueryIterator iter = this.iteratorClass.getDeclaredConstructor().newInstance();
             iter.setTypeMetadata(this.typeMetadata);
             iter.init(source, options, env);
             iter.enableYielding(yield);
@@ -70,7 +70,7 @@ public class TestLookupTask<T extends QueryIterator> {
             Range r = range;
             while (!rangeCompleted) {
                 log.trace("Seeking to range:" + r);
-                this.iterator.seek(r, Collections.EMPTY_LIST, false);
+                this.iterator.seek(r, Collections.emptyList(), false);
                 while (this.iterator.hasTop()) {
                     Document document = deserializeAndFilterDocument(this.iterator.getTopValue());
                     if (document.getDictionary().size() > 0) {

@@ -18,6 +18,8 @@ import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Content;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.Numeric;
+import datawave.query.attributes.PreNormalizedAttribute;
+import datawave.query.attributes.TypeAttribute;
 import datawave.query.util.Tuple2;
 import datawave.util.StringUtils;
 
@@ -265,7 +267,7 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
      * @return true if a hit
      */
     private boolean isHit(String keyWithGrouping, Attribute<?> attr, Multimap<String,String> hitTermMap, Set<Attribute<?>> hitTermAttributes) {
-        if (hitTermMap.containsKey(keyWithGrouping) && hitTermAttributes.contains(attr)) {
+        if (hitTermMap.containsKey(keyWithGrouping) && isAttributeHitTerm(hitTermAttributes, attr)) {
             return true;
         }
 
@@ -292,6 +294,39 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
         }
 
         return false;
+    }
+
+    /**
+     * This method is preferred over a simple <code>set.contains()</code> call because the attribute being compared may not be a TypeAttribute.
+     *
+     * @param hitTermAttributes
+     *            a set of hit term source attributes
+     * @param attr
+     *            the attribute being compared
+     * @return true if the attribute is also a hit term
+     */
+    private boolean isAttributeHitTerm(Set<Attribute<?>> hitTermAttributes, Attribute<?> attr) {
+        String data = getBackingData(attr);
+        for (Attribute<?> attribute : hitTermAttributes) {
+            // compare metadata just to be safe
+            if (attribute.getMetadata().equals(attr.getMetadata())) {
+                String hitData = getBackingData(attribute);
+                if (hitData.equals(data)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private String getBackingData(Attribute<?> attr) {
+        if (attr instanceof PreNormalizedAttribute) {
+            return ((PreNormalizedAttribute) attr).getValue();
+        }
+        if (attr instanceof TypeAttribute) {
+            return ((TypeAttribute<?>) attr).getType().getDelegateAsString();
+        }
+        return String.valueOf(attr.getData());
     }
 
     /**

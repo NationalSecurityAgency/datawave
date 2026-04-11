@@ -3,12 +3,12 @@ package datawave.query.jexl.visitors;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DELAYED;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EVALUATION_ONLY;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_OR;
-import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_TERM;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_VALUE;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.INDEX_HOLE;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.LENIENT;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.STRICT;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
@@ -259,6 +259,23 @@ public class ExpandMultiNormalizedTermsTest {
 
         String original = "((_Bounded_ = true) && (FOO > 1 && FOO < 10))";
         String expected = "((_Bounded_ = true) && (FOO > '1' && FOO < '10'))";
+        expandTerms(original, expected);
+    }
+
+    // Accumulo will throw an exception when creating a range with a lower bound of '4' and an upper bound of '10'
+    @Test
+    public void testBoundedMultiNormalizedBoundsIllegalRange() throws ParseException {
+        Multimap<String,Type<?>> dataTypes = HashMultimap.create();
+        dataTypes.putAll("FOO", Sets.newHashSet(new TrimLeadingZerosType(), new StringType()));
+
+        helper.setIndexedFields(dataTypes.keySet());
+        helper.setIndexOnlyFields(dataTypes.keySet());
+        helper.addTermFrequencyFields(dataTypes.keySet());
+
+        config.setQueryFieldsDatatypes(dataTypes);
+
+        String original = "((_Bounded_ = true) && (FOO > 4 && FOO < 10))";
+        String expected = "((_Bounded_ = true) && (FOO > '4' && FOO < '10'))";
         expandTerms(original, expected);
     }
 
@@ -513,14 +530,14 @@ public class ExpandMultiNormalizedTermsTest {
 
         config.setQueryFieldsDatatypes(dataTypes);
 
-        List<String> markers = Arrays.asList(new String[] {INDEX_HOLE.getLabel(), DELAYED.getLabel(), EVALUATION_ONLY.getLabel(), EXCEEDED_OR.getLabel()});
+        List<String> markers = Arrays.asList(INDEX_HOLE.getLabel(), DELAYED.getLabel(), EXCEEDED_OR.getLabel(), EVALUATION_ONLY.getLabel());
         for (String marker : markers) {
             String original = "((" + marker + " = true) && (FOO == 'Bar'))";
             String expected = "((" + marker + " = true) && (FOO == 'bar'))";
             expandTerms(original, expected);
         }
 
-        markers = Arrays.asList(new String[] {EXCEEDED_TERM.getLabel(), EXCEEDED_VALUE.getLabel()});
+        markers = Collections.singletonList(EXCEEDED_VALUE.getLabel());
         for (String marker : markers) {
             String original = "((" + marker + " = true) && (FOO == 'Bar'))";
             String expected = "((" + marker + " = true) && (FOO == 'Bar'))";
@@ -744,6 +761,48 @@ public class ExpandMultiNormalizedTermsTest {
         expandTerms("_ANYFIELD_ >= 'anywhere'", "_ANYFIELD_ >= 'anywhere'");
         expandTerms("_ANYFIELD_ >= 'oHIo'", "_ANYFIELD_ >= 'ohio' || _ANYFIELD_ >= 'oHIo'");
         expandTerms("_ANYFIELD_ >= '123'", "_ANYFIELD_ >= '+cE1.23' || _ANYFIELD_ >= '123'");
+    }
+
+    /**
+     * Test type exclusion for each node type
+     *
+     * @throws ParseException
+     *             if the query fails to parse
+     */
+    @Test
+    public void testAnyFieldTermsTypeExclusion() throws ParseException {
+
+        Multimap<String,Type<?>> dataTypes = HashMultimap.create();
+        dataTypes.putAll("FOO", Sets.newHashSet(new NumberType()));
+        helper.setDataTypes(dataTypes);
+
+        List<Type<?>> excludeUnfieldedTypes = new ArrayList<>();
+        excludeUnfieldedTypes.add(new NumberType());
+        config.setExcludeUnfieldedTypes(excludeUnfieldedTypes);
+
+        // EQ
+        expandTerms("_ANYFIELD_ == '123'", "_ANYFIELD_ == '123'");
+
+        // NE
+        expandTerms("_ANYFIELD_ != '123'", "_ANYFIELD_ != '123'");
+
+        // ER
+        expandTerms("_ANYFIELD_ =~ '123'", "_ANYFIELD_ =~ '123'");
+
+        // NR
+        expandTerms("_ANYFIELD_ !~ '123'", "_ANYFIELD_ !~ '123'");
+
+        // LT
+        expandTerms("_ANYFIELD_ < '123'", "_ANYFIELD_ < '123'");
+
+        // LE
+        expandTerms("_ANYFIELD_ <= '123'", "_ANYFIELD_ <= '123'");
+
+        // GT
+        expandTerms("_ANYFIELD_ > '123'", "_ANYFIELD_ > '123'");
+
+        // GE
+        expandTerms("_ANYFIELD_ >= '123'", "_ANYFIELD_ >= '123'");
     }
 
     private void expandTerms(String original, String expected) throws ParseException {

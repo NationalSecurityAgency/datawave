@@ -87,6 +87,7 @@ import datawave.microservice.query.QueryImpl;
 import datawave.microservice.query.QueryParameters;
 import datawave.policy.IngestPolicyEnforcer;
 import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.index.day.IndexIngestUtil;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.model.Direction;
 import datawave.query.planner.DefaultQueryPlanner;
@@ -130,6 +131,8 @@ public class ContentFunctionQueryTest {
 
     private static List<IvaratorCacheDirConfig> ivaratorCacheDirConfigs;
 
+    private static final IndexIngestUtil ingestUtil = new IndexIngestUtil();
+
     @Deployment
     public static JavaArchive createDeployment() throws Exception {
         return ShrinkWrap.create(JavaArchive.class)
@@ -164,7 +167,7 @@ public class ContentFunctionQueryTest {
         record.setDataType(new Type(DATA_TYPE_NAME, TestIngestHelper.class, null, null, 1, null));
         record.setRawFileName("example.dat");
         record.setRawRecordNumber(1);
-        record.setDate(formatter.parse(BEGIN_DATE).getTime());
+        record.setTimestamp(formatter.parse(BEGIN_DATE).getTime());
         record.setRawData(data);
         record.generateId(null);
         record.setVisibility(new ColumnVisibility(AUTHS));
@@ -235,6 +238,9 @@ public class ContentFunctionQueryTest {
             }
             writer.close();
         }
+
+        Authorizations auths = new Authorizations("ALL");
+        ingestUtil.write(client, auths);
     }
 
     @Test

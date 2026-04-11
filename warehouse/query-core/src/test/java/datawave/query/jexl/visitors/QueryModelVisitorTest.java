@@ -34,7 +34,6 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.model.QueryModel;
 import datawave.query.util.MockMetadataHelper;
 import datawave.test.JexlNodeAssert;
-import datawave.util.StringUtils;
 
 public class QueryModelVisitorTest {
 
@@ -523,17 +522,17 @@ public class QueryModelVisitorTest {
             ASTJexlScript newscript = QueryOptionsFromQueryVisitor.collect(script, optionsMap);
             if (optionsMap.containsKey(QueryParameters.NO_EXPANSION_FIELDS)) {
                 JexlNodeAssert.assertThat(script).isNotEqualTo(newscript);
-                noExpansionFields = new HashSet<>(Arrays.asList(StringUtils.split(optionsMap.get(QueryParameters.NO_EXPANSION_FIELDS), ',')));
+                noExpansionFields = new HashSet<>(Arrays.asList(optionsMap.get(QueryParameters.NO_EXPANSION_FIELDS).split(",")));
             }
             Assert.assertEquals(expectedNoExpansionFields, noExpansionFields);
             if (optionsMap.containsKey(QueryParameters.LENIENT_FIELDS)) {
                 JexlNodeAssert.assertThat(script).isNotEqualTo(newscript);
-                lenientFields = new HashSet<>(Arrays.asList(StringUtils.split(optionsMap.get(QueryParameters.LENIENT_FIELDS), ',')));
+                lenientFields = new HashSet<>(Arrays.asList(optionsMap.get(QueryParameters.LENIENT_FIELDS).split(",")));
             }
             Assert.assertEquals(expectedLenientFields, lenientFields);
             if (optionsMap.containsKey(QueryParameters.STRICT_FIELDS)) {
                 JexlNodeAssert.assertThat(script).isNotEqualTo(newscript);
-                strictFields = new HashSet<>(Arrays.asList(StringUtils.split(optionsMap.get(QueryParameters.STRICT_FIELDS), ',')));
+                strictFields = new HashSet<>(Arrays.asList(optionsMap.get(QueryParameters.STRICT_FIELDS).split(",")));
             }
             Assert.assertEquals(expectedStrictFields, strictFields);
 

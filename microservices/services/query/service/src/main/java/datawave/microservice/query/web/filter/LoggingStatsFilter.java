@@ -3,13 +3,14 @@ package datawave.microservice.query.web.filter;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.util.MultiValueMap;
 
 @Component
 public class LoggingStatsFilter extends BaseMethodStatsFilter {
-    private final Logger log = Logger.getLogger(this.getClass());
+    private final Logger log = LoggerFactory.getLogger(this.getClass());
 
     @Override
     public void preProcess(RequestMethodStats requestStats) {
@@ -74,7 +75,7 @@ public class LoggingStatsFilter extends BaseMethodStatsFilter {
             message.append(" Login Time: ").append(responseStats.getLoginTime()).append("ms");
             message.append(" Call Time: ").append(responseStats.getCallTime()).append("ms");
 
-            log.trace(message);
+            log.trace(message.toString());
         }
     }
 }

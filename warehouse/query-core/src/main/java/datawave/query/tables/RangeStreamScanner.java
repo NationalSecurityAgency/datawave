@@ -27,7 +27,6 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.iterators.PeekingIterator;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
@@ -508,7 +507,7 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
             IndexInfo info = valueSerializer.deserialize(value, IndexInfo::new);
             if (log.isTraceEnabled()) {
                 for (IndexMatch match : info.uids()) {
-                    log.trace("match is " + StringUtils.split(match.getUid(), '\u0000')[1]);
+                    log.trace("match is " + match.getUid().split("\u0000")[1]);
                 }
             }
             return info;
@@ -672,12 +671,12 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
                 ((RfileScanner) baseScanner).setRanges(Collections.singleton(currentRange));
 
             for (Column family : options.getFetchedColumns()) {
-                if (family.columnQualifier != null)
-                    baseScanner.fetchColumn(new Text(family.columnFamily), new Text(family.columnQualifier));
+                if (family.getColumnQualifier() != null)
+                    baseScanner.fetchColumn(new Text(family.getColumnFamily()), new Text(family.getColumnQualifier()));
                 else {
                     if (log.isTraceEnabled())
-                        log.trace("Setting column family " + new Text(family.columnFamily));
-                    baseScanner.fetchColumnFamily(new Text(family.columnFamily));
+                        log.trace("Setting column family " + new Text(family.getColumnFamily()));
+                    baseScanner.fetchColumnFamily(new Text(family.getColumnFamily()));
                 }
             }
             for (IteratorSetting setting : options.getIterators()) {

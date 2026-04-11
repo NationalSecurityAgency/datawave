@@ -205,13 +205,13 @@ public class GroupFields implements Serializable {
 
     // Parse a set of fields from the string.
     private static Set<String> parseSet(String str) {
-        return Sets.newHashSet(StringUtils.split(str, Constants.COMMA));
+        return Sets.newHashSet(str.split(Constants.COMMA));
     }
 
     // Parse a map from the given string.
     private static Map<String,String> parseMap(String str) {
         Map<String,String> map = new HashMap<>();
-        String[] entries = StringUtils.split(str, Constants.COLON);
+        String[] entries = str.split(Constants.COLON);
         for (String entry : entries) {
             int equals = entry.indexOf(Constants.EQUALS);
             String key = entry.substring(0, equals);
