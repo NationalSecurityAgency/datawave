@@ -76,11 +76,17 @@ public class ColorsTest extends AbstractQueryTest {
     private final Set<String> expectedDays = new HashSet<>();
     private final Set<String> expectedShards = new HashSet<>();
 
+    private static final Authorizations auths = new Authorizations("ALL");
     private static final IndexIngestUtil ingestUtil = new IndexIngestUtil();
 
     @Override
     public ShardQueryLogic getLogic() {
         return logic;
+    }
+
+    @Override
+    public Authorizations getAuths() {
+        return auths;
     }
 
     @BeforeAll
@@ -109,7 +115,7 @@ public class ColorsTest extends AbstractQueryTest {
         Preconditions.checkNotNull(hadoopConfig);
         logic.setHdfsSiteConfigURLs(hadoopConfig.toExternalForm());
 
-        IvaratorCacheDirConfig config = new IvaratorCacheDirConfig(folder.toFile().toString());
+        IvaratorCacheDirConfig config = new IvaratorCacheDirConfig(folder.toUri().toString());
         logic.setIvaratorCacheDirConfigs(Collections.singletonList(config));
 
         logic.setMaxFieldIndexRangeSplit(1); // keep things simple

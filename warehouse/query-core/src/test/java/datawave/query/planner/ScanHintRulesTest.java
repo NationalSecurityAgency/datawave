@@ -58,6 +58,7 @@ public class ScanHintRulesTest extends EasyMockSupport {
 
     private void setupMetadata() throws TableNotFoundException, InstantiationException, IllegalAccessException {
         expect(metadataHelper.getIndexedFields(EasyMock.anyObject())).andReturn(Collections.emptySet()).anyTimes();
+        expect(metadataHelper.getHiddenFields(EasyMock.anyObject())).andReturn(Collections.emptySet()).anyTimes();
         expect(metadataHelper.getReverseIndexedFields(EasyMock.anyObject())).andReturn(Collections.emptySet()).anyTimes();
         expect(metadataHelper.getIndexOnlyFields(EasyMock.anyObject())).andReturn(Collections.emptySet()).anyTimes();
         expect(metadataHelper.getAllFields(EasyMock.anyObject())).andReturn(Collections.singleton("A")).anyTimes();

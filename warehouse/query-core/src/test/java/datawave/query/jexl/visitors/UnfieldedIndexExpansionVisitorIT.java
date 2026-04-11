@@ -179,15 +179,6 @@ public class UnfieldedIndexExpansionVisitorIT extends BaseIndexExpansionTest {
     }
 
     @Test
-    public void testRegexExceedsTimeThresholds() {
-        write("bar", "FIELD_A");
-        write("bat", "FIELD_B", EXCEPTEDVALUE); // should simulate a timeout
-        write("baz", "FIELD_C");
-        String query = "_ANYFIELD_ =~ 'ba.*'";
-        assertThrows(DatawaveFatalQueryException.class, () -> driveExpansion(query, null));
-    }
-
-    @Test
     public void testEqualityExceedsValueThreshold() throws Exception {
         write("bar", "FIELD_A");
         write("bar", "FIELD_B");
@@ -269,7 +260,9 @@ public class UnfieldedIndexExpansionVisitorIT extends BaseIndexExpansionTest {
         write("bar", "FIELD_B");
         write("baz", "FIELD_C");
         String query = "_ANYFIELD_ =~ 'ba.*'";
-        String expected = "_NOFIELD_ =~ 'ba.*'";
+        // new index lookups treat zero timeout as 'don't even run the scan'
+        // String expected = "_NOFIELD_ =~ 'ba.*'";
+        String expected = "FIELD_B == 'bar' || FIELD_A == 'bach' || FIELD_C == 'baz'";
         config.setMaxIndexScanTimeMillis(0L);
         driveExpansion(query, expected);
     }

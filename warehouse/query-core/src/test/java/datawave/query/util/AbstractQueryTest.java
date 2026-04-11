@@ -12,6 +12,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -82,9 +83,6 @@ public abstract class AbstractQueryTest {
 
     private static final Logger log = LoggerFactory.getLogger(AbstractQueryTest.class);
 
-    protected static Authorizations auths = new Authorizations("ALL");
-    protected static Set<Authorizations> authSet = Collections.singleton(auths);
-
     protected final DateFormat format = new SimpleDateFormat("yyyyMMdd");
     protected final KryoDocumentDeserializer deserializer = new KryoDocumentDeserializer();
 
@@ -107,6 +105,13 @@ public abstract class AbstractQueryTest {
     private boolean queryPlanAssertionEnabled = true;
 
     public abstract ShardQueryLogic getLogic();
+
+    /**
+     * Authorizations may be different depending on the test
+     *
+     * @return some auths
+     */
+    public abstract Authorizations getAuths();
 
     @AfterEach
     public void afterEach() {
@@ -152,6 +157,10 @@ public abstract class AbstractQueryTest {
     protected Date getEndDate() throws Exception {
         assertNotNull(endDate);
         return format.parse(endDate);
+    }
+
+    protected Map<String,String> getParameters() {
+        return parameters;
     }
 
     /**
@@ -298,7 +307,7 @@ public abstract class AbstractQueryTest {
      *             if something goes wrong
      */
     public void planAndExecuteQuery(ShardQueryLogic logic) throws Exception {
-        for (String indexTableName : TestIndexTableNames.names()) {
+        for (String indexTableName : getIndexTableNames()) {
             try {
                 log.info("=== using index: {} ===", indexTableName);
                 setupIndexTable(indexTableName, logic);
@@ -307,6 +316,17 @@ public abstract class AbstractQueryTest {
                 teardownIndexTable(indexTableName, logic);
             }
         }
+    }
+
+    /**
+     * Extending classes may override this method.
+     * <p>
+     * <b>NOTE</b>: if a table name is added additional configuration may be necessary
+     *
+     * @return the list of index table names
+     */
+    protected List<String> getIndexTableNames() {
+        return TestIndexTableNames.names();
     }
 
     /**
@@ -345,7 +365,7 @@ public abstract class AbstractQueryTest {
             case TestIndexTableNames.NO_UID_INDEX:
                 break;
             case TestIndexTableNames.TRUNCATED_INDEX:
-                getLogic().setUseTruncatedIndex(false);
+                logic.setUseTruncatedIndex(false);
                 break;
             default:
                 throw new IllegalStateException("Unknown index table name: " + indexTableName);
@@ -380,26 +400,39 @@ public abstract class AbstractQueryTest {
      */
     private void planQuery(ShardQueryLogic logic) throws Exception {
         try {
-            QueryImpl settings = new QueryImpl();
-            settings.setBeginDate(getStartDate());
-            settings.setEndDate(getEndDate());
-            settings.setPagesize(Integer.MAX_VALUE);
-            settings.setQueryAuthorizations(auths.serialize());
-            settings.setQuery(getQuery());
-            settings.setParameters(parameters);
-            settings.setId(UUID.randomUUID());
+            // query parameters need to be set before the call to getSettings()
+            extraConfigurations();
+
+            QueryImpl settings = getSettings();
 
             logic.setMaxEvaluationPipelines(1);
             logic.setHitList(true); // always ask for HIT_TERMs
 
-            extraConfigurations();
-
-            GenericQueryConfiguration config = logic.initialize(clientForTest, settings, authSet);
+            GenericQueryConfiguration config = logic.initialize(clientForTest, settings, Collections.singleton(getAuths()));
             logic.setupQuery(config);
         } catch (Exception e) {
             log.info("exception while planning query", e);
             throw e;
         }
+    }
+
+    /**
+     * Get the {@link QueryImpl}
+     *
+     * @return the Query settings
+     * @throws Exception
+     *             if something goes wrong
+     */
+    protected QueryImpl getSettings() throws Exception {
+        QueryImpl settings = new QueryImpl();
+        settings.setBeginDate(getStartDate());
+        settings.setEndDate(getEndDate());
+        settings.setPagesize(Integer.MAX_VALUE);
+        settings.setQueryAuthorizations(getAuths().serialize());
+        settings.setQuery(getQuery());
+        settings.setParameters(parameters);
+        settings.setId(UUID.randomUUID());
+        return settings;
     }
 
     /**
@@ -409,18 +442,23 @@ public abstract class AbstractQueryTest {
 
     /**
      * Iterate through the query and add all deserialized results to the set of result documents.
+     * <p>
+     * Most tests should not override this method unless there is special result handling logic required
      *
      * @param logic
      *            the query logic
      */
-    private void executeQuery(ShardQueryLogic logic) {
-        results.clear();
-        for (Map.Entry<Key,Value> entry : logic) {
-            Document d = deserializer.apply(entry).getValue();
-            results.add(d);
+    protected void executeQuery(ShardQueryLogic logic) throws Exception {
+        try {
+            results.clear();
+            for (Map.Entry<Key,Value> entry : logic) {
+                Document d = deserializer.apply(entry).getValue();
+                results.add(d);
+            }
+        } finally {
+            logic.close();
+            log.info("query retrieved {} results", results.size());
         }
-        logic.close();
-        log.info("query retrieved {} results", results.size());
     }
 
     /**
