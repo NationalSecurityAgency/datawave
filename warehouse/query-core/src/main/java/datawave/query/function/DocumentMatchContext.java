@@ -25,6 +25,7 @@ import datawave.query.predicate.TimeFilter;
 public class DocumentMatchContext {
     public static final int DEFAULT_MAX_ENCODED_SIZE = 256 * 1024 * 1024;
     public static final int DEFAULT_MAX_DECODED_SIZE = 384 * 1024 * 1024;
+    public static final int DEFAULT_MAX_ENCODED_CONTEXT_SIZE = 256 * 1024 * 1024;
 
     /**
      * Immutable runtime limits for {@code document:match(...)} payload processing.
@@ -32,16 +33,20 @@ public class DocumentMatchContext {
     public static class Limits {
         private final int maxEncodedValueSize;
         private final int maxDecodedValueSize;
+        private final int maxEncodedContextSize;
 
         /**
          * @param maxEncodedValueSize
          *            maximum allowed encoded payload size in bytes
          * @param maxDecodedValueSize
          *            maximum allowed decoded payload size in bytes
+         * @param maxEncodedContextSize
+         *            maximum allowed aggregate encoded payload size retained for a document, in bytes
          */
-        public Limits(int maxEncodedValueSize, int maxDecodedValueSize) {
+        public Limits(int maxEncodedValueSize, int maxDecodedValueSize, int maxEncodedContextSize) {
             this.maxEncodedValueSize = maxEncodedValueSize;
             this.maxDecodedValueSize = maxDecodedValueSize;
+            this.maxEncodedContextSize = maxEncodedContextSize;
         }
 
         /**
@@ -57,6 +62,13 @@ public class DocumentMatchContext {
         public int getMaxDecodedValueSize() {
             return maxDecodedValueSize;
         }
+
+        /**
+         * @return the maximum aggregate encoded payload size retained for a document, in bytes
+         */
+        public int getMaxEncodedContextSize() {
+            return maxEncodedContextSize;
+        }
     }
 
     private final List<Entry<Key,Value>> dEntries;
@@ -68,59 +80,6 @@ public class DocumentMatchContext {
     public DocumentMatchContext(List<Entry<Key,Value>> dEntries, Limits limits) {
         this.dEntries = dEntries;
         this.limits = limits;
-    }
-
-    public DocumentMatchContext(List<Entry<Key,Value>> dEntries, int maxEncodedValueSize) {
-        this(dEntries, new Limits(maxEncodedValueSize, DEFAULT_MAX_DECODED_SIZE));
-    }
-
-    public DocumentMatchContext(List<Entry<Key,Value>> dEntries, int maxEncodedValueSize, int maxDecodedValueSize) {
-        this(dEntries, new Limits(maxEncodedValueSize, maxDecodedValueSize));
-    }
-
-    /**
-     * Builds a context from already-aggregated document entries using the default encoded and decoded payload limits.
-     *
-     * @param entries
-     *            aggregated document entries
-     * @param timeFilter
-     *            optional time filter to apply while selecting {@code d}-column entries
-     * @return a context containing only eligible {@code d}-column entries
-     */
-    public static DocumentMatchContext from(List<Entry<Key,Value>> entries, TimeFilter timeFilter) {
-        return from(entries, timeFilter, new Limits(DEFAULT_MAX_ENCODED_SIZE, DEFAULT_MAX_DECODED_SIZE));
-    }
-
-    /**
-     * Builds a context from already-aggregated document entries using a caller-supplied encoded payload limit and the default decoded payload limit.
-     *
-     * @param entries
-     *            aggregated document entries
-     * @param timeFilter
-     *            optional time filter to apply while selecting {@code d}-column entries
-     * @param maxEncodedValueSize
-     *            maximum allowed encoded payload size in bytes
-     * @return a context containing only eligible {@code d}-column entries
-     */
-    public static DocumentMatchContext from(List<Entry<Key,Value>> entries, TimeFilter timeFilter, int maxEncodedValueSize) {
-        return from(entries, timeFilter, new Limits(maxEncodedValueSize, DEFAULT_MAX_DECODED_SIZE));
-    }
-
-    /**
-     * Builds a context from already-aggregated document entries using explicit encoded and decoded payload limits.
-     *
-     * @param entries
-     *            aggregated document entries
-     * @param timeFilter
-     *            optional time filter to apply while selecting {@code d}-column entries
-     * @param maxEncodedValueSize
-     *            maximum allowed encoded payload size in bytes
-     * @param maxDecodedValueSize
-     *            maximum allowed decoded payload size in bytes
-     * @return a context containing only eligible {@code d}-column entries
-     */
-    public static DocumentMatchContext from(List<Entry<Key,Value>> entries, TimeFilter timeFilter, int maxEncodedValueSize, int maxDecodedValueSize) {
-        return from(entries, timeFilter, new Limits(maxEncodedValueSize, maxDecodedValueSize));
     }
 
     /**
@@ -154,6 +113,10 @@ public class DocumentMatchContext {
 
     public int getMaxDecodedValueSize() {
         return limits.getMaxDecodedValueSize();
+    }
+
+    public int getMaxEncodedContextSize() {
+        return limits.getMaxEncodedContextSize();
     }
 
     public Limits getLimits() {

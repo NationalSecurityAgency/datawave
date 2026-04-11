@@ -2411,6 +2411,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         if (documentMatchContextRequired) {
             addOption(cfg, QueryOptions.DOCUMENT_MATCH_MAX_ENCODED_SIZE, Integer.toString(config.getDocumentMatchMaxEncodedSize()), false);
             addOption(cfg, QueryOptions.DOCUMENT_MATCH_MAX_DECODED_SIZE, Integer.toString(config.getDocumentMatchMaxDecodedSize()), false);
+            addOption(cfg, QueryOptions.DOCUMENT_MATCH_MAX_ENCODED_CONTEXT_SIZE, Integer.toString(config.getDocumentMatchMaxEncodedContextSize()), false);
         }
     }
 

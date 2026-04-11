@@ -288,6 +288,7 @@ public class QueryOptions implements OptionDescriber {
     public static final String DOCUMENT_MATCH_CONTEXT_REQUIRED = "document.match.context.required";
     public static final String DOCUMENT_MATCH_MAX_ENCODED_SIZE = "document.match.max.encoded.size";
     public static final String DOCUMENT_MATCH_MAX_DECODED_SIZE = "document.match.max.decoded.size";
+    public static final String DOCUMENT_MATCH_MAX_ENCODED_CONTEXT_SIZE = "document.match.max.encoded.context.size";
 
     public static final String FIELD_COUNTS = "field.counts";
     public static final String TERM_COUNTS = "term.counts";
@@ -476,6 +477,7 @@ public class QueryOptions implements OptionDescriber {
     private int tfAggregationThresholdMs = -1;
     private int documentMatchMaxEncodedSize = DocumentMatchContext.DEFAULT_MAX_ENCODED_SIZE;
     private int documentMatchMaxDecodedSize = DocumentMatchContext.DEFAULT_MAX_DECODED_SIZE;
+    private int documentMatchMaxEncodedContextSize = DocumentMatchContext.DEFAULT_MAX_ENCODED_CONTEXT_SIZE;
 
     private CountMap fieldCounts;
     private CountMap termCounts;
@@ -606,6 +608,7 @@ public class QueryOptions implements OptionDescriber {
         this.tfAggregationThresholdMs = other.tfAggregationThresholdMs;
         this.documentMatchMaxEncodedSize = other.documentMatchMaxEncodedSize;
         this.documentMatchMaxDecodedSize = other.documentMatchMaxDecodedSize;
+        this.documentMatchMaxEncodedContextSize = other.documentMatchMaxEncodedContextSize;
 
         this.fieldCounts = other.fieldCounts;
         this.termCounts = other.termCounts;
@@ -1464,6 +1467,8 @@ public class QueryOptions implements OptionDescriber {
         options.put(DOCUMENT_MATCH_CONTEXT_REQUIRED, "Whether the query requires gathering document-match context");
         options.put(DOCUMENT_MATCH_MAX_ENCODED_SIZE, "Maximum encoded d-column payload size, in bytes, to inspect for document:match evaluation");
         options.put(DOCUMENT_MATCH_MAX_DECODED_SIZE, "Maximum decoded d-column payload size, in bytes, to inspect for document:match evaluation");
+        options.put(DOCUMENT_MATCH_MAX_ENCODED_CONTEXT_SIZE,
+                        "Maximum aggregate encoded d-column payload size, in bytes, to retain in memory for document:match evaluation");
         options.put(FIELD_COUNTS, "Map of field counts from the global index");
         options.put(TERM_COUNTS, "Map of term counts from the global index");
         return new IteratorOptions(getClass().getSimpleName(), "Runs a query against the DATAWAVE tables", options, null);
@@ -1694,6 +1699,10 @@ public class QueryOptions implements OptionDescriber {
 
         if (options.containsKey(DOCUMENT_MATCH_MAX_DECODED_SIZE)) {
             this.documentMatchMaxDecodedSize = Integer.parseInt(options.get(DOCUMENT_MATCH_MAX_DECODED_SIZE));
+        }
+
+        if (options.containsKey(DOCUMENT_MATCH_MAX_ENCODED_CONTEXT_SIZE)) {
+            this.documentMatchMaxEncodedContextSize = Integer.parseInt(options.get(DOCUMENT_MATCH_MAX_ENCODED_CONTEXT_SIZE));
         }
 
         if (options.containsKey(DATATYPE_FILTER)) {
@@ -2519,6 +2528,14 @@ public class QueryOptions implements OptionDescriber {
         this.documentMatchMaxDecodedSize = documentMatchMaxDecodedSize;
     }
 
+    public int getDocumentMatchMaxEncodedContextSize() {
+        return documentMatchMaxEncodedContextSize;
+    }
+
+    public void setDocumentMatchMaxEncodedContextSize(int documentMatchMaxEncodedContextSize) {
+        this.documentMatchMaxEncodedContextSize = documentMatchMaxEncodedContextSize;
+    }
+
     public boolean isDocumentMatchContextRequired() {
         return documentMatchContextRequired;
     }
@@ -2528,7 +2545,7 @@ public class QueryOptions implements OptionDescriber {
     }
 
     protected DocumentMatchContext.Limits getDocumentMatchLimits() {
-        return new DocumentMatchContext.Limits(documentMatchMaxEncodedSize, documentMatchMaxDecodedSize);
+        return new DocumentMatchContext.Limits(documentMatchMaxEncodedSize, documentMatchMaxDecodedSize, documentMatchMaxEncodedContextSize);
     }
 
     /**

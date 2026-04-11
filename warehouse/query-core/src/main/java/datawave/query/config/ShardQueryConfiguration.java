@@ -513,6 +513,10 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      * Maximum decoded d-column payload size, in bytes, to inspect for document:match evaluation
      */
     private int documentMatchMaxDecodedSize = DocumentMatchContext.DEFAULT_MAX_DECODED_SIZE;
+    /**
+     * Maximum aggregate encoded d-column payload size, in bytes, to retain in memory for document:match evaluation
+     */
+    private int documentMatchMaxEncodedContextSize = DocumentMatchContext.DEFAULT_MAX_ENCODED_CONTEXT_SIZE;
 
     /**
      * Flag to control query option pruning in the visitor function. Queries that see significant or varied pruning via the RangeStream may see a benefit from
@@ -850,6 +854,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setTfAggregationThresholdMs(other.getTfAggregationThresholdMs());
         this.setDocumentMatchMaxEncodedSize(other.getDocumentMatchMaxEncodedSize());
         this.setDocumentMatchMaxDecodedSize(other.getDocumentMatchMaxDecodedSize());
+        this.setDocumentMatchMaxEncodedContextSize(other.getDocumentMatchMaxEncodedContextSize());
         this.setGroupFields(GroupFields.copyOf(other.getGroupFields()));
         this.setPruneQueryOptions(other.getPruneQueryOptions());
         this.setSortQueryPreIndexWithImpliedCounts(other.isSortQueryPreIndexWithImpliedCounts());
@@ -2929,6 +2934,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.documentMatchMaxDecodedSize = documentMatchMaxDecodedSize;
     }
 
+    public int getDocumentMatchMaxEncodedContextSize() {
+        return documentMatchMaxEncodedContextSize;
+    }
+
+    public void setDocumentMatchMaxEncodedContextSize(int documentMatchMaxEncodedContextSize) {
+        this.documentMatchMaxEncodedContextSize = documentMatchMaxEncodedContextSize;
+    }
+
     public GroupFields getGroupFields() {
         return groupFields;
     }
@@ -3246,6 +3259,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getTfAggregationThresholdMs() == that.getTfAggregationThresholdMs() &&
                 getDocumentMatchMaxEncodedSize() == that.getDocumentMatchMaxEncodedSize() &&
                 getDocumentMatchMaxDecodedSize() == that.getDocumentMatchMaxDecodedSize() &&
+                getDocumentMatchMaxEncodedContextSize() == that.getDocumentMatchMaxEncodedContextSize() &&
                 getPruneQueryOptions() == that.getPruneQueryOptions() &&
                 isSortQueryPreIndexWithImpliedCounts() == that.isSortQueryPreIndexWithImpliedCounts() &&
                 isSortQueryPreIndexWithFieldCounts() == that.isSortQueryPreIndexWithFieldCounts() &&
@@ -3487,6 +3501,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getTfAggregationThresholdMs(),
                 getDocumentMatchMaxEncodedSize(),
                 getDocumentMatchMaxDecodedSize(),
+                getDocumentMatchMaxEncodedContextSize(),
                 getPruneQueryOptions(),
                 isSortQueryPreIndexWithImpliedCounts(),
                 isSortQueryPreIndexWithFieldCounts(),

@@ -1,6 +1,7 @@
 package datawave.query.planner;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.text.SimpleDateFormat;
@@ -49,13 +50,15 @@ class DefaultQueryPlannerTest {
             config.setDocumentMatchContextRequired(false);
             config.setDocumentMatchMaxEncodedSize(111);
             config.setDocumentMatchMaxDecodedSize(222);
+            config.setDocumentMatchMaxEncodedContextSize(333);
             IteratorSetting cfg = new IteratorSetting(10, "query", QueryIterator.class);
 
             planner.configureDocumentMatchOptions(config, cfg);
 
-            Assertions.assertEquals("false", cfg.getOptions().get(QueryOptions.DOCUMENT_MATCH_CONTEXT_REQUIRED));
-            Assertions.assertFalse(cfg.getOptions().containsKey(QueryOptions.DOCUMENT_MATCH_MAX_ENCODED_SIZE));
-            Assertions.assertFalse(cfg.getOptions().containsKey(QueryOptions.DOCUMENT_MATCH_MAX_DECODED_SIZE));
+            assertEquals("false", cfg.getOptions().get(QueryOptions.DOCUMENT_MATCH_CONTEXT_REQUIRED));
+            assertFalse(cfg.getOptions().containsKey(QueryOptions.DOCUMENT_MATCH_MAX_ENCODED_SIZE));
+            assertFalse(cfg.getOptions().containsKey(QueryOptions.DOCUMENT_MATCH_MAX_DECODED_SIZE));
+            assertFalse(cfg.getOptions().containsKey(QueryOptions.DOCUMENT_MATCH_MAX_ENCODED_CONTEXT_SIZE));
         }
 
         @Test
@@ -65,13 +68,15 @@ class DefaultQueryPlannerTest {
             config.setDocumentMatchContextRequired(true);
             config.setDocumentMatchMaxEncodedSize(111);
             config.setDocumentMatchMaxDecodedSize(222);
+            config.setDocumentMatchMaxEncodedContextSize(333);
             IteratorSetting cfg = new IteratorSetting(10, "query", QueryIterator.class);
 
             planner.configureDocumentMatchOptions(config, cfg);
 
-            Assertions.assertEquals("true", cfg.getOptions().get(QueryOptions.DOCUMENT_MATCH_CONTEXT_REQUIRED));
-            Assertions.assertEquals("111", cfg.getOptions().get(QueryOptions.DOCUMENT_MATCH_MAX_ENCODED_SIZE));
-            Assertions.assertEquals("222", cfg.getOptions().get(QueryOptions.DOCUMENT_MATCH_MAX_DECODED_SIZE));
+            assertEquals("true", cfg.getOptions().get(QueryOptions.DOCUMENT_MATCH_CONTEXT_REQUIRED));
+            assertEquals("111", cfg.getOptions().get(QueryOptions.DOCUMENT_MATCH_MAX_ENCODED_SIZE));
+            assertEquals("222", cfg.getOptions().get(QueryOptions.DOCUMENT_MATCH_MAX_DECODED_SIZE));
+            assertEquals("333", cfg.getOptions().get(QueryOptions.DOCUMENT_MATCH_MAX_ENCODED_CONTEXT_SIZE));
         }
     }
 

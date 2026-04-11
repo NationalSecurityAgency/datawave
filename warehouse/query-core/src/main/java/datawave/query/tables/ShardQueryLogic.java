@@ -3463,6 +3463,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         getConfig().setDocumentMatchMaxDecodedSize(documentMatchMaxDecodedSize);
     }
 
+    public int getDocumentMatchMaxEncodedContextSize() {
+        return getConfig().getDocumentMatchMaxEncodedContextSize();
+    }
+
+    public void setDocumentMatchMaxEncodedContextSize(int documentMatchMaxEncodedContextSize) {
+        getConfig().setDocumentMatchMaxEncodedContextSize(documentMatchMaxEncodedContextSize);
+    }
+
     public boolean getPruneQueryOptions() {
         return getConfig().getPruneQueryOptions();
     }

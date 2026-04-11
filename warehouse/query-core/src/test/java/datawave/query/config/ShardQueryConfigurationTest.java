@@ -670,6 +670,8 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("documentMatchMaxEncodedSize", DocumentMatchContext.DEFAULT_MAX_ENCODED_SIZE + 1);
         defaultValues.put("documentMatchMaxDecodedSize", DocumentMatchContext.DEFAULT_MAX_DECODED_SIZE);
         updatedValues.put("documentMatchMaxDecodedSize", DocumentMatchContext.DEFAULT_MAX_DECODED_SIZE + 1);
+        defaultValues.put("documentMatchMaxEncodedContextSize", DocumentMatchContext.DEFAULT_MAX_ENCODED_CONTEXT_SIZE);
+        updatedValues.put("documentMatchMaxEncodedContextSize", DocumentMatchContext.DEFAULT_MAX_ENCODED_CONTEXT_SIZE + 1);
         defaultValues.put("documentMatchContextRequired", false);
         updatedValues.put("documentMatchContextRequired", true);
     }
