@@ -99,9 +99,6 @@ public class JexlEvaluation implements Predicate<Tuple3<Key,Document,DatawaveJex
         }
 
         DocumentMatchContext documentMatchContext = (DocumentMatchContext) input.third().get(DocumentFunctions.DOCUMENT_MATCH_CONTEXT_JEXL_VARIABLE_NAME);
-        if (documentMatchContext != null) {
-            documentMatchContext.clearMergedMatches();
-        }
         Object o = script.execute(input.third());
 
         if (log.isTraceEnabled()) {
@@ -115,14 +112,18 @@ public class JexlEvaluation implements Predicate<Tuple3<Key,Document,DatawaveJex
             ((DelayedNonEventIndexContext) input.third()).populateDocument(input.second());
         }
 
-        String documentMatches = (documentMatchContext == null) ? "" : DocumentFunctions.toJson(documentMatchContext.getMergedMatches());
-        if (matched && !documentMatches.isEmpty()) {
+        if (matched && documentMatchContext != null) {
             Document document = input.second();
-            Content matchesAttribute = new Content(documentMatches, document.getMetadata(), document.isToKeep());
-            if (documentMatchContext != null && documentMatchContext.getFirstMatchingColumnVisibility() != null) {
-                matchesAttribute.setColumnVisibility(documentMatchContext.getFirstMatchingColumnVisibility());
+            for (DocumentMatchResults entry : documentMatchContext.getMatches()) {
+                String documentMatches = DocumentFunctions.toDocumentMatchesJson(entry.getPayload());
+                if (documentMatches.isEmpty()) {
+                    continue;
+                }
+
+                Content matchesAttribute = Content.withKeyMetadata(documentMatches, entry.getKey(), document.isToKeep());
+                matchesAttribute.setColumnVisibility(entry.getKey().getColumnVisibilityParsed());
+                document.put(DocumentFunctions.DOCUMENT_MATCHES, matchesAttribute);
             }
-            document.put(DocumentFunctions.DOCUMENT_MATCHES, matchesAttribute);
         }
 
         if (arithmetic instanceof HitListArithmetic) {

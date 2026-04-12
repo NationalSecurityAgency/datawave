@@ -3,24 +3,22 @@ package datawave.query.function;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.security.ColumnVisibility;
 
 import datawave.query.predicate.TimeFilter;
 
 /**
  * Per-document runtime state used by {@code document:match(...)} evaluation.
  * <p>
- * This context carries the raw {@code d}-column entries retained for a candidate document, the configured size limits used while decoding those payloads, the
- * merged offset results accumulated across one or more {@code document:match(...)} calls, grouped first by matched string and then by view, and the first
- * matched {@code d}-column key whose visibility should be applied to the derived {@code DOCUMENT_MATCHES} attribute.
+ * This context carries the raw {@code d}-column entries retained for a candidate document, the configured size limits used while decoding those payloads, and
+ * the per-{@code d}-column {@link DocumentMatchResults} accumulated across one or more {@code document:match(...)} calls for a single evaluation. Context
+ * instances are expected to be created fresh for each evaluation pass rather than reused across multiple documents or repeated evaluations of the same
+ * document.
  */
 public class DocumentMatchContext {
     public static final int DEFAULT_MAX_ENCODED_SIZE = 256 * 1024 * 1024;
@@ -71,14 +69,20 @@ public class DocumentMatchContext {
         }
     }
 
-    private final List<Entry<Key,Value>> dEntries;
+    private final List<Entry<Key,Value>> documentEntries;
     private final Limits limits;
-    private final Map<String,Map<String,Set<Integer>>> mergedMatches = new LinkedHashMap<>();
-    private Key firstMatchingEntry;
-    private boolean visibilityMismatchLogged = false;
+    private final Map<Key,DocumentMatchResults> matches = new LinkedHashMap<>();
 
-    public DocumentMatchContext(List<Entry<Key,Value>> dEntries, Limits limits) {
-        this.dEntries = dEntries;
+    /**
+     * Creates a per-evaluation match context for the retained {@code d}-column entries of a single candidate document.
+     *
+     * @param documentEntries
+     *            retained {@code d}-column entries for the document being evaluated
+     * @param limits
+     *            payload-processing limits applied during decode and match extraction
+     */
+    public DocumentMatchContext(List<Entry<Key,Value>> documentEntries, Limits limits) {
+        this.documentEntries = documentEntries;
         this.limits = limits;
     }
 
@@ -91,20 +95,23 @@ public class DocumentMatchContext {
      *            optional time filter to apply while selecting {@code d}-column entries
      * @param limits
      *            payload-processing limits
-     * @return a context containing only eligible {@code d}-column entries
+     * @return a fresh context containing only eligible {@code d}-column entries for a single evaluation pass
      */
     public static DocumentMatchContext from(List<Entry<Key,Value>> entries, TimeFilter timeFilter, Limits limits) {
-        List<Entry<Key,Value>> dEntries = new ArrayList<>();
+        List<Entry<Key,Value>> documentEntries = new ArrayList<>();
         for (Entry<Key,Value> entry : entries) {
             if (entry.getKey().getColumnFamily().toString().equals("d") && (timeFilter == null || timeFilter.apply(entry))) {
-                dEntries.add(entry);
+                documentEntries.add(entry);
             }
         }
-        return new DocumentMatchContext(dEntries, limits);
+        return new DocumentMatchContext(documentEntries, limits);
     }
 
-    public List<Entry<Key,Value>> getdEntries() {
-        return Collections.unmodifiableList(dEntries);
+    /**
+     * @return the retained {@code d}-column entries available to {@code document:match(...)} during the current evaluation
+     */
+    public List<Entry<Key,Value>> getDocumentEntries() {
+        return Collections.unmodifiableList(documentEntries);
     }
 
     public int getMaxEncodedValueSize() {
@@ -119,92 +126,33 @@ public class DocumentMatchContext {
         return limits.getMaxEncodedContextSize();
     }
 
+    /**
+     * @return the payload-processing limits associated with this evaluation context
+     */
     public Limits getLimits() {
         return limits;
     }
 
     /**
-     * Clears merged match state before evaluating a new document.
-     */
-    public void clearMergedMatches() {
-        mergedMatches.clear();
-        firstMatchingEntry = null;
-        visibilityMismatchLogged = false;
-    }
-
-    /**
-     * Merges per-call matches into the document-wide result set.
-     *
-     * @param search
-     *            the literal string matched by the invocation
-     * @param matches
-     *            matches produced by one {@code document:match(...)} invocation, keyed by view name
-     */
-    public void mergeMatches(String search, Map<String,List<Integer>> matches) {
-        Map<String,Set<Integer>> searchMatches = mergedMatches.computeIfAbsent(search, key -> new LinkedHashMap<>());
-        for (Entry<String,List<Integer>> entry : matches.entrySet()) {
-            searchMatches.computeIfAbsent(entry.getKey(), key -> new LinkedHashSet<>()).addAll(entry.getValue());
-        }
-    }
-
-    /**
-     * @return a defensive copy of the merged document-wide match results
-     */
-    public Map<String,Map<String,List<Integer>>> getMergedMatches() {
-        Map<String,Map<String,List<Integer>>> matches = new LinkedHashMap<>();
-        for (Entry<String,Map<String,Set<Integer>>> searchEntry : mergedMatches.entrySet()) {
-            Map<String,List<Integer>> viewMatches = new LinkedHashMap<>();
-            for (Entry<String,Set<Integer>> viewEntry : searchEntry.getValue().entrySet()) {
-                viewMatches.put(viewEntry.getKey(), new ArrayList<>(viewEntry.getValue()));
-            }
-            matches.put(searchEntry.getKey(), viewMatches);
-        }
-        return matches;
-    }
-
-    /**
-     * @return the first {@code d}-column key that matched during evaluation, or {@code null} if no match has been recorded yet
-     */
-    public Key getFirstMatchingEntry() {
-        return firstMatchingEntry;
-    }
-
-    /**
-     * @return the visibility from the first matched {@code d}-column key, or {@code null} if no match has been recorded yet
-     */
-    public ColumnVisibility getFirstMatchingColumnVisibility() {
-        if (firstMatchingEntry == null) {
-            return null;
-        }
-        return firstMatchingEntry.getColumnVisibilityParsed();
-    }
-
-    /**
-     * Records a matched {@code d}-column key and detects whether its visibility differs from the first matched key for the document.
+     * Records per-call matches in the per-{@code d}-column document-wide result set.
      *
      * @param key
      *            the matched {@code d}-column key
-     * @return {@code true} if the key differs in visibility from the first matched key, otherwise {@code false}
+     * @param search
+     *            the literal string matched by the invocation
+     * @param offsets
+     *            starting offsets found in the matched view
      */
-    public boolean recordMatchingEntry(Key key) {
-        if (firstMatchingEntry == null) {
-            firstMatchingEntry = key;
-            return false;
-        }
-        return !firstMatchingEntry.getColumnVisibilityData().equals(key.getColumnVisibilityData());
+    public void addMatches(Key key, String search, List<Integer> offsets) {
+        matches.computeIfAbsent(key, DocumentMatchResults::new).addMatches(search, offsets);
     }
 
     /**
-     * @return {@code true} if a visibility mismatch has not yet been logged for the current document
+     * Returns the per-entry match results accumulated during this evaluation.
+     *
+     * @return an immutable snapshot view of the accumulated per-{@code d}-column match results
      */
-    public boolean shouldLogVisibilityMismatch() {
-        return !visibilityMismatchLogged;
-    }
-
-    /**
-     * Marks the current document as having already logged a visibility mismatch.
-     */
-    public void markVisibilityMismatchLogged() {
-        visibilityMismatchLogged = true;
+    public List<DocumentMatchResults> getMatches() {
+        return List.copyOf(matches.values());
     }
 }

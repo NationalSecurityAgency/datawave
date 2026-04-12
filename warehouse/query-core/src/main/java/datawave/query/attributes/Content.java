@@ -42,6 +42,12 @@ public class Content extends Attribute<Content> implements Serializable {
         this.source = source;
     }
 
+    public static Content withKeyMetadata(String content, Key metadata, boolean toKeep) {
+        Content attribute = new Content(content, null, toKeep, null);
+        attribute.metadata = metadata;
+        return attribute;
+    }
+
     @Override
     public long sizeInBytes() {
         if (sizeInBytes == Long.MIN_VALUE) {

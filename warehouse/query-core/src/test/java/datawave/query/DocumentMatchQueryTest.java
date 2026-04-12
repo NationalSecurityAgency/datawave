@@ -3,18 +3,22 @@ package datawave.query;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.TimeZone;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.security.Authorizations;
+import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.accumulo.minicluster.MiniAccumuloCluster;
 import org.apache.accumulo.minicluster.MiniAccumuloConfig;
 import org.apache.log4j.Logger;
@@ -35,6 +39,8 @@ import com.google.common.base.Preconditions;
 
 import datawave.ingest.data.TypeRegistry;
 import datawave.query.attributes.Attribute;
+import datawave.query.attributes.Attributes;
+import datawave.query.attributes.Content;
 import datawave.query.attributes.Document;
 import datawave.query.function.DocumentMatchContext;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
@@ -75,7 +81,8 @@ public class DocumentMatchQueryTest extends AbstractQueryTest {
     @Qualifier("EventQuery")
     protected ShardQueryLogic logic;
 
-    private final Map<String,String> expectedDocumentMatches = new HashMap<>();
+    private final Map<String,Set<String>> expectedDocumentMatches = new HashMap<>();
+    private final Map<String,Map<String,ColumnVisibility>> expectedDocumentMatchVisibilities = new HashMap<>();
     private Boolean expectedDocumentMatchContextRequired;
 
     @Override
@@ -126,6 +133,7 @@ public class DocumentMatchQueryTest extends AbstractQueryTest {
     public void afterEach() {
         super.afterEach();
         expectedDocumentMatches.clear();
+        expectedDocumentMatchVisibilities.clear();
         expectedDocumentMatchContextRequired = null;
     }
 
@@ -160,11 +168,18 @@ public class DocumentMatchQueryTest extends AbstractQueryTest {
             assertNotNull(uuid, "result did not contain UUID");
 
             String uuidValue = getUUID(uuid);
-            String expected = expectedDocumentMatches.get(uuidValue);
+            Set<String> expected = expectedDocumentMatches.get(uuidValue);
             if (expected != null) {
                 Attribute<?> matches = result.get(DocumentFunctions.DOCUMENT_MATCHES);
                 assertNotNull(matches, "result did not contain DOCUMENT_MATCHES");
-                assertEquals(expected, matches.getData().toString());
+                assertEquals(expected, getDocumentMatchContents(matches));
+            }
+
+            Map<String,ColumnVisibility> expectedVisibilities = expectedDocumentMatchVisibilities.get(uuidValue);
+            if (expectedVisibilities != null) {
+                Attribute<?> matches = result.get(DocumentFunctions.DOCUMENT_MATCHES);
+                assertNotNull(matches, "result did not contain DOCUMENT_MATCHES");
+                assertEquals(expectedVisibilities, getDocumentMatchVisibilities(matches));
             }
         }
     }
@@ -179,7 +194,8 @@ public class DocumentMatchQueryTest extends AbstractQueryTest {
         expectedDocumentMatchContextRequired = true;
         expectResultCount(1);
         expectUUIDs(java.util.Set.of("CAPONE"));
-        expectedDocumentMatches.put("CAPONE", "{\"can\":{\"CONTENT\":[4,61],\"CONTENT2\":[27]}}");
+        expectedDocumentMatches.put("CAPONE",
+                        Set.of("{\"view\":\"CONTENT\",\"matches\":{\"can\":[4,61]}}", "{\"view\":\"CONTENT2\",\"matches\":{\"can\":[27]}}"));
         planAndExecuteQuery();
     }
 
@@ -193,21 +209,56 @@ public class DocumentMatchQueryTest extends AbstractQueryTest {
         expectedDocumentMatchContextRequired = true;
         expectResultCount(1);
         expectUUIDs(java.util.Set.of("CAPONE"));
-        expectedDocumentMatches.put("CAPONE", "{\"lawyer\":{\"CONTENT2\":[2]}}");
+        expectedDocumentMatches.put("CAPONE", Collections.singleton("{\"view\":\"CONTENT2\",\"matches\":{\"lawyer\":[2]}}"));
         planAndExecuteQuery();
     }
 
     /**
-     * Verifies that multiple JEXL {@code document:match(...)} calls contribute to one merged {@code DOCUMENT_MATCHES} payload.
+     * Verifies that multiple JEXL {@code document:match(...)} calls contribute one {@code DOCUMENT_MATCHES} value per matched {@code d}-column.
      */
     @Test
-    public void testDocumentMatchJexlMergesMatchesAcrossCalls() throws Exception {
+    public void testDocumentMatchJexlAddsPerEntryMatchesAcrossCalls() throws Exception {
         givenQuery("UUID == 'CAPONE' && document:match('CONTENT', 'can') && document:match('CONTENT2', 'lawyer')");
         expectPlan("UUID == 'capone' && document:match('CONTENT', documentMatchContext, 'can') && document:match('CONTENT2', documentMatchContext, 'lawyer')");
         expectedDocumentMatchContextRequired = true;
         expectResultCount(1);
         expectUUIDs(java.util.Set.of("CAPONE"));
-        expectedDocumentMatches.put("CAPONE", "{\"can\":{\"CONTENT\":[4,61]},\"lawyer\":{\"CONTENT2\":[2]}}");
+        expectedDocumentMatches.put("CAPONE",
+                        Set.of("{\"view\":\"CONTENT\",\"matches\":{\"can\":[4,61]}}", "{\"view\":\"CONTENT2\",\"matches\":{\"lawyer\":[2]}}"));
+        planAndExecuteQuery();
+    }
+
+    /**
+     * Verifies that end-to-end {@code DOCUMENT_MATCHES} values preserve the visibilities carried by their source {@code d}-column entries.
+     */
+    @Test
+    public void testDocumentMatchJexlPreservesPerEntryVisibilities() throws Exception {
+        givenQuery("UUID == 'CAPONE' && document:match('can')");
+        expectPlan("UUID == 'capone' && document:match(documentMatchContext, 'can')");
+        expectedDocumentMatchContextRequired = true;
+        expectResultCount(1);
+        expectUUIDs(java.util.Set.of("CAPONE"));
+        expectedDocumentMatches.put("CAPONE",
+                        Set.of("{\"view\":\"CONTENT\",\"matches\":{\"can\":[4,61]}}", "{\"view\":\"CONTENT2\",\"matches\":{\"can\":[27]}}"));
+        expectedDocumentMatchVisibilities.put("CAPONE", Map.of("{\"view\":\"CONTENT\",\"matches\":{\"can\":[4,61]}}", new ColumnVisibility("ALL"),
+                        "{\"view\":\"CONTENT2\",\"matches\":{\"can\":[27]}}", new ColumnVisibility("ALL")));
+        planAndExecuteQuery();
+    }
+
+    /**
+     * Verifies that a wildcard view match combined with a second targeted call accumulates per-entry matches without cross-entry merging.
+     */
+    @Test
+    public void testDocumentMatchJexlWildcardThenSpecificViewAccumulatesPerEntry() throws Exception {
+        givenQuery("UUID == 'CAPONE' && document:match('CONTENT*', 'can') && document:match('CONTENT2', 'lawyer')");
+        expectPlan("UUID == 'capone' && document:match('CONTENT*', documentMatchContext, 'can') && document:match('CONTENT2', documentMatchContext, 'lawyer')");
+        expectedDocumentMatchContextRequired = true;
+        expectResultCount(1);
+        expectUUIDs(java.util.Set.of("CAPONE"));
+        expectedDocumentMatches.put("CAPONE",
+                        Set.of("{\"view\":\"CONTENT\",\"matches\":{\"can\":[4,61]}}", "{\"view\":\"CONTENT2\",\"matches\":{\"can\":[27],\"lawyer\":[2]}}"));
+        expectedDocumentMatchVisibilities.put("CAPONE", Map.of("{\"view\":\"CONTENT\",\"matches\":{\"can\":[4,61]}}", new ColumnVisibility("ALL"),
+                        "{\"view\":\"CONTENT2\",\"matches\":{\"can\":[27],\"lawyer\":[2]}}", new ColumnVisibility("ALL")));
         planAndExecuteQuery();
     }
 
@@ -222,8 +273,35 @@ public class DocumentMatchQueryTest extends AbstractQueryTest {
         expectedDocumentMatchContextRequired = true;
         expectResultCount(1);
         expectUUIDs(java.util.Set.of("CAPONE"));
-        expectedDocumentMatches.put("CAPONE", "{\"can\":{\"CONTENT\":[4,61],\"CONTENT2\":[27]}}");
+        expectedDocumentMatches.put("CAPONE",
+                        Set.of("{\"view\":\"CONTENT\",\"matches\":{\"can\":[4,61]}}", "{\"view\":\"CONTENT2\",\"matches\":{\"can\":[27]}}"));
         planAndExecuteQuery();
+    }
+
+    private Set<String> getDocumentMatchContents(Attribute<?> attribute) {
+        Set<String> values = new LinkedHashSet<>();
+        if (attribute instanceof Attributes) {
+            for (Attribute<? extends Comparable<?>> child : ((Attributes) attribute).getAttributes()) {
+                values.add(((Content) child).getContent());
+            }
+        } else {
+            values.add(((Content) attribute).getContent());
+        }
+        return values;
+    }
+
+    private Map<String,ColumnVisibility> getDocumentMatchVisibilities(Attribute<?> attribute) {
+        Map<String,ColumnVisibility> visibilities = new HashMap<>();
+        if (attribute instanceof Attributes) {
+            for (Attribute<? extends Comparable<?>> child : ((Attributes) attribute).getAttributes()) {
+                Content content = (Content) child;
+                visibilities.put(content.getContent(), content.getColumnVisibility());
+            }
+        } else {
+            Content content = (Content) attribute;
+            visibilities.put(content.getContent(), content.getColumnVisibility());
+        }
+        return visibilities;
     }
 
     /**
@@ -274,5 +352,8 @@ public class DocumentMatchQueryTest extends AbstractQueryTest {
         expectResultCount(1);
         expectUUIDs(java.util.Set.of("CAPONE"));
         planAndExecuteQuery();
+        assertEquals(1, results.size());
+        Document result = results.iterator().next();
+        assertNull(result.get(DocumentFunctions.DOCUMENT_MATCHES), "query without document:match unexpectedly emitted DOCUMENT_MATCHES");
     }
 }
