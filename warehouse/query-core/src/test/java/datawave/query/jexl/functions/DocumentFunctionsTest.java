@@ -1,35 +1,27 @@
 package datawave.query.jexl.functions;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
 import java.util.AbstractMap;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.zip.GZIPOutputStream;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.log4j.AppenderSkeleton;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
-import org.apache.log4j.spi.LoggingEvent;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import datawave.query.function.DocumentMatchContext;
 
 /**
- * Unit tests for {@link DocumentFunctions} covering view selection, matching semantics, payload limits, merged results, and visibility handling.
+ * Unit tests for {@link DocumentFunctions} covering view selection, matching semantics, payload limits, and per-{@code d}-column result accumulation.
  */
 public class DocumentFunctionsTest {
-    private final Logger logger = Logger.getLogger(DocumentFunctions.class);
-
     /**
-     * Verifies that {@code document:match(STRING)} searches all available views and records offsets per view beneath the matched-string key.
+     * Verifies that {@code document:match(STRING)} searches all available views and returns the matched search string when any view matches.
      */
     @Test
     public void testMatchAcrossAllViews() throws Exception {
@@ -39,8 +31,8 @@ public class DocumentFunctionsTest {
 
         String result = DocumentFunctions.match(context, "car");
 
-        assertEquals("{\"car\":{\"BODY\":[1,5],\"META\":[0]}}", result);
-        assertEquals(result, DocumentFunctions.toJson(context.getMergedMatches()));
+        assertEquals("car", result);
+        assertEquals(2, context.getMatches().size());
     }
 
     /**
@@ -55,7 +47,7 @@ public class DocumentFunctionsTest {
 
         String result = DocumentFunctions.match("BODY*", context, "car");
 
-        assertEquals("{\"car\":{\"BODY\":[0],\"BODY_TEXT\":[0,4]}}", result);
+        assertEquals("car", result);
     }
 
     /**
@@ -68,7 +60,7 @@ public class DocumentFunctionsTest {
 
         String result = DocumentFunctions.match("BODY", context, "ana");
 
-        assertEquals("{\"ana\":{\"BODY\":[1,3]}}", result);
+        assertEquals("ana", result);
     }
 
     /**
@@ -80,6 +72,38 @@ public class DocumentFunctionsTest {
                         DocumentMatchContext.DEFAULT_MAX_DECODED_SIZE, DocumentMatchContext.DEFAULT_MAX_ENCODED_CONTEXT_SIZE));
 
         assertTrue(DocumentFunctions.match(context, "Car").isEmpty());
+    }
+
+    /**
+     * Verifies that a null context is treated as a non-match.
+     */
+    @Test
+    public void testNullContextIsNonMatch() {
+        assertTrue(DocumentFunctions.match(null, "car").isEmpty());
+    }
+
+    /**
+     * Verifies that a null search term is treated as a non-match.
+     */
+    @Test
+    public void testNullSearchIsNonMatch() throws Exception {
+        DocumentMatchContext context = new DocumentMatchContext(List.of(entry("test\0uid\0BODY", "scar car")), new DocumentMatchContext.Limits(1024,
+                        DocumentMatchContext.DEFAULT_MAX_DECODED_SIZE, DocumentMatchContext.DEFAULT_MAX_ENCODED_CONTEXT_SIZE));
+
+        assertTrue(DocumentFunctions.match(context, null).isEmpty());
+        assertTrue(DocumentFunctions.match("BODY", context, null).isEmpty());
+    }
+
+    /**
+     * Verifies that an empty search term is treated as a non-match.
+     */
+    @Test
+    public void testEmptySearchIsNonMatch() throws Exception {
+        DocumentMatchContext context = new DocumentMatchContext(List.of(entry("test\0uid\0BODY", "scar car")), new DocumentMatchContext.Limits(1024,
+                        DocumentMatchContext.DEFAULT_MAX_DECODED_SIZE, DocumentMatchContext.DEFAULT_MAX_ENCODED_CONTEXT_SIZE));
+
+        assertTrue(DocumentFunctions.match(context, "").isEmpty());
+        assertTrue(context.getMatches().isEmpty());
     }
 
     /**
@@ -137,7 +161,7 @@ public class DocumentFunctionsTest {
 
         String result = DocumentFunctions.match("BODY", context, "Origins");
 
-        assertEquals("{\"Origins\":{\"BODY\":[3]}}", result);
+        assertEquals("Origins", result);
     }
 
     /**
@@ -151,61 +175,55 @@ public class DocumentFunctionsTest {
 
         String result = DocumentFunctions.match("BODY", context, "Origins");
 
-        assertEquals("{\"Origins\":{\"BODY\":[3]}}", result);
+        assertEquals("Origins", result);
     }
 
     /**
-     * Verifies that multiple {@code document:match(...)} calls merge their offsets into the document-wide result set.
+     * Verifies that multiple {@code document:match(...)} calls accumulate results on a per-{@code d}-column basis for document output.
      */
     @Test
-    public void testMatchMergesResultsAcrossCalls() throws Exception {
+    public void testMatchAccumulatesPerEntryResultsAcrossCalls() throws Exception {
         DocumentMatchContext context = new DocumentMatchContext(List.of(entry("test\0uid\0BODY", "scar car"), entry("test\0uid\0CONTENT2", "lawyer car")),
                         new DocumentMatchContext.Limits(1024, DocumentMatchContext.DEFAULT_MAX_DECODED_SIZE,
                                         DocumentMatchContext.DEFAULT_MAX_ENCODED_CONTEXT_SIZE));
 
-        assertEquals("{\"car\":{\"BODY\":[1,5]}}", DocumentFunctions.match("BODY", context, "car"));
-        assertEquals("{\"lawyer\":{\"CONTENT2\":[0]}}", DocumentFunctions.match("CONTENT2", context, "lawyer"));
-        assertEquals("{\"car\":{\"BODY\":[1,5]},\"lawyer\":{\"CONTENT2\":[0]}}", DocumentFunctions.toJson(context.getMergedMatches()));
+        assertEquals("car", DocumentFunctions.match("BODY", context, "car"));
+        assertEquals("lawyer", DocumentFunctions.match("CONTENT2", context, "lawyer"));
+        assertEquals(2, context.getMatches().size());
+        assertTrue(context.getMatches().stream().anyMatch(matches -> matches.containsSearch("car")));
+        assertTrue(context.getMatches().stream().anyMatch(matches -> matches.containsSearch("lawyer")));
+        assertTrue(context.getMatches().stream().anyMatch(matches -> "BODY".equals(matches.getView())));
+        assertTrue(context.getMatches().stream().anyMatch(matches -> "CONTENT2".equals(matches.getView())));
     }
 
     /**
-     * Verifies that repeated {@code document:match(...)} calls for the same string merge under one top-level match-string key.
+     * Verifies that repeated {@code document:match(...)} calls against the same {@code d}-column accumulate beneath that single entry payload.
      */
     @Test
-    public void testMatchMergesSameSearchAcrossCalls() throws Exception {
-        DocumentMatchContext context = new DocumentMatchContext(List.of(entry("test\0uid\0BODY", "scar car"), entry("test\0uid\0CONTENT2", "lawyer car")),
-                        new DocumentMatchContext.Limits(1024, DocumentMatchContext.DEFAULT_MAX_DECODED_SIZE,
-                                        DocumentMatchContext.DEFAULT_MAX_ENCODED_CONTEXT_SIZE));
+    public void testMatchAccumulatesSameEntryAcrossCalls() throws Exception {
+        DocumentMatchContext context = new DocumentMatchContext(List.of(entry("test\0uid\0BODY", "scar car lawyer")), new DocumentMatchContext.Limits(1024,
+                        DocumentMatchContext.DEFAULT_MAX_DECODED_SIZE, DocumentMatchContext.DEFAULT_MAX_ENCODED_CONTEXT_SIZE));
 
-        assertEquals("{\"car\":{\"BODY\":[1,5]}}", DocumentFunctions.match("BODY", context, "car"));
-        assertEquals("{\"car\":{\"CONTENT2\":[7]}}", DocumentFunctions.match("CONTENT2", context, "car"));
-        assertEquals("{\"car\":{\"BODY\":[1,5],\"CONTENT2\":[7]}}", DocumentFunctions.toJson(context.getMergedMatches()));
+        assertEquals("car", DocumentFunctions.match("BODY", context, "car"));
+        assertEquals("lawyer", DocumentFunctions.match("BODY", context, "lawyer"));
+        assertEquals(1, context.getMatches().size());
+        assertEquals("BODY", context.getMatches().get(0).getView());
+        assertEquals("{\"view\":\"BODY\",\"matches\":{\"car\":[1,5],\"lawyer\":[9]}}",
+                        DocumentFunctions.toDocumentMatchesJson(context.getMatches().get(0).getPayload()));
     }
 
     /**
-     * Verifies that the first matched {@code d}-column visibility is retained and that a later mismatch produces a single info-level log message.
+     * Verifies that repeated identical {@code document:match(...)} calls against the same {@code d}-column do not duplicate offsets for the same search term.
      */
     @Test
-    public void testMatchLogsVisibilityMismatchAndKeepsFirstVisibility() throws Exception {
-        TestAppender appender = new TestAppender();
-        Level originalLevel = logger.getLevel();
-        logger.addAppender(appender);
-        logger.setLevel(Level.INFO);
-        try {
-            DocumentMatchContext context = new DocumentMatchContext(
-                            List.of(entry("test\0uid\0BODY", "scar car", "A"), entry("test\0uid\0CONTENT2", "lawyer car", "B")),
-                            new DocumentMatchContext.Limits(1024, DocumentMatchContext.DEFAULT_MAX_DECODED_SIZE,
-                                            DocumentMatchContext.DEFAULT_MAX_ENCODED_CONTEXT_SIZE));
+    public void testMatchRepeatsSameSearchWithinEntryAcrossCalls() throws Exception {
+        DocumentMatchContext context = new DocumentMatchContext(List.of(entry("test\0uid\0BODY", "scar car")), new DocumentMatchContext.Limits(1024,
+                        DocumentMatchContext.DEFAULT_MAX_DECODED_SIZE, DocumentMatchContext.DEFAULT_MAX_ENCODED_CONTEXT_SIZE));
 
-            assertEquals("{\"car\":{\"BODY\":[1,5]}}", DocumentFunctions.match("BODY", context, "car"));
-            assertEquals("{\"lawyer\":{\"CONTENT2\":[0]}}", DocumentFunctions.match("CONTENT2", context, "lawyer"));
-            assertEquals(new ColumnVisibility("A"), context.getFirstMatchingColumnVisibility());
-            assertEquals(1, appender.infoMessages.size());
-            assertTrue(appender.infoMessages.get(0).contains("differing d-column visibilities"));
-        } finally {
-            logger.removeAppender(appender);
-            logger.setLevel(originalLevel);
-        }
+        assertEquals("car", DocumentFunctions.match("BODY", context, "car"));
+        assertEquals("car", DocumentFunctions.match("BODY", context, "car"));
+        assertEquals(1, context.getMatches().size());
+        assertEquals("{\"view\":\"BODY\",\"matches\":{\"car\":[1,5]}}", DocumentFunctions.toDocumentMatchesJson(context.getMatches().get(0).getPayload()));
     }
 
     /**
@@ -298,27 +316,5 @@ public class DocumentFunctionsTest {
     private Map.Entry<Key,Value> base64OnlyEntry(String cq, String content) {
         byte[] encoded = java.util.Base64.getEncoder().encode(content.getBytes());
         return new AbstractMap.SimpleEntry<>(new Key("row", "d", cq), new Value(encoded));
-    }
-
-    /**
-     * Minimal log4j appender used to capture info-level visibility-mismatch messages.
-     */
-    private static class TestAppender extends AppenderSkeleton {
-        private final List<String> infoMessages = new ArrayList<>();
-
-        @Override
-        protected void append(LoggingEvent event) {
-            if (Level.INFO.equals(event.getLevel())) {
-                infoMessages.add(event.getRenderedMessage());
-            }
-        }
-
-        @Override
-        public void close() {}
-
-        @Override
-        public boolean requiresLayout() {
-            return false;
-        }
     }
 }

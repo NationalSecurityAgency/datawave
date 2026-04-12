@@ -1,7 +1,8 @@
 package datawave.query.function;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Collections;
 import java.util.List;
@@ -12,7 +13,7 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.Lists;
 
@@ -46,7 +47,7 @@ public class DocumentMatchContextFunctionTest {
                         .apply(Tuples.tuple(new Key("20240101_0", "datatype\0uid"), new Document(), Collections.emptyMap()));
         DocumentMatchContext context = (DocumentMatchContext) result.third().get(DocumentFunctions.DOCUMENT_MATCH_CONTEXT_JEXL_VARIABLE_NAME);
 
-        assertEquals(2, context.getdEntries().size());
+        assertEquals(2, context.getDocumentEntries().size());
         assertEquals(1234, context.getMaxEncodedValueSize());
         assertEquals(5678, context.getMaxDecodedValueSize());
         assertEquals(9012, context.getMaxEncodedContextSize());
@@ -66,7 +67,7 @@ public class DocumentMatchContextFunctionTest {
                         .apply(Tuples.tuple(new Key("20240101_0", "datatype\0uid"), new Document(), Collections.emptyMap()));
         DocumentMatchContext context = (DocumentMatchContext) result.third().get(DocumentFunctions.DOCUMENT_MATCH_CONTEXT_JEXL_VARIABLE_NAME);
 
-        assertTrue(context.getdEntries().isEmpty());
+        assertTrue(context.getDocumentEntries().isEmpty());
     }
 
     /**
@@ -92,7 +93,7 @@ public class DocumentMatchContextFunctionTest {
                         .apply(Tuples.tuple(new Key("20240101_0", "datatype\0root"), document, Collections.emptyMap()));
         DocumentMatchContext context = (DocumentMatchContext) result.third().get(DocumentFunctions.DOCUMENT_MATCH_CONTEXT_JEXL_VARIABLE_NAME);
 
-        assertEquals(2, context.getdEntries().size());
+        assertEquals(2, context.getDocumentEntries().size());
     }
 
     /**
@@ -113,8 +114,35 @@ public class DocumentMatchContextFunctionTest {
                         .apply(Tuples.tuple(new Key("20240101_0", "datatype\0uid"), new Document(), Collections.emptyMap()));
         DocumentMatchContext context = (DocumentMatchContext) result.third().get(DocumentFunctions.DOCUMENT_MATCH_CONTEXT_JEXL_VARIABLE_NAME);
 
-        assertEquals(1, context.getdEntries().size());
-        assertEquals("datatype\0uid\0BODY", context.getdEntries().get(0).getKey().getColumnQualifier().toString());
+        assertEquals(1, context.getDocumentEntries().size());
+        assertEquals("datatype\0uid\0BODY", context.getDocumentEntries().get(0).getKey().getColumnQualifier().toString());
+    }
+
+    /**
+     * Verifies that each application creates a fresh {@link DocumentMatchContext}, so mutable match state from a prior evaluation cannot leak into a later one.
+     */
+    @Test
+    public void testApplyCreatesFreshContextEachTime() {
+        List<Map.Entry<Key,Value>> entries = Lists.newArrayList(Map.entry(new Key("20240101_0", "d", "datatype\0uid\0BODY"), new Value("one".getBytes())));
+
+        DocumentMatchConfig config = new DocumentMatchConfig();
+        config.setSource(new ListBackedIterator(entries));
+        config.setLimits(new DocumentMatchContext.Limits(10, 20, 30));
+        DocumentMatchContextFunction function = new DocumentMatchContextFunction(config);
+
+        Tuple3<Key,Document,Map<String,Object>> first = function
+                        .apply(Tuples.tuple(new Key("20240101_0", "datatype\0uid"), new Document(), Collections.emptyMap()));
+        DocumentMatchContext firstContext = (DocumentMatchContext) first.third().get(DocumentFunctions.DOCUMENT_MATCH_CONTEXT_JEXL_VARIABLE_NAME);
+        firstContext.addMatches(entries.get(0).getKey(), "one", List.of(0));
+        assertEquals(1, firstContext.getMatches().size());
+
+        Tuple3<Key,Document,Map<String,Object>> second = function
+                        .apply(Tuples.tuple(new Key("20240101_0", "datatype\0uid"), new Document(), Collections.emptyMap()));
+        DocumentMatchContext secondContext = (DocumentMatchContext) second.third().get(DocumentFunctions.DOCUMENT_MATCH_CONTEXT_JEXL_VARIABLE_NAME);
+
+        assertNotSame(firstContext, secondContext);
+        assertTrue(secondContext.getMatches().isEmpty());
+        assertEquals(1, secondContext.getDocumentEntries().size());
     }
 
     private static class ListBackedIterator implements SortedKeyValueIterator<Key,Value> {
