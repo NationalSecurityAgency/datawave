@@ -157,7 +157,7 @@ public class IndexOnlyKeyToDocumentData extends KeyToDocumentData implements Ite
             }
 
             // get the document key
-            Key docKey = getDocumentKey(from.getKey());
+            Key docKey = getDocKey(from.getKey());
 
             // Ensure that we have a non-empty column qualifier
             final Key stopKey = new Key(from.getKey().getRow().toString(), from.getKey().getColumnFamily().toString(),
@@ -482,7 +482,7 @@ public class IndexOnlyKeyToDocumentData extends KeyToDocumentData implements Ite
         if (null != next) {
             final List<Entry<Key,Value>> keyValues = new LinkedList<>();
             keyValues.add(next);
-            Key docKey = getDocumentKey(next.getKey());
+            Key docKey = getDocKey(next.getKey());
             final DocumentData documentData = new DocumentData(this.iteratorDocumentKey, Collections.singleton(docKey), keyValues, true);
             entry = Maps.immutableEntry(documentData, this.iteratorDocument);
         } else if (next == ITERATOR_COMPLETE_KEY) {

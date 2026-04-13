@@ -10,9 +10,8 @@ import java.net.URL;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.TimeZone;
 
 import org.apache.accumulo.core.client.AccumuloClient;
@@ -36,6 +35,9 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import com.google.common.base.Preconditions;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 import datawave.ingest.data.TypeRegistry;
 import datawave.query.attributes.Attribute;
@@ -43,6 +45,7 @@ import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Content;
 import datawave.query.attributes.Document;
 import datawave.query.function.DocumentMatchContext;
+import datawave.query.function.DocumentMatchResults;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.jexl.functions.DocumentFunctions;
 import datawave.query.tables.ShardQueryLogic;
@@ -81,7 +84,7 @@ public class DocumentMatchQueryTest extends AbstractQueryTest {
     @Qualifier("EventQuery")
     protected ShardQueryLogic logic;
 
-    private final Map<String,Set<String>> expectedDocumentMatches = new HashMap<>();
+    private final Map<String,Map<String,Map<String,List<Integer>>>> expectedDocumentMatches = new HashMap<>();
     private final Map<String,Map<String,ColumnVisibility>> expectedDocumentMatchVisibilities = new HashMap<>();
     private Boolean expectedDocumentMatchContextRequired;
 
@@ -168,11 +171,11 @@ public class DocumentMatchQueryTest extends AbstractQueryTest {
             assertNotNull(uuid, "result did not contain UUID");
 
             String uuidValue = getUUID(uuid);
-            Set<String> expected = expectedDocumentMatches.get(uuidValue);
+            Map<String,Map<String,List<Integer>>> expected = expectedDocumentMatches.get(uuidValue);
             if (expected != null) {
                 Attribute<?> matches = result.get(DocumentFunctions.DOCUMENT_MATCHES);
                 assertNotNull(matches, "result did not contain DOCUMENT_MATCHES");
-                assertEquals(expected, getDocumentMatchContents(matches));
+                assertEquals(expected, getDocumentMatchesByView(matches));
             }
 
             Map<String,ColumnVisibility> expectedVisibilities = expectedDocumentMatchVisibilities.get(uuidValue);
@@ -194,8 +197,7 @@ public class DocumentMatchQueryTest extends AbstractQueryTest {
         expectedDocumentMatchContextRequired = true;
         expectResultCount(1);
         expectUUIDs(java.util.Set.of("CAPONE"));
-        expectedDocumentMatches.put("CAPONE",
-                        Set.of("{\"view\":\"CONTENT\",\"matches\":{\"can\":[4,61]}}", "{\"view\":\"CONTENT2\",\"matches\":{\"can\":[27]}}"));
+        expectedDocumentMatches.put("CAPONE", Map.of("CONTENT", Map.of("can", List.of(4, 61)), "CONTENT2", Map.of("can", List.of(27))));
         planAndExecuteQuery();
     }
 
@@ -209,7 +211,7 @@ public class DocumentMatchQueryTest extends AbstractQueryTest {
         expectedDocumentMatchContextRequired = true;
         expectResultCount(1);
         expectUUIDs(java.util.Set.of("CAPONE"));
-        expectedDocumentMatches.put("CAPONE", Collections.singleton("{\"view\":\"CONTENT2\",\"matches\":{\"lawyer\":[2]}}"));
+        expectedDocumentMatches.put("CAPONE", Map.of("CONTENT2", Map.of("lawyer", List.of(2))));
         planAndExecuteQuery();
     }
 
@@ -223,8 +225,7 @@ public class DocumentMatchQueryTest extends AbstractQueryTest {
         expectedDocumentMatchContextRequired = true;
         expectResultCount(1);
         expectUUIDs(java.util.Set.of("CAPONE"));
-        expectedDocumentMatches.put("CAPONE",
-                        Set.of("{\"view\":\"CONTENT\",\"matches\":{\"can\":[4,61]}}", "{\"view\":\"CONTENT2\",\"matches\":{\"lawyer\":[2]}}"));
+        expectedDocumentMatches.put("CAPONE", Map.of("CONTENT", Map.of("can", List.of(4, 61)), "CONTENT2", Map.of("lawyer", List.of(2))));
         planAndExecuteQuery();
     }
 
@@ -238,10 +239,8 @@ public class DocumentMatchQueryTest extends AbstractQueryTest {
         expectedDocumentMatchContextRequired = true;
         expectResultCount(1);
         expectUUIDs(java.util.Set.of("CAPONE"));
-        expectedDocumentMatches.put("CAPONE",
-                        Set.of("{\"view\":\"CONTENT\",\"matches\":{\"can\":[4,61]}}", "{\"view\":\"CONTENT2\",\"matches\":{\"can\":[27]}}"));
-        expectedDocumentMatchVisibilities.put("CAPONE", Map.of("{\"view\":\"CONTENT\",\"matches\":{\"can\":[4,61]}}", new ColumnVisibility("ALL"),
-                        "{\"view\":\"CONTENT2\",\"matches\":{\"can\":[27]}}", new ColumnVisibility("ALL")));
+        expectedDocumentMatches.put("CAPONE", Map.of("CONTENT", Map.of("can", List.of(4, 61)), "CONTENT2", Map.of("can", List.of(27))));
+        expectedDocumentMatchVisibilities.put("CAPONE", Map.of("CONTENT", new ColumnVisibility("ALL"), "CONTENT2", new ColumnVisibility("ALL")));
         planAndExecuteQuery();
     }
 
@@ -255,10 +254,8 @@ public class DocumentMatchQueryTest extends AbstractQueryTest {
         expectedDocumentMatchContextRequired = true;
         expectResultCount(1);
         expectUUIDs(java.util.Set.of("CAPONE"));
-        expectedDocumentMatches.put("CAPONE",
-                        Set.of("{\"view\":\"CONTENT\",\"matches\":{\"can\":[4,61]}}", "{\"view\":\"CONTENT2\",\"matches\":{\"can\":[27],\"lawyer\":[2]}}"));
-        expectedDocumentMatchVisibilities.put("CAPONE", Map.of("{\"view\":\"CONTENT\",\"matches\":{\"can\":[4,61]}}", new ColumnVisibility("ALL"),
-                        "{\"view\":\"CONTENT2\",\"matches\":{\"can\":[27],\"lawyer\":[2]}}", new ColumnVisibility("ALL")));
+        expectedDocumentMatches.put("CAPONE", Map.of("CONTENT", Map.of("can", List.of(4, 61)), "CONTENT2", Map.of("can", List.of(27), "lawyer", List.of(2))));
+        expectedDocumentMatchVisibilities.put("CAPONE", Map.of("CONTENT", new ColumnVisibility("ALL"), "CONTENT2", new ColumnVisibility("ALL")));
         planAndExecuteQuery();
     }
 
@@ -273,19 +270,18 @@ public class DocumentMatchQueryTest extends AbstractQueryTest {
         expectedDocumentMatchContextRequired = true;
         expectResultCount(1);
         expectUUIDs(java.util.Set.of("CAPONE"));
-        expectedDocumentMatches.put("CAPONE",
-                        Set.of("{\"view\":\"CONTENT\",\"matches\":{\"can\":[4,61]}}", "{\"view\":\"CONTENT2\",\"matches\":{\"can\":[27]}}"));
+        expectedDocumentMatches.put("CAPONE", Map.of("CONTENT", Map.of("can", List.of(4, 61)), "CONTENT2", Map.of("can", List.of(27))));
         planAndExecuteQuery();
     }
 
-    private Set<String> getDocumentMatchContents(Attribute<?> attribute) {
-        Set<String> values = new LinkedHashSet<>();
+    private Map<String,Map<String,List<Integer>>> getDocumentMatchesByView(Attribute<?> attribute) {
+        Map<String,Map<String,List<Integer>>> values = new HashMap<>();
         if (attribute instanceof Attributes) {
             for (Attribute<? extends Comparable<?>> child : ((Attributes) attribute).getAttributes()) {
-                values.add(((Content) child).getContent());
+                addDocumentMatch(values, ((Content) child).getContent());
             }
         } else {
-            values.add(((Content) attribute).getContent());
+            addDocumentMatch(values, ((Content) attribute).getContent());
         }
         return values;
     }
@@ -295,13 +291,32 @@ public class DocumentMatchQueryTest extends AbstractQueryTest {
         if (attribute instanceof Attributes) {
             for (Attribute<? extends Comparable<?>> child : ((Attributes) attribute).getAttributes()) {
                 Content content = (Content) child;
-                visibilities.put(content.getContent(), content.getColumnVisibility());
+                visibilities.put(getDocumentMatchView(content.getContent()), content.getColumnVisibility());
             }
         } else {
             Content content = (Content) attribute;
-            visibilities.put(content.getContent(), content.getColumnVisibility());
+            visibilities.put(getDocumentMatchView(content.getContent()), content.getColumnVisibility());
         }
         return visibilities;
+    }
+
+    private void addDocumentMatch(Map<String,Map<String,List<Integer>>> values, String json) {
+        JsonObject payload = JsonParser.parseString(json).getAsJsonObject();
+        String view = payload.get(DocumentMatchResults.VIEW_FIELD).getAsString();
+        JsonObject matches = payload.getAsJsonObject(DocumentMatchResults.MATCHES_FIELD);
+        Map<String,List<Integer>> offsetsBySearch = new HashMap<>();
+        for (Map.Entry<String,JsonElement> matchEntry : matches.entrySet()) {
+            List<Integer> offsets = new java.util.ArrayList<>();
+            for (JsonElement offset : matchEntry.getValue().getAsJsonArray()) {
+                offsets.add(offset.getAsInt());
+            }
+            offsetsBySearch.put(matchEntry.getKey(), offsets);
+        }
+        values.put(view, offsetsBySearch);
+    }
+
+    private String getDocumentMatchView(String json) {
+        return JsonParser.parseString(json).getAsJsonObject().get(DocumentMatchResults.VIEW_FIELD).getAsString();
     }
 
     /**

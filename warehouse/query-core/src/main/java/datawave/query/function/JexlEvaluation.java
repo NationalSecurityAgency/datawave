@@ -115,12 +115,12 @@ public class JexlEvaluation implements Predicate<Tuple3<Key,Document,DatawaveJex
         if (matched && documentMatchContext != null) {
             Document document = input.second();
             for (DocumentMatchResults entry : documentMatchContext.getMatches()) {
-                String documentMatches = DocumentFunctions.toDocumentMatchesJson(entry.getPayload());
+                String documentMatches = entry.toJson();
                 if (documentMatches.isEmpty()) {
                     continue;
                 }
 
-                Content matchesAttribute = Content.withKeyMetadata(documentMatches, entry.getKey(), document.isToKeep());
+                Content matchesAttribute = new Content(documentMatches, entry.getKey(), document.isToKeep());
                 matchesAttribute.setColumnVisibility(entry.getKey().getColumnVisibilityParsed());
                 document.put(DocumentFunctions.DOCUMENT_MATCHES, matchesAttribute);
             }

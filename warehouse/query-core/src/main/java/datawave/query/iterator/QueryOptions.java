@@ -345,7 +345,6 @@ public class QueryOptions implements OptionDescriber {
     protected EventDataQueryFilter eventEvaluationFilter;
     // filter specifically for event keys. required when performing a seeking aggregation
     protected EventDataQueryFilter eventFilter;
-    protected boolean retainDocumentColumnFamily = false;
 
     protected int maxEvaluationPipelines = 25;
     protected int maxPipelineCachedResults = 25;
@@ -545,7 +544,6 @@ public class QueryOptions implements OptionDescriber {
         this.fiEvaluationFilter = other.fiEvaluationFilter;
         this.eventEvaluationFilter = other.eventEvaluationFilter;
         this.eventFilter = other.eventFilter;
-        this.retainDocumentColumnFamily = other.retainDocumentColumnFamily;
 
         this.ivaratorCacheDirConfigs = (other.ivaratorCacheDirConfigs == null) ? null : new ArrayList<>(other.ivaratorCacheDirConfigs);
         this.hdfsSiteConfigURLs = other.hdfsSiteConfigURLs;
@@ -887,23 +885,11 @@ public class QueryOptions implements OptionDescriber {
             //  @formatter:off
             eventFilter = new EventDataQueryFieldFilter()
                             .withFields(fields)
-                            .withMaxNextCount(getEventNextSeek())
-                            .withDocumentColumnFamily(retainDocumentColumnFamily);
+                            .withMaxNextCount(getEventNextSeek());
             //  @formatter:on
         }
 
         return eventFilter == null ? null : eventFilter.clone();
-    }
-
-    public void setRetainDocumentColumnFamily(boolean retainDocumentColumnFamily) {
-        if (this.retainDocumentColumnFamily != retainDocumentColumnFamily) {
-            this.retainDocumentColumnFamily = retainDocumentColumnFamily;
-            // invalidate the cached filters to force them to be rebuilt instead of
-            // caching stale clones created under the old settings.
-            this.eventFilter = null;
-            this.evaluationFilter = null;
-            this.eventEvaluationFilter = null;
-        }
     }
 
     /**

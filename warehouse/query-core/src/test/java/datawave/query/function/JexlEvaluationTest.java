@@ -11,10 +11,8 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -25,6 +23,9 @@ import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.Maps;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 import datawave.ingest.protobuf.TermWeightPosition;
 import datawave.query.Constants;
@@ -201,8 +202,7 @@ public class JexlEvaluationTest {
                         .of(Maps.immutableEntry(new Key("row", "d", "datatype\0uid\0BODY", "A"), new Value(buildEncodedValue("scar car"))));
         assertEvaluation(query, docKey, d, contextFactory(d, Collections.singleton("FOO"), ctx -> ctx
                         .set(DocumentFunctions.DOCUMENT_MATCH_CONTEXT_JEXL_VARIABLE_NAME, new DocumentMatchContext(entries, TEST_DOCUMENT_MATCH_LIMITS))));
-        assertEquals(Collections.singleton("{\"view\":\"BODY\",\"matches\":{\"car\":[1,5]}}"),
-                        getDocumentMatchContents(d.get(DocumentFunctions.DOCUMENT_MATCHES)));
+        assertEquals(Map.of("BODY", Map.of("car", List.of(1, 5))), getDocumentMatchesByView(d.get(DocumentFunctions.DOCUMENT_MATCHES)));
         assertEquals(new ColumnVisibility("A"), d.get(DocumentFunctions.DOCUMENT_MATCHES).getColumnVisibility());
     }
 
@@ -218,8 +218,8 @@ public class JexlEvaluationTest {
                         Maps.immutableEntry(new Key("row", "d", "datatype\0uid\0CONTENT2", "A"), new Value(buildEncodedValue("lawyer car"))));
         assertEvaluation(query, docKey, d, contextFactory(d, Collections.singleton("FOO"), ctx -> ctx
                         .set(DocumentFunctions.DOCUMENT_MATCH_CONTEXT_JEXL_VARIABLE_NAME, new DocumentMatchContext(entries, TEST_DOCUMENT_MATCH_LIMITS))));
-        assertEquals(Set.of("{\"view\":\"BODY\",\"matches\":{\"car\":[1,5]}}", "{\"view\":\"CONTENT2\",\"matches\":{\"lawyer\":[0]}}"),
-                        getDocumentMatchContents(d.get(DocumentFunctions.DOCUMENT_MATCHES)));
+        assertEquals(Map.of("BODY", Map.of("car", List.of(1, 5)), "CONTENT2", Map.of("lawyer", List.of(0))),
+                        getDocumentMatchesByView(d.get(DocumentFunctions.DOCUMENT_MATCHES)));
     }
 
     @Test
@@ -233,8 +233,7 @@ public class JexlEvaluationTest {
                         .of(Maps.immutableEntry(new Key("row", "d", "datatype\0uid\0BODY", "A"), new Value(buildEncodedValue("scar car lawyer"))));
         assertEvaluation(query, docKey, d, contextFactory(d, Collections.singleton("FOO"), ctx -> ctx
                         .set(DocumentFunctions.DOCUMENT_MATCH_CONTEXT_JEXL_VARIABLE_NAME, new DocumentMatchContext(entries, TEST_DOCUMENT_MATCH_LIMITS))));
-        assertEquals(Collections.singleton("{\"view\":\"BODY\",\"matches\":{\"car\":[1,5],\"lawyer\":[9]}}"),
-                        getDocumentMatchContents(d.get(DocumentFunctions.DOCUMENT_MATCHES)));
+        assertEquals(Map.of("BODY", Map.of("car", List.of(1, 5), "lawyer", List.of(9))), getDocumentMatchesByView(d.get(DocumentFunctions.DOCUMENT_MATCHES)));
     }
 
     @Test
@@ -250,27 +249,53 @@ public class JexlEvaluationTest {
         assertEvaluation(query, docKey, d, contextFactory(d, Collections.singleton("FOO"), ctx -> ctx
                         .set(DocumentFunctions.DOCUMENT_MATCH_CONTEXT_JEXL_VARIABLE_NAME, new DocumentMatchContext(entries, TEST_DOCUMENT_MATCH_LIMITS))));
 
-        Attributes matches = assertInstanceOf(Attributes.class, d.get(DocumentFunctions.DOCUMENT_MATCHES));
-        Map<String,ColumnVisibility> visibilitiesByPayload = new HashMap<>();
-        for (Attribute<? extends Comparable<?>> attribute : matches.getAttributes()) {
-            Content content = assertInstanceOf(Content.class, attribute);
-            visibilitiesByPayload.put(content.getContent(), content.getColumnVisibility());
-        }
-
-        assertEquals(new ColumnVisibility("A"), visibilitiesByPayload.get("{\"view\":\"BODY\",\"matches\":{\"car\":[1,5]}}"));
-        assertEquals(new ColumnVisibility("B"), visibilitiesByPayload.get("{\"view\":\"CONTENT2\",\"matches\":{\"lawyer\":[0]}}"));
+        assertEquals(Map.of("BODY", new ColumnVisibility("A"), "CONTENT2", new ColumnVisibility("B")),
+                        getDocumentMatchVisibilitiesByView(d.get(DocumentFunctions.DOCUMENT_MATCHES)));
     }
 
-    private Set<String> getDocumentMatchContents(Attribute<?> attribute) {
-        Set<String> values = new LinkedHashSet<>();
+    private Map<String,Map<String,List<Integer>>> getDocumentMatchesByView(Attribute<?> attribute) {
+        Map<String,Map<String,List<Integer>>> values = new HashMap<>();
         if (attribute instanceof Attributes) {
             for (Attribute<? extends Comparable<?>> child : ((Attributes) attribute).getAttributes()) {
-                values.add(((Content) child).getContent());
+                addDocumentMatch(values, ((Content) child).getContent());
             }
         } else {
-            values.add(((Content) attribute).getContent());
+            addDocumentMatch(values, ((Content) attribute).getContent());
         }
         return values;
+    }
+
+    private Map<String,ColumnVisibility> getDocumentMatchVisibilitiesByView(Attribute<?> attribute) {
+        Map<String,ColumnVisibility> visibilities = new HashMap<>();
+        if (attribute instanceof Attributes) {
+            for (Attribute<? extends Comparable<?>> child : ((Attributes) attribute).getAttributes()) {
+                Content content = assertInstanceOf(Content.class, child);
+                visibilities.put(getDocumentMatchView(content.getContent()), content.getColumnVisibility());
+            }
+        } else {
+            Content content = assertInstanceOf(Content.class, attribute);
+            visibilities.put(getDocumentMatchView(content.getContent()), content.getColumnVisibility());
+        }
+        return visibilities;
+    }
+
+    private void addDocumentMatch(Map<String,Map<String,List<Integer>>> values, String json) {
+        JsonObject payload = JsonParser.parseString(json).getAsJsonObject();
+        String view = payload.get(DocumentMatchResults.VIEW_FIELD).getAsString();
+        JsonObject matches = payload.getAsJsonObject(DocumentMatchResults.MATCHES_FIELD);
+        Map<String,List<Integer>> offsetsBySearch = new HashMap<>();
+        for (Map.Entry<String,JsonElement> matchEntry : matches.entrySet()) {
+            List<Integer> offsets = new ArrayList<>();
+            for (JsonElement offset : matchEntry.getValue().getAsJsonArray()) {
+                offsets.add(offset.getAsInt());
+            }
+            offsetsBySearch.put(matchEntry.getKey(), offsets);
+        }
+        values.put(view, offsetsBySearch);
+    }
+
+    private String getDocumentMatchView(String json) {
+        return JsonParser.parseString(json).getAsJsonObject().get(DocumentMatchResults.VIEW_FIELD).getAsString();
     }
 
     private byte[] buildEncodedValue(String content) {
