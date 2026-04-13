@@ -3,15 +3,12 @@ package datawave.query.jexl.functions;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.log4j.Logger;
-
-import com.google.gson.Gson;
 
 import datawave.query.data.parsers.DatawaveKey;
 import datawave.query.function.DocumentMatchContext;
@@ -27,7 +24,6 @@ import datawave.query.table.parser.ContentKeyValueFactory;
 @JexlFunctions(descriptorFactory = "datawave.query.jexl.functions.DocumentFunctionsDescriptor")
 public class DocumentFunctions {
     private static final Logger log = Logger.getLogger(DocumentFunctions.class);
-    private static final Gson GSON = new Gson();
 
     public static final String DOCUMENT_FUNCTION_NAMESPACE = "document";
     public static final String DOCUMENT_MATCH_FUNCTION_NAME = "match";
@@ -170,17 +166,4 @@ public class DocumentFunctions {
         return offsets;
     }
 
-    /**
-     * Serializes one per-entry {@code DOCUMENT_MATCHES} payload in the form {@code {"view":"...","matches":{search:[offsets]}}}.
-     *
-     * @param payload
-     *            per-entry payload built from a single matched {@code d}-column
-     * @return JSON string representation, or an empty string if the payload is empty
-     */
-    public static String toDocumentMatchesJson(Map<String,Object> payload) {
-        if (payload.isEmpty()) {
-            return "";
-        }
-        return GSON.toJson(payload);
-    }
 }

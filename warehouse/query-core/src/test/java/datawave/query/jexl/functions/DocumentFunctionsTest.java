@@ -8,6 +8,7 @@ import java.io.OutputStream;
 import java.util.AbstractMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.zip.GZIPOutputStream;
 
 import org.apache.accumulo.core.data.Key;
@@ -15,6 +16,7 @@ import org.apache.accumulo.core.data.Value;
 import org.junit.jupiter.api.Test;
 
 import datawave.query.function.DocumentMatchContext;
+import datawave.query.function.DocumentMatchResults;
 
 /**
  * Unit tests for {@link DocumentFunctions} covering view selection, matching semantics, payload limits, and per-{@code d}-column result accumulation.
@@ -190,10 +192,8 @@ public class DocumentFunctionsTest {
         assertEquals("car", DocumentFunctions.match("BODY", context, "car"));
         assertEquals("lawyer", DocumentFunctions.match("CONTENT2", context, "lawyer"));
         assertEquals(2, context.getMatches().size());
-        assertTrue(context.getMatches().stream().anyMatch(matches -> matches.containsSearch("car")));
-        assertTrue(context.getMatches().stream().anyMatch(matches -> matches.containsSearch("lawyer")));
-        assertTrue(context.getMatches().stream().anyMatch(matches -> "BODY".equals(matches.getView())));
-        assertTrue(context.getMatches().stream().anyMatch(matches -> "CONTENT2".equals(matches.getView())));
+        assertEquals(List.of("{\"view\":\"BODY\",\"matches\":{\"car\":[1,5]}}", "{\"view\":\"CONTENT2\",\"matches\":{\"lawyer\":[0]}}"),
+                        context.getMatches().stream().map(DocumentMatchResults::toJson).sorted().collect(Collectors.toList()));
     }
 
     /**
@@ -208,8 +208,7 @@ public class DocumentFunctionsTest {
         assertEquals("lawyer", DocumentFunctions.match("BODY", context, "lawyer"));
         assertEquals(1, context.getMatches().size());
         assertEquals("BODY", context.getMatches().get(0).getView());
-        assertEquals("{\"view\":\"BODY\",\"matches\":{\"car\":[1,5],\"lawyer\":[9]}}",
-                        DocumentFunctions.toDocumentMatchesJson(context.getMatches().get(0).getPayload()));
+        assertEquals("{\"view\":\"BODY\",\"matches\":{\"car\":[1,5],\"lawyer\":[9]}}", context.getMatches().get(0).toJson());
     }
 
     /**
@@ -223,7 +222,7 @@ public class DocumentFunctionsTest {
         assertEquals("car", DocumentFunctions.match("BODY", context, "car"));
         assertEquals("car", DocumentFunctions.match("BODY", context, "car"));
         assertEquals(1, context.getMatches().size());
-        assertEquals("{\"view\":\"BODY\",\"matches\":{\"car\":[1,5]}}", DocumentFunctions.toDocumentMatchesJson(context.getMatches().get(0).getPayload()));
+        assertEquals("{\"view\":\"BODY\",\"matches\":{\"car\":[1,5]}}", context.getMatches().get(0).toJson());
     }
 
     /**

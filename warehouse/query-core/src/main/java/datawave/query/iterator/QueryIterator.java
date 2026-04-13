@@ -69,7 +69,7 @@ import datawave.query.composite.CompositeMetadata;
 import datawave.query.function.Aggregation;
 import datawave.query.function.DataTypeAsField;
 import datawave.query.function.DocumentMatchConfig;
-import datawave.query.function.DocumentMatchFactory;
+import datawave.query.function.DocumentMatchContextFunction;
 import datawave.query.function.DocumentMetadata;
 import datawave.query.function.DocumentPermutation;
 import datawave.query.function.DocumentProjection;
@@ -260,7 +260,6 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
 
         this.exceededOrEvaluationCache = new HashMap<>();
         this.myEvaluationFunction = getJexlEvaluation(this.getQuery(), arithmetic);
-        this.setRetainDocumentColumnFamily(false);
 
         this.documentOptions = options;
         this.myEnvironment = env;
@@ -1067,7 +1066,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
      */
     protected Function<Tuple3<Key,Document,Map<String,Object>>,Tuple3<Key,Document,Map<String,Object>>> buildDocumentMatchFunction(
                     DocumentMatchConfig documentMatchConfig) {
-        return DocumentMatchFactory.getFunction(documentMatchConfig);
+        return new DocumentMatchContextFunction(documentMatchConfig);
     }
 
     private Range getDocumentRange(NestedQueryIterator<Key> documentSource) {

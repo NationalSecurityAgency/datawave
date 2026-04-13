@@ -1,5 +1,6 @@
 package datawave.query.function;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -10,6 +11,7 @@ import java.util.TreeSet;
 import org.apache.accumulo.core.data.Key;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.gson.Gson;
 
 import datawave.query.data.parsers.DatawaveKey;
 
@@ -19,6 +21,8 @@ import datawave.query.data.parsers.DatawaveKey;
  * A {@code d}-column entry has a single view name, so matches are grouped only by search string within that view.
  */
 public class DocumentMatchResults {
+    private static final Gson GSON = new Gson();
+
     public static final String VIEW_FIELD = "view";
     public static final String MATCHES_FIELD = "matches";
 
@@ -33,13 +37,6 @@ public class DocumentMatchResults {
      */
     public DocumentMatchResults(Key key) {
         this.key = key;
-    }
-
-    private DocumentMatchResults(DocumentMatchResults other) {
-        this.key = other.key;
-        for (Map.Entry<String,SortedSet<Integer>> searchEntry : other.matches.entrySet()) {
-            this.matches.put(searchEntry.getKey(), new TreeSet<>(searchEntry.getValue()));
-        }
     }
 
     public Key getKey() {
@@ -67,34 +64,35 @@ public class DocumentMatchResults {
     }
 
     /**
-     * @param search
-     *            a matched literal string
-     * @return {@code true} if this entry contains offsets for the supplied search string
-     */
-    public boolean containsSearch(String search) {
-        return matches.containsKey(search);
-    }
-
-    /**
      * Builds the JSON-ready payload for this entry in the form {@code {"view":"...","matches":{search:[offsets]}}}.
      *
      * @return a payload map suitable for serialization into the {@code DOCUMENT_MATCHES} attribute, or an empty map if no matches are present
      */
-    public Map<String,Object> getPayload() {
+    private Map<String,Object> getPayload() {
         Map<String,Object> payload = new LinkedHashMap<>();
         String view = getView();
         if (view == null || matches.isEmpty()) {
             return payload;
         }
         payload.put(VIEW_FIELD, view);
-        payload.put(MATCHES_FIELD, matches);
+        Map<String,List<Integer>> jsonMatches = new LinkedHashMap<>();
+        for (Map.Entry<String,SortedSet<Integer>> matchEntry : matches.entrySet()) {
+            jsonMatches.put(matchEntry.getKey(), new ArrayList<>(matchEntry.getValue()));
+        }
+        payload.put(MATCHES_FIELD, jsonMatches);
         return payload;
     }
 
     /**
-     * @return a defensive copy of this entry's match results
+     * Serializes this entry's payload into the {@code DOCUMENT_MATCHES} JSON representation.
+     *
+     * @return JSON string representation, or an empty string if no matches were recorded for the entry
      */
-    public DocumentMatchResults copy() {
-        return new DocumentMatchResults(this);
+    public String toJson() {
+        Map<String,Object> payload = getPayload();
+        if (payload.isEmpty()) {
+            return "";
+        }
+        return GSON.toJson(payload);
     }
 }
