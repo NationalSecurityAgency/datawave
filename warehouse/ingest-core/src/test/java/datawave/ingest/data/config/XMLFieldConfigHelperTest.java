@@ -1,10 +1,11 @@
 package datawave.ingest.data.config;
 
-import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -14,8 +15,8 @@ import java.util.List;
 import java.util.Scanner;
 
 import org.apache.hadoop.conf.Configuration;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.sun.net.httpserver.HttpServer;
 
@@ -33,9 +34,9 @@ import datawave.policy.IngestPolicyEnforcer;
 public class XMLFieldConfigHelperTest {
 
     private final BaseIngestHelper ingestHelper = new TestBaseIngestHelper();
-    private Configuration conf = new Configuration();
+    private final Configuration conf = new Configuration();
 
-    @Before
+    @BeforeEach
     public void setUp() {
 
         conf.set(DataTypeHelper.Properties.DATA_NAME, "test");
@@ -58,10 +59,8 @@ public class XMLFieldConfigHelperTest {
 
         try {
             FieldConfigHelper helper = XMLFieldConfigHelper.load(requestUrl, ingestHelper);
-
-            assertThat(helper.isIndexedField("A"), is(true));
-            assertThat(helper.isIndexedField("B"), is(false));
-
+            assertTrue(helper.isIndexedField("A"));
+            assertFalse(helper.isIndexedField("B"));
         } finally {
             server.stop(0);
 
@@ -87,18 +86,19 @@ public class XMLFieldConfigHelperTest {
 
     private String readFile(String path) {
         StringBuilder sb = new StringBuilder();
-        InputStream istream = getClass().getClassLoader().getResourceAsStream(path);
-        try (Scanner scanner = new Scanner(istream)) {
+        InputStream is = getClass().getClassLoader().getResourceAsStream(path);
+        assertNotNull(is);
+        try (Scanner scanner = new Scanner(is)) {
             while (scanner.hasNext()) {
-                sb.append(scanner.nextLine() + "\n");
+                sb.append(scanner.nextLine()).append("\n");
             }
         }
 
         return sb.toString();
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testBadTag() throws Exception {
+    @Test
+    public void testBadTag() {
         String input = "<?xml version=\"1.0\"?>\n" + "<fieldConfig>\n"
                         + "    <default stored=\"true\" indexed=\"false\" reverseIndexed=\"false\" tokenized=\"true\" reverseTokenized=\"true\" indexType=\"datawave.data.type.LcNoDiacriticsType\"/>\n"
                         + "    <nomatch stored=\"true\" indexed=\"true\" reverseIndexed=\"true\" tokenized=\"true\"  reverseTokenized=\"true\" indexType=\"datawave.data.type.HexStringType\"/>\n"
@@ -106,11 +106,11 @@ public class XMLFieldConfigHelperTest {
                         + "    <field name=\"H\" indexType=\"datawave.data.type.DateType\"/>\n"
                         + "    <orange name=\"H\" indexType=\"datawave.data.type.DateType\"/>\n" + "</fieldConfig>";
 
-        XMLFieldConfigHelper helper = new XMLFieldConfigHelper(new ByteArrayInputStream(input.getBytes()), ingestHelper);
+        assertThrows(IllegalArgumentException.class, () -> new XMLFieldConfigHelper(new ByteArrayInputStream(input.getBytes()), ingestHelper));
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testDuplicateField() throws Exception {
+    @Test
+    public void testDuplicateField() {
         String input = "<?xml version=\"1.0\"?>\n" + "<fieldConfig>\n"
                         + "    <default stored=\"true\" indexed=\"false\" reverseIndexed=\"false\" tokenized=\"true\" reverseTokenized=\"true\" indexType=\"datawave.data.type.LcNoDiacriticsType\"/>\n"
                         + "    <nomatch stored=\"true\" indexed=\"true\" reverseIndexed=\"true\" tokenized=\"true\"  reverseTokenized=\"true\" indexType=\"datawave.data.type.HexStringType\"/>\n"
@@ -118,20 +118,20 @@ public class XMLFieldConfigHelperTest {
                         + "    <field name=\"H\" indexType=\"datawave.data.type.DateType\"/>\n"
                         + "    <field name=\"H\" indexType=\"datawave.data.type.HexStringType\"/>\n" + "</fieldConfig>";
 
-        FieldConfigHelper helper = new XMLFieldConfigHelper(new ByteArrayInputStream(input.getBytes()), ingestHelper);
+        assertThrows(IllegalArgumentException.class, () -> new XMLFieldConfigHelper(new ByteArrayInputStream(input.getBytes()), ingestHelper));
     }
 
-    @Test(expected = IllegalStateException.class)
-    public void testMissingDefault() throws Exception {
+    @Test
+    public void testMissingDefault() {
         String input = "<?xml version=\"1.0\"?>\n" + "<fieldConfig>\n"
                         + "    <nomatch stored=\"true\" indexed=\"true\" reverseIndexed=\"true\" tokenized=\"true\"  reverseTokenized=\"true\" indexType=\"datawave.data.type.HexStringType\"/>\n"
                         + "    <field name=\"A\" indexed=\"true\"/>\n" + "</fieldConfig>";
 
-        FieldConfigHelper helper = new XMLFieldConfigHelper(new ByteArrayInputStream(input.getBytes()), ingestHelper);
+        assertThrows(IllegalStateException.class, () -> new XMLFieldConfigHelper(new ByteArrayInputStream(input.getBytes()), ingestHelper));
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testIncompleteDefault() throws Exception {
+    @Test
+    public void testIncompleteDefault() {
         String input = "<?xml version=\"1.0\"?>\n" + "<fieldConfig>\n"
                         + "    <default stored=\"true\" reverseIndexed=\"false\" tokenized=\"true\" reverseTokenized=\"true\" indexType=\"datawave.data.type.LcNoDiacriticsType\"/>\n"
                         + "    <nomatch stored=\"true\" indexed=\"true\" reverseIndexed=\"true\" tokenized=\"true\"  reverseTokenized=\"true\" indexType=\"datawave.data.type.HexStringType\"/>\n"
@@ -140,7 +140,7 @@ public class XMLFieldConfigHelperTest {
 
                         "</fieldConfig>";
 
-        FieldConfigHelper helper = new XMLFieldConfigHelper(new ByteArrayInputStream(input.getBytes()), ingestHelper);
+        assertThrows(IllegalArgumentException.class, () -> new XMLFieldConfigHelper(new ByteArrayInputStream(input.getBytes()), ingestHelper));
     }
 
     @Test
@@ -151,18 +151,19 @@ public class XMLFieldConfigHelperTest {
                         + "    <field name=\"H\" indexType=\"datawave.data.type.DateType\"/>\n" + "</fieldConfig>";
 
         FieldConfigHelper helper = new XMLFieldConfigHelper(new ByteArrayInputStream(input.getBytes()), ingestHelper);
+        assertNotNull(helper, "Assertion to prevent unused warning on the helper");
         // ok.
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testIncompleteNomatch() throws Exception {
+    @Test
+    public void testIncompleteNomatch() {
         String input = "<?xml version=\"1.0\"?>\n" + "<fieldConfig>\n"
                         + "    <default stored=\"true\" indexed=\"false\" reverseIndexed=\"false\" tokenized=\"true\" reverseTokenized=\"true\" indexType=\"datawave.data.type.LcNoDiacriticsType\"/>\n"
                         + "    <nomatch stored=\"true\" reverseIndexed=\"true\" tokenized=\"true\"  reverseTokenized=\"true\" indexType=\"datawave.data.type.HexStringType\"/>\n"
                         + "    <fieldPattern pattern=\"*J\" indexed=\"true\" indexType=\"datawave.data.type.MacAddressType\"/>\n"
                         + "    <field name=\"H\" indexType=\"datawave.data.type.DateType\"/>\n" + "</fieldConfig>";
 
-        FieldConfigHelper helper = new XMLFieldConfigHelper(new ByteArrayInputStream(input.getBytes()), ingestHelper);
+        assertThrows(IllegalArgumentException.class, () -> new XMLFieldConfigHelper(new ByteArrayInputStream(input.getBytes()), ingestHelper));
     }
 
     @Test
@@ -173,6 +174,7 @@ public class XMLFieldConfigHelperTest {
                         + "    <field name=\"H\" indexType=\"datawave.data.type.DateType,datawave.data.type.HexStringType\"/>\n" + "</fieldConfig>";
 
         FieldConfigHelper helper = new XMLFieldConfigHelper(new ByteArrayInputStream(input.getBytes()), ingestHelper);
+        assertNotNull(helper, "Assertion to prevent unused warning on the helper");
 
         List<Type<?>> types = ingestHelper.getDataTypes("H");
         assertEquals(2, types.size());
@@ -187,6 +189,7 @@ public class XMLFieldConfigHelperTest {
                         + "    <fieldPattern pattern=\"BANAN*\"  indexType=\"datawave.data.type.DateType\"/>\n" + "</fieldConfig>";
 
         FieldConfigHelper helper = new XMLFieldConfigHelper(new ByteArrayInputStream(input.getBytes()), ingestHelper);
+        assertNotNull(helper, "Assertion to prevent unused warning on the helper");
 
         List<Type<?>> types = ingestHelper.getDataTypes("BANANA");
         assertEquals(3, types.size());
@@ -207,7 +210,7 @@ public class XMLFieldConfigHelperTest {
 
         List<Type<?>> types = ingestHelper.getDataTypes("BANANA");
         assertEquals(1, types.size());
-        assertTrue(types.get(0) instanceof datawave.data.type.DateType);
+        assertInstanceOf(DateType.class, types.get(0));
         assertFalse(helper.isIndexedField("BANANA"));
     }
 
@@ -226,7 +229,7 @@ public class XMLFieldConfigHelperTest {
         List<Type<?>> types = ingestHelper.getDataTypes("BANANA");
         assertEquals(1, types.size());
         // B* should sort after *A and hence should be the one used.
-        assertTrue(types.get(0) instanceof datawave.data.type.HexStringType);
+        assertInstanceOf(HexStringType.class, types.get(0));
         assertFalse(helper.isIndexedField("BANANA"));
     }
 
@@ -314,11 +317,11 @@ public class XMLFieldConfigHelperTest {
                 count++;
             }
         }
-        assertEquals("Expected a single type to match " + expected.getName() + ", but " + count + " types matched; List was: " + observedList, 1, count);
+        assertEquals(1, count, "Expected a single type to match " + expected.getName() + ", but " + count + " types matched; List was: " + observedList);
     }
 
     @Test
-    public void testFieldConfigHelperDisallowlist() throws Exception {
+    public void testFieldConfigHelperDisallowList() throws Exception {
         InputStream in = ClassLoader.getSystemResourceAsStream("datawave/ingest/test-field-disallowlist.xml");
         XMLFieldConfigHelper helper = new XMLFieldConfigHelper(in, ingestHelper);
 
