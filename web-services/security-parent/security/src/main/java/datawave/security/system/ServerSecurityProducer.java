@@ -36,8 +36,6 @@ public class ServerSecurityProducer {
      * from the {@link javax.ejb.EJBContext} of an EJB.
      *
      * @return the principal of the calling user
-     * @throws Exception
-     *             if there are issues
      */
     @Produces
     @CallerPrincipal
