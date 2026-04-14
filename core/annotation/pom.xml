@@ -65,6 +65,17 @@
                     <excludePackageNames>datawave.annotation.protobuf.*</excludePackageNames>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.xolstice.maven.plugins</groupId>
+                <artifactId>protobuf-maven-plugin</artifactId>
+                <version>0.6.1</version>
+                <configuration>
+                    <protoSourceRoot>${project.basedir}/src/main/protobuf</protoSourceRoot>
+                    <outputDirectory>${project.build.sourceDirectory}</outputDirectory>
+                    <clearOutputDirectory>false</clearOutputDirectory>
+                    <protocArtifact>com.google.protobuf:protoc:${version.protobuf}:exe:linux-x86_64</protocArtifact>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 </project>
