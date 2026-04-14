@@ -50,15 +50,40 @@ public class InMemoryAccumuloClient implements AccumuloClient {
     private ConditionalWriterConfig conditionalWriterConfig;
     private volatile boolean closed = false;
 
-    public InMemoryAccumuloClient(String username, InMemoryInstance instance) throws AccumuloSecurityException {
+    /**
+     * Creates an InMemoryAccumuloClient with a new default InMemoryAccumulo.
+     *
+     * @param username
+     *            the username
+     */
+    public InMemoryAccumuloClient(String username) {
+        this(username, new InMemoryAccumulo());
+    }
 
+    /**
+     * Creates an InMemoryAccumuloClient with the provided InMemoryAccumulo.
+     *
+     * @param username
+     *            the username
+     * @param acu
+     *            the InMemoryAccumulo instance
+     */
+    public InMemoryAccumuloClient(String username, InMemoryAccumulo acu) {
         this.username = username;
-        this.acu = instance.acu;
+        this.acu = acu;
         if (!acu.users.containsKey(username)) {
             InMemoryUser user = new InMemoryUser(username, new PasswordToken(new byte[0]), Authorizations.EMPTY);
             user.permissions.add(SystemPermission.SYSTEM);
             acu.users.put(user.name, user);
         }
+    }
+
+    /**
+     * @deprecated Use {@link #InMemoryAccumuloClient(String, InMemoryAccumulo)} instead
+     */
+    @Deprecated
+    public InMemoryAccumuloClient(String username, InMemoryInstance instance) throws AccumuloSecurityException {
+        this(username, instance.acu);
     }
 
     @Override

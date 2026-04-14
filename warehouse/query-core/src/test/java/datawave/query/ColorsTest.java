@@ -33,7 +33,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import com.google.common.base.Preconditions;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
 import datawave.query.attributes.Attribute;
@@ -91,7 +91,7 @@ public class ColorsTest extends AbstractQueryTest {
 
     @BeforeAll
     public static void beforeAll() throws Exception {
-        InMemoryInstance i = new InMemoryInstance(ColorsTest.class.getName());
+        InMemoryAccumulo i = InMemoryAccumulo.getInstance(ColorsTest.class.getName());
         client = new InMemoryAccumuloClient("", i);
 
         ColorsIngest.writeData(client);

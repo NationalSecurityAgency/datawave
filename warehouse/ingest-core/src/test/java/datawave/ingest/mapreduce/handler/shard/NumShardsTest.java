@@ -23,8 +23,8 @@ import org.apache.hadoop.conf.Configuration;
 import org.easymock.EasyMock;
 import org.junit.Test;
 
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.util.TableName;
 
@@ -186,7 +186,7 @@ public class NumShardsTest {
                     throws AccumuloException, AccumuloSecurityException, TableExistsException, TableNotFoundException, IOException, ParseException {
         // configure mock accumulo instance and populate with a couple of multiple numshards entries
         PasswordToken noPasswordToken = new PasswordToken();
-        InMemoryInstance i = new InMemoryInstance("mock");
+        InMemoryAccumulo i = InMemoryAccumulo.getInstance("mock");
         AccumuloClient client = new InMemoryAccumuloClient("root", i);
 
         Configuration conf = new Configuration();
@@ -260,7 +260,7 @@ public class NumShardsTest {
                     throws AccumuloException, AccumuloSecurityException, TableExistsException, TableNotFoundException, IOException, ParseException {
         // configure mock accumulo instance and populate with a couple of multiple numshards entries
         PasswordToken noPasswordToken = new PasswordToken();
-        InMemoryInstance i = new InMemoryInstance("mock2");
+        InMemoryAccumulo i = InMemoryAccumulo.getInstance("mock2");
         AccumuloClient client = new InMemoryAccumuloClient("root", i);
 
         Configuration conf = new Configuration();

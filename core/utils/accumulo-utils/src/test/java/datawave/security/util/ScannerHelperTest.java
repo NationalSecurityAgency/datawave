@@ -25,8 +25,8 @@ import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.Lists;
 
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.security.iterator.ConfigurableVisibilityFilter;
 import datawave.webservice.common.connection.WrappedAccumuloClient;
 
@@ -37,7 +37,7 @@ public class ScannerHelperTest {
 
     @BeforeEach
     public void setUp() throws Exception {
-        InMemoryInstance instance = new InMemoryInstance();
+        InMemoryAccumulo instance = new InMemoryAccumulo();
         mockConnector = new InMemoryAccumuloClient("root", instance);
         mockConnector.securityOperations().changeUserAuthorizations("root", new Authorizations("A", "B", "C", "D", "E", "F", "G", "H", "I"));
         mockConnector.tableOperations().create(TABLE_NAME);

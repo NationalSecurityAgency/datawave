@@ -42,7 +42,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Document;
@@ -89,7 +89,7 @@ public class MixedGeoAndGeoWaveTest extends AbstractQueryTest {
     public static void beforeAll() throws Exception {
         System.setProperty("subject.dn.pattern", "(?:^|,)\\s*OU\\s*=\\s*My Department\\s*(?:,|$)");
 
-        InMemoryInstance instance = new InMemoryInstance();
+        InMemoryAccumulo instance = InMemoryAccumulo.getInstance();
         client = new InMemoryAccumuloClient("root", instance);
 
         SecurityOperations sops = client.securityOperations();

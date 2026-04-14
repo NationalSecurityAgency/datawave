@@ -31,7 +31,6 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.marking.MarkingFunctions;
 import datawave.microservice.ControllerIT;
 import datawave.microservice.dictionary.config.DataDictionaryProperties;
@@ -51,7 +50,7 @@ public class DataDictionaryControllerTest extends ControllerIT {
         @Bean
         @Qualifier("warehouse")
         public AccumuloClient warehouseClient() throws AccumuloSecurityException {
-            return new InMemoryAccumuloClient("root", new InMemoryInstance());
+            return new InMemoryAccumuloClient("root");
         }
     }
 

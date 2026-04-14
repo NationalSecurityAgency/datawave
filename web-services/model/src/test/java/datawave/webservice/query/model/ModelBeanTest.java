@@ -36,7 +36,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import org.powermock.reflect.Whitebox;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.core.common.cache.AccumuloTableCache;
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.query.model.ModelKeyParser;
@@ -63,7 +63,7 @@ public class ModelBeanTest {
     private EJBContext ctx;
     private AccumuloTableCache cache;
 
-    private InMemoryInstance instance = null;
+    private InMemoryAccumulo instance = null;
     private AccumuloClient client = null;
     private DatawavePrincipal principal = null;
 
@@ -84,7 +84,7 @@ public class ModelBeanTest {
         Whitebox.setInternalState(bean, AccumuloConnectionFactory.class, connectionFactory);
         Whitebox.setInternalState(bean, AccumuloTableCache.class, cache);
 
-        instance = new InMemoryInstance("test");
+        instance = InMemoryAccumulo.getInstance("test");
         client = new InMemoryAccumuloClient("root", instance);
 
         DatawaveUser user = new DatawaveUser(SubjectIssuerDNPair.of(userDN, issuerDN), UserType.USER, Arrays.asList(auths), null, null, 0L);

@@ -20,8 +20,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
 import datawave.query.config.ShardQueryConfiguration;
@@ -29,7 +29,7 @@ import datawave.util.TableName;
 
 class ScannerFactoryTest {
 
-    private static final InMemoryInstance instance = new InMemoryInstance(ScannerFactoryTest.class.getSimpleName());
+    private static final InMemoryAccumulo instance = InMemoryAccumulo.getInstance(ScannerFactoryTest.class.getSimpleName());
     private static ScannerFactory scannerFactory;
     private static final ShardQueryConfiguration config = new ShardQueryConfiguration();
 
@@ -286,8 +286,8 @@ class ScannerFactoryTest {
      */
     static class MyAccumuloClient extends InMemoryAccumuloClient {
 
-        public MyAccumuloClient(String username, InMemoryInstance instance) throws AccumuloSecurityException {
-            super(username, instance);
+        public MyAccumuloClient(String username, InMemoryAccumulo acu) throws AccumuloSecurityException {
+            super(username, acu);
         }
 
         @Override

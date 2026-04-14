@@ -25,8 +25,8 @@ import org.junit.jupiter.api.Test;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.metadata.protobuf.EdgeMetadata.MetadataValue;
 import datawave.metadata.protobuf.EdgeMetadata.MetadataValue.Metadata;
 import datawave.util.time.DateHelper;
@@ -45,7 +45,7 @@ public class EdgeMetadataCQStripperCombinerTest {
     @BeforeEach
     public void init() throws Exception {
 
-        InMemoryInstance i = new InMemoryInstance(EdgeMetadataCQStripperCombinerTest.class.toString());
+        InMemoryAccumulo i = InMemoryAccumulo.getInstance(EdgeMetadataCQStripperCombinerTest.class.toString());
         accumuloClient = new InMemoryAccumuloClient("root", i);
 
         // Create a table

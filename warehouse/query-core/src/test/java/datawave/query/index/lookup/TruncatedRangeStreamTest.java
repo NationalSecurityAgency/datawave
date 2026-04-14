@@ -29,8 +29,8 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.planner.QueryPlan;
@@ -60,7 +60,7 @@ public class TruncatedRangeStreamTest {
     private final List<String> expected = new ArrayList<>();
     private final List<String> results = new ArrayList<>();
 
-    private final InMemoryInstance instance = new InMemoryInstance(TruncatedRangeStreamTest.class.getName());
+    private final InMemoryAccumulo instance = InMemoryAccumulo.getInstance(TruncatedRangeStreamTest.class.getName());
     private final AccumuloClient client = new InMemoryAccumuloClient("", instance);
     private final Authorizations auths = new Authorizations("VIZ-A", "VIZ-B", "VIZ-C");
     private final String indexTableName = TableName.TRUNCATED_SHARD_INDEX;

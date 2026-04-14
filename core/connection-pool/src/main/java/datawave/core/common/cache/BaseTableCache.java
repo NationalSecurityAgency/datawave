@@ -28,8 +28,8 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Lists;
 
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.accumulo.inmemory.InMemoryTableOperations;
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.common.connection.WrappedAccumuloClient;
@@ -51,7 +51,7 @@ public class BaseTableCache implements Serializable, TableCache {
     private boolean available = false;
     private Date lastRefresh = new Date(0);
     private AccumuloConnectionFactory connectionFactory = null;
-    private transient InMemoryInstance instance = null;
+    private transient InMemoryAccumulo instance = null;
     private SharedCacheCoordinator watcher = null;
     private Future<Boolean> reference = null;
 
@@ -93,7 +93,7 @@ public class BaseTableCache implements Serializable, TableCache {
     }
 
     @Override
-    public InMemoryInstance getInstance() {
+    public InMemoryAccumulo getInstance() {
         return instance;
     }
 
@@ -138,7 +138,7 @@ public class BaseTableCache implements Serializable, TableCache {
     }
 
     @Override
-    public void setInstance(InMemoryInstance instance) {
+    public void setInstance(InMemoryAccumulo instance) {
         this.instance = instance;
     }
 
