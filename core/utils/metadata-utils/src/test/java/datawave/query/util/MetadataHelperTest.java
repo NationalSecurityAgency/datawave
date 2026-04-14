@@ -4,6 +4,9 @@ import static datawave.data.ColumnFamilyConstants.COLF_F;
 import static datawave.data.ColumnFamilyConstants.COLF_H;
 import static datawave.query.util.TestUtils.createDateFrequencyMap;
 import static org.apache.accumulo.core.iterators.LongCombiner.VAR_LEN_ENCODER;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
@@ -28,7 +31,6 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableUtils;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -137,9 +139,9 @@ public class MetadataHelperTest {
 
             writeMutations();
 
-            Assertions.assertEquals(Collections.singleton("rowA"), helper.getAllFields(Collections.singleton("dataTypeA")));
-            Assertions.assertEquals(Collections.singleton("rowA"), helper.getAllFields(null));
-            Assertions.assertEquals(Collections.singleton("rowA"), helper.getAllFields(Collections.emptySet()));
+            assertEquals(Collections.singleton("rowA"), helper.getAllFields(Collections.singleton("dataTypeA")));
+            assertEquals(Collections.singleton("rowA"), helper.getAllFields(null));
+            assertEquals(Collections.singleton("rowA"), helper.getAllFields(Collections.emptySet()));
         }
 
         @Test
@@ -149,9 +151,9 @@ public class MetadataHelperTest {
 
             writeMutations();
 
-            Assertions.assertEquals(Collections.singleton("rowB"), helper.getAllFields(Collections.singleton("dataTypeB")));
-            Assertions.assertEquals(Sets.newHashSet("rowA", "rowB"), helper.getAllFields(null));
-            Assertions.assertEquals(Sets.newHashSet("rowA", "rowB"), helper.getAllFields(Collections.emptySet()));
+            assertEquals(Collections.singleton("rowB"), helper.getAllFields(Collections.singleton("dataTypeB")));
+            assertEquals(Sets.newHashSet("rowA", "rowB"), helper.getAllFields(null));
+            assertEquals(Sets.newHashSet("rowA", "rowB"), helper.getAllFields(Collections.emptySet()));
         }
 
         @Test
@@ -162,9 +164,9 @@ public class MetadataHelperTest {
 
             writeMutations();
 
-            Assertions.assertEquals(Collections.singleton("rowB"), helper.getAllFields(Collections.singleton("dataTypeB")));
-            Assertions.assertEquals(Sets.newHashSet("rowA", "rowB", "rowC"), helper.getAllFields(null));
-            Assertions.assertEquals(Sets.newHashSet("rowA", "rowB", "rowC"), helper.getAllFields(Collections.emptySet()));
+            assertEquals(Collections.singleton("rowB"), helper.getAllFields(Collections.singleton("dataTypeB")));
+            assertEquals(Sets.newHashSet("rowA", "rowB", "rowC"), helper.getAllFields(null));
+            assertEquals(Sets.newHashSet("rowA", "rowB", "rowC"), helper.getAllFields(Collections.emptySet()));
         }
     }
 
@@ -189,8 +191,8 @@ public class MetadataHelperTest {
 
             writeMutations();
 
-            Assertions.assertEquals(24L, helper.getCardinalityForField("NAME", DateHelper.parse("20200104"), DateHelper.parse("20200115")));
-            Assertions.assertEquals(12L, helper.getCardinalityForField("NAME", "wiki", DateHelper.parse("20200104"), DateHelper.parse("20200115")));
+            assertEquals(24L, helper.getCardinalityForField("NAME", DateHelper.parse("20200104"), DateHelper.parse("20200115")));
+            assertEquals(12L, helper.getCardinalityForField("NAME", "wiki", DateHelper.parse("20200104"), DateHelper.parse("20200115")));
         }
 
         /**
@@ -215,8 +217,8 @@ public class MetadataHelperTest {
                                                                                                                                                // match.
             writeMutations();
 
-            Assertions.assertEquals(33L, helper.getCardinalityForField("NAME", DateHelper.parse("20200104"), DateHelper.parse("20200115")));
-            Assertions.assertEquals(12L, helper.getCardinalityForField("NAME", "wiki", DateHelper.parse("20200104"), DateHelper.parse("20200115")));
+            assertEquals(33L, helper.getCardinalityForField("NAME", DateHelper.parse("20200104"), DateHelper.parse("20200115")));
+            assertEquals(12L, helper.getCardinalityForField("NAME", "wiki", DateHelper.parse("20200104"), DateHelper.parse("20200115")));
         }
 
         /**
@@ -242,8 +244,8 @@ public class MetadataHelperTest {
             givenNonAggregatedFrequencyRows("EVENT_DATE", COLF_F, "maze", "20200101", "20200120", 6L);
             writeMutations();
 
-            Assertions.assertEquals(51L, helper.getCardinalityForField("NAME", DateHelper.parse("20200104"), DateHelper.parse("20200115")));
-            Assertions.assertEquals(21L, helper.getCardinalityForField("NAME", "wiki", DateHelper.parse("20200104"), DateHelper.parse("20200115")));
+            assertEquals(51L, helper.getCardinalityForField("NAME", DateHelper.parse("20200104"), DateHelper.parse("20200115")));
+            assertEquals(21L, helper.getCardinalityForField("NAME", "wiki", DateHelper.parse("20200104"), DateHelper.parse("20200115")));
         }
     }
 
@@ -274,7 +276,7 @@ public class MetadataHelperTest {
 
             HashMap<String,Long> actual = helper.getCountsByFieldInDayWithTypes("NAME", "20200110", accumuloClient, null);
 
-            Assertions.assertEquals(expected, actual);
+            assertEquals(expected, actual);
         }
 
         /**
@@ -298,7 +300,7 @@ public class MetadataHelperTest {
 
             HashMap<String,Long> actual = helper.getCountsByFieldInDayWithTypes("NAME", "20200102", accumuloClient, null);
 
-            Assertions.assertEquals(expected, actual);
+            assertEquals(expected, actual);
         }
 
         /**
@@ -329,7 +331,7 @@ public class MetadataHelperTest {
 
             HashMap<String,Long> actual = helper.getCountsByFieldInDayWithTypes("NAME", "20200102", accumuloClient, null);
 
-            Assertions.assertEquals(expected, actual);
+            assertEquals(expected, actual);
         }
     }
 
@@ -353,8 +355,8 @@ public class MetadataHelperTest {
             givenNonAggregatedFrequencyRows("EVENT_DATE", COLF_F, "maze", "20200101", "20200120", 6L);
             writeMutations();
 
-            Assertions.assertEquals(DateHelper.parse("20200101"), helper.getEarliestOccurrenceOfFieldWithType("NAME", null, accumuloClient, null));
-            Assertions.assertEquals(DateHelper.parse("20200105"), helper.getEarliestOccurrenceOfFieldWithType("NAME", "maze", accumuloClient, null));
+            assertEquals(DateHelper.parse("20200101"), helper.getEarliestOccurrenceOfFieldWithType("NAME", null, accumuloClient, null));
+            assertEquals(DateHelper.parse("20200105"), helper.getEarliestOccurrenceOfFieldWithType("NAME", "maze", accumuloClient, null));
         }
 
         /**
@@ -371,8 +373,8 @@ public class MetadataHelperTest {
             givenAggregatedFrequencyRow("EVENT_DATE", COLF_F, "maze", createDateFrequencyMap("20200101", 2L, "20200102", 3L, "20200103", 4L));
             writeMutations();
 
-            Assertions.assertEquals(DateHelper.parse("20200101"), helper.getEarliestOccurrenceOfFieldWithType("NAME", null, accumuloClient, null));
-            Assertions.assertEquals(DateHelper.parse("20200102"), helper.getEarliestOccurrenceOfFieldWithType("NAME", "maze", accumuloClient, null));
+            assertEquals(DateHelper.parse("20200101"), helper.getEarliestOccurrenceOfFieldWithType("NAME", null, accumuloClient, null));
+            assertEquals(DateHelper.parse("20200102"), helper.getEarliestOccurrenceOfFieldWithType("NAME", "maze", accumuloClient, null));
         }
 
         /**
@@ -395,8 +397,8 @@ public class MetadataHelperTest {
             givenNonAggregatedFrequencyRows("EVENT_DATE", COLF_F, "maze", "20200101", "20200120", 6L);
             writeMutations();
 
-            Assertions.assertEquals(DateHelper.parse("20200101"), helper.getEarliestOccurrenceOfFieldWithType("NAME", null, accumuloClient, null));
-            Assertions.assertEquals(DateHelper.parse("20200103"), helper.getEarliestOccurrenceOfFieldWithType("NAME", "maze", accumuloClient, null));
+            assertEquals(DateHelper.parse("20200101"), helper.getEarliestOccurrenceOfFieldWithType("NAME", null, accumuloClient, null));
+            assertEquals(DateHelper.parse("20200103"), helper.getEarliestOccurrenceOfFieldWithType("NAME", "maze", accumuloClient, null));
         }
     }
 
@@ -410,10 +412,10 @@ public class MetadataHelperTest {
         givenHiddenField("EVENT_DATE", "maze");
         writeMutations();
 
-        Assertions.assertTrue(helper.getHiddenFields(Set.of("csv")).contains("NAME"));
-        Assertions.assertTrue(helper.getHiddenFields(Set.of()).contains("EVENT_DATE"));
-        Assertions.assertFalse(helper.getHiddenFields(Set.of("foo")).contains("NAME"));
-        Assertions.assertFalse(helper.getHiddenFields(Set.of()).contains("FOO"));
+        assertTrue(helper.getHiddenFields(Set.of("csv")).contains("NAME"));
+        assertTrue(helper.getHiddenFields(Set.of()).contains("EVENT_DATE"));
+        assertFalse(helper.getHiddenFields(Set.of("foo")).contains("NAME"));
+        assertFalse(helper.getHiddenFields(Set.of()).contains("FOO"));
     }
 
     /**
@@ -436,17 +438,17 @@ public class MetadataHelperTest {
             writeMutations();
 
             // No DataTypes
-            Assertions.assertEquals(Collections.emptySet(), helper.getMissingFieldsInDateRange(Set.of("NAME", "EVENT_DATE"), Collections.emptySet(), "20200101",
+            assertEquals(Collections.emptySet(), helper.getMissingFieldsInDateRange(Set.of("NAME", "EVENT_DATE"), Collections.emptySet(), "20200101",
                             "20200120", Collections.emptySet()));
             // Using DataTypes
-            Assertions.assertEquals(Set.of("EVENT_DATE"),
+            assertEquals(Set.of("EVENT_DATE"),
                             helper.getMissingFieldsInDateRange(Set.of("NAME", "EVENT_DATE"), Set.of("data"), "20200101", "20200120", Collections.emptySet()));
             // Fictitious field
-            Assertions.assertEquals(Set.of("FOO"), helper.getMissingFieldsInDateRange(Set.of("NAME", "EVENT_DATE", "FOO"),
-                            Set.of("wiki", "data", "csv", "maze"), "20200101", "20200120", Collections.emptySet()));
+            assertEquals(Set.of("FOO"), helper.getMissingFieldsInDateRange(Set.of("NAME", "EVENT_DATE", "FOO"), Set.of("wiki", "data", "csv", "maze"),
+                            "20200101", "20200120", Collections.emptySet()));
             // Missing because of date range
-            Assertions.assertEquals(Set.of("NAME", "EVENT_DATE"), helper.getMissingFieldsInDateRange(Set.of("NAME", "EVENT_DATE"), Set.of("wiki", "data"),
-                            "20190101", "20191231", Collections.emptySet()));
+            assertEquals(Set.of("NAME", "EVENT_DATE"), helper.getMissingFieldsInDateRange(Set.of("NAME", "EVENT_DATE"), Set.of("wiki", "data"), "20190101",
+                            "20191231", Collections.emptySet()));
         }
 
         /**
@@ -464,17 +466,17 @@ public class MetadataHelperTest {
             writeMutations();
 
             // No DataTypes
-            Assertions.assertEquals(Collections.emptySet(), helper.getMissingFieldsInDateRange(Set.of("NAME", "EVENT_DATE"), Collections.emptySet(), "20200101",
+            assertEquals(Collections.emptySet(), helper.getMissingFieldsInDateRange(Set.of("NAME", "EVENT_DATE"), Collections.emptySet(), "20200101",
                             "20200120", Collections.emptySet()));
             // Using DataTypes
-            Assertions.assertEquals(Set.of("EVENT_DATE"),
+            assertEquals(Set.of("EVENT_DATE"),
                             helper.getMissingFieldsInDateRange(Set.of("NAME", "EVENT_DATE"), Set.of("data"), "20200101", "20200120", Collections.emptySet()));
             // Fictitious field
-            Assertions.assertEquals(Set.of("FOO"), helper.getMissingFieldsInDateRange(Set.of("NAME", "EVENT_DATE", "FOO"),
-                            Set.of("wiki", "data", "csv", "maze"), "20200101", "20200120", Collections.emptySet()));
+            assertEquals(Set.of("FOO"), helper.getMissingFieldsInDateRange(Set.of("NAME", "EVENT_DATE", "FOO"), Set.of("wiki", "data", "csv", "maze"),
+                            "20200101", "20200120", Collections.emptySet()));
             // Missing because of date range
-            Assertions.assertEquals(Set.of("NAME", "EVENT_DATE"), helper.getMissingFieldsInDateRange(Set.of("NAME", "EVENT_DATE"), Set.of("wiki", "data"),
-                            "20190101", "20191231", Collections.emptySet()));
+            assertEquals(Set.of("NAME", "EVENT_DATE"), helper.getMissingFieldsInDateRange(Set.of("NAME", "EVENT_DATE"), Set.of("wiki", "data"), "20190101",
+                            "20191231", Collections.emptySet()));
         }
 
         /**
@@ -498,17 +500,17 @@ public class MetadataHelperTest {
             writeMutations();
 
             // No DataTypes
-            Assertions.assertEquals(Collections.emptySet(), helper.getMissingFieldsInDateRange(Set.of("NAME", "EVENT_DATE"), Collections.emptySet(), "20200101",
+            assertEquals(Collections.emptySet(), helper.getMissingFieldsInDateRange(Set.of("NAME", "EVENT_DATE"), Collections.emptySet(), "20200101",
                             "20200120", Collections.emptySet()));
             // Using DataTypes
-            Assertions.assertEquals(Set.of("EVENT_DATE"),
+            assertEquals(Set.of("EVENT_DATE"),
                             helper.getMissingFieldsInDateRange(Set.of("NAME", "EVENT_DATE"), Set.of("data"), "20200101", "20200120", Collections.emptySet()));
             // Fictitious field
-            Assertions.assertEquals(Set.of("FOO"), helper.getMissingFieldsInDateRange(Set.of("NAME", "EVENT_DATE", "FOO"),
-                            Set.of("wiki", "data", "csv", "maze"), "20200101", "20200120", Collections.emptySet()));
+            assertEquals(Set.of("FOO"), helper.getMissingFieldsInDateRange(Set.of("NAME", "EVENT_DATE", "FOO"), Set.of("wiki", "data", "csv", "maze"),
+                            "20200101", "20200120", Collections.emptySet()));
             // Missing because of date range
-            Assertions.assertEquals(Set.of("NAME", "EVENT_DATE"), helper.getMissingFieldsInDateRange(Set.of("NAME", "EVENT_DATE"), Set.of("wiki", "data"),
-                            "20190101", "20191231", Collections.emptySet()));
+            assertEquals(Set.of("NAME", "EVENT_DATE"), helper.getMissingFieldsInDateRange(Set.of("NAME", "EVENT_DATE"), Set.of("wiki", "data"), "20190101",
+                            "20191231", Collections.emptySet()));
         }
     }
 }

@@ -1,9 +1,9 @@
 package datawave.query;
 
 import static datawave.query.testframework.CitiesDataType.CityEntry;
+import static datawave.query.testframework.CitiesDataType.CityEntry.nullState;
 import static datawave.query.testframework.CitiesDataType.CityField;
 import static datawave.query.testframework.CitiesDataType.getManager;
-import static datawave.query.testframework.CitiesDataType.CityEntry.nullState;
 import static datawave.query.testframework.RawDataManager.AND_OP;
 import static datawave.query.testframework.RawDataManager.EQ_OP;
 import static datawave.query.testframework.RawDataManager.RE_OP;

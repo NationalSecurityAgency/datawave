@@ -1,5 +1,7 @@
 package datawave.next;
 
+import static org.junit.jupiter.api.Assertions.fail;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -7,7 +9,6 @@ import java.util.Set;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -110,7 +111,7 @@ public class DocIdQueryIteratorTest extends FieldIndexDataTestUtil {
                 iter.next();
             }
         } catch (Exception e) {
-            Assertions.fail("Saw exception", e);
+            fail("Saw exception", e);
         }
     }
 
