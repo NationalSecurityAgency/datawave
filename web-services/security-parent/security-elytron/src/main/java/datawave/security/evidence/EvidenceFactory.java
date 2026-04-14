@@ -26,7 +26,7 @@ import datawave.security.util.SecurityConstants;
  * TrustedHeaderEvidence evidence = EvidenceFactory.getDefault().createTrustedHeaderEvidence(subjectDn, issuerDn, null, null);
  * SecurityDomain domain = SecurityDomain.getCurrent();
  * SecurityIdentity identity = domain.authenticate(evidence);
- * identity.runAs((Callable<Void>) -> {
+ * identity.runAs((Callable&lt;Void&gt;) -&gt; {
  *     // Operations to execute as the authenticated user.
  * })
  * </pre>
