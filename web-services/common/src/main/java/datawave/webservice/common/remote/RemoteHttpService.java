@@ -54,7 +54,6 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.util.EntityUtils;
-import org.jboss.security.JSSESecurityDomain;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xbill.DNS.DClass;
@@ -75,6 +74,7 @@ import datawave.security.authorization.AuthorizationException;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.JWTTokenHandler;
 import datawave.security.authorization.JWTTokenHandler.TtlMode;
+import datawave.security.cert.SSLStores;
 import datawave.security.util.DnUtils;
 import datawave.webservice.common.exception.DatawaveWebApplicationException;
 import datawave.webservice.common.json.ObjectMapperDecorator;
@@ -96,7 +96,7 @@ public abstract class RemoteHttpService {
     private AtomicInteger activeExecutions = new AtomicInteger(0);
 
     @Inject
-    private JSSESecurityDomain jsseSecurityDomain;
+    private SSLStores sslStores;
 
     @Resource
     private ManagedExecutorService executorService;
@@ -110,8 +110,8 @@ public abstract class RemoteHttpService {
 
     private RemoteHttpServiceConfiguration config = new RemoteHttpServiceConfiguration();
 
-    public void setJsseSecurityDomain(JSSESecurityDomain jsseSecurityDomain) {
-        this.jsseSecurityDomain = jsseSecurityDomain;
+    public void setSslStores(SSLStores sslStores) {
+        this.sslStores = sslStores;
     }
 
     public void setExecutorService(ManagedExecutorService executorService) {
@@ -163,10 +163,10 @@ public abstract class RemoteHttpService {
 
         try {
             SSLContext ctx = SSLContext.getInstance("TLSv1.2");
-            ctx.init(jsseSecurityDomain.getKeyManagers(), jsseSecurityDomain.getTrustManagers(), null);
+            ctx.init(sslStores.getKeyManagers(), sslStores.getTrustManagers(), null);
 
-            String alias = jsseSecurityDomain.getKeyStore().aliases().nextElement();
-            X509KeyManager keyManager = (X509KeyManager) jsseSecurityDomain.getKeyManagers()[0];
+            String alias = sslStores.getKeyStore().aliases().nextElement();
+            X509KeyManager keyManager = (X509KeyManager) sslStores.getKeyManagers()[0];
             X509Certificate[] certs = keyManager.getCertificateChain(alias);
             Key signingKey = keyManager.getPrivateKey(alias);
 

@@ -55,7 +55,7 @@ import datawave.microservice.query.QueryParameters;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.util.DnUtils;
 import datawave.webservice.common.json.DefaultMapperDecorator;
-import datawave.webservice.common.remote.TestJSSESecurityDomain;
+import datawave.webservice.common.remote.TestSSLStores;
 import datawave.webservice.query.remote.RemoteQueryServiceImpl;
 import datawave.webservice.query.result.edge.DefaultEdge;
 import datawave.webservice.query.result.edge.EdgeBase;
@@ -218,7 +218,7 @@ public class RemoteEdgeQueryLogicHttpTest {
         remote.setExecutorService(null);
         remote.setObjectMapperDecorator(new DefaultMapperDecorator());
         remote.setResponseObjectFactory(new DefaultResponseObjectFactory());
-        remote.setJsseSecurityDomain(new TestJSSESecurityDomain(alias, privKey, keyPass, chain));
+        remote.setSslStores(new TestSSLStores(alias, privKey, keyPass, chain));
         remote.setNextQueryResponseClass(remote.getResponseObjectFactory().getEdgeQueryResponse().getClass());
 
         logic.setRemoteQueryService(remote);
