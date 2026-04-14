@@ -41,7 +41,7 @@ public class TestLookupTask<T extends QueryIterator> {
     private QueryIterator init(SortedKeyValueIterator<Key,Value> source, Map<String,String> options, IteratorEnvironment env, YieldCallback yield)
                     throws IOException {
         try {
-            QueryIterator iter = this.iteratorClass.newInstance();
+            QueryIterator iter = this.iteratorClass.getDeclaredConstructor().newInstance();
             iter.setTypeMetadata(this.typeMetadata);
             iter.init(source, options, env);
             iter.enableYielding(yield);

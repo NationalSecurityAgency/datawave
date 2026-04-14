@@ -2,7 +2,6 @@ package datawave.microservice.query.executor.action;
 
 import java.util.Set;
 
-import org.apache.accumulo.core.client.AccumuloClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cloud.bus.event.RemoteQueryRequestEvent;
