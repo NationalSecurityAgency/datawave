@@ -6,6 +6,7 @@ import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.replay;
 import static org.easymock.EasyMock.verify;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.net.MalformedURLException;
@@ -230,8 +231,10 @@ public class RunningQueryTest {
         RunningQuery rq = new RunningQuery(client, connectionPriority, logic, settings, null, principal, new QueryMetricFactoryImpl());
         assertEquals("((setup = 'true') && ((initialize = 'true') && FOO == 'bar'))", rq.getMetric().getPlan());
         ResultsPage page = rq.next();
-        // transforms two pages, even though only returns one
-        assertEquals("((page = '2') && ((page = '1') && ((setup = 'true') && ((initialize = 'true') && FOO == 'bar'))))", rq.getMetric().getPlan());
+        // transforms two or three page/results depending on how far the asynchronous results thread has gotten
+        List<String> plans = Arrays.asList(new String[] {"((page = '2') && ((page = '1') && ((setup = 'true') && ((initialize = 'true') && FOO == 'bar'))))",
+                "((page = '3') && ((page = '2') && ((page = '1') && ((setup = 'true') && ((initialize = 'true') && FOO == 'bar')))))"});
+        assertTrue(plans.contains(rq.getMetric().getPlan()));
         assertEquals(1, page.getResults().size());
         page = rq.next();
         // transforms the third page

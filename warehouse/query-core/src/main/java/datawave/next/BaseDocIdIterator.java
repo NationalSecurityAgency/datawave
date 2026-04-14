@@ -281,4 +281,7 @@ public abstract class BaseDocIdIterator implements Iterator<Key> {
         return stats;
     }
 
+    public String getField() {
+        return field;
+    }
 }
