@@ -1714,13 +1714,9 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
         logQuery(config.getQueryTree(), "Query after flattening");
 
-        // for model expansion, we want to only include fields for the datatypes being queried
-        Set<String> allFields = new HashSet<>(metadataHelper.getAllFields(config.getDatatypeFilter()));
-        // but do not include any of the hidden fields
-        allFields.removeAll(metadataHelper.getHiddenFields(config.getDatatypeFilter()));
-
         // Apply the query model.
-        config.setQueryTree(ShardQueryUtils.applyQueryModel(config.getQueryTree(), config, allFields, this.queryModel));
+        config.setQueryTree(ShardQueryUtils.applyQueryModel(config.getQueryTree(), config, metadataHelper.getAllFields(config.getDatatypeFilter()),
+                        this.queryModel));
 
         logQuery(config.getQueryTree(), "Query after applying query model");
 
