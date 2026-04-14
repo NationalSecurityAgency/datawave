@@ -93,7 +93,7 @@ public class SSLStoresImpl implements SSLStores {
         public Builder withKeystore(String url, String password, String type) {
             Preconditions.checkNotNull(url, "keystore URL cannot be null");
             Preconditions.checkNotNull(password, "keystore password cannot be null");
-
+            Preconditions.checkNotNull(type, "keystore type cannot be null");
             this.keyStoreUrl = url;
             this.keyStoreType = type;
             this.keyStorePassword = password;
@@ -114,7 +114,7 @@ public class SSLStoresImpl implements SSLStores {
         public Builder withTruststore(String url, String password, String type) {
             Preconditions.checkNotNull(url, "truststore URL cannot be null");
             Preconditions.checkNotNull(password, "truststore password cannot be null");
-
+            Preconditions.checkNotNull(type, "truststore type cannot be null");
             this.trustStoreUrl = url;
             this.trustStoreType = type;
             this.trustStorePassword = password;
@@ -146,7 +146,6 @@ public class SSLStoresImpl implements SSLStores {
             return new SSLStoresImpl(keyStore, keyManagers, trustStore, trustManagers);
         }
 
-        private static final String JKS = "JKS";
         private static final String PKCS11 = "PKCS11";
         private static final String PKCS11IMPLKS = "PKCS11IMPLKS";
 
@@ -164,10 +163,6 @@ public class SSLStoresImpl implements SSLStores {
         private KeyStore getKeyStore(final String url, final char[] password, String type)
                         throws IOException, KeyStoreException, CertificateException, NoSuchAlgorithmException {
             // If no type was specified, use JKS by default.
-            if (type == null) {
-                type = JKS;
-            }
-
             KeyStore keyStore = KeyStore.getInstance(type);
             // If the type is not PKCS11, load the keystore from the URL stream.
             if (!PKCS11.equalsIgnoreCase(type) && !PKCS11IMPLKS.equalsIgnoreCase(type)) {
