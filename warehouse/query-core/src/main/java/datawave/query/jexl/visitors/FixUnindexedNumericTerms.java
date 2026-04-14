@@ -16,7 +16,7 @@ import org.apache.commons.lang.math.NumberUtils;
 import com.google.common.base.Preconditions;
 
 import datawave.data.type.Type;
-import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.config.ImmutableShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlASTHelper.IdentifierOpLiteral;
@@ -29,9 +29,9 @@ import datawave.webservice.query.exception.QueryException;
  */
 public class FixUnindexedNumericTerms extends RebuildingVisitor {
 
-    private final ShardQueryConfiguration config;
+    private final ImmutableShardQueryConfiguration config;
 
-    public FixUnindexedNumericTerms(ShardQueryConfiguration config) {
+    public FixUnindexedNumericTerms(ImmutableShardQueryConfiguration config) {
         Preconditions.checkNotNull(config);
 
         this.config = config;
@@ -49,7 +49,7 @@ public class FixUnindexedNumericTerms extends RebuildingVisitor {
      * @return a jexl node
      */
     @SuppressWarnings("unchecked")
-    public static <T extends JexlNode> T fixNumerics(ShardQueryConfiguration config, T script) {
+    public static <T extends JexlNode> T fixNumerics(ImmutableShardQueryConfiguration config, T script) {
         FixUnindexedNumericTerms visitor = new FixUnindexedNumericTerms(config);
 
         if (null == visitor.config.getQueryFieldsDatatypes()) {

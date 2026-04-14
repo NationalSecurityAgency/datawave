@@ -15,7 +15,7 @@ import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.log4j.Logger;
 
 import datawave.core.common.logging.ThreadConfigurableLogger;
-import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.config.ImmutableShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
@@ -40,13 +40,14 @@ public class RegexFunctionVisitor extends FunctionIndexQueryExpansionVisitor {
 
     protected Set<String> indexOnlyFields;
 
-    public RegexFunctionVisitor(ShardQueryConfiguration config, MetadataHelper metadataHelper, Set<String> indexOnlyFields) {
+    public RegexFunctionVisitor(ImmutableShardQueryConfiguration config, MetadataHelper metadataHelper, Set<String> indexOnlyFields) {
         super(config, metadataHelper, null);
         this.indexOnlyFields = indexOnlyFields;
     }
 
     @SuppressWarnings("unchecked")
-    public static <T extends JexlNode> T expandRegex(ShardQueryConfiguration config, MetadataHelper metadataHelper, Set<String> indexOnlyFields, T script) {
+    public static <T extends JexlNode> T expandRegex(ImmutableShardQueryConfiguration config, MetadataHelper metadataHelper, Set<String> indexOnlyFields,
+                    T script) {
         RegexFunctionVisitor visitor = new RegexFunctionVisitor(config, metadataHelper, indexOnlyFields);
         JexlNode root = (T) script.jjtAccept(visitor, null);
         root = TreeFlatteningRebuildingVisitor.flatten(root);

@@ -35,7 +35,7 @@ import datawave.core.query.configuration.Result;
 import datawave.core.query.logic.QueryCheckpoint;
 import datawave.core.query.logic.QueryKey;
 import datawave.mr.bulk.RfileResource;
-import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.config.ImmutableShardQueryConfiguration;
 import datawave.query.tables.BatchScannerSession;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.tables.ShardQueryLogic;
@@ -56,7 +56,7 @@ public class PushdownScheduler extends Scheduler {
     /**
      * Configuration reference.
      */
-    protected final ShardQueryConfiguration config;
+    protected final ImmutableShardQueryConfiguration config;
     /**
      * Scanner factory reference.
      */
@@ -81,11 +81,11 @@ public class PushdownScheduler extends Scheduler {
 
     protected MetadataHelper metadataHelper;
 
-    public PushdownScheduler(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelperFactory metaFactory) {
+    public PushdownScheduler(ImmutableShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelperFactory metaFactory) {
         this(config, scannerFactory, metaFactory.createMetadataHelper(config.getClient(), config.getMetadataTableName(), config.getAuthorizations()));
     }
 
-    protected PushdownScheduler(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper) {
+    protected PushdownScheduler(ImmutableShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper) {
         this.config = config;
         this.metadataHelper = helper;
         this.scannerFactory = scannerFactory;
@@ -222,7 +222,7 @@ public class PushdownScheduler extends Scheduler {
      * @see Scheduler#createBatchScanner(ShardQueryConfiguration, datawave.query.tables.ScannerFactory, datawave.webservice.query.configuration.QueryData)
      */
     @Override
-    public BatchScanner createBatchScanner(ShardQueryConfiguration config, ScannerFactory scannerFactory, QueryData qd) throws TableNotFoundException {
+    public BatchScanner createBatchScanner(ImmutableShardQueryConfiguration config, ScannerFactory scannerFactory, QueryData qd) throws TableNotFoundException {
         return ShardQueryLogic.createBatchScanner(config, scannerFactory, qd);
     }
 

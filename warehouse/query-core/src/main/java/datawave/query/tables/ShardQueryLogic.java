@@ -81,6 +81,7 @@ import datawave.query.attributes.TemporalGranularity;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.cardinality.CardinalityConfiguration;
 import datawave.query.common.grouping.GroupFields;
+import datawave.query.config.ImmutableShardQueryConfiguration;
 import datawave.query.config.IndexValueHole;
 import datawave.query.config.Profile;
 import datawave.query.config.ScanHintRule;
@@ -288,7 +289,8 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         }
     }
 
-    public static BatchScanner createBatchScanner(ShardQueryConfiguration config, ScannerFactory scannerFactory, QueryData qd) throws TableNotFoundException {
+    public static BatchScanner createBatchScanner(ImmutableShardQueryConfiguration config, ScannerFactory scannerFactory, QueryData qd)
+                    throws TableNotFoundException {
         final BatchScanner bs = scannerFactory.newScanner(config.getShardTableName(), config.getAuthorizations(), config.getNumQueryThreads(),
                         config.getQuery());
 

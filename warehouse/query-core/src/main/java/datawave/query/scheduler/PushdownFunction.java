@@ -15,7 +15,7 @@ import com.google.common.base.Function;
 import com.google.common.collect.Lists;
 
 import datawave.core.query.configuration.QueryData;
-import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.config.ImmutableShardQueryConfiguration;
 import datawave.query.iterator.QueryOptions;
 import datawave.query.tables.BatchScannerSession;
 import datawave.query.tables.SessionOptions;
@@ -34,7 +34,7 @@ public class PushdownFunction implements Function<QueryData,List<ScannerChunk>> 
     /**
      * The shard query config
      */
-    private final ShardQueryConfiguration config;
+    private final ImmutableShardQueryConfiguration config;
     // any custom settings
     protected Collection<IteratorSetting> customSettings;
     // table id, used to apply execution hints
@@ -50,7 +50,7 @@ public class PushdownFunction implements Function<QueryData,List<ScannerChunk>> 
      * @param tableId
      *            the table id
      */
-    public PushdownFunction(ShardQueryConfiguration config, Collection<IteratorSetting> settings, TableId tableId) {
+    public PushdownFunction(ImmutableShardQueryConfiguration config, Collection<IteratorSetting> settings, TableId tableId) {
         this.config = config;
         this.customSettings = settings;
         this.tableId = tableId;
@@ -108,7 +108,7 @@ public class PushdownFunction implements Function<QueryData,List<ScannerChunk>> 
         return chunks;
     }
 
-    protected ShardQueryConfiguration getConfig() {
+    protected ImmutableShardQueryConfiguration getConfig() {
         return config;
     }
 }

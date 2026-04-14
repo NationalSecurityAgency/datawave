@@ -2,11 +2,11 @@ package datawave.next;
 
 import datawave.next.scanner.DocumentScanner;
 import datawave.next.scanner.DocumentScheduler;
-import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.config.ImmutableShardQueryConfiguration;
 
 public class CountScheduler extends DocumentScheduler {
 
-    public CountScheduler(ShardQueryConfiguration config) {
+    public CountScheduler(ImmutableShardQueryConfiguration config) {
         super(config);
     }
 

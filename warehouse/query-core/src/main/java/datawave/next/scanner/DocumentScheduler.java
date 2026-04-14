@@ -16,7 +16,7 @@ import datawave.core.query.configuration.QueryData;
 import datawave.core.query.configuration.Result;
 import datawave.core.query.logic.QueryCheckpoint;
 import datawave.core.query.logic.QueryKey;
-import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.config.ImmutableShardQueryConfiguration;
 import datawave.query.scheduler.PushdownScheduler;
 import datawave.query.scheduler.Scheduler;
 import datawave.query.tables.ScannerFactory;
@@ -39,7 +39,7 @@ public class DocumentScheduler extends Scheduler {
     protected DocumentScanner scanner;
     protected VisitorFunction visitorFunction;
 
-    public DocumentScheduler(ShardQueryConfiguration config) {
+    public DocumentScheduler(ImmutableShardQueryConfiguration config) {
         this.config = config.getDocumentScannerConfig();
         this.config.setClient(config.getClient());
         this.config.setAuthorizations(AuthorizationsMinimizer.minimize(config.getAuthorizations()).iterator().next());
@@ -53,7 +53,7 @@ public class DocumentScheduler extends Scheduler {
     }
 
     @Override
-    public BatchScanner createBatchScanner(ShardQueryConfiguration config, ScannerFactory scannerFactory, QueryData qd) throws TableNotFoundException {
+    public BatchScanner createBatchScanner(ImmutableShardQueryConfiguration config, ScannerFactory scannerFactory, QueryData qd) throws TableNotFoundException {
         throw new RuntimeException("Not implemented");
     }
 

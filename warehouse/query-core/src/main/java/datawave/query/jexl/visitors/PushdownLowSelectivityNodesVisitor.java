@@ -13,7 +13,7 @@ import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.log4j.Logger;
 
 import datawave.data.MetadataCardinalityCounts;
-import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.config.ImmutableShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.util.MetadataHelper;
@@ -24,16 +24,16 @@ import datawave.query.util.MetadataHelper;
 public class PushdownLowSelectivityNodesVisitor extends ShortCircuitBaseVisitor {
 
     protected MetadataHelper helper;
-    protected ShardQueryConfiguration config;
+    protected ImmutableShardQueryConfiguration config;
 
-    public PushdownLowSelectivityNodesVisitor(ShardQueryConfiguration config, MetadataHelper helper) {
+    public PushdownLowSelectivityNodesVisitor(ImmutableShardQueryConfiguration config, MetadataHelper helper) {
         this.helper = helper;
         this.config = config;
     }
 
     private static final Logger log = Logger.getLogger(PushdownLowSelectivityNodesVisitor.class);
 
-    public static <T extends JexlNode> T pushdownLowSelectiveTerms(T queryTree, ShardQueryConfiguration config, MetadataHelper helper) {
+    public static <T extends JexlNode> T pushdownLowSelectiveTerms(T queryTree, ImmutableShardQueryConfiguration config, MetadataHelper helper) {
         PushdownLowSelectivityNodesVisitor visitor = new PushdownLowSelectivityNodesVisitor(config, helper);
         queryTree.jjtAccept(visitor, null);
         return queryTree;

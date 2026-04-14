@@ -25,7 +25,7 @@ import datawave.core.iterators.BoundedRangeExpansionIterator;
 import datawave.core.iterators.CompositeSeekingIterator;
 import datawave.data.type.DiscreteIndexType;
 import datawave.query.Constants;
-import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.config.ImmutableShardQueryConfiguration;
 import datawave.query.exceptions.IllegalRangeArgumentException;
 import datawave.query.jexl.LiteralRange;
 import datawave.query.tables.ScannerFactory;
@@ -66,7 +66,8 @@ public class BoundedRangeIndexLookup extends AsyncIndexLookup {
      * @param execService
      *            the executor service, not null
      */
-    public BoundedRangeIndexLookup(ShardQueryConfiguration config, ScannerFactory scannerFactory, LiteralRange<?> literalRange, ExecutorService execService) {
+    public BoundedRangeIndexLookup(ImmutableShardQueryConfiguration config, ScannerFactory scannerFactory, LiteralRange<?> literalRange,
+                    ExecutorService execService) {
         super(config, scannerFactory, false, execService);
         this.literalRange = literalRange;
         this.fields = Collections.singleton(literalRange.getFieldName());

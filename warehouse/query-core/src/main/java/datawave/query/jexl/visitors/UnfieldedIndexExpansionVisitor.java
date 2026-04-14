@@ -24,7 +24,7 @@ import org.slf4j.LoggerFactory;
 import com.google.common.base.Preconditions;
 
 import datawave.query.Constants;
-import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.config.ImmutableShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.EmptyUnfieldedTermExpansionException;
 import datawave.query.jexl.JexlASTHelper;
@@ -49,7 +49,7 @@ public class UnfieldedIndexExpansionVisitor extends RegexIndexExpansionVisitor {
     private static final Logger log = LoggerFactory.getLogger(UnfieldedIndexExpansionVisitor.class);
 
     // The constructor should not be made public so that we can ensure that the executor is setup and shutdown correctly
-    protected UnfieldedIndexExpansionVisitor(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper)
+    protected UnfieldedIndexExpansionVisitor(ImmutableShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper)
                     throws TableNotFoundException, IllegalAccessException, InstantiationException {
         super(config, scannerFactory, helper, null, "FieldNameIndexExpansion");
 
@@ -85,8 +85,8 @@ public class UnfieldedIndexExpansionVisitor extends RegexIndexExpansionVisitor {
      * @throws InstantiationException
      *             if we fail to retrieve all data types from the metadata helper
      */
-    public static <T extends JexlNode> T expandUnfielded(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, T script)
-                    throws IllegalAccessException, TableNotFoundException, InstantiationException {
+    public static <T extends JexlNode> T expandUnfielded(ImmutableShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper,
+                    T script) throws IllegalAccessException, TableNotFoundException, InstantiationException {
         // if not expanding fields or values, then this is a noop
         if (config.isExpandFields() || config.isExpandValues() || config.isExpandUnfieldedValues()) {
             UnfieldedIndexExpansionVisitor visitor = new UnfieldedIndexExpansionVisitor(config, scannerFactory, helper);

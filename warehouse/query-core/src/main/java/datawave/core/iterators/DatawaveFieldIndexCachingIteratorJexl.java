@@ -457,7 +457,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         this.termNumber = builder.termNumber;
 
         // Note: We have already selected the control directory at random in the DefaultQueryPlanner
-        // @see DefaultQueryPlanner#getShuffledIvaratoCacheDirConfigs(ShardQueryConfiguration)
+        // @see DefaultQueryPlanner#getShuffledIvaratoCacheDirConfigs(ImmutableShardQueryConfiguration)
         if (ivaratorCacheDirs.size() > 0) {
             this.controlFs = ivaratorCacheDirs.get(0).getFs();
             this.controlDir = new Path(ivaratorCacheDirs.get(0).getPathURI());

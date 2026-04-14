@@ -45,7 +45,7 @@ import com.google.common.collect.Multimap;
 import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.core.iterators.DatawaveFieldIndexListIteratorJexl;
 import datawave.query.Constants;
-import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.config.ImmutableShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.LiteralRange;
@@ -62,12 +62,12 @@ import datawave.webservice.query.exception.QueryException;
 public class PushdownLargeFieldedListsVisitor extends RebuildingVisitor {
     private static final Logger log = ThreadConfigurableLogger.getLogger(PushdownLargeFieldedListsVisitor.class);
 
-    private ShardQueryConfiguration config;
+    private ImmutableShardQueryConfiguration config;
     private String fstHdfsUri;
     private FileSystem fs;
     private Set<String> fields;
 
-    public PushdownLargeFieldedListsVisitor(ShardQueryConfiguration config, FileSystem fs, String fstHdfsUri, Set<String> fields) {
+    public PushdownLargeFieldedListsVisitor(ImmutableShardQueryConfiguration config, FileSystem fs, String fstHdfsUri, Set<String> fields) {
         this.config = config;
         this.fstHdfsUri = fstHdfsUri;
         this.fs = fs;
@@ -90,16 +90,17 @@ public class PushdownLargeFieldedListsVisitor extends RebuildingVisitor {
      * @return The tree with additional index query portions
      */
     @SuppressWarnings("unchecked")
-    public static <T extends JexlNode> T pushdown(ShardQueryConfiguration config, T script, FileSystem fs, String fstHdfsUri) {
+    public static <T extends JexlNode> T pushdown(ImmutableShardQueryConfiguration config, T script, FileSystem fs, String fstHdfsUri) {
         return pushdown(config, script, fs, fstHdfsUri, null, null);
     }
 
-    public static <T extends JexlNode> T pushdown(ShardQueryConfiguration config, T script, FileSystem fs, String fstHdfsUri,
+    public static <T extends JexlNode> T pushdown(ImmutableShardQueryConfiguration config, T script, FileSystem fs, String fstHdfsUri,
                     Map<String,Integer> pushdownCapacity) {
         return pushdown(config, script, fs, fstHdfsUri, pushdownCapacity, null);
     }
 
-    public static <T extends JexlNode> T pushdown(ShardQueryConfiguration config, T script, FileSystem fs, String fstHdfsUri, Object data, Set<String> fields) {
+    public static <T extends JexlNode> T pushdown(ImmutableShardQueryConfiguration config, T script, FileSystem fs, String fstHdfsUri, Object data,
+                    Set<String> fields) {
         // flatten the tree
         script = TreeFlatteningRebuildingVisitor.flatten(script);
 

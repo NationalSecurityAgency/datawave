@@ -81,7 +81,8 @@ import datawave.util.TableName;
  * This class can be initialized with an instance of a ShardQueryLogic or ShardQueryTable which will grab the already configured parameters from the Accumulo
  * Webservice QueryTable and apply them to this configuration object
  */
-public class ShardQueryConfiguration extends GenericQueryConfiguration implements Serializable, CheckpointableQueryConfiguration {
+public class ShardQueryConfiguration extends GenericQueryConfiguration
+                implements Serializable, CheckpointableQueryConfiguration, ImmutableShardQueryConfiguration {
 
     public static final String PARAM_VALUE_SEP_STR = new String(new char[] {Constants.PARAM_VALUE_SEP});
     public static final String TABLE_NAME_SOURCE = "tableName";
@@ -1021,6 +1022,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.shardTableName = tableName;
     }
 
+    @Override
     public String getMetadataTableName() {
         return metadataTableName;
     }
@@ -1029,6 +1031,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.metadataTableName = metadataTableName;
     }
 
+    @Override
     public String getDateIndexTableName() {
         return dateIndexTableName;
     }
@@ -1037,6 +1040,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.dateIndexTableName = dateIndexTableName;
     }
 
+    @Override
     public String getDefaultDateTypeName() {
         return defaultDateTypeName;
     }
@@ -1045,6 +1049,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.defaultDateTypeName = defaultDateTypeName;
     }
 
+    @Override
     public String getIndexTableName() {
         return indexTableName;
     }
@@ -1053,6 +1058,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.indexTableName = indexTableName;
     }
 
+    @Override
     public String getReverseIndexTableName() {
         return reverseIndexTableName;
     }
@@ -1061,6 +1067,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.reverseIndexTableName = reverseIndexTableName;
     }
 
+    @Override
     public String getIndexStatsTableName() {
         return indexStatsTableName;
     }
@@ -1069,6 +1076,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.indexStatsTableName = statsTableName;
     }
 
+    @Override
     public Integer getNumQueryThreads() {
         return numQueryThreads;
     }
@@ -1077,6 +1085,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.numQueryThreads = numQueryThreads;
     }
 
+    @Override
     public Integer getNumIndexLookupThreads() {
         return numLookupThreads;
     }
@@ -1085,6 +1094,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.numLookupThreads = numIndexLookupThreads;
     }
 
+    @Override
     public Integer getNumDateIndexThreads() {
         return numDateIndexThreads;
     }
@@ -1093,6 +1103,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.numDateIndexThreads = numDateIndexThreads;
     }
 
+    @Override
     public Integer getMaxDocScanTimeout() {
         return maxDocScanTimeout;
     }
@@ -1101,6 +1112,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.maxDocScanTimeout = maxDocScanTimeout;
     }
 
+    @Override
     public float getCollapseDatePercentThreshold() {
         return collapseDatePercentThreshold;
     }
@@ -1109,6 +1121,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.collapseDatePercentThreshold = collapseDatePercentThreshold;
     }
 
+    @Override
     public Boolean getFullTableScanEnabled() {
         return fullTableScanEnabled;
     }
@@ -1117,6 +1130,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.fullTableScanEnabled = fullTableScanEnabled;
     }
 
+    @Override
     public String getShardDateFormat() {
         return shardDateFormat;
     }
@@ -1125,6 +1139,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.shardDateFormat = shardDateFormat;
     }
 
+    @Override
     public SimpleDateFormat getShardDateFormatter() {
         return shardDateFormatter;
     }
@@ -1133,6 +1148,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.shardDateFormatter = shardDateFormatter;
     }
 
+    @Override
     public Set<String> getDatatypeFilter() {
         return datatypeFilter;
     }
@@ -1141,6 +1157,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.datatypeFilter = typeFilter;
     }
 
+    @Override
     public String getDatatypeFilterAsString() {
         return new TypeFilter(datatypeFilter).toString();
     }
@@ -1149,6 +1166,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         return fields == null ? null : fields.stream().map(JexlASTHelper::deconstructIdentifier).collect(Collectors.toSet());
     }
 
+    @Override
     public Set<String> getProjectFields() {
         return projectFields;
     }
@@ -1157,10 +1175,12 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.projectFields = deconstruct(projectFields);
     }
 
+    @Override
     public String getProjectFieldsAsString() {
         return StringUtils.join(this.getProjectFields(), Constants.PARAM_VALUE_SEP);
     }
 
+    @Override
     public Set<String> getRenameFields() {
         return renameFields;
     }
@@ -1169,6 +1189,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.renameFields = renameFields;
     }
 
+    @Override
     public Set<String> getDisallowlistedFields() {
         return disallowlistedFields;
     }
@@ -1177,10 +1198,12 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.disallowlistedFields = deconstruct(disallowlistedFields);
     }
 
+    @Override
     public String getDisallowlistedFieldsAsString() {
         return StringUtils.join(this.getDisallowlistedFields(), Constants.PARAM_VALUE_SEP);
     }
 
+    @Override
     public Boolean getUseEnrichers() {
         return useEnrichers;
     }
@@ -1189,6 +1212,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.useEnrichers = useEnrichers;
     }
 
+    @Override
     public List<String> getEnricherClassNames() {
         return enricherClassNames;
     }
@@ -1197,6 +1221,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.enricherClassNames = enricherClassNames;
     }
 
+    @Override
     public boolean isTldQuery() {
         return tldQuery;
     }
@@ -1205,6 +1230,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.tldQuery = tldQuery;
     }
 
+    @Override
     public boolean isDebugMultithreadedSources() {
         return debugMultithreadedSources;
     }
@@ -1213,6 +1239,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.debugMultithreadedSources = debugMultithreadedSources;
     }
 
+    @Override
     public boolean isSortGeoWaveQueryRanges() {
         return sortGeoWaveQueryRanges;
     }
@@ -1221,6 +1248,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.sortGeoWaveQueryRanges = sortGeoWaveQueryRanges;
     }
 
+    @Override
     public int getNumRangesToBuffer() {
         return numRangesToBuffer;
     }
@@ -1229,6 +1257,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.numRangesToBuffer = numRangesToBuffer;
     }
 
+    @Override
     public long getRangeBufferTimeoutMillis() {
         return rangeBufferTimeoutMillis;
     }
@@ -1237,6 +1266,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.rangeBufferTimeoutMillis = rangeBufferTimeoutMillis;
     }
 
+    @Override
     public long getRangeBufferPollMillis() {
         return rangeBufferPollMillis;
     }
@@ -1245,6 +1275,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.rangeBufferPollMillis = rangeBufferPollMillis;
     }
 
+    @Override
     public int getGeometryMaxExpansion() {
         return geometryMaxExpansion;
     }
@@ -1253,6 +1284,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.geometryMaxExpansion = geometryMaxExpansion;
     }
 
+    @Override
     public int getPointMaxExpansion() {
         return pointMaxExpansion;
     }
@@ -1261,6 +1293,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.pointMaxExpansion = pointMaxExpansion;
     }
 
+    @Override
     public int getGeoMaxExpansion() {
         return geoMaxExpansion;
     }
@@ -1269,6 +1302,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.geoMaxExpansion = geoMaxExpansion;
     }
 
+    @Override
     public int getGeoWaveRangeSplitThreshold() {
         return geoWaveRangeSplitThreshold;
     }
@@ -1277,6 +1311,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.geoWaveRangeSplitThreshold = geoWaveRangeSplitThreshold;
     }
 
+    @Override
     public double getGeoWaveMaxRangeOverlap() {
         return geoWaveMaxRangeOverlap;
     }
@@ -1285,6 +1320,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.geoWaveMaxRangeOverlap = geoWaveMaxRangeOverlap;
     }
 
+    @Override
     public boolean isOptimizeGeoWaveRanges() {
         return optimizeGeoWaveRanges;
     }
@@ -1293,6 +1329,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.optimizeGeoWaveRanges = optimizeGeoWaveRanges;
     }
 
+    @Override
     public int getGeoWaveMaxEnvelopes() {
         return geoWaveMaxEnvelopes;
     }
@@ -1301,6 +1338,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.geoWaveMaxEnvelopes = geoWaveMaxEnvelopes;
     }
 
+    @Override
     public Boolean getUseFilters() {
         return useFilters;
     }
@@ -1337,6 +1375,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         }
     }
 
+    @Override
     public Map<String,String> getFilterOptions() {
         return Collections.unmodifiableMap(filterOptions);
     }
@@ -1346,6 +1385,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.filterOptions.putAll(options);
     }
 
+    @Override
     public List<String> getFilterClassNames() {
         return filterClassNames;
     }
@@ -1355,6 +1395,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.filterClassNames = new ArrayList<>((filterClassNames != null ? filterClassNames : Collections.emptyList()));
     }
 
+    @Override
     public String getFieldRuleClassName() {
         return fieldRuleClassName;
     }
@@ -1371,6 +1412,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      * @see QueryIterator
      * @see TLDQueryIterator
      */
+    @Override
     public List<String> getIndexFilteringClassNames() {
         return indexFilteringClassNames;
     }
@@ -1387,6 +1429,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.indexFilteringClassNames = new ArrayList<>((classNames != null ? classNames : Collections.emptyList()));
     }
 
+    @Override
     public Class<? extends Type<?>> getDefaultType() {
         return defaultType;
     }
@@ -1404,6 +1447,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         }
     }
 
+    @Override
     public Set<String> getNonEventKeyPrefixes() {
         return nonEventKeyPrefixes;
     }
@@ -1416,10 +1460,12 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         }
     }
 
+    @Override
     public String getNonEventKeyPrefixesAsString() {
         return StringUtils.join(this.getNonEventKeyPrefixes(), Constants.PARAM_VALUE_SEP);
     }
 
+    @Override
     public Set<String> getUnevaluatedFields() {
         return unevaluatedFields;
     }
@@ -1433,6 +1479,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     }
 
     @Deprecated(since = "7.1.0", forRemoval = true)
+    @Override
     public int getEventPerDayThreshold() {
         return eventPerDayThreshold;
     }
@@ -1443,6 +1490,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     }
 
     @Deprecated(since = "7.1.0", forRemoval = true)
+    @Override
     public int getShardsPerDayThreshold() {
         return shardsPerDayThreshold;
     }
@@ -1452,6 +1500,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.shardsPerDayThreshold = shardsPerDayThreshold;
     }
 
+    @Override
     public int getInitialMaxTermThreshold() {
         return initialMaxTermThreshold;
     }
@@ -1460,6 +1509,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.initialMaxTermThreshold = initialMaxTermThreshold;
     }
 
+    @Override
     public int getIntermediateMaxTermThreshold() {
         return intermediateMaxTermThreshold;
     }
@@ -1468,6 +1518,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.intermediateMaxTermThreshold = intermediateMaxTermThreshold;
     }
 
+    @Override
     public int getIndexedMaxTermThreshold() {
         return indexedMaxTermThreshold;
     }
@@ -1476,6 +1527,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.indexedMaxTermThreshold = indexedMaxTermThreshold;
     }
 
+    @Override
     public int getFinalMaxTermThreshold() {
         return finalMaxTermThreshold;
     }
@@ -1484,6 +1536,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.finalMaxTermThreshold = finalMaxTermThreshold;
     }
 
+    @Override
     public int getMaxDepthThreshold() {
         return maxDepthThreshold;
     }
@@ -1492,6 +1545,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.maxDepthThreshold = maxDepthThreshold;
     }
 
+    @Override
     public boolean isExpandFields() {
         return expandFields;
     }
@@ -1500,6 +1554,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.expandFields = expandFields;
     }
 
+    @Override
     public int getMaxUnfieldedExpansionThreshold() {
         return maxUnfieldedExpansionThreshold;
     }
@@ -1508,6 +1563,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.maxUnfieldedExpansionThreshold = maxUnfieldedExpansionThreshold;
     }
 
+    @Override
     public boolean isExpandValues() {
         return expandValues;
     }
@@ -1516,6 +1572,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.expandValues = expandValues;
     }
 
+    @Override
     public boolean isExpandUnfieldedValues() {
         return expandUnfieldedValues;
     }
@@ -1524,6 +1581,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.expandUnfieldedValues = expandUnfieldedValues;
     }
 
+    @Override
     public int getMaxValueExpansionThreshold() {
         return maxValueExpansionThreshold;
     }
@@ -1532,6 +1590,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.maxValueExpansionThreshold = maxValueExpansionThreshold;
     }
 
+    @Override
     public int getMaxScannerBatchSize() {
         return this.maxScannerBatchSize;
     }
@@ -1540,6 +1599,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.maxScannerBatchSize = size;
     }
 
+    @Override
     public int getMaxIndexBatchSize() {
         return this.maxIndexBatchSize;
     }
@@ -1550,6 +1610,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         }
     }
 
+    @Override
     public int getMaxOrExpansionThreshold() {
         return maxOrExpansionThreshold;
     }
@@ -1558,6 +1619,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.maxOrExpansionThreshold = maxOrExpansionThreshold;
     }
 
+    @Override
     public int getMaxOrRangeThreshold() {
         return maxOrRangeThreshold;
     }
@@ -1566,6 +1628,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.maxOrRangeThreshold = maxOrRangeThreshold;
     }
 
+    @Override
     public int getMaxOrRangeIvarators() {
         return maxOrRangeIvarators;
     }
@@ -1574,6 +1637,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.maxOrRangeIvarators = maxOrRangeIvarators;
     }
 
+    @Override
     public int getMaxRangesPerRangeIvarator() {
         return maxRangesPerRangeIvarator;
     }
@@ -1582,6 +1646,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.maxRangesPerRangeIvarator = maxRangesPerRangeIvarator;
     }
 
+    @Override
     public int getMaxOrExpansionFstThreshold() {
         return maxOrExpansionFstThreshold;
     }
@@ -1590,6 +1655,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.maxOrExpansionFstThreshold = maxOrExpansionFstThreshold;
     }
 
+    @Override
     public String getHdfsSiteConfigURLs() {
         return hdfsSiteConfigURLs;
     }
@@ -1598,6 +1664,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.hdfsSiteConfigURLs = hadoopConfigURLs;
     }
 
+    @Override
     public String getHdfsFileCompressionCodec() {
         return hdfsFileCompressionCodec;
     }
@@ -1606,6 +1673,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.hdfsFileCompressionCodec = hdfsFileCompressionCodec;
     }
 
+    @Override
     public String getZookeeperConfig() {
         return zookeeperConfig;
     }
@@ -1614,6 +1682,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.zookeeperConfig = zookeeperConfig;
     }
 
+    @Override
     public List<IvaratorCacheDirConfig> getIvaratorCacheDirConfigs() {
         return ivaratorCacheDirConfigs;
     }
@@ -1626,10 +1695,12 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.localIvaratorCacheDirConfigs = localIvaratorCacheDirConfigs;
     }
 
+    @Override
     public List<IvaratorCacheDirConfig> getLocalIvaratorCacheDirConfigs() {
         return localIvaratorCacheDirConfigs;
     }
 
+    @Override
     public String getIvaratorFstHdfsBaseURIs() {
         return ivaratorFstHdfsBaseURIs;
     }
@@ -1638,6 +1709,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.ivaratorFstHdfsBaseURIs = ivaratorFstHdfsBaseURIs;
     }
 
+    @Override
     public int getUniqueCacheBufferSize() {
         return uniqueCacheBufferSize;
     }
@@ -1646,6 +1718,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.uniqueCacheBufferSize = uniqueCacheBufferSize;
     }
 
+    @Override
     public int getIvaratorCacheBufferSize() {
         return ivaratorCacheBufferSize;
     }
@@ -1654,6 +1727,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.ivaratorCacheBufferSize = ivaratorCacheBufferSize;
     }
 
+    @Override
     public long getIvaratorCacheScanPersistThreshold() {
         return ivaratorCacheScanPersistThreshold;
     }
@@ -1662,6 +1736,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.ivaratorCacheScanPersistThreshold = ivaratorCacheScanPersistThreshold;
     }
 
+    @Override
     public long getIvaratorCacheScanTimeout() {
         return ivaratorCacheScanTimeout;
     }
@@ -1670,6 +1745,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.ivaratorCacheScanTimeout = ivaratorCacheScanTimeout;
     }
 
+    @Override
     public List<Type<?>> getExcludeUnfieldedTypes() {
         return excludeUnfieldedTypes;
     }
@@ -1678,6 +1754,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.excludeUnfieldedTypes = excludeUnfieldedTypes;
     }
 
+    @Override
     public int getMaxFieldIndexRangeSplit() {
         return maxFieldIndexRangeSplit;
     }
@@ -1686,6 +1763,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.maxFieldIndexRangeSplit = maxFieldIndexRangeSplit;
     }
 
+    @Override
     public int getIvaratorMaxOpenFiles() {
         return ivaratorMaxOpenFiles;
     }
@@ -1694,6 +1772,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.ivaratorMaxOpenFiles = ivaratorMaxOpenFiles;
     }
 
+    @Override
     public int getIvaratorNumRetries() {
         return ivaratorNumRetries;
     }
@@ -1710,6 +1789,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.ivaratorPersistVerify = ivaratorPersistVerify;
     }
 
+    @Override
     public int getIvaratorPersistVerifyCount() {
         return ivaratorPersistVerifyCount;
     }
@@ -1718,6 +1798,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.ivaratorPersistVerifyCount = ivaratorPersistVerifyCount;
     }
 
+    @Override
     public int getMaxIvaratorSources() {
         return maxIvaratorSources;
     }
@@ -1726,6 +1807,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.maxIvaratorSources = maxIvaratorSources;
     }
 
+    @Override
     public long getMaxIvaratorSourceWait() {
         return maxIvaratorSourceWait;
     }
@@ -1734,6 +1816,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.maxIvaratorSourceWait = maxIvaratorSourceWait;
     }
 
+    @Override
     public long getMaxIvaratorResults() {
         return maxIvaratorResults;
     }
@@ -1742,6 +1825,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.maxIvaratorResults = maxIvaratorResults;
     }
 
+    @Override
     public int getMaxIvaratorTerms() {
         return maxIvaratorTerms;
     }
@@ -1750,6 +1834,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.maxIvaratorTerms = maxIvaratorTerms;
     }
 
+    @Override
     public int getMaxEvaluationPipelines() {
         return maxEvaluationPipelines;
     }
@@ -1758,6 +1843,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.maxEvaluationPipelines = maxEvaluationPipelines;
     }
 
+    @Override
     public int getMaxPipelineCachedResults() {
         return maxPipelineCachedResults;
     }
@@ -1766,6 +1852,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.maxPipelineCachedResults = maxCachedResults;
     }
 
+    @Override
     public boolean isExpandAllTerms() {
         return expandAllTerms;
     }
@@ -1779,6 +1866,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      *
      * @return FIELDNAME1:normalizer.class;FIELDNAME2:normalizer.class;
      */
+    @Override
     public String getIndexedFieldDataTypesAsString() {
 
         if (null == this.getIndexedFields() || this.getIndexedFields().isEmpty()) {
@@ -1815,6 +1903,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         return sb.toString();
     }
 
+    @Override
     public Set<String> getIndexedFields() {
         return indexedFields;
     }
@@ -1827,6 +1916,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.indexedFields = (null == indexedFields) ? Collections.emptySet() : Sets.newHashSet(indexedFields);
     }
 
+    @Override
     public Set<String> getReverseIndexedFields() {
         return reverseIndexedFields;
     }
@@ -1839,6 +1929,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.reverseIndexedFields = reverseIndexedFields == null ? new HashSet<>() : Sets.newHashSet(reverseIndexedFields);
     }
 
+    @Override
     public Set<String> getNormalizedFields() {
         return normalizedFields;
     }
@@ -1847,6 +1938,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.normalizedFields = normalizedFields;
     }
 
+    @Override
     public Multimap<String,Type<?>> getDataTypes() {
         if (dataTypes == null) {
             dataTypes = HashMultimap.create();
@@ -1863,6 +1955,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.dataTypes = dataTypes;
     }
 
+    @Override
     public Multimap<String,Type<?>> getQueryFieldsDatatypes() {
         return queryFieldsDatatypes;
     }
@@ -1871,6 +1964,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.queryFieldsDatatypes = queryFieldsDatatypes;
     }
 
+    @Override
     public Map<String,DiscreteIndexType<?>> getFieldToDiscreteIndexTypes() {
         return fieldToDiscreteIndexTypes;
     }
@@ -1879,6 +1973,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.fieldToDiscreteIndexTypes = fieldToDiscreteIndexTypes;
     }
 
+    @Override
     public Multimap<String,String> getCompositeToFieldMap() {
         return compositeToFieldMap;
     }
@@ -1887,6 +1982,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.compositeToFieldMap = compositeToFieldMap;
     }
 
+    @Override
     public Map<String,Date> getCompositeTransitionDates() {
         return compositeTransitionDates;
     }
@@ -1895,6 +1991,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.compositeTransitionDates = compositeTransitionDates;
     }
 
+    @Override
     public Map<String,String> getCompositeFieldSeparators() {
         return compositeFieldSeparators;
     }
@@ -1903,6 +2000,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.compositeFieldSeparators = compositeFieldSeparators;
     }
 
+    @Override
     public Map<String,Date> getWhindexCreationDates() {
         return whindexCreationDates;
     }
@@ -1911,6 +2009,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.whindexCreationDates = whindexCreationDates;
     }
 
+    @Override
     public Multimap<String,Type<?>> getNormalizedFieldsDatatypes() {
         return normalizedFieldsDatatypes;
     }
@@ -1920,6 +2019,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.normalizedFields = Sets.newHashSet(this.normalizedFieldsDatatypes.keySet());
     }
 
+    @Override
     public Set<String> getLimitFields() {
         return limitFields;
     }
@@ -1928,10 +2028,12 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.limitFields = deconstruct(limitFields);
     }
 
+    @Override
     public String getLimitFieldsAsString() {
         return StringUtils.join(this.getLimitFields(), Constants.PARAM_VALUE_SEP);
     }
 
+    @Override
     public Set<String> getMatchingFieldSets() {
         return matchingFieldSets;
     }
@@ -1940,10 +2042,12 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.matchingFieldSets = matchingFieldSets;
     }
 
+    @Override
     public String getMatchingFieldSetsAsString() {
         return StringUtils.join(this.getMatchingFieldSets(), Constants.PARAM_VALUE_SEP);
     }
 
+    @Override
     public boolean isLimitFieldsPreQueryEvaluation() {
         return limitFieldsPreQueryEvaluation;
     }
@@ -1952,6 +2056,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.limitFieldsPreQueryEvaluation = limitFieldsPreQueryEvaluation;
     }
 
+    @Override
     public String getLimitFieldsField() {
         return limitFieldsField;
     }
@@ -1960,6 +2065,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.limitFieldsField = limitFieldsField;
     }
 
+    @Override
     public boolean isDateIndexTimeTravel() {
         return dateIndexTimeTravel;
     }
@@ -1968,6 +2074,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.dateIndexTimeTravel = dateIndexTimeTravel;
     }
 
+    @Override
     public boolean isDateIndexIterator() {
         return dateIndexIterator;
     }
@@ -1976,6 +2083,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.dateIndexIterator = dateIndexIterator;
     }
 
+    @Override
     public boolean getIgnoreNonExistentFields() {
         return ignoreNonExistentFields;
     }
@@ -1984,6 +2092,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.ignoreNonExistentFields = ignoreNonExistentFields;
     }
 
+    @Override
     public long getBeginDateCap() {
         return beginDateCap;
     }
@@ -1992,6 +2101,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.beginDateCap = beginDateCap;
     }
 
+    @Override
     public boolean isFailOutsideValidDateRange() {
         return failOutsideValidDateRange;
     }
@@ -2000,6 +2110,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.failOutsideValidDateRange = failOutsideValidDateRange;
     }
 
+    @Override
     public int getGroupFieldsBatchSize() {
         return groupFieldsBatchSize;
     }
@@ -2008,10 +2119,12 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.groupFieldsBatchSize = groupFieldsBatchSize;
     }
 
+    @Override
     public String getGroupFieldsBatchSizeAsString() {
         return "" + groupFieldsBatchSize;
     }
 
+    @Override
     public boolean isDisableIteratorUniqueFields() {
         return disableIteratorUniqueFields;
     }
@@ -2020,6 +2133,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.disableIteratorUniqueFields = disableIteratorUniqueFields;
     }
 
+    @Override
     public boolean isDisableIteratorMostRecentUniqueFields() {
         return disableIteratorMostRecentUniqueFields;
     }
@@ -2028,6 +2142,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.disableIteratorMostRecentUniqueFields = disableIteratorMostRecentUniqueFields;
     }
 
+    @Override
     public UniqueFields getUniqueFields() {
         return uniqueFields;
     }
@@ -2036,6 +2151,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.uniqueFields = uniqueFields.clone();
     }
 
+    @Override
     public boolean isHitList() {
         return this.hitList;
     }
@@ -2044,6 +2160,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.hitList = hitList;
     }
 
+    @Override
     public boolean isRawTypes() {
         return this.rawTypes;
     }
@@ -2052,6 +2169,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.rawTypes = rawTypes;
     }
 
+    @Override
     public double getMinSelectivity() {
         return minSelectivity;
     }
@@ -2075,6 +2193,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         return true;
     }
 
+    @Override
     public boolean getFilterMaskedValues() {
         return filterMaskedValues;
     }
@@ -2083,6 +2202,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.filterMaskedValues = filterMaskedValues;
     }
 
+    @Override
     public boolean getIncludeDataTypeAsField() {
         return includeDataTypeAsField;
     }
@@ -2091,6 +2211,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.includeDataTypeAsField = includeDataTypeAsField;
     }
 
+    @Override
     public boolean getIncludeRecordId() {
         return includeRecordId;
     }
@@ -2099,6 +2220,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.includeRecordId = includeRecordId;
     }
 
+    @Override
     public boolean getIncludeHierarchyFields() {
         return includeHierarchyFields;
     }
@@ -2107,6 +2229,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.includeHierarchyFields = includeHierarchyFields;
     }
 
+    @Override
     public Map<String,String> getHierarchyFieldOptions() {
         return this.hierarchyFieldOptions;
     }
@@ -2116,6 +2239,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.hierarchyFieldOptions = (null != options) ? options : emptyOptions;
     }
 
+    @Override
     public boolean getIncludeGroupingContext() {
         return includeGroupingContext;
     }
@@ -2124,6 +2248,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.includeGroupingContext = withContextOption;
     }
 
+    @Override
     public List<String> getDocumentPermutations() {
         return documentPermutations;
     }
@@ -2144,6 +2269,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.documentPermutations = permutations;
     }
 
+    @Override
     public boolean isReducedResponse() {
         return reducedResponse;
     }
@@ -2152,6 +2278,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.reducedResponse = reducedResponse;
     }
 
+    @Override
     public boolean isDisableEvaluation() {
         return disableEvaluation;
     }
@@ -2160,6 +2287,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.disableEvaluation = disableEvaluation;
     }
 
+    @Override
     public boolean isDisableIndexOnlyDocuments() {
         return disableIndexOnlyDocuments;
     }
@@ -2168,6 +2296,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.disableIndexOnlyDocuments = disableIndexOnlyDocuments;
     }
 
+    @Override
     public boolean isContainsIndexOnlyTerms() {
         return containsIndexOnlyTerms;
     }
@@ -2176,6 +2305,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.containsIndexOnlyTerms = containsIndexOnlyTerms;
     }
 
+    @Override
     public boolean isContainsCompositeTerms() {
         return containsCompositeTerms;
     }
@@ -2184,6 +2314,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.containsCompositeTerms = containsCompositeTerms;
     }
 
+    @Override
     public boolean isAllowFieldIndexEvaluation() {
         return allowFieldIndexEvaluation;
     }
@@ -2192,6 +2323,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.allowFieldIndexEvaluation = allowFieldIndexEvaluation;
     }
 
+    @Override
     public boolean isAllowTermFrequencyLookup() {
         return allowTermFrequencyLookup;
     }
@@ -2200,6 +2332,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.allowTermFrequencyLookup = allowTermFrequencyLookup;
     }
 
+    @Override
     public boolean isExpandUnfieldedNegations() {
         return expandUnfieldedNegations;
     }
@@ -2208,6 +2341,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.expandUnfieldedNegations = expandUnfieldedNegations;
     }
 
+    @Override
     public boolean isAllTermsIndexOnly() {
         return allTermsIndexOnly;
     }
@@ -2216,6 +2350,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.allTermsIndexOnly = allTermsIndexOnly;
     }
 
+    @Override
     public QueryModel getQueryModel() {
         return queryModel;
     }
@@ -2224,6 +2359,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.queryModel = queryModel;
     }
 
+    @Override
     public String getModelName() {
         return modelName;
     }
@@ -2232,6 +2368,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.modelName = modelName;
     }
 
+    @Override
     public String getModelTableName() {
         return modelTableName;
     }
@@ -2240,6 +2377,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.modelTableName = modelTableName;
     }
 
+    @Override
     public ReturnType getReturnType() {
         return returnType;
     }
@@ -2248,6 +2386,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.returnType = returnType;
     }
 
+    @Override
     public QueryStopwatch getTimers() {
         return timers;
     }
@@ -2260,6 +2399,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.timers.appendTimers(timers);
     }
 
+    @Override
     public ASTJexlScript getQueryTree() {
         return queryTree;
     }
@@ -2283,6 +2423,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         return super.getQueryString();
     }
 
+    @Override
     public boolean isCompressServerSideResults() {
         return compressServerSideResults;
     }
@@ -2297,6 +2438,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      *
      * @return true, if index-only filter functions should be enabled.
      */
+    @Override
     public boolean isIndexOnlyFilterFunctionsEnabled() {
         return this.indexOnlyFilterFunctionsEnabled;
     }
@@ -2312,6 +2454,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.indexOnlyFilterFunctionsEnabled = enabled;
     }
 
+    @Override
     public boolean isCompositeFilterFunctionsEnabled() {
         return compositeFilterFunctionsEnabled;
     }
@@ -2320,6 +2463,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.compositeFilterFunctionsEnabled = compositeFilterFunctionsEnabled;
     }
 
+    @Override
     public List<String> getRealmSuffixExclusionPatterns() {
         return realmSuffixExclusionPatterns;
     }
@@ -2328,6 +2472,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.realmSuffixExclusionPatterns = realmSuffixExclusionPatterns;
     }
 
+    @Override
     public Set<String> getQueryTermFrequencyFields() {
         return queryTermFrequencyFields;
     }
@@ -2336,6 +2481,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.queryTermFrequencyFields = deconstruct(queryTermFrequencyFields);
     }
 
+    @Override
     public boolean isTermFrequenciesRequired() {
         return termFrequenciesRequired;
     }
@@ -2348,10 +2494,12 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.shouldLimitTermExpansionToModel = shouldLimitTermExpansionToModel;
     }
 
+    @Override
     public boolean isLimitTermExpansionToModel() {
         return shouldLimitTermExpansionToModel;
     }
 
+    @Override
     public long getMaxIndexScanTimeMillis() {
         return maxIndexScanTimeMillis;
     }
@@ -2360,6 +2508,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.maxIndexScanTimeMillis = maxTime;
     }
 
+    @Override
     public boolean getParseTldUids() {
         return parseTldUids;
     }
@@ -2368,6 +2517,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.parseTldUids = parseTldUids;
     }
 
+    @Override
     public boolean getCollapseUids() {
         return collapseUids;
     }
@@ -2376,6 +2526,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.collapseUids = collapseUids;
     }
 
+    @Override
     public int getCollapseUidsThreshold() {
         return collapseUidsThreshold;
     }
@@ -2384,6 +2535,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.collapseUidsThreshold = collapseUidsThreshold;
     }
 
+    @Override
     public boolean getEnforceUniqueTermsWithinExpressions() {
         return enforceUniqueTermsWithinExpressions;
     }
@@ -2392,6 +2544,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.enforceUniqueTermsWithinExpressions = enforceUniqueTermsWithinExpressions;
     }
 
+    @Override
     public boolean getPruneQueryByIngestTypes() {
         return pruneQueryByIngestTypes;
     }
@@ -2400,6 +2553,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.pruneQueryByIngestTypes = pruneQueryByIngestTypes;
     }
 
+    @Override
     public boolean getReduceQueryFields() {
         return reduceQueryFields;
     }
@@ -2408,6 +2562,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.reduceQueryFields = reduceQueryFields;
     }
 
+    @Override
     public boolean getReduceQueryFieldsPerShard() {
         return reduceQueryFieldsPerShard;
     }
@@ -2416,6 +2571,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.reduceQueryFieldsPerShard = reduceQueryFieldsPerShard;
     }
 
+    @Override
     public boolean getReduceTypeMetadata() {
         return reduceTypeMetadata;
     }
@@ -2424,6 +2580,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.reduceTypeMetadata = reduceTypeMetadata;
     }
 
+    @Override
     public boolean getReduceTypeMetadataPerShard() {
         return reduceTypeMetadataPerShard;
     }
@@ -2432,6 +2589,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.reduceTypeMetadataPerShard = reduceTypeMetadataPerShard;
     }
 
+    @Override
     public boolean getLimitAnyFieldLookups() {
         return limitAnyFieldLookups;
     }
@@ -2440,6 +2598,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.limitAnyFieldLookups = limitAnyFieldLookups;
     }
 
+    @Override
     public boolean getAllowShortcutEvaluation() {
         return allowShortcutEvaluation;
     }
@@ -2448,6 +2607,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.allowShortcutEvaluation = allowShortcutEvaluation;
     }
 
+    @Override
     public boolean getAccrueStats() {
         return accrueStats;
     }
@@ -2457,6 +2617,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     }
 
+    @Override
     public List<IndexValueHole> getIndexValueHoles() {
         return indexValueHoles;
     }
@@ -2465,6 +2626,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.indexValueHoles = indexValueHoles;
     }
 
+    @Override
     public boolean getCollectTimingDetails() {
         return collectTimingDetails;
     }
@@ -2474,6 +2636,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     }
 
+    @Override
     public boolean getLogTimingDetails() {
         return logTimingDetails;
     }
@@ -2482,6 +2645,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.logTimingDetails = logTimingDetails;
     }
 
+    @Override
     public String getStatsdHost() {
         return statsdHost;
     }
@@ -2490,6 +2654,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.statsdHost = statsdHost;
     }
 
+    @Override
     public int getStatsdPort() {
         return statsdPort;
     }
@@ -2498,6 +2663,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.statsdPort = statsdPort;
     }
 
+    @Override
     public int getStatsdMaxQueueSize() {
         return statsdMaxQueueSize;
     }
@@ -2506,6 +2672,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.statsdMaxQueueSize = statsdMaxQueueSize;
     }
 
+    @Override
     public boolean getSendTimingToStatsd() {
         return sendTimingToStatsd;
     }
@@ -2514,6 +2681,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.sendTimingToStatsd = sendTimingToStatsd;
     }
 
+    @Override
     public boolean isCleanupShardsAndDaysQueryHints() {
         return cleanupShardsAndDaysQueryHints;
     }
@@ -2522,6 +2690,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.cleanupShardsAndDaysQueryHints = cleanupShardsAndDaysQueryHints;
     }
 
+    @Override
     public AtomicInteger getFstCount() {
         return fstCount;
     }
@@ -2530,6 +2699,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.fstCount = fstCount;
     }
 
+    @Override
     public boolean getCacheModel() {
         return cacheModel;
     }
@@ -2538,6 +2708,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.cacheModel = cacheModel;
     }
 
+    @Override
     public boolean isBypassExecutabilityCheck() {
         return bypassExecutabilityCheck;
     }
@@ -2550,6 +2721,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.bypassExecutabilityCheck = bypassExecutabilityCheck;
     }
 
+    @Override
     public boolean getBackoffEnabled() {
         return backoffEnabled;
     }
@@ -2558,6 +2730,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.backoffEnabled = backoffEnabled;
     }
 
+    @Override
     public boolean getUnsortedUIDsEnabled() {
         return unsortedUIDsEnabled;
     }
@@ -2566,6 +2739,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.unsortedUIDsEnabled = unsortedUIDsEnabled;
     }
 
+    @Override
     public boolean getSpeculativeScanning() {
         return speculativeScanning;
     }
@@ -2574,6 +2748,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.speculativeScanning = speculativeScanning;
     }
 
+    @Override
     public boolean getSerializeQueryIterator() {
         return serializeQueryIterator;
     }
@@ -2582,6 +2757,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.serializeQueryIterator = serializeQueryIterator;
     }
 
+    @Override
     public boolean isSortedUIDs() {
         return sortedUIDs;
     }
@@ -2590,6 +2766,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.sortedUIDs = sortedUIDs;
     }
 
+    @Override
     public long getYieldThresholdMs() {
         return yieldThresholdMs;
     }
@@ -2598,6 +2775,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.yieldThresholdMs = yieldThresholdMs;
     }
 
+    @Override
     public int getMaxYields() {
         return maxYields;
     }
@@ -2606,6 +2784,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.maxYields = maxYields;
     }
 
+    @Override
     public boolean isTrackSizes() {
         return trackSizes;
     }
@@ -2614,6 +2793,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.trackSizes = trackSizes;
     }
 
+    @Override
     public List<String> getContentFieldNames() {
         return contentFieldNames;
     }
@@ -2626,10 +2806,12 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.evaluationOnlyFields = evaluationOnlyFields;
     }
 
+    @Override
     public Set<String> getEvaluationOnlyFields() {
         return this.evaluationOnlyFields;
     }
 
+    @Override
     public Set<String> getDisallowedRegexPatterns() {
         return disallowedRegexPatterns;
     }
@@ -2638,6 +2820,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.disallowedRegexPatterns = disallowedRegexPatterns;
     }
 
+    @Override
     public String getActiveQueryLogNameSource() {
         return activeQueryLogNameSource;
     }
@@ -2656,6 +2839,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      *
      * @return the custom active query name to use, or a blank value if the default active query log should be used
      */
+    @Override
     public String getActiveQueryLogName() {
         if (activeQueryLogNameSource == null) {
             return "";
@@ -2670,6 +2854,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         }
     }
 
+    @Override
     public boolean isDisableWhindexFieldMappings() {
         return disableWhindexFieldMappings;
     }
@@ -2678,6 +2863,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.disableWhindexFieldMappings = disableWhindexFieldMappings;
     }
 
+    @Override
     public Set<String> getWhindexMappingFields() {
         return whindexMappingFields;
     }
@@ -2686,6 +2872,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.whindexMappingFields = whindexMappingFields;
     }
 
+    @Override
     public Map<String,Map<String,String>> getWhindexFieldMappings() {
         return whindexFieldMappings;
     }
@@ -2694,6 +2881,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.whindexFieldMappings = whindexFieldMappings;
     }
 
+    @Override
     public boolean isGeneratePlanOnly() {
         return generatePlanOnly;
     }
@@ -2702,6 +2890,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.generatePlanOnly = generatePlanOnly;
     }
 
+    @Override
     public boolean getEnforceUniqueConjunctionsWithinExpression() {
         return enforceUniqueConjunctionsWithinExpression;
     }
@@ -2710,6 +2899,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.enforceUniqueConjunctionsWithinExpression = enforceUniqueConjunctionsWithinExpression;
     }
 
+    @Override
     public boolean getEnforceUniqueDisjunctionsWithinExpression() {
         return enforceUniqueDisjunctionsWithinExpression;
     }
@@ -2718,6 +2908,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.enforceUniqueDisjunctionsWithinExpression = enforceUniqueDisjunctionsWithinExpression;
     }
 
+    @Override
     public BloomFilter<byte[]> getBloom() {
         return bloom;
     }
@@ -2726,6 +2917,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.bloom = bloom;
     }
 
+    @Override
     public Set<String> getNoExpansionFields() {
         return this.noExpansionFields;
     }
@@ -2734,6 +2926,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.noExpansionFields = noExpansionFields;
     }
 
+    @Override
     public Set<String> getLenientFields() {
         return lenientFields;
     }
@@ -2742,6 +2935,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.lenientFields = lenientFields;
     }
 
+    @Override
     public Set<String> getStrictFields() {
         return strictFields;
     }
@@ -2750,6 +2944,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.strictFields = strictFields;
     }
 
+    @Override
     public ExcerptFields getExcerptFields() {
         return excerptFields;
     }
@@ -2761,6 +2956,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.excerptFields = excerptFields;
     }
 
+    @Override
     public Class<? extends SortedKeyValueIterator<Key,Value>> getExcerptIterator() {
         return excerptIterator;
     }
@@ -2769,6 +2965,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.excerptIterator = excerptIterator;
     }
 
+    @Override
     public SummaryOptions getSummaryOptions() {
         return summaryOptions;
     }
@@ -2779,6 +2976,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         }
     }
 
+    @Override
     public Class<? extends SortedKeyValueIterator<Key,Value>> getSummaryIterator() {
         return summaryIterator;
     }
@@ -2787,6 +2985,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.summaryIterator = summaryIterator;
     }
 
+    @Override
     public String getSummaryFieldName() {
         return summaryFieldName;
     }
@@ -2795,6 +2994,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.summaryFieldName = summaryFieldName;
     }
 
+    @Override
     public int getFiFieldSeek() {
         return fiFieldSeek;
     }
@@ -2803,6 +3003,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.fiFieldSeek = fiFieldSeek;
     }
 
+    @Override
     public int getFiNextSeek() {
         return fiNextSeek;
     }
@@ -2811,6 +3012,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.fiNextSeek = fiNextSeek;
     }
 
+    @Override
     public int getEventFieldSeek() {
         return eventFieldSeek;
     }
@@ -2819,6 +3021,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.eventFieldSeek = eventFieldSeek;
     }
 
+    @Override
     public int getEventNextSeek() {
         return eventNextSeek;
     }
@@ -2827,6 +3030,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.eventNextSeek = eventNextSeek;
     }
 
+    @Override
     public int getTfFieldSeek() {
         return tfFieldSeek;
     }
@@ -2835,6 +3039,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.tfFieldSeek = tfFieldSeek;
     }
 
+    @Override
     public int getTfNextSeek() {
         return tfNextSeek;
     }
@@ -2843,6 +3048,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.tfNextSeek = tfNextSeek;
     }
 
+    @Override
     public boolean isSeekingEventAggregation() {
         return seekingEventAggregation;
     }
@@ -2851,6 +3057,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.seekingEventAggregation = seekingEventAggregation;
     }
 
+    @Override
     public long getVisitorFunctionMaxWeight() {
         return visitorFunctionMaxWeight;
     }
@@ -2863,10 +3070,12 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.queryExecutionForPageTimeout = queryExecutionForPageTimeout;
     }
 
+    @Override
     public long getQueryExecutionForPageTimeout() {
         return this.queryExecutionForPageTimeout;
     }
 
+    @Override
     public boolean isLazySetMechanismEnabled() {
         return lazySetMechanismEnabled;
     }
@@ -2875,6 +3084,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.lazySetMechanismEnabled = lazySetMechanismEnabled;
     }
 
+    @Override
     public int getDocAggregationThresholdMs() {
         return docAggregationThresholdMs;
     }
@@ -2883,6 +3093,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.docAggregationThresholdMs = docAggregationThresholdMs;
     }
 
+    @Override
     public int getTfAggregationThresholdMs() {
         return tfAggregationThresholdMs;
     }
@@ -2891,6 +3102,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.tfAggregationThresholdMs = tfAggregationThresholdMs;
     }
 
+    @Override
     public GroupFields getGroupFields() {
         return groupFields;
     }
@@ -2903,6 +3115,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         }
     }
 
+    @Override
     public boolean getPruneQueryOptions() {
         return pruneQueryOptions;
     }
@@ -2911,6 +3124,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.pruneQueryOptions = pruneQueryOptions;
     }
 
+    @Override
     public boolean isRebuildDatatypeFilter() {
         return rebuildDatatypeFilter;
     }
@@ -2919,6 +3133,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.rebuildDatatypeFilter = rebuildDatatypeFilter;
     }
 
+    @Override
     public boolean isRebuildDatatypeFilterPerShard() {
         return rebuildDatatypeFilterPerShard;
     }
@@ -2927,6 +3142,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.rebuildDatatypeFilterPerShard = rebuildDatatypeFilterPerShard;
     }
 
+    @Override
     public double getIndexFieldHoleMinThreshold() {
         return indexFieldHoleMinThreshold;
     }
@@ -2935,6 +3151,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.indexFieldHoleMinThreshold = indexFieldHoleMinThreshold;
     }
 
+    @Override
     public boolean getReduceIngestTypes() {
         return reduceIngestTypes;
     }
@@ -2943,6 +3160,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.reduceIngestTypes = reduceIngestTypes;
     }
 
+    @Override
     public boolean getReduceIngestTypesPerShard() {
         return reduceIngestTypesPerShard;
     }
@@ -2951,6 +3169,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.reduceIngestTypesPerShard = reduceIngestTypesPerShard;
     }
 
+    @Override
     public boolean isSortQueryPreIndexWithImpliedCounts() {
         return sortQueryPreIndexWithImpliedCounts;
     }
@@ -2959,6 +3178,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.sortQueryPreIndexWithImpliedCounts = sortQueryPreIndexWithImpliedCounts;
     }
 
+    @Override
     public boolean isSortQueryPreIndexWithFieldCounts() {
         return sortQueryPreIndexWithFieldCounts;
     }
@@ -2967,6 +3187,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.sortQueryPreIndexWithFieldCounts = sortQueryPreIndexWithFieldCounts;
     }
 
+    @Override
     public boolean isSortQueryPostIndexWithFieldCounts() {
         return sortQueryPostIndexWithFieldCounts;
     }
@@ -2975,6 +3196,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.sortQueryPostIndexWithFieldCounts = sortQueryPostIndexWithFieldCounts;
     }
 
+    @Override
     public boolean isSortQueryPostIndexWithTermCounts() {
         return sortQueryPostIndexWithTermCounts;
     }
@@ -2983,6 +3205,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.sortQueryPostIndexWithTermCounts = sortQueryPostIndexWithTermCounts;
     }
 
+    @Override
     public int getCardinalityThreshold() {
         return cardinalityThreshold;
     }
@@ -3485,6 +3708,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         return this;
     }
 
+    @Override
     public boolean isUseQueryTreeScanHintRules() {
         return useQueryTreeScanHintRules;
     }
@@ -3493,6 +3717,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.useQueryTreeScanHintRules = useQueryTreeScanHintRules;
     }
 
+    @Override
     public List<ScanHintRule<JexlNode>> getQueryTreeScanHintRules() {
         return queryTreeScanHintRules;
     }
@@ -3501,6 +3726,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.queryTreeScanHintRules = queryTreeScanHintRules;
     }
 
+    @Override
     public long getMaxAnyFieldScanTimeMillis() {
         return maxAnyFieldScanTimeMillis;
     }
@@ -3509,6 +3735,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.maxAnyFieldScanTimeMillis = maxAnyFieldScanTimeMillis;
     }
 
+    @Override
     public Set<String> getNoExpansionIfCurrentDateTypes() {
         return noExpansionIfCurrentDateTypes;
     }
@@ -3517,6 +3744,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.noExpansionIfCurrentDateTypes = noExpansionIfCurrentDateTypes;
     }
 
+    @Override
     public DocumentScannerConfig getDocumentScannerConfig() {
         return documentScannerConfig;
     }
@@ -3525,6 +3753,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.documentScannerConfig = documentScannerConfig;
     }
 
+    @Override
     public boolean isUseDocumentScheduler() {
         return useDocumentScheduler;
     }
@@ -3533,6 +3762,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.useDocumentScheduler = useDocumentScheduler;
     }
 
+    @Override
     public int getMaxLinesToPrint() {
         return maxLinesToPrint;
     }
@@ -3541,6 +3771,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.maxLinesToPrint = maxLinesToPrint;
     }
 
+    @Override
     public boolean isDeferPushdownPullup() {
         return deferPushdownPullup;
     }
@@ -3549,6 +3780,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.deferPushdownPullup = deferPushdownPullup;
     }
 
+    @Override
     public String getDayIndexTableName() {
         return dayIndexTableName;
     }
@@ -3557,6 +3789,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.dayIndexTableName = dayIndexTableName;
     }
 
+    @Override
     public String getYearIndexTableName() {
         return yearIndexTableName;
     }
@@ -3565,6 +3798,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.yearIndexTableName = yearIndexTableName;
     }
 
+    @Override
     public boolean isUseShardedIndex() {
         return useShardedIndex;
     }
@@ -3573,6 +3807,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.useShardedIndex = useShardedIndex;
     }
 
+    @Override
     public int getDayIndexThreshold() {
         return dayIndexThreshold;
     }
@@ -3581,6 +3816,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.dayIndexThreshold = dayIndexThreshold;
     }
 
+    @Override
     public boolean isUseTruncatedIndex() {
         return useTruncatedIndex;
     }
@@ -3589,6 +3825,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.useTruncatedIndex = useTruncatedIndex;
     }
 
+    @Override
     public String getTruncatedIndexTableName() {
         return truncatedIndexTableName;
     }
@@ -3597,6 +3834,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.truncatedIndexTableName = truncatedIndexTableName;
     }
 
+    @Override
     public AllHitsQueryConfig getAllHitsQueryConfig() {
         return allHitsQueryConfig;
     }
@@ -3605,6 +3843,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.allHitsQueryConfig = allHitsQueryConfig;
     }
 
+    @Override
     public String getOriginalJexlQuery() {
         return originalJexlQuery;
     }
@@ -3613,6 +3852,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.originalJexlQuery = originalJexlQuery;
     }
 
+    @Override
     public boolean isUseNewIndexLookups() {
         return useNewIndexLookups;
     }

@@ -25,7 +25,7 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.hadoop.io.Text;
 
-import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.config.ImmutableShardQueryConfiguration;
 import datawave.util.TextUtil;
 
 /**
@@ -43,14 +43,14 @@ public class SessionOptions implements ScannerBase {
     protected String classLoaderContext = null;
     protected Map<String,String> executionHints = Collections.emptyMap();
     protected ConsistencyLevel consistencyLevel = ConsistencyLevel.IMMEDIATE;
-    protected ShardQueryConfiguration queryConfig;
+    protected ImmutableShardQueryConfiguration queryConfig;
 
     protected ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
 
     public SessionOptions() {}
 
-    public SessionOptions(SessionOptions options) {
-        setOptions(this, options);
+    public SessionOptions(SessionOptions other) {
+        this.queryConfig = other.queryConfig;
     }
 
     protected static void setOptions(SessionOptions dst, SessionOptions src) {
@@ -294,7 +294,7 @@ public class SessionOptions implements ScannerBase {
      *
      * @return the configuration
      */
-    public ShardQueryConfiguration getQueryConfiguration() {
+    public ImmutableShardQueryConfiguration getQueryConfiguration() {
         return queryConfig;
     }
 
@@ -304,7 +304,7 @@ public class SessionOptions implements ScannerBase {
      * @param queryConfig
      *            the configuration
      */
-    public void setQueryConfiguration(ShardQueryConfiguration queryConfig) {
+    public void setQueryConfiguration(ImmutableShardQueryConfiguration queryConfig) {
         this.queryConfig = queryConfig;
     }
 

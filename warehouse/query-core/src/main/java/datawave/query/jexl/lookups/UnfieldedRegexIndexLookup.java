@@ -19,7 +19,7 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 
 import datawave.core.iterators.UnfieldedRegexExpansionIterator;
-import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.config.ImmutableShardQueryConfiguration;
 import datawave.query.tables.ScannerFactory;
 import datawave.util.time.DateHelper;
 
@@ -38,8 +38,8 @@ public class UnfieldedRegexIndexLookup extends BaseRegexIndexLookup {
     private final int keyThreshold;
     private final int valueThreshold;
 
-    public UnfieldedRegexIndexLookup(ShardQueryConfiguration config, ScannerFactory scannerFactory, ExecutorService execService, String pattern, Range range,
-                    boolean reverse, Set<String> fields) {
+    public UnfieldedRegexIndexLookup(ImmutableShardQueryConfiguration config, ScannerFactory scannerFactory, ExecutorService execService, String pattern,
+                    Range range, boolean reverse, Set<String> fields) {
         super(config, scannerFactory, true, execService, pattern, range, reverse);
         this.fields = Objects.requireNonNullElse(fields, Collections.emptySet());
         this.keyThreshold = config.getMaxUnfieldedExpansionThreshold();

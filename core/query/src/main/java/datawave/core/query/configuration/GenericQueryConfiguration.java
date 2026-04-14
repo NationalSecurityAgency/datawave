@@ -35,7 +35,7 @@ import datawave.util.TableName;
  * </p>
  *
  */
-public class GenericQueryConfiguration implements Serializable {
+public class GenericQueryConfiguration implements Serializable, ImmutableGenericQueryConfiguration {
     // is this execution expected to be checkpointable (changes how we allocate ranges to scanners)
     private boolean checkpointable = false;
 
@@ -132,6 +132,7 @@ public class GenericQueryConfiguration implements Serializable {
         this.setTableHints(other.getTableHints());
     }
 
+    @Override
     public Collection<QueryData> getQueries() {
         return queries;
     }
@@ -145,6 +146,7 @@ public class GenericQueryConfiguration implements Serializable {
      *
      * @return An iterator of query ranges
      */
+    @Override
     public Iterator<QueryData> getQueriesIter() {
         if ((queriesIter == null || !queriesIter.hasNext()) && queries != null) {
             return Iterators.unmodifiableIterator(queries.iterator());
@@ -163,6 +165,7 @@ public class GenericQueryConfiguration implements Serializable {
         this.queriesIter = queriesIter;
     }
 
+    @Override
     public boolean isCheckpointable() {
         return checkpointable;
     }
@@ -171,6 +174,7 @@ public class GenericQueryConfiguration implements Serializable {
         this.checkpointable = checkpointable;
     }
 
+    @Override
     public AccumuloClient getClient() {
         return client;
     }
@@ -179,6 +183,7 @@ public class GenericQueryConfiguration implements Serializable {
         this.client = client;
     }
 
+    @Override
     public Query getQuery() {
         return query;
     }
@@ -191,10 +196,12 @@ public class GenericQueryConfiguration implements Serializable {
         this.queryString = query;
     }
 
+    @Override
     public String getQueryString() {
         return queryString;
     }
 
+    @Override
     public Set<String> getAuths() {
         if (auths == null && authorizations != null) {
             auths = authorizations.stream().flatMap(a -> a.getAuthorizations().stream()).map(b -> new String(b, StandardCharsets.UTF_8))
@@ -209,6 +216,7 @@ public class GenericQueryConfiguration implements Serializable {
         getAuthorizations();
     }
 
+    @Override
     public Set<Authorizations> getAuthorizations() {
         if (authorizations == null && auths != null) {
             authorizations = Collections
@@ -223,6 +231,7 @@ public class GenericQueryConfiguration implements Serializable {
         getAuths();
     }
 
+    @Override
     public int getBaseIteratorPriority() {
         return baseIteratorPriority;
     }
@@ -231,6 +240,7 @@ public class GenericQueryConfiguration implements Serializable {
         this.baseIteratorPriority = baseIteratorPriority;
     }
 
+    @Override
     public Date getBeginDate() {
         return beginDate;
     }
@@ -239,6 +249,7 @@ public class GenericQueryConfiguration implements Serializable {
         this.beginDate = beginDate;
     }
 
+    @Override
     public Date getEndDate() {
         return endDate;
     }
@@ -247,6 +258,7 @@ public class GenericQueryConfiguration implements Serializable {
         this.endDate = endDate;
     }
 
+    @Override
     public Long getMaxWork() {
         return maxWork;
     }
@@ -255,6 +267,7 @@ public class GenericQueryConfiguration implements Serializable {
         this.maxWork = maxWork;
     }
 
+    @Override
     public String getTableName() {
         return tableName;
     }
@@ -263,6 +276,7 @@ public class GenericQueryConfiguration implements Serializable {
         this.tableName = tableName;
     }
 
+    @Override
     public boolean getBypassAccumulo() {
         return bypassAccumulo;
     }
@@ -274,10 +288,12 @@ public class GenericQueryConfiguration implements Serializable {
     /**
      * @return - the accumulo password
      */
+    @Override
     public String getAccumuloPassword() {
         return this.accumuloPassword;
     }
 
+    @Override
     public boolean isReduceResults() {
         return reduceResults;
     }
@@ -296,6 +312,7 @@ public class GenericQueryConfiguration implements Serializable {
         this.accumuloPassword = EnvProvider.resolve(password);
     }
 
+    @Override
     public String getConnPoolName() {
         return connPoolName;
     }
@@ -304,6 +321,7 @@ public class GenericQueryConfiguration implements Serializable {
         this.connPoolName = connPoolName;
     }
 
+    @Override
     public Map<String,ScannerBase.ConsistencyLevel> getTableConsistencyLevels() {
         return tableConsistencyLevels;
     }
@@ -312,6 +330,7 @@ public class GenericQueryConfiguration implements Serializable {
         this.tableConsistencyLevels = tableConsistencyLevels;
     }
 
+    @Override
     public Map<String,Map<String,String>> getTableHints() {
         return tableHints;
     }
@@ -325,6 +344,7 @@ public class GenericQueryConfiguration implements Serializable {
      *
      * @return True if all of the encapsulated values have legitimate values, otherwise false
      */
+    @Override
     public boolean canRunQuery() {
         // Ensure we were given connector and authorizations
         if (null == this.getClient() || null == this.getAuthorizations()) {

@@ -47,7 +47,7 @@ import datawave.query.composite.Composite;
 import datawave.query.composite.CompositeRange;
 import datawave.query.composite.CompositeTerm;
 import datawave.query.composite.CompositeUtils;
-import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.config.ImmutableShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
@@ -65,7 +65,7 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
 
     private static final Logger log = ThreadConfigurableLogger.getLogger(ExpandCompositeTerms.class);
 
-    private final ShardQueryConfiguration config;
+    private final ImmutableShardQueryConfiguration config;
 
     private final HashMap<JexlNode,Composite> jexlNodeToCompMap = new HashMap<>();
 
@@ -75,7 +75,7 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
         public Multimap<String,JexlNode> usedAndedNodes = LinkedHashMultimap.create();
     }
 
-    private ExpandCompositeTerms(ShardQueryConfiguration config) {
+    private ExpandCompositeTerms(ImmutableShardQueryConfiguration config) {
         Preconditions.checkNotNull(config);
         this.config = config;
     }
@@ -92,7 +92,7 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
      * @return An expanded version of the passed-in script containing composite nodes
      */
     @SuppressWarnings("unchecked")
-    public static <T extends JexlNode> T expandTerms(ShardQueryConfiguration config, T script) {
+    public static <T extends JexlNode> T expandTerms(ImmutableShardQueryConfiguration config, T script) {
 
         ExpandCompositeTerms visitor = new ExpandCompositeTerms(config);
 

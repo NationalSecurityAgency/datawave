@@ -68,7 +68,7 @@ import com.google.common.collect.Sets;
 
 import datawave.data.type.Type;
 import datawave.query.Constants;
-import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.config.ImmutableShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.index.lookup.RangeStream;
 import datawave.query.index.stats.IndexStatsClient;
@@ -1830,7 +1830,7 @@ public class JexlASTHelper {
      *            query configuration
      * @return if it is indexed
      */
-    public static boolean isIndexed(JexlNode node, ShardQueryConfiguration config) {
+    public static boolean isIndexed(JexlNode node, ImmutableShardQueryConfiguration config) {
         Preconditions.checkNotNull(config);
 
         final Multimap<String,Type<?>> indexedFieldsDatatypes = config.getQueryFieldsDatatypes();
@@ -1861,7 +1861,7 @@ public class JexlASTHelper {
      *            index stats client
      * @return the selectivity of the node's identifier
      */
-    public static Double getNodeSelectivity(JexlNode node, ShardQueryConfiguration config, IndexStatsClient stats) {
+    public static Double getNodeSelectivity(JexlNode node, ImmutableShardQueryConfiguration config, IndexStatsClient stats) {
         List<ASTIdentifier> idents = getIdentifiers(node);
 
         // If there isn't one identifier you don't need to check the selectivity
@@ -1883,7 +1883,7 @@ public class JexlASTHelper {
      *            the IndexStatsClient
      * @return the selectivity of the node's identifier
      */
-    public static Double getNodeSelectivity(Set<String> fieldNames, ShardQueryConfiguration config, IndexStatsClient stats) {
+    public static Double getNodeSelectivity(Set<String> fieldNames, ImmutableShardQueryConfiguration config, IndexStatsClient stats) {
 
         boolean foundSelectivity = false;
 
