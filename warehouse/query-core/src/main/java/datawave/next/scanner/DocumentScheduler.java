@@ -3,13 +3,14 @@ package datawave.next.scanner;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.PriorityBlockingQueue;
 
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.common.collect.Queues;
 
 import datawave.core.query.configuration.QueryData;
 import datawave.core.query.configuration.Result;
@@ -70,17 +71,39 @@ public class DocumentScheduler extends Scheduler {
     public Iterator<Result> iterator() {
         if (scanner == null) {
             // initialize some objects in the config object
-            if (config.isSortedCandidateQueue()) {
-                config.setCandidateQueue(Queues.newPriorityBlockingQueue());
-            } else {
-                config.setCandidateQueue(Queues.newLinkedBlockingDeque());
-            }
-
-            config.setResults(Queues.newLinkedBlockingDeque());
+            BlockingQueue<KeyWithContext> candidateQueue = createCandidateQueue();
+            BlockingQueue<Result> resultQueue = createResultQueue();
+            config.setCandidateQueue(candidateQueue);
+            config.setResults(resultQueue);
 
             scanner = createScanner();
         }
         return scanner;
+    }
+
+    protected BlockingQueue<KeyWithContext> createCandidateQueue() {
+        int candidateQueueCapacity = config.getCandidateQueueCapacity();
+
+        if (config.isSortedCandidateQueue()) {
+            // queue is still unbounded, but has initial capacity
+            return new PriorityBlockingQueue<>(config.getCandidateQueueCapacity());
+        }
+
+        // else non-sorted
+        if (candidateQueueCapacity <= 0) {
+            return new LinkedBlockingQueue<>();
+        } else {
+            return new LinkedBlockingQueue<>(candidateQueueCapacity);
+        }
+    }
+
+    protected BlockingQueue<Result> createResultQueue() {
+        int resultQueueCapacity = config.getResultQueueCapacity();
+        if (resultQueueCapacity <= 0) {
+            return new LinkedBlockingQueue<>();
+        } else {
+            return new LinkedBlockingQueue<>(resultQueueCapacity);
+        }
     }
 
     protected DocumentScanner createScanner() {

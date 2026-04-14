@@ -9,7 +9,6 @@ import java.util.stream.Collectors;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
-import org.apache.accumulo.core.security.Authorizations;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.annotation.Secured;

@@ -4,11 +4,11 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.Date;
 import java.util.List;
+import java.util.Properties;
 
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.hadoop.mapreduce.AccumuloOutputFormat;
 import org.apache.accumulo.hadoopImpl.mapreduce.AccumuloRecordWriter;
-import org.apache.accumulo.hadoopImpl.mapreduce.lib.OutputConfigurator;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.RecordWriter;
@@ -26,10 +26,12 @@ import org.junit.Test;
 import datawave.common.test.logging.TestLogCollector;
 import datawave.data.hash.UID;
 import datawave.ingest.data.TypeRegistry;
+import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 
 public class CBMutationOutputFormatterTest {
 
+    protected static final String SIMULATION_MODE = "AccumuloOutputFormat.Features.SimulationMode";
     protected static final Logger logger = Logger.getLogger(CBMutationOutputFormatterTest.class);
 
     protected Level testDriverLevel;
@@ -96,7 +98,7 @@ public class CBMutationOutputFormatterTest {
 
             Configuration conf = new Configuration();
 
-            OutputConfigurator.setSimulationMode(AccumuloOutputFormat.class, conf, true);
+            conf.setBoolean(SIMULATION_MODE, true);
 
             TaskAttemptContext attempt = new TaskAttemptContextImpl(conf, new TaskAttemptID());
 
@@ -130,7 +132,7 @@ public class CBMutationOutputFormatterTest {
 
             Configuration conf = new Configuration();
 
-            OutputConfigurator.setSimulationMode(AccumuloOutputFormat.class, conf, true);
+            conf.setBoolean(SIMULATION_MODE, true);
 
             TaskAttemptContext attempt = new TaskAttemptContextImpl(conf, new TaskAttemptID());
 
@@ -170,7 +172,7 @@ public class CBMutationOutputFormatterTest {
 
             Configuration conf = new Configuration();
 
-            OutputConfigurator.setSimulationMode(AccumuloOutputFormat.class, conf, true);
+            conf.setBoolean(SIMULATION_MODE, true);
 
             TaskAttemptContext attempt = new TaskAttemptContextImpl(conf, new TaskAttemptID());
 
@@ -212,7 +214,7 @@ public class CBMutationOutputFormatterTest {
 
             Configuration conf = new Configuration();
 
-            OutputConfigurator.setSimulationMode(AccumuloOutputFormat.class, conf, true);
+            conf.setBoolean(SIMULATION_MODE, true);
 
             conf.set(ShardedDataTypeHandler.SHARD_TNAME, "test-table");
 
@@ -256,7 +258,7 @@ public class CBMutationOutputFormatterTest {
 
             Configuration conf = new Configuration();
 
-            OutputConfigurator.setSimulationMode(AccumuloOutputFormat.class, conf, true);
+            conf.setBoolean(SIMULATION_MODE, true);
 
             conf.set(ShardedDataTypeHandler.SHARD_TNAME, "test-table");
 
@@ -313,7 +315,7 @@ public class CBMutationOutputFormatterTest {
 
             TypeRegistry.getInstance(conf);
 
-            OutputConfigurator.setSimulationMode(AccumuloOutputFormat.class, conf, true);
+            conf.setBoolean(SIMULATION_MODE, true);
 
             conf.set(ShardedDataTypeHandler.SHARD_TNAME, "test-table");
 
@@ -370,7 +372,7 @@ public class CBMutationOutputFormatterTest {
 
             TypeRegistry.getInstance(conf);
 
-            OutputConfigurator.setSimulationMode(AccumuloOutputFormat.class, conf, true);
+            conf.setBoolean(SIMULATION_MODE, true);
 
             conf.set(ShardedDataTypeHandler.SHARD_TNAME, "test-table");
 
@@ -427,7 +429,7 @@ public class CBMutationOutputFormatterTest {
 
             TypeRegistry.getInstance(conf);
 
-            OutputConfigurator.setSimulationMode(AccumuloOutputFormat.class, conf, true);
+            conf.setBoolean(SIMULATION_MODE, true);
 
             conf.set(ShardedDataTypeHandler.SHARD_TNAME, "test-table");
 
@@ -486,7 +488,7 @@ public class CBMutationOutputFormatterTest {
 
             TypeRegistry.getInstance(conf);
 
-            OutputConfigurator.setSimulationMode(AccumuloOutputFormat.class, conf, true);
+            conf.setBoolean(SIMULATION_MODE, true);
 
             conf.set(ShardedDataTypeHandler.SHARD_TNAME, "test-table");
 
@@ -545,7 +547,7 @@ public class CBMutationOutputFormatterTest {
 
             TypeRegistry.getInstance(conf);
 
-            OutputConfigurator.setSimulationMode(AccumuloOutputFormat.class, conf, true);
+            conf.setBoolean(SIMULATION_MODE, true);
 
             conf.set(ShardedDataTypeHandler.SHARD_TNAME, "test-table");
 
@@ -583,5 +585,66 @@ public class CBMutationOutputFormatterTest {
             CBMutationOutputFormatterTest.logger.info("testRecordWriterWriteWithUpdatesWithColFamilyTypedWithoutUID completed.");
         }
 
+    }
+
+    @Test
+    public void testGetClientPropertiesLoadsPreConfiguredProperties() {
+        CBMutationOutputFormatterTest.logger.info("testGetClientPropertiesLoadsPreConfiguredProperties called...");
+
+        try {
+            Configuration conf = new Configuration();
+
+            // Set DataWave connection configuration
+            conf.set(AccumuloHelper.INSTANCE_NAME, "test-instance");
+            conf.set(AccumuloHelper.ZOOKEEPERS, "localhost:2181");
+            conf.set(AccumuloHelper.USERNAME, "testuser");
+            conf.set(AccumuloHelper.PASSWORD, "dGVzdHBhc3M="); // base64 encoded "testpass"
+
+            // Set pre-configured client properties (e.g., batch writer settings from shell scripts)
+            String batchWriterProps = "batch.writer.memory.max=100000000B\nbatch.writer.threads.max=8";
+            conf.set("AccumuloOutputFormat.ClientOpts.ClientProps", batchWriterProps);
+
+            Properties props = CBMutationOutputFormatter.getClientProperties(conf);
+
+            // Verify pre-configured properties are loaded
+            Assert.assertEquals("Pre-configured batch.writer.memory.max should be loaded", "100000000B", props.getProperty("batch.writer.memory.max"));
+            Assert.assertEquals("Pre-configured batch.writer.threads.max should be loaded", "8", props.getProperty("batch.writer.threads.max"));
+
+            // Verify DataWave connection properties are overlaid
+            Assert.assertEquals("Instance name should be set", "test-instance", props.getProperty("instance.name"));
+            Assert.assertEquals("Zookeepers should be set", "localhost:2181", props.getProperty("instance.zookeepers"));
+            Assert.assertNotNull("Auth type should be set", props.getProperty("auth.type"));
+
+        } finally {
+            CBMutationOutputFormatterTest.logger.info("testGetClientPropertiesLoadsPreConfiguredProperties completed.");
+        }
+    }
+
+    @Test
+    public void testGetClientPropertiesWithoutPreConfiguredProperties() {
+        CBMutationOutputFormatterTest.logger.info("testGetClientPropertiesWithoutPreConfiguredProperties called...");
+
+        try {
+            Configuration conf = new Configuration();
+
+            // Set DataWave connection configuration only
+            conf.set(AccumuloHelper.INSTANCE_NAME, "test-instance");
+            conf.set(AccumuloHelper.ZOOKEEPERS, "localhost:2181");
+            conf.set(AccumuloHelper.USERNAME, "testuser");
+            conf.set(AccumuloHelper.PASSWORD, "dGVzdHBhc3M="); // base64 encoded "testpass"
+
+            Properties props = CBMutationOutputFormatter.getClientProperties(conf);
+
+            // Verify DataWave connection properties are set
+            Assert.assertEquals("Instance name should be set", "test-instance", props.getProperty("instance.name"));
+            Assert.assertEquals("Zookeepers should be set", "localhost:2181", props.getProperty("instance.zookeepers"));
+            Assert.assertNotNull("Auth type should be set", props.getProperty("auth.type"));
+
+            // Batch writer properties should not be present
+            Assert.assertNull("batch.writer.memory.max should not be set", props.getProperty("batch.writer.memory.max"));
+
+        } finally {
+            CBMutationOutputFormatterTest.logger.info("testGetClientPropertiesWithoutPreConfiguredProperties completed.");
+        }
     }
 }
