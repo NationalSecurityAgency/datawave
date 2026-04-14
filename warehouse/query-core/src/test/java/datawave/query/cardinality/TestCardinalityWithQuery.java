@@ -32,6 +32,7 @@ import org.junit.rules.TemporaryFolder;
 
 import com.google.common.collect.Sets;
 
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.core.query.logic.AbstractQueryLogicTransformer;

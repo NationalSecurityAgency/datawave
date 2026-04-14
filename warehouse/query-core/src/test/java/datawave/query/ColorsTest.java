@@ -32,8 +32,8 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import com.google.common.base.Preconditions;
 
-import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryAccumulo;
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
 import datawave.query.attributes.Attribute;

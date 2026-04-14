@@ -58,6 +58,7 @@ import org.springframework.util.MultiValueMap;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.configuration.spring.SpringBean;
 import datawave.ingest.config.RawRecordContainerImpl;

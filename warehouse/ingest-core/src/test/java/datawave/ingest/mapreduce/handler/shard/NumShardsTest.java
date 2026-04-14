@@ -193,7 +193,7 @@ public class NumShardsTest {
         conf.set(AccumuloHelper.USERNAME, "root");
         conf.set(AccumuloHelper.INSTANCE_NAME, "mock");
         conf.set(AccumuloHelper.PASSWORD, noPasswordToken.toString());
-        conf.set(AccumuloHelper.ZOOKEEPERS, i.getZooKeepers());
+        conf.set(AccumuloHelper.ZOOKEEPERS, "localhost");
         conf.set(ShardedDataTypeHandler.METADATA_TABLE_NAME, TableName.METADATA);
 
         client.tableOperations().create(conf.get(ShardedDataTypeHandler.METADATA_TABLE_NAME));
@@ -267,7 +267,7 @@ public class NumShardsTest {
         conf.set(AccumuloHelper.USERNAME, "root");
         conf.set(AccumuloHelper.INSTANCE_NAME, "mock2");
         conf.set(AccumuloHelper.PASSWORD, noPasswordToken.toString());
-        conf.set(AccumuloHelper.ZOOKEEPERS, i.getZooKeepers());
+        conf.set(AccumuloHelper.ZOOKEEPERS, "localhost");
         conf.set(ShardedDataTypeHandler.METADATA_TABLE_NAME, TableName.METADATA);
 
         client.tableOperations().create(conf.get(ShardedDataTypeHandler.METADATA_TABLE_NAME));

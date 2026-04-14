@@ -57,6 +57,7 @@ import org.junit.runner.RunWith;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.configuration.spring.SpringBean;
 import datawave.core.query.configuration.QueryData;
