@@ -950,13 +950,8 @@ public class QueryExecutorBean implements QueryExecutor {
             }
 
             // the query principal is our local principal unless the query logic has a different user operations
-            if (qp.getAuths() != null) {
-                qd.logic.preInitialize(q, WSAuthorizationsUtil.buildAuthorizations(Collections.singleton(WSAuthorizationsUtil.splitAuths(qp.getAuths()))));
-            } else {
-                qd.logic.preInitialize(q, WSAuthorizationsUtil.buildAuthorizations(null));
-            }
-            DatawavePrincipal queryPrincipal = (DatawavePrincipal) ((qd.logic.getUserOperations() == null) ? qd.p
-                            : qd.logic.getUserOperations().getRemoteUser((DatawavePrincipal) qd.p));
+            DatawavePrincipal queryPrincipal = (DatawavePrincipal) ((qd.logic.getUserOperations(q) == null) ? qd.p
+                            : qd.logic.getUserOperations(q).getRemoteUser((DatawavePrincipal) qd.p));
             // the overall principal (the one with combined auths across remote user operations) is our own user operations bean
             DatawavePrincipal overallPrincipal = (DatawavePrincipal) userOperationsBean.getRemoteUser((DatawavePrincipal) qd.p);
             Set<Authorizations> calculatedAuths = WSAuthorizationsUtil.getDowngradedAuthorizations(qp.getAuths(), overallPrincipal, queryPrincipal);
@@ -3145,15 +3140,8 @@ public class QueryExecutorBean implements QueryExecutor {
                 accumuloConnectionRequestBean.requestEnd(query.getId().toString());
             }
 
-            // The query principal is our local principal unless the query logic has a different user operations.
-            if (qp.getAuths() != null) {
-                queryData.logic.preInitialize(query,
-                                WSAuthorizationsUtil.buildAuthorizations(Collections.singleton(WSAuthorizationsUtil.splitAuths(qp.getAuths()))));
-            } else {
-                queryData.logic.preInitialize(query, WSAuthorizationsUtil.buildAuthorizations(null));
-            }
-            DatawavePrincipal queryPrincipal = (DatawavePrincipal) ((queryData.logic.getUserOperations() == null) ? queryData.p
-                            : queryData.logic.getUserOperations().getRemoteUser((DatawavePrincipal) queryData.p));
+            DatawavePrincipal queryPrincipal = (DatawavePrincipal) ((queryData.logic.getUserOperations(query) == null) ? queryData.p
+                            : queryData.logic.getUserOperations(query).getRemoteUser((DatawavePrincipal) queryData.p));
             // The overall principal (the one with combined auths across remote user operations) is our own user operations bean.
             DatawavePrincipal overallPrincipal = userOperationsBean.getRemoteUser((DatawavePrincipal) queryData.p);
             Set<Authorizations> calculatedAuths = WSAuthorizationsUtil.getDowngradedAuthorizations(qp.getAuths(), overallPrincipal, queryPrincipal);

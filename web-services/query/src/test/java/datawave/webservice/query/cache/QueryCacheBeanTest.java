@@ -22,7 +22,6 @@ import org.powermock.modules.junit4.PowerMockRunner;
 
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.core.query.logic.QueryLogic;
-import datawave.microservice.authorization.util.AuthorizationsUtil;
 import datawave.microservice.query.QueryImpl;
 import datawave.microservice.querymetric.QueryMetricFactoryImpl;
 import datawave.webservice.query.runner.RunningQuery;
@@ -126,8 +125,7 @@ public class QueryCacheBeanTest {
         expect(logic.isLongRunningQuery()).andReturn(false);
         expect(logic.getResultLimit(q)).andReturn(-1L);
         expect(logic.getMaxResults()).andReturn(-1L);
-        logic.preInitialize(q, AuthorizationsUtil.buildAuthorizations(null));
-        expect(logic.getUserOperations()).andReturn(null);
+        expect(logic.getUserOperations(q)).andReturn(null);
 
         PowerMock.replayAll();
 

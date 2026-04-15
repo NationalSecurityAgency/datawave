@@ -63,7 +63,6 @@ import org.xml.sax.SAXException;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
-import com.google.common.collect.Sets;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
@@ -93,7 +92,6 @@ import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUser.UserType;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.util.DnUtils;
-import datawave.security.util.WSAuthorizationsUtil;
 import datawave.webservice.common.audit.AuditBean;
 import datawave.webservice.common.audit.AuditParameterBuilder;
 import datawave.webservice.common.audit.AuditParameters;
@@ -297,8 +295,7 @@ public class QueryExecutorBeanTest {
         EasyMock.expect(logic.getCollectQueryMetrics()).andReturn(Boolean.FALSE);
         EasyMock.expect(logic.getResultLimit(q)).andReturn(-1L);
         EasyMock.expect(logic.getMaxResults()).andReturn(-1L);
-        logic.preInitialize(q, WSAuthorizationsUtil.buildAuthorizations(Collections.singleton(Sets.newHashSet("PUBLIC", "PRIVATE"))));
-        EasyMock.expect(logic.getUserOperations()).andReturn(null);
+        EasyMock.expect(logic.getUserOperations(q)).andReturn(null);
         EasyMock.expect(responseObjectFactory.getQueryImpl()).andReturn(new QueryImpl());
         EasyMock.expect(logic.getResultLimit(anyObject(QueryImpl.class))).andReturn(-1L);
         PowerMock.replayAll();
@@ -715,8 +712,7 @@ public class QueryExecutorBeanTest {
         EasyMock.expect(logic.getConnPoolName()).andReturn("connPool1");
         EasyMock.expect(logic.getResultLimit(eq(q))).andReturn(-1L).anyTimes();
         EasyMock.expect(logic.getMaxResults()).andReturn(-1L).anyTimes();
-        logic.preInitialize(q, WSAuthorizationsUtil.buildAuthorizations(Collections.singleton(Sets.newHashSet("PUBLIC", "PRIVATE"))));
-        EasyMock.expect(logic.getUserOperations()).andReturn(null);
+        EasyMock.expect(logic.getUserOperations(q)).andReturn(null);
 
         EasyMock.expect(connectionRequestBean.cancelConnectionRequest(q.getId().toString(), userDN.toLowerCase())).andReturn(false).anyTimes();
         connectionFactory.returnClient(EasyMock.isA(AccumuloClient.class));
