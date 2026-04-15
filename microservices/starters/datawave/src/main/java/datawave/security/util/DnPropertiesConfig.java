@@ -1,4 +1,4 @@
-package datawave.microservice.config.security.util;
+package datawave.security.util;
 
 import java.util.List;
 import java.util.regex.Pattern;
@@ -10,7 +10,7 @@ import org.springframework.validation.annotation.Validated;
 
 @Validated
 @ConfigurationProperties(prefix = "datawave.security.util")
-public class DnUtilsProperties {
+public class DnPropertiesConfig {
     @NotEmpty
     private String subjectDnPattern;
     @NotEmpty

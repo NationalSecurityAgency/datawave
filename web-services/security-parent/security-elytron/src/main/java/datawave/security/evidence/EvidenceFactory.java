@@ -12,6 +12,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import com.google.common.base.Preconditions;
 
 import datawave.security.authorization.SubjectIssuerDNPair;
+import datawave.security.util.DnProperties;
 import datawave.security.util.DnUtils;
 import datawave.security.util.SecurityConstants;
 
@@ -175,7 +176,8 @@ public class EvidenceFactory {
 
         // Add an entity with the subject DN and issuer DN to the entity list.
         entities.add(SubjectIssuerDNPair.of(subjectDn, issuerDn));
-        String username = DnUtils.buildNormalizedProxyDN(subjectDn, issuerDn, proxiedSubjects, proxiedIssuers);
+        String username = DnUtils.buildNormalizedProxyDN(subjectDn, issuerDn, proxiedSubjects, proxiedIssuers,
+                        DnProperties.getDefaultInstance().getSubjectDnPattern());
 
         // If the entities contain any trusted proxied entities, remove them from the final entity set.
         if (!trustedProxiedEntities.isEmpty()) {

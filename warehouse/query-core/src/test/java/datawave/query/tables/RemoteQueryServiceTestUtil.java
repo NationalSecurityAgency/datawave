@@ -32,6 +32,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.ws.rs.core.MediaType;
 
+import datawave.security.util.DnProperties;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.NameValuePair;
@@ -104,7 +105,7 @@ public class RemoteQueryServiceTestUtil extends RemoteServiceUtil {
         super.initialize();
 
         final ObjectMapper objectMapper = new DefaultMapperDecorator().decorate(new ObjectMapper());
-        System.setProperty(DnUtils.SUBJECT_DN_PATTERN_PROPERTY, ".*ou=server.*");
+        System.setProperty(DnProperties.SUBJECT_DN_PATTERN_PROPERTY, ".*ou=server.*");
         KeyPairGenerator generater = null;
         try {
             generater = KeyPairGenerator.getInstance("RSA");

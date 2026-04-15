@@ -25,6 +25,7 @@ import javax.enterprise.concurrent.ManagedExecutorService;
 import javax.security.auth.x500.X500Principal;
 import javax.ws.rs.core.MediaType;
 
+import datawave.security.util.DnProperties;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.io.IOUtils;
 import org.junit.After;
@@ -179,7 +180,7 @@ public class RemoteUserOperationsImplHttpTest {
     @Before
     public void setup() throws Exception {
         final ObjectMapper objectMapper = new DefaultMapperDecorator().decorate(new ObjectMapper());
-        System.setProperty(DnUtils.SUBJECT_DN_PATTERN_PROPERTY, ".*ou=server.*");
+        System.setProperty(DnProperties.SUBJECT_DN_PATTERN_PROPERTY, ".*ou=server.*");
 
         setListEffectiveAuthResponse(userDN, auths);
 

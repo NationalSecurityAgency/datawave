@@ -73,10 +73,10 @@ import datawave.microservice.querymetric.config.QueryMetricHandlerProperties;
 import datawave.microservice.querymetric.function.QueryMetricSupplier;
 import datawave.microservice.querymetric.handler.QueryMetricCombiner;
 import datawave.microservice.querymetric.handler.ShardTableQueryMetricHandler;
-import datawave.microservice.security.util.DnUtils;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.JWTTokenHandler;
 import datawave.security.authorization.SubjectIssuerDNPair;
+import datawave.security.util.DnUtils;
 import datawave.webservice.query.result.event.DefaultEvent;
 import datawave.webservice.query.result.event.DefaultField;
 import datawave.webservice.query.result.event.EventBase;
@@ -126,9 +126,6 @@ public class QueryMetricTestBase {
 
     @Autowired
     private QueryMetricClientProperties queryMetricClientProperties;
-
-    @Autowired
-    private DnUtils dnUtils;
 
     @Autowired
     @Qualifier("lastWrittenQueryMetrics")

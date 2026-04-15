@@ -16,8 +16,10 @@ public class SSLStoresProducer {
     /**
      * Allow injection of an {@link SSLStores} instance that is instantiated via system properties set via wildfly. This is intended to be the default way to
      * configure the instance of {@link SSLStores} used throughout the application.
+     *
      * @return the new {@link SSLStores} instance
-     * @throws Exception if an error occurs while creating the {@link SSLStores} instance
+     * @throws Exception
+     *             if an error occurs while creating the {@link SSLStores} instance
      */
     @Produces
     @Default

@@ -1,13 +1,11 @@
 package datawave.security.util;
 
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Properties;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -124,60 +122,6 @@ public final class DnUtils {
         return sb.toString();
     }
 
-    public static Collection<String> buildNormalizedDNList(String subjectDN, String issuerDN, String proxiedSubjectDNs, String proxiedIssuerDNs) {
-        List<String> dnList = new ArrayList<>();
-        if (proxiedSubjectDNs != null) {
-            if (proxiedIssuerDNs == null)
-                throw new IllegalArgumentException("If proxied subject DNs are supplied, then issuer DNs must be supplied as well.");
-            String[] subjectDNarray = splitProxiedDNs(proxiedSubjectDNs, true);
-            String[] issuerDNarray = splitProxiedDNs(proxiedIssuerDNs, true);
-            if (subjectDNarray.length != issuerDNarray.length)
-                throw new IllegalArgumentException("Subject and issuer DN lists do not have the same number of entries: " + Arrays.toString(subjectDNarray)
-                                + " vs " + Arrays.toString(issuerDNarray));
-            for (int i = 0; i < subjectDNarray.length; ++i) {
-                subjectDNarray[i] = normalizeDN(subjectDNarray[i]);
-                issuerDNarray[i] = normalizeDN(issuerDNarray[i]);
-                dnList.add(subjectDNarray[i]);
-                dnList.add(issuerDNarray[i]);
-                if (issuerDNarray[i].equalsIgnoreCase(subjectDNarray[i])) {
-                    throw new IllegalArgumentException("Subject DN " + issuerDNarray[i] + " was passed as an issuer DN.");
-                }
-                if (DnUtilsConfig.getInstance().containsSubjectDn(issuerDNarray[i])) {
-                    throw new IllegalArgumentException("It appears that a subject DN (" + issuerDNarray[i] + ") was passed as an issuer DN.");
-                }
-            }
-        }
-        subjectDN = normalizeDN(subjectDN);
-        issuerDN = normalizeDN(issuerDN);
-        dnList.add(subjectDN.replaceAll("(?<!\\\\)([<>])", "\\\\$1"));
-        dnList.add(issuerDN.replaceAll("(?<!\\\\)([<>])", "\\\\$1"));
-        return dnList;
-    }
-
-    public static String buildNormalizedProxyDN(String subjectDN, String issuerDN, String proxiedSubjectDNs, String proxiedIssuerDNs) {
-        StringBuilder sb = new StringBuilder();
-        for (String escapedDN : buildNormalizedDNList(subjectDN, issuerDN, proxiedSubjectDNs, proxiedIssuerDNs)) {
-            if (sb.length() == 0)
-                sb.append(escapedDN);
-            else
-                sb.append('<').append(escapedDN).append('>');
-        }
-        return sb.toString();
-    }
-
-    public static String buildNormalizedProxyDN(List<SubjectIssuerDNPair> dns) {
-        StringBuilder sb = new StringBuilder();
-        dns.forEach(dn -> {
-            if (sb.length() == 0) {
-                sb.append(normalizeDN(dn.subjectDN()));
-            } else {
-                sb.append('<').append(normalizeDN(dn.subjectDN())).append('>');
-            }
-            sb.append('<').append(normalizeDN(dn.issuerDN())).append('>');
-        });
-        return sb.toString();
-    }
-
     /**
      * Returns the value of the last common name (CN) in the given DN. Returns null iff the DN is blank, contains no CN, or cannot be parsed as a DN.
      *
@@ -227,33 +171,6 @@ public final class DnUtils {
         if (idx >= 0)
             sid = cn.substring(idx + 1);
         return sid;
-    }
-
-    public static boolean isServerDN(String dn) {
-        String[] ouList = DnUtils.getOrganizationalUnits(dn);
-        DnUtilsConfig instance = DnUtilsConfig.getInstance();
-        for (String ou : ouList) {
-            if (instance.isNpeOU(ou.toUpperCase())) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public static String getUserDN(String[] dns) {
-        return getUserDN(dns, false);
-    }
-
-    public static String getUserDN(String[] dns, boolean issuerDNs) {
-        if (issuerDNs && (dns.length % 2) != 0)
-            throw new IllegalArgumentException("DNs array is not a subject/issuer DN list: " + Arrays.toString(dns));
-
-        for (int i = 0; i < dns.length; i += (issuerDNs) ? 2 : 1) {
-            String dn = dns[i];
-            if (!isServerDN(dn))
-                return dn;
-        }
-        return null;
     }
 
     /**
@@ -325,69 +242,165 @@ public final class DnUtils {
         return normalizedUserName;
     }
 
-    /** Config for specifying default subject DN patterns and NPE OUs */
-    public static final String PROPS_RESOURCE = "dnutils.properties";
+    /**
+     * Build and return a collection of normalized DNs built from the given DNs. The subject DN pattern will be used to verify that no proxied subject DNs were
+     * provided as issuer DNs. The subject DN and issuer DN will always be the last DNs in the list.
+     *
+     * @param subjectDN
+     *            the subject DN
+     * @param issuerDN
+     *            the issuer DN
+     * @param proxiedSubjectDNs
+     *            the proxied subject DNs
+     * @param proxiedIssuerDNs
+     *            the proxied issuer DNs
+     * @param subjectDnPattern
+     *            the subject DN pattern
+     * @return a collection of normalized DNs
+     */
+    public static List<String> buildNormalizedDNList(String subjectDN, String issuerDN, String proxiedSubjectDNs, String proxiedIssuerDNs,
+                    Pattern subjectDnPattern) {
+        List<String> dnList = new ArrayList<>();
+        if (proxiedSubjectDNs != null) {
+            if (proxiedIssuerDNs == null) {
+                throw new IllegalArgumentException("If proxied subject DNs are supplied, then issuer DNs must be supplied as well.");
+            }
 
-    /** System property that contains a regex pattern that matches against subject DNs. */
-    public static final String SUBJECT_DN_PATTERN_PROPERTY = "subject.dn.pattern";
+            // Parse the subject and issuer DNs, verifying we have valid pairs.
+            String[] subjectDns = splitProxiedDNs(proxiedSubjectDNs, true);
+            String[] issuerDns = splitProxiedDNs(proxiedIssuerDNs, true);
+            if (subjectDns.length != issuerDns.length)
+                throw new IllegalArgumentException("Subject and issuer DN lists do not have the same number of entries: " + Arrays.toString(subjectDns) + " vs "
+                                + Arrays.toString(issuerDns));
 
-    /** System property containing a comma-delimited list of NPE OUs. */
-    public static final String NPE_OU_PROPERTY = "npe.ou.entries";
-
-    private static class DnUtilsConfig {
-
-        private static DnUtilsConfig instance;
-
-        private static DnUtilsConfig getInstance() {
-            if (instance == null) {
-                Properties props = new Properties();
-                try (InputStream in = DnUtils.class.getClassLoader().getResourceAsStream(PROPS_RESOURCE)) {
-                    props.load(in);
-                } catch (Throwable t) {
-                    log.error(PROPS_RESOURCE + " could not be loaded!", t);
-                    throw new RuntimeException(t);
+            // Normalize each subject/issuer DN, and add them to the final DN list.
+            for (int i = 0; i < subjectDns.length; ++i) {
+                subjectDns[i] = normalizeDN(subjectDns[i]);
+                issuerDns[i] = normalizeDN(issuerDns[i]);
+                // Verify the subject and issuer DN are not the same.
+                if (issuerDns[i].equalsIgnoreCase(subjectDns[i])) {
+                    throw new IllegalArgumentException("Subject DN " + issuerDns[i] + " was passed as an issuer DN.");
+                }
+                // Verify the issuer DN is not a subject DN.
+                if (subjectDnPattern.matcher(issuerDns[i]).find()) {
+                    throw new IllegalArgumentException("It appears that a subject DN (" + issuerDns[i] + ") was passed as an issuer DN.");
                 }
 
-                String subjectDnPatternValue = getSystemProperty(SUBJECT_DN_PATTERN_PROPERTY, props.getProperty(SUBJECT_DN_PATTERN_PROPERTY));
-                Pattern subjectDnPattern;
-                try {
-                    subjectDnPattern = Pattern.compile(subjectDnPatternValue, Pattern.CASE_INSENSITIVE);
-                } catch (Throwable t) {
-                    log.error("{} = '{}' could not be compiled", SUBJECT_DN_PATTERN_PROPERTY, subjectDnPatternValue, t);
-                    throw new RuntimeException(t);
-                }
-
-                String npeOUsValue = getSystemProperty(NPE_OU_PROPERTY, props.getProperty(NPE_OU_PROPERTY));
-                List<String> npeOUs = Arrays.stream(npeOUsValue.split(",")).map(String::trim).map(String::toUpperCase).collect(Collectors.toList());
-
-                instance = new DnUtilsConfig(subjectDnPattern, npeOUs);
+                dnList.add(subjectDns[i]);
+                dnList.add(issuerDns[i]);
             }
-            return instance;
         }
 
-        private static String getSystemProperty(String systemProperty, String defaultValue) {
-            String value = System.getProperty(systemProperty, defaultValue);
-            if (value == null || value.isBlank()) {
-                throw new IllegalStateException(systemProperty + " property value cannot be null or empty");
+        // Normalize the non-proxied subject and issuer DN, and add them to the list.
+        subjectDN = normalizeDN(subjectDN);
+        issuerDN = normalizeDN(issuerDN);
+        dnList.add(subjectDN.replaceAll("(?<!\\\\)([<>])", "\\\\$1"));
+        dnList.add(issuerDN.replaceAll("(?<!\\\\)([<>])", "\\\\$1"));
+        return dnList;
+    }
+
+    /**
+     * Build and return the result of {@link #buildNormalizedDNList(String, String, String, String, Pattern)}, where the string consist of each DN, and every DN
+     * after the first one is wrapped with {@code <} and {@code >}.
+     *
+     * @param subjectDN
+     *            the subject DN
+     * @param issuerDN
+     *            the issuer DN
+     * @param proxiedSubjectDNs
+     *            the proxied subject DNs
+     * @param proxiedIssuerDNs
+     *            the proxied issuer DNs
+     * @param subjectDnPattern
+     *            the subject DN pattern
+     * @return the constructed string
+     * @see #buildNormalizedDNList(String, String, String, String, Pattern)
+     */
+    public static String buildNormalizedProxyDN(String subjectDN, String issuerDN, String proxiedSubjectDNs, String proxiedIssuerDNs,
+                    Pattern subjectDnPattern) {
+        StringBuilder sb = new StringBuilder();
+        for (String escapedDN : buildNormalizedDNList(subjectDN, issuerDN, proxiedSubjectDNs, proxiedIssuerDNs, subjectDnPattern)) {
+            if (sb.length() == 0)
+                sb.append(escapedDN);
+            else
+                sb.append('<').append(escapedDN).append('>');
+        }
+        return sb.toString();
+    }
+
+    /**
+     * Build and return a string consisting of normalized subject and issuer DNs from the given list, where the string consist of each DN, and every DN after
+     * the first one is wrapped with {@code <} and {@code >}.
+     *
+     * @param dns
+     *            the DNs to normalize
+     * @return the constructed string
+     * @see #normalizeDN(String)
+     */
+    public static String buildNormalizedProxyDN(List<SubjectIssuerDNPair> dns) {
+        StringBuilder sb = new StringBuilder();
+        dns.forEach(dn -> {
+            if (sb.length() == 0) {
+                sb.append(normalizeDN(dn.subjectDN()));
+            } else {
+                sb.append('<').append(normalizeDN(dn.subjectDN())).append('>');
             }
-            return value;
-        }
+            sb.append('<').append(normalizeDN(dn.issuerDN())).append('>');
+        });
+        return sb.toString();
+    }
 
-        private final Pattern subjectDnPattern;
-        private final List<String> npeOUs;
+    /**
+     * Return whether the given DN is considered a server DN. The DN will be considered a server DN if the OU of the DN is found in the given list of NPE OUs.
+     *
+     * @param dn
+     *            the DN
+     * @param npeOUs
+     *            the list of NPE OUs, expected to be all uppercase
+     * @return true if the DN is a server DN, or false otherwise
+     */
+    public static boolean isServerDN(String dn, Collection<String> npeOUs) {
+        String[] ouList = DnUtils.getOrganizationalUnits(dn);
+        return Arrays.stream(ouList).anyMatch((ou) -> npeOUs.contains(ou.toUpperCase()));
+    }
 
-        private DnUtilsConfig(Pattern subjectDnPattern, List<String> npeOUs) {
-            this.subjectDnPattern = subjectDnPattern;
-            this.npeOUs = List.copyOf(npeOUs);
-        }
+    /**
+     * Return the first DN that represents a user. A DN will be considered a user DN if it does not have an OU that is found in the given list of NPE OUs.
+     *
+     * @param dns
+     *            the DNs, expected to be all subject DNs
+     * @param npeOUs
+     *            the list of NPE OUs, expected to be all uppercase
+     * @return the first user DN, or null if no user DN was found
+     */
+    public static String getUserDN(String[] dns, Collection<String> npeOUs) {
+        return getUserDN(dns, false, npeOUs);
+    }
 
-        public boolean containsSubjectDn(String dn) {
-            return subjectDnPattern.matcher(dn).find();
-        }
+    /**
+     * Return the first subject DN that represents a user. A DN will be considered a user DN if it does not have an OU that is found in the given list of NPE
+     * OUs.
+     *
+     * @param dns
+     *            the DNs
+     * @param containsIssuerDns
+     *            whether the argument {@code dns} consists of subject/issuer pairs, with issuer DNs present in odd indexes
+     * @param npeOUs
+     *            the list of NPE OUs, expected to be all uppercase
+     * @return the first user subject DN, or null if no user DN was found
+     */
+    public static String getUserDN(String[] dns, boolean containsIssuerDns, Collection<String> npeOUs) {
+        // If the array list contains subject/issuer pairs, verify it has an even length.
+        if (containsIssuerDns && (dns.length % 2) != 0)
+            throw new IllegalArgumentException("DNs array is not a subject/issuer DN list: " + Arrays.toString(dns));
 
-        public boolean isNpeOU(String ou) {
-            return npeOUs.contains(ou);
+        // Find the first subject DN that is not a server DN.
+        for (int i = 0; i < dns.length; i += (containsIssuerDns) ? 2 : 1) {
+            String dn = dns[i];
+            if (!isServerDN(dn, npeOUs))
+                return dn;
         }
+        return null;
     }
 
     /**

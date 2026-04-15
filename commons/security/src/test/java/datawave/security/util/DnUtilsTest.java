@@ -2,19 +2,25 @@ package datawave.security.util;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Collection;
+import java.util.List;
+import java.util.regex.Pattern;
 
 import org.junit.jupiter.api.Test;
-import org.junitpioneer.jupiter.SetSystemProperty;
 
 import com.google.common.collect.Lists;
 
-@SetSystemProperty(key = DnUtils.SUBJECT_DN_PATTERN_PROPERTY, value = "(?:^|,)\\s*OU\\s*=\\s*My Department\\s*(?:,|$)")
-@SetSystemProperty(key = DnUtils.NPE_OU_PROPERTY, value = "iamnotaperson,npe,stillnotaperson")
+import datawave.security.authorization.SubjectIssuerDNPair;
+
 class DnUtilsTest {
+
+    private static final Pattern subjectDnPattern = Pattern.compile("(?:^|,)\\s*OU\\s*=\\s*My Department\\s*(?:,|$)", Pattern.CASE_INSENSITIVE);
+    private static final List<String> npeOUs = List.of("IAMNOTAPERSON", "NPE", "STILLNOTAPERSON");
 
     /**
      * Tests for {@link DnUtils#splitProxiedDNs(String, boolean)}.
@@ -219,127 +225,146 @@ class DnUtilsTest {
         assertEquals("s-1-1-0", DnUtils.normalizeDN(" S-1-1-0 "));
     }
 
+    /**
+     * Tests for {@link DnUtils#buildNormalizedDNList(String, String, String, String, Pattern)}.
+     */
     @Test
-    public void testBuildNormalizedProxyDN() {
-        String expected = "sdn<idn>";
-        String actual = DnUtils.buildNormalizedProxyDN("SDN", "IDN", null, null);
+    public void testBuildNormalizedDNList() {
+        // Verify that given no proxied subject or issuer DNs, the list consists of the normalized subject and issuer Dn.
+        List<String> expected = Lists.newArrayList("sdn", "idn");
+        List<String> actual = DnUtils.buildNormalizedDNList("SDN", "IDN", null, null, subjectDnPattern);
         assertEquals(expected, actual);
 
-        expected = "sdn2<idn2><sdn1><idn1>";
-        actual = DnUtils.buildNormalizedProxyDN("SDN1", "IDN1", "SDN2", "IDN2");
-        assertEquals(expected, actual);
-
-        expected = "sdn2<idn2><sdn3><idn3><sdn1><idn1>";
-        actual = DnUtils.buildNormalizedProxyDN("SDN1", "IDN1", "SDN2<SDN3>", "IDN2<IDN3>");
-        assertEquals(expected, actual);
-
-        expected = "sdn2<idn2><sdn3><idn3><sdn1><idn1>";
-        actual = DnUtils.buildNormalizedProxyDN("SDN1", "IDN1", "<SDN2><SDN3>", "<IDN2><IDN3>");
-        assertEquals(expected, actual);
-    }
-
-    @Test
-    public void testBuildNormalizedDN() {
-        Collection<String> expected = Lists.newArrayList("sdn", "idn");
-        Collection<String> actual = DnUtils.buildNormalizedDNList("SDN", "IDN", null, null);
-        assertEquals(expected, actual);
-
+        // Verify that given a single proxied subject and issuer dn, the list contains them in the correct order.
         expected = Lists.newArrayList("sdn2", "idn2", "sdn1", "idn1");
-        actual = DnUtils.buildNormalizedDNList("SDN1", "IDN1", "SDN2", "IDN2");
+        actual = DnUtils.buildNormalizedDNList("SDN1", "IDN1", "SDN2", "IDN2", subjectDnPattern);
         assertEquals(expected, actual);
 
+        // Verify that given multiple proxied subject and issuer DNs, the list contains them in the correct order.
         expected = Lists.newArrayList("sdn2", "idn2", "sdn3", "idn3", "sdn1", "idn1");
-        actual = DnUtils.buildNormalizedDNList("SDN1", "IDN1", "SDN2<SDN3>", "IDN2<IDN3>");
+        actual = DnUtils.buildNormalizedDNList("SDN1", "IDN1", "SDN2<SDN3>", "IDN2<IDN3>", subjectDnPattern);
         assertEquals(expected, actual);
 
-        expected = Lists.newArrayList("sdn2", "idn2", "sdn3", "idn3", "sdn1", "idn1");
-        actual = DnUtils.buildNormalizedDNList("SDN1", "IDN1", "<SDN2><SDN3>", "<IDN2><IDN3>");
+        // Verify that an exception is thrown if proxied subject DNs are given, but proxied issuer DNs are not.
+        Throwable throwable = assertThrows(IllegalArgumentException.class, () -> DnUtils.buildNormalizedDNList("SDN1", "IDN1", "SDN2", null, subjectDnPattern));
+        assertEquals("If proxied subject DNs are supplied, then issuer DNs must be supplied as well.", throwable.getMessage());
+
+        // Verify that an exception is thrown if an unequal number of subject DNs and issuer DNs were supplied.
+        throwable = assertThrows(IllegalArgumentException.class, () -> DnUtils.buildNormalizedDNList("SDN1", "IDN2", "SDN2<SDN3>", "IDN2", subjectDnPattern));
+        assertEquals("Subject and issuer DN lists do not have the same number of entries: [SDN2, SDN3] vs [IDN2]", throwable.getMessage());
+
+        // Verify that an exception is thrown if a proxied subject DN is equal to its issuer DN.
+        throwable = assertThrows(IllegalArgumentException.class, () -> DnUtils.buildNormalizedDNList("SDN1", "IDN2", "SDN2", "SDN2", subjectDnPattern));
+        assertEquals("Subject DN sdn2 was passed as an issuer DN.", throwable.getMessage());
+
+        // Verify that an exception is thrown if a proxied issuer DN matches the subject DN pattern.
+        throwable = assertThrows(IllegalArgumentException.class,
+                        () -> DnUtils.buildNormalizedDNList("SDN1", "IDN2", "SDN2", "CN=foo,OU=My Department", subjectDnPattern));
+        assertEquals("It appears that a subject DN (cn=foo, ou=my department) was passed as an issuer DN.", throwable.getMessage());
+    }
+
+    /**
+     * Tests for {@link DnUtils#buildNormalizedProxyDN(String, String, String, String, Pattern)}.
+     */
+    @Test
+    public void testBuildNormalizedProxyDNGivenStringArgs() {
+        // Verify that given no proxied subject or issuer DN, string consists of the normalized subject and issuer DN.
+        String expected = "sdn<idn>";
+        String actual = DnUtils.buildNormalizedProxyDN("SDN", "IDN", null, null, subjectDnPattern);
         assertEquals(expected, actual);
+
+        // Verify that given a single proxied subject and issuer dn, the string contains them in the correct order.
+        expected = "sdn2<idn2><sdn1><idn1>";
+        actual = DnUtils.buildNormalizedProxyDN("SDN1", "IDN1", "SDN2", "IDN2", subjectDnPattern);
+        assertEquals(expected, actual);
+
+        // Verify that given multiple proxied subject and issuer DNs, the string contains them in the correct order.
+        expected = "sdn2<idn2><sdn3><idn3><sdn1><idn1>";
+        actual = DnUtils.buildNormalizedProxyDN("SDN1", "IDN1", "SDN2<SDN3>", "IDN2<IDN3>", subjectDnPattern);
+        assertEquals(expected, actual);
+
+        // Verify that an exception is thrown if proxied subject DNs are given, but proxied issuer DNs are not.
+        Throwable throwable = assertThrows(IllegalArgumentException.class,
+                        () -> DnUtils.buildNormalizedProxyDN("SDN1", "IDN1", "SDN2", null, subjectDnPattern));
+        assertEquals("If proxied subject DNs are supplied, then issuer DNs must be supplied as well.", throwable.getMessage());
+
+        // Verify that an exception is thrown if an unequal number of subject DNs and issuer DNs were supplied.
+        throwable = assertThrows(IllegalArgumentException.class, () -> DnUtils.buildNormalizedProxyDN("SDN1", "IDN2", "SDN2<SDN3>", "IDN2", subjectDnPattern));
+        assertEquals("Subject and issuer DN lists do not have the same number of entries: [SDN2, SDN3] vs [IDN2]", throwable.getMessage());
+
+        // Verify that an exception is thrown if a proxied subject DN is equal to its issuer DN.
+        throwable = assertThrows(IllegalArgumentException.class, () -> DnUtils.buildNormalizedProxyDN("SDN1", "IDN2", "SDN2", "SDN2", subjectDnPattern));
+        assertEquals("Subject DN sdn2 was passed as an issuer DN.", throwable.getMessage());
+
+        // Verify that an exception is thrown if a proxied issuer DN matches the subject DN pattern.
+        throwable = assertThrows(IllegalArgumentException.class,
+                        () -> DnUtils.buildNormalizedProxyDN("SDN1", "IDN2", "SDN2", "CN=foo,OU=My Department", subjectDnPattern));
+        assertEquals("It appears that a subject DN (cn=foo, ou=my department) was passed as an issuer DN.", throwable.getMessage());
     }
 
+    /**
+     * Tests for {@link DnUtils#buildNormalizedProxyDN(List)}.
+     */
     @Test
-    public void testGetUserDnFromArray() {
-        String userDnForTest = "snd1";
-        String[] array = new String[] {userDnForTest, "idn"};
-        String userDN = DnUtils.getUserDN(array);
-        assertEquals(userDnForTest, userDN);
+    public void testBuildNormalizedProxyDNGivenSubjectIssuerDNPairArgs() {
+        // Verify that given an empty list, a blank string is returned.
+        assertEquals("", DnUtils.buildNormalizedProxyDN(List.of()));
+
+        // Verify that given a single SubjectIssuerDnPair, the string consists of the normalized subject and issuer DN.
+        assertEquals("sdn<idn>", DnUtils.buildNormalizedProxyDN(List.of(SubjectIssuerDNPair.of("SDN", "IDN"))));
+
+        // Verify that given multiple SubjectIssuerDnPairs, the string consists of them in normalized form.
+        assertEquals("sdn2<idn2><sdn3><idn3><sdn1><idn1>", DnUtils.buildNormalizedProxyDN(
+                        List.of(SubjectIssuerDNPair.of("SDN2", "IDN2"), SubjectIssuerDNPair.of("SDN3", "IDN3"), SubjectIssuerDNPair.of("SDN1", "IDN1"))));
     }
 
+    /**
+     * Tests for {@link DnUtils#isServerDN(String, Collection)}.
+     */
     @Test
-    public void testTest() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            String[] dns = new String[] {"sdn"};
-            DnUtils.getUserDN(dns, true);
-        });
+    void testIsServerDN() {
+        // Verify that given a DN with an OU that is in the NPE OUs, true is returned.
+        assertTrue(DnUtils.isServerDN("cn=serverA, OU=npe, OU=Other OU", npeOUs));
+
+        // Verify that given a DN without a NPE OU, false is returned.
+
+        // Verify that given a DN with an OU that is in the NPE OUs, true is returned.
+        assertFalse(DnUtils.isServerDN("cn=serverA, OU=Example, OU=Other OU", npeOUs));
     }
 
+    /**
+     * Tests for {@link DnUtils#getUserDN(String[], Collection)}
+     */
     @Test
-    public void testBuildNormalizedProxyDNTooMissingIssuers() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            DnUtils.buildNormalizedProxyDN("SDN", "IDN", "SDN2<SDN3>", null);
-        });
+    void testGetUserDNGivenSubjectDNsOnly() {
+        // Verify that given an array that does not contain a user DN, null is returned.
+        assertNull(DnUtils.getUserDN(new String[] {"CN=Server1,OU=Npe", "CN=Server2,OU=IAmNotAPerson"}, npeOUs));
+
+        // Verify that given an array with user DNs, the first user DN is returned.
+        assertEquals("CN=User1,OU=Example", DnUtils
+                        .getUserDN(new String[] {"CN=Server1,OU=Npe", "CN=User1,OU=Example", "CN=Server2,OU=IAmNotAPerson", "CN=User2,OU=Example"}, npeOUs));
     }
 
+    /**
+     * Tests for {@link DnUtils#getUserDN(String[], boolean, Collection)}.
+     */
     @Test
-    public void testBuildNormalizedProxyDNTooFewIssuers() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            DnUtils.buildNormalizedProxyDN("SDN", "IDN", "SDN2<SDN3>", "IDN2");
-        });
-    }
+    void testGetUserDNGivenSubjectAndIssuerDNs() {
+        // Verify that given an array that does not contain a user DN, null is returned.
+        assertNull(DnUtils.getUserDN(new String[] {"CN=Server1,OU=Npe", "CN=Server2,OU=IAmNotAPerson"}, false, npeOUs));
 
-    @Test
-    public void testBuildNormalizedProxyDNTooFewSubjects() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            DnUtils.buildNormalizedProxyDN("SDN", "IDN", "SDN2", "IDN2<IDN3>");
-        });
-    }
+        // Verify that given an array with user DNs, the first user DN is returned.
+        assertEquals("CN=User1,OU=Example", DnUtils.getUserDN(new String[] {"CN=Server1,OU=Npe", "CN=User1,OU=Example", "CN=User2,OU=Example"}, false, npeOUs));
 
-    @Test
-    public void testBuildNormalizedProxyDNSubjectEqualsIssuer() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            DnUtils.buildNormalizedProxyDN("SDN", "IDN", "SDN2", "SDN2");
-        });
-    }
+        // Verify that given an array with subject and issuer DNs, that only the subject DNs are examined.
+        assertNull(DnUtils.getUserDN(new String[] {"CN=Server1,OU=Npe", "CN=Issuer1,OU=Example", "CN=Server2,OU=IAmNotAPerson", "CN=Issuer2,OU=Example"}, true,
+                        npeOUs));
+        assertEquals("CN=User,OU=Example", DnUtils
+                        .getUserDN(new String[] {"CN=Server1,OU=Npe", "CN=Issuer1,OU=Example", "CN=User,OU=Example", "CN=Issuer2,OU=Example"}, true, npeOUs));
 
-    @Test
-    public void testBuildNormalizedProxyDNSubjectDNInIssuer() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            DnUtils.buildNormalizedProxyDN("SDN", "IDN", "SDN2", "CN=foo,OU=My Department");
-        });
-    }
-
-    @Test
-    public void testBuildNormalizedDNListTooMissingIssuers() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            DnUtils.buildNormalizedDNList("SDN", "IDN", "SDN2<SDN3>", null);
-        });
-    }
-
-    @Test
-    public void testBuildNormalizedDNListTooFewIssuers() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            DnUtils.buildNormalizedDNList("SDN", "IDN", "SDN2<SDN3>", "IDN2");
-        });
-    }
-
-    @Test
-    public void testBuildNormalizedDNListTooFewSubjects() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            DnUtils.buildNormalizedDNList("SDN", "IDN", "SDN2", "IDN2<IDN3>");
-        });
-    }
-
-    @Test
-    public void testBuildNormalizedDNListSubjectEqualsIssuer() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            DnUtils.buildNormalizedDNList("SDN", "IDN", "SDN2", "SDN2");
-        });
-    }
-
-    @Test
-    public void testBuildNormalizedDNListSubjectDNInIssuer() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            DnUtils.buildNormalizedDNList("SDN", "IDN", "SDN2", "CN=foo,OU=My Department");
-        });
+        // Verify that an exception is thrown if containsIssuerDns is true, but the DN array has an uneven length.
+        Throwable throwable = assertThrows(IllegalArgumentException.class,
+                        () -> DnUtils.getUserDN(new String[] {"CN=Server1,OU=Npe", "CN=Issuer1,OU=Example", "CN=User,OU=Example"}, true, npeOUs));
+        assertEquals("DNs array is not a subject/issuer DN list: [CN=Server1,OU=Npe, CN=Issuer1,OU=Example, CN=User,OU=Example]", throwable.getMessage());
     }
 }

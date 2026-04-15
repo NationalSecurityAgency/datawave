@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 
 import javax.xml.bind.annotation.XmlRootElement;
 
+import datawave.security.util.DnUtils;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -20,7 +21,6 @@ import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUser.UserType;
 import datawave.security.authorization.ProxiedUserDetails;
 import datawave.security.authorization.SubjectIssuerDNPair;
-import datawave.security.util.ProxiedEntityUtils;
 
 /**
  * A {@link UserDetails} that represents a set of proxied users. For example, this proxied user could represent a GUI server acting on behalf of a user. The GUI
@@ -77,7 +77,7 @@ public class DatawaveUserDetails implements ProxiedUserDetails, UserDetails {
     @Override
     @JsonIgnore
     public String getShortName() {
-        return ProxiedEntityUtils.getShortName(getPrimaryUser().getName());
+        return DnUtils.getShortName(getPrimaryUser().getName());
     }
 
     /**

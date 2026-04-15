@@ -28,6 +28,7 @@ import java.util.UUID;
 
 import javax.ws.rs.core.MediaType;
 
+import datawave.security.util.DnProperties;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
@@ -104,7 +105,7 @@ public class RemoteEdgeQueryLogicHttpTest {
     @Before
     public void setup() throws Exception {
         final ObjectMapper objectMapper = new DefaultMapperDecorator().decorate(new ObjectMapper());
-        System.setProperty(DnUtils.SUBJECT_DN_PATTERN_PROPERTY, ".*ou=server.*");
+        System.setProperty(DnProperties.SUBJECT_DN_PATTERN_PROPERTY, ".*ou=server.*");
         KeyPairGenerator generater = KeyPairGenerator.getInstance("RSA");
         generater.initialize(keysize);
         KeyPair keypair = generater.generateKeyPair();
