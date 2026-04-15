@@ -31,3 +31,13 @@ git clone git@github.com:pubg/protoc-gen-jsonschema.git
 cd protoc-gen-jsonschema
 go install github.com/pubg/protoc-gen-jsonschema
 ```
+
+## Optional: build via Maven
+
+When you need to regenerate `AnnotationV1.proto` Java sources, run the protobuf plugin that is configured in `core/annotation/pom.xml`. It compiles the `.proto` definitions with the same protobuf toolchain referenced in the Maven build and writes the generated Java directly into `core/annotation/src/main/java/datawave/annotation/protobuf/v1`:
+
+```bash
+mvn -pl core/annotation protobuf:compile
+```
+
+Generated files stay alongside the checked-in sources and no additional source-path configuration is required.

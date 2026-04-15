@@ -1,9 +1,11 @@
 package datawave.query.model;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import java.util.Collections;
 
 import org.junit.Test;
-import org.junit.jupiter.api.Assertions;
 
 public class FieldMappingTest {
 
@@ -12,7 +14,7 @@ public class FieldMappingTest {
      */
     @Test
     public void testForwardMappingWithPlainFieldName() {
-        Assertions.assertDoesNotThrow(() -> new FieldMapping("datatype", "DB_NAME", "FIELD_NAME", Direction.FORWARD, "ALL", Collections.emptySet()));
+        assertDoesNotThrow(() -> new FieldMapping("datatype", "DB_NAME", "FIELD_NAME", Direction.FORWARD, "ALL", Collections.emptySet()));
     }
 
     /**
@@ -20,8 +22,7 @@ public class FieldMappingTest {
      */
     @Test
     public void testForwardMappingWithInvalidPatternFieldName() {
-        Assertions.assertThrows(IllegalArgumentException.class,
-                        () -> new FieldMapping("datatype", "[\\]", "FIELD_NAME", Direction.FORWARD, "ALL", Collections.emptySet()),
+        assertThrows(IllegalArgumentException.class, () -> new FieldMapping("datatype", "[\\]", "FIELD_NAME", Direction.FORWARD, "ALL", Collections.emptySet()),
                         "Invalid regex pattern supplied for field name: [\\]");
     }
 
@@ -30,6 +31,6 @@ public class FieldMappingTest {
      */
     @Test
     public void testForwardMappingWithValidPatternFieldName() {
-        Assertions.assertDoesNotThrow(() -> new FieldMapping("datatype", "DB_NAME.*", "FIELD_NAME", Direction.FORWARD, "ALL", Collections.emptySet()));
+        assertDoesNotThrow(() -> new FieldMapping("datatype", "DB_NAME.*", "FIELD_NAME", Direction.FORWARD, "ALL", Collections.emptySet()));
     }
 }
