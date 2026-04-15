@@ -267,14 +267,14 @@ public abstract class BaseIndexLookupTest {
 
     protected void assertResultFields(Set<String> expected) {
         Preconditions.checkNotNull(result, "result cannot be null");
-        assertEquals(expected, result.keySet());
+        assertEquals(new HashSet<>(expected), new HashSet<>(result.keySet()));
     }
 
     protected void assertResultValues(String field, Set<String> values) {
         Preconditions.checkNotNull(result, "result cannot be null");
         assertTrue(result.containsKey(field), "result did not contain field: " + field);
         Set<String> resultValues = new HashSet<>(result.get(field));
-        assertEquals(values, resultValues);
+        assertEquals(new HashSet<>(values), resultValues);
     }
 
     protected void assertExceptionSeen() {
