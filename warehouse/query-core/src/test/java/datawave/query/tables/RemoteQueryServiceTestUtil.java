@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.ws.rs.core.MediaType;
@@ -239,6 +240,7 @@ public class RemoteQueryServiceTestUtil extends RemoteServiceUtil {
 
         private boolean planTest = false;
         private String plan;
+        private CountDownLatch exceptionLatch;
 
         public QueryRunnable(QueryLogic logic) {
             this(logic, null);
@@ -293,8 +295,11 @@ public class RemoteQueryServiceTestUtil extends RemoteServiceUtil {
                     assertEquals(expectedCount, events.size());
                 }
             } catch (Exception e) {
-                caught.set(true);
                 exception = e;
+                caught.set(true);
+                if (exceptionLatch != null) {
+                    exceptionLatch.countDown();
+                }
                 return;
             }
 
@@ -314,6 +319,10 @@ public class RemoteQueryServiceTestUtil extends RemoteServiceUtil {
 
         public Exception getException() {
             return exception;
+        }
+
+        public void setExceptionLatch(CountDownLatch latch) {
+            this.exceptionLatch = latch;
         }
 
         public void setPlanTest(boolean planTest) {

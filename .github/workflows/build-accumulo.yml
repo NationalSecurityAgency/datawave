@@ -36,12 +36,12 @@ jobs:
       #
     steps:
     - name: Checkout DataWave
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         path: datawave
 
     - name: Checkout Accumulo
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       id: accumuloCheckout
       with:
         repository: ${{ github.event.inputs.accumuloRepo }}
