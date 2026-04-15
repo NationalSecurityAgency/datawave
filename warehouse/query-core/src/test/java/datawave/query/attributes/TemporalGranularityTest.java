@@ -7,7 +7,6 @@ import static org.springframework.test.util.AssertionErrors.assertFalse;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -130,8 +129,7 @@ public class TemporalGranularityTest {
     @Test
     public void testSerialization() throws JsonProcessingException {
         for (TemporalGranularity granularity : TemporalGranularity.values()) {
-            Assertions.assertEquals("\"" + granularity.getName() + "\"", objectMapper.writeValueAsString(granularity),
-                            "Incorrect serialization of " + granularity);
+            assertEquals("\"" + granularity.getName() + "\"", objectMapper.writeValueAsString(granularity), "Incorrect serialization of " + granularity);
         }
     }
 
@@ -141,7 +139,7 @@ public class TemporalGranularityTest {
     @Test
     public void testDeserialization() throws JsonProcessingException {
         for (TemporalGranularity granularity : TemporalGranularity.values()) {
-            Assertions.assertEquals(granularity, objectMapper.readValue("\"" + granularity.getName() + "\"", TemporalGranularity.class),
+            assertEquals(granularity, objectMapper.readValue("\"" + granularity.getName() + "\"", TemporalGranularity.class),
                             "Incorrect deserialization of " + granularity);
         }
     }
