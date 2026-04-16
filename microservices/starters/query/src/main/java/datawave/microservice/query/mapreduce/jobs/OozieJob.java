@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
 
+import datawave.security.util.DnUtils;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.fs.Path;
@@ -17,7 +18,6 @@ import datawave.core.query.logic.QueryLogicFactory;
 import datawave.microservice.authorization.user.DatawaveUserDetails;
 import datawave.microservice.query.mapreduce.config.MapReduceQueryProperties;
 import datawave.microservice.query.mapreduce.status.MapReduceQueryStatus;
-import datawave.security.util.ProxiedEntityUtils;
 import datawave.webservice.common.audit.Auditor;
 
 public class OozieJob extends MapReduceJob {
@@ -38,7 +38,7 @@ public class OozieJob extends MapReduceJob {
 
     @Override
     public String createId(DatawaveUserDetails currentUser) {
-        return String.join("_", ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName()), UUID.randomUUID().toString());
+        return String.join("_", DnUtils.getShortName(currentUser.getPrimaryUser().getName()), UUID.randomUUID().toString());
     }
 
     @Override
