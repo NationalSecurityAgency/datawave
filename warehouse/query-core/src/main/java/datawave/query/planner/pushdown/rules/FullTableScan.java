@@ -22,7 +22,7 @@ import datawave.query.planner.pushdown.Cost;
 
 /**
  * Purpose: Delays scanning of leading and trailing wild cards when we have a top level and whose other children are indexed.
- *
+ * <p>
  * Assumptions: Same as parent
  */
 public class FullTableScan extends PushDownRule {
@@ -32,8 +32,6 @@ public class FullTableScan extends PushDownRule {
     @Override
     public Object visit(ASTAndNode node, Object data) {
 
-        JexlNode returnNode = null;
-
         List<JexlNode> rewrittenNodes = Lists.newArrayList();
         for (int i = 0; i < node.jjtGetNumChildren(); i++) {
             JexlNode child = node.jjtGetChild(i);
@@ -42,10 +40,7 @@ public class FullTableScan extends PushDownRule {
 
         }
 
-        returnNode = JexlNodeFactory.createAndNode(rewrittenNodes);
-
-        return returnNode;
-
+        return JexlNodeFactory.createAndNode(rewrittenNodes);
     }
 
     protected JexlNode reverseDepth(JexlNode parentNode, List<JexlNode> delayedPredicates) {
@@ -66,14 +61,12 @@ public class FullTableScan extends PushDownRule {
     @Override
     public Object visit(ASTERNode node, Object data) {
 
-        /**
+        /*
          * Only perform this action is we have an AND as a parent and the cost of our node is INFINITE. our getCost method will only return INFINITE if we have
          * a trailing and leading wildcard
          */
-        if (isParent(node, ASTAndNode.class) && getCost(node) == Cost.INFINITE) {
-
+        if (isParent(node, ASTAndNode.class) && getCost(node).isInfinite()) {
             return QueryPropertyMarker.create(node, DELAYED);
-
         }
 
         return super.visit(node, data);
@@ -81,7 +74,7 @@ public class FullTableScan extends PushDownRule {
 
     @Override
     public Object visit(ASTJexlScript node, Object data) {
-        return (ASTJexlScript) super.visit(node, data);
+        return super.visit(node, data);
     }
 
     /*
@@ -96,11 +89,10 @@ public class FullTableScan extends PushDownRule {
         try {
             regex = new JavaRegexAnalyzer(pattern);
             if (regex.isLeadingRegex() && regex.isTrailingRegex())
-                return Cost.INFINITE;
+                return Cost.infiniteRegex();
         } catch (JavaRegexParseException e) {
             log.warn("Couldn't parse regex from ERNode: " + pattern);
         }
-        return Cost.UNEVALUATED;
-
+        return Cost.zero();
     }
 }

@@ -709,7 +709,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         addOption(cfg, QueryOptions.MATCHING_FIELD_SETS, config.getMatchingFieldSetsAsString(), false);
         addOption(cfg, QueryOptions.GROUP_FIELDS, config.getGroupFields().toString(), true);
         addOption(cfg, QueryOptions.GROUP_FIELDS_BATCH_SIZE, config.getGroupFieldsBatchSizeAsString(), true);
-        if (!config.isDisableIteratorUniqueFields()) {
+        if (!config.isDisableIteratorUniqueFields() && !(config.isDisableIteratorMostRecentUniqueFields() && config.getUniqueFields().isMostRecent())) {
             addOption(cfg, QueryOptions.UNIQUE_FIELDS, config.getUniqueFields().toString(), true);
             if (config.getUniqueFields().isMostRecent()) {
                 // this may be redundant with the uniqueFields.toString(), but other code relies on this explicitly being set
@@ -2088,7 +2088,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 allFields = allFieldTypeMap.getIfPresent(dataTypeHash);
             }
             if (null == allFields) {
-                allFields = metadataHelper.getAllFields(dataTypes);
+                allFields = metadataHelper.getModelExpansionFields(dataTypes);
                 if (cacheDataTypes) {
                     allFieldTypeMap.put(dataTypeHash, allFields);
                 }
@@ -3006,18 +3006,19 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
             // count the terms
             int termCount = TermCountingVisitor.countTerms(queryTree);
+            int indexedEqualityTerms = IndexedTermCountingVisitor.countTerms(config.getQueryTree(), config.getIndexedFields());
+
+            log.info("term count: " + termCount + " indexed terms: " + indexedEqualityTerms);
 
             if (config.getIntermediateMaxTermThreshold() > 0 && termCount > config.getIntermediateMaxTermThreshold()) {
-                throw new DatawaveFatalQueryException(
-                                "Query with " + termCount + " exceeds the initial max term threshold of " + config.getIntermediateMaxTermThreshold());
+                String msg = "Query with " + termCount + " exceeds the initial max term threshold of " + config.getIntermediateMaxTermThreshold();
+                throw new DatawaveFatalQueryException(msg);
             }
 
-            if (config.getIndexedMaxTermThreshold() > 0) {
-                int indexedEqualityTerms = IndexedTermCountingVisitor.countTerms(config.getQueryTree(), config.getIndexedFields());
-                if (indexedEqualityTerms > config.getIndexedMaxTermThreshold()) {
-                    throw new DatawaveQueryException("Query with " + indexedEqualityTerms + " indexed EQ nodes exceeds the indexedMaxTermThreshold of "
-                                    + config.getIndexedMaxTermThreshold());
-                }
+            if (config.getIndexedMaxTermThreshold() > 0 && indexedEqualityTerms > config.getIndexedMaxTermThreshold()) {
+                String msg = "Query with " + indexedEqualityTerms + " indexed EQ nodes exceeds the indexedMaxTermThreshold of "
+                                + config.getIndexedMaxTermThreshold();
+                throw new DatawaveQueryException(msg);
             }
 
             if (termCount >= pushdownThreshold) {

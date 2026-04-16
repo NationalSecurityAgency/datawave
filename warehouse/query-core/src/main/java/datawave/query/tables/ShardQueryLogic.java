@@ -1715,7 +1715,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         logQuery(config.getQueryTree(), "Query after flattening");
 
         // Apply the query model.
-        config.setQueryTree(ShardQueryUtils.applyQueryModel(config.getQueryTree(), config, metadataHelper.getAllFields(config.getDatatypeFilter()),
+        config.setQueryTree(ShardQueryUtils.applyQueryModel(config.getQueryTree(), config, metadataHelper.getModelExpansionFields(config.getDatatypeFilter()),
                         this.queryModel));
 
         logQuery(config.getQueryTree(), "Query after applying query model");
@@ -1906,6 +1906,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
     public void setDisableIteratorUniqueFields(boolean disableIteratorUniqueFields) {
         getConfig().setDisableIteratorUniqueFields(disableIteratorUniqueFields);
+    }
+
+    public boolean isDisableIteratorMostRecentUniqueFields() {
+        return getConfig().isDisableIteratorMostRecentUniqueFields();
+    }
+
+    public void setDisableIteratorMostRecentUniqueFields(boolean disableIteratorMostRecentUniqueFields) {
+        getConfig().setDisableIteratorMostRecentUniqueFields(disableIteratorMostRecentUniqueFields);
     }
 
     public UniqueFields getUniqueFields() {

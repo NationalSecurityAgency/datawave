@@ -33,6 +33,7 @@ import datawave.query.tables.ScannerSession;
  * An asynchronous index lookup which Looks up field names from the index which match the provided set of terms, and optionally limits them to the specified
  * fields
  */
+@Deprecated
 public class FieldNameIndexLookup extends AsyncIndexLookup {
     private static final Logger log = Logger.getLogger(FieldNameIndexLookup.class);
 

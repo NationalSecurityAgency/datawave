@@ -463,6 +463,8 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("compositeFilterFunctionsEnabled", true);
         defaultValues.put("disableIteratorUniqueFields", false);
         updatedValues.put("disableIteratorUniqueFields", true);
+        defaultValues.put("disableIteratorMostRecentUniqueFields", true);
+        updatedValues.put("disableIteratorMostRecentUniqueFields", false);
         defaultValues.put("uniqueFields", new UniqueFields());
         updatedValues.put("uniqueFields", UniqueFields.from("FIELD_U,FIELD_V"));
         defaultValues.put("uniqueCacheBufferSize", 100);

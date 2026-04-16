@@ -93,7 +93,7 @@ public class LocalBatchScanner extends SessionOptions implements BatchScanner {
             SortedKeyValueIterator<Key,Value> created = IteratorConfigUtil.loadIterators(base, iteratorBuilder);
             List<ByteSequence> columns = new ArrayList<>();
             for (Column c : fetchedColumns) {
-                columns.add(new ArrayByteSequence(c.columnFamily));
+                columns.add(new ArrayByteSequence(c.getColumnFamily()));
             }
 
             for (Range range : ranges) {
@@ -103,7 +103,7 @@ public class LocalBatchScanner extends SessionOptions implements BatchScanner {
                     created.next();
                 }
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
 
