@@ -5,7 +5,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import datawave.security.util.DnUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +26,7 @@ import datawave.microservice.authorization.user.DatawaveUserDetailsFactory;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.JWTTokenHandler;
 import datawave.security.authorization.SubjectIssuerDNPair;
+import datawave.security.util.DnUtils;
 
 /**
  * An {@link AuthenticationUserDetailsService} that retrieves user information from a remote authorization service for a set of proxied entity names, and

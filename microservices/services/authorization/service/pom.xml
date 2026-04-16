@@ -92,12 +92,6 @@
                 <version>${version.jjwt}</version>
             </dependency>
             <dependency>
-                <!-- Required to allow the service loader to discover implementations for jjwt-api services. -->
-                <groupId>io.jsonwebtoken</groupId>
-                <artifactId>jjwt-impl</artifactId>
-                <version>${version.jjwt}</version>
-            </dependency>
-            <dependency>
                 <groupId>io.swagger.core.v3</groupId>
                 <artifactId>swagger-annotations</artifactId>
                 <version>${version.swagger}</version>
@@ -168,6 +162,7 @@
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-api</artifactId>
         </dependency>
+        <!-- Required to allow the service loader to discover backing implementations for jjwt-api. -->
         <dependency>
             <groupId>io.swagger.core.v3</groupId>
             <artifactId>swagger-annotations</artifactId>

@@ -28,7 +28,6 @@ import java.util.UUID;
 
 import javax.ws.rs.core.MediaType;
 
-import datawave.security.util.DnProperties;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
@@ -54,7 +53,7 @@ import datawave.core.query.result.event.DefaultResponseObjectFactory;
 import datawave.microservice.query.QueryImpl;
 import datawave.microservice.query.QueryParameters;
 import datawave.security.authorization.DatawavePrincipal;
-import datawave.security.util.DnUtils;
+import datawave.security.util.DnProperties;
 import datawave.webservice.common.json.DefaultMapperDecorator;
 import datawave.webservice.common.remote.TestSSLStores;
 import datawave.webservice.query.remote.RemoteQueryServiceImpl;

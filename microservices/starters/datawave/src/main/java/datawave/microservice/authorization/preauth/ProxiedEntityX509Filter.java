@@ -20,7 +20,6 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import datawave.security.util.DnUtils;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
@@ -29,6 +28,7 @@ import org.springframework.security.web.authentication.preauth.AbstractPreAuthen
 import org.springframework.util.StringUtils;
 
 import datawave.security.authorization.SubjectIssuerDNPair;
+import datawave.security.util.DnUtils;
 
 /**
  * Allows authorization based on a supplied X.509 client certificate (or information from trusted headers) and proxied entities/issuers named in headers.

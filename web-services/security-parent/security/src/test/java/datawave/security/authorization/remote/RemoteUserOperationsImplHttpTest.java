@@ -25,7 +25,6 @@ import javax.enterprise.concurrent.ManagedExecutorService;
 import javax.security.auth.x500.X500Principal;
 import javax.ws.rs.core.MediaType;
 
-import datawave.security.util.DnProperties;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.io.IOUtils;
 import org.junit.After;
@@ -58,7 +57,7 @@ import datawave.security.authorization.ProxiedUserDetails;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.authorization.UserOperations;
 import datawave.security.cert.SSLStores;
-import datawave.security.util.DnUtils;
+import datawave.security.util.DnProperties;
 import datawave.user.AuthorizationsListBase;
 import datawave.user.DefaultAuthorizationsList;
 import datawave.webservice.common.json.DefaultMapperDecorator;

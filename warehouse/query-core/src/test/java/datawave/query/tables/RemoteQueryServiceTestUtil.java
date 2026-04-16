@@ -32,7 +32,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.ws.rs.core.MediaType;
 
-import datawave.security.util.DnProperties;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.NameValuePair;
@@ -61,7 +60,7 @@ import datawave.microservice.query.QueryParameters;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.SubjectIssuerDNPair;
-import datawave.security.util.DnUtils;
+import datawave.security.util.DnProperties;
 import datawave.webservice.common.json.DefaultMapperDecorator;
 import datawave.webservice.common.remote.RemoteServiceUtil;
 import datawave.webservice.common.remote.TestSSLStores;
