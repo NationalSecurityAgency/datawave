@@ -280,7 +280,7 @@ public class GroupingRequiredFilterFunctions {
         firstMatches.forEach(currentMatch -> {
             String matchFieldName = ValueTuple.getFieldName(currentMatch);
             // my firstMatches will be a collection that looks like [NAME.grandparent_0.parent_0.child_0:SANTINO]
-            String theFirstMatch = EvaluationPhaseFilterFunctions.getMatchToLeftOfPeriod(matchFieldName, positionFromLeft);
+            String theFirstMatch = EvaluationPhaseFilterFunctions.getMatchFromLeftOfPeriod(matchFieldName, positionFromLeft);
 
             for (int i = 2; i < args.length; i += 2) {
 
@@ -300,7 +300,7 @@ public class GroupingRequiredFilterFunctions {
                     for (Object fieldValue : (Iterable<?>) args[i]) {
                         String fieldName = ValueTuple.getFieldName(fieldValue);
                         String nextRegex = args[i + 1].toString();
-                        String matchToLeftOfPeriod = EvaluationPhaseFilterFunctions.getMatchToLeftOfPeriod(fieldName, positionFromLeft);
+                        String matchToLeftOfPeriod = EvaluationPhaseFilterFunctions.getMatchFromLeftOfPeriod(fieldName, positionFromLeft);
                         // @formatter:off
                         manageMatchesInGroupLeftRemainingArgs(fieldValue,
                                 nextRegex, // regex
@@ -324,7 +324,7 @@ public class GroupingRequiredFilterFunctions {
                     manageMatchesInGroupLeftRemainingArgs(fieldValue,
                             args[i + 1].toString(), // regex
                             allMatches, theFirstMatch,
-                            EvaluationPhaseFilterFunctions.getMatchToLeftOfPeriod(fieldName, positionFromLeft), // the next match
+                            EvaluationPhaseFilterFunctions.getMatchFromLeftOfPeriod(fieldName, positionFromLeft), // the next match
                             currentMatch);
                     // @formatter:on
                 }

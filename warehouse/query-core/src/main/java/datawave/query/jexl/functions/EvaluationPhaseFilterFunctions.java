@@ -1653,29 +1653,38 @@ public class EvaluationPhaseFilterFunctions {
      * occurrence of the character '.' from the left, where N is specified by {@code pos}.
      *
      * <pre>
-     * Given the string "FIRST.SECOND.THIRD.FOURTH"
-     * - A value of 0 for pos will result in the substring 'SECOND.THIRD'
-     * - A value of 1 for pos will result in the substring 'SECOND'
-     * - A value of 2 for pos will result in null being returned
+     * Given the string "FIELD.FIRST.SECOND.THIRD.FOURTH"
+     * - A value of 0 for pos will result in the substring 'FIRST'
+     * - A value of 1 for pos will result in the substring 'FIRST.SECOND'
+     * - A value of 2 for pos will result in the substring 'FIRST.SECOND.THIRD'
+     * - A value of 3 for pos will result in the substring 'FIRST.SECOND.THIRD.FOURTH'
+     * - A value of 4+ for pos will result in null being returned
      * </pre>
      *
      * @param input
      *            the input string
      * @param pos
-     *            the Nth position of '.' to end the substring at
+     *            the index of the end group to include in the response. All indices will be included between zero and it
+     *
      * @return the substring
      */
-    public static String getMatchToLeftOfPeriod(String input, int pos) {
+    public static String getMatchFromLeftOfPeriod(String input, int pos) {
+        if (pos < 0) {
+            return null;
+        }
         // Always peel off the fieldName before the first '.'
         input = input.substring(input.indexOf('.') + 1);
         int[] indices = getIndicesOfPeriods(input);
-        if (indices.length < pos + 1) {
+        if (pos < indices.length) {
+            return input.substring(0, indices[pos]);
+        } else if (pos == indices.length) {
+            return input;
+        } else {
             if (log.isTraceEnabled()) {
                 log.trace("Not enough grouping info to extract group " + pos + " from the left for input " + input);
             }
             return null;
         }
-        return input.substring(0, indices[indices.length - pos - 1]);
     }
 
     /**

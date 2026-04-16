@@ -106,16 +106,15 @@ public class GroupingRequiredFilterFunctionsIT {
             // can be complex patterns with lookahead: one digit, one upper case, 8+ characters
             "grouping:matchesInGroup(FIELD, '^(?=.*\\\\d)(?=.*[A-Z]).{8,}$', FIELD1, 'b*'); FIELD.1.2.3=bb7dfZuq,FIELD1.1.2.3=bbbbbbbbbb; true",
 
-            // matchesInGroupLeft should work the same as matchesInGroup but with an index offset from the left but
-            // currently does not. The current behavior is show below in tests. When unexpected, the correct response
-            // is indicated. Problem appears to be in EvaluationPhaseFilterFunctions.getMatchToLeftOfPeriod()
+            // matchesInGroupLeft should work the same as matchesInGroup but with an index offset from the left
+            // default 0 - .1 matches .1
             "grouping:matchesInGroupLeft(FIELD, 'a', FIELD1, 'b'); FIELD.1.2.3=a,FIELD1.1.2.3=b; true",
-            // CURRENT BEHAVIOR: 0-index is acting like 1-index, this should still be true
-            "grouping:matchesInGroupLeft(FIELD, 'a', FIELD1, 'b'); FIELD.1.0.3=a,FIELD1.1.9.3=b; false",
-            // CURRENT BEHAVIOR: 1-index is acting like 0-index, this should still be false
-            "grouping:matchesInGroupLeft(FIELD, 'a', FIELD1, 'b', 1); FIELD.000.999.0=a,FIELD1.000.888.9=b; true",
-            // CURRENT BEHAVIOR: 2-index is acting like 3-index, this should be true
-            "grouping:matchesInGroupLeft(FIELD, 'a', FIELD1, 'b', 2); FIELD.000.999.1=a,FIELD1.000.999.1=b; false",
+            // default 0 - .1 matches .1
+            "grouping:matchesInGroupLeft(FIELD, 'a', FIELD1, 'b'); FIELD.1.0.3=a,FIELD1.1.9.3=b; true",
+            // 1 - 000.999 does not match 000.888
+            "grouping:matchesInGroupLeft(FIELD, 'a', FIELD1, 'b', 1); FIELD.000.999.0=a,FIELD1.000.888.9=b; false",
+            // 2 - 000.999.1 matches 000.999.1
+            "grouping:matchesInGroupLeft(FIELD, 'a', FIELD1, 'b', 2); FIELD.000.999.1=a,FIELD1.000.999.1=b; true",
 
             // 0 - 1 does not match 0
             "grouping:matchesInGroupLeft(FIELD, 'a', FIELD1, 'b'); FIELD.1.2.3=a,FIELD1.0.2.3=b; false",
