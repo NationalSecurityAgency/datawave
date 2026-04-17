@@ -19,6 +19,8 @@ import static datawave.modification.MutableMetadataHandlerTestSupport.contentCon
 import static datawave.modification.MutableMetadataHandlerTestSupport.globalIndexQualifier;
 import static datawave.modification.MutableMetadataHandlerTestSupport.normalizeUuid;
 
+import java.util.Set;
+
 import org.junit.jupiter.api.Test;
 
 import datawave.util.TableName;
@@ -233,7 +235,7 @@ public class MutableMetadataHandlerAccumuloTest {
         MutableMetadataHandlerTestSupport support = new MutableMetadataHandlerTestSupport(getClass().getSimpleName() + "_contentDelete");
         String quote = "Content cleanup target";
 
-        support.setContentFields(java.util.Set.of(QUOTE_FIELD));
+        support.setContentFields(Set.of(QUOTE_FIELD));
         support.process(support.newRequest(MODE.INSERT, QUOTE_FIELD, quote, null), false, false);
         support.put(TableName.SHARD, SHARD_ID, "d", DATATYPE + NULL_BYTE + CAPONE_UID + NULL_BYTE + QUOTE_FIELD + NULL_BYTE + "0", "ALL",
                         CAPONE_EVENT_TIMESTAMP, NULL_VALUE);
@@ -249,33 +251,37 @@ public class MutableMetadataHandlerAccumuloTest {
         String quote = "Kind word";
         String tokenValue = "word";
 
-        support.setIndexOnlySuffixes(java.util.Set.of("_TOKEN"));
+        support.setIndexOnlySuffixes(Set.of("_TOKEN"));
         support.process(support.newRequest(MODE.INSERT, QUOTE_FIELD, quote, null), false, false);
         support.setupTokenField(QUOTE_TOKEN_FIELD, tokenValue);
 
         support.process(support.newRequest(MODE.DELETE, QUOTE_FIELD, quote, null), true, false);
 
         support.assertFieldIndexAbsent(QUOTE_TOKEN_FIELD, tokenValue);
-        support.assertTermFrequencyRowAbsent(tokenValue, QUOTE_TOKEN_FIELD);
+        support.assertTermFrequencyRowAbsent(QUOTE_TOKEN_FIELD, tokenValue);
         support.assertShardIndexMutation(QUOTE_TOKEN_FIELD, tokenValue, VIS_ALL, -1);
     }
 
     @Test
-    public void deleteWithPurgeTokensShouldLeaveContentContextTermFrequencyRowsBehind() throws Exception {
+    public void deleteWithPurgeTokensShouldRemoveContentContextTermFrequencyRows() throws Exception {
         MutableMetadataHandlerTestSupport support = new MutableMetadataHandlerTestSupport(getClass().getSimpleName() + "_purgeTokensContentContext");
         String quote = "Kind word";
         String tokenValue = "word";
         String hashedTokenField = contentContextField(QUOTE_TOKEN_FIELD, quote);
 
-        support.setIndexOnlySuffixes(java.util.Set.of("_TOKEN"));
+        support.setIndexOnlySuffixes(Set.of("_TOKEN"));
         support.process(support.newRequest(MODE.INSERT, QUOTE_FIELD, quote, null), false, false);
         support.setupTokenField(QUOTE_TOKEN_FIELD, tokenValue, hashedTokenField);
+        support.assertShardIndexMutation(QUOTE_TOKEN_FIELD, tokenValue, VIS_ALL, 1);
+        support.assertFieldIndexPresent(QUOTE_TOKEN_FIELD, tokenValue, VIS_ALL);
+
+        support.assertTermFrequencyRowPresent(hashedTokenField, tokenValue, VIS_ALL);
 
         support.process(support.newRequest(MODE.DELETE, QUOTE_FIELD, quote, null), true, false);
 
         support.assertFieldIndexAbsent(QUOTE_TOKEN_FIELD, tokenValue);
         support.assertShardIndexMutation(QUOTE_TOKEN_FIELD, tokenValue, VIS_ALL, -1);
-        support.assertTermFrequencyRowPresent(tokenValue, hashedTokenField, VIS_ALL);
+        support.assertTermFrequencyRowAbsent(hashedTokenField, tokenValue);
     }
 
     @Test
@@ -284,14 +290,14 @@ public class MutableMetadataHandlerAccumuloTest {
         String quote = "Kind word";
         String tokenValue = "word";
 
-        support.setIndexOnlySuffixes(java.util.Set.of("_TOKEN"));
+        support.setIndexOnlySuffixes(Set.of("_TOKEN"));
         support.process(support.newRequest(MODE.INSERT, QUOTE_FIELD, quote, null), false, false);
         support.setupTokenField(QUOTE_TOKEN_FIELD, tokenValue);
 
         support.process(support.newRequest(MODE.DELETE, QUOTE_FIELD, quote, null), false, false);
 
         support.assertFieldIndexPresent(QUOTE_TOKEN_FIELD, tokenValue, VIS_ALL);
-        support.assertTermFrequencyRowPresent(tokenValue, QUOTE_TOKEN_FIELD, VIS_ALL);
+        support.assertTermFrequencyRowPresent(QUOTE_TOKEN_FIELD, tokenValue, VIS_ALL);
     }
 
     @Test

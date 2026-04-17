@@ -253,7 +253,7 @@ class MutableMetadataHandlerTestSupport {
     /**
      * Asserts that the shard-table term-frequency row exists for the token and derived field name.
      */
-    void assertTermFrequencyRowPresent(String token, String fieldName, String visibility) throws Exception {
+    void assertTermFrequencyRowPresent(String fieldName, String token, String visibility) throws Exception {
         assertEntryPresent(TableName.SHARD, SHARD_ID, ColumnFamilyConstants.COLF_TF.toString(), termFrequencyQualifier(token, fieldName), visibility,
                         CAPONE_EVENT_TIMESTAMP, NULL_VALUE);
     }
@@ -261,7 +261,7 @@ class MutableMetadataHandlerTestSupport {
     /**
      * Asserts that the shard-table term-frequency row has been removed for the token and derived field name.
      */
-    void assertTermFrequencyRowAbsent(String token, String fieldName) throws Exception {
+    void assertTermFrequencyRowAbsent(String fieldName, String token) throws Exception {
         assertEntryAbsent(TableName.SHARD, SHARD_ID, ColumnFamilyConstants.COLF_TF.toString(), termFrequencyQualifier(token, fieldName));
     }
 
