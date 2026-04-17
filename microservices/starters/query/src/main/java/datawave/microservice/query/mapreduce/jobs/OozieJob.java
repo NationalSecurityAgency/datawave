@@ -6,7 +6,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
 
-import datawave.security.util.DnUtils;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.fs.Path;
@@ -18,6 +17,7 @@ import datawave.core.query.logic.QueryLogicFactory;
 import datawave.microservice.authorization.user.DatawaveUserDetails;
 import datawave.microservice.query.mapreduce.config.MapReduceQueryProperties;
 import datawave.microservice.query.mapreduce.status.MapReduceQueryStatus;
+import datawave.security.util.DnUtils;
 import datawave.webservice.common.audit.Auditor;
 
 public class OozieJob extends MapReduceJob {

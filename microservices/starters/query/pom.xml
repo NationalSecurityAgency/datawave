@@ -50,11 +50,6 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>gov.nsa.datawave.commons</groupId>
-                <artifactId>datawave-commons-security</artifactId>
-                <version>${version.datawave-commons-security}</version>
-            </dependency>
-            <dependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
                 <version>${version.guava}</version>
@@ -106,6 +101,11 @@
                         <artifactId>*</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>gov.nsa.datawave.commons</groupId>
+                <artifactId>datawave-commons-security</artifactId>
+                <version>${version.datawave-commons-security}</version>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.core</groupId>
@@ -278,10 +278,6 @@
             <artifactId>caffeine</artifactId>
         </dependency>
         <dependency>
-            <groupId>gov.nsa.datawave.commons</groupId>
-            <artifactId>datawave-commons-security</artifactId>
-        </dependency>
-        <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
         </dependency>
@@ -304,6 +300,10 @@
         <dependency>
             <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-query-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.commons</groupId>
+            <artifactId>datawave-commons-security</artifactId>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.core</groupId>

@@ -18,12 +18,12 @@ Managing the module dependencies for the Datawave EAR deployment is done through
 
 We create several JBOSS modules that will be part of Wildfly upon startup. These modules can be found in the project [modules](src/main/wildfly/overlay/modules) directory. Most of these modules are self-explanatory and are, except for the module `datawave.webservices.datawave-security-elytron-module`, common dependencies between other modules and the Datawave deployment.
 
-* [datawave.webservices.datawave-security-elytron-module](src/main/wildfly/overlay/modules/datawave/webservices/datawave-ws-security-elytron-module)
+* [datawave.webservice.datawave-security-elytron-module](src/main/wildfly/overlay/modules/datawave/webservice/datawave-security-elytron-module)
     * This module contains the custom Wildfly security components that create the Datawave authentication and authorization workflow leveraging Elytron. These classes must be deployed as a separate JBOSS module. This module should not be imported as a dependency to the Datawave deployment.
-* [datawave.webservices.datawave-security-elytron](src/main/wildfly/overlay/modules/datawave/webservices/datawave-ws-security-elytron)
-    * Contains security-related artifacts that are commonly used between the Datawave deployment and the module `datawave.webservices.datawave-security-elytron-module`.
+* [datawave.webservice.datawave-security-elytron](src/main/wildfly/overlay/modules/datawave/webservice/datawave-security-elytron)
+    * Contains security-related artifacts that are commonly used between the Datawave deployment and the module `datawave.webservice.datawave-security-elytron-module`.
 * [datawave.commons.datawave-commons-security](src/main/wildfly/overlay/modules/datawave/commons/datawave-commons-security)
-    * Contains security-related artifacts that are commonly used between the Datawave deployment, the module `datawave.webservices.datawave-security-elytron-module`, and the microservices.
+    * Contains security-related artifacts that are commonly used between the Datawave deployment, the module `datawave.webservice.datawave-security-elytron-module`, and the microservices.
 * [com.fasterxml.jackson.datatype.jackson-datatype-guava](src/main/wildfly/overlay/modules/com/fasterxml/jackson/datatype/jackson-datatype-guava)
 * [com.fasterxml.jackson.module.jackson-module-jaxb-annotations](src/main/wildfly/overlay/modules/com/fasterxml/jackson/module/jackson-module-jaxb-annotations)
 * [com.github.ben-manes.caffeine](src/main/wildfly/overlay/modules/com/github/ben-manes/caffeine)

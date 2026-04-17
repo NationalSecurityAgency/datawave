@@ -190,7 +190,7 @@ module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.ap
 # configuration options.
 /subsystem=elytron/custom-role-decoder=datawaveRoleDecoder:add( \
     class-name=datawave.security.realm.DatawaveRoleDecoder, \
-    module="datawave.webservices.datawave-security-elytron-module", \
+    module="datawave.webservice.datawave-security-elytron-module", \
     configuration={ \
     })
 
@@ -198,7 +198,7 @@ module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.ap
 # See the class datawave.security.realm.DatawaveEvidenceDecoder for supported configuration options.
 /subsystem=elytron/custom-evidence-decoder=datawaveEvidenceDecoder:add( \
     class-name=datawave.security.realm.DatawaveEvidenceDecoder, \
-    module="datawave.webservices.datawave-security-elytron-module", \
+    module="datawave.webservice.datawave-security-elytron-module", \
     configuration={ \
         jwtEnabled="${dw.jwt.header.authentication:false}", \
         trustedHeadersEnabled="${dw.trusted.header.authentication:false}", \
@@ -211,7 +211,7 @@ module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.ap
 # options.
 /subsystem=elytron/custom-realm=datawaveRealm:add( \
     class-name=datawave.security.realm.DatawaveSecurityRealm, \
-    module="datawave.webservices.datawave-security-elytron-module", \
+    module="datawave.webservice.datawave-security-elytron-module", \
     configuration={ \
         certVerifier="datawave.security.cert.DatawaveCertVerifier", \
         oscpLevel="off" \
@@ -240,7 +240,7 @@ module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.ap
 # Configure the authentication mechanism for Elytron.
 #
 /subsystem=elytron/service-loader-http-server-mechanism-factory=datawaveMechanismFactory:add( \
-    module=datawave.webservices.datawave-security-elytron-module)
+    module=datawave.webservice.datawave-security-elytron-module)
 # Wrap the mechanism factory in a configurable factory so that we can pass in custom configuration options in the
 # properties attribute. See the class datawave.security.auth.DatawaveHttpAuthenticationMechanism for supported
 # configuration options.

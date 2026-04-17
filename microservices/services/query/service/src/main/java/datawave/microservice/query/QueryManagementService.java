@@ -1879,8 +1879,7 @@ public class QueryManagementService implements QueryRequestHandler {
      *             if there is an unknown error
      */
     public QueryImplListResponse list(String queryId, String queryName, DatawaveUserDetails currentUser) throws QueryException {
-        log.info("Request: list from {} for queryId: {}, queryName: {}", DnUtils.getShortName(currentUser.getPrimaryUser().getName()), queryId,
-                        queryName);
+        log.info("Request: list from {} for queryId: {}, queryName: {}", DnUtils.getShortName(currentUser.getPrimaryUser().getName()), queryId, queryName);
 
         return list(queryId, queryName, DnUtils.getShortName(currentUser.getPrimaryUser().getDn().subjectDN()));
     }
@@ -1904,8 +1903,8 @@ public class QueryManagementService implements QueryRequestHandler {
      *             if there is an unknown error
      */
     public QueryImplListResponse adminList(String queryId, String queryName, String userId, DatawaveUserDetails currentUser) throws QueryException {
-        log.info("Request: adminList from {} for queryId: {}, queryName: {}, userId: {}",
-                        DnUtils.getShortName(currentUser.getPrimaryUser().getName()), queryId, queryName, userId);
+        log.info("Request: adminList from {} for queryId: {}, queryName: {}, userId: {}", DnUtils.getShortName(currentUser.getPrimaryUser().getName()), queryId,
+                        queryName, userId);
 
         return list(queryId, queryName, userId);
     }

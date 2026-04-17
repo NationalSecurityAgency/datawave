@@ -7,7 +7,7 @@
         <dependencies>
             <module name="datawave.webservice.configuration" export="true" />
             <module name="datawave.commons.datawave-commons-security" export="true"/>
-            <module name="datawave.webservices.datawave-security-elytron" export="true"/>
+            <module name="datawave.webservice.datawave-security-elytron" export="true"/>
             <module name="org.apache.hadoop.common" export="true" />
             <!-- Fixes Spring context loading issues on Java 11 -->
             <module name="jdk.unsupported" export="true" />

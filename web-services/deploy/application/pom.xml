@@ -709,7 +709,7 @@
                                 </configuration>
                             </execution>
 
-                            <!-- Copy resources for JBOSS module datawave.webservices.datawave-security-elytron. -->
+                            <!-- Copy resources for JBOSS module datawave.webservice.datawave-security-elytron. -->
                             <execution>
                                 <id>copy-datawave-ws-security-elytron</id>
                                 <goals>
@@ -717,7 +717,7 @@
                                 </goals>
                                 <phase>process-resources</phase>
                                 <configuration>
-                                    <outputDirectory>${base.wildfly.modules.dir}/datawave/webservices/datawave-security-elytron/main</outputDirectory>
+                                    <outputDirectory>${base.wildfly.modules.dir}/datawave/webservice/datawave-security-elytron/main</outputDirectory>
                                     <artifactItems>
                                         <artifactItem>
                                             <groupId>gov.nsa.datawave.webservices</groupId>
@@ -728,7 +728,7 @@
                                 </configuration>
                             </execution>
 
-                            <!-- Copy resources for JBOSS module datawave.webservices.datawave-security-elytron-module. -->
+                            <!-- Copy resources for JBOSS module datawave.webservice.datawave-security-elytron-module. -->
                             <execution>
                                 <id>copy-datawave-ws-security-elytron-module</id>
                                 <goals>
@@ -736,7 +736,7 @@
                                 </goals>
                                 <phase>process-resources</phase>
                                 <configuration>
-                                    <outputDirectory>${base.wildfly.modules.dir}/datawave/webservices/datawave-security-elytron-module/main</outputDirectory>
+                                    <outputDirectory>${base.wildfly.modules.dir}/datawave/webservice/datawave-security-elytron-module/main</outputDirectory>
                                     <artifactItems>
                                         <artifactItem>
                                             <groupId>gov.nsa.datawave.webservices</groupId>
