@@ -15,6 +15,7 @@ import static datawave.modification.MutableMetadataHandlerTestSupport.USER;
 import static datawave.modification.MutableMetadataHandlerTestSupport.UUID_FIELD;
 import static datawave.modification.MutableMetadataHandlerTestSupport.VIS_ALL;
 import static datawave.modification.MutableMetadataHandlerTestSupport.VIS_A_AND_B;
+import static datawave.modification.MutableMetadataHandlerTestSupport.contentContextField;
 import static datawave.modification.MutableMetadataHandlerTestSupport.globalIndexQualifier;
 import static datawave.modification.MutableMetadataHandlerTestSupport.normalizeUuid;
 
@@ -257,6 +258,24 @@ public class MutableMetadataHandlerAccumuloTest {
         support.assertFieldIndexAbsent(QUOTE_TOKEN_FIELD, tokenValue);
         support.assertTermFrequencyRowAbsent(tokenValue, QUOTE_TOKEN_FIELD);
         support.assertShardIndexMutation(QUOTE_TOKEN_FIELD, tokenValue, VIS_ALL, -1);
+    }
+
+    @Test
+    public void deleteWithPurgeTokensShouldLeaveContentContextTermFrequencyRowsBehind() throws Exception {
+        MutableMetadataHandlerTestSupport support = new MutableMetadataHandlerTestSupport(getClass().getSimpleName() + "_purgeTokensContentContext");
+        String quote = "Kind word";
+        String tokenValue = "word";
+        String hashedTokenField = contentContextField(QUOTE_TOKEN_FIELD, quote);
+
+        support.setIndexOnlySuffixes(java.util.Set.of("_TOKEN"));
+        support.process(support.newRequest(MODE.INSERT, QUOTE_FIELD, quote, null), false, false);
+        support.setupTokenField(QUOTE_TOKEN_FIELD, tokenValue, hashedTokenField);
+
+        support.process(support.newRequest(MODE.DELETE, QUOTE_FIELD, quote, null), true, false);
+
+        support.assertFieldIndexAbsent(QUOTE_TOKEN_FIELD, tokenValue);
+        support.assertShardIndexMutation(QUOTE_TOKEN_FIELD, tokenValue, VIS_ALL, -1);
+        support.assertTermFrequencyRowPresent(tokenValue, hashedTokenField, VIS_ALL);
     }
 
     @Test
