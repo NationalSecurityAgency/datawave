@@ -707,16 +707,23 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
         addOption(cfg, QueryOptions.LIMIT_FIELDS, config.getLimitFieldsAsString(), false);
         addOption(cfg, QueryOptions.MATCHING_FIELD_SETS, config.getMatchingFieldSetsAsString(), false);
-        addOption(cfg, QueryOptions.GROUP_FIELDS, config.getGroupFields().toString(), true);
-        addOption(cfg, QueryOptions.GROUP_FIELDS_BATCH_SIZE, config.getGroupFieldsBatchSizeAsString(), true);
-        if (!config.isDisableIteratorUniqueFields() && !(config.isDisableIteratorMostRecentUniqueFields() && config.getUniqueFields().isMostRecent())) {
-            addOption(cfg, QueryOptions.UNIQUE_FIELDS, config.getUniqueFields().toString(), true);
-            if (config.getUniqueFields().isMostRecent()) {
-                // this may be redundant with the uniqueFields.toString(), but other code relies on this explicitly being set
-                addOption(cfg, QueryOptions.MOST_RECENT_UNIQUE, Boolean.toString(true), false);
-                addOption(cfg, QueryOptions.UNIQUE_CACHE_BUFFER_SIZE, Integer.toString(config.getUniqueCacheBufferSize()), false);
+
+        if (!config.getUniqueFields().isEmpty()) {
+            if (!config.isDisableIteratorUniqueFields() && !(config.isDisableIteratorMostRecentUniqueFields() && config.getUniqueFields().isMostRecent())) {
+                addOption(cfg, QueryOptions.UNIQUE_FIELDS, config.getUniqueFields().toString(), true);
+                if (config.getUniqueFields().isMostRecent()) {
+                    // this may be redundant with the uniqueFields.toString(), but other code relies on this explicitly being set
+                    addOption(cfg, QueryOptions.MOST_RECENT_UNIQUE, Boolean.toString(true), false);
+                    addOption(cfg, QueryOptions.UNIQUE_CACHE_BUFFER_SIZE, Integer.toString(config.getUniqueCacheBufferSize()), false);
+                }
             }
         }
+        // if we are doing any uniqueness, then we need to have all fields get back to the webservers. Hence we cannot do grouping server side in that case.
+        else if (config.getGroupFields().hasGroupByFields()) {
+            addOption(cfg, QueryOptions.GROUP_FIELDS, config.getGroupFields().toString(), true);
+            addOption(cfg, QueryOptions.GROUP_FIELDS_BATCH_SIZE, config.getGroupFieldsBatchSizeAsString(), true);
+        }
+
         addOption(cfg, QueryOptions.HIT_LIST, Boolean.toString(config.isHitList()), false);
         addOption(cfg, QueryOptions.TERM_FREQUENCY_FIELDS, Joiner.on(',').join(config.getQueryTermFrequencyFields()), false);
         addOption(cfg, QueryOptions.TERM_FREQUENCIES_REQUIRED, Boolean.toString(config.isTermFrequenciesRequired()), false);
@@ -2655,7 +2662,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                         fieldsToRetain.addAll(ReduceFields.getQueryFields(config.getQueryTree()));
                         fieldsToRetain.addAll(config.getProjectFields());
                         fieldsToRetain.addAll(config.getCompositeToFieldMap().keySet());
-                        // GroupBy fields already added to projection at this point in planning
+                        // GroupBy and unique fields already added to projection at this point in planning
                         // Unique and Excerpt fields do not affect returned fields
                     } else {
                         // sum all fields, remove exclude fields
@@ -2737,7 +2744,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
         // Allowlist and disallowlist projection are mutually exclusive. You can't
         // have both.
-        if (null != config.getProjectFields() && !config.getProjectFields().isEmpty()) {
+        if (!config.getProjectFields().isEmpty()) {
             if (log.isDebugEnabled()) {
                 final int maxLen = 100;
                 String projectFields = config.getProjectFieldsAsString();

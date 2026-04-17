@@ -142,6 +142,20 @@ public class DocumentGrouper {
      * @param groups
      *            the {@link Groups} instance to merge newly found groups into
      */
+    // public static void group(Map.Entry<Key,Document> entry, GroupFields groupFields, Groups groups) {
+    // group(entry, groupFields, groups, true);
+    // }
+
+    /**
+     * Groups and aggregates fields from the entries in the given document and merges the new group information into the given {@link Groups} instance.
+     *
+     * @param entry
+     *            the document entry
+     * @param groupFields
+     *            the fields to group and aggregate
+     * @param groups
+     *            the {@link Groups} instance to merge newly found groups into
+     */
     public static void group(Map.Entry<Key,Document> entry, GroupFields groupFields, Groups groups) {
         DocumentGrouper documentGrouper = new DocumentGrouper(entry, groupFields, groups);
         documentGrouper.group();
@@ -159,6 +173,7 @@ public class DocumentGrouper {
     private final FieldIndex aggregateFieldsIndex = new FieldIndex(true); // Allow null attributes when indexing fields to aggregate.
     private final Multimap<Pair<String,String>,Grouping> groupingContextAndInstancesSeenForGroups = HashMultimap.create();
     private final int maxGroupSize;
+    private final boolean oneDocPerGroup;
 
     private DocumentGrouper(Map.Entry<Key,Document> documentEntry, GroupFields groupFields, Groups groups) {
         this.documentKey = documentEntry.getKey();
@@ -168,6 +183,7 @@ public class DocumentGrouper {
         this.reverseModelMappings = groupFields.getReverseModelMap();
         this.groups = groups;
         this.maxGroupSize = this.groupFields.keySet().size();
+        this.oneDocPerGroup = groupFields.isOneDocPerGroup();
     }
 
     /**
@@ -204,9 +220,26 @@ public class DocumentGrouper {
                 log.trace("Aggregation skipped, either no fields targeted for aggregation or no entries found for targeted fields");
             }
 
+            // Now ensure the counts for each grouping are slapped down to 1 as we only want to count this document once
+            // per group if requested
+            if (oneDocPerGroup) {
+                capCurrentGroupCounts(1);
+            }
+
             // Merge the groups and aggregations we found in this particular group-by operation into the groups passed by the user. The separation is required
             // to ensure that any grouping and aggregation done in this session was applied only to the current document.
             this.groups.mergeAll(currentGroups);
+        }
+    }
+
+    /**
+     * Cap the group counts by the specified value. Normally this is only used to cap the group counts to 1 when grouping 1 document
+     *
+     * @param cap
+     */
+    private void capCurrentGroupCounts(int cap) {
+        for (Group group : currentGroups.getGroups()) {
+            group.capGroupCount(cap);
         }
     }
 
