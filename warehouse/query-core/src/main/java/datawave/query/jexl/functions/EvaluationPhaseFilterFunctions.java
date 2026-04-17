@@ -1649,39 +1649,40 @@ public class EvaluationPhaseFilterFunctions {
     }
 
     /**
-     * Returns a string that is a substring of the given string. The substring starts at the index of the first '.', and extends to the index of the Nth
-     * occurrence of the character '.' from the left, where N is specified by {@code pos}.
-     *
-     * <pre>
-     * Given the string "FIELD.FIRST.SECOND.THIRD.FOURTH"
-     * - A value of 0 for pos will result in the substring 'FIRST'
-     * - A value of 1 for pos will result in the substring 'FIRST.SECOND'
-     * - A value of 2 for pos will result in the substring 'FIRST.SECOND.THIRD'
-     * - A value of 3 for pos will result in the substring 'FIRST.SECOND.THIRD.FOURTH'
-     * - A value of 4+ for pos will result in null being returned
-     * </pre>
+     * Extracts a range of dot-delimited segments, starting after the first period.
+     * <p>
+     * This method skips the initial prefix (everything before the first '.') and returns a substring containing all segments from index 0 up to
+     * {@code lastDotSegmentIndex}.
+     * <p>
+     * Example: {@code "FIELD.FIRST.SECOND.THIRD.FOURTH"}
+     * <ul>
+     * <li>lastDotSegmentIndex 0: {@code "FIRST"}</li>
+     * <li>lastDotSegmentIndex 1: {@code "FIRST.SECOND"}</li>
+     * <li>lastDotSegmentIndex 2: {@code "FIRST.SECOND.THIRD"}</li>
+     * <li>lastDotSegmentIndex 3: {@code "FIRST.SECOND.THIRD.FOURTH"}</li>
+     * <li>lastDotSegmentIndex 4+: {@code null}</li>
+     * </ul>
      *
      * @param input
-     *            the input string
-     * @param pos
-     *            the index of the end group to include in the response. All indices will be included between zero and it
-     *
-     * @return the substring
+     *            the dot-delimited string to process
+     * @param lastDotSegmentIndex
+     *            the zero-based index of the last segment to include (relative to the first period)
+     * @return the joined segments from index 0 to {@code lastDotSegmentIndex}, or {@code null} if the index is out of bounds or no periods exist.
      */
-    public static String getMatchFromLeftOfPeriod(String input, int pos) {
-        if (pos < 0) {
+    public static String extractDotSegmentRangeFromLeft(String input, int lastDotSegmentIndex) {
+        if (lastDotSegmentIndex < 0) {
             return null;
         }
         // Always peel off the fieldName before the first '.'
         input = input.substring(input.indexOf('.') + 1);
         int[] indices = getIndicesOfPeriods(input);
-        if (pos < indices.length) {
-            return input.substring(0, indices[pos]);
-        } else if (pos == indices.length) {
+        if (lastDotSegmentIndex < indices.length) {
+            return input.substring(0, indices[lastDotSegmentIndex]);
+        } else if (lastDotSegmentIndex == indices.length) {
             return input;
         } else {
             if (log.isTraceEnabled()) {
-                log.trace("Not enough grouping info to extract group " + pos + " from the left for input " + input);
+                log.trace("Not enough grouping info to extract group " + lastDotSegmentIndex + " from the left for input " + input);
             }
             return null;
         }

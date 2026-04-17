@@ -1037,7 +1037,7 @@ public class EvaluationPhaseFilterFunctionsTest {
     }
 
     /**
-     * Tests for {@link EvaluationPhaseFilterFunctions#getMatchFromLeftOfPeriod(String, int)}.
+     * Tests for {@link EvaluationPhaseFilterFunctions#extractDotSegmentRangeFromLeft(String, int)}.
      */
     public static class GetMatchToLeftOfPeriodTests {
 
@@ -1076,7 +1076,7 @@ public class EvaluationPhaseFilterFunctionsTest {
         }
 
         private void assertResult(String expected) {
-            assertThat(EvaluationPhaseFilterFunctions.getMatchFromLeftOfPeriod(input, position)).isEqualTo(expected);
+            assertThat(EvaluationPhaseFilterFunctions.extractDotSegmentRangeFromLeft(input, position)).isEqualTo(expected);
         }
     }
 
