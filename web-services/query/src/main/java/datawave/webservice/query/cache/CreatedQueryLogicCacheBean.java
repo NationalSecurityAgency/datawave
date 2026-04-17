@@ -87,7 +87,7 @@ public class CreatedQueryLogicCacheBean {
     @Inject
     private AccumuloConnectionFactory connectionFactory;
     private final ConcurrentHashMap<Pair<String,Long>,Triple> cache = new ConcurrentHashMap<>();
-    private Clock clock = Clock.systemDefaultZone();
+    private Clock clock = Clock.systemUTC();
 
     /**
      * Add the provided QueryLogic to the QueryLogicCache.
