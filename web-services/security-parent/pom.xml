@@ -14,7 +14,6 @@
     <modules>
         <module>security</module>
         <module>security-elytron-module</module>
-        <module>security-examples</module>
         <module>security-elytron</module>
     </modules>
 
