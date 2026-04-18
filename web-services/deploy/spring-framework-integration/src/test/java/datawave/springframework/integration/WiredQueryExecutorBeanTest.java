@@ -6,11 +6,11 @@ import java.util.Properties;
 import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
 
+import datawave.security.cert.SSLStores;
 import org.apache.log4j.Logger;
 import org.easymock.EasyMock;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
-import org.jboss.security.JSSESecurityDomain;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.EmptyAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
@@ -106,15 +106,15 @@ public class WiredQueryExecutorBeanTest {
         }
     }
 
-    private static JSSESecurityDomain mockJsseSecurityDomain = EasyMock.createMock(JSSESecurityDomain.class);
+    private static SSLStores mockSSLStores = EasyMock.createMock(SSLStores.class);
     private static DatawavePrincipal mockDatawavePrincipal = EasyMock.createMock(DatawavePrincipal.class);
 
     private static RemoteEdgeDictionary mockRemoteEdgeDictionary = EasyMock.createMock(RemoteEdgeDictionary.class);
 
     public static class Producer {
         @Produces
-        public static JSSESecurityDomain produceSecurityDomain() {
-            return mockJsseSecurityDomain;
+        public static SSLStores produceSSLStores() {
+            return mockSSLStores;
         }
 
         @Produces
