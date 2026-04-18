@@ -3,11 +3,9 @@ package datawave.security.cert;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 
 import java.net.URL;
-import java.security.cert.Certificate;
 
 import org.junit.jupiter.api.Test;
 
@@ -63,18 +61,6 @@ class SSLStoresImplTest {
         assertNotNull(sslContext.getTrustStore(), "Truststore is null");
         assertEquals(JKS, sslContext.getTrustStore().getType(), "Truststore is incorrect type");
         assertNotSame(sslContext.getKeyStore(), sslContext.getTrustStore(), "Keystore and truststore are the same instance");
-    }
-
-    @Test
-    void testGetCertificate() throws Exception {
-        SSLStoresImpl sslContext = SSLStoresImpl.builder().withKeystore(getResource(jksKeyStorePath), password, JKS)
-                        .withTruststore(getResource(pkcs12TrustStorePath), password, PKCS12).build();
-
-        Certificate certificate = sslContext.getCertificate("datawave-ca");
-        assertNotNull(certificate, "Certificate is null");
-
-        certificate = sslContext.getCertificate("nonexistent");
-        assertNull(certificate, "Certificate is not null");
     }
 
     private String getResource(String resource) {

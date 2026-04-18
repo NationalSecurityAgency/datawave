@@ -1,14 +1,12 @@
 package datawave.security.cert;
 
 import java.security.KeyStore;
-import java.security.cert.Certificate;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.TrustManager;
 
 /**
- * This interface replaces usages of the org.jboss.security.JSSESecurityDomain interface provided by the legacy picketbox library. A corresponding
- * implementation can be found in the datawave.security.ssl.SSLContextInfoImpl class in the datawave-ws-security module.
+ * Represents a key store/trust store pair.
  */
 public interface SSLStores {
 
@@ -48,7 +46,4 @@ public interface SSLStores {
         return new TrustManager[0];
     }
 
-    default Certificate getCertificate(String alias) throws Exception {
-        return null;
-    }
 }

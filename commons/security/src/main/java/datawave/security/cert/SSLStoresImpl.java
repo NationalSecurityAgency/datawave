@@ -9,7 +9,6 @@ import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.UnrecoverableKeyException;
-import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 
 import javax.net.ssl.KeyManager;
@@ -20,7 +19,7 @@ import javax.net.ssl.TrustManagerFactory;
 import com.google.common.base.Preconditions;
 
 /**
- * Represents an SSL key store and trust store pair.
+ * Represents a key store/trust store pair.
  */
 public class SSLStoresImpl implements SSLStores {
 
@@ -64,11 +63,6 @@ public class SSLStoresImpl implements SSLStores {
     @Override
     public TrustManager[] getTrustManagers() {
         return this.trustManagers;
-    }
-
-    @Override
-    public Certificate getCertificate(String alias) throws Exception {
-        return this.trustStore.getCertificate(alias);
     }
 
     public static class Builder {
