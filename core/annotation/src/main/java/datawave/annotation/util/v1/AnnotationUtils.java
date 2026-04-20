@@ -25,6 +25,7 @@ import datawave.annotation.protobuf.v1.SegmentValue;
 
 public class AnnotationUtils {
     protected static final Logger log = LoggerFactory.getLogger(AnnotationUtils.class);
+    public static final String UPDATE_REFERENCE = "updates";
 
     public static Annotation injectAnnotationSource(Annotation a, AnnotationSource as) {
         return a.toBuilder().clearSource().setSource(as).clearAnalyticSourceHash().setAnalyticSourceHash(as.getAnalyticSourceHash()).build();
@@ -139,17 +140,17 @@ public class AnnotationUtils {
 
     /**
      * Inject a reference to another annotation into an annotation's metadata table. This is used for updates, where both the original and update are kept, and
-     * these references are used to maintain linkages between the two annotations.
+     * these references are used to maintain linkages between the two annotations. If an update reference already exists in the metadata, it will be overwritten
+     * with the new reference.
      *
      * @param update
      *            the annotation updating the target
      * @param updateTargetId
      *            the identifier of the target being updated.
-     * @return
+     * @return the updated annotation containing the reference to the update target in its metadata table.
      */
     public static Annotation injectUpdateReference(Annotation update, String updateTargetId) {
-        // TODO: implement me - currently a no-op
-        return update;
+        return update.toBuilder().putMetadata(UPDATE_REFERENCE, updateTargetId).build();
     }
 
     /**

@@ -20,7 +20,7 @@ public class AnnotationValidatorsTest {
 
     @Test
     public void testAnnotationWithoutSource() {
-        // demonstrates that an annotation without a source set in the bui;lder will have an empty, non-null source object.
+        // demonstrates that an annotation without a source set in the builder will have an empty, non-null source object.
         Annotation a = Annotation.newBuilder().build();
         assertFalse(a.hasSource());
         AnnotationSource source = a.getSource();
