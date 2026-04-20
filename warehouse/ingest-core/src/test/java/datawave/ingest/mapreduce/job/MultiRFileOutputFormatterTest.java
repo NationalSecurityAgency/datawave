@@ -1,7 +1,6 @@
 package datawave.ingest.mapreduce.job;
 
 import static datawave.ingest.mapreduce.job.BulkIngestMapFileLoader.BULK_IMPORT_MODE_CONFIG;
-import static datawave.ingest.mapreduce.job.MultiRFileOutputFormatter.findContainingSplits;
 import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
@@ -233,7 +232,7 @@ public class MultiRFileOutputFormatterTest {
         expectedExtents.add(new LoadPlan.TableSplits(new Text("20170603_0b"), new Text("20170603_0c")));
 
         List<Text> tableSplits = getSplits();
-        Set<LoadPlan.TableSplits> extents = rfileRows.stream().map(row -> findContainingSplits(row, tableSplits))
+        Set<LoadPlan.TableSplits> extents = rfileRows.stream().map(row -> SplitsFile.findContainingSplits(row, tableSplits))
                         .collect(Collectors.toCollection(HashSet::new));
 
         assertEquals(expectedExtents, extents);
