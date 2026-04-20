@@ -1273,6 +1273,12 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             if (!this.matchingFieldSets.isEmpty()) {
                 this.allowListedFields.addAll(getMatchingFieldList());
             }
+
+            // make sure we include any child fields being projected
+            if (!this.childFields.isEmpty()) {
+                this.allowListedFields.addAll(childFields);
+            }
+
             return new DocumentProjection(this.isIncludeGroupingContext(), this.isReducedResponse(), isTrackSizes(),
                             new Projection(this.allowListedFields, Projection.ProjectionType.INCLUDES));
         } else if (this.useDisallowListedFields) {
@@ -1280,6 +1286,12 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             if (!this.matchingFieldSets.isEmpty()) {
                 this.disallowListedFields.removeAll(getMatchingFieldList());
             }
+
+            // make sure we are not excluding any of the child fields
+            if (!this.childFields.isEmpty()) {
+                this.disallowListedFields.removeAll(childFields);
+            }
+
             return new DocumentProjection(this.isIncludeGroupingContext(), this.isReducedResponse(), isTrackSizes(),
                             new Projection(this.disallowListedFields, Projection.ProjectionType.EXCLUDES));
         } else {
@@ -1300,10 +1312,19 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 }
             }
         }
-        // make sure we include any fields being matched in the limit fields mechanism
+        // make sure we do not include any fields being matched in the limit fields mechanism
         if (!this.matchingFieldSets.isEmpty()) {
             composites.removeAll(getMatchingFieldList());
         }
+
+        if (!this.childFields.isEmpty()) {
+            composites.removeAll(this.childFields);
+        }
+
+        if (!this.allowListedFields.isEmpty()) {
+            composites.removeAll(this.allowListedFields);
+        }
+
         return new DocumentProjection(this.isIncludeGroupingContext(), this.isReducedResponse(), isTrackSizes(), composites,
                         Projection.ProjectionType.EXCLUDES);
     }

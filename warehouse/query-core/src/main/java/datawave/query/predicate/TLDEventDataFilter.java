@@ -1,6 +1,7 @@
 package datawave.query.predicate;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -39,9 +40,13 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
     // track allowlist/disallowlist if specified
     private List<String> sortedAllowlist = null;
     private List<String> sortedDisallowlist = null;
+    private List<String> sortedChildList = null;
 
     // track query fields (must be sorted)
     protected List<String> queryFields;
+
+    // convience list containing query and child fields for seeking purposes
+    protected List<String> childSeekList;
 
     // track recently seen key fields
     private String lastField;
@@ -69,9 +74,9 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
     private final Set<String> nonEventFields;
 
     public TLDEventDataFilter(ASTJexlScript script, Set<String> queryFields, Map<String,ExpressionFilter> expressionFilters, Set<String> includedFields,
-                    Set<String> excludedFields, long maxFieldsBeforeSeek, long maxKeysBeforeSeek) {
-        this(script, queryFields, expressionFilters, includedFields, excludedFields, maxFieldsBeforeSeek, maxKeysBeforeSeek, Collections.emptyMap(), null,
-                        Collections.emptySet());
+                    Set<String> excludedFields, Set<String> childFields, long maxFieldsBeforeSeek, long maxKeysBeforeSeek) {
+        this(script, queryFields, expressionFilters, includedFields, excludedFields, childFields, maxFieldsBeforeSeek, maxKeysBeforeSeek,
+                        Collections.emptyMap(), null, Collections.emptySet());
     }
 
     /**
@@ -85,7 +90,7 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
      * @param script
      *            the query
      * @param queryFields
-     *            the query fields
+     *            the fields to consider
      * @param filters
      *            a map of expression filters
      * @param includedFields
@@ -104,8 +109,8 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
      *            a set of non-event fields
      */
     public TLDEventDataFilter(ASTJexlScript script, Set<String> queryFields, Map<String,ExpressionFilter> filters, Set<String> includedFields,
-                    Set<String> excludedFields, long maxFieldsBeforeSeek, long maxKeysBeforeSeek, Map<String,Integer> limitFieldsMap, String limitFieldsField,
-                    Set<String> nonEventFields) {
+                    Set<String> excludedFields, Set<String> childFields, long maxFieldsBeforeSeek, long maxKeysBeforeSeek, Map<String,Integer> limitFieldsMap,
+                    String limitFieldsField, Set<String> nonEventFields) {
         super(filters);
 
         this.maxFieldsBeforeSeek = maxFieldsBeforeSeek;
@@ -119,7 +124,8 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
 
         setQueryFields(queryFields, script);
         updateLists(includedFields, excludedFields);
-        setSortedLists(includedFields, excludedFields);
+        setSortedLists(includedFields, excludedFields, childFields);
+        updateConvienceLists();
     }
 
     public TLDEventDataFilter(TLDEventDataFilter other) {
@@ -129,6 +135,7 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
         sortedAllowlist = other.sortedAllowlist;
         sortedDisallowlist = other.sortedDisallowlist;
         queryFields = other.queryFields;
+        sortedChildList = other.sortedChildList;
         lastField = other.lastField;
         fieldCount = other.fieldCount;
         lastListSeekIndex = other.lastListSeekIndex;
@@ -172,15 +179,15 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
     }
 
     private boolean apply(Entry<Key,String> input, boolean update) {
-        // if a TLD, then accept em all, otherwise defer to the query field
-        // filter
+        // if a TLD, then accept em all, else if a child field to return then accept, otherwise defer to
+        // the query field filter
         Key current = input.getKey();
         lastParseInfo = getParseInfo(current);
         boolean root = lastParseInfo.isRoot();
         boolean keep = keepField(current, update, root);
         if (keep) {
-            if (root) {
-                // must return true on the root or the field cannot be returned
+            if (root || (sortedChildList != null && sortedChildList.contains(lastParseInfo.getField()))) {
+                // must return true on the root or specified child fields else the field cannot be returned
                 return true;
             } else {
                 // delegate to the super
@@ -196,9 +203,9 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
     }
 
     /**
-     * Determine if a Key should be kept. If a Key is a part of the TLD it will always be kept as long as we have not exceeded the key count limit for that
-     * field if limits are enabled. Otherwise, all TLD Key's will be kept. For a non-TLD the Key will only be kept if it is a nonEvent field which will be used
-     * for query evaluation (apply()==true)
+     * Determine if a Key should be kept. If a Key is a part of the TLD or specified in child fields then it will always be kept as long as we have not exceeded
+     * the key count limit for that field if limits are enabled. For a non-TLD the Key will also be kept if it is a nonEvent field which will be used for query
+     * evaluation (apply()==true)
      *
      * @param k
      *            a key
@@ -210,7 +217,7 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
         // only keep the data from the top level document with fields that matter
         lastParseInfo = getParseInfo(k);
 
-        if (lastParseInfo.isRoot()) {
+        if (lastParseInfo.isRoot() || (sortedChildList != null && sortedChildList.contains(lastParseInfo.getField()))) {
             return k.getColumnQualifier().getLength() == 0 || keepField(k, false, true);
         } else {
             return nonEventFields.contains(lastParseInfo.getField()) && keepField(k, false, false) && apply(k, false);
@@ -292,13 +299,13 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
         if (lastParseInfo.isRoot()) {
             return getListSeek(current, endKey, endKeyInclusive);
         } else {
-            // only look in children for query related fields
-            return getQueryFieldRange(current, endKey, endKeyInclusive);
+            // only look in children for query related fields or specified child fields
+            return getChildFieldRange(current, endKey, endKeyInclusive);
         }
     }
 
     /**
-     * Look in the query fields only, regardless of allowlist or disallowlist configuration
+     * Look in the query fields and specified child fields, regardless of allowlist or disallowlist configuration
      *
      * @param current
      *            the current key
@@ -308,13 +315,13 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
      *            the end inclusive flag
      * @return the new range or null if a seek should not be performed
      */
-    protected Range getQueryFieldRange(Key current, Key endKey, boolean endKeyInclusive) {
+    protected Range getChildFieldRange(Key current, Key endKey, boolean endKeyInclusive) {
         // short circuit the seek if the threshold for seeking hasn't been met or it is disabled
         if (bypassSeek()) {
             return null;
         }
         // generate an allowlist seek only on the query fields, without using any previous state
-        return getAllowlistSeek(current, lastParseInfo.getField(), endKey, endKeyInclusive, queryFields, -1);
+        return getAllowlistSeek(current, lastParseInfo.getField(), endKey, endKeyInclusive, childSeekList, -1);
     }
 
     /**
@@ -567,9 +574,10 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
         Set<String> identifiers = extractIdentifiersFromScript(script);
         fields = Sets.intersection(fields, identifiers);
 
-        queryFields = new ArrayList<>(fields);
-        Collections.sort(queryFields);
-        queryFields = Collections.unmodifiableList(queryFields);
+        queryFields = sortedImmutableList(fields);
+        if (queryFields == null) {
+            queryFields = Collections.emptyList();
+        }
     }
 
     /**
@@ -602,19 +610,36 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
      *            the allowlist modified by queryFields
      * @param disallowlist
      *            the disallowlist modified by queryFields
+     * @param childFields
+     *            the fields to be returned for child documents
      */
-    private void setSortedLists(Set<String> allowlist, Set<String> disallowlist) {
-        if (allowlist != null && !allowlist.isEmpty()) {
-            sortedAllowlist = new ArrayList<>(allowlist);
-            Collections.sort(sortedAllowlist);
-            sortedAllowlist = Collections.unmodifiableList(sortedAllowlist);
-        }
+    private void setSortedLists(Set<String> allowlist, Set<String> disallowlist, Set<String> childFields) {
+        sortedAllowlist = sortedImmutableList(allowlist);
+        sortedDisallowlist = sortedImmutableList(disallowlist);
+        sortedChildList = sortedImmutableList(childFields);
+    }
 
-        if (disallowlist != null && !disallowlist.isEmpty()) {
-            sortedDisallowlist = new ArrayList<>(disallowlist);
-            Collections.sort(sortedDisallowlist);
-            sortedDisallowlist = Collections.unmodifiableList(sortedDisallowlist);
+    private List<String> sortedImmutableList(Collection<String> collection) {
+        if (collection != null && !collection.isEmpty()) {
+            List<String> sorted = new ArrayList<>(collection);
+            Collections.sort(sorted);
+            return Collections.unmodifiableList(sorted);
+        } else {
+            return null;
         }
+    }
+
+    /**
+     * Update some other convience lists
+     */
+    private void updateConvienceLists() {
+        childSeekList = new ArrayList<>();
+        childSeekList.addAll(queryFields);
+        if (sortedChildList != null) {
+            childSeekList.addAll(sortedChildList);
+        }
+        Collections.sort(childSeekList);
+        childSeekList = Collections.unmodifiableList(childSeekList);
     }
 
     /**
@@ -684,7 +709,7 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
                 return true;
             }
         } else {
-            return queryFields.contains(field);
+            return queryFields.contains(field) || (sortedChildList != null && sortedChildList.contains(field));
         }
     }
 

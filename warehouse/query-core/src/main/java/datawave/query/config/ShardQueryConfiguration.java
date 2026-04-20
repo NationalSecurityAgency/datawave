@@ -249,6 +249,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private Set<String> renameFields = new HashSet<>(0);
     // Limit fields returned per event
     private Set<String> projectFields = Collections.emptySet();
+    // Add child fields to return per event
+    private Set<String> projectChildFields = Collections.emptySet();
     private Set<String> disallowlistedFields = new HashSet<>(0);
     private Set<String> indexedFields = Sets.newHashSet();
     private Set<String> reverseIndexedFields = Sets.newHashSet();
@@ -701,6 +703,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setDatatypeFilter(null == other.getDatatypeFilter() ? null : Sets.newHashSet(other.getDatatypeFilter()));
         this.setIndexValueHoles(null == other.getIndexValueHoles() ? null : Lists.newArrayList(other.getIndexValueHoles()));
         this.setProjectFields(null == other.getProjectFields() ? null : Sets.newHashSet(other.getProjectFields()));
+        this.setProjectChildFields(null == other.getProjectChildFields() ? null : Sets.newHashSet(other.getProjectChildFields()));
         this.setRenameFields(null == other.getRenameFields() ? null : Sets.newHashSet(other.getRenameFields()));
         this.setDisallowlistedFields(null == other.getDisallowlistedFields() ? null : Sets.newHashSet(other.getDisallowlistedFields()));
         this.setIndexedFields(null == other.getIndexedFields() ? null : Sets.newHashSet(other.getIndexedFields()));
@@ -1159,6 +1162,18 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public String getProjectFieldsAsString() {
         return StringUtils.join(this.getProjectFields(), Constants.PARAM_VALUE_SEP);
+    }
+
+    public Set<String> getProjectChildFields() {
+        return projectChildFields;
+    }
+
+    public void setProjectChildFields(Set<String> projectFields) {
+        this.projectChildFields = deconstruct(projectFields);
+    }
+
+    public String getProjectChildFieldsAsString() {
+        return StringUtils.join(this.getProjectChildFields(), Constants.PARAM_VALUE_SEP);
     }
 
     public Set<String> getRenameFields() {
@@ -3150,6 +3165,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 Objects.equals(getDatatypeFilter(), that.getDatatypeFilter()) &&
                 Objects.equals(getIndexValueHoles(), that.getIndexValueHoles()) &&
                 Objects.equals(getProjectFields(), that.getProjectFields()) &&
+                Objects.equals(getProjectChildFields(), that.getProjectChildFields()) &&
                 Objects.equals(getRenameFields(), that.getRenameFields()) &&
                 Objects.equals(getDisallowlistedFields(), that.getDisallowlistedFields()) &&
                 Objects.equals(getIndexedFields(), that.getIndexedFields()) &&
@@ -3318,6 +3334,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getDatatypeFilter(),
                 getIndexValueHoles(),
                 getProjectFields(),
+                getProjectChildFields(),
                 getRenameFields(),
                 getDisallowlistedFields(),
                 getIndexedFields(),

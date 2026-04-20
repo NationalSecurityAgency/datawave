@@ -209,6 +209,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
     public static final String EXCEED_TERM_EXPANSION_ERROR = "Query failed because it exceeded the query term expansion threshold";
 
+    public static final int MAX_PROJECTION_FIELDS_DEBUG = 100;
+
     protected boolean limitScanners = false;
 
     /**
@@ -2739,7 +2741,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         // have both.
         if (null != config.getProjectFields() && !config.getProjectFields().isEmpty()) {
             if (log.isDebugEnabled()) {
-                final int maxLen = 100;
+                final int maxLen = MAX_PROJECTION_FIELDS_DEBUG;
                 String projectFields = config.getProjectFieldsAsString();
                 if (projectFields.length() > maxLen) {
                     projectFields = projectFields.substring(0, maxLen) + "[TRUNCATED]";
@@ -2754,6 +2756,20 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             }
 
             addOption(cfg, QueryOptions.DISALLOWLISTED_FIELDS, config.getDisallowlistedFieldsAsString(), false);
+        }
+
+        // include the child projected fields
+        if (null != config.getProjectChildFields() && !config.getProjectChildFields().isEmpty()) {
+            if (log.isDebugEnabled()) {
+                final int maxLen = MAX_PROJECTION_FIELDS_DEBUG;
+                String projectChildFields = config.getProjectChildFieldsAsString();
+                if (projectChildFields.length() > maxLen) {
+                    projectChildFields = projectChildFields.substring(0, maxLen) + "[TRUNCATED]";
+                }
+                log.debug("Setting scan option: " + QueryOptions.PROJECTION_CHILD_FIELDS + " to " + projectChildFields);
+            }
+
+            addOption(cfg, QueryOptions.PROJECTION_CHILD_FIELDS, config.getProjectChildFieldsAsString(), false);
         }
 
         // We don't need to do any expansion of the start or end date/time
