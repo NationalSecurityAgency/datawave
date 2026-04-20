@@ -1,6 +1,7 @@
 package datawave.ingest.mapreduce.job;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.function.Supplier;
 
 import org.apache.hadoop.conf.Configuration;
@@ -27,4 +28,6 @@ public interface SplitsCache extends AutoCloseable {
     int getNearestPartition(String table, Text key);
 
     String getExactLocation(String table, Text key, Supplier<String> defaultFn);
+
+    List<Text> getSplits(Configuration conf, String tableName) throws IOException;
 }

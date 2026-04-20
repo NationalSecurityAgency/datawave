@@ -276,14 +276,11 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
         var builder = org.apache.accumulo.core.client.rfile.RFile.newWriter().to(filename).withFileSystem(fs).withTableProperties(tableConf);
         if(this.loadPlanningEnabled) {
             SplitsCache splits = SplitsCache.getInstance(conf);
-            LoadPlan.SplitResolver splitResolver = row->{
-                try {
-                    return findContainingSplits(row,((SplitsFile) splits).getSplits(conf, table));
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                    }
-            };
-            builder = builder.withSplitResolver(splitResolver);
+            List<Text> splitsFile = splits.getSplits(conf, table);
+            if(splitsFile != null && !splitsFile.isEmpty()) {
+                LoadPlan.SplitResolver splitResolver = row->SplitsFile.findContainingSplits(row, splitsFile);
+                builder = builder.withSplitResolver(splitResolver);
+            }
         }
 
         return new SizeTrackingWriter(builder.build());

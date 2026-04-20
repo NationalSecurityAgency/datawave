@@ -15,6 +15,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
+import org.apache.accumulo.core.data.LoadPlan;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.hadoop.conf.Configuration;
@@ -420,5 +421,26 @@ public class SplitsFile implements SplitsCache {
 
     public List<Text> getSplits(Configuration conf, String tableName) throws IOException {
         return instance.getSplits(tableName);
+    }
+
+    /**
+     * Finds two contiguous table splits that contain the specified row should reside
+     *
+     * @param lookupRow
+     *            Row value to be mapped
+     * @param tableSplits
+     *            Splits for the table in question
+     * @return KeyExtent mapping for the given row
+     */
+    static LoadPlan.TableSplits findContainingSplits(Text lookupRow, List<Text> tableSplits) {
+        int position = Collections.binarySearch(tableSplits, lookupRow);
+        if (position < 0) {
+            position = -1 * (position + 1);
+        }
+
+        Text prevRow = position == 0 ? null : tableSplits.get(position - 1);
+        Text endRow = position == tableSplits.size() ? null : tableSplits.get(position);
+
+        return new LoadPlan.TableSplits(prevRow, endRow);
     }
 }
