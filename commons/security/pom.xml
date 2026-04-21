@@ -8,6 +8,7 @@
     </parent>
 
     <artifactId>datawave-commons-security</artifactId>
+    <version>7.38.0-3508-RC1</version>
     <name>${project.artifactId}</name>
 
     <dependencies>
