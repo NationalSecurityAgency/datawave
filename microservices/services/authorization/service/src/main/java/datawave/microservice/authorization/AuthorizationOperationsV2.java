@@ -14,6 +14,7 @@ import datawave.security.authorization.CachedDatawaveUserService;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.JWTTokenHandler;
 import datawave.security.authorization.UserOperations;
+import datawave.security.util.DnProperties;
 
 /**
  * Presents the REST operations for the authorization service. This version returns the updated (V2) DatawaveUser
@@ -22,9 +23,9 @@ import datawave.security.authorization.UserOperations;
 public class AuthorizationOperationsV2 extends AuthorizationOperationsV1 {
 
     public AuthorizationOperationsV2(JWTTokenHandler tokenHandler, CachedDatawaveUserService cachedDatawaveUserService, ApplicationContext appCtx,
-                    BusProperties busProperties, AuthorizationsListSupplier authorizationsListSupplier, Set<UserOperations> registeredFederatedUserOperations,
-                    DatawaveUserDetailsFactory datawaveUserDetailsFactory) {
-        super(tokenHandler, cachedDatawaveUserService, appCtx, busProperties, authorizationsListSupplier, registeredFederatedUserOperations,
+                    BusProperties busProperties, AuthorizationsListSupplier authorizationsListSupplier, DnProperties dnProperties,
+                    Set<UserOperations> registeredFederatedUserOperations, DatawaveUserDetailsFactory datawaveUserDetailsFactory) {
+        super(tokenHandler, cachedDatawaveUserService, appCtx, busProperties, authorizationsListSupplier, dnProperties, registeredFederatedUserOperations,
                         datawaveUserDetailsFactory);
     }
 

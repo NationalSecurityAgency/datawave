@@ -78,6 +78,7 @@ import datawave.microservice.querymetric.factory.QueryMetricQueryLogicFactory;
 import datawave.query.QueryParameters;
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.security.authorization.DatawaveUser;
+import datawave.security.util.DnProperties;
 import datawave.security.util.DnUtils;
 import datawave.security.util.WSAuthorizationsUtil;
 import datawave.webservice.query.exception.QueryExceptionType;
@@ -107,17 +108,19 @@ public abstract class ShardTableQueryMetricHandler<T extends BaseQueryMetric> ex
     protected UIDBuilder<UID> uidBuilder = UID.builder();
     protected QueryMetricCombiner queryMetricCombiner;
     protected MarkingFunctions markingFunctions;
+    protected DnProperties dnProperties;
     // this lock is necessary for when there is an error condition and the accumuloRecordWriter needs to be replaced
     protected ReentrantReadWriteLock accumuloRecordWriterLock = new ReentrantReadWriteLock();
 
     public ShardTableQueryMetricHandler(QueryMetricHandlerProperties queryMetricHandlerProperties, AccumuloConnectionFactory connectionFactory,
                     QueryMetricQueryLogicFactory logicFactory, QueryMetricFactory metricFactory, MarkingFunctions markingFunctions,
-                    QueryMetricCombiner queryMetricCombiner, LuceneToJexlQueryParser luceneToJexlQueryParser) {
+                    QueryMetricCombiner queryMetricCombiner, LuceneToJexlQueryParser luceneToJexlQueryParser, DnProperties dnProperties) {
         super(luceneToJexlQueryParser);
         this.queryMetricHandlerProperties = queryMetricHandlerProperties;
         this.logicFactory = logicFactory;
         this.metricFactory = metricFactory;
         this.markingFunctions = markingFunctions;
+        this.dnProperties = dnProperties;
         this.connectionFactory = connectionFactory;
         this.queryMetricCombiner = queryMetricCombiner;
 

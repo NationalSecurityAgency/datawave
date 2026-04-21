@@ -32,6 +32,7 @@ import datawave.security.authorization.DatawaveUserV1;
 import datawave.security.authorization.JWTTokenHandler;
 import datawave.security.authorization.ProxiedUserDetails;
 import datawave.security.authorization.UserOperations;
+import datawave.security.util.DnProperties;
 import datawave.security.util.DnUtils;
 import datawave.user.AuthorizationsListBase;
 import datawave.webservice.result.GenericResponse;
@@ -51,18 +52,21 @@ public class AuthorizationOperationsV1 {
 
     protected final AuthorizationsListSupplier authorizationsListSupplier;
 
+    protected final DnProperties dnProperties;
+
     protected final Set<UserOperations> registeredFederatedUserOperations;
 
     protected final DatawaveUserDetailsFactory datawaveUserDetailsFactory;
 
     public AuthorizationOperationsV1(JWTTokenHandler tokenHandler, CachedDatawaveUserService cachedDatawaveUserService, ApplicationContext appCtx,
-                    BusProperties busProperties, AuthorizationsListSupplier authorizationsListSupplier, Set<UserOperations> registeredFederatedUserOperations,
-                    DatawaveUserDetailsFactory datawaveUserDetailsFactory) {
+                    BusProperties busProperties, AuthorizationsListSupplier authorizationsListSupplier, DnProperties dnProperties,
+                    Set<UserOperations> registeredFederatedUserOperations, DatawaveUserDetailsFactory datawaveUserDetailsFactory) {
         this.tokenHandler = tokenHandler;
         this.cachedDatawaveUserService = cachedDatawaveUserService;
         this.appCtx = appCtx;
         this.busProperties = busProperties;
         this.authorizationsListSupplier = authorizationsListSupplier;
+        this.dnProperties = dnProperties;
         this.registeredFederatedUserOperations = registeredFederatedUserOperations;
         this.datawaveUserDetailsFactory = datawaveUserDetailsFactory;
     }

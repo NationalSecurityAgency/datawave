@@ -76,6 +76,7 @@ import datawave.microservice.querymetric.handler.ShardTableQueryMetricHandler;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.JWTTokenHandler;
 import datawave.security.authorization.SubjectIssuerDNPair;
+import datawave.security.util.DnProperties;
 import datawave.security.util.DnUtils;
 import datawave.webservice.query.result.event.DefaultEvent;
 import datawave.webservice.query.result.event.DefaultField;
@@ -126,6 +127,9 @@ public class QueryMetricTestBase {
 
     @Autowired
     private QueryMetricClientProperties queryMetricClientProperties;
+
+    @Autowired
+    private DnProperties dnProperties;
 
     @Autowired
     @Qualifier("lastWrittenQueryMetrics")
