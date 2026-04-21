@@ -1,179 +1,170 @@
 package datawave.webservice.query.logic;
 
-import static org.easymock.EasyMock.expect;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertSame;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
-import javax.ejb.EJBContext;
-
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
-import org.easymock.EasyMock;
-import org.easymock.EasyMockRunner;
-import org.easymock.EasyMockSupport;
-import org.easymock.Mock;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.reflect.Whitebox;
-import org.springframework.beans.factory.support.DefaultListableBeanFactory;
-import org.springframework.beans.factory.xml.XmlBeanDefinitionReader;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.test.util.ReflectionTestUtils;
+
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
 
 import datawave.core.query.logic.BaseQueryLogic;
 import datawave.core.query.logic.QueryLogic;
+import datawave.core.query.logic.QueryLogicFactory;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUser.UserType;
 import datawave.security.authorization.SubjectIssuerDNPair;
-import datawave.security.util.DnProperties;
+import datawave.webservice.common.exception.UnauthorizedException;
+import datawave.webservice.query.exception.QueryException;
 
-@RunWith(EasyMockRunner.class)
-public class ConfiguredQueryLogicFactoryBeanTest extends EasyMockSupport {
+/**
+ * This test exercises several features of the {@link QueryLogicFactory}, notably the ability to remap logics based on name, and the ability to restrict access
+ * to a query logic via user roles.
+ */
+@ExtendWith(SpringExtension.class)
+@ComponentScan(basePackages = "datawave.webservice.query.logic")
+@ContextConfiguration(locations = "classpath:TestConfiguredQueryLogicFactory.xml")
+public class ConfiguredQueryLogicFactoryBeanTest {
 
-    QueryLogicFactoryImpl bean = new QueryLogicFactoryImpl();
+    @Autowired
+    @Qualifier("UserQueryLogic")
+    private BaseQueryLogic<?> userQueryLogic;
 
-    @Mock
-    QueryLogicFactoryConfiguration altFactoryConfig;
+    @Autowired
+    @Qualifier("AdminQueryLogic")
+    private BaseQueryLogic<?> adminQueryLogic;
 
-    @Mock
-    DatawavePrincipal altPrincipal;
+    private final QueryLogicFactory queryLogicFactory = new QueryLogicFactoryImpl();
 
-    @Mock
-    ClassPathXmlApplicationContext applicationContext;
+    private static final String USER_LOGIC_NAME = "UserQueryLogic";
+    private static final String ADMIN_LOGIC_NAME = "AdminQueryLogic";
+    private static final String ADMINISTRATOR_LOGIC_NAME = "AdministratorQueryLogic";
 
-    BaseQueryLogic<?> logic;
+    private final DatawavePrincipal USER_PRINCIPLE = getUserPrinciple();
+    private final DatawavePrincipal ADMIN_PRINCIPLE = getAdminPrinciple();
 
-    private QueryLogicFactoryConfiguration factoryConfig = null;
-    private EJBContext ctx;
-    private DatawavePrincipal principal = null;
+    private final String USER_ROLE = "user";
+    private final String ADMIN_ROLE = "admin";
 
-    @Before
-    public void setup() throws IllegalArgumentException, IllegalAccessException {
-        System.setProperty(DnProperties.NPE_OU_PROPERTY, "iamnotaperson");
-        System.setProperty("dw.metadatahelper.all.auths", "A,B,C,D");
-        Logger.getLogger(ClassPathXmlApplicationContext.class).setLevel(Level.OFF);
-        Logger.getLogger(XmlBeanDefinitionReader.class).setLevel(Level.OFF);
-        Logger.getLogger(DefaultListableBeanFactory.class).setLevel(Level.OFF);
+    private Map<String,String> alternateLogicMap;
+
+    @BeforeEach
+    @SuppressWarnings("unchecked")
+    public void beforeEach(ApplicationContext context) throws IllegalArgumentException, IllegalAccessException {
+        assertNotNull(context);
+
         ClassPathXmlApplicationContext queryFactory = new ClassPathXmlApplicationContext();
         queryFactory.setConfigLocation("TestConfiguredQueryLogicFactory.xml");
         queryFactory.refresh();
-        factoryConfig = queryFactory.getBean(QueryLogicFactoryConfiguration.class.getSimpleName(), QueryLogicFactoryConfiguration.class);
+        QueryLogicFactoryConfiguration factoryConfig = queryFactory.getBean("queryLogicFactoryConfiguration", QueryLogicFactoryConfiguration.class);
 
-        Whitebox.setInternalState(bean, QueryLogicFactoryConfiguration.class, factoryConfig);
-        Whitebox.setInternalState(bean, ClassPathXmlApplicationContext.class, queryFactory);
+        ReflectionTestUtils.setField(queryLogicFactory, "queryLogicFactoryConfiguration", factoryConfig);
+        ReflectionTestUtils.setField(queryLogicFactory, "applicationContext", context);
 
-        ctx = createMock(EJBContext.class);
-        logic = createMockBuilder(BaseQueryLogic.class).addMockedMethods("setLogicName", "getMaxPageSize", "getPageByteTrigger").createMock();
-        DatawaveUser user = new DatawaveUser(SubjectIssuerDNPair.of("CN=Poe Edgar Allan eapoe, OU=acme", "<CN=ca, OU=acme>"), UserType.USER, null, null, null,
-                        0L);
-        principal = new DatawavePrincipal(Collections.singletonList(user));
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testGetQueryLogicWrongName() throws IllegalArgumentException, CloneNotSupportedException {
-        EasyMock.expect(ctx.getCallerPrincipal()).andReturn(principal);
-        bean.getQueryLogic("TestQuery2", principal);
+        alternateLogicMap = (Map<String,String>) queryFactory.getBean("ExpandedLogicMap");
     }
 
     @Test
-    public void testGetQueryLogic() throws IllegalArgumentException, CloneNotSupportedException {
-        EasyMock.expect(ctx.getCallerPrincipal()).andReturn(principal);
-        TestQueryLogic<?> logic = (TestQueryLogic<?>) bean.getQueryLogic("TestQuery", principal);
-        assertEquals("MyMetadataTable", logic.getTableName());
-        assertEquals(123456, logic.getMaxResults());
-        assertEquals(987654, logic.getMaxWork());
+    public void testGetQueryLogicThatDoesNotExist() {
+        assertThrows(IllegalArgumentException.class, () -> queryLogicFactory.getQueryLogic("SuperUserQueryLogic"));
+    }
+
+    // fun fact, this method always fails in the default implementation
+    @Test
+    public void testGetQueryLogicThatExistsButNoProxiedUser() {
+        assertThrows(NullPointerException.class, () -> queryLogicFactory.getQueryLogic(USER_LOGIC_NAME));
     }
 
     @Test
-    public void testGetQueryLogic_HasRequiredRoles() throws Exception {
-        // Set the query name
-        String queryName = "TestQuery";
-        String mappedQueryName = "TestQuery2";
-        Collection<String> roles = Arrays.asList("Monkey King", "Monkey Queen");
-
-        // Set expectations
-        QueryLogicFactoryConfiguration qlfc = new QueryLogicFactoryConfiguration();
-        qlfc.setMaxPageSize(25);
-        qlfc.setPageByteTrigger(1024L);
-        this.logic.setServerUser(altPrincipal);
-        this.logic.setLogicName(queryName);
-        expect(altPrincipal.getPrimaryUser()).andReturn(
-                        new DatawaveUser(SubjectIssuerDNPair.of("CN=Poe Edgar Allan eapoe, OU=acme", "<CN=ca, OU=acme>"), UserType.USER, null, null, null, 0L));
-        expect(this.logic.getMaxPageSize()).andReturn(25);
-        expect(this.logic.getPageByteTrigger()).andReturn(1024L);
-        expect(this.applicationContext.getBean(mappedQueryName)).andReturn(this.logic);
-
-        // Run the test
-        replayAll();
-        QueryLogicFactoryImpl subject = new QueryLogicFactoryImpl();
-        Whitebox.getField(QueryLogicFactoryImpl.class, "queryLogicFactoryConfiguration").set(subject, factoryConfig);
-        Whitebox.getField(QueryLogicFactoryImpl.class, "applicationContext").set(subject, this.applicationContext);
-        QueryLogic<?> result1 = subject.getQueryLogic(queryName, this.altPrincipal);
-        verifyAll();
-
-        // Verify results
-        assertSame("Query logic should not return null", this.logic, result1);
+    public void testUserGetsUserQueryLogic() throws QueryException, CloneNotSupportedException {
+        QueryLogic<?> logic = queryLogicFactory.getQueryLogic(USER_LOGIC_NAME, USER_PRINCIPLE);
+        assertEquals(userQueryLogic, logic);
     }
 
     @Test
-    public void testGetQueryLogic_propertyOverride() throws Exception {
-        // Set the query name
-        String queryName = "TestQuery";
-        Collection<String> roles = Arrays.asList("Monkey King", "Monkey Queen");
-
-        // Set expectations
-        QueryLogicFactoryConfiguration qlfc = new QueryLogicFactoryConfiguration();
-        qlfc.setMaxPageSize(25);
-        qlfc.setPageByteTrigger(1024L);
-
-        Map<String,Collection<String>> rolesMap = new HashMap<>();
-        rolesMap.put(queryName, roles);
-
-        this.logic.setServerUser(altPrincipal);
-        this.logic.setLogicName(queryName);
-        expect(altPrincipal.getPrimaryUser()).andReturn(
-                        new DatawaveUser(SubjectIssuerDNPair.of("CN=Poe Edgar Allan eapoe, OU=acme", "<CN=ca, OU=acme>"), UserType.USER, null, null, null, 0L));
-        expect(this.logic.getMaxPageSize()).andReturn(0);
-        expect(this.logic.getPageByteTrigger()).andReturn(0L);
-        this.logic.setMaxPageSize(25);
-        this.logic.setPageByteTrigger(1024L);
-        expect(this.applicationContext.getBean(queryName)).andReturn(this.logic);
-
-        // Run the test
-        replayAll();
-        QueryLogicFactoryImpl subject = new QueryLogicFactoryImpl();
-        Whitebox.getField(QueryLogicFactoryImpl.class, "queryLogicFactoryConfiguration").set(subject, qlfc);
-        Whitebox.getField(QueryLogicFactoryImpl.class, "applicationContext").set(subject, this.applicationContext);
-        QueryLogic<?> result1 = subject.getQueryLogic(queryName, this.altPrincipal);
-        verifyAll();
-
-        // Verify results
-        assertSame("Query logic should not return null", this.logic, result1);
+    public void testUserCannotGetAdminQueryLogic() {
+        assertThrows(UnauthorizedException.class, () -> queryLogicFactory.getQueryLogic(ADMIN_LOGIC_NAME, USER_PRINCIPLE));
     }
 
     @Test
-    public void testQueryLogicList() throws Exception {
-        // Run the test
-        replayAll();
-        List<QueryLogic<?>> result1 = bean.getQueryLogicList();
-        verifyAll();
+    public void testAdminGetsAdminQueryLogic() throws QueryException, CloneNotSupportedException {
+        QueryLogic<?> logic = queryLogicFactory.getQueryLogic(ADMIN_LOGIC_NAME, ADMIN_PRINCIPLE);
+        assertEquals(adminQueryLogic, logic);
+    }
 
-        // Verify results
-        assertNotNull("Query logic list should not return null", result1);
-        assertEquals("Query logic list should return with 1 item", 1, result1.size());
-        QueryLogic logic = result1.iterator().next();
-        assertEquals("TestQuery", logic.getLogicName());
-        assertEquals(123456, logic.getMaxResults());
-        assertEquals(987654, logic.getMaxWork());
+    @Test
+    public void testAdminGetsUserQueryLogic() throws QueryException, CloneNotSupportedException {
+        QueryLogic<?> logic = queryLogicFactory.getQueryLogic(USER_LOGIC_NAME, ADMIN_PRINCIPLE);
+        assertEquals(userQueryLogic, logic);
+    }
+
+    @Test
+    public void testListQueryLogic() {
+        List<QueryLogic<?>> queryLogics = queryLogicFactory.getQueryLogicList();
+        assertEquals(2, queryLogics.size());
+        queryLogics.sort(Comparator.comparing(QueryLogic::getLogicName));
+        assertEquals(adminQueryLogic, queryLogics.get(0));
+        assertEquals(userQueryLogic, queryLogics.get(1));
+    }
+
+    @Test
+    public void testUserQueryLogicRoles() throws QueryException, CloneNotSupportedException {
+        QueryLogic<?> logic = queryLogicFactory.getQueryLogic(USER_LOGIC_NAME, USER_PRINCIPLE);
+        assertEquals(Set.of(USER_ROLE), logic.getRequiredRoles());
+    }
+
+    @Test
+    public void testAdminQueryLogicRoles() throws QueryException, CloneNotSupportedException {
+        QueryLogic<?> logic = queryLogicFactory.getQueryLogic(ADMIN_LOGIC_NAME, ADMIN_PRINCIPLE);
+        assertEquals(Set.of(ADMIN_ROLE), logic.getRequiredRoles());
+    }
+
+    @Test
+    public void testMappingLogicName() throws QueryException, CloneNotSupportedException {
+        // for this test someone with the ADMINISTRATOR role should be redirected to the ADMIN logic
+        QueryLogicFactoryConfiguration config = (QueryLogicFactoryConfiguration) ReflectionTestUtils.getField(queryLogicFactory,
+                        "queryLogicFactoryConfiguration");
+        assertNotNull(config);
+        config.setLogicMap(alternateLogicMap);
+
+        QueryLogic<?> logic = queryLogicFactory.getQueryLogic(ADMINISTRATOR_LOGIC_NAME, ADMIN_PRINCIPLE);
+        assertEquals(adminQueryLogic, logic);
+    }
+
+    private DatawavePrincipal getUserPrinciple() {
+        Set<String> roles = Set.of(USER_ROLE);
+        return getPrinciple("CN=Poe Edgar Allan eapoe, OU=acme", "<CN=ca, OU=acme>", roles);
+    }
+
+    private DatawavePrincipal getAdminPrinciple() {
+        Set<String> roles = Set.of(ADMIN_ROLE, USER_ROLE);
+        return getPrinciple("CN=Last First Middle fmlast, OU=acme", "<CN=ca, OU=acme>", roles);
+    }
+
+    private DatawavePrincipal getPrinciple(String subjectDN, String issuerDN, Set<String> roles) {
+        SubjectIssuerDNPair dnPair = SubjectIssuerDNPair.of(subjectDN, issuerDN);
+        Set<String> auths = Collections.emptySet();
+        Multimap<String,String> roleToAuthMapping = HashMultimap.create();
+        DatawaveUser user = new DatawaveUser(dnPair, UserType.USER, auths, roles, roleToAuthMapping, 0L);
+        return new DatawavePrincipal(Set.of(user));
     }
 
 }
