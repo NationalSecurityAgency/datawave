@@ -21,7 +21,7 @@ import com.google.common.collect.Sets;
 class DnPropertiesTest {
 
     /**
-     * Verify that {@link DnProperties#getDefaultInstance()} will load properties from the properties file {@value DnProperties#PROPS_RESOURCE}.
+     * Verify that {@link DnProperties#getDefaultInstance()} will load properties from the properties file {@value DnProperties#DEFAULT_PROPERTIES_FILE}.
      */
     @ClearSystemProperty(key = DnProperties.SUBJECT_DN_PATTERN_PROPERTY)
     @ClearSystemProperty(key = DnProperties.NPE_OU_PROPERTY)
@@ -82,14 +82,41 @@ class DnPropertiesTest {
     }
 
     /**
+     * Verify an exception is thrown if the properties file cannot be loaded and either a subject DN pattern or NPE OU list were not specified via system
+     * properties.
+     */
+    @SetSystemProperty(key = DnProperties.SUBJECT_DN_PATTERN_PROPERTY, value = "  ")
+    @SetSystemProperty(key = DnProperties.NPE_OU_PROPERTY, value = "  ")
+    @Test
+    void testNonexistentPropertiesFileThrowsException() {
+        Throwable throwable = assertThrows(RuntimeException.class, () -> DnProperties.createInstanceFromProperties("nonexistent.properties"));
+        assertEquals("Failed to load properties file nonexistent.properties", throwable.getMessage());
+    }
+
+    /**
+     * Verify an exception is not thrown for a non-existent properties file if a subject DN pattern and NPE OU list were provided via system properties.
+     */
+    @SetSystemProperty(key = DnProperties.SUBJECT_DN_PATTERN_PROPERTY, value = "(?:^|,)\\s*OU\\s*=\\s*My Other Department\\s*(?:,|$)")
+    @SetSystemProperty(key = DnProperties.NPE_OU_PROPERTY, value = "iamnotaperson")
+    @Test
+    void testExceptionNotThrownForNonExistentPropertiesFileWhenSystemPropertiesSet() {
+        Pattern expectedSubjectDnPattern = Pattern.compile("(?:^|,)\\s*OU\\s*=\\s*My Other Department\\s*(?:,|$)", Pattern.CASE_INSENSITIVE);
+        Set<String> expectedNpeOUs = Sets.newHashSet("IAMNOTAPERSON");
+
+        DnProperties actual = DnProperties.createInstanceFromProperties("dnutils.properties");
+        assertTrue(arePatternsEqual(expectedSubjectDnPattern, actual.getSubjectDnPattern()));
+        assertEquals(expectedNpeOUs, actual.getNpeOUs());
+    }
+
+    /**
      * Verify an exception is thrown by {@link DnProperties#createInstanceFromProperties(String)} when no valid subject DN pattern can be loaded.
      */
     @SetSystemProperty(key = DnProperties.SUBJECT_DN_PATTERN_PROPERTY, value = "  ")
     @SetSystemProperty(key = DnProperties.NPE_OU_PROPERTY, value = "iamnotaperson,npe,stillnotaperson")
     @Test
     void testNoValidSubjectDnPattern() {
-        Throwable thrown = assertThrows(IllegalArgumentException.class, () -> DnProperties.createInstanceFromProperties("nonexistent.properties"));
-        assertEquals("Failed to load valid subject DN pattern from property subject.dn.pattern from system or properties file dnutils.properties",
+        Throwable thrown = assertThrows(IllegalArgumentException.class, () -> DnProperties.createInstanceFromProperties("dnutils_blank.properties"));
+        assertEquals("Failed to load valid subject DN pattern from property subject.dn.pattern from system or properties file dnutils_blank.properties",
                         thrown.getMessage());
     }
 
@@ -100,8 +127,9 @@ class DnPropertiesTest {
     @SetSystemProperty(key = DnProperties.NPE_OU_PROPERTY, value = "  ")
     @Test
     void testNoValidNpeOUs() {
-        Throwable thrown = assertThrows(IllegalArgumentException.class, () -> DnProperties.createInstanceFromProperties("nonexistent.properties"));
-        assertEquals("Failed to load valid NPE OU list from property npe.ou.entries from system or properties file dnutils.properties", thrown.getMessage());
+        Throwable thrown = assertThrows(IllegalArgumentException.class, () -> DnProperties.createInstanceFromProperties("dnutils_blank.properties"));
+        assertEquals("Failed to load valid NPE OU list from property npe.ou.entries from system or properties file dnutils_blank.properties",
+                        thrown.getMessage());
     }
 
     /**

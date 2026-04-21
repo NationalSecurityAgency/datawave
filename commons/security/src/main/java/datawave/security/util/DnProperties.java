@@ -21,7 +21,7 @@ public class DnProperties {
     private static final Logger log = LoggerFactory.getLogger(DnProperties.class);
 
     /** Config for specifying default subject DN patterns and NPE OUs */
-    public static final String PROPS_RESOURCE = "dnutils.properties";
+    public static final String DEFAULT_PROPERTIES_FILE = "dnutils.properties";
 
     /** System property that contains a regex pattern that matches against subject DNs. */
     public static final String SUBJECT_DN_PATTERN_PROPERTY = "subject.dn.pattern";
@@ -39,57 +39,70 @@ public class DnProperties {
 
     /**
      * Return the default instance of {@link DnProperties}. If it does not exist, it will be set to the result of {@link #createInstanceFromProperties(String)}
-     * with the properties file {@value PROPS_RESOURCE}.
+     * with the properties file {@value DEFAULT_PROPERTIES_FILE}.
      *
      * @return the default {@link DnProperties}
      * @see #createInstanceFromProperties(String)
      */
     public static DnProperties getDefaultInstance() {
         if (defaultInstance == null) {
-            defaultInstance = createInstanceFromProperties(PROPS_RESOURCE);
+            defaultInstance = createInstanceFromProperties(DEFAULT_PROPERTIES_FILE);
         }
         return defaultInstance;
     }
 
     /**
      * Create an instance of {@link DnProperties} where the subject DN pattern and NPE OU list are loaded (in priority order) from the system properties
-     * {@value SUBJECT_DN_PATTERN_PROPERTY} and {@value NPE_OU_PROPERTY}, or those same properties in the given properties file from the classloader.
+     * {@value SUBJECT_DN_PATTERN_PROPERTY} and {@value NPE_OU_PROPERTY}, or those same properties in the given properties file from the classloader if they
+     * were not specified in the system properties.
      *
      * @return a new {@link DnProperties}
      */
     public static DnProperties createInstanceFromProperties(String propertiesFile) {
-        String subjectDnPatternFromFile = null;
-        String npeOUsFromFile = null;
+        // Attempt to fetch a subject DN pattern and NPE OU list from system properties.
+        String subjectDnPatternValue = System.getProperty(SUBJECT_DN_PATTERN_PROPERTY, "");
+        String npeOUsValue = System.getProperty(NPE_OU_PROPERTY, "");
 
-        // Attempt to load the default subject DN pattern and NPE OU list from the properties file available via the classloader.
-        Properties props = new Properties();
-        try (InputStream in = DnProperties.class.getClassLoader().getResourceAsStream(propertiesFile)) {
-            props.load(in);
-            subjectDnPatternFromFile = props.getProperty(SUBJECT_DN_PATTERN_PROPERTY);
-            if (subjectDnPatternFromFile == null) {
-                log.warn("Subject DN pattern property " + SUBJECT_DN_PATTERN_PROPERTY + " not set in " + PROPS_RESOURCE);
+        // If either a subject DN pattern or NPE OU list were not specified, attempt to load them from the properties file.
+        if ((subjectDnPatternValue.isBlank()) || (npeOUsValue.isBlank())) {
+            // Attempt to load the default subject DN pattern and NPE OU list from the properties file available via the classloader.
+            Properties props = new Properties();
+            try (InputStream in = DnProperties.class.getClassLoader().getResourceAsStream(propertiesFile)) {
+                props.load(in);
+
+                // Update the subject DN if needed.
+                if (subjectDnPatternValue.isBlank()) {
+                    subjectDnPatternValue = props.getProperty(SUBJECT_DN_PATTERN_PROPERTY, "");
+                    if (subjectDnPatternValue.isBlank()) {
+                        log.warn("Subject DN pattern property {} not set in {}", SUBJECT_DN_PATTERN_PROPERTY, propertiesFile);
+                    }
+                }
+
+                // Update the NPE OU list if needed.
+                if (npeOUsValue.isBlank()) {
+                    npeOUsValue = props.getProperty(NPE_OU_PROPERTY, "");
+                    if (npeOUsValue.isBlank()) {
+                        log.warn("NPE OUs list property {} not set in {}", NPE_OU_PROPERTY, propertiesFile);
+                    }
+                }
+
+            } catch (Exception e) {
+                // If we failed to load the properties file, throw an error.
+                log.error("Failed to load properties file {}", propertiesFile, e);
+                throw new RuntimeException("Failed to load properties file " + propertiesFile, e);
             }
-            npeOUsFromFile = props.getProperty(NPE_OU_PROPERTY);
-            if (npeOUsFromFile == null) {
-                log.warn("Subject");
+
+            // Throw an error if the subject DN is still blank.
+            if (subjectDnPatternValue.isBlank()) {
+                throw new IllegalArgumentException("Failed to load valid subject DN pattern from property " + SUBJECT_DN_PATTERN_PROPERTY
+                                + " from system or properties file " + propertiesFile);
             }
-        } catch (Throwable t) {
-            // Don't throw an error yet, we may be able to get valid values from system properties, and those take priority anyway.
-            log.error(PROPS_RESOURCE + " could not be loaded!", t);
-        }
 
-        // Fetch a subject DN pattern from the subject DN system property, defaulting to the value loaded from the properties file if not assigned.
-        String subjectDnPatternValue = System.getProperty(SUBJECT_DN_PATTERN_PROPERTY, subjectDnPatternFromFile);
-        if (subjectDnPatternValue == null || subjectDnPatternValue.isBlank()) {
-            throw new IllegalArgumentException("Failed to load valid subject DN pattern from property " + SUBJECT_DN_PATTERN_PROPERTY
-                            + " from system or properties file " + PROPS_RESOURCE);
-        }
-
-        // Fetch a NPE OU list from the NPE OU list system property, default to the value loaded from the properties file if not assigned.
-        String npeOUsValue = System.getProperty(NPE_OU_PROPERTY, npeOUsFromFile);
-        if (npeOUsValue == null || npeOUsValue.isBlank()) {
-            throw new IllegalArgumentException(
-                            "Failed to load valid NPE OU list from property " + NPE_OU_PROPERTY + " from system or properties file " + PROPS_RESOURCE);
+            // Throw an error if the NPE OU list is still blank.
+            if (npeOUsValue.isBlank()) {
+                throw new IllegalArgumentException(
+                                "Failed to load valid NPE OU list from property " + NPE_OU_PROPERTY + " from system or properties file " + propertiesFile);
+            }
         }
 
         // Compile the subject DN pattern.
