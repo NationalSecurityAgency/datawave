@@ -531,6 +531,13 @@
                 <version>${version.google-guava}</version>
                 <scope>provided</scope>
             </dependency>
+            <!-- This dependency will be provided via a Wildfly module for the webservices. -->
+            <dependency>
+                <groupId>gov.nsa.datawave.commons</groupId>
+                <artifactId>datawave-commons-security</artifactId>
+                <version>${project.version}</version>
+                <scope>provided</scope>
+            </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.webservices</groupId>
                 <artifactId>datawave-ws-security-elytron</artifactId>

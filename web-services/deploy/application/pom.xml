@@ -703,7 +703,7 @@
                                         <artifactItem>
                                             <groupId>gov.nsa.datawave.commons</groupId>
                                             <artifactId>datawave-commons-security</artifactId>
-                                            <version>${version.datawave-commons-security}</version>
+                                            <version>${project.version}</version>
                                         </artifactItem>
                                     </artifactItems>
                                 </configuration>

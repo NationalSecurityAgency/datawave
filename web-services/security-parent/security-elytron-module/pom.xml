@@ -46,7 +46,6 @@
         <dependency>
             <groupId>gov.nsa.datawave.commons</groupId>
             <artifactId>datawave-commons-security</artifactId>
-            <version>${version.datawave-commons-security}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>

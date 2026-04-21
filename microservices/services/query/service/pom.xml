@@ -76,11 +76,6 @@
                 <version>${version.datawave}</version>
             </dependency>
             <dependency>
-                <groupId>gov.nsa.datawave.commons</groupId>
-                <artifactId>datawave-commons-security</artifactId>
-                <version>${version.datawave-commons-security}</version>
-            </dependency>
-            <dependency>
                 <groupId>gov.nsa.datawave.core</groupId>
                 <artifactId>base-rest-responses</artifactId>
                 <version>${version.datawave}</version>
