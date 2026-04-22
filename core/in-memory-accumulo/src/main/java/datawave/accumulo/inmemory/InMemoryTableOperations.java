@@ -76,8 +76,6 @@ import org.apache.hadoop.io.Text;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import datawave.accumulo.inmemory.AccumuloValidators;
-
 public class InMemoryTableOperations extends TableOperationsHelper {
     private static final Logger log = LoggerFactory.getLogger(InMemoryTableOperations.class);
     private static final byte[] ZERO = {0};
