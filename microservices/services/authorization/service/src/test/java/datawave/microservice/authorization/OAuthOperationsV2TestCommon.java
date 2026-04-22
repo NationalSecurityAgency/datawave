@@ -23,7 +23,6 @@ import java.util.UUID;
 
 import javax.net.ssl.SSLContext;
 
-import org.junit.jupiter.api.Assertions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.autoconfigure.cache.CacheType;

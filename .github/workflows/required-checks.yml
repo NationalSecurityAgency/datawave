@@ -23,7 +23,7 @@ jobs:
       should_run_compose: ${{ steps.filter.outputs.should_run_compose }}
     steps:
     - name: Checkout Code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         fetch-depth: 0
     
@@ -173,7 +173,7 @@ jobs:
     - name: Report result
       if: needs.check-changes.outputs.should_run_compose == 'true'
       run: |
-        if [[ "${{ needs.call-compose-tests.result }}" == "success" ]]; then
+        if [[ "${{ needs.call-compose-tests.outputs.compose-check-result }}" == "success" ]]; then
           echo "✓ Compose checks passed"
           exit 0
         else
