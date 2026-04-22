@@ -142,20 +142,6 @@ public class DocumentGrouper {
      * @param groups
      *            the {@link Groups} instance to merge newly found groups into
      */
-    // public static void group(Map.Entry<Key,Document> entry, GroupFields groupFields, Groups groups) {
-    // group(entry, groupFields, groups, true);
-    // }
-
-    /**
-     * Groups and aggregates fields from the entries in the given document and merges the new group information into the given {@link Groups} instance.
-     *
-     * @param entry
-     *            the document entry
-     * @param groupFields
-     *            the fields to group and aggregate
-     * @param groups
-     *            the {@link Groups} instance to merge newly found groups into
-     */
     public static void group(Map.Entry<Key,Document> entry, GroupFields groupFields, Groups groups) {
         DocumentGrouper documentGrouper = new DocumentGrouper(entry, groupFields, groups);
         documentGrouper.group();
@@ -220,7 +206,7 @@ public class DocumentGrouper {
                 log.trace("Aggregation skipped, either no fields targeted for aggregation or no entries found for targeted fields");
             }
 
-            // Now ensure the counts for each grouping are slapped down to 1 as we only want to count this document once
+            // Now ensure the counts for each group are reduced down to 1 as we only want to count this document once
             // per group if requested
             if (oneDocPerGroup) {
                 capCurrentGroupCounts(1);
