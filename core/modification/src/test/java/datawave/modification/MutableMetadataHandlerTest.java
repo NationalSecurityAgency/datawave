@@ -46,7 +46,7 @@ import datawave.webservice.modification.ModificationRequestBase.MODE;
  * history side effects are easy to diagnose from a single failing test.
  * </p>
  */
-public class MutableMetadataHandlerAccumuloTest {
+public class MutableMetadataHandlerTest {
 
     @Test
     public void insertShouldAddEventFieldFieldIndexGlobalIndexReverseIndexMetadataAndHistory() throws Exception {

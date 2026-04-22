@@ -1167,8 +1167,11 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
                     String datatype, String eventUid, String fieldValue, String fieldName) throws Exception {
 
         String qualifierPrefix = datatype + NULL_BYTE + eventUid + NULL_BYTE + fieldValue + NULL_BYTE + fieldName;
+        // the endKey will ensure that no other fields get included in this range because all legitimate field name
+        // characters appear after the '.' character in the ASCII table, so this will catch field names like QUOTE
+        // and QUOTE.12345 but not QUOTED or QUOTE_TOKEN.
         Key startKey = new Key(shardId, ColumnFamilyConstants.COLF_TF.toString(), qualifierPrefix);
-        Key endKey = new Key(shardId, ColumnFamilyConstants.COLF_TF.toString(), qualifierPrefix + MAX_CHAR);
+        Key endKey = new Key(shardId, ColumnFamilyConstants.COLF_TF.toString(), qualifierPrefix + "." + MAX_CHAR);
         Range range = new Range(startKey, true, endKey, true);
         return new TermFrequencyIterable(client, shardTable, userAuths, range, fieldName);
     }
