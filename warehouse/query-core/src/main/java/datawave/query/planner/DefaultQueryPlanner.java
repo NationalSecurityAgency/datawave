@@ -203,7 +203,7 @@ import datawave.webservice.query.exception.NotFoundQueryException;
 import datawave.webservice.query.exception.PreConditionFailedQueryException;
 import datawave.webservice.query.exception.QueryException;
 
-public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
+public class DefaultQueryPlanner extends QueryPlanner implements Cloneable, AutoCloseable {
 
     private static final Logger log = ThreadConfigurableLogger.getLogger(DefaultQueryPlanner.class);
 
@@ -3494,7 +3494,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     }
 
     @Override
-    public void finalize() {
+    public void close() {
         if (null != executor) {
             executor.shutdown();
         }
