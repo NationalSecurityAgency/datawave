@@ -350,6 +350,21 @@ public class MetadataHelper {
     }
 
     /**
+     * Fetch the {@link Set} of all fields to be used for model expansion. This is the list of all fields with hidden fields removed.
+     *
+     * @param ingestTypeFilter
+     *            set of ingest types used to restrict the scan
+     * @return all fields in the metadata table minus all hidden fields
+     * @throws TableNotFoundException
+     *             if no table exists
+     */
+    public Set<String> getModelExpansionFields(Set<String> ingestTypeFilter) throws TableNotFoundException {
+        Set<String> fields = new HashSet<>(getAllFields(ingestTypeFilter));
+        fields.removeAll(getHiddenFields(ingestTypeFilter));
+        return Collections.unmodifiableSet(fields);
+    }
+
+    /**
      * Fetch the {@link Set} of all fields contained in the database. This will provide a cached view of the fields which is updated every
      * {@code updateInterval} milliseconds.
      *
@@ -728,7 +743,8 @@ public class MetadataHelper {
      * @throws TableNotFoundException
      *             if the table does not exist
      */
-    @Cacheable(value = "getHiddenFields", key = "{#root.target.auths,#root.target.metadataTableName}", cacheManager = "metadataHelperCacheManager", sync = true)
+    @Cacheable(value = "getHiddenFields", key = "{#root.target.auths,#root.target.metadataTableName,#ingestTypeFilter}",
+                    cacheManager = "metadataHelperCacheManager", sync = true)
     public Set<String> getHiddenFields(Set<String> ingestTypeFilter) throws TableNotFoundException {
 
         Multimap<String,String> hiddenFields = this.allFieldMetadataHelper.loadHiddenFields();
