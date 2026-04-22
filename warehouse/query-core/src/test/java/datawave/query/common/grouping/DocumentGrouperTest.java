@@ -73,6 +73,7 @@ public class DocumentGrouperTest {
         groups = new Groups();
         document = new Document();
         groupFields = new GroupFields();
+        groupFields.setOneDocPerGroup(false);
     }
 
     /**
@@ -98,6 +99,15 @@ public class DocumentGrouperTest {
         groupsAssert.hasTotalGroups(2);
         groupsAssert.assertGroup(textKey("GENDER", "MALE")).hasCount(2);
         groupsAssert.assertGroup(textKey("GENDER", "FEMALE")).hasCount(3);
+
+        // and now retest with one document per group
+        groups.clear();
+        groupFields.setOneDocPerGroup(true);
+        executeGrouping();
+        groupsAssert = GroupsAssert.assertThat(groups);
+        groupsAssert.hasTotalGroups(2);
+        groupsAssert.assertGroup(textKey("GENDER", "MALE")).hasCount(1);
+        groupsAssert.assertGroup(textKey("GENDER", "FEMALE")).hasCount(1);
     }
 
     /**
@@ -137,6 +147,16 @@ public class DocumentGrouperTest {
         groupsAssert.hasTotalGroups(3);
         groupsAssert.assertGroup(textKey("GENDER", "MALE"), numericKey("AGE", "24")).hasCount(1);
         groupsAssert.assertGroup(textKey("GENDER", "FEMALE"), numericKey("AGE", "20")).hasCount(3);
+        groupsAssert.assertGroup(textKey("GENDER", "MALE"), numericKey("AGE", "40")).hasCount(1);
+
+        // and now retest with one document per group
+        groups.clear();
+        groupFields.setOneDocPerGroup(true);
+        executeGrouping();
+        groupsAssert = GroupsAssert.assertThat(groups);
+        groupsAssert.hasTotalGroups(3);
+        groupsAssert.assertGroup(textKey("GENDER", "MALE"), numericKey("AGE", "24")).hasCount(1);
+        groupsAssert.assertGroup(textKey("GENDER", "FEMALE"), numericKey("AGE", "20")).hasCount(1);
         groupsAssert.assertGroup(textKey("GENDER", "MALE"), numericKey("AGE", "40")).hasCount(1);
     }
 
@@ -178,6 +198,17 @@ public class DocumentGrouperTest {
         groupsAssert.assertGroup(textKey("GENDER", "MALE"), numericKey("AGE", "24"), textKey("BUILDING", "East")).hasCount(1);
         groupsAssert.assertGroup(textKey("GENDER", "FEMALE"), numericKey("AGE", "20"), textKey("BUILDING", "West")).hasCount(2);
         groupsAssert.assertGroup(textKey("GENDER", "FEMALE"), numericKey("AGE", "20"), textKey("BUILDING", "East")).hasCount(2);
+
+        // and now retest with one document per group
+        groups.clear();
+        groupFields.setOneDocPerGroup(true);
+        executeGrouping();
+        groupsAssert = GroupsAssert.assertThat(groups);
+        groupsAssert.hasTotalGroups(4);
+        groupsAssert.assertGroup(textKey("GENDER", "MALE"), numericKey("AGE", "24"), textKey("BUILDING", "West")).hasCount(1);
+        groupsAssert.assertGroup(textKey("GENDER", "MALE"), numericKey("AGE", "24"), textKey("BUILDING", "East")).hasCount(1);
+        groupsAssert.assertGroup(textKey("GENDER", "FEMALE"), numericKey("AGE", "20"), textKey("BUILDING", "West")).hasCount(1);
+        groupsAssert.assertGroup(textKey("GENDER", "FEMALE"), numericKey("AGE", "20"), textKey("BUILDING", "East")).hasCount(1);
     }
 
     @Test
@@ -274,6 +305,63 @@ public class DocumentGrouperTest {
                         numericKey("RECORD_ID", "456"),
                         textKey("RECORD_TITLE", "Summary")).hasCount(2);
         // @formatter:on
+
+        // and now retest with one document per group
+        groups.clear();
+        groupFields.setOneDocPerGroup(true);
+        executeGrouping();
+        groupsAssert = GroupsAssert.assertThat(groups);
+        groupsAssert.hasTotalGroups(8);
+
+        // @formatter:off
+        groupsAssert.assertGroup(textKey("GENDER", "MALE"),
+                numericKey("AGE", "24"),
+                textKey("BUILDING", "West"),
+                numericKey("RECORD_ID", "123"),
+                textKey("RECORD_TITLE", "Manual")).hasCount(1);
+
+        groupsAssert.assertGroup(textKey("GENDER", "MALE"),
+                numericKey("AGE", "24"),
+                textKey("BUILDING", "West"),
+                numericKey("RECORD_ID", "456"),
+                textKey("RECORD_TITLE", "Summary")).hasCount(1);
+
+        groupsAssert.assertGroup(textKey("GENDER", "MALE"),
+                numericKey("AGE", "24"),
+                textKey("BUILDING", "East"),
+                numericKey("RECORD_ID", "123"),
+                textKey("RECORD_TITLE", "Manual")).hasCount(1);
+
+        groupsAssert.assertGroup(textKey("GENDER", "MALE"),
+                numericKey("AGE", "24"),
+                textKey("BUILDING", "East"),
+                numericKey("RECORD_ID", "456"),
+                textKey("RECORD_TITLE", "Summary")).hasCount(1);
+
+        groupsAssert.assertGroup(textKey("GENDER", "FEMALE"),
+                numericKey("AGE", "20"),
+                textKey("BUILDING", "West"),
+                numericKey("RECORD_ID", "123"),
+                textKey("RECORD_TITLE", "Manual")).hasCount(1);
+
+        groupsAssert.assertGroup(textKey("GENDER", "FEMALE"),
+                numericKey("AGE", "20"),
+                textKey("BUILDING", "West"),
+                numericKey("RECORD_ID", "456"),
+                textKey("RECORD_TITLE", "Summary")).hasCount(1);
+
+        groupsAssert.assertGroup(textKey("GENDER", "FEMALE"),
+                numericKey("AGE", "20"),
+                textKey("BUILDING", "East"),
+                numericKey("RECORD_ID", "123"),
+                textKey("RECORD_TITLE", "Manual")).hasCount(1);
+
+        groupsAssert.assertGroup(textKey("GENDER", "FEMALE"),
+                numericKey("AGE", "20"),
+                textKey("BUILDING", "East"),
+                numericKey("RECORD_ID", "456"),
+                textKey("RECORD_TITLE", "Summary")).hasCount(1);
+        // @formatter:on
     }
 
     @Test
@@ -293,6 +381,15 @@ public class DocumentGrouperTest {
         groupsAssert.hasTotalGroups(2);
         groupsAssert.assertGroup(textKey("GENDER", "MALE")).hasCount(2);
         groupsAssert.assertGroup(textKey("GENDER", "FEMALE")).hasCount(3);
+
+        // and now retest with one document per group
+        groups.clear();
+        groupFields.setOneDocPerGroup(true);
+        executeGrouping();
+        groupsAssert = GroupsAssert.assertThat(groups);
+        groupsAssert.hasTotalGroups(2);
+        groupsAssert.assertGroup(textKey("GENDER", "MALE")).hasCount(1);
+        groupsAssert.assertGroup(textKey("GENDER", "FEMALE")).hasCount(1);
     }
 
     @Test
@@ -320,6 +417,17 @@ public class DocumentGrouperTest {
         groupsAssert.assertGroup(textKey("BUILDING", "West"), numericKey("AGE", "24")).hasCount(2);
         groupsAssert.assertGroup(textKey("BUILDING", "East"), numericKey("AGE", "20")).hasCount(1);
         groupsAssert.assertGroup(textKey("BUILDING", "East"), numericKey("AGE", "24")).hasCount(1);
+
+        // and now retest with one document per group
+        groups.clear();
+        groupFields.setOneDocPerGroup(true);
+        executeGrouping();
+        groupsAssert = GroupsAssert.assertThat(groups);
+        groupsAssert.hasTotalGroups(4);
+        groupsAssert.assertGroup(textKey("BUILDING", "West"), numericKey("AGE", "20")).hasCount(1);
+        groupsAssert.assertGroup(textKey("BUILDING", "West"), numericKey("AGE", "24")).hasCount(1);
+        groupsAssert.assertGroup(textKey("BUILDING", "East"), numericKey("AGE", "20")).hasCount(1);
+        groupsAssert.assertGroup(textKey("BUILDING", "East"), numericKey("AGE", "24")).hasCount(1);
     }
 
     @Test
@@ -334,6 +442,15 @@ public class DocumentGrouperTest {
         // MALE (Count of 1)
         // FEMALE (Count of 1)
         GroupsAssert groupsAssert = GroupsAssert.assertThat(groups);
+        groupsAssert.hasTotalGroups(2);
+        groupsAssert.assertGroup(textKey("GENDER", "MALE")).hasCount(1);
+        groupsAssert.assertGroup(textKey("GENDER", "FEMALE")).hasCount(1);
+
+        // and now retest with one document per group
+        groups.clear();
+        groupFields.setOneDocPerGroup(true);
+        executeGrouping();
+        groupsAssert = GroupsAssert.assertThat(groups);
         groupsAssert.hasTotalGroups(2);
         groupsAssert.assertGroup(textKey("GENDER", "MALE")).hasCount(1);
         groupsAssert.assertGroup(textKey("GENDER", "FEMALE")).hasCount(1);
@@ -356,6 +473,19 @@ public class DocumentGrouperTest {
         // FEMALE-West (Count of 1)
         // FEMALE-North (Count of 1)
         GroupsAssert groupsAssert = GroupsAssert.assertThat(groups);
+        groupsAssert.hasTotalGroups(6);
+        groupsAssert.assertGroup(textKey("GENDER", "MALE"), textKey("BUILDING", "West")).hasCount(1);
+        groupsAssert.assertGroup(textKey("GENDER", "MALE"), textKey("BUILDING", "East")).hasCount(1);
+        groupsAssert.assertGroup(textKey("GENDER", "MALE"), textKey("BUILDING", "North")).hasCount(1);
+        groupsAssert.assertGroup(textKey("GENDER", "FEMALE"), textKey("BUILDING", "West")).hasCount(1);
+        groupsAssert.assertGroup(textKey("GENDER", "FEMALE"), textKey("BUILDING", "East")).hasCount(1);
+        groupsAssert.assertGroup(textKey("GENDER", "FEMALE"), textKey("BUILDING", "North")).hasCount(1);
+
+        // and now retest with one document per group
+        groups.clear();
+        groupFields.setOneDocPerGroup(true);
+        executeGrouping();
+        groupsAssert = GroupsAssert.assertThat(groups);
         groupsAssert.hasTotalGroups(6);
         groupsAssert.assertGroup(textKey("GENDER", "MALE"), textKey("BUILDING", "West")).hasCount(1);
         groupsAssert.assertGroup(textKey("GENDER", "MALE"), textKey("BUILDING", "East")).hasCount(1);
@@ -399,6 +529,45 @@ public class DocumentGrouperTest {
         groupsAssert.assertGroup(textKey("GENDER", "MALE")).hasCount(4).hasDocumentVisibilities(COLVIS_ALL, COLVIS_I)
                         .hasVisibilitiesForKey(textKey("GENDER", "MALE"), COLVIS_ALL, COLVIS_I);
         groupsAssert.assertGroup(textKey("GENDER", "FEMALE")).hasCount(3).hasDocumentVisibilities(COLVIS_I, COLVIS_E)
+                        .hasVisibilitiesForKey(textKey("GENDER", "FEMALE"), COLVIS_I, COLVIS_E);
+    }
+
+    @Test
+    public void testGroupingBySingleFieldAcrossMultipleDocumentsOneDocPerGroup() {
+        groupFields.setOneDocPerGroup(true);
+
+        givenGroupFields("GENDER");
+
+        givenDocumentColumnVisibility(COLVIS_ALL);
+        givenDocumentEntry(DocumentEntry.of("GENDER.FOO.1").withLcNoDiacritics("MALE", COLVIS_ALL));
+        givenDocumentEntry(DocumentEntry.of("GENDER.FOO.2").withLcNoDiacritics("MALE", COLVIS_ALL));
+        givenDocumentEntry(DocumentEntry.of("GENDER.FOO.3").withLcNoDiacritics("MALE", COLVIS_ALL));
+
+        executeGrouping();
+
+        resetDocument();
+        givenDocumentColumnVisibility(COLVIS_E);
+        givenDocumentEntry(DocumentEntry.of("GENDER.BAR.1").withLcNoDiacritics("FEMALE", COLVIS_I));
+        givenDocumentEntry(DocumentEntry.of("GENDER.BAR.2").withLcNoDiacritics("MALE", COLVIS_I));
+        givenDocumentEntry(DocumentEntry.of("GENDER.HAT.1").withLcNoDiacritics("FEMALE", COLVIS_I));
+
+        executeGrouping();
+
+        resetDocument();
+        givenDocumentColumnVisibility(COLVIS_I);
+        givenDocumentEntry(DocumentEntry.of("GENDER.TIN.1").withLcNoDiacritics("FEMALE", COLVIS_E));
+
+        executeGrouping();
+
+        // We should expect the following groups:
+        // MALE (Count of 2)
+        // FEMALE (Count of 2)
+        GroupsAssert groupsAssert = GroupsAssert.assertThat(groups);
+        groupsAssert.hasTotalGroups(2);
+
+        groupsAssert.assertGroup(textKey("GENDER", "MALE")).hasCount(2).hasDocumentVisibilities(COLVIS_ALL, COLVIS_I)
+                        .hasVisibilitiesForKey(textKey("GENDER", "MALE"), COLVIS_ALL, COLVIS_I);
+        groupsAssert.assertGroup(textKey("GENDER", "FEMALE")).hasCount(2).hasDocumentVisibilities(COLVIS_I, COLVIS_E)
                         .hasVisibilitiesForKey(textKey("GENDER", "FEMALE"), COLVIS_I, COLVIS_E);
     }
 
@@ -459,6 +628,63 @@ public class DocumentGrouperTest {
     }
 
     @Test
+    public void testGroupingByMultipleFieldsWithDifferentFormatsAcrossMultipleDocumentsOneDocPerGroup() {
+        groupFields.setOneDocPerGroup(true);
+        // @formatter:off
+        givenGroupFields("GENDER", "BUILDING");
+
+        givenDocumentColumnVisibility(COLVIS_I);
+        givenDocumentEntry(DocumentEntry.of("GENDER.FOO.1").withLcNoDiacritics("MALE", COLVIS_ALL));
+        givenDocumentEntry(DocumentEntry.of("GENDER.FOO.2").withLcNoDiacritics("FEMALE", COLVIS_ALL));
+        givenDocumentEntry(DocumentEntry.of("BUILDING.1").withLcNoDiacritics("West", COLVIS_E).withLcNoDiacritics("East", COLVIS_I));
+
+        executeGrouping();
+
+        // This document contains only BUILDING entries. Because of this, we should see a single "North" and "South" grouping.
+        resetDocument();
+        givenDocumentColumnVisibility(COLVIS_ALL);
+        givenDocumentEntry(DocumentEntry.of("BUILDING.1").withLcNoDiacritics("North")
+                .withLcNoDiacritics("South"));
+
+        executeGrouping();
+
+        resetDocument();
+        givenDocumentColumnVisibility(COLVIS_E);
+        givenDocumentEntry(DocumentEntry.of("GENDER.TIN.1").withLcNoDiacritics("MALE", COLVIS_ALL));
+        givenDocumentEntry(DocumentEntry.of("GENDER.TIN.2").withLcNoDiacritics("MALE", COLVIS_ALL));
+        givenDocumentEntry(DocumentEntry.of("BUILDING.1").withLcNoDiacritics("Center", COLVIS_ALL));
+
+        executeGrouping();
+
+        // @formatter:on
+
+        // We should expect the following groups:
+        // MALE-West (Count of 1)
+        // MALE-East (Count of 1)
+        // FEMALE-West (Count of 1)
+        // FEMALE-East (Count of 1)
+        // MALE-Center (Count of 1) (only one doc with this)
+        // North (Count of 1)
+        // South (Count of 1)
+
+        GroupsAssert groupsAssert = GroupsAssert.assertThat(groups);
+        groupsAssert.hasTotalGroups(7);
+
+        groupsAssert.assertGroup(textKey("GENDER", "MALE"), textKey("BUILDING", "West")).hasCount(1).hasDocumentVisibilities(COLVIS_ALL_E_I)
+                        .hasVisibilitiesForKey(textKey("GENDER", "MALE"), COLVIS_ALL).hasVisibilitiesForKey(textKey("BUILDING", "West"), COLVIS_E);
+        groupsAssert.assertGroup(textKey("GENDER", "MALE"), textKey("BUILDING", "East")).hasCount(1).hasDocumentVisibilities(COLVIS_ALL_E_I)
+                        .hasVisibilitiesForKey(textKey("GENDER", "MALE"), COLVIS_ALL).hasVisibilitiesForKey(textKey("BUILDING", "East"), COLVIS_I);
+        groupsAssert.assertGroup(textKey("GENDER", "FEMALE"), textKey("BUILDING", "West")).hasCount(1).hasDocumentVisibilities(COLVIS_ALL_E_I)
+                        .hasVisibilitiesForKey(textKey("GENDER", "FEMALE"), COLVIS_ALL).hasVisibilitiesForKey(textKey("BUILDING", "West"), COLVIS_E);
+        groupsAssert.assertGroup(textKey("GENDER", "FEMALE"), textKey("BUILDING", "East")).hasCount(1).hasDocumentVisibilities(COLVIS_ALL_E_I)
+                        .hasVisibilitiesForKey(textKey("GENDER", "FEMALE"), COLVIS_ALL).hasVisibilitiesForKey(textKey("BUILDING", "East"), COLVIS_I);
+        groupsAssert.assertGroup(textKey("GENDER", "MALE"), textKey("BUILDING", "Center")).hasCount(1).hasDocumentVisibilities(COLVIS_ALL)
+                        .hasVisibilitiesForKey(textKey("GENDER", "MALE"), COLVIS_ALL).hasVisibilitiesForKey(textKey("BUILDING", "Center"), COLVIS_ALL);
+        groupsAssert.assertGroup(textKey("BUILDING", "North")).hasCount(1).hasDocumentVisibilities(COLVIS_ALL);
+        groupsAssert.assertGroup(textKey("BUILDING", "South")).hasCount(1).hasDocumentVisibilities(COLVIS_ALL);
+    }
+
+    @Test
     public void testAggregatingFieldWithGroupingContextAndInstanceWithDirectMatches() {
         givenGroupFields("GENDER");
         givenSumFields("AGE");
@@ -509,6 +735,15 @@ public class DocumentGrouperTest {
                         .hasAggregatedMax("AGE", new NumberType("50"))
                         .hasAggregatedMin("AGE", new NumberType("5"));
         // @formatter:on
+
+        // and now retest with one document per group
+        groups.clear();
+        groupFields.setOneDocPerGroup(true);
+        executeGrouping();
+        groupsAssert = GroupsAssert.assertThat(groups);
+        groupsAssert.hasTotalGroups(2);
+        groupsAssert.assertGroup(textKey("GENDER", "MALE")).hasCount(1);
+        groupsAssert.assertGroup(textKey("GENDER", "FEMALE")).hasCount(1);
     }
 
     @Test
@@ -557,6 +792,15 @@ public class DocumentGrouperTest {
                         .hasAggregatedMax("AGE", new NumberType("50"))
                         .hasAggregatedMin("AGE", new NumberType("5"));
         // @formatter:on
+
+        // and now retest with one document per group
+        groups.clear();
+        groupFields.setOneDocPerGroup(true);
+        executeGrouping();
+        groupsAssert = GroupsAssert.assertThat(groups);
+        groupsAssert.hasTotalGroups(2);
+        groupsAssert.assertGroup(textKey("GENDER", "MALE")).hasCount(1);
+        groupsAssert.assertGroup(textKey("GENDER", "FEMALE")).hasCount(1);
     }
 
     @Test
@@ -602,6 +846,15 @@ public class DocumentGrouperTest {
                         .hasAggregatedMax("AGE", new NumberType("50"))
                         .hasAggregatedMin("AGE", new NumberType("5"));
         // @formatter:on
+
+        // and now retest with one document per group
+        groups.clear();
+        groupFields.setOneDocPerGroup(true);
+        executeGrouping();
+        groupsAssert = GroupsAssert.assertThat(groups);
+        groupsAssert.hasTotalGroups(2);
+        groupsAssert.assertGroup(textKey("GENDER", "MALE")).hasCount(1);
+        groupsAssert.assertGroup(textKey("GENDER", "FEMALE")).hasCount(1);
     }
 
     @Test
@@ -645,6 +898,28 @@ public class DocumentGrouperTest {
                         .hasAggregatedAverage("AGE", new BigDecimal("24"))
                         .hasAggregatedMax("AGE", new NumberType("50"))
                         .hasAggregatedMin("AGE", new NumberType("5"));
+        // @formatter:on
+
+        // and now retest with one document per group
+        groups.clear();
+        groupFields.setOneDocPerGroup(true);
+        executeGrouping();
+        groupsAssert = GroupsAssert.assertThat(groups);
+        groupsAssert.hasTotalGroups(2);
+        // @formatter:off
+        groupsAssert.assertGroup(textKey("GENDER", "MALE")).hasCount(1)
+                .hasAggregatedSum("AGE", new BigDecimal("120"))
+                .hasAggregatedCount("AGE", 5L)
+                .hasAggregatedAverage("AGE", new BigDecimal("24"))
+                .hasAggregatedMax("AGE", new NumberType("50"))
+                .hasAggregatedMin("AGE", new NumberType("5"));
+
+        groupsAssert.assertGroup(textKey("GENDER", "FEMALE")).hasCount(1)
+                .hasAggregatedSum("AGE", new BigDecimal("120"))
+                .hasAggregatedCount("AGE", 5L)
+                .hasAggregatedAverage("AGE", new BigDecimal("24"))
+                .hasAggregatedMax("AGE", new NumberType("50"))
+                .hasAggregatedMin("AGE", new NumberType("5"));
         // @formatter:on
     }
 
@@ -710,6 +985,42 @@ public class DocumentGrouperTest {
                         .hasAggregatedCount("HEIGHT", 2L)
                         .hasAggregatedSum("HEIGHT", new BigDecimal("110"))
                         .hasAggregatedAverage("HEIGHT", new BigDecimal("55"));
+        // @formatter:on
+
+        // and now retest with one document per group
+        groups.clear();
+        groupFields.setOneDocPerGroup(true);
+        executeGrouping();
+        groupsAssert = GroupsAssert.assertThat(groups);
+        groupsAssert.hasTotalGroups(3);
+
+        // @formatter:off
+        groupsAssert.assertGroup(textKey("GENDER", "FEMALE"), numericKey("AGE", "30")).hasCount(1)
+                .hasAggregatedMax("BUILDING", new LcNoDiacriticsType("West"))
+                .hasAggregatedMin("BUILDING", new LcNoDiacriticsType("East"))
+                .hasAggregatedCount("BUILDING", 3L)
+                .hasAggregatedMax("HEIGHT", new NumberType("55"))
+                .hasAggregatedCount("HEIGHT", 1L)
+                .hasAggregatedSum("HEIGHT", new BigDecimal("55"))
+                .hasAggregatedAverage("HEIGHT", new BigDecimal("55"));
+
+        groupsAssert.assertGroup(textKey("GENDER", "FEMALE"), numericKey("AGE", "5")).hasCount(1)
+                .hasAggregatedMax("BUILDING", new LcNoDiacriticsType("West"))
+                .hasAggregatedMin("BUILDING", new LcNoDiacriticsType("East"))
+                .hasAggregatedCount("BUILDING", 3L)
+                .hasAggregatedMax("HEIGHT", new NumberType("65"))
+                .hasAggregatedCount("HEIGHT", 2L)
+                .hasAggregatedSum("HEIGHT", new BigDecimal("113"))
+                .hasAggregatedAverage("HEIGHT", new BigDecimal("56.5"));
+
+        groupsAssert.assertGroup(textKey("GENDER", "MALE"), numericKey("AGE", "20")).hasCount(1)
+                .hasAggregatedMax("BUILDING", new LcNoDiacriticsType("West"))
+                .hasAggregatedMin("BUILDING", new LcNoDiacriticsType("East"))
+                .hasAggregatedCount("BUILDING", 3L)
+                .hasAggregatedMax("HEIGHT", new NumberType("60"))
+                .hasAggregatedCount("HEIGHT", 2L)
+                .hasAggregatedSum("HEIGHT", new BigDecimal("110"))
+                .hasAggregatedAverage("HEIGHT", new BigDecimal("55"));
         // @formatter:on
     }
 
@@ -814,6 +1125,108 @@ public class DocumentGrouperTest {
     }
 
     @Test
+    public void testAggregationAcrossMultipleDocumentsOneDocPerGroup() {
+        groupFields.setOneDocPerGroup(true);
+
+        givenGroupFields("GENDER", "AGE");
+        givenSumFields("HEIGHT");
+
+        // We should see groups being counted and aggregation for HEIGHT occurring.
+        givenDocumentEntry(DocumentEntry.of("GENDER.FOO.1").withLcNoDiacritics("MALE"));
+        givenDocumentEntry(DocumentEntry.of("GENDER.FOO.2").withLcNoDiacritics("FEMALE"));
+        givenDocumentEntry(DocumentEntry.of("AGE.FOO.1").withNumberType("20"));
+        givenDocumentEntry(DocumentEntry.of("AGE.FOO.2").withNumberType("15"));
+        // Should aggregate to FOO.1 grouping.
+        givenDocumentEntry(DocumentEntry.of("HEIGHT.FOO.1").withNumberType("5"));
+        // Should aggregate to FOO.2 grouping.
+        givenDocumentEntry(DocumentEntry.of("HEIGHT.FOO.2").withNumberType("5"));
+        // Should not aggregate to anything since there is no direct match for this HEIGHT entry but there are direct matches for other HEIGHT entries.
+        givenDocumentEntry(DocumentEntry.of("HEIGHT.FOO.3").withNumberType("5"));
+
+        executeGrouping();
+
+        // We should see groups being counted, but no aggregation should occur since there are no HEIGHT entries.
+        resetDocument();
+        givenDocumentEntry(DocumentEntry.of("GENDER.FOO.1").withLcNoDiacritics("MALE"));
+        givenDocumentEntry(DocumentEntry.of("GENDER.FOO.2").withLcNoDiacritics("FEMALE"));
+        givenDocumentEntry(DocumentEntry.of("AGE.FOO.1").withNumberType("20"));
+        givenDocumentEntry(DocumentEntry.of("AGE.FOO.2").withNumberType("15"));
+
+        executeGrouping();
+
+        // We should see single value groupings for "MALE" and "FEMALE" being count, with aggregation for HEIGHT occurring.
+        resetDocument();
+        givenDocumentEntry(DocumentEntry.of("GENDER.FOO.1").withLcNoDiacritics("MALE"));
+        givenDocumentEntry(DocumentEntry.of("GENDER.FOO.2").withLcNoDiacritics("FEMALE"));
+        givenDocumentEntry(DocumentEntry.of("GENDER.FOO.3").withLcNoDiacritics("FEMALE"));
+        givenDocumentEntry(DocumentEntry.of("GENDER.FOO.4").withLcNoDiacritics("FEMALE"));
+        givenDocumentEntry(DocumentEntry.of("HEIGHT.FOO.1").withNumberType("5"));
+        givenDocumentEntry(DocumentEntry.of("HEIGHT.FOO.2").withNumberType("5"));
+        givenDocumentEntry(DocumentEntry.of("HEIGHT.FOO.3").withNumberType("5"));
+
+        executeGrouping();
+
+        // We should see groups being counted and aggregation for HEIGHT occurring.
+        resetDocument();
+        givenDocumentEntry(DocumentEntry.of("GENDER.FOO.1").withLcNoDiacritics("MALE"));
+        givenDocumentEntry(DocumentEntry.of("GENDER.FOO.2").withLcNoDiacritics("MALE"));
+        givenDocumentEntry(DocumentEntry.of("AGE.FOO.1").withNumberType("20"));
+        givenDocumentEntry(DocumentEntry.of("AGE.FOO.2").withNumberType("15"));
+        // Should aggregate to FOO.1 grouping.
+        givenDocumentEntry(DocumentEntry.of("HEIGHT.FOO.1").withNumberType("5"));
+        // Should aggregate to FOO.2 grouping.
+        givenDocumentEntry(DocumentEntry.of("HEIGHT.FOO.2").withNumberType("5"));
+
+        executeGrouping();
+
+        // We should see the HEIGHT aggregated towards an empty grouping.
+        resetDocument();
+        givenDocumentEntry(DocumentEntry.of("ADDRESS").withLcNoDiacritics("Los Angeles"));
+        givenDocumentEntry(DocumentEntry.of("HEIGHT.FOO.1").withNumberType("5"));
+        givenDocumentEntry(DocumentEntry.of("HEIGHT.FOO.2").withNumberType("10"));
+
+        executeGrouping();
+
+        // We should see the empty grouping count increase by 1.
+        resetDocument();
+        givenDocumentEntry(DocumentEntry.of("ADDRESS").withLcNoDiacritics("New York City"));
+
+        executeGrouping();
+
+        // We should see the empty grouping count increase by 1 and the HEIGHT entries aggregated towards it.
+        resetDocument();
+        givenDocumentEntry(DocumentEntry.of("ADDRESS").withLcNoDiacritics("San Diego"));
+        givenDocumentEntry(DocumentEntry.of("HEIGHT.FOO.1").withNumberType("1"));
+        givenDocumentEntry(DocumentEntry.of("HEIGHT.FOO.2").withNumberType("1"));
+        givenDocumentEntry(DocumentEntry.of("HEIGHT.FOO.3").withNumberType("1"));
+
+        executeGrouping();
+
+        GroupsAssert groupsAssert = GroupsAssert.assertThat(groups);
+        groupsAssert.hasTotalGroups(6);
+
+        // @formatter:off
+        groupsAssert.assertGroup(textKey("GENDER", "MALE")).hasCount(1)
+                .hasAggregatedSum("HEIGHT", new BigDecimal("5"));
+
+        groupsAssert.assertGroup(textKey("GENDER", "FEMALE")).hasCount(1)
+                .hasAggregatedSum("HEIGHT", new BigDecimal("10"));
+
+        groupsAssert.assertGroup(textKey("GENDER", "MALE"), numericKey("AGE", "15")).hasCount(1)
+                .hasAggregatedSum("HEIGHT", new BigDecimal("5"));
+
+        groupsAssert.assertGroup(textKey("GENDER", "FEMALE"), numericKey("AGE", "15")).hasCount(2)
+                .hasAggregatedSum("HEIGHT", new BigDecimal("5"));
+
+        groupsAssert.assertGroup(textKey("GENDER", "MALE"), numericKey("AGE", "20")).hasCount(3)
+                .hasAggregatedSum("HEIGHT", new BigDecimal("10"));
+
+        groupsAssert.assertGroup(Grouping.emptyGrouping()).hasCount(3)
+                .hasAggregatedSum("HEIGHT", new BigDecimal("18"));
+        // @formatter:on
+    }
+
+    @Test
     public void testAggregatingFieldsWithMixedFormatsWithModelMapping() {
         givenGroupFields("GEN", "AG");
         givenSumFields("PEAK");
@@ -878,6 +1291,42 @@ public class DocumentGrouperTest {
                         .hasAggregatedCount("PEAK", 2L)
                         .hasAggregatedSum("PEAK", new BigDecimal("110"))
                         .hasAggregatedAverage("PEAK", new BigDecimal("55"));
+        // @formatter:on
+
+        // and now retest with one document per group
+        groups.clear();
+        groupFields.setOneDocPerGroup(true);
+        executeGrouping();
+        groupsAssert = GroupsAssert.assertThat(groups);
+        groupsAssert.hasTotalGroups(3);
+
+        // @formatter:off
+        groupsAssert.assertGroup(textKey("GEN", "FEMALE"), numericKey("AG", "30")).hasCount(1)
+                .hasAggregatedMax("LOC", new LcNoDiacriticsType("West"))
+                .hasAggregatedMin("LOC", new LcNoDiacriticsType("East"))
+                .hasAggregatedCount("LOC", 3L)
+                .hasAggregatedMax("PEAK", new NumberType("55"))
+                .hasAggregatedCount("PEAK", 1L)
+                .hasAggregatedSum("PEAK", new BigDecimal("55"))
+                .hasAggregatedAverage("PEAK", new BigDecimal("55"));
+
+        groupsAssert.assertGroup(textKey("GEN", "FEMALE"), numericKey("AG", "5")).hasCount(1)
+                .hasAggregatedMax("LOC", new LcNoDiacriticsType("West"))
+                .hasAggregatedMin("LOC", new LcNoDiacriticsType("East"))
+                .hasAggregatedCount("LOC", 3L)
+                .hasAggregatedMax("PEAK", new NumberType("65"))
+                .hasAggregatedCount("PEAK", 2L)
+                .hasAggregatedSum("PEAK", new BigDecimal("113"))
+                .hasAggregatedAverage("PEAK", new BigDecimal("56.5"));
+
+        groupsAssert.assertGroup(textKey("GEN", "MALE"), numericKey("AG", "20")).hasCount(1)
+                .hasAggregatedMax("LOC", new LcNoDiacriticsType("West"))
+                .hasAggregatedMin("LOC", new LcNoDiacriticsType("East"))
+                .hasAggregatedCount("LOC", 3L)
+                .hasAggregatedMax("PEAK", new NumberType("60"))
+                .hasAggregatedCount("PEAK", 2L)
+                .hasAggregatedSum("PEAK", new BigDecimal("110"))
+                .hasAggregatedAverage("PEAK", new BigDecimal("55"));
         // @formatter:on
     }
 
@@ -957,7 +1406,132 @@ public class DocumentGrouperTest {
     }
 
     @Test
+    public void testAggregationAcrossMultipleDocumentsWithModelMappingOneDocPerGroup() {
+        groupFields.setOneDocPerGroup(true);
+
+        givenGroupFields("GEN", "AG");
+        givenSumFields("PEAK");
+
+        givenQueryModelApplied();
+
+        // We should see groups being counted and aggregation for HEIGHT occurring.
+        givenDocumentEntry(DocumentEntry.of("GENDER.FOO.1").withLcNoDiacritics("MALE"));
+        givenDocumentEntry(DocumentEntry.of("GENDER.FOO.2").withLcNoDiacritics("FEMALE"));
+        givenDocumentEntry(DocumentEntry.of("AGE.FOO.1").withNumberType("20"));
+        givenDocumentEntry(DocumentEntry.of("AGE.FOO.2").withNumberType("15"));
+        // Should aggregate to FOO.1 grouping.
+        givenDocumentEntry(DocumentEntry.of("HEIGHT.FOO.1").withNumberType("5"));
+        // Should aggregate to FOO.2 grouping.
+        givenDocumentEntry(DocumentEntry.of("HEIGHT.FOO.2").withNumberType("5"));
+        // Should not aggregate to anything since there is no direct match for this HEIGHT entry but there are direct matches for other HEIGHT entries.
+        givenDocumentEntry(DocumentEntry.of("HEIGHT.FOO.3").withNumberType("5"));
+
+        executeGrouping();
+
+        // We should see the groups "MALE" and "FEMALE" with no aggregation.
+        resetDocument();
+        givenDocumentEntry(DocumentEntry.of("GENERE.FOO.1").withLcNoDiacritics("MALE"));
+        givenDocumentEntry(DocumentEntry.of("GENERE.FOO.2").withLcNoDiacritics("FEMALE"));
+        givenDocumentEntry(DocumentEntry.of("ETA.FOO.1").withNumberType("20"));
+        givenDocumentEntry(DocumentEntry.of("ETA.FOO.2").withNumberType("15"));
+
+        executeGrouping();
+
+        // We should see the groups "MALE" and "FEMALE" with aggregation of the HEIGHT entries.
+        resetDocument();
+        givenDocumentEntry(DocumentEntry.of("GENDER.FOO.1").withLcNoDiacritics("MALE"));
+        givenDocumentEntry(DocumentEntry.of("GENDER.FOO.2").withLcNoDiacritics("FEMALE"));
+        givenDocumentEntry(DocumentEntry.of("HEIGHT.FOO.1").withNumberType("5"));
+        givenDocumentEntry(DocumentEntry.of("HEIGHT.FOO.2").withNumberType("5"));
+        givenDocumentEntry(DocumentEntry.of("HEIGHT.FOO.3").withNumberType("5"));
+
+        executeGrouping();
+
+        // We should see groups being counted and aggregation for HEIGHT occurring.
+        resetDocument();
+        givenDocumentEntry(DocumentEntry.of("GEN.FOO.1").withLcNoDiacritics("MALE"));
+        givenDocumentEntry(DocumentEntry.of("GEN.FOO.2").withLcNoDiacritics("MALE"));
+        givenDocumentEntry(DocumentEntry.of("AG.FOO.1").withNumberType("20"));
+        givenDocumentEntry(DocumentEntry.of("AG.FOO.2").withNumberType("15"));
+        // Should aggregate to FOO.1 grouping.
+        givenDocumentEntry(DocumentEntry.of("PEAK.FOO.1").withNumberType("5"));
+        // Should aggregate to FOO.2 grouping.
+        givenDocumentEntry(DocumentEntry.of("PEAK.FOO.2").withNumberType("5"));
+
+        executeGrouping();
+
+        GroupsAssert groupsAssert = GroupsAssert.assertThat(groups);
+        groupsAssert.hasTotalGroups(5);
+
+        // We should see each field mapped to the root model mapping name, e.g. GENDER -> GEN, AGE -> AG, HEIGHT -> PEAK, etc.
+        // @formatter:off
+        groupsAssert.assertGroup(textKey("GEN", "MALE")).hasCount(1)
+                .hasAggregatedSum("PEAK", new BigDecimal("5"));
+
+        groupsAssert.assertGroup(textKey("GEN", "FEMALE")).hasCount(1)
+                .hasAggregatedSum("PEAK", new BigDecimal("5"));
+
+        groupsAssert.assertGroup(textKey("GEN", "MALE"), numericKey("AG", "15")).hasCount(1)
+                .hasAggregatedSum("PEAK", new BigDecimal("5"));
+
+        groupsAssert.assertGroup(textKey("GEN", "FEMALE"), numericKey("AG", "15")).hasCount(2)
+                .hasAggregatedSum("PEAK", new BigDecimal("5"));
+
+        groupsAssert.assertGroup(textKey("GEN", "MALE"), numericKey("AG", "20")).hasCount(3)
+                .hasAggregatedSum("PEAK", new BigDecimal("10"));
+        // @formatter:on
+    }
+
+    @Test
     public void testAggregationAcrossDocumentsWithNoGroups() {
+        givenGroupFields("GEN", "AG");
+        givenSumFields("PEAK");
+
+        givenQueryModelApplied();
+
+        // We should see an 'empty' group and aggregation for HEIGHT occurring.
+        givenDocumentEntry(DocumentEntry.of("HEIGHT.FOO.1").withNumberType("5"));
+        givenDocumentEntry(DocumentEntry.of("HEIGHT.FOO.2").withNumberType("5"));
+        givenDocumentEntry(DocumentEntry.of("HEIGHT.FOO.3").withNumberType("5"));
+
+        executeGrouping();
+
+        // We should see an 'empty' group with no aggregation.
+        resetDocument();
+        givenDocumentEntry(DocumentEntry.of("ADDRESS").withLcNoDiacritics("Los Angeles").withLcNoDiacritics("San Diego").withLcNoDiacritics("Baltimore"));
+
+        executeGrouping();
+
+        // We should see an 'empty' group and aggregation for HEIGHT occurring.
+        resetDocument();
+        givenDocumentEntry(DocumentEntry.of("ADDRESS").withLcNoDiacritics("Denver"));
+        givenDocumentEntry(DocumentEntry.of("HEIGHT.FOO.1").withNumberType("5"));
+        givenDocumentEntry(DocumentEntry.of("HEIGHT.FOO.2").withNumberType("5"));
+        givenDocumentEntry(DocumentEntry.of("HEIGHT.FOO.3").withNumberType("5"));
+
+        executeGrouping();
+
+        // We should see an 'empty' group and aggregation for HEIGHT occurring.
+        resetDocument();
+        givenDocumentEntry(DocumentEntry.of("ADDRESS").withLcNoDiacritics("Denver"));
+        givenDocumentEntry(DocumentEntry.of("PEAK.FOO.1").withNumberType("5"));
+        givenDocumentEntry(DocumentEntry.of("PEAK.FOO.2").withNumberType("5"));
+
+        executeGrouping();
+
+        GroupsAssert groupsAssert = GroupsAssert.assertThat(groups);
+        groupsAssert.hasTotalGroups(1);
+
+        // We should see each field mapped to the root model mapping name, e.g. GENDER -> GEN, AGE -> AG, HEIGHT -> PEAK, etc.
+        // @formatter:off
+        groupsAssert.assertGroup().hasCount(4).hasAggregatedSum("PEAK", new BigDecimal("40"));
+        // @formatter:on
+    }
+
+    @Test
+    public void testAggregationAcrossDocumentsWithNoGroupsOneDocPerGroup() {
+        groupFields.setOneDocPerGroup(true);
+
         givenGroupFields("GEN", "AG");
         givenSumFields("PEAK");
 
@@ -1072,6 +1646,36 @@ public class DocumentGrouperTest {
                         .hasAggregatedMin("AG", new NumberType("20"))
                         .hasAggregatedMax("AG", new NumberType("20"));
         // @formatter:on
+
+        // and now retest with one document per group
+        groups.clear();
+        groupFields.setOneDocPerGroup(true);
+        executeGrouping();
+        groupsAssert = GroupsAssert.assertThat(groups);
+        groupsAssert.hasTotalGroups(3);
+
+        // @formatter:off
+        groupsAssert.assertGroup(textKey("GEN", "FEMALE"), numericKey("AG", "30")).hasCount(1)
+                .hasAggregatedCount("AG", 1L)
+                .hasAggregatedAverage("AG", new BigDecimal("30"))
+                .hasAggregatedSum("AG", new BigDecimal("30"))
+                .hasAggregatedMin("AG", new NumberType("30"))
+                .hasAggregatedMax("AG", new NumberType("30"));
+
+        groupsAssert.assertGroup(textKey("GEN", "FEMALE"), numericKey("AG", "5")).hasCount(1)
+                .hasAggregatedCount("AG", 2L)
+                .hasAggregatedAverage("AG", new BigDecimal("5"))
+                .hasAggregatedSum("AG", new BigDecimal("10"))
+                .hasAggregatedMin("AG", new NumberType("5"))
+                .hasAggregatedMax("AG", new NumberType("5"));
+
+        groupsAssert.assertGroup(textKey("GEN", "MALE"), numericKey("AG", "20")).hasCount(1)
+                .hasAggregatedCount("AG", 2L)
+                .hasAggregatedAverage("AG", new BigDecimal("20"))
+                .hasAggregatedSum("AG", new BigDecimal("40"))
+                .hasAggregatedMin("AG", new NumberType("20"))
+                .hasAggregatedMax("AG", new NumberType("20"));
+        // @formatter:on
     }
 
     /**
@@ -1133,6 +1737,18 @@ public class DocumentGrouperTest {
         groupsAssert.assertGroup(textKey("GENDER", "FEMALE"), stringKey("EXPIRATION_DATE", "2025-01-12T00:00:00.000")).hasCount(1);
         groupsAssert.assertGroup(textKey("GENDER", "MALE"), stringKey("EXPIRATION_DATE", "2025-12-12T00:00:00.000")).hasCount(1);
         groupsAssert.assertGroup(textKey("GENDER", "FEMALE"), stringKey("EXPIRATION_DATE", "2025-12-12T00:00:00.000")).hasCount(2);
+
+        // and now retest with one document per group
+        groups.clear();
+        groupFields.setOneDocPerGroup(true);
+        executeGrouping();
+        groupsAssert = GroupsAssert.assertThat(groups);
+        groupsAssert.hasTotalGroups(5);
+        groupsAssert.assertGroup(textKey("GENDER", "MALE"), stringKey("EXPIRATION_DATE", "2025-01-05T00:00:00.000")).hasCount(1);
+        groupsAssert.assertGroup(textKey("GENDER", "FEMALE"), stringKey("EXPIRATION_DATE", "2025-01-05T00:00:00.000")).hasCount(1);
+        groupsAssert.assertGroup(textKey("GENDER", "FEMALE"), stringKey("EXPIRATION_DATE", "2025-01-12T00:00:00.000")).hasCount(1);
+        groupsAssert.assertGroup(textKey("GENDER", "MALE"), stringKey("EXPIRATION_DATE", "2025-12-12T00:00:00.000")).hasCount(1);
+        groupsAssert.assertGroup(textKey("GENDER", "FEMALE"), stringKey("EXPIRATION_DATE", "2025-12-12T00:00:00.000")).hasCount(1);
     }
 
     /**
@@ -1198,6 +1814,20 @@ public class DocumentGrouperTest {
         groupsAssert.assertGroup(textKey("GENDER", "FEMALE"), stringKey("EXPIRATION_DATE", "2025-12-12T00:00:00.000")).hasCount(2);
         groupsAssert.assertGroup(textKey("GENDER", "MALE"), stringKey("EXPIRATION_DATE", "2025-00-00T00:00:00.000")).hasCount(4);
         groupsAssert.assertGroup(textKey("GENDER", "FEMALE"), stringKey("EXPIRATION_DATE", "2025-00-00T00:00:00.000")).hasCount(5);
+
+        // and now retest with one document per group
+        groups.clear();
+        groupFields.setOneDocPerGroup(true);
+        executeGrouping();
+        groupsAssert = GroupsAssert.assertThat(groups);
+        groupsAssert.hasTotalGroups(7);
+        groupsAssert.assertGroup(textKey("GENDER", "MALE"), stringKey("EXPIRATION_DATE", "2025-01-05T00:00:00.000")).hasCount(1);
+        groupsAssert.assertGroup(textKey("GENDER", "FEMALE"), stringKey("EXPIRATION_DATE", "2025-01-05T00:00:00.000")).hasCount(1);
+        groupsAssert.assertGroup(textKey("GENDER", "FEMALE"), stringKey("EXPIRATION_DATE", "2025-01-12T00:00:00.000")).hasCount(1);
+        groupsAssert.assertGroup(textKey("GENDER", "MALE"), stringKey("EXPIRATION_DATE", "2025-12-12T00:00:00.000")).hasCount(1);
+        groupsAssert.assertGroup(textKey("GENDER", "FEMALE"), stringKey("EXPIRATION_DATE", "2025-12-12T00:00:00.000")).hasCount(1);
+        groupsAssert.assertGroup(textKey("GENDER", "MALE"), stringKey("EXPIRATION_DATE", "2025-00-00T00:00:00.000")).hasCount(1);
+        groupsAssert.assertGroup(textKey("GENDER", "FEMALE"), stringKey("EXPIRATION_DATE", "2025-00-00T00:00:00.000")).hasCount(1);
     }
 
     /**
@@ -1258,6 +1888,7 @@ public class DocumentGrouperTest {
         // 2025, MALE, 2025-01-05T10 (Count of 2)
         // 2025, FEMALE, 2025-01-05T10 (Count of 2)
         GroupsAssert groupsAssert = GroupsAssert.assertThat(groups);
+        groupsAssert.hasTotalGroups(8);
         // Groupings for GENDER[ALL], EXPIRATION_DATE[DAY], CREATION_DATE[HOUR]
         groupsAssert.assertGroup(textKey("GENDER", "FEMALE"), stringKey("EXPIRATION_DATE", "2025-01-05T00:00:00.000"),
                         stringKey("CREATION_DATE", "2025-01-05T10:00:00.000")).hasCount(1);
@@ -1276,6 +1907,31 @@ public class DocumentGrouperTest {
                         stringKey("CREATION_DATE", "2025-01-05T10:00:00.000")).hasCount(2);
         groupsAssert.assertGroup(textKey("GENDER", "FEMALE"), stringKey("EXPIRATION_DATE", "2025-00-00T00:00:00.000"),
                         stringKey("CREATION_DATE", "2025-01-05T10:00:00.000")).hasCount(2);
+
+        // and now retest with one document per group
+        groups.clear();
+        groupFields.setOneDocPerGroup(true);
+        executeGrouping();
+        groupsAssert = GroupsAssert.assertThat(groups);
+        groupsAssert.hasTotalGroups(8);
+        // Groupings for GENDER[ALL], EXPIRATION_DATE[DAY], CREATION_DATE[HOUR]
+        groupsAssert.assertGroup(textKey("GENDER", "FEMALE"), stringKey("EXPIRATION_DATE", "2025-01-05T00:00:00.000"),
+                        stringKey("CREATION_DATE", "2025-01-05T10:00:00.000")).hasCount(1);
+        groupsAssert.assertGroup(textKey("GENDER", "MALE"), stringKey("EXPIRATION_DATE", "2025-01-05T00:00:00.000"),
+                        stringKey("CREATION_DATE", "2025-01-05T10:00:00.000")).hasCount(1);
+        groupsAssert.assertGroup(textKey("GENDER", "FEMALE"), stringKey("EXPIRATION_DATE", "2025-01-05T00:00:00.000"),
+                        stringKey("CREATION_DATE", "2025-01-05T22:00:00.000")).hasCount(1);
+        groupsAssert.assertGroup(textKey("GENDER", "FEMALE"), stringKey("EXPIRATION_DATE", "2025-01-12T00:00:00.000"),
+                        stringKey("CREATION_DATE", "2025-01-05T10:00:00.000")).hasCount(1);
+        groupsAssert.assertGroup(textKey("GENDER", "MALE"), stringKey("EXPIRATION_DATE", "2025-12-12T00:00:00.000"),
+                        stringKey("CREATION_DATE", "2025-01-05T10:00:00.000")).hasCount(1);
+        // Groupings for GENDER[ALL], EXPIRATION_DATE[YEAR], CREATION_DATE[HOUR]
+        groupsAssert.assertGroup(textKey("GENDER", "FEMALE"), stringKey("EXPIRATION_DATE", "2025-00-00T00:00:00.000"),
+                        stringKey("CREATION_DATE", "2025-01-05T22:00:00.000")).hasCount(1);
+        groupsAssert.assertGroup(textKey("GENDER", "MALE"), stringKey("EXPIRATION_DATE", "2025-00-00T00:00:00.000"),
+                        stringKey("CREATION_DATE", "2025-01-05T10:00:00.000")).hasCount(1);
+        groupsAssert.assertGroup(textKey("GENDER", "FEMALE"), stringKey("EXPIRATION_DATE", "2025-00-00T00:00:00.000"),
+                        stringKey("CREATION_DATE", "2025-01-05T10:00:00.000")).hasCount(1);
     }
 
     private void givenGroupFields(String... fields) {
