@@ -93,6 +93,19 @@ public class QueryModelExpansionTests extends AbstractQueryTest {
     }
 
     /**
+     * Verify that expansion occurs but not for hidden field
+     */
+    @Test
+    public void testHiddenExpansion() throws Exception {
+        givenQuery("ONE_HIDDEN == 'uuid'");
+        expectPlan("UUID == 'uuid'");
+        planAndExecuteQuery();
+        givenQuery("TWO_HIDDEN == 'uuid'");
+        expectPlan("UUID == 'uuid'");
+        planAndExecuteQuery();
+    }
+
+    /**
      * Verifies that a patterned model mapping expands the query.
      */
     @Test
