@@ -77,6 +77,7 @@ import org.slf4j.LoggerFactory;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 
+import datawave.accumulo.inmemory.AccumuloTableConstants;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.accumulo.inmemory.impl.InMemoryTabletLocator;
@@ -944,7 +945,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
                     startRow = new Text();
 
                 Range metadataRange = new Range(new KeyExtent(TableId.of(tableId), startRow, null).toMetaRow(), true, null, false);
-                Scanner scanner = client.createScanner("accumulo.metadata", Authorizations.EMPTY);
+                Scanner scanner = client.createScanner(AccumuloTableConstants.METADATA_TABLE_NAME, Authorizations.EMPTY);
                 MetadataSchema.TabletsSection.TabletColumnFamily.PREV_ROW_COLUMN.fetch(scanner);
                 scanner.fetchColumnFamily(MetadataSchema.TabletsSection.LastLocationColumnFamily.NAME);
                 scanner.fetchColumnFamily(MetadataSchema.TabletsSection.CurrentLocationColumnFamily.NAME);

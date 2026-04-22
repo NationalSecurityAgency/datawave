@@ -23,6 +23,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.cache.CacheLoader;
 import com.google.common.collect.Sets;
 
+import datawave.accumulo.inmemory.AccumuloTableConstants;
 import datawave.query.util.Tuple2;
 
 /**
@@ -56,7 +57,7 @@ public class MetadataCacheLoader extends CacheLoader<Range,Set<Tuple2<String,Set
         Key endKey = new Key(new KeyExtent(tableId, null, null).toMetaRow()).followingKey(PartialKey.ROW);
         Range metadataRange = new Range(inputKey.getStartKey(), inputKey.isStartKeyInclusive(), endKey, false);
 
-        Scanner scanner = client.createScanner("accumulo.metadata", Authorizations.EMPTY);
+        Scanner scanner = client.createScanner(AccumuloTableConstants.METADATA_TABLE_NAME, Authorizations.EMPTY);
         MetadataSchema.TabletsSection.TabletColumnFamily.PREV_ROW_COLUMN.fetch(scanner);
         scanner.fetchColumnFamily(MetadataSchema.TabletsSection.LastLocationColumnFamily.NAME);
         scanner.fetchColumnFamily(MetadataSchema.TabletsSection.DataFileColumnFamily.NAME);
