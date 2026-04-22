@@ -52,6 +52,15 @@ public class Group {
     }
 
     /**
+     * Cap the group count
+     *
+     * @param cap
+     */
+    public void capGroupCount(int cap) {
+        count = Math.min(count, cap);
+    }
+
+    /**
      * Returns the distinct set of values that represent this grouping.
      *
      * @return the grouping
