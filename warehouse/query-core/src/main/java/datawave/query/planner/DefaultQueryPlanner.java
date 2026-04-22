@@ -2088,7 +2088,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 allFields = allFieldTypeMap.getIfPresent(dataTypeHash);
             }
             if (null == allFields) {
-                allFields = metadataHelper.getAllFields(dataTypes);
+                allFields = metadataHelper.getModelExpansionFields(dataTypes);
                 if (cacheDataTypes) {
                     allFieldTypeMap.put(dataTypeHash, allFields);
                 }
