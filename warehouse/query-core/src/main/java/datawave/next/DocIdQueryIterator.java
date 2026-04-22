@@ -29,6 +29,7 @@ import datawave.next.stats.DocumentIteratorStats;
 import datawave.next.stats.StatUtil;
 import datawave.query.iterator.QueryOptions;
 import datawave.query.jexl.JexlASTHelper;
+import datawave.query.util.AccumuloExceptionChecker;
 
 /**
  * An iterator that runs against the field index and returns all document keys that match the query
@@ -279,11 +280,8 @@ public class DocIdQueryIterator implements SortedKeyValueIterator<Key,Value> {
      * @throws IOException
      *             for read/write issues
      */
-    /**
-     * Check if the throwable is a TabletClosedException by class name to avoid importing non-public Accumulo API.
-     */
     private static boolean isTabletClosedException(Throwable t) {
-        return t != null && t.getClass().getName().equals("org.apache.accumulo.tserver.tablet.TabletClosedException");
+        return AccumuloExceptionChecker.isTabletClosedException(t);
     }
 
     private void handleException(Exception e) throws IOException {

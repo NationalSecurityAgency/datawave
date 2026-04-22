@@ -28,6 +28,7 @@ import datawave.query.tables.BatchResource;
 import datawave.query.tables.ResourceQueue;
 import datawave.query.tables.stats.ScanSessionStats;
 import datawave.query.tables.stats.ScanSessionStats.TIMERS;
+import datawave.query.util.AccumuloExceptionChecker;
 
 public class Scan implements Callable<Scan> {
 
@@ -310,11 +311,8 @@ public class Scan implements Callable<Scan> {
 
     }
 
-    /**
-     * Check if the throwable is a ScanTimedOutException by class name to avoid importing non-public Accumulo API.
-     */
     private boolean isScanTimedOutException(Throwable t) {
-        return t != null && t.getClass().getName().equals("org.apache.accumulo.core.clientImpl.ThriftScanner$ScanTimedOutException");
+        return AccumuloExceptionChecker.isScanTimedOutException(t);
     }
 
     private boolean isInterruptedException(Throwable t) {

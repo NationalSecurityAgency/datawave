@@ -116,6 +116,7 @@ import datawave.query.tracking.ActiveQueryLog;
 import datawave.query.transformer.ExcerptTransform;
 import datawave.query.transformer.SummaryTransform;
 import datawave.query.transformer.UniqueTransform;
+import datawave.query.util.AccumuloExceptionChecker;
 import datawave.query.util.EmptyContext;
 import datawave.query.util.EntryToTuple;
 import datawave.query.util.TraceIterators;
@@ -575,11 +576,8 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
      * @throws IOException
      *             for read/write issues
      */
-    /**
-     * Check if the throwable is a TabletClosedException by class name to avoid importing non-public Accumulo API.
-     */
     private static boolean isTabletClosedException(Throwable t) {
-        return t != null && t.getClass().getName().equals("org.apache.accumulo.tserver.tablet.TabletClosedException");
+        return AccumuloExceptionChecker.isTabletClosedException(t);
     }
 
     private void handleException(Exception e) throws IOException {

@@ -37,6 +37,7 @@ import datawave.query.function.serializer.KryoDocumentSerializer;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.TermFrequencyList;
 import datawave.query.postprocessing.tf.TermOffsetMap;
+import datawave.query.util.AccumuloExceptionChecker;
 import datawave.query.util.Tuple3;
 
 /**
@@ -340,11 +341,8 @@ public class DocumentIterator extends DocumentIteratorOptions implements SortedK
      * @throws IOException
      *             for read/write issues
      */
-    /**
-     * Check if the throwable is a TabletClosedException by class name to avoid importing non-public Accumulo API.
-     */
     private static boolean isTabletClosedException(Throwable t) {
-        return t != null && t.getClass().getName().equals("org.apache.accumulo.tserver.tablet.TabletClosedException");
+        return AccumuloExceptionChecker.isTabletClosedException(t);
     }
 
     private void handleException(Exception e) throws IOException {
