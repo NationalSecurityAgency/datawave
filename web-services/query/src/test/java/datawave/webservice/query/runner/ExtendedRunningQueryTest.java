@@ -18,12 +18,15 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.Transformer;
 import org.apache.commons.collections4.functors.NOPTransformer;
 import org.apache.commons.collections4.iterators.TransformIterator;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -77,12 +80,23 @@ public class ExtendedRunningQueryTest {
     @Mock
     TransformIterator transformIterator;
 
+    private ExecutorService executor;
+
     private Transformer transformer = NOPTransformer.nopTransformer();
 
     @Before
     public void setup() {
         System.setProperty(DnUtils.NPE_OU_PROPERTY, "iamnotaperson");
         System.setProperty("dw.metadatahelper.all.auths", "A,B,C,D");
+        executor = Executors.newSingleThreadExecutor();
+    }
+
+    @After
+    public void after() {
+        if (executor != null) {
+            executor.shutdown();
+            executor = null;
+        }
     }
 
     @Test
@@ -191,6 +205,7 @@ public class ExtendedRunningQueryTest {
         PowerMock.replayAll();
         RunningQuery subject = new RunningQuery(this.client, Priority.NORMAL, this.queryLogic, this.query, methodAuths, principal,
                         new QueryMetricFactoryImpl());
+        subject.setExecutor(executor);
 
         ResultsPage result1 = subject.next();
         String result2 = subject.toString();
@@ -206,7 +221,6 @@ public class ExtendedRunningQueryTest {
         assertNotNull("Expected a non-null toString() representation", result2);
 
         assertSame("Expected lifecycle to be results", QueryMetric.Lifecycle.RESULTS, subject.getMetric().getLifecycle());
-
     }
 
     @Test
@@ -279,6 +293,7 @@ public class ExtendedRunningQueryTest {
         PowerMock.replayAll();
         RunningQuery subject = new RunningQuery(this.client, Priority.NORMAL, this.queryLogic, this.query, methodAuths, principal,
                         new RunningQueryTimingImpl(3600, 1200, 3500, 10), new QueryMetricFactoryImpl());
+        subject.setExecutor(executor);
 
         ResultsPage result1 = subject.next();
         String result2 = subject.toString();
@@ -294,7 +309,6 @@ public class ExtendedRunningQueryTest {
         assertNotNull("Expected a non-null toString() representation", result2);
 
         assertSame("Expected lifecycle to be results", QueryMetric.Lifecycle.RESULTS, subject.getMetric().getLifecycle());
-
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -371,6 +385,7 @@ public class ExtendedRunningQueryTest {
         PowerMock.replayAll();
         RunningQuery subject = new RunningQuery(this.client, Priority.NORMAL, this.queryLogic, this.query, methodAuths, principal,
                         new QueryMetricFactoryImpl());
+        subject.setExecutor(executor);
 
         ResultsPage result1 = subject.next();
 
@@ -444,6 +459,7 @@ public class ExtendedRunningQueryTest {
         PowerMock.replayAll();
         RunningQuery subject = new RunningQuery(this.queryMetrics, this.client, Priority.NORMAL, this.queryLogic, this.query, methodAuths, principal,
                         new QueryMetricFactoryImpl());
+        subject.setExecutor(executor);
         subject.cancel();
         boolean result1 = subject.isCanceled();
         ResultsPage result2 = subject.next();
@@ -504,6 +520,7 @@ public class ExtendedRunningQueryTest {
         PowerMock.replayAll();
         RunningQuery subject = new RunningQuery(this.queryMetrics, this.client, Priority.NORMAL, this.queryLogic, this.query, methodAuths, principal,
                         new QueryMetricFactoryImpl());
+        subject.setExecutor(executor);
         subject.closeConnection(this.connectionFactory);
         QueryMetric.Lifecycle status = subject.getMetric().getLifecycle();
         PowerMock.verifyAll();
@@ -588,6 +605,7 @@ public class ExtendedRunningQueryTest {
         PowerMock.replayAll();
         RunningQuery subject = new RunningQuery(this.client, Priority.NORMAL, this.queryLogic, this.query, methodAuths, principal,
                         new QueryMetricFactoryImpl());
+        subject.setExecutor(executor);
 
         ResultsPage result1 = subject.next();
 
