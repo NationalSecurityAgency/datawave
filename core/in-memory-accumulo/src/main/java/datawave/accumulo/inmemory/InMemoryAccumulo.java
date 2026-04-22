@@ -16,11 +16,6 @@
  */
 package datawave.accumulo.inmemory;
 
-import static datawave.accumulo.inmemory.AccumuloTableConstants.METADATA_TABLE_NAME;
-import static datawave.accumulo.inmemory.AccumuloTableConstants.REPLICATION_TABLE_NAME;
-import static datawave.accumulo.inmemory.AccumuloTableConstants.ROOT_TABLE_NAME;
-import static datawave.accumulo.inmemory.AccumuloTableConstants.qualifyTableName;
-
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -34,10 +29,14 @@ import org.apache.accumulo.core.client.admin.TimeType;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.clientImpl.Namespace;
 import org.apache.accumulo.core.data.Mutation;
+import org.apache.accumulo.core.metadata.MetadataTable;
+import org.apache.accumulo.core.metadata.RootTable;
+import org.apache.accumulo.core.replication.ReplicationTable;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.NamespacePermission;
 import org.apache.accumulo.core.security.SystemPermission;
 import org.apache.accumulo.core.security.TablePermission;
+import org.apache.accumulo.core.util.tables.TableNameUtil;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.io.Text;
 
@@ -55,9 +54,9 @@ public class InMemoryAccumulo {
         users.put(root.name, root);
         namespaces.put(Namespace.DEFAULT.name(), new InMemoryNamespace());
         namespaces.put(Namespace.ACCUMULO.name(), new InMemoryNamespace());
-        createTable("root", ROOT_TABLE_NAME, true, TimeType.LOGICAL);
-        createTable("root", METADATA_TABLE_NAME, true, TimeType.LOGICAL);
-        createTable("root", REPLICATION_TABLE_NAME, true, TimeType.LOGICAL);
+        createTable("root", RootTable.NAME, true, TimeType.LOGICAL);
+        createTable("root", MetadataTable.NAME, true, TimeType.LOGICAL);
+        createTable("root", ReplicationTable.NAME, true, TimeType.LOGICAL);
         this.fs = fs;
     }
 
@@ -88,7 +87,7 @@ public class InMemoryAccumulo {
     }
 
     public void createTable(String username, String tableName, boolean useVersions, TimeType timeType, Map<String,String> properties) {
-        String namespace = qualifyTableName(tableName).getLeft();
+        String namespace = TableNameUtil.qualify(tableName).getFirst();
 
         if (!namespaceExists(namespace)) {
             return;
@@ -103,7 +102,7 @@ public class InMemoryAccumulo {
     }
 
     public void createTable(String username, String tableName, TimeType timeType, Map<String,String> properties) {
-        String namespace = qualifyTableName(tableName).getLeft();
+        String namespace = TableNameUtil.qualify(tableName).getFirst();
         HashMap<String,String> props = new HashMap<>(properties);
 
         if (!namespaceExists(namespace)) {

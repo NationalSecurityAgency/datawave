@@ -1,7 +1,6 @@
 package datawave.accumulo.inmemory;
 
 import org.apache.accumulo.core.data.TableId;
-import org.apache.commons.lang3.tuple.Pair;
 
 /**
  * Constants for Accumulo system table names and IDs. Replaces non-public classes:
@@ -9,8 +8,9 @@ import org.apache.commons.lang3.tuple.Pair;
  * <li>org.apache.accumulo.core.metadata.MetadataTable</li>
  * <li>org.apache.accumulo.core.metadata.RootTable</li>
  * <li>org.apache.accumulo.core.replication.ReplicationTable</li>
- * <li>org.apache.accumulo.core.util.tables.TableNameUtil</li>
  * </ul>
+ *
+ * Note: TableNameUtil.qualify() replacement moved to AccumuloValidators per review feedback, so it can leverage name validation.
  */
 public final class AccumuloTableConstants {
 
@@ -28,19 +28,4 @@ public final class AccumuloTableConstants {
 
     // Replication table constants
     public static final String REPLICATION_TABLE_NAME = "accumulo.replication";
-
-    /**
-     * Qualify a table name by splitting it into namespace and table name parts. Replaces TableNameUtil.qualify().
-     *
-     * @param tableName
-     *            the fully qualified table name (e.g., "namespace.table" or just "table")
-     * @return a Pair of (namespace, tableName), where namespace is empty string if not specified
-     */
-    public static Pair<String,String> qualifyTableName(String tableName) {
-        int dotIndex = tableName.lastIndexOf('.');
-        if (dotIndex == -1) {
-            return Pair.of("", tableName);
-        }
-        return Pair.of(tableName.substring(0, dotIndex), tableName.substring(dotIndex + 1));
-    }
 }
