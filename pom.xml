@@ -1925,6 +1925,11 @@
                                         <reason>Use static imports for JUnit assertions</reason>
                                         <bannedImport>org.junit.jupiter.api.Assertions</bannedImport>
                                     </restrictImports>
+                                    <restrictImports>
+                                        <!-- Cannot ban hamcrest dependency until fully migrated to JUnit5, so ban the import to prevent reintroduction -->
+                                        <reason>Use JUnit5 instead of hamcrest</reason>
+                                        <bannedImport>org.hamcrest.**</bannedImport>
+                                    </restrictImports>
                                 </rules>
                             </configuration>
                         </execution>
