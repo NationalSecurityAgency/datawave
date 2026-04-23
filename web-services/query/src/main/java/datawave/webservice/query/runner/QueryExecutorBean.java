@@ -666,6 +666,7 @@ public class QueryExecutorBean implements QueryExecutor {
 
             rq = new RunningQuery(metrics, null, priority, qd.logic, q, qp.getAuths(), qd.p,
                             new RunningQueryTimingImpl(queryExpirationConf, qp.getPageTimeout()), this.predictor, this.userOperationsBean, this.metricFactory);
+            rq.setExecutor(executor);
             rq.setActiveCall(true);
             rq.getMetric().setProxyServers(qd.proxyServers);
             queryCache.put(q.getId().toString(), rq);
@@ -790,6 +791,7 @@ public class QueryExecutorBean implements QueryExecutor {
             qlCache.add(q.getId().toString(), qd.userid, qd.logic, client);
             rq = new RunningQuery(metrics, null, priority, qd.logic, q, qp.getAuths(), qd.p,
                             new RunningQueryTimingImpl(queryExpirationConf, qp.getPageTimeout()), this.predictor, this.userOperationsBean, this.metricFactory);
+            rq.setExecutor(executor);
             rq.setActiveCall(true);
             rq.getMetric().setProxyServers(qd.proxyServers);
             rq.setClient(client);
@@ -1162,6 +1164,7 @@ public class QueryExecutorBean implements QueryExecutor {
             AccumuloConnectionFactory.Priority priority = logic.getConnectionPriority();
             RunningQuery query = new RunningQuery(metrics, null, priority, logic, q, q.getQueryAuthorizations(), p,
                             new RunningQueryTimingImpl(queryExpirationConf, qp.getPageTimeout()), this.predictor, this.userOperationsBean, this.metricFactory);
+            query.setExecutor(executor);
             results.add(query);
             // Put in the cache by id if its not already in the cache.
             if (!queryCache.containsKey(q.getId().toString()))
@@ -1200,6 +1203,7 @@ public class QueryExecutorBean implements QueryExecutor {
                 query = new RunningQuery(metrics, null, priority, logic, q, q.getQueryAuthorizations(), principal,
                                 new RunningQueryTimingImpl(queryExpirationConf, qp.getPageTimeout()), this.predictor, this.userOperationsBean,
                                 this.metricFactory);
+                query.setExecutor(executor);
                 // Put in the cache by id and name, we will have two copies that reference the same object
                 queryCache.put(q.getId().toString(), query);
             }
@@ -1235,6 +1239,7 @@ public class QueryExecutorBean implements QueryExecutor {
             final AccumuloConnectionFactory.Priority priority = logic.getConnectionPriority();
             query = RunningQuery.createQueryWithAuthorizations(metrics, null, priority, logic, q, auths,
                             new RunningQueryTimingImpl(queryExpirationConf, qp.getPageTimeout()), this.predictor, this.metricFactory);
+            query.setExecutor(executor);
 
             // Put in the cache by id and name, we will have two copies that reference the same object
             queryCache.put(q.getId().toString(), query);
