@@ -20,11 +20,11 @@ public class DocumentCandidateStats implements Serializable {
 
     private final DescriptiveStatistics candidates = new DescriptiveStatistics(window);
 
-    public void merge(DocIdQueryIteratorStats stats) {
-        submitStats.addValue(stats.getInitTime());
-        scanStats.addValue(stats.getScanTime());
-        retrievalStats.addValue(stats.getRetrievalTime());
-        elapsedStats.addValue(stats.getTotalElapsed());
+    public void merge(DocIdQueryIterStats stats) {
+        submitStats.addValue(stats.getTotalInitTime());
+        scanStats.addValue(stats.getTotalScanTime());
+        retrievalStats.addValue(stats.getTotalRetrievalTime());
+        elapsedStats.addValue(stats.getTotalElapsedTime());
         candidates.addValue(stats.getTotalDocumentIds());
     }
 
@@ -48,7 +48,12 @@ public class DocumentCandidateStats implements Serializable {
         return sb.toString();
     }
 
-    private String format(double ns) {
-        return StatUtil.formatNanos((long) ns);
+    /**
+     * Cast the double to a long to eliminate rounding, then take the string value
+     * @param ms the data in milliseconds
+     * @return formatted millis
+     */
+    private String format(double ms) {
+        return String.valueOf((long) ms);
     }
 }
