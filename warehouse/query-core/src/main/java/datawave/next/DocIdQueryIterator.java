@@ -271,6 +271,10 @@ public class DocIdQueryIterator implements SortedKeyValueIterator<Key,Value> {
         return new DocIdQueryIterator(this, env);
     }
 
+    private static boolean isTabletClosedException(Throwable t) {
+        return AccumuloExceptionChecker.isTabletClosedException(t);
+    }
+
     /**
      * Handle an exception returned from seek or next. This will silently ignore IterationInterruptedException as that happens when the underlying iterator was
      * interrupted because the client is no longer listening.
@@ -280,10 +284,6 @@ public class DocIdQueryIterator implements SortedKeyValueIterator<Key,Value> {
      * @throws IOException
      *             for read/write issues
      */
-    private static boolean isTabletClosedException(Throwable t) {
-        return AccumuloExceptionChecker.isTabletClosedException(t);
-    }
-
     private void handleException(Exception e) throws IOException {
         Throwable reason = e;
 
