@@ -75,4 +75,3 @@ The following HTTP status codes have been added for responses from the webserver
 412-20  - Concurrent query limit exceeded
 500-164 - Error checking concurrent query limits
 ```
-Closes #3100

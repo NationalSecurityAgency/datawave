@@ -96,10 +96,6 @@ public class QueryLimiter {
                 throw new IllegalArgumentException("Default user query limit must be greater than 0");
             }
 
-            if (this.configuration.getDefaultSystemQueryLimit() < 1) {
-                throw new IllegalArgumentException("Default system query limit must be greater than 0");
-            }
-
             if (this.configuration.getInternalCacheMaxSize() < 1) {
                 throw new IllegalArgumentException("Internal cache max size must be greater than 0");
             }
