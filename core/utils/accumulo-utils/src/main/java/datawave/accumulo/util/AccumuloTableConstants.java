@@ -1,4 +1,4 @@
-package datawave.accumulo.inmemory;
+package datawave.accumulo.util;
 
 import org.apache.accumulo.core.data.TableId;
 

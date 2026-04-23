@@ -23,7 +23,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.cache.CacheLoader;
 import com.google.common.collect.Sets;
 
-import datawave.accumulo.inmemory.AccumuloTableConstants;
+import datawave.accumulo.util.AccumuloTableConstants;
 import datawave.query.util.Tuple2;
 
 /**
