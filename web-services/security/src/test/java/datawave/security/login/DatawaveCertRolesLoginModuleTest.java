@@ -1,9 +1,9 @@
 package datawave.security.login;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.powermock.api.easymock.PowerMock.field;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.security.KeyStore;
 import java.security.cert.X509Certificate;
@@ -12,21 +12,23 @@ import java.util.HashMap;
 import javax.security.auth.Subject;
 
 import org.jboss.security.SimplePrincipal;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.util.MockCallbackHandler;
 import datawave.security.util.MockDatawaveCertVerifier;
 
 public class DatawaveCertRolesLoginModuleTest {
+
     private DatawaveCertRolesLoginModule loginModule;
     private MockCallbackHandler callbackHandler;
 
     private X509Certificate testUserCert;
 
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    public void beforeEach() throws Exception {
         callbackHandler = new MockCallbackHandler("Alias: ", "Certificate: ");
 
         HashMap<String,String> sharedState = new HashMap<>();
@@ -51,9 +53,10 @@ public class DatawaveCertRolesLoginModuleTest {
         callbackHandler.name = name;
         callbackHandler.credential = testUserCert;
 
-        boolean success = loginModule.login();
-        assertTrue("Login didn't succeed for alias in roles.properties", success);
-        DatawavePrincipal principal = (DatawavePrincipal) field(DatawaveCertRolesLoginModule.class, "identity").get(loginModule);
+        boolean result = loginModule.login();
+        assertTrue(result, "Login didn't succeed for alias in roles.properties");
+        DatawavePrincipal principal = (DatawavePrincipal) ReflectionTestUtils.getField(loginModule, "identity");
+        assertNotNull(principal);
         assertEquals(name.toLowerCase(), principal.getName());
     }
 
@@ -62,8 +65,8 @@ public class DatawaveCertRolesLoginModuleTest {
         callbackHandler.name = "fakeUser";
         callbackHandler.credential = testUserCert;
 
-        boolean success = loginModule.login();
-        assertFalse("Login succeed for alias not in roles.properties", success);
+        boolean result = loginModule.login();
+        assertFalse(result, "Login succeed for alias not in roles.properties");
     }
 
     @Test
@@ -81,9 +84,10 @@ public class DatawaveCertRolesLoginModuleTest {
         callbackHandler.name = testUserCert.getSubjectDN().getName();
         callbackHandler.credential = testUserCert;
 
-        boolean success = loginModule.login();
-        assertTrue("Login didn't succeed for alias in rolesNoIssuer.properties", success);
-        SimplePrincipal principal = (SimplePrincipal) field(DatawaveCertRolesLoginModule.class, "identity").get(loginModule);
+        boolean result = loginModule.login();
+        assertTrue(result, "Login didn't succeed for alias in rolesNoIssuer.properties");
+        SimplePrincipal principal = (SimplePrincipal) ReflectionTestUtils.getField(loginModule, "identity");
+        assertNotNull(principal);
         assertEquals(testUserCert.getSubjectDN().getName().toLowerCase(), principal.getName());
     }
 
@@ -96,7 +100,7 @@ public class DatawaveCertRolesLoginModuleTest {
         loginModule = new DatawaveCertRolesLoginModule();
         loginModule.initialize(new Subject(), callbackHandler, sharedState, options);
 
-        boolean success = loginModule.login();
-        assertFalse(success);
+        boolean result = loginModule.login();
+        assertFalse(result);
     }
 }
