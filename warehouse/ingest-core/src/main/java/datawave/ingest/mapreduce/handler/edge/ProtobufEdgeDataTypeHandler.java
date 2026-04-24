@@ -1413,4 +1413,8 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         // TODO Auto-generated method stub
         return null;
     }
+
+    public void setVersioningCache(EdgeKeyVersioningCache versioningCache) {
+        this.versioningCache = versioningCache;
+    }
 }
