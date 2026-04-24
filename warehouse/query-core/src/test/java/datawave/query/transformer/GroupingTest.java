@@ -301,6 +301,7 @@ public abstract class GroupingTest {
         this.logic.setFullTableScanEnabled(true);
         this.logic.setMaxEvaluationPipelines(1);
         this.logic.setQueryExecutionForPageTimeout(300000000000000L);
+        this.logic.setOneDocPerGroup(false);
         this.deserializer = new KryoDocumentDeserializer();
         this.startDate = format.parse("20091231");
         this.endDate = format.parse("20150101");

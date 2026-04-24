@@ -1170,6 +1170,13 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         return StringUtils.join(this.getProjectFields(), Constants.PARAM_VALUE_SEP);
     }
 
+    public void addProjectFields(Set<String> fields) {
+        // if project fields is empty, then we are returning everything anyway so nothing to add
+        if (!projectFields.isEmpty()) {
+            projectFields.addAll(deconstruct(fields));
+        }
+    }
+
     public Set<String> getRenameFields() {
         return renameFields;
     }
