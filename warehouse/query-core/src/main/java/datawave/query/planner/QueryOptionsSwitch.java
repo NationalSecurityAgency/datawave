@@ -141,6 +141,9 @@ public class QueryOptionsSwitch {
                         config.addProjectFields(groupFields.getProjectionFields());
                     }
                     break;
+                case QueryParameters.DS_ENABLED:
+                    config.setUseDocumentScheduler(Boolean.parseBoolean(value));
+                    break;
             }
         }
     }
