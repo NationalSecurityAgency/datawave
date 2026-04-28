@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>gov.nsa.datawave</groupId>
     <artifactId>datawave-parent</artifactId>
-    <version>7.38.0-SNAPSHOT</version>
+    <version>7.39.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>DataWave</name>
     <description>DataWave is a Java-based ingest and query framework that leverages Apache Accumulo to provide fast, secure access to your data.</description>
@@ -1924,6 +1924,11 @@
                                         <!-- Do not allow qualified static access in code, i.e. Assertions.assertEquals -->
                                         <reason>Use static imports for JUnit assertions</reason>
                                         <bannedImport>org.junit.jupiter.api.Assertions</bannedImport>
+                                    </restrictImports>
+                                    <restrictImports>
+                                        <!-- Cannot ban hamcrest dependency until fully migrated to JUnit5, so ban the import to prevent reintroduction -->
+                                        <reason>Use JUnit5 instead of hamcrest</reason>
+                                        <bannedImport>org.hamcrest.**</bannedImport>
                                     </restrictImports>
                                 </rules>
                             </configuration>

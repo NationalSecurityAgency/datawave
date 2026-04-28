@@ -52,7 +52,7 @@ public interface ColumnFamilyConstants {
     Text COLF_EDGE = new Text("edge");
 
     /**
-     * A colf of 'h' denotes a event that should be hidden from being displayed(only implemented for datadictionary endpoint)
+     * A colf of 'h' denotes an event field that should be hidden from being available for use in queries
      */
     Text COLF_H = new Text("h");
 

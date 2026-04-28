@@ -9,7 +9,6 @@ import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -66,9 +65,9 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
     private Query settings = null;
     private long numResults = 0;
     private long lastPageNumber = 0;
-    private transient TransformIterator iter = null;
+    private volatile transient TransformIterator iter = null;
     private Set<Authorizations> calculatedAuths = null;
-    private boolean finished = false;
+    private volatile boolean finished = false;
     private volatile boolean canceled = false;
     private transient QueryMetricsBean queryMetrics = null;
     private transient RunningQueryTiming timing = null;
@@ -142,7 +141,6 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                                         : userOperations.getRemoteUser((DatawavePrincipal) principal);
         this.calculatedAuths = WSAuthorizationsUtil.getDowngradedAuthorizations(methodAuths, overallPrincipal, queryPrincipal);
         this.timing = timing;
-        this.executor = Executors.newSingleThreadExecutor();
         this.predictor = predictor;
         // set the metric information
         this.getMetric().populate(this.settings);
@@ -328,7 +326,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
      *             if there is a timeout
      */
     private boolean hasNext(long pageStartTime) throws TimeoutException {
-        if (useResultsThread) {
+        if (useResultsThread && executor != null) {
             synchronized (hasNext) {
                 if (hasNext.get() == 0 && running.get() && !this.finished && !this.canceled) {
                     long timeout = (timing != null ? Math.max(1, (timing.getPageShortCircuitTimeoutMs() - (System.currentTimeMillis() - pageStartTime)))
@@ -379,7 +377,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
      *             if there is a timeout
      */
     private Object getNext(long pageStartTime) throws TimeoutException {
-        if (useResultsThread) {
+        if (useResultsThread && executor != null) {
             synchronized (gotNext) {
                 if (gotNext.get() == 0 && running.get() && !this.finished && !this.canceled) {
                     long timeout = (timing != null ? Math.max(1, (timing.getPageShortCircuitTimeoutMs() - (System.currentTimeMillis() - pageStartTime)))
@@ -422,7 +420,6 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             }
             future = null;
         }
-        executor.shutdown();
     }
 
     /**
@@ -452,7 +449,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             testForUncaughtException(resultList.size());
 
             // start up the results thread if needed
-            if (useResultsThread && future == null && !this.canceled && !this.finished) {
+            if (useResultsThread && future == null && executor != null && !this.canceled && !this.finished) {
                 running.set(true);
                 future = executor.submit(() -> getResultsThread());
             }
@@ -814,6 +811,14 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                 throw new QueryException(handler.getThrowable());
             }
         }
+    }
+
+    public ExecutorService getExecutor() {
+        return executor;
+    }
+
+    public void setExecutor(ExecutorService executor) {
+        this.executor = executor;
     }
 
 }
