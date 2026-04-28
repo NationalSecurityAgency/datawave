@@ -19,7 +19,7 @@ message Point { int32 x = 1; int32 y = 2; string label = 3; } // annotations on 
 message SegmentValue {
     string valueHash = 1; // the 32-bit value hash used for grouping.
     string value = 2; // e.g., label
-    float score = 3; // e.g., confidence
+    optional float score = 3; // e.g., confidence
     map<string,string> extension = 4; // type-specific data
 }
 

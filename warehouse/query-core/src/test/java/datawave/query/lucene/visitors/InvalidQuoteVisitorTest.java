@@ -1,5 +1,7 @@
 package datawave.query.lucene.visitors;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -8,7 +10,6 @@ import org.apache.lucene.queryparser.flexible.core.QueryNodeParseException;
 import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
 import org.apache.lucene.queryparser.flexible.core.parser.SyntaxParser;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import datawave.query.language.parser.lucene.AccumuloSyntaxParser;
@@ -132,6 +133,6 @@ public class InvalidQuoteVisitorTest {
         List<String> actualStrings = actual.stream().map(LuceneQueryStringBuildingVisitor::build).collect(Collectors.toList());
         List<String> expectedStrings = expected.stream().map(LuceneQueryStringBuildingVisitor::build).collect(Collectors.toList());
         // Compare the query strings.
-        Assertions.assertEquals(expectedStrings, actualStrings);
+        assertEquals(expectedStrings, actualStrings);
     }
 }

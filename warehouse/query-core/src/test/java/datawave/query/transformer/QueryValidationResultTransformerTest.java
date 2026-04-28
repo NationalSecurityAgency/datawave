@@ -1,10 +1,11 @@
 package datawave.query.transformer;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.util.ArrayList;
 import java.util.List;
 
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import datawave.query.rules.QueryRuleResult;
@@ -168,6 +169,6 @@ class QueryValidationResultTransformerTest {
 
     private void assertResult() {
         QueryValidationResponse actual = transformer.transform(result);
-        Assertions.assertEquals(expectedResponse, actual);
+        assertEquals(expectedResponse, actual);
     }
 }
