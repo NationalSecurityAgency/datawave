@@ -41,8 +41,7 @@ public class InMemoryConnector {
     String username;
     private final InMemoryAccumulo acu;
 
-    InMemoryConnector(String username, InMemoryInstance instance) throws AccumuloSecurityException {
-
+    InMemoryConnector(String username, InMemoryInstance instance) {
         this.username = username;
         this.acu = instance.acu;
         if (!acu.users.containsKey(username)) {
@@ -116,8 +115,10 @@ public class InMemoryConnector {
         return new InMemoryNamespaceOperations(acu, username);
     }
 
+    /**
+     * Not supported by the in-memory implementation.
+     */
     public ConditionalWriter createConditionalWriter(String tableName, ConditionalWriterConfig config) throws TableNotFoundException {
-        // Intentionally unsupported - required for Connector interface but not used by DataWave
         throw new UnsupportedOperationException();
     }
 

@@ -39,19 +39,15 @@ import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.SystemPermission;
 
-// Remove `extends ClientContext` since it's deprecated.
-// Need a workaround for the features that are no longer supported. Not sure if we can just throw them away atm.
-
+/**
+ * In-memory implementation of {@link AccumuloClient} for testing. Does not connect to a real Accumulo instance.
+ */
 public class InMemoryAccumuloClient implements AccumuloClient {
 
     String username;
     private final InMemoryAccumulo acu;
 
-    private ConditionalWriterConfig conditionalWriterConfig;
-    private volatile boolean closed = false;
-
-    public InMemoryAccumuloClient(String username, InMemoryInstance instance) throws AccumuloSecurityException {
-
+    public InMemoryAccumuloClient(String username, InMemoryInstance instance) {
         this.username = username;
         this.acu = instance.acu;
         if (!acu.users.containsKey(username)) {
@@ -61,20 +57,12 @@ public class InMemoryAccumuloClient implements AccumuloClient {
         }
     }
 
+    /**
+     * Not supported by the in-memory implementation.
+     */
     @Override
     public ConditionalWriter createConditionalWriter(String tableName, ConditionalWriterConfig config) throws TableNotFoundException {
-        // Intentionally unsupported - required for AccumuloClient interface but not used by DataWave
         throw new UnsupportedOperationException();
-    }
-
-    public ConditionalWriter createConditionalWriter(String tableName) throws TableNotFoundException {
-        return this.createConditionalWriter(tableName, (ConditionalWriterConfig) null);
-    }
-
-    private void ensureOpen() {
-        if (this.closed) {
-            throw new IllegalStateException("This client was closed.");
-        }
     }
 
     @Override
@@ -167,9 +155,11 @@ public class InMemoryAccumuloClient implements AccumuloClient {
         return new InMemoryNamespaceOperations(acu, username);
     }
 
+    /**
+     * Not supported by the in-memory implementation.
+     */
     @Override
     public ReplicationOperations replicationOperations() {
-        // Intentionally unsupported - required for AccumuloClient interface but not used by DataWave
         throw new UnsupportedOperationException();
     }
 
