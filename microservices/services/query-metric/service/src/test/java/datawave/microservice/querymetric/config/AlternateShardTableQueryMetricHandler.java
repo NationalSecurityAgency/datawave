@@ -3,8 +3,6 @@ package datawave.microservice.querymetric.config;
 import java.util.Collection;
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Qualifier;
-
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.marking.MarkingFunctions;
 import datawave.microservice.querymetric.QueryMetricFactory;

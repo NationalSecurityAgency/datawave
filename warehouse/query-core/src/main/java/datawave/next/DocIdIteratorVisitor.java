@@ -307,7 +307,6 @@ public class DocIdIteratorVisitor extends BaseVisitor {
                 return data;
             case EVALUATION_ONLY:
             case DELAYED:
-            case EXCEEDED_TERM:
             case DROPPED:
             case STRICT:
             case LENIENT:
@@ -331,18 +330,27 @@ public class DocIdIteratorVisitor extends BaseVisitor {
 
     private Object handledBoundedRange(ASTAndNode node, Object data, QueryPropertyMarker.Instance instance) {
         RangeDocIdIterator iterator = new RangeDocIdIterator(source, row, node);
+
+        if (!isFieldIndexed(iterator.getField())) {
+            return null; // do not execute iterators for non-indexed fields
+        }
+
         return configureAndDriveIterator(iterator, data);
     }
 
     private Object handleListMarker(ASTAndNode node, Object data, QueryPropertyMarker.Instance instance) {
         ListDocIdIterator iterator = new ListDocIdIterator(source, row, node);
+
+        if (!isFieldIndexed(iterator.getField())) {
+            return null; // do not execute iterators for non-indexed fields
+        }
+
         return configureAndDriveIterator(iterator, data);
     }
 
     @Override
     public Object visit(ASTEQNode node, Object data) {
-        String field = JexlASTHelper.getIdentifier(node);
-        if (field == null || !indexedFields.contains(field)) {
+        if (!isFieldIndexed(node)) {
             return null; // do not execute iterators for non-indexed fields
         }
 
@@ -357,8 +365,33 @@ public class DocIdIteratorVisitor extends BaseVisitor {
 
     @Override
     public Object visit(ASTERNode node, Object data) {
+        if (!isFieldIndexed(node)) {
+            return null; // do not execute iterators for non-indexed fields
+        }
+
         RegexDocIdIterator iterator = new RegexDocIdIterator(source, row, node);
         return configureAndDriveIterator(iterator, data);
+    }
+
+    /**
+     * Determines if the field is indexed. The field should be found in the identifier.
+     *
+     * @param node
+     *            the JexlNode
+     * @return true if the field is indexed
+     */
+    private boolean isFieldIndexed(JexlNode node) {
+        String field = JexlASTHelper.getIdentifier(node);
+        return isFieldIndexed(field);
+    }
+
+    /**
+     * Determines if the field is indexed. The field should be found in the identifier.
+     *
+     * @return true if the field is indexed
+     */
+    private boolean isFieldIndexed(String field) {
+        return field != null && indexedFields.contains(field);
     }
 
     protected ScanResult configureAndDriveIterator(BaseDocIdIterator iterator, Object data) {

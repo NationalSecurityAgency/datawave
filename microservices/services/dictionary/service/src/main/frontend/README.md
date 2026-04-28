@@ -22,7 +22,7 @@ This section provides the installation details and outlines the steps to run Dat
     ```
     # Build the datawave project and produce images for each microservice:
 
-    mvn -Pcompose -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -Ddist clean install -DskipTests -Djkube.container-image.tags.1=latest -Dmaven.build.cache.enabled=false
+    mvn -Pcompose -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -Ddist clean install -DskipTests -Djkube.container-image.tags.1=latest -Dmaven.build.cache.enabled=false -Dservices -Dstarters -Dutils
 
     # Spin up all the containers for the microservice after full datawave build:
 

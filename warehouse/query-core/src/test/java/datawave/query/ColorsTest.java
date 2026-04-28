@@ -1,6 +1,8 @@
 package datawave.query;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
@@ -76,11 +78,17 @@ public class ColorsTest extends AbstractQueryTest {
     private final Set<String> expectedDays = new HashSet<>();
     private final Set<String> expectedShards = new HashSet<>();
 
+    private static final Authorizations auths = new Authorizations("ALL");
     private static final IndexIngestUtil ingestUtil = new IndexIngestUtil();
 
     @Override
     public ShardQueryLogic getLogic() {
         return logic;
+    }
+
+    @Override
+    public Authorizations getAuths() {
+        return auths;
     }
 
     @BeforeAll
@@ -109,7 +117,7 @@ public class ColorsTest extends AbstractQueryTest {
         Preconditions.checkNotNull(hadoopConfig);
         logic.setHdfsSiteConfigURLs(hadoopConfig.toExternalForm());
 
-        IvaratorCacheDirConfig config = new IvaratorCacheDirConfig(folder.toFile().toString());
+        IvaratorCacheDirConfig config = new IvaratorCacheDirConfig(folder.toUri().toString());
         logic.setIvaratorCacheDirConfigs(Collections.singletonList(config));
 
         logic.setMaxFieldIndexRangeSplit(1); // keep things simple
@@ -297,6 +305,20 @@ public class ColorsTest extends AbstractQueryTest {
         expectShards("20250326", ColorsIngest.getNumShards());
         expectShards("20250327", ColorsIngest.getNewShards());
         planAndExecuteQuery();
+    }
+
+    @Test
+    public void testEnableDocumentSchedulerViaQueryParameter() throws Exception {
+        givenQuery("COLOR == 'blue'");
+        givenParameter(QueryParameters.DS_ENABLED, "true");
+        expectPlan("COLOR == 'blue'");
+        expectResultCount(getTotalEventCount());
+        expectHitTermsRequiredAllOf("COLOR:blue");
+
+        logic.setUseDocumentScheduler(false);
+        assertFalse(logic.isUseDocumentScheduler());
+        planAndExecuteQuery();
+        assertTrue(logic.isUseDocumentScheduler());
     }
 
     // TODO: unique

@@ -102,6 +102,25 @@ public class TermExtractorTest {
         test(query, terms);
     }
 
+    // test term extraction with case-sensitive limited fields
+    // @formatter:off
+    @CsvSource({
+        "a=='abc',abc",
+        "b=='abc',abc",
+        "c=='abc',abc",
+        "A=='abc',abc",
+        "B=='abc',abc",
+        "C=='abc',abc",
+    })
+    // @formatter:on
+    @ParameterizedTest(name = "extract {0}")
+    public void extractTargetCaseSensitiveFieldsTest(String query, String terms) throws ParseException, JavaRegexAnalyzer.JavaRegexParseException {
+        termExtractor = new TermExtractor(Set.of("A", "B", "C"));
+        test(query, terms);
+        termExtractor = new TermExtractor(Set.of("a", "b", "c"));
+        test(query, terms);
+    }
+
     // test normalization is applied
     // @formatter:on
     @CsvSource({"UUID=='AbC',abc", "UUID=='ABC' || UUID=='dEf',abc;def", "UUID='A',", "UUID=='A' || UUID=='B' && UUID=='C',a;b;c;", "UUID=~'.*ABC.*',.*abc.*"})

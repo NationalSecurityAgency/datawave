@@ -65,8 +65,6 @@ public class TagCloudPartition implements Writable {
     }
 
     public List<TagCloudInput> getInputs() {
-        // TODO-crwill9 no real reason to do this
-        // return List.copyOf(inputs);
         return inputs;
     }
 

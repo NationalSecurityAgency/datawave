@@ -1,29 +1,43 @@
 package datawave.annotation.util.v1;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.apache.commons.collections4.IteratorUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.ResourceAccessMode;
 import org.junit.jupiter.api.parallel.ResourceLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonToken;
 import com.google.protobuf.util.JsonFormat;
 
 import datawave.annotation.protobuf.v1.Annotation;
 import datawave.annotation.protobuf.v1.AnnotationList;
+import datawave.annotation.protobuf.v1.SegmentValue;
 import datawave.annotation.test.v1.AnnotationAssertions;
 import datawave.annotation.test.v1.AnnotationTestDataUtil;
 
@@ -82,7 +96,7 @@ public class JacksonJsonSerializationTest {
 
     @Test
     @ResourceLock("annotation_baseline")
-    public void testProtobufSerializationBaseline() throws Exception {
+    public void testProtobufSerializationListBaseline() throws Exception {
         JsonFormat.Printer printer = AnnotationJsonUtils.getPrinter();
         Path p = Path.of("src/test/resources/annotation_baseline.json");
         PrintWriter out = new PrintWriter(new FileWriter(p.toFile()));
@@ -100,7 +114,7 @@ public class JacksonJsonSerializationTest {
 
     @Test
     @ResourceLock("annotation_baseline")
-    public void testProtobufDeserializationBaseline() throws Exception {
+    public void testProtobufDeserializationListBaseline() throws Exception {
         JsonFormat.Parser parser = AnnotationJsonUtils.getParser();
         Path p = Path.of("src/test/resources/annotation_baseline.json");
         List<Annotation> parsedAnnotations = new ArrayList<>();
@@ -114,5 +128,101 @@ public class JacksonJsonSerializationTest {
         }
         assertEquals(36, parsedAnnotations.size());
         // TODO more validation
+    }
+
+    @Test
+    @ResourceLock(value = "annotation_baseline", mode = ResourceAccessMode.READ)
+    public void testProtobufDeserializationListBaselineWithZeroScore() throws Exception {
+        JsonFormat.Parser parser = AnnotationJsonUtils.getParser();
+        AnnotationList parsed = parseAnnotationListWithBaselineSegmentValueMutations(true, false, parser);
+        SegmentValue value = parsed.getAnnotations(0).getSegments(0).getValues(0);
+
+        assertEquals(0.0f, value.getScore(), 0.0f);
+        assertTrue(value.hasScore());
+    }
+
+    @Test
+    @ResourceLock(value = "annotation_baseline", mode = ResourceAccessMode.READ)
+    public void testProtobufDeserializationListBaselineWithMissingScore() throws Exception {
+        JsonFormat.Parser parser = AnnotationJsonUtils.getParser();
+        AnnotationList parsed = parseAnnotationListWithBaselineSegmentValueMutations(false, true, parser);
+        SegmentValue value = parsed.getAnnotations(0).getSegments(0).getValues(1);
+
+        assertEquals(0.0f, value.getScore(), 0.0f);
+        assertFalse(value.hasScore());
+    }
+
+    @Test
+    @ResourceLock("annotation_baseline_ndjson")
+    public void testProtobufSerializationBaselineNdJson() throws Exception {
+        JsonFormat.Printer printer = AnnotationJsonUtils.getPrinter();
+        Path p = Path.of("src/test/resources/annotation_baseline.ndjson");
+        PrintWriter out = new PrintWriter(new FileWriter(p.toFile()));
+        //@formatter:off
+        // boundary type and segment id generation are usually taken care of by the dao layer, we add them
+        // here to create a simulation of that behavior.
+        List<Annotation> testAnnotations = AnnotationTestDataUtil.generateManyTestAnnotations().stream()
+                .map(AnnotationUtils::injectAllHashes)
+                .collect(Collectors.toList());
+        //@formatter:on
+        AnnotationList annotationList = AnnotationList.newBuilder().addAllAnnotations(testAnnotations).build();
+        for (Annotation annotation : annotationList.getAnnotationsList()) {
+            printer.appendTo(annotation, out);
+        }
+        out.close();
+    }
+
+    @Test
+    @ResourceLock("annotation_baseline_ndjson")
+    public void testProtobufDeserializationBaselineNdJson() throws Exception {
+        JsonFormat.Parser parser = AnnotationJsonUtils.getParser();
+        Path p = Path.of("src/test/resources/annotation_baseline.ndjson");
+        List<Annotation> parsedAnnotations = new ArrayList<>();
+        // idiomatic approach for reading annotations in ndjson format.
+        try (FileInputStream is = new FileInputStream(p.toFile())) {
+            JsonReader reader = new JsonReader(new InputStreamReader(is));
+            reader.setLenient(true);
+            Iterator<JsonElement> jsonIterator = null;
+            while (true) {
+                if (jsonIterator == null || !jsonIterator.hasNext()) {
+                    if (reader.peek() == JsonToken.END_DOCUMENT) {
+                        break; // done reading all json
+                    }
+                    JsonElement root = JsonParser.parseReader(reader);
+                    jsonIterator = root.isJsonArray() ? root.getAsJsonArray().iterator() : IteratorUtils.singletonIterator(root);
+                }
+
+                if (jsonIterator.hasNext()) {
+                    JsonElement jsonElement = jsonIterator.next();
+                    Annotation.Builder builder = Annotation.newBuilder();
+                    String jsonString = jsonElement.toString();
+                    parser.merge(jsonString, builder);
+                    Annotation aas = builder.build();
+                    parsedAnnotations.add(aas);
+                }
+            }
+        } catch (IOException e) {
+            log.debug("Reached end of file?", e);
+        }
+        assertEquals(36, parsedAnnotations.size());
+        // TODO more validation
+    }
+
+    private AnnotationList parseAnnotationListWithBaselineSegmentValueMutations(boolean setFirstScoreToZero, boolean removeSecondScore,
+                    JsonFormat.Parser parser) throws Exception {
+        Path p = Path.of("src/test/resources/annotation_baseline.json");
+        ObjectNode root = (ObjectNode) objectMapper.readTree(Files.readString(p));
+        ArrayNode values = root.withArray("annotations").get(0).withArray("segments").get(0).withArray("values");
+
+        if (setFirstScoreToZero) {
+            ((ObjectNode) values.get(0)).put("score", 0.0);
+        }
+        if (removeSecondScore) {
+            ((ObjectNode) values.get(1)).remove("score");
+        }
+
+        AnnotationList.Builder builder = AnnotationList.newBuilder();
+        parser.merge(objectMapper.writeValueAsString(root), builder);
+        return builder.build();
     }
 }

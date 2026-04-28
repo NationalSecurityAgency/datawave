@@ -507,7 +507,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
             // Modify the projectFields and disallowlistFields only for this stage, then return to the original values.
             // Not advisable to create a copy of the config object due to the embedded timers.
             Set<String> originalDisallowlistedFields = new HashSet<>(config.getDisallowlistedFields());
-            Set<String> originalProjectFields = new HashSet<>(config.getProjectFields());
+            Set<String> originalProjectFields = config.getProjectFields();
 
             // either projectFields or disallowlistedFields can be used, but not both
             // this will be caught when loadQueryParameters is called
@@ -837,6 +837,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
                 // since this may be called multiple times always rebuild
                 // @formatter:off
                 ((DocumentTransformer) this.transformerInstance).addTransform(new AnnotationHitsTransformer(
+                        getConfig(),
                         getConfig().getOriginalJexlQuery(),
                         allHitsQueryConfig.getQueryTermExtractor(),
                         allHitsQueryConfig.getTermNormalizer(),
@@ -844,7 +845,8 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
                         getAnnotationHitsFactory(),
                         allHitsQueryConfig.getMaxContextLength(),
                         allHitsQueryConfig.getValidAnnotationTypes(),
-                        allHitsQueryConfig.getTargetField()));
+                        allHitsQueryConfig.getTargetField(),
+                        allHitsQueryConfig.getAnnotationEnrichmentFieldMap()));
                 // @formatter:on
             }
 
@@ -1123,7 +1125,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
                 // Update the config and the projection fields.
                 this.setGroupByFields(groupByFields);
                 config.setGroupFields(groupByFields);
-                config.setProjectFields(groupByFields.getProjectionFields());
+                config.addProjectFields(groupByFields.getProjectionFields());
             }
         }
 
@@ -1143,6 +1145,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
                 // preserve the most recent flag
                 uniqueFields.setMostRecent(config.getUniqueFields().isMostRecent());
                 config.setUniqueFields(uniqueFields);
+                config.addProjectFields(uniqueFields.getFields());
             }
         }
 
@@ -1183,6 +1186,11 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         if (StringUtils.isNotBlank(bypassAccumuloString)) {
             Boolean bypassAccumuloBool = Boolean.parseBoolean(bypassAccumuloString);
             config.setBypassAccumulo(bypassAccumuloBool);
+        }
+
+        String dsEnabled = settings.findParameter(QueryParameters.DS_ENABLED).getParameterValue().trim();
+        if (StringUtils.isNotBlank(dsEnabled)) {
+            config.setUseDocumentScheduler(Boolean.parseBoolean(dsEnabled));
         }
 
         // Get the DATE_INDEX_TIME_TRAVEL parameter if given
@@ -1713,7 +1721,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         logQuery(config.getQueryTree(), "Query after flattening");
 
         // Apply the query model.
-        config.setQueryTree(ShardQueryUtils.applyQueryModel(config.getQueryTree(), config, metadataHelper.getAllFields(config.getDatatypeFilter()),
+        config.setQueryTree(ShardQueryUtils.applyQueryModel(config.getQueryTree(), config, metadataHelper.getModelExpansionFields(config.getDatatypeFilter()),
                         this.queryModel));
 
         logQuery(config.getQueryTree(), "Query after applying query model");
@@ -1904,6 +1912,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
     public void setDisableIteratorUniqueFields(boolean disableIteratorUniqueFields) {
         getConfig().setDisableIteratorUniqueFields(disableIteratorUniqueFields);
+    }
+
+    public boolean isDisableIteratorMostRecentUniqueFields() {
+        return getConfig().isDisableIteratorMostRecentUniqueFields();
+    }
+
+    public void setDisableIteratorMostRecentUniqueFields(boolean disableIteratorMostRecentUniqueFields) {
+        getConfig().setDisableIteratorMostRecentUniqueFields(disableIteratorMostRecentUniqueFields);
     }
 
     public UniqueFields getUniqueFields() {
@@ -2960,6 +2976,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         getConfig().setMaxAnyFieldScanTimeMillis(maxAnyFieldScanTimeMillis);
     }
 
+    public boolean isUseNewIndexLookups() {
+        return getConfig().isUseNewIndexLookups();
+    }
+
+    public void setUseNewIndexLookups(boolean useNewIndexLookups) {
+        getConfig().setUseNewIndexLookups(useNewIndexLookups);
+    }
+
     public Function getQueryMacroFunction() {
         return queryMacroFunction;
     }
@@ -3635,5 +3659,13 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
     public void setAllHitsQueryConfig(AllHitsQueryConfig allHitsQueryConfig) {
         getConfig().setAllHitsQueryConfig(allHitsQueryConfig);
+    }
+
+    public void setOneDocPerGroup(boolean value) {
+        getConfig().getGroupFields().setOneDocPerGroup(value);
+    }
+
+    public void setMultDocPerGroup(boolean value) {
+        getConfig().getGroupFields().setOneDocPerGroup(!value);
     }
 }

@@ -18,12 +18,15 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.Transformer;
 import org.apache.commons.collections4.functors.NOPTransformer;
 import org.apache.commons.collections4.iterators.TransformIterator;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -47,6 +50,7 @@ import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUser.UserType;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.util.DnUtils;
+import datawave.webservice.query.cache.RunningQueryTimingImpl;
 import datawave.webservice.query.metric.QueryMetricsBean;
 import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
 
@@ -76,12 +80,23 @@ public class ExtendedRunningQueryTest {
     @Mock
     TransformIterator transformIterator;
 
+    private ExecutorService executor;
+
     private Transformer transformer = NOPTransformer.nopTransformer();
 
     @Before
     public void setup() {
         System.setProperty(DnUtils.NPE_OU_PROPERTY, "iamnotaperson");
         System.setProperty("dw.metadatahelper.all.auths", "A,B,C,D");
+        executor = Executors.newSingleThreadExecutor();
+    }
+
+    @After
+    public void after() {
+        if (executor != null) {
+            executor.shutdown();
+            executor = null;
+        }
     }
 
     @Test
@@ -169,10 +184,11 @@ public class ExtendedRunningQueryTest {
         expect(this.queryLogic.getTransformIterator(this.query)).andReturn(this.transformIterator);
         Iterator<Object> iterator = resultObjects.iterator();
         while (iterator.hasNext()) {
-            expect(this.transformIterator.hasNext()).andReturn(iterator.hasNext());
+            expect(this.transformIterator.hasNext()).andReturn(true);
             expect(this.transformIterator.next()).andReturn(iterator.next());
             expect(this.transformIterator.getTransformer()).andReturn(transformer);
         }
+        expect(this.transformIterator.hasNext()).andReturn(false);
         expect(this.query.getPagesize()).andReturn(pageSize).anyTimes();
         expect(this.queryLogic.getMaxPageSize()).andReturn(maxPageSize).anyTimes();
         expect(this.queryLogic.getPageByteTrigger()).andReturn(pageByteTrigger).anyTimes();
@@ -189,6 +205,7 @@ public class ExtendedRunningQueryTest {
         PowerMock.replayAll();
         RunningQuery subject = new RunningQuery(this.client, Priority.NORMAL, this.queryLogic, this.query, methodAuths, principal,
                         new QueryMetricFactoryImpl());
+        subject.setExecutor(executor);
 
         ResultsPage result1 = subject.next();
         String result2 = subject.toString();
@@ -204,7 +221,94 @@ public class ExtendedRunningQueryTest {
         assertNotNull("Expected a non-null toString() representation", result2);
 
         assertSame("Expected lifecycle to be results", QueryMetric.Lifecycle.RESULTS, subject.getMetric().getLifecycle());
+    }
 
+    @Test
+    public void testNext_HappyPathUsingTimingConstructor() throws Exception {
+
+        // Set local test input
+        String userDN = "userDN";
+        List<String> dnList = Lists.newArrayList(userDN);
+        String userSid = "userSid";
+        UUID queryId = UUID.randomUUID();
+        String methodAuths = "AUTH_1";
+        String columnVisibility = "AUTH_1";
+        DatawaveUser user = new DatawaveUser(SubjectIssuerDNPair.of("userDN", "issuerDN"), UserType.USER, Collections.singleton(methodAuths), null, null, 0L);
+        DatawavePrincipal principal = new DatawavePrincipal(Collections.singletonList(user));
+        String query = "query";
+        String queryLogicName = "queryLogicName";
+        String queryName = "queryName";
+        long currentTime = System.currentTimeMillis();
+        Date beginDate = new Date(currentTime - 5000);
+        Date endDate = new Date(currentTime - 1000);
+        Date expirationDate = new Date(currentTime + 9999);
+        int pageSize = 3;
+        int maxPageSize = 10;
+        long pageByteTrigger = 4 * 1024L;
+        long maxWork = Long.MAX_VALUE;
+        long maxResults = 100L;
+        List<Object> resultObjects = Arrays.asList(new Object(), "resultObject1", null);
+
+        // Set expectations
+        expect(this.queryLogic.getCollectQueryMetrics()).andReturn(true);
+        expect(this.query.getUncaughtExceptionHandler()).andReturn(exceptionHandler).times(5);
+        expect(this.exceptionHandler.getThrowable()).andReturn(null).times(5);
+        expect(this.query.getId()).andReturn(queryId).times(4);
+        expect(this.query.getOwner()).andReturn(userSid).times(2);
+        expect(this.query.getQuery()).andReturn(query).times(2);
+        expect(this.query.getQueryLogicName()).andReturn(queryLogicName).times(2);
+        expect(this.query.getQueryName()).andReturn(queryName).times(2);
+
+        expect(this.query.getBeginDate()).andReturn(beginDate).times(2);
+        expect(this.query.getEndDate()).andReturn(endDate).times(2);
+        expect(this.query.isMaxResultsOverridden()).andReturn(false).anyTimes();
+        expect(this.query.getExpirationDate()).andReturn(expirationDate);
+        expect(this.query.getParameters()).andReturn(new HashSet<>()).times(2);
+        expect(this.query.getQueryAuthorizations()).andReturn(methodAuths).times(2);
+        expect(this.query.getColumnVisibility()).andReturn(columnVisibility);
+        expect(this.query.getUserDN()).andReturn(userDN).times(3);
+        expect(this.queryLogic.initialize(eq(this.client), eq(this.query), isA(Set.class))).andReturn(this.genericConfiguration);
+        this.queryLogic.setupQuery(this.genericConfiguration);
+        expect(this.queryLogic.getTransformIterator(this.query)).andReturn(this.transformIterator);
+        Iterator<Object> iterator = resultObjects.iterator();
+        while (iterator.hasNext()) {
+            expect(this.transformIterator.hasNext()).andReturn(true);
+            expect(this.transformIterator.next()).andReturn(iterator.next());
+            expect(this.transformIterator.getTransformer()).andReturn(transformer);
+        }
+        expect(this.transformIterator.hasNext()).andReturn(false);
+        expect(this.query.getPagesize()).andReturn(pageSize).anyTimes();
+        expect(this.queryLogic.getMaxPageSize()).andReturn(maxPageSize).anyTimes();
+        expect(this.queryLogic.getPageByteTrigger()).andReturn(pageByteTrigger).anyTimes();
+        expect(this.queryLogic.getMaxWork()).andReturn(maxWork).anyTimes();
+        expect(this.queryLogic.getMaxResults()).andReturn(maxResults).anyTimes();
+        expect(this.genericConfiguration.getQueryString()).andReturn(query).once();
+        expect(this.queryLogic.isLongRunningQuery()).andReturn(false);
+        expect(this.queryLogic.getResultLimit(eq(this.query))).andReturn(maxResults);
+        this.queryLogic.preInitialize(this.query, AuthorizationsUtil.buildAuthorizations(Collections.singleton(Collections.singleton("AUTH_1"))));
+        expect(this.queryLogic.getUserOperations()).andReturn(null);
+        this.queryLogic.setPageProcessingStartTime(anyLong());
+
+        // Run the test
+        PowerMock.replayAll();
+        RunningQuery subject = new RunningQuery(this.client, Priority.NORMAL, this.queryLogic, this.query, methodAuths, principal,
+                        new RunningQueryTimingImpl(3600, 1200, 3500, 10), new QueryMetricFactoryImpl());
+        subject.setExecutor(executor);
+
+        ResultsPage result1 = subject.next();
+        String result2 = subject.toString();
+        QueryMetric.Lifecycle status = subject.getMetric().getLifecycle();
+        PowerMock.verifyAll();
+
+        // Verify results
+        assertNotNull("Expected a non-null page", result1);
+        assertNotNull("Expected a non-null list of results", result1.getResults());
+        assertEquals("Expected 2 non-null items in the list of results", 2, result1.getResults().size());
+        assertSame("Expected status to be closed", status, QueryMetric.Lifecycle.RESULTS);
+
+        assertNotNull("Expected a non-null toString() representation", result2);
+
+        assertSame("Expected lifecycle to be results", QueryMetric.Lifecycle.RESULTS, subject.getMetric().getLifecycle());
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -261,7 +365,7 @@ public class ExtendedRunningQueryTest {
         int count = 0;
         expect(this.transformIterator.hasNext()).andReturn(iterator.hasNext());
         while (iterator.hasNext() && count < maxResults) {
-            expect(this.transformIterator.hasNext()).andReturn(iterator.hasNext());
+            expect(this.transformIterator.hasNext()).andReturn(true);
             expect(this.transformIterator.next()).andReturn(iterator.next());
             count++;
         }
@@ -281,6 +385,7 @@ public class ExtendedRunningQueryTest {
         PowerMock.replayAll();
         RunningQuery subject = new RunningQuery(this.client, Priority.NORMAL, this.queryLogic, this.query, methodAuths, principal,
                         new QueryMetricFactoryImpl());
+        subject.setExecutor(executor);
 
         ResultsPage result1 = subject.next();
 
@@ -354,6 +459,7 @@ public class ExtendedRunningQueryTest {
         PowerMock.replayAll();
         RunningQuery subject = new RunningQuery(this.queryMetrics, this.client, Priority.NORMAL, this.queryLogic, this.query, methodAuths, principal,
                         new QueryMetricFactoryImpl());
+        subject.setExecutor(executor);
         subject.cancel();
         boolean result1 = subject.isCanceled();
         ResultsPage result2 = subject.next();
@@ -414,6 +520,7 @@ public class ExtendedRunningQueryTest {
         PowerMock.replayAll();
         RunningQuery subject = new RunningQuery(this.queryMetrics, this.client, Priority.NORMAL, this.queryLogic, this.query, methodAuths, principal,
                         new QueryMetricFactoryImpl());
+        subject.setExecutor(executor);
         subject.closeConnection(this.connectionFactory);
         QueryMetric.Lifecycle status = subject.getMetric().getLifecycle();
         PowerMock.verifyAll();
@@ -498,6 +605,7 @@ public class ExtendedRunningQueryTest {
         PowerMock.replayAll();
         RunningQuery subject = new RunningQuery(this.client, Priority.NORMAL, this.queryLogic, this.query, methodAuths, principal,
                         new QueryMetricFactoryImpl());
+        subject.setExecutor(executor);
 
         ResultsPage result1 = subject.next();
 
