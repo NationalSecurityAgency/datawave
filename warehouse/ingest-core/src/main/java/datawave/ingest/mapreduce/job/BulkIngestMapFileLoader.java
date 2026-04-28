@@ -61,7 +61,7 @@ import org.apache.log4j.Logger;
 import com.google.common.base.Objects;
 import com.google.common.collect.Lists;
 
-import datawave.core.common.connection.AccumuloTableInfoFetcher;
+import datawave.core.common.connection.AccumuloTableUtils;
 import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.mapreduce.StandaloneStatusReporter;
 import datawave.util.cli.PasswordConverter;
@@ -711,7 +711,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
 
     private int getMajorCompactionCount() {
         try {
-            return AccumuloTableInfoFetcher.getMajorCompactionCount(accumuloClient);
+            return AccumuloTableUtils.getMajorCompactionCount(accumuloClient);
         } catch (Exception e) {
             log.error("Unable to retrieve major compaction stats: " + e.getMessage());
             return 0;

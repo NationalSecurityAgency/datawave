@@ -33,7 +33,7 @@ import org.apache.log4j.Logger;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Maps;
 
-import datawave.core.common.connection.AccumuloTableInfoFetcher;
+import datawave.core.common.connection.AccumuloTableUtils;
 import datawave.ingest.config.BaseHdfsFileCacheUtil;
 import datawave.ingest.mapreduce.partition.BalancedShardPartitioner;
 import datawave.ingest.mapreduce.partition.DelegatePartitioner;
@@ -79,7 +79,7 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
 
     private Map<Text,String> getSplitsWithLocation(String table) throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
         AccumuloClient client = accumuloHelper.newClient();
-        Map<Text,String> locations = AccumuloTableInfoFetcher.getSplitsWithLocations(client, table);
+        Map<Text,String> locations = AccumuloTableUtils.getSplitsWithLocations(client, table);
         // Replace empty-string locations with NO_LOCATION sentinel
         locations.replaceAll((k, v) -> v.isEmpty() ? NO_LOCATION : v);
         return locations;

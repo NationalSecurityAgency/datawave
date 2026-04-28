@@ -72,7 +72,7 @@ import com.google.common.collect.Multimap;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.common.util.ArgumentChecker;
-import datawave.core.common.connection.AccumuloTableInfoFetcher;
+import datawave.core.common.connection.AccumuloTableUtils;
 import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.mr.bulk.split.DefaultLocationStrategy;
 import datawave.mr.bulk.split.DefaultSplitStrategy;
@@ -1072,7 +1072,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
                         }
                     }
                     // REVIEW: retry semantics differ from original TabletLocator.binRanges() loop
-                    binnedRanges = AccumuloTableInfoFetcher.locateTablets(client, tableName, ranges);
+                    binnedRanges = AccumuloTableUtils.locateTablets(client, tableName, ranges);
                     clipRanges(binnedRanges);
                 }
             }

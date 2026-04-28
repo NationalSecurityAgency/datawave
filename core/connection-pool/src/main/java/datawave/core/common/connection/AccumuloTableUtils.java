@@ -31,10 +31,10 @@ import org.apache.hadoop.io.Text;
  *
  * @see <a href="https://github.com/NationalSecurityAgency/datawave/issues/2443">Issue #2443</a>
  */
-public final class AccumuloTableInfoFetcher {
+public final class AccumuloTableUtils {
 
-    private AccumuloTableInfoFetcher() {
-        // utility class
+    private AccumuloTableUtils() {
+        throw new UnsupportedOperationException("Utility class");
     }
 
     /**
