@@ -1,17 +1,18 @@
 package datawave.next.scanner;
 
-import datawave.next.stats.DocIdQueryIterStats;
-import datawave.next.stats.DocIterStats;
-import org.apache.accumulo.core.data.Key;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.IOException;
 import java.time.Clock;
 import java.util.HashSet;
 import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.apache.accumulo.core.data.Key;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import datawave.next.stats.DocIdQueryIterStats;
+import datawave.next.stats.DocIterStats;
 
 public class CandidateResultSerializerTest {
 

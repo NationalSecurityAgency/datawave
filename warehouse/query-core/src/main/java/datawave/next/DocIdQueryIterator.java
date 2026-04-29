@@ -9,8 +9,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
-import datawave.next.scanner.CandidateResult;
-import datawave.next.scanner.CandidateResultSerializer;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -27,6 +25,8 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Splitter;
 
+import datawave.next.scanner.CandidateResult;
+import datawave.next.scanner.CandidateResultSerializer;
 import datawave.next.stats.DocIdQueryIterStats;
 import datawave.next.stats.DocIterStats;
 import datawave.query.iterator.QueryOptions;

@@ -1,15 +1,17 @@
 package datawave.next.scanner;
 
+import java.util.HashSet;
+import java.util.Set;
+
+import org.apache.accumulo.core.data.Key;
+
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.KryoSerializable;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
+
 import datawave.next.stats.DocIdQueryIterStats;
 import datawave.next.stats.DocIterStats;
-import org.apache.accumulo.core.data.Key;
-
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * Serializes candidate document keys, {@link DocIdQueryIterStats} and {@link DocIterStats}
