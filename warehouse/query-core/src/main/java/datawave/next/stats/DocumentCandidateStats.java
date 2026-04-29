@@ -50,7 +50,9 @@ public class DocumentCandidateStats implements Serializable {
 
     /**
      * Cast the double to a long to eliminate rounding, then take the string value
-     * @param ms the data in milliseconds
+     *
+     * @param ms
+     *            the data in milliseconds
      * @return formatted millis
      */
     private String format(double ms) {
