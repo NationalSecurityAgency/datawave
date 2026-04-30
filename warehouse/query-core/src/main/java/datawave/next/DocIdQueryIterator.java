@@ -156,47 +156,52 @@ public class DocIdQueryIterator implements SortedKeyValueIterator<Key,Value> {
             tv = EMPTY_VALUE;
 
             if (batchSize == 1) {
-
-                if (data.hasNext()) {
-                    tk = data.next();
-                } else if (!statsReturned) {
-                    tk = createStatsKey();
-                }
-
-                if (!data.hasNext() && !statsReturned) {
-                    statsReturned = true;
-                    timingStats.markRetrievalStop(clock.millis());
-                    result.setQueryStats(timingStats);
-                    result.setIterStats(iteratorStats);
-                    tv = serializeValue();
-                }
-
+                handleSingleton();
             } else {
-
-                int count = 0;
-                TreeSet<Key> batch = new TreeSet<>();
-                while (data.hasNext() && count < batchSize) {
-                    count++;
-                    batch.add(data.next());
-                }
-
-                if (count == 0) {
-                    tk = createStatsKey();
-                } else {
-                    tk = batch.last();
-                }
-
-                if (!data.hasNext() && !statsReturned) {
-                    statsReturned = true;
-                    timingStats.markRetrievalStop(clock.millis());
-                    result.setCandidates(batch);
-                    result.setQueryStats(timingStats);
-                    result.setIterStats(iteratorStats);
-                    tv = serializeValue();
-                }
+                handleBatch();
             }
         } catch (Exception e) {
             handleException(e);
+        }
+    }
+
+    private void handleSingleton() throws IOException {
+        if (data.hasNext()) {
+            tk = data.next();
+        } else if (!statsReturned) {
+            tk = createStatsKey();
+        }
+
+        if (!data.hasNext() && !statsReturned) {
+            statsReturned = true;
+            timingStats.markRetrievalStop(clock.millis());
+            result.setQueryStats(timingStats);
+            result.setIterStats(iteratorStats);
+            tv = serializeValue();
+        }
+    }
+
+    private void handleBatch() throws IOException {
+        int count = 0;
+        TreeSet<Key> batch = new TreeSet<>();
+        while (data.hasNext() && count < batchSize) {
+            count++;
+            batch.add(data.next());
+        }
+
+        if (count == 0 && !statsReturned) {
+            tk = createStatsKey();
+        } else if (!batch.isEmpty()) {
+            tk = batch.last();
+        }
+
+        if (tk != null) {
+            statsReturned = true;
+            timingStats.markRetrievalStop(clock.millis());
+            result.setCandidates(batch);
+            result.setQueryStats(timingStats);
+            result.setIterStats(iteratorStats);
+            tv = serializeValue();
         }
     }
 

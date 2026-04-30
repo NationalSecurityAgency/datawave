@@ -142,6 +142,9 @@ public class DocumentIdProducer implements RunnableWithContext {
 
         if (cf.equals("STATS")) {
             byte[] payload = value.get();
+            if (payload.length == 0) {
+                return null;
+            }
             CandidateResult result = serializer.deserialize(payload);
             config.getStats().merge(result.getQueryStats());
             config.getStats().merge(result.getIterStats());
@@ -156,7 +159,6 @@ public class DocumentIdProducer implements RunnableWithContext {
         // else bulk results
         byte[] payload = value.get();
         CandidateResult result = serializer.deserialize(payload);
-
         if (result.getQueryStats() != null) {
             // final batch of results will also send back iterator stats
             config.getStats().merge(result.getQueryStats());
