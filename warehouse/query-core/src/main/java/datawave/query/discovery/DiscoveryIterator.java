@@ -19,6 +19,8 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.MapWritable;
@@ -27,6 +29,7 @@ import org.apache.hadoop.io.WritableUtils;
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.LinkedHashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.protobuf.InvalidProtocolBufferException;
 
@@ -46,6 +49,7 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
     private boolean showReferenceCount = false;
     private boolean reverseIndex = false;
     private boolean sumCounts = false;
+    private boolean valuesOnly = false;
 
     @Override
     public DiscoveryIterator deepCopy(IteratorEnvironment env) {
@@ -61,7 +65,7 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
 
         while (iterator.hasTop() && key == null) {
             // Get the entries to aggregate.
-            Multimap<String,TermEntry> terms = getTermsByDatatype();
+            Multimap<String,TermEntry> terms = this.valuesOnly ? getTermsOnly() : getTermsByDatatype();
             if (terms.isEmpty()) {
                 log.trace("Couldn't aggregate index info; moving onto next date/field/term if data is available.");
             } else {
@@ -84,12 +88,52 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
         Multimap<String,TermEntry> terms = ArrayListMultimap.create();
         Key start = new Key(iterator.getTopKey());
         Key key;
-        // If we should sum up counts, we want to collect the term entries for each date seen for the current field and term of start. Otherwise, we only want
-        // to collect the term entries for the current field, term, and date of start.
+        // If we should sum up counts, we want to collect the term entries for each date seen for the current field and term of start.
+        // Otherwise, we only want to collect the term entries for the current field, term, and date of start.
         BiFunction<Key,Key,Boolean> dateMatchingFunction = sumCounts ? (first, second) -> true : this::datesMatch;
         // Find all matching entries and parse term entries from them.
         while (iterator.hasTop() && start.equals((key = iterator.getTopKey()), PartialKey.ROW_COLFAM) && dateMatchingFunction.apply(start, key)) {
             TermEntry termEntry = new TermEntry(key, iterator.getTopValue());
+            if (termEntry.isValid())
+                terms.put(termEntry.getDatatype(), termEntry);
+            else {
+                if (log.isTraceEnabled()) {
+                    log.trace("Received invalid term entry from key: " + key);
+                }
+            }
+            iterator.next();
+        }
+        return terms;
+    }
+
+    private Multimap<String,TermEntry> getTermsOnly() throws IOException {
+        LinkedHashMultimap<String,TermEntry> terms = LinkedHashMultimap.create();
+        Key start = new Key(iterator.getTopKey());
+        Key key;
+        // If we should sum up counts, we want to collect the term entries for each date seen for the current field and term of start.
+        // Otherwise, we only want to collect the term entries for the current field, term, and date of start.
+        BiFunction<Key,Key,Boolean> dateMatchingFunction = sumCounts ? (first, second) -> true : this::datesMatch;
+        // Find all matching entries and parse term entries from them.
+
+        while (iterator.hasTop() && start.equals((key = iterator.getTopKey()), PartialKey.ROW_COLFAM) && dateMatchingFunction.apply(start, key)) {
+            // TermEntry termEntry = new TermEntry(key, iterator.getTopValue());
+            TermEntry termEntry = new TermEntry(key, iterator.getTopValue()) {
+                // Only use term and visibility for equality.
+                @Override
+                public boolean equals(Object o) {
+                    if (o instanceof TermEntry) {
+                        TermEntry other = (TermEntry) o;
+                        return new EqualsBuilder().append(getTerm(), other.getTerm()).append(getVisibility(), other.getVisibility()).isEquals();
+                    }
+                    return false;
+                }
+
+                @Override
+                public int hashCode() {
+                    return new HashCodeBuilder().append(getTerm()).append(getVisibility()).toHashCode();
+                }
+            };
+
             if (termEntry.isValid())
                 terms.put(termEntry.getDatatype(), termEntry);
             else {
@@ -180,8 +224,8 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
      * Set the top {@link Key} and {@link Value} of this iterator, created from the given list of {@link DiscoveredThing} instances.
      */
     private void setTop(List<DiscoveredThing> things) {
-        // We want the key to be the last possible key for this date. Return the key as it is in the index (reversed if necessary) to ensure the keys are
-        // consistent with the initial seek range.
+        // We want the key to be the last possible key for this date. Return the key as it is in the index (reversed if
+        // necessary) to ensure the keys are consistent with the initial seek range.
         DiscoveredThing thing = things.get(0);
         String row = (this.reverseIndex ? new StringBuilder().append(thing.getTerm()).reverse().toString() : thing.getTerm());
         Key newKey = new Key(row, thing.getField(), thing.getDate() + "\uffff");
@@ -210,6 +254,7 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
         this.showReferenceCount = Boolean.parseBoolean(options.get(DiscoveryLogic.SHOW_REFERENCE_COUNT));
         this.reverseIndex = Boolean.parseBoolean(options.get(DiscoveryLogic.REVERSE_INDEX));
         this.sumCounts = Boolean.parseBoolean(options.get(DiscoveryLogic.SUM_COUNTS));
+        this.valuesOnly = Boolean.parseBoolean(options.get(DiscoveryLogic.VALUES_ONLY));
 
         if (log.isTraceEnabled()) {
             log.trace("Source: " + source.getClass().getName());
@@ -217,6 +262,7 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
             log.trace("Show reference counts only: " + this.showReferenceCount);
             log.trace("Reverse index: " + this.reverseIndex);
             log.trace("Sum counts: " + this.sumCounts);
+            log.trace("Values only: " + this.valuesOnly);
         }
     }
 
@@ -241,7 +287,7 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
     private static class TermEntry {
 
         private final String term;
-        private final String field;
+        private String field;
         private String date;
         private String datatype;
         private ColumnVisibility visibility;
@@ -324,6 +370,23 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
 
         public boolean isValid() {
             return valid;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (o instanceof TermEntry) {
+                TermEntry other = (TermEntry) o;
+                return new EqualsBuilder().append(getTerm(), other.getTerm()).append(getField(), other.getField())
+                                .append(getVisibility(), other.getVisibility()).append(getDate(), other.getDate()).append(getDatatype(), other.getDatatype())
+                                .append(getUidCount(), other.getUidCount()).append(getUidListSize(), other.getUidListSize()).isEquals();
+            }
+            return false;
+        }
+
+        @Override
+        public int hashCode() {
+            return new HashCodeBuilder().append(getTerm()).append(getField()).append(getVisibility()).append(getDate()).append(getDatatype())
+                            .append(getUidCount()).append(getUidListSize()).toHashCode();
         }
     }
 }

@@ -89,6 +89,11 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
     public static final String SUM_COUNTS = "sum.counts";
 
     /**
+     * Used to specify a unique list of values not associated with a field.
+     */
+    public static final String VALUES_ONLY = "values.only";
+
+    /**
      * Used to specify whether to search against the reversed index.
      */
     public static final String REVERSE_INDEX = "reverse.index";
@@ -150,6 +155,9 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
 
         // Check if counts should be summed.
         setSumCounts(getOrDefaultBoolean(settings, SUM_COUNTS, getSumCounts()));
+
+        // Specify values only. Treat associated field, data type, and the like as "don't care."
+        setValuesOnly(getOrDefaultBoolean(settings, VALUES_ONLY, false));
 
         // Check if any datatype filters were specified.
         getConfig().setDatatypeFilter(getOrDefaultSet(settings, QueryParameters.DATATYPE_FILTER_SET, getConfig().getDatatypeFilter()));
@@ -580,6 +588,7 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
         setting.addOption(SEPARATE_COUNTS_BY_COLVIS, Boolean.toString(config.getSeparateCountsByColVis()));
         setting.addOption(SHOW_REFERENCE_COUNT, Boolean.toString(config.getShowReferenceCount()));
         setting.addOption(SUM_COUNTS, Boolean.toString(config.getSumCounts()));
+        setting.addOption(VALUES_ONLY, Boolean.toString(config.getValuesOnly()));
         return setting;
     }
 
@@ -688,5 +697,13 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
 
     public void setSumCounts(boolean sumCounts) {
         getConfig().setSumCounts(sumCounts);
+    }
+
+    public void setValuesOnly(boolean valuesOnly) {
+        getConfig().setValuesOnly(valuesOnly);
+    }
+
+    public boolean getValuesOnly() {
+        return getConfig().getValuesOnly();
     }
 }

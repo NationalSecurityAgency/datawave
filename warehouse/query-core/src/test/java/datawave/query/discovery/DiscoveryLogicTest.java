@@ -241,8 +241,10 @@ public class DiscoveryLogicTest {
         logic.setupQuery(config);
         Iterator<DiscoveredThing> iterator = logic.iterator();
         List<DiscoveredThing> actual = new ArrayList<>();
+        DiscoveredThingValuesOnlyConditionalTransformer dtvoct = new DiscoveredThingValuesOnlyConditionalTransformer(logic.getValuesOnly());
         while (iterator.hasNext()) {
-            actual.add(iterator.next());
+            actual.add(dtvoct.apply(iterator.next()));
+            // actual.add(iterator.next());
         }
 
         Assertions.assertThat(actual).hasSize(expected.size());
@@ -517,6 +519,27 @@ public class DiscoveryLogicTest {
 
         expect(new DiscoveredThing("xxx.skydiver", "OCCUPATION", "text", "", "FOO", 400L, new MapWritable()));
         expect(new DiscoveredThing("yyy.skydiver", "OCCUPATION", "text", "", "FOO", 400L, new MapWritable()));
+
+        assertQueryResults();
+    }
+
+    @Test
+    public void testValuesOnlyForLiterals() throws Exception {
+        givenQuery("bbc OR onyx");
+        givenStartDate("20130101");
+        givenEndDate("20130102");
+        givenParameter(DiscoveryLogic.SUM_COUNTS, "true");
+        givenParameter(DiscoveryLogic.VALUES_ONLY, "true");
+
+        // expect(new DiscoveredThing("bbc", "NETWORK", "csv", "", "FOO", 480L, new MapWritable()));
+        // expect(new DiscoveredThing("onyx", "POKEMON", "csv", "", "FOO", 110L, new MapWritable()));
+        // expect(new DiscoveredThing("onyx", "ROCK", "csv", "", "FOO", 4L, new MapWritable()));
+        // expect(new DiscoveredThing("onyx", "ROOSTER", "csv", "", "BAR", 240L, new MapWritable()));
+
+        expect(new DiscoveredThing("bbc", "", "", "", "FOO", 0L, new MapWritable()));
+        expect(new DiscoveredThing("onyx", "", "", "", "FOO", 0L, new MapWritable()));
+        expect(new DiscoveredThing("onyx", "", "", "", "FOO", 0L, new MapWritable()));
+        expect(new DiscoveredThing("onyx", "", "", "", "BAR", 0L, new MapWritable()));
 
         assertQueryResults();
     }
