@@ -14,7 +14,7 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 
 /**
- * Holds stats for document iterators by extending {@link DocIterStats} and also tracks total wall clock time and how many results were found
+ * Tracks timing information for the {@link datawave.next.DocIdQueryIterator} and also tracks how many candidates were found.
  */
 public class DocIdQueryIterStats implements KryoSerializable, Serializable {
 

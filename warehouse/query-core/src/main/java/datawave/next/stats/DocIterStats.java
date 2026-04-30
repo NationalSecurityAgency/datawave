@@ -20,7 +20,7 @@ import com.google.common.base.Preconditions;
  * <li>{@link datawave.next.RegexDocIdIterator}</li>
  * <li>{@link datawave.next.ListDocIdIterator}</li>
  * </ul>
- * These stats are ultimately merged into the {@link DocIdQueryIterStats} and returned to the client.
+ * Per iterator stats are merged into a single stats instance and returned to the client.
  */
 public class DocIterStats implements KryoSerializable, Serializable {
 

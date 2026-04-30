@@ -4,9 +4,13 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.KryoSerializable;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 
+/**
+ * Serializer for {@link CandidateResult} that implement native {@link KryoSerializable} methods
+ */
 public class CandidateResultSerializer {
 
     private final Kryo kryo = new Kryo();

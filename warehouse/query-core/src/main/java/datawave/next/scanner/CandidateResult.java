@@ -24,6 +24,8 @@ public class CandidateResult implements KryoSerializable {
 
     @Override
     public void write(Kryo kryo, Output output) {
+        // serialize the document keys
+        // in practice the count, row, and column families are written
         if (candidates == null) {
             output.writeInt(0, true);
         } else {
