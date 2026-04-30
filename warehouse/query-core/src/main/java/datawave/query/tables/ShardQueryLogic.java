@@ -1188,6 +1188,11 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
             config.setBypassAccumulo(bypassAccumuloBool);
         }
 
+        String dsEnabled = settings.findParameter(QueryParameters.DS_ENABLED).getParameterValue().trim();
+        if (StringUtils.isNotBlank(dsEnabled)) {
+            config.setUseDocumentScheduler(Boolean.parseBoolean(dsEnabled));
+        }
+
         // Get the DATE_INDEX_TIME_TRAVEL parameter if given
         String dateIndexTimeTravelString = settings.findParameter(QueryOptions.DATE_INDEX_TIME_TRAVEL).getParameterValue().trim();
         if (StringUtils.isNotBlank(dateIndexTimeTravelString)) {
