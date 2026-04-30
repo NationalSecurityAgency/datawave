@@ -122,7 +122,7 @@
         <version.jython>2.7.2b2</version.jython>
         <version.kryo>2.20</version.kryo>
         <version.kryonet>2.20</version.kryonet>
-        <version.log4j>2.25.3</version.log4j>
+        <version.log4j>2.25.4</version.log4j>
         <version.lucene>7.5.0</version.lucene>
         <version.metrics-cdi>1.6.0</version.metrics-cdi>
         <version.minlog>1.2</version.minlog>
