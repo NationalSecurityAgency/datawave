@@ -2,14 +2,9 @@ package datawave.webservice.query.limit;
 
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.SortedSet;
-import java.util.regex.Pattern;
-import java.util.regex.PatternSyntaxException;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 /**
@@ -30,61 +25,9 @@ public class UserLimitProvider {
         this.defaultUserQueryLimit = defaultUserQueryLimit;
         this.maxCacheSize = maxCacheSize;
         if (configs != null && !configs.isEmpty()) {
-            validateConfigs(configs);
             populateLimits(configs, groupLimitProvider);
         } else {
             this.customLimits = Map.of();
-        }
-    }
-
-    /**
-     * Validate the given configurations.
-     *
-     * @param configs
-     *            the configurations to validate
-     */
-    private void validateConfigs(Collection<UserLimitConfiguration> configs) {
-        Set<String> userDns = new HashSet<>();
-        for (UserLimitConfiguration config : configs) {
-            // Verify that a user dn was given.
-            String userDn = config.getUserDn();
-            if (StringUtils.isBlank(userDn)) {
-                throw new IllegalArgumentException("User query limit configuration given with blank user DN");
-            }
-
-            // Verify we have not seen a configuration with the user dn before.
-            if (userDns.contains(userDn)) {
-                throw new IllegalArgumentException("Multiple query limit configurations specified for user '" + userDn + "'");
-            } else {
-                userDns.add(userDn);
-            }
-
-            // Verify that if the user query limit was overridden, it is not negative.
-            if (config.getQueryLimit() != null && config.getQueryLimit() < 0) {
-                throw new IllegalArgumentException("Negative user query limit given for user '" + userDn + "'");
-            }
-
-            // Verify that no invalid group name patterns were provided.
-            Map<String,Integer> groupLimits = config.getQueryLogicGroupLimits();
-            if (groupLimits != null) {
-                for (Map.Entry<String,Integer> entry : groupLimits.entrySet()) {
-                    String groupPattern = entry.getKey();
-                    if (StringUtils.isBlank(groupPattern)) {
-                        throw new IllegalArgumentException("User group query limit configuration given with blank group pattern for user '" + userDn + "'");
-                    }
-                    if (!groupPattern.equals(QueryLimitConstants.ASTERISK)) {
-                        try {
-                            Pattern.compile(groupPattern);
-                        } catch (PatternSyntaxException e) {
-                            throw new IllegalArgumentException("Invalid query logic group name pattern: " + groupPattern + " given for user " + userDn, e);
-                        }
-                    }
-                    Integer limit = entry.getValue();
-                    if (limit < 0) {
-                        throw new IllegalArgumentException("Negative query logic group limit given for user '" + userDn + "': " + limit);
-                    }
-                }
-            }
         }
     }
 
@@ -138,5 +81,15 @@ public class UserLimitProvider {
 
     public UserLimits getCustomLimits(String userDn) {
         return customLimits.get(userDn);
+    }
+
+    /**
+     * Clean up this {@link UserLimitProvider} and release its underlying resources.
+     */
+    public void cleanUp() {
+        if (customLimits != null) {
+            customLimits.clear();
+            customLimits = null;
+        }
     }
 }

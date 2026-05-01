@@ -1,7 +1,6 @@
 package datawave.webservice.query.limit;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,61 +19,6 @@ class QueryLogicGroupLimitProviderTest {
     void tearDown() {
         provider = null;
         configs.clear();
-    }
-
-    /**
-     * Verify that configurations with blank group names are forbidden.
-     */
-    @Test
-    void testConfigWithBlankGroupName() {
-        givenConfig(" ", "TLDQueryLogic", 50);
-
-        assertThatThrownBy(this::initProvider).isInstanceOf(IllegalArgumentException.class)
-                        .hasMessage("Query logic group limit configuration given with blank group name");
-    }
-
-    /**
-     * Verify that multiple configurations with the same group name are forbidden.
-     */
-    @Test
-    void testMultipleConfigsWithSameGroupName() {
-        givenConfig("TLD", "TLDQueryLogic", 50);
-        givenConfig("TLD", "TLD*", 25);
-
-        assertThatThrownBy(this::initProvider).isInstanceOf(IllegalArgumentException.class)
-                        .hasMessage("Multiple query logic group configurations given with group name 'TLD'");
-    }
-
-    /**
-     * Verify that configurations with negative limits are forbidden.
-     */
-    @Test
-    void testConfigWithNegativeLimit() {
-        givenConfig("TLD", "TLDQueryLogic", -1);
-
-        assertThatThrownBy(this::initProvider).isInstanceOf(IllegalArgumentException.class).hasMessage("Negative limit given for query logic group 'TLD'");
-    }
-
-    /**
-     * Verify that configurations with blank query logic patterns are forbidden.
-     */
-    @Test
-    void testConfigWithBlankQueryLogicPattern() {
-        givenConfig("TLD", " ", 50);
-
-        assertThatThrownBy(this::initProvider).isInstanceOf(IllegalArgumentException.class)
-                        .hasMessage("Blank query logic pattern given for query logic group 'TLD'");
-    }
-
-    /**
-     * Verify that query logic patterns that cannot be compiled are forbidden.
-     */
-    @Test
-    void testConfigWithUncompilableQueryLogicPattern() {
-        givenConfig("TLD", "TLD[", 50);
-
-        assertThatThrownBy(this::initProvider).isInstanceOf(IllegalArgumentException.class)
-                        .hasMessage("Invalid regex in query logic pattern 'TLD[' for query logic group 'TLD'");
     }
 
     /**

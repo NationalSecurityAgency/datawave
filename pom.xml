@@ -56,6 +56,7 @@
         <version.arquillian-weld-ee-embedded>1.0.0.Final</version.arquillian-weld-ee-embedded>
         <version.assertj>3.20.2</version.assertj>
         <version.avro>1.11.4</version.avro>
+        <version.awaitutility>4.3.0</version.awaitutility>
         <version.byte-buddy>1.14.11</version.byte-buddy>
         <version.caffeine>3.1.0</version.caffeine>
         <version.commons-beanutils>1.9.4</version.commons-beanutils>
@@ -117,6 +118,7 @@
         <version.jjwt>0.11.2</version.jjwt>
         <version.json>20231013</version.json>
         <version.jts>1.19.0</version.jts>
+        <version.junit-pioneer>2.3.0</version.junit-pioneer>
         <version.junit4>4.13.2</version.junit4>
         <version.junit5>5.12.0</version.junit5>
         <version.junit5.platform>1.12.0</version.junit5.platform>
@@ -209,6 +211,16 @@
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-databind</artifactId>
+                <version>${version.jackson}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.dataformat</groupId>
+                <artifactId>jackson-dataformat-xml</artifactId>
+                <version>${version.jackson}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.dataformat</groupId>
+                <artifactId>jackson-dataformat-yaml</artifactId>
                 <version>${version.jackson}</version>
             </dependency>
             <dependency>
@@ -1138,6 +1150,11 @@
                 </exclusions>
             </dependency>
             <dependency>
+                <groupId>org.awaitility</groupId>
+                <artifactId>awaitility</artifactId>
+                <version>${version.awaitutility}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.eclipse.emf</groupId>
                 <artifactId>org.eclipse.emf.common</artifactId>
                 <version>${version.eclipse.emf}</version>
@@ -1467,6 +1484,12 @@
                 <groupId>org.jboss.weld</groupId>
                 <artifactId>weld-core</artifactId>
                 <version>${version.weld-test}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.junit-pioneer</groupId>
+                <artifactId>junit-pioneer</artifactId>
+                <version>${version.junit-pioneer}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>

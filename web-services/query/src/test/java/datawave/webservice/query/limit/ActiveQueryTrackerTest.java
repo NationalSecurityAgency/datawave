@@ -26,7 +26,7 @@ class ActiveQueryTrackerTest {
     @BeforeEach
     void setUp() throws Exception {
         server = new TestingServer();
-        tracker = new ActiveQueryTracker(server.getConnectString(), 120000);
+        tracker = new ActiveQueryTracker(server.getConnectString(), 120000L);
     }
 
     @AfterEach

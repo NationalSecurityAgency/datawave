@@ -5,23 +5,33 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.log4j.Logger;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig;
 
+import com.google.common.base.Preconditions;
+
 /**
  * This class is responsible for determining if any concurrent query limits are going to be exceeded for a user, system, or query logic when a new query is
- * submitted.
+ * submitted. It is expected that only a singleton instance of {@link QueryLimiter} will be created via CDI.
  */
 public class QueryLimiter {
 
     private static final Logger log = Logger.getLogger(QueryLimiter.class);
 
+    // The default string to use as a system name when no system is provided with a query.
+    public static final String EMPTY_SYSTEM_FROM = "EMPTY_SYSTEM_FROM";
+
+    // A lock that will guard access to the query limit configuration and the limit providers.
+    private final Lock configLock = new ReentrantLock();
+
     // The string to use to connect to zookeeper.
     private String zookeeperConfig;
 
     // The configuration to initialize the limit providers with.
-    private QueryLimitConfiguration configuration;
+    private ImmutableQueryLimitConfiguration configuration;
 
     // A cache to store heartbeats of active queries within.
     private QueryHeartbeatCache heartbeatCache;
@@ -38,7 +48,11 @@ public class QueryLimiter {
     // The tracker responsible for interfacing with Zookeeper.
     private ActiveQueryTracker activeQueryTracker;
 
-    public static final String EMPTY_SYSTEM_FROM = "EMPTY_SYSTEM_FROM";
+    // The config reloader responsible for notifying the query limiter when there are updates to the configuration.
+    private QueryLimitConfigReloader configReloader;
+
+    // Whether the limiter is currently in a state where it can provide limits
+    private boolean canProvideLimits = false;
 
     /**
      * Return the zookeeper connection string.
@@ -60,24 +74,141 @@ public class QueryLimiter {
     }
 
     /**
-     * Set the configuration to use to set up this {@link QueryLimiter}
+     * Set the config reloader that will notify this {@link QueryLimiter} of configuration updates.
      *
-     * @param queryLimitConfiguration
-     *            the config
+     * @param configReloader
+     *            the configuration reloader
      */
-    public void setConfiguration(QueryLimitConfiguration queryLimitConfiguration) {
-        this.configuration = queryLimitConfiguration;
+    public void setConfigReloader(QueryLimitConfigReloader configReloader) {
+        this.configReloader = configReloader;
     }
 
     /**
-     * Return the configuration used to set up this {@link QueryLimiter}
+     * Update the configuration for this {@link QueryLimiter}. The configuration will be validated if indicated, and the internal configuration and limit
+     * providers will be recreated to reflect the new configuration.
+     *
+     * @param configuration
+     *            the configuration to set
+     * @param validationRequired
+     *            whether the configuration should be validated before updating the internal providers
+     */
+    private void updateConfiguration(QueryLimitConfiguration configuration, boolean validationRequired) {
+        Preconditions.checkNotNull(configuration, "configuration must not be null");
+
+        configLock.lock();
+        try {
+            // If validation is required, do so.
+            if (validationRequired) {
+                QueryLimitConfigurationValidator.validate(configuration);
+            }
+
+            if (log.isDebugEnabled()) {
+                log.debug("Updating configuration to " + configuration);
+            }
+
+            try {
+                // Update the configuration.
+                this.configuration = new ImmutableQueryLimitConfiguration(configuration);
+
+                // Recreate the query logic group provider.
+                if (this.queryLogicGroupLimitProvider != null) {
+                    try {
+                        this.queryLogicGroupLimitProvider.cleanUp();
+                    } catch (Exception e) {
+                        log.warn("Failed to clean up query logic group limit provider");
+                    }
+                    // Make this null so that if recreating the provider fails for some reason, canProvideLimits() will return false.
+                    this.queryLogicGroupLimitProvider = null;
+                }
+                this.queryLogicGroupLimitProvider = new QueryLogicGroupLimitProvider(configuration.getInternalCacheMaxSize(),
+                                configuration.getQueryLogicGroupConfigs());
+
+                // Recreate the user limit provider.
+                if (this.userLimitProvider != null) {
+                    try {
+                        this.userLimitProvider.cleanUp();
+                    } catch (Exception e) {
+                        log.warn("Failed to clean up user limit provider");
+                    }
+                    // Make this null so that if recreating the provider fails for some reason, canProvideLimits() will return false.
+                    this.userLimitProvider = null;
+                }
+                this.userLimitProvider = new UserLimitProvider(configuration.getDefaultUserQueryLimit(), configuration.getInternalCacheMaxSize(),
+                                configuration.getUserConfigs(), queryLogicGroupLimitProvider);
+
+                // Recreate the system limit provider.
+                if (this.systemLimitProvider != null) {
+                    try {
+                        this.systemLimitProvider.cleanUp();
+                    } catch (Exception e) {
+                        log.warn("Failed to clean up system limit provider");
+                    }
+                    // Make this null so that if recreating the provider fails for some reason, canProvideLimits() will return false.
+                    this.systemLimitProvider = null;
+                }
+                this.systemLimitProvider = new SystemLimitProvider(configuration.getDefaultSystemQueryLimit(), configuration.getInternalCacheMaxSize(),
+                                configuration.getSystemConfigs(), queryLogicGroupLimitProvider);
+
+                log.debug("Configuration updated and internal limit providers recreated");
+            } catch (Exception e) {
+                log.error("Failed to update configuration", e);
+            }
+
+            // Update whether this limiter can provide limits.
+            this.canProvideLimits = this.configuration != null && this.queryLogicGroupLimitProvider != null && this.userLimitProvider != null
+                            && this.systemLimitProvider != null;
+        } finally {
+            configLock.unlock();
+        }
+    }
+
+    /**
+     * Set the configuration for the {@link QueryLimiter} if and only if the configuration for the limiter is currently null. Throws an
+     * {@link IllegalStateException} otherwise. This method exists primarily to support initial CDI injection during startup, and it is expected that
+     * {@link #setup()} will be called to create the internal limit providers.
+     *
+     * @param queryLimitConfiguration
+     *            the config
+     *
+     * @throws NullPointerException
+     *             if the new configuration is null
+     * @throws IllegalStateException
+     *             if the internal {@link QueryLimitConfiguration} is not null.
+     */
+    public void setConfiguration(QueryLimitConfiguration queryLimitConfiguration) {
+        Preconditions.checkNotNull(queryLimitConfiguration, "configuration must not be null");
+        configLock.lock();
+        try {
+            if (this.configuration == null) {
+                this.configuration = new ImmutableQueryLimitConfiguration(queryLimitConfiguration);
+            } else {
+                throw new IllegalStateException("QueryLimitConfiguration is already set, use updateConfiguration(QueryLimitConfiguration) instead");
+            }
+        } finally {
+            configLock.unlock();
+        }
+    }
+
+    /**
+     * Return the configuration currently configured for this {@link QueryLimiter}. This will be an instance of {@link ImmutableQueryLimitConfiguration}.
      *
      * @return the config
      */
     public QueryLimitConfiguration getConfiguration() {
-        return configuration;
+        configLock.lock();
+        try {
+            return configuration;
+        } finally {
+            configLock.unlock();
+        }
     }
 
+    /**
+     * Set the {@link QueryHeartbeatCache}.
+     *
+     * @param heartbeatCache
+     *            the heartbeat cache
+     */
     public void setHeartbeatCache(QueryHeartbeatCache heartbeatCache) {
         this.heartbeatCache = heartbeatCache;
     }
@@ -88,28 +219,35 @@ public class QueryLimiter {
      */
     public void setup() {
         if (log.isDebugEnabled()) {
-            log.debug("Initializing with zookeeperConfig: '" + zookeeperConfig + "' and query limit config: " + configuration);
+            log.debug("Initializing with zookeeperConfig: '" + zookeeperConfig + "', and query limit config: " + configuration);
         }
 
-        if (this.configuration != null) {
-            if (this.configuration.getDefaultUserQueryLimit() < 1) {
-                throw new IllegalArgumentException("Default user query limit must be greater than 0");
+        configLock.lock();
+        try {
+            // If no configuration was supplied from a configured bean, attempt to load a configuration from Zookeeper.
+            if (this.configuration == null) {
+                if (this.configReloader != null) {
+                    QueryLimitConfigReloader.LoadResult loadResult = configReloader.loadConfiguration();
+                    if (loadResult.getStatus() == QueryLimitConfigReloader.ReloadStatus.SUCCESS) {
+                        // Update the configuration and create the providers. The configuration returned by the reloader will already be validated.
+                        updateConfiguration(loadResult.getConfig(), false);
+                    }
+                }
+                if (this.configReloader == null) {
+                    throw new IllegalStateException("No configuration supplied for Query Limiter via injection or Zookeeper.");
+                }
+            } else {
+                // Update the configuration and create the providers.
+                updateConfiguration(this.configuration, true);
             }
 
-            if (this.configuration.getInternalCacheMaxSize() < 1) {
-                throw new IllegalArgumentException("Internal cache max size must be greater than 0");
+            // If the configuration reloader is not null, add a listener so that this limiter will be provided with new configurations. Any configs provided by
+            // the reloader will already be validated.
+            if (configReloader != null) {
+                configReloader.addListener(((config) -> updateConfiguration(config, false)));
             }
-
-            this.queryLogicGroupLimitProvider = new QueryLogicGroupLimitProvider(configuration.getInternalCacheMaxSize(),
-                            configuration.getQueryLogicGroupConfigs());
-            this.userLimitProvider = new UserLimitProvider(configuration.getDefaultUserQueryLimit(), configuration.getInternalCacheMaxSize(),
-                            configuration.getUserConfigs(), queryLogicGroupLimitProvider);
-            this.systemLimitProvider = new SystemLimitProvider(configuration.getDefaultSystemQueryLimit(), configuration.getInternalCacheMaxSize(),
-                            configuration.getSystemConfigs(), queryLogicGroupLimitProvider);
-        } else {
-            this.queryLogicGroupLimitProvider = null;
-            this.userLimitProvider = null;
-            this.systemLimitProvider = null;
+        } finally {
+            configLock.unlock();
         }
     }
 
@@ -123,6 +261,7 @@ public class QueryLimiter {
             } catch (Exception e) {
                 log.error("Error closing heartbeat cache", e);
             }
+            this.heartbeatCache = null;
         }
         if (this.activeQueryTracker != null) {
             try {
@@ -130,6 +269,15 @@ public class QueryLimiter {
             } catch (Exception e) {
                 log.error("Error closing active query tracker", e);
             }
+            this.activeQueryTracker = null;
+        }
+        if (this.configReloader != null) {
+            try {
+                this.configReloader.close();
+            } catch (Exception e) {
+                log.error("Error closing config reloader", e);
+            }
+            this.configReloader = null;
         }
     }
 
@@ -147,29 +295,37 @@ public class QueryLimiter {
      *             if an exception occurs
      */
     public QueryLimiterResponse checkForLimits(String userDn, String system, String queryLogic) throws Exception {
-        // Cast the user DN to lowercase to ensure a consistent format.
-        userDn = userDn.trim().toLowerCase();
+        configLock.lock();
+        try {
+            Preconditions.checkState(canProvideLimits, "Cannot check for limits, configuration or providers are not initialized");
 
-        // Do not cast the system or query logic to lowercase, they will be getting matched against regex patterns.
-        queryLogic = queryLogic.trim();
+            // Cast the user DN to lowercase to ensure a consistent format.
+            userDn = userDn.trim().toLowerCase();
 
-        // Ensure the system is non-null if empty
-        if (system == null || system.isBlank()) {
-            system = EMPTY_SYSTEM_FROM;
+            // Do not cast the system or query logic to lowercase, they will be getting matched against regex patterns.
+            queryLogic = queryLogic.trim();
+
+            // Ensure the system is non-null if empty
+            if (system == null || system.isBlank()) {
+                system = EMPTY_SYSTEM_FROM;
+            }
+
+            if (log.isDebugEnabled()) {
+                log.debug("Checking limits - userDn: " + userDn + ", system: " + system + ", queryLogic: " + queryLogic);
+            }
+
+            // Check if the snapshot reveals that any limits have been met.
+            LimitChecker checker = new LimitChecker(userDn, system, queryLogic);
+            checker.checkLimits();
+            if (checker.metLimit) {
+                return QueryLimiterResponse.metLimit(checker.message);
+            } else {
+                return QueryLimiterResponse.hasNotMetLimit();
+            }
+        } finally {
+            configLock.unlock();
         }
 
-        if (log.isDebugEnabled()) {
-            log.debug("Checking limits - userDn: " + userDn + ", system: " + system + ", queryLogic: " + queryLogic);
-        }
-
-        // Check if the snapshot reveals that any limits have been met.
-        LimitChecker checker = new LimitChecker(userDn, system, queryLogic);
-        checker.checkLimits();
-        if (checker.metLimit) {
-            return QueryLimiterResponse.metLimit(checker.message);
-        } else {
-            return QueryLimiterResponse.hasNotMetLimit();
-        }
     }
 
     /**
@@ -187,22 +343,30 @@ public class QueryLimiter {
      *             if an error occurs
      */
     public void countQueryTowardsLimits(String queryId, String userDn, String system, String queryLogic) throws Exception {
-        if (log.isDebugEnabled()) {
-            log.debug("Start counting query " + queryId + " towards limits");
+        configLock.lock();
+        try {
+            Preconditions.checkState(canProvideLimits, "Cannot check for limits, configuration or providers are not initialized");
+
+            if (log.isDebugEnabled()) {
+                log.debug("Start counting query " + queryId + " towards limits");
+            }
+
+            userDn = userDn.trim().toLowerCase();
+            queryLogic = queryLogic.trim();
+            // Ensure the system is non-null if empty
+            if (system == null || system.isBlank()) {
+                system = EMPTY_SYSTEM_FROM;
+            }
+
+            boolean systemCountsTowardsUserLimits = systemLimitProvider.countsAgainstUserLimit(system);
+
+            QueryHeartbeat heartbeat = getActiveQueryTracker().trackQuery(queryId, userDn, system, queryLogic, systemCountsTowardsUserLimits);
+            // Store the heartbeat into the cache. This acts as a means to keep the connection to Zookeeper alive for the ephemeral nodes stored in the
+            // heartbeat.
+            heartbeatCache.put(heartbeat);
+        } finally {
+            configLock.unlock();
         }
-
-        userDn = userDn.trim().toLowerCase();
-        queryLogic = queryLogic.trim();
-        // Ensure the system is non-null if empty
-        if (system == null || system.isBlank()) {
-            system = EMPTY_SYSTEM_FROM;
-        }
-
-        boolean systemCountsTowardsUserLimits = systemLimitProvider.countsAgainstUserLimit(system);
-
-        QueryHeartbeat heartbeat = getActiveQueryTracker().trackQuery(queryId, userDn, system, queryLogic, systemCountsTowardsUserLimits);
-        // Store the heartbeat into the cache. This acts as a means to keep the connection to Zookeeper alive for the ephemeral nodes stored in the heartbeat.
-        heartbeatCache.put(heartbeat);
     }
 
     /**

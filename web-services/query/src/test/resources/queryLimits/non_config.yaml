@@ -1,0 +1,4 @@
+---
+# Represents an object that cannot be deserialized to a QueryLimitConfiguration.
+"property1": "value"
+"property2": "value"

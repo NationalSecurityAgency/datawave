@@ -50,4 +50,5 @@ class QueryLimiterSpringTest {
         expectedGroupConfigs.add(new QueryLogicGroupLimitConfiguration("GROUP_2", "LOGIC2.*", 25));
         assertThat(config.getQueryLogicGroupConfigs()).isEqualTo(expectedGroupConfigs);
     }
+
 }

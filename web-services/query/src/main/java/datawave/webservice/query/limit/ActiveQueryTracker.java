@@ -1,15 +1,9 @@
 package datawave.webservice.query.limit;
 
-import java.io.File;
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
@@ -17,16 +11,15 @@ import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.framework.recipes.nodes.PersistentNode;
 import org.apache.curator.retry.RetryNTimes;
-import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.data.Stat;
-import org.apache.zookeeper.server.quorum.QuorumPeer;
-import org.apache.zookeeper.server.quorum.QuorumPeerConfig;
+import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
 
 /**
- * This class provides methods for leveraging Zookeeper to track queries and their active status.
+ * This class provides methods for leveraging Zookeeper to track queries and their active status. It is expected that only one instance of an
+ * {@link ActiveQueryTracker} will exist at a time within a singleton {@link QueryLimiter}, and the Zookeeper logic herein adheres to that assumption.
  */
 public class ActiveQueryTracker implements AutoCloseable {
 
@@ -40,52 +33,30 @@ public class ActiveQueryTracker implements AutoCloseable {
     private static final String SYSTEMS_CONTAINER_PATH = "/systems";
     private static final String USERS_CONTAINER_PATH = "/users";
 
-    private final String zookeeperConfig;
-    private final long cleanUpClientInterval;
-    private final Lock clientLock = new ReentrantLock();
-
-    private CuratorFramework client;
-    private long lastClientAccess;
-    private Timer clientCleanupTimer;
+    private final CuratorFrameworkFactory.Builder clientFactory;
+    private LockedZkClientDispatcher clientDispatcher;
 
     /**
-     * Create and return a new {@link ActiveQueryTracker} instance
+     * Create and return a new {@link ActiveQueryTracker} instance.
      *
      * @param zookeeperConfig
      *            the zookeeper config
      * @param clientCleanupInterval
      *            the interval in milliseconds after which the zookeeper client should be cleaned up since its last access
-     * @throws QuorumPeerConfig.ConfigException
+     * @throws ConfigException
      *             if an error occurs when verifying the zookeeper configuration
      */
-    public ActiveQueryTracker(String zookeeperConfig, long clientCleanupInterval) throws QuorumPeerConfig.ConfigException {
-        this.zookeeperConfig = getQuorumPeerConfig(zookeeperConfig);
-        this.cleanUpClientInterval = clientCleanupInterval;
-    }
-
-    private static String getQuorumPeerConfig(String zookeeperConfig) throws QuorumPeerConfig.ConfigException {
-        URI zookeeperConfigFile;
-        try {
-            zookeeperConfigFile = new Path(zookeeperConfig).toUri();
-            if (new File(zookeeperConfigFile).exists()) {
-                QuorumPeerConfig zooConfig = new QuorumPeerConfig();
-                zooConfig.parse(zookeeperConfigFile.getPath());
-                StringBuilder sb = new StringBuilder();
-                for (QuorumPeer.QuorumServer server : zooConfig.getServers().values()) {
-                    if (sb.length() > 0) {
-                        sb.append(',');
-                    }
-                    sb.append(server.addr.getReachableOrOne().getHostName()).append(':').append(zooConfig.getClientPortAddress().getPort());
-                }
-                if (sb.length() == 0) {
-                    sb.append(zooConfig.getClientPortAddress().getHostName()).append(':').append(zooConfig.getClientPortAddress().getPort());
-                }
-                return sb.toString();
-            }
-        } catch (IllegalArgumentException e) {
-            // Try the zookeeper config as is.
-        }
-        return zookeeperConfig;
+    public ActiveQueryTracker(String zookeeperConfig, long clientCleanupInterval) throws ConfigException {
+        zookeeperConfig = ZookeeperUtils.getQuorumPeerConfig(zookeeperConfig);
+        // @formatter:off
+        clientFactory = CuratorFrameworkFactory.builder()
+                        .namespace(ZOOKEEPER_NAMESPACE)
+                        .connectString(zookeeperConfig)
+                        .sessionTimeoutMs(60000)
+                        .connectionTimeoutMs(60000)
+                        .retryPolicy(new RetryNTimes(10, 1000));
+        // @formatter:on
+        clientDispatcher = new LockedZkClientDispatcher(clientFactory, clientCleanupInterval, clientCleanupInterval, TimeUnit.MILLISECONDS);
     }
 
     /**
@@ -135,11 +106,10 @@ public class ActiveQueryTracker implements AutoCloseable {
             log.trace("Tracking query: queryId=" + queryId + ", user='" + userDn + "', system='" + system + "', queryLogic='" + queryLogic + "'");
         }
 
-        clientLock.lock();
-        try {
-            // Initialize the client if needed.
-            initClient();
+        try (LockedZkClientDispatcher.LockedClient lockedClient = clientDispatcher.getLockedClient()) {
             try {
+                CuratorFramework client = lockedClient.getClient();
+
                 // Verify we are not already tracking the query.
                 String systemQueryIdPath = getSystemQueryIdPath(system, queryLogic, queryId);
                 Stat stat = client.checkExists().forPath(systemQueryIdPath);
@@ -167,12 +137,13 @@ public class ActiveQueryTracker implements AutoCloseable {
                 }
 
                 // Create ephemeral nodes for the query ID. These nodes will not persist beyond the lifetime of the client created here.
-                CuratorFramework client = createClient();
+                CuratorFramework heartbeatClient = clientFactory.build();
+                heartbeatClient.start();
                 List<PersistentNode> nodes = new ArrayList<>();
-                nodes.add(new PersistentNode(client, CreateMode.EPHEMERAL, false, systemQueryIdPath, EMPTY_DATA, false));
+                nodes.add(new PersistentNode(heartbeatClient, CreateMode.EPHEMERAL, false, systemQueryIdPath, EMPTY_DATA, false));
                 if (systemCountsAgainstUserLimit) {
                     String userQueryIdPath = getUserQueryIdPath(userDn, queryLogic, queryId);
-                    nodes.add(new PersistentNode(client, CreateMode.EPHEMERAL, false, userQueryIdPath, EMPTY_DATA, false));
+                    nodes.add(new PersistentNode(heartbeatClient, CreateMode.EPHEMERAL, false, userQueryIdPath, EMPTY_DATA, false));
                 }
 
                 // Persist each node to Zookeeper.
@@ -188,11 +159,7 @@ public class ActiveQueryTracker implements AutoCloseable {
                 log.error("Failed to track query " + queryId, e);
                 throw e;
             }
-
-        } finally {
-            clientLock.unlock();
         }
-
         return heartbeat;
     }
 
@@ -216,7 +183,10 @@ public class ActiveQueryTracker implements AutoCloseable {
             log.trace("Fetching total queries for user='" + userDn + "', queryLogic='" + queryLogic + "'");
         }
 
-        return getTotalChildrenWithLock(getUserQueryLogicPath(userDn, queryLogic));
+        try (LockedZkClientDispatcher.LockedClient lockedClient = clientDispatcher.getLockedClient()) {
+            CuratorFramework client = lockedClient.getClient();
+            return getTotalChildrenWithLock(client, getUserQueryLogicPath(userDn, queryLogic));
+        }
     }
 
     /**
@@ -238,30 +208,29 @@ public class ActiveQueryTracker implements AutoCloseable {
             log.trace("Fetching total queries for system='" + system + "', queryLogic='" + queryLogic + "'");
         }
 
-        return getTotalChildrenWithLock(getSystemQueryLogicPath(system, queryLogic));
+        try (LockedZkClientDispatcher.LockedClient lockedClient = clientDispatcher.getLockedClient()) {
+            CuratorFramework client = lockedClient.getClient();
+            return getTotalChildrenWithLock(client, getSystemQueryLogicPath(system, queryLogic));
+        }
     }
 
     /**
      * Obtain a lock for the client and return the total children for the given path. If the path does not exist, 0 will be returned.
      *
+     * @param client
+     *            the client
      * @param path
      *            the node path
      * @return the total children
      * @throws Exception
      *             if an error occurs while scanning nodes
      */
-    private int getTotalChildrenWithLock(String path) throws Exception {
-        clientLock.lock();
+    private int getTotalChildrenWithLock(CuratorFramework client, String path) throws Exception {
         try {
-            // Initialize the client if needed.
-            initClient();
-
-            return getTotalChildren(path);
+            return getTotalChildren(client, path);
         } catch (Exception e) {
             log.error("Failed to get total children for path " + path, e);
             throw e;
-        } finally {
-            clientLock.unlock();
         }
     }
 
@@ -289,7 +258,10 @@ public class ActiveQueryTracker implements AutoCloseable {
                             + queryLogicsAlreadyCounted + ", initialTotal=" + initialTotal);
         }
 
-        return totalQueriesMeetsLimit(userDn, queryLimit, queryLogicsAlreadyCounted, initialTotal, this::getUserPath, this::getUserQueryLogicPath);
+        try (LockedZkClientDispatcher.LockedClient lockedClient = clientDispatcher.getLockedClient()) {
+            CuratorFramework client = lockedClient.getClient();
+            return totalQueriesMeetsLimit(client, userDn, queryLimit, queryLogicsAlreadyCounted, initialTotal, this::getUserPath, this::getUserQueryLogicPath);
+        }
     }
 
     /**
@@ -316,7 +288,11 @@ public class ActiveQueryTracker implements AutoCloseable {
                             + queryLogicsAlreadyCounted + ", initialTotal=" + initialTotal);
         }
 
-        return totalQueriesMeetsLimit(system, queryLimit, queryLogicsAlreadyCounted, initialTotal, this::getSystemPath, this::getSystemQueryLogicPath);
+        try (LockedZkClientDispatcher.LockedClient lockedClient = clientDispatcher.getLockedClient()) {
+            CuratorFramework client = lockedClient.getClient();
+            return totalQueriesMeetsLimit(client, system, queryLimit, queryLogicsAlreadyCounted, initialTotal, this::getSystemPath,
+                            this::getSystemQueryLogicPath);
+        }
     }
 
     /**
@@ -338,38 +314,30 @@ public class ActiveQueryTracker implements AutoCloseable {
      * @throws Exception
      *             if an error occurs while scanning nodes
      */
-    private boolean totalQueriesMeetsLimit(String owner, int limit, Set<String> queryLogicsAlreadyCounted, int initialTotal,
+    private boolean totalQueriesMeetsLimit(CuratorFramework client, String owner, int limit, Set<String> queryLogicsAlreadyCounted, int initialTotal,
                     Function<String,String> ownerPathFunction, BiFunction<String,String,String> queryLogicPathFunction) throws Exception {
-        clientLock.lock();
         try {
-            // Initialize the client if needed.
-            initClient();
-
-            try {
-                int total = initialTotal;
-                // Get the set of query logic nodes underneath the owner node.
-                List<String> queryLogics = client.getChildren().forPath(ownerPathFunction.apply(owner));
-                for (String queryLogic : queryLogics) {
-                    // If we have not already previously counted the total queries underneath the current query logic, increment the total by the number of
-                    // queries for the current query logic.
-                    if (!queryLogicsAlreadyCounted.contains(queryLogic)) {
-                        String queryLogicPath = queryLogicPathFunction.apply(owner, queryLogic);
-                        total += getTotalChildren(queryLogicPath);
-                        // If the total is equal to or greater than the limit, return true.
-                        if (total >= limit) {
-                            return true;
-                        }
+            int total = initialTotal;
+            // Get the set of query logic nodes underneath the owner node.
+            List<String> queryLogics = client.getChildren().forPath(ownerPathFunction.apply(owner));
+            for (String queryLogic : queryLogics) {
+                // If we have not already previously counted the total queries underneath the current query logic, increment the total by the number of
+                // queries for the current query logic.
+                if (!queryLogicsAlreadyCounted.contains(queryLogic)) {
+                    String queryLogicPath = queryLogicPathFunction.apply(owner, queryLogic);
+                    total += getTotalChildren(client, queryLogicPath);
+                    // If the total is equal to or greater than the limit, return true.
+                    if (total >= limit) {
+                        return true;
                     }
                 }
-            } catch (KeeperException.NoNodeException e) {
-                // If this exception occurs, the owner node does not exist. There are no active queries for the owner. Simply return false.
-                return false;
-            } catch (Exception e) {
-                log.error("Failed to count total queries for owner='" + owner + "'", e);
-                throw e;
             }
-        } finally {
-            clientLock.unlock();
+        } catch (KeeperException.NoNodeException e) {
+            // If this exception occurs, the owner node does not exist. There are no active queries for the owner. Simply return false.
+            return false;
+        } catch (Exception e) {
+            log.error("Failed to count total queries for owner='" + owner + "'", e);
+            throw e;
         }
 
         return false;
@@ -378,13 +346,15 @@ public class ActiveQueryTracker implements AutoCloseable {
     /**
      * Return the total number of children for the path. If the path does not exist, 0 will be returned.
      *
+     * @param client
+     *            the client
      * @param path
      *            the path
      * @return the total number of children
      * @throws Exception
      *             if an error occurs while scanning nodes
      */
-    private int getTotalChildren(String path) throws Exception {
+    private int getTotalChildren(CuratorFramework client, String path) throws Exception {
         try {
             Stat stat = client.checkExists().forPath(path);
             if (stat == null) {
@@ -407,10 +377,9 @@ public class ActiveQueryTracker implements AutoCloseable {
         if (log.isTraceEnabled()) {
             log.trace("Fetching distinct query logics");
         }
-        clientLock.lock();
-        try {
-            // Initialize the client if needed.
-            initClient();
+
+        try (LockedZkClientDispatcher.LockedClient lockedClient = clientDispatcher.getLockedClient()) {
+            CuratorFramework client = lockedClient.getClient();
             // If any query logics were tracked, return them.
             Stat stat = client.checkExists().forPath(DISTINCT_QUERY_LOGICS_CONTAINER_PATH);
             if (stat != null) {
@@ -422,8 +391,6 @@ public class ActiveQueryTracker implements AutoCloseable {
         } catch (Exception e) {
             log.error("Failed to fetch distinct query logics", e);
             throw new ActiveQueryException(e);
-        } finally {
-            clientLock.unlock();
         }
     }
 
@@ -516,101 +483,15 @@ public class ActiveQueryTracker implements AutoCloseable {
         return getSystemQueryLogicPath(system, queryLogic) + "/" + queryId;
     }
 
-    /**
-     * Initialize the zookeeper client and cleanup timer if not already initialize. Calling this method will update the last time the client was accessed to the
-     * current time.
-     */
-    private void initClient() {
-        if (client == null) {
-            clientLock.lock();
-            try {
-                // @formatter:off
-                client = createClient();
-                if (cleanUpClientInterval > 0) {
-                    createCleanupTimer();
-                }
-            } finally {
-                clientLock.unlock();
-            }
-        }
-        // Update the last time the client was accessed.
-        lastClientAccess = System.currentTimeMillis();
-    }
-
-    /**
-     * Return a new zookeeper client targeting the namespace {@value #ZOOKEEPER_NAMESPACE}.
-     * @return the client
-     */
-    private CuratorFramework createClient() {
-        CuratorFramework client = CuratorFrameworkFactory.builder()
-                        .namespace(ZOOKEEPER_NAMESPACE)
-                        .connectString(zookeeperConfig)
-                        .sessionTimeoutMs(60000)
-                        .connectionTimeoutMs(60000)
-                        .retryPolicy(new RetryNTimes(10, 1000))
-                        .build();
-
-        // @formatter:on
-        client.start();
-        return client;
-    }
-
-    /**
-     * Create the cleanup timer.
-     */
-    private void createCleanupTimer() {
-        if (clientCleanupTimer == null) {
-            clientCleanupTimer = new Timer("Zookeeper Client Cleanup");
-        }
-
-        clientCleanupTimer.schedule(new TimerTask() {
-            @Override
-            public void run() {
-                if (lastClientAccess + cleanUpClientInterval <= System.currentTimeMillis()) {
-                    cancel();
-                } else if (client == null) {
-                    cancel();
-                }
-            }
-        }, cleanUpClientInterval, cleanUpClientInterval);
-    }
-
-    /**
-     * Clean up the underlying resources used by this {@link ActiveQueryTracker}.
-     */
-    public void cleanup() {
-        closeClientAndTimer();
-    }
-
-    /**
-     * Close the client and clean up timer, and nullify them.
-     */
-    private void closeClientAndTimer() {
-        if (client != null) {
-            clientLock.lock();
-            try {
-                if (clientCleanupTimer != null) {
-                    clientCleanupTimer.cancel();
-                    clientCleanupTimer = null;
-                }
-                if (client != null) {
-                    try {
-                        client.close();
-                    } finally {
-                        client = null;
-                    }
-                }
-            } finally {
-                clientLock.unlock();
-            }
-        }
-    }
-
-    /**
-     * Close this {@link ActiveQueryTracker} and call {@link #cleanup()}.
-     */
     @Override
-    public void close() {
-        cleanup();
+    public void close() throws Exception {
+        if (clientDispatcher != null) {
+            try {
+                clientDispatcher.close();
+            } catch (Exception e) {
+                log.error("Failed to close client dispatcher", e);
+            }
+            clientDispatcher = null;
+        }
     }
 }

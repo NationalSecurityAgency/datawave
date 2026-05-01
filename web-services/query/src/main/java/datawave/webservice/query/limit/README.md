@@ -47,6 +47,37 @@ When using regex patterns in the configurations above, there is the possibility 
 2. Partial regex (non-wildcard-only): If we cannot find an exact match, then we attempt to find all partial matches, and see if any of their limits are met, checking against the lowest limits first.
 3. Wildcard-only regex: In the case of no exact or partial matches, we use the wildcard match with the lowest limit.
 
+## Dynamic Configuration Updates
+
+The configuration for the `QueryLimiter` may be updated dynamically through Zookeeper. When the `QueryLimiter` is configured with a [QueryLimitConfigReloader](QueryLimitConfigReloader.java), it will register a listener with the reloader. When the reloader receives a triggering event, it will attempt to load a new `QueryLimitConfiguration` from a file who's filepath is specified in Zookeeper, and provide the configuration (if valid) to any listeners.
+
+The `QueryLimitConfigReloader` will operate on nodes in Zookeeper under the namespace `QueryLimitConfig`. When a reload is triggered, it will load a new `QueryLimitConfigration` from the file URL in the data of the node `/path`. A reload will be triggered if any of the following events happen:
+- The node `/path` is created with non-empty data, or modified with new non-empty data.
+- The node `/trigger` is created, modified, or deleted.
+
+The data of the node `/path` should be set to the file URL of a JSON, XML, or YAML file that can be deserialized to a `QueryLimitConfiguration`. The URL may have the URI schemes `http:`, `https:`,`hdfs:`, or `file:`. In the case of no scheme, the file will be loaded from the local filesystem. After a reload attempt, the following nodes will be created/updated:
+
+```
+/attempts/<serverIpAddress>/status # The status of the latest reload attempt.
+/attempts/<serverIpAddress>/cause  # The triggering cause of the latest reload attempt.
+/attempts/<serverIpAddress>/time   # The time of the latest reload attempt in ISO-8601 format.
+/attempts/<serverIpAddress>/errors # A node containing children whose data contains brief descriptions about errors that occurred. Exists only when an error occurred.
+```
+
+The data of the node `/attempts/<serverIpAddress>/status` will be one of the following:
+- `SUCCESS`: Indicates a valid `QueryLimitConfiguration` was loaded from the file and supplied to all configured listeners.
+- `LISTENER_ERROR`: Indicates a valid `QueryLimitConfiguration` was loaded from the file, but one or more listeners threw an exception when provided the configuration.
+- `RELOAD_ERROR`: Indicates a valid `QueryLimitConfiguration` could not be loaded.
+
+The data of the node `/attempts/<serverIpAddress>/cause` will be one of the following:
+- `PATH_NODE_CREATED`: The reload was triggered by the creation of the node `/path` with non-empty data.
+- `PATH_NODE_MODIFIED`: The reload was triggered by the modification of the node `/path` with non-empty data.
+- `TRIGGER_NODE_CREATED`: The reload was triggered by the creation of the node `/trigger`.
+- `TRIGGER_NODE_MODIFIED`: The reload was triggered by the modification of the node `/trigger`.
+- `TRIGGER_NODE_DELETED`: The reload was triggered by the deletion of the node `/trigger`.
+
+The node `/attempts/<serverIpAddress>/errors` will contain children with names following the format `/error_<X>` where X is a value from `0` to one less than the total errors that were recorded. The data of each error node will contain brief descriptions of the error that occurred. The full stack trace will be available in the logs.
+
 ## Implementation
 
 Checking limits and marking as active/inactive is done through the [QueryLimiter](QueryLimiter.java) class. The three main methods for interacting with the query limit feature are:
@@ -70,7 +101,7 @@ When a query is marked as active via `QueryLimiter.countQueryTowardsLimits()`, i
 
 `ActiveQueryTracker.trackQuery()` will return a [QueryHeartbeat](QueryHeartbeat.java) instance that contain a list of `PersistentNode` (provided by the Apache Curator library) wrappers around the ephemeral nodes listed above. The `QueryHeartbeat` will maintain the connection  to Zookeeper and attempt to keep the ephemeral nodes present in Zookeeper until `QueryHeartbeat.stop()` is called. If `QueryHeartbeat.stop()` is called, or the webserver crashes, the ephemeral nodes will automatically be deleted by Zookeeper.
 
-The following HTTP status codes have been added for responses from the webserver:
+The following HTTP status codes are available for responses from the webserver:
 ```
 412-20  - Concurrent query limit exceeded
 500-164 - Error checking concurrent query limits

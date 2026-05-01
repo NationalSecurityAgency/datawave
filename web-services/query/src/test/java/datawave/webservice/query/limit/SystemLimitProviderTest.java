@@ -1,7 +1,6 @@
 package datawave.webservice.query.limit;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,74 +24,6 @@ class SystemLimitProviderTest {
         provider = null;
         systemConfigs.clear();
         groupConfigs.clear();
-    }
-
-    /**
-     * Verify that configurations with blank system patterns are forbidden.
-     */
-    @Test
-    void testConfigWithBlankSystemPattern() {
-        givenSystemConfig(" ", 10, true, null);
-
-        assertThatThrownBy(this::initProvider).isInstanceOf(IllegalArgumentException.class)
-                        .hasMessage("System query limit configuration specified with blank system pattern");
-    }
-
-    /**
-     * Verify that configurations with regex system patterns that cannot be compiled are forbidden.
-     */
-    @Test
-    void testConfigWithUncompilableSystemPattern() {
-        givenSystemConfig("SYS[", 10, true, null);
-
-        assertThatThrownBy(this::initProvider).isInstanceOf(IllegalArgumentException.class).hasMessage("Invalid regex in system pattern 'SYS['");
-    }
-
-    /**
-     * Verify that multiple configurations using the same system patterns are forbidden.
-     */
-    @Test
-    void testMultipleConfigsWithSameSystemPattern() {
-        givenSystemConfig("SYSTEM_01*", 10, true, null);
-        givenSystemConfig("SYSTEM_01*", 10, true, null);
-
-        assertThatThrownBy(this::initProvider).isInstanceOf(IllegalArgumentException.class)
-                        .hasMessage("Multiple query limit configurations specified with system pattern 'SYSTEM_01*'");
-    }
-
-    /**
-     * Verify that configurations with conflicting system patterns that are equivalent exact matches are forbidden.
-     */
-    @Test
-    void testEquivalentExactMatchPatterns() {
-        givenSystemConfig("SYSTEM_01", 10, true, null); // Literals only.
-        givenSystemConfig("SYSTEM\\_01", 10, true, null); // Literals and escaped literals.
-
-        assertThatThrownBy(this::initProvider).isInstanceOf(IllegalArgumentException.class)
-                        .hasMessage("System pattern 'SYSTEM\\_01' will resolve to an exact match that is equivalent to system pattern 'SYSTEM_01' from "
-                                        + "another system configuration.");
-    }
-
-    /**
-     * Verify that configurations with an implied wildcard system pattern {@code *} that are configured to not apply to user limits are forbidden.
-     */
-    @Test
-    void testImpliedWildcardSystemPatternThatDoesNotApplyToUserLimit() {
-        givenSystemConfig("*", 10, false, null);
-
-        assertThatThrownBy(this::initProvider).isInstanceOf(IllegalArgumentException.class)
-                        .hasMessage("System pattern '*' is wildcard-only and may not be used to override whether queries count against user limits to false");
-    }
-
-    /**
-     * Verify that configurations with an explicit wildcard system pattern that are configured to not apply to user limits are forbidden.
-     */
-    @Test
-    void testExplicitWildcardSystemPatternThatDoesNotApplyToUserLimit() {
-        givenSystemConfig(".*", 10, false, null);
-
-        assertThatThrownBy(this::initProvider).isInstanceOf(IllegalArgumentException.class)
-                        .hasMessage("System pattern '.*' is wildcard-only and may not be used to override whether queries count against user limits to false");
     }
 
     /**

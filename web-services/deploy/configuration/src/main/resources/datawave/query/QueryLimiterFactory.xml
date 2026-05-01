@@ -146,10 +146,28 @@
         <property name="cleanupUnit" value="MINUTES"/>
     </bean>
 
-    <!-- Configuration for the QueryLimiter. -->
+    <!-- Configuration for the QueryLimitConfigReloader.
+        - zookeeperConfigs: A comma-delimited list of Zookeeper hosts, or a path to a zookeeper config file, e.g., host:2181,host2:2181, or
+            file:///opt/datawave/zookeeper-warehouse/conf/zoo.cfg
+        - hdfsConfigUrls: A comma-delimited list of HDFS configuration files, e.g.
+            file:///opt/datawave/hadoop-warehouse/conf/core-site.xml,file:///opt/datawave/hadoop-warehouse/conf/hdfs-site.xml
+    -->
+    <bean id="queryLimitReloader" class="datawave.webservice.query.limit.QueryLimitConfigReloader" init-method="setup" destroy-method="shutdown">
+        <property name="zookeeperConfig" value="${zookeeper.hosts}"/>
+        <property name="hdfsConfigUrls" value="${hdfs.site.config.urls}"/>
+    </bean>
+
+    <!-- Configuration for the QueryLimiter.
+        - zookeeperConfigs: A comma-delimited list of Zookeeper hosts, or a path to a zookeeper config file, e.g., host:2181,host2:2181, or
+            file:///opt/datawave/zookeeper-warehouse/conf/zoo.cfg
+        - configuration: The reference to the target configuration bean
+        - heartbeatCache: The reference to the heartbeat cache
+        - configReloader: The reference to the config reloader
+    -->
     <bean id="queryLimiter" class="datawave.webservice.query.limit.QueryLimiter" init-method="setup" destroy-method="shutdown">
         <property name="zookeeperConfig" value="${zookeeper.hosts}"/>
         <property name="configuration" ref="queryLimitConfiguration"/>
         <property name="heartbeatCache" ref="queryHeartbeatCache"/>
+        <property name="configReloader" ref="queryLimitReloader"/>
     </bean>
 </beans>

@@ -2,16 +2,29 @@ package datawave.webservice.query.limit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.CuratorFrameworkFactory;
+import org.apache.curator.retry.RetryNTimes;
 import org.apache.curator.test.TestingServer;
+import org.apache.zookeeper.server.quorum.QuorumPeerConfig;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -27,10 +40,38 @@ class QueryLimiterTest {
     private static final String tldQueryLogic = "TLDQueryLogic";
     private static final String eventQueryLogic = "EventQueryLogic";
 
+    private static String validJsonFile;
+
     private final Map<String,QueryLimiter> systemToLimiter = new HashMap<>();
     private QueryHeartbeatCache heartbeatCache;
     private QueryLimitConfiguration config;
     private TestingServer server;
+
+    @BeforeAll
+    static void beforeAll() throws Exception {
+        ClassLoader classLoader = QueryLimitConfigReloaderTest.class.getClassLoader();
+        validJsonFile = getAbsolutePath(classLoader, "queryLimits/valid_config.json");
+    }
+
+    /**
+     * Return the absolute path for the given file as resolved by the classloader.
+     *
+     * @param classLoader
+     *            the classloader
+     * @param relativePath
+     *            the relative path
+     * @return the absolute path
+     * @throws URISyntaxException
+     *             if the URL cannot be converted to a URI
+     */
+    private static String getAbsolutePath(ClassLoader classLoader, String relativePath) throws URISyntaxException {
+        URL url = classLoader.getResource(relativePath);
+        if (url != null) {
+            return Paths.get(url.toURI()).toAbsolutePath().toString();
+        } else {
+            throw new NullPointerException("Null URL returned for relative path '" + relativePath);
+        }
+    }
 
     @BeforeEach
     void setUp() throws Exception {
@@ -43,16 +84,14 @@ class QueryLimiterTest {
         heartbeatCache.shutdown();
         systemToLimiter.clear();
         config = null;
-        if (server != null) {
-            server.close();
-        }
+        server.close();
     }
 
     /**
-     * Verify {@link QueryLimiter#setup()} throws an exception if given a default user query limit less than 1.
+     * Verify {@link QueryLimiter#setup()} throws an exception if the query validation fails when a configuration is initially supplied via injection.
      */
     @Test
-    void testDefaultUserQueryLimitLessThanOne() {
+    void testConfigurationFailsValidation() {
         QueryLimiter limiter = new QueryLimiter();
         limiter.setZookeeperConfig(server.getConnectString());
 
@@ -64,20 +103,24 @@ class QueryLimiterTest {
     }
 
     /**
-     * Verify {@link QueryLimiter#setup()} throws an exception if given a default internal max cache size less than 1.
+     * Verify that {@link QueryLimiter#setup()} will load a configuration from zookeeper if one was not supplied via injection.
      */
     @Test
-    void testDefaultQueryLimitLessThanOne() {
+    void testInitialConfigurationSuppliedByZookeeper() throws Exception {
+        QueryLimitConfigReloader reloader = new QueryLimitConfigReloader();
+        reloader.setZookeeperConfig(server.getConnectString());
+        reloader.setup();
+
         QueryLimiter limiter = new QueryLimiter();
         limiter.setZookeeperConfig(server.getConnectString());
+        limiter.setConfigReloader(reloader);
 
-        QueryLimitConfiguration config = new QueryLimitConfiguration();
-        config.setDefaultUserQueryLimit(100);
-        config.setDefaultSystemQueryLimit(5000);
-        config.setInternalCacheMaxSize(0);
-        limiter.setConfiguration(config);
+        try (CuratorFramework client = createReloaderClient()) {
+            client.create().forPath("/path", validJsonFile.getBytes());
+        }
 
-        assertThatThrownBy(limiter::setup).isInstanceOf(IllegalArgumentException.class).hasMessage("Internal cache max size must be greater than 0");
+        limiter.setup();
+        assertNotNull(limiter.getConfiguration());
     }
 
     /**
@@ -461,14 +504,53 @@ class QueryLimiterTest {
         assertLimitNotMet(userA, system1, tldQueryLogic);
     }
 
-    private QueryLimiter getLimiter(String system) {
+    /**
+     * Verify that when a valid configuration is reloaded by the internal {@link QueryLimitConfigReloader}, the {@link QueryLimiter} is updated.
+     */
+    @Test
+    void testConfigurationReload() throws Exception {
+        QueryLimitConfiguration config = new QueryLimitConfiguration();
+        config.setDefaultSystemQueryLimit(100);
+        config.setDefaultUserQueryLimit(5);
+        givenConfig(config);
+
+        QueryLimiter limiter = getLimiter(system1);
+
+        // Sleep one second to allow for reloader set up.
+        Thread.sleep(TimeUnit.SECONDS.toMillis(1));
+
+        // Create the path node. This should trigger a configuration reload that is passed to the limiter.
+        try (CuratorFramework client = createReloaderClient()) {
+            client.create().forPath("/path", validJsonFile.getBytes());
+        }
+
+        // Wait until we see a configuration from the limiter that does not match the original config.
+        try {
+            Awaitility.await().atMost(5, TimeUnit.SECONDS).until(() -> limiter.getConfiguration().getDefaultSystemQueryLimit() != 100);
+        } catch (Exception e) {
+            fail("Timeout exceeded while waiting for limiter to be updated with new configuration.");
+        }
+
+        // The configuration loaded by the JSON file has a default user query limit of 100, and default system limit of 1000. Verify we see these changes
+        // reflected in each limiter.
+        QueryLimitConfiguration updatedConfig = limiter.getConfiguration();
+        assertEquals(100, updatedConfig.getDefaultUserQueryLimit());
+        assertEquals(1000, updatedConfig.getDefaultSystemQueryLimit());
+    }
+
+    private QueryLimiter getLimiter(String system) throws QuorumPeerConfig.ConfigException {
         if (systemToLimiter.containsKey(system)) {
             return systemToLimiter.get(system);
         } else {
+            QueryLimitConfigReloader reloader = new QueryLimitConfigReloader();
+            reloader.setZookeeperConfig(server.getConnectString());
+            reloader.setup();
+
             QueryLimiter limiter = new QueryLimiter();
             limiter.setZookeeperConfig(server.getConnectString());
             limiter.setConfiguration(config);
             limiter.setHeartbeatCache(heartbeatCache);
+            limiter.setConfigReloader(reloader);
             limiter.setup();
             systemToLimiter.put(system, limiter);
             return limiter;
@@ -502,5 +584,13 @@ class QueryLimiterTest {
 
     private void givenConfig(QueryLimitConfiguration config) {
         this.config = config;
+    }
+
+    private CuratorFramework createReloaderClient() {
+        CuratorFramework client = CuratorFrameworkFactory.builder().namespace(QueryLimitConfigReloader.ZOOKEEPER_NAMESPACE)
+                        .connectString(server.getConnectString()).sessionTimeoutMs(60000).connectionTimeoutMs(60000).retryPolicy(new RetryNTimes(10, 1000))
+                        .build();
+        client.start();
+        return client;
     }
 }
