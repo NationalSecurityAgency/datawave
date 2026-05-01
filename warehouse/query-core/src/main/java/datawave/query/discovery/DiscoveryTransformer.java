@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Writable;
@@ -58,9 +59,12 @@ public class DiscoveryTransformer extends BaseQueryLogicTransformer<DiscoveredTh
 
         fields.add(this.makeField("VALUE", markings, "", 0L, thing.getTerm()));
         /**
-         * Added query model to alias FIELD
+         * Added query model to alias FIELD, if DiscoveredThing::field both not NULL and not empty.
          */
-        fields.add(this.makeField("FIELD", markings, "", 0L, myQueryModel.aliasFieldNameReverseModel(thing.getField())));
+        Optional<String> fieldOFThing = Optional.ofNullable(thing.getField());
+        fieldOFThing.filter(i -> !i.isEmpty())
+                        .ifPresent(i -> fields.add(this.makeField("FIELD", markings, "", 0L, myQueryModel.aliasFieldNameReverseModel(i))));
+
         fields.add(this.makeField("DATE", markings, "", 0L, thing.getDate()));
         fields.add(this.makeField("DATA TYPE", markings, "", 0L, thing.getType()));
 
