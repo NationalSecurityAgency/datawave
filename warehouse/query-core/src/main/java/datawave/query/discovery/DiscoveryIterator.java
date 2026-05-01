@@ -116,7 +116,6 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
         // Find all matching entries and parse term entries from them.
 
         while (iterator.hasTop() && start.equals((key = iterator.getTopKey()), PartialKey.ROW_COLFAM) && dateMatchingFunction.apply(start, key)) {
-            // TermEntry termEntry = new TermEntry(key, iterator.getTopValue());
             TermEntry termEntry = new TermEntry(key, iterator.getTopValue()) {
                 // Only use term and visibility for equality.
                 @Override
