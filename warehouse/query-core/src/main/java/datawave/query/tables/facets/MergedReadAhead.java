@@ -7,6 +7,7 @@ import java.util.NoSuchElementException;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import org.apache.log4j.Logger;
 
@@ -81,7 +82,15 @@ public class MergedReadAhead<T> extends AbstractExecutionThreadService implement
     private void readFromQueue() {
         if (!isStreaming) {
             log.trace("Non-streaming, waiting for termination...");
-            awaitTerminated();
+            // loop to prevent a possible deadlock in com.google.common.util.concurrent.Monitor
+            // due to a lost signal when the thread receiving the signal was in an interrupted state
+            while (!state().equals(State.TERMINATED)) {
+                try {
+                    awaitTerminated(250, TimeUnit.MILLISECONDS);
+                } catch (TimeoutException e) {
+
+                }
+            }
         }
 
         try {
@@ -132,7 +141,15 @@ public class MergedReadAhead<T> extends AbstractExecutionThreadService implement
     public void close() throws IOException {
         log.trace("stopping...");
         stopAsync();
-        awaitTerminated();
+        // loop to prevent a possible deadlock in com.google.common.util.concurrent.Monitor
+        // due to a lost signal when the thread receiving the signal was in an interrupted state
+        while (!state().equals(State.TERMINATED)) {
+            try {
+                awaitTerminated(250, TimeUnit.MILLISECONDS);
+            } catch (TimeoutException e) {
+
+            }
+        }
         log.trace("stopped.");
     }
 

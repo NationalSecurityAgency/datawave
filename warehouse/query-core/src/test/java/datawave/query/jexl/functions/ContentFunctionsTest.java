@@ -219,6 +219,44 @@ public class ContentFunctionsTest {
     }
 
     @Test
+    public void testEvaluationDoesNotCrossGroupedContentContexts() {
+        String query = buildFunction(ContentFunctions.CONTENT_PHRASE_FUNCTION_NAME, "'CONTENT'", Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'cat'",
+                        "'bog'");
+        JexlExpression expr = engine.createExpression(query);
+
+        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Map.entry(new Zone("CONTENT.1", true, eventId), asList(1))));
+        termOffSetMap.putTermFrequencyList("bog", new TermFrequencyList(Map.entry(new Zone("CONTENT.2", true, eventId), asList(2))));
+        termOffSetMap.setGatherPhraseOffsets(true);
+        termOffSetMap.setExcerptFields(Set.of("CONTENT"));
+
+        context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
+        Object o = expr.evaluate(context);
+
+        assertTrue(expect(o, false));
+        assertNoPhraseOffsetsFor("CONTENT");
+        assertNoPhraseOffsetsFor("CONTENT.1");
+        assertNoPhraseOffsetsFor("CONTENT.2");
+    }
+
+    @Test
+    public void testEvaluationMatchesWithinGroupedContentContext() {
+        String query = buildFunction(ContentFunctions.CONTENT_PHRASE_FUNCTION_NAME, "'CONTENT'", Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'cat'",
+                        "'mat'");
+        JexlExpression expr = engine.createExpression(query);
+
+        termOffSetMap.putTermFrequencyList("cat", new TermFrequencyList(Map.entry(new Zone("CONTENT.1", true, eventId), asList(1))));
+        termOffSetMap.putTermFrequencyList("mat", new TermFrequencyList(Map.entry(new Zone("CONTENT.1", true, eventId), asList(2))));
+        termOffSetMap.setGatherPhraseOffsets(true);
+        termOffSetMap.setExcerptFields(Set.of("CONTENT"));
+
+        context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
+        Object o = expr.evaluate(context);
+
+        assertTrue(expect(o, true));
+        assertPhraseOffset("CONTENT.1", 1, 2);
+    }
+
+    @Test
     public void forwardSharedTokenIndex() {
         String query = buildFunction(ContentFunctions.CONTENT_PHRASE_FUNCTION_NAME, Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'c'", "'b'", "'a'");
         JexlExpression expr = engine.createExpression(query);
