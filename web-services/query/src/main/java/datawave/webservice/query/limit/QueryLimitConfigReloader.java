@@ -497,7 +497,7 @@ public class QueryLimitConfigReloader implements AutoCloseable {
      * <li>If the error messages list is not empty, set the children of the node {@code /attempts/<serverIpAddress>/errors} such that there is one child for
      * each error message, with the path {@code error_X} where X equals the index of the error message in the list, and data is set to the bytes of the error
      * message.</li>
-     * <ul/>
+     * </ul>
      * </li>
      * </ul>
      *
