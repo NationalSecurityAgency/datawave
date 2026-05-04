@@ -17,7 +17,7 @@ import com.google.common.cache.CacheBuilder;
 /**
  * Created on 2/8/17.
  */
-public class FileSystemCache {
+public class FileSystemCache implements AutoCloseable {
     private static Logger log = Logger.getLogger(FileSystemCache.class);
     protected Cache<URI,FileSystem> fileSystemCache = CacheBuilder.newBuilder().expireAfterAccess(5, TimeUnit.MINUTES).concurrencyLevel(5).maximumSize(10)
                     .build();
@@ -65,7 +65,7 @@ public class FileSystemCache {
     }
 
     @Override
-    protected void finalize() throws Throwable {
+    public void close() {
         cleanup();
     }
 }
