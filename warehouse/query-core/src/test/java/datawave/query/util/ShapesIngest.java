@@ -510,6 +510,21 @@ public class ShapesIngest {
         tokenize(client, bwConfig, "PROPERTIES", "convex,cyclic,equilateral,isogonal,isotoxal", type, hexagon, hexagonUid);
         tokenize(client, bwConfig, "PROPERTIES", "convex,cyclic,equilateral,isogonal,isotoxal", type, octagon, octagonUid);
 
+        tokenize(client, bwConfig, "DESCRIPTION", "all three angles are less than ninety degrees", type, triangle, acuteUid);
+        tokenize(client, bwConfig, "DESCRIPTION", "all three angles are sixty degrees", type, triangle, equilateralUid);
+        tokenize(client, bwConfig, "DESCRIPTION", "two angles are equal", type, triangle, isoscelesUid);
+
+        tokenize(client, bwConfig, "DESCRIPTION", "a parallelogram with four sides of equal length and four ninety degree angles", type, quadrilateral, squareUid);
+        tokenize(client, bwConfig, "DESCRIPTION", "a parallelogram with four ninety degree angles", type, quadrilateral, rectangleUid);
+        tokenize(client, bwConfig, "DESCRIPTION", "a parallelogram with four sides of equal length", type, quadrilateral, rhombusUid);
+        tokenize(client, bwConfig, "DESCRIPTION", "a parallelogram with adjacent sides that are not equal and angles are not ninety degrees", type, quadrilateral, rhomboidUid);
+        tokenize(client, bwConfig, "DESCRIPTION", "a quadrilateral with at least one pair of parallel sides", type, quadrilateral, trapezoidUid);
+        tokenize(client, bwConfig, "DESCRIPTION", "a quadrilateral with two pairs of equal length sides that are adjacent to each other", type, quadrilateral, kiteUid);
+
+        tokenize(client, bwConfig, "DESCRIPTION", "a shape with five straight sides and five interior angles", type, pentagon, pentagonUid);
+        tokenize(client, bwConfig, "DESCRIPTION", "a shape with six straight sides and six interior angles", type, hexagon, hexagonUid);
+        tokenize(client, bwConfig, "DESCRIPTION", "a shape with eight straight sides and eight interior angles", type, octagon, octagonUid);
+
         // metadata table
         try (BatchWriter bw = client.createBatchWriter(TableName.METADATA, bwConfig)) {
 
