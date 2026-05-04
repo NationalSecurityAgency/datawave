@@ -517,8 +517,8 @@ public class ScannerFactory {
         }
     }
 
-    public BatchScanner newScanner(ShardQueryConfiguration config, QueryData qd) throws TableNotFoundException {
-        final BatchScanner bs = this.newScanner(config.getShardTableName(), config.getAuthorizations(), config.getNumQueryThreads(), config.getQuery());
+    public BatchScanner newScanner(ShardQueryConfiguration config, QueryData qd, String tableName) throws TableNotFoundException {
+        final BatchScanner bs = this.newScanner(tableName, config.getAuthorizations(), config.getNumQueryThreads(), config.getQuery());
 
         if (log.isTraceEnabled()) {
             log.trace("Running with " + config.getAuthorizations() + " and " + config.getNumQueryThreads() + " threads: " + qd);
