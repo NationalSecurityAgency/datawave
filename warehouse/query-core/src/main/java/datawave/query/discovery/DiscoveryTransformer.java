@@ -62,7 +62,7 @@ public class DiscoveryTransformer extends BaseQueryLogicTransformer<DiscoveredTh
          * Added query model to alias FIELD, if DiscoveredThing::field both not NULL and not empty.
          */
         Optional<String> fieldOFThing = Optional.ofNullable(thing.getField());
-        fieldOFThing.filter(i -> !i.isEmpty())
+        fieldOFThing.filter(i -> !i.isBlank())
                         .ifPresent(i -> fields.add(this.makeField("FIELD", markings, "", 0L, myQueryModel.aliasFieldNameReverseModel(i))));
 
         fields.add(this.makeField("DATE", markings, "", 0L, thing.getDate()));
