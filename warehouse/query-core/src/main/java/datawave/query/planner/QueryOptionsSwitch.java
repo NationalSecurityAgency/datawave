@@ -49,7 +49,7 @@ public class QueryOptionsSwitch {
                     config.setGroupFields(groupFields);
                     // If there are any group-by fields, update the projection fields to include them.
                     if (groupFields.hasGroupByFields()) {
-                        config.setProjectFields(groupFields.getProjectionFields());
+                        config.addProjectFields(groupFields.getProjectionFields());
                     }
                     break;
                 case QueryParameters.GROUP_FIELDS_BATCH_SIZE:
@@ -64,6 +64,7 @@ public class QueryOptionsSwitch {
                     // preserve the most recent flag
                     uniqueFields.setMostRecent(config.getUniqueFields().isMostRecent());
                     config.setUniqueFields(uniqueFields);
+                    config.addProjectFields(uniqueFields.getFields());
                     break;
                 case QueryParameters.MOST_RECENT_UNIQUE:
                     log.info("Setting unique fields to be most recent");
@@ -99,7 +100,7 @@ public class QueryOptionsSwitch {
                     config.setGroupFields(groupFields);
                     // Update the projection fields only if we have group-by fields specified.
                     if (groupFields.hasGroupByFields()) {
-                        config.setProjectFields(groupFields.getProjectionFields());
+                        config.addProjectFields(groupFields.getProjectionFields());
                     }
                     break;
                 case QueryParameters.MAX_FIELDS:
@@ -109,7 +110,7 @@ public class QueryOptionsSwitch {
                     config.setGroupFields(groupFields);
                     // Update the projection fields only if we have group-by fields specified.
                     if (groupFields.hasGroupByFields()) {
-                        config.setProjectFields(groupFields.getProjectionFields());
+                        config.addProjectFields(groupFields.getProjectionFields());
                     }
                     break;
                 case QueryParameters.MIN_FIELDS:
@@ -119,7 +120,7 @@ public class QueryOptionsSwitch {
                     config.setGroupFields(groupFields);
                     // Update the projection fields only if we have group-by fields specified.
                     if (groupFields.hasGroupByFields()) {
-                        config.setProjectFields(groupFields.getProjectionFields());
+                        config.addProjectFields(groupFields.getProjectionFields());
                     }
                     break;
                 case QueryParameters.COUNT_FIELDS:
@@ -129,7 +130,7 @@ public class QueryOptionsSwitch {
                     config.setGroupFields(groupFields);
                     // Update the projection fields only if we have group-by fields specified.
                     if (groupFields.hasGroupByFields()) {
-                        config.setProjectFields(groupFields.getProjectionFields());
+                        config.addProjectFields(groupFields.getProjectionFields());
                     }
                     break;
                 case QueryParameters.AVERAGE_FIELDS:
@@ -139,8 +140,11 @@ public class QueryOptionsSwitch {
                     config.setGroupFields(groupFields);
                     // Update the projection fields only if we have group-by fields specified.
                     if (groupFields.hasGroupByFields()) {
-                        config.setProjectFields(groupFields.getProjectionFields());
+                        config.addProjectFields(groupFields.getProjectionFields());
                     }
+                    break;
+                case QueryParameters.DS_ENABLED:
+                    config.setUseDocumentScheduler(Boolean.parseBoolean(value));
                     break;
             }
         }

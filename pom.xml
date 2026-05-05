@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>gov.nsa.datawave</groupId>
     <artifactId>datawave-parent</artifactId>
-    <version>7.38.0-SNAPSHOT</version>
+    <version>7.39.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>DataWave</name>
     <description>DataWave is a Java-based ingest and query framework that leverages Apache Accumulo to provide fast, secure access to your data.</description>
@@ -73,8 +73,8 @@
         <version.commons-pool>1.6</version.commons-pool>
         <version.commons-pool2>2.6.1</version.commons-pool2>
         <version.commons-text>1.11.0</version.commons-text>
-        <version.curator>5.7.1</version.curator>
-        <version.curator.test>5.7.1</version.curator.test>
+        <version.curator>5.9.0</version.curator>
+        <version.curator.test>5.9.0</version.curator.test>
         <version.datawave.accumulo-api>4.0.0</version.datawave.accumulo-api>
         <version.datawave.audit-api>4.0.0</version.datawave.audit-api>
         <version.datawave.authorization-api>4.0.0</version.datawave.authorization-api>
@@ -123,7 +123,7 @@
         <version.jython>2.7.2b2</version.jython>
         <version.kryo>2.20</version.kryo>
         <version.kryonet>2.20</version.kryonet>
-        <version.log4j>2.25.3</version.log4j>
+        <version.log4j>2.25.4</version.log4j>
         <version.lucene>7.5.0</version.lucene>
         <version.metrics-cdi>1.6.0</version.metrics-cdi>
         <version.minlog>1.2</version.minlog>
@@ -1924,6 +1924,11 @@
                                         <!-- Do not allow qualified static access in code, i.e. Assertions.assertEquals -->
                                         <reason>Use static imports for JUnit assertions</reason>
                                         <bannedImport>org.junit.jupiter.api.Assertions</bannedImport>
+                                    </restrictImports>
+                                    <restrictImports>
+                                        <!-- Cannot ban hamcrest dependency until fully migrated to JUnit5, so ban the import to prevent reintroduction -->
+                                        <reason>Use JUnit5 instead of hamcrest</reason>
+                                        <bannedImport>org.hamcrest.**</bannedImport>
                                     </restrictImports>
                                 </rules>
                             </configuration>
