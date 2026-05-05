@@ -1130,9 +1130,14 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
         return splits;
     }
 
+    /**
+     * Truncates/clips the ranges in binnedRanges to fit within their assigned tablet boundaries. This makes it easier to identify what work needs to be redone
+     * when failures occur and tablets have merged or split. The method modifies binnedRanges in place.
+     *
+     * @param binnedRanges
+     *            the map of location -&gt; (extent -&gt; ranges) to clip
+     */
     private void clipRanges(Map<String,Map<KeyExtent,List<Range>>> binnedRanges) {
-        // truncate the ranges to within the tablets... this makes it easier to know what work
-        // needs to be redone when failures occurs and tablets have merged or split
         Map<String,Map<KeyExtent,List<Range>>> binnedRanges2 = new HashMap<>();
         for (Entry<String,Map<KeyExtent,List<Range>>> entry : binnedRanges.entrySet()) {
             Map<KeyExtent,List<Range>> tabletMap = new HashMap<>();
