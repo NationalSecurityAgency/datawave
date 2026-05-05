@@ -23,12 +23,12 @@ import datawave.ingest.data.config.NormalizedFieldAndValue;
 /**
  * Implements methods provided by the {@link WhindexIngest} interface, enabling parsing and application of Whindex rules defined by the constants:
  * <ul>
- * <li>{@link #WHINDEX_RULES}</li>
- * <li>{@link #VALUE_FIELD}</li>
- * <li>{@link #SRC_FIELD}</li>
- * <li>{@link #DELETE_SRC_FIELD}</li>
- * <li>{@link #DST_FIELD}</li>
- * <li>{@link #VALUES}</li>
+ * <li>{@value #WHINDEX_RULES}</li>
+ * <li>{@value #VALUE_FIELD}</li>
+ * <li>{@value #SRC_FIELD}</li>
+ * <li>{@value #DELETE_SRC_FIELD}</li>
+ * <li>{@value #DST_FIELD}</li>
+ * <li>{@value #VALUES}</li>
  * </ul>
  * <p>
  * Call {@link #setup(Configuration)} (which reads properties prefixed by <code>typeName. {@link #WHINDEX_RULES}.</code>) before
