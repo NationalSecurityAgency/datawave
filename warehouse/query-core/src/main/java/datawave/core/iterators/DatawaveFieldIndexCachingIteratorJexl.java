@@ -73,7 +73,7 @@ import datawave.query.util.sortedset.HdfsBackedSortedSet;
  * <p>
  * Event key: CF, {datatype}\0{UID}
  */
-public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIterator {
+public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIterator implements AutoCloseable {
 
     public static final Text ANY_FINAME = new Text("fi\0" + Constants.ANY_FIELD);
     public static final Text FI_START = new Text("fi\0");
@@ -550,9 +550,8 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
     }
 
     @Override
-    protected void finalize() throws Throwable {
+    public void close() {
         clearRowBasedHdfsBackedSet();
-        super.finalize();
     }
 
     @Override
