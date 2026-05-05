@@ -18,7 +18,6 @@ import java.util.TreeMap;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
-import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Value;
 import org.apache.commons.codec.binary.Base64;
@@ -77,7 +76,7 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
 
     private PartitionerCache partitionerCache;
 
-    private Map<Text,String> getSplitsWithLocation(String table) throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
+    private Map<Text,String> getSplitsWithLocation(String table) throws AccumuloException, TableNotFoundException {
         AccumuloClient client = accumuloHelper.newClient();
         Map<Text,String> locations = AccumuloTableUtils.getSplitsWithLocations(client, table);
         // Replace empty-string locations with NO_LOCATION sentinel
@@ -250,7 +249,7 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
                 // if the file exists and the new file would exceed the deviation threshold, don't replace it
                 throw new IOException("Splits file will not be replaced");
             }
-        } catch (IOException | AccumuloSecurityException | AccumuloException | TableNotFoundException ex) {
+        } catch (IOException | AccumuloException | TableNotFoundException ex) {
             log.error("Unable to write new splits file", ex);
             throw new IOException(ex);
         }

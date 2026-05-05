@@ -66,8 +66,6 @@ public final class AccumuloTableUtils {
      * @return a map of {@code location -> (extent -> ranges)}
      * @throws AccumuloException
      *             if a general Accumulo error occurs
-     * @throws AccumuloSecurityException
-     *             if a security error occurs
      * @throws TableNotFoundException
      *             if the table does not exist
      */
@@ -78,8 +76,13 @@ public final class AccumuloTableUtils {
     // REVIEW: The original TabletLocator.binRanges() used a retry loop for partial binning failures.
     // The public locate() API may handle this internally. Verify retry semantics are equivalent.
     public static Map<String,Map<KeyExtent,List<Range>>> locateTablets(AccumuloClient client, String tableName, List<Range> ranges)
-                    throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
-        Locations locations = client.tableOperations().locate(tableName, ranges);
+                    throws AccumuloException, TableNotFoundException {
+        Locations locations;
+        try {
+            locations = client.tableOperations().locate(tableName, ranges);
+        } catch (AccumuloSecurityException e) {
+            throw new AccumuloException(e);
+        }
         Map<String,Map<KeyExtent,List<Range>>> binnedRanges = new HashMap<>();
         for (Map.Entry<TabletId,List<Range>> entry : locations.groupByTablet().entrySet()) {
             TabletId tabletId = entry.getKey();
@@ -106,14 +109,16 @@ public final class AccumuloTableUtils {
      * @return a sorted map of split point (end-row) to tablet server location
      * @throws AccumuloException
      *             if a general Accumulo error occurs
-     * @throws AccumuloSecurityException
-     *             if a security error occurs
      * @throws TableNotFoundException
      *             if the table does not exist
      */
-    public static Map<Text,String> getSplitsWithLocations(AccumuloClient client, String tableName)
-                    throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
-        Locations locations = client.tableOperations().locate(tableName, Collections.singletonList(new Range()));
+    public static Map<Text,String> getSplitsWithLocations(AccumuloClient client, String tableName) throws AccumuloException, TableNotFoundException {
+        Locations locations;
+        try {
+            locations = client.tableOperations().locate(tableName, Collections.singletonList(new Range()));
+        } catch (AccumuloSecurityException e) {
+            throw new AccumuloException(e);
+        }
         Map<Text,String> result = new TreeMap<>();
         for (Map.Entry<TabletId,List<Range>> entry : locations.groupByTablet().entrySet()) {
             TabletId tabletId = entry.getKey();

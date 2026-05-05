@@ -1141,8 +1141,9 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
                 Range tabletRange = tabletRanges.getKey().toDataRange();
                 List<Range> clippedRanges = new ArrayList<>();
                 tabletMap.put(tabletRanges.getKey(), clippedRanges);
-                for (Range range : tabletRanges.getValue())
+                for (Range range : tabletRanges.getValue()) {
                     clippedRanges.add(tabletRange.clip(range));
+                }
             }
         }
 
