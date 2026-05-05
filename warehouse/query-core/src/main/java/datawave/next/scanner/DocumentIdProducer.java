@@ -1,5 +1,7 @@
 package datawave.next.scanner;
 
+import static datawave.next.DocIdQueryIterator.STATS;
+
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
@@ -140,7 +142,7 @@ public class DocumentIdProducer implements RunnableWithContext {
     private KeyWithContext parseEntry(Key key, Value value) throws IOException {
         String cf = key.getColumnFamily().toString();
 
-        if (cf.equals("STATS")) {
+        if (cf.equals(STATS)) {
             byte[] payload = value.get();
             if (payload.length == 0) {
                 return null;

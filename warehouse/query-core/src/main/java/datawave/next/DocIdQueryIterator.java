@@ -43,6 +43,9 @@ public class DocIdQueryIterator implements SortedKeyValueIterator<Key,Value> {
     public static final String SCAN_TIMEOUT = "scan.timeout";
     public static final String PARTIAL_INTERSECTIONS = "partial.intersections";
 
+    // constant used for scans that return stats but no candidates
+    public static final String STATS = "STATS";
+
     private Range range;
     private ASTJexlScript script;
     private Set<String> datatypeFilter;
@@ -57,7 +60,7 @@ public class DocIdQueryIterator implements SortedKeyValueIterator<Key,Value> {
     private long scanTimeout = -1;
     private boolean allowPartialIntersections = true;
 
-    private final Value EMPTY_VALUE = new Value();
+    private static final Value EMPTY_VALUE = new Value();
 
     private Key tk;
     private Value tv = EMPTY_VALUE;
@@ -221,7 +224,7 @@ public class DocIdQueryIterator implements SortedKeyValueIterator<Key,Value> {
      * @return a stats key
      */
     private Key createStatsKey() {
-        return new Key(range.getStartKey().getRow(), new Text("STATS"));
+        return new Key(range.getStartKey().getRow(), new Text(STATS));
     }
 
     @Override

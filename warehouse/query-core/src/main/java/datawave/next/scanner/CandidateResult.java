@@ -4,6 +4,8 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.accumulo.core.data.Key;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.KryoSerializable;
@@ -103,5 +105,31 @@ public class CandidateResult implements KryoSerializable {
 
     public void setIterStats(DocIterStats iterStats) {
         this.iterStats = iterStats;
+    }
+
+    @Override
+    public int hashCode() {
+        //  @formatter:off
+        return new HashCodeBuilder()
+                .append(candidates)
+                .append(queryStats)
+                .append(iterStats)
+                .toHashCode();
+        //  @formatter:on
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o instanceof CandidateResult) {
+            CandidateResult other = (CandidateResult) o;
+            //  @formatter:off
+            return new EqualsBuilder()
+                    .append(candidates, other.candidates)
+                    .append(queryStats, other.queryStats)
+                    .append(iterStats, other.iterStats)
+                    .isEquals();
+            //  @formatter:on
+        }
+        return false;
     }
 }
