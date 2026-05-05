@@ -250,11 +250,6 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>org.picketbox</groupId>
-            <artifactId>picketbox</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
             <groupId>org.apache.accumulo</groupId>
             <artifactId>accumulo-tserver</artifactId>
             <scope>runtime</scope>

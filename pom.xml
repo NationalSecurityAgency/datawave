@@ -134,7 +134,6 @@
         <version.mysql-connector>9.3.0</version.mysql-connector>
         <version.netty>4.1.42.Final</version.netty>
         <version.objenesis>3.3</version.objenesis>
-        <version.picketbox>5.0.3.Final</version.picketbox>
         <version.powermock>2.0.9</version.powermock>
         <version.proto-google-common-protos>2.61.0</version.proto-google-common-protos>
         <version.protobuf>3.16.3</version.protobuf>
@@ -1369,24 +1368,6 @@
                 <artifactId>weld-core-impl</artifactId>
                 <version>${version.weld}</version>
                 <scope>provided</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.picketbox</groupId>
-                <artifactId>picketbox</artifactId>
-                <version>${version.picketbox}</version>
-                <scope>provided</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.picketbox</groupId>
-                <artifactId>picketbox-infinispan</artifactId>
-                <version>${version.picketbox}</version>
-                <scope>provided</scope>
-                <exclusions>
-                    <exclusion>
-                        <groupId>dom4j</groupId>
-                        <artifactId>dom4j</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.wildfly</groupId>

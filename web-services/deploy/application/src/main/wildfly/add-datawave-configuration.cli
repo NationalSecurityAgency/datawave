@@ -382,7 +382,8 @@ jms-queue add --queue-address=AccumuloTableCacheDLQ --entries=queue/AccumuloTabl
 /subsystem=logging/logger=org.jboss.resteasy.specimpl:add(use-parent-handlers=false,handlers=["RESTEASY_LOG"])
 /subsystem=logging/logger=datawave.resteasy.interceptor:add(use-parent-handlers=false,handlers=["RESTEASY_LOG"])
 
-# Add trace logging for JBoss module class loading. Uncomment this only when you need to debug JBoss/Wildfly classloading issues, this log will get big fast.
+# Add trace logging for JBoss module class loading. The JBoss.log file will get big fast if activated, so uncomment this
+# only when you need to see exactly which libraries/modules Wildfly is loading classes from in the classloaders.
 # /subsystem=logging/logger=org.jboss.modules:add(use-parent-handlers=false, handlers=["JBOSS_LOG"])
 
 # Custom log levels
