@@ -71,17 +71,17 @@ public class QueryLimitConfigReloader implements AutoCloseable {
     /**
      * Mapper for JSON files.
      */
-    private static final JsonMapper jsonMapper = JsonMapper.builder().build();
+    private static final JsonMapper jsonMapper = new JsonMapper();
 
     /**
      * Mapper for XML files.
      */
-    private static final XmlMapper xmlMapper = XmlMapper.builder().build();
+    private static final XmlMapper xmlMapper = new XmlMapper();
 
     /**
      * Mapper for YAML files.
      */
-    private static final YAMLMapper yamlMapper = YAMLMapper.builder().build();
+    private static final YAMLMapper yamlMapper = new YAMLMapper();
 
     /**
      * Map of format names to the mappers.
