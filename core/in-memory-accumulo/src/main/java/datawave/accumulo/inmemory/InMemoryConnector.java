@@ -18,7 +18,6 @@ package datawave.accumulo.inmemory;
 
 import java.util.concurrent.TimeUnit;
 
-import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.BatchDeleter;
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.BatchWriter;
