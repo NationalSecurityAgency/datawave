@@ -872,6 +872,7 @@ public class GroupingTest extends AbstractQueryTest {
         givenNonModelData();
 
         givenQuery("(UUID:C* or UUID:S* ) and #GROUPBY('$GENDER') and #AVERAGE('AGE', 'VALUE') and #MAX('AGE') and #AVERAGE('VALUE')");
+        expectPlan("(((_Eval_ = true) && (UUID =~ 'c.*?')) || ((_Eval_ = true) && (UUID =~ 's.*?')))");
         givenLuceneParserForLogic();
 
         expectGroup(Group.of("MALE").withCount(10).withAggregate(Aggregate.of("AGE").withMax("40").withAverage("26.8"))
