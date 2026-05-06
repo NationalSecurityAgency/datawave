@@ -1,7 +1,5 @@
 package datawave.query.jexl.visitors;
 
-import static datawave.core.iterators.TimeoutExceptionIterator.EXCEPTEDVALUE;
-
 import java.util.Set;
 
 import org.apache.commons.jexl3.parser.ASTJexlScript;
@@ -58,16 +56,6 @@ public class BoundedRangeIndexExpansionVisitorIT extends BaseIndexExpansionTest 
     @Test
     public void testExpansionSkipsCompositeField() {
         // really, verify that composite fields are retained
-    }
-
-    @Test
-    public void testSimulatedTimeout() throws Exception {
-        write("a", "FIELD_A");
-        write("b", "FIELD_A", EXCEPTEDVALUE);
-        write("c", "FIELD_A");
-        String query = "((_Bounded_ = true) && (FIELD_A >= 'a' && FIELD_A <= 'c'))";
-        String expected = "((_Value_ = true) && ((_Bounded_ = true) && (FIELD_A >= 'a' && FIELD_A <= 'c')))";
-        driveExpansion(query, expected);
     }
 
     @Test

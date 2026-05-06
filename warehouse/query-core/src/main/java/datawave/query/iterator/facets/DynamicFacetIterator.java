@@ -1,6 +1,7 @@
 package datawave.query.iterator.facets;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.util.Collection;
 import java.util.Iterator;
@@ -133,7 +134,8 @@ public class DynamicFacetIterator extends FieldIndexOnlyQueryIterator {
 
     @Override
     protected IteratorBuildingVisitor createIteratorBuildingVisitor(final Range documentRange, boolean isQueryFullySatisfied, boolean sortedUIDs)
-                    throws MalformedURLException, ConfigException, IllegalAccessException, InstantiationException {
+                    throws MalformedURLException, ConfigException, IllegalAccessException, InstantiationException, NoSuchMethodException,
+                    InvocationTargetException {
         //  @formatter:off
         return super.createIteratorBuildingVisitor(documentRange, isQueryFullySatisfied, sortedUIDs)
                 .setIteratorBuilder(CardinalityIteratorBuilder.class)
@@ -148,7 +150,7 @@ public class DynamicFacetIterator extends FieldIndexOnlyQueryIterator {
 
     @Override
     public Iterator<Entry<Key,Document>> getDocumentIterator(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive)
-                    throws IOException, ConfigException, InstantiationException, IllegalAccessException {
+                    throws IOException, ConfigException, InstantiationException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
         // Otherwise, we have to use the field index
         // Seek() the boolean logic stuff
         createAndSeekIndexIterator(range, columnFamilies, inclusive);
@@ -229,7 +231,7 @@ public class DynamicFacetIterator extends FieldIndexOnlyQueryIterator {
         Iterator<Entry<Key,Document>> fieldIndexDocuments = null;
         try {
             fieldIndexDocuments = getDocumentIterator(range, columnFamilies, inclusive);
-        } catch (ConfigException | IllegalAccessException | InstantiationException e) {
+        } catch (ConfigException | IllegalAccessException | InstantiationException | NoSuchMethodException | InvocationTargetException e) {
             throw new IOException("Unable to create document iterator", e);
         }
 

@@ -64,6 +64,9 @@ public abstract class BaseIndexLookupTest {
 
     private final StringBuilder sb = new StringBuilder();
 
+    protected ScanMonitor monitor;
+    private ExecutorService monitorExecutor;
+
     @BeforeAll
     public static void setup() throws Exception {
         InMemoryInstance instance = new InMemoryInstance();
@@ -93,11 +96,16 @@ public abstract class BaseIndexLookupTest {
         query = null;
         result = null;
         executor = Executors.newFixedThreadPool(5);
+
+        monitor = ScanMonitor.of("query-id", null);
+        monitorExecutor = Executors.newSingleThreadExecutor();
+        monitorExecutor.submit(monitor);
     }
 
     @AfterEach
     public void afterEach() {
         executor.shutdownNow();
+        monitorExecutor.shutdownNow();
     }
 
     protected void addDelayIterator(int delay) {
@@ -259,14 +267,14 @@ public abstract class BaseIndexLookupTest {
 
     protected void assertResultFields(Set<String> expected) {
         Preconditions.checkNotNull(result, "result cannot be null");
-        assertEquals(expected, result.keySet());
+        assertEquals(new HashSet<>(expected), new HashSet<>(result.keySet()));
     }
 
     protected void assertResultValues(String field, Set<String> values) {
         Preconditions.checkNotNull(result, "result cannot be null");
         assertTrue(result.containsKey(field), "result did not contain field: " + field);
         Set<String> resultValues = new HashSet<>(result.get(field));
-        assertEquals(values, resultValues);
+        assertEquals(new HashSet<>(values), resultValues);
     }
 
     protected void assertExceptionSeen() {
