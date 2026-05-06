@@ -5,6 +5,7 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.nio.charset.CharacterCodingException;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
@@ -40,6 +41,7 @@ import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.FirstEntryInRowIterator;
 import org.apache.accumulo.core.iterators.ValueFormatException;
 import org.apache.accumulo.core.iterators.user.RegExFilter;
 import org.apache.accumulo.core.iterators.user.SummingCombiner;
@@ -345,6 +347,21 @@ public class MetadataHelper {
      */
     public Metadata getMetadata(Set<String> ingestTypeFilter) throws TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
         return new Metadata(this, ingestTypeFilter);
+    }
+
+    /**
+     * Fetch the {@link Set} of all fields to be used for model expansion. This is the list of all fields with hidden fields removed.
+     *
+     * @param ingestTypeFilter
+     *            set of ingest types used to restrict the scan
+     * @return all fields in the metadata table minus all hidden fields
+     * @throws TableNotFoundException
+     *             if no table exists
+     */
+    public Set<String> getModelExpansionFields(Set<String> ingestTypeFilter) throws TableNotFoundException {
+        Set<String> fields = new HashSet<>(getAllFields(ingestTypeFilter));
+        fields.removeAll(getHiddenFields(ingestTypeFilter));
+        return Collections.unmodifiableSet(fields);
     }
 
     /**
@@ -715,6 +732,32 @@ public class MetadataHelper {
         } catch (InstantiationException | ExecutionException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    /**
+     * Get the set of hidden fields for the provided ingest type filter. A null or empty filter indicates all hidden fields should be returned.
+     *
+     * @param ingestTypeFilter
+     *            the ingest type filter
+     * @return the set of hidden fields given the provided ingest type filter
+     * @throws TableNotFoundException
+     *             if the table does not exist
+     */
+    @Cacheable(value = "getHiddenFields", key = "{#root.target.auths,#root.target.metadataTableName,#ingestTypeFilter}",
+                    cacheManager = "metadataHelperCacheManager", sync = true)
+    public Set<String> getHiddenFields(Set<String> ingestTypeFilter) throws TableNotFoundException {
+
+        Multimap<String,String> hiddenFields = this.allFieldMetadataHelper.loadHiddenFields();
+
+        Set<String> fields = new HashSet<>();
+        if (ingestTypeFilter == null || ingestTypeFilter.isEmpty()) {
+            fields.addAll(hiddenFields.values());
+        } else {
+            for (String datatype : ingestTypeFilter) {
+                fields.addAll(hiddenFields.get(datatype));
+            }
+        }
+        return Collections.unmodifiableSet(fields);
     }
 
     /**
@@ -1693,6 +1736,105 @@ public class MetadataHelper {
     }
 
     /**
+     * Get fields that have not been ingested within the date range (start and end dates are inclusive).
+     *
+     * @param fields
+     *            the fields
+     * @param datatypes
+     *            the datatypes
+     * @param beginDate
+     *            the start date
+     * @param endDate
+     *            the end date
+     * @param specialFields
+     *            special fields to exclude from search
+     * @return a set of missing fields from the given date range
+     */
+    public Set<String> getMissingFieldsInDateRange(Set<String> fields, Set<String> datatypes, String beginDate, String endDate, Set<String> specialFields) {
+        SortedSet<String> sortedDatatypes = new TreeSet<>(datatypes);
+        Set<String> foundFields = new HashSet<>();
+        fields = Sets.difference(fields, specialFields);
+        Set<Range> ranges = createExactFieldCountRanges(fields);
+        StringBuilder dataTypeRegex = new StringBuilder();
+        List<IteratorSetting> settings = new ArrayList<>();
+
+        if (ranges.isEmpty()) {
+            return Collections.emptySet();
+        }
+
+        int index = 0;
+        for (String dataType : sortedDatatypes) {
+            if (index < sortedDatatypes.size() - 1) {
+                dataTypeRegex.append(dataType).append("\u0000.*").append("|");
+                index++;
+            } else {
+                dataTypeRegex.append(dataType).append("\u0000.*");
+            }
+        }
+
+        AccumuloClient client = accumuloClient;
+        if (client instanceof WrappedAccumuloClient) {
+            client = ((WrappedAccumuloClient) client).getReal();
+        }
+
+        try (BatchScanner bs = ScannerHelper.createBatchScanner(client, getMetadataTableName(), getAuths(), fields.size())) {
+            if (!datatypes.isEmpty()) {
+                IteratorSetting regexFilter = new IteratorSetting(50, "regexFilter", RegExFilter.class);
+                regexFilter.addOption(RegExFilter.COLQ_REGEX, dataTypeRegex.toString());
+                settings.add(regexFilter);
+            }
+
+            settings.add(new IteratorSetting(51, "firstEntryInRow", FirstEntryInRowIterator.class));
+            bs.fetchColumnFamily(ColumnFamilyConstants.COLF_F);
+            bs.setRanges(ranges);
+
+            for (IteratorSetting setting : settings) {
+                bs.addScanIterator(setting);
+            }
+
+            for (Entry<Key,Value> entry : bs) {
+                Text colq = entry.getKey().getColumnQualifier();
+                int colqIndex = colq.find(NULL_BYTE);
+
+                String remainder;
+                try {
+                    remainder = Text.decode(colq.getBytes(), colqIndex + 1, colq.getLength() - (colqIndex + 1));
+                } catch (CharacterCodingException e) {
+                    log.warn("Could not deserialize colqual: {} ", entry.getKey());
+                    continue;
+                }
+                if (remainder.equals(FrequencyMetadataAggregator.AGGREGATED)) {
+                    // This is an aggregated entry.
+                    try {
+                        DateFrequencyMap map = new DateFrequencyMap(entry.getValue().get());
+                        if (!map.subMap(beginDate, endDate).isEmpty()) {
+                            foundFields.add(entry.getKey().getRow().toString());
+                        }
+                    } catch (IOException e) {
+                        log.error("Failed to convert Value to DateFrequencyMap", e);
+                    }
+                } else {
+                    // This is an entry with a count for a single date.
+                    try {
+                        Date date = DateHelper.parse(remainder);
+                        // Add the field if we fall within beginDate and endDate, inclusively.
+                        if (date.compareTo(DateHelper.parse(beginDate)) >= 0 && date.compareTo(DateHelper.parse(endDate)) <= 0) {
+                            foundFields.add(entry.getKey().getRow().toString());
+                        }
+                    } catch (ValueFormatException e) {
+                        log.warn("Could not convert the Value to a long: {}", entry.getValue());
+                    } catch (DateTimeParseException e) {
+                        log.warn("Could not convert date string: {}", remainder);
+                    }
+                }
+            }
+        } catch (TableNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+        return Sets.difference(fields, foundFields);
+    }
+
+    /**
      * Build ranges for the {@link #getCountsForFieldsInDateRange(Set, Set, String, String)} method.
      * <p>
      * The {@link MetadataFColumnSeekingFilter} can handle a field range, but providing datatypes enables more precise ranges.
@@ -1720,6 +1862,21 @@ public class MetadataHelper {
                 Key end = new Key(field, "f", datatypes.last() + '\u0000' + endDate + '\u0000');
                 ranges.add(new Range(start, true, end, false));
             }
+        }
+        return ranges;
+    }
+
+    /**
+     * Build ranges for the {@link #getMissingFieldsInDateRange(Set, Set, String, String, Set)} method.
+     *
+     * @param fields
+     *            the fields
+     * @return a set of exact ranges for the provided fields.
+     */
+    private Set<Range> createExactFieldCountRanges(Set<String> fields) {
+        Set<Range> ranges = new HashSet<>();
+        for (String field : fields) {
+            ranges.add(Range.exact(field, "f"));
         }
         return ranges;
     }
@@ -2155,5 +2312,4 @@ public class MetadataHelper {
         RegExFilter.setRegexs(cqRegex, null, null, regex, null, false);
         return cqRegex;
     }
-
 }

@@ -24,8 +24,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.accumulo.core.client.BatchScanner;
-import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
@@ -288,31 +286,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         }
     }
 
-    public static BatchScanner createBatchScanner(ShardQueryConfiguration config, ScannerFactory scannerFactory, QueryData qd) throws TableNotFoundException {
-        final BatchScanner bs = scannerFactory.newScanner(config.getShardTableName(), config.getAuthorizations(), config.getNumQueryThreads(),
-                        config.getQuery());
-
-        if (log.isTraceEnabled()) {
-            log.trace("Running with " + config.getAuthorizations() + " and " + config.getNumQueryThreads() + " threads: " + qd);
-        }
-
-        bs.setRanges(qd.getRanges());
-
-        for (IteratorSetting cfg : qd.getSettings()) {
-            bs.addScanIterator(cfg);
-        }
-
-        if (config.getTableConsistencyLevels().containsKey(config.getTableName())) {
-            bs.setConsistencyLevel(config.getTableConsistencyLevels().get(config.getTableName()));
-        }
-
-        if (config.getTableHints().containsKey(config.getTableName())) {
-            bs.setExecutionHints(config.getTableHints().get(config.getTableName()));
-        }
-
-        return bs;
-    }
-
     @Override
     public GenericQueryConfiguration initialize(AccumuloClient client, Query settings, Set<Authorizations> auths) throws Exception {
         // whenever we reinitialize, ensure we have a fresh transformer
@@ -507,7 +480,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
             // Modify the projectFields and disallowlistFields only for this stage, then return to the original values.
             // Not advisable to create a copy of the config object due to the embedded timers.
             Set<String> originalDisallowlistedFields = new HashSet<>(config.getDisallowlistedFields());
-            Set<String> originalProjectFields = new HashSet<>(config.getProjectFields());
+            Set<String> originalProjectFields = config.getProjectFields();
 
             // either projectFields or disallowlistedFields can be used, but not both
             // this will be caught when loadQueryParameters is called
@@ -1125,7 +1098,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
                 // Update the config and the projection fields.
                 this.setGroupByFields(groupByFields);
                 config.setGroupFields(groupByFields);
-                config.setProjectFields(groupByFields.getProjectionFields());
+                config.addProjectFields(groupByFields.getProjectionFields());
             }
         }
 
@@ -1145,6 +1118,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
                 // preserve the most recent flag
                 uniqueFields.setMostRecent(config.getUniqueFields().isMostRecent());
                 config.setUniqueFields(uniqueFields);
+                config.addProjectFields(uniqueFields.getFields());
             }
         }
 
@@ -1185,6 +1159,11 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         if (StringUtils.isNotBlank(bypassAccumuloString)) {
             Boolean bypassAccumuloBool = Boolean.parseBoolean(bypassAccumuloString);
             config.setBypassAccumulo(bypassAccumuloBool);
+        }
+
+        String dsEnabled = settings.findParameter(QueryParameters.DS_ENABLED).getParameterValue().trim();
+        if (StringUtils.isNotBlank(dsEnabled)) {
+            config.setUseDocumentScheduler(Boolean.parseBoolean(dsEnabled));
         }
 
         // Get the DATE_INDEX_TIME_TRAVEL parameter if given
@@ -1715,7 +1694,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         logQuery(config.getQueryTree(), "Query after flattening");
 
         // Apply the query model.
-        config.setQueryTree(ShardQueryUtils.applyQueryModel(config.getQueryTree(), config, metadataHelper.getAllFields(config.getDatatypeFilter()),
+        config.setQueryTree(ShardQueryUtils.applyQueryModel(config.getQueryTree(), config, metadataHelper.getModelExpansionFields(config.getDatatypeFilter()),
                         this.queryModel));
 
         logQuery(config.getQueryTree(), "Query after applying query model");
@@ -1906,6 +1885,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
     public void setDisableIteratorUniqueFields(boolean disableIteratorUniqueFields) {
         getConfig().setDisableIteratorUniqueFields(disableIteratorUniqueFields);
+    }
+
+    public boolean isDisableIteratorMostRecentUniqueFields() {
+        return getConfig().isDisableIteratorMostRecentUniqueFields();
+    }
+
+    public void setDisableIteratorMostRecentUniqueFields(boolean disableIteratorMostRecentUniqueFields) {
+        getConfig().setDisableIteratorMostRecentUniqueFields(disableIteratorMostRecentUniqueFields);
     }
 
     public UniqueFields getUniqueFields() {
@@ -3645,5 +3632,13 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
     public void setAllHitsQueryConfig(AllHitsQueryConfig allHitsQueryConfig) {
         getConfig().setAllHitsQueryConfig(allHitsQueryConfig);
+    }
+
+    public void setOneDocPerGroup(boolean value) {
+        getConfig().getGroupFields().setOneDocPerGroup(value);
+    }
+
+    public void setMultDocPerGroup(boolean value) {
+        getConfig().getGroupFields().setOneDocPerGroup(!value);
     }
 }

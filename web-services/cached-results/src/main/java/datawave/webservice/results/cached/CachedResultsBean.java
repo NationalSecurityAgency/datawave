@@ -44,6 +44,7 @@ import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
 import javax.ejb.TransactionManagement;
 import javax.ejb.TransactionManagementType;
+import javax.enterprise.concurrent.ManagedExecutorService;
 import javax.inject.Inject;
 import javax.interceptor.Interceptors;
 import javax.sql.DataSource;
@@ -107,6 +108,7 @@ import datawave.security.user.UserOperationsBean;
 import datawave.webservice.common.audit.AuditBean;
 import datawave.webservice.common.audit.AuditParameters;
 import datawave.webservice.common.audit.Auditor.AuditType;
+import datawave.webservice.common.exception.BadRequestException;
 import datawave.webservice.common.exception.DatawaveWebApplicationException;
 import datawave.webservice.common.exception.NoResultsException;
 import datawave.webservice.common.exception.NotFoundException;
@@ -127,6 +129,8 @@ import datawave.webservice.query.exception.QueryCanceledQueryException;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.exception.UnauthorizedQueryException;
 import datawave.webservice.query.factory.Persister;
+import datawave.webservice.query.limit.QueryLimiter;
+import datawave.webservice.query.limit.QueryLimiterResponse;
 import datawave.webservice.query.metric.QueryMetricsBean;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.query.runner.AccumuloConnectionRequestBean;
@@ -191,6 +195,9 @@ public class CachedResultsBean {
     @Resource(lookup = "java:jboss/datasources/CachedResultsDS")
     protected DataSource ds;
 
+    @Resource
+    private ManagedExecutorService executor;
+
     @Inject
     private QueryCache runningQueryCache;
 
@@ -231,6 +238,9 @@ public class CachedResultsBean {
 
     @Inject
     private AccumuloConnectionRequestBean accumuloConnectionRequestBean;
+
+    @Inject
+    private QueryLimiter queryLimiter;
 
     protected static final String COMMA = ",";
     protected static final String TABLE = "$table";
@@ -377,6 +387,24 @@ public class CachedResultsBean {
             try {
                 rq = getQueryById(queryId);
 
+                try {
+                    // Check if submitting a new query would exceed any configured concurrent query limits.
+                    Query settings = rq.getSettings();
+                    QueryLimiterResponse limiterResponse = queryLimiter.checkForLimits(settings.getUserDN(), settings.getSystemFrom(),
+                                    settings.getQueryLogicName());
+                    if (limiterResponse.metLimit()) {
+                        BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.CONCURRENT_QUERY_LIMIT_EXCEEDED,
+                                        limiterResponse.getMessage());
+                        response.addException(qe);
+                        throw new BadRequestException(qe, response);
+                    }
+                } catch (Exception e) {
+                    log.error("Error checking concurrent query limits", e);
+                    QueryException qe = new QueryException(DatawaveErrorCode.CONCURRENT_QUERY_LIMIT_ERROR, e);
+                    response.addException(qe);
+                    throw qe;
+                }
+
                 // prevent duplicate calls to load with the same queryId
                 if (CachedResultsBean.loadingQueries.contains(queryId)) {
                     // if a different thread is using rq, we don't want to modify it in the finally block
@@ -479,11 +507,13 @@ public class CachedResultsBean {
                 try {
                     query = new RunningQuery(null, null, logic.getConnectionPriority(), logic, q, q.getQueryAuthorizations(), p,
                                     new RunningQueryTimingImpl(queryExpirationConf, q.getPageTimeout()), predictor, userOperationsBean, metricFactory);
+                    query.setExecutor(executor);
                     query.setActiveCall(true);
                     // queryMetric was duplicated from the original earlier
                     query.setMetric(queryMetric);
                     query.setQueryMetrics(metrics);
                     query.setClient(client);
+                    queryLimiter.countQueryTowardsLimits(q.getId().toString(), userDn, q.getSystemFrom(), logic.getLogicName());
                 } finally {
                     qlCache.poll(q.getId().toString());
                 }
@@ -722,6 +752,11 @@ public class CachedResultsBean {
                 } catch (Exception e) {
                     response.addException(new QueryException(DatawaveErrorCode.QUERY_CLOSE_ERROR, e).getBottomQueryException());
                 }
+                try {
+                    queryLimiter.stopCountingQueryTowardsLimits(query.getSettings().getId().toString());
+                } catch (Exception e) {
+                    log.error("Failed to stop counting query " + query.getSettings().getId().toString() + " towards limits", e);
+                }
             } else if (client != null) {
                 try {
                     connectionFactory.returnClient(client);
@@ -729,6 +764,7 @@ public class CachedResultsBean {
                     log.error(new QueryException(DatawaveErrorCode.CONNECTOR_RETURN_ERROR, e));
                 }
             }
+
         }
     }
 
@@ -2146,6 +2182,7 @@ public class CachedResultsBean {
                 AccumuloConnectionFactory.Priority priority = logic.getConnectionPriority();
                 query = new RunningQuery(metrics, null, priority, logic, q, q.getQueryAuthorizations(), p,
                                 new RunningQueryTimingImpl(queryExpirationConf, q.getPageTimeout()), predictor, userOperationsBean, metricFactory);
+                query.setExecutor(executor);
                 query.setActiveCall(true);
                 // Put in the cache by id and name, we will have two copies that reference the same object
                 runningQueryCache.put(q.getId().toString(), query);

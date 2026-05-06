@@ -46,6 +46,7 @@ import datawave.webservice.query.exception.PreConditionFailedQueryException;
 /**
  * An asynchronous index lookup which looks up concrete values for the specified regex term.
  */
+@Deprecated
 public class RegexIndexLookup extends AsyncIndexLookup {
 
     private static final Object LOCK = new Object();

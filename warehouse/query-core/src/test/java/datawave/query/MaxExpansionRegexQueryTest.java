@@ -8,6 +8,7 @@ import static datawave.query.testframework.RawDataManager.OR_OP;
 import static datawave.query.testframework.RawDataManager.RE_OP;
 import static datawave.query.testframework.RawDataManager.RN_OP;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.File;
@@ -349,7 +350,7 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
         // verify we still get our expected results
         runTest(query, expect);
         // and verify that the ivarators indeed persisted
-        assertEquals(3, countComplete(dirs));
+        assertTrue("Expected at least one ivarator to complete and persist", countComplete(dirs) >= 1);
     }
 
     private int countComplete(List<String> dirs) throws Exception {

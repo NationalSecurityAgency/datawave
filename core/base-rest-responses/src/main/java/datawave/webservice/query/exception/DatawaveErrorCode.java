@@ -169,6 +169,7 @@ public enum DatawaveErrorCode {
     QUERY_PLAN_ERROR(500, 161, "Error retrieving plan for query."),
     QUERY_PREDICTIONS_ERROR(500, 162, "Error retrieving predictions for query."),
     QUERY_VALIDATION_ERROR(500, 163, "Error validating query."),
+    CONCURRENT_QUERY_LIMIT_ERROR(500, 164, "Error checking concurrent query limits."),
     // 204 No Content
     NO_QUERIES_FOUND(204, 1, "No queries found for user."),
     RESULTS_NOT_SENT(204, 2, "Results not sent."),
@@ -275,7 +276,8 @@ public enum DatawaveErrorCode {
     CURRENT_AND_PREVIOUS_EVENT_ORDER_INVALID(412, 16, "Current event and previous event are not in chronological order"),
     CURRENT_AND_NEXT_EVENT_ORDER_INVALID(412, 17, "Current event and next event are not in chronological order"),
     FIELD_PHRASE_QUERY_NOT_INDEXED(412, 18, "Field cannot be queried as a phrase since it was not indexed as such."),
-    NO_QUERY_VALIDATION_RULES_CONFIGURED(412, 19, "No query validation rules configured for the query logic.");
+    NO_QUERY_VALIDATION_RULES_CONFIGURED(412, 19, "No query validation rules configured for the query logic."),
+    CONCURRENT_QUERY_LIMIT_EXCEEDED(412, 20, "Concurrent query limit exceeded.");
 
     private String message;
     private int httpCode;

@@ -1,5 +1,7 @@
 package datawave.query.jexl.visitors;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -7,7 +9,6 @@ import java.util.Set;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ParseException;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -100,6 +101,6 @@ class FieldsWithNumericValuesVisitorTest {
     private void assertResult() throws ParseException {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
         Set<String> actual = FieldsWithNumericValuesVisitor.getFields(script);
-        Assertions.assertEquals(expectedFields, actual);
+        assertEquals(expectedFields, actual);
     }
 }

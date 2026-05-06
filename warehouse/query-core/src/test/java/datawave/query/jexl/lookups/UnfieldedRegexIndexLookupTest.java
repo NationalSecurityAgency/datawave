@@ -1,6 +1,5 @@
 package datawave.query.jexl.lookups;
 
-import static datawave.core.iterators.TimeoutExceptionIterator.EXCEPTEDVALUE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Collections;
@@ -77,22 +76,11 @@ public class UnfieldedRegexIndexLookupTest extends BaseIndexLookupTest {
     }
 
     @Test
-    public void testSimulatedTimeout() throws Exception {
-        write("bar", "FIELD_A");
-        write("baz", "FIELD_A");
-        write("baz-kaboom", "FIELD_A", EXCEPTEDVALUE);
-        withQuery("_ANYFIELD_ =~ 'ba.*'");
-        executeLookup();
-        assertTimeoutExceeded();
-        assertResultFields(Collections.emptySet());
-    }
-
-    @Test
     public void testExpansionTimeoutOnInitialSeek() throws Exception {
-        long origIndexScanTime = config.getMaxIndexScanTimeMillis();
+        long origIndexScanTime = config.getMaxAnyFieldScanTimeMillis();
         try {
             addDelayIterator(10);
-            config.setMaxIndexScanTimeMillis(5);
+            config.setMaxAnyFieldScanTimeMillis(5);
 
             // ensure the test always hits the timeout
             for (int i = 0; i < 15; i++) {
@@ -105,16 +93,16 @@ public class UnfieldedRegexIndexLookupTest extends BaseIndexLookupTest {
             assertResultFields(Collections.emptySet());
         } finally {
             removeDelayIterator();
-            config.setMaxIndexScanTimeMillis(origIndexScanTime);
+            config.setMaxAnyFieldScanTimeMillis(origIndexScanTime);
         }
     }
 
     @Test
     public void testExpansionTimeoutOnNext() throws Exception {
-        long origIndexScanTime = config.getMaxIndexScanTimeMillis();
+        long origIndexScanTime = config.getMaxAnyFieldScanTimeMillis();
         try {
             addDelayIterator(1);
-            config.setMaxIndexScanTimeMillis(5);
+            config.setMaxAnyFieldScanTimeMillis(5);
 
             // ensure the test always hits the timeout
             for (int i = 0; i < 15; i++) {
@@ -127,7 +115,7 @@ public class UnfieldedRegexIndexLookupTest extends BaseIndexLookupTest {
             assertResultFields(Collections.emptySet());
         } finally {
             removeDelayIterator();
-            config.setMaxIndexScanTimeMillis(origIndexScanTime);
+            config.setMaxAnyFieldScanTimeMillis(origIndexScanTime);
         }
     }
 
@@ -274,6 +262,8 @@ public class UnfieldedRegexIndexLookupTest extends BaseIndexLookupTest {
      */
     private AsyncIndexLookup createLookup(String regex, Range range, boolean reverse, Set<String> fields) {
         ScannerFactory scannerFactory = new ScannerFactory(client);
-        return new UnfieldedRegexIndexLookup(config, scannerFactory, executor, regex, range, reverse, fields);
+        AsyncIndexLookup lookup = new UnfieldedRegexIndexLookup(config, scannerFactory, executor, regex, range, reverse, fields);
+        lookup.setScanMonitor(monitor);
+        return lookup;
     }
 }

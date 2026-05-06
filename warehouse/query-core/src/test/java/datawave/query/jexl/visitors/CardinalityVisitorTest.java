@@ -35,7 +35,6 @@ public class CardinalityVisitorTest {
     public void testMarkers() {
         // some markers are treated as max cost
         test(Long.MAX_VALUE, "((_Value_ = true) && (F =~ 'ba.*'))");
-        test(Long.MAX_VALUE, "((_Term_ = true) && (_ANYFIELD_ =~ 'ba.*'))");
         test(Long.MAX_VALUE, "((_List_ = true) && (((id = 'some-bogus-id') && (field = 'QUOTE') && (params = '{\"values\":[\"a\",\"b\",\"c\"]}'))))");
         test(Long.MAX_VALUE, "((_Bounded_ = true) && (A >= 1 && A <= 2))");
 
