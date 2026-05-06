@@ -1,6 +1,8 @@
 package datawave.query.config;
 
-import org.junit.jupiter.api.Assertions;
+import static org.junit.jupiter.api.assertEquals;
+import static org.junit.jupiter.api.assertNotEquals;
+
 import org.junit.jupiter.api.Test;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -30,8 +32,8 @@ class IvaratorConfigTest {
         String reserialized = IvaratorConfig.toJson(deserialized);
         IvaratorConfig redeserialized = IvaratorConfig.fromJson(reserialized);
 
-        Assertions.assertEquals(serialized, reserialized);
-        Assertions.assertEquals(deserialized, redeserialized);
+        assertEquals(serialized, reserialized);
+        assertEquals(deserialized, redeserialized);
 
     }
 
@@ -55,8 +57,8 @@ class IvaratorConfigTest {
         IvaratorConfig conf2 = new IvaratorConfig();
         IvaratorConfig conf3 = new IvaratorConfig(conf2);
 
-        Assertions.assertNotEquals(conf1, conf2);
-        Assertions.assertEquals(conf2, conf3);
+        assertNotEquals(conf1, conf2);
+        assertEquals(conf2, conf3);
 
     }
 
@@ -68,10 +70,10 @@ class IvaratorConfigTest {
         queryConfig.setIvaratorConfig(ivaratorConfig);
         queryConfig.setIvaratorMaxOpenFiles(123);
 
-        Assertions.assertEquals(123, ivaratorConfig.getIvaratorMaxOpenFiles());
+        assertEquals(123, ivaratorConfig.getIvaratorMaxOpenFiles());
 
         ivaratorConfig.setIvaratorMaxOpenFiles(456);
-        Assertions.assertEquals(456, queryConfig.getIvaratorMaxOpenFiles());
+        assertEquals(456, queryConfig.getIvaratorMaxOpenFiles());
     }
 
     @Test
@@ -82,10 +84,10 @@ class IvaratorConfigTest {
         ops.setIvaratorConfig(ivaratorConfig);
         ops.setIvaratorMaxOpenFiles(123);
 
-        Assertions.assertEquals(123, ivaratorConfig.getIvaratorMaxOpenFiles());
+        assertEquals(123, ivaratorConfig.getIvaratorMaxOpenFiles());
 
         ivaratorConfig.setIvaratorMaxOpenFiles(456);
-        Assertions.assertEquals(456, ops.getIvaratorMaxOpenFiles());
+        assertEquals(456, ops.getIvaratorMaxOpenFiles());
     }
 
 }
