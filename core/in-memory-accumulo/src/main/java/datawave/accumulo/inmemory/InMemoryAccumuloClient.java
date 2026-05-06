@@ -61,6 +61,14 @@ public class InMemoryAccumuloClient implements AccumuloClient {
      * Not supported by the in-memory implementation.
      */
     @Override
+    public ConditionalWriter createConditionalWriter(String tableName) throws TableNotFoundException {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * Not supported by the in-memory implementation.
+     */
+    @Override
     public ConditionalWriter createConditionalWriter(String tableName, ConditionalWriterConfig config) throws TableNotFoundException {
         throw new UnsupportedOperationException();
     }
