@@ -3,7 +3,6 @@ package datawave.query.jexl.visitors;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DELAYED;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EVALUATION_ONLY;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_OR;
-import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_TERM;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_VALUE;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.INDEX_HOLE;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.LENIENT;
@@ -263,6 +262,23 @@ public class ExpandMultiNormalizedTermsTest {
         expandTerms(original, expected);
     }
 
+    // Accumulo will throw an exception when creating a range with a lower bound of '4' and an upper bound of '10'
+    @Test
+    public void testBoundedMultiNormalizedBoundsIllegalRange() throws ParseException {
+        Multimap<String,Type<?>> dataTypes = HashMultimap.create();
+        dataTypes.putAll("FOO", Sets.newHashSet(new TrimLeadingZerosType(), new StringType()));
+
+        helper.setIndexedFields(dataTypes.keySet());
+        helper.setIndexOnlyFields(dataTypes.keySet());
+        helper.addTermFrequencyFields(dataTypes.keySet());
+
+        config.setQueryFieldsDatatypes(dataTypes);
+
+        String original = "((_Bounded_ = true) && (FOO > 4 && FOO < 10))";
+        String expected = "((_Bounded_ = true) && (FOO > '4' && FOO < '10'))";
+        expandTerms(original, expected);
+    }
+
     @Test
     public void testBoundedMultiNormalizedBounds3() throws ParseException {
         Multimap<String,Type<?>> dataTypes = HashMultimap.create();
@@ -514,14 +530,14 @@ public class ExpandMultiNormalizedTermsTest {
 
         config.setQueryFieldsDatatypes(dataTypes);
 
-        List<String> markers = Arrays.asList(new String[] {INDEX_HOLE.getLabel(), DELAYED.getLabel(), EXCEEDED_OR.getLabel(), EVALUATION_ONLY.getLabel()});
+        List<String> markers = Arrays.asList(INDEX_HOLE.getLabel(), DELAYED.getLabel(), EXCEEDED_OR.getLabel(), EVALUATION_ONLY.getLabel());
         for (String marker : markers) {
             String original = "((" + marker + " = true) && (FOO == 'Bar'))";
             String expected = "((" + marker + " = true) && (FOO == 'bar'))";
             expandTerms(original, expected);
         }
 
-        markers = Arrays.asList(new String[] {EXCEEDED_TERM.getLabel(), EXCEEDED_VALUE.getLabel()});
+        markers = Collections.singletonList(EXCEEDED_VALUE.getLabel());
         for (String marker : markers) {
             String original = "((" + marker + " = true) && (FOO == 'Bar'))";
             String expected = "((" + marker + " = true) && (FOO == 'Bar'))";

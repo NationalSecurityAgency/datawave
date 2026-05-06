@@ -1,27 +1,25 @@
 package datawave.query.model;
 
-import java.util.Collections;
-import java.util.Set;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.when;
+
+import java.time.Clock;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
-import org.easymock.EasyMock;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.api.easymock.PowerMock;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(ModelKeyParser.class)
-@PowerMockIgnore("org.apache.log4j")
+@ExtendWith(MockitoExtension.class)
 public class ModelKeyParserTest {
 
     private static final String MODEL_NAME = "MODEL";
@@ -31,7 +29,6 @@ public class ModelKeyParserTest {
     private static final String COLVIZ = "PRIVATE";
     private static final Direction FORWARD = Direction.FORWARD;
     private static final Direction REVERSE = Direction.REVERSE;
-    private static final Set<Authorizations> AUTHS = Collections.singleton(new Authorizations("PRIVATE, PUBLIC"));
     private static FieldMapping FORWARD_FIELD_MAPPING = null;
     private static FieldMapping STRICT_MAPPING = null;
     private static FieldMapping REVERSE_FIELD_MAPPING = null;
@@ -54,10 +51,12 @@ public class ModelKeyParserTest {
     private static Mutation REVERSE_MUTATION = null;
     private static Mutation REVERSE_DELETE_MUTATION = null;
 
-    private static long TIMESTAMP = System.currentTimeMillis();
+    private static final long TIMESTAMP = System.currentTimeMillis() - 123400000;
 
-    @Before
-    public void setup() throws Exception {
+    private final Clock clock = Mockito.mock(Clock.class);
+
+    @BeforeEach
+    public void beforeEach() throws Exception {
         FORWARD_FIELD_MAPPING = new FieldMapping();
         FORWARD_FIELD_MAPPING.setColumnVisibility(COLVIZ);
         FORWARD_FIELD_MAPPING.setDatatype(DATATYPE);
@@ -119,263 +118,226 @@ public class ModelKeyParserTest {
         REVERSE_DELETE_MUTATION = new Mutation(FIELD_NAME);
         REVERSE_DELETE_MUTATION.putDelete(MODEL_NAME + ModelKeyParser.NULL_BYTE + DATATYPE, MODEL_FIELD_NAME + ModelKeyParser.NULL_BYTE + REVERSE.getValue(),
                         new ColumnVisibility(COLVIZ), TIMESTAMP);
-
-        PowerMock.mockStatic(System.class, System.class.getMethod("currentTimeMillis"));
     }
 
     @Test
-    public void testForwardKeyParse() throws Exception {
+    public void testForwardKeyParse() {
         FieldMapping mapping = ModelKeyParser.parseKey(FORWARD_KEY);
-        Assert.assertEquals(FORWARD_FIELD_MAPPING, mapping);
+        assertEquals(FORWARD_FIELD_MAPPING, mapping);
 
         // Test ForwardKeyParse with no datatype
         FORWARD_FIELD_MAPPING.setDatatype(null);
         FORWARD_KEY = new Key(MODEL_FIELD_NAME, MODEL_NAME, FIELD_NAME + ModelKeyParser.NULL_BYTE + FORWARD.getValue(), COLVIZ, TIMESTAMP);
 
         mapping = ModelKeyParser.parseKey(FORWARD_KEY);
-        Assert.assertEquals(FORWARD_FIELD_MAPPING, mapping);
+        assertEquals(FORWARD_FIELD_MAPPING, mapping);
     }
 
     @Test
-    public void testStrictKeyParse() throws Exception {
+    public void testStrictKeyParse() {
         FieldMapping mapping = ModelKeyParser.parseKey(STRICT_KEY);
-        Assert.assertEquals(STRICT_MAPPING, mapping);
+        assertEquals(STRICT_MAPPING, mapping);
 
         // Test ForwardKeyParse with no datatype
         STRICT_MAPPING.setDatatype(null);
         STRICT_KEY = new Key(MODEL_FIELD_NAME, MODEL_NAME, QueryModel.STRICT, COLVIZ, TIMESTAMP);
 
         mapping = ModelKeyParser.parseKey(STRICT_KEY);
-        Assert.assertEquals(STRICT_MAPPING, mapping);
+        assertEquals(STRICT_MAPPING, mapping);
     }
 
     @Test
-    public void testVersionKeyParse() throws Exception {
+    public void testVersionKeyParse() {
         FieldMapping mapping = ModelKeyParser.parseKey(VERSION_KEY1, VERSION_VALUE1);
-        Assert.assertEquals(VERSION_MAPPING, mapping);
+        assertEquals(VERSION_MAPPING, mapping);
         mapping = ModelKeyParser.parseKey(VERSION_KEY2, VERSION_VALUE2);
-        Assert.assertEquals(VERSION_MAPPING, mapping);
+        assertEquals(VERSION_MAPPING, mapping);
         mapping = ModelKeyParser.parseKey(VERSION_KEY3, VERSION_VALUE3);
-        Assert.assertEquals(VERSION_MAPPING, mapping);
+        assertEquals(VERSION_MAPPING, mapping);
     }
 
     @Test
-    public void testReverseKeyParse() throws Exception {
+    public void testReverseKeyParse() {
         FieldMapping mapping = ModelKeyParser.parseKey(REVERSE_KEY);
-        Assert.assertEquals(REVERSE_FIELD_MAPPING, mapping);
+        assertEquals(REVERSE_FIELD_MAPPING, mapping);
 
         // Test ReverseKeyParse with no datatype
         REVERSE_FIELD_MAPPING.setDatatype(null);
         REVERSE_KEY = new Key(FIELD_NAME, MODEL_NAME, MODEL_FIELD_NAME + ModelKeyParser.NULL_BYTE + REVERSE.getValue(), COLVIZ, TIMESTAMP);
         mapping = ModelKeyParser.parseKey(REVERSE_KEY);
-        Assert.assertEquals("ReverseKeyParse with no datatype failed.", REVERSE_FIELD_MAPPING, mapping);
+        assertEquals(REVERSE_FIELD_MAPPING, mapping, "ReverseKeyParse with no datatype failed.");
     }
 
     @Test
-    public void testForwardMappingParse() throws Exception {
-        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
-        PowerMock.replayAll();
+    public void testForwardMappingParse() {
+        when(clock.millis()).thenReturn(TIMESTAMP);
+        ReflectionTestUtils.setField(ModelKeyParser.class, "clock", clock);
+
         Key k = ModelKeyParser.createKey(FORWARD_FIELD_MAPPING, MODEL_NAME);
-        PowerMock.verifyAll();
-        Assert.assertEquals(FORWARD_KEY, k);
+        assertEquals(FORWARD_KEY, k);
 
         // Test forwardMappingParse with null datatype
-        PowerMock.resetAll();
-        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
         FORWARD_FIELD_MAPPING.setDatatype(null);
-        PowerMock.replayAll();
         k = ModelKeyParser.createKey(FORWARD_FIELD_MAPPING, MODEL_NAME);
-        PowerMock.verifyAll();
         FORWARD_KEY = new Key(MODEL_FIELD_NAME, MODEL_NAME, FIELD_NAME + ModelKeyParser.NULL_BYTE + FORWARD.getValue(), COLVIZ, TIMESTAMP);
-        PowerMock.verifyAll();
-        Assert.assertEquals(FORWARD_KEY, k);
+        assertEquals(FORWARD_KEY, k);
     }
 
     @Test
-    public void testStrictMappingParse() throws Exception {
-        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
-        PowerMock.replayAll();
+    public void testStrictMappingParse() {
+        when(clock.millis()).thenReturn(TIMESTAMP);
+        ReflectionTestUtils.setField(ModelKeyParser.class, "clock", clock);
+
         Key k = ModelKeyParser.createKey(STRICT_MAPPING, MODEL_NAME);
-        PowerMock.verifyAll();
-        Assert.assertEquals(STRICT_KEY, k);
+        assertEquals(STRICT_KEY, k);
 
         // Test StrictMappingParse with null datatype
-        PowerMock.resetAll();
-        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
         STRICT_MAPPING.setDatatype(null);
-        PowerMock.replayAll();
         k = ModelKeyParser.createKey(STRICT_MAPPING, MODEL_NAME);
-        PowerMock.verifyAll();
         STRICT_KEY = new Key(MODEL_FIELD_NAME, MODEL_NAME, QueryModel.STRICT, COLVIZ, TIMESTAMP);
-        PowerMock.verifyAll();
-        Assert.assertEquals(STRICT_KEY, k);
+        assertEquals(STRICT_KEY, k);
     }
 
     @Test
-    public void testReverseMappingParse() throws Exception {
-        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
-        PowerMock.replayAll();
+    public void testReverseMappingParse() {
+        when(clock.millis()).thenReturn(TIMESTAMP);
+        ReflectionTestUtils.setField(ModelKeyParser.class, "clock", clock);
+
         Key k = ModelKeyParser.createKey(REVERSE_FIELD_MAPPING, MODEL_NAME);
-        PowerMock.verifyAll();
-        Assert.assertEquals(REVERSE_KEY, k);
+        assertEquals(REVERSE_KEY, k);
 
         // Test with null datatype
-        PowerMock.resetAll();
-        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
         REVERSE_FIELD_MAPPING.setDatatype(null);
-        PowerMock.replayAll();
         REVERSE_KEY = new Key(FIELD_NAME, MODEL_NAME, MODEL_FIELD_NAME + ModelKeyParser.NULL_BYTE + REVERSE.getValue(), COLVIZ, TIMESTAMP);
         k = ModelKeyParser.createKey(REVERSE_FIELD_MAPPING, MODEL_NAME);
-        PowerMock.verifyAll();
-        Assert.assertEquals(REVERSE_KEY, k);
+        assertEquals(REVERSE_KEY, k);
     }
 
     @Test
-    public void testForwardCreateMutation() throws Exception {
-        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
-        PowerMock.replayAll();
+    public void testForwardCreateMutation() {
+        when(clock.millis()).thenReturn(TIMESTAMP);
+        ReflectionTestUtils.setField(ModelKeyParser.class, "clock", clock);
+
         Mutation m = ModelKeyParser.createMutation(FORWARD_FIELD_MAPPING, MODEL_NAME);
-        PowerMock.verifyAll();
         m.getUpdates();
-        Assert.assertEquals(FORWARD_MUTATION, m);
+        assertTrue(FORWARD_MUTATION.equals(m));
 
         // Test with null datatype
-        PowerMock.resetAll();
-        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
         FORWARD_FIELD_MAPPING.setDatatype(null);
-        PowerMock.replayAll();
         m = ModelKeyParser.createMutation(FORWARD_FIELD_MAPPING, MODEL_NAME);
         FORWARD_MUTATION = new Mutation(MODEL_FIELD_NAME);
         FORWARD_MUTATION.put(MODEL_NAME, FIELD_NAME + ModelKeyParser.NULL_BYTE + FORWARD.getValue(), new ColumnVisibility(COLVIZ), TIMESTAMP,
                         ModelKeyParser.NULL_VALUE);
-        PowerMock.verifyAll();
         m.getUpdates();
-        Assert.assertEquals(FORWARD_MUTATION, m);
+        assertEquals(FORWARD_MUTATION, m);
     }
 
     @Test
-    public void testStrictCreateMutation() throws Exception {
-        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
-        PowerMock.replayAll();
+    public void testStrictCreateMutation() {
+        when(clock.millis()).thenReturn(TIMESTAMP);
+        ReflectionTestUtils.setField(ModelKeyParser.class, "clock", clock);
+
         Mutation m = ModelKeyParser.createMutation(STRICT_MAPPING, MODEL_NAME);
-        PowerMock.verifyAll();
         m.getUpdates();
-        Assert.assertEquals(STRICT_MUTATION, m);
+        assertEquals(STRICT_MUTATION, m);
 
         // Test with null datatype
-        PowerMock.resetAll();
-        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
         STRICT_MAPPING.setDatatype(null);
-        PowerMock.replayAll();
         m = ModelKeyParser.createMutation(STRICT_MAPPING, MODEL_NAME);
         STRICT_MUTATION = new Mutation(MODEL_FIELD_NAME);
         STRICT_MUTATION.put(MODEL_NAME, QueryModel.STRICT, new ColumnVisibility(COLVIZ), TIMESTAMP, ModelKeyParser.NULL_VALUE);
-        PowerMock.verifyAll();
         m.getUpdates();
-        Assert.assertEquals(STRICT_MUTATION, m);
+        assertEquals(STRICT_MUTATION, m);
     }
 
     @Test
-    public void testReverseCreateMutation() throws Exception {
-        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
-        PowerMock.replayAll();
+    public void testReverseCreateMutation() {
+        when(clock.millis()).thenReturn(TIMESTAMP);
+        ReflectionTestUtils.setField(ModelKeyParser.class, "clock", clock);
+
         Mutation m = ModelKeyParser.createMutation(REVERSE_FIELD_MAPPING, MODEL_NAME);
-        PowerMock.verifyAll();
         m.getUpdates();
-        Assert.assertEquals(REVERSE_MUTATION, m);
+        assertEquals(REVERSE_MUTATION, m);
 
         // Test with null datatype
-        PowerMock.resetAll();
-        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
         REVERSE_FIELD_MAPPING.setDatatype(null);
-        PowerMock.replayAll();
         m = ModelKeyParser.createMutation(REVERSE_FIELD_MAPPING, MODEL_NAME);
         REVERSE_MUTATION = new Mutation(FIELD_NAME);
         REVERSE_MUTATION.put(MODEL_NAME, MODEL_FIELD_NAME + ModelKeyParser.NULL_BYTE + REVERSE.getValue(), new ColumnVisibility(COLVIZ), TIMESTAMP,
                         ModelKeyParser.NULL_VALUE);
-        PowerMock.verifyAll();
         m.getUpdates();
-        Assert.assertEquals(REVERSE_MUTATION, m);
+        assertEquals(REVERSE_MUTATION, m);
     }
 
     @Test
-    public void testForwardCreateDeleteMutation() throws Exception {
-        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP).times(2);
-        PowerMock.replayAll();
+    public void testForwardCreateDeleteMutation() {
+        when(clock.millis()).thenReturn(TIMESTAMP);
+        ReflectionTestUtils.setField(ModelKeyParser.class, "clock", clock);
+
         Mutation m = ModelKeyParser.createDeleteMutation(FORWARD_FIELD_MAPPING, MODEL_NAME);
-        PowerMock.verifyAll();
         m.getUpdates();
-        Assert.assertEquals(FORWARD_DELETE_MUTATION, m);
+        assertEquals(FORWARD_DELETE_MUTATION, m);
 
         // Test with null datatype
-        PowerMock.resetAll();
-        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP).times(2);
         FORWARD_FIELD_MAPPING.setDatatype(null);
-        PowerMock.replayAll();
         FORWARD_DELETE_MUTATION = new Mutation(MODEL_FIELD_NAME);
         FORWARD_DELETE_MUTATION.putDelete(MODEL_NAME, FIELD_NAME + ModelKeyParser.NULL_BYTE + FORWARD.getValue(), new ColumnVisibility(COLVIZ), TIMESTAMP);
         FORWARD_DELETE_MUTATION.putDelete(MODEL_NAME, FIELD_NAME + ModelKeyParser.NULL_BYTE + "index_only" + ModelKeyParser.NULL_BYTE + FORWARD.getValue(),
                         new ColumnVisibility(COLVIZ), TIMESTAMP);
         m = ModelKeyParser.createDeleteMutation(FORWARD_FIELD_MAPPING, MODEL_NAME);
-        PowerMock.verifyAll();
         m.getUpdates();
-        Assert.assertEquals(FORWARD_DELETE_MUTATION, m);
+        assertEquals(FORWARD_DELETE_MUTATION, m);
     }
 
     @Test
-    public void testStrictCreateDeleteMutation() throws Exception {
-        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP).times(2);
-        PowerMock.replayAll();
+    public void testStrictCreateDeleteMutation() {
+        when(clock.millis()).thenReturn(TIMESTAMP);
+        ReflectionTestUtils.setField(ModelKeyParser.class, "clock", clock);
+
         Mutation m = ModelKeyParser.createDeleteMutation(STRICT_MAPPING, MODEL_NAME);
-        PowerMock.verifyAll();
         m.getUpdates();
-        Assert.assertEquals(STRICT_DELETE_MUTATION, m);
+        assertEquals(STRICT_DELETE_MUTATION, m);
 
         // Test with null datatype
-        PowerMock.resetAll();
-        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP).times(2);
         STRICT_MAPPING.setDatatype(null);
-        PowerMock.replayAll();
         STRICT_DELETE_MUTATION = new Mutation(MODEL_FIELD_NAME);
         STRICT_DELETE_MUTATION.putDelete(MODEL_NAME, ModelKeyParser.ATTRIBUTES, new ColumnVisibility(COLVIZ), TIMESTAMP);
         STRICT_DELETE_MUTATION.putDelete(MODEL_NAME, QueryModel.STRICT, new ColumnVisibility(COLVIZ), TIMESTAMP);
         m = ModelKeyParser.createDeleteMutation(STRICT_MAPPING, MODEL_NAME);
-        PowerMock.verifyAll();
         m.getUpdates();
-        Assert.assertEquals(STRICT_DELETE_MUTATION, m);
+        assertEquals(STRICT_DELETE_MUTATION, m);
     }
 
     @Test
-    public void testReverseCreateDeleteMutation() throws Exception {
-        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
-        PowerMock.replayAll();
+    public void testReverseCreateDeleteMutation() {
+        when(clock.millis()).thenReturn(TIMESTAMP);
+        ReflectionTestUtils.setField(ModelKeyParser.class, "clock", clock);
+
         Mutation m = ModelKeyParser.createDeleteMutation(REVERSE_FIELD_MAPPING, MODEL_NAME);
-        PowerMock.verifyAll();
         m.getUpdates();
-        Assert.assertEquals(REVERSE_DELETE_MUTATION, m);
+        assertEquals(REVERSE_DELETE_MUTATION, m);
 
         // Test with null datatype
-        PowerMock.resetAll();
-        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
+
         REVERSE_FIELD_MAPPING.setDatatype(null);
-        PowerMock.replayAll();
         REVERSE_DELETE_MUTATION = new Mutation(FIELD_NAME);
         REVERSE_DELETE_MUTATION.putDelete(MODEL_NAME, MODEL_FIELD_NAME + ModelKeyParser.NULL_BYTE + REVERSE.getValue(), new ColumnVisibility(COLVIZ),
                         TIMESTAMP);
         m = ModelKeyParser.createDeleteMutation(REVERSE_FIELD_MAPPING, MODEL_NAME);
-        PowerMock.verifyAll();
         m.getUpdates();
-        Assert.assertEquals(REVERSE_DELETE_MUTATION, m);
+        assertEquals(REVERSE_DELETE_MUTATION, m);
     }
 
     @Test
-    public void testParseKeyNullCV() throws Exception {
+    public void testParseKeyNullCV() {
         FieldMapping mapping = ModelKeyParser.parseKey(NULL_CV_KEY);
-        Assert.assertEquals(NULL_CV_MAPPING, mapping);
+        assertEquals(NULL_CV_MAPPING, mapping);
     }
 
     @Test
-    public void testForwardMappingIndexOnlyParse() throws Exception {
+    public void testForwardMappingIndexOnlyParse() {
+        when(clock.millis()).thenReturn(TIMESTAMP);
+        ReflectionTestUtils.setField(ModelKeyParser.class, "clock", clock);
 
         // Test with datatype
         FieldMapping forwardMapping = new FieldMapping();
@@ -388,13 +350,11 @@ public class ModelKeyParserTest {
         Key expectedForwardKey = new Key(MODEL_FIELD_NAME, MODEL_NAME + ModelKeyParser.NULL_BYTE + DATATYPE,
                         FIELD_NAME + ModelKeyParser.NULL_BYTE + FORWARD.getValue(), COLVIZ, TIMESTAMP);
 
-        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
-        PowerMock.replayAll();
+
         Key k = ModelKeyParser.createKey(forwardMapping, MODEL_NAME);
-        Assert.assertEquals(expectedForwardKey, k);
+        assertEquals(expectedForwardKey, k);
 
         // Test without datatype
-        PowerMock.resetAll();
         forwardMapping = new FieldMapping();
         forwardMapping.setColumnVisibility(COLVIZ);
         forwardMapping.setDirection(FORWARD);
@@ -403,14 +363,16 @@ public class ModelKeyParserTest {
 
         expectedForwardKey = new Key(MODEL_FIELD_NAME, MODEL_NAME, FIELD_NAME + ModelKeyParser.NULL_BYTE + FORWARD.getValue(), COLVIZ, TIMESTAMP);
 
-        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
-        PowerMock.replayAll();
+
         k = ModelKeyParser.createKey(forwardMapping, MODEL_NAME);
-        Assert.assertEquals(expectedForwardKey, k);
+        assertEquals(expectedForwardKey, k);
     }
 
     @Test
-    public void testForwardIndexOnlyCreateMutation() throws Exception {
+    public void testForwardIndexOnlyCreateMutation() {
+        when(clock.millis()).thenReturn(TIMESTAMP);
+        ReflectionTestUtils.setField(ModelKeyParser.class, "clock", clock);
+
         FieldMapping forwardMapping = new FieldMapping();
         forwardMapping.setColumnVisibility("PRIVATE");
         forwardMapping.setDatatype(DATATYPE);
@@ -423,14 +385,12 @@ public class ModelKeyParserTest {
         Text cq = new Text(FIELD_NAME + ModelKeyParser.NULL_BYTE + FORWARD.getValue());
         expectedforwardMutation.put(cf, cq, new ColumnVisibility(COLVIZ), TIMESTAMP, ModelKeyParser.NULL_VALUE);
 
-        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
-        PowerMock.replayAll();
+
         Mutation m = ModelKeyParser.createMutation(forwardMapping, MODEL_NAME);
         m.getUpdates();
-        Assert.assertTrue("Expected true: expectedforwardMutation.equals(m)", expectedforwardMutation.equals(m));
+        assertTrue(expectedforwardMutation.equals(m), "Expected true: expectedforwardMutation.equals(m)");
 
         // Without Datatype
-        PowerMock.resetAll();
         forwardMapping = new FieldMapping();
         forwardMapping.setColumnVisibility(COLVIZ);
         forwardMapping.setDirection(FORWARD);
@@ -442,46 +402,41 @@ public class ModelKeyParserTest {
         cq = new Text(FIELD_NAME + ModelKeyParser.NULL_BYTE + FORWARD.getValue());
         expectedforwardMutation.put(cf, cq, new ColumnVisibility(COLVIZ), TIMESTAMP, ModelKeyParser.NULL_VALUE);
 
-        EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
-        PowerMock.replayAll();
         m = ModelKeyParser.createMutation(forwardMapping, MODEL_NAME);
         m.getUpdates();
-        Assert.assertTrue("Expected true: expectedforwardMutation.equals(m)", expectedforwardMutation.equals(m));
+        assertTrue(expectedforwardMutation.equals(m), "Expected true: expectedforwardMutation.equals(m)");
     }
 
     /**
      * Test boundary conditions on ForwardKeyParsing / Trigger failure conditions
-     *
-     * @throws Exception
      */
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testKeyWithInvalidDirection() throws Exception {
+    @Test
+    public void testKeyWithInvalidDirection() {
         Key keyWrongDirection = new Key(MODEL_FIELD_NAME, MODEL_NAME, FIELD_NAME + ModelKeyParser.NULL_BYTE + "someInvalidDirection", COLVIZ, TIMESTAMP);
-        ModelKeyParser.parseKey(keyWrongDirection);
+        assertThrows(IllegalArgumentException.class, () -> ModelKeyParser.parseKey(keyWrongDirection));
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testKeyWithTooManyPartsInColQualifier() throws Exception {
+    @Test
+    public void testKeyWithTooManyPartsInColQualifier() {
         Key keyTooManyParts = new Key(MODEL_FIELD_NAME, MODEL_NAME, FIELD_NAME + ModelKeyParser.NULL_BYTE + FORWARD.getValue() + ModelKeyParser.NULL_BYTE
                         + "index_only" + ModelKeyParser.NULL_BYTE + REVERSE.getValue(), COLVIZ, TIMESTAMP);
-        ModelKeyParser.parseKey(keyTooManyParts);
+        assertThrows(IllegalArgumentException.class, () -> ModelKeyParser.parseKey(keyTooManyParts));
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testKeyWithIncorrectlyPositionedIndexOnlyAndDirection() throws Exception {
+    @Test
+    public void testKeyWithIncorrectlyPositionedIndexOnlyAndDirection() {
         // Correct cq: field\x00
         Key mismatchedParts = new Key(MODEL_FIELD_NAME, MODEL_NAME,
                         FIELD_NAME + ModelKeyParser.NULL_BYTE + FORWARD.getValue() + ModelKeyParser.NULL_BYTE + "index_only", COLVIZ, TIMESTAMP);
-        ModelKeyParser.parseKey(mismatchedParts);
-        Assert.fail("Expected IllegalArgumentException on key with 'index_only' and 'forward' in wrong positions.");
+        String msg = "Expected IllegalArgumentException on key with 'index_only' and 'forward' in wrong positions.";
+        assertThrows(IllegalArgumentException.class, () -> ModelKeyParser.parseKey(mismatchedParts), msg);
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testIndexOnlyOnAReverseKeyIsInvalid() throws Exception {
-        // Test index_only on a reverse key.. reverse keys should not have index_only
+    @Test
+    public void testIndexOnlyOnAReverseKeyIsInvalid() {
+        // Test index_only on a reverse key... reverse keys should not have index_only
         Key reverseIndexOnly = new Key(MODEL_FIELD_NAME, MODEL_NAME, FIELD_NAME + ModelKeyParser.NULL_BYTE + "index_only" + REVERSE.getValue(), COLVIZ,
                         TIMESTAMP);
-        ModelKeyParser.parseKey(reverseIndexOnly);
+        assertThrows(IllegalArgumentException.class, () -> ModelKeyParser.parseKey(reverseIndexOnly));
     }
 }
