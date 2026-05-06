@@ -761,6 +761,25 @@ public class VisibilityWiseGuysIngestWithModel {
             mutation.put("DATAWAVE", "UUID" + "\u0000" + "forward", columnVisibility, timeStamp, emptyValue);
             bw.addMutation(mutation);
 
+            mutation = new Mutation("ONE_HIDDEN");
+            mutation.put("DATAWAVE", "HIDDEN1" + "\u0000" + "forward", columnVisibility, timeStamp, emptyValue);
+            mutation.put("DATAWAVE", "UUID" + "\u0000" + "forward", columnVisibility, timeStamp, emptyValue);
+            bw.addMutation(mutation);
+
+            mutation = new Mutation("TWO_HIDDEN");
+            mutation.put("DATAWAVE", "HIDDEN1" + "\u0000" + "forward", columnVisibility, timeStamp, emptyValue);
+            mutation.put("DATAWAVE", "TWO_HIDDEN" + "\u0000" + "forward", columnVisibility, timeStamp, emptyValue);
+            mutation.put("DATAWAVE", "UUID" + "\u0000" + "forward", columnVisibility, timeStamp, emptyValue);
+            mutation.put("e", datatype, columnVisibility, timeStamp, emptyValue);
+            mutation.put("i", datatype, columnVisibility, timeStamp, emptyValue);
+            mutation.put("h", datatype, columnVisibility, timeStamp, emptyValue);
+            bw.addMutation(mutation);
+
+            mutation = new Mutation("HIDDEN1");
+            mutation.put("e", datatype, columnVisibility, timeStamp, emptyValue);
+            mutation.put("i", datatype, columnVisibility, timeStamp, emptyValue);
+            mutation.put("h", datatype, columnVisibility, timeStamp, emptyValue);
+
             // specifically for testing the #NOEXPANSION function
             mutation = new Mutation("COLOR");
             mutation.put("DATAWAVE", "COLOR" + "\u0000" + "forward", columnVisibility, timeStamp, emptyValue);

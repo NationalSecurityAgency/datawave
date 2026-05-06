@@ -173,7 +173,7 @@ jobs:
     - name: Report result
       if: needs.check-changes.outputs.should_run_compose == 'true'
       run: |
-        if [[ "${{ needs.call-compose-tests.result }}" == "success" ]]; then
+        if [[ "${{ needs.call-compose-tests.outputs.compose-check-result }}" == "success" ]]; then
           echo "✓ Compose checks passed"
           exit 0
         else

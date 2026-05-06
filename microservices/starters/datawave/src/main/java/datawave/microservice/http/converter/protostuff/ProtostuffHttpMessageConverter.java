@@ -55,10 +55,10 @@ public class ProtostuffHttpMessageConverter extends AbstractHttpMessageConverter
         if (PROTOSTUFF.isCompatibleWith(contentType)) {
             try {
                 // noinspection unchecked
-                Message<Object> msg = (Message<Object>) clazz.newInstance();
+                Message<Object> msg = (Message<Object>) clazz.getDeclaredConstructor().newInstance();
                 ProtostuffIOUtil.mergeFrom(inputMessage.getBody(), msg, msg.cachedSchema(), buffer.get());
                 return msg;
-            } catch (InstantiationException | IllegalAccessException e) {
+            } catch (ReflectiveOperationException e) {
                 throw new HttpMessageNotReadableException("Unable to read protostuff message: " + e.getMessage(), e, inputMessage);
             }
         }
