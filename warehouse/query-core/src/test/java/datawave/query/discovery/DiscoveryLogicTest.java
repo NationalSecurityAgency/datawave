@@ -94,7 +94,7 @@ public class DiscoveryLogicTest {
         writeEntries("ROOSTER", "onyx", "csv", "BAR", "20130102", 5, 24, 2);
         writeEntries("ROOSTER", "onyx", "csv", "BAR", "20130103", 5, 24, 20);
         writeEntries("NETWORK", "bbc", "csv", "FOO", "20130101", 10, 24, 20);
-        writeEntries("NETWORK", "bbc", "csv", "FOO", "20130102", 10, 24, 20);
+        writeEntries("NETWORK", "bbc", "csv", "BAR", "20130102", 10, 24, 20); // formerly FOO
         writeEntries("NETWORK", "bbc", "csv", "FOO", "20130103", 10, 24, 20);
         writeEntries("OCCUPATION", "skydiver", "text", "FOO", "20130101", 10, 10, 5);
         writeEntries("OCCUPATION", "skydiver", "text", "FOO", "20130102", 10, 10, 5);
@@ -241,10 +241,15 @@ public class DiscoveryLogicTest {
         logic.setupQuery(config);
         Iterator<DiscoveredThing> iterator = logic.iterator();
         List<DiscoveredThing> actual = new ArrayList<>();
+
         DiscoveredThingValuesOnlyConditionalTransformer dtvoct = new DiscoveredThingValuesOnlyConditionalTransformer(logic.getValuesOnly());
         while (iterator.hasNext()) {
             actual.add(dtvoct.apply(iterator.next()));
         }
+
+        /*
+         * while (iterator.hasNext()) { actual.add(iterator.next()); }
+         */
 
         Assertions.assertThat(actual).hasSize(expected.size());
         for (int i = 0; i < expected.size(); i++) {
@@ -282,7 +287,7 @@ public class DiscoveryLogicTest {
         givenEndDate("20130102");
 
         expect(new DiscoveredThing("bbc", "NETWORK", "csv", "20130101", "FOO", 240L, new MapWritable()));
-        expect(new DiscoveredThing("bbc", "NETWORK", "csv", "20130102", "FOO", 240L, new MapWritable()));
+        expect(new DiscoveredThing("bbc", "NETWORK", "csv", "20130102", "BAR", 240L, new MapWritable()));
         expect(new DiscoveredThing("onyx", "POKEMON", "csv", "20130101", "FOO", 100L, new MapWritable()));
         expect(new DiscoveredThing("onyx", "POKEMON", "csv", "20130102", "FOO", 10L, new MapWritable()));
         expect(new DiscoveredThing("onyx", "ROCK", "csv", "20130101", "FOO", 1L, new MapWritable()));
@@ -300,7 +305,7 @@ public class DiscoveryLogicTest {
         givenEndDate("20130102");
 
         expect(new DiscoveredThing("bbc", "NETWORK", "csv", "20130101", "FOO", 240L, new MapWritable()));
-        expect(new DiscoveredThing("bbc", "NETWORK", "csv", "20130102", "FOO", 240L, new MapWritable()));
+        expect(new DiscoveredThing("bbc", "NETWORK", "csv", "20130102", "BAR", 240L, new MapWritable()));
         expect(new DiscoveredThing("onyx", "POKEMON", "csv", "20130101", "FOO", 100L, new MapWritable()));
         expect(new DiscoveredThing("onyx", "POKEMON", "csv", "20130102", "FOO", 10L, new MapWritable()));
         expect(new DiscoveredThing("onyx", "ROCK", "csv", "20130101", "FOO", 1L, new MapWritable()));
@@ -428,7 +433,7 @@ public class DiscoveryLogicTest {
         givenEndDate("20130102");
         givenParameter(DiscoveryLogic.SUM_COUNTS, "true");
 
-        expect(new DiscoveredThing("bbc", "NETWORK", "csv", "", "FOO", 480L, new MapWritable()));
+        expect(new DiscoveredThing("bbc", "NETWORK", "csv", "", "BAR&FOO", 480L, new MapWritable()));
         expect(new DiscoveredThing("onyx", "POKEMON", "csv", "", "FOO", 110L, new MapWritable()));
         expect(new DiscoveredThing("onyx", "ROCK", "csv", "", "FOO", 4L, new MapWritable()));
         expect(new DiscoveredThing("onyx", "ROOSTER", "csv", "", "BAR", 240L, new MapWritable()));
@@ -443,7 +448,7 @@ public class DiscoveryLogicTest {
         givenEndDate("20130102");
         givenParameter(DiscoveryLogic.SUM_COUNTS, "true");
 
-        expect(new DiscoveredThing("bbc", "NETWORK", "csv", "", "FOO", 480L, new MapWritable()));
+        expect(new DiscoveredThing("bbc", "NETWORK", "csv", "", "BAR&FOO", 480L, new MapWritable()));
         expect(new DiscoveredThing("onyx", "POKEMON", "csv", "", "FOO", 110L, new MapWritable()));
         expect(new DiscoveredThing("onyx", "ROCK", "csv", "", "FOO", 4L, new MapWritable()));
         expect(new DiscoveredThing("onyx", "ROOSTER", "csv", "", "BAR", 240L, new MapWritable()));
@@ -530,11 +535,25 @@ public class DiscoveryLogicTest {
         givenParameter(DiscoveryLogic.SUM_COUNTS, "true");
         givenParameter(DiscoveryLogic.VALUES_ONLY, "true");
 
-        expect(new DiscoveredThing("bbc", "", "", "", "FOO", 0L, new MapWritable()));
+        expect(new DiscoveredThing("bbc", "", "", "", "BAR&FOO", 0L, new MapWritable()));
         expect(new DiscoveredThing("onyx", "", "", "", "FOO", 0L, new MapWritable()));
         expect(new DiscoveredThing("onyx", "", "", "", "FOO", 0L, new MapWritable()));
         expect(new DiscoveredThing("onyx", "", "", "", "BAR", 0L, new MapWritable()));
+        assertQueryResults();
+    }
 
+    @Test
+    public void testValuesOnlyForLiteralsNoSumCount() throws Exception {
+        givenQuery("bbc OR onyx");
+        givenStartDate("20130101");
+        givenEndDate("20130102");
+        givenParameter(DiscoveryLogic.SUM_COUNTS, "false");
+        givenParameter(DiscoveryLogic.VALUES_ONLY, "true");
+
+        expect(new DiscoveredThing("bbc", "", "", "", "BAR&FOO", 0L, new MapWritable()));
+        expect(new DiscoveredThing("onyx", "", "", "", "FOO", 0L, new MapWritable()));
+        expect(new DiscoveredThing("onyx", "", "", "", "FOO", 0L, new MapWritable()));
+        expect(new DiscoveredThing("onyx", "", "", "", "BAR", 0L, new MapWritable()));
         assertQueryResults();
     }
 }

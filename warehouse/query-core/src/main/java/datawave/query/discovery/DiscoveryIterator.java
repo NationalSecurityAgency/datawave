@@ -7,6 +7,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
@@ -29,7 +30,6 @@ import org.apache.hadoop.io.WritableUtils;
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.LinkedHashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.protobuf.InvalidProtocolBufferException;
 
@@ -58,14 +58,24 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
         return copy;
     }
 
-    @Override
-    public void next() throws IOException {
-        this.key = null;
-        this.value = null;
-
-        while (iterator.hasTop() && key == null) {
+    private void termsOnlyOperation() throws IOException {
+        while (Optional.ofNullable(iterator).isPresent() && iterator.hasTop()) {
             // Get the entries to aggregate.
-            Multimap<String,TermEntry> terms = this.valuesOnly ? getTermsOnly() : getTermsByDatatype();
+            Set<TermEntry> terms = getTermsOnly();
+            if (terms.isEmpty()) {
+                log.trace("Couldn't aggregate index info; moving onto next date/field/term if data is available.");
+            } else {
+                List<DiscoveredThing> things = List.of(aggregate(terms));
+                setTop(things);
+                return;
+            }
+        }
+    }
+
+    private void standardOperation() throws IOException {
+        while (Optional.ofNullable(iterator).isPresent() && iterator.hasTop() && key == null) {
+            // Get the entries to aggregate.
+            Multimap<String,TermEntry> terms = getTermsByDatatype();
             if (terms.isEmpty()) {
                 log.trace("Couldn't aggregate index info; moving onto next date/field/term if data is available.");
             } else {
@@ -78,6 +88,20 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
                 }
             }
         }
+    }
+
+    @Override
+    public void next() throws IOException {
+        this.key = null;
+        this.value = null;
+
+        // Underlying code is tentacled. Keep this "strategy" non-parameterized for now.
+        if (this.valuesOnly) {
+            termsOnlyOperation();
+        } else {
+            standardOperation();
+        }
+
         log.trace("No data found.");
     }
 
@@ -91,8 +115,13 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
         // If we should sum up counts, we want to collect the term entries for each date seen for the current field and term of start.
         // Otherwise, we only want to collect the term entries for the current field, term, and date of start.
         BiFunction<Key,Key,Boolean> dateMatchingFunction = sumCounts ? (first, second) -> true : this::datesMatch;
+
         // Find all matching entries and parse term entries from them.
-        while (iterator.hasTop() && start.equals((key = iterator.getTopKey()), PartialKey.ROW_COLFAM) && dateMatchingFunction.apply(start, key)) {
+        //@formatter:off
+        while (Optional.ofNullable(iterator).isPresent() &&
+                iterator.hasTop() &&
+                start.equals((key = iterator.getTopKey()), PartialKey.ROW_COLFAM) &&
+                dateMatchingFunction.apply(start, key)) {
             TermEntry termEntry = new TermEntry(key, iterator.getTopValue());
             if (termEntry.isValid())
                 terms.put(termEntry.getDatatype(), termEntry);
@@ -103,19 +132,21 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
             }
             iterator.next();
         }
+        //@formatter:on
         return terms;
     }
 
-    private Multimap<String,TermEntry> getTermsOnly() throws IOException {
-        LinkedHashMultimap<String,TermEntry> terms = LinkedHashMultimap.create();
+    private Set<TermEntry> getTermsOnly() throws IOException {
+        Set<TermEntry> terms = new HashSet<>();
         Key start = new Key(iterator.getTopKey());
         Key key;
-        // If we should sum up counts, we want to collect the term entries for each date seen for the current field and term of start.
-        // Otherwise, we only want to collect the term entries for the current field, term, and date of start.
-        BiFunction<Key,Key,Boolean> dateMatchingFunction = sumCounts ? (first, second) -> true : this::datesMatch;
-        // Find all matching entries and parse term entries from them.
 
-        while (iterator.hasTop() && start.equals((key = iterator.getTopKey()), PartialKey.ROW_COLFAM) && dateMatchingFunction.apply(start, key)) {
+        // Find all matching entries and parse term entries from them.
+        //@formatter:off
+        while (Optional.ofNullable(iterator).isPresent() &&
+                iterator.hasTop() &&
+                start.equals((key = iterator.getTopKey()), PartialKey.ROW_COLFAM)) {
+
             TermEntry termEntry = new TermEntry(key, iterator.getTopValue()) {
                 // Only use term and visibility for equality.
                 @Override
@@ -134,7 +165,7 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
             };
 
             if (termEntry.isValid())
-                terms.put(termEntry.getDatatype(), termEntry);
+                terms.add(termEntry);
             else {
                 if (log.isTraceEnabled()) {
                     log.trace("Received invalid term entry from key: " + key);
@@ -142,6 +173,7 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
             }
             iterator.next();
         }
+        //@formatter:on
         return terms;
     }
 
@@ -169,6 +201,9 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
             TermEntry first = termEntries.iterator().next();
             String term = reverseIndex ? new StringBuilder(first.getTerm()).reverse().toString() : first.getTerm();
             String date = sumCounts ? "" : first.date;
+            if (valuesOnly) {
+                date = "";
+            }
 
             Set<ColumnVisibility> visibilities = new HashSet<>();
             Map<String,Long> visibilityToCounts = new HashMap<>();
@@ -241,7 +276,7 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
     public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
         this.iterator.seek(range, columnFamilies, inclusive);
         if (log.isTraceEnabled()) {
-            log.trace("My source " + (this.iterator.hasTop() ? "does" : "does not") + " have a top.");
+            log.trace("My source " + ((Optional.ofNullable(iterator).isPresent() && this.iterator.hasTop()) ? "does" : "does not") + " have a top.");
         }
         next();
     }
