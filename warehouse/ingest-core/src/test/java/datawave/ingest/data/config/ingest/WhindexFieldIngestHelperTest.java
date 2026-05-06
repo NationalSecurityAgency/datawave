@@ -1,9 +1,12 @@
 package datawave.ingest.data.config.ingest;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.util.Arrays;
 
 import org.apache.hadoop.conf.Configuration;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.HashMultimap;
@@ -36,7 +39,7 @@ class WhindexFieldIngestHelperTest {
         Multimap<String,WhindexConfig> expectedValues = LinkedListMultimap.create();
 
         // Verify that the valueFieldsToWhindexConfigs() mapping is empty.
-        Assertions.assertEquals(expectedValues, wHelper.getValueFieldsToWhindexConfigs());
+        assertEquals(expectedValues, wHelper.getValueFieldsToWhindexConfigs());
     }
 
     /**
@@ -85,7 +88,7 @@ class WhindexFieldIngestHelperTest {
         expectedValues.put("zValueField", expectedConfigC);
 
         // Assert that the parsed whindex configurations match the expected mapping.
-        Assertions.assertEquals(ImmutableMultimap.copyOf(expectedValues), wHelper.getValueFieldsToWhindexConfigs());
+        assertEquals(ImmutableMultimap.copyOf(expectedValues), wHelper.getValueFieldsToWhindexConfigs());
     }
 
     /**
@@ -118,7 +121,7 @@ class WhindexFieldIngestHelperTest {
         HashMultimap<String,NormalizedContentInterface> expectedValues = HashMultimap.create();
         expectedValues.put("xDestField", new NormalizedFieldAndValue("xSourceField", "xTestValue1"));
         expectedValues.put("xValueField", new NormalizedFieldAndValue("xValueField", "xTestValue1"));
-        Assertions.assertEquals(HashMultiset.create(expectedValues.entries()), HashMultiset.create(actualValues.entries()));
+        assertEquals(HashMultiset.create(expectedValues.entries()), HashMultiset.create(actualValues.entries()));
     }
 
     /**
@@ -152,7 +155,7 @@ class WhindexFieldIngestHelperTest {
         expectedValues.put("yDestField", new NormalizedFieldAndValue("ySourceField", "yTestValue1"));
         expectedValues.put("yValueField", new NormalizedFieldAndValue("yValueField", "yTestValue1"));
         expectedValues.put("ySourceField", new NormalizedFieldAndValue("ySourceField", "yTestValue1"));
-        Assertions.assertEquals(HashMultiset.create(expectedValues.entries()), HashMultiset.create(actualValues.entries()));
+        assertEquals(HashMultiset.create(expectedValues.entries()), HashMultiset.create(actualValues.entries()));
     }
 
     /**
@@ -188,7 +191,7 @@ class WhindexFieldIngestHelperTest {
         expectedValues.put("zDestField", new NormalizedFieldAndValue("zSourceField", "zTestValue1"));
         expectedValues.put("zValueField", new NormalizedFieldAndValue("zValueField", "zTestValue1"));
         expectedValues.put("zSourceField", new NormalizedFieldAndValue("zSourceField", "zTestValue1"));
-        Assertions.assertEquals(HashMultiset.create(expectedValues.entries()), HashMultiset.create(actualValues.entries()));
+        assertEquals(HashMultiset.create(expectedValues.entries()), HashMultiset.create(actualValues.entries()));
     }
 
     /**
@@ -228,7 +231,7 @@ class WhindexFieldIngestHelperTest {
         expectedValues.put("pDestField", new NormalizedFieldAndValue("SHARED_SRC_FIELD", "oTestValue1,pTestValue1"));
         expectedValues.put("oValueField", new NormalizedFieldAndValue("oValueField", "oTestValue1"));
         expectedValues.put("pValueField", new NormalizedFieldAndValue("pValueField", "pTestValue1"));
-        Assertions.assertEquals(HashMultiset.create(expectedValues.entries()), HashMultiset.create(actualValues.entries()));
+        assertEquals(HashMultiset.create(expectedValues.entries()), HashMultiset.create(actualValues.entries()));
     }
 
     /**
@@ -254,9 +257,9 @@ class WhindexFieldIngestHelperTest {
 
         // Verify that the destination field is recognized as a whindex field,
         // and the source as well as the value field are not.
-        Assertions.assertTrue(wHelper.isWhindexField("xDestField"));
-        Assertions.assertFalse(wHelper.isWhindexField("xSourceField"));
-        Assertions.assertFalse(wHelper.isWhindexField("xTestValue1"));
+        assertTrue(wHelper.isWhindexField("xDestField"));
+        assertFalse(wHelper.isWhindexField("xSourceField"));
+        assertFalse(wHelper.isWhindexField("xTestValue1"));
     }
 
     /**
@@ -281,9 +284,9 @@ class WhindexFieldIngestHelperTest {
         wHelper.setup(config);
 
         // Verify that only the destination field is identified as a whindex field.
-        Assertions.assertTrue(wHelper.isWhindexField("yDestField"));
-        Assertions.assertFalse(wHelper.isWhindexField("ySourceField"));
-        Assertions.assertFalse(wHelper.isWhindexField("yTestValue1"));
+        assertTrue(wHelper.isWhindexField("yDestField"));
+        assertFalse(wHelper.isWhindexField("ySourceField"));
+        assertFalse(wHelper.isWhindexField("yTestValue1"));
     }
 
     /**
@@ -307,8 +310,8 @@ class WhindexFieldIngestHelperTest {
         wHelper.setup(config);
 
         // Verify that only the destination field is recognized as a whindex field.
-        Assertions.assertTrue(wHelper.isWhindexField("zDestField"));
-        Assertions.assertFalse(wHelper.isWhindexField("zSourceField"));
-        Assertions.assertFalse(wHelper.isWhindexField("zTestValue1"));
+        assertTrue(wHelper.isWhindexField("zDestField"));
+        assertFalse(wHelper.isWhindexField("zSourceField"));
+        assertFalse(wHelper.isWhindexField("zTestValue1"));
     }
 }

@@ -1,8 +1,11 @@
 package datawave.ingest.data.config.ingest;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.util.Arrays;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 public class WhindexConfigTest {
@@ -18,11 +21,11 @@ public class WhindexConfigTest {
         WhindexConfig config = WhindexConfig.builder().withValueField("field1").withValues(Arrays.asList("val1", "val2")).withSourceField("src")
                         .withDestField("dst").withOverloaded(true).build();
 
-        Assertions.assertEquals("field1", config.getValueField());
-        Assertions.assertEquals(Arrays.asList("val1", "val2"), config.getValues());
-        Assertions.assertEquals("src", config.getSourceField());
-        Assertions.assertEquals("dst", config.getDestField());
-        Assertions.assertTrue(config.isOverloaded());
+        assertEquals("field1", config.getValueField());
+        assertEquals(Arrays.asList("val1", "val2"), config.getValues());
+        assertEquals("src", config.getSourceField());
+        assertEquals("dst", config.getDestField());
+        assertTrue(config.isOverloaded());
     }
 
     /**
@@ -40,14 +43,14 @@ public class WhindexConfigTest {
         WhindexConfig config2 = WhindexConfig.builder().withValueField("field").withValues(Arrays.asList("val1", "val2")).withSourceField("src")
                         .withDestField("dst").withOverloaded(false).build();
 
-        Assertions.assertEquals(config1, config2);
-        Assertions.assertEquals(config1.hashCode(), config2.hashCode());
+        assertEquals(config1, config2);
+        assertEquals(config1.hashCode(), config2.hashCode());
 
         // Different overloaded flag
         WhindexConfig config3 = WhindexConfig.builder().withValueField("field").withValues(Arrays.asList("val1", "val2")).withSourceField("src")
                         .withDestField("dst").withOverloaded(true).build();
 
-        Assertions.assertNotEquals(config1, config3);
+        assertNotEquals(config1, config3);
     }
 
     /**
@@ -58,8 +61,8 @@ public class WhindexConfigTest {
         WhindexConfig config = WhindexConfig.builder().withValueField("field").withValues(Arrays.asList("val1", "val2")).withSourceField("src")
                         .withDestField("dst").withOverloaded(false).build();
 
-        Assertions.assertNotEquals(null, config);
-        Assertions.assertNotEquals("spaghetti", config);
-        Assertions.assertEquals(config, config);
+        assertNotEquals(null, config);
+        assertNotEquals("spaghetti", config);
+        assertEquals(config, config);
     }
 }
