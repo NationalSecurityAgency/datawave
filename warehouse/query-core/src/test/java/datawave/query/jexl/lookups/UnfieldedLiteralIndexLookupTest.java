@@ -17,11 +17,11 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.tables.ScannerFactory;
 
 /**
- * Tests for the {@link FieldExpansionIndexLookup}
+ * Tests for the {@link UnfieldedLiteralIndexLookup}
  */
-public class FieldExpansionIndexLookupTest extends BaseIndexLookupTest {
+public class UnfieldedLiteralIndexLookupTest extends BaseIndexLookupTest {
 
-    private static final Logger log = LoggerFactory.getLogger(FieldExpansionIndexLookupTest.class);
+    private static final Logger log = LoggerFactory.getLogger(UnfieldedLiteralIndexLookupTest.class);
 
     @Test
     public void testValueDoesNotExpand() {
@@ -117,6 +117,8 @@ public class FieldExpansionIndexLookupTest extends BaseIndexLookupTest {
 
     private AsyncIndexLookup createLookup(String value) {
         ScannerFactory scannerFactory = new ScannerFactory(client);
-        return new FieldExpansionIndexLookup(config, scannerFactory, value, indexedFields, executor);
+        AsyncIndexLookup lookup = new UnfieldedLiteralIndexLookup(config, scannerFactory, value, indexedFields, executor);
+        lookup.setScanMonitor(monitor);
+        return lookup;
     }
 }

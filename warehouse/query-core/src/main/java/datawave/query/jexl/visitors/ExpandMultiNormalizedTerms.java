@@ -3,7 +3,6 @@ package datawave.query.jexl.visitors;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.BOUNDED_RANGE;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DROPPED;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EVALUATION_ONLY;
-import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_TERM;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_VALUE;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.LENIENT;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.STRICT;
@@ -160,7 +159,7 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
          * have an evaluation only term predicate, then no need to apply normalizations If we have already expanded this node, then nothing to do
          */
         QueryPropertyMarker.Instance marker = QueryPropertyMarker.findInstance(node);
-        if (marker.isAnyTypeOf(EXCEEDED_VALUE, EXCEEDED_TERM) || this.expandedNodes.contains(node)) {
+        if (marker.isType(EXCEEDED_VALUE) || this.expandedNodes.contains(node)) {
             return node;
         }
 

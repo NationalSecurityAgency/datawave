@@ -1,9 +1,9 @@
 package datawave.query.language.functions.jexl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.Lists;
@@ -55,10 +55,10 @@ class GroupByTest {
                         exception.getMessage());
         Throwable childCause = exception.getCause();
         // Verify that the original exception was not swallowed, and is present in the stack trace.
-        Assertions.assertInstanceOf(BadRequestQueryException.class, childCause);
+        assertInstanceOf(BadRequestQueryException.class, childCause);
         Throwable grandchildCause = childCause.getCause();
-        Assertions.assertInstanceOf(IllegalArgumentException.class, grandchildCause);
-        Assertions.assertEquals("No TemporalGranularity exists with the name BAD_TRANSFORMER", grandchildCause.getMessage());
+        assertInstanceOf(IllegalArgumentException.class, grandchildCause);
+        assertEquals("No TemporalGranularity exists with the name BAD_TRANSFORMER", grandchildCause.getMessage());
     }
 
     @Test

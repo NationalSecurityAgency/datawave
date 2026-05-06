@@ -1,0 +1,74 @@
+################################################################
+# Grouped content-function tests for tokenized fields in nested JSON
+
+# These tests exercise phrase evaluation over grouped term-frequency
+# entries produced from the tvmaze quickstart sample data.
+
+# In The Big Bang Theory sample document, "Jim Parsons" and
+# "Johnny Galecki" are separate EMBEDDED_CAST_PERSON_NAME values under
+# different CAST elements. A grouped TF-aware phrase query should:
+#   1. match "jim parsons" within one grouped context
+#   2. reject "jim galecki" across two grouped contexts
+
+################################################################
+# Positive phrase query: both terms come from the same grouped value
+
+setCurlData query=$( urlencode "GENRES == 'comedy' && EMBEDDED_CAST_PERSON_NAME_TOKEN == 'jim' && EMBEDDED_CAST_PERSON_NAME_TOKEN == 'parsons' && content:phrase(EMBEDDED_CAST_PERSON_NAME_TOKEN, termOffsetMap, 'jim', 'parsons')" ) \
+        queryName=EventQueryGroupedContentPhrasePositive \
+        begin=19700101 \
+        end=20990101 \
+        pagesize=1 \
+        auths=BAR,FOO,PRIVATE \
+        columnVisibility=PRIVATE \
+        query.syntax=JEXL
+
+configureTest \
+        CreateGroupedContentPhrasePositive \
+        "Creates a grouped content-function query that should match Jim Parsons within one cast entry" \
+        "--header 'Content-Type: application/x-www-form-urlencoded' ${DW_CURL_DATA} -X POST ${URI_ROOT}/Query/EventQuery/create" \
+        "application/xml;charset=UTF-8" \
+        200
+
+runTest --set-query-id
+
+configureTest \
+        GroupedContentPhrasePositivePage1 \
+        "Gets the first page of results for the grouped positive content-function test in JSON format" \
+        "--header 'Accept: application/json' -X GET ${URI_ROOT}/Query/${DW_QUERY_ID}/next" \
+        application/json \
+        200
+
+runTest
+
+configureCloseQueryTest ${DW_QUERY_ID}
+
+runTest
+
+################################################################
+# Negative phrase query: terms exist in the same base field but in
+# different grouped contexts, so this should not match
+
+setCurlData query=$( urlencode "GENRES == 'comedy' && EMBEDDED_CAST_PERSON_NAME_TOKEN == 'jim' && EMBEDDED_CAST_PERSON_NAME_TOKEN == 'galecki' && content:phrase(EMBEDDED_CAST_PERSON_NAME_TOKEN, termOffsetMap, 'jim', 'galecki')" ) \
+        queryName=EventQueryGroupedContentPhraseNegative \
+        begin=19700101 \
+        end=20990101 \
+        pagesize=1 \
+        auths=BAR,FOO,PRIVATE \
+        columnVisibility=PRIVATE \
+        query.syntax=JEXL
+
+configureTest \
+        CreateGroupedContentPhraseNegative \
+        "Creates a grouped content-function query that should not match across separate cast entries" \
+        "--header 'Content-Type: application/x-www-form-urlencoded' ${DW_CURL_DATA} -X POST ${URI_ROOT}/Query/EventQuery/create" \
+        "application/xml;charset=UTF-8" \
+        200
+
+runTest --set-query-id
+
+configureTest \
+        GroupedContentPhraseNegative204 \
+        "Returns 204 because Jim and Galecki occur in separate grouped cast contexts" \
+        "--header 'Accept: application/json' -X GET ${URI_ROOT}/Query/${DW_QUERY_ID}/next" \
+        "" \
+        204
