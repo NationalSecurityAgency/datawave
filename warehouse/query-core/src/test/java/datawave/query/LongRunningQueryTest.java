@@ -13,10 +13,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -59,6 +62,7 @@ public class LongRunningQueryTest {
     private static final Logger log = Logger.getLogger(LongRunningQueryTest.class);
     private static AccumuloClient client = null;
     private ShardQueryLogic logic;
+    private ExecutorService executor;
 
     @Before
     public void setup() throws Exception {
@@ -89,6 +93,16 @@ public class LongRunningQueryTest {
         logic.setCacheModel(false);
         logic.setMaxPipelineCachedResults(0);
         logic.setIvaratorCacheBufferSize(0);
+
+        executor = Executors.newSingleThreadExecutor();
+    }
+
+    @After
+    public void after() {
+        if (executor != null) {
+            executor.shutdown();
+            executor = null;
+        }
     }
 
     /**
@@ -132,6 +146,7 @@ public class LongRunningQueryTest {
         RunningQueryTimingImpl timing = new RunningQueryTimingImpl(conf, 1);
         RunningQuery runningQuery = new RunningQuery(null, client, AccumuloConnectionFactory.Priority.NORMAL, logic, query, "", datawavePrincipal, timing, null,
                         new QueryMetricFactoryImpl());
+        runningQuery.setExecutor(executor);
         List<ResultsPage> pages = new ArrayList<>();
 
         ResultsPage page = runningQuery.next();
@@ -194,6 +209,7 @@ public class LongRunningQueryTest {
         RunningQueryTimingImpl timing = new RunningQueryTimingImpl(conf, 1);
         RunningQuery runningQuery = new RunningQuery(null, client, AccumuloConnectionFactory.Priority.NORMAL, logic, query, "", datawavePrincipal, timing, null,
                         new QueryMetricFactoryImpl());
+        runningQuery.setExecutor(executor);
         List<ResultsPage> pages = new ArrayList<>();
         ResultsPage page = runningQuery.next();
         Thread.sleep(15);
@@ -248,6 +264,7 @@ public class LongRunningQueryTest {
 
         RunningQuery runningQuery = new RunningQuery(null, client, AccumuloConnectionFactory.Priority.NORMAL, logic, query, "", datawavePrincipal, null, null,
                         new QueryMetricFactoryImpl());
+        runningQuery.setExecutor(executor);
         List<ResultsPage> pages = new ArrayList<>();
 
         ResultsPage page = runningQuery.next();
@@ -306,6 +323,7 @@ public class LongRunningQueryTest {
 
         RunningQuery runningQuery = new RunningQuery(null, client, AccumuloConnectionFactory.Priority.NORMAL, logic, query, "", datawavePrincipal, null, null,
                         new QueryMetricFactoryImpl());
+        runningQuery.setExecutor(executor);
         List<ResultsPage> pages = new ArrayList<>();
 
         ResultsPage page = runningQuery.next();
