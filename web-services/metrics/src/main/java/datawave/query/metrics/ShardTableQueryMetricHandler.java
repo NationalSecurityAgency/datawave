@@ -104,7 +104,7 @@ import datawave.webservice.result.EventQueryResponseBase;
 
 @ApplicationScoped
 @SuppressWarnings("unused")
-public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMetric> {
+public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMetric> implements AutoCloseable {
     private static final Logger log = ThreadConfigurableLogger.getLogger(ShardTableQueryMetricHandler.class);
 
     private static final String QUERY_METRICS_LOGIC_NAME = "QueryMetricsQuery";
@@ -188,8 +188,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
     }
 
     @Override
-    protected void finalize() throws Throwable {
-        super.finalize();
+    public void close() throws IOException, InterruptedException {
         this.recordWriter.close(null);
     }
 

@@ -23,7 +23,6 @@ public class FieldMissingFromSchemaVisitorTest {
 
     // Special fields required by visitor.
     private Set<String> specialFields = Sets.newHashSet(ANY_FIELD, NO_FIELD);
-
     private MockMetadataHelper helper;
 
     @Before

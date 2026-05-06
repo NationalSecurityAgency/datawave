@@ -1,7 +1,8 @@
 package datawave.ingest.mapreduce.handler.shard;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import org.apache.hadoop.conf.Configuration;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -16,10 +17,10 @@ import datawave.util.time.DateHelper;
 
 class ShardIdFactoryTest {
 
-    private String uid = "1.2.3";
-    private String date = "20240115";
-    private String dataType = "csva";
-    private int numShards = 10;
+    private final String uid = "1.2.3";
+    private final String date = "20240115";
+    private final String dataType = "csva";
+    private final int numShards = 10;
 
     private Configuration conf;
 
@@ -43,7 +44,7 @@ class ShardIdFactoryTest {
     void testGetShardIdWithNoGenerators() {
         RawRecordContainer event = createEvent(uid, date, dataType);
         String shardId = new ShardIdFactory(conf).getShardId(event);
-        Assertions.assertEquals("20240115_2", shardId);
+        assertEquals("20240115_2", shardId);
     }
 
     /**
@@ -62,7 +63,7 @@ class ShardIdFactoryTest {
 
         RawRecordContainer event = createEvent(uid, date, dataType);
         String shardId = new ShardIdFactory(conf).getShardId(event);
-        Assertions.assertEquals("20240115_2", shardId);
+        assertEquals("20240115_2", shardId);
     }
 
     /**
@@ -81,7 +82,7 @@ class ShardIdFactoryTest {
 
         RawRecordContainer event = createEvent(uid, date, dataType);
         String shardId = new ShardIdFactory(conf).getShardId(event);
-        Assertions.assertEquals("20240115_10", shardId);
+        assertEquals("20240115_10", shardId);
     }
 
     /**
@@ -100,7 +101,7 @@ class ShardIdFactoryTest {
 
         RawRecordContainer event = createEvent(uid, date, dataType);
         String shardId = new ShardIdFactory(conf).getShardId(event);
-        Assertions.assertEquals("20240115_20", shardId);
+        assertEquals("20240115_20", shardId);
     }
 
     @Test
@@ -113,7 +114,7 @@ class ShardIdFactoryTest {
 
         String actualShardId = new ShardIdFactory(conf).getShardId(event);
 
-        Assertions.assertEquals(expectedShardId, actualShardId);
+        assertEquals(expectedShardId, actualShardId);
     }
 
     private RawRecordContainer createEvent(String uid, String date, String dataType) {
@@ -129,7 +130,7 @@ class ShardIdFactoryTest {
     }
 
     public static class EventWithShardId extends RawRecordContainerImpl {
-        private String shardId;
+        private final String shardId;
 
         public EventWithShardId(String shardId) {
             this.shardId = shardId;
