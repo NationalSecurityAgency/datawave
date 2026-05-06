@@ -37,7 +37,7 @@ import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.core.common.connection.AccumuloConnectionFactory.Priority;
 import datawave.core.common.util.EnvProvider;
 
-public class AccumuloRecordWriter extends RecordWriter<Text,Mutation> {
+public class AccumuloRecordWriter extends RecordWriter<Text,Mutation> implements AutoCloseable {
     private MultiTableBatchWriter mtbw = null;
     private HashMap<Text,BatchWriter> bws = null;
     private Text defaultTableName = null;
@@ -242,8 +242,7 @@ public class AccumuloRecordWriter extends RecordWriter<Text,Mutation> {
     }
 
     @Override
-    protected void finalize() throws Throwable {
-        super.finalize();
+    public void close() {
         returnConnector();
     }
 

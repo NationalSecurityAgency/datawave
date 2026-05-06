@@ -1,6 +1,8 @@
 package datawave.query;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
@@ -303,6 +305,20 @@ public class ColorsTest extends AbstractQueryTest {
         expectShards("20250326", ColorsIngest.getNumShards());
         expectShards("20250327", ColorsIngest.getNewShards());
         planAndExecuteQuery();
+    }
+
+    @Test
+    public void testEnableDocumentSchedulerViaQueryParameter() throws Exception {
+        givenQuery("COLOR == 'blue'");
+        givenParameter(QueryParameters.DS_ENABLED, "true");
+        expectPlan("COLOR == 'blue'");
+        expectResultCount(getTotalEventCount());
+        expectHitTermsRequiredAllOf("COLOR:blue");
+
+        logic.setUseDocumentScheduler(false);
+        assertFalse(logic.isUseDocumentScheduler());
+        planAndExecuteQuery();
+        assertTrue(logic.isUseDocumentScheduler());
     }
 
     // TODO: unique

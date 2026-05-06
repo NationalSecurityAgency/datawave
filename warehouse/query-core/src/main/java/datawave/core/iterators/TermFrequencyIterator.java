@@ -24,6 +24,7 @@ import com.google.common.collect.Multimap;
 
 import datawave.query.Constants;
 import datawave.query.data.parsers.TermFrequencyKey;
+import datawave.query.jexl.JexlASTHelper;
 
 /**
  * An iterator for the Datawave shard table, it searches TermFrequency keys for a list of terms and values. It is assumed that the range specified includes all
@@ -208,7 +209,21 @@ public class TermFrequencyIterator extends WrappingIterator {
     }
 
     private boolean fieldValueAccepted() {
-        return uidsAndValues.contains(tfKey.getUidAndValue()) && fields.contains(tfKey.getField());
+        return uidsAndValues.contains(tfKey.getUidAndValue()) && fieldMatches(tfKey.getField());
+    }
+
+    private boolean fieldMatches(String candidateField) {
+        if (fields.contains(candidateField)) {
+            return true;
+        }
+
+        for (String field : fields) {
+            if (JexlASTHelper.isGroupedFieldMatch(field, candidateField)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private boolean uidMatches() {
