@@ -20,8 +20,8 @@ import org.junit.Test;
 @SuppressWarnings("deprecation")
 public class HashUIDTest {
 
-    private String data = "20100901: the quick brown fox jumped over the lazy dog";
-    private String data2 = "20100831: the quick brown fox jumped over the lazy dog";
+    private final String data = "20100901: the quick brown fox jumped over the lazy dog";
+    private final String data2 = "20100831: the quick brown fox jumped over the lazy dog";
 
     @Test
     public void testParsing() {

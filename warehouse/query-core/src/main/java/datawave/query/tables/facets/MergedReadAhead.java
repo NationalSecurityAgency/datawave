@@ -1,6 +1,5 @@
 package datawave.query.tables.facets;
 
-import java.io.Closeable;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
@@ -8,6 +7,7 @@ import java.util.NoSuchElementException;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import org.apache.log4j.Logger;
 
@@ -24,7 +24,7 @@ import com.google.common.util.concurrent.AbstractExecutionThreadService;
  * stopped.
  */
 @SuppressWarnings("UnstableApiUsage")
-public class MergedReadAhead<T> extends AbstractExecutionThreadService implements Iterator<T>, Closeable {
+public class MergedReadAhead<T> extends AbstractExecutionThreadService implements Iterator<T>, AutoCloseable {
 
     private static final Logger log = Logger.getLogger(MergedReadAhead.class);
 
@@ -82,7 +82,15 @@ public class MergedReadAhead<T> extends AbstractExecutionThreadService implement
     private void readFromQueue() {
         if (!isStreaming) {
             log.trace("Non-streaming, waiting for termination...");
-            awaitTerminated();
+            // loop to prevent a possible deadlock in com.google.common.util.concurrent.Monitor
+            // due to a lost signal when the thread receiving the signal was in an interrupted state
+            while (!state().equals(State.TERMINATED)) {
+                try {
+                    awaitTerminated(250, TimeUnit.MILLISECONDS);
+                } catch (TimeoutException e) {
+
+                }
+            }
         }
 
         try {
@@ -129,19 +137,19 @@ public class MergedReadAhead<T> extends AbstractExecutionThreadService implement
         throw new UnsupportedOperationException();
     }
 
-    public void finalize() throws Throwable {
-        try {
-            close();
-        } finally {
-            super.finalize();
-        }
-    }
-
     @Override
     public void close() throws IOException {
         log.trace("stopping...");
         stopAsync();
-        awaitTerminated();
+        // loop to prevent a possible deadlock in com.google.common.util.concurrent.Monitor
+        // due to a lost signal when the thread receiving the signal was in an interrupted state
+        while (!state().equals(State.TERMINATED)) {
+            try {
+                awaitTerminated(250, TimeUnit.MILLISECONDS);
+            } catch (TimeoutException e) {
+
+            }
+        }
         log.trace("stopped.");
     }
 
