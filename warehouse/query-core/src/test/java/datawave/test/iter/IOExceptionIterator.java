@@ -25,6 +25,8 @@ public class IOExceptionIterator implements SortedKeyValueIterator<Key,Value>, O
     public static String FIRE_ON_SEEK = "fireOnSeek";
     public static String FIRE_ON_NEXT = "fireOnNext";
     public static String FIRE_RANDOMLY = "fireRandomly";
+    public static String FIRE_MODULO = "fireModulo";
+    public static String MODULUS = "modulus";
 
     private Key tk;
     private Value tv;
@@ -37,6 +39,10 @@ public class IOExceptionIterator implements SortedKeyValueIterator<Key,Value>, O
     private boolean fireOnSeek = false;
     private boolean fireOnNext = false;
     private boolean fireRandomly = false;
+    private boolean fireModulo = false;
+
+    private int counter = 0;
+    private int modulus;
 
     private final Random random = new Random();
 
@@ -54,6 +60,8 @@ public class IOExceptionIterator implements SortedKeyValueIterator<Key,Value>, O
         options.addNamedOption(FIRE_ON_SEEK, "Fire the exception on the first seek");
         options.addNamedOption(FIRE_ON_NEXT, "Fire the exception on the first next");
         options.addNamedOption(FIRE_RANDOMLY, "Fire the exception randomly (10% chance)");
+        options.addNamedOption(FIRE_MODULO, "Fire the exception every N calls");
+        options.addNamedOption(MODULUS, "The modulus");
         return options;
     }
 
@@ -94,7 +102,19 @@ public class IOExceptionIterator implements SortedKeyValueIterator<Key,Value>, O
             fireRandomly = Boolean.parseBoolean(option);
         }
 
-        if (!(fireOnSeek || fireOnNext || fireRandomly)) {
+        option = map.get(FIRE_MODULO);
+        if (option != null) {
+            fireModulo = Boolean.parseBoolean(option);
+
+            option = map.get(MODULUS);
+            if (option == null) {
+                throw new IllegalArgumentException("FIRE_MODULO was set without a MODULUS option");
+            } else {
+                modulus = Integer.parseInt(option);
+            }
+        }
+
+        if (!(fireOnSeek || fireOnNext || fireRandomly || fireModulo)) {
             throw new IllegalStateException("At least one fire option must be specified");
         }
 
@@ -108,7 +128,7 @@ public class IOExceptionIterator implements SortedKeyValueIterator<Key,Value>, O
 
     @Override
     public void next() throws IOException {
-        if (fireOnNext() || fireRandomly()) {
+        if (fireOnNext() || fireRandomly() || fireModulo()) {
             fireException();
         }
         tk = null;
@@ -122,7 +142,7 @@ public class IOExceptionIterator implements SortedKeyValueIterator<Key,Value>, O
 
     @Override
     public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
-        if (fireOnSeek() || fireRandomly()) {
+        if (fireOnSeek() || fireRandomly() || fireModulo()) {
             fireException();
         }
         source.seek(range, columnFamilies, inclusive);
@@ -139,6 +159,10 @@ public class IOExceptionIterator implements SortedKeyValueIterator<Key,Value>, O
 
     private boolean fireRandomly() {
         return fireRandomly && random.nextInt(3) == 0;
+    }
+
+    private boolean fireModulo() {
+        return fireModulo && ++counter % modulus == 0;
     }
 
     private void fireException() throws IOException {
@@ -169,6 +193,8 @@ public class IOExceptionIterator implements SortedKeyValueIterator<Key,Value>, O
         copy.fireOnSeek = fireOnSeek;
         copy.fireOnNext = fireOnNext;
         copy.fireRandomly = fireRandomly;
+        copy.fireModulo = fireModulo;
+        copy.modulus = modulus;
         return copy;
     }
 
