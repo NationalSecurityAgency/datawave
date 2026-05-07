@@ -91,8 +91,6 @@ public class QueryLimiter {
             log.debug("Initializing with zookeeperConfig: '" + zookeeperConfig + "' and query limit config: " + configuration);
         }
 
-        log.debug("Name: " + name);
-
         if (this.configuration != null) {
             if (this.configuration.getDefaultUserQueryLimit() < 1) {
                 throw new IllegalArgumentException("Default user query limit must be greater than 0");
@@ -203,7 +201,6 @@ public class QueryLimiter {
         boolean systemCountsTowardsUserLimits = systemLimitProvider.countsAgainstUserLimit(system);
 
         QueryHeartbeat heartbeat = getActiveQueryTracker().trackQuery(queryId, userDn, system, queryLogic, systemCountsTowardsUserLimits);
-        log.debug("heartbeatcache null? " + (heartbeatCache == null));
         // Store the heartbeat into the cache. This acts as a means to keep the connection to Zookeeper alive for the ephemeral nodes stored in the heartbeat.
         heartbeatCache.put(heartbeat);
     }
@@ -214,7 +211,6 @@ public class QueryLimiter {
      * @return the set of IDs for active queries
      */
     public Set<String> getActiveQueries() {
-        log.debug("heartbeatcache null? " + (heartbeatCache == null));
         return heartbeatCache.getQueryIds();
     }
 
