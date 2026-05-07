@@ -97,8 +97,11 @@ jobs:
       with:
         fetch-depth: 0
         token: ${{ secrets.GHCR_WRITE_ACCESS_TOKEN }}
+
+    - name: Fast-forward to branch tip
+      run: git pull --ff-only
         
-    - name: Set up JDK ${{env.ACCUMULO_JAVA_VERSION}}
+    - name: Set up JDK
       uses: actions/setup-java@v4
       with:
         distribution: ${{env.JAVA_DISTRIBUTION}}
