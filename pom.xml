@@ -151,6 +151,8 @@
         <!-- Different version of weld for tests since the Arquillian embedded EE container needs an older version. -->
         <version.weld-test>2.3.5.Final</version.weld-test>
         <version.wildfly>17.0.1.Final</version.wildfly>
+        <!-- The version of jackson provided by Wildfly 17. -->
+        <version.wildfly.jackson>2.9.9</version.wildfly.jackson>
         <version.woodstox-core>5.4.0</version.woodstox-core>
         <version.woodstox-stax2>3.1.4</version.woodstox-stax2>
         <version.xerces>2.12.2</version.xerces>
@@ -211,16 +213,6 @@
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-databind</artifactId>
-                <version>${version.jackson}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.dataformat</groupId>
-                <artifactId>jackson-dataformat-xml</artifactId>
-                <version>${version.jackson}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.dataformat</groupId>
-                <artifactId>jackson-dataformat-yaml</artifactId>
                 <version>${version.jackson}</version>
             </dependency>
             <dependency>

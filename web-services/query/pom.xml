@@ -9,14 +9,18 @@
     <artifactId>datawave-ws-query</artifactId>
     <packaging>ejb</packaging>
     <name>${project.artifactId}</name>
+
     <dependencies>
         <dependency>
             <groupId>com.fasterxml.jackson.dataformat</groupId>
             <artifactId>jackson-dataformat-xml</artifactId>
+            <!-- Use the version bundled with Wildfly. The later version will not load correctly in Wildfly 17. -->
+            <version>${version.wildfly.jackson}</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.dataformat</groupId>
             <artifactId>jackson-dataformat-yaml</artifactId>
+            <version>${version.jackson}</version>
         </dependency>
         <dependency>
             <groupId>com.google.code.gson</groupId>

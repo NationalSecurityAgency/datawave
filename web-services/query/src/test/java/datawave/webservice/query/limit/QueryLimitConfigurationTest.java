@@ -221,7 +221,11 @@ class QueryLimitConfigurationTest {
     // Non-builder creation required to make pretty print work.
     private static final XmlMapper xmlMapper = new XmlMapper(new WstxInputFactory(), new WstxOutputFactory());
 
-    private static final YAMLMapper yamlMapper = YAMLMapper.builder().enable(SerializationFeature.INDENT_OUTPUT).build();
+    private static final YAMLMapper yamlMapper = new YAMLMapper();
+
+    static {
+        yamlMapper.enable(SerializationFeature.INDENT_OUTPUT);
+    }
 
     @BeforeAll
     static void beforeAll() {

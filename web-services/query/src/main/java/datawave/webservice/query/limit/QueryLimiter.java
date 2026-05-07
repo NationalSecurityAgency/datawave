@@ -224,6 +224,11 @@ public class QueryLimiter {
 
         configLock.lock();
         try {
+            // Require the heartbeat cache to be set.
+            if (heartbeatCache == null) {
+                throw new IllegalStateException("No heartbeat cache set");
+            }
+
             // If no configuration was supplied from a configured bean, attempt to load a configuration from Zookeeper.
             if (this.configuration == null) {
                 if (this.configReloader != null) {
@@ -255,6 +260,8 @@ public class QueryLimiter {
      * Releases internal resources and cleans up connections and scheduled tasks.
      */
     public void shutdown() {
+        log.debug("Shutting down");
+
         if (this.heartbeatCache != null) {
             try {
                 this.heartbeatCache.shutdown();
@@ -375,6 +382,7 @@ public class QueryLimiter {
      * @return the set of IDs for active queries
      */
     public Set<String> getActiveQueries() {
+        log.debug("heartbeatCache == null ? " + (heartbeatCache == null));
         return heartbeatCache.getQueryIds();
     }
 

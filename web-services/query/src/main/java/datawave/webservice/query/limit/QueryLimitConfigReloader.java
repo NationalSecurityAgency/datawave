@@ -40,6 +40,8 @@ import org.apache.zookeeper.server.quorum.QuorumPeerConfig;
 import org.awaitility.Awaitility;
 import org.awaitility.core.ConditionTimeoutException;
 
+import com.ctc.wstx.stax.WstxInputFactory;
+import com.ctc.wstx.stax.WstxOutputFactory;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.format.DataFormatDetector;
 import com.fasterxml.jackson.core.format.DataFormatMatcher;
@@ -76,7 +78,8 @@ public class QueryLimitConfigReloader implements AutoCloseable {
     /**
      * Mapper for XML files.
      */
-    private static final XmlMapper xmlMapper = new XmlMapper();
+    // Ensure the mapper is created with factories that support the StAX2 API.
+    private static final XmlMapper xmlMapper = new XmlMapper(new WstxInputFactory(), new WstxOutputFactory());
 
     /**
      * Mapper for YAML files.
@@ -273,6 +276,10 @@ public class QueryLimitConfigReloader implements AutoCloseable {
      * cleanup interval.
      */
     public void setup() throws QuorumPeerConfig.ConfigException {
+        if (log.isDebugEnabled()) {
+            log.debug("Initializing with zookeeperConfig: " + this.zookeeperConfig + " and hdfsConfigUrls: " + hdfsConfigUrls);
+        }
+
         // If the zookeeper config points to a file, extract the hosts from it.
         this.zookeeperConfig = ZookeeperUtils.getQuorumPeerConfig(this.zookeeperConfig);
 
@@ -313,6 +320,7 @@ public class QueryLimitConfigReloader implements AutoCloseable {
     }
 
     public void shutdown() {
+        log.debug("Shutting down");
         close();
     }
 

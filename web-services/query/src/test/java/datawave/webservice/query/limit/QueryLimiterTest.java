@@ -94,6 +94,7 @@ class QueryLimiterTest {
     void testConfigurationFailsValidation() {
         QueryLimiter limiter = new QueryLimiter();
         limiter.setZookeeperConfig(server.getConnectString());
+        limiter.setHeartbeatCache(heartbeatCache);
 
         QueryLimitConfiguration config = new QueryLimitConfiguration();
         config.setDefaultUserQueryLimit(0);
@@ -114,6 +115,7 @@ class QueryLimiterTest {
         QueryLimiter limiter = new QueryLimiter();
         limiter.setZookeeperConfig(server.getConnectString());
         limiter.setConfigReloader(reloader);
+        limiter.setHeartbeatCache(heartbeatCache);
 
         try (CuratorFramework client = createReloaderClient()) {
             client.create().forPath("/path", validJsonFile.getBytes());
