@@ -8,13 +8,13 @@
         <relativePath>../../../microservice-service-parent/pom.xml</relativePath>
     </parent>
     <artifactId>accumulo-service</artifactId>
-    <version>4.0.5-SNAPSHOT</version>
+    <version>4.0.1-test-cascade-2</version>
     <description>DATAWAVE Accumulo Microservice</description>
     <url>https://code.nsa.gov/datawave-accumulo-service</url>
     <scm>
         <connection>scm:git:${project.scm.url}</connection>
         <developerConnection>scm:git:${project.scm.url}</developerConnection>
-        <tag>HEAD</tag>
+        <tag>microservices/services/accumulo-4.0.1-test-cascade-2</tag>
         <url>https://github.com/NationalSecurityAgency/datawave</url>
     </scm>
     <properties>
@@ -25,7 +25,7 @@
         <version.curator>5.2.0</version.curator>
         <version.curator.test>5.2.0</version.curator.test>
         <version.datawave>7.33.1</version.datawave>
-        <version.datawave.accumulo-api>4.0.2-SNAPSHOT</version.datawave.accumulo-api>
+        <version.datawave.accumulo-api>4.0.1-test-cascade-2</version.datawave.accumulo-api>
         <version.datawave.audit-api>4.0.2</version.datawave.audit-api>
         <version.datawave.authorization-api>4.0.2</version.datawave.authorization-api>
         <version.datawave.starter>4.0.7</version.datawave.starter>
