@@ -100,7 +100,7 @@ jobs:
 
     - name: Fast-forward to branch tip
       run: git pull --ff-only
-        
+
     - name: Set up JDK
       uses: actions/setup-java@v4
       with:
@@ -117,6 +117,30 @@ jobs:
         registry: ${{ env.GITHUB_REGISTRY }}
         username: ${{ secrets.GHCR_WRITE_USER_NAME }}
         password: ${{ secrets.GHCR_WRITE_ACCESS_TOKEN }}
+    # When called from the cascade workflow, earlier projects in the cascade
+    # may have been released already.  Update this project's parent and
+    # inter-microservice dependency version properties so the release picks
+    # up the latest non-SNAPSHOT versions.
+    - name: Update dependencies from earlier cascade releases
+      if: ${{ inputs.bumpDownstream }}
+      run: |
+        set -euo pipefail
+        git config user.email "datawave@github.com"
+        git config user.name "${{ secrets.GHCR_WRITE_USER_NAME }}"
+        cd "${{ inputs.projectToRelease }}"
+        mvn --batch-mode --no-transfer-progress \
+            versions:update-parent versions:update-properties \
+            -DallowSnapshots=false \
+            -DgenerateBackupPoms=false \
+            -Dincludes="gov.nsa.datawave.microservice:*"
+        cd "$GITHUB_WORKSPACE"
+        if git diff --quiet; then
+          echo "No dependency updates needed for ${{ inputs.projectToRelease }}."
+        else
+          git add -A
+          git commit -m "auto-update: update deps for ${{ inputs.projectToRelease }}"
+          git push
+        fi
     - name: Determine release version
       id: version
       run: |
