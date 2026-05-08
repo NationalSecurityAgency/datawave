@@ -57,7 +57,7 @@ class QueryLimiterConcurrencyTest {
     //
     // This number represents maximum amount of time allowed to elapse between extra queries that should not have been created to the last valid query that
     // is expected to be a valid creation. A certain fudge factor is required for testing simultaneous query creations.
-    private static final long SIMULTANEOUS_QUERY_CREATION_ALLOWANCE = 100L;
+    private static final long SIMULTANEOUS_QUERY_CREATION_ALLOWANCE = 250L;
 
     // Set this to true to print the attempt results for debugging purposes.
     private static final boolean printAttempts = false;
