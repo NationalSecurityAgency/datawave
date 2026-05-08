@@ -581,7 +581,7 @@ public class DiscoveryLogicTest {
         assertQueryResults();
     }
 
-    // @Test
+    @Test
     public void testValuesOnlyForFieldedLiterals() throws Exception {
         // givenQuery("bbc OR onyx");
         givenQuery("rock:onyx OR pokemon:onyx");
@@ -597,7 +597,7 @@ public class DiscoveryLogicTest {
         assertQueryResults();
     }
 
-    // @Test
+    @Test
     public void testValuesOnlyForFieldedLiteralsExtendedRange() throws Exception {
         givenQuery("rock:onyx OR pokemon:onyx");
         givenStartDate("20130101");

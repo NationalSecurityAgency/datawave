@@ -61,7 +61,7 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
     private void termsOnlyOperation() throws IOException {
         while (Optional.ofNullable(iterator).isPresent() && iterator.hasTop()) {
             // Get the entries to aggregate.
-            Set<TermEntry> terms = getTermsOnly();
+            Set<TermInterface> terms = getTermsOnly();
             if (terms.isEmpty()) {
                 log.trace("Couldn't aggregate index info; moving onto next date/field/term if data is available.");
             } else {
@@ -75,7 +75,7 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
     private void standardOperation() throws IOException {
         while (Optional.ofNullable(iterator).isPresent() && iterator.hasTop() && key == null) {
             // Get the entries to aggregate.
-            Multimap<String,TermEntry> terms = getTermsByDatatype();
+            Multimap<String,TermInterface> terms = getTermsByDatatype();
             if (terms.isEmpty()) {
                 log.trace("Couldn't aggregate index info; moving onto next date/field/term if data is available.");
             } else {
@@ -106,8 +106,8 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
     /**
      * Return a multimap containing mappings of datatypes to term entries that should be aggregated.
      */
-    private Multimap<String,TermEntry> getTermsByDatatype() throws IOException {
-        Multimap<String,TermEntry> terms = ArrayListMultimap.create();
+    private Multimap<String,TermInterface> getTermsByDatatype() throws IOException {
+        Multimap<String,TermInterface> terms = ArrayListMultimap.create();
         Key start = new Key(iterator.getTopKey());
         Key key;
         // If we should sum up counts, we want to collect the term entries for each date seen for the current field and term of start.
@@ -133,8 +133,8 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
         return terms;
     }
 
-    private Set<TermEntry> getTermsOnly() throws IOException {
-        Set<TermEntry> terms = new HashSet<>();
+    private Set<TermInterface> getTermsOnly() throws IOException {
+        Set<TermInterface> terms = new HashSet<>();
         Key start = new Key(iterator.getTopKey());
         Key key;
 
@@ -142,25 +142,7 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
         //@formatter:off
         while (iterator.hasTop() &&
                 start.equals((key = iterator.getTopKey()), PartialKey.ROW)) {
-
-            TermEntry termEntry = new TermEntry(key, iterator.getTopValue()) {
-                // Only use term and visibility for equality.
-                @Override
-                public boolean equals(Object o) {
-                    if (o instanceof TermEntry) {
-                        TermEntry other = (TermEntry) o;
-                        return new EqualsBuilder().append(getTerm(), other.getTerm())
-                                .append(getVisibility(), other.getVisibility()).isEquals();
-                    }
-                    return false;
-                }
-
-                @Override
-                public int hashCode() {
-                    return new HashCodeBuilder().append(getTerm())
-                            .append(getVisibility()).toHashCode();
-                }
-            };
+            TermOnlyEntry termEntry = new TermOnlyEntry(key, iterator.getTopValue());
 
             if (termEntry.isValid())
                 terms.add(termEntry);
@@ -192,13 +174,13 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
     /**
      * Return the given term entries aggregated into a single {@link DiscoveredThing} if possible, or return null if any issues occurred.
      */
-    private DiscoveredThing aggregate(Collection<TermEntry> termEntries) {
+    private DiscoveredThing aggregate(Collection<TermInterface> termEntries) {
         if (termEntries.isEmpty()) {
             return null;
         } else {
-            TermEntry first = termEntries.iterator().next();
+            TermInterface first = termEntries.iterator().next();
             String term = reverseIndex ? new StringBuilder(first.getTerm()).reverse().toString() : first.getTerm();
-            String date = sumCounts ? "" : first.date;
+            String date = sumCounts ? "" : first.getDate();
             if (valuesOnly) {
                 date = "";
             }
@@ -208,7 +190,7 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
             long count = 0L;
 
             // Aggregate the counts and visibilities from each entry.
-            for (TermEntry termEntry : termEntries) {
+            for (TermInterface termEntry : termEntries) {
                 // Fetch the count to aggregate based of whether we should show the term count or the reference count.
                 long currentCount = this.showReferenceCount ? termEntry.getUidListSize() : termEntry.getUidCount();
                 try {
@@ -316,10 +298,10 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
     /**
      * Represents term information parsed from a {@link Key}, {@link Value} pair.
      */
-    private static class TermEntry {
+    private static class TermEntry implements TermInterface {
 
         private final String term;
-        private String field;
+        private final String field;
         private String date;
         private String datatype;
         private ColumnVisibility visibility;
