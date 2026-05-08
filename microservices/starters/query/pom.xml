@@ -31,7 +31,7 @@
         <version.datawave.authorization-api>4.0.1-SNAPSHOT</version.datawave.authorization-api>
         <version.datawave.dictionary-api>4.0.7-SNAPSHOT</version.datawave.dictionary-api>
         <version.datawave.hazelcast-client>4.0.4</version.datawave.hazelcast-client>
-        <version.datawave.hazelcast-common>4.0.4</version.datawave.hazelcast-common>
+        <version.datawave.hazelcast-common>4.0.5-SNAPSHOT</version.datawave.hazelcast-common>
         <version.datawave.mapreduce-query-api>1.0.2-SNAPSHOT</version.datawave.mapreduce-query-api>
         <version.datawave.query-api>1.0.2-SNAPSHOT</version.datawave.query-api>
         <version.datawave.query-metric-api>4.1.4-SNAPSHOT</version.datawave.query-metric-api>
