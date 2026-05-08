@@ -115,7 +115,7 @@ public class QueryLimiter {
                     try {
                         this.queryLogicGroupLimitProvider.cleanUp();
                     } catch (Exception e) {
-                        log.warn("Failed to clean up query logic group limit provider");
+                        log.warn("Failed to clean up query logic group limit provider", e);
                     }
                     // Make this null so that if recreating the provider fails for some reason, canProvideLimits() will return false.
                     this.queryLogicGroupLimitProvider = null;
@@ -128,7 +128,7 @@ public class QueryLimiter {
                     try {
                         this.userLimitProvider.cleanUp();
                     } catch (Exception e) {
-                        log.warn("Failed to clean up user limit provider");
+                        log.warn("Failed to clean up user limit provider", e);
                     }
                     // Make this null so that if recreating the provider fails for some reason, canProvideLimits() will return false.
                     this.userLimitProvider = null;
@@ -141,7 +141,7 @@ public class QueryLimiter {
                     try {
                         this.systemLimitProvider.cleanUp();
                     } catch (Exception e) {
-                        log.warn("Failed to clean up system limit provider");
+                        log.warn("Failed to clean up system limit provider", e);
                     }
                     // Make this null so that if recreating the provider fails for some reason, canProvideLimits() will return false.
                     this.systemLimitProvider = null;
@@ -250,6 +250,9 @@ public class QueryLimiter {
             // the reloader will already be validated.
             if (configReloader != null) {
                 configReloader.addListener(((config) -> updateConfiguration(config, false)));
+                log.debug("QueryLimiter now listening for configuration updates");
+            } else {
+                log.warn("No config reloader set for QueryLimiter, limiter will not be notified of configuration updates");
             }
         } finally {
             configLock.unlock();
@@ -266,25 +269,28 @@ public class QueryLimiter {
             try {
                 this.heartbeatCache.shutdown();
             } catch (Exception e) {
-                log.error("Error closing heartbeat cache", e);
+                log.warn("Error closing heartbeat cache", e);
+            } finally {
+                this.heartbeatCache = null;
             }
-            this.heartbeatCache = null;
         }
         if (this.activeQueryTracker != null) {
             try {
                 this.activeQueryTracker.close();
             } catch (Exception e) {
-                log.error("Error closing active query tracker", e);
+                log.warn("Error closing active query tracker", e);
+            } finally {
+                this.activeQueryTracker = null;
             }
-            this.activeQueryTracker = null;
         }
         if (this.configReloader != null) {
             try {
                 this.configReloader.close();
             } catch (Exception e) {
-                log.error("Error closing config reloader", e);
+                log.warn("Error closing config reloader", e);
+            } finally {
+                this.configReloader = null;
             }
-            this.configReloader = null;
         }
     }
 
@@ -382,7 +388,6 @@ public class QueryLimiter {
      * @return the set of IDs for active queries
      */
     public Set<String> getActiveQueries() {
-        log.debug("heartbeatCache == null ? " + (heartbeatCache == null));
         return heartbeatCache.getQueryIds();
     }
 

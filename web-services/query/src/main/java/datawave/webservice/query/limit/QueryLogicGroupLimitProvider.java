@@ -10,10 +10,14 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
+import org.apache.log4j.Logger;
+
 /**
  * This class is responsible for identifying and providing limits that should be enforced for query logic groups.
  */
 public class QueryLogicGroupLimitProvider {
+
+    private static final Logger log = Logger.getLogger(QueryLogicGroupLimitProvider.class);
 
     private final long maxCacheSize;
 
@@ -113,13 +117,15 @@ public class QueryLogicGroupLimitProvider {
      * Clean up this {@link QueryLogicGroupLimitProvider} and release its underlying resources.
      */
     public void cleanUp() {
-        if (groupsToLimits != null) {
-            groupsToLimits.clear();
-            groupsToLimits = null;
-        }
+        groupsToLimits = null;
         if (groupLimitCache != null) {
-            groupLimitCache.cleanUp();
-            groupLimitCache = null;
+            try {
+                groupLimitCache.cleanUp();
+            } catch (Exception e) {
+                log.warn("Failed to clear groupLimitCache", e);
+            } finally {
+                groupLimitCache = null;
+            }
         }
     }
 

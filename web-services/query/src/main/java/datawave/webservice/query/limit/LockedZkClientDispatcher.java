@@ -155,9 +155,7 @@ public class LockedZkClientDispatcher implements AutoCloseable {
                     try {
                         client.close();
                     } catch (Exception e) {
-                        if (log.isWarnEnabled()) {
-                            log.warn("Failed to close client", e);
-                        }
+                        log.warn("Failed to close client", e);
                     } finally {
                         client = null;
                     }
@@ -178,9 +176,7 @@ public class LockedZkClientDispatcher implements AutoCloseable {
                 try {
                     executor.shutdown();
                 } catch (Exception e) {
-                    if (log.isWarnEnabled()) {
-                        log.warn("Failed to shutdown executor", e);
-                    }
+                    log.warn("Failed to shutdown executor", e);
                 }
                 executor = null;
             }

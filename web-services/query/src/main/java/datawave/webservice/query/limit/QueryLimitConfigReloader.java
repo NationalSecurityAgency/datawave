@@ -17,9 +17,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -450,7 +452,7 @@ public class QueryLimitConfigReloader implements AutoCloseable {
      */
     private void triggerReload(ReloadCause cause) {
         if (log.isDebugEnabled()) {
-            log.debug("Configuration reload triggered");
+            log.debug("Configuration reload triggered due to cause " + cause);
         }
 
         // Obtain the reload lock.
@@ -459,6 +461,10 @@ public class QueryLimitConfigReloader implements AutoCloseable {
             Instant attemptTime = Instant.now();
             // Attempt to load the configuration from the path node.
             LoadResult result = loadConfiguration();
+
+            if (log.isDebugEnabled()) {
+                log.debug("Received reload result status=" + result.getStatus() + ", errors=" + result.getErrorMessages());
+            }
 
             // If we successfully loaded a valid configuration, pass it to any listeners registered with this loader.
             if (result.status == ReloadStatus.SUCCESS) {
@@ -644,6 +650,9 @@ public class QueryLimitConfigReloader implements AutoCloseable {
                 try {
                     // Deserialize the configuration using the associated mapper for the format.
                     config = formatToMapper.get(factory.getFormatName()).readValue(contents, QueryLimitConfiguration.class);
+                    if (log.isDebugEnabled()) {
+                        log.debug("Deserialized config: " + config);
+                    }
                 } catch (Exception e) {
                     log.error("Failed to deserialize file " + path + " to a " + QueryLimitConfiguration.class.getName(), e);
                     return LoadResult.reloadError("Failed to deserialize file to a " + QueryLimitConfiguration.class.getSimpleName());
@@ -787,32 +796,35 @@ public class QueryLimitConfigReloader implements AutoCloseable {
             try {
                 pathCache.close();
             } catch (Exception e) {
-                log.error("Failed to close path cache", e);
+                log.warn("Failed to close path cache", e);
+            } finally {
+                pathCache = null;
             }
-            pathCache = null;
         }
         if (triggerCache != null) {
             try {
                 triggerCache.close();
             } catch (Exception e) {
-                log.error("Failed to close trigger cache", e);
+                log.warn("Failed to close trigger cache", e);
+            } finally {
+                triggerCache = null;
             }
-            triggerCache = null;
         }
         if (executor != null) {
             try {
                 executor.shutdown();
             } catch (Exception e) {
-                log.error("Failed to close executor", e);
+                log.warn("Failed to close executor", e);
+            } finally {
+                executor = null;
             }
-            executor = null;
         }
 
         if (listeners != null) {
             try {
                 listeners.clear();
             } catch (Exception e) {
-                log.error("Failed to clear listeners", e);
+                log.warn("Failed to clear listeners", e);
             } finally {
                 listeners = null;
             }
@@ -822,9 +834,10 @@ public class QueryLimitConfigReloader implements AutoCloseable {
             try {
                 clientDispatcher.close();
             } catch (Exception e) {
-                log.error("Failed to close client dispatcher", e);
+                log.warn("Failed to close client dispatcher", e);
+            } finally {
+                clientDispatcher = null;
             }
-            clientDispatcher = null;
         }
     }
 

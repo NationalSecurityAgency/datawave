@@ -154,13 +154,15 @@ public class SystemLimitProvider {
      */
     public void cleanUp() {
         if (systemLimitCache != null) {
-            systemLimitCache.invalidateAll();
-            systemLimitCache = null;
+            try {
+                systemLimitCache.invalidateAll();
+            } catch (Exception e) {
+                log.error("Failed to clear systemLimitCache", e);
+            } finally {
+                systemLimitCache = null;
+            }
         }
-        if (sortedSystemLimits != null) {
-            sortedSystemLimits.clear();
-            sortedSystemLimits = null;
-        }
+        sortedSystemLimits = null;
     }
 
     /**

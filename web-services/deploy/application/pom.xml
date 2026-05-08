@@ -49,6 +49,12 @@
             <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-metrics-core</artifactId>
             <version>${project.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.yaml</groupId>
+                    <artifactId>snakeyaml</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave</groupId>
@@ -62,6 +68,10 @@
                 <exclusion>
                     <groupId>gov.nsa.datawave.core</groupId>
                     <artifactId>datawave-core-connection-pool</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.yaml</groupId>
+                    <artifactId>snakeyaml</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>

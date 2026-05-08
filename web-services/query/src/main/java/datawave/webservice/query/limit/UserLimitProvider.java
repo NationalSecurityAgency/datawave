@@ -87,9 +87,6 @@ public class UserLimitProvider {
      * Clean up this {@link UserLimitProvider} and release its underlying resources.
      */
     public void cleanUp() {
-        if (customLimits != null) {
-            customLimits.clear();
-            customLimits = null;
-        }
+        customLimits = null;
     }
 }
