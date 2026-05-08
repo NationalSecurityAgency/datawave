@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.microservice</groupId>
         <artifactId>datawave-microservice-service-parent</artifactId>
-        <version>5.0.11</version>
+        <version>5.0.12-test-cascade-6</version>
         <relativePath>../../../microservice-service-parent/pom.xml</relativePath>
     </parent>
     <artifactId>mapreduce-query-service</artifactId>
@@ -23,10 +23,10 @@
         <registry.namespace>nationalsecurityagency/</registry.namespace>
         <start-class>datawave.microservice.query.mapreduce.MapReduceQueryService</start-class>
         <version.datawave>7.33.1</version.datawave>
-        <version.datawave.authorization-api>4.0.1-SNAPSHOT</version.datawave.authorization-api>
+        <version.datawave.authorization-api>4.0.4-accumulo4</version.datawave.authorization-api>
         <version.datawave.mapreduce-query-core-job>1.0.5-SNAPSHOT</version.datawave.mapreduce-query-core-job>
-        <version.datawave.starter>4.0.8-SNAPSHOT</version.datawave.starter>
-        <version.datawave.starter-query>1.0.11-SNAPSHOT</version.datawave.starter-query>
+        <version.datawave.starter>4.0.8-test-cascade-6</version.datawave.starter>
+        <version.datawave.starter-query>1.0.11-test-cascade-6</version.datawave.starter-query>
         <version.hadoop>3.3.4</version.hadoop>
         <!-- dependency declared in datawave-microservice-parent, but the version can be overridden here -->
         <version.log4j>2.25.3</version.log4j>
