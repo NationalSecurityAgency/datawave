@@ -8,12 +8,12 @@
         <relativePath>../../../microservice-parent/pom.xml</relativePath>
     </parent>
     <artifactId>file-provider-service-api</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>1.0.0-test-cascade-6</version>
     <url>https://github.com/NationalSecurityAgency/datawave-file-provider-service</url>
     <scm>
         <connection>scm:git:${project.scm.url}</connection>
         <developerConnection>scm:git:${project.scm.url}</developerConnection>
-        <tag>HEAD</tag>
+        <tag>microservices/services/file-provider/api-1.0.0-test-cascade-6</tag>
         <url>https://github.com/NationalSecurityAgency/datawave</url>
     </scm>
     <repositories>
