@@ -25,7 +25,7 @@
         <version.curator>5.2.0</version.curator>
         <version.curator.test>5.2.0</version.curator.test>
         <version.datawave>7.33.1</version.datawave>
-        <version.datawave.accumulo-api>4.0.1</version.datawave.accumulo-api>
+        <version.datawave.accumulo-api>4.0.2-SNAPSHOT</version.datawave.accumulo-api>
         <version.datawave.audit-api>4.0.2</version.datawave.audit-api>
         <version.datawave.authorization-api>4.0.2</version.datawave.authorization-api>
         <version.datawave.starter>4.0.7</version.datawave.starter>
