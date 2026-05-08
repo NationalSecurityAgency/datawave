@@ -29,6 +29,16 @@ public class DiscoveredThing implements WritableComparable<DiscoveredThing> {
         this.countsByColumnVisibility = countsByColumnVisibility;
     }
 
+    public DiscoveredThing(String term, String columnVisibility) {
+        this.term = term;
+        this.field = "";
+        this.type = "";
+        this.date = "";
+        this.columnVisibility = columnVisibility;
+        this.count = new VLongWritable(0L);
+        this.countsByColumnVisibility = new MapWritable();
+    }
+
     public DiscoveredThing() {
         count = new VLongWritable();
         countsByColumnVisibility = new MapWritable();

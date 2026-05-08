@@ -116,8 +116,7 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
 
         // Find all matching entries and parse term entries from them.
         //@formatter:off
-        while (Optional.ofNullable(iterator).isPresent() &&
-                iterator.hasTop() &&
+        while (iterator.hasTop() &&
                 start.equals((key = iterator.getTopKey()), PartialKey.ROW_COLFAM) &&
                 dateMatchingFunction.apply(start, key)) {
             TermEntry termEntry = new TermEntry(key, iterator.getTopValue());
@@ -141,8 +140,7 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
 
         // Find all matching entries and parse term entries from them.
         //@formatter:off
-        while (Optional.ofNullable(iterator).isPresent() &&
-                iterator.hasTop() &&
+        while (iterator.hasTop() &&
                 start.equals((key = iterator.getTopKey()), PartialKey.ROW)) {
 
             TermEntry termEntry = new TermEntry(key, iterator.getTopValue()) {
@@ -151,14 +149,16 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
                 public boolean equals(Object o) {
                     if (o instanceof TermEntry) {
                         TermEntry other = (TermEntry) o;
-                        return new EqualsBuilder().append(getTerm(), other.getTerm()).append(getVisibility(), other.getVisibility()).isEquals();
+                        return new EqualsBuilder().append(getTerm(), other.getTerm())
+                                .append(getVisibility(), other.getVisibility()).isEquals();
                     }
                     return false;
                 }
 
                 @Override
                 public int hashCode() {
-                    return new HashCodeBuilder().append(getTerm()).append(getVisibility()).toHashCode();
+                    return new HashCodeBuilder().append(getTerm())
+                            .append(getVisibility()).toHashCode();
                 }
             };
 
@@ -408,17 +408,30 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
         public boolean equals(Object o) {
             if (o instanceof TermEntry) {
                 TermEntry other = (TermEntry) o;
-                return new EqualsBuilder().append(getTerm(), other.getTerm()).append(getField(), other.getField())
-                                .append(getVisibility(), other.getVisibility()).append(getDate(), other.getDate()).append(getDatatype(), other.getDatatype())
-                                .append(getUidCount(), other.getUidCount()).append(getUidListSize(), other.getUidListSize()).isEquals();
+                // @formatter:off
+                return new EqualsBuilder().append(getTerm(), other.getTerm())
+                        .append(getField(), other.getField())
+                        .append(getVisibility(), other.getVisibility())
+                        .append(getDate(), other.getDate())
+                        .append(getDatatype(), other.getDatatype())
+                        .append(getUidCount(), other.getUidCount())
+                        .append(getUidListSize(), other.getUidListSize()).isEquals();
+                // @formatter:on
             }
             return false;
         }
 
         @Override
         public int hashCode() {
-            return new HashCodeBuilder().append(getTerm()).append(getField()).append(getVisibility()).append(getDate()).append(getDatatype())
-                            .append(getUidCount()).append(getUidListSize()).toHashCode();
+            // @formatter:off
+            return new HashCodeBuilder().append(getTerm())
+                    .append(getField())
+                    .append(getVisibility())
+                    .append(getDate())
+                    .append(getDatatype())
+                    .append(getUidCount())
+                    .append(getUidListSize()).toHashCode();
+            // @formatter:on
         }
     }
 }
