@@ -131,6 +131,7 @@ jobs:
         mvn --batch-mode --no-transfer-progress \
             versions:update-parent versions:update-properties \
             -DallowSnapshots=false \
+            -DallowMajorUpdates=false \
             -DgenerateBackupPoms=false \
             -Dincludes="gov.nsa.datawave.microservice:*"
         cd "$GITHUB_WORKSPACE"
@@ -209,6 +210,7 @@ jobs:
             -Dservices -Dstarters \
             versions:update-parent versions:update-properties \
             -DallowSnapshots=false \
+            -DallowMajorUpdates=false \
             -DgenerateBackupPoms=false \
             -Dincludes="gov.nsa.datawave.microservice:${ARTIFACT_ID}"
         cd "$GITHUB_WORKSPACE"
