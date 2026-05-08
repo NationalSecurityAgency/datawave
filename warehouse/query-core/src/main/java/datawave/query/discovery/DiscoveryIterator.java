@@ -101,8 +101,6 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
         } else {
             standardOperation();
         }
-
-        log.trace("No data found.");
     }
 
     /**
@@ -145,7 +143,7 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
         //@formatter:off
         while (Optional.ofNullable(iterator).isPresent() &&
                 iterator.hasTop() &&
-                start.equals((key = iterator.getTopKey()), PartialKey.ROW_COLFAM)) {
+                start.equals((key = iterator.getTopKey()), PartialKey.ROW)) {
 
             TermEntry termEntry = new TermEntry(key, iterator.getTopValue()) {
                 // Only use term and visibility for equality.

@@ -244,12 +244,11 @@ public class DiscoveryLogicTest {
 
         DiscoveredThingValuesOnlyConditionalTransformer dtvoct = new DiscoveredThingValuesOnlyConditionalTransformer(logic.getValuesOnly());
         while (iterator.hasNext()) {
-            actual.add(dtvoct.apply(iterator.next()));
+            DiscoveredThing dtee = iterator.next();
+            actual.add(dtvoct.apply(dtee));
+            // actual.add(dtvoct.apply(iterator.next()));
+            // actual.add(iterator.next());
         }
-
-        /*
-         * while (iterator.hasNext()) { actual.add(iterator.next()); }
-         */
 
         Assertions.assertThat(actual).hasSize(expected.size());
         for (int i = 0; i < expected.size(); i++) {
@@ -536,14 +535,12 @@ public class DiscoveryLogicTest {
         givenParameter(DiscoveryLogic.VALUES_ONLY, "true");
 
         expect(new DiscoveredThing("bbc", "", "", "", "BAR&FOO", 0L, new MapWritable()));
-        expect(new DiscoveredThing("onyx", "", "", "", "FOO", 0L, new MapWritable()));
-        expect(new DiscoveredThing("onyx", "", "", "", "FOO", 0L, new MapWritable()));
-        expect(new DiscoveredThing("onyx", "", "", "", "BAR", 0L, new MapWritable()));
+        expect(new DiscoveredThing("onyx", "", "", "", "BAR&FOO", 0L, new MapWritable()));
         assertQueryResults();
     }
 
     @Test
-    public void testValuesOnlyForLiteralsNoSumCount() throws Exception {
+    public void testValuesOnlyForLiteralsFalseSumCount() throws Exception {
         givenQuery("bbc OR onyx");
         givenStartDate("20130101");
         givenEndDate("20130102");
@@ -551,9 +548,73 @@ public class DiscoveryLogicTest {
         givenParameter(DiscoveryLogic.VALUES_ONLY, "true");
 
         expect(new DiscoveredThing("bbc", "", "", "", "BAR&FOO", 0L, new MapWritable()));
+        expect(new DiscoveredThing("onyx", "", "", "", "BAR&FOO", 0L, new MapWritable()));
+        assertQueryResults();
+    }
+
+    @Test
+    public void testValuesOnlyForPatterns() throws Exception {
+        givenQuery("*yx OR b*");
+        givenStartDate("20130101");
+        givenEndDate("20130102");
+        givenParameter(DiscoveryLogic.SUM_COUNTS, "true");
+        givenParameter(DiscoveryLogic.VALUES_ONLY, "true");
+
+        expect(new DiscoveredThing("bbc", "", "", "", "BAR&FOO", 0L, new MapWritable()));
+        expect(new DiscoveredThing("onyx", "", "", "", "BAR&FOO", 0L, new MapWritable()));
+
+        assertQueryResults();
+    }
+
+    @Test
+    public void testValuesOnlyForPatternsNotFound() throws Exception {
+        givenQuery("*nixon OR ford*");
+        givenStartDate("20130101");
+        givenEndDate("20130102");
+        givenParameter(DiscoveryLogic.SUM_COUNTS, "true");
+        givenParameter(DiscoveryLogic.VALUES_ONLY, "true");
+
+        // We expect no results. Make sure we do not blow up.
+        // expect(new DiscoveredThing("bbc", "", "", "", "BAR&FOO", 0L, new MapWritable()));
+        // expect(new DiscoveredThing("onyx", "", "", "", "BAR&FOO", 0L, new MapWritable()));
+
+        assertQueryResults();
+    }
+
+    @Test
+    public void testValuesOnlyForFieldedLiterals() throws Exception {
+        // givenQuery("bbc OR onyx");
+        givenQuery("rock:onyx OR pokemon:onyx");
+        givenStartDate("20130101");
+        givenEndDate("20130102");
+
+        givenParameter(DiscoveryLogic.SUM_COUNTS, "true");
+        givenParameter(DiscoveryLogic.VALUES_ONLY, "true");
+
+        // expect(new DiscoveredThing("bbc", "", "", "", "BAR&FOO", 0L, new MapWritable()));
         expect(new DiscoveredThing("onyx", "", "", "", "FOO", 0L, new MapWritable()));
         expect(new DiscoveredThing("onyx", "", "", "", "FOO", 0L, new MapWritable()));
-        expect(new DiscoveredThing("onyx", "", "", "", "BAR", 0L, new MapWritable()));
+        assertQueryResults();
+    }
+
+    @Test
+    public void testValuesOnlyForFieldedLiteralsExtendedRange() throws Exception {
+        givenQuery("rock:onyx OR pokemon:onyx");
+        givenStartDate("20130101");
+        givenEndDate("20130104");
+
+        givenParameter(DiscoveryLogic.SUM_COUNTS, "true");
+        givenParameter(DiscoveryLogic.VALUES_ONLY, "true");
+
+        // expect(new DiscoveredThing("onyx", "POKEMON", "csv", "20130101", "FOO", 100L, new MapWritable()));
+        // expect(new DiscoveredThing("onyx", "POKEMON", "csv", "20130102", "FOO", 10L, new MapWritable()));
+        // expect(new DiscoveredThing("onyx", "POKEMON", "csv", "20130103", "FOO", 1L, new MapWritable()));
+        // expect(new DiscoveredThing("onyx", "ROCK", "csv", "20130101", "FOO", 1L, new MapWritable()));
+        // expect(new DiscoveredThing("onyx", "ROCK", "csv", "20130102", "FOO", 3L, new MapWritable()));
+        // expect(new DiscoveredThing("onyx", "ROCK", "csv", "20130103", "FOO", 3L, new MapWritable()));
+
+        expect(new DiscoveredThing("onyx", "", "", "", "FOO", 0L, new MapWritable()));
+        expect(new DiscoveredThing("onyx", "", "", "", "FOO", 0L, new MapWritable()));
         assertQueryResults();
     }
 }
