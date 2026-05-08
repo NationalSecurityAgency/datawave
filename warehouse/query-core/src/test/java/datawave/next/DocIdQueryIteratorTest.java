@@ -23,9 +23,16 @@ public class DocIdQueryIteratorTest extends FieldIndexDataTestUtil {
 
     private final Set<String> indexedFields = Set.of("FIELD_A", "FIELD_B");
 
+    private final Map<String,String> extraOptions = new HashMap<>();
+
     @BeforeEach
     public void setup() {
         query = null;
+        extraOptions.clear();
+    }
+
+    public void withOption(String key, String value) {
+        extraOptions.put(key, value);
     }
 
     @Test
@@ -86,6 +93,32 @@ public class DocIdQueryIteratorTest extends FieldIndexDataTestUtil {
         withQuery("((_Bounded_ = true) && (FIELD_A >= 'value-a' && FIELD_A <= 'value-c'))");
         drive();
         assertResultSize(11);
+    }
+
+    @Test
+    public void testBulkRetrievalSingletons() {
+        writeData("FIELD_A", "value-a", 750);
+        withQuery("FIELD_A == 'value-a'");
+        drive();
+        assertResultSize(750);
+    }
+
+    @Test
+    public void testBulkRetrievalBatches() {
+        writeData("FIELD_A", "value-a", 750);
+        withQuery("FIELD_A == 'value-a'");
+        withOption(DocIdQueryIterator.BATCH_SIZE, "20");
+        drive();
+        assertResultSize(750);
+    }
+
+    @Test
+    public void testBulkRetrievalPerfectBatchSize() {
+        writeData("FIELD_A", "value-a", 25);
+        withQuery("FIELD_A == 'value-a'");
+        withOption(DocIdQueryIterator.BATCH_SIZE, "25");
+        drive();
+        assertResultSize(25);
     }
 
     protected void withQuery(String query) {
