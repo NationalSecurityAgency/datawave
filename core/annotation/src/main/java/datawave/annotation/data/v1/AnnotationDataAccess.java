@@ -520,7 +520,7 @@ public class AnnotationDataAccess {
         if (conflicting.isPresent()) {
             if (blockAnnotationSourceOverwrites) {
                 throw new AnnotationWriteException("Cannot add annotation source because an annotation source with the same id already exists.");
-            } else {
+            } else if (log.isDebugEnabled()) {
                 log.debug("Allowing annotation source overwrite: {}", annotationSourceString(annotationSource));
             }
         }
@@ -604,7 +604,7 @@ public class AnnotationDataAccess {
         if (conflicting.isPresent()) {
             if (blockAnnotationOverwrites) {
                 throw new AnnotationWriteException("Cannot add annotation because an annotation with the same id already exists.");
-            } else {
+            } else if (log.isDebugEnabled()) {
                 log.debug("Allowing annotation overwrite: {}", annotationIdContext(conflicting.get()));
             }
         }
