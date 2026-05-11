@@ -271,11 +271,12 @@ public class AnnotationDataAccessTest {
 
     @Test
     public void testGetAnnotationSource() {
-        Optional<AnnotationSource> annotationOptional = dao.getAnnotationSource("07826DD26F8CE2594B46BD7338F135D8");
+        Optional<AnnotationSource> annotationOptional = dao.getAnnotationSource("B3A65E623F5062BD3391015CDAA422B2");
         assertFalse(annotationOptional.isEmpty());
         AnnotationSource as = annotationOptional.get();
         assertEquals("v6", as.getEngine());
         assertEquals("avalon", as.getModel());
+        assertEquals("toyota", as.getPlatform());
 
         final String[] expectedConfigKeys = {"normalization"};
         final String[] expectedConfigValues = {"circular"};
@@ -321,7 +322,7 @@ public class AnnotationDataAccessTest {
             System.out.println("*************** " + table + " ********************");
             while (iterator.hasNext()) {
                 Map.Entry<Key,Value> entry = iterator.next();
-                log.info("key: {}; value length: {}", entry.getKey(), entry.getValue().getSize());
+                System.out.println("key: " + entry.getKey() + "; value: " + entry.getValue());
             }
             scanner.close();
         } catch (TableNotFoundException e) {
