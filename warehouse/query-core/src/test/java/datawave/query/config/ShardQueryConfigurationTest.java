@@ -515,8 +515,6 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("seekingEventAggregation", true);
         defaultValues.put("visitorFunctionMaxWeight", 5000000L);
         updatedValues.put("visitorFunctionMaxWeight", 1000000L);
-        defaultValues.put("lazySetMechanismEnabled", false);
-        updatedValues.put("lazySetMechanismEnabled", true);
         defaultValues.put("docAggregationThresholdMs", -1);
         updatedValues.put("docAggregationThresholdMs", 30000);
         defaultValues.put("tfAggregationThresholdMs", -1);
