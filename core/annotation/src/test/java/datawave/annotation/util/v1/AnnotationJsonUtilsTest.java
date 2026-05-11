@@ -125,7 +125,6 @@ public class AnnotationJsonUtilsTest {
         Annotation expectedAnnotation = AnnotationUtils.injectAllHashes(testAnnotation);
         Annotation observedAnnotation = AnnotationJsonUtils.annotationFromJson(testAnnotationJsonWithIds);
         AnnotationAssertions.assertAnnotationsEqual(expectedAnnotation, observedAnnotation);
-        AnnotationValidators.getAnnotationValidator().check(observedAnnotation);
         AnnotationValidators.checkAnnotation(observedAnnotation);
         AnnotationValidators.checkAnnotationIds(observedAnnotation);
     }

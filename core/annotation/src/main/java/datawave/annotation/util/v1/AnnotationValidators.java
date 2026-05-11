@@ -57,29 +57,36 @@ public class AnnotationValidators {
 
     private static final Validator<Segment> segmentIdentityValidator = Validator.<Segment>create()
             .addCheck(s -> StringUtils.isNotBlank(s.getSegmentHash()), "Segment hash (identity) must not be blank")
-            .addMemberValidator(Segment::getValuesList, segmentValueIdentityValidator);
+            .addMemberValidator(Segment::getValuesList, segmentValueIdentityValidator, "in segment identity validation");
 
     // ------ segment data validation ------ //
 
     private static final Validator<SegmentValue> segmentValueValidator = Validator.<SegmentValue>create()
             .addCheck(v -> StringUtils.isNotBlank(v.getValue()), "Segment value must not be blank");
 
-    private static final Validator<Segment> segmentValidator = Validator.<Segment>create()
-            .addCheck(s -> !s.getValuesList().isEmpty(), "Segment must have at least one value")
-            .addCheck(Segment::hasBoundary, "Segment must have a boundary")
-            .addMemberValidator(Segment::getValuesList, segmentValueValidator)
-            .addMemberValidator(s -> Collections.singletonList(s.getBoundary()), getBoundaryValidatorByType);
+    // base validation case.
+    private static final Validator<Segment> baseSegmentValidator = Validator.<Segment>create().addCheck(Segment::hasBoundary, "Segment must have a boundary")
+            .addMemberValidator(Segment::getValuesList, segmentValueValidator, "in base segment validation")
+            .addMemberValidator(s -> Collections.singletonList(s.getBoundary()), getBoundaryValidatorByType, "in base segment validation");
+
+    // in the normal case, we always want a segment to have at least one value...
+    private static final Validator<Segment> segmentValidator = Validator.<Segment>create().extend(baseSegmentValidator)
+            .addCheck(s -> !s.getValuesList().isEmpty(), "Segment must have at least one value");
+
+    // segment updates are allowed to have an empty value list to 'mask' or 'delete' an existing segment, but if they
+    // do have values, they must still be valid.
+    private static final Validator<Segment> segmentUpdateValidator = Validator.<Segment>create().extend(baseSegmentValidator);
 
     // ------- annotation identity validation ------ //
 
     private static final Validator<Annotation> annotationIdentityValidator = Validator.<Annotation>create()
             .addCheck(a -> StringUtils.isNotBlank(a.getAnnotationId()), "Annotation id must not be blank")
             .addCheck(a -> StringUtils.isNotBlank(a.getAnalyticSourceHash()) || StringUtils.isNotBlank(a.getSource().getAnalyticHash()), "Annotation source hash must not be blank")
-            .addMemberValidator(Annotation::getSegmentsList, segmentIdentityValidator);
+            .addMemberValidator(Annotation::getSegmentsList, segmentIdentityValidator, "in annotation identity validation");
 
     // ------- annotation data validation ------ //
 
-    private static final Validator<Annotation> annotationValidator = Validator.<Annotation>create()
+    private static final Validator<Annotation> baseAnnotationValidator = Validator.<Annotation>create()
             .addCheck(a -> StringUtils.isNotBlank(a.getShard()), "Annotation shard must not be blank")
             .addCheck(a -> StringUtils.isNotBlank(a.getDataType()), "Annotation datatype must not be blank")
             .addCheck(a -> StringUtils.isNotBlank(a.getUid()), "Annotation uid must not be blank")
@@ -88,8 +95,13 @@ public class AnnotationValidators {
             .addCheck(a -> !a.getMetadataMap().isEmpty(), "Annotation metadata map must include a 'visibility' and 'created_date'")
             .addCheck(a -> a.getMetadataMap().get("visibility") != null, "Annotation metadata map must include a 'visibility'")
             .addCheck(a -> a.getMetadataMap().get("created_date") != null, "Annotation metadata map must include a 'created_date'")
-            .addCheck(a -> !a.getSegmentsList().isEmpty(), "Annotation must include at least one segment")
-            .addMemberValidator(Annotation::getSegmentsList, segmentValidator);
+            .addCheck(a -> !a.getSegmentsList().isEmpty(), "Annotation must include at least one segment");
+
+    private static final Validator<Annotation> annotationValidator = Validator.<Annotation>create().extend(baseAnnotationValidator)
+            .addMemberValidator(Annotation::getSegmentsList, segmentValidator, "in annotation validation");
+
+    private static final Validator<Annotation> annotationUpdateValidator = Validator.<Annotation>create().extend(baseAnnotationValidator)
+            .addMemberValidator(Annotation::getSegmentsList, segmentUpdateValidator, "in annotation update validation");
 
     // ------ annotation source identity validation ------ //
 
@@ -128,31 +140,11 @@ public class AnnotationValidators {
         return annotationValidator.check(annotation);
     }
 
+    public static Validator.ValidationState<Annotation> checkAnnotationUpdate(Annotation annotation) {
+        return annotationUpdateValidator.check(annotation);
+    }
+
     public static Validator.ValidationState<Segment> checkSegment(Segment segment) {
         return segmentValidator.check(segment);
-    }
-
-    public static Validator<AnnotationSource> getAnnotationSourceValidator() {
-        return annotationSourceValidator;
-    }
-
-    public static Validator<AnnotationSource> getAnnotationSourceIdentityValidator() {
-        return annotationSourceValidator;
-    }
-
-    public static Validator<Annotation> getAnnotationValidator() {
-        return annotationValidator;
-    }
-
-    public static Validator<AnnotationSource> getAnnotationIdentityValidator() {
-        return annotationSourceValidator;
-    }
-
-    public static Validator<Segment> getSegmentValidator() {
-        return segmentValidator;
-    }
-
-    public static Validator<AnnotationSource> getSegmentIdentityValidator() {
-        return annotationSourceValidator;
     }
 }
