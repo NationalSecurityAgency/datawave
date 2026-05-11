@@ -242,8 +242,7 @@ public class SetMembershipVisitorTest {
     }
 
     /**
-     * Verify that given a matching index-only field in a filter function with index-only field tagging disabled, that a set is returned containing the field
-     * and that the original query is not modified.
+     * Verify that the {@link SetMembershipVisitor} can find index-only fields within a filter function.
      */
     @Test
     public void testIndexOnlyFieldInFilterFunctionsWithTaggingDisabled() throws ParseException {
@@ -255,40 +254,38 @@ public class SetMembershipVisitorTest {
 
     /**
      * Given that index fields should be tagged, and a query that does not contain any matches, verify that
-     * {@link SetMembershipVisitor#getMembers(Set, JexlNode)} returns an empty set and that the original query is not modified.
+     * {@link SetMembershipVisitor#getMembers(Set, JexlNode)} returns an empty set.
      */
     @Test
     public void testGetMembersWithIndexOnlyFieldTaggingEnabledWithoutMatches() throws ParseException {
         givenFields("CITY", "NAME", "COUNTY");
         givenQuery("(FOO == 'bar') && (BAT == 'aaa')");
 
-        assertMembershipWithTagging();
+        assertMembership();
         assertQuery("(FOO == 'bar') && (BAT == 'aaa')");
     }
 
     /**
-     * Given that index fields should be tagged, and a query that contains matches, but none in a filter function, verify that
-     * {@link SetMembershipVisitor#getMembers(Set, JexlNode)} returns a set of the matching fields, and that the original query was not modified.
+     * Verify that the {@link SetMembershipVisitor#getMembers(Set, JexlNode)} returns a set of the matching fields.
      */
     @Test
     public void testMatchingIndexOnlyFieldsNotInFilterFunctions() throws ParseException {
         givenFields("CITY", "NAME", "COUNTY");
         givenQuery("(CITY == 'bar') && (NAME == 'aaa' || BAR == 'bbb')");
 
-        assertMembershipWithTagging("CITY", "NAME");
+        assertMembership("CITY", "NAME");
         assertQuery("(CITY == 'bar') && (NAME == 'aaa' || BAR == 'bbb')");
     }
 
     /**
-     * Given that index fields should be tagged, and a query that contains matches in a non-filter function, verify that
-     * {@link SetMembershipVisitor#getMembers(Set, JexlNode)} returns a set of the matching fields, and that the original query was not modified.
+     * Verify that the {@link SetMembershipVisitor} matches fields in the unique function namespace.
      */
     @Test
-    public void testTaggingIndexOnlyInNonFilterFunctions() throws ParseException {
+    public void testMatchingIndexOnlyFieldsInUniqueFunctionNamespace() throws ParseException {
         givenFields("CITY", "NAME", "COUNTY");
         givenQuery("CITY == 'bar' && f:unique(NAME, BAR)");
 
-        assertMembershipWithTagging("CITY", "NAME");
+        assertMembership("CITY", "NAME");
         assertQuery("CITY == 'bar' && f:unique(NAME, BAR)");
     }
 
@@ -305,10 +302,6 @@ public class SetMembershipVisitorTest {
     }
 
     private void assertMembership(String... expected) {
-        assertThat(SetMembershipVisitor.getMembers(fields, query)).containsExactly(expected);
-    }
-
-    private void assertMembershipWithTagging(String... expected) {
         assertThat(SetMembershipVisitor.getMembers(fields, query)).containsExactly(expected);
     }
 
