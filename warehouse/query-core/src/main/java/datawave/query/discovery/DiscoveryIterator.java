@@ -44,6 +44,8 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
 
     private Key key;
     private Value value;
+    private Range lastRange;
+    private Collection<ByteSequence> columnFamilies;
     private SortedKeyValueIterator<Key,Value> iterator;
     private boolean separateCountsByColVis = false;
     private boolean showReferenceCount = false;
@@ -61,7 +63,8 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
     private void termsOnlyOperation() throws IOException {
         while (Optional.ofNullable(iterator).isPresent() && iterator.hasTop()) {
             // Get the entries to aggregate.
-            Set<TermInterface> terms = getTermsOnly();
+            boolean firstTermOnly = true;
+            Set<TermInterface> terms = getTermsOnly(firstTermOnly);
             if (terms.isEmpty()) {
                 log.trace("Couldn't aggregate index info; moving onto next date/field/term if data is available.");
             } else {
@@ -95,7 +98,7 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
         this.key = null;
         this.value = null;
 
-        // Underlying code is tentacled. Keep this "strategy" non-parameterized for now.
+        // Keep this "strategy" non-parameterized for now.
         if (this.valuesOnly) {
             termsOnlyOperation();
         } else {
@@ -133,7 +136,7 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
         return terms;
     }
 
-    private Set<TermInterface> getTermsOnly() throws IOException {
+    private Set<TermInterface> getTermsOnly(boolean firstTermOnly) throws IOException {
         Set<TermInterface> terms = new HashSet<>();
         Key start = new Key(iterator.getTopKey());
         Key key;
@@ -144,9 +147,15 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
                 start.equals((key = iterator.getTopKey()), PartialKey.ROW)) {
             TermOnlyEntry termEntry = new TermOnlyEntry(key, iterator.getTopValue());
 
-            if (termEntry.isValid())
+            if (termEntry.isValid()) {
                 terms.add(termEntry);
-            else {
+                return terms;
+//                // Return the first term only.
+//                if (firstTermOnly){
+//                    iterator.next();
+//                    break;
+//                }
+            } else {
                 if (log.isTraceEnabled()) {
                     log.trace("Received invalid term entry from key: " + key);
                 }
@@ -181,9 +190,9 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
             TermInterface first = termEntries.iterator().next();
             String term = reverseIndex ? new StringBuilder(first.getTerm()).reverse().toString() : first.getTerm();
             String date = sumCounts ? "" : first.getDate();
-            if (valuesOnly) {
-                date = "";
-            }
+//            if (valuesOnly) {
+//                date = "";
+//            }
 
             Set<ColumnVisibility> visibilities = new HashSet<>();
             Map<String,Long> visibilityToCounts = new HashMap<>();
@@ -237,7 +246,8 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
     /**
      * Set the top {@link Key} and {@link Value} of this iterator, created from the given list of {@link DiscoveredThing} instances.
      */
-    private void setTop(List<DiscoveredThing> things) {
+    private void setTop(List<DiscoveredThing> things) throws IOException {
+
         // We want the key to be the last possible key for this date. Return the key as it is in the index (reversed if
         // necessary) to ensure the keys are consistent with the initial seek range.
         DiscoveredThing thing = things.get(0);
@@ -247,13 +257,29 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
         // Create a value from the list of things.
         ArrayWritable thingArray = new ArrayWritable(DiscoveredThing.class, things.toArray(new DiscoveredThing[0]));
         Value newValue = new Value(WritableUtils.toByteArray(thingArray));
+        if (valuesOnly){
+            Key skipKey = new Key(row, "\uffff");
+            if(!columnFamilies.isEmpty()){
+                skipKey = new Key(row, thing.getField(), "\uffff");
+            }
 
-        this.key = newKey;
+            if (lastRange.contains(skipKey)) {
+                this.key = skipKey;
+                Range nextRange = new Range(skipKey,false,lastRange.getEndKey(), lastRange.isEndKeyInclusive());
+                this.iterator.seek(nextRange, columnFamilies,false);
+            }
+        } else{
+            this.key = newKey;
+
+        }
+
         this.value = newValue;
     }
 
     @Override
     public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
+        this.lastRange = range;
+        this.columnFamilies = columnFamilies;
         this.iterator.seek(range, columnFamilies, inclusive);
         if (log.isTraceEnabled()) {
             log.trace("My source " + ((Optional.ofNullable(iterator).isPresent() && this.iterator.hasTop()) ? "does" : "does not") + " have a top.");
@@ -269,6 +295,9 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
         this.reverseIndex = Boolean.parseBoolean(options.get(DiscoveryLogic.REVERSE_INDEX));
         this.sumCounts = Boolean.parseBoolean(options.get(DiscoveryLogic.SUM_COUNTS));
         this.valuesOnly = Boolean.parseBoolean(options.get(DiscoveryLogic.VALUES_ONLY));
+        if(valuesOnly){
+            sumCounts=false;
+        }
 
         if (log.isTraceEnabled()) {
             log.trace("Source: " + source.getClass().getName());
