@@ -1,19 +1,16 @@
 package datawave.query.tables.keyword;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyInt;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.powermock.api.easymock.PowerMock.expectLastCall;
-import static org.powermock.api.easymock.PowerMock.replayAll;
-import static org.powermock.api.easymock.PowerMock.verifyAll;
 
 import java.util.AbstractMap;
 import java.util.Collections;
@@ -33,10 +30,8 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.collections.iterators.ArrayListIterator;
 import org.apache.commons.collections4.iterators.TransformIterator;
-import org.junit.Before;
-import org.junit.Test;
-import org.powermock.api.easymock.PowerMock;
-import org.powermock.api.easymock.annotation.Mock;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.Sets;
 
@@ -46,6 +41,7 @@ import datawave.core.query.logic.BaseQueryLogic;
 import datawave.core.query.logic.QueryLogicTransformer;
 import datawave.core.query.result.event.DefaultResponseObjectFactory;
 import datawave.marking.MarkingFunctions;
+import datawave.marking.MarkingFunctionsFactory;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
 import datawave.query.config.KeywordQueryConfiguration;
@@ -63,10 +59,12 @@ public class KeywordQueryLogicTest {
     private BatchScanner mockScanner;
     private GenericQueryConfiguration mockGenericConfig;
     private KeywordQueryConfiguration mockKeywordConfig;
-    @Mock
-    Query query;
 
-    @Before
+    private Query query;
+
+    private final MarkingFunctions markingFunctions = MarkingFunctionsFactory.createMarkingFunctions();
+
+    @BeforeEach
     public void setup() throws TableNotFoundException {
         keywordQueryLogic = new KeywordQueryLogic();
         mockScannerFactory = mock(ScannerFactory.class);
@@ -96,7 +94,7 @@ public class KeywordQueryLogicTest {
     }
 
     @Test
-    public void setupQueryWithViewNameSetsIteratorSetting() throws Exception {
+    public void setupQueryWithViewNameSetsIteratorSettingTest() throws Exception {
         Query settings = new QueryImpl();
         settings.setQuery("not null");
         when(mockKeywordConfig.getQuery()).thenReturn(settings);
@@ -106,7 +104,7 @@ public class KeywordQueryLogicTest {
     }
 
     @Test
-    public void setupQueryTableNotFoundThrowsRuntimeException() throws Exception {
+    public void setupQueryTableNotFoundThrowsRuntimeExceptionTest() throws Exception {
         Query settings = new QueryImpl();
         settings.setQuery("not null");
         when(mockKeywordConfig.getQuery()).thenReturn(settings);
@@ -115,13 +113,13 @@ public class KeywordQueryLogicTest {
     }
 
     @Test
-    public void setupNoQuery() throws Exception {
+    public void setupNoQueryTest() throws Exception {
         keywordQueryLogic.setupQuery(mockKeywordConfig);
         assertFalse(keywordQueryLogic.iterator().hasNext());
     }
 
     @Test
-    public void setupExternalDataQuery() throws Exception {
+    public void setupExternalDataQueryTest() throws Exception {
         keywordQueryLogic.setExternalData(List.of(Map.entry(new Key("externalKey"), new Value("externalValue"))), Set.of());
         keywordQueryLogic.setupQuery(mockKeywordConfig);
         Iterator<Entry<Key,Value>> itr = keywordQueryLogic.iterator();
@@ -160,12 +158,11 @@ public class KeywordQueryLogicTest {
         int result1 = subject.getMaxPageSize();
         long result2 = subject.getPageByteTrigger();
         TransformIterator result3 = subject.getTransformIterator(this.query);
-        verifyAll();
 
         // Verify results
-        assertEquals("Incorrect max page size", 0, result1);
-        assertEquals("Incorrect page byte trigger", 0, result2);
-        assertNotNull("Iterator should not be null", result3);
+        assertEquals(0, result1, "Incorrect max page size");
+        assertEquals(0, result2, "Incorrect page byte trigger");
+        assertNotNull(result3, "Iterator should not be null");
     }
 
     @Test
@@ -200,11 +197,10 @@ public class KeywordQueryLogicTest {
 
     @Test
     public void testWithLanguages() throws Exception {
-        AccumuloClient mockClient = PowerMock.createMock(AccumuloClient.class);
-        MarkingFunctions mockMarkingFunctions = PowerMock.createMock(MarkingFunctions.class);
+        AccumuloClient client = mock(AccumuloClient.class);
 
         KeywordQueryLogic logic = new KeywordQueryLogic();
-        logic.setMarkingFunctions(mockMarkingFunctions);
+        logic.setMarkingFunctions(markingFunctions);
         logic.setResponseObjectFactory(new DefaultResponseObjectFactory());
 
         Authorizations auths = new Authorizations("A");
@@ -214,7 +210,7 @@ public class KeywordQueryLogicTest {
                         "event:20241218_0/sampleCsv/1.2.3%LANGUAGE:ENGLISH event:20241218_0/sampleCsv/1.2.4!PAGE_ID:12345%LANGUAGE:UNKNOWN event:20241218_0/sampleCsv/1.2.5");
         settings.setQueryAuthorizations("A");
 
-        logic.initialize(mockClient, settings, Set.of(auths));
+        logic.initialize(client, settings, Set.of(auths));
         Map<String,String> documentLanguageMap = logic.getConfig().getState().getLanguageMap();
         String threeLanguage = documentLanguageMap.get("20241218_0/sampleCsv/1.2.3");
         String fourLanguage = documentLanguageMap.get("20241218_0/sampleCsv/1.2.4");
@@ -227,11 +223,10 @@ public class KeywordQueryLogicTest {
 
     @Test
     public void testDecodeQueryAndValue() throws Exception {
-        AccumuloClient mockClient = PowerMock.createMock(AccumuloClient.class);
-        MarkingFunctions mockMarkingFunctions = PowerMock.createMock(MarkingFunctions.class);
+        AccumuloClient mockClient = mock(AccumuloClient.class);
 
         KeywordQueryLogic logic = new KeywordQueryLogic();
-        logic.setMarkingFunctions(mockMarkingFunctions);
+        logic.setMarkingFunctions(markingFunctions);
         logic.setResponseObjectFactory(new DefaultResponseObjectFactory());
 
         Authorizations auths = new Authorizations("A");
@@ -251,16 +246,11 @@ public class KeywordQueryLogicTest {
         Value viewValue = new Value(KeywordResults.serialize(results));
         Map.Entry<Key,Value> entry = new AbstractMap.SimpleImmutableEntry<>(dataKey, viewValue);
 
-        mockMarkingFunctions.translateFromColumnVisibilityForAuths(new ColumnVisibility("A"), auths);
-        expectLastCall().andReturn(Map.of("A", "A")).anyTimes();
-
-        replayAll();
+        markingFunctions.translateFromColumnVisibilityForAuths(new ColumnVisibility("A"), auths);
 
         logic.initialize(mockClient, settings, Set.of(auths));
         QueryLogicTransformer<Map.Entry<Key,Value>,TagCloudPartition> transformer = logic.getTransformer(settings);
         TagCloudPartition base = transformer.transform(entry);
-
-        verifyAll();
 
         TagCloudPartition expected = new TagCloudPartition("someLanguage", KeywordResultsTransformer.LABEL,
                         List.of(new TagCloudInput("someSource", "someVisibility", Map.of("get much", 0.5903, "kind", 0.2546, "kind word", 0.2052),

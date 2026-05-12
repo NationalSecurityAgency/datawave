@@ -407,6 +407,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private boolean accrueStats = false;
 
     private boolean disableIteratorUniqueFields = false;
+    private boolean disableIteratorMostRecentUniqueFields = true;
     private UniqueFields uniqueFields = new UniqueFields();
     private boolean cacheModel = false;
     /**
@@ -489,10 +490,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      */
     private long visitorFunctionMaxWeight = 5000000L;
 
-    /**
-     * If true, the LAZY_SET mechanism will be enabled for non-event and index-only fields.
-     */
-    private boolean lazySetMechanismEnabled = false;
     /**
      * Document aggregations that exceed this threshold in milliseconds are logged as a warning
      */
@@ -799,6 +796,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setGroupFieldsBatchSize(other.getGroupFieldsBatchSize());
         this.setAccrueStats(other.getAccrueStats());
         this.setDisableIteratorUniqueFields(other.isDisableIteratorUniqueFields());
+        this.setDisableIteratorMostRecentUniqueFields(other.isDisableIteratorMostRecentUniqueFields());
         this.setUniqueFields(other.getUniqueFields());
         log.info("Checkpointing with " + getUniqueFields());
         this.setUniqueCacheBufferSize(other.getUniqueCacheBufferSize());
@@ -831,7 +829,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setSeekingEventAggregation(other.isSeekingEventAggregation());
         this.setVisitorFunctionMaxWeight(other.getVisitorFunctionMaxWeight());
         this.setQueryExecutionForPageTimeout(other.getQueryExecutionForPageTimeout());
-        this.setLazySetMechanismEnabled(other.isLazySetMechanismEnabled());
         this.setDocAggregationThresholdMs(other.getDocAggregationThresholdMs());
         this.setTfAggregationThresholdMs(other.getTfAggregationThresholdMs());
         this.setGroupFields(GroupFields.copyOf(other.getGroupFields()));
@@ -1005,15 +1002,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         return this.hdfsSiteConfigURLs != null && (null != this.ivaratorCacheDirConfigs && !this.ivaratorCacheDirConfigs.isEmpty());
     }
 
-    /**
-     * A convenience method that determines whether we can handle when we have exceeded the term threshold on some node. Currently we cannot.
-     *
-     * @return if we can handle exceeding the term threshold
-     */
-    public boolean canHandleExceededTermThreshold() {
-        return false;
-    }
-
     public String getShardTableName() {
         return shardTableName;
     }
@@ -1166,6 +1154,13 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public String getProjectFieldsAsString() {
         return StringUtils.join(this.getProjectFields(), Constants.PARAM_VALUE_SEP);
+    }
+
+    public void addProjectFields(Set<String> fields) {
+        // if project fields is empty, then we are returning everything anyway so nothing to add
+        if (!projectFields.isEmpty()) {
+            projectFields.addAll(deconstruct(fields));
+        }
     }
 
     public Set<String> getRenameFields() {
@@ -2027,6 +2022,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.disableIteratorUniqueFields = disableIteratorUniqueFields;
     }
 
+    public boolean isDisableIteratorMostRecentUniqueFields() {
+        return disableIteratorMostRecentUniqueFields;
+    }
+
+    public void setDisableIteratorMostRecentUniqueFields(boolean disableIteratorMostRecentUniqueFields) {
+        this.disableIteratorMostRecentUniqueFields = disableIteratorMostRecentUniqueFields;
+    }
+
     public UniqueFields getUniqueFields() {
         return uniqueFields;
     }
@@ -2866,14 +2869,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         return this.queryExecutionForPageTimeout;
     }
 
-    public boolean isLazySetMechanismEnabled() {
-        return lazySetMechanismEnabled;
-    }
-
-    public void setLazySetMechanismEnabled(boolean lazySetMechanismEnabled) {
-        this.lazySetMechanismEnabled = lazySetMechanismEnabled;
-    }
-
     public int getDocAggregationThresholdMs() {
         return docAggregationThresholdMs;
     }
@@ -3201,7 +3196,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 isSeekingEventAggregation() == that.isSeekingEventAggregation() &&
                 getVisitorFunctionMaxWeight() == that.getVisitorFunctionMaxWeight() &&
                 getQueryExecutionForPageTimeout() == that.getQueryExecutionForPageTimeout() &&
-                isLazySetMechanismEnabled() == that.isLazySetMechanismEnabled() &&
                 getDocAggregationThresholdMs() == that.getDocAggregationThresholdMs() &&
                 getTfAggregationThresholdMs() == that.getTfAggregationThresholdMs() &&
                 getPruneQueryOptions() == that.getPruneQueryOptions() &&
@@ -3227,6 +3221,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getMaxAnyFieldScanTimeMillis() == that.getMaxAnyFieldScanTimeMillis() &&
                 isUseNewIndexLookups() == that.isUseNewIndexLookups() &&
                 isDisableIteratorUniqueFields() == that.isDisableIteratorUniqueFields() &&
+                isDisableIteratorMostRecentUniqueFields() == that.isDisableIteratorMostRecentUniqueFields() &&
                 isUseShardedIndex() == that.isUseShardedIndex() &&
                 getDayIndexThreshold() == that.getDayIndexThreshold() &&
                 isUseTruncatedIndex() == that.isUseTruncatedIndex() &&
@@ -3438,7 +3433,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 isSeekingEventAggregation(),
                 getVisitorFunctionMaxWeight(),
                 getQueryExecutionForPageTimeout(),
-                isLazySetMechanismEnabled(),
                 getDocAggregationThresholdMs(),
                 getTfAggregationThresholdMs(),
                 getPruneQueryOptions(),
@@ -3465,6 +3459,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getMaxAnyFieldScanTimeMillis(),
                 isUseNewIndexLookups(),
                 isDisableIteratorUniqueFields(),
+                isDisableIteratorMostRecentUniqueFields(),
                 isUseShardedIndex(),
                 getDayIndexThreshold(),
                 isUseTruncatedIndex(),

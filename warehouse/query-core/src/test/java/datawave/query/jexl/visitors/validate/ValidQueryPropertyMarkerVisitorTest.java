@@ -51,7 +51,7 @@ public class ValidQueryPropertyMarkerVisitorTest {
     // Verify that a query with multiple markers with multiple source nodes is invalid.
     @Test
     public void testMultipleMarkersWithMultipleSources() throws ParseException {
-        givenQuery("((_Bounded_ = true) && FOO > 5 && FOO < 10) && ((_List_ = true) && FOO == 'a' && FOO == 'b') && ((_Term_ = true) && BAR =~ 'a*' && BAR =~ 'b*')");
+        givenQuery("((_Bounded_ = true) && FOO > 5 && FOO < 10) && ((_List_ = true) && FOO == 'a' && FOO == 'b')");
         assertIsInvalid();
     }
 

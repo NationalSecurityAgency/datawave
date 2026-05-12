@@ -85,7 +85,7 @@ import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 @RunWith(Arquillian.class)
 public class GeoSortedQueryDataTest {
 
-    private static final int NUM_SHARDS = 241;
+    private static final int NUM_SHARDS = 3;
     private static final String DATA_TYPE_NAME = "wkt";
     private static final String INGEST_HELPER_CLASS = TestIngestHelper.class.getName();
     private static final String FIELD_NAME = "GEO_FIELD";
@@ -96,7 +96,7 @@ public class GeoSortedQueryDataTest {
     private static final SimpleDateFormat formatter = new SimpleDateFormat(formatPattern);
 
     private static final String BEGIN_DATE = "20000101 000000.000";
-    private static final String END_DATE = "20500101 000000.000";
+    private static final String END_DATE = "20000102 000000.000";
 
     private static final String USER = "testcorp";
     private static final String USER_DN = "cn=test.testcorp.com, ou=datawave, ou=development, o=testcorp, c=us";
@@ -272,6 +272,12 @@ public class GeoSortedQueryDataTest {
             }
             writer.close();
         }
+
+        try (var bw = client.createBatchWriter(TableName.METADATA, new BatchWriterConfig())) {
+            Mutation m = new Mutation("num_shards");
+            m.put("ns", "20000101_3", new Value());
+            bw.addMutation(m);
+        }
     }
 
     @Before
@@ -279,8 +285,8 @@ public class GeoSortedQueryDataTest {
         // increase the depth threshold
         logic.setMaxDepthThreshold(10);
 
-        logic.setIntermediateMaxTermThreshold(50);
-        logic.setIndexedMaxTermThreshold(50);
+        logic.setIntermediateMaxTermThreshold(250);
+        logic.setIndexedMaxTermThreshold(250);
 
         // set the pushdown threshold really high to avoid collapsing uids into shards (overrides setCollapseUids if #terms is greater than this threshold)
         ((DefaultQueryPlanner) (logic.getQueryPlanner())).setPushdownThreshold(1000000);

@@ -29,7 +29,6 @@ public class IvaratorRequiredVisitorTest {
     public void testMarkers() {
         // ivarator required
         test("((_Value_ = true) && (F =~ 'ba.*'))", true);
-        test("((_Term_ = true) && (_ANYFIELD_ =~ 'ba.*'))", true);
         test("((_List_ = true) && (((id = 'some-bogus-id') && (field = 'QUOTE') && (params = '{\"values\":[\"a\",\"b\",\"c\"]}'))))", true);
 
         // ivarator not required
@@ -49,7 +48,6 @@ public class IvaratorRequiredVisitorTest {
     public void testOrIvarators() {
         // ivarator required
         test("A == '1' || ((_Value_ = true) && (F =~ 'ba.*'))", true);
-        test("A == '1' || ((_Term_ = true) && (_ANYFIELD_ =~ 'ba.*'))", true);
         test("A == '1' || ((_List_ = true) && (((id = 'some-bogus-id') && (field = 'QUOTE') && (params = '{\"values\":[\"a\",\"b\",\"c\"]}'))))", true);
 
         // ivarator not required
@@ -64,7 +62,6 @@ public class IvaratorRequiredVisitorTest {
     public void testAndIvarators() {
         // ivarator required
         test("A == '1' && ((_Value_ = true) && (F =~ 'ba.*'))", true);
-        test("A == '1' && ((_Term_ = true) && (_ANYFIELD_ =~ 'ba.*'))", true);
         test("A == '1' && ((_List_ = true) && (((id = 'some-bogus-id') && (field = 'QUOTE') && (params = '{\"values\":[\"a\",\"b\",\"c\"]}'))))", true);
 
         // ivarator not required
