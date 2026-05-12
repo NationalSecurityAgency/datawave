@@ -76,6 +76,11 @@ on:
         required: false
         type: boolean
         default: false
+      branch:
+        required: false
+        type: string
+        default: ""
+        description: "Branch to release from. When empty, uses the triggering ref. Set by the cascade workflow for non-final releases."
 env:
   JAVA_VERSION: '11'
   JAVA_DISTRIBUTION: 'zulu' #This is the default on v1 of the action for 1.8
@@ -97,6 +102,7 @@ jobs:
       with:
         fetch-depth: 0
         token: ${{ secrets.GHCR_WRITE_ACCESS_TOKEN }}
+        ref: ${{ inputs.branch || '' }}
 
     - name: Fast-forward to branch tip
       run: git pull --ff-only
