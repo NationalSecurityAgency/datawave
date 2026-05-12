@@ -24,6 +24,7 @@ import org.springframework.core.ResolvableType;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.io.ProtocolResolver;
 import org.springframework.core.io.Resource;
+import org.springframework.core.metrics.ApplicationStartup;
 
 /**
  * A delegating wrapper around {@link ConfigurableApplicationContext}. This implements all methods of {@link ConfigurableApplicationContext}, delegating each
@@ -77,6 +78,16 @@ public class ThreadSafeClassPathXmlApplicationContext implements ConfigurableApp
     }
 
     @Override
+    public void setApplicationStartup(ApplicationStartup applicationStartup) {
+        lockAndWrite(() -> configurableApplicationContext.setApplicationStartup(applicationStartup));
+    }
+
+    @Override
+    public ApplicationStartup getApplicationStartup() {
+        return lockAndRead(configurableApplicationContext::getApplicationStartup);
+    }
+
+    @Override
     public void setEnvironment(ConfigurableEnvironment environment) {
         lockAndWrite(() -> configurableApplicationContext.setEnvironment(environment));
     }
@@ -114,6 +125,11 @@ public class ThreadSafeClassPathXmlApplicationContext implements ConfigurableApp
     @Override
     public void addApplicationListener(ApplicationListener<?> listener) {
         lockAndWrite(() -> configurableApplicationContext.addApplicationListener(listener));
+    }
+
+    @Override
+    public void setClassLoader(ClassLoader classLoader) {
+        lockAndWrite(() -> configurableApplicationContext.setClassLoader(classLoader));
     }
 
     @Override
@@ -232,6 +248,16 @@ public class ThreadSafeClassPathXmlApplicationContext implements ConfigurableApp
     }
 
     @Override
+    public <T> ObjectProvider<T> getBeanProvider(Class<T> requiredType, boolean allowEagerInit) {
+        return lockAndRead(() -> configurableApplicationContext.getBeanProvider(requiredType, allowEagerInit));
+    }
+
+    @Override
+    public <T> ObjectProvider<T> getBeanProvider(ResolvableType requiredType, boolean allowEagerInit) {
+        return lockAndRead(() -> configurableApplicationContext.getBeanProvider(requiredType, allowEagerInit));
+    }
+
+    @Override
     public String[] getBeanNamesForType(ResolvableType resolvableType) {
         return lockAndRead(() -> configurableApplicationContext.getBeanNamesForType(resolvableType));
     }
@@ -274,6 +300,12 @@ public class ThreadSafeClassPathXmlApplicationContext implements ConfigurableApp
     @Override
     public <A extends Annotation> A findAnnotationOnBean(String beanName, Class<A> annotationType) throws NoSuchBeanDefinitionException {
         return lockAndRead(() -> configurableApplicationContext.findAnnotationOnBean(beanName, annotationType));
+    }
+
+    @Override
+    public <A extends Annotation> A findAnnotationOnBean(String beanName, Class<A> annotationType, boolean allowFactoryBeanInit)
+                    throws NoSuchBeanDefinitionException {
+        return lockAndRead(() -> configurableApplicationContext.findAnnotationOnBean(beanName, annotationType, allowFactoryBeanInit));
     }
 
     @Override
