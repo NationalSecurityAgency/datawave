@@ -37,7 +37,7 @@
         <version.datawave.query-metric-api>4.1.4-SNAPSHOT</version.datawave.query-metric-api>
         <version.datawave.starter>4.0.8-SNAPSHOT</version.datawave.starter>
         <version.datawave.starter-metadata>3.0.5-SNAPSHOT</version.datawave.starter-metadata>
-        <version.datawave.starter-query-metric>3.0.5</version.datawave.starter-query-metric>
+        <version.datawave.starter-query-metric>3.0.6-SNAPSHOT</version.datawave.starter-query-metric>
         <version.guava>31.1-jre</version.guava>
         <version.hadoop>3.3.4</version.hadoop>
         <!-- version set in datawave-microservice-parent, but can be overridden here -->
