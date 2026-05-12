@@ -320,8 +320,10 @@ public class ExtendedRunningQueryTest {
         when(this.queryLogic.isLongRunningQuery()).thenReturn(false);
         when(this.queryLogic.getResultLimit(eq(this.query))).thenReturn(maxResults);
 
-        when(this.transformIterator.hasNext()).thenReturn(true);
-        when(this.transformIterator.next()).thenReturn(new Object(), "resultObject1", "resultObject2", "resultObject3", "resultObject4", "resultObject5");
+        List<Object> resultObjects = Arrays.asList(new Object(), "resultObject1", "resultObject2", "resultObject3", "resultObject4", "resultObject5");
+        when(this.transformIterator.hasNext()).thenReturn(true, true, true, true, true, true, false);
+        when(this.transformIterator.next()).thenReturn(resultObjects.get(0), resultObjects.get(1), resultObjects.get(2), resultObjects.get(3),
+                        resultObjects.get(4), resultObjects.get(5));
 
         when(this.transformIterator.getTransformer()).thenReturn(transformer);
 
