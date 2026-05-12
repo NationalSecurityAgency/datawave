@@ -139,8 +139,8 @@ public class ZkObjectPublisherTest {
                         .isInstanceOf(IllegalArgumentException.class).hasMessage("zookeeperConfig must not be null or blank");
         assertThatThrownBy(() -> new ZkObjectPublisher("QueryLimitConfig", "   ", null, QueryLimitConfiguration.class, null))
                         .isInstanceOf(IllegalArgumentException.class).hasMessage("zookeeperConfig must not be null or blank");
-        assertThatThrownBy(() -> new ZkObjectPublisher("QueryLimitConfig", server.getConnectString(), null, (Class<?>) null, null))
-                        .isInstanceOf(NullPointerException.class).hasMessage("pojoClass must not be null");
+        assertThatThrownBy(() -> new ZkObjectPublisher("QueryLimitConfig", server.getConnectString(), null, null, null))
+                        .isInstanceOf(NullPointerException.class).hasMessage("objectClass must not be null");
     }
 
     /**
