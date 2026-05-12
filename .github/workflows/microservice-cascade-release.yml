@@ -6,6 +6,11 @@ name: Cascade Release Microservices
 # (committed with the "auto-update:" prefix), so the next project in the cascade
 # picks it up. The whole pipeline fails if the final compose-tests gate fails.
 #
+# Non-final releases run on a temporary branch (cascade-release/<run_id>) so that
+# the auto-update and release-plugin commits never touch the main branch. The
+# temp branch is deleted at the end regardless of success or failure. Published
+# artifacts and tags are independent of the branch and are kept.
+#
 # The dependency graph is computed at runtime from the live POMs by
 # .github/release/cascade-plan.py so it cannot drift. (Maven's `-pl :a -amd`
 # reactor selection cannot be used here because consumer POMs pin released
@@ -90,9 +95,12 @@ jobs:
       cascade: ${{ steps.compute.outputs.cascade }}
       startArtifact: ${{ steps.compute.outputs.startArtifact }}
       count: ${{ steps.compute.outputs.count }}
+      branch: ${{ steps.branch.outputs.branch }}
     steps:
       - name: Checkout DataWave
         uses: actions/checkout@v6
+        with:
+          token: ${{ secrets.GHCR_WRITE_ACCESS_TOKEN }}
 
       - name: Compute dependent cascade
         id: compute
@@ -112,6 +120,21 @@ jobs:
           echo "startArtifact=$START_ARTIFACT" >> "$GITHUB_OUTPUT"
           echo "count=$COUNT" >> "$GITHUB_OUTPUT"
           echo "cascade=$CASCADE_JSON" >> "$GITHUB_OUTPUT"
+
+      # Non-final releases use a throwaway branch so auto-update and
+      # release-plugin commits never land on the main branch.
+      - name: Create temporary branch for non-final release
+        id: branch
+        run: |
+          if [ "${{ inputs.finalRelease }}" = "true" ]; then
+            echo "branch=" >> "$GITHUB_OUTPUT"
+          else
+            BRANCH="cascade-release/${{ github.run_id }}"
+            git checkout -b "$BRANCH"
+            git push -u origin "$BRANCH"
+            echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
+            echo "::notice::Non-final release will use temporary branch $BRANCH"
+          fi
 
       - name: Dry-run summary
         if: ${{ inputs.dryRun }}
@@ -133,6 +156,7 @@ jobs:
       finalRelease: ${{ inputs.finalRelease }}
       modifier: ${{ inputs.modifier }}
       bumpDownstream: true
+      branch: ${{ needs.plan.outputs.branch }}
     secrets: inherit
 
   compose-validation:
@@ -143,3 +167,18 @@ jobs:
     with:
       allow-snapshots: false
     secrets: inherit
+
+  # Clean up the temporary branch used by non-final releases.
+  # Runs on success or failure so the branch is always removed.
+  cleanup:
+    name: Delete cascade branch
+    needs: [plan, release, compose-validation]
+    if: ${{ always() && needs.plan.outputs.branch != '' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Delete temporary branch
+        run: |
+          echo "Deleting temporary branch ${{ needs.plan.outputs.branch }}"
+          git push https://x-access-token:${{ secrets.GHCR_WRITE_ACCESS_TOKEN }}@github.com/${{ github.repository }} --delete "${{ needs.plan.outputs.branch }}" || true
