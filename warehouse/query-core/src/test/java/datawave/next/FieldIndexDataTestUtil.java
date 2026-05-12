@@ -19,7 +19,7 @@ import org.apache.commons.jexl3.parser.ASTJexlScript;
 import com.google.common.base.Preconditions;
 
 import datawave.accumulo.inmemory.util.SortedMapIterator;
-import datawave.next.stats.DocumentIteratorStats;
+import datawave.next.stats.DocIterStats;
 import datawave.query.jexl.JexlASTHelper;
 
 /**
@@ -43,7 +43,7 @@ public abstract class FieldIndexDataTestUtil {
     protected Key max;
 
     protected String query;
-    protected DocumentIteratorStats stats;
+    protected DocIterStats stats;
 
     protected void clearState() {
         data.clear();

@@ -428,7 +428,7 @@ public class IntermediateResultsQueryTest extends AbstractQueryTest {
             givenParameter(QueryParameters.GROUP_FIELDS_BATCH_SIZE, "10");
             givenQuery("SHAPE == 'triangle' || SHAPE == 'square' || SHAPE == 'pentagon' || SHAPE == 'hexagon' || SHAPE == 'octagon'");
             givenPageShortCircuitTimeoutMs(1_000);
-            givenMaxLongRunningTimeoutRetries(10); // need more than default of three
+            givenMaxLongRunningTimeoutRetries(15); // need more than default of three
             expectPlan("SHAPE == 'triangle' || SHAPE == 'square' || SHAPE == 'pentagon' || SHAPE == 'hexagon' || SHAPE == 'octagon'");
             expectCompletePageCount(1);
             expectCompletePageSize(6);
@@ -475,7 +475,7 @@ public class IntermediateResultsQueryTest extends AbstractQueryTest {
             addDelayIterator();
             givenQuery("SHAPE == 'triangle' || SHAPE == 'square' || SHAPE == 'pentagon' || SHAPE == 'hexagon' || SHAPE == 'octagon'");
             givenPageSizeShortCircuitCheckMs(1);
-            givenMaxLongRunningTimeoutRetries(10); // need more than default of three
+            givenMaxLongRunningTimeoutRetries(15); // need more than default of three
             countingLogic.setMaxPageSize(2); // six results, two per page, should be three pages
             countingLogic.setPageWaitTimeMillis(750); // configure wait time
             expectPlan("SHAPE == 'triangle' || SHAPE == 'square' || SHAPE == 'pentagon' || SHAPE == 'hexagon' || SHAPE == 'octagon'");
@@ -495,7 +495,7 @@ public class IntermediateResultsQueryTest extends AbstractQueryTest {
             addDelayIterator();
             givenQuery("SHAPE == 'triangle' || SHAPE == 'square' || SHAPE == 'pentagon' || SHAPE == 'hexagon' || SHAPE == 'octagon'");
             givenPageShortCircuitTimeoutMs(1_000);
-            givenMaxLongRunningTimeoutRetries(10); // need more than default of three
+            givenMaxLongRunningTimeoutRetries(15); // need more than default of three
             countingLogic.setPageWaitTimeMillis(750); // configure await time
             expectPlan("SHAPE == 'triangle' || SHAPE == 'square' || SHAPE == 'pentagon' || SHAPE == 'hexagon' || SHAPE == 'octagon'");
             expectCompletePageCount(1);

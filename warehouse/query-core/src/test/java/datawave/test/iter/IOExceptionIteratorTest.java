@@ -1,5 +1,6 @@
 package datawave.test.iter;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.Collections;
@@ -17,6 +18,7 @@ import datawave.accumulo.inmemory.util.SortedMapIterator;
 import datawave.core.iterators.IteratorTimeoutException;
 
 public class IOExceptionIteratorTest {
+
     private final Value EMPTY_VALUE = new Value();
 
     @Test
@@ -73,8 +75,64 @@ public class IOExceptionIteratorTest {
         assertThrows(IteratorTimeoutException.class, () -> driveIterator(options));
     }
 
+    @Test
+    public void testExceptionOnModulo_NoModulusSpecified() {
+        Map<String,String> options = new HashMap<>();
+        options.put(IOExceptionIterator.EXCEPTION_CLASS, IteratorTimeoutException.class.getName());
+        options.put(IOExceptionIterator.EXCEPTION_MESSAGE, "IOException msg");
+        options.put(IOExceptionIterator.FIRE_MODULO, "true");
+
+        Exception e = assertThrows(IllegalArgumentException.class, () -> driveIterator(options, 5));
+        String expected = "FIRE_MODULO was set without a MODULUS option";
+        assertEquals(expected, e.getMessage());
+    }
+
+    @Test
+    public void testExceptionOnModulo_ExceptionDoesNotFire() throws Exception {
+        Map<String,String> options = new HashMap<>();
+        options.put(IOExceptionIterator.EXCEPTION_CLASS, IteratorTimeoutException.class.getName());
+        options.put(IOExceptionIterator.EXCEPTION_MESSAGE, "IOException msg");
+        options.put(IOExceptionIterator.FIRE_MODULO, "true");
+        options.put(IOExceptionIterator.MODULUS, "100");
+
+        driveIterator(options, 5);
+    }
+
+    @Test
+    public void testExceptionOnModulo() {
+        Map<String,String> options = new HashMap<>();
+        options.put(IOExceptionIterator.EXCEPTION_CLASS, IteratorTimeoutException.class.getName());
+        options.put(IOExceptionIterator.EXCEPTION_MESSAGE, "IOException msg");
+        options.put(IOExceptionIterator.FIRE_MODULO, "true");
+        options.put(IOExceptionIterator.MODULUS, "5");
+
+        assertThrows(IteratorTimeoutException.class, () -> driveIterator(options));
+    }
+
+    /**
+     * Drive the iterator across a dataset with default size of 50
+     *
+     * @param options
+     *            the map of iterator options
+     * @throws Exception
+     *             if something goes wrong
+     */
     private void driveIterator(Map<String,String> options) throws Exception {
-        SortedKeyValueIterator<Key,Value> source = getData();
+        driveIterator(options, 50);
+    }
+
+    /**
+     * Drive the iterator across a dataset of specified size
+     *
+     * @param options
+     *            the map of iterator options
+     * @param size
+     *            the number of keys in the dataset
+     * @throws Exception
+     *             if something goes wrong
+     */
+    private void driveIterator(Map<String,String> options, int size) throws Exception {
+        SortedKeyValueIterator<Key,Value> source = getSource(size);
         IOExceptionIterator iter = new IOExceptionIterator();
         iter.init(source, options, new TestIteratorEnv());
         iter.seek(new Range(), Collections.emptySet(), false);
@@ -83,11 +141,29 @@ public class IOExceptionIteratorTest {
         }
     }
 
-    private SortedKeyValueIterator<Key,Value> getData() {
+    /**
+     * Create a {@link SortedMapIterator} of the specified size
+     *
+     * @param size
+     *            the number of keys
+     * @return an iterator
+     */
+    private SortedKeyValueIterator<Key,Value> getSource(int size) {
+        return new SortedMapIterator(getData(size));
+    }
+
+    /**
+     * Create a dataset of specified size
+     *
+     * @param count
+     *            the size of the dataset
+     * @return a dataset
+     */
+    private TreeMap<Key,Value> getData(int count) {
         TreeMap<Key,Value> data = new TreeMap<>();
-        for (int i = 0; i < 50; i++) {
+        for (int i = 0; i < count; i++) {
             data.put(new Key("row-" + i), EMPTY_VALUE);
         }
-        return new SortedMapIterator(data);
+        return data;
     }
 }
