@@ -54,8 +54,8 @@ import datawave.util.StringUtils;
  * A publisher that can be triggered to deserialize and publish updates of a configured class to subscribers. The publisher leverages Zookeeper and is triggered
  * by changes to Zookeeper nodes. The publisher will be triggered to reload an instance of the configured object when:
  * <ul>
- * <l>The node {@code /<namespace>/path} is created or modified with non-empty data.</l> <l>The node {@code /<namespace>/trigger} is created, modified, or
- * deleted.</l>
+ * <li>The node {@code /<namespace>/path} is created or modified with non-empty data.</li>
+ * <li>The node {@code /<namespace>/trigger} is created, modified, or deleted.</li>
  * </ul>
  * Upon receiving a trigger event, the publisher will attempt to read and deserialize an instance of the configured class from the filepath stored in the data
  * of the node {@code /<namespace>/path}. The filepath is expected to be XML, JSON, or YAML, and must conform to one of the following URI schemes:
@@ -311,6 +311,7 @@ public class ZkObjectPublisher {
      *
      * @param initFlag
      *            a flag to set to true when an initialized event is received by the listener
+     * @return the cache listener
      */
     private CuratorCacheListener createPathCacheListener(AtomicBoolean initFlag) {
         // @formatter:off
@@ -379,10 +380,13 @@ public class ZkObjectPublisher {
 
     /**
      * Trigger a POJO reload. If a POJO is reloaded, it will be provided to any listeners configured for this {@link ZkObjectPublisher}.
+     *
+     * @param cause
+     *            the triggering cause
      */
-    private void triggerReload(ZkObjectPublishCause trigger) {
+    private void triggerReload(ZkObjectPublishCause cause) {
         if (log.isDebugEnabled()) {
-            log.debug(addLogPrefix("Reload triggered by " + trigger));
+            log.debug(addLogPrefix("Reload triggered by " + cause));
         }
 
         // Obtain the reload lock.
@@ -417,12 +421,12 @@ public class ZkObjectPublisher {
             }
 
             if (log.isDebugEnabled()) {
-                log.debug(addLogPrefix("Update of " + objectClass.getName() + " completed with attemptTime:=" + attemptTime + ", trigger=" + trigger + ", "
+                log.debug(addLogPrefix("Update of " + objectClass.getName() + " completed with attemptTime:=" + attemptTime + ", trigger=" + cause + ", "
                                 + "status=" + result.getStatus() + ", errors=" + result.getErrors()));
             }
 
             // Update the attempt nodes for the latest attempt.
-            updateAttemptNodes(trigger, result.getStatus(), result.getErrors(), attemptTime);
+            updateAttemptNodes(cause, result.getStatus(), result.getErrors(), attemptTime);
         } catch (Exception e) {
             log.error(addLogPrefix("Failed to reload object"), e);
             throw new RuntimeException("Failed to reload object", e);
