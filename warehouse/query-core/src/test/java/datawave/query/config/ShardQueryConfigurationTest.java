@@ -463,6 +463,8 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("compositeFilterFunctionsEnabled", true);
         defaultValues.put("disableIteratorUniqueFields", false);
         updatedValues.put("disableIteratorUniqueFields", true);
+        defaultValues.put("disableIteratorMostRecentUniqueFields", true);
+        updatedValues.put("disableIteratorMostRecentUniqueFields", false);
         defaultValues.put("uniqueFields", new UniqueFields());
         updatedValues.put("uniqueFields", UniqueFields.from("FIELD_U,FIELD_V"));
         defaultValues.put("uniqueCacheBufferSize", 100);
@@ -513,8 +515,6 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("seekingEventAggregation", true);
         defaultValues.put("visitorFunctionMaxWeight", 5000000L);
         updatedValues.put("visitorFunctionMaxWeight", 1000000L);
-        defaultValues.put("lazySetMechanismEnabled", false);
-        updatedValues.put("lazySetMechanismEnabled", true);
         defaultValues.put("docAggregationThresholdMs", -1);
         updatedValues.put("docAggregationThresholdMs", 30000);
         defaultValues.put("tfAggregationThresholdMs", -1);

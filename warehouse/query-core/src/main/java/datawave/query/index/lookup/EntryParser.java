@@ -2,7 +2,6 @@ package datawave.query.index.lookup;
 
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DELAYED;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_OR;
-import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_TERM;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_VALUE;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.INDEX_HOLE;
 
@@ -26,7 +25,7 @@ import datawave.query.util.ValueSerializerType;
 
 /**
  * Parses entries returned from an index lookup, see {@link RangeStream#visit(ASTEQNode, Object)}.
- *
+ * <p>
  * An entry is defined as a Tuple of the key's column qualifier and it's {@link IndexInfo}
  *
  * A delayed predicate node is build if the IndexInfo does not have any document ids or if the column qualifier indicates a day range.
@@ -122,6 +121,6 @@ public class EntryParser implements Function<Result,Tuple2<String,IndexInfo>> {
     }
 
     protected boolean isDelayedPredicate(JexlNode currNode) {
-        return QueryPropertyMarker.findInstance(currNode).isAnyTypeOf(INDEX_HOLE, DELAYED, EXCEEDED_OR, EXCEEDED_TERM, EXCEEDED_VALUE);
+        return QueryPropertyMarker.findInstance(currNode).isAnyTypeOf(INDEX_HOLE, DELAYED, EXCEEDED_OR, EXCEEDED_VALUE);
     }
 }

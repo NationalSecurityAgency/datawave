@@ -1,5 +1,6 @@
 package datawave.next;
 
+import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -27,7 +28,7 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Preconditions;
 
-import datawave.next.stats.DocumentIteratorStats;
+import datawave.next.stats.DocIterStats;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.jexl.visitors.BaseVisitor;
@@ -70,7 +71,9 @@ public class DocIdIteratorVisitor extends BaseVisitor {
     private long resultInterval = 500;
     private boolean allowPartialIntersections = false;
 
-    private final DocumentIteratorStats stats = new DocumentIteratorStats();
+    private final DocIterStats stats = new DocIterStats();
+
+    private final Clock clock = Clock.systemUTC();
 
     /**
      *
@@ -307,7 +310,6 @@ public class DocIdIteratorVisitor extends BaseVisitor {
                 return data;
             case EVALUATION_ONLY:
             case DELAYED:
-            case EXCEEDED_TERM:
             case DROPPED:
             case STRICT:
             case LENIENT:
@@ -331,18 +333,27 @@ public class DocIdIteratorVisitor extends BaseVisitor {
 
     private Object handledBoundedRange(ASTAndNode node, Object data, QueryPropertyMarker.Instance instance) {
         RangeDocIdIterator iterator = new RangeDocIdIterator(source, row, node);
+
+        if (!isFieldIndexed(iterator.getField())) {
+            return null; // do not execute iterators for non-indexed fields
+        }
+
         return configureAndDriveIterator(iterator, data);
     }
 
     private Object handleListMarker(ASTAndNode node, Object data, QueryPropertyMarker.Instance instance) {
         ListDocIdIterator iterator = new ListDocIdIterator(source, row, node);
+
+        if (!isFieldIndexed(iterator.getField())) {
+            return null; // do not execute iterators for non-indexed fields
+        }
+
         return configureAndDriveIterator(iterator, data);
     }
 
     @Override
     public Object visit(ASTEQNode node, Object data) {
-        String field = JexlASTHelper.getIdentifier(node);
-        if (field == null || !indexedFields.contains(field)) {
+        if (!isFieldIndexed(node)) {
             return null; // do not execute iterators for non-indexed fields
         }
 
@@ -357,8 +368,33 @@ public class DocIdIteratorVisitor extends BaseVisitor {
 
     @Override
     public Object visit(ASTERNode node, Object data) {
+        if (!isFieldIndexed(node)) {
+            return null; // do not execute iterators for non-indexed fields
+        }
+
         RegexDocIdIterator iterator = new RegexDocIdIterator(source, row, node);
         return configureAndDriveIterator(iterator, data);
+    }
+
+    /**
+     * Determines if the field is indexed. The field should be found in the identifier.
+     *
+     * @param node
+     *            the JexlNode
+     * @return true if the field is indexed
+     */
+    private boolean isFieldIndexed(JexlNode node) {
+        String field = JexlASTHelper.getIdentifier(node);
+        return isFieldIndexed(field);
+    }
+
+    /**
+     * Determines if the field is indexed. The field should be found in the identifier.
+     *
+     * @return true if the field is indexed
+     */
+    private boolean isFieldIndexed(String field) {
+        return field != null && indexedFields.contains(field);
     }
 
     protected ScanResult configureAndDriveIterator(BaseDocIdIterator iterator, Object data) {
@@ -378,7 +414,7 @@ public class DocIdIteratorVisitor extends BaseVisitor {
 
         // if scan results exist then this scan is allowed to timeout
         boolean checkForTimeout = data instanceof ScanResult;
-        long scanStart = System.currentTimeMillis();
+        long scanStart = clock.millis();
         long elapsedScanTime;
 
         int count = 0;
@@ -389,7 +425,7 @@ public class DocIdIteratorVisitor extends BaseVisitor {
             count++;
             result.addKey(iterator.next());
             if (checkForTimeout && count % resultInterval == 0) {
-                elapsedScanTime = System.currentTimeMillis() - scanStart;
+                elapsedScanTime = clock.millis() - scanStart;
                 if (elapsedScanTime >= maxScanTimeMillis) {
                     result.setTimeout(true);
                     log.warn("term: [{}] founds {} hits before hitting timeout threshold: {}", iterator.getNode(), result.getResults().size(),
@@ -399,7 +435,7 @@ public class DocIdIteratorVisitor extends BaseVisitor {
             }
         }
 
-        elapsedScanTime = System.currentTimeMillis() - scanStart;
+        elapsedScanTime = clock.millis() - scanStart;
         stats.merge(iterator.getStats());
 
         if (log.isDebugEnabled()) {
@@ -447,7 +483,7 @@ public class DocIdIteratorVisitor extends BaseVisitor {
         return null;
     }
 
-    public DocumentIteratorStats getStats() {
+    public DocIterStats getStats() {
         return stats;
     }
 

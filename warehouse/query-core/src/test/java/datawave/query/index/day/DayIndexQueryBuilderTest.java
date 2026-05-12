@@ -355,18 +355,6 @@ public class DayIndexQueryBuilderTest {
     }
 
     @Test
-    public void testPersistExceededTerm() {
-        setQuery("C == 'prime' && ((_Term_ = true) && B == 'odd')");
-        addExpectedForPrime("(C == 'prime' && ((_Term_ = true) && B == 'odd'))");
-        test();
-
-        teardown();
-        setQuery("C == 'prime' || ((_Term_ = true) && B == 'odd')");
-        addExpectedForPrime("C == 'prime'", "((_Term_ = true) && B == 'odd')");
-        test();
-    }
-
-    @Test
     public void testPersistDelayedMarker() {
         setQuery("C == 'prime' && ((_Delayed_ = true) && B == 'odd')");
         addExpectedForPrime("(C == 'prime' && ((_Delayed_ = true) && B == 'odd'))");
