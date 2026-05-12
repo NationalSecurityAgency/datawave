@@ -27,6 +27,7 @@ public abstract class AbstractIngestHelper extends DataTypeHelperImpl implements
     /* Map of field names to normalizers, null key is the default normalizer */
     protected MaskedFieldHelper mfHelper = null;
     protected Set<String> shardExclusions = new HashSet<>();
+
     protected boolean hasIndexDisallowlist = false;
     protected boolean hasReverseIndexDisallowlist = false;
 

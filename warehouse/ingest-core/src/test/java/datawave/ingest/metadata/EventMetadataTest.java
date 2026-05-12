@@ -123,6 +123,11 @@ public class EventMetadataTest {
                         encodeCount("20140402", 1L));
     }
 
+    /*
+     * SETH NOTE could use this as test and the above, update helper to be errorShardedIngestHelper(?) at leasts override the datatypeRequired method. make a
+     * new class just for this in this tests
+     */
+
     /**
      * Test ingesting an event for an indexed field.
      */

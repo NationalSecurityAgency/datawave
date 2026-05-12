@@ -14,4 +14,13 @@ public interface FieldConfigHelper {
     boolean isTokenizedField(String fieldName);
 
     boolean isReverseTokenizedField(String fieldName);
+
+    /*
+     * SETH NOTE Should this be documented? Not sure what the consensus is for abstract methods. These also force other classes to implement these methods like
+     * XMLFieldConfigHelper. Should they be added to those classes as well, or should we take another approach to adding ErrorIndexedFields?
+     */
+    boolean isErrorIndexedField(String fieldName);
+
+    boolean isErrorReverseIndexedField(String fieldName);
+
 }

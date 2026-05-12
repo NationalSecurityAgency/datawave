@@ -142,6 +142,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
     public static final String FIELD_CONFIG_FILE = FieldConfigHelperConstants.FIELD_CONFIG_FILE;
 
     private static final String PROPERTY_MALFORMED = " property malformed: ";
+
     private static final Logger log = LoggerFactory.getLogger(BaseIngestHelper.class);
 
     private Multimap<String,datawave.data.type.Type<?>> typeFieldMap = null;
@@ -261,6 +262,12 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
             log.debug("Field config specified: {}", this.fieldConfigHelper.describeSource());
         }
 
+        // --- INDEX_FIELDS ---
+
+        /*
+         * SETH NOTE This is most likely the start of the chunk that needs to be cloned for the error index stuff.
+         */
+
         // Process the indexed fields
         if (config.get(this.getType().typeName() + DISALLOWLIST_INDEX_FIELDS) != null) {
             if (log.isDebugEnabled()) {
@@ -294,6 +301,12 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
             }
         }
 
+        // --- REVERSE INDEX FIELDS ---
+
+        /*
+         * SETH NOTE This is what Laura was talking about-- the Allow/Disallow is mutually exclusive. I haven't seen this same block above for the non-reverse
+         * index fields. Maybe I need to take another look.
+         */
         // Ensure that we have only an allowlist or a disallowlist of fields to
         // reverse index
         if (config.get(this.getType().typeName() + DISALLOWLIST_REVERSE_INDEX_FIELDS) != null
@@ -341,6 +354,10 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
             }
 
         }
+
+        /*
+         * SETH NOTE Not sure if I'll need what's after this. I'll start with the above block and add to it as needed.
+         */
 
         // gather the list of all indexed fields across all types
         // this list is only used for generating warnings if we are not indexing
@@ -452,7 +469,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
         }
     }
 
-    private void moveToPatternMap(Set<String> in, Map<String,Pattern> out) {
+    protected void moveToPatternMap(Set<String> in, Map<String,Pattern> out) {
         for (Iterator<String> itr = in.iterator(); itr.hasNext();) {
             String str = itr.next();
             if (str.indexOf('*') != -1) {
@@ -1224,4 +1241,5 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
             }
         }
     }
+
 }

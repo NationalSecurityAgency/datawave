@@ -174,12 +174,20 @@ public class EventMetadata implements RawRecordMetadata {
             // using either the assigned dataType or the default dataType
             boolean shouldWriteDataType = false;
 
-            if (helper.isIndexedField(fieldName)) {
+            boolean isIndexed = false;
+
+            isIndexed = helper.isIndexedField(fieldName);
+
+            if (isIndexed) {
                 shouldWriteDataType = true;
                 updateForIndexedField(helper, event, fields, countDelta, loadDateStr, NO_TOKEN_DESIGNATOR, fieldName);
             }
 
-            if (helper.isReverseIndexedField(fieldName)) {
+            boolean isReverseIndexed = false;
+
+            isReverseIndexed = helper.isReverseIndexedField(fieldName);
+
+            if (isReverseIndexed) {
                 shouldWriteDataType = true;
                 updateForReverseIndexedField(helper, event, fields, countDelta, loadDateStr, NO_TOKEN_DESIGNATOR, fieldName);
             }

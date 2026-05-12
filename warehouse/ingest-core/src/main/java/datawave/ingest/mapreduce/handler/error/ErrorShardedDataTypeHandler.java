@@ -218,6 +218,8 @@ public class ErrorShardedDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends Abstract
                     TaskInputOutputContext<KEYIN,? extends RawRecordContainer,KEYOUT,VALUEOUT> context, ContextWriter<KEYOUT,VALUEOUT> contextWriter)
                     throws IOException, InterruptedException {
 
+        errorHelper.setActiveDataType(record.getDataType());
+
         // write out the event into a value before we muck with it
         DataOutputBuffer buffer = new DataOutputBuffer();
         record.write(buffer);
