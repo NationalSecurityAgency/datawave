@@ -2712,7 +2712,7 @@ public class QueryOptions implements OptionDescriber {
      * @param allowBlankValues
      *            If true, blank values will be converted to a single space, as blank values will fail in InputFormatBase when run through the MapReduce api.
      */
-    public static <T> void addOption(IteratorSetting setting, String option, T value, Function<T,String> valueTransformer, boolean allowBlankValues) {
+    private static <T> void addOption(IteratorSetting setting, String option, T value, Function<T,String> valueTransformer, boolean allowBlankValues) {
         // If we have a default options implementation for the specified iterator setting's class, fetch it.
         DefaultOptions defaultOptions = getDefaultOptions(setting.getIteratorClass());
         // If the value matches the default value, do not add it to the setting and instead remove it from the IteratorSetting if it exists.

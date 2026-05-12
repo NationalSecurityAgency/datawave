@@ -2406,9 +2406,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable, Auto
             if (sourceLimit > 0) {
                 addOption(cfg, QueryOptions.LIMIT_SOURCES, Long.toString(sourceLimit), false);
             }
-            if (config.getCollectTimingDetails()) {
-                addOption(cfg, QueryOptions.COLLECT_TIMING_DETAILS, Boolean.toString(true), false);
-            }
             if (config.getSendTimingToStatsd()) {
                 addOption(cfg, QueryOptions.STATSD_HOST_COLON_PORT, config.getStatsdHost() + ':' + Integer.toString(config.getStatsdPort()), false);
                 addOption(cfg, QueryOptions.STATSD_MAX_QUEUE_SIZE, Integer.toString(config.getStatsdMaxQueueSize()), false);
@@ -2462,7 +2459,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable, Auto
 
             // only serialize the filter if not empty
             if (!config.getDatatypeFilter().isEmpty()) {
-                cfg.addOption(QueryOptions.DATATYPE_FILTER, config.getDatatypeFilterAsString());
+                addOption(cfg, QueryOptions.DATATYPE_FILTER, config.getDatatypeFilterAsString(), false);
             }
 
             addOption(cfg, QueryOptions.CONTENT_EXPANSION_FIELDS, getContentExpansionFields(), false);
