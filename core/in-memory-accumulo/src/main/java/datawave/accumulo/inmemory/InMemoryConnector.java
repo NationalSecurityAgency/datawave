@@ -37,7 +37,7 @@ import org.apache.accumulo.core.security.SystemPermission;
 
 public class InMemoryConnector {
 
-    String username;
+    final String username;
     private final InMemoryAccumulo acu;
 
     InMemoryConnector(String username, InMemoryInstance instance) {

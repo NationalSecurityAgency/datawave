@@ -44,7 +44,7 @@ import org.apache.accumulo.core.security.SystemPermission;
  */
 public class InMemoryAccumuloClient implements AccumuloClient {
 
-    String username;
+    final String username;
     private final InMemoryAccumulo acu;
 
     public InMemoryAccumuloClient(String username, InMemoryInstance instance) {
@@ -61,7 +61,7 @@ public class InMemoryAccumuloClient implements AccumuloClient {
      * Not supported by the in-memory implementation.
      */
     @Override
-    public ConditionalWriter createConditionalWriter(String tableName) throws TableNotFoundException {
+    public ConditionalWriter createConditionalWriter(String tableName) {
         throw new UnsupportedOperationException();
     }
 
@@ -69,7 +69,7 @@ public class InMemoryAccumuloClient implements AccumuloClient {
      * Not supported by the in-memory implementation.
      */
     @Override
-    public ConditionalWriter createConditionalWriter(String tableName, ConditionalWriterConfig config) throws TableNotFoundException {
+    public ConditionalWriter createConditionalWriter(String tableName, ConditionalWriterConfig config) {
         throw new UnsupportedOperationException();
     }
 
