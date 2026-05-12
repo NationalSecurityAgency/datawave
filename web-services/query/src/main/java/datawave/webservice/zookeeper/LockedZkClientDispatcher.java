@@ -1,4 +1,4 @@
-package datawave.webservice.query.limit;
+package datawave.webservice.zookeeper;
 
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;

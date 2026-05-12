@@ -49,34 +49,7 @@ When using regex patterns in the configurations above, there is the possibility 
 
 ## Dynamic Configuration Updates
 
-The configuration for the `QueryLimiter` may be updated dynamically through Zookeeper. When the `QueryLimiter` is configured with a [QueryLimitConfigReloader](QueryLimitConfigReloader.java), it will register a listener with the reloader. When the reloader receives a triggering event, it will attempt to load a new `QueryLimitConfiguration` from a file who's filepath is specified in Zookeeper, and provide the configuration (if valid) to any listeners.
-
-The `QueryLimitConfigReloader` will operate on nodes in Zookeeper under the namespace `QueryLimitConfig`. When a reload is triggered, it will load a new `QueryLimitConfigration` from the file URL in the data of the node `/path`. A reload will be triggered if any of the following events happen:
-- The node `/path` is created with non-empty data, or modified with new non-empty data.
-- The node `/trigger` is created, modified, or deleted.
-
-The data of the node `/path` should be set to the file URL of a JSON, XML, or YAML file that can be deserialized to a `QueryLimitConfiguration`. The URL may have the URI schemes `http:`, `https:`,`hdfs:`, or `file:`. In the case of no scheme, the file will be loaded from the local filesystem. After a reload attempt, the following nodes will be created/updated:
-
-```
-/attempts/<serverIpAddress>/status # The status of the latest reload attempt.
-/attempts/<serverIpAddress>/cause  # The triggering cause of the latest reload attempt.
-/attempts/<serverIpAddress>/time   # The time of the latest reload attempt in ISO-8601 format.
-/attempts/<serverIpAddress>/errors # A node containing children whose data contains brief descriptions about errors that occurred. Exists only when an error occurred.
-```
-
-The data of the node `/attempts/<serverIpAddress>/status` will be one of the following:
-- `SUCCESS`: Indicates a valid `QueryLimitConfiguration` was loaded from the file and supplied to all configured listeners.
-- `LISTENER_ERROR`: Indicates a valid `QueryLimitConfiguration` was loaded from the file, but one or more listeners threw an exception when provided the configuration.
-- `RELOAD_ERROR`: Indicates a valid `QueryLimitConfiguration` could not be loaded.
-
-The data of the node `/attempts/<serverIpAddress>/cause` will be one of the following:
-- `PATH_NODE_CREATED`: The reload was triggered by the creation of the node `/path` with non-empty data.
-- `PATH_NODE_MODIFIED`: The reload was triggered by the modification of the node `/path` with non-empty data.
-- `TRIGGER_NODE_CREATED`: The reload was triggered by the creation of the node `/trigger`.
-- `TRIGGER_NODE_MODIFIED`: The reload was triggered by the modification of the node `/trigger`.
-- `TRIGGER_NODE_DELETED`: The reload was triggered by the deletion of the node `/trigger`.
-
-The node `/attempts/<serverIpAddress>/errors` will contain children with names following the format `/error_<X>` where X is a value from `0` to one less than the total errors that were recorded. The data of each error node will contain brief descriptions of the error that occurred. The full stack trace will be available in the logs.
+The configuration for the `QueryLimiter` may be updated dynamically through Zookeeper. When the `QueryLimiter` is configured with a [ZkObjectPublisher](../../zookeeper/ZkObjectPublisher.java), it will subscribe to updates publisher. When the publisher receives a triggering event, it will attempt to load a new `QueryLimitConfiguration` from the configured file. See the [ZkObjectPublisher README](../../zookeeper/README.md) for more details. 
 
 ## Implementation
 

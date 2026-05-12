@@ -1,4 +1,4 @@
-package datawave.webservice.query.limit;
+package datawave.webservice.zookeeper;
 
 import java.net.URI;
 import java.nio.file.Files;
@@ -11,10 +11,12 @@ import org.apache.zookeeper.server.quorum.QuorumPeerConfig;
 /**
  * Utility class for Zookeeper operations.
  */
-public final class ZookeeperUtils {
+public final class ZkUtils {
+
+    public static final byte[] EMPTY_DATA = new byte[0];
 
     /**
-     * Return a
+     * Return a formatted Zookeeper connect string that can be used to connect to a running Zookeeper server.
      *
      * @param config
      *            the configuration file/string
@@ -60,7 +62,7 @@ public final class ZookeeperUtils {
         return sb.toString();
     }
 
-    private ZookeeperUtils() {
+    private ZkUtils() {
         throw new UnsupportedOperationException();
     }
 }

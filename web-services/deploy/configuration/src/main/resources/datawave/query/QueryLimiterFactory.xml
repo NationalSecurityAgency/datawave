@@ -146,15 +146,29 @@
         <property name="cleanupUnit" value="MINUTES"/>
     </bean>
 
-    <!-- Configuration for the QueryLimitConfigReloader.
+    <!-- Configuration for the ZkObjectPublisher.
         - zookeeperConfigs: A comma-delimited list of Zookeeper hosts, or a path to a zookeeper config file, e.g., host:2181,host2:2181, or
             file:///opt/datawave/zookeeper-warehouse/conf/zoo.cfg
         - hdfsConfigUrls: A comma-delimited list of HDFS configuration files, e.g.
             file:///opt/datawave/hadoop-warehouse/conf/core-site.xml,file:///opt/datawave/hadoop-warehouse/conf/hdfs-site.xml
+        - namespace: The unique namespace used by this ZkObjectPublisher. It is critical that each configured
+            ZkObjectPublisher uses a unique namespace to prevent conflicting writes of attempt statuses.
+        - objectClass: The fully qualified class name of the class that will be deserialized from the file whose filepath
+            is set in the data of the node <namespace>/path in Zookeeper.
+        - objectValidators: A list of validators that deserialized instances of the object must pass before they will be
+            published to subscribers.
     -->
-    <bean id="queryLimitReloader" class="datawave.webservice.query.limit.QueryLimitConfigReloader" init-method="setup" destroy-method="shutdown">
-        <property name="zookeeperConfig" value="${zookeeper.hosts}"/>
-        <property name="hdfsConfigUrls" value="${hdfs.site.config.urls}"/>
+    <bean id="queryLimitConfigValidator" class="datawave.webservice.query.limit.QueryLimitConfigurationValidator" />
+    <bean id="queryLimitConfigPublisher" class="datawave.webservice.zookeeper.ZkObjectPublisher">
+        <constructor-arg name="zookeeperConfig" value="${zookeeper.hosts}"/>
+        <constructor-arg name="hdfsConfigUrls" value="${hdfs.site.config.urls}"/>
+        <constructor-arg name="namespace" value="QueryLimitConfig"/>
+        <constructor-arg name="objectClass" value="datawave.webservice.query.limit.QueryLimitConfiguration"/>
+        <constructor-arg name="objectValidators">
+            <list>
+                <ref bean="queryLimitConfigValidator"/>
+            </list>
+        </constructor-arg>
     </bean>
 
     <!-- Configuration for the QueryLimiter.
@@ -162,12 +176,12 @@
             file:///opt/datawave/zookeeper-warehouse/conf/zoo.cfg
         - configuration: The reference to the target configuration bean
         - heartbeatCache: The reference to the heartbeat cache
-        - configReloader: The reference to the config reloader
+        - configPublisher: The reference to the config publisher
     -->
     <bean id="queryLimiter" class="datawave.webservice.query.limit.QueryLimiter" init-method="setup" destroy-method="shutdown">
         <property name="zookeeperConfig" value="${zookeeper.hosts}"/>
         <property name="configuration" ref="queryLimitConfiguration"/>
         <property name="heartbeatCache" ref="queryHeartbeatCache"/>
-        <property name="configReloader" ref="queryLimitReloader"/>
+        <property name="configPublisher" ref="queryLimitConfigPublisher"/>
     </bean>
 </beans>

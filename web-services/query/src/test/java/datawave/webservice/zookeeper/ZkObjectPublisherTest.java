@@ -1,6 +1,6 @@
-package datawave.webservice.query.limit;
+package datawave.webservice.zookeeper;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -23,14 +23,21 @@ import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.retry.RetryNTimes;
 import org.apache.curator.test.TestingServer;
 import org.apache.zookeeper.data.Stat;
-import org.apache.zookeeper.server.quorum.QuorumPeerConfig;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-class QueryLimitConfigReloaderTest {
+import datawave.webservice.query.limit.QueryLimitConfiguration;
+import datawave.webservice.query.limit.QueryLimitConfigurationValidator;
+
+public class ZkObjectPublisherTest {
+
+    private static final String NAMESPACE = "QueryLimitConfig";
+    private static final Logger log = LoggerFactory.getLogger(ZkObjectPublisherTest.class);
 
     private static String validJsonFile;
     private static String validXmlFile;
@@ -39,10 +46,12 @@ class QueryLimitConfigReloaderTest {
     private static String nonConfigFile;
     private static String unsupportedFormatFile;
 
-    private QueryLimitConfigReloader reloader;
+    private ZkObjectPublisher publisher;
     private final List<QueryLimitConfiguration> configs = new ArrayList<>();
     private TestingServer server;
     private CuratorFramework client;
+
+    private static String serverIpAddress;
 
     private static String causeNode;
     private static String statusNode;
@@ -53,13 +62,13 @@ class QueryLimitConfigReloaderTest {
 
     @BeforeAll
     static void beforeAll() throws Exception {
-        String serverIpAddress = InetAddress.getLocalHost().getHostAddress();
+        serverIpAddress = InetAddress.getLocalHost().getHostAddress();
         causeNode = "/attempts/" + serverIpAddress + "/cause";
         statusNode = "/attempts/" + serverIpAddress + "/status";
         errorsNode = "/attempts/" + serverIpAddress + "/errors";
         timeNode = "/attempts/" + serverIpAddress + "/time";
 
-        ClassLoader classLoader = QueryLimitConfigReloaderTest.class.getClassLoader();
+        ClassLoader classLoader = ZkObjectPublisherTest.class.getClassLoader();
         validJsonFile = getAbsolutePath(classLoader, "queryLimits/valid_config.json");
         validXmlFile = getAbsolutePath(classLoader, "queryLimits/valid_config.xml");
         validYamlFile = getAbsolutePath(classLoader, "queryLimits/valid_config.yaml");
@@ -92,25 +101,24 @@ class QueryLimitConfigReloaderTest {
     void setUp() throws Exception {
         testStartTime = Instant.now();
         configs.clear();
-        reloader = null;
+        publisher = null;
         server = new TestingServer();
         server.start();
         // @formatter:off
-        client = CuratorFrameworkFactory.builder().namespace("QueryLimitConfig")
-                        .connectString(server.getConnectString())
-                        .sessionTimeoutMs(300000)
-                        .connectionTimeoutMs(60000)
-                        .retryPolicy(new RetryNTimes(10, 1000))
-                        .build();
+        client = CuratorFrameworkFactory.builder().namespace(NAMESPACE)
+                .connectString(server.getConnectString())
+                .sessionTimeoutMs(300000)
+                .connectionTimeoutMs(60000)
+                .retryPolicy(new RetryNTimes(10, 1000))
+                .build();
         // @formatter:on
         client.start();
-
     }
 
     @AfterEach
     void tearDown() throws IOException {
-        if (reloader != null) {
-            reloader.close();
+        if (publisher != null) {
+            publisher.close();
         }
         if (client != null) {
             client.close();
@@ -121,7 +129,24 @@ class QueryLimitConfigReloaderTest {
     }
 
     /**
-     * Verify that the {@link QueryLimitConfigReloader} can read a {@link QueryLimitConfiguration} from a JSON file on the local file system.
+     * Verify that invalid constructor args will result in exceptions.
+     */
+    @Test
+    void testInvalidConstructorArgs() {
+        assertThatThrownBy(() -> new ZkObjectPublisher(null, null, null, QueryLimitConfiguration.class, null)).isInstanceOf(IllegalArgumentException.class)
+                        .hasMessage("namespace must not be null or blank");
+        assertThatThrownBy(() -> new ZkObjectPublisher("   ", null, null, QueryLimitConfiguration.class, null)).isInstanceOf(IllegalArgumentException.class)
+                        .hasMessage("namespace must not be null or blank");
+        assertThatThrownBy(() -> new ZkObjectPublisher("QueryLimitConfig", null, null, QueryLimitConfiguration.class, null))
+                        .isInstanceOf(IllegalArgumentException.class).hasMessage("zookeeperConfig must not be null or blank");
+        assertThatThrownBy(() -> new ZkObjectPublisher("QueryLimitConfig", "   ", null, QueryLimitConfiguration.class, null))
+                        .isInstanceOf(IllegalArgumentException.class).hasMessage("zookeeperConfig must not be null or blank");
+        assertThatThrownBy(() -> new ZkObjectPublisher("QueryLimitConfig", server.getConnectString(), null, (Class<?>) null, null))
+                        .isInstanceOf(NullPointerException.class).hasMessage("pojoClass must not be null");
+    }
+
+    /**
+     * Verify that the {@link ZkObjectPublisher} can read a {@link QueryLimitConfiguration} from a JSON file on the local file system.
      */
     @Test
     void testReloadValidJsonFromLocalFilesystem() throws Exception {
@@ -129,8 +154,8 @@ class QueryLimitConfigReloaderTest {
         createOrUpdateNode("/path", validJsonFile);
         createOrUpdateNode("/trigger", "changeme");
 
-        // Create the reloader and start listening for trigger events.
-        createReloader();
+        // Create the publisher and start listening for trigger events.
+        createPublisher();
 
         // Trigger a reload.
         createOrUpdateNode("/trigger", "");
@@ -146,14 +171,14 @@ class QueryLimitConfigReloaderTest {
         waitForAttemptTimeNodeToBeCreated();
 
         // Verify the attempt nodes were updated correctly.
-        assertCause(QueryLimitConfigReloader.ReloadCause.TRIGGER_NODE_MODIFIED);
-        assertStatus(QueryLimitConfigReloader.ReloadStatus.SUCCESS);
+        assertCause(ZkObjectPublishCause.TRIGGER_NODE_MODIFIED);
+        assertStatus(ZkObjectPublishStatus.SUCCESS);
         assertErrorsNodeDoesNotExist();
         assertTimeNodeHasRecentTime();
     }
 
     /**
-     * Verify that the {@link QueryLimitConfigReloader} can read a {@link QueryLimitConfiguration} from an XML file on the local file system.
+     * Verify that the {@link ZkObjectPublisher} can read a {@link QueryLimitConfiguration} from an XML file on the local file system.
      */
     @Test
     void testReloadValidXmlFromLocalFilesystem() throws Exception {
@@ -161,8 +186,8 @@ class QueryLimitConfigReloaderTest {
         createOrUpdateNode("/path", validXmlFile);
         createOrUpdateNode("/trigger", "changeme");
 
-        // Create the reloader and start listening for trigger events.
-        createReloader();
+        // Create the publisher and start listening for trigger events.
+        createPublisher();
 
         // Trigger a reload.
         createOrUpdateNode("/trigger", "");
@@ -178,14 +203,14 @@ class QueryLimitConfigReloaderTest {
         waitForAttemptTimeNodeToBeCreated();
 
         // Verify the attempt nodes were updated correctly.
-        assertCause(QueryLimitConfigReloader.ReloadCause.TRIGGER_NODE_MODIFIED);
-        assertStatus(QueryLimitConfigReloader.ReloadStatus.SUCCESS);
+        assertCause(ZkObjectPublishCause.TRIGGER_NODE_MODIFIED);
+        assertStatus(ZkObjectPublishStatus.SUCCESS);
         assertErrorsNodeDoesNotExist();
         assertTimeNodeHasRecentTime();
     }
 
     /**
-     * Verify that the {@link QueryLimitConfigReloader} can read a {@link QueryLimitConfiguration} from a YAML file on the local file system.
+     * Verify that the {@link ZkObjectPublisher} can read a {@link QueryLimitConfiguration} from a YAML file on the local file system.
      */
     @Test
     void testReloadValidYamlFromLocalFilesystem() throws Exception {
@@ -193,8 +218,8 @@ class QueryLimitConfigReloaderTest {
         createOrUpdateNode("/path", validYamlFile);
         createOrUpdateNode("/trigger", "changeme");
 
-        // Create the reloader and start listening for trigger events.
-        createReloader();
+        // Create the publisher and start listening for trigger events.
+        createPublisher();
 
         // Trigger a reload.
         createOrUpdateNode("/trigger", "");
@@ -210,14 +235,14 @@ class QueryLimitConfigReloaderTest {
         waitForAttemptTimeNodeToBeCreated();
 
         // Verify the attempt nodes were updated correctly.
-        assertCause(QueryLimitConfigReloader.ReloadCause.TRIGGER_NODE_MODIFIED);
-        assertStatus(QueryLimitConfigReloader.ReloadStatus.SUCCESS);
+        assertCause(ZkObjectPublishCause.TRIGGER_NODE_MODIFIED);
+        assertStatus(ZkObjectPublishStatus.SUCCESS);
         assertErrorsNodeDoesNotExist();
         assertTimeNodeHasRecentTime();
     }
 
     /**
-     * Verify that if the file path is prefixed with {@code file://}, {@link QueryLimitConfigReloader} will attempt to read the file from the local file system.
+     * Verify that if the file path is prefixed with {@code file://}, {@link ZkObjectPublisher} will attempt to read the file from the local file system.
      */
     @Test
     void testFilePrefixWillReloadFromLocalFilesystem() throws Exception {
@@ -225,8 +250,8 @@ class QueryLimitConfigReloaderTest {
         createOrUpdateNode("/path", "file://" + validJsonFile);
         createOrUpdateNode("/trigger", "changeme");
 
-        // Create the reloader and start listening for trigger events.
-        createReloader();
+        // Create the publisher and start listening for trigger events.
+        createPublisher();
 
         // Trigger a reload.
         createOrUpdateNode("/trigger", "");
@@ -242,22 +267,22 @@ class QueryLimitConfigReloaderTest {
         waitForAttemptTimeNodeToBeCreated();
 
         // Verify the attempt nodes were updated correctly.
-        assertCause(QueryLimitConfigReloader.ReloadCause.TRIGGER_NODE_MODIFIED);
-        assertStatus(QueryLimitConfigReloader.ReloadStatus.SUCCESS);
+        assertCause(ZkObjectPublishCause.TRIGGER_NODE_MODIFIED);
+        assertStatus(ZkObjectPublishStatus.SUCCESS);
         assertErrorsNodeDoesNotExist();
         assertTimeNodeHasRecentTime();
     }
 
     /**
-     * Verify that if the node {@code /trigger} is created, {@link QueryLimitConfigReloader} will reload the configuration.
+     * Verify that if the node {@code /trigger} is created, {@link ZkObjectPublisher} will reload the configuration.
      */
     @Test
     void testReloadTriggeredByTriggerNodeCreation() throws Exception {
         // Set up the /path node beforehand.
         createOrUpdateNode("/path", validJsonFile);
 
-        // Create the reloader and start listening for trigger events.
-        createReloader();
+        // Create the publisher and start listening for trigger events.
+        createPublisher();
 
         // Trigger a reload.
         createOrUpdateNode("/trigger", "");
@@ -273,14 +298,14 @@ class QueryLimitConfigReloaderTest {
         waitForAttemptTimeNodeToBeCreated();
 
         // Verify the attempt nodes were updated correctly.
-        assertCause(QueryLimitConfigReloader.ReloadCause.TRIGGER_NODE_CREATED);
-        assertStatus(QueryLimitConfigReloader.ReloadStatus.SUCCESS);
+        assertCause(ZkObjectPublishCause.TRIGGER_NODE_CREATED);
+        assertStatus(ZkObjectPublishStatus.SUCCESS);
         assertErrorsNodeDoesNotExist();
         assertTimeNodeHasRecentTime();
     }
 
     /**
-     * Verify that if the node {@code /trigger} is deleted, {@link QueryLimitConfigReloader} will reload the configuration.
+     * Verify that if the node {@code /trigger} is deleted, {@link ZkObjectPublisher} will reload the configuration.
      */
     @Test
     void testReloadTriggeredByTriggerNodeDeleted() throws Exception {
@@ -288,8 +313,8 @@ class QueryLimitConfigReloaderTest {
         createOrUpdateNode("/path", validJsonFile);
         createOrUpdateNode("/trigger", "changeme");
 
-        // Create the reloader and start listening for trigger events.
-        createReloader();
+        // Create the publisher and start listening for trigger events.
+        createPublisher();
 
         // Trigger a reload.
         client.delete().forPath("/trigger");
@@ -305,19 +330,19 @@ class QueryLimitConfigReloaderTest {
         waitForAttemptTimeNodeToBeCreated();
 
         // Verify the attempt nodes were updated correctly.
-        assertCause(QueryLimitConfigReloader.ReloadCause.TRIGGER_NODE_DELETED);
-        assertStatus(QueryLimitConfigReloader.ReloadStatus.SUCCESS);
+        assertCause(ZkObjectPublishCause.TRIGGER_NODE_DELETED);
+        assertStatus(ZkObjectPublishStatus.SUCCESS);
         assertErrorsNodeDoesNotExist();
         assertTimeNodeHasRecentTime();
     }
 
     /**
-     * Verify that if the node {@code /path} is created with empty data, {@link QueryLimitConfigReloader} will not reload a configuration.
+     * Verify that if the node {@code /path} is created with empty data, {@link ZkObjectPublisher} will not reload a configuration.
      */
     @Test
     void testReloadNotTriggeredByPathNodeCreationWithEmptyData() throws Exception {
-        // Create the reloader and start listening for trigger events.
-        createReloader();
+        // Create the publisher and start listening for trigger events.
+        createPublisher();
 
         // Create the /path node.
         createOrUpdateNode("/path", "");
@@ -333,15 +358,15 @@ class QueryLimitConfigReloaderTest {
     }
 
     /**
-     * Verify that if the node {@code /path} is modified with empty data, {@link QueryLimitConfigReloader} will not reload a configuration.
+     * Verify that if the node {@code /path} is modified with empty data, {@link ZkObjectPublisher} will not reload a configuration.
      */
     @Test
     void testReloadNotTriggeredByPathNodeModificationWithEmptyData() throws Exception {
         // Set up the /path node beforehand.
         createOrUpdateNode("/path", validJsonFile);
 
-        // Create the reloader and start listening for trigger events.
-        createReloader();
+        // Create the publisher and start listening for trigger events.
+        createPublisher();
 
         // Modify the /path node.
         createOrUpdateNode("/path", "");
@@ -357,12 +382,12 @@ class QueryLimitConfigReloaderTest {
     }
 
     /**
-     * Verify that if the node {@code /path} is created with non-empty data, {@link QueryLimitConfigReloader} will reload a configuration.
+     * Verify that if the node {@code /path} is created with non-empty data, {@link ZkObjectPublisher} will reload a configuration.
      */
     @Test
     void testReloadTriggeredByPathNodeCreationWithNonEmptyData() throws Exception {
-        // Create the reloader and start listening for trigger events.
-        createReloader();
+        // Create the publisher and start listening for trigger events.
+        createPublisher();
 
         // Create the /path node.
         createOrUpdateNode("/path", validJsonFile);
@@ -378,22 +403,22 @@ class QueryLimitConfigReloaderTest {
         waitForAttemptTimeNodeToBeCreated();
 
         // Verify the attempt nodes were updated correctly.
-        assertCause(QueryLimitConfigReloader.ReloadCause.PATH_NODE_CREATED);
-        assertStatus(QueryLimitConfigReloader.ReloadStatus.SUCCESS);
+        assertCause(ZkObjectPublishCause.PATH_NODE_CREATED);
+        assertStatus(ZkObjectPublishStatus.SUCCESS);
         assertErrorsNodeDoesNotExist();
         assertTimeNodeHasRecentTime();
     }
 
     /**
-     * Verify that if the node {@code /path} is modified with non-empty data, {@link QueryLimitConfigReloader} will reload a configuration.
+     * Verify that if the node {@code /path} is modified with non-empty data, {@link ZkObjectPublisher} will reload a configuration.
      */
     @Test
     void testReloadTriggeredByPathModificationWithNonEmptyData() throws Exception {
         // Set up the /path node beforehand.
         createOrUpdateNode("/path", validJsonFile);
 
-        // Create the reloader and start listening for trigger events.
-        createReloader();
+        // Create the publisher and start listening for trigger events.
+        createPublisher();
 
         // Modify the /path node.
         createOrUpdateNode("/path", validXmlFile);
@@ -409,8 +434,8 @@ class QueryLimitConfigReloaderTest {
         waitForAttemptTimeNodeToBeCreated();
 
         // Verify the attempt nodes were updated correctly.
-        assertCause(QueryLimitConfigReloader.ReloadCause.PATH_NODE_MODIFIED);
-        assertStatus(QueryLimitConfigReloader.ReloadStatus.SUCCESS);
+        assertCause(ZkObjectPublishCause.PATH_NODE_MODIFIED);
+        assertStatus(ZkObjectPublishStatus.SUCCESS);
         assertErrorsNodeDoesNotExist();
         assertTimeNodeHasRecentTime();
     }
@@ -422,8 +447,8 @@ class QueryLimitConfigReloaderTest {
     void testNonExistentPathNode() throws Exception {
         createOrUpdateNode("/trigger", "changeme");
 
-        // Create the reloader and start listening for trigger events.
-        createReloader();
+        // Create the publisher and start listening for trigger events.
+        createPublisher();
 
         // Trigger a reload.
         createOrUpdateNode("/trigger", "");
@@ -439,9 +464,11 @@ class QueryLimitConfigReloaderTest {
         assertTrue(configs.isEmpty());
 
         // Verify the attempt nodes were updated correctly.
-        assertCause(QueryLimitConfigReloader.ReloadCause.TRIGGER_NODE_MODIFIED);
-        assertStatus(QueryLimitConfigReloader.ReloadStatus.RELOAD_ERROR);
-        assertErrors("Node does not exist: /path");
+        assertCause(ZkObjectPublishCause.TRIGGER_NODE_MODIFIED);
+        assertStatus(ZkObjectPublishStatus.RELOAD_ERROR);
+        assertTotalErrors(1);
+        assertErrorMessage(0, "Node does not exist: QueryLimitConfig/path");
+        assertErrorDoesNotHaveStackTrace(0);
         assertTimeNodeHasRecentTime();
     }
 
@@ -454,8 +481,8 @@ class QueryLimitConfigReloaderTest {
         createOrUpdateNode("/path", null);
         createOrUpdateNode("/trigger", "changeme");
 
-        // Create the reloader and start listening for trigger events.
-        createReloader();
+        // Create the publisher and start listening for trigger events.
+        createPublisher();
 
         // Trigger a reload.
         createOrUpdateNode("/trigger", "");
@@ -471,9 +498,11 @@ class QueryLimitConfigReloaderTest {
         assertTrue(configs.isEmpty());
 
         // Verify the attempt nodes were updated correctly.
-        assertCause(QueryLimitConfigReloader.ReloadCause.TRIGGER_NODE_MODIFIED);
-        assertStatus(QueryLimitConfigReloader.ReloadStatus.RELOAD_ERROR);
-        assertErrors("Config file path is not set in data for node /path");
+        assertCause(ZkObjectPublishCause.TRIGGER_NODE_MODIFIED);
+        assertStatus(ZkObjectPublishStatus.RELOAD_ERROR);
+        assertTotalErrors(1);
+        assertErrorMessage(0, "Blank filepath set in data for node QueryLimitConfig/path");
+        assertErrorDoesNotHaveStackTrace(0);
         assertTimeNodeHasRecentTime();
     }
 
@@ -486,8 +515,8 @@ class QueryLimitConfigReloaderTest {
         createOrUpdateNode("/path", "   ");
         createOrUpdateNode("/trigger", "changeme");
 
-        // Create the reloader and start listening for trigger events.
-        createReloader();
+        // Create the publisher and start listening for trigger events.
+        createPublisher();
 
         // Trigger a reload.
         createOrUpdateNode("/trigger", "");
@@ -503,9 +532,11 @@ class QueryLimitConfigReloaderTest {
         assertTrue(configs.isEmpty());
 
         // Verify the attempt nodes were updated correctly.
-        assertCause(QueryLimitConfigReloader.ReloadCause.TRIGGER_NODE_MODIFIED);
-        assertStatus(QueryLimitConfigReloader.ReloadStatus.RELOAD_ERROR);
-        assertErrors("Config file path is not set in data for node /path");
+        assertCause(ZkObjectPublishCause.TRIGGER_NODE_MODIFIED);
+        assertStatus(ZkObjectPublishStatus.RELOAD_ERROR);
+        assertTotalErrors(1);
+        assertErrorMessage(0, "Blank filepath set in data for node QueryLimitConfig/path");
+        assertErrorDoesNotHaveStackTrace(0);
         assertTimeNodeHasRecentTime();
     }
 
@@ -518,8 +549,8 @@ class QueryLimitConfigReloaderTest {
         createOrUpdateNode("/path", "ftp://i/do/not/exist");
         createOrUpdateNode("/trigger", "changeme");
 
-        // Create the reloader and start listening for trigger events.
-        createReloader();
+        // Create the publisher and start listening for trigger events.
+        createPublisher();
 
         // Trigger a reload.
         createOrUpdateNode("/trigger", "");
@@ -535,9 +566,11 @@ class QueryLimitConfigReloaderTest {
         assertTrue(configs.isEmpty());
 
         // Verify the attempt nodes were updated correctly.
-        assertCause(QueryLimitConfigReloader.ReloadCause.TRIGGER_NODE_MODIFIED);
-        assertStatus(QueryLimitConfigReloader.ReloadStatus.RELOAD_ERROR);
-        assertErrors("Failed to read contents from file ftp://i/do/not/exist: Unsupported URI scheme 'ftp'");
+        assertCause(ZkObjectPublishCause.TRIGGER_NODE_MODIFIED);
+        assertStatus(ZkObjectPublishStatus.RELOAD_ERROR);
+        assertTotalErrors(1);
+        assertErrorMessage(0, "Failed to read contents from file ftp://i/do/not/exist: Unsupported URI scheme: ftp");
+        assertErrorStackTraceBeginsWith(0, "java.io.IOException: Unsupported URI scheme: ftp");
         assertTimeNodeHasRecentTime();
     }
 
@@ -550,8 +583,8 @@ class QueryLimitConfigReloaderTest {
         createOrUpdateNode("/path", "i/do/not/exist");
         createOrUpdateNode("/trigger", "changeme");
 
-        // Create the reloader and start listening for trigger events.
-        createReloader();
+        // Create the publisher and start listening for trigger events.
+        createPublisher();
 
         // Trigger a reload.
         createOrUpdateNode("/trigger", "");
@@ -567,9 +600,11 @@ class QueryLimitConfigReloaderTest {
         assertTrue(configs.isEmpty());
 
         // Verify the attempt nodes were updated correctly.
-        assertCause(QueryLimitConfigReloader.ReloadCause.TRIGGER_NODE_MODIFIED);
-        assertStatus(QueryLimitConfigReloader.ReloadStatus.RELOAD_ERROR);
-        assertErrors("File not found: i/do/not/exist");
+        assertCause(ZkObjectPublishCause.TRIGGER_NODE_MODIFIED);
+        assertStatus(ZkObjectPublishStatus.RELOAD_ERROR);
+        assertTotalErrors(1);
+        assertErrorMessage(0, "File not found: i/do/not/exist");
+        assertErrorStackTraceBeginsWith(0, "java.nio.file.NoSuchFileException: i/do/not/exist");
         assertTimeNodeHasRecentTime();
     }
 
@@ -582,8 +617,8 @@ class QueryLimitConfigReloaderTest {
         createOrUpdateNode("/path", unsupportedFormatFile);
         createOrUpdateNode("/trigger", "changeme");
 
-        // Create the reloader and start listening for trigger events.
-        createReloader();
+        // Create the publisher and start listening for trigger events.
+        createPublisher();
 
         // Trigger a reload.
         createOrUpdateNode("/trigger", "");
@@ -599,9 +634,12 @@ class QueryLimitConfigReloaderTest {
         assertTrue(configs.isEmpty());
 
         // Verify the attempt nodes were updated correctly.
-        assertCause(QueryLimitConfigReloader.ReloadCause.TRIGGER_NODE_MODIFIED);
-        assertStatus(QueryLimitConfigReloader.ReloadStatus.RELOAD_ERROR);
-        assertErrors("Config file must be XML, JSON, or YAML");
+        assertCause(ZkObjectPublishCause.TRIGGER_NODE_MODIFIED);
+        assertStatus(ZkObjectPublishStatus.RELOAD_ERROR);
+        assertTotalErrors(1);
+        assertErrorMessage(0,
+                        "File /home/ubuntu/datawave-data/datawave/web-services/query/target/test-classes/queryLimits/unsupported_format.toml must be XML, JSON, or YAML");
+        assertErrorDoesNotHaveStackTrace(0);
         assertTimeNodeHasRecentTime();
     }
 
@@ -614,8 +652,8 @@ class QueryLimitConfigReloaderTest {
         createOrUpdateNode("/path", nonConfigFile);
         createOrUpdateNode("/trigger", "changeme");
 
-        // Create the reloader and start listening for trigger events.
-        createReloader();
+        // Create the publisher and start listening for trigger events.
+        createPublisher();
 
         // Trigger a reload.
         createOrUpdateNode("/trigger", "");
@@ -631,9 +669,11 @@ class QueryLimitConfigReloaderTest {
         assertTrue(configs.isEmpty());
 
         // Verify the attempt nodes were updated correctly.
-        assertCause(QueryLimitConfigReloader.ReloadCause.TRIGGER_NODE_MODIFIED);
-        assertStatus(QueryLimitConfigReloader.ReloadStatus.RELOAD_ERROR);
-        assertErrors("Failed to deserialize file to a QueryLimitConfiguration");
+        assertCause(ZkObjectPublishCause.TRIGGER_NODE_MODIFIED);
+        assertStatus(ZkObjectPublishStatus.RELOAD_ERROR);
+        assertTotalErrors(1);
+        assertErrorMessage(0, "Failed to deserialize file to a datawave.webservice.query.limit.QueryLimitConfiguration");
+        assertErrorStackTraceBeginsWith(0, "com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException: Unrecognized field \"property1\"");
         assertTimeNodeHasRecentTime();
     }
 
@@ -647,8 +687,8 @@ class QueryLimitConfigReloaderTest {
         createOrUpdateNode("/path", invalidConfigFile);
         createOrUpdateNode("/trigger", "changeme");
 
-        // Create the reloader and start listening for trigger events.
-        createReloader();
+        // Create the publisher and start listening for trigger events.
+        createPublisher();
 
         // Trigger a reload.
         createOrUpdateNode("/trigger", "");
@@ -664,32 +704,35 @@ class QueryLimitConfigReloaderTest {
         assertTrue(configs.isEmpty());
 
         // Verify the attempt nodes were updated correctly.
-        assertCause(QueryLimitConfigReloader.ReloadCause.TRIGGER_NODE_MODIFIED);
-        assertStatus(QueryLimitConfigReloader.ReloadStatus.RELOAD_ERROR);
-        assertErrors("Configuration failed validation: Default user query limit must be greater than 0");
+        assertCause(ZkObjectPublishCause.TRIGGER_NODE_MODIFIED);
+        assertStatus(ZkObjectPublishStatus.RELOAD_ERROR);
+        assertTotalErrors(1);
+        assertErrorMessage(0,
+                        "Reloaded datawave.webservice.query.limit.QueryLimitConfiguration failed validation: Default user query limit must be greater than 0");
+        assertErrorStackTraceBeginsWith(0, "java.lang.IllegalArgumentException: Default user query limit must be greater than 0");
         assertTimeNodeHasRecentTime();
     }
 
     /**
-     * Verify that if exceptions are thrown by listeners after supplying them with a new configuration, the errors are captured and recorded.
+     * Verify that if exceptions are thrown by subscribers after supplying them with a new configuration, the errors are captured and recorded.
      */
     @Test
-    void testExceptionsThrownByListeners() throws Exception {
+    void testExceptionsThrownBySubscribers() throws Exception {
         // Set up the /path node beforehand.
         createOrUpdateNode("/path", validJsonFile);
         createOrUpdateNode("/trigger", "changeme");
 
-        // Create the reloader and start listening for trigger events.
-        createReloader();
+        // Create the publisher and start listening for trigger events.
+        createPublisher();
 
-        // Add listeners to the reloader that will throw a variety of exceptions.
-        reloader.addListener(configuration -> {
+        // Add listeners to the publisher that will throw a variety of exceptions.
+        publisher.subscribeToUpdates(configuration -> {
             throw new NullPointerException("Something bad happened!");
         });
-        reloader.addListener(configuration -> {
+        publisher.subscribeToUpdates(configuration -> {
             throw new IllegalArgumentException("I don't like this configuration.");
         });
-        reloader.addListener(configuration -> {
+        publisher.subscribeToUpdates(configuration -> {
             throw new UnsupportedOperationException("Why do I even exist?");
         });
 
@@ -707,10 +750,15 @@ class QueryLimitConfigReloaderTest {
         waitForAttemptTimeNodeToBeCreated();
 
         // Verify the attempt nodes were updated correctly.
-        assertCause(QueryLimitConfigReloader.ReloadCause.TRIGGER_NODE_MODIFIED);
-        assertStatus(QueryLimitConfigReloader.ReloadStatus.LISTENER_ERROR);
-        assertErrors("Exception thrown by listener: Something bad happened!", "Exception thrown by listener: I don't like this configuration.",
-                        "Exception thrown by listener: Why do I even exist?");
+        assertCause(ZkObjectPublishCause.TRIGGER_NODE_MODIFIED);
+        assertStatus(ZkObjectPublishStatus.SUBSCRIBER_ERROR);
+        assertTotalErrors(3);
+        assertErrorMessage(0, "Exception thrown by listener: Something bad happened!");
+        assertErrorStackTraceBeginsWith(0, "java.lang.NullPointerException: Something bad happened!");
+        assertErrorMessage(1, "Exception thrown by listener: I don't like this configuration.");
+        assertErrorStackTraceBeginsWith(1, "java.lang.IllegalArgumentException: I don't like this configuration.");
+        assertErrorMessage(2, "Exception thrown by listener: Why do I even exist?");
+        assertErrorStackTraceBeginsWith(2, "java.lang.UnsupportedOperationException: Why do I even exist?");
         assertTimeNodeHasRecentTime();
     }
 
@@ -744,11 +792,11 @@ class QueryLimitConfigReloaderTest {
         }
     }
 
-    private void assertCause(QueryLimitConfigReloader.ReloadCause cause) throws Exception {
-        assertData(causeNode, cause.toString());
+    private void assertCause(ZkObjectPublishCause trigger) throws Exception {
+        assertData(causeNode, trigger.toString());
     }
 
-    private void assertStatus(QueryLimitConfigReloader.ReloadStatus status) throws Exception {
+    private void assertStatus(ZkObjectPublishStatus status) throws Exception {
         assertData(statusNode, status.toString());
     }
 
@@ -757,16 +805,27 @@ class QueryLimitConfigReloaderTest {
         assertNull(stat, "Expected node " + errorsNode + " to not exist");
     }
 
-    private void assertErrors(String... errors) throws Exception {
+    private void assertTotalErrors(int expected) throws Exception {
         Stat stat = client.checkExists().forPath(errorsNode);
-        assertNotNull(stat, "Expected node " + errorsNode + " to exist");
-        List<String> children = client.getChildren().forPath(errorsNode);
-        List<String> actualErrors = new ArrayList<>();
-        for (String child : children) {
-            String actualData = new String(client.getData().forPath(errorsNode + "/" + child));
-            actualErrors.add(actualData);
-        }
-        assertThat(actualErrors).containsExactlyInAnyOrder(errors);
+        assertEquals(expected, stat.getNumChildren(), "Expected node " + errorsNode + " to have " + expected + " children");
+    }
+
+    private void assertErrorMessage(int errorIndex, String message) throws Exception {
+        assertData(errorsNode + "/error_" + errorIndex + "/message", message);
+    }
+
+    private void assertErrorStackTraceBeginsWith(int errorIndex, String prefix) throws Exception {
+        String path = errorsNode + "/error_" + errorIndex + "/stacktrace";
+        Stat stat = client.checkExists().forPath(path);
+        assertNotNull(stat, "Expected node " + path + " to exist");
+        String data = new String(client.getData().forPath(path));
+        assertTrue(data.startsWith(prefix));
+    }
+
+    private void assertErrorDoesNotHaveStackTrace(int errorIndex) throws Exception {
+        String path = errorsNode + "/error_" + errorIndex + "/stacktrace";
+        Stat stat = client.checkExists().forPath(path);
+        assertNull(stat, "Expected node " + path + " to not exist");
     }
 
     private void assertTimeNodeHasRecentTime() throws Exception {
@@ -784,16 +843,15 @@ class QueryLimitConfigReloaderTest {
         assertEquals(expectedData, actualData, "Expected data for node " + path + " to be '" + expectedData + "'");
     }
 
-    private void createReloader() throws QuorumPeerConfig.ConfigException {
-        reloader = new QueryLimitConfigReloader();
-        reloader.setZookeeperConfig(server.getConnectString());
-        reloader.setup();
+    private void createPublisher() {
+        publisher = new ZkObjectPublisher(NAMESPACE, server.getConnectString(), null, QueryLimitConfiguration.class,
+                        List.of(new QueryLimitConfigurationValidator()));
         try {
-            reloader.awaitCacheInitialization(5, TimeUnit.SECONDS);
+            publisher.awaitCacheInitialization(5, TimeUnit.SECONDS);
         } catch (Exception e) {
-            throw new RuntimeException("Reloader caches failed to initialize before timeout", e);
+            throw new RuntimeException("Publisher caches failed to initialize before timeout", e);
         }
-        reloader.addListener(configs::add);
+        publisher.subscribeToUpdates((pojo) -> configs.add((QueryLimitConfiguration) pojo));
     }
 
     private void createOrUpdateNode(String node, String dataStr) throws Exception {

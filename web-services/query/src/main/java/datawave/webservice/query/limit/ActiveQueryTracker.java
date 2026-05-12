@@ -1,5 +1,7 @@
 package datawave.webservice.query.limit;
 
+import static datawave.webservice.zookeeper.ZkUtils.EMPTY_DATA;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -17,6 +19,9 @@ import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.data.Stat;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
 
+import datawave.webservice.zookeeper.LockedZkClientDispatcher;
+import datawave.webservice.zookeeper.ZkUtils;
+
 /**
  * This class provides methods for leveraging Zookeeper to track queries and their active status. It is expected that only one instance of an
  * {@link ActiveQueryTracker} will exist at a time within a singleton {@link QueryLimiter}, and the Zookeeper logic herein adheres to that assumption.
@@ -26,8 +31,6 @@ public class ActiveQueryTracker implements AutoCloseable {
     public static final String ZOOKEEPER_NAMESPACE = "ActiveQueries";
 
     private static final Logger log = Logger.getLogger(ActiveQueryTracker.class);
-
-    private static final byte[] EMPTY_DATA = new byte[0];
 
     private static final String DISTINCT_QUERY_LOGICS_CONTAINER_PATH = "/distinctQueryLogics";
     private static final String SYSTEMS_CONTAINER_PATH = "/systems";
@@ -47,7 +50,7 @@ public class ActiveQueryTracker implements AutoCloseable {
      *             if an error occurs when verifying the zookeeper configuration
      */
     public ActiveQueryTracker(String zookeeperConfig, long clientCleanupInterval) throws ConfigException {
-        zookeeperConfig = ZookeeperUtils.getQuorumPeerConfig(zookeeperConfig);
+        zookeeperConfig = ZkUtils.getQuorumPeerConfig(zookeeperConfig);
         // @formatter:off
         clientFactory = CuratorFrameworkFactory.builder()
                         .namespace(ZOOKEEPER_NAMESPACE)

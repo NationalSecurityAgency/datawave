@@ -28,10 +28,14 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import datawave.webservice.zookeeper.ZkObjectPublisher;
+
 /**
  * Test cases for testing the functionality of {@link QueryLimiter}.
  */
 class QueryLimiterTest {
+
+    private static final String PUBLISHER_NAMESPACE = "QueryLimitConfig";
 
     private static final String userA = "cn=testuserA, c=us";
     private static final String userB = "cn=testuserB, c=us";
@@ -49,7 +53,7 @@ class QueryLimiterTest {
 
     @BeforeAll
     static void beforeAll() throws Exception {
-        ClassLoader classLoader = QueryLimitConfigReloaderTest.class.getClassLoader();
+        ClassLoader classLoader = QueryLimiterTest.class.getClassLoader();
         validJsonFile = getAbsolutePath(classLoader, "queryLimits/valid_config.json");
     }
 
@@ -108,13 +112,12 @@ class QueryLimiterTest {
      */
     @Test
     void testInitialConfigurationSuppliedByZookeeper() throws Exception {
-        QueryLimitConfigReloader reloader = new QueryLimitConfigReloader();
-        reloader.setZookeeperConfig(server.getConnectString());
-        reloader.setup();
+        ZkObjectPublisher publisher = new ZkObjectPublisher(PUBLISHER_NAMESPACE, server.getConnectString(), null, QueryLimitConfiguration.class,
+                        List.of(new QueryLimitConfigurationValidator()));
 
         QueryLimiter limiter = new QueryLimiter();
         limiter.setZookeeperConfig(server.getConnectString());
-        limiter.setConfigReloader(reloader);
+        limiter.setConfigPublisher(publisher);
         limiter.setHeartbeatCache(heartbeatCache);
 
         try (CuratorFramework client = createReloaderClient()) {
@@ -507,7 +510,7 @@ class QueryLimiterTest {
     }
 
     /**
-     * Verify that when a valid configuration is reloaded by the internal {@link QueryLimitConfigReloader}, the {@link QueryLimiter} is updated.
+     * Verify that when a valid configuration is reloaded by the internal {@link ZkObjectPublisher}, the {@link QueryLimiter} is updated.
      */
     @Test
     void testConfigurationReload() throws Exception {
@@ -544,15 +547,14 @@ class QueryLimiterTest {
         if (systemToLimiter.containsKey(system)) {
             return systemToLimiter.get(system);
         } else {
-            QueryLimitConfigReloader reloader = new QueryLimitConfigReloader();
-            reloader.setZookeeperConfig(server.getConnectString());
-            reloader.setup();
+            ZkObjectPublisher publisher = new ZkObjectPublisher(PUBLISHER_NAMESPACE, server.getConnectString(), null, QueryLimitConfiguration.class,
+                            List.of(new QueryLimitConfigurationValidator()));
 
             QueryLimiter limiter = new QueryLimiter();
             limiter.setZookeeperConfig(server.getConnectString());
             limiter.setConfiguration(config);
             limiter.setHeartbeatCache(heartbeatCache);
-            limiter.setConfigReloader(reloader);
+            limiter.setConfigPublisher(publisher);
             limiter.setup();
             systemToLimiter.put(system, limiter);
             return limiter;
@@ -589,9 +591,15 @@ class QueryLimiterTest {
     }
 
     private CuratorFramework createReloaderClient() {
-        CuratorFramework client = CuratorFrameworkFactory.builder().namespace(QueryLimitConfigReloader.ZOOKEEPER_NAMESPACE)
-                        .connectString(server.getConnectString()).sessionTimeoutMs(60000).connectionTimeoutMs(60000).retryPolicy(new RetryNTimes(10, 1000))
-                        .build();
+        // @formatter:off
+        CuratorFramework client = CuratorFrameworkFactory.builder()
+                .namespace(PUBLISHER_NAMESPACE)
+                .connectString(server.getConnectString())
+                .sessionTimeoutMs(60000)
+                .connectionTimeoutMs(60000)
+                .retryPolicy(new RetryNTimes(10, 1000))
+                .build();
+        // @formatter:on
         client.start();
         return client;
     }

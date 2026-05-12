@@ -1,4 +1,4 @@
-package datawave.webservice.query.limit;
+package datawave.webservice.zookeeper;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;

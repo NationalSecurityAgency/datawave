@@ -13,6 +13,10 @@ import org.apache.zookeeper.server.quorum.QuorumPeerConfig;
 
 import com.google.common.base.Preconditions;
 
+import datawave.webservice.zookeeper.ZkObjectPublishResult;
+import datawave.webservice.zookeeper.ZkObjectPublishStatus;
+import datawave.webservice.zookeeper.ZkObjectPublisher;
+
 /**
  * This class is responsible for determining if any concurrent query limits are going to be exceeded for a user, system, or query logic when a new query is
  * submitted. It is expected that only a singleton instance of {@link QueryLimiter} will be created via CDI.
@@ -48,8 +52,8 @@ public class QueryLimiter {
     // The tracker responsible for interfacing with Zookeeper.
     private ActiveQueryTracker activeQueryTracker;
 
-    // The config reloader responsible for notifying the query limiter when there are updates to the configuration.
-    private QueryLimitConfigReloader configReloader;
+    // The publisher responsible for notifying the query limiter when there are updates to the configuration.
+    private ZkObjectPublisher configPublisher;
 
     // Whether the limiter is currently in a state where it can provide limits
     private boolean canProvideLimits = false;
@@ -74,13 +78,13 @@ public class QueryLimiter {
     }
 
     /**
-     * Set the config reloader that will notify this {@link QueryLimiter} of configuration updates.
+     * Set the config publisher that will notify this {@link QueryLimiter} of configuration updates.
      *
-     * @param configReloader
-     *            the configuration reloader
+     * @param configPublisher
+     *            the configuration publisher
      */
-    public void setConfigReloader(QueryLimitConfigReloader configReloader) {
-        this.configReloader = configReloader;
+    public void setConfigPublisher(ZkObjectPublisher configPublisher) {
+        this.configPublisher = configPublisher;
     }
 
     /**
@@ -99,7 +103,7 @@ public class QueryLimiter {
         try {
             // If validation is required, do so.
             if (validationRequired) {
-                QueryLimitConfigurationValidator.validate(configuration);
+                QueryLimitConfigurationValidationUtils.validate(configuration);
             }
 
             if (log.isDebugEnabled()) {
@@ -231,15 +235,17 @@ public class QueryLimiter {
 
             // If no configuration was supplied from a configured bean, attempt to load a configuration from Zookeeper.
             if (this.configuration == null) {
-                if (this.configReloader != null) {
-                    QueryLimitConfigReloader.LoadResult loadResult = configReloader.loadConfiguration();
-                    if (loadResult.getStatus() == QueryLimitConfigReloader.ReloadStatus.SUCCESS) {
+                if (this.configPublisher != null) {
+                    ZkObjectPublishResult result = configPublisher.getObjectFromZk();
+                    if (result.getStatus() == ZkObjectPublishStatus.SUCCESS) {
                         // Update the configuration and create the providers. The configuration returned by the reloader will already be validated.
-                        updateConfiguration(loadResult.getConfig(), false);
+                        updateConfiguration((QueryLimitConfiguration) result.getUpdatedObject(), false);
+                    } else {
+                        log.error("Failed to load configuration from zookeeper: " + result);
                     }
                 }
-                if (this.configReloader == null) {
-                    throw new IllegalStateException("No configuration supplied for Query Limiter via injection or Zookeeper.");
+                if (this.configuration == null) {
+                    throw new IllegalStateException("No configuration supplied for Query Limiter either via injection or Zookeeper.");
                 }
             } else {
                 // Update the configuration and create the providers.
@@ -248,11 +254,11 @@ public class QueryLimiter {
 
             // If the configuration reloader is not null, add a listener so that this limiter will be provided with new configurations. Any configs provided by
             // the reloader will already be validated.
-            if (configReloader != null) {
-                configReloader.addListener(((config) -> updateConfiguration(config, false)));
-                log.debug("QueryLimiter now listening for configuration updates");
+            if (configPublisher != null) {
+                configPublisher.subscribeToUpdates(((config) -> updateConfiguration((QueryLimitConfiguration) config, false)));
+                log.debug("QueryLimiter now listening for configuration updates from config publisher");
             } else {
-                log.warn("No config reloader set for QueryLimiter, limiter will not be notified of configuration updates");
+                log.warn("No config publisher set for QueryLimiter, limiter will not be notified of configuration updates");
             }
         } finally {
             configLock.unlock();
@@ -283,13 +289,13 @@ public class QueryLimiter {
                 this.activeQueryTracker = null;
             }
         }
-        if (this.configReloader != null) {
+        if (this.configPublisher != null) {
             try {
-                this.configReloader.close();
+                this.configPublisher.close();
             } catch (Exception e) {
-                log.warn("Error closing config reloader", e);
+                log.warn("Error closing config publisher", e);
             } finally {
-                this.configReloader = null;
+                this.configPublisher = null;
             }
         }
     }

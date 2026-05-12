@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans-4.0.xsd">
+
+    <!-- This file provides bean definitions for testing the creation of a ZkObjectPublisher. -->
+    <bean id="queryConfigValidator" class="datawave.webservice.query.limit.QueryLimitConfigurationValidator" />
+
+    <bean id="queryLimitConfigPublisher" class="datawave.webservice.zookeeper.ZkObjectPublisher">
+        <constructor-arg name="zookeeperConfig" value="localhost:2181"/>
+        <constructor-arg name="hdfsConfigUrls" value=""/>
+        <constructor-arg name="namespace" value="QueryLimitConfig"/>
+        <constructor-arg name="objectClass" value="datawave.webservice.query.limit.QueryLimitConfiguration"/>
+        <constructor-arg name="objectValidators">
+            <list>
+                <ref bean="queryConfigValidator"/>
+            </list>
+        </constructor-arg>
+    </bean>
+</beans>
