@@ -491,10 +491,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private long visitorFunctionMaxWeight = 5000000L;
 
     /**
-     * If true, the LAZY_SET mechanism will be enabled for non-event and index-only fields.
-     */
-    private boolean lazySetMechanismEnabled = false;
-    /**
      * Document aggregations that exceed this threshold in milliseconds are logged as a warning
      */
     private int docAggregationThresholdMs = -1;
@@ -833,7 +829,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setSeekingEventAggregation(other.isSeekingEventAggregation());
         this.setVisitorFunctionMaxWeight(other.getVisitorFunctionMaxWeight());
         this.setQueryExecutionForPageTimeout(other.getQueryExecutionForPageTimeout());
-        this.setLazySetMechanismEnabled(other.isLazySetMechanismEnabled());
         this.setDocAggregationThresholdMs(other.getDocAggregationThresholdMs());
         this.setTfAggregationThresholdMs(other.getTfAggregationThresholdMs());
         this.setGroupFields(GroupFields.copyOf(other.getGroupFields()));
@@ -2874,14 +2869,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         return this.queryExecutionForPageTimeout;
     }
 
-    public boolean isLazySetMechanismEnabled() {
-        return lazySetMechanismEnabled;
-    }
-
-    public void setLazySetMechanismEnabled(boolean lazySetMechanismEnabled) {
-        this.lazySetMechanismEnabled = lazySetMechanismEnabled;
-    }
-
     public int getDocAggregationThresholdMs() {
         return docAggregationThresholdMs;
     }
@@ -3209,7 +3196,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 isSeekingEventAggregation() == that.isSeekingEventAggregation() &&
                 getVisitorFunctionMaxWeight() == that.getVisitorFunctionMaxWeight() &&
                 getQueryExecutionForPageTimeout() == that.getQueryExecutionForPageTimeout() &&
-                isLazySetMechanismEnabled() == that.isLazySetMechanismEnabled() &&
                 getDocAggregationThresholdMs() == that.getDocAggregationThresholdMs() &&
                 getTfAggregationThresholdMs() == that.getTfAggregationThresholdMs() &&
                 getPruneQueryOptions() == that.getPruneQueryOptions() &&
@@ -3447,7 +3433,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 isSeekingEventAggregation(),
                 getVisitorFunctionMaxWeight(),
                 getQueryExecutionForPageTimeout(),
-                isLazySetMechanismEnabled(),
                 getDocAggregationThresholdMs(),
                 getTfAggregationThresholdMs(),
                 getPruneQueryOptions(),
