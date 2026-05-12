@@ -50,11 +50,19 @@ def _iter_poms() -> Iterable[Path]:
         yield pom
 
 
-def build_graph() -> Tuple[Dict[str, Path], Dict[str, List[str]]]:
-    """Return (artifactId -> project_dir, upstream -> [consumers])."""
+def build_graph() -> Tuple[Dict[str, Path], Dict[str, List[str]], Set[str]]:
+    """Return (artifactId -> project_dir, upstream -> [consumers], aggregators).
+
+    *aggregators* is the set of artifactIds whose POM declares ``<modules>``
+    (either at the top level or inside a ``<profile>``).  These multi-module
+    reactor POMs must not be released individually because their child modules
+    are already released as separate cascade entries; deploying the reactor
+    would attempt to re-publish those children and fail with a 409 Conflict.
+    """
     project_dirs: Dict[str, Path] = {}
     parents: Dict[str, str] = {}
     deps: Dict[str, Set[str]] = defaultdict(set)
+    aggregators: Set[str] = set()
 
     for pom in _iter_poms():
         root = ET.parse(pom).getroot()
@@ -75,6 +83,13 @@ def build_graph() -> Tuple[Dict[str, Path], Dict[str, List[str]]]:
         if parent_group == MS_GROUP_ID and parent_artifact:
             parents[artifact_id] = parent_artifact
 
+        # Detect multi-module aggregator POMs (top-level or inside profiles).
+        if root.find("m:modules/m:module", NS) is not None:
+            aggregators.add(artifact_id)
+        for profile in root.iter(f"{{{MAVEN_NS}}}profile"):
+            if profile.find("m:modules/m:module", NS) is not None:
+                aggregators.add(artifact_id)
+
         for dep in root.iter(f"{{{MAVEN_NS}}}dependency"):
             if _text(dep.find("m:groupId", NS)) != MS_GROUP_ID:
                 continue
@@ -94,7 +109,7 @@ def build_graph() -> Tuple[Dict[str, Path], Dict[str, List[str]]]:
     # Deterministic ordering of consumers per upstream.
     for k in consumers:
         consumers[k].sort()
-    return project_dirs, consumers
+    return project_dirs, consumers, aggregators
 
 
 def find_start(project_dirs: Dict[str, Path], starting: str) -> str:
@@ -159,13 +174,18 @@ def main(argv: List[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
 
-    project_dirs, consumers = build_graph()
+    project_dirs, consumers, aggregators = build_graph()
     start = find_start(project_dirs, args.starting_project)
     ordered = cascade(start, consumers)
 
+    # Exclude multi-module aggregator POMs from the release plan.
+    # They are kept in the graph so that traversal still reaches their
+    # transitive dependents, but releasing them would re-deploy child
+    # modules that are already released as individual cascade entries.
     payload = [
         {"artifactId": a, "path": str(project_dirs[a].relative_to(REPO_ROOT))}
         for a in ordered
+        if a not in aggregators
     ]
     if args.compact:
         json.dump(payload, sys.stdout, separators=(",", ":"))
