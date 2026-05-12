@@ -17,7 +17,7 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.annotations.VisibleForTesting;
 
-import datawave.ingest.util.cache.watch.AgeOffRuleLoader;
+import datawave.ingest.util.cache.watch.RuleConfig;
 
 /**
  * Formats a rule
@@ -45,23 +45,26 @@ public class AgeOffRuleFormatter {
     @VisibleForTesting
     void format(Writer writer) throws IOException {
 
-        AgeOffRuleLoader.RuleConfig ruleConfig = createRuleConfig(this.configuration);
+        RuleConfig ruleConfig = createRuleConfig(this.configuration);
 
         writer.write(transformToXmlString(ruleConfig));
     }
 
-    private static AgeOffRuleLoader.RuleConfig createRuleConfig(AgeOffRuleConfiguration configuration) throws IOException {
-        AgeOffRuleLoader.RuleConfig ruleConfig = new AgeOffRuleLoader.RuleConfig(configuration.getFilterClass().getName(), index++);
-        ruleConfig.label(configuration.getRuleLabel());
-        ruleConfig.setIsMerge(configuration.shouldMerge());
-        ruleConfig.ttlValue(configuration.getTtlDuration());
-        ruleConfig.ttlUnits(configuration.getTtlUnits());
-        ruleConfig.matchPattern(buildMatchPattern(configuration, configuration.getIndentation()));
-        ruleConfig.customElements(configuration.getCustomElements());
-        return ruleConfig;
+    private static RuleConfig createRuleConfig(AgeOffRuleConfiguration configuration) throws IOException {
+        // @formatter:off
+        RuleConfig.Builder builder = new RuleConfig.Builder(configuration.getFilterClass().getName(), index++)
+                .setLabel(configuration.getRuleLabel())
+                .setMerge(configuration.shouldMerge())
+                .setTtlValue(configuration.getTtlDuration())
+                .setTtlUnits(configuration.getTtlUnits())
+                .setMatchPattern(buildMatchPattern(configuration, configuration.getIndentation()))
+                .setCustomElements(configuration.getCustomElements());
+        // @formatter:on
+
+        return builder.build();
     }
 
-    private String transformToXmlString(AgeOffRuleLoader.RuleConfig ruleConfig) throws IOException {
+    private String transformToXmlString(RuleConfig ruleConfig) throws IOException {
         try {
             Transformer trans = initializeXmlTransformer();
 
