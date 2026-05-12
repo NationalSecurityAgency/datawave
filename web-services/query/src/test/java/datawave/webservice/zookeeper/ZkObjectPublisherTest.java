@@ -50,9 +50,7 @@ public class ZkObjectPublisherTest {
     private final List<QueryLimitConfiguration> configs = new ArrayList<>();
     private TestingServer server;
     private CuratorFramework client;
-
-    private static String serverIpAddress;
-
+    
     private static String causeNode;
     private static String statusNode;
     private static String errorsNode;
@@ -62,7 +60,7 @@ public class ZkObjectPublisherTest {
 
     @BeforeAll
     static void beforeAll() throws Exception {
-        serverIpAddress = InetAddress.getLocalHost().getHostAddress();
+        String serverIpAddress = InetAddress.getLocalHost().getHostAddress();
         causeNode = "/attempts/" + serverIpAddress + "/cause";
         statusNode = "/attempts/" + serverIpAddress + "/status";
         errorsNode = "/attempts/" + serverIpAddress + "/errors";
@@ -638,7 +636,7 @@ public class ZkObjectPublisherTest {
         assertStatus(ZkObjectPublishStatus.RELOAD_ERROR);
         assertTotalErrors(1);
         assertErrorMessage(0,
-                        "File /home/ubuntu/datawave-data/datawave/web-services/query/target/test-classes/queryLimits/unsupported_format.toml must be XML, JSON, or YAML");
+                        "File " + unsupportedFormatFile + " must be XML, JSON, or YAML");
         assertErrorDoesNotHaveStackTrace(0);
         assertTimeNodeHasRecentTime();
     }
