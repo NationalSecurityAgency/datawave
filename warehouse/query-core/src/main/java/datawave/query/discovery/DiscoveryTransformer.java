@@ -5,6 +5,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Writable;
@@ -32,7 +34,7 @@ public class DiscoveryTransformer extends BaseQueryLogicTransformer<DiscoveredTh
     private BaseQueryLogic<DiscoveredThing> logic = null;
     private QueryModel myQueryModel = null;
     private MarkingFunctions markingFunctions;
-    private ResponseObjectFactory responseObjectFactory;
+    private final ResponseObjectFactory responseObjectFactory;
 
     public DiscoveryTransformer(BaseQueryLogic<DiscoveredThing> logic, Query settings, QueryModel qm) {
         super(new MarkingFunctions.Default());
@@ -42,47 +44,54 @@ public class DiscoveryTransformer extends BaseQueryLogicTransformer<DiscoveredTh
         this.myQueryModel = qm;
     }
 
+    Function<String,Map<String,String>> markingsFromVisibility = x -> {
+        try {
+            return this.markingFunctions.translateFromColumnVisibility(new ColumnVisibility(x));
+        } catch (Exception e) {
+            throw new RuntimeException("could not parse to markings: " + x);
+        }
+    };
+
+    BiFunction<DiscoveredThing,Map<String,String>,List<FieldBase>> generateFieldList = (x, y) -> {
+        List<FieldBase> fields = new ArrayList<>();
+
+        fields.add(this.makeField("VALUE", y, "", 0L, x.getTerm()));
+        /**
+         * Added query model to alias FIELD, if DiscoveredThing::field both not NULL and not empty.
+         */
+        Optional<String> fieldOFThing = Optional.ofNullable(x.getField());
+        fieldOFThing.filter(i -> !i.isBlank()).ifPresent(i -> fields.add(this.makeField("FIELD", y, "", 0L, myQueryModel.aliasFieldNameReverseModel(i))));
+
+        fields.add(this.makeField("DATE", y, "", 0L, x.getDate()));
+        fields.add(this.makeField("DATA TYPE", y, "", 0L, x.getType()));
+
+        // If requested return counts separated by colvis, all counts by colvis could be > total record count
+        if (x.getCountsByColumnVisibility() != null && !x.getCountsByColumnVisibility().isEmpty()) {
+            for (Map.Entry<Writable,Writable> entry : x.getCountsByColumnVisibility().entrySet()) {
+                try {
+                    Map<String,String> eMarkings = this.markingFunctions.translateFromColumnVisibility(new ColumnVisibility(entry.getKey().toString()));
+                    fields.add(this.makeField("RECORD COUNT", new HashMap<>(), entry.getKey().toString(), 0L, entry.getValue().toString()));
+                } catch (Exception e) {
+                    throw new RuntimeException("could not parse to markings: " + x.getColumnVisibility());
+                }
+
+            }
+        } else {
+            fields.add(this.makeField("RECORD COUNT", y, "", 0L, Long.toString(x.getCount())));
+        }
+        return fields;
+    };
+
     @Override
     public EventBase transform(DiscoveredThing thing) {
         Preconditions.checkNotNull(thing, "Received a null object to transform!");
 
         EventBase event = this.responseObjectFactory.getEvent();
-        Map<String,String> markings;
-        try {
-            markings = this.markingFunctions.translateFromColumnVisibility(new ColumnVisibility(thing.getColumnVisibility()));
-        } catch (Exception e) {
-            throw new RuntimeException("could not parse to markings: " + thing.getColumnVisibility());
-        }
+
+        Map<String,String> markings = markingsFromVisibility.apply(thing.getColumnVisibility());
         event.setMarkings(markings);
 
-        List<FieldBase> fields = new ArrayList<>();
-
-        fields.add(this.makeField("VALUE", markings, "", 0L, thing.getTerm()));
-        /**
-         * Added query model to alias FIELD, if DiscoveredThing::field both not NULL and not empty.
-         */
-        Optional<String> fieldOFThing = Optional.ofNullable(thing.getField());
-        fieldOFThing.filter(i -> !i.isBlank())
-                        .ifPresent(i -> fields.add(this.makeField("FIELD", markings, "", 0L, myQueryModel.aliasFieldNameReverseModel(i))));
-
-        fields.add(this.makeField("DATE", markings, "", 0L, thing.getDate()));
-        fields.add(this.makeField("DATA TYPE", markings, "", 0L, thing.getType()));
-
-        // If requested return counts separated by colvis, all counts by colvis could be > total record count
-        if (thing.getCountsByColumnVisibility() != null && !thing.getCountsByColumnVisibility().isEmpty()) {
-            for (Map.Entry<Writable,Writable> entry : thing.getCountsByColumnVisibility().entrySet()) {
-                try {
-                    Map<String,String> eMarkings = this.markingFunctions.translateFromColumnVisibility(new ColumnVisibility(entry.getKey().toString()));
-                    fields.add(this.makeField("RECORD COUNT", new HashMap<>(), entry.getKey().toString(), 0L, entry.getValue().toString()));
-                } catch (Exception e) {
-                    throw new RuntimeException("could not parse to markings: " + thing.getColumnVisibility());
-                }
-
-            }
-        } else {
-            fields.add(this.makeField("RECORD COUNT", markings, "", 0L, Long.toString(thing.getCount())));
-        }
-
+        List<FieldBase> fields = generateFieldList.apply(thing, markings);
         event.setFields(fields);
         event.setSizeInBytes(fields.size() * 6L);
 

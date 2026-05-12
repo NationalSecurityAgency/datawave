@@ -1,7 +1,17 @@
 package datawave.query.discovery;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.accumulo.core.client.AccumuloClient;
@@ -36,8 +46,6 @@ import datawave.query.MockAccumuloRecordWriter;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.util.MetadataHelperFactory;
 import datawave.util.TableName;
-
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class DiscoveryLogicTest {
 
@@ -242,8 +250,9 @@ public class DiscoveryLogicTest {
         while (iterator.hasNext()) {
             DiscoveredThing dtee = iterator.next();
             actual.add(dtvoct.apply(dtee));
-            // actual.add(dtvoct.apply(iterator.next()));
-            // actual.add(iterator.next());
+
+            //actual.add(dtvoct.apply(iterator.next()));
+            //actual.add(iterator.next());
         }
 
         Assertions.assertThat(actual).hasSize(expected.size());
@@ -536,7 +545,7 @@ public class DiscoveryLogicTest {
     }
 
     @Test
-    public void test() {
+    public void testAccumuloCoreDataRange() {
         Key start = new Key("bbc");
         Key stop = new Key("bbc\u0000");
         Range range = new Range(start, true, stop, false);
@@ -611,13 +620,6 @@ public class DiscoveryLogicTest {
 
         givenParameter(DiscoveryLogic.SUM_COUNTS, "true");
         givenParameter(DiscoveryLogic.VALUES_ONLY, "true");
-
-        // expect(new DiscoveredThing("onyx", "POKEMON", "csv", "20130101", "FOO", 100L, new MapWritable()));
-        // expect(new DiscoveredThing("onyx", "POKEMON", "csv", "20130102", "FOO", 10L, new MapWritable()));
-        // expect(new DiscoveredThing("onyx", "POKEMON", "csv", "20130103", "FOO", 1L, new MapWritable()));
-        // expect(new DiscoveredThing("onyx", "ROCK", "csv", "20130101", "FOO", 1L, new MapWritable()));
-        // expect(new DiscoveredThing("onyx", "ROCK", "csv", "20130102", "FOO", 3L, new MapWritable()));
-        // expect(new DiscoveredThing("onyx", "ROCK", "csv", "20130103", "FOO", 3L, new MapWritable()));
 
         expect(new DiscoveredThing("onyx", "", "", "", "FOO", 0L, new MapWritable()));
         expect(new DiscoveredThing("onyx", "", "", "", "FOO", 0L, new MapWritable()));
