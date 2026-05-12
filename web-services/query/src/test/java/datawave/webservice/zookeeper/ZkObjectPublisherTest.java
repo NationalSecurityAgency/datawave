@@ -50,7 +50,7 @@ public class ZkObjectPublisherTest {
     private final List<QueryLimitConfiguration> configs = new ArrayList<>();
     private TestingServer server;
     private CuratorFramework client;
-    
+
     private static String causeNode;
     private static String statusNode;
     private static String errorsNode;
@@ -635,8 +635,7 @@ public class ZkObjectPublisherTest {
         assertCause(ZkObjectPublishCause.TRIGGER_NODE_MODIFIED);
         assertStatus(ZkObjectPublishStatus.RELOAD_ERROR);
         assertTotalErrors(1);
-        assertErrorMessage(0,
-                        "File " + unsupportedFormatFile + " must be XML, JSON, or YAML");
+        assertErrorMessage(0, "File " + unsupportedFormatFile + " must be XML, JSON, or YAML");
         assertErrorDoesNotHaveStackTrace(0);
         assertTimeNodeHasRecentTime();
     }
