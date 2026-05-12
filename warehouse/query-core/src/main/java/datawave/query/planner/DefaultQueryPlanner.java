@@ -2462,13 +2462,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable, Auto
 
             addOption(cfg, QueryOptions.CONTENT_EXPANSION_FIELDS, getContentExpansionFields(), false);
 
-            if (config.isDebugMultithreadedSources()) {
-                addOption(cfg, QueryOptions.DEBUG_MULTITHREADED_SOURCES, Boolean.toString(config.isDebugMultithreadedSources()), false);
-            }
-
-            if (config.isLimitFieldsPreQueryEvaluation()) {
-                addOption(cfg, QueryOptions.LIMIT_FIELDS_PRE_QUERY_EVALUATION, Boolean.toString(config.isLimitFieldsPreQueryEvaluation()), false);
-            }
+            addOption(cfg, QueryOptions.DEBUG_MULTITHREADED_SOURCES, Boolean.toString(config.isDebugMultithreadedSources()), false);
+            addOption(cfg, QueryOptions.LIMIT_FIELDS_PRE_QUERY_EVALUATION, Boolean.toString(config.isLimitFieldsPreQueryEvaluation()), false);
 
             if (config.getLimitFieldsField() != null) {
                 addOption(cfg, QueryOptions.LIMIT_FIELDS_FIELD, config.getLimitFieldsField(), false);
@@ -2771,14 +2766,10 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable, Auto
         addOption(cfg, QueryOptions.FILTER_MASKED_VALUES, Boolean.toString(config.getFilterMaskedValues()), false);
 
         // Include the EVENT_DATATYPE as a field
-        if (config.getIncludeDataTypeAsField()) {
-            addOption(cfg, QueryOptions.INCLUDE_DATATYPE, Boolean.toString(true), false);
-        }
+        addOption(cfg, QueryOptions.INCLUDE_DATATYPE, Boolean.toString(config.getIncludeDataTypeAsField()), false);
 
         // Include the RECORD_ID as a field
-        if (!config.getIncludeRecordId()) {
-            addOption(cfg, QueryOptions.INCLUDE_RECORD_ID, Boolean.toString(false), false);
-        }
+        addOption(cfg, QueryOptions.INCLUDE_RECORD_ID, Boolean.toString(config.getIncludeRecordId()), false);
 
         // Conditionally include CHILD_COUNT, DESCENDANT_COUNT, HAS_CHILDREN
         // and/or PARENT_UID fields, plus

@@ -2496,7 +2496,10 @@ public class QueryOptions implements OptionDescriber {
 
     private static final Joiner COMMA_JOINER = Joiner.on(",").skipNulls();
 
-    // Map of class strings to DefaultOptions implementations.
+    /**
+     * Cache of default option values per QueryOptions subclass. Keyed by fully-qualified class name, lazily populated by {@link #getDefaultOptions(String)}.
+     * Used by {@link #addOption} to omit options whose values match the defaults, reducing iterator setting size.
+     */
     protected static final Map<String,DefaultOptions> defaultOptionsMap = new HashMap<>();
 
     static {
@@ -2658,7 +2661,9 @@ public class QueryOptions implements OptionDescriber {
     }
 
     /**
-     * Add an option to the given iterator setting. The value will be converted to a string using the appropriate method based on the type of the value.
+     * Add an option to the given iterator setting. The value will be converted to a string based on its type (Boolean, Integer, Collection, Enum, etc.). If the
+     * value matches the default for the iterator's class (as defined by {@link #createDefaultOptions()}), the option is removed from the setting instead of
+     * added. This keeps iterator settings compact by only including non-default values.
      *
      * @param setting
      *            The iterator setting to add the option to.
@@ -2729,6 +2734,14 @@ public class QueryOptions implements OptionDescriber {
         setting.addOption(option, valueString);
     }
 
+    /**
+     * Immutable container of default option values for a QueryOptions class. Used by {@link #addOption} to determine whether an option value matches the
+     * default and can be omitted from the iterator setting. Collection-typed values are stored as unmodifiable collections to ensure consistent equality
+     * checks.
+     * <p>
+     * Instances are created via {@link #createDefaultOptions()} and cached in {@link #defaultOptionsMap}. Subclasses of QueryOptions should override
+     * {@code createDefaultOptions()} to register their own defaults.
+     */
     protected static final class DefaultOptions {
 
         private final Map<String,Object> defaultValues;
@@ -2737,14 +2750,33 @@ public class QueryOptions implements OptionDescriber {
             this.defaultValues = MapUtils.unmodifiableMap(new HashMap<>());
         }
 
+        /**
+         * @param defaultValues
+         *            the map of option names to their default values
+         */
         public DefaultOptions(Map<String,Object> defaultValues) {
             this.defaultValues = MapUtils.unmodifiableMap(defaultValues);
         }
 
+        /**
+         * @param option
+         *            the option name
+         * @return true if a default value is registered for the given option
+         */
         public boolean hasDefaultValue(String option) {
             return defaultValues.containsKey(option);
         }
 
+        /**
+         * Check whether the given value matches the registered default for an option. Collection values are wrapped as unmodifiable before comparison to match
+         * the storage format.
+         *
+         * @param option
+         *            the option name
+         * @param value
+         *            the value to compare against the default
+         * @return true if a default exists and equals the given value
+         */
         public boolean equalsDefaultValue(String option, Object value) {
             if (hasDefaultValue(option)) {
                 Object defaultValue = defaultValues.get(option);
@@ -2756,6 +2788,9 @@ public class QueryOptions implements OptionDescriber {
             return false;
         }
 
+        /**
+         * @return an immutable copy of the default values map
+         */
         public ImmutableMap<String,Object> getDefaultValues() {
             return ImmutableMap.copyOf(defaultValues);
         }
@@ -2764,6 +2799,9 @@ public class QueryOptions implements OptionDescriber {
             return new Builder();
         }
 
+        /**
+         * Builder for constructing {@link DefaultOptions} instances. Collection values are automatically wrapped as unmodifiable on insertion.
+         */
         protected static class Builder {
             private final Map<String,Object> values;
 
@@ -2771,6 +2809,15 @@ public class QueryOptions implements OptionDescriber {
                 values = new HashMap<>();
             }
 
+            /**
+             * Register a default value for an option. Collection values are wrapped as unmodifiable to ensure consistent equality semantics.
+             *
+             * @param option
+             *            the option name
+             * @param value
+             *            the default value
+             * @return this builder
+             */
             public Builder putDefaultValue(String option, Object value) {
                 if (value.getClass().isAssignableFrom(Collection.class)) {
                     value = Collections.unmodifiableCollection((Collection<?>) value);
@@ -2779,6 +2826,13 @@ public class QueryOptions implements OptionDescriber {
                 return this;
             }
 
+            /**
+             * Register multiple default values. Each entry is processed through {@link #putDefaultValue}.
+             *
+             * @param values
+             *            map of option names to default values
+             * @return this builder
+             */
             public Builder putDefaultValues(Map<String,Object> values) {
                 values.forEach(this::putDefaultValue);
                 return this;
@@ -2799,6 +2853,9 @@ public class QueryOptions implements OptionDescriber {
                 return false;
             }
 
+            /**
+             * @return an immutable {@link DefaultOptions} instance
+             */
             public DefaultOptions build() {
                 return new DefaultOptions(values);
             }
