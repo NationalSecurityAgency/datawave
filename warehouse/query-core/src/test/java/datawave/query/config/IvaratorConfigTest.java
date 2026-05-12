@@ -1,7 +1,7 @@
 package datawave.query.config;
 
-import static org.junit.jupiter.api.assertEquals;
-import static org.junit.jupiter.api.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 import org.junit.jupiter.api.Test;
 
