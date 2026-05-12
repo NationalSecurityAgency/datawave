@@ -34,6 +34,8 @@ import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
 import datawave.data.ColumnFamilyConstants;
+import datawave.data.hash.HashUID;
+import datawave.data.hash.UID;
 import datawave.ingest.protobuf.Uid;
 import datawave.marking.MarkingFunctions;
 import datawave.query.QueryTestTableHelper;
@@ -251,7 +253,7 @@ class MutableMetadataHandlerTestSupport {
     /**
      * Asserts that the shard-table term-frequency row exists for the token and derived field name.
      */
-    void assertTermFrequencyRowPresent(String token, String fieldName, String visibility) throws Exception {
+    void assertTermFrequencyRowPresent(String fieldName, String token, String visibility) throws Exception {
         assertEntryPresent(TableName.SHARD, SHARD_ID, ColumnFamilyConstants.COLF_TF.toString(), termFrequencyQualifier(token, fieldName), visibility,
                         CAPONE_EVENT_TIMESTAMP, NULL_VALUE);
     }
@@ -259,7 +261,7 @@ class MutableMetadataHandlerTestSupport {
     /**
      * Asserts that the shard-table term-frequency row has been removed for the token and derived field name.
      */
-    void assertTermFrequencyRowAbsent(String token, String fieldName) throws Exception {
+    void assertTermFrequencyRowAbsent(String fieldName, String token) throws Exception {
         assertEntryAbsent(TableName.SHARD, SHARD_ID, ColumnFamilyConstants.COLF_TF.toString(), termFrequencyQualifier(token, fieldName));
     }
 
@@ -416,10 +418,27 @@ class MutableMetadataHandlerTestSupport {
      * Sets up a token field (e.g., QUOTE_TOKEN) with field-index, term-frequency, and global-index rows.
      */
     void setupTokenField(String tokenFieldName, String tokenValue) throws Exception {
+        setupTokenField(tokenFieldName, tokenValue, tokenFieldName);
+    }
+
+    /**
+     * Sets up a token field where the tf row may use a different field name than the fi/global-index rows, e.g. QUOTE_TOKEN.<hash>.
+     */
+    void setupTokenField(String tokenFieldName, String tokenValue, String termFrequencyFieldName) throws Exception {
         put(TableName.SHARD, SHARD_ID, FIELD_INDEX_PREFIX + tokenFieldName, fieldIndexQualifier(tokenValue), VIS_ALL, CAPONE_EVENT_TIMESTAMP, NULL_VALUE);
-        put(TableName.SHARD, SHARD_ID, ColumnFamilyConstants.COLF_TF.toString(), termFrequencyQualifier(tokenValue, tokenFieldName), VIS_ALL,
+        put(TableName.SHARD, SHARD_ID, ColumnFamilyConstants.COLF_TF.toString(), termFrequencyQualifier(tokenValue, termFrequencyFieldName), VIS_ALL,
                         CAPONE_EVENT_TIMESTAMP, NULL_VALUE);
         put(TableName.SHARD_INDEX, tokenValue, tokenFieldName, globalIndexQualifier(), VIS_ALL, DAY_TIMESTAMP, uidListValue(CAPONE_UID, 1));
+    }
+
+    static String contentContextField(String fieldName, String content) {
+        return fieldName + "." + contentContextHash(content);
+    }
+
+    static String contentContextHash(String content) {
+        UID uid = HashUID.builder().newId(content);
+        String baseUid = uid.getBaseUid();
+        return baseUid.substring(0, baseUid.indexOf('.'));
     }
 
     /**
