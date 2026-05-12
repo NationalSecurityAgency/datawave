@@ -2,6 +2,7 @@ package datawave.data.normalizer;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -10,7 +11,6 @@ import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.regex.Pattern;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 public class NumberNormalizerTest {
@@ -92,14 +92,14 @@ public class NumberNormalizerTest {
     }
 
     private void assertNormalizeResult(String input, String expected) {
-        assertEquals(normalizer.normalize(input), expected);
+        assertEquals(expected, normalizer.normalize(input));
     }
 
     private void assertComparativelyConsecutive(String... values) {
         for (int i = 0; i < values.length - 1; i++) {
             int compare = values[i].compareTo(values[i + 1]);
             if (compare > 0) {
-                Assertions.fail("Expected values to be consecutive, but encountered " + values[i] + " which is greater than " + values[i + 1]);
+                fail("Expected values to be consecutive, but encountered " + values[i] + " which is greater than " + values[i + 1]);
             }
         }
     }

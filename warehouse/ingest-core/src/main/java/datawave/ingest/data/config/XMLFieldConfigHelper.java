@@ -40,6 +40,7 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
     private boolean noMatchReverseTokenized = false;
     private String noMatchFieldType = null;
 
+    private final String configSource;
     private final Map<String,FieldInfo> knownFields = new HashMap<>();
     private TreeMap<Matcher,String> patterns = new TreeMap<>(new BaseIngestHelper.MatcherComparator());
 
@@ -72,7 +73,7 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
         try (InputStream in = getAsStream(fieldConfigFile)) {
             if (in != null) {
                 log.info("Loading field configuration from configuration file: {}", fieldConfigFile);
-                return new XMLFieldConfigHelper(in, baseIngestHelper);
+                return new XMLFieldConfigHelper(in, baseIngestHelper, fieldConfigFile);
             } else {
                 throw new IllegalArgumentException("Field config file '" + fieldConfigFile + "' not found!");
             }
@@ -108,6 +109,12 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
     }
 
     public XMLFieldConfigHelper(InputStream in, BaseIngestHelper helper) throws ParserConfigurationException, SAXException, IOException {
+        this(in, helper, null);
+    }
+
+    public XMLFieldConfigHelper(InputStream in, BaseIngestHelper helper, String source) throws ParserConfigurationException, SAXException, IOException {
+        this.configSource = source;
+
         final FieldConfigHandler handler = new FieldConfigHandler(this, helper);
         SAXParser parser = parserFactory.newSAXParser();
         parser.parse(in, handler);
@@ -118,6 +125,11 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
     public boolean addKnownField(String fieldName, FieldInfo info) {
         // must track the fields we've seen so we can properly apply default rules.
         return (knownFields.put(fieldName, info) == null);
+    }
+
+    @Override
+    public String describeSource() {
+        return configSource;
     }
 
     public boolean addKnownFieldPattern(String fieldName, FieldInfo info, Matcher pattern) {

@@ -1,5 +1,6 @@
 package datawave.query.tables.keyword.extractor;
 
+import static datawave.query.function.JexlEvaluation.HIT_TERM_FIELD;
 import static datawave.query.jexl.JexlASTHelper.deconstructIdentifier;
 
 import java.util.ArrayList;
@@ -7,6 +8,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import org.apache.accumulo.core.data.Key;
@@ -25,9 +27,9 @@ public class FieldedTagCloudInputExtractor implements TagCloudInputExtractor {
     private static final double DEFAULT_MIN_SCORE = .6;
 
     private String category;
+    private String subType;
     private List<String> fields;
     private Map<String,String> fieldToScoreField = new HashMap<>();
-    // TODO-crwill9 ehh
     private String defaultScore = DEFAULT_SCORE;
     private double minScore = DEFAULT_MIN_SCORE;
     private TagCloudPartition partition;
@@ -36,6 +38,11 @@ public class FieldedTagCloudInputExtractor implements TagCloudInputExtractor {
 
     @Override
     public void extract(Key source, Map<String,Attribute<? extends Comparable<?>>> documentData) {
+        if (fields == null) {
+            log.warn("no fields configured for extractor: " + category + "." + subType + ", skipping");
+            return;
+        }
+
         String docId = getDocId(source);
 
         Map<String,Double> extractedFields = new HashMap<>();
@@ -67,10 +74,30 @@ public class FieldedTagCloudInputExtractor implements TagCloudInputExtractor {
             }
         }
 
-        TagCloudInput tagCloudInput = new TagCloudInput(docId, source.getColumnVisibility().toString(), extractedFields, Map.of("type", category));
+        if (extractedFields.isEmpty()) {
+            // nothing extracted, do not generate anything
+            return;
+        }
+
+        Map<String,String> metadata = new HashMap<>();
+        metadata.put("type", category);
+        if (subType != null) {
+            metadata.put("subType", subType);
+        }
+
+        String docIdFromHitTerm = getDocIdFromHitTerm(documentData);
+        if (docIdFromHitTerm == null) {
+            docIdFromHitTerm = docId;
+            log.debug("unable to locate id for document in " + HIT_TERM_FIELD + " using " + docId);
+        }
+        TagCloudInput tagCloudInput = new TagCloudInput(docIdFromHitTerm, source.getColumnVisibility().toString(), extractedFields, metadata);
 
         if (this.partition == null) {
-            this.partition = new TagCloudPartition(this.category, this.category, TagCloudPartition.ScoreType.HIGHER_IS_BETTER, new ArrayList<>());
+            String logicalPartition = category;
+            if (subType != null) {
+                logicalPartition += "." + subType;
+            }
+            this.partition = new TagCloudPartition(logicalPartition, this.category, TagCloudPartition.ScoreType.HIGHER_IS_BETTER, new ArrayList<>());
         }
 
         this.partition.addInput(tagCloudInput);
@@ -94,6 +121,35 @@ public class FieldedTagCloudInputExtractor implements TagCloudInputExtractor {
     @Override
     public TagCloudInputTransformer<TagCloudPartition> getInputTransformer() {
         return TagCloudPartitionTransformer.getInstance();
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (!(other instanceof FieldedTagCloudInputExtractor)) {
+            return false;
+        }
+
+        // partition excluded because it is transient
+        return Objects.equals(fields, ((FieldedTagCloudInputExtractor) other).fields)
+                        && Objects.equals(fieldToScoreField, ((FieldedTagCloudInputExtractor) other).fieldToScoreField)
+                        && Objects.equals(minScore, ((FieldedTagCloudInputExtractor) other).minScore)
+                        && Objects.equals(category, ((FieldedTagCloudInputExtractor) other).category)
+                        && Objects.equals(subType, ((FieldedTagCloudInputExtractor) other).subType);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(fields, fieldToScoreField, minScore, category, subType);
+    }
+
+    private String getDocIdFromHitTerm(Map<String,Attribute<? extends Comparable<?>>> documentData) {
+        Attribute<?> hitTermAttribute = documentData.get(HIT_TERM_FIELD);
+        if (hitTermAttribute == null) {
+            return null;
+        }
+
+        List<String> identifiers = KeywordQueryUtil.getStringValuesFromAttribute(hitTermAttribute);
+        return KeywordQueryUtil.chooseBestIdentifier(identifiers);
     }
 
     /**
@@ -177,5 +233,13 @@ public class FieldedTagCloudInputExtractor implements TagCloudInputExtractor {
 
     public double getMinScore() {
         return minScore;
+    }
+
+    public String getSubType() {
+        return subType;
+    }
+
+    public void setSubType(String subType) {
+        this.subType = subType;
     }
 }

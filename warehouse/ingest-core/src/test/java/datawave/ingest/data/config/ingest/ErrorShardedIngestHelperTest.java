@@ -1,11 +1,13 @@
 package datawave.ingest.data.config.ingest;
 
 import static datawave.ingest.data.config.ingest.BaseIngestHelper.INDEX_FIELDS;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Set;
 
 import org.apache.hadoop.conf.Configuration;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -71,14 +73,14 @@ class ErrorShardedIngestHelperTest {
         // With null activeDataType, checks union of ALL per-datatype error configs as a safe fallback.
         // error.xyz config has {XYZ_ERROR_A, XYZ_A}, so both should match.
         errorHelper.setActiveDataType(null);
-        Assertions.assertFalse(errorHelper.isIndexedField("UNINDEXED_FIELD"));
-        Assertions.assertTrue(errorHelper.isIndexedField("XYZ_A")); // in error.xyz config
-        Assertions.assertTrue(errorHelper.isIndexedField("XYZ_ERROR_A")); // in error.xyz config
+        assertFalse(errorHelper.isIndexedField("UNINDEXED_FIELD"));
+        assertTrue(errorHelper.isIndexedField("XYZ_A")); // in error.xyz config
+        assertTrue(errorHelper.isIndexedField("XYZ_ERROR_A")); // in error.xyz config
 
         errorHelper.setActiveDataType(TypeRegistry.getType("xyz"));
-        Assertions.assertFalse(errorHelper.isIndexedField("UNINDEXED_FIELD"));
-        Assertions.assertTrue(errorHelper.isIndexedField("XYZ_A"));
-        Assertions.assertTrue(errorHelper.isIndexedField("XYZ_ERROR_A"));
+        assertFalse(errorHelper.isIndexedField("UNINDEXED_FIELD"));
+        assertTrue(errorHelper.isIndexedField("XYZ_A"));
+        assertTrue(errorHelper.isIndexedField("XYZ_ERROR_A"));
 
     }
 
@@ -140,47 +142,47 @@ class ErrorShardedIngestHelperTest {
         // error.csv config has {CSV_ERROR_A, CSV_A}, error.json config has {JSON_ERROR_A, JSON_A},
         // base error config has {GLOB_ERROR_A, GLOB_A}.
         errorHelper.setActiveDataType(null);
-        Assertions.assertFalse(errorHelper.isIndexedField("UNINDEXED_FIELD"));
+        assertFalse(errorHelper.isIndexedField("UNINDEXED_FIELD"));
 
         // Fields from any per-datatype error config should be indexed
-        Assertions.assertTrue(errorHelper.isIndexedField("CSV_A")); // in error.csv config
-        Assertions.assertTrue(errorHelper.isIndexedField("JSON_A")); // in error.json config
-        Assertions.assertTrue(errorHelper.isIndexedField("CSV_ERROR_A")); // in error.csv config
-        Assertions.assertTrue(errorHelper.isIndexedField("JSON_ERROR_A")); // in error.json config
+        assertTrue(errorHelper.isIndexedField("CSV_A")); // in error.csv config
+        assertTrue(errorHelper.isIndexedField("JSON_A")); // in error.json config
+        assertTrue(errorHelper.isIndexedField("CSV_ERROR_A")); // in error.csv config
+        assertTrue(errorHelper.isIndexedField("JSON_ERROR_A")); // in error.json config
 
         // Base error index fields should also be indexed
-        Assertions.assertTrue(errorHelper.isIndexedField("GLOB_A"));
-        Assertions.assertTrue(errorHelper.isIndexedField("GLOB_ERROR_A"));
+        assertTrue(errorHelper.isIndexedField("GLOB_A"));
+        assertTrue(errorHelper.isIndexedField("GLOB_ERROR_A"));
 
         // --- CSV vs JSON DATA TYPE ---
         errorHelper.setActiveDataType(TypeRegistry.getType("csv"));
         // dt HAS been set, field IS NOT indexed on any datatype
-        Assertions.assertFalse(errorHelper.isIndexedField("UNINDEXED_FIELD"));
+        assertFalse(errorHelper.isIndexedField("UNINDEXED_FIELD"));
 
         // The following should use the ErrorShardedIngestHelper.isIndexedField() method instead of the general one in BaseIngestHelper.
 
         // dt HAS been set, field IS indexed as normal indexed field
-        Assertions.assertTrue(errorHelper.isIndexedField("CSV_A"));
-        Assertions.assertFalse(errorHelper.isIndexedField("JSON_A"));
+        assertTrue(errorHelper.isIndexedField("CSV_A"));
+        assertFalse(errorHelper.isIndexedField("JSON_A"));
 
         // dt HAS been set, field IS NOT indexed as normal indexed field, only as error indexed field
-        Assertions.assertTrue(errorHelper.isIndexedField("CSV_ERROR_A"));
-        Assertions.assertFalse(errorHelper.isIndexedField("JSON_ERROR_A"));
+        assertTrue(errorHelper.isIndexedField("CSV_ERROR_A"));
+        assertFalse(errorHelper.isIndexedField("JSON_ERROR_A"));
 
         // --- JSON DATA TYPE ---
         errorHelper.setActiveDataType(TypeRegistry.getType("json"));
         // dt HAS been set, field IS NOT indexed on any datatype
-        Assertions.assertFalse(errorHelper.isIndexedField("UNINDEXED_FIELD"));
+        assertFalse(errorHelper.isIndexedField("UNINDEXED_FIELD"));
 
         // The following should use the ErrorShardedIngestHelper.isIndexedField() method instead of the general one in BaseIngestHelper.
 
         // dt HAS been set, field IS indexed as normal indexed field
-        Assertions.assertFalse(errorHelper.isIndexedField("CSV_A"));
-        Assertions.assertTrue(errorHelper.isIndexedField("JSON_A"));
+        assertFalse(errorHelper.isIndexedField("CSV_A"));
+        assertTrue(errorHelper.isIndexedField("JSON_A"));
 
         // dt HAS been set, field IS NOT indexed as normal indexed field, only as error indexed field
-        Assertions.assertFalse(errorHelper.isIndexedField("CSV_ERROR_A"));
-        Assertions.assertTrue(errorHelper.isIndexedField("JSON_ERROR_A"));
+        assertFalse(errorHelper.isIndexedField("CSV_ERROR_A"));
+        assertTrue(errorHelper.isIndexedField("JSON_ERROR_A"));
 
     }
 
@@ -210,14 +212,14 @@ class ErrorShardedIngestHelperTest {
     // // NULL dt
     // errorHelper.setActiveDataType(null);
     // // dt HAS NOT been set, index DOES NOT exist
-    // Assertions.assertFalse(errorHelper.isReverseIndexedField("UNINDEXED_FIELD"));
+    // assertFalse(errorHelper.isReverseIndexedField("UNINDEXED_FIELD"));
     //
     // // CSV dt
     // errorHelper.setActiveDataType(TypeRegistry.getType("csv"));
     // // dt HAS been set, index DOES NOT exist
-    // Assertions.assertFalse(errorHelper.isReverseIndexedField("UNINDEXED_FIELD"));
+    // assertFalse(errorHelper.isReverseIndexedField("UNINDEXED_FIELD"));
     // // dt HAS been set, dt index DOES exist
-    // Assertions.assertTrue(errorHelper.isReverseIndexedField("DT_B"));
+    // assertTrue(errorHelper.isReverseIndexedField("DT_B"));
     //
     // }
 
@@ -233,21 +235,21 @@ class ErrorShardedIngestHelperTest {
         ErrorShardedIngestHelper helper = new ErrorShardedIngestHelper();
         helper.setup(config);
 
-        Assertions.assertEquals(Set.of("FOO", "BAR", "HAT"), helper.getIndexedFields());
-        Assertions.assertFalse(helper.hasIndexDisallowlist());
+        assertEquals(Set.of("FOO", "BAR", "HAT"), helper.getIndexedFields());
+        assertFalse(helper.hasIndexDisallowlist());
 
         // The fields FOO, BAR, and HAT should be considered indexed fields.
-        Assertions.assertTrue(helper.isIndexedField("FOO"));
-        Assertions.assertTrue(helper.isIndexedField("BAR"));
-        Assertions.assertTrue(helper.isIndexedField("HAT"));
+        assertTrue(helper.isIndexedField("FOO"));
+        assertTrue(helper.isIndexedField("BAR"));
+        assertTrue(helper.isIndexedField("HAT"));
 
-        Assertions.assertEquals(Set.of("APPLE", "BANANA", "KIWI"), helper.getReverseIndexedFields());
-        Assertions.assertFalse(helper.hasReverseIndexDisallowlist());
+        assertEquals(Set.of("APPLE", "BANANA", "KIWI"), helper.getReverseIndexedFields());
+        assertFalse(helper.hasReverseIndexDisallowlist());
 
         // The fields APPLE, BANANA, and KIWI should be considered reverse indexed fields.
-        Assertions.assertTrue(helper.isReverseIndexedField("APPLE"));
-        Assertions.assertTrue(helper.isReverseIndexedField("BANANA"));
-        Assertions.assertTrue(helper.isReverseIndexedField("KIWI"));
+        assertTrue(helper.isReverseIndexedField("APPLE"));
+        assertTrue(helper.isReverseIndexedField("BANANA"));
+        assertTrue(helper.isReverseIndexedField("KIWI"));
     }
 
     /**
@@ -262,22 +264,22 @@ class ErrorShardedIngestHelperTest {
         ErrorShardedIngestHelper helper = new ErrorShardedIngestHelper();
         helper.setup(config);
 
-        Assertions.assertEquals(Set.of("FOO", "BAR", "HAT"), helper.getIndexedFields());
-        Assertions.assertTrue(helper.hasIndexDisallowlist());
+        assertEquals(Set.of("FOO", "BAR", "HAT"), helper.getIndexedFields());
+        assertTrue(helper.hasIndexDisallowlist());
 
         // Although getIndexedFields() will return FOO, BAR, and HAT, they should not be considered indexed fields due to the disallow list. Verify this as a
         // sanity check.
-        Assertions.assertFalse(helper.isIndexedField("FOO"));
-        Assertions.assertFalse(helper.isIndexedField("BAR"));
-        Assertions.assertFalse(helper.isIndexedField("HAT"));
+        assertFalse(helper.isIndexedField("FOO"));
+        assertFalse(helper.isIndexedField("BAR"));
+        assertFalse(helper.isIndexedField("HAT"));
 
-        Assertions.assertEquals(Set.of("APPLE", "BANANA", "KIWI"), helper.getReverseIndexedFields());
-        Assertions.assertTrue(helper.hasReverseIndexDisallowlist());
+        assertEquals(Set.of("APPLE", "BANANA", "KIWI"), helper.getReverseIndexedFields());
+        assertTrue(helper.hasReverseIndexDisallowlist());
 
         // Repeat the sanity check for APPLE, BANANA, and KIWI as reverse indexed fields.
-        Assertions.assertFalse(helper.isReverseIndexedField("APPLE"));
-        Assertions.assertFalse(helper.isReverseIndexedField("BANANA"));
-        Assertions.assertFalse(helper.isReverseIndexedField("KIWI"));
+        assertFalse(helper.isReverseIndexedField("APPLE"));
+        assertFalse(helper.isReverseIndexedField("BANANA"));
+        assertFalse(helper.isReverseIndexedField("KIWI"));
     }
 
     private Configuration getBaseConfig() {

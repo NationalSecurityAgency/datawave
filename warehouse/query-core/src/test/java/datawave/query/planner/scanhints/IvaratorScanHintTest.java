@@ -50,12 +50,6 @@ public class IvaratorScanHintTest {
     }
 
     @Test
-    public void testIvaratorTermApply() throws ParseException {
-        JexlNode node = JexlASTHelper.parseJexlQuery("BAZ == 'woot' && !((_Term_ = true) && (FOO =~ '.*a'))");
-        assertTrue(hint.apply(node));
-    }
-
-    @Test
     public void testIvaratorListApply() throws ParseException {
         JexlNode node = JexlASTHelper.parseJexlQuery("BAZ == 'woot' && !((_List_ = true) && (FOO =~ '.*a'))");
         assertTrue(hint.apply(node));

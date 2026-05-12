@@ -18,9 +18,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import datawave.query.util.sortedset.ByteArrayComparator;
-import datawave.query.util.sortedset.MultiSetBackedSortedSet;
-
 public class MultiSetBackedSortedSetTest {
     private byte[][] data = null;
     private int[] sortedOrder = null;
