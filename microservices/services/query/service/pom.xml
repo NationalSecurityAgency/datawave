@@ -27,7 +27,7 @@
         <version.datawave>7.33.1</version.datawave>
         <version.datawave.audit-api>4.0.3-test-cascade-8</version.datawave.audit-api>
         <version.datawave.authorization-api>4.0.4-accumulo4</version.datawave.authorization-api>
-        <version.datawave.hazelcast-common>4.0.4</version.datawave.hazelcast-common>
+        <version.datawave.hazelcast-common>4.0.5-test-cascade-8</version.datawave.hazelcast-common>
         <version.datawave.query-api>1.0.2-test-cascade-8</version.datawave.query-api>
         <version.datawave.query-metric-api>4.1.4-test-cascade-8</version.datawave.query-metric-api>
         <version.datawave.starter>4.0.8-test-cascade-8</version.datawave.starter>
