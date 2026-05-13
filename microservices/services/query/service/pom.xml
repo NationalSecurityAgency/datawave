@@ -31,7 +31,7 @@
         <version.datawave.query-api>1.0.2-test-cascade-8</version.datawave.query-api>
         <version.datawave.query-metric-api>4.1.4-test-cascade-8</version.datawave.query-metric-api>
         <version.datawave.starter>4.0.8-test-cascade-8</version.datawave.starter>
-        <version.datawave.starter-audit>4.0.5</version.datawave.starter-audit>
+        <version.datawave.starter-audit>4.0.6-test-cascade-8</version.datawave.starter-audit>
         <version.datawave.starter-cached-results>1.0.12</version.datawave.starter-cached-results>
         <version.datawave.starter-query>1.0.10</version.datawave.starter-query>
         <version.datawave.starter-query-metric>3.0.5</version.datawave.starter-query-metric>
