@@ -402,7 +402,7 @@ public class AnnotationDataAccessTest {
         // Note: if delete returns null mutation, writer.addMutation is called with null which throws
         try {
             dao.delete(shard, dataType, uid, annotationId);
-            // If we get here, the delete handled empty results correctly
+            // If we get here, delete handled empty results correctly
         } catch (IllegalArgumentException e) {
             // This is expected if mutationAdapter returns null and writer.addMutation is called with null
             // The implementation should be fixed to check for null mutations

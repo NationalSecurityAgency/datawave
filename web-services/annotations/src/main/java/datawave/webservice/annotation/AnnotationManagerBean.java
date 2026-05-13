@@ -261,8 +261,7 @@ public class AnnotationManagerBean implements AnnotationManager {
         final RequestContext context = new RequestContext(config, ctx, connectionFactory, accumuloConnectionRequestBean, responseObjectFactory);
         try {
             final Annotation rawAnnotation = AnnotationJsonUtils.annotationFromJson(body);
-            final Validator<Annotation> validator = AnnotationValidators.getAnnotationValidator();
-            final Validator.ValidationState<Annotation> validationState = validator.check(rawAnnotation);
+            final Validator.ValidationState<Annotation> validationState = AnnotationValidators.checkAnnotation(rawAnnotation);
             if (!validationState.isValid()) {
                 final String message = String.format("Invalid annotation json: %s", validationState.getErrors());
                 log.info(message);
@@ -327,8 +326,7 @@ public class AnnotationManagerBean implements AnnotationManager {
         final RequestContext context = new RequestContext(config, ctx, connectionFactory, accumuloConnectionRequestBean, responseObjectFactory);
         try {
             final Annotation rawAnnotation = AnnotationJsonUtils.annotationFromJson(body);
-            final Validator<Annotation> validator = AnnotationValidators.getAnnotationValidator();
-            final Validator.ValidationState<Annotation> validationState = validator.check(rawAnnotation);
+            final Validator.ValidationState<Annotation> validationState = AnnotationValidators.checkAnnotationUpdate(rawAnnotation);
             if (!validationState.isValid()) {
                 final String message = String.format("Invalid annotation json: %s", validationState.getErrors());
                 log.info(message);
