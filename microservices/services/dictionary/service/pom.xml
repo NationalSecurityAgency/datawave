@@ -30,7 +30,7 @@
         <version.curator>5.2.0</version.curator>
         <version.datawave>7.33.1</version.datawave>
         <version.datawave.authorization-api>4.0.4-accumulo4</version.datawave.authorization-api>
-        <version.datawave.dictionary-api>4.0.6</version.datawave.dictionary-api>
+        <version.datawave.dictionary-api>4.0.7-test-cascade-8</version.datawave.dictionary-api>
         <version.datawave.starter>4.0.7</version.datawave.starter>
         <version.datawave.starter-metadata>3.0.4</version.datawave.starter-metadata>
         <version.guava>31.1-jre</version.guava>
