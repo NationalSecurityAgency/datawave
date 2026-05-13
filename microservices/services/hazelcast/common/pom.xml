@@ -18,7 +18,7 @@
     </scm>
     <properties>
         <version.datawave.starter>4.0.7</version.datawave.starter>
-        <version.datawave.starter-cache>4.0.2</version.datawave.starter-cache>
+        <version.datawave.starter-cache>4.0.3-test-cascade-8</version.datawave.starter-cache>
         <!-- dependency declared in datawave-microservice-parent, but the version can be overridden here -->
         <version.log4j>2.25.3</version.log4j>
         <!-- dependency declared in datawave-microservice-parent, but the version can be overridden here -->
