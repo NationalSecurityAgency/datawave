@@ -32,7 +32,7 @@
         <version.datawave.query-api>1.0.2-test-cascade-8</version.datawave.query-api>
         <version.datawave.query-metric-api>4.1.4-test-cascade-8</version.datawave.query-metric-api>
         <version.datawave.starter>4.0.8-test-cascade-8</version.datawave.starter>
-        <version.datawave.starter-metadata>3.0.4</version.datawave.starter-metadata>
+        <version.datawave.starter-metadata>3.0.5-test-cascade-8</version.datawave.starter-metadata>
         <version.datawave.starter-query-metric>3.0.5</version.datawave.starter-query-metric>
         <version.guava>31.1-jre</version.guava>
         <version.hadoop>3.3.4</version.hadoop>
