@@ -34,7 +34,7 @@
         <version.datawave.starter-audit>4.0.6-test-cascade-8</version.datawave.starter-audit>
         <version.datawave.starter-cached-results>1.0.12</version.datawave.starter-cached-results>
         <version.datawave.starter-query>1.0.10</version.datawave.starter-query>
-        <version.datawave.starter-query-metric>3.0.5</version.datawave.starter-query-metric>
+        <version.datawave.starter-query-metric>3.0.6-test-cascade-8</version.datawave.starter-query-metric>
         <version.guava>31.1-jre</version.guava>
         <version.hadoop>3.3.4</version.hadoop>
         <!-- version set in datawave-microservice-parent, but can be overridden here -->
