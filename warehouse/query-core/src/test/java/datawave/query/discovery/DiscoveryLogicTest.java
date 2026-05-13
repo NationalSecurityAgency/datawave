@@ -1,5 +1,6 @@
 package datawave.query.discovery;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.text.SimpleDateFormat;
@@ -30,11 +31,10 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.MapWritable;
 import org.apache.log4j.Logger;
-import org.assertj.core.api.Assertions;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.result.event.DefaultResponseObjectFactory;
@@ -62,16 +62,16 @@ public class DiscoveryLogicTest {
     private String query;
     private String startDate;
     private String endDate;
-    private Map<String,String> parameters = new HashMap<>();
+    private final Map<String,String> parameters = new HashMap<>();
 
     private final List<DiscoveredThing> expected = new ArrayList<>();
 
-    @BeforeClass
+    @BeforeAll
     public static void setUp() {
         System.setProperty(MetadataHelperFactory.ALL_AUTHS_PROPERTY, QUERY_AUTHS);
     }
 
-    @Before
+    @BeforeEach
     public void setup() throws Throwable {
         initClient();
         writeData();
@@ -222,7 +222,7 @@ public class DiscoveryLogicTest {
         logic.setMetadataHelperFactory(new MetadataHelperFactory());
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         query = null;
         startDate = null;
@@ -255,12 +255,12 @@ public class DiscoveryLogicTest {
             //actual.add(iterator.next());
         }
 
-        Assertions.assertThat(actual).hasSize(expected.size());
+        assertEquals(expected.size(),actual.size());
         for (int i = 0; i < expected.size(); i++) {
             DiscoveredThing actualThing = actual.get(i);
             DiscoveredThing expectedThing = expected.get(i);
-            Assertions.assertThat(actualThing).isEqualTo(expectedThing);
-            Assertions.assertThat(actualThing.getCountsByColumnVisibility()).isEqualTo(expectedThing.getCountsByColumnVisibility());
+            assertEquals(expectedThing,actualThing);
+            assertEquals(expectedThing.getCountsByColumnVisibility(),actualThing.getCountsByColumnVisibility());
         }
     }
 
