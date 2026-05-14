@@ -188,7 +188,7 @@ public class ActiveQueryTracker implements AutoCloseable {
 
         try (LockedZkClientDispatcher.LockedClient lockedClient = clientDispatcher.getLockedClient()) {
             CuratorFramework client = lockedClient.getClient();
-            return getTotalChildrenWithLock(client, getUserQueryLogicPath(userDn, queryLogic));
+            return getTotalChildren(client, getUserQueryLogicPath(userDn, queryLogic));
         }
     }
 
@@ -213,27 +213,7 @@ public class ActiveQueryTracker implements AutoCloseable {
 
         try (LockedZkClientDispatcher.LockedClient lockedClient = clientDispatcher.getLockedClient()) {
             CuratorFramework client = lockedClient.getClient();
-            return getTotalChildrenWithLock(client, getSystemQueryLogicPath(system, queryLogic));
-        }
-    }
-
-    /**
-     * Obtain a lock for the client and return the total children for the given path. If the path does not exist, 0 will be returned.
-     *
-     * @param client
-     *            the client
-     * @param path
-     *            the node path
-     * @return the total children
-     * @throws Exception
-     *             if an error occurs while scanning nodes
-     */
-    private int getTotalChildrenWithLock(CuratorFramework client, String path) throws Exception {
-        try {
-            return getTotalChildren(client, path);
-        } catch (Exception e) {
-            log.error("Failed to get total children for path " + path, e);
-            throw e;
+            return getTotalChildren(client, getSystemQueryLogicPath(system, queryLogic));
         }
     }
 
