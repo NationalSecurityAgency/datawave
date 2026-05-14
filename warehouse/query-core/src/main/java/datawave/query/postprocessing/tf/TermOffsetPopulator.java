@@ -44,6 +44,7 @@ import datawave.query.Constants;
 import datawave.query.attributes.Content;
 import datawave.query.attributes.Document;
 import datawave.query.data.parsers.TermFrequencyKey;
+import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.TermFrequencyList;
 import datawave.query.jexl.visitors.LiteralNodeSubsetVisitor;
 import datawave.query.predicate.EventDataQueryFilter;
@@ -171,9 +172,8 @@ public class TermOffsetPopulator {
             try {
                 TermWeight.Info twInfo = TermWeight.Info.parseFrom(tfSource.getTopValue().get());
 
-                // if no content expansion fields then assume every field is permitted for unfielded content functions
-                boolean isContentExpansionField = contentExpansionFields == null || contentExpansionFields.isEmpty()
-                                || contentExpansionFields.contains(parser.getField());
+                // Check if this field is a content expansion field and is permitted for unfielded content functions (supports grouped field notation)
+                boolean isContentExpansionField = isContentExpansionField(parser.getField(), contentExpansionFields);
                 TermFrequencyList.Zone twZone = new TermFrequencyList.Zone(parser.getField(), isContentExpansionField, TermFrequencyList.getEventId(key));
 
                 for (int i = 0; i < twInfo.getTermOffsetCount(); i++) {
@@ -228,6 +228,37 @@ public class TermOffsetPopulator {
 
     public static boolean isContentFunctionTerm(String functionName) {
         return phraseFunctions.contains(functionName);
+    }
+
+    /**
+     * Check if a candidate field is a content expansion field. This method supports both exact field matches and grouped field notation (e.g., BODY.A1B2C3
+     * matches BODY).
+     *
+     * @param candidateField
+     *            the field to check
+     * @param contentExpansionFields
+     *            the set of content expansion fields
+     * @return true if the candidate field is a content expansion field or is a grouped field that matches a content expansion field
+     */
+    public static boolean isContentExpansionField(String candidateField, Set<String> contentExpansionFields) {
+        // if no content expansion fields then assume every field is permitted for unfielded content functions
+        if (contentExpansionFields == null || contentExpansionFields.isEmpty()) {
+            return true;
+        }
+
+        // exact match
+        if (contentExpansionFields.contains(candidateField)) {
+            return true;
+        }
+
+        // check for grouped field match (e.g., BODY.A1B2C3 matches BODY)
+        for (String contentExpansionField : contentExpansionFields) {
+            if (JexlASTHelper.isGroupedFieldMatch(contentExpansionField, candidateField)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

@@ -19,7 +19,7 @@
     <scm>
         <connection>scm:git:${project.scm.url}</connection>
         <developerConnection>scm:git:${project.scm.url}</developerConnection>
-        <tag>HEAD</tag>
+        <tag>microservices/microservice-parent-4.0.11-SNAPSHOT</tag>
         <url>https://github.com/NationalSecurityAgency/datawave</url>
     </scm>
     <distributionManagement>
