@@ -55,6 +55,32 @@ on:
         required: true
         default: "RC1"
         description: "Modifier to add to version (e. g. 1.0.0-RC1)."
+      bumpDownstream:
+        required: false
+        default: false
+        type: boolean
+        description: "After a successful release, run versions:update-parent and versions:update-properties to bump every consumer in microservices/ that depends on the released artifact, and push an auto-update commit. Used by the cascade workflow."
+  workflow_call:
+    inputs:
+      projectToRelease:
+        required: true
+        type: string
+      finalRelease:
+        required: true
+        type: boolean
+      modifier:
+        required: false
+        type: string
+        default: "RC1"
+      bumpDownstream:
+        required: false
+        type: boolean
+        default: false
+      branch:
+        required: false
+        type: string
+        default: ""
+        description: "Branch to release from. When empty, uses the triggering ref. Set by the cascade workflow for non-final releases."
 env:
   JAVA_VERSION: '11'
   JAVA_DISTRIBUTION: 'zulu' #This is the default on v1 of the action for 1.8
@@ -76,8 +102,12 @@ jobs:
       with:
         fetch-depth: 0
         token: ${{ secrets.GHCR_WRITE_ACCESS_TOKEN }}
-        
-    - name: Set up JDK ${{env.ACCUMULO_JAVA_VERSION}}
+        ref: ${{ inputs.branch || '' }}
+
+    - name: Fast-forward to branch tip
+      run: git pull --ff-only
+
+    - name: Set up JDK
       uses: actions/setup-java@v4
       with:
         distribution: ${{env.JAVA_DISTRIBUTION}}
@@ -93,31 +123,59 @@ jobs:
         registry: ${{ env.GITHUB_REGISTRY }}
         username: ${{ secrets.GHCR_WRITE_USER_NAME }}
         password: ${{ secrets.GHCR_WRITE_ACCESS_TOKEN }}
+    # When called from the cascade workflow, earlier projects in the cascade
+    # may have been released already.  Update this project's parent and
+    # inter-microservice dependency version properties so the release picks
+    # up the latest non-SNAPSHOT versions.
+    - name: Update dependencies from earlier cascade releases
+      if: ${{ inputs.bumpDownstream }}
+      run: |
+        set -euo pipefail
+        git config user.email "datawave@github.com"
+        git config user.name "${{ secrets.GHCR_WRITE_USER_NAME }}"
+        cd "${{ inputs.projectToRelease }}"
+        mvn --batch-mode --no-transfer-progress \
+            versions:update-parent versions:update-properties \
+            -DallowSnapshots=false \
+            -DallowMajorUpdates=false \
+            -DgenerateBackupPoms=false \
+            -Dincludes="gov.nsa.datawave.microservice:*"
+        cd "$GITHUB_WORKSPACE"
+        if git diff --quiet; then
+          echo "No dependency updates needed for ${{ inputs.projectToRelease }}."
+        else
+          git add -A
+          git commit -m "auto-update: update deps for ${{ inputs.projectToRelease }}"
+          git push
+        fi
     - name: Determine release version
       id: version
       run: |
-        cd "${{ github.event.inputs.projectToRelease }}"
+        cd "${{ inputs.projectToRelease }}"
         RAW_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout) || \
                       mvn help:evaluate -Dexpression=project.version -DforceStdout
+        ARTIFACT_ID=$(mvn help:evaluate -Dexpression=project.artifactId -q -DforceStdout) || \
+                      mvn help:evaluate -Dexpression=project.artifactId -DforceStdout
         BASE_VERSION=${RAW_VERSION%-SNAPSHOT}
 
-        if [ "${{ github.event.inputs.finalRelease }}" = "true" ]; then
+        if [ "${{ inputs.finalRelease }}" = "true" ]; then
           FINAL_VERSION="$BASE_VERSION"
           # Bump patch for new dev version
           IFS='.' read -r MAJOR MINOR PATCH <<< "$BASE_VERSION"
           NEXT_DEV_VERSION="$MAJOR.$MINOR.$((PATCH+1))-SNAPSHOT"
         else
-          FINAL_VERSION="${BASE_VERSION}-${{ github.event.inputs.modifier }}"
+          FINAL_VERSION="${BASE_VERSION}-${{ inputs.modifier }}"
           # Leave dev version as-is
           NEXT_DEV_VERSION="$RAW_VERSION"
         fi
 
+        echo "ARTIFACT_ID=$ARTIFACT_ID" >> $GITHUB_OUTPUT
         echo "FINAL_VERSION=$FINAL_VERSION" >> $GITHUB_OUTPUT
         echo "NEXT_DEV_VERSION=$NEXT_DEV_VERSION" >> $GITHUB_OUTPUT
-        echo "VERSION_TAG=${{ github.event.inputs.projectToRelease }}-$FINAL_VERSION" >> $GITHUB_OUTPUT
+        echo "VERSION_TAG=${{ inputs.projectToRelease }}-$FINAL_VERSION" >> $GITHUB_OUTPUT
     - name: Release with Maven
       run: |
-        cd "${{ github.event.inputs.projectToRelease }}"
+        cd "${{ inputs.projectToRelease }}"
         #Github actions bot user id + user.login. See https://api.github.com/users/github-actions%5Bbot%5D
         git config user.email "datawave@github.com"
         git config user.name "${{ secrets.GHCR_WRITE_USER_NAME }}"
@@ -132,8 +190,48 @@ jobs:
         -DreleaseVersion="${{ steps.version.outputs.FINAL_VERSION }}" \
         -DdevelopmentVersion="${{ steps.version.outputs.NEXT_DEV_VERSION }}" \
         -Dtag="${{ steps.version.outputs.VERSION_TAG }}"
-          
-    
-          
+
+    # When invoked from the cascade workflow, follow up the release by bumping every
+    # consumer POM in microservices/ that depends on the just-released artifact.
+    # versions:update-parent rewrites <parent><version>; versions:update-properties
+    # rewrites the version property used by each <dependency>'s <version>${...}</version>.
+    # Both look up the latest non-snapshot version of the targeted artifact in the
+    # configured repos (GitHub Packages, where release:perform just published).
+    - name: Bump downstream consumers
+      if: ${{ inputs.bumpDownstream }}
+      env:
+        ARTIFACT_ID: ${{ steps.version.outputs.ARTIFACT_ID }}
+        FINAL_VERSION: ${{ steps.version.outputs.FINAL_VERSION }}
+      run: |
+        set -euo pipefail
+        # Pick up release plugin's pushed commits, just in case.
+        git pull --rebase --autostash
+
+        # Activate the umbrella `services` and `starters` profiles so the
+        # reactor includes every microservice/starter module (modules under
+        # microservices/services and microservices/starters are gated on these
+        # profiles in their parent POMs).
+        # Exclude the just-released artifact itself from the reactor so that
+        # versions:update-properties resolves its version from the remote
+        # repository (where the release was just published) rather than the
+        # local reactor SNAPSHOT, which would otherwise bypass -DallowSnapshots=false.
+        cd microservices
+        mvn --batch-mode --no-transfer-progress \
+            -Dservices -Dstarters \
+            -pl "!:${ARTIFACT_ID}" \
+            versions:update-parent versions:update-properties \
+            -DallowSnapshots=false \
+            -DallowMajorUpdates=false \
+            -DgenerateBackupPoms=false \
+            -Dincludes="gov.nsa.datawave.microservice:${ARTIFACT_ID}"
+        cd "$GITHUB_WORKSPACE"
+
+        if git diff --quiet; then
+          echo "No downstream POMs needed updating for ${ARTIFACT_ID}=${FINAL_VERSION}."
+        else
+          git add -A
+          git commit -m "auto-update: bump ${ARTIFACT_ID} to ${FINAL_VERSION}"
+          git push
+        fi
 
 
