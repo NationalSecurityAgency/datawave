@@ -33,6 +33,7 @@ public class AnnotationTestDataUtil {
         return AnnotationSource.newBuilder()
                 .setEngine("inline v6")
                 .setModel("GR Supra")
+                .setPlatform("toyota")
                 .putMetadata("visibility", VISIBILITY)
                 .putMetadata("created_date",CREATED_DATE)
                 .putConfiguration("octane","99")
@@ -152,6 +153,7 @@ public class AnnotationTestDataUtil {
                     AnnotationSource annotationSource = AnnotationSource.newBuilder()
                             .setEngine(engine)
                             .setModel(model)
+                            .setPlatform(sourceLabel)
                             .putAllMetadata(metadata)
                             .putAllConfiguration(configuration)
                             .build();

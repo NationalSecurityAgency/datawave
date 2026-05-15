@@ -137,6 +137,7 @@ public class AnnotationUtils {
      * <ul>
      * <li>the annotation source engine</li>
      * <li>the annotation source model</li>
+     * <li>the annotation source platform</li>
      * <li>the annotation source configuration</li>
      * </ul>
      *
@@ -152,6 +153,7 @@ public class AnnotationUtils {
         return hashFunction.newHasher()
                 .putUnencodedChars(annotationSource.getEngine())
                 .putUnencodedChars(annotationSource.getModel())
+                .putUnencodedChars(annotationSource.getPlatform())
                 .putObject(annotationSource.getConfigurationMap(), stringMapFunnel)
                 .hash()
                 .toString()
