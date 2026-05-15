@@ -205,8 +205,8 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
         String row = (this.reverseIndex ? new StringBuilder().append(thing.getTerm()).reverse().toString() : thing.getTerm());
         Key newKey = new Key(row, thing.getField(), thing.getDate() + "\uffff");
 
-        // Conditionally trim DiscoveredThing.  (Perhaps to term and visibility).
-        //List<DiscoveredThing> thingsConditional = things.stream().map(discoveredThingTransformer).collect(Collectors.toList());
+        // Conditionally trim DiscoveredThing. (Perhaps to term and visibility).
+        // List<DiscoveredThing> thingsConditional = things.stream().map(discoveredThingTransformer).collect(Collectors.toList());
 
         // Create a value from the list of things.
         ArrayWritable thingArray = new ArrayWritable(DiscoveredThing.class, things.toArray(new DiscoveredThing[0]));

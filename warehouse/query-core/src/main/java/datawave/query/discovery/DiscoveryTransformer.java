@@ -1,5 +1,7 @@
 package datawave.query.discovery;
 
+import static datawave.query.discovery.DiscoveryLogic.VALUES_ONLY;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -8,7 +10,7 @@ import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
-import datawave.microservice.query.QueryImpl;
+import datawave.webservice.query.result.event.*;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.io.Writable;
@@ -21,18 +23,14 @@ import datawave.core.query.logic.BaseQueryLogicTransformer;
 import datawave.marking.MarkingFunctions;
 import datawave.marking.MarkingFunctions.Exception;
 import datawave.microservice.query.Query;
+import datawave.microservice.query.QueryImpl;
 import datawave.query.model.QueryModel;
 import datawave.webservice.query.cachedresults.CacheableQueryRow;
 import datawave.webservice.query.exception.QueryException;
-import datawave.webservice.query.result.event.EventBase;
-import datawave.webservice.query.result.event.FieldBase;
-import datawave.webservice.query.result.event.Metadata;
-import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.EventQueryResponseBase;
 
-import static datawave.query.discovery.DiscoveryLogic.VALUES_ONLY;
-
+@SuppressWarnings({"rawtypes"})
 public class DiscoveryTransformer extends BaseQueryLogicTransformer<DiscoveredThing,EventBase> implements CacheableLogic {
     private List<String> variableFieldList = null;
     private final BaseQueryLogic<DiscoveredThing> logic;
@@ -44,8 +42,8 @@ public class DiscoveryTransformer extends BaseQueryLogicTransformer<DiscoveredTh
     /**
      * Variant of a field list that contains only a value field.
      */
-    BiFunction<DiscoveredThing,Map<String,String>,List<FieldBase<?>>> generateValuesOnlyFieldList = (x, y) -> {
-        List<FieldBase<?>> fields = new ArrayList<>();
+    BiFunction<DiscoveredThing,Map<String,String>,List<FieldBase>> generateValuesOnlyFieldList = (x, y) -> {
+        List<FieldBase> fields = new ArrayList<>();
 
         fields.add(this.makeField("VALUE", y, "", 0L, x.getTerm()));
 
@@ -55,8 +53,8 @@ public class DiscoveryTransformer extends BaseQueryLogicTransformer<DiscoveredTh
     /**
      * Variant of field list that contains a standard, default set of fields.
      */
-    BiFunction<DiscoveredThing,Map<String,String>,List<FieldBase<?>>> generateFieldList = (x, y) -> {
-        List<FieldBase<?>> fields = new ArrayList<>();
+    BiFunction<DiscoveredThing,Map<String,String>,List<FieldBase>> generateFieldList = (x, y) -> {
+        List<FieldBase> fields = new ArrayList<>();
 
         fields.add(this.makeField("VALUE", y, "", 0L, x.getTerm()));
         /*
@@ -85,20 +83,20 @@ public class DiscoveryTransformer extends BaseQueryLogicTransformer<DiscoveredTh
         return fields;
     };
 
-    final Map<String, BiFunction<DiscoveredThing,Map<String,String>,List<FieldBase<?>>> > mapMapGenerator = new HashMap<>();
+    final Map<String,BiFunction<DiscoveredThing,Map<String,String>,List<FieldBase>>> mapMapGenerator = new HashMap<>();
     {
-        mapMapGenerator.put("VALUES_ONLY",generateValuesOnlyFieldList);
-        mapMapGenerator.put("STANDARD",generateFieldList);
+        mapMapGenerator.put("VALUES_ONLY", generateValuesOnlyFieldList);
+        mapMapGenerator.put("STANDARD", generateFieldList);
     }
 
     /**
-     * Factory to get a  particular  field list generator. Different scenarios may call for different field lists.
+     * Factory to get a particular field list generator. Different scenarios may call for different field lists.
      *
      * @param isValuesOnly
      * @return
      */
-    BiFunction<DiscoveredThing,Map<String,String>,List<FieldBase<?>>> getMapGenerator(boolean isValuesOnly){
-        return mapMapGenerator.get(isValuesOnly? "VALUES_ONLY": "STANDARD");
+    BiFunction<DiscoveredThing,Map<String,String>,List<FieldBase>> getMapGenerator(boolean isValuesOnly) {
+        return mapMapGenerator.get(isValuesOnly ? "VALUES_ONLY" : "STANDARD");
     }
 
     public DiscoveryTransformer(BaseQueryLogic<DiscoveredThing> logic, Query settings, QueryModel qm) {
@@ -110,6 +108,7 @@ public class DiscoveryTransformer extends BaseQueryLogicTransformer<DiscoveredTh
         this.valuesOnly = getOrDefaultBoolean(settings, VALUES_ONLY, false);
     }
 
+    @SuppressWarnings({"rawtypes","unchecked"})
     @Override
     public EventBase transform(DiscoveredThing thing) {
         Preconditions.checkNotNull(thing, "Received a null object to transform!");
@@ -119,7 +118,7 @@ public class DiscoveryTransformer extends BaseQueryLogicTransformer<DiscoveredTh
         Map<String,String> markings = markingsFromVisibility.apply(thing.getColumnVisibility());
         event.setMarkings(markings);
 
-        List<FieldBase<?>> fields = getMapGenerator(valuesOnly).apply(thing, markings);
+        List<FieldBase> fields = getMapGenerator(valuesOnly).apply(thing, markings);
         event.setFields(fields);
         event.setSizeInBytes(fields.size() * 6L);
 
@@ -133,8 +132,9 @@ public class DiscoveryTransformer extends BaseQueryLogicTransformer<DiscoveredTh
         return event;
     }
 
-    protected FieldBase<?> makeField(String name, Map<String,String> markings, String columnVisibility, Long timestamp, Object value) {
-        FieldBase<?> field = this.responseObjectFactory.getField();
+    @SuppressWarnings({"rawtypes"})
+    protected FieldBase makeField(String name, Map<String,String> markings, String columnVisibility, Long timestamp, Object value) {
+        FieldBase field = this.responseObjectFactory.getField();
         field.setName(name);
         field.setMarkings(markings);
         field.setColumnVisibility(columnVisibility);
@@ -143,6 +143,7 @@ public class DiscoveryTransformer extends BaseQueryLogicTransformer<DiscoveredTh
         return field;
     }
 
+    @SuppressWarnings({"rawtypes"})
     @Override
     public BaseQueryResponse createResponse(List<Object> resultList) {
         EventQueryResponseBase response = this.responseObjectFactory.getEventQueryResponse();
@@ -157,6 +158,7 @@ public class DiscoveryTransformer extends BaseQueryLogicTransformer<DiscoveredTh
         return response;
     }
 
+    @SuppressWarnings({"unchecked"})
     @Override
     public CacheableQueryRow writeToCache(Object o) throws QueryException {
         EventBase event = (EventBase) o;
@@ -176,6 +178,7 @@ public class DiscoveryTransformer extends BaseQueryLogicTransformer<DiscoveredTh
         return cqo;
     }
 
+    @SuppressWarnings({"unchecked"})
     @Override
     public Object readFromCache(CacheableQueryRow cacheableQueryRow) {
         if (this.variableFieldList == null) {

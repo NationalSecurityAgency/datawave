@@ -251,16 +251,16 @@ public class DiscoveryLogicTest {
             DiscoveredThing dtee = iterator.next();
             actual.add(dtvoct.apply(dtee));
 
-            //actual.add(dtvoct.apply(iterator.next()));
-            //actual.add(iterator.next());
+            // actual.add(dtvoct.apply(iterator.next()));
+            // actual.add(iterator.next());
         }
 
-        assertEquals(expected.size(),actual.size());
+        assertEquals(expected.size(), actual.size());
         for (int i = 0; i < expected.size(); i++) {
             DiscoveredThing actualThing = actual.get(i);
             DiscoveredThing expectedThing = expected.get(i);
-            assertEquals(expectedThing,actualThing);
-            assertEquals(expectedThing.getCountsByColumnVisibility(),actualThing.getCountsByColumnVisibility());
+            assertEquals(expectedThing, actualThing);
+            assertEquals(expectedThing.getCountsByColumnVisibility(), actualThing.getCountsByColumnVisibility());
         }
     }
 
