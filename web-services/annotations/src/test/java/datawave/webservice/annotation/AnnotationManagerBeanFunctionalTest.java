@@ -316,7 +316,7 @@ public class AnnotationManagerBeanFunctionalTest {
 
     @Test
     public void testGetAnnotationSource() {
-        Response response = annotationManager.getAnnotationSource("F1A0463C207B3778B472B506F3F8351A");
+        Response response = annotationManager.getAnnotationSource("52EF0E07742AC65873C6DF80759AF192");
         assertResponseStatus(200, response);
         AnnotationSource annotationSource = assertExpectedEntity(AnnotationSource.class, response);
         assertNotNull(annotationSource);
@@ -324,11 +324,11 @@ public class AnnotationManagerBeanFunctionalTest {
 
     @Test
     public void testGetMissingAnnotationSource() {
-        Response response = annotationManager.getAnnotationSource("F1A0463C207B3778B472B506F3F8351B");
+        Response response = annotationManager.getAnnotationSource("52EF0E07742AC65873C6DF80759AF193");
         assertResponseStatus(404, response);
         String errorResponse = assertExpectedEntity(String.class, response);
         assertContains("No annotation source found for analyticHash", errorResponse);
-        assertContains("F1A0463C207B3778B472B506F3F8351B", errorResponse);
+        assertContains("52EF0E07742AC65873C6DF80759AF193", errorResponse);
 
     }
 
