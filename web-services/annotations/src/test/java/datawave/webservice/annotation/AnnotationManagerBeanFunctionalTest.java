@@ -682,12 +682,13 @@ public class AnnotationManagerBeanFunctionalTest {
         newSegments.add(AnnotationTestDataUtil.generateTestSegment());
 
         AnnotationSource baseSource = testAnnotation.getSource();
-
-        AnnotationSource newSource = baseSource.toBuilder().setEngine("boxer 4").setModel("Impreza XV").build();
-
+        AnnotationSource newSource = baseSource.toBuilder().clearAnalyticSourceHash().clearAnalyticHash().setEngine("boxer 4").setModel("Impreza XV").build();
         Annotation testUpdateAnnotation = testAnnotation.toBuilder().clearSegments().addAllSegments(newSegments).clearSource().setSource(newSource).build();
-        Annotation expectedUpdateAnnotation = AnnotationUtils.injectAllHashes(testUpdateAnnotation);
         String updateJson = AnnotationJsonUtils.annotationToJsonWithoutIds(testUpdateAnnotation);
+
+        // Update the expected testUpdateAnnotation with the 'updates' metadata entry added by the annotation data access object.
+        Annotation testUpdateAnnotationWithUpdated = testUpdateAnnotation.toBuilder().putMetadata("updates", expectedAnnotation.getAnnotationId()).build();
+        Annotation expectedUpdateAnnotation = AnnotationUtils.injectAllHashes(testUpdateAnnotationWithUpdated);
 
         // submit the update and check the result.
         Response updateResponse = annotationManager.updateAnnotation("UUID", "ANDOLINI", expectedAnnotation.getAnnotationId(), updateJson);
