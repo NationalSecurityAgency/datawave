@@ -373,18 +373,28 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
         @Override
         public boolean equals(Object o) {
             if (o instanceof TermEntry) {
+                //  @formatter:off
                 TermEntry other = (TermEntry) o;
-                return new EqualsBuilder().append(getTerm(), other.getTerm()).append(getField(), other.getField())
-                                .append(getVisibility(), other.getVisibility()).append(getDate(), other.getDate()).append(getDatatype(), other.getDatatype())
-                                .append(getUidCount(), other.getUidCount()).append(getUidListSize(), other.getUidListSize()).isEquals();
+                return new EqualsBuilder().append(getTerm(), other.getTerm())
+                        .append(getField(), other.getField())
+                        .append(getVisibility(), other.getVisibility())
+                        .append(getDate(), other.getDate())
+                        .append(getDatatype(), other.getDatatype())
+                        .append(getUidCount(), other.getUidCount())
+                        .append(getUidListSize(), other.getUidListSize()).isEquals();
+                //  @formatter:on
             }
             return false;
         }
 
         @Override
         public int hashCode() {
-            return new HashCodeBuilder().append(getTerm()).append(getField()).append(getVisibility()).append(getDate()).append(getDatatype())
-                            .append(getUidCount()).append(getUidListSize()).toHashCode();
+            //  @formatter:off
+            return new HashCodeBuilder().append(getTerm())
+                    .append(getField()).append(getVisibility())
+                    .append(getDate()).append(getDatatype())
+                    .append(getUidCount()).append(getUidListSize()).toHashCode();
+            //  @formatter:on
         }
     }
 }

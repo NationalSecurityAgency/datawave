@@ -10,7 +10,6 @@ import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
-import datawave.webservice.query.result.event.*;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.io.Writable;
@@ -26,7 +25,10 @@ import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
 import datawave.query.model.QueryModel;
 import datawave.webservice.query.cachedresults.CacheableQueryRow;
-import datawave.webservice.query.exception.QueryException;
+import datawave.webservice.query.result.event.EventBase;
+import datawave.webservice.query.result.event.FieldBase;
+import datawave.webservice.query.result.event.Metadata;
+import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.EventQueryResponseBase;
 
@@ -108,7 +110,7 @@ public class DiscoveryTransformer extends BaseQueryLogicTransformer<DiscoveredTh
         this.valuesOnly = getOrDefaultBoolean(settings, VALUES_ONLY, false);
     }
 
-    @SuppressWarnings({"rawtypes","unchecked"})
+    @SuppressWarnings({"rawtypes", "unchecked"})
     @Override
     public EventBase transform(DiscoveredThing thing) {
         Preconditions.checkNotNull(thing, "Received a null object to transform!");
@@ -160,7 +162,7 @@ public class DiscoveryTransformer extends BaseQueryLogicTransformer<DiscoveredTh
 
     @SuppressWarnings({"unchecked"})
     @Override
-    public CacheableQueryRow writeToCache(Object o) throws QueryException {
+    public CacheableQueryRow writeToCache(Object o) {
         EventBase event = (EventBase) o;
 
         CacheableQueryRow cqo = responseObjectFactory.getCacheableQueryRow();
