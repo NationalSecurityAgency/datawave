@@ -70,8 +70,8 @@ public class AnnotationTestDataUtil {
     }
 
     public static Segment generateTestSegment() {
-        SegmentValue segmentValue = SegmentValue.newBuilder().setValue("horse").setScore(.21f).build();
-        SegmentBoundary bounds = SegmentBoundary.newBuilder().setBoundaryType(TIME_MILLI).setStart(1540).setEnd(5200).build();
+        SegmentValue segmentValue = SegmentValue.newBuilder().setValue("tree").setScore(.19f).build();
+        SegmentBoundary bounds = SegmentBoundary.newBuilder().setBoundaryType(TIME_MILLI).setStart(1230).setEnd(1500).build();
         return Segment.newBuilder().addValues(segmentValue).setBoundary(bounds).build();
     }
 

@@ -34,7 +34,7 @@ public class VisibilityTransformerTest {
     public void testDefaultVisibilityTransformer() throws AnnotationSerializationException {
         AccumuloAnnotationSerializer serializer = new AccumuloAnnotationSerializer();
         Annotation baseAnnotation = AnnotationTestDataUtil.generateTestAnnotation();
-        Annotation partialAnnotation = AnnotationUtils.injectAnnotationHash(baseAnnotation);
+        Annotation partialAnnotation = AnnotationUtils.injectAllHashes(baseAnnotation);
         Map<String,String> metadata = new HashMap<>();
         metadata.put("visibility", "PUBLIC");
         metadata.put("owner", "dad");
@@ -63,7 +63,7 @@ public class VisibilityTransformerTest {
         TimestampTransformer timestampTransformer = new DefaultTimestampTransformer();
         AccumuloAnnotationSerializer serializer = new AccumuloAnnotationSerializer(visibilityTransformer, timestampTransformer);
         Annotation baseAnnotation = AnnotationTestDataUtil.generateTestAnnotation();
-        Annotation partialAnnotation = AnnotationUtils.injectAnnotationHash(baseAnnotation);
+        Annotation partialAnnotation = AnnotationUtils.injectAllHashes(baseAnnotation);
         Map<String,String> metadata = new HashMap<>();
         metadata.put("visibility", "PUBLIC");
         metadata.put("owner", "dad");
