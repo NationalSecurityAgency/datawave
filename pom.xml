@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>gov.nsa.datawave</groupId>
     <artifactId>datawave-parent</artifactId>
-    <version>7.38.3-SNAPSHOT</version>
+    <version>7.38.3</version>
     <packaging>pom</packaging>
     <name>DataWave</name>
     <description>DataWave is a Java-based ingest and query framework that leverages Apache Accumulo to provide fast, secure access to your data.</description>
@@ -23,7 +23,7 @@
     <scm>
         <connection>scm:git:https://github.com/NationalSecurityAgency/datawave.git</connection>
         <developerConnection>scm:git:git@github.com:NationalSecurityAgency/datawave.git</developerConnection>
-        <tag>HEAD</tag>
+        <tag>7.38.3</tag>
         <url>https://github.com/NationalSecurityAgency/datawave</url>
     </scm>
     <distributionManagement>

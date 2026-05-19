@@ -4,17 +4,17 @@
     <parent>
         <groupId>gov.nsa.datawave.microservice</groupId>
         <artifactId>datawave-microservice-parent</artifactId>
-        <version>4.0.10</version>
+        <version>7.38.3</version>
         <relativePath>../microservice-parent</relativePath>
     </parent>
     <artifactId>datawave-microservice-service-parent</artifactId>
-    <version>5.0.12-SNAPSHOT</version>
+    <version>7.38.3</version>
     <packaging>pom</packaging>
     <name>DataWave Microservices Spring Boot Service Parent</name>
     <scm>
         <connection>scm:git:${project.scm.url}</connection>
         <developerConnection>scm:git:${project.scm.url}</developerConnection>
-        <tag>HEAD</tag>
+        <tag>7.38.3</tag>
         <url>https://github.com/NationalSecurityAgency/datawave</url>
     </scm>
     <properties>
