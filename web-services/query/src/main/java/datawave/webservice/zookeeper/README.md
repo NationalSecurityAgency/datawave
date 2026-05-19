@@ -1,7 +1,7 @@
 # ZkObjectPublisher
 
 The class [ZkObjectPublisher](ZkObjectPublisher.java) provides the ability to trigger and publish updates of a configured class instance to any subscribers using Zookeeper to listen for updates and triggering events. A publisher instance can be configured with the following:
-* `namespace`: The unique namespace for the ZkObjectPublisher. It is critical that this namespace is unique to any configured ZkObjectPublisher instances on the same server in order to prevent multiple publishers from writing to the same `/<namespace>/attempts/<serverIpAddress>` node in Zookeeper.
+* `namespace`: The unique namespace for the ZkObjectPublisher. **It is critical that this namespace is unique to any configured ZkObjectPublisher instances** on the same server in order to prevent multiple publishers from writing to the same `/<namespace>/attempts/<serverIpAddress>` node in Zookeeper.
 * `zookeeperConfig`: The zookeeper connect string, or a filepath of a zookeeper configuration file.
 * `hdfsConfigUrls`: A comma-delimited list of hadoop configuration files.
 * `objectClass`: The class of the object type the publisher will deserialize and publish.
@@ -12,7 +12,7 @@ A ZkObjectPublisher will attempt to reload and publish a new instance of its con
 * The node `/<namespace>/path` is created or modified with non-empty data.
 * The node `/<namespace>/trigger` is created, modified, or deleted.
 
-Upon receiving a trigger event, the publisher will attempt to read and deserialize an instance of the configured class from the filepath stored in the data of the node `/<namespace>/path`. The filepath is expected to be XML, JSON, or YAML, and must conform to one of the following URI schemes:
+Upon receiving a trigger event, the publisher will attempt to read and deserialize an instance of the configured class from the filepath stored in the data of the node `/<namespace>/path`. The filepath is expected to point to an XML, JSON, or YAML file, and must conform to one of the following URI schemes:
 * A URL: `http://path/to/file` or `https://path/to/file`
 * An HDFS file: `hdfs://path/to/file`
 * A local file: `file://path/to/file` or `/path/to/file`
