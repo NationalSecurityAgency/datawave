@@ -20,8 +20,8 @@ public class ExecutionHintHelper {
 
     private static final Logger log = LoggerFactory.getLogger(ExecutionHintHelper.class);
 
-    public static String SCAN_TYPE = "scan_type";
-    public static String PRIORITY = "priority";
+    public static final String SCAN_TYPE = "scan_type";
+    public static final String PRIORITY = "priority";
 
     private ExecutionHintHelper() {
         // enforce static access
