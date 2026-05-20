@@ -41,6 +41,15 @@ public class DiscoveryTransformer extends BaseQueryLogicTransformer<DiscoveredTh
     private final ResponseObjectFactory responseObjectFactory;
     private boolean valuesOnly = false;
 
+    public DiscoveryTransformer(BaseQueryLogic<DiscoveredThing> logic, Query settings, QueryModel qm) {
+        super(new MarkingFunctions.Default());
+        this.markingFunctions = logic.getMarkingFunctions();
+        this.responseObjectFactory = logic.getResponseObjectFactory();
+        this.logic = logic;
+        this.myQueryModel = qm;
+        this.valuesOnly = getOrDefaultBoolean(settings, VALUES_ONLY, false);
+    }
+
     /**
      * Variant of a field list that contains only a value field.
      */
@@ -99,15 +108,6 @@ public class DiscoveryTransformer extends BaseQueryLogicTransformer<DiscoveredTh
      */
     BiFunction<DiscoveredThing,Map<String,String>,List<FieldBase>> getMapGenerator(boolean isValuesOnly) {
         return mapMapGenerator.get(isValuesOnly ? "VALUES_ONLY" : "STANDARD");
-    }
-
-    public DiscoveryTransformer(BaseQueryLogic<DiscoveredThing> logic, Query settings, QueryModel qm) {
-        super(new MarkingFunctions.Default());
-        this.markingFunctions = logic.getMarkingFunctions();
-        this.responseObjectFactory = logic.getResponseObjectFactory();
-        this.logic = logic;
-        this.myQueryModel = qm;
-        this.valuesOnly = getOrDefaultBoolean(settings, VALUES_ONLY, false);
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})

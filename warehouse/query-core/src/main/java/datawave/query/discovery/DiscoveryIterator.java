@@ -7,7 +7,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
@@ -205,9 +204,6 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
         String row = (this.reverseIndex ? new StringBuilder().append(thing.getTerm()).reverse().toString() : thing.getTerm());
         Key newKey = new Key(row, thing.getField(), thing.getDate() + "\uffff");
 
-        // Conditionally trim DiscoveredThing. (Perhaps to term and visibility).
-        // List<DiscoveredThing> thingsConditional = things.stream().map(discoveredThingTransformer).collect(Collectors.toList());
-
         // Create a value from the list of things.
         ArrayWritable thingArray = new ArrayWritable(DiscoveredThing.class, things.toArray(new DiscoveredThing[0]));
         Value newValue = new Value(WritableUtils.toByteArray(thingArray));
@@ -236,7 +232,7 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
         this.columnFamilies = columnFamilies;
         this.iterator.seek(range, columnFamilies, inclusive);
         if (log.isTraceEnabled()) {
-            log.trace("My source " + ((Optional.ofNullable(iterator).isPresent() && this.iterator.hasTop()) ? "does" : "does not") + " have a top.");
+            log.trace("My source " + (this.iterator.hasTop() ? "does" : "does not") + " have a top.");
         }
         next();
     }

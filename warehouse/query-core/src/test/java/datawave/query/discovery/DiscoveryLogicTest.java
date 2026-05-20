@@ -1,7 +1,6 @@
 package datawave.query.discovery;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -22,9 +21,7 @@ import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
-import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.user.SummingCombiner;
 import org.apache.accumulo.core.security.Authorizations;
@@ -250,9 +247,6 @@ public class DiscoveryLogicTest {
         while (iterator.hasNext()) {
             DiscoveredThing dtee = iterator.next();
             actual.add(dtvoct.apply(dtee));
-
-            // actual.add(dtvoct.apply(iterator.next()));
-            // actual.add(iterator.next());
         }
 
         assertEquals(expected.size(), actual.size());
@@ -542,16 +536,6 @@ public class DiscoveryLogicTest {
         expect(new DiscoveredThing("bbc", "", "", "", "FOO", 0L, new MapWritable()));
         expect(new DiscoveredThing("onyx", "", "", "", "FOO", 0L, new MapWritable()));
         assertQueryResults();
-    }
-
-    @Test
-    public void testAccumuloCoreDataRange() {
-        Key start = new Key("bbc");
-        Key stop = new Key("bbc\u0000");
-        Range range = new Range(start, true, stop, false);
-
-        Key last = new Key("bbc");
-        assertTrue(range.contains(last));
     }
 
     @Test
