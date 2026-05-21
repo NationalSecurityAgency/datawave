@@ -4,6 +4,7 @@ import static org.apache.accumulo.core.client.ScannerBase.ConsistencyLevel;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -28,7 +29,7 @@ public class BatchScannerBuilderTest {
 
     private static AccumuloClient client;
     private static final String tableName = "shard";
-    private static final Authorizations auths = new Authorizations("VIZ-A");
+    private static final Collection<Authorizations> auths = List.of(new Authorizations("VIZ-A"));
     private final Range range = Range.exact("row");
 
     private static final Long ts = System.currentTimeMillis();

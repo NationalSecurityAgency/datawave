@@ -3,6 +3,8 @@ package datawave.scan;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.accumulo.core.client.AccumuloClient;
@@ -27,11 +29,14 @@ public class ScannerBuilderTest {
 
     private static AccumuloClient client;
     private static final String tableName = "shard";
-    private final Authorizations auths = new Authorizations("VIZ-A");
+
+    private final Authorizations authSetA = new Authorizations("VIZ-A", "VIZ-B");
+    private final Authorizations authSetB = new Authorizations("VIZ-B", "VIZ-C");
+    private final Collection<Authorizations> auths = List.of(authSetA, authSetB);
     private final Range range = Range.exact("row");
 
     private static final Long ts = System.currentTimeMillis();
-    private static final Key key = new Key("row", "cf", "cq", "VIZ-A", ts);
+    private static final Key key = new Key("row", "cf", "cq", "VIZ-B", ts);
     private static final Value EMPTY_VALUE = new Value();
 
     @BeforeAll
