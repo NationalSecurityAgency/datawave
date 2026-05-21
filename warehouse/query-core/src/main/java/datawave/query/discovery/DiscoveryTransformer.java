@@ -81,7 +81,7 @@ public class DiscoveryTransformer extends BaseQueryLogicTransformer<DiscoveredTh
         if (x.getCountsByColumnVisibility() != null && !x.getCountsByColumnVisibility().isEmpty()) {
             for (Map.Entry<Writable,Writable> entry : x.getCountsByColumnVisibility().entrySet()) {
                 try {
-                    Map<String,String> eMarkings = this.markingFunctions.translateFromColumnVisibility(new ColumnVisibility(entry.getKey().toString()));
+                    this.markingFunctions.translateFromColumnVisibility(new ColumnVisibility(entry.getKey().toString()));
                     fields.add(this.makeField("RECORD COUNT", new HashMap<>(), entry.getKey().toString(), 0L, entry.getValue().toString()));
                 } catch (Exception e) {
                     throw new RuntimeException("could not parse to markings: " + x.getColumnVisibility());

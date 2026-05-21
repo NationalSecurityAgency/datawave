@@ -573,16 +573,11 @@ public class DiscoveryLogicTest {
         givenParameter(DiscoveryLogic.SUM_COUNTS, "true");
         givenParameter(DiscoveryLogic.VALUES_ONLY, "true");
 
-        // We expect no results. Make sure we do not blow up.
-        // expect(new DiscoveredThing("bbc", "", "", "", "BAR&FOO", 0L, new MapWritable()));
-        // expect(new DiscoveredThing("onyx", "", "", "", "BAR&FOO", 0L, new MapWritable()));
-
         assertQueryResults();
     }
 
     @Test
     public void testValuesOnlyForFieldedLiterals() throws Exception {
-        // givenQuery("bbc OR onyx");
         givenQuery("rock:onyx OR pokemon:onyx");
         givenStartDate("20130101");
         givenEndDate("20130102");
@@ -590,7 +585,6 @@ public class DiscoveryLogicTest {
         givenParameter(DiscoveryLogic.SUM_COUNTS, "true");
         givenParameter(DiscoveryLogic.VALUES_ONLY, "true");
 
-        // expect(new DiscoveredThing("bbc", "", "", "", "BAR&FOO", 0L, new MapWritable()));
         expect(new DiscoveredThing("onyx", "", "", "", "FOO", 0L, new MapWritable()));
         expect(new DiscoveredThing("onyx", "", "", "", "FOO", 0L, new MapWritable()));
         assertQueryResults();

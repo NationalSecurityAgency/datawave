@@ -51,7 +51,6 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
     private boolean reverseIndex = false;
     private boolean sumCounts = false;
     private boolean valuesOnly = false;
-    private DiscoveredThingValuesOnlyConditionalTransformer discoveredThingTransformer;
 
     @Override
     public DiscoveryIterator deepCopy(IteratorEnvironment env) {
@@ -95,17 +94,14 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
         // Otherwise, we only want to collect the term entries for the current field, term, and date of start.
         BiFunction<Key,Key,Boolean> dateMatchingFunction = sumCounts ? (first, second) -> true : this::datesMatch;
 
-        // if 'values only' is selected, then we should match on row rather than column family.
-        PartialKey partialKey = valuesOnly ? PartialKey.ROW : PartialKey.ROW_COLFAM;
-
         // Find all matching entries and parse term entries from them.
-        while (iterator.hasTop() && start.equals((key = iterator.getTopKey()), partialKey) && dateMatchingFunction.apply(start, key)) {
+        while (iterator.hasTop() && start.equals((key = iterator.getTopKey()), PartialKey.ROW_COLFAM) && dateMatchingFunction.apply(start, key)) {
             TermEntry termEntry = new TermEntry(key, iterator.getTopValue());
             if (termEntry.isValid()) {
                 terms.put(termEntry.getDatatype(), termEntry);
                 // if 'values only' is selected, then we only need a single TermEntry, the first one. The value of each
-                // term in TermEntry should be the identical as we iterate in this while. Therefore, the first one
-                // encountered will suffice.
+                // term in TermEntry should be the identical as we iterate in this 'while' loop. Therefore, the first
+                // one encountered will suffice.
                 if (valuesOnly) {
                     return terms;
                 }
@@ -245,7 +241,6 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
         this.reverseIndex = Boolean.parseBoolean(options.get(DiscoveryLogic.REVERSE_INDEX));
         this.sumCounts = Boolean.parseBoolean(options.get(DiscoveryLogic.SUM_COUNTS));
         this.valuesOnly = Boolean.parseBoolean(options.get(DiscoveryLogic.VALUES_ONLY));
-        this.discoveredThingTransformer = new DiscoveredThingValuesOnlyConditionalTransformer(valuesOnly);
         if (valuesOnly) {
             sumCounts = false;
         }
@@ -281,7 +276,7 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
     private static class TermEntry {
 
         private final String term;
-        private String field;
+        private final String field;
         private String date;
         private String datatype;
         private ColumnVisibility visibility;

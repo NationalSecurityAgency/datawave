@@ -639,7 +639,7 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
      */
     private Iterator<DiscoveredThing> transformScanner(final BatchScanner scanner, final QueryData queryData, Set<String> indexedFields) {
         return concat(transform(scanner.iterator(), new Function<Entry<Key,Value>,Iterator<DiscoveredThing>>() {
-            DataInputBuffer in = new DataInputBuffer();
+            final DataInputBuffer in = new DataInputBuffer();
 
             @Override
             public Iterator<DiscoveredThing> apply(Entry<Key,Value> from) {
