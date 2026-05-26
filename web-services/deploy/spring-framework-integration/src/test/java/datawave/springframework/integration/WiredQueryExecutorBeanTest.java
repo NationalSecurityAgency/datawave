@@ -6,7 +6,6 @@ import java.util.Properties;
 import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
 
-import datawave.security.cert.SSLStores;
 import org.apache.log4j.Logger;
 import org.easymock.EasyMock;
 import org.jboss.arquillian.container.test.api.Deployment;
@@ -38,6 +37,7 @@ import datawave.query.tables.shard.FieldIndexCountQueryLogic;
 import datawave.query.transformer.EventQueryDataDecoratorTransformer;
 import datawave.query.util.DateIndexHelperFactory;
 import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.cert.SSLStores;
 import datawave.security.system.CallerPrincipal;
 import datawave.security.system.ServerPrincipal;
 import datawave.webservice.common.json.DefaultMapperDecorator;
