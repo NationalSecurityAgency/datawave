@@ -112,12 +112,12 @@
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-api</artifactId>
         </dependency>
-        <!-- Required to allow the service loader discover backing implementations for jjwt-api.-->
+        <!-- Required to allow the service loader to discover backing implementations for jjwt-api.-->
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-impl</artifactId>
         </dependency>
-        <!-- Required to allow the service loader discover backing implementations for jjwt-api.-->
+        <!-- Required to allow the service loader to discover backing implementations for jjwt-api.-->
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-jackson</artifactId>
