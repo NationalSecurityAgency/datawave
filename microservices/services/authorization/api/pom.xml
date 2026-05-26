@@ -26,6 +26,7 @@
         <version.jaxb>2.3.3</version.jaxb>
         <version.jaxb-impl>2.3.9</version.jaxb-impl>
         <version.jjwt>0.11.2</version.jjwt>
+        <version.datawave-commons-security>7.40.0-3508-RC1</version.datawave-commons-security>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -105,6 +106,7 @@
         <dependency>
             <groupId>gov.nsa.datawave.commons</groupId>
             <artifactId>datawave-commons-security</artifactId>
+            <version>${version.datawave-commons-security}</version>
         </dependency>
         <dependency>
             <groupId>io.jsonwebtoken</groupId>

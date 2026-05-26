@@ -50,6 +50,7 @@
         <version.webjars.leaflet>1.8.0</version.webjars.leaflet>
         <version.webjars.locator-core>0.59</version.webjars.locator-core>
         <version.zookeeper>3.9.2</version.zookeeper>
+        <version.datawave-commons-security>7.40.0-3508-RC1</version.datawave-commons-security>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -429,6 +430,7 @@
         <dependency>
             <groupId>gov.nsa.datawave.commons</groupId>
             <artifactId>datawave-commons-security</artifactId>
+            <version>${version.datawave-commons-security}</version>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.core</groupId>
