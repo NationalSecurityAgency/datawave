@@ -79,12 +79,6 @@
 
         <property name="auditType" value="${datawave.query.logic.logics.BaseEventQuery.auditType}" />
         <property name="logicDescription" value="${datawave.query.logic.logics.BaseEventQuery.logicDescription}" />
-        <!-- Determines how many events in the global index lookup will be
-        aggregated into a day range -->
-        <property name="eventPerDayThreshold" value="${datawave.query.logic.logics.BaseEventQuery.eventPerDayThreshold}" />
-        <!-- Determines how many shards in the global index lookup will be
-        aggregated into a day range -->
-        <property name="shardsPerDayThreshold" value="${datawave.query.logic.logics.BaseEventQuery.shardsPerDayThreshold}" />
         <!-- The max number of terms BEFORE all expansions -->
         <property name="initialMaxTermThreshold" value="${datawave.query.logic.logics.BaseEventQuery.initialMaxTermThreshold}" />
         <!-- The max number of terms AFTER all expansions -->
@@ -497,10 +491,6 @@
         <property name="useEnrichers" value="${datawave.query.logic.logics.HitHighlights.useEnrichers}" />
         <property name="auditType" value="${datawave.query.logic.logics.HitHighlights.auditType}" />
         <property name="logicDescription" value="${datawave.query.logic.logics.HitHighlights.logicDescription}" />
-        <!-- Determines how many events in the global index lookup will be aggregated into a day range -->
-        <property name="eventPerDayThreshold" value="${datawave.query.logic.logics.HitHighlights.eventPerDayThreshold}" />
-        <!-- Determines how many shards in the global index lookup will be aggregated into a day range -->
-        <property name="shardsPerDayThreshold" value="${datawave.query.logic.logics.HitHighlights.shardsPerDayThreshold}" />
         <!-- The max number of terms BEFORE all expansions -->
         <property name="initialMaxTermThreshold" value="${datawave.query.logic.logics.BaseEventQuery.initialMaxTermThreshold}" />
         <!-- The max number of terms AFTER all expansions -->

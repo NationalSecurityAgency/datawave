@@ -341,8 +341,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      */
     private boolean expandUnfieldedNegations = true;
     private ReturnType returnType = DocumentSerialization.DEFAULT_RETURN_TYPE;
-    private int eventPerDayThreshold = 10000;
-    private int shardsPerDayThreshold = 10;
     private int initialMaxTermThreshold = 2500;
     // the intermediate term threshold is used to enforce a term limit prior to the range stream
     private int intermediateMaxTermThreshold = 2500;
@@ -490,10 +488,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      */
     private long visitorFunctionMaxWeight = 5000000L;
 
-    /**
-     * If true, the LAZY_SET mechanism will be enabled for non-event and index-only fields.
-     */
-    private boolean lazySetMechanismEnabled = false;
     /**
      * Document aggregations that exceed this threshold in milliseconds are logged as a warning
      */
@@ -746,8 +740,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setAllowTermFrequencyLookup(other.isAllowTermFrequencyLookup());
         this.setExpandUnfieldedNegations(other.isExpandUnfieldedNegations());
         this.setReturnType(other.getReturnType());
-        this.setEventPerDayThreshold(other.getEventPerDayThreshold());
-        this.setShardsPerDayThreshold(other.getShardsPerDayThreshold());
         this.setInitialMaxTermThreshold(other.getInitialMaxTermThreshold());
         this.setIntermediateMaxTermThreshold(other.getIntermediateMaxTermThreshold());
         this.setIndexedMaxTermThreshold(other.getIndexedMaxTermThreshold());
@@ -833,7 +825,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setSeekingEventAggregation(other.isSeekingEventAggregation());
         this.setVisitorFunctionMaxWeight(other.getVisitorFunctionMaxWeight());
         this.setQueryExecutionForPageTimeout(other.getQueryExecutionForPageTimeout());
-        this.setLazySetMechanismEnabled(other.isLazySetMechanismEnabled());
         this.setDocAggregationThresholdMs(other.getDocAggregationThresholdMs());
         this.setTfAggregationThresholdMs(other.getTfAggregationThresholdMs());
         this.setGroupFields(GroupFields.copyOf(other.getGroupFields()));
@@ -1437,26 +1428,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         } else {
             this.unevaluatedFields = deconstruct(unevaluatedFields);
         }
-    }
-
-    @Deprecated(since = "7.1.0", forRemoval = true)
-    public int getEventPerDayThreshold() {
-        return eventPerDayThreshold;
-    }
-
-    @Deprecated(since = "7.1.0", forRemoval = true)
-    public void setEventPerDayThreshold(int eventPerDayThreshold) {
-        this.eventPerDayThreshold = eventPerDayThreshold;
-    }
-
-    @Deprecated(since = "7.1.0", forRemoval = true)
-    public int getShardsPerDayThreshold() {
-        return shardsPerDayThreshold;
-    }
-
-    @Deprecated(since = "7.1.0", forRemoval = true)
-    public void setShardsPerDayThreshold(int shardsPerDayThreshold) {
-        this.shardsPerDayThreshold = shardsPerDayThreshold;
     }
 
     public int getInitialMaxTermThreshold() {
@@ -2874,14 +2845,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         return this.queryExecutionForPageTimeout;
     }
 
-    public boolean isLazySetMechanismEnabled() {
-        return lazySetMechanismEnabled;
-    }
-
-    public void setLazySetMechanismEnabled(boolean lazySetMechanismEnabled) {
-        this.lazySetMechanismEnabled = lazySetMechanismEnabled;
-    }
-
     public int getDocAggregationThresholdMs() {
         return docAggregationThresholdMs;
     }
@@ -3079,8 +3042,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 isAllowFieldIndexEvaluation() == that.isAllowFieldIndexEvaluation() &&
                 isAllowTermFrequencyLookup() == that.isAllowTermFrequencyLookup() &&
                 isExpandUnfieldedNegations() == that.isExpandUnfieldedNegations() &&
-                getEventPerDayThreshold() == that.getEventPerDayThreshold() &&
-                getShardsPerDayThreshold() == that.getShardsPerDayThreshold() &&
                 getInitialMaxTermThreshold() == that.getInitialMaxTermThreshold() &&
                 getIntermediateMaxTermThreshold() == that.getIntermediateMaxTermThreshold() &&
                 getIndexedMaxTermThreshold() == that.getIndexedMaxTermThreshold() &&
@@ -3208,7 +3169,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 isSeekingEventAggregation() == that.isSeekingEventAggregation() &&
                 getVisitorFunctionMaxWeight() == that.getVisitorFunctionMaxWeight() &&
                 getQueryExecutionForPageTimeout() == that.getQueryExecutionForPageTimeout() &&
-                isLazySetMechanismEnabled() == that.isLazySetMechanismEnabled() &&
                 getDocAggregationThresholdMs() == that.getDocAggregationThresholdMs() &&
                 getTfAggregationThresholdMs() == that.getTfAggregationThresholdMs() &&
                 getPruneQueryOptions() == that.getPruneQueryOptions() &&
@@ -3372,8 +3332,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 isAllowTermFrequencyLookup(),
                 isExpandUnfieldedNegations(),
                 getReturnType(),
-                getEventPerDayThreshold(),
-                getShardsPerDayThreshold(),
                 getInitialMaxTermThreshold(),
                 getIntermediateMaxTermThreshold(),
                 getIndexedMaxTermThreshold(),
@@ -3446,7 +3404,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 isSeekingEventAggregation(),
                 getVisitorFunctionMaxWeight(),
                 getQueryExecutionForPageTimeout(),
-                isLazySetMechanismEnabled(),
                 getDocAggregationThresholdMs(),
                 getTfAggregationThresholdMs(),
                 getPruneQueryOptions(),
