@@ -135,9 +135,7 @@ public class BoundedRangeIndexLookup extends AsyncIndexLookup {
                 }
 
             } catch (Exception e) {
-                log.error("Exception seen: {}", e.getMessage());
-                // mark the field as threshold exceeded regardless of the exception type
-                markExceeded();
+                handleException(e);
             } finally {
                 if (log.isTraceEnabled()) {
                     log.trace("closing scanner");
@@ -267,15 +265,19 @@ public class BoundedRangeIndexLookup extends AsyncIndexLookup {
             }
         } catch (Exception e) {
             // any exception causes the range to marked as value exceeded
-            markExceeded();
+            handleException(e);
         }
     }
 
     /**
      * Manipulates the {@link #indexLookupMap} so the bounded range term will be wrapped with an exceeded value marker.
+     *
+     * @param e
+     *            the exception
      */
-    protected void markExceeded() {
-        log.debug("marking range as exceeded");
+    protected void handleException(Exception e) {
+        log.warn("BoundedRangeIndexLookup saw exception: {}", e.getMessage());
+        log.debug("marking bounded range as value exceeded");
         indexLookupMap.put(field, "");
         indexLookupMap.get(field).setThresholdExceeded();
     }

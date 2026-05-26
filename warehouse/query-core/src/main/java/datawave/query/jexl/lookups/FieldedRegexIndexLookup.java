@@ -93,8 +93,7 @@ public class FieldedRegexIndexLookup extends BaseRegexIndexLookup {
                 }
 
             } catch (Exception e) {
-                log.error("Unexpected exception seen", e);
-                handleException();
+                handleException(e);
             }
         };
     }
@@ -124,10 +123,14 @@ public class FieldedRegexIndexLookup extends BaseRegexIndexLookup {
      * An exception while expanding a fielded regex retains the field but clears all collected values, if any such values exist.
      * <p>
      * The entry is then marked as threshold exceeded.
+     *
+     * @param e
+     *            the exception
      */
     @Override
-    protected void handleException() {
-        log.debug("marking regex as exceeded");
+    protected void handleException(Exception e) {
+        log.warn("FieldedRegexIndexLookup saw exception: {}", e.getMessage());
+        log.debug("marking fielded regex as exceeded value");
         indexLookupMap.setExceptionSeen(true);
         indexLookupMap.setTimeoutExceeded(true); // stub this out
         indexLookupMap.put(field, "");

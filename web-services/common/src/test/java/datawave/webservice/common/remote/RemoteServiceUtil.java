@@ -4,6 +4,7 @@ import static java.lang.Thread.sleep;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.sun.net.httpserver.HttpExchange;
@@ -70,13 +71,21 @@ public class RemoteServiceUtil {
 
     public static class ForeverHandler implements HttpHandler {
         private final AtomicBoolean interrupt;
+        private volatile CountDownLatch arrivalLatch;
 
         public ForeverHandler(AtomicBoolean interrupt) {
             this.interrupt = interrupt;
         }
 
+        public void setArrivalLatch(CountDownLatch arrivalLatch) {
+            this.arrivalLatch = arrivalLatch;
+        }
+
         @Override
         public void handle(HttpExchange exchange) throws IOException {
+            if (arrivalLatch != null) {
+                arrivalLatch.countDown();
+            }
             while (true) {
                 try {
                     sleep(50);

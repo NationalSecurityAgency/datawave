@@ -95,8 +95,7 @@ public class UnfieldedRegexIndexLookup extends BaseRegexIndexLookup {
 
             } catch (Exception e) {
                 // assume any exception is indicative of a timeout
-                handleException();
-                log.error(e.getMessage(), e);
+                handleException(e);
             }
         };
     }
@@ -123,9 +122,14 @@ public class UnfieldedRegexIndexLookup extends BaseRegexIndexLookup {
 
     /**
      * An exception while expanding an unfielded regex clears the entire index lookup map.
+     *
+     * @param e
+     *            the exception
      */
     @Override
-    protected void handleException() {
+    protected void handleException(Exception e) {
+        log.warn("UnfieldedRegexIndexLookup saw exception: {}", e.getMessage());
+        log.debug("unfielded regex marked as timeout, this will fail the query");
         indexLookupMap.setExceptionSeen(true);
         indexLookupMap.setTimeoutExceeded(true);
         indexLookupMap.setUnfieldedTimeoutSeen();

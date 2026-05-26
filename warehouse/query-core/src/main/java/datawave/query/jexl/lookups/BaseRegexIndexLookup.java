@@ -65,14 +65,17 @@ public abstract class BaseRegexIndexLookup extends AsyncIndexLookup {
                 future.get();
             }
         } catch (Exception e) {
-            handleException();
+            handleException(e);
         }
     }
 
     /**
      * Extending classes deal with exceptions differently
+     *
+     * @param e
+     *            the exception
      */
-    protected abstract void handleException();
+    protected abstract void handleException(Exception e);
 
     /**
      * Reverses the value coming off the shard reverse index
