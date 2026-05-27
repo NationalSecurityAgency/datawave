@@ -1,4 +1,4 @@
-package datawave.constants;
+package datawave.table.constants;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -15,13 +15,13 @@ public class ColumnFamilyConstantsTest {
 
     @Test
     public void testConstantsAsString() {
-        assertEquals("tf", ColumnFamilyConstants.TERM_FREQUENCY_NAME);
-        assertEquals("d", ColumnFamilyConstants.FULL_CONTENT_NAME);
+        assertEquals("tf", ColumnFamilyConstants.TERM_FREQUENCY);
+        assertEquals("d", ColumnFamilyConstants.FULL_CONTENT);
     }
 
     @Test
     public void testConstantsAsText() {
-        assertEquals(new Text("tf"), ColumnFamilyConstants.TERM_FREQUENCY);
-        assertEquals(new Text("d"), ColumnFamilyConstants.FULL_CONTENT);
+        assertEquals(new Text("tf"), ColumnFamilyConstants.TERM_FREQUENCY_TEXT);
+        assertEquals(new Text("d"), ColumnFamilyConstants.FULL_CONTENT_TEXT);
     }
 }

@@ -30,7 +30,6 @@ import org.apache.log4j.Logger;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 
-import datawave.constants.ColumnFamilyConstants;
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.logic.BaseQueryLogic;
@@ -48,6 +47,7 @@ import datawave.query.tables.ScannerFactory;
 import datawave.query.tables.keyword.transform.KeywordResultsTransformer;
 import datawave.query.tables.keyword.transform.TagCloudInputTransformer;
 import datawave.query.transformer.TagCloudTransformer;
+import datawave.table.constants.ColumnFamilyConstants;
 import datawave.util.keyword.TagCloudPartition;
 import datawave.util.keyword.TagCloudUtils;
 import datawave.webservice.query.exception.QueryException;
@@ -387,7 +387,7 @@ public class KeywordQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
         log.debug("Received pieces: " + shardId + ", " + datatype + ", " + uid);
 
         // Create and add a Range
-        final String cf = ColumnFamilyConstants.FULL_CONTENT_NAME;
+        final String cf = ColumnFamilyConstants.FULL_CONTENT;
         final String cq = datatype + Constants.NULL_BYTE_STRING + uid;
         final Key startKey = new Key(shardId, cf, cq + Constants.NULL_BYTE_STRING);
         final Key endKey = new Key(shardId, cf, cq + endKeyTerminator);

@@ -1,4 +1,4 @@
-package datawave.constants;
+package datawave.table.constants;
 
 /**
  * Constants for locality group names reserved by DataWave

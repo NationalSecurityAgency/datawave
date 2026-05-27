@@ -35,17 +35,17 @@ import org.junit.runner.RunWith;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 
-import datawave.constants.ColumnFamilyConstants;
 import datawave.ingest.data.config.NormalizedFieldAndValue;
 import datawave.ingest.protobuf.TermWeight;
 import datawave.query.Constants;
 import datawave.query.iterator.SortedListKeyValueIterator;
+import datawave.table.constants.ColumnFamilyConstants;
 
 @RunWith(EasyMockRunner.class)
 public class TermFrequencyExcerptIteratorTest extends EasyMockSupport {
 
     private static final Text row = new Text("20220115_1");
-    private static final Text colf = ColumnFamilyConstants.TERM_FREQUENCY;
+    private static final Text colf = ColumnFamilyConstants.TERM_FREQUENCY_TEXT;
 
     @Mock
     private IteratorEnvironment env;

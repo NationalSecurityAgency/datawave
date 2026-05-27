@@ -35,15 +35,15 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import datawave.constants.ColumnFamilyConstants;
 import datawave.query.Constants;
 import datawave.query.iterator.SortedListKeyValueIterator;
+import datawave.table.constants.ColumnFamilyConstants;
 
 @RunWith(EasyMockRunner.class)
 public class ContentSummaryIteratorTest extends EasyMockSupport {
 
     private static final Text row = new Text("20220115_1");
-    private static final Text colf = new Text(ColumnFamilyConstants.FULL_CONTENT_NAME);
+    private static final Text colf = new Text(ColumnFamilyConstants.FULL_CONTENT);
 
     @Mock
     private IteratorEnvironment env;

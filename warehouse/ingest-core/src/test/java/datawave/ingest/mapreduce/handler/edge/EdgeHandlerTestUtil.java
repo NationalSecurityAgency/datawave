@@ -19,7 +19,6 @@ import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 
-import datawave.constants.ColumnFamilyConstants;
 import datawave.edge.util.EdgeValue;
 import datawave.ingest.config.RawRecordContainerImpl;
 import datawave.ingest.data.RawRecordContainer;
@@ -29,6 +28,7 @@ import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.writer.AbstractContextWriter;
 import datawave.ingest.test.StandaloneStatusReporter;
 import datawave.ingest.test.StandaloneTaskAttemptContext;
+import datawave.table.constants.ColumnFamilyConstants;
 import datawave.util.TableName;
 
 public class EdgeHandlerTestUtil {
@@ -44,7 +44,7 @@ public class EdgeHandlerTestUtil {
     private static Logger log = Logger.getLogger(EdgeHandlerTestUtil.class);
 
     public static boolean isDocumentKey(Key k) {
-        return isShardKey(k) && k.getColumnFamily().toString().equals(ColumnFamilyConstants.FULL_CONTENT_NAME);
+        return isShardKey(k) && k.getColumnFamily().toString().equals(ColumnFamilyConstants.FULL_CONTENT);
     }
 
     public static boolean isShardKey(Key k) {

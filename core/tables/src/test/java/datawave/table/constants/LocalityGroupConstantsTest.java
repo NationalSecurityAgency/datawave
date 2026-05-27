@@ -1,4 +1,4 @@
-package datawave.constants;
+package datawave.table.constants;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 

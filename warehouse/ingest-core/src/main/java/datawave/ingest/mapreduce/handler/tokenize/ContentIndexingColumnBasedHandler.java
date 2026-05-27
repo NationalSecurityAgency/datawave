@@ -27,7 +27,6 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
-import datawave.constants.ColumnFamilyConstants;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.NormalizedFieldAndValue;
@@ -52,6 +51,7 @@ import datawave.ingest.util.BloomFilterUtil;
 import datawave.ingest.util.BloomFilterWrapper;
 import datawave.ingest.util.Identity;
 import datawave.ingest.util.TimeoutStrategy;
+import datawave.table.constants.ColumnFamilyConstants;
 import datawave.util.TextUtil;
 
 /**
@@ -603,7 +603,7 @@ public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractC
         colq.append(this.eventDataTypeName).append('\u0000').append(this.eventUid).append('\u0000').append(nfv.getIndexedFieldValue()).append('\u0000')
                         .append(nfv.getIndexedFieldName());
 
-        BulkIngestKey bKey = new BulkIngestKey(new Text(this.getShardTableName()), new Key(shardId, ColumnFamilyConstants.TERM_FREQUENCY.getBytes(),
+        BulkIngestKey bKey = new BulkIngestKey(new Text(this.getShardTableName()), new Key(shardId, ColumnFamilyConstants.TERM_FREQUENCY_TEXT.getBytes(),
                         colq.toString().getBytes(), visibility, event.getTimestamp(), helper.getDeleteMode()));
 
         values.put(bKey, value);

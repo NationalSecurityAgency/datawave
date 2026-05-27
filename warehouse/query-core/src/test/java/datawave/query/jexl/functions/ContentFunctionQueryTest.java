@@ -61,7 +61,6 @@ import com.google.common.collect.Multimap;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.configuration.spring.SpringBean;
-import datawave.constants.ColumnFamilyConstants;
 import datawave.ingest.config.RawRecordContainerImpl;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.Type;
@@ -94,6 +93,7 @@ import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.testframework.MockStatusReporter;
+import datawave.table.constants.ColumnFamilyConstants;
 import datawave.util.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.webservice.query.result.event.DefaultEvent;
@@ -455,7 +455,7 @@ public class ContentFunctionQueryTest {
             colq.append(this.eventDataTypeName).append('\u0000').append(this.eventUid).append('\u0000').append(nfv.getIndexedFieldValue()).append('\u0000')
                             .append(nfv.getIndexedFieldName());
 
-            BulkIngestKey bKey = new BulkIngestKey(new Text(this.getShardTableName()), new Key(shardId, ColumnFamilyConstants.TERM_FREQUENCY.getBytes(),
+            BulkIngestKey bKey = new BulkIngestKey(new Text(this.getShardTableName()), new Key(shardId, ColumnFamilyConstants.TERM_FREQUENCY_TEXT.getBytes(),
                             colq.toString().getBytes(), fieldVisibility, event.getDate(), helper.getDeleteMode()));
             values.put(bKey, new Value(info.toByteArray()));
         }
