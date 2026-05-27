@@ -27,6 +27,7 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
+import org.apache.commons.collections4.iterators.UniqueFilterIterator;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.LongRange;
@@ -118,6 +119,11 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
         super(other);
         this.config = new DiscoveryQueryConfiguration(other.config);
         this.metadataHelper = other.metadataHelper;
+    }
+
+    @Override
+    public Iterator<DiscoveredThing> iterator() {
+        return getValuesOnly() ? new UniqueFilterIterator<>(this.iterator) : this.iterator;
     }
 
     @Override
@@ -646,7 +652,7 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
                 queryData.setLastResult(from.getKey());
                 Value value = from.getValue();
                 in.reset(value.get(), value.getSize());
-                ArrayWritable aw = new ArrayWritable(DiscoveredThing.class);
+                ArrayWritable aw = new ArrayWritable(DiscoveredThingTermIsotope.class);
                 try {
                     aw.readFields(in);
                 } catch (IOException e) {

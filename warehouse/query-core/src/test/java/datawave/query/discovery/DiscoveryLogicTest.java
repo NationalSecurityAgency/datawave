@@ -1,6 +1,7 @@
 package datawave.query.discovery;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -253,7 +254,19 @@ public class DiscoveryLogicTest {
         for (int i = 0; i < expected.size(); i++) {
             DiscoveredThing actualThing = actual.get(i);
             DiscoveredThing expectedThing = expected.get(i);
-            assertEquals(expectedThing, actualThing);
+            assertInstanceOf(DiscoveredThing.class, actualThing);
+            // N.B.: DiscoveredThingTermIsotope extends DiscoveredThing. Convert to common format for comparison.
+            //@formatter:off
+            DiscoveredThing actualThingg = new DiscoveredThing(actualThing.getTerm(),
+                    actualThing.getField(),
+                    actualThing.getType(),
+                    actualThing.getDate(),
+                    actualThing.getColumnVisibility(),
+                    actualThing.getCount(),
+                    actualThing.getCountsByColumnVisibility());
+            //@formatter:on
+            assertEquals(expectedThing, actualThingg);
+
             assertEquals(expectedThing.getCountsByColumnVisibility(), actualThing.getCountsByColumnVisibility());
         }
     }
@@ -586,7 +599,6 @@ public class DiscoveryLogicTest {
         givenParameter(DiscoveryLogic.VALUES_ONLY, "true");
 
         expect(new DiscoveredThing("onyx", "", "", "", "FOO", 0L, new MapWritable()));
-        expect(new DiscoveredThing("onyx", "", "", "", "FOO", 0L, new MapWritable()));
         assertQueryResults();
     }
 
@@ -599,7 +611,6 @@ public class DiscoveryLogicTest {
         givenParameter(DiscoveryLogic.SUM_COUNTS, "true");
         givenParameter(DiscoveryLogic.VALUES_ONLY, "true");
 
-        expect(new DiscoveredThing("onyx", "", "", "", "FOO", 0L, new MapWritable()));
         expect(new DiscoveredThing("onyx", "", "", "", "FOO", 0L, new MapWritable()));
         assertQueryResults();
     }
