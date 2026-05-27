@@ -9,6 +9,9 @@ import java.util.NoSuchElementException;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 
@@ -21,7 +24,8 @@ import datawave.webservice.query.exception.QueryException;
  * @param <T>
  *            type for the iterator
  */
-public class MergeSortIterator<T> implements Iterator<T> {
+public class MergeSortIterator<T> implements CloseableIterator<T> {
+    private static final Logger log = LoggerFactory.getLogger(MergeSortIterator.class);
 
     private List<Iterator<T>> iterators = new ArrayList<>();
     private List<T> lastList = new ArrayList<>();
@@ -86,6 +90,27 @@ public class MergeSortIterator<T> implements Iterator<T> {
         if (e != null) {
             throw new UnsupportedOperationException("One or more of the underlying sets does not support this operation", e);
         }
+    }
+
+    @Override
+    public void close() {
+        for (Iterator<T> it : iterators) {
+            if (it instanceof AutoCloseable) {
+                try {
+                    ((AutoCloseable) it).close();
+                } catch (Exception e) {
+                    log.warn("Failed to close underlying iterator in MergeSortIterator", e);
+                }
+            }
+        }
+        iterators.clear();
+        nextIterators.clear();
+        lastList.clear();
+        if (set != null) {
+            set.clear();
+        }
+        next = null;
+        populated = false;
     }
 
     /* Some utility methods */

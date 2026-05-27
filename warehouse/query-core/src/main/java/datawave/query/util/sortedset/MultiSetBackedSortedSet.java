@@ -3,7 +3,6 @@ package datawave.query.util.sortedset;
 import java.util.AbstractSet;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.SortedSet;
@@ -44,9 +43,11 @@ public class MultiSetBackedSortedSet<E> extends AbstractSet<E> implements Sorted
     @Override
     public int size() {
         int size = 0;
-        for (@SuppressWarnings("unused")
-        E t : this) {
-            size++;
+        try (CloseableIterator<E> iter = iterator()) {
+            while (iter.hasNext()) {
+                iter.next();
+                size++;
+            }
         }
         return size;
     }
@@ -75,7 +76,7 @@ public class MultiSetBackedSortedSet<E> extends AbstractSet<E> implements Sorted
     }
 
     @Override
-    public Iterator<E> iterator() {
+    public CloseableIterator<E> iterator() {
         return new MergeSortIterator<>(sets);
     }
 

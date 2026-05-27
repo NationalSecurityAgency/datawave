@@ -247,8 +247,9 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
             int actualSize = 0;
             PersistOptions persistOptions = handler.getPersistOptions();
             List<E> setToVerify = new ArrayList<>();
-            try (SortedSetOutputStream<E> stream = handler.getOutputStream()) {
-                for (E t : set) {
+            try (SortedSetOutputStream<E> stream = handler.getOutputStream(); CloseableIterator<E> setIterator = CloseableIterator.wrapSafely(set.iterator())) {
+                while (setIterator.hasNext()) {
+                    E t = setIterator.next();
                     stream.writeObject(t);
                     if (persistOptions.isVerifyElements() && setToVerify.size() < persistOptions.getNumElementsToVerify()) {
                         setToVerify.add(t);
@@ -390,9 +391,12 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
     public boolean contains(Object o) {
         if (persisted) {
             E t = (E) o;
-            for (E next : this) {
-                if (equals(next, t)) {
-                    return true;
+            try (CloseableIterator<E> iter = iterator()) {
+                while (iter.hasNext()) {
+                    E next = iter.next();
+                    if (equals(next, t)) {
+                        return true;
+                    }
                 }
             }
             return false;
@@ -402,11 +406,42 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
     }
 
     @Override
-    public Iterator<E> iterator() {
+    public CloseableIterator<E> iterator() {
         if (persisted) {
             return new FileIterator();
         } else {
-            return set.iterator();
+            return new NoOpCloseableIterator<>(set.iterator());
+        }
+    }
+
+    /**
+     * Wraps an in-memory Iterator so it satisfies CloseableIterator. close() is a no-op since there is no underlying stream to release.
+     */
+    private static class NoOpCloseableIterator<E> implements CloseableIterator<E> {
+        private final Iterator<E> delegate;
+
+        NoOpCloseableIterator(Iterator<E> delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return delegate.hasNext();
+        }
+
+        @Override
+        public E next() {
+            return delegate.next();
+        }
+
+        @Override
+        public void remove() {
+            delegate.remove();
+        }
+
+        @Override
+        public void close() {
+            // no underlying stream to release
         }
     }
 
@@ -705,7 +740,7 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
     /**
      * This is the iterator for a persisted FileSortedSet
      */
-    protected class FileIterator implements Iterator<E>, AutoCloseable {
+    protected class FileIterator implements CloseableIterator<E> {
         private SortedSetInputStream<E> stream;
         private E next;
 

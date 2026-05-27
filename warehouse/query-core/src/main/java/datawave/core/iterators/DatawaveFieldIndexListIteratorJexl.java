@@ -265,12 +265,16 @@ public class DatawaveFieldIndexListIteratorJexl extends DatawaveFieldIndexCachin
             }
 
             InputStream fis = fs.open(filename);
-            if (codec != null) {
-                fis = codec.createInputStream(fis);
+            try {
+                if (codec != null) {
+                    fis = codec.createInputStream(fis);
+                }
+                NoOutputs outputs = NoOutputs.getSingleton();
+                DataInput di = new InputStreamDataInput(fis);
+                return new FST<>(di, outputs);
+            } finally {
+                fis.close();
             }
-            NoOutputs outputs = NoOutputs.getSingleton();
-            DataInput di = new InputStreamDataInput(fis);
-            return new FST<>(di, outputs);
         }
 
         public static synchronized void clear(String file) {

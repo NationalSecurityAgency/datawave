@@ -588,6 +588,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
                 Key startKey = r.getStartKey();
                 // decide if keyValues needs to be rebuilt or can be reused
                 if (!this.keys.hasNext() || (this.keys.peek().compareTo(startKey) > 0)) {
+                    this.keys.close();
                     this.keys = new CachingIterator<>(this.threadSafeSet.iterator());
                 }
             }
@@ -867,6 +868,9 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
                     }
                     // so the range does not contain the key. determine if we need to seek
                     else if (key.compareTo(this.lastRangeSeeked.getStartKey()) < 0) {
+                        if (this.keys != null) {
+                            this.keys.close();
+                        }
                         this.keys = new CachingIterator<>(this.threadSafeSet.tailSet(this.lastRangeSeeked.getStartKey()).iterator());
                         log.trace(controlDir + ": " + key + " is less than " + this.lastRangeSeeked.getStartKey() + " -> Tail set starts at "
                                         + this.keys.peek());
@@ -1286,7 +1290,10 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
      *
      */
     protected void clearRowBasedHdfsBackedSet() {
-        this.keys = null;
+        if (this.keys != null) {
+            this.keys.close();
+            this.keys = null;
+        }
         this.currentRow = null;
         this.set = null;
     }
@@ -1423,10 +1430,17 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
             // if this set is not marked as complete (meaning completely filled AND persisted), then we cannot trust the contents and we need to recompute.
             if (!this.setControl.isCompleteAndPersisted(row)) {
                 this.set.clear();
-                this.keys = null;
+                if (this.keys != null) {
+                    this.keys.close();
+                    this.keys = null;
+                }
                 log.info(String.format("%s: Creating empty HdfsBackedSortedSet for Ivarator %s with ivaratorCacheDirs %s", controlDir,
                                 getIvaratorInfo(row, false), ivaratorCacheDirs));
             } else {
+                if (this.keys != null) {
+                    this.keys.close();
+                    this.keys = null;
+                }
                 this.keys = new CachingIterator<>(this.set.iterator());
                 log.info(String.format("%s: Reusing completed HdfsBackedSortedSet for Ivarator %s with ivaratorCacheDirs %s", controlDir,
                                 getIvaratorInfo(row, false), ivaratorCacheDirs));

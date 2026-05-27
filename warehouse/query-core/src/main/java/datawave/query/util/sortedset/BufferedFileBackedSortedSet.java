@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
-import java.util.Iterator;
 import java.util.List;
 import java.util.SortedSet;
 import java.util.function.Predicate;
@@ -291,7 +290,7 @@ public class BufferedFileBackedSortedSet<E> implements SortedSet<E> {
     }
 
     @Override
-    public Iterator<E> iterator() {
+    public CloseableIterator<E> iterator() {
         // first lets compact down the sets if needed
         try {
             // if we have any persisted sets, then ensure we are persisted
