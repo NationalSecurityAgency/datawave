@@ -18,7 +18,8 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.util.StringUtils;
 import org.apache.log4j.Logger;
 
-import datawave.ingest.mapreduce.handler.ExtendedDataTypeHandler;
+import datawave.constants.ColumnFamilyConstants;
+import datawave.constants.LocalityGroupConstants;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.ingest.table.aggregator.BitSetCombiner;
 import datawave.ingest.table.aggregator.CombinerConfiguration;
@@ -106,9 +107,8 @@ public class ShardTableConfigHelper extends AbstractTableConfigHelper {
         String localityGroupsConf = null;
         if (tableName.equals(shardTableName)) {
             localityGroupsConf = conf.get(shardTableName + LOCALITY_GROUPS,
-                            ExtendedDataTypeHandler.FULL_CONTENT_LOCALITY_NAME + ':' + ExtendedDataTypeHandler.FULL_CONTENT_COLUMN_FAMILY + ','
-                                            + ExtendedDataTypeHandler.TERM_FREQUENCY_LOCALITY_NAME + ':'
-                                            + ExtendedDataTypeHandler.TERM_FREQUENCY_COLUMN_FAMILY);
+                            LocalityGroupConstants.FULL_CONTENT_LOCALITY + ':' + ColumnFamilyConstants.FULL_CONTENT_NAME + ','
+                                            + LocalityGroupConstants.TERM_FREQUENCY_LOCALITY + ':' + ColumnFamilyConstants.TERM_FREQUENCY_NAME);
             for (String localityGroupDefConf : StringUtils.split(localityGroupsConf)) {
                 String[] localityGroupDef = StringUtils.split(localityGroupDefConf, '\\', ':');
                 Set<Text> families = localityGroups.get(localityGroupDef[0]);

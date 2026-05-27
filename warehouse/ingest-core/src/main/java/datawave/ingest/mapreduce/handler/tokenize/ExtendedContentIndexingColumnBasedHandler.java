@@ -37,6 +37,7 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Multimap;
 
+import datawave.constants.ColumnFamilyConstants;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.NormalizedFieldAndValue;
@@ -561,8 +562,8 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
     }
 
     /**
-     * Writes the document's content into the {@link #FULL_CONTENT_COLUMN_FAMILY} column family. The data is compressed (GZIP) and Base64 encoded before being
-     * placed into the value.
+     * Writes the document's content into the {@link ColumnFamilyConstants#FULL_CONTENT} column family. The data is compressed (GZIP) and Base64 encoded before
+     * being placed into the value.
      *
      * @param event
      *            the event
@@ -591,8 +592,7 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
                     TaskInputOutputContext<KEYIN,? extends RawRecordContainer,KEYOUT,VALUEOUT> context, StatusReporter reporter, Text uid, byte[] visibility,
                     byte[] shardId, byte[] rawValue) throws IOException, InterruptedException, MutationsRejectedException {
 
-        Key k = createKey(shardId, new Text(ExtendedDataTypeHandler.FULL_CONTENT_COLUMN_FAMILY), uid, visibility, event.getTimestamp(),
-                        this.ingestHelper.getDeleteMode());
+        Key k = createKey(shardId, new Text(ColumnFamilyConstants.FULL_CONTENT_NAME), uid, visibility, event.getTimestamp(), this.ingestHelper.getDeleteMode());
 
         ByteArrayOutputStream baos = null;
         Base64OutputStream b64os = null;
@@ -805,9 +805,8 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
         colq.append(this.eventDataTypeName).append('\u0000').append(this.eventUid).append('\u0000').append(nfv.getIndexedFieldValue()).append('\u0000')
                         .append(nfv.getIndexedFieldName());
 
-        BulkIngestKey bKey = new BulkIngestKey(new Text(this.getShardTableName()),
-                        new Key(shardId, ExtendedDataTypeHandler.TERM_FREQUENCY_COLUMN_FAMILY.getBytes(), colq.toString().getBytes(), visibility,
-                                        event.getTimestamp(), deleteMode));
+        BulkIngestKey bKey = new BulkIngestKey(new Text(this.getShardTableName()), new Key(shardId, ColumnFamilyConstants.TERM_FREQUENCY.getBytes(),
+                        colq.toString().getBytes(), visibility, event.getTimestamp(), deleteMode));
 
         contextWriter.write(bKey, value, context);
     }

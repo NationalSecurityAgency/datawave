@@ -35,8 +35,8 @@ import org.junit.runner.RunWith;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 
+import datawave.constants.ColumnFamilyConstants;
 import datawave.ingest.data.config.NormalizedFieldAndValue;
-import datawave.ingest.mapreduce.handler.ExtendedDataTypeHandler;
 import datawave.ingest.protobuf.TermWeight;
 import datawave.query.Constants;
 import datawave.query.iterator.SortedListKeyValueIterator;
@@ -45,7 +45,7 @@ import datawave.query.iterator.SortedListKeyValueIterator;
 public class TermFrequencyExcerptIteratorTest extends EasyMockSupport {
 
     private static final Text row = new Text("20220115_1");
-    private static final Text colf = ExtendedDataTypeHandler.TERM_FREQUENCY_COLUMN_FAMILY;
+    private static final Text colf = ColumnFamilyConstants.TERM_FREQUENCY;
 
     @Mock
     private IteratorEnvironment env;

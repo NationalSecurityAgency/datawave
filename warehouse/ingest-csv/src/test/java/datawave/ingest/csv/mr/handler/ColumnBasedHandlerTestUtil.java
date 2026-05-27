@@ -23,6 +23,7 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 
+import datawave.constants.ColumnFamilyConstants;
 import datawave.ingest.config.RawRecordContainerImpl;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.config.NormalizedContentInterface;
@@ -52,7 +53,7 @@ public class ColumnBasedHandlerTestUtil {
     private static final Logger log = Logger.getLogger(ColumnBasedHandlerTestUtil.class);
 
     public static boolean isDocumentKey(Key k) {
-        return isShardKey(k) && k.getColumnFamily().toString().equals(ExtendedDataTypeHandler.FULL_CONTENT_COLUMN_FAMILY);
+        return isShardKey(k) && k.getColumnFamily().toString().equals(ColumnFamilyConstants.FULL_CONTENT_NAME);
     }
 
     public static boolean isShardKey(Key k) {

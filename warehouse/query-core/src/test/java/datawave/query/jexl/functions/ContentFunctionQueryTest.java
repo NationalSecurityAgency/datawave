@@ -61,6 +61,7 @@ import com.google.common.collect.Multimap;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.configuration.spring.SpringBean;
+import datawave.constants.ColumnFamilyConstants;
 import datawave.ingest.config.RawRecordContainerImpl;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.Type;
@@ -71,7 +72,6 @@ import datawave.ingest.data.config.NormalizedFieldAndValue;
 import datawave.ingest.data.config.ingest.AbstractContentIngestHelper;
 import datawave.ingest.data.config.ingest.ContentBaseIngestHelper;
 import datawave.ingest.data.config.ingest.TermFrequencyIngestHelperInterface;
-import datawave.ingest.mapreduce.handler.ExtendedDataTypeHandler;
 import datawave.ingest.mapreduce.handler.dateindex.DateIndexDataTypeHandler;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.ingest.mapreduce.handler.tokenize.ContentIndexingColumnBasedHandler;
@@ -455,9 +455,8 @@ public class ContentFunctionQueryTest {
             colq.append(this.eventDataTypeName).append('\u0000').append(this.eventUid).append('\u0000').append(nfv.getIndexedFieldValue()).append('\u0000')
                             .append(nfv.getIndexedFieldName());
 
-            BulkIngestKey bKey = new BulkIngestKey(new Text(this.getShardTableName()),
-                            new Key(shardId, ExtendedDataTypeHandler.TERM_FREQUENCY_COLUMN_FAMILY.getBytes(), colq.toString().getBytes(), fieldVisibility,
-                                            event.getDate(), helper.getDeleteMode()));
+            BulkIngestKey bKey = new BulkIngestKey(new Text(this.getShardTableName()), new Key(shardId, ColumnFamilyConstants.TERM_FREQUENCY.getBytes(),
+                            colq.toString().getBytes(), fieldVisibility, event.getDate(), helper.getDeleteMode()));
             values.put(bKey, new Value(info.toByteArray()));
         }
 

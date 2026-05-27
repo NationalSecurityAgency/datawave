@@ -17,12 +17,12 @@ import org.apache.log4j.Logger;
 
 import com.google.common.collect.ImmutableSet;
 
+import datawave.constants.ColumnFamilyConstants;
 import datawave.core.common.connection.AccumuloConnectionFactory.Priority;
 import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.logic.BaseQueryLogic;
 import datawave.core.query.logic.QueryLogicTransformer;
-import datawave.ingest.mapreduce.handler.ExtendedDataTypeHandler;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl.Parameter;
 import datawave.query.QueryParameters;
@@ -112,7 +112,7 @@ public class TermFrequencyQueryTable extends BaseQueryLogic<Entry<Key,Value>> {
                 END = ALL;
             }
 
-            final String tf = ExtendedDataTypeHandler.TERM_FREQUENCY_COLUMN_FAMILY.toString();
+            final String tf = ColumnFamilyConstants.TERM_FREQUENCY.toString();
             Key startKey = new Key(shardId, tf, datatype + NULL + uid + NULL);
             Key endKey = new Key(shardId, tf, datatype + NULL + uid + END);
             Range r = new Range(startKey, true, endKey, false);

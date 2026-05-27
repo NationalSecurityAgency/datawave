@@ -149,6 +149,11 @@
                 <version>${project.version}</version>
             </dependency>
             <dependency>
+                <groupId>gov.nsa.datawave.core</groupId>
+                <artifactId>datawave-core-data</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>gov.nsa.datawave.webservices</groupId>
                 <artifactId>datawave-ws-annotations</artifactId>
                 <version>${project.version}</version>

@@ -30,6 +30,7 @@ import org.apache.log4j.Logger;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 
+import datawave.constants.ColumnFamilyConstants;
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.logic.BaseQueryLogic;
@@ -37,7 +38,6 @@ import datawave.core.query.logic.CheckpointableQueryLogic;
 import datawave.core.query.logic.QueryCheckpoint;
 import datawave.core.query.logic.QueryKey;
 import datawave.core.query.logic.QueryLogicTransformer;
-import datawave.ingest.mapreduce.handler.ExtendedDataTypeHandler;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl.Parameter;
 import datawave.query.Constants;
@@ -387,7 +387,7 @@ public class KeywordQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
         log.debug("Received pieces: " + shardId + ", " + datatype + ", " + uid);
 
         // Create and add a Range
-        final String cf = ExtendedDataTypeHandler.FULL_CONTENT_COLUMN_FAMILY;
+        final String cf = ColumnFamilyConstants.FULL_CONTENT_NAME;
         final String cq = datatype + Constants.NULL_BYTE_STRING + uid;
         final Key startKey = new Key(shardId, cf, cq + Constants.NULL_BYTE_STRING);
         final Key endKey = new Key(shardId, cf, cq + endKeyTerminator);
