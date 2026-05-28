@@ -48,7 +48,7 @@
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.core</groupId>
-            <artifactId>datawave-core-data</artifactId>
+            <artifactId>datawave-core-tables</artifactId>
         </dependency>
         <dependency>
             <groupId>io.dropwizard.metrics</groupId>
