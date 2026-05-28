@@ -1,8 +1,8 @@
 /*
- * This file runs in a Node context.
+ * This file runs in a Node context. This is the default configuration for a Quasar app created with the CLI with some modifications.
  */
 
-// Configuration for your app
+// Configuration for Data Dictionary frontend application built with Quasar Framework and Vite.
 // https://v2.quasar.dev/quasar-cli-vite/quasar-config-js
 
 import { configure } from 'quasar/wrappers';
@@ -12,13 +12,13 @@ export default configure(function (ctx) {
     // https://v2.quasar.dev/quasar-cli-vite/prefetch-feature
     // preFetch: true,
 
-    // app boot file (/src/boot)
+    // app boot file (/src/boot) - This is for our Axios configuration and API client setup.
     boot: ['axios'],
 
-    // https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#css
+    // https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#css - Access our global css file.
     css: ['app.css'],
 
-    // https://github.com/quasarframework/quasar/tree/dev/extras
+    // https://github.com/quasarframework/quasar/tree/dev/extras - These are needed for some of the table icons in Data Dictionary.
     extras: [
       'ionicons-v4',
       'roboto-font',
@@ -69,14 +69,14 @@ export default configure(function (ctx) {
 
     animations: [],
 
-    // SSR
+    // SSR - Used default settings - https://quasar.dev/quasar-cli-vite/developing-ssr/configuring-ssr
     ssr: {
       pwa: false,
       prodPort: 3000,
       middlewares: ['render']
     },
 
-    // PWA
+    // PWA - Used default settings - https://quasar.dev/quasar-cli-vite/developing-pwa/configuring-pwa
     pwa: {
       workboxMode: 'generateSW',
       injectPwaMetaTags: true,

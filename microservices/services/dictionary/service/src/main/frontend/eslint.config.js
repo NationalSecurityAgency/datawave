@@ -29,6 +29,7 @@ export default tseslint.config(
     },
     rules: {
       // Relaxed Vue rules for Quasar, which has its own conventions that may not align with strict Vue style rules.
+      // These can be tightened up in the future if desired, but for now we want to allow some flexibility in how components are structured and named.
       'vue/multi-word-component-names': 'off',
       'vue/max-attributes-per-line': 'off',
       'vue/html-indent': 'off',
@@ -38,6 +39,7 @@ export default tseslint.config(
       'vue/v-slot-style': 'off',
 
       // TypeScript - lenient during build, but can be tightened up in the future.
+      // These are set to 'warn' instead of 'error' to avoid build failures, but they will still show up in the console and can be addressed over time.
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-unused-vars': ['warn', {
         argsIgnorePattern: '^_',
