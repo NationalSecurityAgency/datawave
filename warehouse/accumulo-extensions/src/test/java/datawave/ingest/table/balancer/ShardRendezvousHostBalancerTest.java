@@ -754,6 +754,31 @@ public class ShardRendezvousHostBalancerTest {
 
     }
 
+    @Test
+    public void computeTabletAssignmentCountsByHostCount_canLeaveTabletsUnassignedDueToRounding() {
+        // Three groups with equal total tserver weight:
+        // Group key=1: 6 hosts with 1 tserver each -> contribution = 6
+        // Group key=2: 3 hosts with 2 tservers each -> contribution = 6
+        // Group key=3: 2 hosts with 3 tservers each -> contribution = 6
+        // Total tservers = 18
+        //
+        // For 4 tablets, each group gets round(4 * 6/18) = round(1.333) = 1.
+        // Total assigned = 3, but 4 were requested.
+        // tabletsLeft = 1, triggering the Preconditions.checkState failure.
+
+        List<TabletServerId> tserverList = new ArrayList<>();
+        tserverList.addAll(generateTabletServers(0, 6, 1)); // 6 hosts, 1 tserver each
+        tserverList.addAll(generateTabletServers(6, 3, 2)); // 3 hosts, 2 tservers each
+        tserverList.addAll(generateTabletServers(9, 2, 3)); // 2 hosts, 3 tservers each
+
+        var tservers = new RendezvousHostBalancer.TServers(tserverList);
+
+        Map<Integer,Integer> counts = tservers.computeTabletAssignmentCountsByHostCount(4);
+
+        int assigned = counts.values().stream().mapToInt(Integer::intValue).sum();
+        assertEquals(4, assigned, "Not all tablets were assigned");
+    }
+
     private static String getDay(TabletId tabletId) {
         return ShardRendezvousHostBalancer.PARTITIONER.apply(tabletId);
     }

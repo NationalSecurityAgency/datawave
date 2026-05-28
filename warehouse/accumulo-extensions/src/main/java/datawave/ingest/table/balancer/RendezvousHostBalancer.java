@@ -83,7 +83,7 @@ public abstract class RendezvousHostBalancer implements TabletBalancer {
         this.env = balancerEnvironment;
     }
 
-    private static class TServers {
+    static class TServers {
 
         Map<Integer,Map<String,List<TabletServerId>>> tservers = new HashMap<>();
 
@@ -148,6 +148,18 @@ public abstract class RendezvousHostBalancer implements TabletBalancer {
                 if (tablets > 0) {
                     counts.put(tserversPerHost, tablets);
                     tabletsLeft -= tablets;
+                }
+            }
+
+            // Rounding can cause the sum of rounded values to be less than numTablets. Distribute
+            // any remaining tablets one at a time to groups that already have an allocation.
+            if (tabletsLeft > 0 && !counts.isEmpty()) {
+                for (var entry : counts.entrySet()) {
+                    if (tabletsLeft == 0) {
+                        break;
+                    }
+                    entry.setValue(entry.getValue() + 1);
+                    tabletsLeft--;
                 }
             }
 
