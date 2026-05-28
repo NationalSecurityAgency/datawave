@@ -20,7 +20,7 @@
     <properties>
         <node.downloadRoot>https://nodejs.org/dist/</node.downloadRoot>
         <node.npmRegistryUrl>https://registry.npmjs.org/</node.npmRegistryUrl>
-        <node.version>v22.22.3</node.version>
+        <node.version>v22.13.0</node.version>
         <npm.downloadRoot>https://registry.npmjs.org/npm/-/</npm.downloadRoot>
         <npm.version>10.9.8</npm.version>
         <start-class>datawave.microservice.dictionary.DictionaryService</start-class>
