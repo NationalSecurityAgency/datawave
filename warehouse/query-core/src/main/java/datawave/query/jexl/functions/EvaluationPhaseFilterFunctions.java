@@ -1661,21 +1661,26 @@ public class EvaluationPhaseFilterFunctions {
      * <li>lastDotSegmentIndex 2: {@code "FIRST.SECOND.THIRD"}</li>
      * <li>lastDotSegmentIndex 3: {@code "FIRST.SECOND.THIRD.FOURTH"}</li>
      * <li>lastDotSegmentIndex 4+: {@code null}</li>
+     * <li>lastDotSegmentIndex -1: {@code "FIRST.SECOND.THIRD.FOURTH"}</li>
      * </ul>
      *
      * @param input
      *            the dot-delimited string to process
      * @param lastDotSegmentIndex
-     *            the zero-based index of the last segment to include (relative to the first period)
+     *            the zero-based index of the last segment to include (relative to the first period). -1 is valid to mean all
      * @return the joined segments from index 0 to {@code lastDotSegmentIndex}, or {@code null} if the index is out of bounds or no periods exist.
      */
     public static String extractDotSegmentRangeFromLeft(String input, int lastDotSegmentIndex) {
-        if (lastDotSegmentIndex < 0) {
+        if (lastDotSegmentIndex < -1) {
             return null;
         }
+
         // Always peel off the fieldName before the first '.'
         input = input.substring(input.indexOf('.') + 1);
         int[] indices = getIndicesOfPeriods(input);
+        if (lastDotSegmentIndex == -1) {
+            return input;
+        }
         if (lastDotSegmentIndex < indices.length) {
             return input.substring(0, indices[lastDotSegmentIndex]);
         } else if (lastDotSegmentIndex == indices.length) {
@@ -1690,7 +1695,7 @@ public class EvaluationPhaseFilterFunctions {
 
     /**
      * Returns a string that is a substring of the given string. The substring starts at the index of the Nth occurrence of the character '.' from the left,
-     * where N is specified by {@code pos} and extends to the end of the string.
+     * where N is specified by {@code pos} and extends to the end of the string. A pos of '-1' will return the maximum substring possible.
      *
      * <pre>
      * Given the string "FIRST.SECOND.THIRD.FOURTH"
@@ -1698,6 +1703,7 @@ public class EvaluationPhaseFilterFunctions {
      * - A value of 1 for pos will result in the substring 'THIRD.FOURTH'
      * - A value of 2 for pos will result in the substring 'SECOND.THIRD.FOURTH'
      * - A value of 3 for pos will result in null being returned
+     * - A value of -1 for pos will result in the substring 'SECOND.THIRD.FOURTH'
      * </pre>
      *
      * @param input
@@ -1708,6 +1714,15 @@ public class EvaluationPhaseFilterFunctions {
      */
     public static String getMatchToRightOfPeriod(String input, int pos) {
         int[] indices = getIndicesOfPeriods(input);
+
+        if (indices.length == 0) {
+            return null;
+        }
+
+        if (pos == -1) {
+            return input.substring(indices[0] + 1);
+        }
+
         if (indices.length < pos + 1) {
             if (log.isTraceEnabled()) {
                 log.trace("Not enough grouping info to extract group " + pos + " from the right for input " + input);

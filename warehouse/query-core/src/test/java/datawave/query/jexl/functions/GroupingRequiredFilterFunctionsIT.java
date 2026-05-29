@@ -97,6 +97,15 @@ public class GroupingRequiredFilterFunctionsIT {
             // 10 - if there aren't enough indexes in the group it can't be true even if otherwise is a match
             "grouping:matchesInGroup(FIELD, 'a', FIELD1, 'b', 10); FIELD.1.2.3=a,FIELD1.1.2.3=b; false",
 
+            // matchesInGroup supports -1 for position to mean full group
+            "grouping:matchesInGroup(FIELD, 'a', FIELD1, 'b', -1); FIELD.1.2.3=a,FIELD1.1.2.3=b; true",
+            "grouping:matchesInGroup(FIELD, 'a', FIELD1, 'b', -1); FIELD.1.2.3=a,FIELD1.1.2.4=b; false",
+            "grouping:matchesInGroup(FIELD, 'a', FIELD1, 'b', -1); FIELD.1.2.3=a,FIELD1.1.2=b; false",
+            "grouping:matchesInGroup(FIELD, 'a', FIELD1, 'b', -1); FIELD.1.2=a,FIELD1.1.2.3=b; false",
+            "grouping:matchesInGroup(FIELD, 'a', FIELD1, 'b', -1); FIELD=a,FIELD1.1.2.3=b; false",
+            "grouping:matchesInGroup(FIELD, 'a', FIELD1, 'b', -1); FIELD.1.2.3=a,FIELD1=b; false",
+            "grouping:matchesInGroup(FIELD, 'a', FIELD1, 'b', -1); FIELD.1.2.3=a,FIELD1.1.2.3.0=b; false",
+
             // supports regexes on either argument
             "grouping:matchesInGroup(FIELD, 'a*', FIELD1, 'b*'); FIELD.1.2.3=aaaaaaaa,FIELD1.1.2.3=bbbbbbbbbb; true",
             // regex can be full wildcards
@@ -138,7 +147,16 @@ public class GroupingRequiredFilterFunctionsIT {
             // matchesInGroupLeft also supports regex
             "grouping:matchesInGroupLeft(FIELD, 'a*', FIELD1, 'b*'); FIELD.1.2.3=aaaaaaaa,FIELD1.1.2.3=bbbbbbbbbb; true",
             "grouping:matchesInGroupLeft(FIELD, 'a{8}', FIELD1, 'b*'); FIELD.1.2.3=aaaaaaaa,FIELD1.1.2.3=bbbbbbbbbb; true",
-            "grouping:matchesInGroupLeft(FIELD, '^(?=.*\\\\d)(?=.*[A-Z]).{8,}$', FIELD1, 'b*'); FIELD.1.2.3=bb7dfZuq,FIELD1.1.2.3=bbbbbbbbbb; true",})
+            "grouping:matchesInGroupLeft(FIELD, '^(?=.*\\\\d)(?=.*[A-Z]).{8,}$', FIELD1, 'b*'); FIELD.1.2.3=bb7dfZuq,FIELD1.1.2.3=bbbbbbbbbb; true",
+
+            // matchesInGroupLeft supports -1 for position to mean full group
+            "grouping:matchesInGroupLeft(FIELD, 'a', FIELD1, 'b', -1); FIELD.1.2.3=a,FIELD1.1.2.3=b; true",
+            "grouping:matchesInGroupLeft(FIELD, 'a', FIELD1, 'b', -1); FIELD.1.2.3=a,FIELD1.1.2.4=b; false",
+            "grouping:matchesInGroupLeft(FIELD, 'a', FIELD1, 'b', -1); FIELD.1.2.3=a,FIELD1.1.2=b; false",
+            "grouping:matchesInGroupLeft(FIELD, 'a', FIELD1, 'b', -1); FIELD.1.2=a,FIELD1.1.2.3=b; false",
+            "grouping:matchesInGroupLeft(FIELD, 'a', FIELD1, 'b', -1); FIELD=a,FIELD1.1.2.3=b; false",
+            "grouping:matchesInGroupLeft(FIELD, 'a', FIELD1, 'b', -1); FIELD.1.2.3=a,FIELD1=b; false",
+            "grouping:matchesInGroupLeft(FIELD, 'a', FIELD1, 'b', -1); FIELD.1.2.3=a,FIELD1.1.2.3.0=b; false",})
     @ParameterizedTest(name = "{0} against {1} should be {2}")
     public void functionalTests(String query, String data, boolean result) {
         withQuery(query);

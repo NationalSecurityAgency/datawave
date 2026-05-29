@@ -1067,7 +1067,7 @@ public class EvaluationPhaseFilterFunctionsTest {
             givenPosition(4);
             assertResult(null);
 
-            givenPosition(-1);
+            givenPosition(-2);
             assertResult(null);
         }
 
