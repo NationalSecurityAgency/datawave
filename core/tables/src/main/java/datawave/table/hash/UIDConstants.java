@@ -1,11 +1,8 @@
-package datawave.data.hash;
+package datawave.table.hash;
 
 /**
- * Deprecated, use {@link datawave.table.hash.UIDConstants}
- * <p>
  * Constants used for [internal] UIDs
  */
-@Deprecated(forRemoval = true, since = "7.40.0")
 public interface UIDConstants {
     /**
      * Character used for separating various parts of a UID, such as hashes and "extra" strings

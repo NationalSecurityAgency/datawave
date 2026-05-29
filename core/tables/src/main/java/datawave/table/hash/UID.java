@@ -1,9 +1,9 @@
-package datawave.data.hash;
+package datawave.table.hash;
 
-import static datawave.data.hash.UIDConstants.CONFIG_MACHINE_ID_KEY;
-import static datawave.data.hash.UIDConstants.CONFIG_UID_TYPE_KEY;
-import static datawave.data.hash.UIDConstants.DEFAULT_SEPARATOR;
-import static datawave.data.hash.UIDConstants.MILLISECONDS_PER_DAY;
+import static datawave.table.hash.UIDConstants.CONFIG_MACHINE_ID_KEY;
+import static datawave.table.hash.UIDConstants.CONFIG_UID_TYPE_KEY;
+import static datawave.table.hash.UIDConstants.DEFAULT_SEPARATOR;
+import static datawave.table.hash.UIDConstants.MILLISECONDS_PER_DAY;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -14,34 +14,31 @@ import java.lang.reflect.Method;
 import java.util.Comparator;
 import java.util.Date;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Writable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import datawave.util.StringUtils;
-
 /**
- * Deprecated, use {@link datawave.table.hash.UID}
- * <p>
  * Internal, DATAWAVE-specific, unique identifier. Instead of using a UUID which consumes 128 bits, we are using:
- *
+ * <p>
  * originally: two concatenated int values that are results of computing a Murmur hash on the raw bytes using two different seeds. The resulting UID has the
  * form:
- *
+ * <p>
  * OptionPrefix.Hash1.Hash2
- *
+ * <p>
  * currently: three concatenated int values that are results of computing a Murmur hash on the raw bytes using three different seeds. The resulting UID has the
  * form:
- *
+ * <p>
  * Hash0.Hash1.Hash2
- *
+ * <p>
  * optionally: Additional data can be tagged onto the end
- *
+ * <p>
  * Hash0.Hash1.Hash2.Stuff
  *
  */
-@Deprecated(forRemoval = true, since = "7.40.0")
+
 public abstract class UID implements Comparable<UID>, Comparator<UID>, Writable, Serializable {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(UID.class);
@@ -261,7 +258,6 @@ public abstract class UID implements Comparable<UID>, Comparator<UID>, Writable,
      *            string version of hash
      * @return UID of parsed hash
      */
-    @SuppressWarnings("unchecked")
     public static <UID_TYPE extends UID> UID_TYPE parse(final String s) {
         return parse(s, -1);
     }

@@ -1,4 +1,4 @@
-package datawave.data.hash;
+package datawave.table.hash;
 
 import java.math.BigInteger;
 
@@ -11,10 +11,6 @@ import org.apache.zookeeper.data.Stat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * Deprecated, use {@link datawave.table.hash.ZkSnowflakeCache}
- */
-@Deprecated(forRemoval = true, since = "7.40.0")
 public class ZkSnowflakeCache {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ZkSnowflakeCache.class);

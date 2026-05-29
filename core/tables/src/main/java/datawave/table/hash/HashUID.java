@@ -1,41 +1,37 @@
-package datawave.data.hash;
+package datawave.table.hash;
 
-import static datawave.data.hash.UIDConstants.DEFAULT_SEPARATOR;
-import static datawave.data.hash.UIDConstants.TIME_SEPARATOR;
+import static datawave.table.hash.UIDConstants.DEFAULT_SEPARATOR;
+import static datawave.table.hash.UIDConstants.TIME_SEPARATOR;
 
 import java.io.DataInput;
 import java.io.IOException;
 import java.util.Date;
 
-import org.apache.commons.lang.builder.CompareToBuilder;
-import org.apache.commons.lang.builder.EqualsBuilder;
-import org.apache.commons.lang.builder.HashCodeBuilder;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.builder.CompareToBuilder;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.hadoop.util.hash.Hash;
 import org.apache.hadoop.util.hash.MurmurHash;
 
-import datawave.util.StringUtils;
-
 /**
- * Deprecated, use {@link datawave.table.hash.HashUID}
- * <p>
  * Internal, DATAWAVE-specific, unique identifier. Instead of using a UUID which consumes 128 bits, we are using:
- *
+ * <p>
  * originally: two concatenated int values that are results of computing a Murmur hash on the raw bytes using two different seeds. The resulting UID has the
  * form:
- *
+ * <p>
  * OptionPrefix.Hash1.Hash2
- *
+ * <p>
  * currently: three concatenated int values that are results of computing a Murmur hash on the raw bytes using three different seeds. The resulting UID has the
  * form:
- *
+ * <p>
  * Hash0.Hash1.Hash2
- *
+ * <p>
  * optionally: Additional data can be tagged onto the end
- *
+ * <p>
  * Hash0.Hash1.Hash2.Stuff
  *
  */
-@Deprecated(forRemoval = true, since = "7.40.0")
 public class HashUID extends UID {
 
     private static final long serialVersionUID = 4016018180334520481L;
@@ -43,7 +39,7 @@ public class HashUID extends UID {
     private static final int SEED0 = 2011;
     private static final int SEED1 = 650567;
     private static final int SEED2 = 22051009;
-    private static Hash hash = MurmurHash.getInstance();
+    private static final Hash hash = MurmurHash.getInstance();
 
     private int h1 = 0;
 
@@ -251,7 +247,6 @@ public class HashUID extends UID {
      *            - the string to parse
      * @return UID
      */
-    @SuppressWarnings("unchecked")
     public static HashUID parse(String s) {
         return parse(s, -1);
     }
@@ -265,7 +260,6 @@ public class HashUID extends UID {
      *            is the number of pieces of the extra portion to include. -1 means all, 0 means none.
      * @return UID
      */
-    @SuppressWarnings("unchecked")
     public static HashUID parse(String s, int maxExtraParts) {
         String[] parts = StringUtils.split(s, DEFAULT_SEPARATOR);
         if (parts.length < 3)
@@ -305,7 +299,6 @@ public class HashUID extends UID {
      *            string representation of hash
      * @return UID
      */
-    @SuppressWarnings("unchecked")
     public static HashUID parseBase(String s) {
         return parse(s, 0);
     }
