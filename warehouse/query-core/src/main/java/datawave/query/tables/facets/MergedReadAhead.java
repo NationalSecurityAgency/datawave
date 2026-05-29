@@ -1,5 +1,6 @@
 package datawave.query.tables.facets;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
@@ -23,7 +24,7 @@ import com.google.common.util.concurrent.AbstractExecutionThreadService;
  * stopped.
  */
 @SuppressWarnings("UnstableApiUsage")
-public class MergedReadAhead<T> extends AbstractExecutionThreadService implements Iterator<T>, AutoCloseable {
+public class MergedReadAhead<T> extends AbstractExecutionThreadService implements Iterator<T>, Closeable {
 
     private static final Logger log = Logger.getLogger(MergedReadAhead.class);
 
@@ -126,6 +127,14 @@ public class MergedReadAhead<T> extends AbstractExecutionThreadService implement
     @Override
     public void remove() {
         throw new UnsupportedOperationException();
+    }
+
+    public void finalize() throws Throwable {
+        try {
+            close();
+        } finally {
+            super.finalize();
+        }
     }
 
     @Override
