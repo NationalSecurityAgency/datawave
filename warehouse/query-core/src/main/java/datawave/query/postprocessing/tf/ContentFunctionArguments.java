@@ -180,6 +180,14 @@ class ContentFunctionArguments {
         return zones;
     }
 
+    private static final Float readMinScore(String arg) {
+        try {
+            return Float.parseFloat(arg);
+        } catch (NumberFormatException nfe) {
+            return null;
+        }
+    }
+
     private void readTerms(final List<JexlNode> args, int currentArg) {
         // Get the actual terms
         terms = new ArrayList<>(args.size() - currentArg);
@@ -193,14 +201,6 @@ class ContentFunctionArguments {
             }
 
             terms.add(term.toLowerCase(Locale.ENGLISH));
-        }
-    }
-
-    private static final Float readMinScore(String arg) {
-        try {
-            return Float.parseFloat(arg);
-        } catch (NumberFormatException nfe) {
-            return null;
         }
     }
 }

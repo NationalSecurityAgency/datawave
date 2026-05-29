@@ -859,6 +859,9 @@ public class WiseGuysIngest {
             addShardFiTfTokens(bw, range, "PHILOSOPHY",
                             "He prioritized absolute power and control, ruthlessly eliminating any threats to his dominance over Chicago's criminal operations. He ran his illegal enterprises with business-like efficiency, focusing on maximizing profits and maintaining a structured organization. While notorious for violence, he also attempted to project an image of a respectable citizen, engaging in charitable acts and seeking public favor.",
                             corleoneUID, corleoneTimeStampDelta);
+            addShardFiTfTokens(bw, range, "PHILOSOPHY",
+                    "alt1 alt2 alt3",
+                    corleoneUID, corleoneTimeStampDelta, "hash1");
 
             addShardFiTfTokens(bw, range, "QUOTE", "If you can quote the rules then you can obey them", sopranoUID, sopranoTimeStampDelta);
             addShardFiTfTokens(bw, range, "QUOTE", "You can get much farther with a kind word and a gun than you can with a kind word alone", caponeUID,

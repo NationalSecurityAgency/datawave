@@ -1,5 +1,6 @@
 package datawave.query.planner;
 
+import static datawave.query.jexl.functions.GroupingRequiredFilterFunctions.GROUPING_REQUIRED_FUNCTION_NAMESPACE;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.BOUNDED_RANGE;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_VALUE;
 
@@ -1508,8 +1509,29 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable, Auto
 
         // now determine if we actually require gathering term frequencies
         if (!queryTfFields.isEmpty()) {
+            // content functions require tf
             Multimap<String,Function> contentFunctions = TermOffsetPopulator.getContentFunctions(config.getQueryTree());
-            config.setTermFrequenciesRequired(!contentFunctions.isEmpty());
+
+            // grouping notation functions on index only-fields require tf
+            Multimap<String,Function> groupingFunctions = JexlASTHelper.getFunctions(config.getQueryTree(), Set.of(GROUPING_REQUIRED_FUNCTION_NAMESPACE));
+            boolean groupingFunctionsNeedTf = false;
+            if (!groupingFunctions.isEmpty()) {
+                // check each grouping function for an index only tf field
+                for (Function f : groupingFunctions.values()) {
+                    // loop over the queryTfFields and check arguments. This is naive but also simple, scale is small so efficiency doesn't matter
+                    for (JexlNode arg : f.args()) {
+                        if (queryTfFields.contains(JexlASTHelper.getIdentifier(arg).toUpperCase())) {
+                            groupingFunctionsNeedTf = true;
+                            break;
+                        }
+                    }
+                    if (groupingFunctionsNeedTf) {
+                        break;
+                    }
+                }
+            }
+
+            config.setTermFrequenciesRequired(!contentFunctions.isEmpty() || groupingFunctionsNeedTf);
 
             // Print the nice log message
             if (log.isDebugEnabled()) {
@@ -1537,13 +1559,10 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable, Auto
     /**
      * Handle case when input field value pairs are swapped
      *
-     * @param script
-     *            the jexl script
-     * @param timers
-     *            timers for metrics
+     * @param script the jexl script
+     * @param timers timers for metrics
      * @return a script with swapped nodes
-     * @throws DatawaveQueryException
-     *             for issues with queries
+     * @throws DatawaveQueryException for issues with queries
      */
     protected ASTJexlScript timedInvertSwappedNodes(QueryStopwatch timers, final ASTJexlScript script) throws DatawaveQueryException {
         return visitorManager.timedVisit(timers, "Invert Swapped Nodes", () -> (InvertNodeVisitor.invertSwappedNodes(script)));
@@ -1552,13 +1571,10 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable, Auto
     /**
      * Handle special case where a regex node can be replaced with a 'not equals null' node
      *
-     * @param script
-     *            the jexl script
-     * @param timers
-     *            timers for metrics
+     * @param script the jexl script
+     * @param timers timers for metrics
      * @return jexl query tree
-     * @throws DatawaveQueryException
-     *             for issues with datawave queries
+     * @throws DatawaveQueryException for issues with datawave queries
      */
     protected ASTJexlScript timedFixNotNullIntent(QueryStopwatch timers, final ASTJexlScript script) throws DatawaveQueryException {
         try {

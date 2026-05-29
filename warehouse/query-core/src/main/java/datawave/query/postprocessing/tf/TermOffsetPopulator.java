@@ -6,6 +6,7 @@ import static datawave.query.jexl.functions.ContentFunctions.CONTENT_FUNCTION_NA
 import static datawave.query.jexl.functions.ContentFunctions.CONTENT_PHRASE_FUNCTION_NAME;
 import static datawave.query.jexl.functions.ContentFunctions.CONTENT_SCORED_PHRASE_FUNCTION_NAME;
 import static datawave.query.jexl.functions.ContentFunctions.CONTENT_WITHIN_FUNCTION_NAME;
+import static datawave.query.jexl.functions.GroupingRequiredFilterFunctions.GROUPING_REQUIRED_FUNCTION_NAMESPACE;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -25,6 +26,7 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ASTStringLiteral;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.hadoop.io.Text;
@@ -323,8 +325,22 @@ public class TermOffsetPopulator {
                     Set<String> termFrequencyFields) {
         Multimap<String,Function> functions = TermOffsetPopulator.getContentFunctions(query);
 
-        if (!functions.isEmpty()) {
+        // grouping notation functions on index only-fields require tf
+        Multimap<String,Function> groupingFunctions = JexlASTHelper.getFunctions(query, Set.of(GROUPING_REQUIRED_FUNCTION_NAMESPACE));
+
+        if (!functions.isEmpty() || !groupingFunctions.isEmpty()) {
             Multimap<String,String> queryFieldValues = LiteralNodeSubsetVisitor.getLiterals(termFrequencyFields, query);
+            if (!groupingFunctions.isEmpty()) {
+                for (Function f : groupingFunctions.values()) {
+                    for (int i = 0; i < f.args().size(); i = i + 2) {
+                        String field = JexlASTHelper.getIdentifier(f.args().get(i));
+                        Object value = JexlASTHelper.getLiteralValue(f.args().get(i+1));
+                        if (termFrequencyFields.contains(field) && value != null) {
+                            queryFieldValues.put(field, value.toString());
+                        }
+                    }
+                }
+            }
             if (!queryFieldValues.isEmpty()) {
                 // if the content expansion fields is empty, then the term frequency field set will be used instead
                 if (contentExpansionFields == null || contentExpansionFields.isEmpty()) {
@@ -340,7 +356,10 @@ public class TermOffsetPopulator {
                     Multimap<String,String> queryFieldValues) {
         // get the intersection of the content expansion fields (or term frequency fields) and those that are in the content functions
         Multimap<String,String> contentFieldValues = getContentFieldValues(contentExpansionFields, functions);
-
+        // TODO work around to hit the grouping functions needs to go here
+        if (functions.isEmpty()) {
+            contentFieldValues = queryFieldValues;
+        }
         // now get the intersection of the content function values and those literals in the query:
         Multimap<String,String> termFrequencyFieldValues = HashMultimap.create();
         for (String key : contentFieldValues.keySet()) {
