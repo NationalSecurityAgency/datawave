@@ -33,7 +33,7 @@ public class TimestampTransformerTest {
     public void testDefaultTimestampTransformer() throws AnnotationSerializationException {
         AccumuloAnnotationSerializer serializer = new AccumuloAnnotationSerializer();
         Annotation baseAnnotation = AnnotationTestDataUtil.generateTestAnnotation();
-        Annotation partialAnnotation = AnnotationUtils.injectAnnotationHash(baseAnnotation);
+        Annotation partialAnnotation = AnnotationUtils.injectAllHashes(baseAnnotation);
         Map<String,String> metadata = new HashMap<>();
         metadata.put("created_date", "2025-10-14T20:17:46.384Z");
         metadata.put("updated_date", "2025-10-15T09:32:19.483Z");
@@ -60,7 +60,7 @@ public class TimestampTransformerTest {
         TimestampTransformer timestampTransformer = new TestTimestampTransformer();
         AccumuloAnnotationSerializer serializer = new AccumuloAnnotationSerializer(visibilityTransformer, timestampTransformer);
         Annotation baseAnnotation = AnnotationTestDataUtil.generateTestAnnotation();
-        Annotation partialAnnotation = AnnotationUtils.injectAnnotationHash(baseAnnotation);
+        Annotation partialAnnotation = AnnotationUtils.injectAllHashes(baseAnnotation);
         Map<String,String> metadata = new HashMap<>();
         metadata.put("created_date", "2025-10-14T20:17:46.384Z");
         metadata.put("updated_date", "2025-10-15T09:32:19.483Z");
