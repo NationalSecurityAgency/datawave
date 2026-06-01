@@ -211,9 +211,14 @@ jobs:
         # reactor includes every microservice/starter module (modules under
         # microservices/services and microservices/starters are gated on these
         # profiles in their parent POMs).
+        # Exclude the just-released artifact itself from the reactor so that
+        # versions:update-properties resolves its version from the remote
+        # repository (where the release was just published) rather than the
+        # local reactor SNAPSHOT, which would otherwise bypass -DallowSnapshots=false.
         cd microservices
         mvn --batch-mode --no-transfer-progress \
             -Dservices -Dstarters \
+            -pl "!:${ARTIFACT_ID}" \
             versions:update-parent versions:update-properties \
             -DallowSnapshots=false \
             -DallowMajorUpdates=false \
