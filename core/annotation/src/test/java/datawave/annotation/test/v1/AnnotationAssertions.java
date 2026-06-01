@@ -47,13 +47,13 @@ public class AnnotationAssertions {
     }
 
     public static void assertAnnotationsEqual(Annotation t, Annotation a) {
-        assertEquals(t.getShard(), a.getShard());
-        assertEquals(t.getDataType(), a.getDataType());
-        assertEquals(t.getUid(), a.getUid());
-        assertEquals(t.getAnnotationType(), a.getAnnotationType());
-        assertEquals(t.getAnnotationId(), a.getAnnotationId());
-        assertEquals(t.getMetadataMap(), a.getMetadataMap());
-        assertEquals(t.getDocumentId(), a.getDocumentId());
+        assertEquals(t.getShard(), a.getShard(), "Annotation shard mismatch");
+        assertEquals(t.getDataType(), a.getDataType(), "Annotation datatype mismatch");
+        assertEquals(t.getUid(), a.getUid(), "Annotation uid mismatch");
+        assertEquals(t.getAnnotationType(), a.getAnnotationType(), "Annotation type mismatch");
+        assertEquals(t.getAnnotationId(), a.getAnnotationId(), "Annotation id mismatch");
+        assertEquals(t.getMetadataMap(), a.getMetadataMap(), "Annotation metadata mismatch");
+        assertEquals(t.getDocumentId(), a.getDocumentId(), "Annotation document id mismatch");
         assertSegmentsEqual(t.getSegmentsList(), a.getSegmentsList());
     }
 
