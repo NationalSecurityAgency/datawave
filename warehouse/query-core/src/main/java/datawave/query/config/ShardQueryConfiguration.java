@@ -541,9 +541,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      * The minimum percentage threshold that the count for an index row must meet compared to the count for the corresponding frequency row in the metadata
      * table in order to NOT be considered a field index hole. The value must be between 0.0-1.0, where 1.0 is equivalent to 100%.
      */
+    private double indexFieldHoleMinThreshold = 1.0d;
 
     private String fieldRuleClassName;
-    private double indexFieldHoleMinThreshold = 1.0d;
 
     /**
      * The set of date types that, if the query's end date is the current date, will NOT result in any date range adjustments or the addition of a
@@ -584,6 +584,12 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      * If the days in the query date range exceed this threshold, the year index is scanned first in an effort to reduce useless scans against the day index
      */
     private int dayIndexThreshold = -1;
+
+    /**
+     * The set of fields such that if a query is performing a unique operation only on fields found in this set, the unique transform should not be executed on
+     * the tserver side.
+     */
+    private Set<String> webserverOnlyUniqueFields = Collections.emptySet();
 
     /**
      * Default constructor
@@ -849,6 +855,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setTruncatedIndexTableName(other.getTruncatedIndexTableName());
         this.setOriginalJexlQuery(other.getOriginalJexlQuery());
         this.setAllHitsQueryConfig(other.getAllHitsQueryConfig());
+        this.setWebserverOnlyUniqueFields(other.getWebserverOnlyUniqueFields() == null ? null : Sets.newHashSet(other.getWebserverOnlyUniqueFields()));
     }
 
     /**
@@ -3201,7 +3208,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 isUseTruncatedIndex() == that.isUseTruncatedIndex() &&
                 getTruncatedIndexTableName() == that.getTruncatedIndexTableName() &&
                 Objects.equals(getOriginalJexlQuery(), that.getOriginalJexlQuery()) &&
-                Objects.equals(getAllHitsQueryConfig(), that.getAllHitsQueryConfig());
+                Objects.equals(getAllHitsQueryConfig(), that.getAllHitsQueryConfig()) &&
+                Objects.equals(getWebserverOnlyUniqueFields(), that.getWebserverOnlyUniqueFields());
         // @formatter:on
     }
 
@@ -3437,7 +3445,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 isUseTruncatedIndex(),
                 getTruncatedIndexTableName(),
                 getOriginalJexlQuery(),
-                getAllHitsQueryConfig()
+                getAllHitsQueryConfig(),
+                    getWebserverOnlyUniqueFields()
         );
         // @formatter:on
     }
@@ -3583,5 +3592,13 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public void setUseNewIndexLookups(boolean useNewIndexLookups) {
         this.useNewIndexLookups = useNewIndexLookups;
+    }
+
+    public Set<String> getWebserverOnlyUniqueFields() {
+        return webserverOnlyUniqueFields;
+    }
+
+    public void setWebserverOnlyUniqueFields(Set<String> webserverOnlyUniqueFields) {
+        this.webserverOnlyUniqueFields = webserverOnlyUniqueFields;
     }
 }

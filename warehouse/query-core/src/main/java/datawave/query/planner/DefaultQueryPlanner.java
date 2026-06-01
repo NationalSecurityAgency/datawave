@@ -710,11 +710,17 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
         if (!config.getUniqueFields().isEmpty()) {
             if (!config.isDisableIteratorUniqueFields() && !(config.isDisableIteratorMostRecentUniqueFields() && config.getUniqueFields().isMostRecent())) {
-                addOption(cfg, QueryOptions.UNIQUE_FIELDS, config.getUniqueFields().toString(), true);
-                if (config.getUniqueFields().isMostRecent()) {
-                    // this may be redundant with the uniqueFields.toString(), but other code relies on this explicitly being set
-                    addOption(cfg, QueryOptions.MOST_RECENT_UNIQUE, Boolean.toString(true), false);
-                    addOption(cfg, QueryOptions.UNIQUE_CACHE_BUFFER_SIZE, Integer.toString(config.getUniqueCacheBufferSize()), false);
+                // If the unique fields contain any fields that are not webserver-only fields, we need to perform the unique transform on the tserver side.
+                if (config.getWebserverOnlyUniqueFields().isEmpty()
+                                || !config.getWebserverOnlyUniqueFields().containsAll(config.getUniqueFields().getFields())) {
+                    addOption(cfg, QueryOptions.UNIQUE_FIELDS, config.getUniqueFields().toString(), true);
+                    if (config.getUniqueFields().isMostRecent()) {
+                        // this may be redundant with the uniqueFields.toString(), but other code relies on this explicitly being set
+                        addOption(cfg, QueryOptions.MOST_RECENT_UNIQUE, Boolean.toString(true), false);
+                        addOption(cfg, QueryOptions.UNIQUE_CACHE_BUFFER_SIZE, Integer.toString(config.getUniqueCacheBufferSize()), false);
+                    }
+                } else {
+                    log.debug("Query contains unique with webserver-only fields. Unique transform will be skipped on the tserver side.");
                 }
             }
         }

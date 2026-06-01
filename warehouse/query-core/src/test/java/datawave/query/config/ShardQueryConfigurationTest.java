@@ -659,6 +659,9 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("allHitsQueryConfig", new AllHitsQueryConfig());
         defaultValues.put("originalJexlQuery", null);
         updatedValues.put("originalJexlQuery", "FIELD == 'VALUE'");
+
+        defaultValues.put("webserverOnlyUniqueFields", Sets.newHashSet());
+        updatedValues.put("webserverOnlyUniqueFields", Sets.newHashSet("FIELD1", "FIELD2"));
     }
 
     private Query createQuery(String query) {
