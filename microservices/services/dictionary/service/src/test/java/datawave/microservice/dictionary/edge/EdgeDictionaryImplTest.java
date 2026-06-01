@@ -26,6 +26,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
@@ -37,6 +38,7 @@ import com.google.common.collect.SetMultimap;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.data.ColumnFamilyConstants;
 import datawave.metadata.protobuf.EdgeMetadata.MetadataValue;
+import datawave.security.authorization.JWTTokenHandler;
 import datawave.webservice.dictionary.edge.DefaultEdgeDictionary;
 import datawave.webservice.dictionary.edge.DefaultMetadata;
 import datawave.webservice.dictionary.edge.EventField;
@@ -63,6 +65,9 @@ public class EdgeDictionaryImplTest {
 
     SetMultimap<Key,Value> edgeMetadataRows;
     Method transformResultsMethod;
+
+    @MockBean
+    private JWTTokenHandler jwtTokenHandler;
 
     @Autowired
     private EdgeDictionary<DefaultEdgeDictionary,DefaultMetadata> impl;

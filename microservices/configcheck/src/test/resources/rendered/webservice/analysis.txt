@@ -19,8 +19,6 @@ doc.beans.BaseEventQuery.disableIndexOnlyDocuments: false
 doc.beans.BaseEventQuery.docAggregationThresholdMs: -1
 doc.beans.BaseEventQuery.enricherClassNames: "datawave.query.enrich.DatawaveTermFrequencyEnricher"
 doc.beans.BaseEventQuery.evaluationOnlyFields: ""
-doc.beans.BaseEventQuery.eventPerDayThreshold: 40000
-doc.beans.BaseEventQuery.finalMaxTermThreshold: 2000
 doc.beans.BaseEventQuery.fullTableScanEnabled: false
 doc.beans.BaseEventQuery.hdfsSiteConfigURLs: "file:///etc/hadoop/conf/core-site.xml,file:///etc/hadoop/conf/hdfs-site.xml"
 doc.beans.BaseEventQuery.includeDataTypeAsField: false
@@ -58,7 +56,6 @@ doc.beans.BaseEventQuery.queryThreads: 100
 doc.beans.BaseEventQuery.realmSuffixExclusionPatterns: "<.*>$"
 doc.beans.BaseEventQuery.reverseIndexTableName: "${table.name.shardReverseIndex}"
 doc.beans.BaseEventQuery.sendTimingToStatsd: false
-doc.beans.BaseEventQuery.shardsPerDayThreshold: 20
 doc.beans.BaseEventQuery.statsdHost: "localhost"
 doc.beans.BaseEventQuery.statsdPort: 8125
 doc.beans.BaseEventQuery.tableName: "${table.name.shard}"
@@ -153,8 +150,6 @@ doc.beans.FieldIndexCountQuery.queryThreads: 100
 doc.beans.FieldIndexCountQuery.reverseIndexTableName: "${table.name.shardReverseIndex}"
 doc.beans.FieldIndexCountQuery.tableName: "${table.name.shard}"
 doc.beans.HitHighlights.auditType: "NONE"
-doc.beans.HitHighlights.eventPerDayThreshold: 40000
-doc.beans.HitHighlights.finalMaxTermThreshold: 2000
 doc.beans.HitHighlights.fullTableScanEnabled: false
 doc.beans.HitHighlights.hdfsSiteConfigURLs: "file:///etc/hadoop/conf/core-site.xml,file:///etc/hadoop/conf/hdfs-site.xml"
 doc.beans.HitHighlights.includeDataTypeAsField: false
@@ -183,7 +178,6 @@ doc.beans.HitHighlights.minimumSelectivity: 0.2
 doc.beans.HitHighlights.querySyntaxParsers.JEXL: null
 doc.beans.HitHighlights.queryThreads: 100
 doc.beans.HitHighlights.reverseIndexTableName: "${table.name.shardReverseIndex}"
-doc.beans.HitHighlights.shardsPerDayThreshold: 20
 doc.beans.HitHighlights.tableName: "${table.name.shard}"
 doc.beans.HitHighlights.useEnrichers: false
 doc.beans.HitHighlights.zookeeperConfig: ""

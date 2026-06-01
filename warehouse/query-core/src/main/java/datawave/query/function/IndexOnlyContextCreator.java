@@ -12,7 +12,6 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.commons.jexl3.JexlContext;
 import org.apache.commons.jexl3.parser.JexlNode;
 
 import com.google.common.base.Function;
@@ -22,45 +21,22 @@ import datawave.query.Constants;
 import datawave.query.attributes.Document;
 import datawave.query.collections.FunctionalSet;
 import datawave.query.composite.CompositeMetadata;
-import datawave.query.iterator.IndexOnlyFunctionIterator;
 import datawave.query.iterator.QueryOptions;
 import datawave.query.jexl.DatawaveJexlContext;
 import datawave.query.jexl.DelayedNonEventIndexContext;
-import datawave.query.jexl.IndexOnlyJexlContext;
 import datawave.query.jexl.visitors.IteratorBuildingVisitor;
-import datawave.query.jexl.visitors.SetMembershipVisitor;
-import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.predicate.TimeFilter;
 import datawave.query.util.Tuple3;
 import datawave.query.util.TypeMetadata;
 
 /**
- * Creates a specialized, lazy-fetching IndexOnlyJexlContext if a query includes at least one filter evaluation for an index-only field (e.g., BODY, FOOT, HEAD,
- * and META). Otherwise, it defers to its parent {@link JexlContextCreator} to create a standard {@link JexlContext}. <br>
- * <br>
- * For example, the following query would result in the creation of an ordinary {@link JexlContext}: <br>
+ * Used to create a specialized, lazy-fetching index only context that in practice was quite horrible.
+ * <p>
+ * Currently used ot create a {@link DelayedNonEventIndexContext} which is far more responsible with the delegated resources.
  *
- * <pre>
- *     REGULAR_FIELD=='value1' AND filter:includeRegex(OTHER_REGULAR_FIELD,'.*value2.*')
- * </pre>
- *
- * <br>
- * In contrast, the following query would result in the creation of an {@link IndexOnlyJexlContext}: <br>
- *
- * <pre>
- *     REGULAR_FIELD=='value1' AND filter:includeRegex(BODY@LAZY_SET_FOR_INDEX_ONLY_FUNCTION_EVALUATION,'.*value2.*')
- * </pre>
- *
- * <br>
- * Notice that the index-only field name must be appended with a special suffix. Such a suffix is not contained in the original query, but is added by the
- * {@link DefaultQueryPlanner} in the JBoss process when it calls the {@code IndexOnlyVisitor} as part of the process to update the JEXL query tree. <br>
- *
- * @see IndexOnlyJexlContext
- * @see DefaultQueryPlanner
+ * @see DelayedNonEventIndexContext
  */
 public class IndexOnlyContextCreator extends JexlContextCreator {
-    private final boolean createIndexOnlyJexlContext;
-    private final SortedKeyValueIterator<Key,Value> documentSpecificSource;
     private final Function<Range,Key> getDocumentKey;
     private final boolean includeGroupingContext;
     private final boolean includeRecordId;
@@ -101,7 +77,7 @@ public class IndexOnlyContextCreator extends JexlContextCreator {
      * @param comparatorFactory
      *            the comparator factory to use
      * @param delayedNonEventFieldMap
-     *            map of the delated non event fields
+     *            map of the delayed non-event fields
      * @param equality
      *            the equality object
      * @param iteratorBuildingVisitor
@@ -117,7 +93,6 @@ public class IndexOnlyContextCreator extends JexlContextCreator {
         checkNotNull(source, SIMPLE_NAME + " cannot be initialized with a null " + SKVI_SIMPLE_NAME);
         checkNotNull(range, SIMPLE_NAME + " cannot be initialized with a null Range");
         checkNotNull(options, SIMPLE_NAME + " cannot be initialized with null " + QO_SIMPLE_NAME);
-        this.documentSpecificSource = source;
         this.typeMetadata = typeMetadata;
         this.compositeMetadata = compositeMetadata;
         this.getDocumentKey = new CreatorOptions(options).getDocumentKey();
@@ -134,8 +109,6 @@ public class IndexOnlyContextCreator extends JexlContextCreator {
 
         this.range = range;
         this.timeFilter = options.getTimeFilter();
-        final String query = options.getQuery();
-        this.createIndexOnlyJexlContext = (null != query) && query.contains(SetMembershipVisitor.INDEX_ONLY_FUNCTION_SUFFIX);
     }
 
     @Override
@@ -192,16 +165,7 @@ public class IndexOnlyContextCreator extends JexlContextCreator {
 
     @Override
     protected DatawaveJexlContext newDatawaveJexlContext(final Tuple3<Key,Document,Map<String,Object>> from) {
-        final DatawaveJexlContext parentContext = super.newDatawaveJexlContext(from);
-        DatawaveJexlContext newContext;
-        if (this.createIndexOnlyJexlContext) {
-            final Key key = from.first();
-            final IndexOnlyFunctionIterator<Tuple3<Key,Document,DatawaveJexlContext>> iterator = new IndexOnlyFunctionIterator<>(this.documentSpecificSource,
-                            this, key);
-            newContext = new IndexOnlyJexlContext<>(parentContext, iterator);
-        } else {
-            newContext = parentContext;
-        }
+        DatawaveJexlContext newContext = super.newDatawaveJexlContext(from);
 
         // see if there are any delayed nodes that need to be processed
         if (delayedNonEventFieldMap != null && !delayedNonEventFieldMap.isEmpty()) {
@@ -237,7 +201,7 @@ public class IndexOnlyContextCreator extends JexlContextCreator {
     /*
      * Deep copy of standard QueryOptions that adds a getter for obtaining the value of the "getDocumentKey"
      */
-    private class CreatorOptions extends QueryOptions {
+    private static class CreatorOptions extends QueryOptions {
         public CreatorOptions(final QueryOptions other) {
             this.deepCopy(other);
         }
