@@ -1,8 +1,14 @@
 package datawave.ingest.table.balancer;
 
+import com.google.common.base.Preconditions;
+import com.google.common.hash.HashCode;
+import com.google.common.hash.Hashing;
+import com.google.common.primitives.UnsignedBytes;
+
 import java.nio.charset.StandardCharsets;
 import java.util.AbstractMap;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -11,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -21,11 +28,6 @@ import org.apache.accumulo.core.spi.balancer.TabletBalancer;
 import org.apache.accumulo.core.spi.balancer.data.TServerStatus;
 import org.apache.accumulo.core.spi.balancer.data.TabletMigration;
 import org.apache.accumulo.core.spi.balancer.data.TabletServerId;
-
-import com.google.common.base.Preconditions;
-import com.google.common.hash.HashCode;
-import com.google.common.hash.Hashing;
-import com.google.common.primitives.UnsignedBytes;
 
 /**
  * Rendezvous hashing server partitioning balancer. This balancer has the following goals.
@@ -42,7 +44,7 @@ import com.google.common.primitives.UnsignedBytes;
  * <p>
  * For a given group name (like 20250618) this balancer computes hash(group_name+hostname) for each host and then sorts on the hashes. This gives each group a
  * consistent and unique ordering across host. Within a host, hash(group_name+hostname+port) is computed for each tserver and sorted by the hashes giving unique
- * per group order for the tservers on the host..
+ * per group order for the tservers on the host.
  * </p>
  *
  */
@@ -85,7 +87,9 @@ public abstract class RendezvousHostBalancer implements TabletBalancer {
 
     static class TServers {
 
-        Map<Integer,Map<String,List<TabletServerId>>> tservers = new HashMap<>();
+        // TreeMap keeps tserver groups in ascending key order, making every iteration
+        // over tservers deterministic regardless of insertion order.
+        Map<Integer,Map<String,List<TabletServerId>>> tservers = new TreeMap<>();
 
         TServers(List<TabletServerId> tabletServers) {
             Map<String,List<TabletServerId>> tserversPerHost = new HashMap<>();
@@ -124,46 +128,62 @@ public abstract class RendezvousHostBalancer implements TabletBalancer {
          * </ul>
          *
          * <p>
-         * For the example above would return Map.of(5, 833, 4, 167);
+         * Distribution of tablets will use the largest remainder to guarantee that counts equal {@code numTablets} exactly regardless of tserver count or
+         * rounding. Each group of tservers first receives {@code floor(numTablets * weight)} tablets, then the remaining tablets are partitioned one at a time
+         * to the tserver groups with the largest fractional remainders. Tserver group ordering is used as a tiebreaker so the result is fully deterministic.
          */
         public Map<Integer,Integer> computeTabletAssignmentCountsByHostCount(int numTablets) {
             if (tservers.size() == 1) {
                 return Map.of(tservers.keySet().iterator().next(), numTablets);
             }
 
-            Map<Integer,Integer> counts = new HashMap<>();
-
             double totalTservers = getTotalNumberOfTservers();
 
-            int tabletsLeft = numTablets;
+            List<Integer> numOfTserversPerHost = new ArrayList<>(tservers.keySet());
 
-            for (var entry : tservers.entrySet()) {
-                int tserversPerHost = entry.getKey();
-                int numHost = entry.getValue().size();
-                double numTservers = tserversPerHost * numHost;
+            double[] exactAssignedTabletPercentages = new double[numOfTserversPerHost.size()];
+            int[] roundedAssignedTablets = new int[numOfTserversPerHost.size()];
+            int roundedTabletsSum = 0;
 
-                double percent = numTservers / totalTservers;
+            for (int i = 0; i < numOfTserversPerHost.size(); i++) {
+                int tserversPerHost = numOfTserversPerHost.get(i);
+                double numTservers = (double) tserversPerHost * tservers.get(tserversPerHost).size();
+                exactAssignedTabletPercentages[i] = numTablets * (numTservers / totalTservers);
+                // Casting to int drops the remainder
+                roundedAssignedTablets[i] = (int) exactAssignedTabletPercentages[i];
+                roundedTabletsSum += roundedAssignedTablets[i];
+            }
 
-                int tablets = Math.min(tabletsLeft, (int) Math.round(numTablets * percent));
-                if (tablets > 0) {
-                    counts.put(tserversPerHost, tablets);
-                    tabletsLeft -= tablets;
+            // Distribute the remaining tablets to the tserver groups with the largest
+            // fractional remainders. Ties are broken by highest number of tservers per host.
+            int remaining = numTablets - roundedTabletsSum;
+            Integer[] hostGroups = new Integer[numOfTserversPerHost.size()];
+            for (int i = 0; i < numOfTserversPerHost.size(); i++) {
+                hostGroups[i] = i;
+            }
+
+            Arrays.sort(hostGroups, (first, second) -> {
+                double remA = exactAssignedTabletPercentages[first] - roundedAssignedTablets[first];
+                double remB = exactAssignedTabletPercentages[second] - roundedAssignedTablets[second];
+                int cmp = Double.compare(remB, remA); // descending remainder
+                return cmp != 0 ? cmp : Integer.compare(numOfTserversPerHost.get(first), numOfTserversPerHost.get(second));
+            });
+            // Assign the remaining tablets across the remaining tablet servers.
+            for (int i = 0; i < remaining; i++) {
+                roundedAssignedTablets[hostGroups[i]]++;
+            }
+
+            // Build result, excluding hostGroups allocated 0 tablets.
+            Map<Integer,Integer> counts = new LinkedHashMap<>();
+            for (int i = 0; i < numOfTserversPerHost.size(); i++) {
+                if (roundedAssignedTablets[i] > 0) {
+                    counts.put(numOfTserversPerHost.get(i), roundedAssignedTablets[i]);
                 }
             }
 
-            // Rounding can cause the sum of rounded values to be less than numTablets. Distribute
-            // any remaining tablets one at a time to groups that already have an allocation.
-            if (tabletsLeft > 0 && !counts.isEmpty()) {
-                for (var entry : counts.entrySet()) {
-                    if (tabletsLeft == 0) {
-                        break;
-                    }
-                    entry.setValue(entry.getValue() + 1);
-                    tabletsLeft--;
-                }
-            }
-
-            Preconditions.checkState(tabletsLeft == 0, tabletsLeft + " tablets are unassigned. Ensure the tserver regex patterns are correct");
+            Preconditions.checkState(counts.values().stream().mapToInt(v -> v).sum() == numTablets,
+                            "%d tablets are unassigned. Ensure the tserver regex patterns are correct",
+                            numTablets - counts.values().stream().mapToInt(v -> v).sum());
 
             return counts;
         }
@@ -370,6 +390,13 @@ public abstract class RendezvousHostBalancer implements TabletBalancer {
         for (var tabletId : tabletsInGroup) {
             if (!desiredLocations.containsKey(tabletId)) {
                 var iter = tserverGoalCounts.entrySet().iterator();
+                // Guard against an empty iterator. This check changes the NoSuchElementException
+                // into a better error message. This should never be encountered.
+                Preconditions.checkState(iter.hasNext(),
+                                "%d tablets still need assignment but no tserver goals remain. "
+                                                + "This indicates a mismatch between the tablet count (%d) and the "
+                                                + "total goal slots computed by computeTabletAssignmentCountsByHostCount.",
+                                tabletsInGroup.size() - desiredLocations.size(), tabletsInGroup.size());
                 Map.Entry<TabletServerId,Integer> next = iter.next();
                 TabletServerId nextTserver = next.getKey();
                 int nextCount = next.getValue();
