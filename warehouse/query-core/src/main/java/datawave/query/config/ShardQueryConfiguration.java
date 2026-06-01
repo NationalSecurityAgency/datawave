@@ -342,8 +342,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      */
     private boolean expandUnfieldedNegations = true;
     private ReturnType returnType = DocumentSerialization.DEFAULT_RETURN_TYPE;
-    private int eventPerDayThreshold = 10000;
-    private int shardsPerDayThreshold = 10;
     private int initialMaxTermThreshold = 2500;
     // the intermediate term threshold is used to enforce a term limit prior to the range stream
     private int intermediateMaxTermThreshold = 2500;
@@ -732,8 +730,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setAllowTermFrequencyLookup(other.isAllowTermFrequencyLookup());
         this.setExpandUnfieldedNegations(other.isExpandUnfieldedNegations());
         this.setReturnType(other.getReturnType());
-        this.setEventPerDayThreshold(other.getEventPerDayThreshold());
-        this.setShardsPerDayThreshold(other.getShardsPerDayThreshold());
         this.setInitialMaxTermThreshold(other.getInitialMaxTermThreshold());
         this.setIntermediateMaxTermThreshold(other.getIntermediateMaxTermThreshold());
         this.setIndexedMaxTermThreshold(other.getIndexedMaxTermThreshold());
@@ -1422,26 +1418,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         } else {
             this.unevaluatedFields = deconstruct(unevaluatedFields);
         }
-    }
-
-    @Deprecated(since = "7.1.0", forRemoval = true)
-    public int getEventPerDayThreshold() {
-        return eventPerDayThreshold;
-    }
-
-    @Deprecated(since = "7.1.0", forRemoval = true)
-    public void setEventPerDayThreshold(int eventPerDayThreshold) {
-        this.eventPerDayThreshold = eventPerDayThreshold;
-    }
-
-    @Deprecated(since = "7.1.0", forRemoval = true)
-    public int getShardsPerDayThreshold() {
-        return shardsPerDayThreshold;
-    }
-
-    @Deprecated(since = "7.1.0", forRemoval = true)
-    public void setShardsPerDayThreshold(int shardsPerDayThreshold) {
-        this.shardsPerDayThreshold = shardsPerDayThreshold;
     }
 
     public int getInitialMaxTermThreshold() {
@@ -3093,8 +3069,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 isAllowFieldIndexEvaluation() == that.isAllowFieldIndexEvaluation() &&
                 isAllowTermFrequencyLookup() == that.isAllowTermFrequencyLookup() &&
                 isExpandUnfieldedNegations() == that.isExpandUnfieldedNegations() &&
-                getEventPerDayThreshold() == that.getEventPerDayThreshold() &&
-                getShardsPerDayThreshold() == that.getShardsPerDayThreshold() &&
                 getInitialMaxTermThreshold() == that.getInitialMaxTermThreshold() &&
                 getIntermediateMaxTermThreshold() == that.getIntermediateMaxTermThreshold() &&
                 getIndexedMaxTermThreshold() == that.getIndexedMaxTermThreshold() &&
@@ -3386,8 +3360,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 isAllowTermFrequencyLookup(),
                 isExpandUnfieldedNegations(),
                 getReturnType(),
-                getEventPerDayThreshold(),
-                getShardsPerDayThreshold(),
                 getInitialMaxTermThreshold(),
                 getIntermediateMaxTermThreshold(),
                 getIndexedMaxTermThreshold(),

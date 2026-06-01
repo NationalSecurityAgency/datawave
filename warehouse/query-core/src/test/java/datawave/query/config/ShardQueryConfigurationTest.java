@@ -364,10 +364,6 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("expandUnfieldedNegations", false);
         defaultValues.put("returnType", DocumentSerialization.DEFAULT_RETURN_TYPE);
         updatedValues.put("returnType", DocumentSerialization.ReturnType.writable);
-        defaultValues.put("eventPerDayThreshold", 10000);
-        updatedValues.put("eventPerDayThreshold", 10340);
-        defaultValues.put("shardsPerDayThreshold", 10);
-        updatedValues.put("shardsPerDayThreshold", 18);
         defaultValues.put("initialMaxTermThreshold", 2500);
         updatedValues.put("initialMaxTermThreshold", 2540);
         defaultValues.put("intermediateMaxTermThreshold", 2500);

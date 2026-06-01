@@ -5,16 +5,17 @@
   "annotationId": "A7699117",
   "documentId": "000000000001",
   "annotationType": "tts",
-  "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+  "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
   "source": {
-    "analyticHash": "86226841",
-    "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+    "analyticHash": "5CC1A2BE",
+    "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
     "engine": "inline v6",
     "model": "GR Supra",
     "configuration": {
       "octane": "99",
       "model_year": "2025"
     },
+    "platform": "toyota",
     "metadata": {
       "visibility": "PUBLIC",
       "created_date": "2025-10-01T00:00:00Z"
@@ -197,16 +198,17 @@
   "annotationId": "175BF2E8",
   "documentId": "000000000002",
   "annotationType": "tokens",
-  "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+  "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
   "source": {
-    "analyticHash": "86226841",
-    "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+    "analyticHash": "5CC1A2BE",
+    "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
     "engine": "inline v6",
     "model": "GR Supra",
     "configuration": {
       "octane": "99",
       "model_year": "2025"
     },
+    "platform": "toyota",
     "metadata": {
       "visibility": "PUBLIC",
       "created_date": "2025-10-01T00:00:00Z"
@@ -325,16 +327,17 @@
   "annotationId": "3D3AFEA0",
   "documentId": "000000000003",
   "annotationType": "object",
-  "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+  "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
   "source": {
-    "analyticHash": "86226841",
-    "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+    "analyticHash": "5CC1A2BE",
+    "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
     "engine": "inline v6",
     "model": "GR Supra",
     "configuration": {
       "octane": "99",
       "model_year": "2025"
     },
+    "platform": "toyota",
     "metadata": {
       "visibility": "PUBLIC",
       "created_date": "2025-10-01T00:00:00Z"
@@ -517,16 +520,17 @@
   "annotationId": "7B2FAF43",
   "documentId": "000000000004",
   "annotationType": "image",
-  "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+  "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
   "source": {
-    "analyticHash": "86226841",
-    "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+    "analyticHash": "5CC1A2BE",
+    "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
     "engine": "inline v6",
     "model": "GR Supra",
     "configuration": {
       "octane": "99",
       "model_year": "2025"
     },
+    "platform": "toyota",
     "metadata": {
       "visibility": "PUBLIC",
       "created_date": "2025-10-01T00:00:00Z"
@@ -632,16 +636,17 @@
   "annotationId": "327C292F",
   "documentId": "000000000005",
   "annotationType": "tts",
-  "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+  "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
   "source": {
-    "analyticHash": "86226841",
-    "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+    "analyticHash": "5CC1A2BE",
+    "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
     "engine": "inline v6",
     "model": "GR Supra",
     "configuration": {
       "octane": "99",
       "model_year": "2025"
     },
+    "platform": "toyota",
     "metadata": {
       "visibility": "PUBLIC",
       "created_date": "2025-10-01T00:00:00Z"
@@ -824,16 +829,17 @@
   "annotationId": "19C96CBC",
   "documentId": "000000000006",
   "annotationType": "tokens",
-  "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+  "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
   "source": {
-    "analyticHash": "86226841",
-    "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+    "analyticHash": "5CC1A2BE",
+    "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
     "engine": "inline v6",
     "model": "GR Supra",
     "configuration": {
       "octane": "99",
       "model_year": "2025"
     },
+    "platform": "toyota",
     "metadata": {
       "visibility": "PUBLIC",
       "created_date": "2025-10-01T00:00:00Z"
@@ -952,16 +958,17 @@
   "annotationId": "32F7C24E",
   "documentId": "000000000007",
   "annotationType": "object",
-  "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+  "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
   "source": {
-    "analyticHash": "86226841",
-    "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+    "analyticHash": "5CC1A2BE",
+    "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
     "engine": "inline v6",
     "model": "GR Supra",
     "configuration": {
       "octane": "99",
       "model_year": "2025"
     },
+    "platform": "toyota",
     "metadata": {
       "visibility": "PUBLIC",
       "created_date": "2025-10-01T00:00:00Z"
@@ -1144,16 +1151,17 @@
   "annotationId": "CC2AA8C3",
   "documentId": "000000000008",
   "annotationType": "image",
-  "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+  "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
   "source": {
-    "analyticHash": "86226841",
-    "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+    "analyticHash": "5CC1A2BE",
+    "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
     "engine": "inline v6",
     "model": "GR Supra",
     "configuration": {
       "octane": "99",
       "model_year": "2025"
     },
+    "platform": "toyota",
     "metadata": {
       "visibility": "PUBLIC",
       "created_date": "2025-10-01T00:00:00Z"
@@ -1259,16 +1267,17 @@
   "annotationId": "3FE49853",
   "documentId": "000000000009",
   "annotationType": "tts",
-  "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+  "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
   "source": {
-    "analyticHash": "86226841",
-    "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+    "analyticHash": "5CC1A2BE",
+    "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
     "engine": "inline v6",
     "model": "GR Supra",
     "configuration": {
       "octane": "99",
       "model_year": "2025"
     },
+    "platform": "toyota",
     "metadata": {
       "visibility": "PUBLIC",
       "created_date": "2025-10-01T00:00:00Z"
@@ -1451,16 +1460,17 @@
   "annotationId": "CD27BF6E",
   "documentId": "000000000010",
   "annotationType": "tokens",
-  "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+  "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
   "source": {
-    "analyticHash": "86226841",
-    "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+    "analyticHash": "5CC1A2BE",
+    "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
     "engine": "inline v6",
     "model": "GR Supra",
     "configuration": {
       "octane": "99",
       "model_year": "2025"
     },
+    "platform": "toyota",
     "metadata": {
       "visibility": "PUBLIC",
       "created_date": "2025-10-01T00:00:00Z"
@@ -1579,16 +1589,17 @@
   "annotationId": "53F057A7",
   "documentId": "000000000011",
   "annotationType": "object",
-  "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+  "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
   "source": {
-    "analyticHash": "86226841",
-    "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+    "analyticHash": "5CC1A2BE",
+    "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
     "engine": "inline v6",
     "model": "GR Supra",
     "configuration": {
       "octane": "99",
       "model_year": "2025"
     },
+    "platform": "toyota",
     "metadata": {
       "visibility": "PUBLIC",
       "created_date": "2025-10-01T00:00:00Z"
@@ -1771,16 +1782,17 @@
   "annotationId": "FB541605",
   "documentId": "000000000012",
   "annotationType": "image",
-  "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+  "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
   "source": {
-    "analyticHash": "86226841",
-    "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+    "analyticHash": "5CC1A2BE",
+    "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
     "engine": "inline v6",
     "model": "GR Supra",
     "configuration": {
       "octane": "99",
       "model_year": "2025"
     },
+    "platform": "toyota",
     "metadata": {
       "visibility": "PUBLIC",
       "created_date": "2025-10-01T00:00:00Z"
@@ -1886,16 +1898,17 @@
   "annotationId": "8C315CC7",
   "documentId": "000000000013",
   "annotationType": "tts",
-  "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+  "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
   "source": {
-    "analyticHash": "86226841",
-    "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+    "analyticHash": "5CC1A2BE",
+    "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
     "engine": "inline v6",
     "model": "GR Supra",
     "configuration": {
       "octane": "99",
       "model_year": "2025"
     },
+    "platform": "toyota",
     "metadata": {
       "visibility": "PUBLIC",
       "created_date": "2025-10-01T00:00:00Z"
@@ -2078,16 +2091,17 @@
   "annotationId": "227FDA0F",
   "documentId": "000000000014",
   "annotationType": "tokens",
-  "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+  "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
   "source": {
-    "analyticHash": "86226841",
-    "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+    "analyticHash": "5CC1A2BE",
+    "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
     "engine": "inline v6",
     "model": "GR Supra",
     "configuration": {
       "octane": "99",
       "model_year": "2025"
     },
+    "platform": "toyota",
     "metadata": {
       "visibility": "PUBLIC",
       "created_date": "2025-10-01T00:00:00Z"
@@ -2206,16 +2220,17 @@
   "annotationId": "C4416601",
   "documentId": "000000000015",
   "annotationType": "object",
-  "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+  "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
   "source": {
-    "analyticHash": "86226841",
-    "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+    "analyticHash": "5CC1A2BE",
+    "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
     "engine": "inline v6",
     "model": "GR Supra",
     "configuration": {
       "octane": "99",
       "model_year": "2025"
     },
+    "platform": "toyota",
     "metadata": {
       "visibility": "PUBLIC",
       "created_date": "2025-10-01T00:00:00Z"
@@ -2398,16 +2413,17 @@
   "annotationId": "808E32FD",
   "documentId": "000000000016",
   "annotationType": "image",
-  "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+  "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
   "source": {
-    "analyticHash": "86226841",
-    "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+    "analyticHash": "5CC1A2BE",
+    "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
     "engine": "inline v6",
     "model": "GR Supra",
     "configuration": {
       "octane": "99",
       "model_year": "2025"
     },
+    "platform": "toyota",
     "metadata": {
       "visibility": "PUBLIC",
       "created_date": "2025-10-01T00:00:00Z"
@@ -2513,16 +2529,17 @@
   "annotationId": "05EB49D4",
   "documentId": "000000000017",
   "annotationType": "tts",
-  "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+  "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
   "source": {
-    "analyticHash": "86226841",
-    "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+    "analyticHash": "5CC1A2BE",
+    "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
     "engine": "inline v6",
     "model": "GR Supra",
     "configuration": {
       "octane": "99",
       "model_year": "2025"
     },
+    "platform": "toyota",
     "metadata": {
       "visibility": "PUBLIC",
       "created_date": "2025-10-01T00:00:00Z"
@@ -2705,16 +2722,17 @@
   "annotationId": "989FC696",
   "documentId": "000000000018",
   "annotationType": "tokens",
-  "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+  "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
   "source": {
-    "analyticHash": "86226841",
-    "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+    "analyticHash": "5CC1A2BE",
+    "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
     "engine": "inline v6",
     "model": "GR Supra",
     "configuration": {
       "octane": "99",
       "model_year": "2025"
     },
+    "platform": "toyota",
     "metadata": {
       "visibility": "PUBLIC",
       "created_date": "2025-10-01T00:00:00Z"
@@ -2833,16 +2851,17 @@
   "annotationId": "5353CC53",
   "documentId": "000000000019",
   "annotationType": "object",
-  "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+  "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
   "source": {
-    "analyticHash": "86226841",
-    "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+    "analyticHash": "5CC1A2BE",
+    "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
     "engine": "inline v6",
     "model": "GR Supra",
     "configuration": {
       "octane": "99",
       "model_year": "2025"
     },
+    "platform": "toyota",
     "metadata": {
       "visibility": "PUBLIC",
       "created_date": "2025-10-01T00:00:00Z"
@@ -3025,16 +3044,17 @@
   "annotationId": "8C866D2F",
   "documentId": "000000000020",
   "annotationType": "image",
-  "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+  "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
   "source": {
-    "analyticHash": "86226841",
-    "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+    "analyticHash": "5CC1A2BE",
+    "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
     "engine": "inline v6",
     "model": "GR Supra",
     "configuration": {
       "octane": "99",
       "model_year": "2025"
     },
+    "platform": "toyota",
     "metadata": {
       "visibility": "PUBLIC",
       "created_date": "2025-10-01T00:00:00Z"
@@ -3140,16 +3160,17 @@
   "annotationId": "B852D3DA",
   "documentId": "000000000021",
   "annotationType": "tts",
-  "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+  "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
   "source": {
-    "analyticHash": "86226841",
-    "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+    "analyticHash": "5CC1A2BE",
+    "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
     "engine": "inline v6",
     "model": "GR Supra",
     "configuration": {
       "octane": "99",
       "model_year": "2025"
     },
+    "platform": "toyota",
     "metadata": {
       "visibility": "PUBLIC",
       "created_date": "2025-10-01T00:00:00Z"
@@ -3332,16 +3353,17 @@
   "annotationId": "30587053",
   "documentId": "000000000022",
   "annotationType": "tokens",
-  "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+  "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
   "source": {
-    "analyticHash": "86226841",
-    "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+    "analyticHash": "5CC1A2BE",
+    "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
     "engine": "inline v6",
     "model": "GR Supra",
     "configuration": {
       "octane": "99",
       "model_year": "2025"
     },
+    "platform": "toyota",
     "metadata": {
       "visibility": "PUBLIC",
       "created_date": "2025-10-01T00:00:00Z"
@@ -3460,16 +3482,17 @@
   "annotationId": "A2CEF983",
   "documentId": "000000000023",
   "annotationType": "object",
-  "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+  "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
   "source": {
-    "analyticHash": "86226841",
-    "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+    "analyticHash": "5CC1A2BE",
+    "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
     "engine": "inline v6",
     "model": "GR Supra",
     "configuration": {
       "octane": "99",
       "model_year": "2025"
     },
+    "platform": "toyota",
     "metadata": {
       "visibility": "PUBLIC",
       "created_date": "2025-10-01T00:00:00Z"
@@ -3652,16 +3675,17 @@
   "annotationId": "966BD4C9",
   "documentId": "000000000024",
   "annotationType": "image",
-  "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+  "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
   "source": {
-    "analyticHash": "86226841",
-    "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+    "analyticHash": "5CC1A2BE",
+    "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
     "engine": "inline v6",
     "model": "GR Supra",
     "configuration": {
       "octane": "99",
       "model_year": "2025"
     },
+    "platform": "toyota",
     "metadata": {
       "visibility": "PUBLIC",
       "created_date": "2025-10-01T00:00:00Z"
@@ -3767,16 +3791,17 @@
   "annotationId": "1574E0B4",
   "documentId": "000000000025",
   "annotationType": "tts",
-  "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+  "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
   "source": {
-    "analyticHash": "86226841",
-    "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+    "analyticHash": "5CC1A2BE",
+    "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
     "engine": "inline v6",
     "model": "GR Supra",
     "configuration": {
       "octane": "99",
       "model_year": "2025"
     },
+    "platform": "toyota",
     "metadata": {
       "visibility": "PUBLIC",
       "created_date": "2025-10-01T00:00:00Z"
@@ -3959,16 +3984,17 @@
   "annotationId": "46B19D5A",
   "documentId": "000000000026",
   "annotationType": "tokens",
-  "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+  "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
   "source": {
-    "analyticHash": "86226841",
-    "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+    "analyticHash": "5CC1A2BE",
+    "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
     "engine": "inline v6",
     "model": "GR Supra",
     "configuration": {
       "octane": "99",
       "model_year": "2025"
     },
+    "platform": "toyota",
     "metadata": {
       "visibility": "PUBLIC",
       "created_date": "2025-10-01T00:00:00Z"
@@ -4087,16 +4113,17 @@
   "annotationId": "937738CC",
   "documentId": "000000000027",
   "annotationType": "object",
-  "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+  "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
   "source": {
-    "analyticHash": "86226841",
-    "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+    "analyticHash": "5CC1A2BE",
+    "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
     "engine": "inline v6",
     "model": "GR Supra",
     "configuration": {
       "octane": "99",
       "model_year": "2025"
     },
+    "platform": "toyota",
     "metadata": {
       "visibility": "PUBLIC",
       "created_date": "2025-10-01T00:00:00Z"
@@ -4279,16 +4306,17 @@
   "annotationId": "A9E095FB",
   "documentId": "000000000028",
   "annotationType": "image",
-  "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+  "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
   "source": {
-    "analyticHash": "86226841",
-    "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+    "analyticHash": "5CC1A2BE",
+    "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
     "engine": "inline v6",
     "model": "GR Supra",
     "configuration": {
       "octane": "99",
       "model_year": "2025"
     },
+    "platform": "toyota",
     "metadata": {
       "visibility": "PUBLIC",
       "created_date": "2025-10-01T00:00:00Z"
@@ -4394,16 +4422,17 @@
   "annotationId": "91F84ECA",
   "documentId": "000000000029",
   "annotationType": "tts",
-  "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+  "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
   "source": {
-    "analyticHash": "86226841",
-    "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+    "analyticHash": "5CC1A2BE",
+    "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
     "engine": "inline v6",
     "model": "GR Supra",
     "configuration": {
       "octane": "99",
       "model_year": "2025"
     },
+    "platform": "toyota",
     "metadata": {
       "visibility": "PUBLIC",
       "created_date": "2025-10-01T00:00:00Z"
@@ -4586,16 +4615,17 @@
   "annotationId": "224923C3",
   "documentId": "000000000030",
   "annotationType": "tokens",
-  "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+  "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
   "source": {
-    "analyticHash": "86226841",
-    "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+    "analyticHash": "5CC1A2BE",
+    "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
     "engine": "inline v6",
     "model": "GR Supra",
     "configuration": {
       "octane": "99",
       "model_year": "2025"
     },
+    "platform": "toyota",
     "metadata": {
       "visibility": "PUBLIC",
       "created_date": "2025-10-01T00:00:00Z"
@@ -4714,16 +4744,17 @@
   "annotationId": "B113E121",
   "documentId": "000000000031",
   "annotationType": "object",
-  "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+  "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
   "source": {
-    "analyticHash": "86226841",
-    "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+    "analyticHash": "5CC1A2BE",
+    "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
     "engine": "inline v6",
     "model": "GR Supra",
     "configuration": {
       "octane": "99",
       "model_year": "2025"
     },
+    "platform": "toyota",
     "metadata": {
       "visibility": "PUBLIC",
       "created_date": "2025-10-01T00:00:00Z"
@@ -4906,16 +4937,17 @@
   "annotationId": "CB26B407",
   "documentId": "000000000032",
   "annotationType": "image",
-  "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+  "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
   "source": {
-    "analyticHash": "86226841",
-    "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+    "analyticHash": "5CC1A2BE",
+    "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
     "engine": "inline v6",
     "model": "GR Supra",
     "configuration": {
       "octane": "99",
       "model_year": "2025"
     },
+    "platform": "toyota",
     "metadata": {
       "visibility": "PUBLIC",
       "created_date": "2025-10-01T00:00:00Z"
@@ -5021,16 +5053,17 @@
   "annotationId": "E997916D",
   "documentId": "000000000033",
   "annotationType": "tts",
-  "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+  "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
   "source": {
-    "analyticHash": "86226841",
-    "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+    "analyticHash": "5CC1A2BE",
+    "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
     "engine": "inline v6",
     "model": "GR Supra",
     "configuration": {
       "octane": "99",
       "model_year": "2025"
     },
+    "platform": "toyota",
     "metadata": {
       "visibility": "PUBLIC",
       "created_date": "2025-10-01T00:00:00Z"
@@ -5213,16 +5246,17 @@
   "annotationId": "FA6A536F",
   "documentId": "000000000034",
   "annotationType": "tokens",
-  "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+  "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
   "source": {
-    "analyticHash": "86226841",
-    "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+    "analyticHash": "5CC1A2BE",
+    "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
     "engine": "inline v6",
     "model": "GR Supra",
     "configuration": {
       "octane": "99",
       "model_year": "2025"
     },
+    "platform": "toyota",
     "metadata": {
       "visibility": "PUBLIC",
       "created_date": "2025-10-01T00:00:00Z"
@@ -5341,16 +5375,17 @@
   "annotationId": "947C4B3F",
   "documentId": "000000000035",
   "annotationType": "object",
-  "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+  "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
   "source": {
-    "analyticHash": "86226841",
-    "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+    "analyticHash": "5CC1A2BE",
+    "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
     "engine": "inline v6",
     "model": "GR Supra",
     "configuration": {
       "octane": "99",
       "model_year": "2025"
     },
+    "platform": "toyota",
     "metadata": {
       "visibility": "PUBLIC",
       "created_date": "2025-10-01T00:00:00Z"
@@ -5533,16 +5568,17 @@
   "annotationId": "05E5F3B9",
   "documentId": "000000000036",
   "annotationType": "image",
-  "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+  "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
   "source": {
-    "analyticHash": "86226841",
-    "analyticSourceHash": "F1A0463C207B3778B472B506F3F8351A",
+    "analyticHash": "5CC1A2BE",
+    "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
     "engine": "inline v6",
     "model": "GR Supra",
     "configuration": {
       "octane": "99",
       "model_year": "2025"
     },
+    "platform": "toyota",
     "metadata": {
       "visibility": "PUBLIC",
       "created_date": "2025-10-01T00:00:00Z"
