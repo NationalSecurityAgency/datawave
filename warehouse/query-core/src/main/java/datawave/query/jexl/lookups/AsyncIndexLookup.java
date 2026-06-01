@@ -13,6 +13,7 @@ import org.apache.log4j.Logger;
 
 import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.scan.ScannerBuilder;
 import datawave.query.tables.ScannerFactory;
 
 /**
@@ -32,6 +33,7 @@ public abstract class AsyncIndexLookup extends IndexLookup {
     // flag for unfielded lookups
     protected final boolean unfieldedLookup;
 
+    protected ScannerBuilder builder = null;
     protected ScanMonitor monitor;
 
     public AsyncIndexLookup(ShardQueryConfiguration config, ScannerFactory scannerFactory, boolean unfieldedLookup, ExecutorService execService) {
