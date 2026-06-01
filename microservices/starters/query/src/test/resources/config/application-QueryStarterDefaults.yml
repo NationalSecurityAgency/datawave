@@ -63,8 +63,6 @@ warehouse:
     fullTableScanEnabled: false
     baseIteratorPriority: 100
     maxIndexScanTimeMillis: 31536000000
-    eventPerDayThreshold: 40000
-    shardsPerDayThreshold: 20
     initialMaxTermThreshold: 2000
     finalMaxTermThreshold: 2000
     maxDepthThreshold: 2000
@@ -190,8 +188,6 @@ datawave:
             'bar': "foo"
           auditType: "NONE"
           logicDescription: "Retrieve sharded events/documents, leveraging the global index tables as needed"
-          eventPerDayThreshold: ${warehouse.defaults.eventPerDayThreshold}
-          shardsPerDayThreshold: ${warehouse.defaults.shardsPerDayThreshold}
           initialMaxTermThreshold: ${warehouse.defaults.initialMaxTermThreshold}
           finalMaxTermThreshold: ${warehouse.defaults.finalMaxTermThreshold}
           maxDepthThreshold: ${warehouse.defaults.maxDepthThreshold}
@@ -442,8 +438,6 @@ datawave:
           useEnrichers: false
           auditType: "NONE"
           logicDescription: "Fast boolean query over indexed fields, only returning fields queried on"
-          eventPerDayThreshold: 40000
-          shardsPerDayThreshold: ${warehouse.defaults.shardsPerDayThreshold}
           initialMaxTermThreshold: ${warehouse.defaults.initialMaxTermThreshold}
           finalMaxTermThreshold: ${warehouse.defaults.finalMaxTermThreshold}
           maxDepthThreshold: ${warehouse.defaults.maxDepthThreshold}
@@ -483,7 +477,7 @@ datawave:
         fieldName: 'EVENT_ID'
         queryLogics:
           'default': 'LuceneUUIDEventQuery'
-        allowedWildcardAfter: 28
+        allowWildcardAfter: 28
       'UUID':
         fieldName: 'UUID'
         queryLogics:

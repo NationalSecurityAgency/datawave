@@ -1,87 +1,149 @@
 package datawave.query.rules;
 
+import static datawave.query.Constants.ANY_FIELD;
+import static datawave.query.Constants.NO_FIELD;
+
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.apache.accumulo.core.client.TableNotFoundException;
 import org.easymock.EasyMock;
+import org.easymock.EasyMockExtension;
+import org.easymock.Mock;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
+import datawave.microservice.query.Query;
 import datawave.query.util.MetadataHelper;
-import datawave.query.util.MockMetadataHelper;
+import datawave.util.time.DateHelper;
 
+@ExtendWith(EasyMockExtension.class)
 public class FieldExistenceRuleTest extends ShardQueryRuleTest {
 
-    private static final Set<String> ALL_FIELDS = Set.of("FOO", "BAR", "BAT");
-    private static final String ANYFIELD = "_ANYFIELD_";
-    private static final MockMetadataHelper defaultMetadataHelper = new MockMetadataHelper();
+    private static final String beginDate = "20201231";
+    private static final String endDate = "20251231";
+    private static final Set<String> specialFields = Set.of(ANY_FIELD, NO_FIELD);
+    private static final Set<String> hiddenFields = Set.of("HIDDEN_FIELD");
 
-    private final Set<String> fieldExceptions = new HashSet<>();
+    @Mock
+    private MetadataHelper helper;
+
+    @Mock
+    private Query settings;
+
+    private final Set<String> existingFields = new HashSet<>();
+    private final Set<String> foundFields = new HashSet<>();
+    private final Set<String> missingFields = new HashSet<>();
 
     @BeforeAll
-    public static void beforeClass() throws Exception {
-        defaultMetadataHelper.addFields(ALL_FIELDS);
-    }
+    public static void beforeClass() throws Exception {}
 
     @BeforeEach
     public void setUp() throws Exception {
         givenRuleName(RULE_NAME);
-        givenMetadataHelper(defaultMetadataHelper);
+        givenMetadataHelper(helper);
         expectRuleName(RULE_NAME);
     }
 
-    /**
-     * Test a query where all fields exist.
-     */
-    @Test
-    public void testAllFieldsExist() throws Exception {
-        givenQuery("FOO == 'abc' || BAR =~ 'abc' || filter:includeRegex(BAT, '45*')");
-
-        assertResult();
+    @AfterEach
+    @Override
+    void tearDown() {
+        query = null;
+        existingFields.clear();
+        foundFields.clear();
+        missingFields.clear();
     }
 
     /**
-     * Test a query where some fields do not exist.
+     * Test no non-existent fields or immaterial query subsets.
      */
     @Test
-    public void testNonExistentFields() throws Exception {
-        givenQuery("TOMFOOLERY == 'abc' || CHAOS =~ 'abc' || filter:includeRegex(SHENANIGANS, '45.8') || FOO == 'aa'");
-        expectMessage("Fields not found in data dictionary: TOMFOOLERY, CHAOS, SHENANIGANS");
+    void testNoIssuesFound() throws Exception {
+        givenQuery("AGE == 'foo' || GENDER == 'bar'");
+
+        givenExistingFields("AGE", "GENDER");
+        expectFoundFields("AGE", "GENDER");
+
         assertResult();
+
+        EasyMock.verify(settings, helper);
     }
 
     /**
-     * Test a query that has a non-existent field that is a special field.
+     * Test the presence of a non-existent field.
      */
     @Test
-    public void testSpecialField() throws Exception {
-        givenQuery("FOO == 'abc' || TOMFOOLERY == 'abc' || _ANYFIELD_ = 'abc'");
-        givenFieldException(ANYFIELD);
-        expectMessage("Fields not found in data dictionary: TOMFOOLERY");
+    void testNonExistentFieldFound() throws Exception {
+        givenQuery("AGE == 'foo' || GENDER == 'bar'");
+
+        givenExistingFields("AGE");
+        expectFoundFields("AGE", "GENDER");
+        givenMissingFields("GENDER");
+
+        expectMessage("Fields not found in data dictionary: GENDER");
+
         assertResult();
+
+        EasyMock.verify(settings, helper);
     }
 
     /**
-     * Test a scenario where an exception gets thrown by the metadata helper.
+     * Test the presence of an immaterial query subset.
      */
     @Test
-    public void testExceptionThrown() throws Exception {
-        MetadataHelper mockHelper = EasyMock.createMock(MetadataHelper.class);
-        Exception exception = new IllegalArgumentException("Failed to fetch all fields");
-        EasyMock.expect(mockHelper.getAllFields(Collections.emptySet())).andThrow(exception);
-        EasyMock.replay(mockHelper);
+    void testImmaterialFieldsFound() throws Exception {
+        givenQuery("AGE == 'foo' || GENDER == 'bar'");
 
-        givenQuery("FOO == 'abc'");
-        givenMetadataHelper(mockHelper);
+        givenExistingFields("AGE", "GENDER");
+        expectFoundFields("AGE", "GENDER");
+        givenMissingFields("AGE", "GENDER");
 
-        expectException(exception);
+        expectMessage("There is no data in the following fields [AGE, GENDER] for the entire query date range 20201231 to 20251231.");
+
         assertResult();
+
+        EasyMock.verify(settings, helper);
     }
 
-    private void givenFieldException(String exception) {
-        this.fieldExceptions.add(exception);
+    /**
+     * Test the presence of a non-existent field and an immaterial query subset.
+     */
+    @Test
+    void testNonExistentFieldsAndImmaterialFieldsFound() throws Exception {
+        givenQuery("NAME == 'hat' && (AGE == 'foo' || GENDER == 'bar')");
+
+        givenExistingFields("AGE", "GENDER");
+        expectFoundFields("AGE", "GENDER", "NAME");
+        givenMissingFields("AGE", "GENDER");
+
+        expectMessage("Fields not found in data dictionary: NAME");
+        expectMessage("There is no data in the following fields [AGE, GENDER] for the entire query date range 20201231 to 20251231.");
+
+        assertResult();
+
+        EasyMock.verify(settings, helper);
+    }
+
+    /**
+     * Test a query with a hidden field.
+     */
+    @Test
+    public void testHiddenFields() throws Exception {
+        givenQuery("FOO == 'abc' || BAR =~ 'abc' || filter:includeRegex(SHENANIGANS, '45.8') || HIDDEN_FIELD == 'aa'");
+        expectMessage("Fields not found in data dictionary: SHENANIGANS, HIDDEN_FIELD");
+
+        givenExistingFields("FOO", "BAR");
+        expectFoundFields("FOO", "BAR", "SHENANIGANS", "HIDDEN_FIELD");
+        givenMissingFields("SHENANIGANS", "HIDDEN_FIELD");
+
+        assertResult();
+
+        EasyMock.verify(settings, helper);
     }
 
     @Override
@@ -91,8 +153,38 @@ public class FieldExistenceRuleTest extends ShardQueryRuleTest {
 
     @Override
     protected ShardQueryRule getNewRule() {
+        EasyMock.expect(settings.getBeginDate()).andReturn(DateHelper.parse(beginDate)).anyTimes();
+        EasyMock.expect(settings.getEndDate()).andReturn(DateHelper.parse(endDate)).anyTimes();
+        givenQuerySettings(settings);
+
+        try {
+            EasyMock.expect(helper.getHiddenFields(Collections.emptySet())).andReturn(hiddenFields);
+            EasyMock.expect(helper.getAllFields(Collections.emptySet())).andReturn(existingFields);
+        } catch (TableNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+
+        if (!foundFields.isEmpty()) {
+            EasyMock.expect(helper.getMissingFieldsInDateRange(foundFields, Collections.emptySet(), beginDate, endDate, specialFields))
+                            .andReturn(missingFields);
+        }
+
+        EasyMock.replay(settings, helper);
+
         FieldExistenceRule rule = new FieldExistenceRule(ruleName);
-        rule.setSpecialFields(fieldExceptions);
+        rule.setSpecialFields(specialFields);
         return rule;
+    }
+
+    private void givenExistingFields(String... fields) {
+        this.existingFields.addAll(Arrays.asList(fields));
+    }
+
+    private void expectFoundFields(String... fields) {
+        this.foundFields.addAll(Arrays.asList(fields));
+    }
+
+    private void givenMissingFields(String... fields) {
+        this.missingFields.addAll(Arrays.asList(fields));
     }
 }

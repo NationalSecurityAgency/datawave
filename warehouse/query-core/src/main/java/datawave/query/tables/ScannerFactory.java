@@ -13,6 +13,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchScanner;
+import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.client.TableNotFoundException;
@@ -25,6 +26,7 @@ import org.slf4j.LoggerFactory;
 import com.google.common.base.Preconditions;
 
 import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.configuration.QueryData;
 import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.microservice.query.Query;
 import datawave.mr.bulk.BulkInputFormat;
@@ -33,7 +35,7 @@ import datawave.mr.bulk.RfileScanner;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.tables.stats.ScanSessionStats;
 import datawave.query.util.QueryScannerHelper;
-import datawave.webservice.common.connection.WrappedConnector;
+import datawave.webservice.common.connection.WrappedAccumuloClient;
 
 public class ScannerFactory {
 
@@ -136,7 +138,7 @@ public class ScannerFactory {
         }
 
         if (log.isDebugEnabled()) {
-            log.debug("Created ScannerFactory {}, wrapped={}", System.identityHashCode(this), (client instanceof WrappedConnector));
+            log.debug("Created ScannerFactory {}, wrapped={}", System.identityHashCode(this), (client instanceof WrappedAccumuloClient));
         }
     }
 
@@ -513,6 +515,30 @@ public class ScannerFactory {
         } else {
             throw new IllegalStateException("Factory has been locked. No new scanners can be created.");
         }
+    }
+
+    public BatchScanner newScanner(ShardQueryConfiguration config, QueryData qd, String tableName) throws TableNotFoundException {
+        final BatchScanner bs = this.newScanner(tableName, config.getAuthorizations(), config.getNumQueryThreads(), config.getQuery());
+
+        if (log.isTraceEnabled()) {
+            log.trace("Running with " + config.getAuthorizations() + " and " + config.getNumQueryThreads() + " threads: " + qd);
+        }
+
+        bs.setRanges(qd.getRanges());
+
+        for (IteratorSetting cfg : qd.getSettings()) {
+            bs.addScanIterator(cfg);
+        }
+
+        if (config.getTableConsistencyLevels().containsKey(config.getTableName())) {
+            bs.setConsistencyLevel(config.getTableConsistencyLevels().get(config.getTableName()));
+        }
+
+        if (config.getTableHints().containsKey(config.getTableName())) {
+            bs.setExecutionHints(config.getTableHints().get(config.getTableName()));
+        }
+
+        return bs;
     }
 
     /**

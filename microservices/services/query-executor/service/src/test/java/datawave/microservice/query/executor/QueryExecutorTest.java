@@ -515,7 +515,7 @@ public abstract class QueryExecutorTest {
         // get a result
         startTime = System.currentTimeMillis();
         Result result = null;
-        while (result == null && (System.currentTimeMillis() - startTime) < TimeUnit.SECONDS.toMillis(10000)) {
+        while (result == null && (System.currentTimeMillis() - startTime) < TimeUnit.SECONDS.toMillis(10)) {
             result = listener.receive(100, TimeUnit.MILLISECONDS);
             checkFailed(key.getQueryId());
         }

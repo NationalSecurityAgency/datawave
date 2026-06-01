@@ -87,8 +87,8 @@ public class Content extends Attribute<Content> implements Serializable {
             Class sourceClass;
             try {
                 sourceClass = Class.forName(clazz);
-                source = (Attribute<?>) sourceClass.newInstance();
-            } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+                source = (Attribute<?>) sourceClass.getDeclaredConstructor().newInstance();
+            } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
                 throw new RuntimeException("could not parse source", e);
             }
 

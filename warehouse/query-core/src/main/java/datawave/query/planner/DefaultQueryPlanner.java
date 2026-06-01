@@ -100,6 +100,8 @@ import datawave.query.index.day.DayIndexStream;
 import datawave.query.index.lookup.IndexStream;
 import datawave.query.index.lookup.QueryPlanStream;
 import datawave.query.index.lookup.RangeStream;
+import datawave.query.index.lookup.TruncatedIndexIterator;
+import datawave.query.index.lookup.TruncatedRangeStream;
 import datawave.query.iterator.CloseableListIterable;
 import datawave.query.iterator.QueryIterator;
 import datawave.query.iterator.QueryOptions;
@@ -705,16 +707,23 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
         addOption(cfg, QueryOptions.LIMIT_FIELDS, config.getLimitFieldsAsString(), false);
         addOption(cfg, QueryOptions.MATCHING_FIELD_SETS, config.getMatchingFieldSetsAsString(), false);
-        addOption(cfg, QueryOptions.GROUP_FIELDS, config.getGroupFields().toString(), true);
-        addOption(cfg, QueryOptions.GROUP_FIELDS_BATCH_SIZE, config.getGroupFieldsBatchSizeAsString(), true);
-        if (!config.isDisableIteratorUniqueFields()) {
-            addOption(cfg, QueryOptions.UNIQUE_FIELDS, config.getUniqueFields().toString(), true);
-            if (config.getUniqueFields().isMostRecent()) {
-                // this may be redundant with the uniqueFields.toString(), but other code relies on this explicitly being set
-                addOption(cfg, QueryOptions.MOST_RECENT_UNIQUE, Boolean.toString(true), false);
-                addOption(cfg, QueryOptions.UNIQUE_CACHE_BUFFER_SIZE, Integer.toString(config.getUniqueCacheBufferSize()), false);
+
+        if (!config.getUniqueFields().isEmpty()) {
+            if (!config.isDisableIteratorUniqueFields() && !(config.isDisableIteratorMostRecentUniqueFields() && config.getUniqueFields().isMostRecent())) {
+                addOption(cfg, QueryOptions.UNIQUE_FIELDS, config.getUniqueFields().toString(), true);
+                if (config.getUniqueFields().isMostRecent()) {
+                    // this may be redundant with the uniqueFields.toString(), but other code relies on this explicitly being set
+                    addOption(cfg, QueryOptions.MOST_RECENT_UNIQUE, Boolean.toString(true), false);
+                    addOption(cfg, QueryOptions.UNIQUE_CACHE_BUFFER_SIZE, Integer.toString(config.getUniqueCacheBufferSize()), false);
+                }
             }
         }
+        // if we are doing any uniqueness, then we need to have all fields get back to the webservers. Hence we cannot do grouping server side in that case.
+        else if (config.getGroupFields().hasGroupByFields()) {
+            addOption(cfg, QueryOptions.GROUP_FIELDS, config.getGroupFields().toString(), true);
+            addOption(cfg, QueryOptions.GROUP_FIELDS_BATCH_SIZE, config.getGroupFieldsBatchSizeAsString(), true);
+        }
+
         addOption(cfg, QueryOptions.HIT_LIST, Boolean.toString(config.isHitList()), false);
         addOption(cfg, QueryOptions.TERM_FREQUENCY_FIELDS, Joiner.on(',').join(config.getQueryTermFrequencyFields()), false);
         addOption(cfg, QueryOptions.TERM_FREQUENCIES_REQUIRED, Boolean.toString(config.isTermFrequenciesRequired()), false);
@@ -1008,7 +1017,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         if (disableBoundedLookup) {
             // protection mechanism. If we disable bounded ranges and have a
             // LT,GT or ER node, we should expand it
-            if (BoundedRangeDetectionVisitor.mustExpandBoundedRange(config, metadataHelper, config.getQueryTree())) {
+            if (BoundedRangeDetectionVisitor.mustExpandBoundedRange(config.getQueryTree(), getNonEventFields())) {
                 disableBoundedLookup = false;
             }
         }
@@ -1391,8 +1400,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         // if we have to force it down the field-index path with event-specific
         // ranges
         if (!compositeFields.isEmpty()) {
-            boolean functionsEnabled = config.isCompositeFilterFunctionsEnabled();
-            containsComposites = !SetMembershipVisitor.getMembers(compositeFields.keySet(), config, config.getQueryTree(), functionsEnabled).isEmpty();
+            containsComposites = !SetMembershipVisitor.getMembers(compositeFields.keySet(), config.getQueryTree()).isEmpty();
         }
 
         // Print the nice log message
@@ -1487,7 +1495,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         Set<String> termFrequencyFields = getTermFrequencyFields();
 
         if (!termFrequencyFields.isEmpty()) {
-            queryTfFields = SetMembershipVisitor.getMembers(termFrequencyFields, config, config.getQueryTree());
+            queryTfFields = SetMembershipVisitor.getMembers(termFrequencyFields, config.getQueryTree());
 
             // Print the nice log message
             if (log.isDebugEnabled()) {
@@ -1855,8 +1863,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         boolean containsIndexOnlyFields;
         TraceStopwatch stopwatch = timers.newStartedStopwatch(stage);
         try {
-            boolean functionsEnabled = config.isIndexOnlyFilterFunctionsEnabled();
-            containsIndexOnlyFields = !SetMembershipVisitor.getMembers(indexOnlyFields, config, script, functionsEnabled).isEmpty();
+            containsIndexOnlyFields = !SetMembershipVisitor.getMembers(indexOnlyFields, script).isEmpty();
 
             // Print the nice log message
             if (log.isDebugEnabled()) {
@@ -1882,7 +1889,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         });
     }
 
-    private ASTJexlScript timedExpandRanges(QueryStopwatch timers, String stage, final ASTJexlScript script, ShardQueryConfiguration config,
+    protected ASTJexlScript timedExpandRanges(QueryStopwatch timers, String stage, final ASTJexlScript script, ShardQueryConfiguration config,
                     MetadataHelper metadataHelper, ScannerFactory scannerFactory) throws DatawaveQueryException {
         config.setQueryTree(script);
         TraceStopwatch innerStopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - " + stage);
@@ -2086,7 +2093,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 allFields = allFieldTypeMap.getIfPresent(dataTypeHash);
             }
             if (null == allFields) {
-                allFields = metadataHelper.getAllFields(dataTypes);
+                allFields = metadataHelper.getModelExpansionFields(dataTypes);
                 if (cacheDataTypes) {
                     allFieldTypeMap.put(dataTypeHash, allFields);
                 }
@@ -2653,7 +2660,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                         fieldsToRetain.addAll(ReduceFields.getQueryFields(config.getQueryTree()));
                         fieldsToRetain.addAll(config.getProjectFields());
                         fieldsToRetain.addAll(config.getCompositeToFieldMap().keySet());
-                        // GroupBy fields already added to projection at this point in planning
+                        // GroupBy and unique fields already added to projection at this point in planning
                         // Unique and Excerpt fields do not affect returned fields
                     } else {
                         // sum all fields, remove exclude fields
@@ -2735,7 +2742,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
         // Allowlist and disallowlist projection are mutually exclusive. You can't
         // have both.
-        if (null != config.getProjectFields() && !config.getProjectFields().isEmpty()) {
+        if (!config.getProjectFields().isEmpty()) {
             if (log.isDebugEnabled()) {
                 final int maxLen = 100;
                 String projectFields = config.getProjectFieldsAsString();
@@ -3004,18 +3011,19 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
             // count the terms
             int termCount = TermCountingVisitor.countTerms(queryTree);
+            int indexedEqualityTerms = IndexedTermCountingVisitor.countTerms(config.getQueryTree(), config.getIndexedFields());
+
+            log.info("term count: " + termCount + " indexed terms: " + indexedEqualityTerms);
 
             if (config.getIntermediateMaxTermThreshold() > 0 && termCount > config.getIntermediateMaxTermThreshold()) {
-                throw new DatawaveFatalQueryException(
-                                "Query with " + termCount + " exceeds the initial max term threshold of " + config.getIntermediateMaxTermThreshold());
+                String msg = "Query with " + termCount + " exceeds the initial max term threshold of " + config.getIntermediateMaxTermThreshold();
+                throw new DatawaveFatalQueryException(msg);
             }
 
-            if (config.getIndexedMaxTermThreshold() > 0) {
-                int indexedEqualityTerms = IndexedTermCountingVisitor.countTerms(config.getQueryTree(), config.getIndexedFields());
-                if (indexedEqualityTerms > config.getIndexedMaxTermThreshold()) {
-                    throw new DatawaveQueryException("Query with " + indexedEqualityTerms + " indexed EQ nodes exceeds the indexedMaxTermThreshold of "
-                                    + config.getIndexedMaxTermThreshold());
-                }
+            if (config.getIndexedMaxTermThreshold() > 0 && indexedEqualityTerms > config.getIndexedMaxTermThreshold()) {
+                String msg = "Query with " + indexedEqualityTerms + " indexed EQ nodes exceeds the indexedMaxTermThreshold of "
+                                + config.getIndexedMaxTermThreshold();
+                throw new DatawaveQueryException(msg);
             }
 
             if (termCount >= pushdownThreshold) {
@@ -3097,10 +3105,14 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         });
     }
 
-    private QueryPlanStream getQueryPlanStream(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper metadataHelper) {
+    protected QueryPlanStream getQueryPlanStream(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper metadataHelper) {
 
         if (config.isUseShardedIndex()) {
             return getDayIndexStream(config);
+        } else if (config.isUseTruncatedIndex()) {
+            this.rangeStreamClass = TruncatedRangeStream.class.getCanonicalName();
+            this.createUidsIteratorClass = TruncatedIndexIterator.class;
+            return initializeRangeStream(config, scannerFactory, metadataHelper);
         } else {
             return initializeRangeStream(config, scannerFactory, metadataHelper);
         }

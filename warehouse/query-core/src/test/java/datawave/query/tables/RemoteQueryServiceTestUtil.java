@@ -10,7 +10,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.math.BigInteger;
 import java.net.HttpURLConnection;
-import java.nio.charset.Charset;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
@@ -28,6 +27,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.ws.rs.core.MediaType;
@@ -145,7 +145,7 @@ public class RemoteQueryServiceTestUtil extends RemoteServiceUtil {
             String responseBody = objectMapper.writeValueAsString(createResponse);
             exchange.getResponseHeaders().add("Content-Type", MediaType.APPLICATION_JSON);
             exchange.sendResponseHeaders(HttpURLConnection.HTTP_OK, responseBody.length());
-            IOUtils.write(responseBody, exchange.getResponseBody(), Charset.forName("UTF-8"));
+            IOUtils.write(responseBody, exchange.getResponseBody(), UTF_8);
             exchange.close();
         };
 
@@ -166,7 +166,7 @@ public class RemoteQueryServiceTestUtil extends RemoteServiceUtil {
             String responseBody = objectMapper.writeValueAsString(response);
             exchange.getResponseHeaders().add("Content-Type", MediaType.APPLICATION_JSON);
             exchange.sendResponseHeaders(responseCode, responseBody.length());
-            IOUtils.write(responseBody, exchange.getResponseBody(), Charset.forName("UTF-8"));
+            IOUtils.write(responseBody, exchange.getResponseBody(), UTF_8);
             exchange.close();
         };
 
@@ -177,7 +177,7 @@ public class RemoteQueryServiceTestUtil extends RemoteServiceUtil {
             String responseBody = objectMapper.writeValueAsString(closeResponse);
             exchange.getResponseHeaders().add("Content-Type", MediaType.APPLICATION_JSON);
             exchange.sendResponseHeaders(HttpURLConnection.HTTP_OK, responseBody.length());
-            IOUtils.write(responseBody, exchange.getResponseBody(), Charset.forName("UTF-8"));
+            IOUtils.write(responseBody, exchange.getResponseBody(), UTF_8);
             exchange.close();
         };
 
@@ -240,6 +240,7 @@ public class RemoteQueryServiceTestUtil extends RemoteServiceUtil {
 
         private boolean planTest = false;
         private String plan;
+        private CountDownLatch exceptionLatch;
 
         public QueryRunnable(QueryLogic logic) {
             this(logic, null);
@@ -294,8 +295,11 @@ public class RemoteQueryServiceTestUtil extends RemoteServiceUtil {
                     assertEquals(expectedCount, events.size());
                 }
             } catch (Exception e) {
-                caught.set(true);
                 exception = e;
+                caught.set(true);
+                if (exceptionLatch != null) {
+                    exceptionLatch.countDown();
+                }
                 return;
             }
 
@@ -315,6 +319,10 @@ public class RemoteQueryServiceTestUtil extends RemoteServiceUtil {
 
         public Exception getException() {
             return exception;
+        }
+
+        public void setExceptionLatch(CountDownLatch latch) {
+            this.exceptionLatch = latch;
         }
 
         public void setPlanTest(boolean planTest) {

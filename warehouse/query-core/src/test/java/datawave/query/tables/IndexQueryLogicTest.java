@@ -1,6 +1,7 @@
 package datawave.query.tables;
 
 import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -24,6 +25,7 @@ import datawave.core.query.result.event.DefaultResponseObjectFactory;
 import datawave.marking.MarkingFunctions;
 import datawave.query.Constants;
 import datawave.query.QueryTestTableHelper;
+import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.planner.DatePartitionedQueryPlanner;
 import datawave.query.testframework.AbstractFunctionalQuery;
 import datawave.query.testframework.AccumuloSetup;
@@ -89,6 +91,14 @@ public class IndexQueryLogicTest extends AbstractFunctionalQuery {
         this.logic.setMetadataHelperFactory(new MetadataHelperFactory());
         this.logic.setQueryPlanner(new DatePartitionedQueryPlanner());
         this.logic.setResponseObjectFactory(new DefaultResponseObjectFactory());
+
+        // setup the hadoop configuration
+        URL hadoopConfig = this.getClass().getResource("/testhadoop.config");
+        logic.setHdfsSiteConfigURLs(hadoopConfig.toExternalForm());
+
+        // setup a directory for cache results
+        IvaratorCacheDirConfig config = new IvaratorCacheDirConfig(temporaryFolder.newFolder().toURI().toString());
+        logic.setIvaratorCacheDirConfigs(Collections.singletonList(config));
 
         // init must set auths
         testInit();

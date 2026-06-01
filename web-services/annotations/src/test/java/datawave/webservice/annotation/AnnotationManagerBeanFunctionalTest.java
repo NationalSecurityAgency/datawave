@@ -4,12 +4,14 @@ import static datawave.annotation.test.v1.AnnotationAssertions.assertAnnotations
 import static datawave.annotation.test.v1.AnnotationAssertions.assertSegmentsEqual;
 import static datawave.annotation.test.v1.AnnotationTestDataUtil.generateMultiTestSegment;
 import static datawave.annotation.test.v1.AnnotationTestDataUtil.generateTestAnnotation;
+import static datawave.annotation.test.v1.AnnotationTestDataUtil.generateTestAnnotationSource;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -42,14 +44,20 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 
+import com.google.protobuf.InvalidProtocolBufferException;
+
 import datawave.annotation.data.transform.DefaultTimestampTransformer;
 import datawave.annotation.data.transform.DefaultVisibilityTransformer;
 import datawave.annotation.data.transform.TimestampTransformer;
 import datawave.annotation.data.transform.VisibilityTransformer;
 import datawave.annotation.data.v1.AccumuloAnnotationSerializer;
+import datawave.annotation.data.v1.AccumuloAnnotationSourceSerializer;
 import datawave.annotation.data.v1.AnnotationDataAccess;
 import datawave.annotation.protobuf.v1.Annotation;
+import datawave.annotation.protobuf.v1.AnnotationSource;
 import datawave.annotation.protobuf.v1.Segment;
+import datawave.annotation.test.v1.AnnotationTestDataUtil;
+import datawave.annotation.util.v1.AnnotationJsonUtils;
 import datawave.annotation.util.v1.AnnotationUtils;
 import datawave.configuration.spring.SpringBean;
 import datawave.core.common.connection.AccumuloConnectionFactory;
@@ -82,33 +90,36 @@ public class AnnotationManagerBeanFunctionalTest {
 
     @Mock
     @Produces
-    private static EJBContext ctx;
+    private EJBContext ctx;
 
     @Mock
     @Produces
-    private static AccumuloConnectionFactory connectionFactory;
+    private AccumuloConnectionFactory connectionFactory;
 
     @Mock
     @Produces
-    private static QueryExecutorBean queryExecutorBean;
+    private QueryExecutorBean queryExecutorBean;
 
     @Mock
     @Produces
-    private static QueryLogicFactory queryLogicFactory;
+    private QueryLogicFactory queryLogicFactory;
 
     @Mock
     @Produces
-    private static UserOperations userOperations;
+    private UserOperations userOperations;
 
     @Mock
-    private static AccumuloConnectionRequestBean accumuloConnectionRequestBean;
+    private AccumuloConnectionRequestBean accumuloConnectionRequestBean;
 
     @Produces
     private static final ResponseObjectFactory responseObjectFactory = new DefaultResponseObjectFactory();
 
     @Inject
-    @SpringBean(name = "AnnotationManager")
+    @SpringBean(name = "AnnotationManagerConfig")
+    protected AnnotationManagerConfig annotationManagerConfig;
+
     protected AnnotationManager annotationManager;
+    protected DatawavePrincipal defaultPrincipal;
 
     @Deployment
     public static JavaArchive createDeployment() {
@@ -139,24 +150,32 @@ public class AnnotationManagerBeanFunctionalTest {
     }
 
     @BeforeClass
-    public static void setUp() throws Exception {
+    public static void setupTestData() throws Exception {
 
         QueryTestTableHelper queryTestTableHelper = new QueryTestTableHelper(ExcerptTest.DocumentRangeTest.class.toString(), log);
         client = queryTestTableHelper.client;
 
-        String tableName = "annotations";
+        String annotationTableName = "annotation";
+        String annotationSourceTableName = "annotationSource";
         TableOperations tops = client.tableOperations();
-        tops.create("annotations");
+        tops.create(annotationTableName);
+        tops.create(annotationSourceTableName);
 
         VisibilityTransformer visibilityTransformer = new DefaultVisibilityTransformer();
         TimestampTransformer timestampTransformer = new DefaultTimestampTransformer();
 
         AccumuloAnnotationSerializer annotationSerializer = new AccumuloAnnotationSerializer(visibilityTransformer, timestampTransformer);
-        Authorizations auths = new Authorizations("ALL", "PUBLIC");
-        testDao = new AnnotationDataAccess(client, Set.of(auths), tableName, annotationSerializer);
+        AccumuloAnnotationSourceSerializer annotationSourceSerializer = new AccumuloAnnotationSourceSerializer(visibilityTransformer, timestampTransformer);
+
+        Authorizations auths = new Authorizations("ALL", "PUBLIC", "PRIVATE");
+        testDao = new AnnotationDataAccess(client, Set.of(auths), annotationTableName, annotationSourceTableName, annotationSerializer,
+                        annotationSourceSerializer);
 
         Annotation testAnnotation = generateTestAnnotation();
         testDao.addAnnotation(testAnnotation);
+
+        AnnotationSource testAnnotationSource = generateTestAnnotationSource();
+        testDao.addAnnotationSource(testAnnotationSource);
 
         Logger.getLogger(PrintUtility.class).setLevel(Level.DEBUG);
 
@@ -169,7 +188,14 @@ public class AnnotationManagerBeanFunctionalTest {
         PrintUtility.printTable(client, auths, TableName.SHARD);
         PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
         PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
-        PrintUtility.printTable(client, auths, tableName);
+        PrintUtility.printTable(client, auths, annotationTableName);
+        PrintUtility.printTable(client, auths, annotationSourceTableName);
+    }
+
+    @Before
+    public void setup() throws Exception {
+        TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
+        log.setLevel(Level.TRACE);
 
         ctx = EasyMock.createMock(EJBContext.class);
 
@@ -184,8 +210,8 @@ public class AnnotationManagerBeanFunctionalTest {
         );
         //@formatter:on
 
-        DatawavePrincipal principal = new DatawavePrincipal(List.of(user));
-        EasyMock.expect(ctx.getCallerPrincipal()).andReturn(principal).anyTimes();
+        defaultPrincipal = new DatawavePrincipal(List.of(user));
+        EasyMock.expect(ctx.getCallerPrincipal()).andReturn(defaultPrincipal).times(1);
 
         connectionFactory = EasyMock.createMock(AccumuloConnectionFactory.class);
         EasyMock.expect(connectionFactory.getTrackingMap(EasyMock.anyObject())).andReturn(new HashMap<>()).anyTimes();
@@ -202,21 +228,105 @@ public class AnnotationManagerBeanFunctionalTest {
         ).andReturn(client).anyTimes();
         //@formatter:on
 
+        connectionFactory.returnClient(EasyMock.anyObject());
+        EasyMock.expectLastCall().anyTimes();
+
         queryExecutorBean = EasyMock.createMock(QueryExecutorBean.class);
         queryLogicFactory = EasyMock.createMock(QueryLogicFactory.class);
         userOperations = EasyMock.createMock(UserOperations.class);
         accumuloConnectionRequestBean = EasyMock.createMock(AccumuloConnectionRequestBean.class);
 
         EasyMock.replay(ctx, connectionFactory);
+
+        annotationManager = new AnnotationManagerBean();
+
+        // Inject mocks and config into private fields
+        setField(annotationManager, "ctx", ctx);
+        setField(annotationManager, "connectionFactory", connectionFactory);
+        setField(annotationManager, "accumuloConnectionRequestBean", accumuloConnectionRequestBean);
+        setField(annotationManager, "config", annotationManagerConfig);
+        setField(annotationManager, "responseObjectFactory", responseObjectFactory);
+
+    }
+
+    private static void setField(Object target, String fieldName, Object value) throws Exception {
+        Field field = findField(target.getClass(), fieldName);
+        field.setAccessible(true);
+        field.set(target, value);
+    }
+
+    private static Field findField(Class<?> clazz, String fieldName) throws NoSuchFieldException {
+        Class<?> current = clazz;
+        while (current != null) {
+            try {
+                return current.getDeclaredField(fieldName);
+            } catch (NoSuchFieldException e) {
+                current = current.getSuperclass();
+            }
+        }
+        throw new NoSuchFieldException(fieldName);
     }
 
     public static void addAnnotationTestData(AccumuloClient client) {
+        // TODO: add annotation source data
         testDao.addAnnotation(generateCorleoneAnnotation());
+        testDao.addAnnotation(generatePrivateAnnotation());
+        testDao.addAnnotation(generateUpdatableAnnotation());
     }
 
     public static Annotation generateCorleoneAnnotation() {
+        return generateAnnotationWithId("CORLEONE", "corleone");
+    }
+
+    public static Annotation generatePrivateAnnotation() {
+        Annotation baseAnnotation = generateAnnotationWithId("SOPRANO", "soprano");
+
         Map<String,String> metadata = new HashMap<>();
-        metadata.put("UUID", "CORLEONE");
+        metadata.put("UUID", "SOPRANO");
+        metadata.put("visibility", "PRIVATE");
+        metadata.put("created_date", "2025-10-02T00:00:00.000Z");
+
+        //@formatter:off
+        return baseAnnotation.toBuilder()
+                .setShard("20130101_0")
+                .setDataType("test")
+                .setUid("-1kfeoq.-80b5fs.r0262j")
+                .setAnnotationType("sopranoAnnotationType")
+                .setDocumentId("SOPRANO")
+                .clearSegments()
+                .addAllSegments(List.of(generateMultiTestSegment()))
+                .clearMetadata()
+                .putAllMetadata(metadata)
+                .build();
+        //@formatter:on
+    }
+
+    public static Annotation generateUpdatableAnnotation() {
+        Annotation baseAnnotation = generateAnnotationWithId("ANDOLINI", "anodlini");
+
+        Map<String,String> metadata = new HashMap<>();
+        metadata.put("UUID", "ANDOLINI");
+        metadata.put("visibility", "PUBLIC");
+        metadata.put("created_date", "2025-10-03T00:00:00.000Z");
+
+        //@formatter:off
+        return baseAnnotation.toBuilder()
+                .setShard("20130101_0")
+                .setDataType("test")
+                .setUid("-d5uxna.msizfm.-oxy0iu.1")
+                .setAnnotationType("anodlinuAnnotationType")
+                .setDocumentId("ANDOLINI")
+                .clearMetadata()
+                .putAllMetadata(metadata)
+                .build();
+        //@formatter:on
+    }
+
+    public static Annotation generateAnnotationWithId(String id, String type) {
+        AnnotationSource baseAnnotationSource = generateTestAnnotationSource();
+        AnnotationSource annotationSource = AnnotationUtils.injectAnnotationSourceHashes(baseAnnotationSource);
+        Map<String,String> metadata = new HashMap<>();
+        metadata.put("UUID", id);
         metadata.put("visibility", "ALL");
         metadata.put("created_date", "2025-10-01T00:00:00.000Z");
 
@@ -225,19 +335,31 @@ public class AnnotationManagerBeanFunctionalTest {
                 .setShard("20130101_0")
                 .setDataType("test")
                 .setUid("-d5uxna.msizfm.-oxy0iu")
-                .setAnnotationType("corleoneAnnotationType")
+                .setAnnotationType(type + "AnnotationType")
+                .setDocumentId(id)
+                .setSource(annotationSource)
                 .addAllSegments(List.of(generateMultiTestSegment()))
                 .putAllMetadata(metadata)
                 .build();
         //@formatter:on
     }
 
-    @Before
-    public void setup() {
-        TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
-        log.setLevel(Level.TRACE);
-        AnnotationManagerBean bean = (AnnotationManagerBean) annotationManager;
-        bean.setEJBContext(ctx);
+    @Test
+    public void testGetAnnotationSource() {
+        Response response = annotationManager.getAnnotationSource("52EF0E07742AC65873C6DF80759AF192");
+        assertResponseStatus(200, response);
+        AnnotationSource annotationSource = assertExpectedEntity(AnnotationSource.class, response);
+        assertNotNull(annotationSource);
+    }
+
+    @Test
+    public void testGetMissingAnnotationSource() {
+        Response response = annotationManager.getAnnotationSource("52EF0E07742AC65873C6DF80759AF193");
+        assertResponseStatus(404, response);
+        String errorResponse = assertExpectedEntity(String.class, response);
+        assertContains("No annotation source found for analyticHash", errorResponse);
+        assertContains("52EF0E07742AC65873C6DF80759AF193", errorResponse);
+
     }
 
     @Test
@@ -287,7 +409,7 @@ public class AnnotationManagerBeanFunctionalTest {
     @Test
     public void testGetAnnotationsForInternalId() {
         Annotation testAnnotation = generateTestAnnotation();
-        Annotation expectedAnnotation = AnnotationUtils.injectAnnotationAndSegmentIds(testAnnotation);
+        Annotation expectedAnnotation = AnnotationUtils.injectAllHashes(testAnnotation);
         Response response = annotationManager.getAnnotationsFor("DOCUMENT", "20250704_249/testDataType/abcde.fghij.klmno");
         assertResponseStatus(200, response);
         ArrayList<Annotation> annotationList = assertExpectedEntity(ArrayList.class, response);
@@ -298,7 +420,7 @@ public class AnnotationManagerBeanFunctionalTest {
     @Test
     public void testGetAnnotationsForMissingInternalId() {
         Annotation testAnnotation = generateTestAnnotation();
-        Annotation expectedAnnotation = AnnotationUtils.injectAnnotationAndSegmentIds(testAnnotation);
+        Annotation expectedAnnotation = AnnotationUtils.injectAllHashes(testAnnotation);
         Response response = annotationManager.getAnnotationsFor("DOCUMENT", "20250704_249/testDataType/12345.67890.12345");
         assertResponseStatus(404, response);
         String errorResponse = assertExpectedEntity(String.class, response);
@@ -318,7 +440,7 @@ public class AnnotationManagerBeanFunctionalTest {
     @Test
     public void testAnnotationsForExternalIdWithAnnotations() {
         Annotation testAnnotation = generateCorleoneAnnotation();
-        Annotation expectedAnnotation = AnnotationUtils.injectAnnotationAndSegmentIds(testAnnotation);
+        Annotation expectedAnnotation = AnnotationUtils.injectAllHashes(testAnnotation);
         Response response = annotationManager.getAnnotationsFor("UUID", "CORLEONE");
         assertResponseStatus(200, response);
         ArrayList<Annotation> annotationList = assertExpectedEntity(ArrayList.class, response);
@@ -329,7 +451,7 @@ public class AnnotationManagerBeanFunctionalTest {
     @Test
     public void testGetAllAnnotationsByTypeInternalId() {
         Annotation testAnnotation = generateTestAnnotation();
-        Annotation expectedAnnotation = AnnotationUtils.injectAnnotationAndSegmentIds(testAnnotation);
+        Annotation expectedAnnotation = AnnotationUtils.injectAllHashes(testAnnotation);
         // TODO: insert a second annotation for the same document with a different type?
         //@formatter:off
         Response response = annotationManager.getAnnotationsByType(
@@ -347,7 +469,7 @@ public class AnnotationManagerBeanFunctionalTest {
     @Test
     public void testGetAllAnnotationByTypeInternalIdMissingType() {
         Annotation testAnnotation = generateTestAnnotation();
-        Annotation expectedAnnotation = AnnotationUtils.injectAnnotationAndSegmentIds(testAnnotation);
+        Annotation expectedAnnotation = AnnotationUtils.injectAllHashes(testAnnotation);
         // TODO: insert a second annotation for the same document with a different type?
         //@formatter:off
         Response response = annotationManager.getAnnotationsByType(
@@ -377,7 +499,7 @@ public class AnnotationManagerBeanFunctionalTest {
     @Test
     public void testGetAllAnnotationByTypeExternalIdWithAnnotations() {
         Annotation testAnnotation = generateCorleoneAnnotation();
-        Annotation expectedAnnotation = AnnotationUtils.injectAnnotationAndSegmentIds(testAnnotation);
+        Annotation expectedAnnotation = AnnotationUtils.injectAllHashes(testAnnotation);
         Response response = annotationManager.getAnnotationsByType("UUID", "CORLEONE", "corleoneAnnotationType");
         assertResponseStatus(200, response);
         ArrayList<Annotation> annotationList = assertExpectedEntity(ArrayList.class, response);
@@ -388,13 +510,113 @@ public class AnnotationManagerBeanFunctionalTest {
     @Test
     public void testGetAnnotationInternalId() {
         Annotation testAnnotation = generateTestAnnotation();
-        Annotation expectedAnnotation = AnnotationUtils.injectAnnotationAndSegmentIds(testAnnotation);
-        Response response = annotationManager.getAnnotation("DOCUMENT", "20250704_249/testDataType/abcde.fghij.klmno", "a75beb9e");
+        Annotation expectedAnnotation = AnnotationUtils.injectAllHashes(testAnnotation);
+        Response response = annotationManager.getAnnotation("DOCUMENT", "20250704_249/testDataType/abcde.fghij.klmno", "23BD91EC");
         assertResponseStatus(200, response);
         List<Annotation> annotationList = assertExpectedEntity(List.class, response);
         assertFalse(annotationList.isEmpty());
         assertEquals(1, annotationList.size());
         assertAnnotationsEqual(expectedAnnotation, annotationList.iterator().next());
+    }
+
+    @Test
+    public void testGetPrivateAnnotationFailure() {
+        Annotation testAnnotation = generateTestAnnotation();
+        Annotation expectedAnnotation = AnnotationUtils.injectAllHashes(testAnnotation);
+        Response response = annotationManager.getAnnotation("DOCUMENT", "20130102_0/test/-a4vymb.ntjagn.-pyz1jv", "A22496BE");
+        assertResponseStatus(404, response);
+    }
+
+    @Test
+    public void testGetPrivateAnnotationSuccess() {
+        //@formatter:off
+        DatawaveUser user = new DatawaveUser(
+                SubjectIssuerDNPair.of("testUser"),
+                DatawaveUser.UserType.USER,
+                List.of("ALL", "PUBLIC","PRIVATE"),
+                null,
+                null,
+                -1L
+        );
+        //@formatter:on
+
+        DatawavePrincipal principal = new DatawavePrincipal(List.of(user));
+        EasyMock.reset(ctx);
+        EasyMock.expect(ctx.getCallerPrincipal()).andReturn(principal).times(1);
+        EasyMock.replay(ctx);
+
+        Annotation testAnnotation = generatePrivateAnnotation();
+        Annotation expectedAnnotation = AnnotationUtils.injectAllHashes(testAnnotation);
+        Response response = annotationManager.getAnnotation("DOCUMENT", "20130101_0/test/-1kfeoq.-80b5fs.r0262j", "A22496BE");
+        assertResponseStatus(200, response);
+        List<Annotation> annotationList = assertExpectedEntity(List.class, response);
+        assertFalse(annotationList.isEmpty());
+        assertEquals(1, annotationList.size());
+        assertAnnotationsEqual(expectedAnnotation, annotationList.iterator().next());
+    }
+
+    @Test
+    public void testValidatePrivateAuthorizationReset() {
+        Annotation testAnnotation = generatePrivateAnnotation();
+        Annotation expectedAnnotation = AnnotationUtils.injectAllHashes(testAnnotation);
+
+        // validates that authorizations are reset across multiple calls.
+        //@formatter:off
+        DatawaveUser privateUser = new DatawaveUser(
+                SubjectIssuerDNPair.of("testUser"),
+                DatawaveUser.UserType.USER,
+                List.of("ALL", "PUBLIC","PRIVATE"),
+                null,
+                null,
+                -1L
+        );
+        //@formatter:on
+
+        DatawavePrincipal privatePrincipal = new DatawavePrincipal(List.of(privateUser));
+        EasyMock.reset(ctx);
+        EasyMock.expect(ctx.getCallerPrincipal()).andReturn(privatePrincipal).times(1);
+        EasyMock.replay(ctx);
+
+        Response privateResponse = annotationManager.getAnnotation("DOCUMENT", "20130101_0/test/-1kfeoq.-80b5fs.r0262j", "A22496BE");
+        assertResponseStatus(200, privateResponse);
+        List<Annotation> privateAnnotationList = assertExpectedEntity(List.class, privateResponse);
+        assertFalse(privateAnnotationList.isEmpty());
+        assertEquals(1, privateAnnotationList.size());
+        assertAnnotationsEqual(expectedAnnotation, privateAnnotationList.iterator().next());
+
+        //@formatter:off
+        DatawaveUser publicUser = new DatawaveUser(
+                SubjectIssuerDNPair.of("testUser"),
+                DatawaveUser.UserType.USER,
+                List.of("ALL", "PUBLIC"),
+                null,
+                null,
+                -1L
+        );
+        //@formatter:on
+
+        DatawavePrincipal publicPrincipal = new DatawavePrincipal(List.of(publicUser));
+        EasyMock.reset(ctx);
+        EasyMock.expect(ctx.getCallerPrincipal()).andReturn(publicPrincipal).times(1);
+        EasyMock.replay(ctx);
+
+        Response publicannotationResponse = annotationManager.getAnnotation("DOCUMENT", "20130102_0/test/-a4vymb.ntjagn.-pyz1jv", "A9F9A0B4");
+        assertResponseStatus(404, publicannotationResponse);
+    }
+
+    @Test
+    public void testGetAnnotationInternalIdDisabled() {
+        AnnotationManagerBean bean = (AnnotationManagerBean) annotationManager;
+        AnnotationManagerConfig config = bean.getConfig();
+        config.setEnableInternalIdLookup(false);
+
+        Annotation testAnnotation = generateTestAnnotation();
+        Annotation expectedAnnotation = AnnotationUtils.injectAllHashes(testAnnotation);
+        Response response = annotationManager.getAnnotation("DOCUMENT", "20250704_249/testDataType/abcde.fghij.klmno", "23BD91EC");
+        assertResponseStatus(500, response);
+        String errorResponse = assertExpectedEntity(String.class, response);
+        assertContains("Internal identifier lookup is disabled for", errorResponse);
+        assertContains("20250704_249/testDataType/abcde.fghij.klmno", errorResponse);
     }
 
     @Test
@@ -405,7 +627,6 @@ public class AnnotationManagerBeanFunctionalTest {
         assertContains("No annotations found for identifier", errorResponse);
         assertContains("20250704_249/testDataType/abcde.fghij.klmno", errorResponse);
         assertContains("aaaaaaaa", errorResponse);
-
     }
 
     @Test
@@ -423,8 +644,8 @@ public class AnnotationManagerBeanFunctionalTest {
     @Test
     public void testGetAnnotationExternalIdWithAnnotations() {
         Annotation testAnnotation = generateCorleoneAnnotation();
-        Annotation expectedAnnotation = AnnotationUtils.injectAnnotationAndSegmentIds(testAnnotation);
-        Response response = annotationManager.getAnnotation("UUID", "CORLEONE", "2e8fbb3e");
+        Annotation expectedAnnotation = AnnotationUtils.injectAllHashes(testAnnotation);
+        Response response = annotationManager.getAnnotation("UUID", "CORLEONE", expectedAnnotation.getAnnotationId());
         assertResponseStatus(200, response);
         List<Annotation> annotationList = assertExpectedEntity(List.class, response);
         assertFalse(annotationList.isEmpty());
@@ -434,7 +655,62 @@ public class AnnotationManagerBeanFunctionalTest {
 
     @Ignore
     public void testUpdateAnnotationInternalId() {
-        fail("Not implemented");
+        Annotation testAnnotation = generateCorleoneAnnotation();
+
+        // annotationManager.updateAnnotation();
+    }
+
+    @Test
+    public void testUpdateAnnotationExternalId() throws InvalidProtocolBufferException {
+        EasyMock.reset(ctx);
+        EasyMock.expect(ctx.getCallerPrincipal()).andReturn(defaultPrincipal).times(4);
+        EasyMock.replay(ctx);
+
+        // get the annotation we plan to update
+        Annotation testAnnotation = generateUpdatableAnnotation();
+        Annotation expectedAnnotation = AnnotationUtils.injectAllHashes(testAnnotation);
+        Response response = annotationManager.getAnnotation("UUID", "ANDOLINI", expectedAnnotation.getAnnotationId());
+        assertResponseStatus(200, response);
+        List<Annotation> annotationList = assertExpectedEntity(List.class, response);
+        assertFalse(annotationList.isEmpty());
+        assertEquals(1, annotationList.size());
+        assertAnnotationsEqual(expectedAnnotation, annotationList.iterator().next());
+
+        // now update the annotation with a new segment, source and generate json
+        List<Segment> existingSegments = testAnnotation.getSegmentsList();
+        List<Segment> newSegments = new ArrayList<>(existingSegments);
+        newSegments.add(AnnotationTestDataUtil.generateTestSegment());
+
+        AnnotationSource baseSource = testAnnotation.getSource();
+        AnnotationSource newSource = baseSource.toBuilder().clearAnalyticSourceHash().clearAnalyticHash().setEngine("boxer 4").setModel("Impreza XV").build();
+        Annotation testUpdateAnnotation = testAnnotation.toBuilder().clearSegments().addAllSegments(newSegments).clearSource().setSource(newSource).build();
+        String updateJson = AnnotationJsonUtils.annotationToJsonWithoutIds(testUpdateAnnotation);
+
+        // Update the expected testUpdateAnnotation with the 'updates' metadata entry added by the annotation data access object.
+        Annotation testUpdateAnnotationWithUpdated = testUpdateAnnotation.toBuilder().putMetadata("updates", expectedAnnotation.getAnnotationId()).build();
+        Annotation expectedUpdateAnnotation = AnnotationUtils.injectAllHashes(testUpdateAnnotationWithUpdated);
+
+        // submit the update and check the result.
+        Response updateResponse = annotationManager.updateAnnotation("UUID", "ANDOLINI", expectedAnnotation.getAnnotationId(), updateJson);
+        assertResponseStatus(200, updateResponse);
+        Annotation annotationUpdate = assertExpectedEntity(Annotation.class, updateResponse);
+        assertAnnotationsEqual(expectedUpdateAnnotation, annotationUpdate);
+
+        // validate that the annotation we were returned exists by querying again.
+        Response checkResponse = annotationManager.getAnnotation("UUID", "ANDOLINI", expectedUpdateAnnotation.getAnnotationId());
+        assertResponseStatus(200, checkResponse);
+        List<Annotation> annotationCheckList = assertExpectedEntity(List.class, checkResponse);
+        assertFalse(annotationCheckList.isEmpty());
+        assertEquals(1, annotationCheckList.size());
+        assertAnnotationsEqual(expectedUpdateAnnotation, annotationCheckList.iterator().next());
+
+        // validate that the original annotation exists too.
+        Response expectedResponse = annotationManager.getAnnotation("UUID", "ANDOLINI", expectedAnnotation.getAnnotationId());
+        assertResponseStatus(200, expectedResponse);
+        List<Annotation> expectedResponseList = assertExpectedEntity(List.class, expectedResponse);
+        assertFalse(expectedResponseList.isEmpty());
+        assertEquals(1, expectedResponseList.size());
+        assertAnnotationsEqual(expectedAnnotation, expectedResponseList.iterator().next());
     }
 
     @Ignore
@@ -446,15 +722,17 @@ public class AnnotationManagerBeanFunctionalTest {
     public void testGetAnnotationSegmentInternalId() {
         Metadata expectedMetadata = new Metadata("shard", "20250704_249", "testDataType", "abcde.fghij.klmno");
         Annotation testAnnotation = generateTestAnnotation();
-        Annotation expectedAnnotation = AnnotationUtils.injectAnnotationAndSegmentIds(testAnnotation);
+        Annotation expectedAnnotation = AnnotationUtils.injectAllHashes(testAnnotation);
+
         //@formatter:off
         Response response = annotationManager.getAnnotationSegment(
                 "DOCUMENT",
-                "20250704_249/testDataType/abcde.fghij.klmno",
-                "a75beb9e",
-                "5a7bcdd9"
+                expectedAnnotation.getShard() + "/" + expectedAnnotation.getDataType() + "/" + expectedAnnotation.getUid(),
+                expectedAnnotation.getAnnotationId(),
+                expectedAnnotation.getSegments(0).getSegmentHash()
         );
         //@formatter:on
+
         assertResponseStatus(200, response);
         Map<Metadata,Collection<Segment>> result = assertExpectedEntity(Map.class, response);
         assertFalse(result.isEmpty());
@@ -483,12 +761,12 @@ public class AnnotationManagerBeanFunctionalTest {
     }
 
     @Test
-    public void testGetAnnotationSegmentInternalIdMissingSegmentId() {
+    public void testGetAnnotationSegmentInternalIdMissingSegmentHash() {
         //@formatter:off
         Response response = annotationManager.getAnnotationSegment(
                 "DOCUMENT",
                 "20250704_249/testDataType/abcde.fghij.klmno",
-                "a75beb9e",
+                "23BD91EC",
                 "bbbbbbbb");
         //@formatter:on
         assertResponseStatus(404, response);

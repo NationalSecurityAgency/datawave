@@ -275,45 +275,45 @@ public class TLDQueryIteratorIT extends QueryIteratorIT {
         return new Range(startKey, true, endKey, true);
     }
 
-    private List<Map.Entry<Key,Value>> configureTLDTestData(long eventTime) {
-        List<Map.Entry<Key,Value>> listSource = super.configureTestData(eventTime);
+    private List<Map.Entry<Key,Value>> configureTLDTestData(long eventTimestamp) {
+        List<Map.Entry<Key,Value>> listSource = super.configureTestData(eventTimestamp);
 
         // add some indexed TF fields in a child
-        listSource.add(new AbstractMap.SimpleEntry<>(getEvent("TF_FIELD1", ",,q ,r, ,s,", "123.345.456.1"), EMPTY_VALUE));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI("TF_FIELD1", "q r s", "123.345.456.1"), EMPTY_VALUE));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI("TF_FIELD1", "q", "123.345.456.1"), EMPTY_VALUE));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI("TF_FIELD1", "r", "123.345.456.1"), EMPTY_VALUE));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI("TF_FIELD1", "s", "123.345.456.1"), EMPTY_VALUE));
-        listSource.add(new AbstractMap.SimpleEntry<>(getTF("TF_FIELD1", "q", "123.345.456.1"), EMPTY_VALUE));
-        listSource.add(new AbstractMap.SimpleEntry<>(getTF("TF_FIELD1", "r", "123.345.456.1"), EMPTY_VALUE));
-        listSource.add(new AbstractMap.SimpleEntry<>(getTF("TF_FIELD1", "s", "123.345.456.1"), EMPTY_VALUE));
+        listSource.add(new AbstractMap.SimpleEntry<>(getEvent("TF_FIELD1", ",,q ,r, ,s,", "123.345.456.1", eventTimestamp), EMPTY_VALUE));
+        listSource.add(new AbstractMap.SimpleEntry<>(getFI("TF_FIELD1", "q r s", "123.345.456.1", eventTimestamp), EMPTY_VALUE));
+        listSource.add(new AbstractMap.SimpleEntry<>(getFI("TF_FIELD1", "q", "123.345.456.1", eventTimestamp), EMPTY_VALUE));
+        listSource.add(new AbstractMap.SimpleEntry<>(getFI("TF_FIELD1", "r", "123.345.456.1", eventTimestamp), EMPTY_VALUE));
+        listSource.add(new AbstractMap.SimpleEntry<>(getFI("TF_FIELD1", "s", "123.345.456.1", eventTimestamp), EMPTY_VALUE));
+        listSource.add(new AbstractMap.SimpleEntry<>(getTF("TF_FIELD1", "q", "123.345.456.1", eventTimestamp), EMPTY_VALUE));
+        listSource.add(new AbstractMap.SimpleEntry<>(getTF("TF_FIELD1", "r", "123.345.456.1", eventTimestamp), EMPTY_VALUE));
+        listSource.add(new AbstractMap.SimpleEntry<>(getTF("TF_FIELD1", "s", "123.345.456.1", eventTimestamp), EMPTY_VALUE));
 
-        listSource.add(new AbstractMap.SimpleEntry<>(getEvent("TF_FIELD2", ",d, ,e, ,f,", "123.345.456.2"), EMPTY_VALUE));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI("TF_FIELD2", "d e f", "123.345.456.2"), EMPTY_VALUE));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI("TF_FIELD2", "d", "123.345.456.2"), EMPTY_VALUE));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI("TF_FIELD2", "e", "123.345.456.2"), EMPTY_VALUE));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI("TF_FIELD2", "f", "123.345.456.2"), EMPTY_VALUE));
-        listSource.add(new AbstractMap.SimpleEntry<>(getTF("TF_FIELD2", "d", "123.345.456.2"), EMPTY_VALUE));
-        listSource.add(new AbstractMap.SimpleEntry<>(getTF("TF_FIELD2", "e", "123.345.456.2"), EMPTY_VALUE));
-        listSource.add(new AbstractMap.SimpleEntry<>(getTF("TF_FIELD2", "f", "123.345.456.2"), EMPTY_VALUE));
+        listSource.add(new AbstractMap.SimpleEntry<>(getEvent("TF_FIELD2", ",d, ,e, ,f,", "123.345.456.2", eventTimestamp), EMPTY_VALUE));
+        listSource.add(new AbstractMap.SimpleEntry<>(getFI("TF_FIELD2", "d e f", "123.345.456.2", eventTimestamp), EMPTY_VALUE));
+        listSource.add(new AbstractMap.SimpleEntry<>(getFI("TF_FIELD2", "d", "123.345.456.2", eventTimestamp), EMPTY_VALUE));
+        listSource.add(new AbstractMap.SimpleEntry<>(getFI("TF_FIELD2", "e", "123.345.456.2", eventTimestamp), EMPTY_VALUE));
+        listSource.add(new AbstractMap.SimpleEntry<>(getFI("TF_FIELD2", "f", "123.345.456.2", eventTimestamp), EMPTY_VALUE));
+        listSource.add(new AbstractMap.SimpleEntry<>(getTF("TF_FIELD2", "d", "123.345.456.2", eventTimestamp), EMPTY_VALUE));
+        listSource.add(new AbstractMap.SimpleEntry<>(getTF("TF_FIELD2", "e", "123.345.456.2", eventTimestamp), EMPTY_VALUE));
+        listSource.add(new AbstractMap.SimpleEntry<>(getTF("TF_FIELD2", "f", "123.345.456.2", eventTimestamp), EMPTY_VALUE));
 
         // add some event data for children
-        listSource.add(new AbstractMap.SimpleEntry<>(getEvent("EVENT_FIELD7", "1", "123.345.456.1"), EMPTY_VALUE));
+        listSource.add(new AbstractMap.SimpleEntry<>(getEvent("EVENT_FIELD7", "1", "123.345.456.1", eventTimestamp), EMPTY_VALUE));
 
         // add some non-event data that is unique for children
-        listSource.add(new AbstractMap.SimpleEntry<>(getEvent("TF_FIELD3", "z", "123.345.456.2"), EMPTY_VALUE));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI("TF_FIELD3", "z", "123.345.456.2"), EMPTY_VALUE));
+        listSource.add(new AbstractMap.SimpleEntry<>(getEvent("TF_FIELD3", "z", "123.345.456.2", eventTimestamp), EMPTY_VALUE));
+        listSource.add(new AbstractMap.SimpleEntry<>(getFI("TF_FIELD3", "z", "123.345.456.2", eventTimestamp), EMPTY_VALUE));
 
         // add some grouping data
         // parent is a1, a2
         // first child is b1, b2
         // second child is c1, c2
-        listSource.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.456", "EVENT_FIELD1.1", "a1"));
-        listSource.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.456", "EVENT_FIELD1.1", "a2"));
-        listSource.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.456.1", "EVENT_FIELD1.1.1", "b1"));
-        listSource.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.456.1", "EVENT_FIELD1.1.1", "b2"));
-        listSource.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.456.2", "EVENT_FIELD1.2.1", "c1"));
-        listSource.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.456.2", "EVENT_FIELD1.2.1", "c2"));
+        listSource.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.456", "EVENT_FIELD1.1", "a1", eventTimestamp));
+        listSource.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.456", "EVENT_FIELD1.1", "a2", eventTimestamp));
+        listSource.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.456.1", "EVENT_FIELD1.1.1", "b1", eventTimestamp));
+        listSource.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.456.1", "EVENT_FIELD1.1.1", "b2", eventTimestamp));
+        listSource.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.456.2", "EVENT_FIELD1.2.1", "c1", eventTimestamp));
+        listSource.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.456.2", "EVENT_FIELD1.2.1", "c2", eventTimestamp));
 
         return listSource;
     }

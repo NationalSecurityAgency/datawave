@@ -31,7 +31,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.apache.commons.collections4.Transformer;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,7 +58,6 @@ import datawave.microservice.config.RequestScopeBeanSupplier;
 import datawave.microservice.query.cachedresults.config.CachedResultsQueryProperties;
 import datawave.microservice.query.cachedresults.status.CachedResultsQueryStatus;
 import datawave.microservice.query.cachedresults.status.cache.CachedResultsQueryCache;
-import datawave.microservice.query.cachedresults.status.cache.util.CacheUpdater;
 import datawave.microservice.query.storage.QueryStatus;
 import datawave.microservice.query.storage.QueryStorageCache;
 import datawave.security.authorization.ProxiedUserDetails;

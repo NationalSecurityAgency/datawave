@@ -1,12 +1,19 @@
 package datawave.query.jexl.lookups;
 
-import static datawave.core.iterators.TimeoutExceptionIterator.EXCEPTEDVALUE;
+import static org.apache.accumulo.core.client.ScannerBase.ConsistencyLevel;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
+import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.iteratorsImpl.system.IterationInterruptedException;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -14,6 +21,7 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Preconditions;
 
+import datawave.core.iterators.IteratorTimeoutException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods.RefactoredRangeDescription;
 import datawave.query.tables.ScannerFactory;
@@ -21,6 +29,8 @@ import datawave.query.tables.ScannerFactory;
 public class FieldedRegexIndexLookupTest extends BaseIndexLookupTest {
 
     private static final Logger log = LoggerFactory.getLogger(FieldedRegexIndexLookupTest.class);
+
+    private AsyncIndexLookup lookup;
 
     @Test
     public void testExpansionWithNodata() {
@@ -72,14 +82,109 @@ public class FieldedRegexIndexLookupTest extends BaseIndexLookupTest {
     }
 
     @Test
-    public void testExpansionTimeoutFailure() {
-        write("bar", "FIELD_A");
-        write("baz", "FIELD_A", EXCEPTEDVALUE);
-        withQuery("FIELD_A =~ 'ba.*'");
-        executeLookup();
-        assertResultFields(Set.of("FIELD_A"));
-        assertThrows(ExceededThresholdException.class, () -> assertResultValues("FIELD_A", Set.of("bar")));
-        assertTimeoutExceeded();
+    public void testExpansionTimeoutOnInitialSeek() {
+        long origIndexScanTime = config.getMaxIndexScanTimeMillis();
+        try {
+            addDelayIterator(10);
+            config.setMaxIndexScanTimeMillis(5);
+
+            // ensure the test always hits the timeout
+            for (int i = 0; i < 15; i++) {
+                write("bar-" + i, "FIELD_A");
+            }
+
+            withQuery("FIELD_A =~ 'ba.*'");
+            executeLookup();
+            // a partial expansion will occur
+            assertTimeoutExceeded();
+            assertThrows(ExceededThresholdException.class, () -> assertResultValues("FIELD_A", Collections.emptySet()));
+            assertResultFields(Set.of("FIELD_A"));
+        } finally {
+            removeDelayIterator();
+            config.setMaxIndexScanTimeMillis(origIndexScanTime);
+        }
+    }
+
+    @Test
+    public void testExpansionTimeoutOnNext() {
+        long origIndexScanTime = config.getMaxIndexScanTimeMillis();
+        try {
+            addDelayIterator(1);
+            config.setMaxIndexScanTimeMillis(5);
+
+            // ensure the test always hits the timeout
+            for (int i = 0; i < 15; i++) {
+                write("bar-" + i, "FIELD_A");
+            }
+
+            withQuery("FIELD_A =~ 'ba.*'");
+            executeLookup();
+            // a partial expansion will occur
+            assertThrows(ExceededThresholdException.class, () -> assertResultValues("FIELD_A", Collections.emptySet()));
+            assertTimeoutExceeded();
+            assertResultFields(Set.of("FIELD_A"));
+        } finally {
+            removeDelayIterator();
+            config.setMaxIndexScanTimeMillis(origIndexScanTime);
+        }
+    }
+
+    @Test
+    public void testInitialSeekIteratorTimeoutException() {
+        try {
+            addIOExceptionIterator(IteratorTimeoutException.class.getName(), "Timeout for test", "seek");
+
+            // ensure the test always hits the timeout
+            for (int i = 0; i < 15; i++) {
+                write("bar-" + i, "FIELD_A");
+            }
+
+            withQuery("FIELD_A =~ 'ba.*'");
+            executeLookup();
+            // a partial expansion will occur
+            assertTimeoutExceeded();
+            assertThrows(ExceededThresholdException.class, () -> assertResultValues("FIELD_A", Collections.emptySet()));
+            assertResultFields(Set.of("FIELD_A"));
+        } finally {
+            removeIOExceptionIterator();
+        }
+    }
+
+    @Test
+    public void testInitialSeekIteratorInterruptedException() {
+        try {
+            addRuntimeExceptionIterator(IterationInterruptedException.class.getName(), "IterationInterrupted for test", "seek");
+
+            for (int i = 0; i < 15; i++) {
+                write("bar-" + i, "FIELD_A");
+            }
+
+            withQuery("FIELD_A =~ 'ba.*'");
+            executeLookup();
+            assertResultFields(Set.of("FIELD_A"));
+            assertExceptionSeen();
+        } finally {
+            removeRuntimeExceptionIterator();
+        }
+    }
+
+    @Test
+    public void testInitialSeekNullPointerException() {
+        try {
+            addRuntimeExceptionIterator(NullPointerException.class.getName(), "NPE for test", "seek");
+
+            // ensure the test always hits the timeout
+            for (int i = 0; i < 15; i++) {
+                write("bar-" + i, "FIELD_A");
+            }
+
+            withQuery("FIELD_A =~ 'ba.*'");
+            executeLookup();
+            assertResultFields(Set.of("FIELD_A"));
+            assertExceptionSeen();
+        } finally {
+            removeRuntimeExceptionIterator();
+        }
     }
 
     @Test
@@ -109,6 +214,70 @@ public class FieldedRegexIndexLookupTest extends BaseIndexLookupTest {
         assertResultValues("FIELD_A", Set.of("tim", "tam"));
     }
 
+    @Test
+    public void testExecutionHints_expansionPoolSelectedOverIndexTable() {
+        write("bar", "FIELD_A");
+        withQuery("FIELD_A =~ 'ba.*'");
+
+        Map<String,String> expansionHints = new HashMap<>();
+        expansionHints.put("scan_type", "expansion-pool-a");
+        expansionHints.put("priority", "2");
+
+        Map<String,String> indexHints = new HashMap<>();
+        indexHints.put("scan_type", "index-a");
+        indexHints.put("priority", "1");
+
+        Map<String,Map<String,String>> tableHints = new HashMap<>();
+        tableHints.put("expansion", expansionHints);
+        tableHints.put("shardIndex", indexHints);
+        config.setTableHints(tableHints);
+
+        executeLookup();
+        assertResultFields(Set.of("FIELD_A"));
+        assertResultValues("FIELD_A", Set.of("bar"));
+
+        assertNotNull(lookup.builder);
+        assertEquals(expansionHints, lookup.builder.getExecutionHints());
+    }
+
+    @Test
+    public void testExecutionHints_indexTableNameSelectedWhenNoExpansionPoolExists() {
+        write("bar", "FIELD_A");
+        withQuery("FIELD_A =~ 'ba.*'");
+
+        Map<String,String> indexHints = new HashMap<>();
+        indexHints.put("scan_type", "index-a");
+        indexHints.put("priority", "1");
+
+        Map<String,Map<String,String>> tableHints = new HashMap<>();
+        tableHints.put("shardIndex", indexHints);
+        config.setTableHints(tableHints);
+
+        executeLookup();
+        assertResultFields(Set.of("FIELD_A"));
+        assertResultValues("FIELD_A", Set.of("bar"));
+
+        assertNotNull(lookup.builder);
+        assertEquals(indexHints, lookup.builder.getExecutionHints());
+    }
+
+    @Test
+    public void testConsistencyLevel() {
+        write("bar", "FIELD_A");
+        withQuery("FIELD_A =~ 'ba.*'");
+
+        Map<String,ScannerBase.ConsistencyLevel> consistencyLevels = new HashMap<>();
+        consistencyLevels.put("shardIndex", ConsistencyLevel.EVENTUAL);
+        config.setTableConsistencyLevels(consistencyLevels);
+
+        executeLookup();
+        assertResultFields(Set.of("FIELD_A"));
+        assertResultValues("FIELD_A", Set.of("bar"));
+
+        assertNotNull(lookup.builder);
+        assertEquals(ConsistencyLevel.EVENTUAL, lookup.builder.getConsistencyLevel());
+    }
+
     @Override
     protected void executeLookup() {
         try {
@@ -123,7 +292,7 @@ public class FieldedRegexIndexLookupTest extends BaseIndexLookupTest {
             Range range = desc.range;
             boolean reverse = desc.isForReverseIndex;
 
-            AsyncIndexLookup lookup = createLookup(field, value, range, reverse);
+            lookup = createLookup(field, value, range, reverse);
             executeLookup(lookup);
         } catch (Exception e) {
             log.error(e.getMessage(), e);
@@ -133,6 +302,8 @@ public class FieldedRegexIndexLookupTest extends BaseIndexLookupTest {
 
     private AsyncIndexLookup createLookup(String field, String value, Range range, boolean reverse) {
         ScannerFactory scannerFactory = new ScannerFactory(client);
-        return new FieldedRegexIndexLookup(config, scannerFactory, executor, field, value, range, reverse);
+        AsyncIndexLookup lookup = new FieldedRegexIndexLookup(config, scannerFactory, executor, field, value, range, reverse);
+        lookup.setScanMonitor(monitor);
+        return lookup;
     }
 }

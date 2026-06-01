@@ -8,7 +8,7 @@ import java.util.List;
 import org.apache.commons.jexl3.JexlException;
 import org.apache.commons.jexl3.parser.ASTEQNode;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
-import org.apache.commons.lang.time.DateUtils;
+import org.apache.commons.lang3.time.DateUtils;
 import org.apache.log4j.Logger;
 
 import datawave.microservice.querymetric.BaseQueryMetric;

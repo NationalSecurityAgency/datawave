@@ -7,6 +7,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.StringJoiner;
 
+import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.TermFrequencyList;
 
 /**
@@ -147,7 +148,21 @@ public class TermOffsetMap {
      * @return true if the field is an excerpt field, or false otherwise
      */
     public boolean isExcerptField(String field) {
-        return excerptFields != null && excerptFields.contains(field);
+        if (excerptFields == null) {
+            return false;
+        }
+
+        if (excerptFields.contains(field)) {
+            return true;
+        }
+
+        for (String excerptField : excerptFields) {
+            if (JexlASTHelper.isGroupedFieldMatch(excerptField, field)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     @Override

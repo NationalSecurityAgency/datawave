@@ -15,9 +15,13 @@ public class ShardedYearIndexKeyParser extends AbstractIndexKeyParser {
             return key; // pass-through
         }
 
+        // use a byte array constructor to avoid expensive parsing of the ColumnVisibility
         String year = getYear();
-        String nextRow = year + NULL_CHAR + getValue();
-        return new Key(nextRow, getField(), getDatatype(), key.getColumnVisibilityParsed(), key.getTimestamp());
+        byte[] row = (year + NULL_CHAR + getValue()).getBytes();
+        byte[] cf = getField().getBytes();
+        byte[] cq = getDatatype().getBytes();
+        byte[] cv = key.getColumnVisibilityData().toArray();
+        return new Key(row, cf, cq, cv, key.getTimestamp());
     }
 
     public BitSet getBitset() {

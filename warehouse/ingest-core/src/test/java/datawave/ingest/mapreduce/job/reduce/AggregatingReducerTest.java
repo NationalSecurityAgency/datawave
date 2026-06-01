@@ -1,11 +1,7 @@
-//
-// Source code recreated from a .class file by IntelliJ IDEA
-// (powered by FernFlower decompiler)
-//
-
 package datawave.ingest.mapreduce.job.reduce;
 
 import static datawave.ingest.mapreduce.job.TableConfigurationUtil.ITERATOR_CLASS_MARKER;
+import static datawave.ingest.mapreduce.job.TableConfigurationUtil.JOB_OUTPUT_TABLE_NAMES;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -24,11 +20,7 @@ import org.apache.hadoop.io.Text;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.mockito.Mockito;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
@@ -36,9 +28,6 @@ import com.google.common.collect.Maps;
 import datawave.ingest.mapreduce.job.TableConfigurationUtil;
 import datawave.ingest.mapreduce.job.reduce.AggregatingReducer.CustomColumnToClassMapping;
 
-@RunWith(PowerMockRunner.class)
-// @PrepareForTest({TableConfigurationUtil.class})
-@PrepareForTest({AggregatingReducer.class, TableConfigurationUtil.class})
 public class AggregatingReducerTest {
     private CustomColumnToClassMapping columnToClassMapping;
     private Map<String,String> optMap;
@@ -74,16 +63,10 @@ public class AggregatingReducerTest {
     }
 
     private void setupMocks() throws Exception {
-        conf = (Configuration) PowerMockito.mock(Configuration.class);
-        PowerMockito.whenNew(Configuration.class).withAnyArguments().thenReturn(conf);
-        PowerMockito.when(conf.iterator()).thenReturn(confMap.entrySet().iterator());
+        conf = new Configuration(false);
+        conf.setStrings(JOB_OUTPUT_TABLE_NAMES, tables.toArray(new String[0]));
 
-        PowerMockito.mockStatic(TableConfigurationUtil.class, new Class[0]);
-        PowerMockito.when(TableConfigurationUtil.getJobOutputTableNames((Configuration) Mockito.any(Configuration.class))).thenReturn(tables);
-
-        tcu = PowerMockito.mock(TableConfigurationUtil.class);
-        PowerMockito.whenNew(TableConfigurationUtil.class).withAnyArguments().thenReturn(tcu);
-        PowerMockito.doNothing().when(tcu).setTableItersPrioritiesAndOpts();
+        tcu = Mockito.mock(TableConfigurationUtil.class);
     }
 
     @Test
@@ -169,8 +152,8 @@ public class AggregatingReducerTest {
         table2AggregatorMap.put(2, optMap);
 
         setupMocks();
-        PowerMockito.when(tcu.getTableAggregators(Mockito.eq("table1"))).thenReturn(table1AggregatorMap);
-        PowerMockito.when(tcu.getTableAggregators(Mockito.eq("table2"))).thenReturn(table2AggregatorMap);
+        Mockito.when(tcu.getTableAggregators(Mockito.eq("table1"))).thenReturn(table1AggregatorMap);
+        Mockito.when(tcu.getTableAggregators(Mockito.eq("table2"))).thenReturn(table2AggregatorMap);
 
         AggregatingReducerTest.TestAggregatingReducer aggregatingReducer = new AggregatingReducerTest.TestAggregatingReducer();
         aggregatingReducer.tcu = tcu;
@@ -199,7 +182,7 @@ public class AggregatingReducerTest {
         table1CombinerMap.put(3, optMap);
 
         setupMocks();
-        PowerMockito.when(tcu.getTableCombiners(Mockito.eq("table1"))).thenReturn(table1CombinerMap);
+        Mockito.when(tcu.getTableCombiners(Mockito.eq("table1"))).thenReturn(table1CombinerMap);
 
         AggregatingReducerTest.TestAggregatingReducer aggregatingReducer = new AggregatingReducerTest.TestAggregatingReducer();
         aggregatingReducer.tcu = tcu;
@@ -221,11 +204,10 @@ public class AggregatingReducerTest {
         table1CombinerMap.put(2, optMap);
 
         setupMocks();
-        PowerMockito.whenNew(TableConfigurationUtil.class).withAnyArguments().thenReturn(tcu);
-        PowerMockito.doNothing().when(tcu).setTableItersPrioritiesAndOpts();
-        PowerMockito.when(tcu.getTableCombiners(Mockito.eq("table1"))).thenReturn(table1CombinerMap);
+        Mockito.when(tcu.getTableCombiners(Mockito.eq("table1"))).thenReturn(table1CombinerMap);
 
         AggregatingReducerTest.TestAggregatingReducer aggregatingReducer = new AggregatingReducerTest.TestAggregatingReducer();
+        aggregatingReducer.tcu = tcu;
         aggregatingReducer.configureCombiners(conf);
     }
 
@@ -238,12 +220,10 @@ public class AggregatingReducerTest {
         table1CombinerMap.put(1, optMap);
 
         setupMocks();
-        TableConfigurationUtil tcu = PowerMockito.mock(TableConfigurationUtil.class);
-        PowerMockito.whenNew(TableConfigurationUtil.class).withAnyArguments().thenReturn(tcu);
-        PowerMockito.doNothing().when(tcu).setTableItersPrioritiesAndOpts();
-        PowerMockito.when(tcu.getTableCombiners(Mockito.eq("table1"))).thenReturn(table1CombinerMap);
+        Mockito.when(tcu.getTableCombiners(Mockito.eq("table1"))).thenReturn(table1CombinerMap);
 
         AggregatingReducerTest.TestAggregatingReducer aggregatingReducer = new AggregatingReducerTest.TestAggregatingReducer();
+        aggregatingReducer.tcu = tcu;
         aggregatingReducer.configureCombiners(conf);
     }
 

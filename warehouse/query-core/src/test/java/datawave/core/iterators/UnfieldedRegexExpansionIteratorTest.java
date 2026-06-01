@@ -147,7 +147,7 @@ public class UnfieldedRegexExpansionIteratorTest {
         withData("ac", "FIELD_B", "20250804_0", "datatype-a");
         withPattern("a.*");
         withDates("20250804", "20250804");
-        withExpected("aa FIELD_B", "ac FIELD_B");
+        withExpected("aa FIELD_B", "ab FIELD_B", "ac FIELD_B");
         drive();
     }
 
@@ -208,6 +208,37 @@ public class UnfieldedRegexExpansionIteratorTest {
         withPattern("a.*");
         withDates("20250804", "20250804");
         withExpected("ab FIELD_A");
+        drive();
+    }
+
+    @Test
+    public void testVerifyDateBoundsDoNotSkipExtraFields() throws Exception {
+        withData("aa", "FIELD_A", "20250803_0", "datatype-a");
+        withData("ab", "FIELD_A", "20250804_0", "datatype-a");
+        withData("ac", "FIELD_A", "20250805_0", "datatype-a");
+        withData("ad", "FIELD_A", "20250809_0", "datatype-a");
+        withData("ad", "FIELD_B", "20250804_0", "datatype-a");
+        withPattern("a.*");
+        withDates("20250804", "20250804");
+        withExpected("ab FIELD_A", "ad FIELD_B");
+        drive();
+    }
+
+    @Test
+    public void testLargerDateBoundaryCheck() throws Exception {
+        List<String> values = List.of("aa", "ab", "ac");
+        List<String> fields = List.of("FIELD_A", "FIELD_B", "FIELD_C");
+        for (String value : values) {
+            for (String field : fields) {
+                withData(value, field, "20250803_0", "datatype-a");
+                withData(value, field, "20250804_0", "datatype-a");
+                withData(value, field, "20250805_0", "datatype-a");
+            }
+        }
+
+        withPattern("a.*");
+        withDates("20250803", "20250803");
+        withExpected("aa FIELD_A", "aa FIELD_B", "aa FIELD_C", "ab FIELD_A", "ab FIELD_B", "ab FIELD_C", "ac FIELD_A", "ac FIELD_B", "ac FIELD_C");
         drive();
     }
 

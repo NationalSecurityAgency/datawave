@@ -1,5 +1,7 @@
 package datawave.webservice.annotation;
 
+import static datawave.annotation.util.v1.AnnotationUtils.injectAnnotationSource;
+
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -22,7 +24,6 @@ import javax.ejb.TransactionAttributeType;
 import javax.ejb.TransactionManagement;
 import javax.ejb.TransactionManagementType;
 import javax.inject.Inject;
-import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -34,7 +35,7 @@ import javax.ws.rs.core.Response;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,11 +43,13 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.protobuf.InvalidProtocolBufferException;
 
 import datawave.annotation.data.v1.AccumuloAnnotationSerializer;
+import datawave.annotation.data.v1.AccumuloAnnotationSourceSerializer;
 import datawave.annotation.data.v1.AnnotationDataAccess;
 import datawave.annotation.protobuf.v1.Annotation;
+import datawave.annotation.protobuf.v1.AnnotationSource;
 import datawave.annotation.protobuf.v1.Segment;
 import datawave.annotation.util.Validator;
-import datawave.annotation.util.v1.AnnotationUtils;
+import datawave.annotation.util.v1.AnnotationJsonUtils;
 import datawave.annotation.util.v1.AnnotationValidators;
 import datawave.configuration.spring.SpringBean;
 import datawave.core.common.connection.AccumuloConnectionFactory;
@@ -84,91 +87,31 @@ public class AnnotationManagerBean implements AnnotationManager {
     @SpringBean(name = "AnnotationManagerConfig")
     private AnnotationManagerConfig config;
 
-    // Per-request stateful variables, managed internally.
-    private Set<Authorizations> authorizations;
-    private AccumuloClient client;
-    private LookupUUIDService lookupUUIDService;
-    private AnnotationDataAccess annotationDataAccess;
-
     @VisibleForTesting
     public void setEJBContext(EJBContext ctx) {
         this.ctx = ctx;
     }
 
-    /**
-     * Calculate the auths for this query based on the principal and the queryAuths if any.
-     *
-     * @param queryAuths
-     *            the auths to downgrade to, or null if no downgrade is desired
-     * @param principal
-     *            the caller principal
-     * @return a Set of authorizations to use for this query
-     * @throws QueryException
-     *             and exception if there was a problem calculating the auths
-     */
-    private static Set<Authorizations> getUserAuthorizations(@SuppressWarnings("SameParameterValue") String queryAuths, DatawavePrincipal principal)
-                    throws QueryException {
+    @GET
+    @Path("/source/{analyticHash}")
+    @Produces("application/json")
+    @Override
+    public Response getAnnotationSource(@PathParam("analyticHash") String analyticHash) {
+        final RequestContext context = new RequestContext(config, ctx, connectionFactory, accumuloConnectionRequestBean, responseObjectFactory);
         try {
-            if (queryAuths == null) {
-                return AuthorizationsUtil.buildAuthorizations(principal.getAuthorizations());
-            } else {
-                final String downgradedAuths = AuthorizationsUtil.downgradeUserAuths(queryAuths, principal, principal);
-                return AuthorizationsUtil.buildAuthorizations(Collections.singleton(AuthorizationsUtil.splitAuths(downgradedAuths)));
+            final AnnotationDataAccess annotationDataAccess = context.initializeAnnotationService();
+            Optional<AnnotationSource> results = annotationDataAccess.getAnnotationSource(analyticHash);
+            if (results.isEmpty()) {
+                return jsonNotFound("No annotation source found for analyticHash: " + analyticHash);
             }
-
+            return jsonOk(results.get());
         } catch (Exception e) {
-            throw new QueryException("Failed to get user query authorizations", e);
+            final String message = String.format("Internal error fetching annotation source: %s", e.getMessage());
+            log.error(message, e);
+            return jsonError(message);
+        } finally {
+            context.returnAccumuloClient();
         }
-    }
-
-    public AccumuloClient initializeAccumuloClient() throws QueryException {
-        if (client == null || authorizations == null) {
-            final Principal p = ctx.getCallerPrincipal();
-            final boolean isDatawavePrincipal = DatawavePrincipal.class.isAssignableFrom(p.getClass());
-            final DatawavePrincipal dp = isDatawavePrincipal ? (DatawavePrincipal) p : null;
-            final String userDn = dp != null ? dp.getUserDN().subjectDN() : p.getName();
-            final Collection<String> proxyServers = dp != null ? dp.getProxyServers() : null;
-
-            // TODO: allow downgrade?
-            // String queryAuths = queryParameters.getFirst(QueryParameters.QUERY_AUTHORIZATIONS);
-            authorizations = getUserAuthorizations(null, dp);
-
-            UUID transactionUUID = java.util.UUID.randomUUID();
-            Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-            if (trackingMap != null) {
-                trackingMap.put("query.user", "user");
-                trackingMap.put("query.id", transactionUUID.toString());
-                trackingMap.put("query.query", "something else");
-            }
-            accumuloConnectionRequestBean.requestBegin(transactionUUID.toString(), userDn, trackingMap);
-            try {
-                client = connectionFactory.getClient(userDn, proxyServers, config.getConnPoolName(), config.getPriority(), trackingMap);
-            } catch (Exception e) {
-                throw new QueryException("Unable to get Accumulo client, exception encountered: ", e);
-            } finally {
-                accumuloConnectionRequestBean.requestEnd(transactionUUID.toString());
-            }
-        }
-        return client;
-    }
-
-    public LookupUUIDService initializeLookupUUIDService() throws QueryException {
-        if (lookupUUIDService == null) {
-            final AccumuloClient client = initializeAccumuloClient();
-            lookupUUIDService = new LookupUUIDService(config.getLookupUUIDServiceConfig(), client, authorizations, responseObjectFactory,
-                            config.getLookupUUIDQueryLogic());
-        }
-        return lookupUUIDService;
-    }
-
-    public AnnotationDataAccess initializeAnnotationService() throws QueryException {
-        if (annotationDataAccess == null) {
-            final AccumuloClient client = initializeAccumuloClient();
-            final AccumuloAnnotationSerializer annotationSerializer = new AccumuloAnnotationSerializer(config.getVisibilityTransformer(),
-                            config.getTimestampTransformer());
-            annotationDataAccess = new AnnotationDataAccess(client, authorizations, config.getTableName(), annotationSerializer);
-        }
-        return annotationDataAccess;
     }
 
     @GET
@@ -177,12 +120,13 @@ public class AnnotationManagerBean implements AnnotationManager {
     @Override
     public Response getAnnotationTypes(@PathParam("idType") String idType, @PathParam("id") String id) {
         // TODO sanitize input to make sure it contains nothing weird like nulls.
+        final RequestContext context = new RequestContext(config, ctx, connectionFactory, accumuloConnectionRequestBean, responseObjectFactory);
         try {
-            final List<Metadata> metadata = lookupDocumentIdentifier(idType, id);
+            final List<Metadata> metadata = lookupDocumentIdentifier(context, idType, id);
             if (metadata.isEmpty()) {
                 return jsonNotFound(String.format("No internal identifier found for '%s:%s'", idType, id));
             }
-            final AnnotationDataAccess annotationDataAccess = initializeAnnotationService();
+            final AnnotationDataAccess annotationDataAccess = context.initializeAnnotationService();
             final Map<Metadata,Collection<String>> results = new HashMap<>();
             for (Metadata md : metadata) {
                 final Collection<String> types = annotationDataAccess.getAnnotationTypes(md.getRow(), md.getDataType(), md.getInternalId());
@@ -198,6 +142,8 @@ public class AnnotationManagerBean implements AnnotationManager {
             final String message = String.format("Internal error fetching annotation: %s", e.getMessage());
             log.error(message, e);
             return jsonError(message);
+        } finally {
+            context.returnAccumuloClient();
         }
     }
 
@@ -207,18 +153,20 @@ public class AnnotationManagerBean implements AnnotationManager {
     @Override
     public Response getAnnotationsFor(@PathParam("idType") String idType, @PathParam("id") String id) {
         // TODO sanitize input to make sure it contains nothing weird like nulls.
+        final RequestContext context = new RequestContext(config, ctx, connectionFactory, accumuloConnectionRequestBean, responseObjectFactory);
         try {
-            final List<Metadata> metadata = lookupDocumentIdentifier(idType, id);
+            final List<Metadata> metadata = lookupDocumentIdentifier(context, idType, id);
             if (metadata.isEmpty()) {
                 return jsonNotFound(String.format("No internal identifier found for '%s:%s'", idType, id));
             }
-            final AnnotationDataAccess annotationDataAccess = initializeAnnotationService();
+            final AnnotationDataAccess annotationDataAccess = context.initializeAnnotationService();
 
             final List<Annotation> results = new ArrayList<>();
             for (Metadata md : metadata) {
                 final List<Annotation> annotations = annotationDataAccess.getAnnotations(md.getRow(), md.getDataType(), md.getInternalId());
                 if (!annotations.isEmpty()) {
-                    results.addAll(annotations);
+                    List<Annotation> annotationsWithSources = lookupAndInjectAnnotationSources(context, annotations);
+                    results.addAll(annotationsWithSources);
                 }
             }
             if (results.isEmpty()) {
@@ -229,6 +177,8 @@ public class AnnotationManagerBean implements AnnotationManager {
             final String message = String.format("Internal error fetching annotation: %s", e.getMessage());
             log.error(message, e);
             return jsonError(message);
+        } finally {
+            context.returnAccumuloClient();
         }
     }
 
@@ -238,19 +188,21 @@ public class AnnotationManagerBean implements AnnotationManager {
     @Override
     public Response getAnnotationsByType(@PathParam("idType") String idType, @PathParam("id") String id, @PathParam("annotationType") String annotationType) {
         // TODO sanitize input to make sure it contains nothing weird like nulls.
+        final RequestContext context = new RequestContext(config, ctx, connectionFactory, accumuloConnectionRequestBean, responseObjectFactory);
         try {
-            final List<Metadata> metadata = lookupDocumentIdentifier(idType, id);
+            final List<Metadata> metadata = lookupDocumentIdentifier(context, idType, id);
             if (metadata.isEmpty()) {
                 return jsonNotFound(String.format("No internal identifier found for '%s:%s'", idType, id));
             }
-            final AnnotationDataAccess annotationDataAccess = initializeAnnotationService();
+            final AnnotationDataAccess annotationDataAccess = context.initializeAnnotationService();
 
             final List<Annotation> results = new ArrayList<>();
             for (Metadata md : metadata) {
                 final List<Annotation> annotations = annotationDataAccess.getAnnotationsForType(md.getRow(), md.getDataType(), md.getInternalId(),
                                 annotationType);
                 if (!annotations.isEmpty()) {
-                    results.addAll(annotations);
+                    List<Annotation> annotationsWithSources = lookupAndInjectAnnotationSources(context, annotations);
+                    results.addAll(annotationsWithSources);
                 }
             }
             if (results.isEmpty()) {
@@ -261,6 +213,8 @@ public class AnnotationManagerBean implements AnnotationManager {
             final String message = String.format("Internal error fetching annotation: %s", e.getMessage());
             log.error(message, e);
             return jsonError(message);
+        } finally {
+            context.returnAccumuloClient();
         }
     }
 
@@ -269,17 +223,21 @@ public class AnnotationManagerBean implements AnnotationManager {
     @Produces("application/json")
     @Override
     public Response getAnnotation(@PathParam("idType") String idType, @PathParam("id") String id, @PathParam("annotationId") String annotationId) {
+        final RequestContext context = new RequestContext(config, ctx, connectionFactory, accumuloConnectionRequestBean, responseObjectFactory);
         try {
-            final List<Metadata> metadata = lookupDocumentIdentifier(idType, id);
+            final List<Metadata> metadata = lookupDocumentIdentifier(context, idType, id);
             if (metadata.isEmpty()) {
                 return jsonNotFound(String.format("No internal identifier found for '%s:%s'", idType, id));
             }
-            final AnnotationDataAccess annotationDataAccess = initializeAnnotationService();
+            final AnnotationDataAccess annotationDataAccess = context.initializeAnnotationService();
 
             final List<Annotation> results = new ArrayList<>();
             for (Metadata md : metadata) {
                 final Optional<Annotation> annotations = annotationDataAccess.getAnnotation(md.getRow(), md.getDataType(), md.getInternalId(), annotationId);
-                annotations.ifPresent(results::add);
+                if (annotations.isPresent()) {
+                    Annotation annotationWithSource = lookupAndInjectAnnotationSource(context, annotations.get());
+                    results.add(annotationWithSource);
+                }
             }
             if (results.isEmpty()) {
                 return jsonNotFound("annotations", idType, id, metadata.toString(), null, annotationId, null);
@@ -289,6 +247,8 @@ public class AnnotationManagerBean implements AnnotationManager {
             final String message = String.format("Internal error fetching annotation: %s", e.getMessage());
             log.error(message, e);
             return jsonError(message);
+        } finally {
+            context.returnAccumuloClient();
         }
     }
 
@@ -298,17 +258,17 @@ public class AnnotationManagerBean implements AnnotationManager {
     @RolesAllowed({"AnnotationWriter"})
     @Override
     public Response addAnnotation(@PathParam("idType") String idType, @PathParam("id") String id, String body) {
+        final RequestContext context = new RequestContext(config, ctx, connectionFactory, accumuloConnectionRequestBean, responseObjectFactory);
         try {
-            final Annotation rawAnnotation = AnnotationUtils.annotationFromJson(body);
-            final Validator<Annotation> validator = AnnotationValidators.getAnnotationValidator();
-            final Validator.ValidationState<Annotation> validationState = validator.check(rawAnnotation);
+            final Annotation rawAnnotation = AnnotationJsonUtils.annotationFromJson(body);
+            final Validator.ValidationState<Annotation> validationState = AnnotationValidators.checkAnnotation(rawAnnotation);
             if (!validationState.isValid()) {
                 final String message = String.format("Invalid annotation json: %s", validationState.getErrors());
                 log.info(message);
                 return jsonError(message);
             }
 
-            final List<Metadata> metadataList = lookupDocumentIdentifier(idType, id);
+            final List<Metadata> metadataList = lookupDocumentIdentifier(context, idType, id);
             if (metadataList.isEmpty()) {
                 final String message = String.format("No internal identifier found for '%s:%s'", idType, id);
                 log.info(message);
@@ -330,7 +290,7 @@ public class AnnotationManagerBean implements AnnotationManager {
                     .build();
             //@formatter:on
 
-            final AnnotationDataAccess annotationDataAccess = initializeAnnotationService();
+            final AnnotationDataAccess annotationDataAccess = context.initializeAnnotationService();
             Optional<Annotation> addResult = annotationDataAccess.addAnnotation(localizedAnnotation);
             if (addResult.isPresent()) {
                 log.debug("Successfully added annotation: {}", addResult.get());
@@ -351,6 +311,8 @@ public class AnnotationManagerBean implements AnnotationManager {
             final String message = String.format("Internal error adding annotation: %s", e.getMessage());
             log.error(message, e);
             return jsonError(message);
+        } finally {
+            context.returnAccumuloClient();
         }
     }
 
@@ -361,17 +323,17 @@ public class AnnotationManagerBean implements AnnotationManager {
     @Override
     public Response updateAnnotation(@PathParam("idType") String idType, @PathParam("id") String id, @PathParam("annotationId") String annotationId,
                     String body) {
+        final RequestContext context = new RequestContext(config, ctx, connectionFactory, accumuloConnectionRequestBean, responseObjectFactory);
         try {
-            final Annotation rawAnnotation = AnnotationUtils.annotationFromJson(body);
-            final Validator<Annotation> validator = AnnotationValidators.getAnnotationValidator();
-            final Validator.ValidationState<Annotation> validationState = validator.check(rawAnnotation);
+            final Annotation rawAnnotation = AnnotationJsonUtils.annotationFromJson(body);
+            final Validator.ValidationState<Annotation> validationState = AnnotationValidators.checkAnnotationUpdate(rawAnnotation);
             if (!validationState.isValid()) {
                 final String message = String.format("Invalid annotation json: %s", validationState.getErrors());
                 log.info(message);
                 return jsonError(message);
             }
 
-            final List<Metadata> metadataList = lookupDocumentIdentifier(idType, id);
+            final List<Metadata> metadataList = lookupDocumentIdentifier(context, idType, id);
             if (metadataList.isEmpty()) {
                 final String message = String.format("No internal identifier found for '%s:%s'", idType, id);
                 log.info(message);
@@ -393,8 +355,8 @@ public class AnnotationManagerBean implements AnnotationManager {
                     .build();
             //@formatter:on
 
-            final AnnotationDataAccess annotationDataAccess = initializeAnnotationService();
-            Optional<Annotation> addResult = annotationDataAccess.updateAnnotation(localizedAnnotation);
+            final AnnotationDataAccess annotationDataAccess = context.initializeAnnotationService();
+            Optional<Annotation> addResult = annotationDataAccess.updateAnnotation(annotationId, localizedAnnotation);
             if (addResult.isPresent()) {
                 log.debug("Successfully updated annotation: {}", addResult.get());
                 return jsonOk(addResult.get());
@@ -413,21 +375,24 @@ public class AnnotationManagerBean implements AnnotationManager {
             final String message = String.format("Internal error updating annotation: %s", e.getMessage());
             log.error(message, e);
             return jsonError(message);
+        } finally {
+            context.returnAccumuloClient();
         }
     }
 
     @GET
-    @Path("/{idType}/{id}/annotation/{annotationId}/segment/{segmentId}")
+    @Path("/{idType}/{id}/annotation/{annotationId}/segment/{segmentHash}")
     @Produces("application/json")
     @Override
     public Response getAnnotationSegment(@PathParam("idType") String idType, @PathParam("id") String id, @PathParam("annotationId") String annotationId,
-                    @PathParam("segmentId") String segmentId) {
+                    @PathParam("segmentHash") String segmentHash) {
+        final RequestContext context = new RequestContext(config, ctx, connectionFactory, accumuloConnectionRequestBean, responseObjectFactory);
         try {
-            final List<Metadata> metadata = lookupDocumentIdentifier(idType, id);
+            final List<Metadata> metadata = lookupDocumentIdentifier(context, idType, id);
             if (metadata.isEmpty()) {
                 return jsonNotFound(String.format("No internal identifier found for '%s:%s'", idType, id));
             }
-            final AnnotationDataAccess annotationDataAccess = initializeAnnotationService();
+            final AnnotationDataAccess annotationDataAccess = context.initializeAnnotationService();
 
             final Map<Metadata,Annotation> annotationResults = new HashMap<>();
             for (Metadata md : metadata) {
@@ -436,7 +401,7 @@ public class AnnotationManagerBean implements AnnotationManager {
             }
 
             if (annotationResults.isEmpty()) {
-                return jsonNotFound("annotations", idType, id, metadata.toString(), null, annotationId, segmentId);
+                return jsonNotFound("annotations", idType, id, metadata.toString(), null, annotationId, segmentHash);
             }
 
             final Map<Metadata,Collection<Segment>> results = new HashMap<>();
@@ -444,7 +409,7 @@ public class AnnotationManagerBean implements AnnotationManager {
                 // now select only the segments that were requested.
                 List<Segment> matchingSegments = new ArrayList<>();
                 for (Segment s : entry.getValue().getSegmentsList()) {
-                    if (s.getSegmentId().equals(segmentId)) {
+                    if (s.getSegmentHash().equals(segmentHash)) {
                         matchingSegments.add(s);
                     }
                 }
@@ -454,63 +419,16 @@ public class AnnotationManagerBean implements AnnotationManager {
             }
 
             if (results.isEmpty()) {
-                return jsonNotFound("segments", idType, id, metadata.toString(), null, annotationId, segmentId);
+                return jsonNotFound("segments", idType, id, metadata.toString(), null, annotationId, segmentHash);
             }
             return jsonOk(results);
         } catch (QueryException e) {
             final String message = String.format("Internal error fetching segment: %s", e.getMessage());
             log.error(message, e);
             return jsonError(message);
+        } finally {
+            context.returnAccumuloClient();
         }
-    }
-
-    @POST
-    @Path("/{idType}/{id}/annotation/{annotationId}/segment")
-    @Consumes("application/json")
-    @Produces("application/json")
-    @RolesAllowed({"AnnotationWriter"})
-    @Override
-    public Response addSegment(@PathParam("idType") String idType, @PathParam("id") String id, @PathParam("annotationId") String annotationId, String body) {
-        try {
-            Segment segment = AnnotationUtils.segmentFromJson(body);
-
-            final List<Metadata> metadataList = lookupDocumentIdentifier(idType, id);
-            if (metadataList.isEmpty()) {
-                final String message = String.format("No internal identifier found for '%s:%s'", idType, id);
-                log.info(message);
-                return jsonNotFound(message);
-            } else if (metadataList.size() > 1) {
-                final String message = String.format("Multiple internal identifiers found for '%s:%s' must choose an id with a single internal id: %s", idType,
-                                id, metadataList);
-                log.info(message);
-                return jsonError(message);
-            }
-            final Metadata metadata = metadataList.get(0);
-
-            final AnnotationDataAccess annotationDataAccess = initializeAnnotationService();
-            annotationDataAccess.addSegment(metadata.getRow(), metadata.getDataType(), metadata.getInternalId(), annotationId, segment);
-            return jsonOk(segment.getSegmentId());
-        } catch (InvalidProtocolBufferException e) {
-            final String message = String.format("Invalid annotation json: %s", e.getMessage());
-            log.error(message, e);
-            return jsonError(message);
-        } catch (QueryException e) {
-            final String message = String.format("Internal error adding segment: %s", e.getMessage());
-            log.error(message, e);
-            return jsonError(message);
-        }
-    }
-
-    @PUT
-    @Path("/{idType}/{id}/annotation/{annotationId}/segment/{segmentId}")
-    @Consumes("application/json")
-    @Produces("application/json")
-    @RolesAllowed({"AnnotationWriter"})
-    @Override
-    public Response updateSegment(@PathParam("idType") String idType, @PathParam("id") String id, @PathParam("annotationId") String annotationId,
-                    @PathParam("segmentId") String segmentId, String body) {
-        // TODO: determine update semantics.
-        return jsonError("Not implemented");
     }
 
     /**
@@ -525,14 +443,66 @@ public class AnnotationManagerBean implements AnnotationManager {
      * @throws QueryException
      *             if the id is malformed.
      */
-    private List<Metadata> lookupDocumentIdentifier(String idType, String id) throws QueryException {
+    private List<Metadata> lookupDocumentIdentifier(RequestContext context, String idType, String id) throws QueryException {
+        // If the idType is RECORD_ID or DOCUMENT, treat the id provided as an internal id and perform a direct lookup
+        // against the annotations table, if that's enabled.
         if (idType.equals("DOCUMENT") || idType.equals("RECORD_ID")) {
-            // If the idType is RECORD_ID or DOCUMENT treat the id provided is an internal id.
+            if (!config.isEnableInternalIdLookup()) {
+                final String message = String.format("Internal identifier lookup is disabled for '%s:%s' please use a valid document id type.", idType, id);
+                throw new QueryException(message);
+            }
+
             return parseDocumentIdentifier(id);
+        }
+
+        // Otherwise, use the lookup uuid service to perform a lookup to find the internal id in the shard table.
+        final LookupUUIDService lookup = context.initializeLookupUUIDService();
+        return lookup.executeLookupUUIDQuery(idType, id);
+    }
+
+    /**
+     * Given a list of annotations, retrieve the annotation source information that is referenced by their analyticHash. If an analyticHash is not found, we
+     * simply return the annotation without the source data injected. Currently, no errors are logged.
+     *
+     * @param annotations
+     *            the annotations to inject sources into
+     * @return return annotations with sources injected where possible.
+     */
+    private List<Annotation> lookupAndInjectAnnotationSources(RequestContext context, List<Annotation> annotations) {
+        final List<Annotation> results = new ArrayList<>();
+        for (Annotation a : annotations) {
+            results.add(lookupAndInjectAnnotationSource(context, a));
+        }
+        return results;
+    }
+
+    /**
+     * Given an annotation, retrieve the annotation source information that is referenced by their analyticHash. Employs a per-request hash so we don't look up
+     * a single source multiple times.
+     */
+    private Annotation lookupAndInjectAnnotationSource(RequestContext context, Annotation a) {
+        // no need to inject a source if we already have one.
+        if (a.hasSource()) {
+            log.warn("Strange, this annotation already has a source. Annotation {}/{}/{} {}, using analyticHash {}", a.getShard(), a.getDataType(), a.getUid(),
+                            a.getAnnotationId(), a.getAnalyticSourceHash());
+            return a;
+        }
+
+        if (StringUtils.isBlank(a.getAnalyticSourceHash())) {
+            log.warn("Strange, this annotation does not have an analytic hash. Annotation {}/{}/{} {}", a.getShard(), a.getDataType(), a.getUid(),
+                            a.getAnnotationId());
+            return a;
+        }
+
+        // do the deed and cache the results.
+        final String analyticHash = a.getAnalyticSourceHash();
+        final Optional<AnnotationSource> result = context.getAnnotationSource(analyticHash);
+        if (result.isPresent()) {
+            return injectAnnotationSource(a, result.get());
         } else {
-            // Otherwise, perform a lookup to find the internal id.
-            final LookupUUIDService lookup = initializeLookupUUIDService();
-            return lookup.executeLookupUUIDQuery(idType, id);
+            log.debug("No analytic source found for annotation {}/{}/{} {}, using analyticHash {}", a.getShard(), a.getDataType(), a.getUid(),
+                            a.getAnnotationId(), a.getAnalyticSourceHash());
+            return a;
         }
     }
 
@@ -556,7 +526,7 @@ public class AnnotationManagerBean implements AnnotationManager {
     }
 
     private static Response jsonNotFound(String objectType, String idType, String id, String internalId, String annotationType, String annotationId,
-                    String segmentId) {
+                    String segmentHash) {
         String message = id.contains(internalId) ? String.format("No %s found for identifier: '%s:%s'", objectType, idType, id)
                         : String.format("No %s found for identifier '%s:%s', internalId: '%s'", objectType, idType, id, internalId);
 
@@ -566,8 +536,8 @@ public class AnnotationManagerBean implements AnnotationManager {
         if (!StringUtils.isEmpty(annotationId)) {
             message += String.format(", annotationId '%s'", annotationId);
         }
-        if (!StringUtils.isEmpty(segmentId)) {
-            message += String.format(", segmentId '%s'", segmentId);
+        if (!StringUtils.isEmpty(segmentHash)) {
+            message += String.format(", segmentHash '%s'", segmentHash);
         }
 
         return jsonNotFound(message);
@@ -586,5 +556,227 @@ public class AnnotationManagerBean implements AnnotationManager {
     private static Response jsonOk(Object responseObject) {
         // TODO: do we want to return more? (e.g., include fields like internal id, etc..
         return Response.ok(responseObject, MediaType.APPLICATION_JSON_TYPE.withCharset("utf-8")).build();
+    }
+
+    @VisibleForTesting
+    protected AnnotationManagerConfig getConfig() {
+        return config;
+    }
+
+    /** Per-request initialization code and related state */
+    protected static final class RequestContext {
+
+        private final AnnotationManagerConfig config;
+        private final AccumuloConnectionFactory connectionFactory;
+        private final AccumuloConnectionRequestBean accumuloConnectionRequestBean;
+        private final ResponseObjectFactory responseObjectFactory;
+
+        /** the user performing this request */
+        private final DatawavePrincipal datawavePrincipal;
+
+        /** the dn of the user performing this request */
+        private final String userDn;
+
+        /** proxy servers involved in this request */
+        private final Collection<String> proxyServers;
+
+        /** quthorizations pulled from the query parameters for this request */
+        private final String queryAuths;
+
+        /** the final set of merged query and user authorizations. */
+        private Set<Authorizations> authorizations;
+
+        /** the accumulo client to use for this request - obtained from the connection pool and must be returned. */
+        private AccumuloClient client;
+
+        /** used to lookup uuids and obtain internal identifiers, scoped to the caller's authorizations */
+        private LookupUUIDService lookupUUIDService;
+
+        /** used to _read_ annotations directly from accumulo, scoped to the caller's authorizations */
+        private AnnotationDataAccess annotationDataAccess;
+
+        /** Cache lookups for unique analytic source hashes so we don't perform lookups more than once. TODO: make this a proper cross-request cache? */
+        private final Map<String,Optional<AnnotationSource>> retrievedSourcesCache = new HashMap<>();
+
+        /** Lookup an annotation source or retrieve it from the cache */
+        public Optional<AnnotationSource> getAnnotationSource(String analyticHash) {
+            return retrievedSourcesCache.computeIfAbsent(analyticHash, key -> annotationDataAccess.getAnnotationSource(analyticHash));
+        }
+
+        /**
+         * Initialize the request context with the objects needed to perform various request state initialization. Validation of the objects provided is
+         * performed in the various initialize methods exposed by this class. Each of the objects provided as parameters are expected to be shared across many
+         * requests.
+         *
+         * @param config
+         *            the annotation manager configuration
+         * @param ctx
+         *            the ejb context - used for retrieving the principal for he qrequest
+         * @param connectionFactory
+         *            the accumulo connection factory - used for getting accumulo clients
+         * @param accumuloConnectionRequestBean
+         *            the accumulo connection request bean - used for tracking accumulo clients rerquests
+         * @param responseObjectFactory
+         *            the response object factory used for creating LookupUUID responses.
+         */
+        protected RequestContext(AnnotationManagerConfig config, EJBContext ctx, AccumuloConnectionFactory connectionFactory,
+                        AccumuloConnectionRequestBean accumuloConnectionRequestBean, ResponseObjectFactory responseObjectFactory) {
+            this.config = config;
+            this.connectionFactory = connectionFactory;
+            this.accumuloConnectionRequestBean = accumuloConnectionRequestBean;
+            this.responseObjectFactory = responseObjectFactory;
+
+            final Principal p = ctx.getCallerPrincipal();
+            final boolean isDatawavePrincipal = DatawavePrincipal.class.isAssignableFrom(p.getClass());
+            final DatawavePrincipal dp = isDatawavePrincipal ? (DatawavePrincipal) p : null;
+
+            this.userDn = dp != null ? dp.getUserDN().subjectDN() : p.getName();
+            this.proxyServers = dp != null ? dp.getProxyServers() : null;
+            this.datawavePrincipal = dp;
+
+            // TODO: allow downgrading by reading query auths from query parameters.
+            this.queryAuths = null;
+        }
+
+        /**
+         * Calculate the authorizations for this request based on the principal and the queryAuths if any.
+         *
+         * @return a valid set of query auths, will throw an exception if this isn't possible.
+         * @throws QueryException
+         *             and exception if there was a problem calculating the auths
+         */
+        private Set<Authorizations> initializeAuthorizations() throws QueryException {
+            if (authorizations == null) {
+                log.trace("Initializing authorizations: userDn: {}, query: {}", userDn, queryAuths);
+                if (datawavePrincipal == null) {
+                    throw new QueryException("Failed to get user principal from request, unable to proceed");
+                }
+
+                try {
+                    if (queryAuths == null) {
+                        authorizations = AuthorizationsUtil.buildAuthorizations(datawavePrincipal.getAuthorizations());
+                    } else {
+                        final String downgradedAuths = AuthorizationsUtil.downgradeUserAuths(queryAuths, datawavePrincipal, datawavePrincipal);
+                        authorizations = AuthorizationsUtil.buildAuthorizations(Collections.singleton(AuthorizationsUtil.splitAuths(downgradedAuths)));
+                    }
+
+                } catch (Exception e) {
+                    throw new QueryException("Failed to get user query authorizations", e);
+                }
+
+                log.debug("Authorizations initialized: userDn: {}, query: {}, final auths: {}", userDn, queryAuths, authorizations);
+            }
+            return authorizations;
+        }
+
+        /**
+         * Initialize the accumulo client
+         *
+         * @return a valid client, will throw an exception if this isn't possibly
+         * @throws QueryException
+         *             if the client can't be initialized.
+         */
+        protected AccumuloClient initializeAccumuloClient() throws QueryException {
+            if (client == null) {
+                log.trace("Initializing accumulo client");
+                UUID transactionUUID = java.util.UUID.randomUUID();
+
+                if (connectionFactory == null) {
+                    throw new QueryException("The accumulo connection factory isn't present, unable to proceed");
+                }
+
+                Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
+                if (trackingMap != null) {
+                    trackingMap.put("query.user", userDn);
+                    trackingMap.put("query.id", transactionUUID.toString());
+                    trackingMap.put("query.query", "annotation manager");
+                } else {
+                    log.info("Accumulo connection tracking map was null, this isn't fatal, but odd.");
+                }
+
+                if (accumuloConnectionRequestBean == null) {
+                    throw new QueryException("The accumulo connection request manager isn't present, unable to proceed");
+                }
+
+                accumuloConnectionRequestBean.requestBegin(transactionUUID.toString(), userDn, trackingMap);
+                try {
+                    client = connectionFactory.getClient(userDn, proxyServers, config.getConnPoolName(), config.getPriority(), trackingMap);
+                } catch (Exception e) {
+                    throw new QueryException("Unable to get Accumulo client, exception encountered: ", e);
+                } finally {
+                    accumuloConnectionRequestBean.requestEnd(transactionUUID.toString());
+                }
+                log.debug("Accumulo client initialized successfully");
+
+            }
+            return client;
+        }
+
+        /**
+         * Initialize the lookup uuid service
+         *
+         * @return a valid lookup uuid service, throws an exception if this isn't possible.
+         * @throws QueryException
+         *             if the lookup uuid service can't be initialized.
+         */
+        protected LookupUUIDService initializeLookupUUIDService() throws QueryException {
+            if (lookupUUIDService == null) {
+
+                if (config == null) {
+                    throw new QueryException("The lookup uuid service configuration isn't present, unable to proceed");
+                }
+
+                if (responseObjectFactory == null) {
+                    throw new QueryException("The response object factory isn't present, unable to proceed");
+                }
+
+                log.trace("Initializing lookupUUIDService");
+                final Set<Authorizations> authorizations = initializeAuthorizations();
+                final AccumuloClient client = initializeAccumuloClient();
+                lookupUUIDService = new LookupUUIDService(config.getLookupUUIDServiceConfig(), client, authorizations, responseObjectFactory,
+                                config.getLookupUUIDQueryLogic());
+                log.debug("LookupUUID service initialized successfully");
+            }
+            return lookupUUIDService;
+        }
+
+        /**
+         * Initialize the annotation service, specifically the data access layer.
+         *
+         * @return a valid annotation data access object, throws an exception if this isn't possible.
+         * @throws QueryException
+         *             if the annotation data access object can't be initialized.
+         */
+        protected AnnotationDataAccess initializeAnnotationService() throws QueryException {
+            if (annotationDataAccess == null) {
+                log.trace("Initializing annotation data access layer");
+                final Set<Authorizations> authorizations = initializeAuthorizations();
+                final AccumuloClient client = initializeAccumuloClient();
+                final AccumuloAnnotationSerializer annotationSerializer = new AccumuloAnnotationSerializer(
+                                config.getAnnotationConfig().getVisibilityTransformer(), config.getAnnotationConfig().getTimestampTransformer());
+                final AccumuloAnnotationSourceSerializer annotationSourceSerializer = new AccumuloAnnotationSourceSerializer(
+                                config.getAnnotationConfig().getVisibilityTransformer(), config.getAnnotationConfig().getTimestampTransformer());
+                annotationDataAccess = new AnnotationDataAccess(client, authorizations, config.getAnnotationConfig().getAnnotationTableName(),
+                                config.getAnnotationConfig().getAnnotationSourceTableName(), annotationSerializer, annotationSourceSerializer);
+                log.debug("Annotation data access layer initialized successfully");
+            }
+            return annotationDataAccess;
+        }
+
+        /**
+         * Return the accumulo client currently held by this class. If there's a problem returning the client, logs a warning. Sets the internal client state to
+         * null.
+         */
+        protected void returnAccumuloClient() {
+            try {
+                log.trace("Returning accumulo client");
+                connectionFactory.returnClient(client);
+                log.debug("Accumulo client returned");
+            } catch (Exception e) {
+                log.warn("Error when returning client", e);
+            } finally {
+                client = null;
+            }
+        }
     }
 }

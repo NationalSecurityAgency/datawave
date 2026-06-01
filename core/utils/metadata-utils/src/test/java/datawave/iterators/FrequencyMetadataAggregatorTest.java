@@ -6,6 +6,7 @@ import static datawave.data.ColumnFamilyConstants.COLF_F;
 import static datawave.data.ColumnFamilyConstants.COLF_I;
 import static datawave.data.ColumnFamilyConstants.COLF_RI;
 import static datawave.query.util.TestUtils.createDateFrequencyMap;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.File;
 import java.net.URISyntaxException;
@@ -33,7 +34,6 @@ import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableUtils;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -655,7 +655,7 @@ public class FrequencyMetadataAggregatorTest {
         List<Map.Entry<Key,Value>> expectedSorted = new ArrayList(expected);
         expectedSorted.sort(Map.Entry.comparingByKey());
 
-        Assertions.assertEquals(expectedSorted, actual, getDiffs(expectedSorted, actual));
+        assertEquals(expectedSorted, actual, getDiffs(expectedSorted, actual));
     }
 
     private Scanner createScanner() throws TableNotFoundException {
@@ -697,7 +697,7 @@ public class FrequencyMetadataAggregatorTest {
         List<Map.Entry<Key,Value>> expectedSorted = new ArrayList(expected);
         expectedSorted.sort(Map.Entry.comparingByKey());
 
-        Assertions.assertEquals(expectedSorted, actual, getDiffs(expectedSorted, actual));
+        assertEquals(expectedSorted, actual, getDiffs(expectedSorted, actual));
     }
 
     private String getDiffs(List<Map.Entry<Key,Value>> expected, List<Map.Entry<Key,Value>> actual) {
