@@ -1,4 +1,4 @@
-package datawave.query.scan;
+package datawave.scan;
 
 import java.util.Collections;
 import java.util.HashSet;
