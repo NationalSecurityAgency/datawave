@@ -1,5 +1,6 @@
-package datawave.query.scan;
+package datawave.scan;
 
+import static org.apache.accumulo.core.client.ScannerBase.ConsistencyLevel;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -9,7 +10,6 @@ import java.util.Map;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.BatchWriter;
-import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
@@ -98,11 +98,11 @@ public class BatchScannerBuilderTest {
         BatchScannerBuilder builder = BatchScannerBuilder.create(client)
                 .setTableName(tableName)
                 .setAuthorizations(auths)
-                .setConsistencyLevel(ScannerBase.ConsistencyLevel.IMMEDIATE);
+                .setConsistencyLevel(ConsistencyLevel.IMMEDIATE);
         //  @formatter:on
 
         buildAndScan(builder);
-        assertEquals(ScannerBase.ConsistencyLevel.IMMEDIATE, builder.getConsistencyLevel());
+        assertEquals(ConsistencyLevel.IMMEDIATE, builder.getConsistencyLevel());
     }
 
     @Test
@@ -111,11 +111,11 @@ public class BatchScannerBuilderTest {
         BatchScannerBuilder builder = BatchScannerBuilder.create(client)
                 .setTableName(tableName)
                 .setAuthorizations(auths)
-                .setConsistencyLevel(ScannerBase.ConsistencyLevel.EVENTUAL);
+                .setConsistencyLevel(ConsistencyLevel.EVENTUAL);
         //  @formatter:on
 
         buildAndScan(builder);
-        assertEquals(ScannerBase.ConsistencyLevel.EVENTUAL, builder.getConsistencyLevel());
+        assertEquals(ConsistencyLevel.EVENTUAL, builder.getConsistencyLevel());
     }
 
     @Test
@@ -128,7 +128,7 @@ public class BatchScannerBuilderTest {
         //  @formatter:on
 
         buildAndScan(builder);
-        assertEquals(ScannerBase.ConsistencyLevel.IMMEDIATE, builder.getConsistencyLevel());
+        assertEquals(ConsistencyLevel.IMMEDIATE, builder.getConsistencyLevel());
     }
 
     @Test
@@ -141,7 +141,7 @@ public class BatchScannerBuilderTest {
         //  @formatter:on
 
         buildAndScan(builder);
-        assertEquals(ScannerBase.ConsistencyLevel.EVENTUAL, builder.getConsistencyLevel());
+        assertEquals(ConsistencyLevel.EVENTUAL, builder.getConsistencyLevel());
     }
 
     @Test
