@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave</groupId>
         <artifactId>assemble-parent</artifactId>
-        <version>7.38.0-SNAPSHOT</version>
+        <version>7.40.0-SNAPSHOT</version>
     </parent>
     <artifactId>assemble-datawave</artifactId>
     <packaging>pom</packaging>
@@ -126,6 +126,10 @@
             <groupId>gov.nsa.datawave.core</groupId>
             <artifactId>datawave-core-annotation</artifactId>
             <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.core</groupId>
+            <artifactId>datawave-core-tables</artifactId>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.webservices</groupId>
@@ -724,6 +728,7 @@
                                             <include>gov.nsa.datawave.core:datawave-core-common</include>
                                             <include>gov.nsa.datawave.core:datawave-core-common-util</include>
                                             <include>gov.nsa.datawave.core:datawave-core-query</include>
+                                            <include>gov.nsa.datawave.core:datawave-core-tables</include>
                                             <include>gov.nsa.datawave.core:accumulo-utils</include>
                                             <include>gov.nsa.datawave.core:metadata-utils</include>
                                             <include>gov.nsa.datawave.core:type-utils</include>
@@ -774,6 +779,7 @@
                                             <include>gov.nsa.datawave.core:datawave-core-connection-pool</include>
                                             <include>gov.nsa.datawave.core:datawave-core-common</include>
                                             <include>gov.nsa.datawave.core:datawave-core-common-util</include>
+                                            <include>gov.nsa.datawave.core:datawave-core-tables</include>
                                             <include>gov.nsa.datawave.core:accumulo-utils</include>
                                             <include>gov.nsa.datawave.core:metadata-utils</include>
                                             <include>gov.nsa.datawave.core:type-utils</include>
