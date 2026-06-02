@@ -36,13 +36,13 @@ public class BalancedShardPartitioner extends Partitioner<BulkIngestKey,Value> i
     int missingShardIdCount = 0;
 
     public enum MissingShardStrategy {
-        HASH, COLLAPSE;
+        hash, collapse;
 
         public static MissingShardStrategy getStrategy(String stratString) {
-            if (HASH.name().equals(stratString)) {
-                return HASH;
-            } else if (COLLAPSE.name().equals(stratString)) {
-                return COLLAPSE;
+            if (hash.name().equals(stratString)) {
+                return hash;
+            } else if (collapse.name().equals(stratString)) {
+                return collapse;
             } else {
                 throw new EnumConstantNotPresentException(BalancedShardPartitioner.MissingShardStrategy.class, stratString);
             }
