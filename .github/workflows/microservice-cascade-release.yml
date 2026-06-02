@@ -6,10 +6,15 @@ name: Cascade Release Microservices
 # (committed with the "auto-update:" prefix), so the next project in the cascade
 # picks it up. The whole pipeline fails if the final compose-tests gate fails.
 #
-# Non-final releases run on a temporary branch (cascade-release/<run_id>) so that
-# the auto-update and release-plugin commits never touch the main branch. The
-# temp branch is deleted at the end regardless of success or failure. Published
-# artifacts and tags are independent of the branch and are kept.
+# All releases (final and non-final) run on a temporary branch
+# (cascade-release/<run_id>) so that auto-update and release-plugin commits
+# never touch the target branch during the multi-hour run. Published artifacts
+# and tags are independent of the branch and are always kept.
+#
+# For final releases the temporary branch is merged back into the target branch
+# after compose-tests pass. If the target branch has diverged and the merge
+# conflicts, a PR is opened for manual resolution and the branch is preserved.
+# For non-final releases the branch is always deleted.
 #
 # The dependency graph is computed at runtime from the live POMs by
 # .github/release/cascade-plan.py so it cannot drift. (Maven's `-pl :a -amd`
@@ -121,20 +126,14 @@ jobs:
           echo "count=$COUNT" >> "$GITHUB_OUTPUT"
           echo "cascade=$CASCADE_JSON" >> "$GITHUB_OUTPUT"
 
-      # Non-final releases use a throwaway branch so auto-update and
-      # release-plugin commits never land on the main branch.
-      - name: Create temporary branch for non-final release
+      - name: Create temporary release branch
         id: branch
         run: |
-          if [ "${{ inputs.finalRelease }}" = "true" ]; then
-            echo "branch=" >> "$GITHUB_OUTPUT"
-          else
-            BRANCH="cascade-release/${{ github.run_id }}"
-            git checkout -b "$BRANCH"
-            git push -u origin "$BRANCH"
-            echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
-            echo "::notice::Non-final release will use temporary branch $BRANCH"
-          fi
+          BRANCH="cascade-release/${{ github.run_id }}"
+          git checkout -b "$BRANCH"
+          git push -u origin "$BRANCH"
+          echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
+          echo "::notice::Release will use temporary branch $BRANCH"
 
       - name: Dry-run summary
         if: ${{ inputs.dryRun }}
@@ -168,12 +167,76 @@ jobs:
       allow-snapshots: false
     secrets: inherit
 
-  # Clean up the temporary branch used by non-final releases.
-  # Runs on success or failure so the branch is always removed.
+  # For final releases, merge the temporary branch back into the target branch
+  # so that release-plugin and auto-update commits land on the mainline.
+  merge-back:
+    name: Merge release branch into ${{ github.ref_name }}
+    needs: [plan, compose-validation]
+    if: ${{ inputs.dryRun == false && inputs.finalRelease == true }}
+    runs-on: ubuntu-latest
+    outputs:
+      merged: ${{ steps.merge.outputs.merged }}
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout target branch
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GHCR_WRITE_ACCESS_TOKEN }}
+          ref: ${{ github.ref_name }}
+      - name: Merge or open PR
+        id: merge
+        env:
+          GH_TOKEN: ${{ secrets.GHCR_WRITE_ACCESS_TOKEN }}
+        run: |
+          set -euo pipefail
+          BRANCH="${{ needs.plan.outputs.branch }}"
+          git config user.email "datawave@github.com"
+          git config user.name "${{ secrets.GHCR_WRITE_USER_NAME }}"
+          git pull --ff-only
+          git fetch origin "$BRANCH"
+
+          if git merge --ff-only "origin/$BRANCH" 2>/dev/null; then
+            git push
+            echo "merged=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::Fast-forward merged $BRANCH into ${{ github.ref_name }}."
+          elif git merge -m "cascade-release: merge final release run ${{ github.run_id }}" "origin/$BRANCH" 2>/dev/null; then
+            git push
+            echo "merged=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::Merge-committed $BRANCH into ${{ github.ref_name }}."
+          else
+            git merge --abort || true
+
+            BODY="Automated merge-back from final cascade release.
+            **Run:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            **Starting project:** ${{ needs.plan.outputs.startArtifact }}
+            **Projects released:** ${{ needs.plan.outputs.count }}
+
+            This branch contains release-plugin and auto-update commits.
+            Resolve conflicts and merge to complete the release."
+
+            gh pr create \
+              --base "${{ github.ref_name }}" \
+              --head "$BRANCH" \
+              --title "cascade-release: merge back run ${{ github.run_id }}" \
+              --body "$BODY"
+            echo "merged=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Conflicts with ${{ github.ref_name }} — PR opened for manual merge-back."
+          fi
+
+  # Delete the temporary branch when it is no longer needed.
+  # Preserved when: final release and merge-back did not fully merge (PR opened
+  # or compose-validation failed before merge-back ran).
   cleanup:
     name: Delete cascade branch
-    needs: [plan, release, compose-validation]
-    if: ${{ always() && needs.plan.outputs.branch != '' }}
+    needs: [plan, release, compose-validation, merge-back]
+    if: >-
+      ${{ always()
+          && needs.plan.outputs.branch != ''
+          && (inputs.finalRelease != true
+              || needs.merge-back.outputs.merged == 'true') }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
