@@ -106,9 +106,9 @@ public class FieldRenameTransformTest {
         fieldMap.add("field1=field6");
 
         Document d = new Document();
-        d.put("field1.field.11", new Numeric("1", key, true), true, false);
-        d.put("field2.field.12", new Numeric("2", key, true), true, false);
-        d.put("field3.field.13", new Numeric("3", key, true), true, false);
+        d.put("field1.field.11", new Numeric("1", key, true), true);
+        d.put("field2.field.12", new Numeric("2", key, true), true);
+        d.put("field3.field.13", new Numeric("3", key, true), true);
 
         DocumentTransform transformer = new FieldRenameTransform(fieldMap, true, false);
 

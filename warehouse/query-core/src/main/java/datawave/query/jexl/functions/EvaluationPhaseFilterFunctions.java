@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
@@ -32,6 +31,8 @@ import datawave.query.attributes.ValueTuple;
 import datawave.query.collections.FunctionalSet;
 import datawave.query.jexl.JexlPatternCache;
 import datawave.util.OperationEvaluator;
+import datawave.webservice.query.exception.BadRequestQueryException;
+import datawave.webservice.query.exception.DatawaveErrorCode;
 
 /**
  * NOTE: The {@link JexlFunctionArgumentDescriptorFactory} is implemented by {@link EvaluationPhaseFilterFunctionsDescriptor}. This is kept as a separate class
@@ -52,6 +53,8 @@ public class EvaluationPhaseFilterFunctions {
      * This regex matches against regex strings that contain case-insensitive flags, e.g. {@code (?i).*(?-i)}.
      */
     public static final String CASE_INSENSITIVE = ".*\\(\\?[idmsux]*-[dmsux]*i[idmsux]*\\).*";
+
+    public static final Object LOCK = new Object();
 
     private static final Logger log = Logger.getLogger(EvaluationPhaseFilterFunctions.class);
 
@@ -379,7 +382,8 @@ public class EvaluationPhaseFilterFunctions {
                 }
             }
         }
-        return Collections.EMPTY_LIST.stream();
+
+        return Stream.empty();
     }
 
     /**
@@ -1331,6 +1335,7 @@ public class EvaluationPhaseFilterFunctions {
                     "yyyy-MM-dd HH:mm:ssz",
                     "yyyy-MM-dd HH:mm:ss",
                     "yyyyMMdd HHmmss",
+                    "yyyy:MM:dd HH:mm:ss",
                     "yyyy-MM-dd'T'HH'|'mm",
                     "yyyy-MM-dd'T'HH':'mm':'ss'.'SSS'Z'",
                     "yyyy-MM-dd'T'HH':'mm':'ss'Z'",
@@ -1549,7 +1554,7 @@ public class EvaluationPhaseFilterFunctions {
      *             if the value failed to be parsed using the supplied format
      */
     public static long getTime(Object value, DateFormat format) throws ParseException {
-        synchronized (format) {
+        synchronized (LOCK) {
             return format.parse(ValueTuple.getStringValue(value)).getTime();
         }
     }
@@ -1611,7 +1616,9 @@ public class EvaluationPhaseFilterFunctions {
                 // try the next one
             }
         }
-        throw new ParseException("Unable to parse value using known date formats: " + value, 0);
+        BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.UNPARSEABLE_JEXL_QUERY,
+                        "Unable to parse value using known date formats: " + value + " [Error offset: 0]");
+        throw new IllegalArgumentException(qe);
     }
 
     /**

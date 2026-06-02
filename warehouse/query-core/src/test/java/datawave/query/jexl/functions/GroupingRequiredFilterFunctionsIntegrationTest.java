@@ -40,6 +40,7 @@ import datawave.ingest.data.TypeRegistry;
 import datawave.microservice.query.QueryImpl;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.RebuildingScannerTestHelper;
+import datawave.query.index.day.IndexIngestUtil;
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
@@ -56,6 +57,12 @@ public abstract class GroupingRequiredFilterFunctionsIntegrationTest {
     @RunWith(Arquillian.class)
     public static class ShardRangeTest extends GroupingRequiredFilterFunctionsIntegrationTest {
 
+        @Before
+        public void setup() throws ParseException {
+            super.setup();
+            logic.setCollapseUids(true);
+        }
+
         @Override
         protected String getRange() {
             return "SHARD";
@@ -64,6 +71,12 @@ public abstract class GroupingRequiredFilterFunctionsIntegrationTest {
 
     @RunWith(Arquillian.class)
     public static class DocumentRangeTest extends GroupingRequiredFilterFunctionsIntegrationTest {
+
+        @Before
+        public void setup() throws ParseException {
+            super.setup();
+            logic.setCollapseUids(true);
+        }
 
         @Override
         protected String getRange() {
@@ -74,10 +87,11 @@ public abstract class GroupingRequiredFilterFunctionsIntegrationTest {
     private static final Logger log = Logger.getLogger(GroupingRequiredFilterFunctionsIntegrationTest.class);
     private static final Authorizations auths = new Authorizations("ALL", "E", "I");
     private static final Set<Authorizations> authSet = Collections.singleton(auths);
+    private static final IndexIngestUtil ingestUtil = new IndexIngestUtil();
 
     @Inject
     @SpringBean(name = "EventQuery")
-    private ShardQueryLogic logic;
+    protected ShardQueryLogic logic;
 
     private final DateFormat format = new SimpleDateFormat("yyyyMMdd");
     private final Map<String,String> queryParameters = new HashMap<>();
@@ -176,6 +190,9 @@ public abstract class GroupingRequiredFilterFunctionsIntegrationTest {
     private AccumuloClient createClient(RebuildingScannerTestHelper.TEARDOWN teardown, RebuildingScannerTestHelper.INTERRUPT interrupt) throws Exception {
         AccumuloClient client = new QueryTestTableHelper(getClass().toString(), log, teardown, interrupt).client;
         GroupingFiltersIngest.writeItAll(client, getRange());
+
+        ingestUtil.write(client, auths);
+
         PrintUtility.printTable(client, auths, TableName.SHARD);
         PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
         PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);

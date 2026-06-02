@@ -6,7 +6,9 @@ import static datawave.util.TableName.SHARD_INDEX;
 import static datawave.util.TableName.SHARD_RINDEX;
 
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.accumulo.core.client.AccumuloClient;
@@ -15,7 +17,9 @@ import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.IteratorUtil;
 import org.apache.accumulo.core.iterators.LongCombiner;
+import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
 
@@ -26,6 +30,8 @@ import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.ListType;
 import datawave.data.type.NumberType;
 import datawave.ingest.protobuf.Uid;
+import datawave.query.index.day.IndexIngestUtil;
+import datawave.test.MacTestUtil;
 import datawave.util.TableName;
 
 /**
@@ -105,6 +111,8 @@ public class ShapesIngest {
 
     private static final LongCombiner.VarLenEncoder encoder = new LongCombiner.VarLenEncoder();
 
+    private static final IndexIngestUtil ingestUtil = new IndexIngestUtil();
+
     protected static String normalizerForField(String field) {
         switch (field) {
             case "SHAPE":
@@ -133,6 +141,20 @@ public class ShapesIngest {
         tops.create(SHARD_INDEX);
         tops.create(SHARD_RINDEX);
         tops.create(METADATA);
+
+        Map<String,String> additions = new HashMap<>();
+        IteratorUtil.IteratorScope[] scopes = IteratorUtil.IteratorScope.values();
+        for (IteratorUtil.IteratorScope scope : scopes) {
+            String name = "table.iterator." + scope.name() + ".UIDAggregator";
+            String opt = "table.iterator." + scope.name() + ".UIDAggregator.opt.*";
+
+            additions.put(name, "19,datawave.iterators.TotalAggregatingIterator");
+            additions.put(opt, "datawave.ingest.table.aggregator.KeepCountOnlyUidAggregator");
+        }
+        MacTestUtil.addPropertiesAndWait(tops, SHARD_INDEX, additions);
+
+        // grant root user all auths so they can scan the tables
+        client.securityOperations().changeUserAuthorizations("root", new Authorizations("ALL"));
 
         BatchWriterConfig bwConfig = new BatchWriterConfig().setMaxMemory(1000L).setMaxLatency(1, TimeUnit.SECONDS).setMaxWriteThreads(1);
         Mutation m;
@@ -316,6 +338,8 @@ public class ShapesIngest {
             m.put("SHAPE", shard + '\u0000' + quadrilateral, cv, ts, getValue(type, rectangleUid));
             m.put("SHAPE", shard + '\u0000' + quadrilateral, cv, ts, getValue(type, rhomboidUid));
             m.put("SHAPE", shard + '\u0000' + quadrilateral, cv, ts, getValue(type, rhombusUid));
+            m.put("SHAPE", shard + '\u0000' + quadrilateral, cv, ts, getValue(type, trapezoidUid));
+            m.put("SHAPE", shard + '\u0000' + quadrilateral, cv, ts, getValue(type, kiteUid));
             bw.addMutation(m);
             m = new Mutation("pentagon");
             m.put("SHAPE", shard + '\u0000' + pentagon, cv, ts, getValue(type, pentagonUid));
@@ -486,6 +510,24 @@ public class ShapesIngest {
         tokenize(client, bwConfig, "PROPERTIES", "convex,cyclic,equilateral,isogonal,isotoxal", type, hexagon, hexagonUid);
         tokenize(client, bwConfig, "PROPERTIES", "convex,cyclic,equilateral,isogonal,isotoxal", type, octagon, octagonUid);
 
+        tokenize(client, bwConfig, "DESCRIPTION", "all three angles are less than ninety degrees", type, triangle, acuteUid);
+        tokenize(client, bwConfig, "DESCRIPTION", "all three angles are sixty degrees", type, triangle, equilateralUid);
+        tokenize(client, bwConfig, "DESCRIPTION", "two angles are equal", type, triangle, isoscelesUid);
+
+        tokenize(client, bwConfig, "DESCRIPTION", "a parallelogram with four sides of equal length and four ninety degree angles", type, quadrilateral,
+                        squareUid);
+        tokenize(client, bwConfig, "DESCRIPTION", "a parallelogram with four ninety degree angles", type, quadrilateral, rectangleUid);
+        tokenize(client, bwConfig, "DESCRIPTION", "a parallelogram with four sides of equal length", type, quadrilateral, rhombusUid);
+        tokenize(client, bwConfig, "DESCRIPTION", "a parallelogram with adjacent sides that are not equal and angles are not ninety degrees", type,
+                        quadrilateral, rhomboidUid);
+        tokenize(client, bwConfig, "DESCRIPTION", "a quadrilateral with at least one pair of parallel sides", type, quadrilateral, trapezoidUid);
+        tokenize(client, bwConfig, "DESCRIPTION", "a quadrilateral with two pairs of equal length sides that are adjacent to each other", type, quadrilateral,
+                        kiteUid);
+
+        tokenize(client, bwConfig, "DESCRIPTION", "a shape with five straight sides and five interior angles", type, pentagon, pentagonUid);
+        tokenize(client, bwConfig, "DESCRIPTION", "a shape with six straight sides and six interior angles", type, hexagon, hexagonUid);
+        tokenize(client, bwConfig, "DESCRIPTION", "a shape with eight straight sides and eight interior angles", type, octagon, octagonUid);
+
         // metadata table
         try (BatchWriter bw = client.createBatchWriter(TableName.METADATA, bwConfig)) {
 
@@ -599,6 +641,16 @@ public class ShapesIngest {
         }
 
         // TODO -- query model
+
+        try (BatchWriter bw = client.createBatchWriter(TableName.METADATA)) {
+            m = new Mutation("num_shards");
+            m.put("ns", "20240101_1", new Value());
+            bw.addMutation(m);
+        }
+
+        // this is hacky and highlights an opportunity to improve the test framework
+        Authorizations auths = new Authorizations("ALL");
+        ingestUtil.write(client, auths);
     }
 
     private static void tokenize(AccumuloClient client, BatchWriterConfig config, String field, String data, RangeType type, String datatype, String uid)

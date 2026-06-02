@@ -75,6 +75,12 @@ public abstract class HitsAreAlwaysIncludedCommonalityTokenTest {
             PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
         }
 
+        @Before
+        public void setup() {
+            super.setup();
+            logic.setCollapseUids(true);
+        }
+
         @Override
         protected void runTestQuery(String queryString, Date startDate, Date endDate, Map<String,String> extraParms, Collection<String> goodResults)
                         throws Exception {
@@ -97,6 +103,12 @@ public abstract class HitsAreAlwaysIncludedCommonalityTokenTest {
             PrintUtility.printTable(client, auths, TableName.SHARD);
             PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
             PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
+        }
+
+        @Before
+        public void setup() {
+            super.setup();
+            logic.setCollapseUids(false);
         }
 
         @Override

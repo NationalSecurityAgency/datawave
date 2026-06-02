@@ -33,10 +33,11 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.user.SummingCombiner;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.accumulo.core.util.Pair;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Function;
 import com.google.common.collect.HashMultimap;
@@ -56,6 +57,7 @@ import datawave.modification.configuration.ModificationServiceConfiguration;
 import datawave.modification.query.ModificationQueryService;
 import datawave.query.data.parsers.DatawaveKey;
 import datawave.query.data.parsers.DatawaveKey.KeyType;
+import datawave.query.data.parsers.TermFrequencyKey;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.MetadataHelperFactory;
 import datawave.security.authorization.ProxiedUserDetails;
@@ -187,7 +189,7 @@ import datawave.webservice.result.GenericResponse;
  */
 public class MutableMetadataHandler extends ModificationServiceConfiguration {
 
-    private Logger log = Logger.getLogger(this.getClass());
+    private Logger log = LoggerFactory.getLogger(this.getClass());
 
     protected static final long MS_PER_DAY = TimeUnit.DAYS.toMillis(1);
     protected static final String DESCRIPTION = "Modification service that processes insert, update, and delete requests of event fields for event(s) identified by the shard id, datatype, and event uid.";
@@ -261,7 +263,7 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
     public void setIndexOnlyMap(Map<String,String> map) {
         this.indexOnlyMap = HashMultimap.create();
         for (Map.Entry<String,String> entry : map.entrySet()) {
-            for (String value : StringUtils.split(entry.getValue(), ',')) {
+            for (String value : entry.getValue().split(",")) {
                 this.indexOnlyMap.put(entry.getKey(), value.trim());
             }
         }
@@ -360,7 +362,7 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
                                     new HashMap<>(), null);
 
                     for (Pair<Key,Value> p : fieldHistoryList) {
-                        if (p.getFirst().getColumnQualifier().find(mr.getFieldValue()) > -1) {
+                        if (p.getLeft().getColumnQualifier().find(mr.getFieldValue()) > -1) {
                             ++valHistoryCount;
                         }
                     }
@@ -498,11 +500,11 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
             for (Type<?> n : dataTypes) {
                 String indexTerm = fieldValue;
                 if (historicalValue) {
-                    int lastColon = fieldValue.lastIndexOf(":");
+                    int lastColon = fieldValue.lastIndexOf(':');
                     // The next two lines build up to the beginning of the indexTerm by finding the first two colons
                     // We could use split if we could guarantee a colon never appears in the index term itself
-                    int indexTermLeadingColon = fieldValue.indexOf(":", 0);
-                    indexTermLeadingColon = fieldValue.indexOf(":", indexTermLeadingColon + 1);
+                    int indexTermLeadingColon = fieldValue.indexOf(':', 0);
+                    indexTermLeadingColon = fieldValue.indexOf(':', indexTermLeadingColon + 1);
                     indexTerm = fieldValue.substring(indexTermLeadingColon + 1, lastColon);
                 }
                 String indexedValue = n.normalize(indexTerm);
@@ -689,18 +691,18 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
 
         for (Pair<Key,Value> currentEntry : currentEntryList) {
 
-            ColumnVisibility viz = currentEntry.getFirst().getColumnVisibilityParsed();
+            ColumnVisibility viz = currentEntry.getLeft().getColumnVisibilityParsed();
 
-            DatawaveKey key = new DatawaveKey(currentEntry.getFirst());
+            DatawaveKey key = new DatawaveKey(currentEntry.getLeft());
 
             String shardId = key.getRow().toString();
 
-            long currentEntryTimestamp = currentEntry.getFirst().getTimestamp();
+            long currentEntryTimestamp = currentEntry.getLeft().getTimestamp();
 
             if (key.getType().equals(KeyType.INDEX_EVENT)) {
                 // Only the delete the fi key
-                Mutation e = new Mutation(currentEntry.getFirst().getRow());
-                e.putDelete(currentEntry.getFirst().getColumnFamily(), currentEntry.getFirst().getColumnQualifier(), viz, currentEntryTimestamp);
+                Mutation e = new Mutation(currentEntry.getLeft().getRow());
+                e.putDelete(currentEntry.getLeft().getColumnFamily(), currentEntry.getLeft().getColumnQualifier(), viz, currentEntryTimestamp);
                 writer.getBatchWriter(this.getEventTableName()).addMutation(e);
             } else if (key.getType().equals(KeyType.EVENT)) {
                 Mutation m = new Mutation(key.getFieldName());
@@ -709,9 +711,9 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
                 m.put(ColumnFamilyConstants.COLF_F, new Text(key.getDataType() + NULL_BYTE + DateHelper.format(currentEntryTimestamp)),
                                 new Value(SummingCombiner.VAR_LEN_ENCODER.encode(-1L)));
                 // Remove the event field.
-                Mutation e = new Mutation(currentEntry.getFirst().getRow());
+                Mutation e = new Mutation(currentEntry.getLeft().getRow());
                 if (!isIndexOnlyField) {
-                    e.putDelete(currentEntry.getFirst().getColumnFamily(), currentEntry.getFirst().getColumnQualifier(), viz, currentEntryTimestamp);
+                    e.putDelete(currentEntry.getLeft().getColumnFamily(), currentEntry.getLeft().getColumnQualifier(), viz, currentEntryTimestamp);
                 }
 
                 // Remove the content column
@@ -737,10 +739,13 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
 
                         DatawaveKey fiKeyParsed = new DatawaveKey(fiKey);
 
-                        // Remove the term frequency entry
-                        e.putDelete(ColumnFamilyConstants.COLF_TF.toString(), fiKeyParsed.getDataType() + NULL_BYTE + fiKeyParsed.getUid() + NULL_BYTE
-                                        + fiKeyParsed.getFieldValue() + NULL_BYTE + fiKeyParsed.getFieldName(), fiKey.getColumnVisibilityParsed(),
-                                        fiKey.getTimestamp());
+                        // Remove all matching term frequency entries, including grouped variants such as QUOTE_TOKEN.<hash>.
+                        try (TermFrequencyIterable tfKeys = getTermFrequencyKeys(client, this.getEventTableName(), userAuths, shardId,
+                                        fiKeyParsed.getDataType(), fiKeyParsed.getUid(), fiKeyParsed.getFieldValue(), fiKeyParsed.getFieldName())) {
+                            for (Key tfKey : tfKeys) {
+                                e.putDelete(tfKey.getColumnFamily(), tfKey.getColumnQualifier(), tfKey.getColumnVisibilityParsed(), tfKey.getTimestamp());
+                            }
+                        }
 
                         // Create a UID object for the Value which will remove this UID
                         Builder uidBuilder = Uid.List.newBuilder();
@@ -846,17 +851,17 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
                     String oldColViz = new String(oldColumnVisibility.flatten(), "UTF-8");
                     String thisVis = new String(thisViz.flatten(), "UTF-8");
                     if (!oldColViz.equals(thisVis)) {
-                        log.trace("Skipping key that does not match with column visibility: " + e.getKey());
+                        log.trace("Skipping key that does not match with column visibility: {}", e.getKey());
                         continue;
                     }
                 } else {
                     Map<String,String> markings = markingFunctions.translateFromColumnVisibilityForAuths(e.getKey().getColumnVisibilityParsed(), userAuths);
                     if (null != oldFieldMarkings && !oldFieldMarkings.equals(markings)) {
-                        log.trace("Skipping key that does not match with markings: " + e.getKey());
+                        log.trace("Skipping key that does not match with markings: {}", e.getKey());
                         continue;
                     }
                 }
-                results.add(new Pair<>(e.getKey(), e.getValue()));
+                results.add(Pair.of(e.getKey(), e.getValue()));
             }
         } finally {
             s.close();
@@ -989,6 +994,8 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
      *            operation
      * @param userAuths
      *            set of user auths
+     * @param userDetails
+     *            proxied user details
      * @return Event
      * @throws Exception
      *             if there are issues
@@ -1039,10 +1046,10 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
 
                 e = eResponse.getEvents().get(0);
             } else {
-                log.error("Received a " + response.getClass().getSimpleName() + " but expected a subclass of EventQueryResponseBase");
+                log.error("Received a {} but expected a subclass of EventQueryResponseBase", response.getClass().getSimpleName());
             }
         } catch (Exception ex) {
-            log.error(ex);
+            log.error("", ex);
         } finally {
             if (id != null) {
                 queryService.close(id);
@@ -1154,6 +1161,50 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
                 scanner.close();
             }
         }
+    }
+
+    protected TermFrequencyIterable getTermFrequencyKeys(AccumuloClient client, String shardTable, Set<Authorizations> userAuths, String shardId,
+                    String datatype, String eventUid, String fieldValue, String fieldName) throws Exception {
+
+        String qualifierPrefix = datatype + NULL_BYTE + eventUid + NULL_BYTE + fieldValue + NULL_BYTE + fieldName;
+        // the endKey will ensure that no other fields get included in this range because all legitimate field name
+        // characters appear after the '.' character in the ASCII table, so this will catch field names like QUOTE
+        // and QUOTE.12345 but not QUOTED or QUOTE_TOKEN.
+        Key startKey = new Key(shardId, ColumnFamilyConstants.COLF_TF.toString(), qualifierPrefix);
+        Key endKey = new Key(shardId, ColumnFamilyConstants.COLF_TF.toString(), qualifierPrefix + "." + MAX_CHAR);
+        Range range = new Range(startKey, true, endKey, true);
+        return new TermFrequencyIterable(client, shardTable, userAuths, range, fieldName);
+    }
+
+    protected static class TermFrequencyIterable implements Iterable<Key>, AutoCloseable {
+        private final Scanner scanner;
+        private final String fieldName;
+
+        public TermFrequencyIterable(AccumuloClient client, String shardTable, Set<Authorizations> userAuths, Range range, String fieldName)
+                        throws TableNotFoundException {
+            this.scanner = ScannerHelper.createScanner(client, shardTable, userAuths);
+            this.scanner.setRange(range);
+            this.fieldName = fieldName;
+        }
+
+        @Override
+        public Iterator<Key> iterator() {
+            final TermFrequencyKey parser = new TermFrequencyKey();
+            return Iterators.transform(Iterators.filter(scanner.iterator(), entry -> {
+                parser.parse(entry.getKey());
+                String candidateField = parser.getField();
+                return fieldName.equals(candidateField) || isGroupedFieldMatch(fieldName, candidateField);
+            }), entry -> entry.getKey());
+        }
+
+        @Override
+        public void close() throws Exception {
+            scanner.close();
+        }
+    }
+
+    private static boolean isGroupedFieldMatch(String queryField, String candidateField) {
+        return candidateField.startsWith(queryField) && candidateField.length() > queryField.length() && candidateField.charAt(queryField.length()) == '.';
     }
 
     private String stripGrouping(String fieldName) {

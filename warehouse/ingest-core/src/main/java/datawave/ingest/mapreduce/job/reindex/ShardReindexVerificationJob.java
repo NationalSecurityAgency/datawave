@@ -26,8 +26,8 @@ import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 
 import datawave.ingest.mapreduce.job.util.AccumuloUtil;
-import datawave.ingest.mapreduce.job.util.RFileUtil;
 import datawave.ingest.mapreduce.job.util.SplittableRFileRangeInputFormat;
+import datawave.util.accumulo.RFileUtil;
 
 /**
  * Verify the equivalence of two inputs. Primarily used for verifying ShardReindexJob correctness

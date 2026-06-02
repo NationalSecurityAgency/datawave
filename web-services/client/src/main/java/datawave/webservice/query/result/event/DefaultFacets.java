@@ -22,7 +22,7 @@ import io.protostuff.Schema;
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public class DefaultFacets extends FacetsBase implements Serializable, Message<DefaultFacets>, ObjectSizeOf {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -836236435709294127L;
 
     public void setMarkings(Map<String,String> markings) {
         this.markings = markings;

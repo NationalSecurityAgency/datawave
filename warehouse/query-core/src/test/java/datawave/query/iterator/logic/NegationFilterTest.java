@@ -5,11 +5,15 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 
+import org.apache.accumulo.core.data.ByteSequence;
+import org.apache.accumulo.core.data.Range;
 import org.junit.Test;
 
 import com.google.common.collect.Lists;
@@ -151,6 +155,11 @@ public class NegationFilterTest {
             } else {
                 return null;
             }
+        }
+
+        @Override
+        public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
+            throw new UnsupportedEncodingException("Not implemented");
         }
 
         @Override

@@ -1,7 +1,6 @@
 package datawave.query.planner.async;
 
 import java.util.Set;
-import java.util.concurrent.Callable;
 
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.slf4j.Logger;

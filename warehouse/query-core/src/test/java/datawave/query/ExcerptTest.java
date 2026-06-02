@@ -4,8 +4,8 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.text.DateFormat;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -14,6 +14,7 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
 
+import javax.annotation.Nonnull;
 import javax.inject.Inject;
 
 import org.apache.accumulo.core.client.AccumuloClient;
@@ -52,13 +53,18 @@ import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 public abstract class ExcerptTest {
 
     @RunWith(Arquillian.class)
-    public static class ShardRange extends datawave.query.ExcerptTest {
+    public static class ShardRangeTest extends datawave.query.ExcerptTest {
         protected static AccumuloClient connector = null;
+
+        @Override
+        protected void runTestQuery(String queryString) throws Exception {
+            super.runTestQuery(connector, queryString);
+        }
 
         @BeforeClass
         public static void setUp() throws Exception {
 
-            QueryTestTableHelper qtth = new QueryTestTableHelper(ShardRange.class.toString(), log);
+            QueryTestTableHelper qtth = new QueryTestTableHelper(ShardRangeTest.class.toString(), log);
             connector = qtth.client;
             WiseGuysIngest.writeItAll(connector, WiseGuysIngest.WhatKindaRange.SHARD);
             Authorizations auths = new Authorizations("ALL");
@@ -68,20 +74,26 @@ public abstract class ExcerptTest {
         }
 
         @Override
-        protected void runTestQuery(String queryString, Date startDate, Date endDate, Map<String,String> extraParms, Collection<String> goodResults)
-                        throws Exception {
-            super.runTestQuery(connector, queryString, startDate, endDate, extraParms, goodResults);
+        @Before
+        public void setup() throws ParseException {
+            super.setup();
+            logic.setCollapseUids(true);
         }
     }
 
     @RunWith(Arquillian.class)
-    public static class DocumentRange extends datawave.query.ExcerptTest {
+    public static class DocumentRangeTest extends datawave.query.ExcerptTest {
         protected static AccumuloClient connector = null;
+
+        @Override
+        protected void runTestQuery(String queryString) throws Exception {
+            super.runTestQuery(connector, queryString);
+        }
 
         @BeforeClass
         public static void setUp() throws Exception {
 
-            QueryTestTableHelper qtth = new QueryTestTableHelper(DocumentRange.class.toString(), log);
+            QueryTestTableHelper qtth = new QueryTestTableHelper(DocumentRangeTest.class.toString(), log);
             connector = qtth.client;
 
             WiseGuysIngest.writeItAll(connector, WiseGuysIngest.WhatKindaRange.DOCUMENT);
@@ -92,9 +104,10 @@ public abstract class ExcerptTest {
         }
 
         @Override
-        protected void runTestQuery(String queryString, Date startDate, Date endDate, Map<String,String> extraParms, Collection<String> goodResults)
-                        throws Exception {
-            super.runTestQuery(connector, queryString, startDate, endDate, extraParms, goodResults);
+        @Before
+        public void setup() throws ParseException {
+            super.setup();
+            logic.setCollapseUids(false);
         }
     }
 
@@ -111,6 +124,11 @@ public abstract class ExcerptTest {
     protected KryoDocumentDeserializer deserializer;
 
     private final DateFormat format = new SimpleDateFormat("yyyyMMdd");
+    private Date startDate;
+    private Date endDate;
+
+    private final Map<String,String> extraParameters = new HashMap<>();
+    private final Set<String> expectedResults = new HashSet<>();
 
     @Deployment
     public static JavaArchive createDeployment() throws Exception {
@@ -131,18 +149,43 @@ public abstract class ExcerptTest {
     }
 
     @Before
-    public void setup() {
+    public void setup() throws ParseException {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         log.setLevel(Level.TRACE);
         logic.setFullTableScanEnabled(true);
         deserializer = new KryoDocumentDeserializer();
+        startDate = format.parse("19000101");
+        endDate = format.parse("20240101");
+        extraParameters.clear();
+        extraParameters.put("include.grouping.context", "true");
+        extraParameters.put("hit.list", "true");
+        extraParameters.put("return.fields", "HIT_EXCERPT");
+        extraParameters.put("query.syntax", "LUCENE");
+        expectedResults.clear();
     }
 
-    protected abstract void runTestQuery(String queryString, Date startDate, Date endDate, Map<String,String> extraParms, Collection<String> goodResults)
-                    throws Exception;
+    protected void updateQueryParam(@Nonnull String key, @Nonnull String value) {
+        if (!key.isBlank() && !value.isBlank()) {
+            extraParameters.put(key, value);
+        }
+    }
 
-    protected void runTestQuery(AccumuloClient connector, String queryString, Date startDate, Date endDate, Map<String,String> extraParms,
-                    Collection<String> goodResults) throws Exception {
+    protected void addExpectedResult(@Nonnull String result) {
+        if (!result.isBlank()) {
+            expectedResults.add(result);
+        }
+    }
+
+    protected boolean initialized() {
+        return !(extraParameters.isEmpty() || expectedResults.isEmpty());
+    }
+
+    protected abstract void runTestQuery(String queryString) throws Exception;
+
+    protected void runTestQuery(AccumuloClient connector, String queryString) throws Exception {
+        if (!initialized()) {
+            throw new Exception("must set query parameters and expected results before running query");
+        }
 
         QueryImpl settings = new QueryImpl();
         settings.setBeginDate(startDate);
@@ -150,7 +193,7 @@ public abstract class ExcerptTest {
         settings.setPagesize(Integer.MAX_VALUE);
         settings.setQueryAuthorizations(auths.serialize());
         settings.setQuery(queryString);
-        settings.setParameters(extraParms);
+        settings.setParameters(extraParameters);
         settings.setId(UUID.randomUUID());
 
         log.debug("query: " + settings.getQuery());
@@ -169,18 +212,18 @@ public abstract class ExcerptTest {
 
             log.debug("dictionary:" + dictionary);
             for (Map.Entry<String,Attribute<? extends Comparable<?>>> dictionaryEntry : dictionary.entrySet()) {
+                String fieldName = dictionaryEntry.getKey();
 
                 // skip expected generated fields
-                if (dictionaryEntry.getKey().equals(JexlEvaluation.HIT_TERM_FIELD) || dictionaryEntry.getKey().contains("ORIGINAL_COUNT")
-                                || dictionaryEntry.getKey().equals("RECORD_ID")) {
+                if (fieldName.equals(JexlEvaluation.HIT_TERM_FIELD) || fieldName.contains("ORIGINAL_COUNT") || fieldName.equals("RECORD_ID")) {
                     continue;
                 }
 
                 Attribute<? extends Comparable<?>> attribute = dictionaryEntry.getValue();
                 if (attribute instanceof Attributes) {
-                    for (Attribute attr : ((Attributes) attribute).getAttributes()) {
-                        String toFind = dictionaryEntry.getKey() + ":" + attr;
-                        boolean found = goodResults.remove(toFind);
+                    for (Attribute<?> attr : ((Attributes) attribute).getAttributes()) {
+                        String toFind = fieldName + ":" + attr.getData();
+                        boolean found = expectedResults.remove(toFind);
                         if (found)
                             log.debug("removed " + toFind);
                         else {
@@ -189,9 +232,9 @@ public abstract class ExcerptTest {
                     }
                 } else {
 
-                    String toFind = dictionaryEntry.getKey() + ":" + dictionaryEntry.getValue();
+                    String toFind = fieldName + ":" + attribute.getData();
 
-                    boolean found = goodResults.remove(toFind);
+                    boolean found = expectedResults.remove(toFind);
                     if (found)
                         log.debug("removed " + toFind);
                     else {
@@ -203,210 +246,140 @@ public abstract class ExcerptTest {
         }
 
         assertTrue("unexpected fields returned: " + unexpectedFields, unexpectedFields.isEmpty());
-        assertTrue(goodResults + " was not empty", goodResults.isEmpty());
+        assertTrue(expectedResults + " was not empty", expectedResults.isEmpty());
 
         assertFalse("No docs were returned!", docs.isEmpty());
     }
 
     @Test
     public void simpleTest() throws Exception {
-        Map<String,String> extraParameters = new HashMap<>();
-        extraParameters.put("include.grouping.context", "true");
-        extraParameters.put("hit.list", "true");
-        extraParameters.put("return.fields", "HIT_EXCERPT");
-        extraParameters.put("query.syntax", "LUCENE");
-
         String queryString = "QUOTE:(farther) #EXCERPT_FIELDS(QUOTE/2)";
 
         // not sure why the timestamp and delete flag are present
-        Set<String> goodResults = new HashSet<>(Set.of("HIT_EXCERPT:get much [farther] with a: : [] 9223372036854775807 false"));
+        addExpectedResult("HIT_EXCERPT:get much [farther] with a");
 
-        runTestQuery(queryString, format.parse("19000101"), format.parse("20240101"), extraParameters, goodResults);
+        runTestQuery(queryString);
     }
 
     @Test
     public void simpleTestBefore() throws Exception {
-        Map<String,String> extraParameters = new HashMap<>();
-        extraParameters.put("include.grouping.context", "true");
-        extraParameters.put("hit.list", "true");
-        extraParameters.put("return.fields", "HIT_EXCERPT");
-        extraParameters.put("query.syntax", "LUCENE");
-
         String queryString = "QUOTE:(farther) #EXCERPT_FIELDS(QUOTE/2/before)";
 
         // not sure why the timestamp and delete flag are present
-        Set<String> goodResults = new HashSet<>(Set.of("HIT_EXCERPT:get much [farther]: : [] 9223372036854775807 false"));
+        addExpectedResult("HIT_EXCERPT:get much [farther]");
 
-        runTestQuery(queryString, format.parse("19000101"), format.parse("20240101"), extraParameters, goodResults);
+        runTestQuery(queryString);
     }
 
     @Test
     public void simpleTestAfter() throws Exception {
-        Map<String,String> extraParameters = new HashMap<>();
-        extraParameters.put("include.grouping.context", "true");
-        extraParameters.put("hit.list", "true");
-        extraParameters.put("return.fields", "HIT_EXCERPT");
-        extraParameters.put("query.syntax", "LUCENE");
-
         String queryString = "QUOTE:(farther) #EXCERPT_FIELDS(QUOTE/2/after)";
 
         // not sure why the timestamp and delete flag are present
-        Set<String> goodResults = new HashSet<>(Set.of("HIT_EXCERPT:[farther] with a: : [] 9223372036854775807 false"));
+        addExpectedResult("HIT_EXCERPT:[farther] with a");
 
-        runTestQuery(queryString, format.parse("19000101"), format.parse("20240101"), extraParameters, goodResults);
+        runTestQuery(queryString);
     }
 
     @Test
     public void lessSimpleBeforeTest() throws Exception {
-        Map<String,String> extraParameters = new HashMap<>();
-        extraParameters.put("include.grouping.context", "true");
-        extraParameters.put("hit.list", "true");
-        extraParameters.put("return.fields", "HIT_EXCERPT");
-        extraParameters.put("query.syntax", "LUCENE");
-
         String queryString = "QUOTE:(he cant refuse) #EXCERPT_FIELDS(QUOTE/2/before)";
 
-        Set<String> goodResults = new HashSet<>(Set.of("HIT_EXCERPT:an offer [he] [cant] [refuse]: : [] 9223372036854775807 false"));
+        addExpectedResult("HIT_EXCERPT:an offer [he] [cant] [refuse]");
 
-        runTestQuery(queryString, format.parse("19000101"), format.parse("20240101"), extraParameters, goodResults);
+        runTestQuery(queryString);
     }
 
     @Test
     public void lessSimpleAfterTest() throws Exception {
-        Map<String,String> extraParameters = new HashMap<>();
-        extraParameters.put("include.grouping.context", "true");
-        extraParameters.put("hit.list", "true");
-        extraParameters.put("return.fields", "HIT_EXCERPT");
-        extraParameters.put("query.syntax", "LUCENE");
-
         String queryString = "QUOTE:(he cant refuse) #EXCERPT_FIELDS(QUOTE/2/after)";
 
-        Set<String> goodResults = new HashSet<>(Set.of("HIT_EXCERPT:[he] [cant] [refuse]: : [] 9223372036854775807 false"));
+        addExpectedResult("HIT_EXCERPT:[he] [cant] [refuse]");
 
-        runTestQuery(queryString, format.parse("19000101"), format.parse("20240101"), extraParameters, goodResults);
+        runTestQuery(queryString);
     }
 
     @Test
     public void lessSimpleTest() throws Exception {
-        Map<String,String> extraParameters = new HashMap<>();
-        extraParameters.put("include.grouping.context", "true");
-        extraParameters.put("hit.list", "true");
-        extraParameters.put("return.fields", "HIT_EXCERPT");
-        extraParameters.put("query.syntax", "LUCENE");
-
         String queryString = "QUOTE:(he cant refuse) #EXCERPT_FIELDS(QUOTE/2)";
 
-        Set<String> goodResults = new HashSet<>(Set.of("HIT_EXCERPT:an offer [he] [cant] [refuse]: : [] 9223372036854775807 false"));
+        addExpectedResult("HIT_EXCERPT:an offer [he] [cant] [refuse]");
 
-        runTestQuery(queryString, format.parse("19000101"), format.parse("20240101"), extraParameters, goodResults);
+        runTestQuery(queryString);
     }
 
     @Test
     public void biggerRangeThanQuoteLength() throws Exception {
-        Map<String,String> extraParameters = new HashMap<>();
-        extraParameters.put("include.grouping.context", "true");
-        extraParameters.put("hit.list", "true");
-        extraParameters.put("return.fields", "HIT_EXCERPT");
-        extraParameters.put("query.syntax", "LUCENE");
-
         String queryString = "QUOTE:(he cant refuse) #EXCERPT_FIELDS(QUOTE/20)";
 
-        Set<String> goodResults = new HashSet<>(Set.of("HIT_EXCERPT:im gonna make him an offer [he] [cant] [refuse]: : [] 9223372036854775807 false"));
+        addExpectedResult("HIT_EXCERPT:im gonna make him an offer [he] [cant] [refuse]");
 
-        runTestQuery(queryString, format.parse("19000101"), format.parse("20240101"), extraParameters, goodResults);
+        runTestQuery(queryString);
     }
 
     @Test
     public void biggerRangeThanQuoteLengthBeforeTest() throws Exception {
-        Map<String,String> extraParameters = new HashMap<>();
-        extraParameters.put("include.grouping.context", "true");
-        extraParameters.put("hit.list", "true");
-        extraParameters.put("return.fields", "HIT_EXCERPT");
-        extraParameters.put("query.syntax", "LUCENE");
-
         String queryString = "QUOTE:(he cant refuse) #EXCERPT_FIELDS(QUOTE/20/before)";
 
-        Set<String> goodResults = new HashSet<>(Set.of("HIT_EXCERPT:im gonna make him an offer [he] [cant] [refuse]: : [] 9223372036854775807 false"));
+        addExpectedResult("HIT_EXCERPT:im gonna make him an offer [he] [cant] [refuse]");
 
-        runTestQuery(queryString, format.parse("19000101"), format.parse("20240101"), extraParameters, goodResults);
+        runTestQuery(queryString);
     }
 
     @Test
     public void biggerRangeThanQuoteLengthAfterTest() throws Exception {
-        Map<String,String> extraParameters = new HashMap<>();
-        extraParameters.put("include.grouping.context", "true");
-        extraParameters.put("hit.list", "true");
-        extraParameters.put("return.fields", "HIT_EXCERPT");
-        extraParameters.put("query.syntax", "LUCENE");
-
         String queryString = "QUOTE:(he cant refuse) #EXCERPT_FIELDS(QUOTE/20/after)";
 
-        Set<String> goodResults = new HashSet<>(Set.of("HIT_EXCERPT:[he] [cant] [refuse]: : [] 9223372036854775807 false"));
+        addExpectedResult("HIT_EXCERPT:[he] [cant] [refuse]");
 
-        runTestQuery(queryString, format.parse("19000101"), format.parse("20240101"), extraParameters, goodResults);
+        runTestQuery(queryString);
     }
 
     @Test
     public void wholeQuote() throws Exception {
-        Map<String,String> extraParameters = new HashMap<>();
-        extraParameters.put("include.grouping.context", "true");
-        extraParameters.put("hit.list", "true");
-        extraParameters.put("return.fields", "HIT_EXCERPT");
-        extraParameters.put("query.syntax", "LUCENE");
-
         String queryString = "QUOTE:(im gonna make him an offer he cant refuse) #EXCERPT_FIELDS(QUOTE/20)";
 
-        Set<String> goodResults = new HashSet<>(
-                        Set.of("HIT_EXCERPT:[im] [gonna] [make] [him] [an] [offer] [he] [cant] [refuse]: : [] 9223372036854775807 false"));
+        addExpectedResult("HIT_EXCERPT:[im] [gonna] [make] [him] [an] [offer] [he] [cant] [refuse]");
 
-        runTestQuery(queryString, format.parse("19000101"), format.parse("20240101"), extraParameters, goodResults);
+        runTestQuery(queryString);
     }
 
     @Test
     public void anotherFirstTerm() throws Exception {
-        Map<String,String> extraParameters = new HashMap<>();
-        extraParameters.put("include.grouping.context", "true");
-        extraParameters.put("hit.list", "true");
-        extraParameters.put("return.fields", "HIT_EXCERPT,UUID");
-        extraParameters.put("query.syntax", "LUCENE");
+        updateQueryParam("return.fields", "HIT_EXCERPT,UUID");
 
         // "if" is the first term for one event
         String queryString = "QUOTE:(if) #EXCERPT_FIELDS(QUOTE/3)";
 
-        Set<String> goodResults = new HashSet<>(Set.of("UUID.0:SOPRANO", "HIT_EXCERPT:[if] you can quote: : [] 9223372036854775807 false"));
+        addExpectedResult("UUID.0:SOPRANO");
+        addExpectedResult("HIT_EXCERPT:[if] you can quote");
 
-        runTestQuery(queryString, format.parse("19000101"), format.parse("20240101"), extraParameters, goodResults);
+        runTestQuery(queryString);
     }
 
     @Test
     public void anotherFirstTermBeforeTest() throws Exception {
-        Map<String,String> extraParameters = new HashMap<>();
-        extraParameters.put("include.grouping.context", "true");
-        extraParameters.put("hit.list", "true");
-        extraParameters.put("return.fields", "HIT_EXCERPT,UUID");
-        extraParameters.put("query.syntax", "LUCENE");
+        updateQueryParam("return.fields", "HIT_EXCERPT,UUID");
 
         // "if" is the first term for one event
         String queryString = "QUOTE:(if) #EXCERPT_FIELDS(QUOTE/3/before)";
 
-        Set<String> goodResults = new HashSet<>(Set.of("UUID.0:SOPRANO", "HIT_EXCERPT:[if]: : [] 9223372036854775807 false"));
+        addExpectedResult("UUID.0:SOPRANO");
+        addExpectedResult("HIT_EXCERPT:[if]");
 
-        runTestQuery(queryString, format.parse("19000101"), format.parse("20240101"), extraParameters, goodResults);
+        runTestQuery(queryString);
     }
 
     @Test
     public void anotherFirstTermAfterTest() throws Exception {
-        Map<String,String> extraParameters = new HashMap<>();
-        extraParameters.put("include.grouping.context", "true");
-        extraParameters.put("hit.list", "true");
-        extraParameters.put("return.fields", "HIT_EXCERPT,UUID");
-        extraParameters.put("query.syntax", "LUCENE");
+        updateQueryParam("return.fields", "HIT_EXCERPT,UUID");
 
         // "if" is the first term for one event
         String queryString = "QUOTE:(if) #EXCERPT_FIELDS(QUOTE/3/after)";
 
-        Set<String> goodResults = new HashSet<>(Set.of("UUID.0:SOPRANO", "HIT_EXCERPT:[if] you can quote: : [] 9223372036854775807 false"));
+        addExpectedResult("UUID.0:SOPRANO");
+        addExpectedResult("HIT_EXCERPT:[if] you can quote");
 
-        runTestQuery(queryString, format.parse("19000101"), format.parse("20240101"), extraParameters, goodResults);
+        runTestQuery(queryString);
     }
 }

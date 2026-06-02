@@ -77,7 +77,7 @@ public abstract class QueryFunctionQueryTest {
             File tempDir = temporaryFolder.newFolder("TempDirForCompositeFunctionsTestShardRange");
             System.setProperty("type.metadata.dir", tempDir.getCanonicalPath());
 
-            QueryTestTableHelper qtth = new QueryTestTableHelper(CompositeFunctionsTest.ShardRange.class.toString(), log);
+            QueryTestTableHelper qtth = new QueryTestTableHelper(QueryFunctionQueryTest.ShardRange.class.toString(), log);
             client = qtth.client;
 
             WiseGuysIngest.writeItAll(client, WiseGuysIngest.WhatKindaRange.SHARD);
@@ -86,6 +86,12 @@ public abstract class QueryFunctionQueryTest {
             PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
             PrintUtility.printTable(client, auths, QueryTestTableHelper.METADATA_TABLE_NAME);
             PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
+        }
+
+        @Before
+        public void setup() {
+            super.setup();
+            eventQueryLogic.setCollapseUids(true);
         }
 
         @AfterClass
@@ -116,7 +122,7 @@ public abstract class QueryFunctionQueryTest {
             File tempDir = temporaryFolder.newFolder("TempDirForCompositeFunctionsTestDocumentRange");
             System.setProperty("type.metadata.dir", tempDir.getCanonicalPath());
 
-            QueryTestTableHelper qtth = new QueryTestTableHelper(CompositeFunctionsTest.DocumentRange.class.toString(), log);
+            QueryTestTableHelper qtth = new QueryTestTableHelper(QueryFunctionQueryTest.DocumentRange.class.toString(), log);
             client = qtth.client;
 
             WiseGuysIngest.writeItAll(client, WiseGuysIngest.WhatKindaRange.DOCUMENT);
@@ -125,6 +131,12 @@ public abstract class QueryFunctionQueryTest {
             PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
             PrintUtility.printTable(client, auths, QueryTestTableHelper.METADATA_TABLE_NAME);
             PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
+        }
+
+        @Before
+        public void setup() {
+            super.setup();
+            eventQueryLogic.setCollapseUids(false);
         }
 
         @AfterClass
@@ -243,6 +255,42 @@ public abstract class QueryFunctionQueryTest {
         }
         Assert.assertTrue("Expected results " + expected + " differ form actual results " + resultSet, expected.containsAll(resultSet));
         Assert.assertEquals("Unexpected number of records", expected.size(), resultSet.size());
+    }
+
+    @Test
+    public void testPhraseFunctionsWithHashes() throws Exception {
+        // @formatter:off
+        String[] queryStrings = {
+                // this is added to the new tfs added with dot notation check if they can even be queried
+                "QUOTE == 'never' && QUOTE == 'refuse'",
+                // check if a content phrase across these same dot notation fields can get a hit
+                "content:phrase(termOffsetMap, 'i', 'never', 'refuse') && QUOTE == 'i' && QUOTE == 'never' && QUOTE == 'refuse'",
+                // check that there is no cross contamination between the dot notation tfs and normal tfs
+                "content:phrase(termOffsetMap, 'gonna', 'refuse') && QUOTE == 'gonna' && QUOTE == 'refuse'",
+                // check that if no tf set with dot notation satisfies a query it will be short circuited in tf eval
+                "content:phrase(termOffsetMap, 'never', 'offer') && QUOTE == 'never' && QUOTE == 'offer'",
+                // verify tfs from another section of the query don't help this resolve
+                "content:phrase(QUOTE, termOffsetMap, 'never', 'refuse') && QUOTE == 'never' && QUOTE == 'refuse' && content:phrase(PHILOSOPHY, termOffsetMap, 'absolute', 'power') && PHILOSOPHY == 'absolute' && PHILOSOPHY == 'power'",
+                // invert the targets
+                "content:phrase(PHILOSOPHY, termOffsetMap, 'never', 'refuse') && QUOTE == 'never' && QUOTE == 'refuse' && content:phrase(QUOTE, termOffsetMap, 'absolute', 'power') && PHILOSOPHY == 'absolute' && PHILOSOPHY == 'power'",
+        };
+
+        List<String>[] expected = new List[] {
+                List.of("CORLEONE"),
+                List.of("CORLEONE"),
+                Collections.emptyList(),
+                Collections.emptyList(),
+                List.of("CORLEONE"),
+                Collections.emptyList(),
+        };
+        // @formatter:on
+        eventQueryLogic.setInitialMaxTermThreshold(20);
+        eventQueryLogic.setIntermediateMaxTermThreshold(20);
+        eventQueryLogic.setFinalMaxTermThreshold(20);
+
+        for (int i = 0; i < queryStrings.length; i++) {
+            runTestQuery(expected[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), Collections.emptyMap());
+        }
     }
 
     @Test

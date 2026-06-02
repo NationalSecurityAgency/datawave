@@ -13,7 +13,7 @@ import datawave.webservice.result.BaseQueryResponse;
 @XmlAccessorType(XmlAccessType.FIELD)
 public class ExtJsResponse<T> extends BaseQueryResponse {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 2957709211965763347L;
     private List<T> data;
     private int total;
 

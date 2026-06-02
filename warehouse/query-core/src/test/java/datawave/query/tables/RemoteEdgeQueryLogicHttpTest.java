@@ -1,5 +1,7 @@
 package datawave.query.tables;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -9,7 +11,6 @@ import java.io.InputStreamReader;
 import java.math.BigInteger;
 import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
-import java.nio.charset.Charset;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.PrivateKey;
@@ -84,14 +85,14 @@ public class RemoteEdgeQueryLogicHttpTest {
 
     private void setContent(InputStream content) throws IOException {
         StringBuilder builder = new StringBuilder();
-        InputStreamReader reader = new InputStreamReader(content, "UTF8");
+        InputStreamReader reader = new InputStreamReader(content, UTF_8);
         char[] buffer = new char[1024];
         int chars = reader.read(buffer);
         while (chars >= 0) {
             builder.append(buffer, 0, chars);
             chars = reader.read(buffer);
         }
-        List<NameValuePair> data = URLEncodedUtils.parse(builder.toString(), Charset.forName("UTF-8"));
+        List<NameValuePair> data = URLEncodedUtils.parse(builder.toString(), UTF_8);
         for (NameValuePair pair : data) {
             if (pair.getName().equals(QueryParameters.QUERY_STRING)) {
                 this.content = pair.getValue();
@@ -136,7 +137,7 @@ public class RemoteEdgeQueryLogicHttpTest {
                 String responseBody = objectMapper.writeValueAsString(createResponse);
                 exchange.getResponseHeaders().add("Content-Type", MediaType.APPLICATION_JSON);
                 exchange.sendResponseHeaders(HttpURLConnection.HTTP_OK, responseBody.length());
-                IOUtils.write(responseBody, exchange.getResponseBody(), Charset.forName("UTF-8"));
+                IOUtils.write(responseBody, exchange.getResponseBody(), UTF_8);
                 exchange.close();
             }
         };
@@ -185,7 +186,7 @@ public class RemoteEdgeQueryLogicHttpTest {
                 exchange.getResponseHeaders().add("Content-Type", MediaType.APPLICATION_JSON);
                 int responseCode = nextCalls > 2 ? HttpURLConnection.HTTP_NO_CONTENT : HttpURLConnection.HTTP_OK;
                 exchange.sendResponseHeaders(responseCode, responseBody.length());
-                IOUtils.write(responseBody, exchange.getResponseBody(), Charset.forName("UTF-8"));
+                IOUtils.write(responseBody, exchange.getResponseBody(), UTF_8);
                 exchange.close();
             }
         };
@@ -199,7 +200,7 @@ public class RemoteEdgeQueryLogicHttpTest {
                 String responseBody = objectMapper.writeValueAsString(closeResponse);
                 exchange.getResponseHeaders().add("Content-Type", MediaType.APPLICATION_JSON);
                 exchange.sendResponseHeaders(HttpURLConnection.HTTP_OK, responseBody.length());
-                IOUtils.write(responseBody, exchange.getResponseBody(), Charset.forName("UTF-8"));
+                IOUtils.write(responseBody, exchange.getResponseBody(), UTF_8);
                 exchange.close();
             }
         };

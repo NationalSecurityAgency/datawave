@@ -18,7 +18,7 @@ import datawave.webservice.result.BaseResponse;
 @XmlAccessorType(XmlAccessType.NONE)
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public class MapReduceJobDescriptionList extends BaseResponse implements Serializable {
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -3015609044850863121L;
 
     @XmlElementWrapper(name = "MapReduceJobDescriptionList")
     @XmlElement(name = "MapReduceJobDescription")

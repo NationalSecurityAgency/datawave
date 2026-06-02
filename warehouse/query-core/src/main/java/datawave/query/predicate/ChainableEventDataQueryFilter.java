@@ -10,8 +10,6 @@ import javax.annotation.Nullable;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 
-import datawave.query.attributes.Document;
-
 /**
  * Wrap multiple EventDataQueryFilter objects and in order process them
  */
@@ -105,7 +103,7 @@ public class ChainableEventDataQueryFilter implements EventDataQueryFilter {
         }
 
         // test the end key
-        if (result == null || result.getEndKey() == null || result.getEndKey().compareTo(candidate.getEndKey()) >= 0) {
+        if (result.getEndKey() == null || result.getEndKey().compareTo(candidate.getEndKey()) >= 0) {
             result = new Range(result.getStartKey(), result.isStartKeyInclusive(), candidate.getEndKey(),
                             result.isEndKeyInclusive() && candidate.isEndKeyInclusive());
         }

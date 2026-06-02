@@ -24,6 +24,9 @@ public class AgeOffFileGenerator {
     /**
      * Writes the file to the writer.
      *
+     * @param writer
+     *            the writer
+     *
      * @throws IOException
      *             i/o exception with writer
      */

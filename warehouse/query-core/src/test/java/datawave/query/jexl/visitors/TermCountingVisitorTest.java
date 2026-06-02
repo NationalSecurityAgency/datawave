@@ -85,12 +85,6 @@ public class TermCountingVisitorTest {
     }
 
     @Test
-    public void testExceededTermThreshold() throws ParseException {
-        String query = "((_Term_ = true) && (FOO == 'bar'))";
-        testCounts(query, 1);
-    }
-
-    @Test
     public void testExceededValueThreshold() throws ParseException {
         String query = "((_Value_ = true) && (INDEX_ONLY_FIELD =~ 'a*'))";
         testCounts(query, 1);

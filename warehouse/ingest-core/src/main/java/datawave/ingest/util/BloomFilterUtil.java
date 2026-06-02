@@ -7,8 +7,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.ngram.NGramTokenizer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Multimap;
 import com.google.common.hash.BloomFilter;
@@ -31,7 +32,7 @@ public class BloomFilterUtil {
     private static final float FILTER_SIZE_TO_NGRAM_COUNT_FACTOR = 1.1f;
 
     private final AbstractContentIngestHelper helper;
-    private final Logger log = Logger.getLogger(BloomFilterUtil.class);
+    private final Logger log = LoggerFactory.getLogger(BloomFilterUtil.class);
     private final int maxAllowedExecutionTime;
     private int maxNGramLength = AbstractNGramTokenizationStrategy.DEFAULT_MAX_NGRAM_LENGTH;
     private final String minDiskSpacePath;
@@ -80,7 +81,7 @@ public class BloomFilterUtil {
      *            the n-gram tokenization strategy
      * @return The number of generated n-grams
      * @throws TimeoutException
-     *             if the tokenization operation takes too long in relation to the overall mapred.task.timeout
+     *             if the tokenization operation takes too long in relation to the overall mapreduce.task.timeout
      */
     private int applyNgrams(final String fieldName, final Collection<NormalizedContentInterface> ncis, final AbstractNGramTokenizationStrategy strategy)
                     throws TokenizationException {
@@ -129,7 +130,7 @@ public class BloomFilterUtil {
     }
 
     /**
-     * Returns the desired filter size to output from the applyNGrams(..) method. This value is meant as an approximation to help limit and optimize the number
+     * Returns the desired filter size to output from the applyNGrams(.) method. This value is meant as an approximation to help limit and optimize the number
      * of n-grams applied to a generated filter. A value less than or equal to the EMPTY_FILTER_SIZE effectively turns off pruning optimizations based on filter
      * size, which could result in unexpectedly large bloom filters.
      *
@@ -157,11 +158,11 @@ public class BloomFilterUtil {
     }
 
     /**
-     * Create a BloomFilter based on a multi-map of fields
+     * Create a BloomFilter based on a multimap of fields
      *
      * @param fields
      *            The fields and their values with which to create a bloom filter
-     * @return a wrapped BloomFilter based on a multi-map of fields
+     * @return a wrapped BloomFilter based on a multimap of fields
      */
     public BloomFilterWrapper newMultimapBasedFilter(final Multimap<String,NormalizedContentInterface> fields) {
         // Declare the return value
@@ -309,7 +310,7 @@ public class BloomFilterUtil {
                         totalAppliedNGrams += this.applyNgrams(fieldName, ncis, pruningStrategy);
                     } catch (final TokenizationException e) {
                         if (e.getCause() instanceof IOException) {
-                            this.log.error(e);
+                            this.log.error("TokenizationException:", e);
                         } else if (e.getCause() instanceof TimeoutException) {
                             timeout = (TimeoutException) e.getCause();
                         }

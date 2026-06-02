@@ -1,0 +1,16 @@
+Stopwords Corpus for the YAKE Keyword Extraction Algorithm
+
+This corpus contains lists of stop words for several languages.  These
+are high-frequency grammatical words which are usually ignored in text
+retrieval applications.
+
+This corpus was obtained from:
+https://github.com/apache/spark/tree/branch-3.4/mllib/src/main/resources/org/apache/spark/ml/feature/stopwords
+
+Which in-turn were obtained from:
+http://anoncvs.postgresql.org/cvsweb.cgi/pgsql/src/backend/snowball/stopwords/
+
+The English list has been augmented
+https://github.com/nltk/nltk_data/issues/22
+
+All content is under the Apache 2.0 license.

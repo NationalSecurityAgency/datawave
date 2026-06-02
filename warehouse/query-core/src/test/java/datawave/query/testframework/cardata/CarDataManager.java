@@ -22,9 +22,19 @@ import datawave.query.testframework.cardata.CarsDataType.CarField;
 public class CarDataManager extends AbstractDataManager {
 
     private static final Logger log = Logger.getLogger(CarDataManager.class);
+    private static CarDataManager INSTANCE = new CarDataManager();
 
-    public CarDataManager() {
+    private CarDataManager() {
         super(CarField.EVENT_ID.name(), CarField.START_DATE.name(), CarField.getFieldsMetadata());
+    }
+
+    public static CarDataManager getInstance() {
+        return INSTANCE;
+    }
+
+    public static synchronized CarDataManager newInstance() {
+        INSTANCE = new CarDataManager();
+        return INSTANCE;
     }
 
     @Override

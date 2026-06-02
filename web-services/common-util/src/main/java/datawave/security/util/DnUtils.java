@@ -13,7 +13,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import datawave.security.authorization.SubjectIssuerDNPair;
-import datawave.user.AuthorizationsListBase;
 
 public class DnUtils {
 

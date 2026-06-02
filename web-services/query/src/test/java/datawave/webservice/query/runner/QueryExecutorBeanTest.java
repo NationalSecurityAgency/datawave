@@ -3,7 +3,7 @@ package datawave.webservice.query.runner;
 import static org.easymock.EasyMock.anyObject;
 import static org.easymock.EasyMock.eq;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.fail;
 import static org.powermock.api.easymock.PowerMock.createMock;
 import static org.powermock.api.easymock.PowerMock.createStrictMock;
@@ -14,6 +14,7 @@ import static org.powermock.reflect.Whitebox.setInternalState;
 import java.io.IOException;
 import java.io.StringReader;
 import java.net.URISyntaxException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -34,10 +35,10 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.accumulo.core.util.Pair;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.time.DateUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.log4j.Logger;
 import org.easymock.EasyMock;
 import org.easymock.IAnswer;
@@ -110,6 +111,8 @@ import datawave.webservice.query.configuration.LookupUUIDConfiguration;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.factory.Persister;
+import datawave.webservice.query.limit.QueryLimiter;
+import datawave.webservice.query.limit.QueryLimiterResponse;
 import datawave.webservice.query.logic.QueryLogicFactoryImpl;
 import datawave.webservice.query.metric.QueryMetricsBean;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
@@ -156,6 +159,7 @@ public class QueryExecutorBeanTest {
     private Dispatcher dispatcher;
     private MockHttpRequest request;
     private MockHttpResponse response;
+    private QueryLimiter queryLimiter;
 
     @Before
     public void setup() throws Exception {
@@ -186,6 +190,7 @@ public class QueryExecutorBeanTest {
         queryExpirationConf.setCallTimeout(60);
         connectionRequestBean = createStrictMock(AccumuloConnectionRequestBean.class);
         responseObjectFactory = createStrictMock(ResponseObjectFactory.class);
+        queryLimiter = createStrictMock(QueryLimiter.class);
         setInternalState(auditor, AuditService.class, auditService);
         setInternalState(auditor, AuditParameterBuilder.class, new DefaultAuditParameterBuilder());
         setInternalState(connectionRequestBean, EJBContext.class, ctx);
@@ -208,7 +213,7 @@ public class QueryExecutorBeanTest {
         setInternalState(bean, QueryParameters.class, new DefaultQueryParameters());
         setInternalState(bean, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         setInternalState(bean, AccumuloConnectionRequestBean.class, connectionRequestBean);
-
+        setInternalState(bean, QueryLimiter.class, queryLimiter);
         // RESTEasy mock stuff
         dispatcher = MockDispatcherFactory.createDispatcher();
         dispatcher.getRegistry().addSingletonResource(bean, "/DataWave/Query");
@@ -219,8 +224,8 @@ public class QueryExecutorBeanTest {
     public void testTriple_Nulls() throws Exception {
         Triple subject = new Triple(null, null, null);
         subject.hashCode();
-        assertTrue("Should not be equal", !subject.equals(null));
-        assertTrue("Should not be equal", !subject.equals(new Triple("test", null, null)));
+        assertNotEquals("Should not be equal", subject, null);
+        assertNotEquals("Should not be equal", subject, new Triple("test", null, null));
     }
 
     private QueryImpl createNewQuery() throws Exception {
@@ -289,7 +294,7 @@ public class QueryExecutorBeanTest {
         EasyMock.expect(persister.create(principal.getUserDN().subjectDN(), dnList, (SecurityMarking) Whitebox.getField(bean.getClass(), "marking").get(bean),
                         queryLogicName, (QueryParameters) Whitebox.getField(bean.getClass(), "qp").get(bean), optionalParameters)).andReturn(q);
         EasyMock.expect(queryLogicFactory.getQueryLogic(queryLogicName, principal)).andReturn(logic);
-        EasyMock.expect(logic.getRequiredQueryParameters()).andReturn(Collections.EMPTY_SET);
+        EasyMock.expect(logic.getRequiredQueryParameters()).andReturn(Collections.emptySet());
         EasyMock.expect(logic.getConnectionPriority()).andReturn(AccumuloConnectionFactory.Priority.NORMAL);
         EasyMock.expect(logic.containsDNWithAccess(dnList)).andReturn(true);
         EasyMock.expect(logic.getMaxPageSize()).andReturn(0);
@@ -370,6 +375,8 @@ public class QueryExecutorBeanTest {
         List<String> dnList = Arrays.asList(dns);
 
         PowerMock.resetAll();
+        EasyMock.expect(queryLimiter.checkForLimits(userDN.toLowerCase(), null, queryLogicName)).andReturn(QueryLimiterResponse.hasNotMetLimit());
+
         EasyMock.expect(ctx.getCallerPrincipal()).andReturn(principal).anyTimes();
         suppress(constructor(DefaultQueryParameters.class));
         EasyMock.expect(persister.create(userDN, dnList, (SecurityMarking) Whitebox.getField(bean.getClass(), "marking").get(bean), queryLogicName,
@@ -379,7 +386,7 @@ public class QueryExecutorBeanTest {
         EasyMock.expect(logic.getResultLimit(anyObject(QueryImpl.class))).andReturn(-1L);
 
         EasyMock.expect(queryLogicFactory.getQueryLogic(queryLogicName, principal)).andReturn(logic);
-        EasyMock.expect(logic.getRequiredQueryParameters()).andReturn(Collections.EMPTY_SET);
+        EasyMock.expect(logic.getRequiredQueryParameters()).andReturn(Collections.emptySet());
         EasyMock.expect(logic.containsDNWithAccess(dnList)).andReturn(true);
         EasyMock.expect(logic.getMaxPageSize()).andReturn(0);
         EasyMock.expect(logic.getAuditType(EasyMock.<Query> anyObject())).andReturn(AuditType.ACTIVE).anyTimes();
@@ -437,7 +444,7 @@ public class QueryExecutorBeanTest {
                         queryLogicName, (QueryParameters) Whitebox.getField(bean.getClass(), "qp").get(bean), optionalParameters)).andReturn(q);
 
         EasyMock.expect(queryLogicFactory.getQueryLogic(queryLogicName, principal)).andReturn(logic);
-        EasyMock.expect(logic.getRequiredQueryParameters()).andReturn(Collections.EMPTY_SET);
+        EasyMock.expect(logic.getRequiredQueryParameters()).andReturn(Collections.emptySet());
         EasyMock.expect(logic.containsDNWithAccess(dnList)).andReturn(true);
         EasyMock.expect(logic.getMaxPageSize()).andReturn(0);
 
@@ -446,7 +453,7 @@ public class QueryExecutorBeanTest {
         metric.setQueryType(RunningQuery.class.getSimpleName());
 
         QueryMetric testMetric = new QueryMetric((QueryMetric) metric) {
-            public static final long serialVersionUID = 1L;
+            public static final long serialVersionUID = 7210890100446871775L;
 
             @Override
             public boolean equals(Object o) {
@@ -620,8 +627,9 @@ public class QueryExecutorBeanTest {
 
     @Test
     public void testBeginDateAfterEndDate() throws Exception {
-        final Date beginDate = new Date(2018, 1, 2);
-        final Date endDate = new Date(2018, 1, 1);
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        final Date beginDate = sdf.parse("2024-01-02");
+        final Date endDate = sdf.parse("2024-01-01");
 
         final MultivaluedMap<String,String> queryParameters = createNewQueryParameterMap();
         queryParameters.remove(QueryParameters.QUERY_BEGIN);
@@ -675,6 +683,14 @@ public class QueryExecutorBeanTest {
         MultivaluedMap<String,String> optionalParameters = createNewQueryParameters(q, queryParameters);
 
         PowerMock.resetAll();
+        EasyMock.expect(queryLimiter.checkForLimits(userDN.toLowerCase(), null, queryLogicName)).andReturn(QueryLimiterResponse.hasNotMetLimit()).anyTimes();
+
+        queryLimiter.countQueryTowardsLimits(q.getId().toString(), userDN.toLowerCase(), null, queryLogicName);
+        EasyMock.expectLastCall().anyTimes();
+
+        queryLimiter.stopCountingQueryTowardsLimits(q.getId().toString());
+        EasyMock.expectLastCall().anyTimes();
+
         EasyMock.expect(ctx.getCallerPrincipal()).andReturn(principal).anyTimes();
         EasyMock.expect(logic.getAuditType(null)).andReturn(AuditType.NONE);
         EasyMock.expect(persister.create(principal.getUserDN().subjectDN(), dnList, Whitebox.getInternalState(bean, SecurityMarking.class), queryLogicName,
@@ -683,6 +699,8 @@ public class QueryExecutorBeanTest {
         EasyMock.expect(responseObjectFactory.getQueryImpl()).andReturn(new QueryImpl());
         EasyMock.expect(logic.getResultLimit(anyObject(QueryImpl.class))).andReturn(-1L);
         EasyMock.expect(connectionFactory.getTrackingMap(anyObject())).andReturn(null).anyTimes();
+        persister.remove(q);
+        EasyMock.expectLastCall().anyTimes();
 
         BaseQueryMetric metric = new QueryMetricFactoryImpl().createMetric();
         metric.populate(q);
@@ -772,11 +790,11 @@ public class QueryExecutorBeanTest {
             Assert.assertNull(cachedRunningQuery);
             Pair<QueryLogic<?>,AccumuloClient> pair = qlCache.poll(q.getId().toString());
             Assert.assertNotNull(pair);
-            Assert.assertEquals(logic, pair.getFirst());
-            Assert.assertEquals(c, pair.getSecond());
+            Assert.assertEquals(logic, pair.getLeft());
+            Assert.assertEquals(c, pair.getRight());
 
             // Have to add these back because poll was destructive
-            qlCache.add(q.getId().toString(), principal.getShortName(), pair.getFirst(), pair.getSecond());
+            qlCache.add(q.getId().toString(), principal.getShortName(), pair.getLeft(), pair.getRight());
 
             // Call close
             bean.close(q.getId().toString());

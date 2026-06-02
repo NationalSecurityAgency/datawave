@@ -1,6 +1,7 @@
 package datawave.query.iterator.facets;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.util.Collection;
 import java.util.Iterator;
@@ -133,16 +134,23 @@ public class DynamicFacetIterator extends FieldIndexOnlyQueryIterator {
 
     @Override
     protected IteratorBuildingVisitor createIteratorBuildingVisitor(final Range documentRange, boolean isQueryFullySatisfied, boolean sortedUIDs)
-                    throws MalformedURLException, ConfigException, IllegalAccessException, InstantiationException {
-
-        return super.createIteratorBuildingVisitor(documentRange, isQueryFullySatisfied, sortedUIDs).setIteratorBuilder(CardinalityIteratorBuilder.class)
-                        .setFieldsToAggregate(configuration.getFacetedFields());
+                    throws MalformedURLException, ConfigException, IllegalAccessException, InstantiationException, NoSuchMethodException,
+                    InvocationTargetException {
+        //  @formatter:off
+        return super.createIteratorBuildingVisitor(documentRange, isQueryFullySatisfied, sortedUIDs)
+                .setIteratorBuilder(CardinalityIteratorBuilder.class)
+                .setFieldsToAggregate(configuration.getFacetedFields())
+                //  note: setting query fully satisfied to false kicks the document building decision
+                //  to the set of fields to aggregate, which is the set of facet fields configured
+                //  for this query. The FacetLogic should not rely on arbitrary decisions from
+                //  the SatisfactionVisitor.
+                .setIsQueryFullySatisfied(false);
+        //  @formatter:on
     }
 
-    @SuppressWarnings({"unchecked", "rawtypes"})
     @Override
     public Iterator<Entry<Key,Document>> getDocumentIterator(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive)
-                    throws IOException, ConfigException, InstantiationException, IllegalAccessException {
+                    throws IOException, ConfigException, InstantiationException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
         // Otherwise, we have to use the field index
         // Seek() the boolean logic stuff
         createAndSeekIndexIterator(range, columnFamilies, inclusive);
@@ -223,7 +231,7 @@ public class DynamicFacetIterator extends FieldIndexOnlyQueryIterator {
         Iterator<Entry<Key,Document>> fieldIndexDocuments = null;
         try {
             fieldIndexDocuments = getDocumentIterator(range, columnFamilies, inclusive);
-        } catch (ConfigException | IllegalAccessException | InstantiationException e) {
+        } catch (ConfigException | IllegalAccessException | InstantiationException | NoSuchMethodException | InvocationTargetException e) {
             throw new IOException("Unable to create document iterator", e);
         }
 

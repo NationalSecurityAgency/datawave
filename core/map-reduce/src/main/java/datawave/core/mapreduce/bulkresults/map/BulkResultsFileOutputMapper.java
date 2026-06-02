@@ -4,7 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -21,7 +21,8 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.NullWritable;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.util.Assert;
 
 import datawave.core.query.cache.ResultsPage;
@@ -35,7 +36,7 @@ import datawave.webservice.util.ProtostuffMessageBodyWriter;
 
 public class BulkResultsFileOutputMapper extends ApplicationContextAwareMapper<Key,Value,Key,Value> {
 
-    private static Logger log = Logger.getLogger(BulkResultsFileOutputMapper.class);
+    private static Logger log = LoggerFactory.getLogger(BulkResultsFileOutputMapper.class);
     /**
      * Parameter to store Base64 encoded serialized Query settings
      */
@@ -82,6 +83,7 @@ public class BulkResultsFileOutputMapper extends ApplicationContextAwareMapper<K
 
         QueryLogic<?> logic = (QueryLogic<?>) super.applicationContext.getBean(logicName);
         t = logic.getEnrichedTransformer(query);
+
         Assert.notNull(logic.getMarkingFunctions());
         Assert.notNull(logic.getResponseObjectFactory());
         this.format = SerializationFormat.valueOf(context.getConfiguration().get(RESULT_SERIALIZATION_FORMAT));
@@ -118,6 +120,9 @@ public class BulkResultsFileOutputMapper extends ApplicationContextAwareMapper<K
                     }
                     context.write(key, val);
                 } catch (Exception e) {
+                    if (e instanceof InterruptedException) {
+                        Thread.currentThread().interrupt();
+                    }
                     throw new RuntimeException("Unable to serialize response of class: " + response.getClass().getName(), e);
                 }
                 context.progress();
@@ -171,11 +176,11 @@ public class BulkResultsFileOutputMapper extends ApplicationContextAwareMapper<K
         Marshaller m = ctx.createMarshaller();
         m.marshal(q, writer);
         // Probably need to base64 encode it so that it will not mess up the Hadoop Configuration object
-        return new String(Base64.encodeBase64(writer.toString().getBytes()), Charset.forName("UTF-8"));
+        return new String(Base64.encodeBase64(writer.toString().getBytes()), StandardCharsets.UTF_8);
     }
 
     public static Query deserializeQuery(String base64EncodedQuery, Class<? extends Query> queryImplClass) throws JAXBException {
-        String query = new String(Base64.decodeBase64(base64EncodedQuery), Charset.forName("UTF-8"));
+        String query = new String(Base64.decodeBase64(base64EncodedQuery), StandardCharsets.UTF_8);
         JAXBContext ctx = JAXBContext.newInstance(queryImplClass);
         Unmarshaller u = ctx.createUnmarshaller();
         return (Query) u.unmarshal(new StringReader(query));

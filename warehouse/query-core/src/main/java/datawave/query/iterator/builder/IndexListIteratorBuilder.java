@@ -86,6 +86,7 @@ public class IndexListIteratorBuilder extends IvaratorBuilder implements Iterato
                         .withMaxRangeSplit(maxRangeSplit)
                         .withMaxOpenFiles(ivaratorMaxOpenFiles)
                         .withIvaratorCacheDirs(ivaratorCacheDirs)
+                        .withTermNumber(termNumber)
                         .withNumRetries(ivaratorNumRetries)
                         .withPersistOptions(ivaratorPersistOptions)
                         .withMaxResults(maxIvaratorResults)
@@ -97,7 +98,10 @@ public class IndexListIteratorBuilder extends IvaratorBuilder implements Iterato
                         .withCompositeSeekThreshold(compositeSeekThreshold)
                         .withTypeMetadata(typeMetadata)
                         .withIvaratorSourcePool(ivaratorSourcePool)
-                        .withIteratorEnv(env);
+                        .withIteratorEnv(env)
+                        .withQueryId(queryId)
+                        .withScanId(scanId)
+                        .withWaitWindowObserver(waitWindowObserver);
                 // @formatter:on
                 if (values != null) {
                     builder = builder.withValues(values);
@@ -113,13 +117,8 @@ public class IndexListIteratorBuilder extends IvaratorBuilder implements Iterato
                 listIterator.init(source, null, env);
                 log.debug("Created a DatawaveFieldIndexListIteratorJexl: " + listIterator);
 
-                boolean canBuildDocument = this.fieldsToAggregate == null ? false : this.fieldsToAggregate.contains(field);
-                if (forceDocumentBuild) {
-                    canBuildDocument = true;
-                }
-
                 // Add an interator to aggregate documents. This is needed for index only fields.
-                DocumentAggregatingIterator aggregatingIterator = new DocumentAggregatingIterator(canBuildDocument, this.typeMetadata, keyTform);
+                DocumentAggregatingIterator aggregatingIterator = new DocumentAggregatingIterator(buildDocument, this.typeMetadata, keyTform);
                 aggregatingIterator.init(listIterator, null, null);
 
                 docIterator = aggregatingIterator;

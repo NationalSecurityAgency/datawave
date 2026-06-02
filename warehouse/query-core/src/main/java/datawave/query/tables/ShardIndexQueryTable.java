@@ -269,7 +269,7 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> implem
         if (log.isTraceEnabled()) {
             log.trace("fetching dataTypes from FetchDataTypesVisitor");
         }
-        Multimap<String,Type<?>> fieldToDataTypeMap = FetchDataTypesVisitor.fetchDataTypes(metadataHelper, getConfig().getDatatypeFilter(), script);
+        Multimap<String,Type<?>> fieldToDataTypeMap = FetchDataTypesVisitor.fetchDataTypes(metadataHelper, dataTypes, script);
         getConfig().setDataTypes(fieldToDataTypeMap);
         getConfig().setQueryFieldsDatatypes(fieldToDataTypeMap);
 
@@ -420,6 +420,7 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> implem
      * @param baseConfig
      *            The shard query configuration
      * @param checkpoint
+     *            The query checkpoint
      */
     @Override
     public void setupQuery(AccumuloClient client, GenericQueryConfiguration baseConfig, QueryCheckpoint checkpoint) throws Exception {

@@ -59,6 +59,7 @@ import datawave.query.index.lookup.ScannerStream;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.util.QueryScannerHelper;
 import datawave.query.util.Tuple2;
+import datawave.query.util.ValueSerializerType;
 import datawave.util.time.DateHelper;
 
 /**
@@ -221,6 +222,9 @@ public class RangeStreamScannerTest {
         final IteratorSetting uidSetting = new IteratorSetting(priority++, CreateUidsIterator.class);
         uidSetting.addOption(CreateUidsIterator.COLLAPSE_UIDS, Boolean.valueOf(false).toString());
 
+        // Use Kryo serialization
+        uidSetting.addOption(CreateUidsIterator.VALUE_ENCODING, ValueSerializerType.KRYO.toString());
+
         options.addScanIterator(uidSetting);
         options.addScanIterator(QueryScannerHelper.getQueryInfoIterator(config.getQuery(), false, queryString));
 
@@ -326,38 +330,6 @@ public class RangeStreamScannerTest {
         }
         assertEquals(8, shardCount);
         assertEquals(120, documentCount);
-        assertFalse(scannerStream.hasNext());
-    }
-
-    /**
-     * FOO == 'boohoo' hits day 20190319 with 15 shards, each shard has 25 document ids.
-     */
-    @Test
-    public void testExceedShardsPerDayThresholdAndDocumentsPerShardThreshold() throws Exception {
-
-        // Components that define the query: "FOO == 'boohoo'"
-        String fieldName = "FOO";
-        String fieldValue = "boohoo";
-        ASTEQNode eqNode = (ASTEQNode) JexlNodeFactory.buildEQNode(fieldName, fieldValue);
-
-        // Construct a ScannerStream from RangeStreamScanner, iterator, entry parser.
-        RangeStreamScanner rangeStreamScanner = buildRangeStreamScanner(fieldName, fieldValue);
-        EntryParser entryParser = new EntryParser(eqNode, fieldName, fieldValue, config.getIndexedFields());
-        ScannerStream scannerStream = ScannerStream.initialized(rangeStreamScanner, entryParser, eqNode);
-
-        // Assert the iterator correctly iterates over the iterables without irritating the unit test.
-        assertTrue(scannerStream.hasNext());
-        int shardCount = 0;
-        int documentCount = 0;
-        while (scannerStream.hasNext()) {
-            Tuple2<String,IndexInfo> entry = scannerStream.next();
-            assertTrue("Expected shard to start with '20190323' but was: " + entry.first(), entry.first().startsWith("20190323"));
-            shardCount++;
-            documentCount += entry.second().count();
-        }
-        // A single range with a count of -1 means the shard ranges were collapsed into a day range.
-        assertEquals(15, shardCount);
-        assertEquals(375, documentCount);
         assertFalse(scannerStream.hasNext());
     }
 

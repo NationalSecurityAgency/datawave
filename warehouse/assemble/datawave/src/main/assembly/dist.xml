@@ -109,15 +109,16 @@
                 <include>${groupId}:datawave-ingest-wikipedia</include>
                 <include>${groupId}:datawave-ingest-nyctlc</include>
                 <include>${groupId}:datawave-ingest-json</include>
+                <include>${groupId}:datawave-keyword-common</include>
                 <include>gov.nsa.datawave.core:datawave-core-connection-pool</include>
                 <include>gov.nsa.datawave.core:datawave-core-common</include>
                 <include>gov.nsa.datawave.core:datawave-core-common-util</include>
                 <include>gov.nsa.datawave.core:datawave-core-query</include>
-                <include>gov.nsa.datawave.microservice:accumulo-utils</include>
-                <include>gov.nsa.datawave.microservice:metadata-utils</include>
-                <include>gov.nsa.datawave.microservice:type-utils</include>
-                <include>gov.nsa.datawave.microservice:base-rest-responses</include>
-                <include>gov.nsa.datawave.microservice:common-utils</include>
+                <include>gov.nsa.datawave.core:accumulo-utils</include>
+                <include>gov.nsa.datawave.core:metadata-utils</include>
+                <include>gov.nsa.datawave.core:type-utils</include>
+                <include>gov.nsa.datawave.core:base-rest-responses</include>
+                <include>gov.nsa.datawave.core:common-utils</include>
                 <include>gov.nsa.datawave.webservices:datawave-ws-common</include>
                 <include>gov.nsa.datawave.webservices:datawave-ws-common-util</include>
                 <include>gov.nsa.datawave.webservices:datawave-ws-client</include>
@@ -125,6 +126,7 @@
                 <include>io.dropwizard.metrics:metrics-core</include>
                 <include>org.javatuples:javatuples</include>
                 <include>com.google.code.gson:gson</include>
+                <include>com.ibm.icu:icu4j</include>
                 <include>org.apache.lucene:lucene-core</include>
                 <include>com.clearspring.analytics:stream</include>
                 <include>com.timgroup:java-statsd-client</include>
@@ -156,7 +158,6 @@
             <fileMode>0444</fileMode>
             <includes>
                   <include>org.apache.commons:commons-lang3</include>
-                  <include>${groupId}:datawave-ingest-core</include>
                   <include>${groupId}:datawave-core</include>
                   <include>${groupId}:datawave-ingest-csv</include>
                   <include>${groupId}:datawave-ingest-json</include>
@@ -166,11 +167,11 @@
                   <include>gov.nsa.datawave.core:datawave-core-connection-pool</include>
                   <include>gov.nsa.datawave.core:datawave-core-common</include>
                   <include>gov.nsa.datawave.core:datawave-core-common-util</include>
-                  <include>gov.nsa.datawave.microservice:accumulo-utils</include>
-                  <include>gov.nsa.datawave.microservice:metadata-utils</include>
-                  <include>gov.nsa.datawave.microservice:type-utils</include>
-                  <include>gov.nsa.datawave.microservice:base-rest-responses</include>
-                  <include>gov.nsa.datawave.microservice:common-utils</include>
+                  <include>gov.nsa.datawave.core:accumulo-utils</include>
+                  <include>gov.nsa.datawave.core:metadata-utils</include>
+                  <include>gov.nsa.datawave.core:type-utils</include>
+                  <include>gov.nsa.datawave.core:base-rest-responses</include>
+                  <include>gov.nsa.datawave.core:common-utils</include>
                   <include>gov.nsa.datawave.webservices:datawave-ws-common</include>
                   <include>gov.nsa.datawave.webservices:datawave-ws-common-util</include>
                   <include>com.google.code.gson:gson</include>

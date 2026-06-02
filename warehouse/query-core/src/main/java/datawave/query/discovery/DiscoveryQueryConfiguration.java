@@ -16,6 +16,7 @@ import datawave.query.jexl.LiteralRange;
  * Adds the ability to hold on to two multimaps. They map literals and patterns to the fields they were associated with in the query.
  */
 public class DiscoveryQueryConfiguration extends ShardIndexQueryConfiguration implements Serializable {
+    private static final long serialVersionUID = -2349167549098253860L;
     private Multimap<String,String> literals, patterns;
     private Multimap<String,LiteralRange<String>> ranges;
     private boolean separateCountsByColVis = false;

@@ -1,0 +1,20 @@
+spring:
+  application:
+    name: dictionary-test
+  cloud:
+    bus:
+      enabled: true
+    consul:
+      enabled: false
+    config:
+      enabled: false
+      discovery:
+        enabled: false
+  main:
+    banner-mode: "OFF"
+
+datawave:
+  table:
+    cache:
+      enabled: false
+

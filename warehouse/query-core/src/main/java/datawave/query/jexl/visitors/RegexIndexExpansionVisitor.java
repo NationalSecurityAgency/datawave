@@ -5,11 +5,10 @@ import static datawave.query.jexl.JexlASTHelper.isLiteralEquality;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DELAYED;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DROPPED;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EVALUATION_ONLY;
-import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_TERM;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_VALUE;
 import static org.apache.commons.jexl3.parser.JexlNodes.id;
 
-import java.util.Collection;
+import java.text.MessageFormat;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -24,7 +23,6 @@ import org.apache.commons.jexl3.parser.ASTIdentifier;
 import org.apache.commons.jexl3.parser.ASTNENode;
 import org.apache.commons.jexl3.parser.ASTNRNode;
 import org.apache.commons.jexl3.parser.ASTNotNode;
-import org.apache.commons.jexl3.parser.ASTReference;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.commons.jexl3.parser.ParserTreeConstants;
@@ -35,22 +33,27 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
-import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.query.Constants;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
+import datawave.query.exceptions.DoNotPerformOptimizedQueryException;
 import datawave.query.exceptions.EmptyUnfieldedTermExpansionException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
+import datawave.query.jexl.lookups.AsyncIndexLookup;
+import datawave.query.jexl.lookups.FieldedRegexIndexLookup;
 import datawave.query.jexl.lookups.IndexLookup;
 import datawave.query.jexl.lookups.IndexLookupMap;
 import datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods;
+import datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods.RefactoredRangeDescription;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.model.QueryModel;
 import datawave.query.parser.JavaRegexAnalyzer;
 import datawave.query.planner.pushdown.Cost;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.util.MetadataHelper;
+import datawave.webservice.query.exception.DatawaveErrorCode;
+import datawave.webservice.query.exception.PreConditionFailedQueryException;
 
 /**
  * Visits a Jexl tree, looks for regex terms, and replaces them with concrete values from the index
@@ -60,7 +63,10 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
 
     protected boolean expandUnfieldedNegations;
 
-    protected Collection<String> onlyUseThese;
+    protected Set<String> onlyUseThese;
+    protected Set<String> expansionFields;
+    protected Set<String> forwardIndexedFields;
+    protected Set<String> reverseIndexedFields;
 
     // This flag keeps track of whether we are in a negated portion of the tree.
     protected boolean negated = false;
@@ -86,15 +92,20 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
         this.expandUnfieldedNegations = config.isExpandUnfieldedNegations();
 
         if (config.isLimitTermExpansionToModel()) {
-            try {
-                QueryModel queryModel = helper.getQueryModel(config.getModelTableName(), config.getModelName());
-                this.onlyUseThese = queryModel.getForwardQueryMapping().values();
-            } catch (ExecutionException e) {
-                this.onlyUseThese = null;
-            }
+            QueryModel queryModel = helper.getQueryModel(config.getModelTableName(), config.getModelName());
+            this.onlyUseThese = new HashSet<>(queryModel.getForwardQueryMapping().values());
         } else {
             this.onlyUseThese = null;
         }
+
+        this.expansionFields = helper.getExpansionFields(config.getDatatypeFilter());
+        if (this.expansionFields == null) {
+            this.expansionFields = new HashSet<>();
+        }
+
+        forwardIndexedFields = ShardIndexQueryTableStaticMethods.getIndexedExpansionFields(expansionFields, false, config.getDatatypeFilter(), helper);
+        reverseIndexedFields = ShardIndexQueryTableStaticMethods.getIndexedExpansionFields(expansionFields, true, config.getDatatypeFilter(), helper);
+
         this.stage = "regex";
     }
 
@@ -187,15 +198,12 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
         if (markedParents != null) {
             boolean evalOnly = false;
             boolean exceededValueMarker = false;
-            boolean exceededTermMarker = false;
             for (JexlNode markedParent : markedParents) {
                 QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(markedParent);
                 if (instance.isAnyTypeOf(EVALUATION_ONLY, DROPPED)) {
                     evalOnly = true;
                 } else if (instance.isType(EXCEEDED_VALUE)) {
                     exceededValueMarker = true;
-                } else if (instance.isType(EXCEEDED_TERM)) {
-                    exceededTermMarker = true;
                 }
             }
 
@@ -206,9 +214,9 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
                 throw new DatawaveFatalQueryException(e);
             }
 
-            if (evalOnly && !exceededValueMarker && !exceededTermMarker && nonEvent) {
+            if (evalOnly && !exceededValueMarker && nonEvent) {
                 return QueryPropertyMarker.create(node, EXCEEDED_VALUE);
-            } else if (exceededValueMarker || exceededTermMarker) {
+            } else if (exceededValueMarker) {
                 // already did this expansion
                 return node;
             } else if (!nonEvent && evalOnly) {
@@ -271,7 +279,11 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
             throw new DatawaveFatalQueryException(e);
         }
 
-        return buildIndexLookup(node, false, false, () -> createLookup(node));
+        if (config.isUseNewIndexLookups()) {
+            return buildIndexLookup(node, false, false, () -> createFieldedRegexIndexLookup(node));
+        } else {
+            return buildIndexLookup(node, false, false, () -> createLookup(node));
+        }
     }
 
     @Override
@@ -294,19 +306,9 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
         }
     }
 
-    @Override
-    public Object visit(ASTReference node, Object data) {
-        ASTReference ref = (ASTReference) super.visit(node, data);
-        if (ref.jjtGetNumChildren() == 0) {
-            return null;
-        } else {
-            return ref;
-        }
-    }
-
     /**
      * Determines if we should expand a regular expression given the current AST.
-     *
+     * <p>
      * A regex doesn't have to be expanded if we can work out the logic such that we can satisfy the query with term equality only. The simple case is when the
      * ERNode and an EQNode share an AND parent. There are more complicated variants involving grand parents and OR nodes that are considered.
      *
@@ -344,7 +346,7 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
     /**
      * Walks up an AST and evaluates subtrees as needed. This method will fail fast if we determine we do not have to process a regex, otherwise the entire tree
      * will be evaluated.
-     *
+     * <p>
      * This method recurses upwards, searching for an AND or OR node in the lineage. Once of those nodes is found, then the subtree rooted at that node is
      * evaluated. The visit map is used to cache already evaluated subtrees, so moving to a parent will not cause a subtree to be evaluated along with its
      * unevaluated siblings.
@@ -377,13 +379,16 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
 
     /**
      * Evaluates a subtree to see if it can prevent the expansion of a regular expression.
-     *
+     * <p>
      * This method recurses down under three conditions:
-     *
-     * 1) An OR is encountered. In this case the result of recursing down the subtrees rooted at each child is OR'd together and returned. 2) An AND is
-     * encountered. In this case the result of recursing down the subtrees rooted at each child is AND'd together and returned. 3) Any node that is not an EQ
-     * node and has only 1 child. If there are multiple children, this method returns true, indicating that the subtree cannot defeat a regex expansion.
-     *
+     * <p>
+     * 1) An OR is encountered. In this case the result of recursing down the subtrees rooted at each child is OR'd together and returned.
+     * <p>
+     * 2) An AND is encountered. In this case the result of recursing down the subtrees rooted at each child is AND'd together and returned.
+     * <p>
+     * 3) Any node that is not an EQ node and has only 1 child. If there are multiple children, this method returns true, indicating that the subtree cannot
+     * defeat a regex expansion.
+     * <p>
      * If an EQ node is encountered, we check if it can defeat an expansion by returning the value of a call to `doesNodeSupportRegexExpansion` on the node.
      *
      * @param node
@@ -491,8 +496,7 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
 
     protected IndexLookup createLookup(JexlNode node) {
         String fieldName = JexlASTHelper.getIdentifier(node);
-        return ShardIndexQueryTableStaticMethods.expandRegexTerms((ASTERNode) node, config, scannerFactory, fieldName,
-                        config.getQueryFieldsDatatypes().get(fieldName), helper, executor);
+        return ShardIndexQueryTableStaticMethods.expandRegexTerms((ASTERNode) node, config, scannerFactory, fieldName, helper, executor);
     }
 
     /**
@@ -627,7 +631,7 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
     public boolean shouldProcessRegexByCostWithChildren(List<JexlNode> children, Cost regexCost) {
         Preconditions.checkArgument(!children.isEmpty(), "We found an empty list of children for an AND which should at least contain an ERnode");
 
-        Cost c = new Cost();
+        Cost c = Cost.zero();
 
         for (JexlNode child : children) {
             Cost childCost = costAnalysis.computeCostForSubtree(child);
@@ -648,7 +652,7 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
             }
         }
 
-        return (regexCost.getERCost() + regexCost.getOtherCost()) < (c.getERCost() + c.getOtherCost());
+        return (regexCost.getRegexCost() + regexCost.getOtherCost()) < (c.getRegexCost() + c.getOtherCost());
     }
 
     private void onlyRetainFieldNamesInTheModelForwardMapping(IndexLookupMap fieldsToValues) {
@@ -687,6 +691,10 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
             logResult(currentNode, fieldsToTerms);
         }
 
+        if (fieldsToTerms.isUnfieldedTimeoutSeen()) {
+            throw new DatawaveFatalQueryException("Failed to expand unfielded term");
+        }
+
         if (futureJexlNode.isIgnoreComposites()) {
             // composites should be removed prior to building the index expansion iterators
             // and should never be returned to the webservice
@@ -696,15 +704,17 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
         JexlNode newNode;
 
         // If we have no children, it's impossible to find any records, so this query returns no results
+        // unless the expansion is unfielded in which case throw an exception. handle that case above.
         if (fieldsToTerms.isEmpty()) {
-            // simply replace the _ANYFIELD_ with _NOFIELD_ denoting that there was no expansion. This will naturally evaluate correctly when applying
-            // the query against the document
-            for (ASTIdentifier id : JexlASTHelper.getIdentifiers(currentNode)) {
+            // if there was no field expansion then replace _ANYFIELD_ with _NOFIELD_, the RangeStream will drop
+            // this term from the query
+            JexlNode copy = copy(currentNode);
+            for (ASTIdentifier id : JexlASTHelper.getIdentifiers(copy)) {
                 if (!futureJexlNode.isKeepOriginalNode() && Constants.ANY_FIELD.equals(id.getName())) {
                     JexlNodes.setIdentifier(id, Constants.NO_FIELD);
                 }
             }
-            newNode = currentNode;
+            newNode = copy;
         } else {
             onlyRetainFieldNamesInTheModelForwardMapping(fieldsToTerms);
             if (isNegativeNode(currentNode)) {
@@ -719,5 +729,57 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
         }
 
         futureJexlNode.setRebuiltNode(newNode);
+    }
+
+    /**
+     * Create an {@link IndexLookup} for a fielded regex
+     *
+     * @param node
+     *            a JexlNode
+     * @return a {@link FieldedRegexIndexLookup}
+     */
+    protected IndexLookup createFieldedRegexIndexLookup(JexlNode node) {
+        String field = JexlASTHelper.getIdentifier(node);
+        String pattern = String.valueOf(JexlASTHelper.getLiteralValue(node));
+        validatePattern(pattern);
+
+        RefactoredRangeDescription description = getRegexRange(field, pattern);
+        AsyncIndexLookup lookup = new FieldedRegexIndexLookup(config, scannerFactory, executor, field, pattern, description.range,
+                        description.isForReverseIndex);
+        lookup.setScanMonitor(monitor);
+        return lookup;
+    }
+
+    /**
+     * Validate the provided pattern against the list of disallowed patterns
+     *
+     * @param pattern
+     *            the pattern
+     */
+    protected void validatePattern(String pattern) {
+        if (config.getDisallowedRegexPatterns().contains(pattern)) {
+            PreConditionFailedQueryException qe = new PreConditionFailedQueryException(DatawaveErrorCode.IGNORE_PATTERN_FOR_INDEX_LOOKUP,
+                            MessageFormat.format("Pattern: {0}", pattern));
+            log.error(qe.getMessage(), qe);
+            throw new DoNotPerformOptimizedQueryException(qe);
+        }
+    }
+
+    /**
+     * Wrapper around {@link ShardIndexQueryTableStaticMethods#getRegexRange(Map.Entry, boolean, MetadataHelper, ShardQueryConfiguration)}.
+     *
+     * @param field
+     *            the field
+     * @param pattern
+     *            the pattern
+     * @return a range description
+     */
+    protected RefactoredRangeDescription getRegexRange(String field, String pattern) {
+        try {
+            return ShardIndexQueryTableStaticMethods.getRegexRange(field, pattern, config.getFullTableScanEnabled(), helper, config);
+        } catch (JavaRegexAnalyzer.JavaRegexParseException | TableNotFoundException | ExecutionException e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
     }
 }

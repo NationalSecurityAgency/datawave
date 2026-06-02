@@ -11,11 +11,11 @@ import org.apache.log4j.Logger;
 import datawave.query.attributes.Document;
 
 /**
- *
+ * This class is a delegate/base class now that the SeekableIterator was merged into the NestedIterator interface
  */
-public class SeekableNestedIterator<T> implements NestedIterator<T>, SeekableIterator {
+public class SeekableNestedIterator<T> implements NestedIterator<T> {
     private static final Logger log = Logger.getLogger(SeekableNestedIterator.class);
-    private NestedIterator<T> source;
+    private final NestedIterator<T> source;
     protected Range totalRange = null;
     protected Collection<ByteSequence> columnFamilies = null;
     protected boolean inclusive = false;
@@ -30,16 +30,7 @@ public class SeekableNestedIterator<T> implements NestedIterator<T>, SeekableIte
         this.totalRange = range;
         this.columnFamilies = columnFamilies;
         this.inclusive = inclusive;
-        if (source instanceof SeekableIterator) {
-            ((SeekableIterator) source).seek(range, columnFamilies, inclusive);
-        } else {
-            Iterable<? extends NestedIterator<?>> leaves = source.leaves();
-            for (NestedIterator<?> leaf : leaves) {
-                if (leaf instanceof SeekableIterator) {
-                    ((SeekableIterator) leaf).seek(range, columnFamilies, inclusive);
-                }
-            }
-        }
+        source.seek(range, columnFamilies, inclusive);
     }
 
     @Override

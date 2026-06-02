@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:util="http://www.springframework.org/schema/util"
+       xsi:schemaLocation="
+     http://www.springframework.org/schema/beans
+     http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+     http://www.springframework.org/schema/util
+     http://www.springframework.org/schema/util/spring-util-4.0.xsd">
+
+    <!-- Query Function definitions -->
+    <util:map id="jexlEngineFunctionMap" key-type="java.lang.String" value-type="java.lang.String">
+        <entry key="f" value="datawave.query.jexl.functions.QueryFunctions"/>
+        <entry key="geo" value="datawave.query.jexl.functions.GeoFunctions"/>
+        <entry key="geowave" value="datawave.query.jexl.functions.GeoWaveFunctions"/>
+        <entry key="content" value="datawave.query.jexl.functions.ContentFunctions"/>
+        <entry key="normalize" value="datawave.query.jexl.functions.NormalizationFunctions"/>
+        <entry key="filter" value="datawave.query.jexl.functions.EvaluationPhaseFilterFunctions"/>
+        <entry key="grouping" value="datawave.query.jexl.functions.GroupingRequiredFilterFunctions"/>
+    </util:map>
+
+</beans>

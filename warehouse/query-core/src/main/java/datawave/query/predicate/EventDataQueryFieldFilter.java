@@ -52,8 +52,9 @@ public class EventDataQueryFieldFilter implements EventDataQueryFilter {
             this.document = new Key(other.document);
         }
         this.maxNextCount = other.maxNextCount;
-        this.fields = other.fields;
-        this.parser = other.parser;
+        this.fields = new TreeSet<>(other.fields);
+        // need to create a separate parser as the parser is not thread safe
+        this.parser = new EventKey();
         // do not copy nextCount or currentField because that is internal state
         this.nextCount = 0;
         this.currentField = null;

@@ -7,7 +7,7 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
@@ -79,6 +79,9 @@ import datawave.webservice.response.objects.KeyBase;
 import datawave.webservice.result.EventQueryResponseBase;
 import datawave.webservice.result.FacetQueryResponseBase;
 import datawave.webservice.result.GenericResponse;
+import datawave.webservice.result.keyword.TagCloudBase;
+import datawave.webservice.result.keyword.TagCloudEntryBase;
+import datawave.webservice.result.keyword.TagCloudResponseBase;
 
 @RunWith(SpringRunner.class)
 @ContextConfiguration
@@ -186,7 +189,7 @@ public class RemoteUserOperationsImplHttpTest {
                 String responseBody = objectMapper.writeValueAsString(listEffectiveAuthResponse);
                 exchange.getResponseHeaders().add("Content-Type", MediaType.APPLICATION_JSON);
                 exchange.sendResponseHeaders(HttpURLConnection.HTTP_OK, responseBody.length());
-                IOUtils.write(responseBody, exchange.getResponseBody(), Charset.forName("UTF-8"));
+                IOUtils.write(responseBody, exchange.getResponseBody(), StandardCharsets.UTF_8);
                 exchange.close();
             }
         };
@@ -200,7 +203,7 @@ public class RemoteUserOperationsImplHttpTest {
                 String responseBody = objectMapper.writeValueAsString(flushResponse);
                 exchange.getResponseHeaders().add("Content-Type", MediaType.APPLICATION_JSON);
                 exchange.sendResponseHeaders(HttpURLConnection.HTTP_OK, responseBody.length());
-                IOUtils.write(responseBody, exchange.getResponseBody(), Charset.forName("UTF-8"));
+                IOUtils.write(responseBody, exchange.getResponseBody(), StandardCharsets.UTF_8);
                 exchange.close();
             }
         };
@@ -294,6 +297,21 @@ public class RemoteUserOperationsImplHttpTest {
 
         @Override
         public KeyBase getKey() {
+            return null;
+        }
+
+        @Override
+        public TagCloudBase getTagCloud() {
+            return null;
+        }
+
+        @Override
+        public TagCloudResponseBase getTagCloudQueryResponse() {
+            return null;
+        }
+
+        @Override
+        public TagCloudEntryBase getTagCloudEntry() {
             return null;
         }
 

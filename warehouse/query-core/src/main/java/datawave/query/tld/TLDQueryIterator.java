@@ -3,6 +3,7 @@ package datawave.query.tld;
 import static datawave.query.jexl.visitors.EventDataQueryExpressionVisitor.getExpressionFilters;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.util.Collection;
 import java.util.Collections;
@@ -35,6 +36,7 @@ import datawave.query.iterator.QueryIterator;
 import datawave.query.iterator.QueryOptions;
 import datawave.query.iterator.SourcedOptions;
 import datawave.query.iterator.logic.IndexIterator;
+import datawave.query.iterator.waitwindow.WaitWindowObserver;
 import datawave.query.jexl.functions.FieldIndexAggregator;
 import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor.ExpressionFilter;
 import datawave.query.jexl.visitors.IteratorBuildingVisitor;
@@ -192,7 +194,7 @@ public class TLDQueryIterator extends QueryIterator {
                     final Class<?> fClass = Class.forName(fClassName);
                     if (Predicate.class.isAssignableFrom(fClass)) {
                         // Create and configure the predicate
-                        final Predicate p = (Predicate) fClass.newInstance();
+                        final Predicate p = (Predicate) fClass.getDeclaredConstructor().newInstance();
                         if (p instanceof ConfiguredPredicate) {
                             ((ConfiguredPredicate) p).configure(options);
                         }
@@ -213,7 +215,7 @@ public class TLDQueryIterator extends QueryIterator {
                         return fieldIndexKeyDataTypeFilter;
                     }
                 }
-            } catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
+            } catch (ClassNotFoundException | IllegalAccessException | InstantiationException | InvocationTargetException | NoSuchMethodException e) {
                 log.error("Could not instantiate postprocessing chain!", e);
             }
         }
@@ -236,7 +238,9 @@ public class TLDQueryIterator extends QueryIterator {
     @Override
     public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
         // when we are torn down and rebuilt, ensure the range is for the next top level document
-        if (!range.isStartKeyInclusive()) {
+        // Skip this logic if this is part of a yield where we are trying to restart at the beginning of a particular
+        // event key or shard range.
+        if (!range.isStartKeyInclusive() && !WaitWindowObserver.hasBeginMarker(range.getStartKey())) {
             Key startKey = TLD.getNextParentKey(range.getStartKey());
             if (!startKey.equals(range.getStartKey())) {
                 Key endKey = range.getEndKey();
@@ -250,7 +254,8 @@ public class TLDQueryIterator extends QueryIterator {
 
     @Override
     protected IteratorBuildingVisitor createIteratorBuildingVisitor(final Range documentRange, boolean isQueryFullySatisfied, boolean sortedUIDs)
-                    throws MalformedURLException, ConfigException, InstantiationException, IllegalAccessException {
+                    throws MalformedURLException, ConfigException, InstantiationException, IllegalAccessException, NoSuchMethodException,
+                    InvocationTargetException {
         return createIteratorBuildingVisitor(TLDIndexBuildingVisitor.class, documentRange, isQueryFullySatisfied, sortedUIDs)
                         .setIteratorBuilder(TLDIndexIteratorBuilder.class);
     }

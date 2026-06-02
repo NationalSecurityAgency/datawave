@@ -7,6 +7,7 @@ import static datawave.query.index.lookup.RangeStreamQueryTest.TERM_CONTEXT.DELA
 import static datawave.query.index.lookup.RangeStreamQueryTest.TERM_CONTEXT.DELAYED_INTERSECT;
 import static datawave.query.index.lookup.RangeStreamQueryTest.TERM_CONTEXT.DELAYED_UNION;
 import static datawave.query.jexl.visitors.JexlStringBuildingVisitor.buildQuery;
+import static datawave.util.TableName.METADATA;
 import static datawave.util.TableName.SHARD_INDEX;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -51,6 +52,7 @@ import datawave.query.jexl.visitors.TreeEqualityVisitor;
 import datawave.query.planner.QueryPlan;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.util.MockMetadataHelper;
+import datawave.util.TableName;
 
 /**
  * Integration test for asserting correct query plans coming off the RangeStream
@@ -97,7 +99,7 @@ public class RangeStreamQueryTest {
         Value docValue = buildDocRange("a.b.c");
         Value docValue2 = buildDocRange("x.y.z");
 
-        Text cq = new Text("20200101_7\0datatype");
+        Text cq = new Text("20200101_0\0datatype");
 
         Mutation m = new Mutation("shard");
         m.put(new Text("FOO"), cq, shardValue);
@@ -119,6 +121,13 @@ public class RangeStreamQueryTest {
 
         bw.flush();
         bw.close();
+
+        connector.tableOperations().create(METADATA);
+        try (BatchWriter batchWriter = connector.createBatchWriter(TableName.METADATA)) {
+            m = new Mutation("num_shards");
+            m.put("ns", "20000101_1", new Value());
+            batchWriter.addMutation(m);
+        }
     }
 
     private static Value buildDocRange(String uid) {
@@ -205,13 +214,6 @@ public class RangeStreamQueryTest {
     }
 
     @Test
-    public void testQueriesWithExceededTermMarkers() throws Exception {
-        test("((_Term_ = true) && (FOO =~ 'ba.*'))", DELAYED);
-        test("(((_Term_ = true) && (FOO =~ 'ba.*')) && ((_Term_ = true) && (FOO2 =~ 'ba.*')))", DELAYED_INTERSECT);
-        test("(((_Term_ = true) && (FOO =~ 'ba.*')) || ((_Term_ = true) && (FOO2 =~ 'ba.*')))", DELAYED_UNION);
-    }
-
-    @Test
     public void testQueriesWithDelayedRegexNodes() throws Exception {
         test("((_Delayed_ = true) && (FOO =~ 'ba.*'))", DELAYED);
         test("(((_Delayed_ = true) && (FOO =~ 'ba.*')) && ((_Delayed_ = true) && (FOO2 =~ 'ba.*')))", DELAYED_INTERSECT);
@@ -220,9 +222,9 @@ public class RangeStreamQueryTest {
 
     @Test
     public void testQueriesWithBoundedRangeMarkers() throws Exception {
-        test("((_Bounded_ = true) && (FOO > '3' && FOO < 7))", DELAYED);
-        test("(((_Bounded_ = true) && (FOO > '3' && FOO < 7)) && ((_Bounded_ = true) && (FOO2 > '3' && FOO2 < 7)))", DELAYED_INTERSECT);
-        test("(((_Bounded_ = true) && (FOO > '3' && FOO < 7)) || ((_Bounded_ = true) && (FOO2 > '3' && FOO2 < 7)))", DELAYED_UNION);
+        test("((_Bounded_ = true) && (FOO > '3' && FOO < 7))", ANCHOR);
+        test("(((_Bounded_ = true) && (FOO > '3' && FOO < 7)) && ((_Bounded_ = true) && (FOO2 > '3' && FOO2 < 7)))", ANCHOR_INTERSECT);
+        test("(((_Bounded_ = true) && (FOO > '3' && FOO < 7)) || ((_Bounded_ = true) && (FOO2 > '3' && FOO2 < 7)))", ANCHOR_UNION);
     }
 
     @Test
@@ -239,13 +241,10 @@ public class RangeStreamQueryTest {
 
     @Test
     public void testQueriesWithMixedMarkers() throws Exception {
-        // intersection of delayed markers is all delayed
-        test("(((_Term_ = true) && (FOO =~ 'ba.*')) && ((_Delayed_ = true) && (FOO2 =~ 'ba.*')))", DELAYED_INTERSECT);
         // presence of value exceeded makes this an anchor
         test("(((_Value_ = true) && (FOO =~ 'ba.*')) && ((_Delayed_ = true) && (FOO2 =~ 'ba.*')))", ANCHOR_INTERSECT);
 
         // value exceeded or not, union is always delayed if at least one term is delayed
-        test("(((_Term_ = true) && (FOO =~ 'ba.*')) || ((_Delayed_ = true) && (FOO2 =~ 'ba.*')))", DELAYED_UNION);
         test("(((_Value_ = true) && (FOO =~ 'ba.*')) || ((_Delayed_ = true) && (FOO2 =~ 'ba.*')))", DELAYED_UNION);
     }
 
@@ -278,6 +277,9 @@ public class RangeStreamQueryTest {
                 "FOO == 'shard' && (FOO2 == 'uid' || FOO3 == 'shard')", "FOO == 'shard' && (FOO2 == 'uid' || FOO3 == 'uid')",
                 "FOO == 'uid' && (FOO2 == 'shard' || FOO3 == 'shard')", "FOO == 'uid' && (FOO2 == 'shard' || FOO3 == 'uid')",
                 "FOO == 'uid' && (FOO2 == 'uid' || FOO3 == 'shard')", "FOO == 'uid' && (FOO2 == 'uid' || FOO3 == 'uid')",
+                // two terms, both delayed
+                "((_Value_ = true) && (FOO =~ 'zz.*')) || ((_Value_ = true) && (FOO =~ 'xx.*'))",
+                "((_Value_ = true) && (FOO =~ 'zz.*')) && ((_Value_ = true) && (FOO =~ 'xx.*'))",
                 // three terms, one term is a nested union
                 "FOO == 'shard' && FOO2 == 'shard' && (FOO2 == 'shard' || FOO3 == 'shard')",
                 "FOO == 'shard' && FOO2 == 'shard' && (FOO2 == 'shard' || FOO3 == 'uid')",
@@ -332,6 +334,9 @@ public class RangeStreamQueryTest {
                 "FOO == 'shard' || (FOO2 == 'uid' && FOO3 == 'shard')", "FOO == 'shard' || (FOO2 == 'uid' && FOO3 == 'uid')",
                 "FOO == 'uid' || (FOO2 == 'shard' && FOO3 == 'shard')", "FOO == 'uid' || (FOO2 == 'shard' && FOO3 == 'uid')",
                 "FOO == 'uid' || (FOO2 == 'uid' && FOO3 == 'shard')", "FOO == 'uid' || (FOO2 == 'uid' && FOO3 == 'uid')",
+                // two terms, both delayed
+                "((_Value_ = true) && (FOO =~ 'zz.*')) || ((_Value_ = true) && (FOO =~ 'xx.*'))",
+                "((_Value_ = true) && (FOO =~ 'zz.*')) && ((_Value_ = true) && (FOO =~ 'xx.*'))",
                 // three terms, one term is a nested intersection
                 "FOO == 'shard' || FOO2 == 'shard' || (FOO2 == 'shard' && FOO3 == 'shard')",
                 "FOO == 'shard' || FOO2 == 'shard' || (FOO2 == 'shard' && FOO3 == 'uid')",
@@ -413,6 +418,8 @@ public class RangeStreamQueryTest {
         ASTJexlScript plannedScript = JexlNodeFactory.createScript(plan.getQueryTree());
         ASTJexlScript expectedScript = JexlASTHelper.parseAndFlattenJexlQuery(expected);
         if (!TreeEqualityVisitor.isEqual(expectedScript, plannedScript)) {
+            log.info("expected: " + buildQuery(expectedScript));
+            log.info("result  : " + buildQuery(plannedScript));
             fail("Expected [" + buildQuery(expectedScript) + "] but got [" + buildQuery(plannedScript) + "]");
         }
         queryPlans.close();

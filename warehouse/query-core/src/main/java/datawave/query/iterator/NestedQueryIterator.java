@@ -1,8 +1,10 @@
 package datawave.query.iterator;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Queue;
 
+import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Range;
 import org.apache.log4j.Logger;
 
@@ -81,21 +83,38 @@ public class NestedQueryIterator<T> implements NestedIterator<T> {
     @Override
     public void remove() {
         currentNest.remove();
-
     }
 
     @Override
     public void initialize() {
         if (null == currentNest) {
             popNextNest();
-        } else
+        } else {
             currentNest.initialize();
-
+        }
     }
 
     @Override
     public T move(T minimum) {
         return currentNest.move(minimum);
+    }
+
+    /**
+     * Seeks the current nest using the provided range. Note: if the range is beyond the current nest it is up to the caller to advance to the next nest via a
+     * call to {@link #hasNext()}
+     *
+     * @param range
+     *            the seek range
+     * @param columnFamilies
+     *            the column families
+     * @param inclusive
+     *            true if range is inclusive
+     * @throws IOException
+     *             if the underlying source has a problem
+     */
+    @Override
+    public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
+        currentNest.seek(range, columnFamilies, inclusive);
     }
 
     @Override

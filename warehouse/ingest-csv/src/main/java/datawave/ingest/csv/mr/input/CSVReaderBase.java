@@ -104,6 +104,7 @@ public class CSVReaderBase extends LongLineEventRecordReader implements EventRec
         try {
             totalSize = genericSplit.getLength() * 4l;
         } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
             throw new IOException("Interrupted Exception thrown while attempting to get split length", ex);
         }
     }
@@ -158,7 +159,7 @@ public class CSVReaderBase extends LongLineEventRecordReader implements EventRec
 
         // If the event date field name is not specified in the configuration, then set the event date to the file modification time.
         if (StringUtils.isEmpty(eventDateFieldName))
-            event.setDate(fileModificationTime);
+            event.setTimestamp(fileModificationTime);
 
         // We still try to process the event record.
         final int fields = Math.min(rawEventFields.length, header.length);

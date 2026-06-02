@@ -23,13 +23,16 @@ import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.lookups.AsyncIndexLookup;
+import datawave.query.jexl.lookups.ExceededThresholdException;
 import datawave.query.jexl.lookups.IndexLookup;
 import datawave.query.jexl.lookups.IndexLookupMap;
+import datawave.query.jexl.lookups.ScanMonitor;
 import datawave.query.planner.pushdown.CostEstimator;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.util.MetadataHelper;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
+import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
 
 /**
  * Abstract class which provides a framework for visitors which perform index lookups based on the contents of the Jexl tree
@@ -54,6 +57,8 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
     protected ExecutorService executor;
     protected Map<String,IndexLookup> lookupMap;
     protected List<FutureJexlNode> futureJexlNodes;
+
+    protected ScanMonitor monitor;
 
     protected String stage = "default";
 
@@ -93,6 +98,20 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
         }
     }
 
+    protected void setupScanMonitor() {
+        String id = "(unknown)";
+        if (config.getQuery() != null && config.getQuery().getId() != null) {
+            id = config.getQuery().getId().toString();
+        }
+
+        QueryUncaughtExceptionHandler handler = config.getQuery().getUncaughtExceptionHandler();
+        monitor = ScanMonitor.of(id, handler);
+    }
+
+    protected void shutdownMonitor() {
+        monitor.close();
+    }
+
     /**
      * The expand method is the entrypoint which should be called to run index expansion on a given Jexl tree.
      *
@@ -105,6 +124,7 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
     @SuppressWarnings("unchecked")
     protected <T extends JexlNode> T expand(T script) {
         setupExecutor();
+        setupScanMonitor();
         try {
             if (null == config.getQueryFieldsDatatypes()) {
                 QueryException qe = new QueryException(DatawaveErrorCode.DATATYPESFORINDEXFIELDS_MULTIMAP_MISSING);
@@ -115,14 +135,10 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
 
             rebuildFutureJexlNodes();
 
-            // handle the case where the root node was expanded
-            if (rebuiltScript instanceof FutureJexlNode) {
-                rebuiltScript = (T) ((FutureJexlNode) rebuiltScript).getRebuiltNode();
-            }
-
             return rebuiltScript;
         } finally {
             shutdownExecutor();
+            shutdownMonitor();
         }
     }
 
@@ -159,7 +175,7 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
      *            whether the original node should be replaced
      * @return a FutureJexlNode
      */
-    protected FutureJexlNode createFutureJexlNode(IndexLookup lookup, JexlNode node, boolean ignoreComposites, boolean keepOriginalNode) {
+    protected JexlNode createFutureJexlNode(IndexLookup lookup, JexlNode node, boolean ignoreComposites, boolean keepOriginalNode) {
         // if this is an asynchronous index lookup, set
         // it up and submit it to the executor service
         if (lookup instanceof AsyncIndexLookup) {
@@ -170,7 +186,8 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
         futureNode.jjtSetParent(node.jjtGetParent());
         futureJexlNodes.add(futureNode);
 
-        return futureNode;
+        // do not embed the FutureJexlNode into the tree. It complicates rewrites.
+        return node;
     }
 
     protected void rebuildFutureJexlNodes() {
@@ -181,13 +198,12 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
 
             rebuildFutureJexlNode(futureJexlNode);
 
-            JexlNode newNode = futureJexlNode.getRebuiltNode();
-
-            // if the parent is not null, replace the child
-            // if the parent is null, this is the root node, and we will handle that in the expand method
-            if (futureJexlNode.jjtGetParent() != null) {
-                JexlNodes.replaceChild(futureJexlNode.jjtGetParent(), futureJexlNode, newNode);
+            if (futureJexlNode.jjtGetParent() == null) {
+                throw new IllegalStateException("Invalid query tree detected during index expansion");
             }
+
+            JexlNode node = futureJexlNode.getOrigNode();
+            JexlNodes.swap(node.jjtGetParent(), node, futureJexlNode.getRebuiltNode());
         }
     }
 
@@ -203,6 +219,7 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
      * Serves as a placeholder Jexl node which can eventually be replaced with an expanded Jexl node once the Index Lookup has finished
      */
     protected static class FutureJexlNode extends JexlNode {
+        private static final long serialVersionUID = -6505517654708569236L;
         private final JexlNode origNode;
         private final IndexLookup lookup;
         private final boolean ignoreComposites;
@@ -277,15 +294,19 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
             return;
         }
 
-        if (lookupMap.containsKey(field)) {
-            String term = JexlStringBuildingVisitor.buildQuery(node);
-            if (lookupMap.get(field).isEmpty()) {
-                log.debug("{} expansion for term [{}] failed (no data)", stage, term);
-            } else if (lookupMap.get(field).isThresholdExceeded()) {
-                log.debug("{} expansion for term [{}] failed (threshold)", stage, term);
-            } else {
-                log.debug("{} expansion for term [{}] success ({} values)", stage, term, lookupMap.get(field).size());
+        String term = JexlStringBuildingVisitor.buildQuery(node);
+        try {
+            if (lookupMap.containsKey(field)) {
+                if (lookupMap.get(field).isEmpty()) {
+                    log.debug("{} expansion for term [{}] failed (no data)", stage, term);
+                } else if (lookupMap.get(field).isThresholdExceeded()) {
+                    log.debug("{} expansion for term [{}] failed (threshold)", stage, term);
+                } else {
+                    log.debug("{} expansion for term [{}] success ({} values)", stage, term, lookupMap.get(field).size());
+                }
             }
+        } catch (ExceededThresholdException e) {
+            log.error("{} expansion for term [{}] had an error, possible race condition.", stage, term);
         }
     }
 
@@ -312,7 +333,7 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
         @Override
         public Thread newThread(Runnable r) {
             Thread thread = dtf.newThread(r);
-            thread.setName(name + " Session " + threadIdentifier + " -" + threadNum++);
+            thread.setName(name + " " + threadIdentifier + " -" + threadNum++);
             thread.setDaemon(true);
             thread.setUncaughtExceptionHandler(config.getQuery().getUncaughtExceptionHandler());
             return thread;

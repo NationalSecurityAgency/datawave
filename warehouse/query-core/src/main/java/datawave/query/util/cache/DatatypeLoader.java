@@ -118,7 +118,7 @@ public class DatatypeLoader extends AccumuloLoader<String,Multimap<String,Type<?
                     String row = key.getRow().toString().toUpperCase();
 
                     if (reverse)
-                        row = new StringBuffer(row).reverse().toString();
+                        row = new StringBuilder(row).reverse().toString();
 
                     Multimap<String,Type<?>> typedNormalizers = entryCache.get(row);
 
@@ -130,7 +130,7 @@ public class DatatypeLoader extends AccumuloLoader<String,Multimap<String,Type<?
                     @SuppressWarnings("unchecked")
                     Class<? extends Type<?>> clazz = (Class<? extends Type<?>>) Class.forName(colq.substring(idx + 1));
 
-                    Type<?> normalizer = clazz.newInstance();
+                    Type<?> normalizer = clazz.getDeclaredConstructor().newInstance();
 
                     typedNormalizers.put(type, normalizer);
 

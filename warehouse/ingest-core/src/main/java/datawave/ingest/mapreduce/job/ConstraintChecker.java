@@ -38,7 +38,8 @@ public class ConstraintChecker {
                 }
 
                 try {
-                    ConstraintInitializer initializer = Class.forName(initializerClass).asSubclass(ConstraintInitializer.class).newInstance();
+                    ConstraintInitializer initializer = Class.forName(initializerClass).asSubclass(ConstraintInitializer.class).getDeclaredConstructor()
+                                    .newInstance();
                     initializer.addConstraints(conf, constraints);
 
                 } catch (Exception e) {
@@ -99,6 +100,8 @@ public class ConstraintChecker {
      * Thrown when a violation is encountered.
      */
     public static class ConstraintViolationException extends RuntimeException {
+        private static final long serialVersionUID = -9068071363548359998L;
+
         public ConstraintViolationException(Text table, VisibilityConstraint constraint) {
             super(String.format("Visibility constraint '%s' violated for table '%s'", constraint, table));
         }

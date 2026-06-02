@@ -7,12 +7,13 @@ import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.retry.RetryNTimes;
-import org.apache.log4j.Logger;
 import org.apache.zookeeper.data.Stat;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ZkSnowflakeCache {
 
-    private static final Logger LOGGER = Logger.getLogger(ZkSnowflakeCache.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ZkSnowflakeCache.class);
 
     private static CuratorFramework curator;
     private static boolean isInitialized = false;

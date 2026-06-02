@@ -18,8 +18,7 @@ import org.apache.hadoop.io.Text;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.base.Splitter;
-
+import datawave.core.common.util.TypeFilter;
 import datawave.query.Constants;
 import datawave.query.jexl.LiteralRange;
 
@@ -55,7 +54,12 @@ public class BoundedRangeExpansionIterator extends SeekingFilter implements Opti
         if (StringUtils.isBlank(opt)) {
             datatypes = new TreeSet<>();
         } else {
-            datatypes = new TreeSet<>(Splitter.on(',').splitToList(opt));
+            TypeFilter filter = TypeFilter.fromString(opt);
+            if (filter.isEmpty()) {
+                datatypes = new TreeSet<>();
+            } else {
+                datatypes = new TreeSet<>(filter.getElements());
+            }
         }
 
         startDate = options.get(START_DATE);
@@ -80,7 +84,9 @@ public class BoundedRangeExpansionIterator extends SeekingFilter implements Opti
 
     @Override
     public FilterResult filter(Key k, Value v) {
-        log.trace("filter key: {}", k.toStringNoTime());
+        if (log.isTraceEnabled()) {
+            log.trace("filter key: {}", k.toStringNoTime());
+        }
 
         // shard + null + datatype
         String cq = k.getColumnQualifier().toString();
@@ -124,7 +130,9 @@ public class BoundedRangeExpansionIterator extends SeekingFilter implements Opti
      */
     @Override
     public Key getNextKeyHint(Key k, Value v) {
-        log.trace("get next key hint: {}", k.toStringNoTime());
+        if (log.isTraceEnabled()) {
+            log.trace("get next key hint: {}", k.toStringNoTime());
+        }
 
         // shard + null + datatype
         String cq = k.getColumnQualifier().toString();

@@ -25,7 +25,7 @@ public class ModificationRequestBase implements Serializable {
 
     private static String COLUMN_VISIBILITY = "columnVisibility";
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 4312291034126058550L;
 
     @XmlEnum(String.class)
     public enum MODE {

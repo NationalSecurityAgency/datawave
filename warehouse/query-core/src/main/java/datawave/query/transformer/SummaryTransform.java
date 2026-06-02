@@ -30,6 +30,7 @@ import com.google.common.collect.Iterators;
 
 import datawave.common.util.ArgumentChecker;
 import datawave.query.Constants;
+import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Content;
 import datawave.query.attributes.Document;
@@ -51,22 +52,26 @@ public class SummaryTransform extends DocumentTransform.DefaultDocumentTransform
     private static final String SUMMARY_EMPTY_MESSAGE = "NO CONTENT FOUND TO SUMMARIZE";
     private static final Summary ERROR_SUMMARY = new Summary(null, SUMMARY_ERROR_MESSAGE);
     private static final Summary EMPTY_SUMMARY = new Summary(null, SUMMARY_EMPTY_MESSAGE);
-
-    private static final String CONTENT_SUMMARY = "CONTENT_SUMMARY";
+    private static final String DEFAULT_SUMMARY_FIELD_NAME = "SUMMARY";
 
     private final ContentSummaryIterator summaryIterator;
+    private final String summaryFieldName;
     private final SummaryOptions summaryOptions;
     private final IteratorEnvironment env;
     private final SortedKeyValueIterator<Key,Value> source;
 
-    public SummaryTransform(SummaryOptions summaryOptions, IteratorEnvironment env, SortedKeyValueIterator<Key,Value> source,
+    public SummaryTransform(SummaryOptions summaryOptions, String summaryFieldName, IteratorEnvironment env, SortedKeyValueIterator<Key,Value> source,
                     SortedKeyValueIterator<Key,Value> summaryIterator) {
         ArgumentChecker.notNull(summaryOptions);
         this.summaryOptions = summaryOptions;
         this.env = env;
         this.source = source;
         this.summaryIterator = (ContentSummaryIterator) summaryIterator;
-
+        if (summaryFieldName != null && !summaryFieldName.isBlank()) {
+            this.summaryFieldName = summaryFieldName;
+        } else {
+            this.summaryFieldName = DEFAULT_SUMMARY_FIELD_NAME;
+        }
     }
 
     @Nullable
@@ -82,7 +87,7 @@ public class SummaryTransform extends DocumentTransform.DefaultDocumentTransform
                         log.trace("Fetching summaries {} for document {}", summaryOptions, document.getMetadata());
                     }
                     Set<Summary> summaries = getSummaries(documentKeys);
-                    addSummariesToDocument(summaries, document);
+                    addSummariesToDocument(summaries, document, summaryFieldName);
                 } else {
                     if (log.isTraceEnabled()) {
                         log.trace("document keys were not added to document {}, skipping", document.getMetadata());
@@ -100,10 +105,23 @@ public class SummaryTransform extends DocumentTransform.DefaultDocumentTransform
      *            the document
      * @return a list of the eventIds
      */
-    private static ArrayList<DocumentKey> getEventIds(Document document) {
+    protected static ArrayList<DocumentKey> getEventIds(Document document) {
         ArrayList<DocumentKey> eventIds = new ArrayList<>();
-        if (document.containsKey("RECORD_ID")) {
-            eventIds.add((DocumentKey) document.get("RECORD_ID"));
+        if (document.containsKey(Document.DOCKEY_FIELD_NAME)) {
+            Attribute<?> attr = document.get(Document.DOCKEY_FIELD_NAME);
+            if (attr instanceof DocumentKey) {
+                eventIds.add((DocumentKey) attr);
+            } else if (attr instanceof Attributes) {
+                // if the attr is an instanceof Attributes, then we need to find the one that best describes
+                // the root or TLD document which should be the one with the smallest CF (datatype\x00uid)
+                Attribute<?> smallest = null;
+                for (Attribute<?> child : ((Attributes) attr).getAttributes()) {
+                    if (smallest == null || child.getMetadata().getColumnFamily().getLength() < smallest.getMetadata().getColumnFamily().getLength()) {
+                        smallest = child;
+                    }
+                }
+                eventIds.add((DocumentKey) smallest);
+            }
         } else {
             Key key = document.getMetadata();
             String[] cf = key.getColumnFamily().toString().split(Constants.NULL);
@@ -114,14 +132,14 @@ public class SummaryTransform extends DocumentTransform.DefaultDocumentTransform
     }
 
     /**
-     * Add the summaries to the document as part of {@value #CONTENT_SUMMARY}.
+     * Add the summaries to the document as part of the configured summary field.
      *
      * @param summaries
      *            the summaries to add
      * @param document
      *            the document
      */
-    private static void addSummariesToDocument(Set<Summary> summaries, Document document) {
+    private static void addSummariesToDocument(Set<Summary> summaries, Document document, String summaryFieldName) {
         Attributes summaryAttribute = new Attributes(true);
 
         for (Summary summary : summaries) {
@@ -131,7 +149,7 @@ public class SummaryTransform extends DocumentTransform.DefaultDocumentTransform
             }
         }
 
-        document.put(CONTENT_SUMMARY, summaryAttribute);
+        document.replace(summaryFieldName, summaryAttribute, false);
     }
 
     /**

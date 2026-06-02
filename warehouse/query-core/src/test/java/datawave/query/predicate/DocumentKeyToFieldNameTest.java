@@ -122,6 +122,7 @@ public class DocumentKeyToFieldNameTest {
     }
 
     private static class TestDatatype extends BaseType<String> {
+        private static final long serialVersionUID = 3822654660554167058L;
 
         public TestDatatype(String delegateString, Normalizer<String> normalizer) {
             super(delegateString, normalizer);

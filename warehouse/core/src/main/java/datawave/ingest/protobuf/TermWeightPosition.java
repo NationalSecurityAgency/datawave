@@ -3,13 +3,14 @@ package datawave.ingest.protobuf;
 import java.util.Comparator;
 
 import org.apache.commons.lang.builder.HashCodeBuilder;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This is a utility class for processing a single term weight position. These get aggregated into a TermWeight,
  */
 public class TermWeightPosition implements Comparable<TermWeightPosition> {
-    private static final Logger log = Logger.getLogger(TermWeightPosition.class);
+    private static final Logger log = LoggerFactory.getLogger(TermWeightPosition.class);
     public static final int DEFAULT_OFFSET = -1;
     public static final int DEFAULT_PREV_SKIPS = -1;
     public static final int DEFAULT_SCORE = -1;

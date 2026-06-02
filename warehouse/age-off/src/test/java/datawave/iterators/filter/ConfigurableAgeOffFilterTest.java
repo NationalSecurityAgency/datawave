@@ -1,9 +1,9 @@
 package datawave.iterators.filter;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.net.URL;
@@ -60,9 +60,9 @@ public class ConfigurableAgeOffFilterTest {
 
         filter.init(source, options, env);
 
-        assertThat(filter.accept(new Key(), VALUE), is(true));
+        assertTrue(filter.accept(new Key(), VALUE));
         // 1970 is older than 30 days, but filter is disable so should be true
-        assertThat(filter.accept(getKey(0), VALUE), is(true));
+        assertTrue(filter.accept(getKey(0), VALUE));
     }
 
     @Test
@@ -73,9 +73,9 @@ public class ConfigurableAgeOffFilterTest {
 
         filter.init(source, options, env);
 
-        assertThat(filter.accept(new Key(), VALUE), is(true));
+        assertTrue(filter.accept(new Key(), VALUE));
         // 1970 is older than 30 days, but filter is disable so should be true
-        assertThat(filter.accept(getKey(0), VALUE), is(true));
+        assertTrue(filter.accept(getKey(0), VALUE));
     }
 
     @Test
@@ -86,9 +86,9 @@ public class ConfigurableAgeOffFilterTest {
         // no file or other delegate filters configured, so only the ttl are used
         filter.init(source, options, env);
 
-        assertThat(filter.accept(getKey(daysAgo(10)), VALUE), is(true));
+        assertTrue(filter.accept(getKey(daysAgo(10)), VALUE));
         // 100 is older than 30 days
-        assertThat(filter.accept(getKey(daysAgo(100)), VALUE), is(false));
+        assertFalse(filter.accept(getKey(daysAgo(100)), VALUE));
     }
 
     @Test
@@ -100,8 +100,8 @@ public class ConfigurableAgeOffFilterTest {
 
         // the file uses TestFilter which always returns false for accept and filter applied
         // so only ttl is uses for acceptance
-        assertThat(filter.accept(getKey(daysAgo(15)), VALUE), is(true));
-        assertThat(filter.accept(getKey(daysAgo(123)), VALUE), is(false));
+        assertTrue(filter.accept(getKey(daysAgo(15)), VALUE));
+        assertFalse(filter.accept(getKey(daysAgo(123)), VALUE));
     }
 
     @Test
@@ -143,24 +143,23 @@ public class ConfigurableAgeOffFilterTest {
         long compositeTS = CompositeTimestamp.getCompositeTimeStamp(daysAgo(365), tomorrow);
 
         // brand new key should be good
-        assertThat(filter.accept(new Key(), VALUE), is(true));
+        assertTrue(filter.accept(new Key(), VALUE));
         // first five will hit the ttl short circuit
-        assertThat(filter.accept(getKey(daysAgo(1)), VALUE), is(true));
-        assertThat(filter.accept(getKey(daysAgo(2)), VALUE), is(true));
-        assertThat(filter.accept(getKey(daysAgo(3)), VALUE), is(true));
-        assertThat(filter.accept(getKey(daysAgo(4)), VALUE), is(true));
-        assertThat("If this fails it may be an edge case due to date rollover, try again in a minute", //
-                        filter.accept(getKey(daysAgo(5)), VALUE), is(true));
+        assertTrue(filter.accept(getKey(daysAgo(1)), VALUE));
+        assertTrue(filter.accept(getKey(daysAgo(2)), VALUE));
+        assertTrue(filter.accept(getKey(daysAgo(3)), VALUE));
+        assertTrue(filter.accept(getKey(daysAgo(4)), VALUE));
+        assertTrue("If this fails it may be an edge case due to date rollover, try again in a minute", filter.accept(getKey(daysAgo(5)), VALUE));
 
         // these will not hit the ttl short circuit and the single applied rule
-        assertThat(filter.accept(getKey("foo", daysAgo(6)), VALUE), is(true));
+        assertTrue(filter.accept(getKey("foo", daysAgo(6)), VALUE));
         // will not match so should be true
-        assertThat(filter.accept(getKey("bar", daysAgo(7)), VALUE), is(true));
-        assertThat(filter.accept(getKey("foo", daysAgo(8)), VALUE), is(true));
+        assertTrue(filter.accept(getKey("bar", daysAgo(7)), VALUE));
+        assertTrue(filter.accept(getKey("foo", daysAgo(8)), VALUE));
         // this is really old and matches so should not be accepted
-        assertThat(filter.accept(getKey("foo", daysAgo(365)), VALUE), is(false));
+        assertFalse(filter.accept(getKey("foo", daysAgo(365)), VALUE));
         // this is really old and matches, but has a future age off date, so should be accepted
-        assertThat(filter.accept(getKey("foo", compositeTS), VALUE), is(true));
+        assertTrue(filter.accept(getKey("foo", compositeTS), VALUE));
 
     }
 
@@ -198,10 +197,10 @@ public class ConfigurableAgeOffFilterTest {
         Key oldBarTab = getKey("bar", "tab", daysAgo(100));
         Key lowBar = getKey("low", "bar", daysAgo(32));
 
-        assertThat(filter.accept(fooWee, VALUE), is(true));
-        assertThat(filter.accept(newBarTab, VALUE), is(true));
-        assertThat(filter.accept(oldBarTab, VALUE), is(false));
-        assertThat(filter.accept(lowBar, VALUE), is(false));
+        assertTrue(filter.accept(fooWee, VALUE));
+        assertTrue(filter.accept(newBarTab, VALUE));
+        assertFalse(filter.accept(oldBarTab, VALUE));
+        assertFalse(filter.accept(lowBar, VALUE));
     }
 
     @Test(expected = NullPointerException.class)
@@ -229,14 +228,14 @@ public class ConfigurableAgeOffFilterTest {
         // @formatter:on
         for (String unit : allUnits) {
             options.put(AgeOffConfigParams.TTL_UNITS, unit);
-            assertThat(filter.validateOptions(options), is(true));
+            assertTrue(filter.validateOptions(options));
         }
         options.put(AgeOffConfigParams.TTL_UNITS, "parsecs");
-        assertThat(filter.validateOptions(options), is(false));
+        assertFalse(filter.validateOptions(options));
 
         options.put(AgeOffConfigParams.TTL, "0x143");
         options.put(AgeOffConfigParams.TTL_UNITS, AgeOffTtlUnits.DAYS);
-        assertThat(filter.validateOptions(options), is(false));
+        assertFalse(filter.validateOptions(options));
     }
 
     // --------------------------------------------

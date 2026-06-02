@@ -98,7 +98,6 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
 
     private Set<ColumnVisibility> columnVisibilities = Sets.newHashSet();
     private TreeMap<Key,Value> keyCache = null;
-    protected static final MarkingFunctions markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
 
     // -------------------------------------------------------------------------
     // ------------- Constructors
@@ -566,7 +565,7 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
             ColumnVisibility cv = null;
             try {
                 // Calculate the columnVisibility for this key from the combiner.
-                cv = markingFunctions.combine(columnVisibilities);
+                cv = MarkingFunctions.Factory.createMarkingFunctions().combine(columnVisibilities);
             } catch (Exception e) {
                 log.error("Could not create combined columnVisibility for the count", e);
                 return null;

@@ -29,7 +29,7 @@ import io.protostuff.Schema;
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public class DefaultEvent extends EventBase<DefaultEvent,DefaultField> implements Serializable, Message<DefaultEvent>, ObjectSizeOf {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 2390592143914560317L;
 
     @XmlElement(name = "Markings")
     @XmlJavaTypeAdapter(StringMapAdapter.class)

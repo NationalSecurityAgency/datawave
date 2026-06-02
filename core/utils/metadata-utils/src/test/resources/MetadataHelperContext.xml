@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+
+    <bean id="metadataCacheManager" scope="prototype" class="datawave.query.util.MetadataCacheManager">
+        <constructor-arg name="cacheManager" ref="metadataHelperCacheManager" />
+    </bean>
+
+
+    <bean id="metadataHelperCacheManager" class="org.springframework.cache.caffeine.CaffeineCacheManager">
+        <property name="cacheSpecification" value="maximumSize=100, expireAfterWrite=1m, recordStats" />
+    </bean>
+</beans>

@@ -1,6 +1,7 @@
 package datawave.query.tables;
 
 import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -24,13 +25,15 @@ import datawave.core.query.result.event.DefaultResponseObjectFactory;
 import datawave.marking.MarkingFunctions;
 import datawave.query.Constants;
 import datawave.query.QueryTestTableHelper;
-import datawave.query.planner.FederatedQueryPlanner;
+import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
+import datawave.query.planner.DatePartitionedQueryPlanner;
 import datawave.query.testframework.AbstractFunctionalQuery;
 import datawave.query.testframework.AccumuloSetup;
 import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.FileType;
 import datawave.query.testframework.QueryLogicTestHarness;
+import datawave.query.testframework.cardata.CarDataManager;
 import datawave.query.testframework.cardata.CarsDataType;
 import datawave.query.testframework.cardata.CarsDataType.CarField;
 import datawave.query.testframework.cardata.GenericCarFields;
@@ -42,7 +45,7 @@ import datawave.security.authorization.SubjectIssuerDNPair;
 
 /**
  * See {@link GenericCarFields#index} for which fields are indexed in the data set used by this test.
- *
+ * <p>
  * Also see {@link GenericCarFields#reverse} for reverse indices.
  */
 public class IndexQueryLogicTest extends AbstractFunctionalQuery {
@@ -60,6 +63,8 @@ public class IndexQueryLogicTest extends AbstractFunctionalQuery {
     public static void setupClass() throws Exception {
         Collection<DataTypeHadoopConfig> dataTypes = new ArrayList<>();
         FieldConfig generic = new GenericCarFields();
+
+        CarDataManager.newInstance(); // Can I do this dynamically?
         dataTypes.add(new CarsDataType(CarsDataType.CarEntry.tesla, generic));
         dataTypes.add(new CarsDataType(CarsDataType.CarEntry.ford, generic));
 
@@ -84,8 +89,16 @@ public class IndexQueryLogicTest extends AbstractFunctionalQuery {
         this.logic.setDateIndexHelperFactory(new DateIndexHelperFactory());
         this.logic.setMarkingFunctions(new MarkingFunctions.Default());
         this.logic.setMetadataHelperFactory(new MetadataHelperFactory());
-        this.logic.setQueryPlanner(new FederatedQueryPlanner());
+        this.logic.setQueryPlanner(new DatePartitionedQueryPlanner());
         this.logic.setResponseObjectFactory(new DefaultResponseObjectFactory());
+
+        // setup the hadoop configuration
+        URL hadoopConfig = this.getClass().getResource("/testhadoop.config");
+        logic.setHdfsSiteConfigURLs(hadoopConfig.toExternalForm());
+
+        // setup a directory for cache results
+        IvaratorCacheDirConfig config = new IvaratorCacheDirConfig(temporaryFolder.newFolder().toURI().toString());
+        logic.setIvaratorCacheDirConfigs(Collections.singletonList(config));
 
         // init must set auths
         testInit();

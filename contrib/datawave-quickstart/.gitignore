@@ -24,7 +24,6 @@
 !bin/services/datawave/test-web/responses/*
 !bin/services/datawave/test-web/responses/**/*.expected
 
-!.dockerignore
 !docker
 !docker/**
 

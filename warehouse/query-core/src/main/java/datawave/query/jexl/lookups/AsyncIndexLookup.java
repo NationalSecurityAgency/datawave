@@ -1,5 +1,6 @@
 package datawave.query.jexl.lookups;
 
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -12,6 +13,7 @@ import org.apache.log4j.Logger;
 
 import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.scan.ScannerBuilder;
 import datawave.query.tables.ScannerFactory;
 
 /**
@@ -22,14 +24,29 @@ import datawave.query.tables.ScannerFactory;
 public abstract class AsyncIndexLookup extends IndexLookup {
     private static final Logger log = ThreadConfigurableLogger.getLogger(AsyncIndexLookup.class);
 
-    protected boolean unfieldedLookup;
-
     protected ExecutorService execService;
+
+    // specific lookups may use this threshold
+    protected final int maxUnfieldedExpansionThreshold;
+    protected final int maxValueExpansionThreshold;
+
+    // flag for unfielded lookups
+    protected final boolean unfieldedLookup;
+
+    protected ScannerBuilder builder = null;
+    protected ScanMonitor monitor;
 
     public AsyncIndexLookup(ShardQueryConfiguration config, ScannerFactory scannerFactory, boolean unfieldedLookup, ExecutorService execService) {
         super(config, scannerFactory);
         this.unfieldedLookup = unfieldedLookup;
         this.execService = execService;
+
+        this.maxUnfieldedExpansionThreshold = config.getMaxUnfieldedExpansionThreshold();
+        this.maxValueExpansionThreshold = config.getMaxValueExpansionThreshold();
+    }
+
+    public void setScanMonitor(ScanMonitor monitor) {
+        this.monitor = monitor;
     }
 
     /**
@@ -48,6 +65,7 @@ public abstract class AsyncIndexLookup extends IndexLookup {
             try {
                 startedLatch.await();
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 throw new UnsupportedOperationException("Interrupted while waiting for IndexLookup to start", e);
             }
         } else {
@@ -80,14 +98,18 @@ public abstract class AsyncIndexLookup extends IndexLookup {
                 break;
             }
 
-        } catch (InterruptedException | ExecutionException e) {
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             throw new RuntimeException(e);
-        } catch (TimeoutException e) {
+        } catch (ExecutionException e) {
+            throw new RuntimeException(e);
+        } catch (TimeoutException | CancellationException e) {
             future.cancel(true);
 
             try {
                 stoppedLatch.await();
             } catch (InterruptedException ex) {
+                Thread.currentThread().interrupt();
                 log.error("Interrupted waiting for canceled AsyncIndexLookup to complete.");
                 throw new RuntimeException(ex);
             }

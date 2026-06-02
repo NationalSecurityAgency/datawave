@@ -19,8 +19,6 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.log4j.Logger;
 
-import com.google.common.collect.Table;
-
 import datawave.ingest.mapreduce.handler.shard.ShardIdFactory;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.util.time.DateHelper;
@@ -186,7 +184,7 @@ public class SplitsFile {
         return dateIsBalanced;
     }
 
-    public static Map<String,List<Text>> getSplits(Configuration conf) throws IOException {
+    public static Map<Integer,List<Text>> getSplits(Configuration conf) throws IOException {
         return TableSplitsCache.getCurrentCache(conf).getSplits();
 
     }

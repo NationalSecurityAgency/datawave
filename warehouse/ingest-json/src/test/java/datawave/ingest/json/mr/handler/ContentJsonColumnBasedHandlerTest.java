@@ -46,9 +46,9 @@ public class ContentJsonColumnBasedHandlerTest {
     private static final boolean PRINT_GENERATED_KEYS_ONLY_ON_FAIL = true;
 
     private Configuration conf;
-    private static Path edgeKeyVersionCachePath = Paths.get(System.getProperty("user.dir"), "edge-key-version.txt");
-    private static Logger log = Logger.getLogger(ContentJsonColumnBasedHandlerTest.class);
-    private static Enumeration rootAppenders = Logger.getRootLogger().getAllAppenders();
+    private static final Path edgeKeyVersionCachePath = Paths.get(System.getProperty("user.dir"), "edge-key-version.txt");
+    private static final Logger log = Logger.getLogger(ContentJsonColumnBasedHandlerTest.class);
+    private static final Enumeration<?> rootAppenders = Logger.getRootLogger().getAllAppenders();
 
     @BeforeClass
     public static void setupSystemSettings() throws Exception {
@@ -113,6 +113,8 @@ public class ContentJsonColumnBasedHandlerTest {
         conf.set(ShardedDataTypeHandler.SHARD_TNAME, TableName.SHARD);
         conf.set(ShardedDataTypeHandler.SHARD_GIDX_TNAME, TableName.SHARD_INDEX);
         conf.set(ShardedDataTypeHandler.SHARD_GRIDX_TNAME, TableName.SHARD_RINDEX);
+        conf.set(ShardedDataTypeHandler.SHARD_DAY_INDEX_TABLE_NAME, TableName.SHARD_DAY_INDEX);
+        conf.set(ShardedDataTypeHandler.SHARD_YEAR_INDEX_TABLE_NAME, TableName.SHARD_YEAR_INDEX);
     }
 
     @Test

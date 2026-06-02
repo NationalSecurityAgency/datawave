@@ -1,12 +1,13 @@
 #!/bin/bash
 
-if [[ `uname` == "Darwin" ]]; then
-	THIS_SCRIPT=`python -c 'import os,sys;print os.path.realpath(sys.argv[1])' $0`
+if [[ $(uname) == "Darwin" ]]; then
+  THIS_SCRIPT=$(python -c 'import os,sys;print os.path.realpath(sys.argv[1])' $0)
 else
-	THIS_SCRIPT=`readlink -f $0`
+  THIS_SCRIPT=$(readlink -f "$0")
 fi
+
 THIS_DIR="${THIS_SCRIPT%/*}"
-cd $THIS_DIR
+cd $THIS_DIR || exit
 
 #
 # Get the classpath
@@ -28,13 +29,13 @@ fi
 declare -a INGEST_CONFIG
 i=0
 for f in ../../config/*-config.xml; do
-  INGEST_CONFIG[i++]=`basename $f`
+  INGEST_CONFIG[i++]=$(basename $f)
 done
 
 #
 # Transform the classpath into a comma-separated list also
 #
-LIBJARS=`echo $CLASSPATH | sed 's/:/,/g'`
+LIBJARS=$(echo $CLASSPATH | sed 's/:/,/g')
 
 #
 # Ingest parameters
@@ -47,10 +48,10 @@ if [[ "$BULK_CHILD_REDUCE_MAX_MEMORY_MB" == "" ]]; then
 fi
 # Tell Yarn that we're using 20% more memory than we've requested for the VM
 # to account for off heap memory usage.
-MAP_MEMORY_MB=$(( (($BULK_CHILD_MAP_MAX_MEMORY_MB*1048576*12)/10)/1048576  ))
-REDUCE_MEMORY_MB=$(( (($BULK_CHILD_REDUCE_MAX_MEMORY_MB*1048576*12)/10)/1048576  ))
+MAP_MEMORY_MB=$(( ((BULK_CHILD_MAP_MAX_MEMORY_MB*1048576*12)/10)/1048576  ))
+REDUCE_MEMORY_MB=$(( ((BULK_CHILD_REDUCE_MAX_MEMORY_MB*1048576*12)/10)/1048576  ))
 
-DATE=`date "+%Y%m%d%H%M%S"`
+DATE=$(date "+%Y%m%d%H%M%S")
 WORKDIR=${BASE_WORK_DIR}/${DATE}-$$/
 # specifying no partitioning argument will default to the MultiTableRangePartitioner
 PART_ARG=

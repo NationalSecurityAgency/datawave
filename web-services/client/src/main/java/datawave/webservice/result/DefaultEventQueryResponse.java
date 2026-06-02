@@ -28,7 +28,7 @@ import io.protostuff.Schema;
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public class DefaultEventQueryResponse extends EventQueryResponseBase implements TotalResultsAware, Serializable, Message<DefaultEventQueryResponse> {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 7770211210912829217L;
 
     @XmlElement(name = "TotalEvents")
     private Long totalEvents = null;

@@ -19,6 +19,7 @@ public class TablePartitionerOffsets extends HashMap<Text,Integer> {
     private final Configuration conf;
     private final PartitionerCache partitionerCache;
     private final int reduceTasks;
+    private static final long serialVersionUID = -1767994113482201024L;
 
     public TablePartitionerOffsets(Configuration conf, List<Text> tableNames, PartitionerCache partitionerCache) throws ClassNotFoundException {
         super();

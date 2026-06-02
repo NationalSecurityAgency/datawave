@@ -20,7 +20,6 @@ import datawave.core.query.logic.WritesResultCardinalities;
 import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.Query;
 import datawave.query.attributes.Document;
-import datawave.util.StringUtils;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
 import datawave.webservice.query.result.event.Metadata;
@@ -132,7 +131,7 @@ public class DocumentTransformer extends DocumentTransformerSupport<Entry<Key,Va
 
         String colf = documentKey.getColumnFamily().toString();
 
-        int index = colf.indexOf("\0");
+        int index = colf.indexOf('\0');
         Preconditions.checkArgument(-1 != index);
 
         String dataType = colf.substring(0, index);
@@ -177,7 +176,7 @@ public class DocumentTransformer extends DocumentTransformerSupport<Entry<Key,Va
             event.setFields(new ArrayList<>(documentFields));
 
             Metadata metadata = new Metadata();
-            String[] colfParts = StringUtils.split(colf, '\0');
+            String[] colfParts = colf.split("\0");
             if (colfParts.length >= 1) {
                 metadata.setDataType(colfParts[0]);
             }

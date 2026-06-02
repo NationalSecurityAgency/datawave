@@ -1,5 +1,7 @@
 package datawave.webservice.common.remote;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -37,6 +39,7 @@ import org.apache.http.HttpHeaders;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
@@ -183,6 +186,14 @@ public abstract class RemoteHttpService {
                             retryCounter(), nonRetriableClasses, unavailableRetryClasses);
 
             // @formatter:off
+            RequestConfig requestConfig = RequestConfig.custom()
+                    .setConnectionRequestTimeout(config.getConnectionPoolTimeout())
+                    .setConnectTimeout(config.getConnectTimeout())
+                    .setSocketTimeout(config.getSocketTimeout())
+                    .build();
+            // @formatter:on
+
+            // @formatter:off
             client = HttpClients.custom()
                     .setSSLContext(ctx)
                     .setSSLHostnameVerifier(NoopHostnameVerifier.INSTANCE)
@@ -190,6 +201,7 @@ public abstract class RemoteHttpService {
                     .setMaxConnTotal(maxConnections())
                     .setMaxConnPerRoute(maxConnections())
                     .setRetryHandler(datawaveRetryHandler)
+                    .setDefaultRequestConfig(requestConfig)
                     .setServiceUnavailableRetryStrategy(new DatawaveUnavailableRetryStrategy(unavailableRetryCount(), unavailableRetryDelay(), retryCounter()))
                     .build();
             // @formatter:on
@@ -214,6 +226,7 @@ public abstract class RemoteHttpService {
                 try {
                     Thread.sleep(1000L);
                 } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                     break;
                 }
                 totalWait = System.currentTimeMillis() - waitStart;
@@ -372,7 +385,7 @@ public abstract class RemoteHttpService {
 
     public String getContent(InputStream content) throws IOException {
         StringBuilder builder = new StringBuilder();
-        InputStreamReader reader = new InputStreamReader(content, "UTF8");
+        InputStreamReader reader = new InputStreamReader(content, UTF_8);
         char[] buffer = new char[1024];
         int chars = reader.read(buffer);
         while (chars >= 0) {
@@ -559,6 +572,30 @@ public abstract class RemoteHttpService {
         config.setUnavailableRetryDelay(unavailableRetryDelay);
     }
 
+    public void setSocketTimeout(int socketTimeout) {
+        getConfig().setSocketTimeout(socketTimeout);
+    }
+
+    public int getSocketTimeout() {
+        return getConfig().getSocketTimeout();
+    }
+
+    public void setConnectTimeout(int connectTimeout) {
+        getConfig().setConnectTimeout(connectTimeout);
+    }
+
+    public int getConnectTimeout() {
+        return getConfig().getConnectTimeout();
+    }
+
+    public void setConnectionPoolTimeout(int connectionPoolTimeout) {
+        getConfig().setConnectionPoolTimeout(connectionPoolTimeout);
+    }
+
+    public int getConnectionPoolTimeout() {
+        return getConfig().getConnectionPoolTimeout();
+    }
+
     public ResponseObjectFactory getResponseObjectFactory() {
         return responseObjectFactory;
     }
@@ -623,6 +660,7 @@ public abstract class RemoteHttpService {
                         }
                         Thread.sleep(unavailableRetryDelay);
                     } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
                         // Ignore -- we'll just end up retrying a little too fast
                     }
                 }

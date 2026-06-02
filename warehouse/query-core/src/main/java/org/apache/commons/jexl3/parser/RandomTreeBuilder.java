@@ -16,9 +16,7 @@ import org.springframework.core.type.filter.AssignableTypeFilter;
 
 import com.google.common.collect.Lists;
 
-import datawave.query.jexl.NodeTypeCount;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
-import datawave.query.jexl.visitors.NodeTypeCountVisitor;
 
 /**
  * Counts the total number of nodes for each node type present in a query tree.

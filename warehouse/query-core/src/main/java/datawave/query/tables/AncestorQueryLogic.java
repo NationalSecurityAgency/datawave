@@ -5,8 +5,8 @@ import datawave.query.ancestor.AncestorQueryPlanner;
 import datawave.query.ancestor.AncestorRangeStream;
 import datawave.query.ancestor.AncestorUidIntersector;
 import datawave.query.index.lookup.AncestorCreateUidsIterator;
+import datawave.query.planner.DatePartitionedQueryPlanner;
 import datawave.query.planner.DefaultQueryPlanner;
-import datawave.query.planner.FederatedQueryPlanner;
 import datawave.query.planner.QueryPlanner;
 
 /**
@@ -34,7 +34,7 @@ public class AncestorQueryLogic extends ShardQueryLogic {
 
     @Override
     public void setQueryPlanner(QueryPlanner planner) {
-        if (!(planner instanceof DefaultQueryPlanner) && !(planner instanceof FederatedQueryPlanner)) {
+        if (!(planner instanceof DefaultQueryPlanner) && !(planner instanceof DatePartitionedQueryPlanner)) {
             throw new IllegalArgumentException("Query logic requires DefaultQueryPlanner or FederatedQueryPlanner compatibility");
         }
 
@@ -45,8 +45,8 @@ public class AncestorQueryLogic extends ShardQueryLogic {
 
     private DefaultQueryPlanner getDefaultQueryPlanner() {
         QueryPlanner planner = getQueryPlanner();
-        if (planner instanceof FederatedQueryPlanner) {
-            return ((FederatedQueryPlanner) planner).getQueryPlanner();
+        if (planner instanceof DatePartitionedQueryPlanner) {
+            return ((DatePartitionedQueryPlanner) planner).getQueryPlanner();
         } else {
             return (DefaultQueryPlanner) planner;
         }

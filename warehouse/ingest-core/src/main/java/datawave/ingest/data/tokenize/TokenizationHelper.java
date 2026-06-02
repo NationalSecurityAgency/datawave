@@ -1,18 +1,23 @@
 package datawave.ingest.data.tokenize;
 
+import static org.apache.lucene.analysis.core.StopAnalyzer.ENGLISH_STOP_WORDS_SET;
+
 import java.io.IOException;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.CharArraySet;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import datawave.data.hash.HashUID;
+import datawave.data.hash.UID;
 import datawave.ingest.data.config.DataTypeHelper;
 import datawave.util.ObjectFactory;
 
 public class TokenizationHelper {
 
-    private static final Logger log = Logger.getLogger(TokenizationHelper.class);
+    private static final Logger log = LoggerFactory.getLogger(TokenizationHelper.class);
 
     /**
      * Used to track tokenization execution time. It's too expensive to perform a call to System.currentTimeMillis() each time we produce a new token, so spawn
@@ -21,10 +26,11 @@ public class TokenizationHelper {
      * The main thread will check the counter value each time it produces a new token and thus track the number of ticks that have elapsed.
      */
     public static class HeartBeatThread extends Thread {
-        private static final Logger log = Logger.getLogger(HeartBeatThread.class);
+        private static final Logger log = LoggerFactory.getLogger(HeartBeatThread.class);
 
         public static final long INTERVAL = 500; // half second resolution
         public static volatile int counter = 0;
+
         public static long lastRun;
 
         static {
@@ -41,15 +47,16 @@ public class TokenizationHelper {
                 try {
                     Thread.sleep(INTERVAL);
                 } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                     throw new RuntimeException(e);
                 }
 
-                // verify that we're exeuting in a timely fashion
-                // ..if not warn.
+                // verify that we're executing in a timely fashion; if not then send out a warning.
+                // if not warn.
                 long currentRun = System.currentTimeMillis();
                 long delta = currentRun - lastRun;
                 if (delta > (INTERVAL * 1.5)) {
-                    log.warn("HeartBeatThread starved for cpu, " + "should execute every " + INTERVAL + " ms, " + "latest: " + delta + " ms.");
+                    log.warn("HeartBeatThread starved for cpu, should execute every {}ms, latest: {}ms.", INTERVAL, delta);
                 }
                 lastRun = currentRun;
                 counter++;
@@ -138,6 +145,9 @@ public class TokenizationHelper {
     public static final String MAX_URL_DECODES = ".token.interfield.position.increment";
     private int maxUrlDecodes = 2;
 
+    public static final String CONTENT_CONTEXT_ENABLED = ".token.content.context.enabled";
+    private boolean contentContextEnabled = false;
+
     public TokenizationHelper(DataTypeHelper helper, Configuration conf) throws IllegalArgumentException {
         analyzerClassName = conf.get(helper.getType().typeName() + ANALYZER_CLASS, analyzerClassName);
         stopWordList = conf.get(helper.getType().typeName() + STOP_WORD_LIST, stopWordList);
@@ -159,6 +169,7 @@ public class TokenizationHelper {
         tokenizerTimeWarnThresholdMsec = conf.getLong(helper.getType().typeName() + TOKENIZER_TIME_WARN_MSEC, tokenizerTimeWarnThresholdMsec);
         tokenizerTimeErrorThresholdMsec = conf.getLong(helper.getType().typeName() + TOKENIZER_TIME_ERROR_MSEC, tokenizerTimeErrorThresholdMsec);
         interFieldPositionIncrement = conf.getInt(helper.getType().typeName() + INTERFIELD_POSITION_INCREMENT, interFieldPositionIncrement);
+        contentContextEnabled = conf.getBoolean(helper.getType().typeName() + CONTENT_CONTEXT_ENABLED, contentContextEnabled);
 
         final String nameProp = helper.getType().typeName() + TOKENIZER_TIME_THRESHOLD_NAMES;
         final String threshProp = helper.getType().typeName() + TOKENIZER_TIME_THRESHOLDS_MSEC;
@@ -347,6 +358,14 @@ public class TokenizationHelper {
         this.maxUrlDecodes = maxUrlDecodes;
     }
 
+    public boolean isContentContextEnabled() {
+        return contentContextEnabled;
+    }
+
+    public void setContentContextEnabled(boolean contentContextEnabled) {
+        this.contentContextEnabled = contentContextEnabled;
+    }
+
     public TokenSearch configureSearchUtil(TokenSearch searchUtil) {
         searchUtil.setDirtyWordTokensEnabled(isDirtyWordTokensEnabled());
         searchUtil.setFileWordTokensEnabled(isFileWordTokensEnabled());
@@ -373,8 +392,23 @@ public class TokenizationHelper {
             }
         } else {
             log.warn("Utilizing default stopword set. Tokenization and indexing may generate unwanted data");
-            stopWords = org.apache.lucene.analysis.core.StopAnalyzer.ENGLISH_STOP_WORDS_SET;
+            stopWords = ENGLISH_STOP_WORDS_SET;
         }
         return stopWords;
+    }
+
+    /**
+     * Obtains a Mumur hash for the specified content. Appended to the field name, so that distinct fields are produced based on the content value - and that
+     * proximity queries across content contexts don't match.
+     *
+     * @param content
+     *            the content for which to generate the hash
+     * @return the string version of the hash. Only the first portion of the HashUID is returned.
+     */
+    public String getContentContextHash(String content) {
+        UID uid = HashUID.builder().newId(content);
+        String uidString = uid.getBaseUid();
+        int first = uidString.indexOf(".");
+        return uidString.substring(0, first);
     }
 }

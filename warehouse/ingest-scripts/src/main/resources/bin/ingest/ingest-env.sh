@@ -17,7 +17,7 @@ shopt -s compat31 > /dev/null 2>&1
 
 # load the external password specifications.  The following needs to be defined in this script: PASSWORD, TRUSTSTORE_PASSWORD, KEYSTORE_PASSWORD
 function checkForVar (){
-   found=`cat $1 | egrep " $2 *="`
+   found=$(cat $1 | grep -E " $2 *=")
    if [[ "$found" == "" ]]; then
       echo "$2,"
    fi
@@ -194,6 +194,8 @@ HDFS_BASE_DIR="${HDFS_BASE_DIR}"
 
 BASE_WORK_DIR="${BASE_WORK_DIR}"
 BASE_WORK_DIR="${BASE_WORK_DIR:-/datawave/ingest/work}"
+
+ACTIVE_JOB_CACHE_PATH="${ACTIVE_JOB_CACHE_PATH}"
 
 HDFS_MONITOR_ARGS="${HDFS_MONITOR_ARGS}"
 

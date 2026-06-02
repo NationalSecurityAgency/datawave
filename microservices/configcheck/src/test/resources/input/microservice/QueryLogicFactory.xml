@@ -79,12 +79,6 @@
 
         <property name="auditType" value="${datawave.query.logic.logics.BaseEventQuery.auditType}" />
         <property name="logicDescription" value="${datawave.query.logic.logics.BaseEventQuery.logicDescription}" />
-        <!-- Determines how many events in the global index lookup will be
-        aggregated into a day range -->
-        <property name="eventPerDayThreshold" value="${datawave.query.logic.logics.BaseEventQuery.eventPerDayThreshold}" />
-        <!-- Determines how many shards in the global index lookup will be
-        aggregated into a day range -->
-        <property name="shardsPerDayThreshold" value="${datawave.query.logic.logics.BaseEventQuery.shardsPerDayThreshold}" />
         <!-- The max number of terms BEFORE all expansions -->
         <property name="initialMaxTermThreshold" value="${datawave.query.logic.logics.BaseEventQuery.initialMaxTermThreshold}" />
         <!-- The max number of terms AFTER all expansions -->
@@ -113,6 +107,10 @@
         <property name="hdfsSiteConfigURLs" value="${datawave.query.logic.logics.BaseEventQuery.hdfsSiteConfigURLs}" />
         <!-- the zookeeper configuration (could be something like file:///opt/datawave/zookeeper-warehouse/conf/zoo.cfg, or the zookeeper list (somehost1:2181,somehost2:2181,…)-->
         <property name="zookeeperConfig" value="${datawave.query.logic.logics.BaseEventQuery.zookeeperConfig}" />
+
+        <!-- This is injected via BaseEventQueryConfiguration.java and configured via configuration properties -->
+        <!-- the list of directories in which the query service puts its caches (selection always made on query service side) -->
+        <property name="localIvaratorCacheDirConfigs" ref="baseEventQueryLocalIvaratorCacheDirConfigs" />
 
         <!-- This is injected via BaseEventQueryConfiguration.java and configured via configuration properties -->
         <!-- the list of directories in which the ivarator puts its caches (selection always made on tserver side) -->
@@ -233,7 +231,23 @@
         <bean class="datawave.query.language.functions.jexl.TimeFunction"/>
         <bean class="datawave.query.language.functions.jexl.Jexl"/>
         <bean class="datawave.query.language.functions.jexl.Options"/>
+        <bean class="datawave.query.language.functions.jexl.GroupBy"/>
         <bean class="datawave.query.language.functions.jexl.Unique"/>
+        <bean class="datawave.query.language.functions.jexl.UniqueByDay"/>
+        <bean class="datawave.query.language.functions.jexl.UniqueByHour"/>
+        <bean class="datawave.query.language.functions.jexl.UniqueByMinute"/>
+        <bean class="datawave.query.language.functions.jexl.UniqueByMonth"/>
+        <bean class="datawave.query.language.functions.jexl.UniqueBySecond"/>
+        <bean class="datawave.query.language.functions.jexl.UniqueByTenthOfHour"/>
+        <bean class="datawave.query.language.functions.jexl.UniqueByYear"/>
+        <bean class="datawave.query.language.functions.jexl.MostRecentUnique"/>
+        <bean class="datawave.query.language.functions.jexl.MostRecentUniqueByDay"/>
+        <bean class="datawave.query.language.functions.jexl.MostRecentUniqueByHour"/>
+        <bean class="datawave.query.language.functions.jexl.MostRecentUniqueByMinute"/>
+        <bean class="datawave.query.language.functions.jexl.MostRecentUniqueByMonth"/>
+        <bean class="datawave.query.language.functions.jexl.MostRecentUniqueBySecond"/>
+        <bean class="datawave.query.language.functions.jexl.MostRecentUniqueByTenthOfHour"/>
+        <bean class="datawave.query.language.functions.jexl.MostRecentUniqueByYear"/>
         <bean class="datawave.query.language.functions.jexl.Geowave.Contains"/>
         <bean class="datawave.query.language.functions.jexl.Geowave.CoveredBy"/>
         <bean class="datawave.query.language.functions.jexl.Geowave.Covers"/>
@@ -476,10 +490,6 @@
         <property name="useEnrichers" value="${datawave.query.logic.logics.HitHighlights.useEnrichers}" />
         <property name="auditType" value="${datawave.query.logic.logics.HitHighlights.auditType}" />
         <property name="logicDescription" value="${datawave.query.logic.logics.HitHighlights.logicDescription}" />
-        <!-- Determines how many events in the global index lookup will be aggregated into a day range -->
-        <property name="eventPerDayThreshold" value="${datawave.query.logic.logics.HitHighlights.eventPerDayThreshold}" />
-        <!-- Determines how many shards in the global index lookup will be aggregated into a day range -->
-        <property name="shardsPerDayThreshold" value="${datawave.query.logic.logics.HitHighlights.shardsPerDayThreshold}" />
         <!-- The max number of terms BEFORE all expansions -->
         <property name="initialMaxTermThreshold" value="${datawave.query.logic.logics.BaseEventQuery.initialMaxTermThreshold}" />
         <!-- The max number of terms AFTER all expansions -->

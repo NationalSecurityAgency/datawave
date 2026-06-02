@@ -2,7 +2,6 @@ package datawave.core.common.cache;
 
 import java.io.Serializable;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -16,31 +15,30 @@ import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
-import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.NamespaceExistsException;
-import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.admin.NamespaceOperations;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iterators.user.RegExFilter;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Lists;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.accumulo.inmemory.InMemoryTableOperations;
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.common.connection.WrappedAccumuloClient;
 
 public class BaseTableCache implements Serializable, TableCache {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -5849784584173005890L;
 
-    private final transient Logger log = Logger.getLogger(this.getClass());
+    private final transient Logger log = LoggerFactory.getLogger(this.getClass());
 
     /** should be set by configuration **/
     private String tableName = null;
@@ -50,6 +48,7 @@ public class BaseTableCache implements Serializable, TableCache {
     private long maxRows = Long.MAX_VALUE;
 
     /** set programatically **/
+    private boolean available = false;
     private Date lastRefresh = new Date(0);
     private AccumuloConnectionFactory connectionFactory = null;
     private transient InMemoryInstance instance = null;
@@ -81,6 +80,11 @@ public class BaseTableCache implements Serializable, TableCache {
     @Override
     public Date getLastRefresh() {
         return lastRefresh;
+    }
+
+    @Override
+    public boolean isAvailable() {
+        return available;
     }
 
     @Override
@@ -215,13 +219,9 @@ public class BaseTableCache implements Serializable, TableCache {
                 count++;
             }
             this.lastRefresh = new Date();
-            try {
-                instanceClient.tableOperations().delete(tableName);
-            } catch (TableNotFoundException e) {
-                // the table will not exist the first time this is run
-            }
-            instanceClient.tableOperations().rename(tempTableName, tableName);
-            log.info("Cached " + count + " k,v for table: " + tableName);
+            ((InMemoryTableOperations) instanceClient.tableOperations()).rename(tempTableName, tableName, true);
+            log.info("Cached {} k,v for table: {}", count, tableName);
+            this.available = true;
         } catch (Exception e) {
             log.error(e.getMessage(), e);
             throw e;
@@ -238,7 +238,7 @@ public class BaseTableCache implements Serializable, TableCache {
                 if (null != writer)
                     writer.close();
             } catch (Exception e) {
-                log.warn("Error closing batch writer for table: " + tempTableName, e);
+                log.warn("Error closing batch writer for table: {}", tempTableName, e);
             }
             lock.unlock();
         }
@@ -247,11 +247,6 @@ public class BaseTableCache implements Serializable, TableCache {
 
     public void setupScanner(BatchScanner scanner) {
         scanner.setRanges(Lists.newArrayList(new Range()));
-        Map<String,String> options = new HashMap<>();
-        options.put(RegExFilter.COLF_REGEX, "^f$");
-        options.put("negate", "true");
-        IteratorSetting settings = new IteratorSetting(100, "skipFColumn", RegExFilter.class, options);
-        scanner.addScanIterator(settings);
     }
 
     @Override
@@ -269,7 +264,7 @@ public class BaseTableCache implements Serializable, TableCache {
                 }
             } catch (NamespaceExistsException e) {
                 // in this case, somebody else must have created the namespace after our existence check
-                log.info("Tried to create Accumulo namespace," + namespace + ", but it already exists");
+                log.info("Tried to create Accumulo namespace, {}, but it already exists", namespace);
             }
         }
     }

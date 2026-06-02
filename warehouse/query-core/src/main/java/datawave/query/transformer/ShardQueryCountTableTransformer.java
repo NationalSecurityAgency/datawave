@@ -68,7 +68,7 @@ public class ShardQueryCountTableTransformer extends BaseQueryLogicTransformer<E
         metadata.setInternalId(field.getName()); // There is only one item returned for the entire query logic.
         metadata.setRow(Constants.EMPTY_STRING);
         e.setMetadata(metadata);
-
+        e.setSizeInBytes(fields.size() * 6L);
         return e;
     }
 

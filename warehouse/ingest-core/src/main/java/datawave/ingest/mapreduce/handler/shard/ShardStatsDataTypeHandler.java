@@ -1,12 +1,7 @@
 package datawave.ingest.mapreduce.handler.shard;
 
-import static datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler.SHARD_TNAME;
-
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Enumeration;
 import java.util.List;
-import java.util.Properties;
 
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configuration;

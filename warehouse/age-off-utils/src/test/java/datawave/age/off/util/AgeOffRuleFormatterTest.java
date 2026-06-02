@@ -27,6 +27,7 @@ public class AgeOffRuleFormatterTest {
                 "          dryFood driedBeans=548d\n" +
                 "          dryFood bakingSoda=720d\n" +
                 "          dryFood coffeeGround=90d\n" +
+                "          dryFood sunbutter=183d\n" +
                 "          dryFood coffeeWholeBean=183d\n" +
                 "          dryFood coffeeInstant=730d\n" +
                 "          dryFood twinkies=" + Integer.MAX_VALUE + "d\n" +

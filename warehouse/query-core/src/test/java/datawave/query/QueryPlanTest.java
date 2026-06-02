@@ -16,7 +16,9 @@ import org.junit.Test;
 
 import datawave.microservice.querymetric.QueryMetric;
 import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.exceptions.DatawaveAsyncOperationException;
 import datawave.query.exceptions.DatawaveFatalQueryException;
+import datawave.query.exceptions.DatawaveQueryException;
 import datawave.query.exceptions.DoNotPerformOptimizedQueryException;
 import datawave.query.exceptions.FullTableScansDisallowedException;
 import datawave.query.exceptions.InvalidQueryException;
@@ -25,6 +27,7 @@ import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.testframework.AbstractFunctionalQuery;
 import datawave.query.testframework.AccumuloSetup;
 import datawave.query.testframework.CitiesDataType;
+import datawave.query.testframework.CityDataManager;
 import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.FileType;
@@ -58,6 +61,7 @@ public class QueryPlanTest extends AbstractFunctionalQuery {
         generic.addIndexField(CitiesDataType.CityField.STATE.name());
         generic.addReverseIndexField(CitiesDataType.CityField.STATE.name());
         generic.addReverseIndexField(CitiesDataType.CityField.CONTINENT.name());
+        CityDataManager.newInstance();
         DataTypeHadoopConfig dataType = new CitiesDataType(CitiesDataType.CityEntry.generic, generic);
         accumuloSetup.setData(FileType.CSV, dataType);
 
@@ -106,8 +110,8 @@ public class QueryPlanTest extends AbstractFunctionalQuery {
         this.logic.setIndexTableName("missing");
         try {
             runTest(query, query);
-            fail("Expected RuntimeException.");
-        } catch (RuntimeException e) {
+            fail("Expected DatawaveQueryException.");
+        } catch (DatawaveQueryException e) {
             assertEquals(expectedPlan, metric.getPlan());
         }
     }
@@ -119,8 +123,8 @@ public class QueryPlanTest extends AbstractFunctionalQuery {
         this.logic.setIndexTableName("missing");
         try {
             runTest(query, query);
-            fail("Expected RuntimeException.");
-        } catch (RuntimeException e) {
+            fail("Expected DatawaveQueryException.");
+        } catch (DatawaveQueryException e) {
             assertEquals(expectedPlan, metric.getPlan());
         }
     }
@@ -158,14 +162,14 @@ public class QueryPlanTest extends AbstractFunctionalQuery {
         String query = Constants.ANY_FIELD + " != " + "'" + TestCities.london + "'";
         // Do not expect the query plan to be updated with the resulting plan from DefaultQueryPlanner.process(), an error will occur earlier when attempting
         // to fetch field index holes from the missing metadata table.
-        String expectedPlan = "_ANYFIELD_ != 'london'";
+        String expectedPlan = "!(_ANYFIELD_ == 'london')";
 
         this.logic.setMetadataTableName("missing");
         try {
             runTestQuery(Collections.emptyList(), query, this.dataManager.getShardStartEndDate()[0], this.dataManager.getShardStartEndDate()[1],
                             Collections.emptyMap());
-            fail("Expected DatawaveFatalQueryException.");
-        } catch (DatawaveFatalQueryException e) {
+            fail("Expected DatawaveFatalQueryException or DatawaveAsyncOperationException.");
+        } catch (DatawaveFatalQueryException | DatawaveAsyncOperationException e) {
             assertEquals(expectedPlan, metric.getPlan());
         }
     }
@@ -179,8 +183,8 @@ public class QueryPlanTest extends AbstractFunctionalQuery {
         try {
             runTestQuery(Collections.emptyList(), query, this.dataManager.getShardStartEndDate()[0], this.dataManager.getShardStartEndDate()[1],
                             Collections.emptyMap());
-            fail("Expected DatawaveFatalQueryException.");
-        } catch (DatawaveFatalQueryException e) {
+            fail("Expected DatawaveFatalQueryException or DatawaveAsyncOperationException.");
+        } catch (DatawaveFatalQueryException | DatawaveAsyncOperationException e) {
             assertEquals(expectedPlan, metric.getPlan());
         }
     }

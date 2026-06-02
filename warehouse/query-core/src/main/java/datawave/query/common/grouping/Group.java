@@ -52,6 +52,15 @@ public class Group {
     }
 
     /**
+     * Cap the group count
+     *
+     * @param cap
+     */
+    public void capGroupCount(int cap) {
+        count = Math.min(count, cap);
+    }
+
+    /**
      * Returns the distinct set of values that represent this grouping.
      *
      * @return the grouping
@@ -162,7 +171,7 @@ public class Group {
 
     @Override
     public String toString() {
-        return new ToStringBuilder(this).append("attributes", grouping).append("attributeVisibilities", attributeVisibilities)
+        return new ToStringBuilder(this).append("grouping", grouping).append("attributeVisibilities", attributeVisibilities)
                         .append("documentVisibilities", documentVisibilities).append("count", count).append("aggregatedFields", fieldAggregator).toString();
     }
 }

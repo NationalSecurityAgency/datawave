@@ -1,0 +1,1123 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="fr">
+  <siteinfo>
+    <sitename>Wikipédia</sitename>
+    <dbname>frwiki</dbname>
+    <base>https://fr.wikipedia.org/wiki/Wikip%C3%A9dia:Accueil_principal</base>
+    <generator>MediaWiki 1.45.0-wmf.1</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Média</namespace>
+      <namespace key="-1" case="first-letter">Spécial</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Discussion</namespace>
+      <namespace key="2" case="first-letter">Utilisateur</namespace>
+      <namespace key="3" case="first-letter">Discussion utilisateur</namespace>
+      <namespace key="4" case="first-letter">Wikipédia</namespace>
+      <namespace key="5" case="first-letter">Discussion Wikipédia</namespace>
+      <namespace key="6" case="first-letter">Fichier</namespace>
+      <namespace key="7" case="first-letter">Discussion fichier</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">Discussion MediaWiki</namespace>
+      <namespace key="10" case="first-letter">Modèle</namespace>
+      <namespace key="11" case="first-letter">Discussion modèle</namespace>
+      <namespace key="12" case="first-letter">Aide</namespace>
+      <namespace key="13" case="first-letter">Discussion aide</namespace>
+      <namespace key="14" case="first-letter">Catégorie</namespace>
+      <namespace key="15" case="first-letter">Discussion catégorie</namespace>
+      <namespace key="100" case="first-letter">Portail</namespace>
+      <namespace key="101" case="first-letter">Discussion Portail</namespace>
+      <namespace key="102" case="first-letter">Projet</namespace>
+      <namespace key="103" case="first-letter">Discussion Projet</namespace>
+      <namespace key="104" case="first-letter">Référence</namespace>
+      <namespace key="105" case="first-letter">Discussion Référence</namespace>
+      <namespace key="710" case="first-letter">TimedText</namespace>
+      <namespace key="711" case="first-letter">TimedText talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Discussion module</namespace>
+      <namespace key="1728" case="first-letter">Event</namespace>
+      <namespace key="1729" case="first-letter">Event talk</namespace>
+      <namespace key="2600" case="first-letter">Sujet</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Neuromancien</title>
+    <ns>0</ns>
+    <id>38720</id>
+    <revision>
+      <id>225772586</id>
+      <parentid>225705941</parentid>
+      <timestamp>2025-05-18T19:10:43Z</timestamp>
+      <contributor>
+        <username>1904.CC</username>
+        <id>770503</id>
+      </contributor>
+      <comment>Historique de la publication</comment>
+      <origin>225772586</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="16826" sha1="suu7ybhzktqf2vko1qkugj8fjjvekbu" xml:space="preserve">{{Infobox Livre
+ | auteur             = [[William Gibson]]
+ | préface            = 
+ | directeur          = 
+ | genre              = [[Science-fiction]]&lt;br&gt;[[Cyberpunk]]
+ | titre_orig         = {{Langue|en|Neuromancer}}
+ | pays               = {{États-Unis}}
+ | lieuparution_orig  = [[New York]]
+ | langue             = [[Anglais américain]]
+ | éditeur_orig       = [[Ace Books]]
+ | collection_orig    = 
+ | dateparution_orig  = {{Date|1 juillet 1984|en littérature}}
+ | pages_orig         = 271
+ | isbn_orig          = 0-441-56956-0
+ | traducteur         = [[Jean Bonnefoy]]
+ | titre              = Neuromancien
+ | lieuparution       = [[Paris]]
+ | éditeur            = [[La Découverte]]
+ | collection         = Fictions
+ | dateparution       = {{Date|14 novembre 1985|en littérature}}
+ | image              = 
+ | légende            = 
+ | dessinateur        = 
+ | artiste_couverture = 
+ | série              = [[Trilogie de la Conurb]]
+ | type_média         = Livre papier
+ | pages              = 300
+ | isbn               = 2-7071-1562-2
+ | précédent          = 
+ | suivant            = [[Comte Zéro]]
+}}
+
+'''''Neuromancien''''' (titre original : ''{{Langue|en|Neuromancer}}'') est le premier roman de [[science-fiction]] de [[William Gibson]]. Publié en [[1984 en littérature|1984]], il est généralement considéré comme le roman fondateur du mouvement [[cyberpunk]], ayant inspiré bon nombre d'œuvres telles que le [[manga]] ''[[Ghost in the Shell]]'' et le film ''[[Matrix (film)|Matrix]]''. Il a notamment remporté le [[prix Nebula du meilleur roman]] 1984.
+
+Il est suivi par ''[[Comte Zéro]]'' (1986) et ''[[Mona Lisa s'éclate]]'' (1988).
+
+== Historique de la publication ==
+
+À la fin de 1981, Gibson est un jeune auteur qui n'a publié que quatre nouvelles. Il attire cependant l'attention du milieu SF avec la nomination de ''[[Johnny Mnemonic (nouvelle)|Johnny Mnemonic]]'' pour le [[Prix Nebula de la meilleure nouvelle courte|prix Nebula]] en 1981. Gibson obtient le soutien de l'éditeur Terry Carr, qui a publié sa nouvelle ''The Gernsback Continuum'' dans l'anthologie ''Universe'', et qui propose à Gibson de publier un roman. Gibson lui soumet en octobre 1981 un court [[synopsis]] sous le titre provisoire ''Jacked In'' («câblé»){{sfn|Henthorne|2011|p=10}}. À la même période, Gibson présente sa nouvelle ''[[Gravé sur chrome (nouvelle)|Gravé sur chrome]]'', dans laquelle il invente le concept de ''[[Cyberespace]]''. En 1982, Gibson débute l'écriture de ''Neuromancien'', bien qu'il ne se sent pas prêt pour l'écriture d'une œuvre longue. Poussé par une «panique animale», il combine le personnage de Molly apparu dans  ''Johnny Mnemonic'' avec la trame narrative de ''Gravé sur chrome''{{sfn|Westfahl|2013|p=61}}. Tout en s'occupant de son fils nouveau-né, Gibson termine son roman en 1983, en dépassant de six mois le délai imparti{{sfn|Henthorne|2011|p=10}}. Le livre sort chez [[Ace Books]] le 1er juillet 1984.
+
+[[William Gibson]] a ajouté la dernière phrase du roman à la dernière minute, dans une tentative délibérée de s'empêcher d'écrire une suite, mais a fini par le faire précisément avec ''[[Comte Zéro]]'' (1986)&lt;ref name="sequel"&gt;{{lien web| langue=en | auteur=William Gibson | titre=(untitled weblog post) | url=http://www.williamgibsonbooks.com/blog/2003_01_01_archive.asp#90158337 | site=williamgibsonbooks.com | date=2003-01-01 | archive-url=https://web.archive.org/web/20070926221513/http://www.williamgibsonbooks.com/blog/2003_01_01_archive.asp#90158337 | archive-date=September 26, 2007 }}&lt;/ref&gt;.
+
+== Contexte fictionnel ==
+''Neuromancien'' présente une [[dystopie]] de type [[cyberpunk]] : un monde futuriste où règne le [[capitalisme]] le plus débridé, gouverné par des [[mégacorporation]]s et où les drogues de synthèse et les augmentations physiques ([[cybernétique]]s) sont omniprésentes.
+
+Dans cet univers, les « ''cowboys'' » du [[cyberespace]] (des [[pirates informatiques]]) se connectent au [[réseau informatique]] global, surnommé la « Matrice » (''the matrix'' en VO), grâce à leur [[Ordinateur|console]] à laquelle ils sont reliés par des [[électrode]]s fixées sur le crâne, ce qui leur permet d'avoir une perception visuelle et sensorielle des données [[numérique]]s qui composent la Matrice.
+
+Les cowboys, en perpétuelle quête d'informations à monnayer au plus offrant, s'infiltrent incognito dans les [[banques de données]] des grandes corporations en exploitant leurs [[Faille informatique|failles]]. Mais la police de [[Alan Turing|Turing]] veille, ainsi que les [[Intelligence artificielle|Intelligences artificielle]]s (IA), utilisées pour protéger les données sensibles des corporations de la main avide des pirates ; tout comme la « Glace », des programmes [[Pare-feu (informatique)|pare-feu]] qui peuvent être d'un danger mortel pour les cowboys assez fous pour tenter de passer au travers, ou de les contourner.
+
+== Résumé ==
+Dans la ''Conurb'', la plus grande [[mégalopole]] du monde située en [[Amérique du Nord]], Henry Dorsett Case est un « cowboy » du cyberespace, un ''hacker'' qui sillonne la Matrice. Il est le meilleur et rien ne lui résiste. Mais un jour, étant trop gourmand, il décide de doubler son employeur. Celui-ci, en représailles, lui injecte une [[mycotoxine]] russe qui détruit de manière sélective une partie de son [[système nerveux]], celle qui est reliée aux « trodes » (les électrodes de sa console informatique). Case perd alors toute capacité à se connecter à la Matrice : pour lui, tout est perdu, il n'est plus rien...
+
+Aussi, lorsqu'un jour Armitage, un homme mystérieux au passé trouble mais apparemment influent, et Molly, une mercenaire dangereuse dont les yeux ont été remplacés par des implants oculaires, le retrouvent à [[Chiba]] au [[Japon]] et proposent de lui redonner accès à la Matrice, Case accepte sans hésiter. Mais sa mission est risquée : il s'agit de pénétrer le système informatique d'une gigantesque [[multinationale]] suisse, la Tessier-Ashpool SA, ce qu'il fera avec l'aide du mystérieux Muetdhiver.
+
+== Personnages ==
+* Case (Henry Dorsett Case)
+* Molly (Molly Millions)
+* Willis Corto, alias Armitage
+* Peter Riviera
+* Lady 3Jane / Marie-France Tessier-Ashpool
+* Hideo
+* Le Finlandais (« The Finn » en VO)
+* Maelcum
+* Julius « Julie » Deane
+* McCoy Pauley, alias « Dixie le Trait-plat » (« Dixie Flatline » en VO)
+* Muetdhiver (« Wintermute » en VO)
+* Neuromancien (« Neuromancer » en VO)
+* Linda Lee
+
+== À propos du titre ==
+Le terme « Neuromancien » est une variation du mot « nécromancien »&lt;ref&gt;{{CNRTL|nécromancie}}&lt;/ref&gt;{{,}}&lt;ref&gt;David Porush, « ''Cybernauts in Cyberspace: William Gibson's Neuromancer'' » in ''Aliens: The Anthropology of Science Fiction'', ed. George Slusser et Eric Rabkin, [[Carbondale (Illinois)|Carbondale]], 1987, {{p.}}171.&lt;/ref&gt; », un magicien qui pratique la [[nécromancie]], c'est-à-dire la divination par l'évocation des morts :
+* [[wikt:neuro-|neuro-]] : « nerfs », intelligence (artificielle)
+* [[wikt:-mancie|mancien]] : « prédire l'avenir », par extension, la magie.
+
+Gibson définit le terme original ''Neuromancer'' comme un [[mot-valise]] basé sur « ''neuro'' », « ''romancer'' » et « ''necromancer'' »&lt;ref&gt;{{en}}
+{{citation bloc|''"Neuromancer," the boy said, slitting long gray eyes against the rising sun. "The lane to the land of the dead. Where you are, my friend. Marie-France, my lady, she prepared this road but her lord choked her off before I could read the book of her days. '''Neuro from the nerves, the silver paths. Romancer. Nec- romancer. I call up the dead'''. But no, my friend," and the boy did a little dance, brown feet printing the sand, "I am the dead, and their land." He laughed. A gull cried. "Stay. If your woman is a ghost, she doesn't know it. Neither will you."''}} (''Neuromancien'', Chapitre 21)&lt;br /&gt;
+traduction (par Jean Bonnefoy) :
+{{citation bloc|Neuromancien, dit le garçon, plissant ses grands yeux gris face au soleil levant. La voie vers le pays des morts. Où tu te trouves en ce moment, mon ami. Marie-France, ma dame, c'est elle qui a préparé cette route, mais son seigneur l'a étouffée avant que j'aie pu lire le livre de ses jours. '''Neuro, de nerfs, ces chemins d'argent. Et mancien. Comme nécromancien. J'invoque les morts.''' Mais non, mon ami (et le garçon accomplit une petite danse, pieds bruns s'imprimant sur le sable), je ''suis'' les morts, les morts et leur territoire. (Il rit. Une mouette cria.) Reste. Si ta compagne est un spectre, elle ne le sait pas. Et toi non plus.}}&lt;/ref&gt; où lui-même apparaît en trompe-l'œil comme le narrateur qui renouvelle les genres littéraires dans ce [[pastiche]] d'anticipation futuriste&lt;ref&gt;{{en}} [http://www.lanceolsen.com/neuromancer.html Lance Olsen à propos de l'essai de David Porush] :
+{{citation bloc|''Second, as Porush notes, the title echoes "necromancer, the magician who conjures up the dead." No doubt this is a text inhabited by those raised from the dead, Lazarus after Lazarus, from Dixie Flatline in the form of a construct to Linda Lee's structure in cyberspace. Ashpool intermittently awakes from his cryogenic death-sleep, and the child 3Jane perceives Wintermute as a ghost whispering in her ear. Case flatlines and comes back to talk about it. Metaphorically, Corto is raised from the dead when he is transformed into Armitage.''
+
+''But Porush does not point out a secondary "necromancy" in the title. Not only are characters raised from the dead by a number of fictional magicians, but also various genres are "raised from the dead" by the very real magician of magicians — Gibson himself. The text is one about regeneration and endurance. Forms arise, undergo transformations, and continue metamorphosed. Gibson becomes the new romancer behind Neuromancer, revitalizing the science fiction novel, the quest story, the myth of the hero, the mystery, the hard-boiled detective novel, the epic, the thriller, and the tales of the cowboy and romantic artist, among others. He represents old stories in a revealing revamped intertexual pastiche.''}}&lt;/ref&gt;.
+
+== Inspirations ==
+Le roman de [[Philip K. Dick]] ''[[Les androïdes rêvent-ils de moutons électriques ?]]'' et son adaptation au cinéma, le film ''[[Blade Runner (film)|Blade Runner]]'' de [[Ridley Scott]] sorti en 1982, ont influencé William Gibson pendant l'écriture de son roman&lt;ref&gt;[http://io9.com/how-did-william-gibson-really-feel-about-blade-runner-896472321 How did William Gibson really feel about Blade Runner?]&lt;/ref&gt;{{,}}&lt;ref&gt;[http://project.cyberpunk.ru/idb/gibson_interview.html An Interview with William Gibson by Larry McCaffery]&lt;/ref&gt;.
+
+== Récompenses ==
+* [[Prix Philip-K.-Dick]] du meilleur roman [[1984 en littérature|1984]]
+* [[Prix Nebula]] du meilleur roman [[1984 en littérature|1984]]
+* [[Prix Hugo du meilleur roman]] [[1985 en littérature|1985]]
+* [[Prix Tähtivaeltaja]] pour la traduction finnoise du roman [[1992 en littérature|1992]]
+
+== Éditions ==
+* ''{{Langue|en|Neuromancer}}'', [[Ace Books]], {{Date|1 juillet 1984|en littérature}}, {{Nb p.|271}} {{ISBN|0-441-56956-0}}
+* ''Neuromancien'', [[La Découverte]], {{Coll.|Fictions}}, {{Date|14 novembre 1985|en littérature}}, {{Trad.|[[Jean Bonnefoy]]}}, {{Nb p.|300}} {{ISBN|2-7071-1562-2}}
+* ''Neuromancien'', [[J'ai lu]] {{Coll.|Science-fiction}} {{Numéro|2325}}, {{Date|janvier 1988|en littérature}}, {{Trad.|[[Jean Bonnefoy]]}}, {{Nb p.|319}} {{ISBN|2-277-22325-5}}
+* ''Neuromancien'', [[France Loisirs]], {{Date|août 2000|en littérature}}, {{Trad.|[[Jean Bonnefoy]]}}, {{Nb p.|350}} {{ISBN|2-7441-3915-7}}
+* ''Neuromancien'', [[Au diable vauvert (éditeur)|Au diable vauvert]], {{Date|1 octobre 2020|en littérature}}, {{Trad.|[[Laurent Queyssi]]}}, {{Nb p.|438}} {{ISBN|979-10-307-0365-8}}
+
+== Un classique de la science-fiction ==
+Ce roman est considéré comme un classique de la [[science-fiction]] dans les ouvrages de référence suivants :
+* ''[[La Bibliothèque idéale de la SF]]'', [[Éditions Albin Michel|Albin Michel]], [[1988 en littérature|1988]] ;
+* Enquête du Fanzine ''Carnage mondain'' auprès de ses lecteurs, [[1989 en littérature|1989]] ;
+* [[Stan Barets]], ''Le science-fictionnaire'', [[Éditions Denoël|Denoël]], coll. « [[Présence du futur]] », [[1994 en littérature|1994]] ;
+* ''Bibliothèque idéale'' du webzine [http://www.cafardcosmique.com/Bibliotheque-Ideale-de-la-SF Cafard cosmique].
+* ''Passeport pour les étoiles'', guide de lecture, Francis Valery, [[Éditions Denoël|Denoël]], [[2000 en littérature|2000]].
+
+== Adaptation cinématographique ==
+Un projet d'adapter le roman en film est à l'étude depuis de longues années. En 2012, [[Vincenzo Natali]] annonce des possibilités de casting avec [[Mark Wahlberg]] dans le rôle de Case et [[Liam Neeson]] dans le rôle d'Armitage. Mais rien ne se concrétise par la suite&lt;ref&gt;{{Lien web | langue=en | auteur=Ben Child | titre=''Will Liam Neeson and Mark Wahlberg be plugging into Neuromancer?'' | url=https://www.theguardian.com/film/filmblog/2012/aug/02/liam-neeson-mark-wahlberg-neuromancer | site=[[The Guardian]].com | date=2 août 2012}}.&lt;/ref&gt;.
+
+== Notes et références ==
+{{Références}}
+
+== Annexes ==
+=== Bibliographie ===
+* {{ouvrage | langue=en | auteur=Larry McCaffery | titre=Storming the Reality Studio: A Casebook of Cyberpunk and Postmodern Science Fiction | éditeur=[[Duke University Press]] | lieu=[[Durham (Caroline du Nord)|Durham]] | année=1991 | isbn=978-0-8223-1168-3 | oclc=23384573}}
+* {{ouvrage | langue=en | auteur=Gary Westfahl  | titre=William Gibson | éditeur=[[University of Illinois Press]] | lieu= |collection=Modern Masters of Science Fiction| année=2013 | isbn=978-0-252-07937-5 | oclc=}}
+* {{ouvrage | langue=en | auteur1= George Slusser | directeur1= oui| auteur2= Tom Shippey | directeur2= oui| titre=Fiction 2000: Cyberpunk and the Future of Narrative | lieu= | éditeur=[[University of Georgia Press]]  |collection=| année=1992 | isbn=978-0820314495 | oclc=}}
+* {{Article |langue=en |auteur1=Ian Lancashire |titre=Ninsei Street, Chiba City, in Gibson's "Neuromancer" |périodique=Science Fiction Studies |éditeur=University of California Press |volume=30 |numéro=2 |date=2003-07 |pages=341–46 |issn= |e-issn= |jstor=4241190|lire en ligne= |consulté le= |id= }}.
+* {{Article |langue=en |auteur1=Tony Myers |titre=The Postmodern Imaginary in William Gibson's "Neuromancer" |périodique=Modern Fiction Studies |éditeur=Johns Hopkins University Press|volume=47 |numéro=4 |date=2001 |pages=887–909  |issn= |e-issn= |jstor= 26286501 |lire en ligne= |consulté le= |id= }}.
+
+=== Articles connexes ===
+* [[Cyberpunk]]
+* [[Exocortex]]
+
+=== Liens externes ===
+* [https://www.radiofrance.fr/franceculture/podcasts/la-science-cqfd/40-ans-du-neuromancien-2605999 « Neuromancien : 40 ans de cyber-culte »], ''La Science, CQFD'', France Culture, 26 juin 2024.
+* {{en}} [https://archive.org/details/Timothy_Leary_Archives_206.dv Vidéo de promotion du livre avec les commentaires de William Gibson et Timothy Leary dans les années 1990]
+* {{Bases littérature}}
+
+{{Succession/Début|titre=''Neuromancien''}}
+{{Succession/Ligne
+  |nom= [[Prix Hugo du meilleur roman]]
+  |avant= ''[[Marée stellaire]]'' par [[David Brin]]
+  |nbav= 2
+  |après= ''[[La Stratégie Ender]]'' par [[Orson Scott Card]]
+  |nbap= 2
+  |période= [[1985 en littérature|1985]]
+}}
+{{Succession/Ligne
+  |nom= [[Prix Nebula du meilleur roman]]
+  |avant= idem
+  |après= idem
+  |période= [[1984 en littérature|1984]]
+}}
+{{Succession/Ligne
+  |nom= [[Prix Philip-K.-Dick]]
+  |avant= ''[[Les Voies d'Anubis]]'' par [[Tim Powers]]
+  |après= ''[[Le Palais du déviant]]'' par [[Tim Powers]]
+  |période= [[1984 en littérature|1984]]
+}}
+{{Succession/Ligne
+  |nom= [[Prix Tähtivaeltaja]]
+  |avant= ''[[Substance Mort]]'' par [[Philip K. Dick]]
+  |après= ''[[Le Maître du Haut Château]]'' par [[Philip K. Dick]]
+  |période= [[1992 en littérature|1992]]
+}}
+{{Succession/Fin}}
+{{Palette|William Gibson|Prix Hugo du meilleur roman|Prix Nebula du meilleur roman}}
+{{Portail|littérature américaine|science-fiction}}
+
+[[Catégorie:Roman de William Gibson]]
+[[Catégorie:Roman cyberpunk]]
+[[Catégorie:Roman de science-fiction américain]]
+[[Catégorie:Roman américain paru en 1984]]
+[[Catégorie:Prix Hugo du meilleur roman]]
+[[Catégorie:Prix Nebula du meilleur roman]]
+[[Catégorie:Prix Philip-K.-Dick]]
+[[Catégorie:Roman dystopique de science-fiction]]
+[[Catégorie:Roman sur l'intelligence artificielle]]
+[[Catégorie:Roman sur la réalité virtuelle]]
+[[Catégorie:Œuvre littéraire sur la Troisième Guerre mondiale]]
+[[Catégorie:Premier roman]]
+[[Catégorie:1984 en science-fiction]]</text>
+      <sha1>suu7ybhzktqf2vko1qkugj8fjjvekbu</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>New wave</title>
+    <ns>0</ns>
+    <id>43576</id>
+    <revision>
+      <id>224316682</id>
+      <parentid>220406994</parentid>
+      <timestamp>2025-03-28T16:36:24Z</timestamp>
+      <contributor>
+        <username>THXfr</username>
+        <id>5080691</id>
+      </contributor>
+      <comment>/* Histoire */</comment>
+      <origin>224316682</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="22163" sha1="osjgkfz1mmpfxfb7dtnem6qef1mhgdj" xml:space="preserve">{{Voir homonymes|New wave (homonymie)}}
+{{confusion|New age (musique)}}
+{{Infobox Musique (style)
+| nom = New wave
+| légende image = Le groupe [[Depeche Mode]] sur le plateau de l'émission de télévision ''[[Wetten, dass..?]]'' en 2013.
+| origines stylistiques = [[Rock]], [[art rock]]&lt;ref name= artrock-RS&gt;{{Lien web|langue=en|url=https://www.rollingstone.com/music/lists/100-greatest-artists-of-all-time-19691231/roxy-music-19691231|titre=100 Greatest Artists of All Time: Roxy Music|auteur=John Taylor|éditeur=100 Greatest Artists of All Time|consulté le=17 mars 2011}}.&lt;/ref&gt;{{,}}&lt;ref name= artrock-RS2&gt;{{Lien web|langue=en|url=https://www.rollingstone.com/music/artists/david-bowie/biography|titre=David Bowie: Biography|auteur=Mark Kemp|éditeur=[[Rolling Stone]]|consulté le=17 mars 2011}}.&lt;/ref&gt;, [[punk rock]]&lt;ref name=AllmusicNewWave&gt;{{lien web|lang=en|consulté le=3 décembre 2013|url=http://www.allmusic.com/style/new-wave-ma0000002750|titre=New Wave's Essay on New Wave and list of essential New Wave Records from allmusic}}&lt;/ref&gt;, [[glam rock]], [[pop rock]], [[ska]], [[reggae]], [[musique expérimentale|expérimental]], [[musique électronique]], [[power pop]], [[funk]], [[bubblegum pop]]&lt;ref&gt;{{en}} Cooper, Kim, Smay, David, ''Bubblegum Music is the Naked Truth'' (2001), page 248 ''Nobody took the bubblegum ethos to heart like the new wave bands''.&lt;/ref&gt;{{,}}&lt;ref&gt;{{en}} [{{Allmusic|class= explore| id= essay/new-wave-t727| pure_url= yes}} Allmusic New Wave Essay] de [[Stephen Thomas Erlewine]].&lt;/ref&gt;, [[disco]]&lt;ref&gt;{{Lien web|langue=en|url=http://www.synthpunk.org/units/keyboard1.html|titre=Keyboard Magazine, juin 1982|éditeur=Synthpunk.org|consulté le=15 mai 2011}}.&lt;/ref&gt;{{,}}&lt;ref name=discoinferno&gt;{{article|lang=en|url=https://www.independent.co.uk/news/world/americas/disco-inferno-680390.html |titre=Disco inferno |date=11 décembre 2004 |périodique=The Independent |lieu=Royaume-Uni|consulté le=15 mai 2011}}.&lt;/ref&gt;{{,}}&lt;ref&gt;{{en}} [https://www.nytimes.com/1996/04/22/arts/bernard-edwards-43-musician-in-disco-band-and-pop-producer.html Bernard Edwards, 43, Musician In Disco Band and Pop Producer The New York Times 22 April 1996] "As disco waned in the late 70s, so did Chic's album sales. But its influence lingered on as new wave, rap and dance-pop bands found inspiration in Chic's club anthems".&lt;/ref&gt;
+| origines culturelles = Fin des [[années 1970]] ; [[Royaume-Uni]], [[États-Unis]]
+| instruments = [[Guitare électrique]], [[guitare basse]], [[Batterie (musique)|batterie]] ou [[boîte à rythmes]], [[synthétiseur]]s, [[chant]]s
+| popularité = Élevée à la fin des [[années 1970]] et dans les [[années 1980]]&lt;ref name=CateforisQ&amp;A&gt;{{en}} [http://press.umich.edu/pdf/9780472115556-qa.pdf Q&amp;A with Theo Cateforis, author of Are We Not New Wave? Modern Pop at the Turn of the 1980s The University of Michigan Press 2011]&lt;/ref&gt; ; revirement fin des années 1990&lt;ref name=EncyclopediaofContemporaryBritishCulture&gt;{{Ouvrage|langue=en|titre=Encyclopedia of Contemporary British Culture Page 365|éditeur=Google Books|année=|isbn=|lire en ligne=https://books.google.com/books?id=iS4hsxKiMNgC&amp;pg=PA365&amp;dq=%22New+Wave+of+New+Wave%22}}.&lt;/ref&gt;{{,}}&lt;ref name=Revival&gt;[{{Allmusic|class=explore|id=style/d13761|pure_url=yes}} New Wave/Post Punk Revival], ''[[AllMusic]]''.&lt;/ref&gt;{{,}}&lt;ref&gt;Canteforis p. 69&lt;/ref&gt;
+| sous genres = [[Synthpop]], [[cold wave]], [[electronic body music]], [[Nouveaux Romantiques|nouveaux romantiques]].
+| genres associés = [[Post-punk]], [[synthpop]], [[cold wave]], [[electronic body music]], [[Nouveaux Romantiques|nouveaux romantiques]].
+| genres dérivés = [[Neue Deutsche Welle]], [[histoire du rock finlandais|rock finlandais]]&lt;ref name= SuomiRock&gt;{{en}} [http://www.hs.fi/english/article/Born+in+1959+The+last+happy+generation+/1135261341930 Born in 1959: The last happy generation] [[Helsingin Sanomat]], 10 novembre 2010, consulté le 30 décembre 2013.&lt;/ref&gt;, [[synthpop]], mod revival, [[chillwave]]&lt;ref&gt;{{en}} {{article|auteur=Pirnia, Garin|url=http://blogs.wsj.com/speakeasy/2010/03/13/is-chillwave-the-next-big-music-trend|titre= Is Chillwave the Next Big Music Trend?|périodique=The Wall Street Journal|date=13 mars 2010|consulté le=15 mai 2011}}.&lt;/ref&gt;, [[rock alternatif]], [[Nouveaux Romantiques|nouveaux romantiques]]
+| scènes régionales = [[Neue Deutsche Welle|Allemagne]], [[Belgique]], [[Argentine]]&lt;ref&gt;{{lien web|lang=en|url=http://www.mtv.com/artists/soda-stereo/biography/|titre=Soda Stereo Bio|site=[[MTV News|MTV]]|consulté le=30 décembre 2013}}.&lt;/ref&gt;, [[Movida|Espagne]], [[États-Unis]], [[Finlande]], [[Cold wave|France]], [[Italie]]&lt;ref&gt;{{lien web|lang=en|url=http://thequietus.com/articles/12827-neon-informations-of-death-mutazione-comp|titre=LISTEN: Mutazione Comp Preview|site=[[The Quietus]]|date=12 juillet 2013|consulté le=30 décembre 2013}}.&lt;/ref&gt;, [[Philippines]]&lt;ref&gt;{{en}} [http://filipinojournal.com/our-columnist/sa-ugoy-ng-musika/a-tribute-to-the-%E2%80%9980s-philippine-new-wave-scene Filipinojournal.com], ''A Tribute to the ’80s Philippine New Wave Scene''.&lt;/ref&gt;, [[Royaume-Uni]], [[Novi val|Yougoslavie]]
+}}
+
+La '''new wave''' (prononcé {{MSAPI|ˈnjuːˌweɪv}} en [[anglais britannique]] ou {{MSAPI|ˈn(j)uˌweɪv}} en [[anglais américain]]), littéralement {{citation|nouvelle vague}} , qui tire son nom de la [[Nouvelle Vague]] du cinéma français des années 1950&lt;ref&gt;{{en}}) ''New wave (music)'' dans l'[[Encyclopædia Britannica]].&lt;/ref&gt;, est un genre musical regroupant plusieurs styles de musiques [[Pop (musique)|pop]]/[[rock]] apparues de la fin des [[années 1970]] au milieu des [[années 1980]], aux sonorités électroniques et [[punk rock]]&lt;ref&gt;{{harvsp|Cateforis|2011|page=9-12}}.&lt;/ref&gt;. À l'origine — comme pour le [[post-punk]] — la new wave définissait les nouveaux groupes et artistes [[pop rock]] anglo-américains apparus après l'explosion du [[Punk rock|punk]], avant qu'elle ne soit identifiée comme un [[genre musical]] incorporant [[musique électronique]]/[[musique expérimentale|expérimentale]], [[disco]] et [[Pop (musique)|pop]]. Quelques sous-genres et dérivés musicaux ont été créés à partir de la new wave, dont les [[Nouveaux Romantiques|nouveaux romantiques]], l'[[electronic body music]] (EBM) et le [[rock gothique]].
+
+La new wave est l'un des genres musicaux popularisés dans les années 1980 où synthétiseurs et boites à rythmes se font très présents &lt;ref&gt;{{en}} [http://80music.about.com/od/top10list1/tp/80snewwaveartists.htm '80s New Wave Artists - Top 10 New Wave Artists of the '80s].&lt;/ref&gt; ; il se concrétise sur [[MTV]]&lt;ref name="allmusic.com"&gt;{{en}} [http://www.allmusic.com/explore/style/new-wave-d381 New Wave: Significant Albums, Artists and Songs, Most Viewed], ''[[AllMusic]]''.&lt;/ref&gt;, et la popularité de nombreux artistes issus de cette scène est due à la popularité du genre présenté sur la chaîne. Au milieu des années 1980, elle commence à se mélanger avec d'autres genres musicaux&lt;ref name="allmusic.com"/&gt;{{,}}&lt;ref name=Cateforis&gt;{{en}} [http://docs.google.com/viewer?a=v&amp;q=cache:K1FT9s7iZgMJ:iaspm-us.net/wordpress/wp-content/uploads/2010/09/Cateforis.pdf+Theo+Cateforis+the+death&amp;hl=en&amp;gl=us&amp;pid=bl&amp;srcid=ADGEESgXPV1cYTF5r2LVbQGmx2Vq76McE-1jikbaLuWR25ICOVhW1DXrVLZHO3GRx7LE_ki7TaPXhVFLU-DR_UJGNT9WLGe9rzwHKHs65aEhz92mAr0sxeZ81Vw_KUOOjJcoDsuvbehB&amp;sig=AHIEtbSjIigaJFb7ZIlERw4k5u8F4Wt3ug ''The Death of New Wave''], Theo Cateforis Assistant Professor of Music History and Cultures in the Department of Art and Music Histories, Syracuse University, 2009.&lt;/ref&gt;. La new wave revient dans les [[années 1990]], grâce à la {{citation|nostalgie}} des artistes et fans du genre. Ce revirement n'est aperçu réellement qu'à partir de 2004 ; de ce fait, la new wave a influencé d'autres genres musicaux&lt;ref name="CateforisQ&amp;A" /&gt;{{,}}&lt;ref name=EncyclopediaofContemporaryBritishCulture/&gt;{{,}}&lt;ref name=Revival/&gt;{{,}}&lt;ref name=msnbc&gt;{{Lien web|langue=en|url=http://www.msnbc.msn.com/id/6031887/|titre=New wave is back – in hot new bands,|auteur=Michael Paoletta|année=2004|éditeur=MSNBC|consulté le=15 mai 2011}}.&lt;/ref&gt;{{,}}&lt;ref name=DrumsIndependent&gt;{{article|lang=en|url=https://www.independent.co.uk/arts-entertainment/music/reviews/album-the-drums-the-drums-moshi-moshiisland-1991439.html |titre=Album: The Drums, The Drums |périodique=The Independent |lieu=UK |date=4 juin 2010 |consulté le=15 mai 2011 |prénom=Andy |nom=Gill}}.&lt;/ref&gt;{{,}}&lt;ref name=decade&gt;{{Lien web|langue=en|url=http://www.yaledailynews.com/scene/scene-cover/2009/10/23/decade-never-dies/|titre=The decade that never dies Still ’80s Fetishizing in ’09 Yale Daily News|auteur=Claire Gordon|année=2009|éditeur=Yaledailynews.com|consulté le=15 mai 2011}}.&lt;/ref&gt;{{,}}&lt;ref name=USAToday&gt;{{article|nom=Lopez |prénom=Korina |url=https://www.usatoday.com/life/music/news/2010-08-28-indiestyle_N.htm |titre=Indie singers storm the scene with style and spectacle | périodique=USA Today |date=30 août 2010 |consulté le=15 mai 2011}}.&lt;/ref&gt;.
+
+== Étymologie ==
+[[Fichier:Blondie1977.jpg|vignette|gauche|[[Blondie (groupe)|Blondie]], 1976. De gauche à droite : Gary Valentine, Clem Burke, Deborah Harry, Chris Stein et Jimmy Destri.]]
+
+La nature de la musique new wave est le sujet de nombreuses controverses et confusions. La [[discographie]] de ''Who's New Wave in Music'' en 1985 liste des artistes dans plus de 130 catégories séparées&lt;ref&gt;Cateforis  p.11&lt;/ref&gt;. Le ''New [[Rolling Stone]] Encyclopedia of Rock'' utilise le terme de {{citation|pratiquement dénuée de sens}} dans sa définition de la new wave&lt;ref&gt;{{harvsp|Cateforis|2011|page=11}}.&lt;/ref&gt;, tandis que le site [[AllMusic]] mentionne une {{citation|diversité stylistique}}&lt;ref name=AllmusicNewWave/&gt;.
+
+La new wave est initialement identifiée sous la catégorie de musique rock dans les [[années 1970]], par des critiques comme Nick Kent et Dave Marsh pour classifier des groupes originaires de New York comme [[Velvet Underground]] et [[New York Dolls]]&lt;ref&gt;{{en}} Cateforis  p. 20&lt;/ref&gt;. Il gagne une identité plus large en 1976 lorsqu'il apparaît dans des [[fanzine]]s comme ''[[Sniffin' Glue]]'' et autres magazines comme ''[[Melody Maker]]'' et ''[[New Musical Express]]''&lt;ref name=Gendron&gt;{{en}} Gendron, Bernard (2002). ''Between Montmartre and the Mudd Club: Popular Music and the Avant-Garde'' (Chicago and London: University of Chicago Press), pp. 269–270.&lt;/ref&gt;. Dans un article datant de {{date-|novembre 1976}} de ''Melody Maker'', Caroline Coon utilise le terme de [[Malcolm McLaren]], {{citation|new wave}} pour décrire la musique de groupes musicaux qui ne sont pas catégorisés [[punk rock|punk]], mais qui y sont liés et qui font partie de la même scène musicale&lt;ref&gt;{{en}} Clinton Heylin, ''Babylon's Burning'' (Conongate, 2007), pp. 140, 172.&lt;/ref&gt;. Le terme est également utilisé par le journaliste [[Charles Shaar Murray]] dans sa critique sur [[The Boomtown Rats]]&lt;ref name=Murray&gt;{{en}} Murray, Charles Shaar. [http://bobgeldof.info/Disc/rats1977.html Sleevenotes to CD reissue of ''The Boomtown Rats'']. 21 janvier 2007.&lt;/ref&gt;. Pendant une courte période, entre 1976 et 1977, les termes de new wave et de punk deviennent en quelque sorte interchangeables&lt;ref name=Cateforis/&gt;{{,}}&lt;ref&gt;{{Ouvrage|langue=en|prénom1=Vernon|nom1=Joynson|titre=Up Yours!|sous-titre=A Guide to UK Punk, New Wave and Early Post Punk|lieu=Wolverhampton|éditeur=Borderline Publications|année=2001|pages totales=552|passage=12|isbn=1-899855-13-0}}.&lt;/ref&gt;. Fin 1977, {{citation|new wave}} est remplacé par le terme {{citation|punk}} dans sa définition de la nouvelle [[musique underground]] au [[Royaume-Uni]]&lt;ref name="Gendron"/&gt;. Aux [[États-Unis]], Seymour Stein, croyant que le terme {{citation|punk}} qualifiait les ventes médiocres de son label [[Sire Records]] au club [[CBGB]],  où apparaissent des groupes comme [[Blondie (groupe)|Blondie]] et [[The B-52's]], et lance une campagne {{citation|Don't Call It Punk}} militant pour le remplacement du terme punk par celui de {{citation|new wave}}&lt;ref&gt;Cateforis p.25&lt;/ref&gt;.
+
+== Histoire ==
+[[Fichier:New Order - Fête de l'Humanité 2012 - 013.jpg|vignette|gauche|Bernard Sumner, chanteur de [[New Order]] et auparavant guitariste et aux synthétiseurs avec [[Joy Division]].]]
+
+La new wave, qui débute à la fin des [[années 1970]] pour s'éteindre vers 1986, est née du regain de créativité du [[rock]] en 1978-1979 et de la nouvelle vague des [[synthétiseur]]s et des [[Boîte à rythmes|boites à rythmes]] devenus accessibles aux jeunes musiciens ; la génération [[post-punk]] ayant digéré l'influence d'artistes et de groupes novateurs majeurs tels que [[David Bowie]], [[Klaus Nomi]], [[Roxy Music]], [[Brian Eno]] et [[Kraftwerk]]. Courant musical à l'avant-garde durant les années 1980, plutôt européen et surtout britannique, la new wave se caractérisa comme étant un mouvement branché et underground grâce à des labels indépendants tel que [[Factory Records|Factory]] pour [[Joy Division]], [[New Order]] et [[Orchestral Manoeuvres in the Dark]] ou Beggars Banquet pour [[Gary Numan]] (ainsi que son premier groupe Tubeway Army)
+
+Au début des [[années 1980]], de nombreux artistes et groupes new wave qui deviendront plus tard importants émergent dans des villes provinciales du sud de l'Angleterre : [[Depeche Mode]] et [[Yazoo]] à [[Basildon]], [[Siouxsie and the Banshees]] à [[Chislehurst]] et [[Bromley]], [[Soft Cell]] à [[Leeds]], [[The Cure]] à [[Crawley]], [[Duran Duran]] à [[Birmingham]], [[Howard Jones]] à [[Southampton]] ou encore [[Tears for Fears]] à [[Bath]]. Par la suite, le mouvement s'étend à [[Londres]], qui sert de véritable champ d'expérimentation pour des artistes et groupes tels que [[Simple Minds]], [[Ultravox]], [[Eurythmics]], [[Frankie Goes To Hollywood]], [[Art of Noise]], [[Dead or Alive (groupe)|Dead or Alive]], [[Bronski Beat]], [[Erasure]], [[Talk Talk]], [[Yazoo]], [[Imagination]], [[Level 42]], [[Pet Shop Boys]], [[The Human League]], [[Heaven 17]], [[Thompson Twins]], [[Visage (groupe)|Visage]] et [[Spandau Ballet]], ces deux derniers groupes étant souvent associés à la scène des Nouveaux Romantiques &lt;ref&gt;{{Lien web |langue=fr-FR |titre=Jabots électriques : les nouveaux romantiques |url=http://www.linflux.com/musique/musiques-actuelles/jabots-electriques-les-nouveaux-romantiques/ |site=L'influx |date=2019-09-02 |consulté le=2021-01-28}}&lt;/ref&gt;.
+
+En [[Allemagne]], il s'agit de {{lang|de|Neue deutsche Welle}} ({{citation|nouvelle vague allemande}}, ou NDW)&lt;ref&gt;{{Lien web |langue=en-US |prénom=Anton |nom=Spice |titre=The Neue Welle: An introduction to Germany's post-punk underground in 10 crucial 7"s |url=https://thevinylfactory.com/features/the-neue-welle-an-introduction-to-germanys-post-punk-underground-in-10-crucial-7s/ |site=The Vinyl Factory |date=2015-06-19 |consulté le=2021-01-28}}&lt;/ref&gt;. La new wave allemande a été particulièrement productive, avec des groupes comme [[Alphaville (groupe allemand)|Alphaville]], [[Deutsch-Amerikanische Freundschaft|DAF]], Der Plan, [[Andreas Dorau]], [[Spider Murphy Gang]] et le label Ata Tak, [[Palais Schaumburg (groupe)|Palais Schaumburg]], Die Tanzdiele, [[Grauzone]], Xmal Deutschland. Der Plan se démarque par son côté onirique voire surréaliste dans sa première époque, l'emploi de synthétiseurs déjantés (de type Moog et analogiques), de boîtes à rythmes aux sons lourds, d'effets [[vocoder]] sur les voix.
+
+Parallèlement, en [[Belgique]] et en [[France]] se développe une scène dite new wave avec toutes les tendances qui en dériveront (cf. le [[rock belge]], la [[musique industrielle]], la [[Rock à Rennes|scène électro pop rennaise]] représentée par [[Étienne Daho]]). Les groupes français  [[Taxi Girl (groupe)|Taxi Girl]], [[Indochine (groupe)|Indochine]], [[Trisomie 21 (groupe)|Trisomie 21]], [[Niagara (groupe)|Niagara]], et belges comme [[Telex]], [[TC Matic]], [[Aroma di Amore]], [[Front 242]], [[Twee Belgen]], [[Minimal Compact]], [[The Neon Judgement]] se font connaître par le biais de labels indépendants dont [[PIAS|Play it again, Sam!]]. Leur musique est fortement relayée dans les années 1980 par le mythique club de Manchester (Royaume-Uni), [[The Haçienda|l'Hacienda]], les diverses salles de concert de toute l'Europe, comme celle de l'[[Ancienne Belgique]] à Bruxelles, par exemple, ainsi que dans les fameux night clubs belges, comme celui du même nom à Anvers, la Chapelle à Liège, le Boccacio, le Skyline qui orienteront par la suite leur programmation musicale vers l'[[acid house]] et la [[new beat]] puis la [[techno]] dans les années 1990&lt;ref&gt;https://www.youtube.com/watch?v=ooYf0K-82h4&amp;t=79s&lt;/ref&gt;
+
+== Styles et sous-genres ==
+[[Fichier:Elvis Costello 1978.jpg|thumb|[[Elvis Costello]] au Massey Hall de [[Toronto]], en avril 1979.]]
+
+Le son new wave représente à la fin des [[années 1970]] une direction différente par rapport aux musiques [[blues]] et [[rock 'n' roll]] de la fin des [[années 1960]] et du [[rock]] du milieu des [[années 1970]]. D'après le critique musical [[Simon Reynolds (critique musical)|Simon Reynolds]], les musiciens de new wave jouaient souvent de la guitare rythmique houleuse à un tempo rapide. Les claviers démarraient ou arrêtaient la structure et la mélodie des chansons. Reynolds note que les chants de new wave paraissaient [[hauteur (musique)|hauts]], geeky et de banlieue&lt;ref name=Reynolds160&gt;{{en}} [[Simon Reynolds (critique musical)|Reynolds, Simon]], ''Rip It Up and Start Again PostPunk 1978–1984''. page 160.&lt;/ref&gt;. La nervosité ringarde était une caractéristique des fans et de groupes comme [[Talking Heads]], [[Devo]] et [[Elvis Costello]]. Elle comprenait une forme de danse robotique, des voix aigües nerveuses, des costumes et de grosses lunettes&lt;ref&gt;{{harvsp|Cateforis|2011}}.&lt;/ref&gt;. La majorité des groupes de new wave masculins américains à la fin des années 1970 sont composés de blancs de classe moyenne, et critiquaient intentionnellement d'une manière ringarde leur {{citation|blancheur}}&lt;ref name="cateforis7194"&gt;{{harvsp|Cateforis|2011|page=71–94}}.&lt;/ref&gt;. La scène [[pub rock]] au milieu des années 1970 se compose de nombreux groupes new wave comme [[Ian Dury]], [[Nick Lowe]], [[Eddie and the Hot Rods]] et [[Dr. Feelgood (groupe)|Dr. Feelgood]]&lt;ref name=Bomp&gt;{{en}} Adams, Bobby. [http://powerpop.blogspot.com/2005/12/pppda-nick-lowe-interview-from-1979.html ''Nick Lowe: A Candid Interview''], ''Bomp'' magazine, janvier 1979, consulté le 21 janvier 2007.&lt;/ref&gt;.
+
+Les auteurs-interprètes, comme [[Elvis Costello]], [[Joe Jackson]], [[Graham Parker]] et [[Billy Idol]], étaient {{citation|colériques}}, {{citation|intelligents}}, et s'{{citation|intéressaient à la musique pop à l'attitude sardonique et l'énergie et agressive et intense du punk}} faisaient partie de la scène new wave&lt;ref&gt;{{en}} [{{Allmusic|class=album|id=r10059|pure_url=yes}} Album Review Look Sharp]&lt;/ref&gt;. Un revirement britannique du [[ska]] et du [[2 tone (musique)|2 tone]], dirigé par [[The Specials]] sont plus politiquement conscients que les genres new wave. [[Madness]], [[English Beat|The Beat/English Beat]], et [[Selecter]] sont associés à ce revirement&lt;ref&gt;[http://www.allmusic.com/style/ska-revival-ma0000002403 Ska Revival by Allmusic]&lt;/ref&gt;.
+
+[[Fichier:Robert Smith of The Cure live in Singapore 1 August 2007.jpg |thumb|[[Robert Smith (musicien)|Robert Smith]] du groupe [[The Cure]] en concert à [[Singapour]] en août 2007.]]
+
+Des groupes phares comme [[Siouxsie and the Banshees]], [[Joy Division]] ou [[The Cure]] marquent la new wave gothique.
+
+== Discographie ==
+Au-delà des discographies individuelles des artistes, on peut citer les productions du magazine ''[[Flexipop]]'' qui publia, joints au magazine papier, des disques ([[Flexi disc|7 pouces flexi]]) voire des cassettes audio ou des albums vinyle.
+Ces productions sont regroupées sur plusieurs albums, difficilement trouvables aujourd'hui{{quand|date=avril 2015}}{{référence nécessaire|date=avril 2015}}.
+
+== Notes et références ==
+{{Références}}
+
+== Voir aussi ==
+=== Articles connexes ===
+* [[No wave]], genre musical (antonyme)
+
+=== Bibliographie ===
+* Sylvain Fanet, ''Standing On A Beach - La New Wave en 100 disques essentiels'', Editions Le Mot et le Reste, 2019.
+* {{Ouvrage|langue=en|prénom1=Theo|nom1=Cateforis|titre=Are We Not New Wave?|sous-titre=Modern Pop at the Turn of the 1980s|éditeur=The University of Michigan Press|année=2011|pages totales=294|isbn=978-0-472-03470-3|isbn2=0-472-03470-7|lire en ligne=http://www.press.umich.edu/152565/are_we_not_new_wave|consulté le=4 juin 2014}}.
+* [[Jean-François Bizot]] présente la New Wave, concocté par Mariel Primois et Jean Rouzaud, Éditions du Panama/Actuel, 2007 {{ISBN|978-2-7557-0283-5}}.
+* Guillaume Gilles, ''L'esthétique New Wave'', Éditions : Camion Blanc, 2006, {{ISBN|978-2-9101-9648-6}}, ouvrage qui présente les influences et la naissance de la new wave, ainsi qu'une série d'analyses des albums et chansons clefs du genre.
+* [[Frédéric Thébault]], ''Génération Extrême - 1975-1982, du punk à la cold-wave'', Éditions : Camion Blanc, 2005, ouvrage présentant un panorama des mouvements musicaux de l'époque.
+* [[Christophe Bourseiller]], ''Génération Chaos - Punk, New Wave 1975 - 1981'', [[Éditions Denoël]], 2008, ouvrage présentant un panorama des mouvements musicaux de l'époque.
+* [[Pierre Mikaïloff]] et Pierre Terrasson, ''Post-punk - 1978-85'', [[Éditions Didier Carpentier]], 2015.
+
+=== Liens externes ===
+* [http://www.nordwaves.fr/ Nordwaves.fr]
+* [http://wavelength.fr/ Wavelength]
+* [http://www.new-wave4ever.com/ New-Wave4Ever]
+{{Liens}}
+
+{{Palette|Genres de rock|Musique électronique}}
+{{Portail|rock|musique électronique|années 1970|années 1980|punk}}
+
+[[Catégorie:New wave| ]]
+[[Catégorie:Genre de rock]]
+[[Catégorie:Genre de musique électronique]]
+[[Catégorie:Phénomène de mode des années 1970]]
+[[Catégorie:Phénomène de mode des années 1980]]
+[[Catégorie:Histoire du rock]]</text>
+      <sha1>osjgkfz1mmpfxfb7dtnem6qef1mhgdj</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Synthétiseur</title>
+    <ns>0</ns>
+    <id>22254</id>
+    <revision>
+      <id>225683307</id>
+      <parentid>225683190</parentid>
+      <timestamp>2025-05-15T11:03:17Z</timestamp>
+      <contributor>
+        <username>Le scrameustache</username>
+        <id>3808278</id>
+      </contributor>
+      <comment>Révocation des modifications de [[Special:Contributions/89.84.127.40|89.84.127.40]] (retour à la version précédente de [[Special:Contributions/74.58.103.52|74.58.103.52]])</comment>
+      <origin>225683307</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="37855" sha1="poil298aoeme1xl2w2k6elzyvh5cppx" xml:space="preserve">{{redirect homophones|Synthé|Sainté}}
+{{redirect|Patch (son)|homonymie=Patch}}
+{{Voir homonymes|Synthétiseur (homonymie)}}
+{{Infobox Musique (instrument)
+ | charte            = rock
+ | nom               = Synthétiseur
+ | image             = Access Virus TI.jpg
+ | légende           = Un synthétiseur, l'[[Access Virus]] TI.
+ | nom_autre         = 
+ | variantes         = {{Hlist|[[Telharmonium]]|[[Ondes Martenot]]|[[Orgue Hammond]]}}
+ | classification    = [[Électrophone]]
+ | famille           = [[Instrument à clavier]] et [[Instrument de musique électronique|électronique]]
+ | membres           = 
+ | tessiture         = 
+ | œuvres            = 
+ | instrumentiste    = [[Jean-Michel Jarre]]...
+ | facteur           = [[Robert Moog]], [[Doepfer]]...
+ | articles_connexes = 
+ | échantillon       = [[Fichier:1s4. 438 synthé différents en 104 minutes.flac|vignette|Différents sons de synthétiseur (1/4).]]}}
+Un '''synthétiseur''' (ou familièrement '''synthé''', par [[apocope]]) est un [[instrument de musique électronique]] capable de créer et de [[Modulation (musique)|moduler]] des [[son (physique)|sons]] sous forme de [[signal électrique]]. Il peut être utilisé pour imiter, avec plus ou moins de réalisme, des [[Instrument de musique|instruments de musique]] traditionnels, des bruits naturels ou encore pour créer des sonorités complètement originales.
+
+Les sonorités varient en fonction de la technique de [[synthèse sonore]] utilisée ([[synthèse sonore soustractive|synthèse soustractive]], [[Synthèse sonore additive|synthèse additive]], [[Synthèse FM|modulation de fréquence]], [[tables d'ondes]], [[Échantillon (musique)|échantillons]], [[Synthèse par modélisation physique|modélisation physique]], [[modulation de phase]], [[synthèse granulaire]]{{etc.}}).
+
+Un synthétiseur est, depuis la fin des années 1960, un instrument de musique classé dans la famille des [[électrophone]]s, qui produit des sons par synthèse électronique. Il est l'un des outils centraux de la production de [[musique électronique]]. On distingue les synthétiseurs analogiques et numériques. Tout comme dans de nombreux domaines techniques, les appareils numériques ont en partie supplanté la technologie analogique pure. Les appareils analogiques sont toutefois toujours utilisés en raison de leurs propriétés caractéristiques. De nombreux appareils anciens ont parfois atteint le statut de culte parmi les musiciens. Le son caractéristique de certains appareils répandus et l'utilisation créative de leurs particularités ont souvent influencé le développement de genres musicaux entiers, comme l'[[acid house]], la [[techno]], le [[drum and bass]] ou la [[synthwave]]. Dans ce dernier cas, le synthétiseur est l'instrument central.
+
+== Principes ==
+[[Fichier:Doepfer Dark Energy II with wire angled (photo by David J).jpg|vignette|[[Doepfer Musikelektronik GmbH|Doepfer]] Dark Energy II (2012), synthétiseur analogique sans [[Clavier (instrument)|clavier]].]]
+Les sons peuvent être créés soit de manière [[analogique]] à l'aide de circuits [[Électronique analogique|électroniques à comportement continu]], soit de manière [[numérique]] à l'aide de [[Électronique numérique|circuits numériques]] spécialisés ou encore en utilisant un mélange de ces deux technologies ({{citation |synthèse hybride}}). Une troisième voie est apparue vers 1995 quand la puissance des microprocesseurs a permis d’exécuter des [[Instrument virtuel|logiciels]] de synthèse sonore en temps réel sur des ordinateurs personnels ou sur des DSP embarqués. Dans cette troisième voie, l'une des méthodes consiste à répliquer les structures de synthèse d'origine en modélisant numériquement les circuits analogiques, toutes les ressources possibles des technologies numériques (circuits [[Processeur de signal numérique|DSP]] ou CPU des ordinateurs) sont alors utilisées pour générer ou modifier des sons musicaux. De nombreuses structures de synthèse sont proposées utilisant des principes de base variés, quelquefois combinés.
+
+Un synthétiseur nécessite habituellement l'utilisation d'un [[clavier (instrument)|clavier]] pour jouer de l'instrument, mais d'autres contrôleurs sont possibles : on peut l'utiliser avec un [[Séquenceur musical|séquenceur]], un contrôleur à ruban tactile, ou même grâce à des capteurs détectant la position de la main du joueur dans l'espace. Un clavier peut être inclus avec l'instrument quand il est sous forme physique. Certains synthétiseurs sont conçus sans clavier, et peuvent être contrôlés par l'adjonction d'un clavier compatible (par exemple grâce à l'interface standard [[Musical Instrument Digital Interface|MIDI]], ou CV/Gate).
+
+En plus du clavier, un synthétiseur propose généralement un ensemble de [[potentiomètre]]s et de [[fader]]s pour permettre le réglage du son ([[Enveloppe sonore|enveloppe]], [[Filtre (audio)|filtre]], [[bend]]{{etc.}}).
+
+=== Méthodes de synthèse ===
+{{Article détaillé|Synthèse sonore}}
+Trois types de [[synthèse sonore]] ont prédominé dans l'histoire des synthétiseurs.
+
+==== Synthèse analogique ====
+[[File:Hönig-Synthesizer (1965-).jpg|vignette|Synthétiseur analogique Hönig (1965).]]
+Les plus courantes sont les synthèses analogiques [[synthèse sonore soustractive|soustractive]] et [[synthèse sonore additive|additive]] (l'additive fut utilisée dès le début du {{s-|XX|e}} sur un instrument appelé le [[Telharmonium]]. Ce fut la première). Elles se basent sur des formes d'onde simples ([[Signal sinusoïdal|sinusoïdale]], [[signal triangulaire|triangulaire]] ou [[signal carré|carrée]] le plus souvent). La synthèse additive combine différentes ondes sinusoïdales (comme un orgue par exemple). La synthèse soustractive utilise des signaux riches en [[Harmonique (musique)|harmoniques]], et nécessite des [[Filtre (électronique)|filtres]] pour ajuster le timbre. Cependant, il est techniquement simplificateur de qualifier en bloc les synthétiseurs analogiques de synthèse soustractive au seul motif de l'usage d'un filtre en fin de traitement. Nombre de synthétiseurs modulaires ou semi-modulaires permettent également de combiner plusieurs signaux différents et pas uniquement par simple addition mais également par leur multiplication via un [[modulateur en anneau]]. C'est notamment possible avec le [[EMS VCS3|VCS3 de EMS]]. Les technologies numériques ont très vite été utilisées dans les synthétiseurs analogiques, notamment pour permettre la mise en mémoire des sonorités programmées (évitant ainsi de refaire manuellement les réglages pour passer d'un son à l'autre), la gestion de la polyphonie et l'attribution des voix disponibles aux touches d'un clavier, etc. La synthèse analogique a connu son heure de gloire dans les [[années 1970]] puis un retour en grâce à partir des [[années 1990]], son usage étant en effet assez répandu dans les [[musiques actuelles]].
+
+Dans les années 1990, sont apparus des instruments numériques matériels ressemblant en tout point à leurs ainés et dotés de processeurs capables de modéliser la totalité de la chaîne du signal analogique. Puis, lorsque les ordinateurs sont devenus suffisamment puissants, vers la fin du vingtième siècle et début du vingt-et-unième, des émulations ont vu le jour sous forme de [[logiciel]] informatique. Ces versions virtuelles (qu'elles se présentent sous la forme d'un instrument réel ou d'un programme tournant sur un ordinateur) parviennent à simuler de manière quasi-parfaite les sonorités typiques et le comportement des synthétiseurs analogiques.
+
+==== Synthèse FM ====
+[[Fichier:YAMAHA DX7.jpg|vignette|Le [[Yamaha DX7]] utilise la [[synthèse FM]].]]
+La [[synthèse FM]] est un autre type de synthèse, radicalement différent et entièrement numérique, qui a remporté un large succès dans les [[années 1980]]. Le principe de la [[modulation de fréquence]] qui consiste à moduler un générateur par un autre n'est pas nouveau et existe déjà en synthèse analogique, mais l'instabilité rencontrée sur les modules analogiques en limite l'usage à certains effets et sonorités. L'utilisation d'algorithmes numériques permet en revanche une précision et une prédiction parfaite des formes d'onde qui rend la modulation de fréquence exploitable comme une méthode de synthèse autonome couvrant en palette sonore toutes les familles d'instruments.
+
+==== Synthèse numérique et échantillonnage ====
+Tous les [[Instrument de musique électronique|instruments électroniques]] munis d'un [[Clavier (instrument)|clavier]] ne sont pas forcément des synthétiseurs dans le sens littéral du terme. Certains appareils comme les [[Échantillonneur|échantillonneurs numériques]] (ou lecteurs d'échantillons, ''Rompler'' en anglais, lorsque ceux-ci n'offrent pas la possibilité à l'utilisateur d'échantillonner ses propres sonorités) reproduisent des [[Échantillon (musique)|échantillons sonores]] [[Enregistrement sonore|enregistrés]]. Cependant la frontière entre les deux types d'appareil n'est pas clairement établie : certaines techniques de synthèse se basent sur des échantillons (voir des modèles comme le [[Roland D-50]] ou le [[Korg M1]], synthétiseurs numériques utilisant des "ondes" [[Modulation par impulsions et codage|PCM]], c'est-à-dire des échantillons).
+
+=== Modules ===
+[[Fichier:Synth Diag.svg|vignette|Architecture typique d'un [[synthétiseur modulaire]] [[Synthèse sonore soustractive|soustractif]].]]
+{{Article détaillé|Synthétiseur modulaire}}
+
+Les premiers synthétiseurs génèrent des sons par des circuits [[électronique analogique|électroniques analogiques]] organisés en nombreux modules interconnectés électriquement entre eux (appelés {{citation|patch}}). Les synthétiseurs numériques plus récents fonctionnent différemment, utilisant des [[Processeur de signal numérique|processeurs]], mais ils gardent souvent une architecture modulaire inspirée par la synthèse analogique (''[[Synthétiseur analogique virtuel|Virtual Analogic]]''). Parmi les modules les plus utilisés figurent :
+* les [[Oscillateur contrôlé en tension|VCO]], [[Oscillateur (électronique)|oscillateurs]] qui créent les sons de base avec un [[Timbre (musique)|timbre]] qui dépend de la méthode de synthèse ;
+* les [[Filtre contrôlé en tension|VCF]], [[Filtre (électronique)|filtres]] permettant de transformer le son en filtrant certaines fréquences ;
+* les [[Voltage Controlled Amplifier|VCA]], [[Amplificateur audio|amplificateurs]] ayant pour rôle d'amplifier le signal, et donc de faire varier son volume.
+Les composants précédents sont contrôlables (d'où l'appellation ''{{Langue|en|texte=Voltage-Controlled}}''), il existe donc des composants permettant de les moduler :
+* les générateurs d'[[enveloppe sonore|enveloppes]] (ADSR ou autres), permettant de faire moduler le son de manière synchronisée avec le début et fin de note ;
+* les [[Low frequency oscillation|LFO]], oscillateurs basse fréquence permettant de moduler le son de manière périodique, pour obtenir par exemple un [[vibrato]] ou un [[tremolo]].
+
+Les [[synthétiseur modulaire|synthétiseurs modulaires]] permettent de combiner librement tous ces composants, ou même d'en ajouter. Dans les synthétiseurs plus compacts, ces modules sont précâblés, et ne peuvent être combinés que de la manière prévue par le constructeur.
+[[Fichier:Oberheim Matrix-6 - display &amp; mode select.jpg|thumb|upright=0.6|Afficheur de patchs d'un [[Oberheim]] Matrix-6.]]
+On appelle {{citation étrangère|lang=en|patch}} (ou encore {{citation étrangère|lang=en|program}} ou {{citation étrangère|lang=en|voice}})&lt;ref&gt;{{ouvrage|langue=en|url=https://www.google.fr/books/edition/MIDI/ajDaXh-qgDUC?hl=fr&amp;gbpv=1&amp;dq=patch+synthesizer&amp;pg=PA184&amp;printsec=frontcover |titre=MIDI - A Comprehensive Introduction|auteur= Joseph Rothstein|année= 1995|éditeur=A-R Editions, Inc.|isbn=978-0895793096|pages totales=263 }}.&lt;/ref&gt; l'ensemble des paramètres de chaque module ainsi que leurs configurations, qui génèrent un son spécifique&lt;ref&gt;{{ouvrage |langue=en|url=https://www.google.fr/books/edition/Designing_Software_Synthesizer_Plug_Ins/oaYgBQAAQBAJ?hl=fr&amp;gbpv=0 |titre=Designing Software Synthesizer Plug-Ins in C++|auteur=Will C. Pirkle|année=2014|éditeur=CRC Press|date= 30 octobre 2014 |pages totales= 760 }}.&lt;/ref&gt;; par extension, un son est aussi appelé {{citation|patch}}. Sur les synthétiseurs anciens sans mémoire, il correspondait à un ensemble de réglages, et sur les synthétiseurs modernes il correspond à un emplacement mémoire, identifié soit par un numéro soit par une lettre et un numéro, éventuellement associé à un libellé décrivant le nom du son.
+
+== Histoire ==
+L'histoire de la [[synthèse sonore]] et celle du synthétiseur étant intimement liées, elles sont toutes deux regroupées ici.
+
+=== Ancêtre ===
+[[Fichier:1st commercial Moog synthesizer (1964, commissioned by the Alwin Nikolai Dance Theater of NY) @ Stearns Collection (Stearns 2035), University of Michigan.jpg|vignette|Le premier synthétiseur Moog commercialisé (1964).]]
+
+En [[1874 en musique|1874]], après avoir déposé infructueusement le brevet du [[téléphone]] (une heure après [[Alexandre Graham Bell]]), [[Elisha Gray]] invente le [[télégraphe]] musical. Celui-ci comporte un clavier de deux octaves et exploite via des électro-aimants les vibrations de lamelles métalliques. La diffusion est assurée par le réseau téléphonique. En [[1897]], l'Américain [[Thaddeus Cahill]] invente le [[telharmonium]], appelé aussi [[dynamophone]] car il fonctionne à l'aide de {{nombre|408|[[dynamo]]s}}. Il inspirera la conception de l'[[orgue Hammond]] quarante ans plus tard et utilise lui aussi le réseau téléphonique. En [[1905 en musique|1905]], l'entreprise ''Max Kohl'' conçoit un synthétiseur sonore&lt;ref&gt;{{Lien web |langue=en-GB |prénom=Lindsay Newton |nom=says |titre=Helmholtz Sound Synthesiser. Max Kohl. Germany, 1905 |url=http://120years.net/helmholtz-sound-synthesiser-max-kohl-germany-1905/ |site=120 Years of Electronic Music |date=2014-10-02 |consulté le=2024-01-10}}&lt;/ref&gt; selon l'ouvrage révolutionnaire d'[[Hermann von Helmholtz]] intitulé « Théorie physiologique de la musique, fondée sur l'étude des sensations auditives » (1868)&lt;ref&gt;{{ouvrage|langue=fr|auteur=Hermann von Helmholtz|titre=Théorie physiologique de la musique, fondée sur l'étude des sensations auditives|url=https://archive.org/stream/thoriephysiolo00helm#page/n0|lieu=Paris|éditeur=Victor Masson et fils|année=1868}}.&lt;/ref&gt;, afin de démontrer et d'analyser l’effet des harmoniques dans un son complexe.
+
+En [[1907 en musique|1907]], [[Lee De Forest]] invente le [[tube à vide]] (la « lampe » électronique, la [[Triode (électronique)|triode]]) qui va permettre de réaliser des circuits électroniques. En [[1917 en musique|1917]], le Russe [[Lev Sergueïevitch Termen|Léon Theremine]] invente le [[thérémine]], instrument peu courant mais encore joué et construit aujourd'hui. Il ne comporte pas de clavier mais deux antennes qui sont influencées par les positions des mains, l'une servant à piloter la hauteur et l'autre le volume du son ; ce son est le résultat de la différence entre deux oscillateurs travaillant à très hautes fréquences. C'est lui qui fait les « [[Chœur (instrument)|chœurs]] » dans le morceau ''[[Good Vibrations]]'' de [[Brian Wilson]] ([[The Beach Boys]]) et que l'on entend aussi comme l'instrument principal du thème du générique de la série télévisée britannique ''[[Inspecteur Barnaby]]''.
+
+[[Fichier:Minimoog (Buffalo Museum of Science).jpg|vignette|Le [[Minimoog]], synthétiseur fabriqué par la société Moog à partir de 1969.]]
+[[Maurice Martenot]] invente en [[1928 en musique|1928]] « les [[ondes Martenot]] », instrument qui utilise le même principe de différence entre deux fréquences élevées mais dispose d'un clavier et d'un moyen de faire des [[glissando]]s. Cet instrument au son fascinant a été réédité en [[2001 en musique|2001]] sous le nom d'« Ondéa » et est exploité notamment en concert par [[Yann Tiersen]]. Bien avant, des artistes comme [[Olivier Messiaen]], [[Edgar Varèse]] ou [[Darius Milhaud]] ont composé pour lui un véritable répertoire. Deux ans plus tard, le [[trautonium]] de l'Allemand [[Friedrich Trautwein]] est le premier synthétiseur à [[synthèse sonore soustractive|synthèse soustractive]]. La bande-son du film ''[[Les Oiseaux (film)|Les Oiseaux]]'' d'[[Alfred Hitchcock]] a été entièrement réalisée avec cet instrument, par [[Oskar Sala]], notamment les cris des oiseaux. En [[1935 en musique|1935]], c'est la naissance de l'[[orgue Hammond]], conçu par [[Laurens Hammond]] qui travaillait à l'origine à la mise au point d'un moteur destiné à une horloge. Les sons de l'orgue Hammond sont créés par un grand nombre de [[Roue phonique (organologie)|roues phoniques]] (sortes de dynamos) et selon un procédé de [[synthèse sonore additive|synthèse additive]]&lt;ref group=alpha&gt;Les [[orgue]]s électriques sont basés sur le principe de la synthèse additive, dans laquelle plusieurs signaux sont mélangés.&lt;/ref&gt;. Cet instrument est totalement [[polyphonique]] ; chaque roue générant un signal [[Harmonique (musique)|harmonique]]. Destiné initialement aux églises, il sera popularisé par le [[gospel]] puis le [[blues]], le [[jazz]] et le [[rock]]. Il est encore très populaire aujourd'hui&lt;ref&gt;{{lien web |auteur=Marjolaine Portier-Kaltenbach|titre=Delvon Lamarr Trio : De l'or(gue) dans les doigts|date= 10 mars 2022
+|url=https://www.radiofrance.fr/francemusique/podcasts/la-chronique-de-marjolaine-portier-kaltenbach/delvon-lamarr-trio-de-l-or-gue-dans-les-doigts-6493991|éditeur=[[France Musique]] |site=radiofrance.fr/francemusique|consulté le=3 janvier 2023}}.&lt;/ref&gt;. Dans les orgues électroniques ultérieurs, les sons sont générés par des circuits électroniques. Le [[Novachord]], également développé par la société Hammond et construit à 1069 exemplaires entre 1939 et 1942, peut être considéré comme le premier véritable synthétiseur polyphonique avec générateur d'enveloppe et filtres. Il fonctionnait avec des [[tube électronique |tubes électroniques]]. Faute de succès commercial, la production n'a toutefois pas repris après la fin de la Seconde Guerre mondiale. En [[1947 en musique|1947]], l'électronicien français [[Constant Martin]] invente le [[clavioline]], instrument à clavier (une octave et demi) n'ayant qu'un seul oscillateur.
+
+Hugh Le Caine, John Hanert, [[Raymond Scott]], [[Percy Grainger]] (avec Burnett Cross) et d'autres ont construit divers instruments de musique électroniques à la fin des années 1940 et dans les années 1950. Il convient de mentionner en particulier la machine orchestrale ainsi que le générateur d'effets sonores Karloff de Raymond Scott&lt;ref&gt;{{lien web|url=https://artsandculture.google.com/story/raymond-scott-s-early-work-in-electronic-music/hAWBcZ37KBNQcA |titre=Early Work in Electronic Music - Raymond Scott's |titre=Karloff - Monster of a Sound Effects Machine |éditeur=Manhattan Research Inc |langue=en |consulté le=2021-09-02}}.&lt;/ref&gt;.
+
+[[Fichier:2s4. 438 synthé différents en 104 minutes.ogg|vignette|Différents sons de synthétiseur (2/4).]]
+[[Fichier:3s4. 438 synthé différents en 104 minutes.ogg|vignette|Différents sons de synthétiseur (3/4).]]
+[[Fichier:4s4. 438 synthé différents en 104 minutes.ogg|vignette|Différents sons de synthétiseur (4/4).]]
+
+En [[1950 en musique|1950]], le chef d'orchestre [[Raymond Scott]] crée le [[clavivox]] pour produire des jingles publicitaires, puis l'[[électronium]], un instrument très avant-gardiste puisqu'il est à la fois un synthétiseur et un [[Séquenceur musical|séquenceur]], permettant donc de programmer des mélodies.
+
+En 1950, [[Radio Corporation of America|RCA]] a produit des appareils expérimentaux pour produire de la voix et de la musique. Dans le laboratoire expérimental new-yorkais de la ''Radio Corporation of America'', les ingénieurs {{lien|fr=Harry F. Olson}} et [[Herbert Belar]] construisirent un appareil commandé par bandes perforées, le synthétiseur RCA Mark&amp;nbsp;I. Les sons y étaient produits par des oscillateurs à diapason ; les vibrations sinusoïdales étaient prélevées électromagnétiquement et transformées en vibrations en dents de scie riches en harmoniques. C'est surtout le compositeur [[Milton Babbitt]] qui s'est occupé de cet appareil et qui a également été conseiller pour le modèle suivant [[RCA Mark II Sound Synthesizer|Mark&amp;nbsp;II]], qui a été fabriqué au ''[[Columbia-Princeton Electronic Music Center]]''. Ce ''Mark II de 1958'' ne pouvait cependant reproduire un morceau de musique qu'après une programmation préalable avec une [[Portée (musique)|portée]] et devait être reprogrammé pour le suivant. Il était contrôlé par des [[bande perforée|bandes perforées]]. En 1958, [[Daphne Oram]] a développé au ''BBC Radiophonic Workshop'' un nouveau synthétiseur qui utilisait la technique dite des ''oramics''&lt;ref&gt;{{lien web |auteur=Steve Marshall |url=https://www.soundonsound. com/people/story-bbc-radiophonic-workshop |titre=The Story Of The BBC Radiophonic Workshop |citation=Daphne Oram manipule une boucle de bande à Broadcasting House |site= soundonsound.com|éditeur=BBC |date=2008-04 |consulté le=2020-09 |langue=en}}.&lt;/ref&gt;. Le synthétiseur était contrôlé par un film de 35 mm. Il a été utilisé pendant quelques années par la [[British Broadcasting Corporation|BBC]].
+
+À partir des années 1960, le développement de l'[[Électronique (technique)|électronique]] était tel qu'il était possible de produire des sons et des tonalités en [[temps réel]], mais ces appareils étaient limités à une utilisation en studio en raison de leur taille. Ces appareils étaient généralement modulaires et les différents composants pouvaient être câblés manuellement les uns aux autres. Beaucoup de ces premiers appareils étaient des pièces uniques expérimentales. [[Don Buchla|Donald Buchla]], Hugh Le Caine, Raymond Scott et Paul Ketoff ont été les pionniers dans les années 1960, mais seul Buchla proposait un appareil commercial.
+
+Sept ans plus tard, en [[1957 en musique|1957]], [[Max Mathews]], ingénieur aux [[Bell Laboratories]] écrit le premier programme de [[synthèse numérique]], appelé « MUSIC-I », pour l'[[IBM 704]]. En [[1964 en musique|1964]], [[Moog]] commercialise son premier synthétiseur&lt;ref&gt;{{lien web|langue=en |url=http://createdigitalmusic.com/2007/03/23/this-week-in-synths-the-stearns-collection-moog-modular-mike-oldfields-ob-xa-and-the-moog-iiip/|site=createdigitalmusic.com|date=2007/03/23|titre=this week in synths the stearns -  collection Moog modular Mike Oldfields ob xa and the Moog iiip}}.&lt;/ref&gt;, et [[Paul Ketoff]] présente son « synket »&lt;ref&gt;''{{lang|en|Keyboard Magazine Presents Vintage Synthesizers}}'', {{p.|71}}.&lt;/ref&gt;.
+
+En [[1969 en musique|1969]], [[George Harrison]], guitariste solo des [[Beatles]], est le premier à utiliser un Moog dans un album de rock sur ''[[Abbey Road (album)|Abbey Road]]''. [[Pete Townshend]], du groupe [[The Who]], crée l'année suivante des boucles avec un synthétiseur [[ARP (synthétiseurs)|ARP]] sur ''[[Who's Next]]''. L'originalité de cet album est que les synthétiseurs ne cherchent pas à remplacer des instruments classiques, mais fournissent l'élément de rythme lui-même, en particulier dans ''[[Won't Get Fooled Again]]''. Le synthétiseur devient alors à part entière un instrument de [[rock]].
+
+En [[1972 en musique|1972]] sort le premier synthétiseur [[polyphonie|diphonique]], l'[[ARP Odyssey]] conçu par [[Alan Robert Pearlman|Alan R. Pearlman]]. En [[1974 en musique|1974]], les premiers synthétiseurs polyphoniques apparaissent, avec le SEM&lt;ref&gt;{{lien web |titre=Oberheim SEM / Synthetiseur.net |url=https://synthetiseur.net/oberheim/sem/ |site=Synthetiseur.net |consulté le=17-10-2020}}.&lt;/ref&gt; à deux, puis quatre et huit [[voix (polyphonie)|voix]], introduits par [[Tom Oberheim]]. Dès [[1983 en musique|1983]], première démonstration publique du [[Musical Instrument Digital Interface]] ou interface MIDI, raccordant un {{Lien|langue=en|fr=Roland Jupiter-6}} et un [[Sequential Circuits]] {{nobr|Prophet 600}}, par [[Dave Smith (ingénieur)|Dave Smith]]&lt;ref&gt;{{Lien brisé |url= http://mixonline.com/TECnology-Hall-of-Fame/smith-sequential-midi-090106/ |titre=mixonline.com/TECnology-Hall-o… |brisé le=20-04-2023}}.&lt;/ref&gt;. La même année, le [[Yamaha DX7]] est commercialisé&lt;ref&gt;{{en}} http://www.vintagesynth.com/yamaha/dx7.php&lt;/ref&gt;.
+
+=== Synthétiseurs notables et musiciens ===
+{{Catégorie détaillée|Synthétiseur}}
+Voici une liste des instruments qui ont représenté une étape importante au niveau du son ou d'un style musical et qui méritent un article dédié. Pour chaque instrument, quelques musiciens&lt;ref&gt;L'article d'un instrument peut indiquer plus de musiciens en ayant fait usage.&lt;/ref&gt; ou des styles étroitement liés sont indiqués.
+{{Liste nombreuse|
+* [[Access Virus]] (modèles A, B, C, TI, TI2, etc.) largement utilisés dans les domaines musicaux de la [[trance]] et de la [[techno]] par des artistes tels que [[Headhunterz]], [[Angerfist]].
+* [[Alesis Andromeda]]. Utilise des composants numériques et modernes pour piloter un circuit de synthèse entièrement analogique ([[Klaus Schulze]]).
+* '''ARP'''
+** [[ARP 2500|2500]] ([[Pete Townshend]], [[The Who]], [[Aphex Twin]], [[Éliane Radigue]], [[Meat Beat Manifesto]], [[David Bowie]], [[Skinny Puppy]], [[Jean-Michel Jarre]], [[Jimmy Page]], [[Paul Davis (chanteur)|Paul Davis]], [[Vince Clarke]], [[David Hentschel]] (''Funeral for a friend'', ''Startling Music'')).
+** [[ARP 2600|2600]] ([[Pete Townshend]] (solo), [[The Who]] (''[[Baba O'Riley]]'', ''[[Won't Get Fooled Again]]''), [[Klaus Schulze]], [[Jean-Jacques Birgé]], [[Depeche Mode]], [[Erasure]], [[Stevie Wonder]], [[Weather Report]], [[Edgar Winter]], [[Space (groupe)|Space]], [[Genesis (groupe)|Genesis]], [[Lightwave]], [[Jean-Michel Jarre]], [[New Order]], [[Chemical Brothers]], [[Simian Mobile Disco]], [[Aphex Twin]]).
+** [[ARP Odyssey|Odyssey]] ([[Georges Rodi]], [[Klaus Schulze]], [[Kraftwerk]], [[Ultravox]], [[Styx (musique)|Styx]], [[Herbie Hancock]], [[Spock's Beard]], [[Deep Purple]] ([[Jon Lord]])).
+* Casio CZ-101 ({{Lien|langue=en|trad=Casio CZ synthesizers|fr=Synthétiseurs Cazio CZ}}). L'un des premiers synthétiseurs numériques bon marché ([[Vince Clarke]], [[Erasure]]).
+* [[Cavagnolo Exagone XM64]]. Un des rares synthétiseurs analogiques monophoniques produits par une firme française (1982).
+* [[Clavia Nord Lead]]. Le premier synthétiseur à utiliser des circuits numériques pour émuler des circuits analogiques ([[The Prodigy]], [[Space (groupe)|Space]], [[Zoot Woman]], {{Lien|langue=en|trad=The Weathermen (band)|fr=The Weathermen}}, [[Jean-Michel Jarre]]).
+* [[Elka Synthex]]. L'un des derniers grands analogiques ([[Tangerine Dream]], [[Space (groupe)|Space]], [[Jean-Michel Jarre]], [[Stevie Wonder]], [[Giorgio Moroder]]).
+* [[EMS VCS3]] ([[Klaus Schulze]], [[Roxy Music]], [[Hawkwind]], [[Tim Blake]], [[Pink Floyd]], [[Space (groupe)|Space]], [[Jean-Michel Jarre]], {{Lien|langue=en|fr=BBC Radiophonic Workshop}}, [[Brian Eno]]).
+* [[E-mu Emulator]] ([[The Residents]], [[Depeche Mode]], [[Deep Purple]], [[Genesis (groupe)|Genesis]], [[Vangelis]]).
+*'''[[Ensoniq]]'''
+** [[Ensoniq ESQ-1|ESQ-1]] ([[Jean-Michel Jarre]], [[Steve Roach]]).
+** [[Ensoniq VFX|VFX]] ([[Tony Banks (musicien)|Tony Banks]], [[Space (groupe)|Space]], [[Jean-Jacques Birgé]]).
+* [[Fairlight CMI]] ([[Daniel Balavoine]], [[Jean-Michel Jarre]], [[Kate Bush]], [[Space (groupe)|Space]], [[Peter Gabriel]], [[Mike Oldfield]], [[Jan Hammer]], [[Pet Shop Boys]], [[The Art of Noise]], [[Supertramp]]).
+* '''[[Korg]]'''
+** [[Korg 01/W|01/W]] ([[Alex Staropoli]]).
+** [[Korg i30|i30]] ([[Jean-Christian Michel]] (''[[Jean-Sébastien Bach|J.S. Bach]] Transcriptions'')).
+** [[Korg KARMA|KARMA]] ([[Jean-Michel Jarre]]).
+** [[Korg M1|M1]] ([[Bradley Joseph]], [[Space (groupe)|Space]], [[Trisomie 21]], [[The Cure]], [[Pink Floyd]]).
+** [[Korg MS-20|MS-20]] ([[Erasure]], [[Digitalism]], [[Chemical Brothers]]).
+** [[Korg Triton|Triton]] ([[Bradley Joseph]], [[Derek Sherinian]]).
+** [[Korg Wavestation|Wavestation]] ([[Tony Banks (musicien)|Tony Banks]]).
+* [[Kurzweil K2000]]. Synthétiseur disposant du système VAST ([[Jean-Michel Jarre]], [[Pink Floyd]], [[Lightwave]]).
+* [[Lyricon]]. Premier instrument à vent électronique produit en grande série ([[Michael Brecker]], [[Tom Scott (musicien)|Tom Scott]], {{Lien|langue=en|trad=Chuck Greenberg (musician)|fr=Chuck Greenberg}}, [[Wayne Shorter]], {{Lien|langue=en|fr=Jack Lancaster}} (''{{Lien|langue=en|fr=The Rock Peter and the Wolf}}'', ''Marscape'')).
+* '''[[Moog]]'''
+** [[Minimoog]] ([[Emerson, Lake and Palmer]], [[Keith Emerson]], [[Gary Numan]], [[Pink Floyd]], [[Jean-Michel Jarre]], [[Kraftwerk]], [[Erasure]], [[Rush (groupe)|Rush]], [[The Cure]], [[Yes (groupe)|Yes]], [[Rick Wakeman]], [[Patrick Moraz]], [[Buggles]], [[Geoff Downes]], [[Igor Khorochev]], Badger, [[Stereolab]], [[Devo]], {{Lien|langue=en|fr=Ray Buttigieg}}, [[George Duke]], [[Tangerine Dream]], [[Edgar Froese]], [[Peter Baumann]], [[Klaus Schulze]], [[Triumvirat (groupe)|Triumvirat]], [[Strawbs]], [[Paul McCartney]] &amp; [[Wings (groupe)|Wings]] ''[[Band on the Run (album)|Band on the Run]]'', [[Gentle Giant]], [[Dr. Dre]], [[Daft Punk]] ).
+** [[Polymoog]] ([[Tony Banks (musicien)|Tony Banks]] (''[[...And Then There Were Three...]]''), [[Kraftwerk]], [[Gary Numan]], [[Rick Wakeman]], [[Yes (groupe)|Yes]], [[Tim Blake]]).
+** [[Synthétiseur Moog|Modular]] ([[Emerson, Lake and Palmer]], [[Keith Emerson]], [[Wendy Carlos]], [[Isao Tomita]], [[Klaus Schulze]], [[Tangerine Dream]], {{Lien|langue=en|fr=Tonto's Expanding Head Band}}, [[The Beatles]] (album ''[[Abbey Road (album)|Abbey Road]]''), [[George Harrison]] (''[[Electronic Sound]]''), [[Weezer]], [[Space (groupe)|Space]], [[Massive Attack]]).
+** [[Moog Taurus|Taurus]] ([[Rush (groupe)|Rush]], [[Jean-Michel Jarre]], [[Genesis (groupe)|Genesis]], [[The Police]], [[U2]], [[The Cure]], [[Yes (groupe)|Yes]], [[Steve Hackett]], [[Strawbs]]).
+* [[Oberheim OB-X]], [[Oberheim OB-Xa]] ([[Rush (groupe)|Rush]], [[Prince (musicien)|Prince]], [[Styx (musique)|Styx]], [[Supertramp]], [[Van Halen]], [[Jean-Michel Jarre]], [[Georges Rodi]]).
+* [[PPG Wave|PPG Wave 2]] ([[Rush (groupe)|Rush]], [[Depeche Mode]], [[Jean-Michel Jarre]], [[Jean-Jacques Birgé]], [[Tangerine Dream]] ([[Edgar Froese]]), [[The Fixx]], [[Thomas Dolby]]).
+* [[Roland (entreprise)|'''Roland''']]
+** [[Roland D-50|D-50]] ([[Jean-Michel Jarre]], [[Enya]], [[IQ (groupe)|IQ]]).
+** [[Roland JD-800|JD-800]]. Premier synthétiseur numérique à reproposer une interface conviviale « un bouton, une fonction » comme sur ses ancêtres analogiques ([[Jean-Michel Jarre]], Francis Rimbert, [[Vangelis]], [[Genesis (groupe)|Genesis]], [[The Prodigy]], [[Pet Shop Boys]]).
+** [[Roland JP-8000|JP-8000]]. Le synthétiseur qui a posé les bases sonores de la [[trance]], notamment ce son de dent de scie très chaud et typique ([[Jean-Michel Jarre]], Francis Rimbert).
+** [[Roland Juno-60|Juno-60]]/[[Roland Juno-106]]. C'est grâce à ces synthétiseurs que l'album ''Living in America'', du groupe suédois [[The Sounds]], fut connu en Amérique et en Europe. Il peut être entendu sur tous leurs albums.
+** [[Roland Jupiter-8|Jupiter-8]] ([[Rush (groupe)|Rush]], [[Duran Duran]], [[Erasure]], [[Orchestral Manoeuvres in the Dark|OMD]], [[Huey Lewis and the News]], [[Space (groupe)|Space]], [[Indochine (musique)|Indochine]], [[Massive Attack]], [[Jean-Michel Jarre]]).
+** [[Roland MT-32|MT-32]]. Un standard ''de facto'' pour la musique et les bruitages des [[jeux vidéo]].
+** [[Roland TB-303|TB-303]] ([[techno]], [[acid house]], [[Fatboy Slim]], [[Daft Punk]]).
+** [[Roland V-Synth|V-Synth]]. Synthétiseur de recherche intégrant la technologie VariPhrase, la synthèse à oscillateurs multiples, les algorithmes COSM, la synthèse Vocal Designer, une [[interface de programmation]] ([[écran tactile]], nombreux contrôleurs [[Système temps réel|temps réel]] comme le {{Langue|en|texte=Time Trip Pad}} ou encore le double {{Langue|en|texte=D-Beam}}). Le V-Synth GT, sorti en 2007, ajoute, entre autres, la {{nobr|synthèse AP}} et une architecture [[Microprocesseur multi-cœur|double cœur]] permettant de doubler la puissance du V-Synth original ([[Front 242]], [[Skinny Puppy]], [[Orbital (groupe)|Orbital]], [[Jean-Jacques Birgé]], [[Vitalic]]).
+* [[RSF Polykobol II]]. La référence française des synthétiseurs analogiques [[polyphonique]]s à mémoire des [[années 1980]], instrument rare ([[Lightwave]], [[Jean-Michel Jarre]]).
+* '''[[Sequential Circuits]]'''
+** [[Sequential Circuits Prophet 5|Prophet 5]] ([[Berlin (groupe)|Berlin]], [[Phil Collins]], [[The Cars]], [[Erasure]], [[Kraftwerk]], [[Steve Winwood]], [[Underworld (groupe)|Underworld]], [[MSTRKRFT]], [[Chromeo]], [[Patrick Moraz]]).
+** [[Sequential Circuits Prophet 10|Prophet 10]] ([[Tangerine Dream]], [[The Orb]], [[The Who]], [[Pet Shop Boys]], [[Vangelis]], [[Genesis (groupe)|Genesis]], [[Human League]], le cinéaste et compositeur [[John Carpenter]], [[Patrick Moraz]]).
+* [[Synclavier]] ([[Laurie Anderson]], [[Asia (groupe)|Asia]], [[Buggles]], [[Geoff Downes]], [[The Cure]], [[Dire Straits]], [[Kraftwerk]], [[Pat Metheny]], [[Pink Floyd]], [[Sting]], [[Tangerine Dream]], [[Vangelis]], [[Michael Jackson]], [[Stevie Wonder]], [[Yes]], [[Frank Zappa]]).
+* [[Technos Acxel]] développé et commercialisé par la société québécoise Technos de 1987 à 1990.
+*'''[[Waldorf Music]]'''
+** [[Waldorf Q|Q]] et modèles dérivés.
+** Wave. Un monstre de la synthèse à [[tables d'ondes]].
+* {{Lien|langue=en|fr=WaveFrame AudioFrame}} ([[Peter Gabriel]], [[Stevie Wonder]]).
+*'''[[Yamaha]]'''
+** [[Yamaha CS-80|CS-80]]. Premier synthétiseur polyphonique 8 notes de la marque, totalement analogique, à clavier gérant le {{Langue|en|texte=Polyphonic aftertouch}}, pesant environ cent kilogrammes, sans doute le plus expressif de tous, tel un instrument acoustique ([[Vangelis]], [[Space (groupe)|Space]], [[Hans Zimmer]], [[Eddie Jobson]], [[Jean-Michel Jarre]]).
+** [[Yamaha DX7|DX7]] ([[Jean-Michel Jarre]], [[Rush (groupe)|Rush]], [[Steve Reich]], [[Depeche Mode]], [[Zoot Woman]], [[The Cure]], [[Brian Eno]], [[Jean-Philippe Rykiel]], [[Jean-Jacques Birgé]], [[Howard Jones]], [[Nitzer Ebb]], [[Front 242]], [[David Bowie]], [[Enya]], [[Talk Talk]], [[Kraftwerk]], [[Vangelis]]).
+** {{Lien|langue=en|fr=GX-1}} ([[Emerson, Lake and Palmer]], [[Emerson, Lake and Powell]], [[Keith Emerson]], Hans-Jürgen Fritz ([[Triumvirat (groupe)|Triumvirat]]), [[Led Zeppelin]], [[Stevie Wonder]], [[ABBA]], [[Hans Zimmer]], [[Rick van der Linden]]).
+** Motif. Série de synthétiseurs Workstations lancés en 2001.
+** [[Yamaha SHS-10|SHS-10]]. L'un des premiers « [[keytar]]s » (synthétiseur en bandoulière comme une guitare) des années 1980 ([[Martin Circus]], {{Lien|langue=en|trad=Showbread (band)|fr=Showbread}}, [[Rick Wakeman]]).
+** VL-1. Premier [[Synthèse par modélisation physique|synthétiseur à modélisation physique]].
+}}
+
+== Principaux fabricants ==
+{{colonnes|taille=18|
+* [[Access Music]]
+* [[Acxel2]] (Idarca-Audio Inc., faillite en 2010)
+* [[Akai]]
+* [[Alesis]]
+* [[ARP (synthétiseurs)|ARP]]
+* [[Arturia]]
+* [[Behringer]]
+* [[Buchla and Associates]]
+* [[Casio]]
+* [[Clavia]]
+* [[Crumar]]
+* [[Dave Smith Instruments]]
+* [[Doepfer]]
+* [[Electronic Music Studio]] (EMS)
+* [[Elektron (entreprise)|Elektron]]
+* [[E-mu]]
+* [[Ensoniq]]
+* [[Fairlight CMI]]
+* [[Formanta Polivoks]]
+* [[Generalmusic]]
+* [[Hartmann Music]]
+* [[Ibbsynth]]
+* [[Kawai]]
+* [[Ketron]]
+* [[Korg]]
+* [[Kurzweil Music Systems]]
+* [[Roger Linn|Linn Electronics, Inc.]]
+* MFB
+* [[Moog]]
+* {{Lien|langue=en|fr=New England Digital}} (NED)
+* [[Novation Electronic Music Systems|Novation]]
+* [[Oberheim]]
+* [[PAiA Electronics]]
+* [[Palm Products GmbH]] (PPG)
+* [[Realtime Music Solutions]] (RMS)
+* [[Roland Corporation]]
+* [[RSF (synthétiseurs)|RSF]]
+* [[Sequential Circuits]]
+* [[Societa Industrie Elettroniche]] (SIEL)
+* [[Spectrasonics]]
+* [[Steiner-Parker]]
+* [[Studio Electronics]]
+* [[Technics]]
+* [[Waldorf Music]]
+* [[Yamaha Corporation|Yamaha]]
+}}
+
+== Notes et références ==
+=== Notes ===
+{{références|groupe=alpha}}
+=== Références ===
+{{références}}
+
+== Annexes ==
+=== Bibliographie ===
+* {{en}} [[Peter Shapiro]], [[Iara Lee]], ''Modulations: a history of electronic music'', 1999 {{ISBN|189102406X}}.
+* Pauline Bruchet, ''Modulations : une histoire de la musique électronique'', 2004 {{ISBN|2844851479}}.
+* {{Ouvrage|langue=fr|auteur1=Laurent de Wilde|titre=Les fous du son|sous-titre=d'Édison à nos jours|éditeur=[[Folio (Gallimard)]]|collection=histoire|année=2019|pages totales=672|isbn=978-2072802393|lire en ligne=https://books.google.fr/books?id=mFq2CwAAQBAJ&amp;printsec=frontcover&amp;dq=Les+fous+du+son&amp;hl=fr&amp;sa=X&amp;ved=2ahUKEwigp9j_0NrvAhUOx4UKHT_6DcsQ6AEwAHoECAYQAg#v=onepage&amp;q=Les%20fous%20du%20son&amp;f=false}}.
+
+=== Articles connexes ===
+* [[Vélocité (musique)|Vélocité d'un clavier numérique]]
+* [[Orgue numérique]]
+* [[Instrument de musique électronique]]
+* Logiciel de synthétiseur virtuel : [[Magnus Choir]]...
+
+{{Palette|Création de musique électronique}}
+{{Portail|musique électronique|musique}}
+
+[[Catégorie:Synthétiseur| ]]
+[[Catégorie:Instrument à clavier]]
+[[Catégorie:Instrument de musique électronique]]</text>
+      <sha1>poil298aoeme1xl2w2k6elzyvh5cppx</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Cyberpunk</title>
+    <ns>0</ns>
+    <id>725</id>
+    <revision>
+      <id>224798408</id>
+      <parentid>223136258</parentid>
+      <timestamp>2025-04-14T09:15:23Z</timestamp>
+      <contributor>
+        <username>MegHuxley</username>
+        <id>4922369</id>
+      </contributor>
+      <minor/>
+      <comment>lien vers page cyberespace</comment>
+      <origin>224798408</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="33770" sha1="fdgh2gj6v5f6x4lnle5jzu1l0bfq19z" xml:space="preserve">{{À sourcer|date=août 2024}}
+{{voir homonymes|Cyberpunk (homonymie)}}
+{{Infobox Musique (style)
+| image = Times Square, New York City (HDR).jpg
+| origines stylistiques = [[science-fiction]], [[Mouvement punk|Punk]]
+| genres dérivés = [[Steampunk]], [[Dieselpunk]], [[Solarpunk]], [[Biopunk]]
+}}[[File:SonyCenterAtNight.jpg|thumb|upright|[[Sony-Center|Centre Sony]] à Berlin, décrit comme un exemple réel de lieu ''cyberpunk'' par [[David Suzuki]]&lt;ref&gt;{{ouvrage |nom1=Suzuki |prénom1=David |lien auteur1=David Suzuki |titre=Good News for a Change:How Everyday People Are Helping the Planet |éditeur=Greystone Books |année=2003 |passage=332 |isbn=155054926X |lire en ligne=https://books.google.com/books?id=nbvpz6NaZC8C&amp;pg=PA332&amp;dq=Berlin+Sony+Center+cyberpunk}}&lt;/ref&gt;.]]
+
+Le '''cyberpunk''' (association des mots ''[[cybernétique]]'' et ''[[mouvement punk|punk]]'') est un genre de la [[science-fiction]] très apparenté à la [[dystopie]] et à la [[hard science-fiction]]. Il met souvent en scène un futur proche, avec une société technologiquement avancée, notamment dans les [[Technologies de l'information et de la communication|technologies de l'information]] et la [[cybernétique]].
+
+Selon [[Bruce Sterling]] : « le courant provient d'un univers où le dingue d'informatique et le rocker se rejoignent, d'un bouillon de culture où les tortillements des chaînes génétiques s'imbriquent ». Les mondes cyberpunks sont empreints de violence et de pessimisme ; ils sont souvent lugubres et déprimants. Les personnages sont des [[antihéros]] désabusés, cyniques et cupides.
+
+Le cyberpunk a depuis essaimé ses thématiques dans de nombreux médias : [[bande dessinée]], [[cinéma]], [[musique]], [[Jeu vidéo|jeux vidéo]] et [[Jeu de rôle sur table|jeux de rôle]].
+
+== Thématiques ==
+[[Image:William_Gibson_by_FredArmitage_crop.jpg|vignette|gauche|&lt;center&gt;[[William Gibson]] auteur de ''[[Neuromancien]]'', roman emblématique du genre.&lt;/center&gt;]]
+En opposition avec les récits de science-fiction se déroulant dans une perspective plus large (voyages dans l'espace, découverte de nouveaux espaces, conflits mettant en jeu l'univers connu et inconnu), le ''cyberpunk'' est un confluent et conflit des thématiques du [[hacker (sécurité informatique)|hackeur]], de l'[[intelligence artificielle]] et des [[multinationale]]s se déroulant la plupart du temps dans un futur proche sur Terre.
+
+Le lieu où l'histoire se déroule possède des caractères [[dystopie|dystopique]]s, « [[mouvement punk|punk]] », en ce sens que les personnages faisant leur possible pour se débrouiller dans un univers désorganisé, où le futur est déjà passé, se retrouvant dans la zone d'incertitude séparant une « presque-apocalypse » et l'univers [[Science-fiction post-apocalyptique|post-apocalyptique]], voient leurs actions se heurter à des intérêts inamovibles, impalpables.
+L'assimilation du terme « punk » est aussi induite par le slogan de ce mouvement, « [[Punk rock|No Future]]! », et par son esthétique à la fois familière et particulièrement agressive (en particulier celle de la branche dite « néo-punk » comprenant notamment le [[Crête iroquoise|mohawk]], la coupe « iroquois »). L'implication politique [[anarchisme|anarchiste]] vaut surtout par son opposition à l'organisation des pouvoirs dépourvue d'[[éthique]], très fortement dénoncée et la plupart du temps combattue.
+
+Les écrivains cyberpunk empruntent divers éléments aux romans noirs, policiers et récits post-modernistes pour exprimer un côté underground, chaotique et nihiliste d'une société entièrement informatisée voire robotisée. Cette vision trouble et tourmentée du futur est souvent à l'antipode de ce qu'elle fut dans les années 1940. Dans son livre "The Gernsback Continuum", William Gibson exprime avec sarcasme le mépris de la culture cyberpunk envers le roman utopique.
+Dans les œuvres cyberpunk, l'action prend le plus souvent place en ligne, dans le [[cyberespace]], ce qui a tendance à souvent brouiller les frontières entre virtuel et réalité.
+
+''[[Neuromancien]]'' de [[William Gibson]] est le roman canonique du genre &lt;ref&gt;''Media in America: The Wilson Quarterly Reader'' Par Douglas Gomery {{p.|273}}&lt;/ref&gt;. L'auteur y a le génial pressentiment de ce qui va devenir le fait marquant, dans le domaine des technologies, de la décennie suivante : Internet. Il fait véritablement œuvre d'anticipation, en imaginant un futur où la technologie, au développement hypertrophique, finit par envahir irrémédiablement l’environnement humain, par le remplacer ; un univers froid où l’informatique révèle son pouvoir de contrôle, renforçant celui des autorités, où elle sacre son omniprésence en venant s’inscrire au cœur des organismes humains, au moyen de tout un arsenal de gadgets électroniques.
+
+=== Futur proche ===
+Il constitue fréquemment une vision plutôt pessimiste de notre avenir. Ainsi y sont décrits des problèmes tels que la pollution, l'essor de la criminalité, la surpopulation, le décalage de plus en plus grand entre minorité de riches et majorité de pauvres.
+
+Le cyberpunk brosse un portrait sinistre et noir du monde qui serait alors entièrement dominé par des programmes informatiques et où les multinationales ont, pour la plupart, remplacé toute forme de gouvernement.
+L'état économique et technologique du Japon dans les années 1980 a largement inspiré et contribué à cette littérature. Les paysages artificiels, sur-urbanisés ainsi que les néons et autres enseignes lumineuses caractérisent le visuel cyberpunk.
+[[Fichier:重庆洪崖洞夜景.jpg|vignette|[[Chongqing]]''',''' [[Municipalité (république populaire de Chine)|municipalité]] de la [[République populaire de Chine]].]]
+Ce que devrait nous apporter la science dans les décennies à venir se retrouve dans la littérature cyberpunk. Tous les domaines technologiques sont abordés, même si les technologies relatives à l'[[informatique]] et à l'[[Électronique (technique)|électronique]] sont le plus souvent mises en avant. Le concept de Techno-accélération y est important : la technologie avance plus vite que la pensée (et la société) : l'humain semble être dépassé par la Machine.
+
+Les œuvres cyberpunks popularisent l'idée de la fusion de l'humain et du spirituel avec la machine, donnant ainsi naissance à des êtres [[hybride]]s, constitués de chair et de métal. La notion de membres artificiels, c'est-à-dire de [[Prothèse (médecine)|prothèse]]s intelligentes, plus résistantes et plus sensibles que des membres naturels, a été introduite avec le cyberpunk. De manière générale, nombre de personnages de romans cyberpunk possèdent un corps dont les facultés ont été augmentées artificiellement, que ce soit par des [[nanomachine]]s ou des [[drogue]]s. On peut supposer qu'une telle fascination pour les machines vient de la découverte par le grand public, à la fin des années [[1970]], de la puissance de calcul des ordinateurs émergents et des possibilités que l'[[informatique]] promet alors.
+
+=== Perception, mémoire et réalité virtuelle ===
+Possibilité commune d'une histoire réécrite comme dans ''[[Blade Runner (film)|Blade Runner]]'' ou de l'ensemble du monde sensible qui est faux comme dans ''[[Matrix (film)|Matrix]]''. Dans ''[[Jusqu'au bout du monde (film, 1991)|Jusqu'au bout du monde]]'' de Wenders les personnages deviennent accros à l'usage d'une machine enregistrant leur propre rêve &lt;ref&gt; ''Media in America: The Wilson Quarterly Reader.'' Par Douglas Gomery {{p.|273}} &lt;/ref&gt;.
+
+=== Anti-héros et méga-corporations ===
+Il nait un nouveau type de personnage, l’homme de la rue, solitaire et marginal, contraint de s’adapter à une évolution technologique rapide et incessante, et de s’en sortir le moins mal possible. Ce personnage sans racines, [[surdoué]] de l’électronique mais [[Asocial|pas des relations humaines]], travaille parfois pour de grandes sociétés, mais le plus souvent pour son compte ; spécialiste de l’infiltration de banques de données, de la création de virus informatiques, et de la prise de drogues suspectes, c’est un « mauvais garçon » sous tous rapports, un punk de l’âge cyber.
+
+Les anti-héros du genre cyberpunk se découvrent souvent pions manipulés dans un imbroglio de sociétés secrètes, services gouvernementaux, syndicats du crime, tout cela plus ou moins dirigé par les cadres supérieurs de multinationales devenues plus puissantes que des États ; elles ont leurs propres lois, possèdent des territoires, et contrôlent la vie de leurs employés de la naissance à la mort. Leurs dirigeants sont souvent dénués de tout sens moral.
+
+Les personnages des romans cyberpunk sont insignifiants comparativement au pouvoir quasi-divin que possèdent les méga-corporations : ils sont face à elles les grains de sable dans l'engrenage. Cette lutte de [[David (Bible)|David]] contre [[Goliath (Bible)|Goliath]] est celle du [[hacker (sécurité informatique)|hackeur]] contre la [[multinationale]] et constitue un thème récurrent des romans cyberpunks (comme ''[[Gravé sur chrome]]'', [[William Gibson]], 1986).
+
+== Histoire et origine du terme ==
+[[Fichier:Bruce Sterling (Open Cultures) cropped.jpg|thumb| [[Bruce Sterling]], auteur et éditeur du fanzine ''[[Cheap Truth]]'' sous le pseudonyme Vincent Omniaveritas.]]
+
+=== Contexte et précurseurs ===
+Les auteurs de romans cyberpunks prirent leur inspiration de nombreuses sources. Il est possible de faire remonter les influences du mouvement jusqu'au ''[[Frankenstein ou le Prométhée moderne|Frankenstein]]'' de [[Mary Shelley]] &lt;ref name="kadrey"&gt;[[Richard Kadrey]] et Larry McCaffery, "Cyberpunk 101 : A Schematic Guide to Storming the Reality Studio" in Larry McCaffery par ''Storming the Reality Studio: A Casebook of Cyberpunk and Postmodern Science'' {{p.|17}} &lt;/ref&gt;. En préface à l'anthologie ''[[Mozart en verres miroirs]]'' (''{{langue|en|texte=Mirrorshades: A Cyberpunk Anthology}}''), [[Bruce Sterling]] nomme plusieurs auteurs dont [[Harlan Ellison]], [[Samuel Delany]], [[Norman Spinrad]], [[Michael Moorcock]], [[Brian Aldiss]], [[J. G. Ballard]], [[John Brunner]] et surtout [[Phillip K. Dick]] en source pour le genre &lt;ref&gt; ''Bruce sterling présente Mozart en verres miroirs'', Denoël 1996, {{p.|8}} &lt;/ref&gt;.
+
+=== Origine du terme cyberpunk ===
+Le terme cyberpunk a été popularisé par [[Gardner R. Dozois]], éditeur du ''[[Asimov's Science Fiction Magazine|{{langue|en|texte=Asimov's Science Fiction Magazine}}]]''. C'est le {{Date|30|12|1984}}, dans le ''[[The Washington Post|{{langue|en|texte=Washington Post}}]]'', qu'un article de Dozois intitulé « {{langue|en|texte=SF in the Eighties}} » qualifie de « cyberpunk » le style de l'œuvre de l'écrivain [[William Gibson]], et plus particulièrement de son roman ''[[Neuromancien]]'' ([[1984 en science-fiction|1984]]). Il décrivait aussi tout un groupe de jeunes auteurs « bizarres » écrivant dans le [[fanzine]] ''{{langue|en|texte=Cheap Truth}}'' : [[Bruce Sterling]], [[William Gibson]], [[Lewis Shiner]], [[Pat Cadigan]] et [[Greg Bear]]. Le « mouvement » cyberpunk était né. Le terme avait cependant été employé plus tôt, en {{Date||11|1983}}, par l'écrivain américain [[Bruce Bethke]], comme titre d'une de ses nouvelles publiées en novembre 1983 dans le magazine ''[[Amazing Stories|{{langue|en|texte=Amazing Science Fiction Stories}}]]''&lt;ref&gt;Beril Balkan, ''Hackers, pirates, cyberpunks : la résistance du web'', Nouvelobs.com, 05/08/2009 consulté le 05/08/2009 {{Lire en ligne|lien=http://tempsreel.nouvelobs.com/actualites/vu_sur_le_web/20090727.OBS5575/hackers_pirates_cyberpunks__la_resistance_du_web.html}}&lt;/ref&gt;.
+
+== Influences et adaptations ==
+Les innovations technologiques sur lesquelles s'appuie la littérature cyberpunk sont présentes dans beaucoup de média qui ne sont pas classés comme cyberpunks. Par exemple, certains auteurs considèrent que le film ''[[Johnny Mnemonic (film)|Johnny Mnemonic]]'', bien qu'inspiré de la [[Johnny Mnemonic (nouvelle)|nouvelle du même nom]] de [[William Gibson]], n'est pas cyberpunk et marque plutôt la fin de celui-ci&lt;ref&gt;{{Ouvrage|prénom1=Kroker, Arthur,|nom1=1945-|titre=Hacking the future : stories for the flesh-eating 90s|éditeur=St. Martin's Press|date=1996|isbn=0312129556|isbn2=9780312129552|oclc=33335451|lire en ligne=https://www.worldcat.org/oclc/33335451|consulté le=2019-03-31}}&lt;/ref&gt;.
+
+=== Adaptations audiovisuelles ===
+==== Cinéma ====
+* ''[[New York 1997]]'' ([[John Carpenter]], [[1981 au cinéma|1981]]) 
+* ''[[Blade Runner (film)|Blade Runner]]'' (Ridley Scott, [[1982 au cinéma|1982]], d'après le roman de [[Philip K. Dick]])
+* ''[[Tron]]'' ([[Steven Lisberger]], [[1982 au cinéma|1982]])
+* ''[[RoboCop]]'' ([[Paul Verhoeven]], [[1987 au cinéma|1987]]). Ce film a fait l'objet d'un [[RoboCop (film, 2014)|remake en 2014]].
+* ''[[Tetsuo (film)|Tetsuo]]'' ([[Shin'ya Tsukamoto]], [[1989 au cinéma|1989]])
+* ''[[Total Recall]]'' (Paul Verhoeven, [[1990 au cinéma|1990]], d'après une nouvelle de [[Philip K. Dick]]). Ce film a fait l'objet d'un [[Total Recall : Mémoires programmées|remake en 2012]].
+*''[[Hardware (film)|Hardware]]'' (Richard Stanley, 1990)
+* ''[[Jusqu'au bout du monde (film, 1991)|Jusqu'au bout du monde]]'' ([[Wim Wenders]], [[1991 au cinéma|1991]])
+*''[[Demolition Man]]'' ([[Marco Brambilla]], [[1993 au cinéma|1993]])
+* ''[[Johnny Mnemonic (film)|Johnny Mnemonic]]'' ([[Robert Longo]], [[1995 au cinéma|1995]], d'après une nouvelle de [[William Gibson]])
+* ''[[Judge Dredd (film)|Judge Dredd]]'' ([[Danny Cannon]], 1995). Ce film a fait l'objet d'un [[Dredd|remake en 2012]].
+* ''[[Strange Days (film)|Strange Days]]'' ([[Kathryn Bigelow]], 1995)
+* ''[[Nirvana (film)|Nirvana]]'' ([[Gabriele Salvatores]], [[1996 au cinéma|1996]])
+* ''[[New Rose Hotel]]'' ([[Abel Ferrara]], [[1998 au cinéma|1998]], d'après une nouvelle de [[William Gibson]])
+* ''[[Matrix (film)|Matrix]]'' ([[Lana et Lilly Wachowski|les Wachowski]], [[1999 au cinéma|1999]]) &lt;ref&gt;''The Science Fiction Handbook'' Par M. Keith Booker, Anne-Marie Thomas &lt;/ref&gt;.
+*[[Avalon (film, 2001)|''Avalon'']] ([[Mamoru Oshii]], 2001)
+* ''[[Minority Report]]'' ([[Steven Spielberg]], [[2002 au cinéma|2002]], d'après une nouvelle de [[Philip K. Dick]])
+* ''[[Cypher]]'' ([[Vincenzo Natali]], 2002)
+* ''[[Immortel, ad vitam]]'' ([[Enki Bilal]], 2004, librement inspiré de ''[[La Foire aux immortels]]'' et ''[[La Femme piège]]'')
+* ''[[Babylon A.D]]'' ([[Mathieu Kassovitz]], [[2008 au cinéma|2008]])
+* ''[[Tron : L'Héritage]]'' ([[Joseph Kosinski]], [[2010 au cinéma|2010]])
+* ''[[Chappie]]'' ([[Neill Blomkamp]], [[2015 au cinéma|2015]])
+* ''[[Blade Runner 2049]]'' ([[Denis Villeneuve]], 2017)
+* ''[[Alita: Battle Angel]]'' ([[Robert Rodriguez]], inspiré du manga [[Gunnm]], 2018)&lt;ref&gt;{{Article|langue=fr|titre=« Gunnm », un monument du manga cyberpunk, du Japon à Hollywood|périodique=Le Monde|date=2019-02-13|lire en ligne=https://www.lemonde.fr/pixels/article/2019/02/13/gunnm-un-monument-du-manga-cyberpunk-du-japon-a-hollywood_5423103_4408996.html|consulté le=2019-02-13}}&lt;/ref&gt;
+* ''[[Upgrade (film, 2018)|Upgrade]]'' ([[Leigh Whannell]], 2018)
+*[[Ready Player One (film)|''Ready Player One'']] ([[Steven Spielberg]], 2018)
+* Plusieurs films du réalisateur [[David Cronenberg]] relèvent du genre cyberpunk ou contiennent des thématiques s'en inspirant&lt;ref&gt;{{Article|langue=fr|titre=CINÉMA. "Cosmopolis" avec Robert Pattinson : trop indigeste pour séduire|prénom1=Guillaume|nom1=Defare|date=26 mai 2012|périodique=leplus.nouvelobs.com|lire en ligne=http://leplus.nouvelobs.com/contribution/559335-cosmopolis-avec-robert-pattinson-trop-indigeste-pour-seduire.html|consulté le=2017-02-14}}&lt;/ref&gt; (''[[eXistenZ]]'', ''[[Vidéodrome]]''...)
+
+==== Séries télévisées ====
+Le cyberpunk a influencé certaines séries télévisées sans que celles-ci soient futuristes. Par exemple, un des épisodes de ''[[X-Files : Aux frontières du réel|X-files]]'' qui, bien qu'il se déroule dans le présent, utilise le thème cyberpunk ; l'épisode ''[[Clic mortel]]'' (''{{lang|en|Kill Switch}}''), dont le scénario a été écrit par [[William Gibson]], fait référence au téléchargement de conscience à travers Internet par des hackeurs informatiques vivant en marge de la société.
+
+Autres exemples marquants :
+* ''[[Max Headroom]]'' ([[1987 à la télévision|1987]] - [[1988 à la télévision|1988]], Peter Waag&lt;ref name="kadrey" /&gt;)
+* ''[[Wild Palms]]'' ([[1993 à la télévision|1993]])
+* ''[[Total recall 2070]]'' ([[1999 à la télévision|1999]], [[Art Monterastelli]]&lt;ref name="kadrey" /&gt;)
+* ''[[Dark Angel (série télévisée)|Dark Angel]]'' ([[2000 à la télévision|2000]] - [[2002 à la télévision|2002]], [[James Cameron]] et Charles H. Eglee)
+* ''[[Dollhouse]]''
+* ''[[Caprica]]''
+* ''[[Almost Human]]''
+* ''[[Person of Interest]]''
+* ''[[Continuum (série télévisée)|Continuum]]'' ([[2012 à la télévision|2012]], [[Simon Barry]]&lt;ref name="kadrey" /&gt;)
+* ''[[Minority Report (série télévisée)|Minority Report]]''
+* ''[[Black Mirror (série télévisée)|Black Mirror]]'' ([[2011 au cinéma|2011]], [[Charlie Brooker]])
+* ''[[Altered Carbon]] ([[2018 au cinéma|2018]]'', créé par [[Laeta Kalogridis|Leata Kalogridis]] d'après le roman de [[Richard Morgan|Richard K. Morgan]] sorti en [[2002 en littérature|2002]])
+
+La série américaine ''[[Mr. Robot (série télévisée)|Mr. Robot]]'' ([[2015]] - [[2019]], Sam Esmail), qui se déroule dans notre monde, la société hyperconnectée des années 2010, peut être vue comme une série cyberpunk&lt;ref&gt;{{Lien web|titre = 3 new summer TV shows you should be watching|url = http://www.vox.com/2015/6/24/8839461/summer-tv-shows-new|site = Vox|consulté le = 2015-07-19}}&lt;/ref&gt;. Elle reprend en effet plusieurs concepts et éléments propres au genre : multinationale surpuissante, omniprésence de l'informatique, héros solitaire et drogué, hackeurs contestataires, contrôle des masses par les médias et la technologie...
+
+=== Jeux ===
+
+==== Jeux de rôle papier et de société ====
+Rapidement, le genre toucha le monde des [[Jeu de rôle sur table|jeux de rôle sur table]] avec des titres comme ''[[Cyberpunk 2013]]'' qui fit connaître [[R. Talsorian Games]] plus connu sous sa seconde version [[Cyberpunk 2020]] et qui muta parallèlement en 1986 par l’ajout d'éléments de Fantasy en [[Shadowrun]] (FASA, Jeux Descartes). En parallèle, des versions génériques apparurent tel [[GURPS]] : ''Cyberpunk'' ([[Steve Jackson Games]]) et ''CyberAge'' (un univers du jeu de rôle ''[[SimulacreS]]''). Plus récemment, [[R. Talsorian Games]] a édité une nouvelle version dans sa franchise Cyberpunk : Cyberpunk RED.
+
+On retrouve aussi des éléments d'ambiance cyberpunk dans le jeu de plateau [[Warhammer 40,000|Warhammer 40.000]], développé par [[Games Workshop]] à partir de 1987 (adapté par la suite en jeu vidéo, avec [[Warhammer 40,000: Dawn of War|Warhammer 40.000 : Dawn of War]] et ses suites).
+
+En 1996 sort le jeu ''[[Netrunner]]'', créé par [[Richard Garfield]], qui met en scène les tentatives de piratage d'un « runner » ([[Black hat|pirate informatique]]) contre une corporation. Une réinterprétation du jeu est sortie en 2012, nommée [[Android: Netrunner]].
+
+==== Jeux vidéo ====
+De nombreuses adaptations d'univers cyberpunk ont été produites. On peut citer le fait que [[William Gibson]] présida lui-même l'adaptation d'un de ses romans avec le jeu de rôle [[Neuromancer (jeu vidéo)|Neuromancer]] produit en [[1988 en jeu vidéo|1988]] par [[Interplay]]. Indirectement, les films ''[[Blade Runner (film)|Blade Runner]]'' et la série ''[[Max Headroom]]'' eurent aussi des adaptations en jeu vidéo. Le jeu de rôle papier ''[[Shadowrun]]'' reçut jusqu'à quatre adaptations vidéo-ludiques.
+
+Plusieurs titres originaux inspirés du cyberpunk virent le jour dans différents types comme ''[[Beneath a Steel Sky]]'' (jeu d'aventure pointez-cliquer), [[Snatcher]] (jeu d'aventure japonais) en [[1988 en jeu vidéo|1988]], ''[[Syndicate (jeu vidéo, 1993)|Syndicate]]'' ([[Jeu de stratégie en temps réel]]) en [[1993 en jeu vidéo|1993]], ''[[System Shock]]'' en 1994 et sa suite ''[[System Shock 2]]'' en 1999, ''[[The Nomad Soul]]'' en 1999 et ''[[E.Y.E.: Divine Cybermancy]]'' (Tir subjectif) en [[2011 en jeu vidéo|2011]] et [[VA-11 Hall-A]] (Visual Novel) en 2016.
+
+La série des ''[[Deus Ex (jeu vidéo)|Deus Ex]] —'' lancée en 2000 sous l'impulsion de [[Warren Spector]] (alors [[Ion Storm]]), héritiers assumés des jeux [[System Shock]] — est un exemple du jeu vidéo à l'univers cyberpunk. Tous les ingrédients habituels y sont : prothèses, piratage, futur proche, société sombre et désespérée.
+
+[[Square Enix]] s'est également inspiré du courant pour créer l'univers de ''[[Final Fantasy VII]]'', sorti en 1997. On y retrouve une intrigue se déroulant sur une planète semblable à la Terre, bien que plus avancée technologiquement, contrôlée par Shinra, une firme hégémonique aux dirigeants peu scrupuleux, où son [[Siège social|siège]] se trouve à Midgar, une cité urbanisée à l'extrême, dans laquelle les personnes les plus aisées vivent dans des habitations construites sur une gigantesque plaque à {{unité|50|mètres}} au-dessus du sol, alors que la partie la plus modeste de la population est contrainte de vivre dans des taudis, situés sous la plaque et privés des rayons du soleil&lt;ref&gt;{{Lien web|langue = français|titre = Midgar|url = http://fr.finalfantasy.wikia.com/wiki/Midgar|site = Wiki Final Fantasy|consulté le = 31/07/2014}}&lt;/ref&gt;. L'univers du jeu accorde également une place prépondérante à la technologie&lt;ref&gt;{{Lien web|langue = anglais|titre = Shinra Electric Power Company|url = http://finalfantasy.wikia.com/wiki/Shinra_Electric_Power_Company|site = Final Fantasy Wiki|consulté le = 31/07/2014}}&lt;/ref&gt;. Le protagoniste du jeu, Cloud Strife, incarne parfaitement cet anti-héros récurrent dans les œuvres cyberpunk.
+
+Le même studio, avec la participation de sa filiale [[Eidos Montréal]], développera ''[[Deus Ex: Human Revolution]]'' en 2011, où le thème central du jeu est l'essor des sociétés dans la mondialisation, l'espionnage, la survie de l'homme, la pauvreté et l'éthique du [[transhumanisme]] avec le remplacement artificiel de parties du corps humain qui est un thème compatible du cyberpunk.
+
+Le studio [[Atlus]] a régalement repris des éléments cyberpunks, notamment dans ''Shin Megami Tensei II —'' où la société de Tokyo Millenium est divisée entre les riches fidèles du Centre et les infidèles qui doivent survivre dans un environnement métallique, dévasté et sans ressources — ou ''Devil Summoner : Soul Hackers'', où la Phantom Society exploite le réseau Paradigm X pour voler les âmes des habitants de la ville ultramoderne Amami City.
+
+En 2013 le jeu [[SimCity (jeu vidéo, 2013)|SimCity]] annonce la sortie de l'extension ''SimCity : Villes de Demain'' sur [[Ordinateur personnel|PC]], qui invite les joueurs à bâtir et gérer leurs propres villes cyberpunk grâce à « OmegaCo ».
+
+==== Cyberpunk 2077 ====
+En 2020, le studio [[CD Projekt|CD Projekt Red]] sort sa vision d'un monde cyberpunk avec ''[[Cyberpunk 2077]],'' adapté du jeu de rôle papier ''[[Cyberpunk 2020]]'', dans lequel le joueur incarne V, un ou une mercenaire vivant à Night City, une ville bâtie après l'effondrement des Etats-Unis&lt;ref&gt;{{Lien web |langue=fr-FR |titre=Cyberpunk 2077 : le créateur du jeu de rôle sur table revient sur la création de Night City |url=https://www.begeek.fr/cyberpunk-2077-le-createur-du-jeu-de-role-sur-table-revient-sur-la-creation-de-night-city-291174 |site=Begeek.fr |date=2018-09-17 |consulté le=2020-12-16}}&lt;/ref&gt;. En 2023, CD Projekt annonce la première extension ([[Contenu téléchargeable additionnel|DLC]]) payante du jeu : [[Cyberpunk 2077#Contenu additionnel|''Phantom Liberty'']], qui sort fin septembre.
+
+Avec plus de 26 millions d'exemplaires vendus fin 2023, (3 millions pour ''Phantom Liberty'') et les millions de visionnage de ''[[Cyberpunk: Edgerunners]] —'' son adaptation en série d'animation sur [[Netflix]], sortie en 2022 — le jeu est un succès commercial.
+
+=== Manga et anime japonais ===
+{{...}}
+C'est dans les anime et les manga que le cyberpunk eut la plus grande influence &lt;ref&gt;Booker Thomas ''The Science Fiction Handbook'' {{p.|11}}&lt;/ref&gt;.
+
+* ''[[Akira (manga)|Akira]]'' de [[Katsuhiro Ōtomo]] (manga en 1982, anime en 1988)
+* ''[[Appleseed]]'' de Masamune Shirow (1985)
+* ''[[Bubblegum Crisis]]'' (1987)
+* ''[[Silent Möbius]]'' de [[Kia Asamiya]] (1989)
+* ''[[AD Police (manga)|AD Police]]'' de [[Tony Takezaki]] (1989)
+* ''[[Ghost in the Shell]]'' (manga de [[Masamune Shirow]] en 1989, anime de [[Mamoru Oshii]] en 1995, film avec [[Scarlett Johansson]] en 2017)
+* ''[[Gunnm]]'' de [[Yukito Kishiro]] (1990)
+* ''[[Cyber City Oedo 808]]'' de [[Yoshiaki Kawajiri]] (1990)
+* ''[[Armitage III]]'' (1994)
+* ''[[BLAME!]]'' de [[Tsutomu Nihei]] (1998)
+* ''[[Serial Experiments Lain]]'' de [[Ryutaro Nakamura]] (1998)
+* ''[[Eden (manga)|Eden]]'' (manga publié de 1998 à 2008)
+* ''[[Cowboy Bebop]]'' (1998-1999)
+* ''[[Metropolis (film, 2001)|Metropolis]]'' de [[Rintarō]] (2001)
+* ''[[Mardock Scramble]]'' de [[Tow Ubukata]] (2003)
+* ''[[Texhnolyze]]'' (2003)
+* ''[[Wonderful Days]]'' de [[Kim Moon-Saeng]] (2003)
+* ''[[Mardock Scramble]]'' (2010), d'après les romans illustrés de Tow Ubukata (2003)
+* ''[[Ergo Proxy]]'' de [[Shukō Murase]] (2006)
+* ''[[Vexille]]'' (2007)
+* ''[[Accel World]]'' (manga en 2010 et animé en 2012)
+* ''[[Psycho-Pass]]'' (2012)
+* ''[[Edens Zero]]'' (2018)
+* ''[[Cyberpunk: Edgerunners]]'' (2022)
+
+=== Bandes dessinées ===
+[[Fichier:Cyberpunk Girl.jpeg|thumb|upright|Art cyberpunk.]]
+* ''[[Métal hurlant]]'' sous l'impulsion de [[Jean-Pierre Dionnet]]
+* ''[[Les Chroniques de Centrum]]'' (scénario [[Jean-Pierre Andrevon]], dessins [[Afif Khaled]])
+* ''[[Zentak]]'' (scénario [[Jean-Pierre Pécau]], dessins Def)
+* ''[[Little Blade]]'' (scénario [[Jean-Pierre Pécau]], dessins Def, [[Hubert (auteur)|Hubert]])
+* ''[[Carmen Mc Callum]]'' (scénario [[Fred Duval]], dessins [[Stéphane Girard|Gess]])
+* ''[[Travis (bande dessinée)|Travis]]'' (scénario [[Fred Duval]], dessins [[Christophe Quet]])
+* ''[[Marvel 2099]]''
+* ''[[Nomad (bande dessinée)|''Nomad'']]'' (scénario [[Jean-David Morvan]], dessins [[Philippe Buchet]], [[Sylvain Savoia]])
+* ''[[Ultima Parano]]'' (scénario JB, dessins et couleurs Steph)
+* ''[[Sha (bande dessinée)|Sha]]'' (scénario [[Pat Mills]], dessins et couleurs [[Olivier Ledroit]])
+* ''[[L'Incal]]'' (scénario [[Alexandro Jodorowsky]], dessin [[Jean Giraud|Moebius]])
+* ''Urban'' (scénario [[Luc Brunschwig]], dessin [[Roberto Ricci]])&lt;ref&gt;{{Lien web|nom1=MAGNERON|prénom1=Philippe|titre=Urban - BD, informations, cotes|url=http://www.bedetheque.com/serie-29156-BD-Urban.html|site=www.bedetheque.com|consulté le=2016-06-09}}&lt;/ref&gt;
+* L'univers de l'auteur illustrateur [[Enki Bilal]] (''[[La Trilogie Nikopol]]'', ''[[La Tétralogie du Monstre]]'')
+* ''[[RanXerox]] (Dessin Stefano Tamburini, Tanino Liberatore) 1978''
+* ''[[Transmetropolitan]]'' (scénario Warren Ellis, dessins Darick Robertson)
+* ''[[Tokyo Ghost]]'' (Dessin [[Sean Murphy (auteur)|Sean Murphy]], Scénario [[Rick Remender]])
+
+=== Musique ===
+* L'album ''Afterworld'' du producteur Siren, sortie le 26 janvier 2015, s'inspire de l'univers Cyberpunk.
+* Sorti en 1993, l'album ''[[Cyberpunk (album)|Cyberpunk]]'' de [[Billy Idol]] est réalisé après avoir participé à une partie de [[jeu de rôle]] du même nom ''[[Cyberpunk 2020|Cyberpunk]]''. L'album recevra néanmoins de très bonnes critiques de la part d'une nouvelle clientèle, les « rôlistes », qui l'apprécient pour son ambiance très proche du jeu, permettant ainsi de le faire tourner durant les parties.
+* La comédie musicale [[Starmania]] de Michel Berger sur un livret de Luc Plamondon créée le 10 avril 1979 au Palais des Congrès à Paris, développe un univers cyberpunk.
+*On retrouve l'influence du cyberpunk au sein de beaucoup de groupes de [[musique industrielle]], [[Electronic body music|EBM]], [[Dark wave|Darkwave]] tels que [[Front Line Assembly]], [[Nine Inch Nails]], [[Skinny Puppy]] ou [[Ministry]], autant dans les paroles et l'atmosphère musicale que les codes vestimentaires et les vidéo clips.
+*L'album Trinity du rappeur français, Laylow, est aussi considéré comme s'inscrivant dans le mouvement cyberpunk&lt;ref&gt;{{Lien web |langue=fr-FR |prénom=Julien Perocheau·Design·15 |nom=décembre 2020 |titre=Comment l’esthétique cyberpunk est devenue incontournable dans la culture populaire |url=https://views.fr/2020/12/15/esthetique-cyberpunk-tendance/ |site=Views |date=2020-12-15 |consulté le=2021-03-18}}&lt;/ref&gt;.
+*La bande son de ''[[Cyberpunk 2077]]'', composée par [[Marcin Przybyłowicz]].
+
+Les genres [[synthwave]] et [[vaporwave]] ont également été influencés par le style cyberpunk. Le premier est un renouveau nostalgique [[rétrofuturisme|rétrofuturiste]] des origines du cyberpunk et le second est une critique [[dystopique]]&lt;ref&gt;{{Lien web |url=http://www.allmusic.com/album/exo-mw0002387718 |titre=Exo - Gatekeeper |site=[[AllMusic]] |consulté le=3 janvier 2015 |auteur=Ham, Robert}}&lt;/ref&gt; du [[capitalisme]]&lt;ref&gt;{{Lien web |url=http://www.stylus.com/hzwtls |titre=Vaporwave: Soundtrack to Austerity |site=Stylus.com |date=29 janvier 2014 |consulté le=8 février 2014 |auteur=Ward, Christian}}&lt;/ref&gt;.
+
+== Sous-genres et postérité ==
+[[Fichier:Steampunk-falksen.jpg|thumb|upright|[[Steampunk]]]]
+=== Sous-genres ===
+{{Article détaillé|Steampunk|Biopunk}}
+Il peut y avoir contestation au sujet de la classification des différents sous-genres du cyberpunk : par exemple, on considère le [[steampunk]] et le [[biopunk]] comme des sous-genres mais, les caractéristiques de ces sous-genres du cyberpunk étant relativement vastes et encore assez proches des caractéristiques définissant le cyberpunk, un chevauchement peut aisément survenir lors d'une identification d'une œuvre au cyberpunk et à ses sous-genres.
+
+Le cyberpunk étant un genre assez vaste, il est parfois problématique de dissocier clairement les sous-genres des simples facettes variées de ce genre. Le modèle de terminologie "~punk" peut être utilisé pour nommer des spécialités du cyberpunk ou de ses sous-genres qui ne sont pas véritablement identifiées comme séparées, soit par le manque de différences, soit par le manque d'utilisation de pareils termes. Par exemple, le terme "arcanepunk" peut faire référence à la relative alliance de la technologie et de la magie dans un univers cyberpunk.
+
+=== Fin probable ===
+{{Article détaillé|Postcyberpunk}}
+
+Dès le milieu des [[années 1980]], les auteurs comme Gibson et Sterling annonçaient que le mouvement cyberpunk était déjà moribond, récupéré par [[Hollywood]], digéré et recraché sous une forme dépourvue de son élément punk. À cet égard, un article de [[Lewis Shiner]], publié dans le ''[[The New York Times|New York Times]]'' et intitulé ''Confessions of an ex-Cyberpunk'', fera date, et entraînera une longue réponse de la part de Bruce Sterling : ''Cyberpunk in the Nineties'', dans laquelle il déplore, tout en s'en amusant, que cette étiquette lui colle encore à la peau, mais revendique toujours haut et fort les valeurs véhiculées par le mouvement.
+
+Pour certains, c'est le refus du mouvement d'imaginer un meilleur futur qui est la cause de la courte durée du mouvement&lt;ref&gt; Booker-Thomas ''The Science Fiction Handbook'' {{p.|10}}&lt;/ref&gt;. C'est [[Neal Stephenson]], dans son roman ''[[Le Samouraï virtuel]]'' (''Snow Crash'') paru en [[1992]], qui enterre définitivement le cyberpunk dans les toutes premières pages. Cependant, cette opinion est contestée par les gens mettant en avant les œuvres de nouveaux auteurs comme [[Richard Morgan]].
+
+On peut éventuellement expliquer la diminution du nombre d'œuvres cyberpunk par le fait que certains thèmes abordés, qui étaient auparavant futuristes et précurseurs, sont de plus en plus vrais dans la société contemporaine. Notamment aux thèmes, qui furent novateurs mais ne le sont plus, de l'émergence d'un réseau mondial de communication ([[Internet]]), du [[terrorisme]] de masse, du pouvoir de l'État qui s'amoindrit au profit des grandes entreprises, des [[Prothèse (médecine)|prothèses]] et implants, etc. Ainsi, en [[2007]], [[Charles Stross]] publie le roman ''Halting State'' dont l'histoire se situe dans un futur moyennement proche ([[2016]]) mais dont les problématiques contemporaines reflètent l'actualité de [[2005]]-[[2006]]. Il faut peut-être alors plus parler de réorientation d'une partie du cyberpunk que d'une fin.
+
+== Notes et références ==
+{{Crédit d'auteurs|interne|Musique cyberpunk|oldid}}
+{{Références}}
+
+== Annexes ==
+{{Autres projets|commons=Category:Cyberpunk|wikt=cyberpunk}}
+
+=== Articles connexes ===
+* [[Postcyberpunk]], [[steampunk]], [[biopunk]]
+* [[Cybernétique]], [[cyborg]], [[Cyberart]]
+* [[Réalité virtuelle]]
+* [[Informatique]]
+* [[Littérature postmoderne]]
+
+=== Liens externes ===
+{{Liens}}
+* [https://jurojin.net/lunivers-cyberpunk-dystopie-de-notre-relation-aux-machines/ L’univers cyberpunk- dystopie de notre relation aux machines sur Jurojin.net]
+
+{{Palette|Genres de la science-fiction|Science-fiction}}
+{{Portail|informatique|science-fiction|punk}}
+
+[[Catégorie:Cyberpunk|*]]
+[[Catégorie:Punk]]</text>
+      <sha1>fdgh2gj6v5f6x4lnle5jzu1l0bfq19z</sha1>
+    </revision>
+  </page>
+  <page>
+    <title>Recherche d'information</title>
+    <ns>0</ns>
+    <id>70885</id>
+    <revision>
+      <id>225546849</id>
+      <parentid>218506079</parentid>
+      <timestamp>2025-05-10T13:05:56Z</timestamp>
+      <contributor>
+        <username>Manell.zt</username>
+        <id>5182693</id>
+      </contributor>
+      <minor/>
+      <comment>ajout d'un pluriel manquant</comment>
+      <origin>225546849</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="45951" sha1="gc0p11a31hcttj0eijtmu2z5gpbbfr7" xml:space="preserve">{{à sourcer|date=mars 2010}}
+
+La '''recherche d'[[information]]''' ('''RI'''&lt;ref&gt;En [[langue anglaise|anglais]] ''information retrieval'', IR.&lt;/ref&gt;) est le domaine qui étudie la manière de retrouver des informations dans un [[corpus]]. Celui-ci est composé de documents d'une ou plusieurs [[Base de données|bases de données]], qui sont décrits par un contenu ou les [[Métadonnée|métadonnées]] associées. Les bases de données peuvent être [[Base de données relationnelle|relationnelles]] ou [[Informations non structurées|non structurées]], telles celles mises en réseau par des liens [[hypertexte]] comme dans le [[World Wide Web]], l'[[internet]] et les [[intranet]]s. Le contenu des documents peut être du texte, des sons, des images ou des [[donnée]]s.
+
+La recherche d'information est historiquement liée aux [[Sciences de l'information et des bibliothèques|sciences de l'information et à la bibliothéconomie]] qui visent à représenter des [[document électronique|documents]] dans le but d'en récupérer des [[information]]s, au moyen de la construction d’[[Index (base de données)|index]]. L’[[informatique]] a permis le développement d’outils pour traiter l’information et établir la représentation des [[document électronique|documents]] au moment de leur [[indexation automatique|indexation]], ainsi que pour rechercher l’information. La recherche d'information est aujourd'hui un champ pluridisciplinaire, intéressant même les [[sciences cognitives]].
+
+La recherche d'information sur le web à l'aide d'un [[moteur de recherche]] est une technique de l'information et de la communication, désormais massivement adoptée par les usagers. Précédemment, durant l’[[Antiquité]], des historiens connus tels que [[Thucydide]] et [[Hérodote]] ne pouvaient utiliser ce genre de méthode de recherche. Pour Hérodote, le plus important était de se rendre sur place, utiliser ses sens tels que l’ouïe et la vue. Puis, il commençait à mener son enquête en s’informant et se renseignant auprès du peuple. À l’inverse, Thucydide avait pour méthode d’écouter les rumeurs. Il consignait par écrit ces faits et avait pour but de les faire perdurer dans le temps pour en faire profiter les générations futures&lt;ref&gt;B. François, ''Cours d’initiation à la culture antique'', 5ème secondaire générale, Athénée Royal Vauban, Charleroi, 2019, p. 3-5.&lt;/ref&gt;.
+
+== Introduction ==
+[[image:Library 1842.jpg|thumbnail|300px|right|Recherche d'information sans ordinateur.]]
+
+Avec l'apparition des premiers [[Ordinateur|ordinateurs]] est née l'idée d'utiliser des machines pour automatiser la recherche d'information dans les [[bibliothèque]]s. Celle-ci a notamment été popularisée en 1945 par [[Vannevar Bush]]  dans son célèbre article « [[As We May Think]] »&lt;ref name="Singhal2001"&gt;{{article |langue=en|nom1=Singhal |prénom=Amit|lien auteur1=Amit Singhal
+|titre=Modern Information Retrieval: A Brief Overview
+|journal=Bulletin of the IEEE Computer Society Technical Committee on Data Engineering
+|volume=24 |numéro=4 |pages=35–43 |année =2001
+|url=http://singhal.info/ieee2001.pdf }}&lt;/ref&gt;.
+
+Les premiers systèmes utilisés par des bibliothèques permettent d'effectuer des recherches [[Modèle booléen|booléennes]], c’est-à-dire des recherches où la présence ou l'absence d'un terme dans un document conduit à la sélection du document. Ces recherches nécessitent plusieurs intermédiaires et surtout de gros moyens : il faut tout d'abord créer une [[nomenclature]] permettant de décrire l'ensemble des documents puis sélectionner, pour chaque document du corpus, les mots-clés permettant de le décrire. Une telle description par mots-clés ([[indexation matière]]) nécessite une grande expertise de la part du bibliothécaire, ses connaissances devant être suffisantes pour non seulement choisir les mots-clés reflétant au mieux le contenu d'un document, mais aussi pour choisir les termes permettant de le distinguer au sein du fonds complet. Cette même connaissance est, de plus, partiellement nécessaire au moment de la recherche, lorsqu'il s'agit de « traduire » une question, plus ou moins précise, en un ensemble de mots-clés. Ce processus d'indexation, essentiellement manuel, est de plus insuffisamment exhaustif et précis. Il se peut par exemple que pour des problèmes de [[synonymie]], certains documents répondant à la question d'un utilisateur puissent ne pas être retrouvés.
+
+La description manuelle étant un processus lent ne garantissant pas de bons résultats, des recherches ont été menées pour extraire automatiquement la description d'un document à partir de son contenu. Dès les années 1970, des expériences ont montré que les techniques automatiques pouvaient fonctionner correctement sur des corpus de quelques milliers de documents&lt;ref name="Singhal2001" /&gt;. L'utilisation grandissante des logiciels de [[traitement de texte]], et par là même la mise à disposition de quantités de plus en plus importantes de textes directement interprétables par l'ordinateur va alors entraîner le développement rapide des modèles de RI. Ces deux aspects, l'indexation et la recherche sont au cœur des problèmes abordés par la RI. L'indexation et la recherche ont très rapidement évolué d'une [[modèle booléen|modélisation booléenne]] de la recherche (un terme représente ou ne représente pas le document dans le cas de l'indexation, un document
+répond ou ne répond pas à la question) à des [[Modèle vectoriel|modèles vectoriels]] ou [[modèle probabiliste de pertinence|probabilistes]].
+
+La [[Retour de pertinence|pertinence d'un document]] pour une question dans des modèles qui sont basés sur une représentation imprécise des documents et des questions s'exprime dans ce type de modèles de RI sous la forme d'un score. Ce score ne permet plus une validation automatique des systèmes de RI.
+En effet, pour la question « le document doit contenir le mot chèvre ''et'' élevage », un document contenant les mots « chèvre » et « élevage » est une bonne réponse, contrairement à un document qui ne les contient pas.
+Lorsque la question devient « le document doit ''avoir pour thème'' l'élevage des chèvres », un document qui parle de soin des chèvres sans utiliser le mot « élevage » sera une bonne réponse, mais aura un score moins important qu'un document qui parle directement de l'élevage des chèvres.
+
+Il est donc impossible de prouver qu'un système de RI est performant puisque le score rend vague la notion de bonne réponse : un document répond ''plus ou moins bien'' à une question.
+La notion de ''pertinence d'un document pour une question'' émerge donc en même temps que les premiers systèmes de RI, avec les premières mesures permettant de comparer les différents résultats renvoyés par les systèmes de RI. Les premières mesures, encore largement employées aujourd'hui, sont
+la [[Précision et rappel (recherche d'information)|précision]], le [[Précision et rappel (recherche d'information)|rappel]], le [[Bruit et silence|bruit]] et le [[Bruit et silence|silence]] :
+
+* un système de RI est très précis si ''presque tous les documents renvoyés sont pertinents'' ;
+* un système de RI a un bon rappel s'il renvoie ''la plupart des documents pertinents du corpus'' pour une question ;
+* un système de RI est bruyant s'il renvoie trop de documents dont peu sont pertinents ;
+* un système de RI est silencieux s'il ne renvoie pas assez de documents pertinents.
+
+En général, les systèmes de recherche d'informations s'appuient sur ces différentes mesures et effectuent un équilibre entre eux. Il est possible, par exemple, d'affiner les requêtes à l'aide d'opérateurs de recherche complexes.
+
+Des problématiques connexes se sont aussi greffées autour de la RI. Parmi les plus courantes et les plus utiles, l'interaction avec l'utilisateur permet d'obtenir progressivement des documents de plus en plus pertinents. Certains se sont ensuite essayés à simuler cette interaction, ou au moins une partie, en proposant des techniques permettant « d'enrichir » la question&amp;nbsp;— en ajoutant par exemple des termes qui n'étaient pas dans la question originale. Cette technique est connue sous le nom d'expansion de requête&lt;ref&gt;{{Lien web |auteur=Aurélie Picton, Cécile Fabre, Didier Bourigault |titre=Méthodes linguistiques pour l’expansion de requêtes |url=https://www.cairn.info/revue-francaise-de-linguistique-appliquee-2008-1-page-83.htm# |site=cairn.info |date=2008 }}.&lt;/ref&gt;.
+
+De la recherche documentaire proprement dite, le domaine évolue vers des tâches proches, comme la ''[[classification]]'' qui permet de regrouper entre eux des documents ayant des thématiques proches, le ''classement'' qui a pour but de classer les documents dans un ensemble de catégories prédéfinies. Puis, à mesure que la notion de document et d'unité d'information devient plus floue, les tâches d'extraction d'information'' et de ''[[Résumé automatique de texte|résumé automatique]]'' apparaissent. Actuellement, le domaine regroupe plusieurs thématiques de recherche et évolue avec l'apparition de nouveaux types de corpus, de documents et de besoins d'utilisateurs. Les conférences [[Text REtrieval Conference| TREC]]
+et [http://www.acm.org/sigir/ SIGIR] donnent un aperçu de la diversité des recherches menées aujourd'hui dans le domaine général de la RI.
+
+=== Précision de vocabulaire ===
+[[Fichier:Stephen A. Schwarzman Building, Reading Room Entrance.jpg|250px|right|Rayonnage de bibliothèque.]]
+
+''Le Vocabulaire de la documentation'' (Paris, [[Association des professionnels de l'information et de la documentation|ADBS]], 2004) distingue la recherche d'information de la recherche de l'information :
+* recherche d'information : « Ensemble des méthodes, procédures et techniques permettant, en fonction de critères de recherche propres à l’[[usager]], de sélectionner l’information dans un ou plusieurs fonds de documents plus ou moins structurés » ;
+* recherche de l'information : « Ensemble des méthodes, procédures et techniques ayant pour objet d’extraire d’un document ou d’un ensemble de documents les informations pertinentes ».
+
+Au sens large, la recherche d'information inclut deux aspects :
+* l'[[indexation automatique|indexation]] des corpus ;
+* l'interrogation du fonds documentaire ainsi constitué.
+Ces deux aspects sont néanmoins très intimement liés en pratique, la manière d'indexer limitant ou influençant les possibilités de rechercher.
+
+== Composantes ==
+=== Prétraitements ===
+
+La première phase en recherche d'information est d'établir ces techniques permettant de passer d'un [[document]] textuel à une représentation exploitable par un modèle de RI. Cette transformation est scindée en deux étapes distinctes et correspond à l'[[indexation automatique|indexation des documents]] :
+
+* il faut extraire d'un texte un ensemble de [[descripteur]]s. Ceux-ci sont la plupart du temps (après suppression des mots grammaticaux par exemple, reconnaissance des [[Entité nommée|entités nommées]]) l'ensemble des termes qui apparaissent dans un document, souvent transformés ([[lemmatisation]], ...) ;
+* à l'aide de ce jeu de descripteurs, il est possible de représenter le [[document]] par un vecteur dans l'espace des termes. Il est également possible d'utiliser des connaissances ''a priori'' sur la façon dont les termes sont répartis dans les documents suivant leur importance.
+
+=== Recherche ===
+Une fois les documents transformés, il est possible de rechercher ceux qui répondent le mieux à une question d'un utilisateur et d'utiliser des modèles capables d'interagir avec l'utilisateur afin d'améliorer petit à petit les réponses du système de RI au cours d'une session — l'utilisateur indiquant à chaque fois les documents pertinents pour sa question. Ces indications peuvent aussi servir à améliorer globalement le fonctionnement du système de RI.
+
+Il est également important de noter que la recherche documentaire n'est pas un acte isolé dans le temps. En effet, une session de recherche documentaire peut être assimilée à une situation d'apprentissage spiralaire, qui permet l'accès à de nouvelles connaissances au fur et à mesure de la RI.
+
+=== Mesures ===
+En RI, la mise au point des modèles passe par une phase expérimentale qui suppose l'utilisation de '''métriques''' qui ont pour but de permettre la comparaison des modèles entre eux ou la mise au point de leurs paramètres. Ces mesures supposent connus un jeu de questions et les réponses pertinentes dans un corpus donné.
+Deux concepts simples, à savoir le [[Précision et rappel|rappel]] (proportion de documents pertinents renvoyés par le système parmi tous ceux qui sont pertinents) et la [[Précision et rappel|précision]] (proportion des documents pertinents parmi l'ensemble de ceux renvoyés par le système), ont été étendus pour permettre
+une analyse fine des performances de système de RI.
+
+=== Prise en compte de l'utilisateur ===
+L'utilisateur étant à l'origine du besoin en information, il est apparu nécessaire de compléter la simple requête par des informations supplémentaires en provenance de l'utilisateur. Le [[retour de pertinence]] est une approche qui peut par exemple prendre en compte un jugement de pertinence sur les documents présentés à l'utilisateur à l'issue de sa recherche. L'objectif est donc pour le système de savoir quels sont, parmi les documents présentés, ceux qui répondent vraiment au besoin de l'utilisateur.
+
+== La pertinence dans la recherche d'information ==
+
+=== La pertinence système ===
+À la fin des années 1950 dans les pays anglo-saxons, les chercheurs s'inscrivant dans le courant de l'"information retrieval" utilisent le concept de pertinence pour évaluer la performance des systèmes informatiques d'enregistrement, de stockage et de recherche automatisée.
+
+[[Calvin Mooers]] est le fondateur de ce courant de recherche. Alors qu'auparavant les concepts véhiculés en bibliothèque s'apparentaient plus à la reproduction de gestes professionnels ([[bibliothéconomie]]), il introduit le travail sur les mots-clés en s'appuyant sur les travaux de [[Vannevar Bush]] et [[Ranganathan]]. Il parle alors d'"utilité" de l'information.
+
+[[Hans Peter Luhn]] réfléchit également à la mécanisation de la recherche d'information et met au point l'indexation automatique et les résumés automatisés. Le système doit rechercher le nombre d'occurrences des mots dans un texte, mais aussi prendre compte de la structure générale du document (en supposant que la place des mots corresponde à leur importance) ou encore la mise en forme du texte. Ce processus voit très vite ses limites être atteintes et la pertinence des documents proposés après une requête n'est pas forcément satisfaisante.
+
+ sont Allen Kent et son équipe de chercheurs qui ont employé le terme "pertinent interest" pour la première fois en 1955&lt;ref&gt;{{Ouvrage|langue=anglais|auteur1=Kent Allen|nom2=Berry M.|auteur3=Luehrs F. U.|auteur4=Perry J. W.|titre=Machine Literature searching : VIII. Operational criteria for designing information retrieval systems. Journal of the Association for Information Science and Technology|passage=p. 93-101, vol. 6, n°2|date=1955}}&lt;/ref&gt;. Ce terme désigne les documents vers lesquels diriger l'attention des usagers.
+
+A cette époque, le terme de "relevance" est préféré à celui de pertinence. Ce qui semble évident au regard d'un contexte de recherche informatisée. Cependant, on note la tentative d'introduction de l'humain avec les premiers questionnements sur le concept de "jugement de pertinence"&lt;ref name=":1"&gt;{{Article|langue=fr|auteur1=Boubée, Nicole|titre=Épistémologie des concepts de jugements de pertinence et de jugements de "crédibilité web".|périodique=Les cahiers du numérique [en ligne],|date=2018|lire en ligne=https://www.cairn.info/revue-les-cahiers-du-numerique-2018-2-page-113.htm|format=P. 113-138}}&lt;/ref&gt;.
+
+Brigitte Simonnot&lt;ref name=":4"&gt;{{Article|auteur1=SIMMONOT, Brigitte|titre=De la pertinence à l'utilité en recherche d'information : le cas du Web|périodique=Recherches récentes en sciences de l'information - convergences et dynamiques, actes du colloque international MICS-LERASS ; ADBS Éditions, collection Sciences de l'information, série Recherches et Documents|date=Mars 2002|lire en ligne=&lt;Https://www.researchgate.net/publication/37759528_De_la_pertinence_a_l'utilite_en_recherche_d'information_le_cas_du_Web&gt;  |accès url=libre|pages=p. 393-410}}&lt;/ref&gt;, enseignante chercheuse en SIC au CREM (Centre de Recherche sur les Médiations) de l'Université de Lorraine, affirme que la théorie de la pertinence admet une hiérarchie de contextes d'interprétations avec pour chacun plusieurs hypothèses. Elle définit la pertinence comme "une relation entre une hypothèse et un contexte" qui sont ordonnés selon deux dimensions : l'effet de l'hypothèse (croyances et connaissances d'un sujet) et l'effort que doit fournir un individu pour intégrer l'hypothèse dans ses connaissances.
+
+Avec la recherche sur le web, on voit une légère amélioration de la pertinence avec l'apparition du [[Dublin Core]] et la mise en place de métadonnées pour décrire un document à l'aide de méta-descripteurs. Cependant la pratique de [[référencement abusif]] (''spamdexing'') détourne l'utilisation des métadonnées de leur fonction initiale et permet d'augmenter l'audience d'un site.
+
+La mesure de la pertinence système correspond au taux de rappel, qui évalue la proportion de documents pertinents dans l'ensemble des ressources présentes dans une collection, et au taux de précision, qui estime la proportion de documents pertinents dans les documents retrouvés.
+
+=== La pertinence usager ===
+Au bout de quelques décennies, le concept de pertinence a connu des avancées. Avec l'"information seeking" ou l'"information searching", la grande entreprise d'identification des critères du début des années 1990 a relancé l'intérêt vers la pertinence usager&lt;ref name=":1" /&gt;. Nicole Boubée, docteure en SIC et spécialiste des pratiques informationnelles et médiatiques, présente particulièrement pour cette période les travaux de Schamber&lt;ref name=":2"&gt;{{Article|langue=anglais|auteur1=Schamber L|auteur2=Eisenberg M. B.|auteur3=Nilan M. S.|titre=A re-examination of relevance : toward a dynamic, situational definition|périodique=Information processing and management|date=1990|pages=vol. 26, n°6, p. 755-776}}&lt;/ref&gt;qui aboutissent à deux postulats : la pertinence est de nature subjective et elle est un processus dynamique. Ce travail innovant met en avant l'empirie et l'approche qualitative. Schamber et ses collègues déclinent plusieurs critères de pertinence comme la validité, l'émotion que l'information suscite, la clarté...
+
+La pertinence est définie ici comme un jugement porté par l'utilisateur sur l'information qu'il trouve au regard de ses besoins. Pour être jugée pertinente, l’information doit lui être utile pour la production qu'il vise, lui apporter des connaissances nouvelles et, enfin, être facile à comprendre et à exploiter&lt;ref name=":0"&gt;{{Lien web |langue=fr |auteur=A.P.D.E.N. (ensemble d'associations académiques des collèges, lycées et établissements d'enseignement supérieur publics) |titre=Pertinence sur Wikinotions |url=https://wikinotions.apden.org/notions.php?p=consult&amp;nom=pertinence |site=Wikinotions infodoc |consulté le=22 novembre 2022}}.&lt;/ref&gt;.
+
+Depuis les années 1980, la démarche documentaire a fait l'objet de nombreuses études qui adoptaient une approche cognitiviste&lt;ref name=":4" /&gt;. Selon Carol Kuhlthau&lt;ref&gt;{{Article|langue=en|auteur1=Kuhlthau C. C.|titre=Accomodating the User's information search process : challenges for information retrieval system designers,|périodique=Bulletin of the American Society for Information Science, vol. 25, n° 3.|date=1999|lire en ligne=https://asistdl.onlinelibrary.wiley.com/doi/full/10.1002/bult.115}}&lt;/ref&gt;, six phases se succèdent dans un processus de recherche : 
+
+# L'initialisation : durant laquelle un individu prend conscience de ses lacunes, ce qui le pousse à entamer un processus de recherche d'information.
+# La sélection : l'individu commence à cerner le sujet avec un questionnement lui permettant de définir une problématique.
+# L'exploration : l'individu essaye de trouver des informations sur son sujet.
+# La formulation : l'individu se focalise sur certaines des informations trouvées lors de la phase précédente, ce qui lui permet de clarifier ses pensées et de se focaliser sur l'objet de sa recherche.
+# La collecte : cette étape correspond à la  recherche et la sélection des informations les plus pertinentes.
+# La présentation : consiste en la mise en forme des informations recueillies afin de conclure la recherche.
+
+La qualité d'une recherche dépend essentiellement de la formulation de la requête. Cette étape n'est pas forcément maîtrisée par la majorité des utilisateurs du web qui ne connaissent pas toutes les fonctions de recherche ou les opérateurs booléens&lt;ref name=":4" /&gt;.
+
+=== La pertinence dans le paradigme orienté usages ===
+Avec l'essor de la recherche d'information sur le web, se sont développées de nouvelles pratiques évaluatives. D'autres critères de pertinence ont vu le jour notamment grâce aux travaux interdisciplinaires des chercheurs en sciences de l'information et en [[psychologie cognitive]]. C'est ainsi que Nicole Boubée et [[André Tricot]] placent de nouveaux concepts cognitivistes dans la recherche d'information pour dépasser le clivage pertinence subjective / pertinence objective&lt;ref&gt;{{Ouvrage|langue=fr|auteur1=Boubée Nicole|auteur2=Tricot André|titre=Qu'est-ce que rechercher l'information ?|lieu=Villeurbanne|éditeur=Presse de l'ENSSIB|date=2010}}&lt;/ref&gt; : critères de déduction logique, d'induction, de sérendipité mais aussi critères se rapportant au contexte de recherche de l'usager (adéquation avec la tâche, réponses émotionnelles... ).
+
+Pour un individu, la pertinence d'une information est instable. Elle varie selon les étapes de la recherche, selon la reformulation possible de la problématique et des questions, puis des requêtes. De même, une information peut devenir pertinente quand le seul critère d'intelligibilité n'est pas respecté dans un premier temps, mais qu'il le devient après la lecture d'informations pertinentes qui permettent des améliorations dans la compréhension. Le contexte est donc un élément important pour cette notion&lt;ref name=":0" /&gt;.
+
+Stefano Mizzaro&lt;ref&gt;{{Article|langue=en|auteur1=Mizzaro S.|titre=Relevance : the whole history|périodique=Journal of the American Society for Information Science,
+vol. 48, n°9|date=1997|lire en ligne=https://asistdl.onlinelibrary.wiley.com/doi/10.1002/%28SICI%291097-4571%28199709%2948%3A9%3C810%3A%3AAID-ASI6%3E3.0.CO%3B2-U|pages=p.810-832.}}&lt;/ref&gt; quant à lui, met en avant la complexité et la diversité des types de pertinence. Il la définit comme une relation entre deux entités : collection de documents et utilisateurs. Il distingue trois dimensions de la pertinence : 
+
+* Le domaine du sujet, qui renvoie au champ disciplinaire auquel il appartient.
+* La tâche, qui correspond à l'activité réalisée par l'utilisateur avec les documents trouvés.
+* Le contexte, définit comme tout ce qui n'est pas lié au domaine du sujet ou à la tâche (comme les connaissances de l'utilisateur ou le temps et l'argent disponible pour la recherche).
+
+Brigitte Simonnot conteste l’idée que la pertinence d’un document dépend seulement du besoin de l’utilisateur. Il doit prendre en compte l’état des connaissances sur le sujet de sa recherche, mobiliser ses savoirs faire en termes de lecture par exemple mais aussi le temps dont il dispose. Tous ces éléments impacteront le choix des documents. Quand l’utilisateur fait une recherche sur le Web, son niveau de lecture et de connaissances n’est pas demandé. Ce problème est en partie pallié par l’avènement de portails regroupant un grand nombre de ressources ciblées pour des publics particuliers (exemple des portails numériques.)&lt;ref name=":4" /&gt;
+
+=== La pertinence dans l'ère numérique ===
+Avec l'avènement du numérique, la définition concrète de la pertinence arrive à épuisement. On parle plutôt désormais de l'influence plus ou moins forte de tel ou tel critère&lt;ref name=":1" /&gt;. Le concept de pertinence est également utilisé par les industries du contenu et des services du web (Google, Facebook...).
+
+Niels Kressens parle du pouvoir de contrôle que ces industries exercent : il ne s'agit plus d'amplifier le contrôle évaluatif des usagers mais bien de contrôler leur pouvoir de sélection. La pertinence se définit alors selon des critères techniques objectivés : l'occurrence des mots-clés de la requête dans les pages web, par exemple, avec un traitement algorithmique spécifique à  chaque moteur de recherche qui renvoie à  des critères subjectifs et/ou économiques (habitudes de navigation de l'individu, placement de résultats par une entreprise, etc.)&lt;ref name=":0" /&gt;.
+
+Van Couvering, professeure et spécialiste en médias et communications, affirme que ces industries du contenu ont pris pour base des travaux académiques sur la pertinence issus des sciences de l'information&lt;ref name=":3"&gt;{{Article|langue=anglais|auteur1=Kerssens Niels|titre=When search engines stopped being human : menu interfaces and the rise of the ideological nature of algorithmic search|périodique=Internet Histories|date=2017|pages=vol. 1, n°3, p.219-237}}&lt;/ref&gt;. La pertinence de l'information laisse place à la pertinence du service lui-même : c'est l'adhésion du service qui importe.
+
+Brigitte Simonnot met en avant la pertinence du choix de l'outil, avec l’idée qu’il existe un grand nombre de moteurs de recherche sur le web. L'utilisateur doit donc choisir le bon outil lors d’une démarche de recherche documentaire, cependant dans la plupart des cas il choisit l'outil qu'il connait le mieux sans nécessairement prendre en compte ses besoins et les spécificités du moteur de recherche&lt;ref name=":4" /&gt;.
+
+Finalement, les industries du web procèdent de la même manière que l'information retrieval en réduisant le travail et l'effort de l'usager dans ses pratiques informationnelles. Ainsi, il n'a plus besoin de comprendre comment les systèmes fonctionnent pour les utiliser efficacement&lt;ref&gt;{{Ouvrage|langue=anglais|auteur1=Warner Julian|titre=Human information retrieval|lieu=Cambridge|éditeur=MIT Presse|date=2010}}&lt;/ref&gt;. Certains chercheurs&lt;ref&gt;{{Article|langue=anglais|auteur1=Rieh Soo Young|auteur2=Danielson D.R.|titre=Credibility : A multidisciplinary framework|périodique=Annual review of information science and technology|date=2007|pages=vol. 41, n° 1, p. 307-364}}&lt;/ref&gt; orientent désormais leurs travaux vers des critères de [[Crédibilité|crédibilité Web]] qui supplanteraient le concept de pertinence.
+
+=== Le terme de jugement de pertinence ===
+C'est dans un contexte de recherches informationnelles automatisées que le concept de jugement de pertinence voit le jour. Cette introduction subjective pourrait surprendre mais elle s'explique, selon Tefko Saracevic (scientifique de l'information), par le fait que le jugement par l'humain est nécessaire pour améliorer ou concevoir un objet dans une science de nature ingénieure où le test est indispensable. L’expérience a prouvé aussi que pour améliorer un système d'information, la méthode la plus appropriée est de faire juger celui-ci par l'humain&lt;ref&gt;{{Ouvrage|langue=anglais|auteur1=Saracevic Tefko|titre=The Notion of Relevance in Information Science : Everybody knows what relevance is. But, what is it really ?|éditeur=Morgan &amp; Claypool Publishers|date=2017}}&lt;/ref&gt;.
+
+Nicole Boubée émet des critiques sur ce concept qu'elle estime encore trop associé aux systèmes calculatoires&lt;ref name=":1" /&gt;. Elle reprend les différents critères de jugement de pertinence&lt;ref name=":2" /&gt; et leur composition et remarque que l'idée d'apporter de l'humain dans un concept forgé par les sciences exactes n'a pas véritablement abouti puisqu'on continue de raisonner en termes de "degré de pertinence", de "poids de chaque critère". Or juger de la pertinence d'une information ne peut pas se résoudre à l'application de simples règles en appliquant des critères sous forme de procédure codifiée.
+
+Un autre problème réside dans la proximité de certains termes avec celui de pertinence : [[crédibilité]], utilité, fiabilité, confiance&lt;ref name=":1" /&gt; ...
+
+On assiste actuellement à la naissance d'un troisième type de jugement qui suspend toute perspective humaine : le jugement algorithmique&lt;ref&gt;{{Ouvrage|langue=anglais|auteur1=Hillis Ken|auteur2=Petit M.|auteur3=Jarrett K.|titre=Google and the Culture of Search|éditeur=Routledge|date=2012}}&lt;/ref&gt; imposé par les industries de contenu. Il nécessite désormais d'analyser les travaux alliant médias, technologies et pratiques sociales sous l'angle de l'éthique dans le sens de "favoriser la capacité émancipatrice des publics et usagers"&lt;ref name=":1" /&gt;.
+
+== Groupes sur la recherche d'information ==
+
+Historiquement, la recherche d'information était faite dans les bibliothèques avec le protocole [[Z39.50]] qui était maintenu par la Bibliothèque du Congrès. Ces travaux se poursuivent avec les protocoles SRW (Search / Retrieve via Web Services) et SRU (Search / Retrieve via URL).
+Il existe un important groupe de travail (SIGIR, [[Special interest group|Special Interest Group]] for Information Retrieval) dans l'association internationale [[Association for Computing Machinery|ACM (Association for Computing Machinery)]], ainsi qu'une série de conférences et de campagnes d'évaluation organisées à ce sujet par le [[National Institute of Standards and Technology|NIST]] : [http://trec.nist.gov TREC (Text REtrieval Conference)], qui ont traité, au fil des années, aussi bien des aspects multimédia de la recherche d'information que des problématiques liées au peuplement de bases de connaissances à partir du Web, de la recherche d'information en domaine de spécialité ou sur des plateformes de [[micro-blogging]]. Au niveau francophone, la communauté scientifique est notamment représentée par l'ARIA (Association Francophone de Recherche d'Information et Applications) et les conférences annuelles [http://asso-aria.org/coriaconf CORIA].
+
+== Modèles mathématiques de RI ==
+[[Image:Information-Retrieval-Models.png|thumb|500px|Categorisation des modèles de RI (depuis [[:de:Information Retrieval#Klassifikation von Retrievalmodellen|l'entrée allemande]], source originale&lt;ref&gt;{{Ouvrage|prénom1=Dominik|nom1=Kuropka|titre=Modelle zur Repräsentation natürlichsprachlicher Dokumente : Ontologie-basiertes Information-Filtering-und-Retrieval mit relationalen Datenbanken|éditeur=Logos Verlag Berlin|date=2004|isbn=3-8325-0514-8|isbn2=978-3-8325-0514-1|oclc=57729599|présentation en ligne=http://www.logos-verlag.de/cgi-bin/engbuchmid?isbn=0514&amp;lng=eng&amp;id=|lire en ligne=https://www.worldcat.org/oclc/57729599|consulté le=2023-02-07}}&lt;/ref&gt;).]]
+
+
+
+Les modèles de RI peuvent être classés selon deux aspects. La première dimension est le modèle mathématique considéré :
+* ''l'[[modèle booléen|approche ensembliste]]'' qui considère que l'ensemble des documents s'obtient par une série d'opérations (intersection, union et le passage au complémentaire). Le langage de requête SQL1 correspond à cette approche dite aussi de logique de premier niveau ;
+* ''l'[[modèle vectoriel|approche algébrique]]''&amp;nbsp;(ou vectorielle) qui considère que les documents et les questions font partie d'un même [[espace vectoriel]] ;
+* ''l'[[modèle probabiliste de pertinence|approche probabiliste]]'' qui essaie de modéliser la notion de ''pertinence''.
+La seconde dimension prend en compte les liens pouvant exister entre les termes.
+
+
+== Modèles cognitifs de RI ==
+{{Article détaillé|Modèles cognitifs de la recherche d'information}}
+
+Rechercher de l’information met en jeu pour l’usager toute une série de [[processus cognitifs]] ([[lecture]], [[résolution de problème]], [[savoirs procéduraux]] et [[savoirs déclaratifs]], etc.){{Référence nécessaire}}. Pour exposer le plus clairement possible ce qui se passe lors d’une RI, plusieurs chercheurs spécialisés (soit dans le domaine de l’information, soit dans le domaine des sciences cognitives) dans la recherche d’information ont proposé des modèles. Ceux-ci sont censés rendre compte de ce qui se passe concrètement et, pour certains, permettre de tirer des hypothèses sur l’origine cognitive des actes perceptibles.
+
+=== Modèle de recherche d'information ===
+
+Alors que la recherche d’information est une activité humaine ancienne, son étude s’est développée surtout avec l’apparition des systèmes de recherches documentaires informatisés{{Référence nécessaire}}.
+Un premier modèle est celui de l’Information Retrieval&lt;ref&gt;M.-R. Amini, É. Gaussier, [http://www.eyrolles.com/Informatique/Livre/recherche-d-information-9782212135329 Recherche d'Information - Applications, modèles et algorithmes], Eyrolles, 2013, pp. I-XIX, 1-233, Paris&lt;/ref&gt;.
+Dans ce modèle, on trouve trois éléments : l’usager, l’ensemble de documents et, entre les deux, le spécialiste de l’information ([[bibliothécaire]] ou [[documentaliste]]) qui peut interroger la base de données. Ce modèle a été conçu alors que les usagers n’avaient pas encore accès à des [[catalogues]] informatisés. Le bibliothécaire utilisait pour indexer les documents un langage fermé, de type [[thésaurus documentaire|thesaurus]], et interrogeait le système en réutilisant ce même langage. Ainsi, l’usager ayant un besoin d’information, il l’exprime sous forme de question et le bibliothécaire transcrit celle-ci en requête pour interroger un système documentaire. Les documents, de l’autre côté, ont été représentés, c’est-à-dire transcrits en [[notices bibliographiques]] et [[indexation matière|indexés]]. Entre la requête et l’[[Index (base de données)|index]] du système s’opère alors un appariement qui fournira une réponse.
+
+==== Critiques ====
+Ce modèle a été critiqué&lt;ref&gt;{{Ouvrage|langue=fr|auteur1=Yves CHIARAMELLA, Philippe MULHEM|titre=La recherche d'information. De la documentation automatique à la recherche d'information en contexte|passage=p. 11-38|lieu=Paris|éditeur=Lavoisier, Document numérique, vol. 10, no. 1|date=2007|pages totales=152|isbn=9782746219694|lire en ligne=https://www.cairn.info/revue-document-numerique-2007-1-page-11.htm|consulté le=17 février 2023}}&lt;/ref&gt; pour deux raisons majeures. La première est le flou de certains termes utilisés (surtout la notion de besoin d’information) et le manque d’explication sur les connexions qui se font (comment passe-t-on d’un besoin à une question puis à une requête ?)
+La seconde tient à l’idée que le besoin d’information reste le même durant tout le travail. Or, toutes les études prouvent que la question initiale évolue très souvent lors d’une recherche.
+
+Toutefois, ces critiques, même si elles sont valables dans l’absolu, sont amoindries par le fait qu’elles portent sur des points qui ne sont pas primordiaux dans ce système. Le but de ce modèle est de décrire concrètement ce qui se passe. L’aspect cognitif (et en l’occurrence, le besoin d’information), même s’il apparaît, n’est pas essentiel. C’est pour cela que les termes sont flous. De plus, même si le questionnement de l’usager va évoluer en même temps que son travail progresse, lorsqu’il interroge le bibliothécaire, à chaque fois il commence un nouveau cycle de recherche. Dès lors, la critique la plus forte serait de dire que ce modèle est maintenant obsolète, car l’intermédiaire entre le sujet et les documents n’existe plus.
+
+=== Représentation en pivot ===
+Plutôt que de voir la RI comme une confrontation entre un usager et un système de recherche d’information, des chercheurs et en premier lieu Marchionini&lt;ref name="marchionini"&gt;{{Article|langue=en|auteur1=M. Agosti|auteur2=P. G. Marchetti|titre=User navigation in the IRS conceptual structure through a semantic association function.|périodique=[[The Computer Journal]]|volume=35|numéro=3|pages=194–199|date=1992-06|doi=10.1093/comjnl/35.3.194}}&lt;/ref&gt;{{,}}&lt;ref&gt;{{Marchionini95}}&lt;/ref&gt;
+ont proposé une représentation de la RI en insistant sur ce qui leur semble le cœur de celle-ci, à savoir la définition du problème selon quatre étapes :
+* l’[[énonciation]] du problème ;
+* le choix de la source d’information ;
+* l’extraction de l’information ;
+* l’examen des résultats.
+Chacune de ses actions entraîne des modifications dans la définition du problème. L’interaction entre l’usager et le système de recherche puis les documents entraîne une réévaluation des besoins et des savoirs. Dans cette représentation, la recherche n’est pas linéaire.
+
+==== Évolution de cette représentation ====
+Depuis les premiers travaux de Marchionini&lt;ref  name="marchionini"/&gt;et sa première modélisation, les données ont changé, surtout avec le développement de l’accès à internet. Une reformulation de cette représentation&lt;ref&gt;Zhang, J. and Marchionini, G. 2004. Coupling browse and search in highly interactive user interfaces: a study of the relation browser++. In Proceedings of the 4th ACM/IEEE-CS Joint Conference on Digital Libraries (Tucson, AZ, USA, June 7–11, 2004). JCDL '04. ACM, New York, NY, 384-384.&lt;/ref&gt; met au centre le sujet. Celui-ci a un besoin d’information qui est flou, mais qui est perçu. Ceci va donc entraîner une série d’actions, dont l’interrogation d’une base de données. Cette interrogation se fonde sur la représentation du fonctionnement de l’interface. Les résultats vont faire évoluer la représentation du problème et entraîner d’autres actions.
+
+=== Représentations basées sur l’exploration ===
+[[Image:Merton College library hall.jpg|300px|left|Une bibliothèque à explorer.]]
+Le postulat de base de ces représentations est que l’usager n’a pas une idée claire de ce qu’il cherche{{Référence nécessaire}}. Ce sont les réponses apportées par le système et les lectures de documents qui vont permettre à l’individu de préciser son besoin d’information. Bates a qualifié ce modèle de « berrypicking ». L’usager va cueillir des informations dans les documents comme on cueille des baies. Il passe d’un document à l’autre, se laisse mener par ce qu’il trouve et réfléchit, limite sa recherche au fur et à mesure, selon ce qu’il trouve.
+
+==== Critiques ====
+La critique principale{{Référence nécessaire}} insiste sur le fait que même si une recherche d’information est erratique, le sujet a malgré tout une idée de ce qu’il cherche. Cette question première sera peut-être profondément modifiée par la suite, mais il n’en demeure pas moins qu’une recherche part toujours de l’expression, plus ou moins claire, d’un manque.
+O’Day et Jeffries font évoluer la comparaison de la RI et la cueillette de baies et préfèrent voir la RI comme une course d’orientation&lt;ref&gt;O’Day, V. L., and Jeffries, R. (1993). Orienteering in an information landscape: How information seekers get from here to there. In Proceedings of ACM/InterCHI ’93&lt;/ref&gt;. L’usager ne sait pas vraiment ce qu’il cherche, mais il est en mesure de juger de ce qui est intéressant pour lui au regard des résultats. De plus, chaque document trouvé mène à une décision concernant la suite du travail. Enfin, si des représentations partielles apparaissent lors de la recherche, une représentation générale du but à atteindre perdure.
+
+À côté de ces travaux qui visent plus à décrire la suite des actions qui constituent une recherche d’information, d’autres, issus de la psychologie cognitive, considèrent la RI comme une forme particulière de [[résolution de problèmes]]. La [[psychologie cognitive]] s’est intéressée à ce sujet et certaines théories ont été transférées dans l’étude de la RI.
+
+=== Construction d’un espace de recherche ===
+Lors d’une résolution de problème, le sujet doit élaborer une représentation de la situation de départ, une représentation du but et une représentation des actions licites. Dans une RI, cela correspondrait à l’écriture d’une question dans un système donné (situation de départ), à l’affichage de notices (situation-but), et à une liste des actions qui doivent être entreprises pour passer du besoin à la satisfaction. Ces trois représentations individuelles constituent l’espace de recherche. Ce dernier est à distinguer de l’espace de la tâche qui est virtuel et correspond à une résolution parfaite du problème.
+
+==== Critiques ====
+Ce modèle a été critiqué pour plusieurs raisons{{Référence nécessaire}}. À l’origine, la notion de résolution de problème s’appuyait sur des problèmes simples (ex. la tour de Hanoï). La situation de départ, la situation-but et les opérations licites étaient facilement exprimables. Dès que les problèmes sont des problèmes complexes et ouverts, la situation de départ et la situation-but ne sont plus aussi apparentes. La RI tient de ce type de tâche, ouverte et complexe. Au moment où commence une recherche, il est difficile de décrire complètement tous les éléments qui vont constituer la situation de départ. En effet, définir son besoin d’information est déjà une tâche complexe. La situation-but est encore plus malaisée à présenter. On peut dire comme Chen et Dhar que : « la situation-but est constituée par l’affichage de notices de documents se rapportant à la question posée et adaptés à l’usager destinataire de l’information. », mais cela ne dit pas comment se fait le lien entre la question et l’affichage de notices (est-ce que cet affichage est valable ?) ni surtout comment on peut affirmer que ces documents sont adaptés.
+Enfin, La liste des actions autorisées est peu maîtrisée par les utilisateurs d’un système de recherches. Plus l’usager est novice, moins il sait ce que le système accepte comme interrogation ou quelles sont les méthodes pour écrire une équation de recherche permettant de limiter le bruit et le silence. Or, ce respect des actions autorisées est une nécessité dans la présentation canonique de la résolution de problèmes.
+
+== Outils de recherche d'information ==
+
+* [[DataparkSearch]]
+* [[Lucene]]
+* [[Mnogosearch]]
+* [[Xapian]]
+* [[Zettair]]
+* Weblab intégrant [[Apache Solr]]
+* [[Reportlinker]]
+
+== Notes et références ==
+{{Références}}
+
+== Voir aussi ==
+=== Articles connexes ===
+* [[Moteur de recherche]]
+* [[Système de recherche d'information]]
+* [[Optimisation pour les moteurs de recherche]]
+* [[Bibliothèque numérique]]
+* [[Système d'information géographique]]
+* [[Modèles cognitifs de la recherche d'information]]
+* [[Bruit et silence]]
+* [[Fouille de textes]]
+* [[Humanités numériques]]
+* [[Infolisme]]
+*[[Évaluation de l'information]]
+
+=== Liens externes ===
+* {{Autorité}}
+* {{Bases}}
+* {{Dictionnaires}}
+* M.-R. Amini, É. Gaussier, [http://www.eyrolles.com/Informatique/Livre/recherche-d-information-9782212135329 Recherche d'Information - Applications, modèles et algorithmes], [[Eyrolles]], 2013, pp. I-XIX, 1-233, Paris
+* M.Ihadjadene, [http://www.lavoisier.fr/fr/livres/index.asp?texte=2746208210&amp;select=isbn&amp;from=Hermes Les systèmes de recherche d'informations: modèles conceptuels], 2004, Hermes, Paris
+* M.Ihadjadene, Méthodes avancées pour les SRI, Hermes, 2004, Paris
+* B. Grau, J.P. Chevallet, [http://editions.lavoisier.fr/notice.asp?ouvrage=2138685&amp;pos=3 La recherche d'informations précises], Hermes, 2007, Paris
+* M. Boughanem et J. Savoy, [http://editions.lavoisier.fr/notice.asp?ouvrage=2139071 Recherche d'information : état des lieux et perspectives], Hermes, 2008, Paris
+* P. Bellot, [http://editions.lavoisier.fr/notice.asp?ouvrage=2139625&amp;pos=2 Recherche d'information contextuelle, assistée et personnalisée], 2011, Hermes, Paris
+* T. Joachims, [http://videolectures.net/mlss03_joachims_irlt/ Information Retrieval and Language Technology (vidéos)], 2003, Cornell University
+* R. Ferber, [http://information-retrieval.de/irb/irb.html Information Retrieval - Suchmodelle und Data-Mining-Verfahren für Textsammlungen und das Web], 2003, dpunkt.verlag, {{ISBN|3-89864-213-5}}
+* C. J. Van Rijsbergen, [http://www.dcs.gla.ac.uk/Keith/Preface.html Information Retrieval (2d edition)], 1979, {{ISBN|0-408-70929-4}},
+* Baeza-Yates, Ricardo A. and Ribeiro-Neto, Berthier, "Modern Information Retrieval", 1999,{{ISBN|0-201-39829-X}}
+* Christopher D. Manning and Raghavan Prabhakar and Hinrich Schütze, [http://www.informationretrieval.org/ An introduction to information retrieval], 2008
+* {{Ouvrage|prénom1=Salaün,|nom1=Jean-Michel.|prénom2=Arsenault, Clément,|nom2=1962-|titre=Introduction aux sciences de l'information|éditeur=Presses de l'Université de Montréal|année=2009|pages totales=235|passage=101-158|isbn=978-2-7606-2114-5|isbn2=2760621146|oclc=320584406|lire en ligne=https://www.worldcat.org/oclc/320584406|consulté le=2019-01-18}}
+
+{{Portail|sciences de l'information et des bibliothèques|informatique}}
+
+[[Catégorie:Recherche d'information|*]]
+[[Catégorie:Informatique théorique]]
+[[Catégorie:Traitement automatique du langage naturel]]
+
+[[sv:Informationsåtkomst]]</text>
+      <sha1>gc0p11a31hcttj0eijtmu2z5gpbbfr7</sha1>
+    </revision>
+  </page>
+</mediawiki>

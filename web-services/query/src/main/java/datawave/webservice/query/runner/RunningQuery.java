@@ -9,7 +9,6 @@ import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -19,6 +18,7 @@ import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.jboss.logging.NDC;
 
@@ -55,7 +55,7 @@ import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
  */
 public class RunningQuery extends AbstractRunningQuery implements Runnable {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -8812242917762274469L;
 
     private static Logger log = Logger.getLogger(RunningQuery.class);
 
@@ -65,22 +65,24 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
     private Query settings = null;
     private long numResults = 0;
     private long lastPageNumber = 0;
-    private transient TransformIterator iter = null;
+    private volatile transient TransformIterator iter = null;
     private Set<Authorizations> calculatedAuths = null;
-    private boolean finished = false;
+    private volatile boolean finished = false;
     private volatile boolean canceled = false;
     private transient QueryMetricsBean queryMetrics = null;
     private transient RunningQueryTiming timing = null;
     private ExecutorService executor = null;
     private volatile Future<Object> future = null;
     private final BlockingQueue<Object> resultsThreadQueue = new ArrayBlockingQueue<>(1);
+    private volatile Exception resultsThreadException = null;
     private final AtomicInteger hasNext = new AtomicInteger(0);
     private final AtomicInteger gotNext = new AtomicInteger(0);
     private final AtomicBoolean running = new AtomicBoolean(false);
     private QueryPredictor predictor = null;
     private long maxResults = 0;
     private int currentTimeoutcount = 0;
-    private boolean allowShortCircuitTimeouts = false;
+    private boolean allowIntermediateEmptyPages = false;
+    private boolean useResultsThread = true;
 
     public RunningQuery() {
         super(new QueryMetricFactoryImpl());
@@ -139,7 +141,6 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                                         : userOperations.getRemoteUser((DatawavePrincipal) principal);
         this.calculatedAuths = WSAuthorizationsUtil.getDowngradedAuthorizations(methodAuths, overallPrincipal, queryPrincipal);
         this.timing = timing;
-        this.executor = Executors.newSingleThreadExecutor();
         this.predictor = predictor;
         // set the metric information
         this.getMetric().populate(this.settings);
@@ -203,8 +204,12 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             this.lastPageNumber = 0;
             this.logic.setupQuery(configuration);
             this.iter = this.logic.getTransformIterator(this.settings);
-            this.allowShortCircuitTimeouts = logic.isLongRunningQuery();
-            // the configuration query string should now hold the planned query
+            this.allowIntermediateEmptyPages = logic.isLongRunningQuery();
+            // force us to use asynchronous results thread to allow intermediate empty pages
+            if (this.allowIntermediateEmptyPages) {
+                this.useResultsThread = true;
+            }
+            // the configuration query string should now hold the initial planned query
             this.getMetric().setPlan(configuration.getQueryString());
             this.getMetric().setSetupTime((System.currentTimeMillis() - start));
             this.getMetric().setLifecycle(QueryMetric.Lifecycle.INITIALIZED);
@@ -254,6 +259,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                     try {
                         Thread.sleep(1);
                     } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
                         throw new RuntimeException(e);
                     }
                 }
@@ -275,17 +281,19 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                 }
             }
         } catch (Exception e) {
+            resultsThreadException = e;
+            if (e instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
             if (settings.getUncaughtExceptionHandler() != null) {
                 settings.getUncaughtExceptionHandler().uncaughtException(Thread.currentThread(), e);
-            } else {
-                running.set(false);
-                synchronized (hasNext) {
-                    hasNext.notifyAll();
-                }
-                synchronized (gotNext) {
-                    gotNext.notifyAll();
-                }
-                throw new RuntimeException(e);
+            }
+            running.set(false);
+            synchronized (hasNext) {
+                hasNext.notifyAll();
+            }
+            synchronized (gotNext) {
+                gotNext.notifyAll();
             }
         }
 
@@ -300,6 +308,14 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         return running;
     }
 
+    public boolean isUseResultsThread() {
+        return useResultsThread;
+    }
+
+    public void setUseResultsThread(boolean useResultsThread) {
+        this.useResultsThread = useResultsThread;
+    }
+
     /**
      * This method is used to determine if we have a next result. This will throw a timeout exception if the page short circuit limit is reached.
      *
@@ -310,7 +326,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
      *             if there is a timeout
      */
     private boolean hasNext(long pageStartTime) throws TimeoutException {
-        if (allowShortCircuitTimeouts) {
+        if (useResultsThread && executor != null) {
             synchronized (hasNext) {
                 if (hasNext.get() == 0 && running.get() && !this.finished && !this.canceled) {
                     long timeout = (timing != null ? Math.max(1, (timing.getPageShortCircuitTimeoutMs() - (System.currentTimeMillis() - pageStartTime)))
@@ -318,8 +334,16 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                     try {
                         hasNext.wait(timeout);
                     } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
                         // if we got interrupted, then just return false
                         return false;
+                    }
+                    if (resultsThreadException != null) {
+                        if (resultsThreadException instanceof RuntimeException) {
+                            throw (RuntimeException) resultsThreadException;
+                        } else {
+                            throw new RuntimeException(resultsThreadException);
+                        }
                     }
                     if (running.get() && (hasNext.get() == 0)) {
                         throw new TimeoutException("hasNext timed out");
@@ -353,7 +377,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
      *             if there is a timeout
      */
     private Object getNext(long pageStartTime) throws TimeoutException {
-        if (allowShortCircuitTimeouts) {
+        if (useResultsThread && executor != null) {
             synchronized (gotNext) {
                 if (gotNext.get() == 0 && running.get() && !this.finished && !this.canceled) {
                     long timeout = (timing != null ? Math.max(1, (timing.getPageShortCircuitTimeoutMs() - (System.currentTimeMillis() - pageStartTime)))
@@ -361,6 +385,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                     try {
                         gotNext.wait(timeout);
                     } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
                         // if we got interrupted, then just return null
                         return null;
                     }
@@ -395,7 +420,6 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             }
             future = null;
         }
-        executor.shutdown();
     }
 
     /**
@@ -411,20 +435,21 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         long pageStartTime = System.currentTimeMillis();
         this.logic.setPageProcessingStartTime(pageStartTime);
         List<Object> resultList = new ArrayList<>();
-        boolean hitPageByteTrigger = false;
-        boolean hitPageTimeTrigger = false;
         boolean hitIntermediateResult = false;
         boolean hitShortCircuitForLongRunningQuery = false;
+
+        int currentPageCount = 0;
+        long currentPageBytes = 0;
+        int maxPageSize = Math.min(this.settings.getPagesize(), this.logic.getMaxPageSize());
+
         try {
             addNDC();
-            int currentPageCount = 0;
-            long currentPageBytes = 0;
 
             // test for any exceptions prior to loop as hasNext() would likely be false;
             testForUncaughtException(resultList.size());
 
             // start up the results thread if needed
-            if (this.allowShortCircuitTimeouts && future == null && !this.canceled && !this.finished) {
+            if (useResultsThread && future == null && executor != null && !this.canceled && !this.finished) {
                 running.set(true);
                 future = executor.submit(() -> getResultsThread());
             }
@@ -450,7 +475,6 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                     // if the logic had a page byte trigger, and we have reached that, then break out
                     if (this.logic.getPageByteTrigger() > 0 && currentPageBytes >= this.logic.getPageByteTrigger()) {
                         log.info("Query logic max page byte trigger has been reached, aborting query.next call");
-                        hitPageByteTrigger = true;
                         break;
                     }
                     // if the logic had a max num results (across all pages) and we have reached that (or the maxResultsOverride if set), then break out
@@ -476,11 +500,9 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                     // this page.
                     long pageTimeInCall = (System.currentTimeMillis() - pageStartTime);
 
-                    int maxPageSize = Math.min(this.settings.getPagesize(), this.logic.getMaxPageSize());
                     if (timing != null && currentPageCount > 0 && timing.shouldReturnPartialResults(currentPageCount, maxPageSize, pageTimeInCall)) {
                         log.info("Query logic max expire before page is full, returning existing results " + currentPageCount + " " + maxPageSize + " "
                                         + pageTimeInCall + " " + timing);
-                        hitPageTimeTrigger = true;
                         break;
                     }
 
@@ -519,7 +541,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                 // This means the iter.hasNext() call didn't return within the allotted time. If this is a long running query,
                 // then we want to signal that the caller should call next to keep going (as opposed to just returning the
                 // page as COMPLETE)
-                if (allowShortCircuitTimeouts) {
+                if (allowIntermediateEmptyPages) {
                     log.info("Short circuiting the long running query");
                     hitShortCircuitForLongRunningQuery = true;
                 } else if (resultList.isEmpty()) {
@@ -534,6 +556,13 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             // Update the metric
             long now = System.currentTimeMillis();
             this.getMetric().addPageTime(currentPageCount, now - pageStartTime, pageStartTime, now);
+            // check the query plan for updates
+            if (logic instanceof BaseQueryLogic) {
+                BaseQueryLogic baseLogic = (BaseQueryLogic) logic;
+                if (baseLogic.getConfig() != null && !StringUtils.isEmpty(baseLogic.getConfig().getQueryString())) {
+                    this.getMetric().setPlan(baseLogic.getConfig().getQueryString());
+                }
+            }
             this.lastPageNumber++;
             if (!resultList.isEmpty()) {
                 this.getMetric().setLifecycle(QueryMetric.Lifecycle.RESULTS);
@@ -560,10 +589,9 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         if (!resultList.isEmpty()) {
             log.info("Returning page of results");
             // we have results!
-            return new ResultsPage(resultList,
-                            ((hitPageByteTrigger || hitPageTimeTrigger || hitIntermediateResult || hitShortCircuitForLongRunningQuery)
-                                            ? ResultsPage.Status.PARTIAL
-                                            : ResultsPage.Status.COMPLETE));
+            // we also indicate whether we returned less than the requested page size in the response
+            return new ResultsPage(resultList, ((hasNext.get() > 0 && numResults < this.maxResults && currentPageCount < maxPageSize) || hitIntermediateResult
+                            || hitShortCircuitForLongRunningQuery) ? ResultsPage.Status.PARTIAL : ResultsPage.Status.COMPLETE);
         } else {
             // we have no results. Let us determine whether we are done or not.
 
@@ -784,4 +812,13 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             }
         }
     }
+
+    public ExecutorService getExecutor() {
+        return executor;
+    }
+
+    public void setExecutor(ExecutorService executor) {
+        this.executor = executor;
+    }
+
 }

@@ -18,7 +18,6 @@ import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
 
 import datawave.data.type.Type;
 import datawave.webservice.query.util.TypedValue;
@@ -37,7 +36,7 @@ import io.protostuff.Schema;
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public class DefaultField extends FieldBase<DefaultField> implements Serializable, Message<DefaultField> {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -3982566563059126017L;
 
     @XmlElement(name = "Markings")
     @XmlJavaTypeAdapter(StringMapAdapter.class)

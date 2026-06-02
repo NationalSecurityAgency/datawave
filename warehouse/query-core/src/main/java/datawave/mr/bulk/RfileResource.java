@@ -108,12 +108,12 @@ public class RfileResource extends BatchResource {
         if (log.isDebugEnabled()) {
             log.debug("Setting Options");
         }
-        if (null != options.getConfiguration() && null != options.getConfiguration().getAccumuloPassword()) {
+        if (null != options.getQueryConfiguration() && null != options.getQueryConfiguration().getAccumuloPassword()) {
             if (log.isDebugEnabled()) {
                 log.debug("Setting and configuration");
             }
-            AccumuloHelper.setPassword(conf, options.getConfiguration().getAccumuloPassword().getBytes());
-            BulkInputFormat.setMemoryInput(conf, getClient().whoami(), options.getConfiguration().getAccumuloPassword().getBytes(), tableName,
+            AccumuloHelper.setPassword(conf, options.getQueryConfiguration().getAccumuloPassword().getBytes());
+            BulkInputFormat.setMemoryInput(conf, getClient().whoami(), options.getQueryConfiguration().getAccumuloPassword().getBytes(), tableName,
                             auths.iterator().next());
             ((RfileScanner) baseScanner).setConfiguration(conf);
         }

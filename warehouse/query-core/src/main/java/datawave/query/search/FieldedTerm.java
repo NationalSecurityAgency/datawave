@@ -90,7 +90,7 @@ public class FieldedTerm extends Term implements Comparable<FieldedTerm> {
             termNoQuotes = termString;
         }
 
-        int firstColonIndex = termNoQuotes.indexOf(":");
+        int firstColonIndex = termNoQuotes.indexOf(':');
         if (firstColonIndex != -1) {
             return termNoQuotes.substring(0, firstColonIndex);
         }
@@ -107,7 +107,7 @@ public class FieldedTerm extends Term implements Comparable<FieldedTerm> {
             termNoQuotes = termString;
         }
 
-        int firstColonIndex = termNoQuotes.indexOf(":");
+        int firstColonIndex = termNoQuotes.indexOf(':');
         if (firstColonIndex == -1) {
             return termNoQuotes;
         } else {

@@ -23,6 +23,7 @@ import datawave.query.attributes.TypeAttribute;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.ContentFunctionsDescriptor;
 import datawave.query.jexl.functions.ContentFunctionsDescriptor.ContentJexlArgumentDescriptor;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
 
 /**
  * A function that intersects document keys prior to fetching term offsets.
@@ -35,6 +36,7 @@ public class DocumentKeysFunction {
 
     private final Set<String> negatedValues = new HashSet<>();
     private final Multimap<String,ContentFunction> contentFunctions = LinkedListMultimap.create();
+    private boolean delayed;
 
     /**
      * @param config
@@ -61,6 +63,10 @@ public class DocumentKeysFunction {
                 if (!(parent instanceof ASTFunctionNode)) {
                     throw new IllegalArgumentException("parent was not a function node");
                 }
+
+                // if the function is delayed it violates normal assumptions about the document. The tokens will not have been pushed from the fi into the
+                // document
+                delayed = QueryPropertyMarker.isAncestorMarked(parent, QueryPropertyMarker.MarkerType.DELAYED);
 
                 argsDescriptor = descriptor.getArgumentDescriptor((ASTFunctionNode) parent);
 
@@ -106,6 +112,11 @@ public class DocumentKeysFunction {
      * @return a filtered set of document keys
      */
     protected Set<Key> getDocKeys(Document d, Set<Key> docKeys) {
+        if (delayed) {
+            // cannot be safely optimized, skip
+            return docKeys;
+        }
+
         Multimap<String,Key> valueToKeys = buildValueToKeys(d);
 
         // add all negated values

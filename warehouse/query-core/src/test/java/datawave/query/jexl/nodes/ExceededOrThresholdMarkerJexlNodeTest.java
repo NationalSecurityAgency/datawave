@@ -1,5 +1,7 @@
 package datawave.query.jexl.nodes;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import static datawave.microservice.query.QueryParameters.QUERY_AUTHORIZATIONS;
 import static datawave.microservice.query.QueryParameters.QUERY_BEGIN;
 import static datawave.microservice.query.QueryParameters.QUERY_END;
@@ -78,6 +80,7 @@ import datawave.microservice.query.QueryImpl;
 import datawave.microservice.query.QueryParameters;
 import datawave.policy.IngestPolicyEnforcer;
 import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.index.day.IndexIngestUtil;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
@@ -181,6 +184,8 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
 
     private static InMemoryInstance instance;
 
+    private static final IndexIngestUtil ingestUtil = new IndexIngestUtil();
+
     @Deployment
     public static JavaArchive createDeployment() throws Exception {
         return ShrinkWrap.create(JavaArchive.class)
@@ -223,8 +228,8 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
             record.setDataType(new Type(DATA_TYPE_NAME, TestIngestHelper.class, (Class) null, (String[]) null, 1, (String[]) null));
             record.setRawFileName("geodata_" + recNum + ".dat");
             record.setRawRecordNumber(recNum++);
-            record.setDate(formatter.parse(beginDate).getTime());
-            record.setRawData((wktData[i]).getBytes("UTF8"));
+            record.setTimestamp(formatter.parse(beginDate).getTime());
+            record.setRawData((wktData[i]).getBytes(UTF_8));
             record.generateId(null);
             record.setVisibility(new ColumnVisibility(AUTHS));
 
@@ -291,6 +296,14 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
             }
             writer.close();
         }
+
+        try (BatchWriter bw = client.createBatchWriter(TableName.METADATA)) {
+            Mutation m = new Mutation("num_shards");
+            m.put("ns", "20000101_1", new Value());
+            bw.addMutation(m);
+        }
+
+        ingestUtil.write(client, new Authorizations(AUTHS));
     }
 
     @Test
@@ -307,14 +320,17 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
         maxOrRangeIvarators = 1;
         maxRangesPerRangeIvarator = 1;
 
-        List<String> queryRanges = getQueryRanges(query);
+        if (!logic.isUseDocumentScheduler()) {
+            // this call is not compatible with the document scheduler
+            List<String> queryRanges = getQueryRanges(query);
 
-        Assert.assertEquals(1, queryRanges.size());
-        String id = queryRanges.get(0).substring(queryRanges.get(0).indexOf("id = '") + 6,
-                        queryRanges.get(0).indexOf("') && (field = '" + GEO_QUERY_FIELD + "')"));
-        Assert.assertEquals("((_List_ = true) && ((id = '" + id + "') && (field = '" + GEO_QUERY_FIELD
-                        + "') && (params = '{\"ranges\":[[\"[1f0aaaaaaaaaaaaaaa\",\"1f1fffb0ebff104155]\"],[\"[1f2000228a00228a00\",\"1f20008a28008a2800]\"],[\"[1f200364bda9c63d03\",\"1f35553ac3ffb0ebff]\"]]}')))",
-                        queryRanges.get(0));
+            Assert.assertEquals(1, queryRanges.size());
+            String id = queryRanges.get(0).substring(queryRanges.get(0).indexOf("id = '") + 6,
+                            queryRanges.get(0).indexOf("') && (field = '" + GEO_QUERY_FIELD + "')"));
+            Assert.assertEquals("((_List_ = true) && ((id = '" + id + "') && (field = '" + GEO_QUERY_FIELD
+                            + "') && (params = '{\"ranges\":[[\"[1f0aaaaaaaaaaaaaaa\",\"1f1fffb0ebff104155]\"],[\"[1f2000228a00228a00\",\"1f20008a28008a2800]\"],[\"[1f200364bda9c63d03\",\"1f35553ac3ffb0ebff]\"]]}')))",
+                            queryRanges.get(0));
+        }
 
         List<DefaultEvent> events = getQueryResults(query);
         Assert.assertEquals(10, events.size());
@@ -352,15 +368,18 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
         maxOrRangeThreshold = 1;
         maxRangesPerRangeIvarator = 2;
 
-        List<String> queryRanges = getQueryRanges(query);
+        if (!logic.isUseDocumentScheduler()) {
+            // this call is not compatible with the document scheduler
+            List<String> queryRanges = getQueryRanges(query);
 
-        Assert.assertEquals(1, queryRanges.size());
-        String id = queryRanges.get(0).substring(queryRanges.get(0).indexOf("id = '") + 6,
-                        queryRanges.get(0).indexOf("') && (field = '" + GEO_QUERY_FIELD + "')"));
-        Assert.assertEquals("((_Value_ = true) && ((_Bounded_ = true) && (" + GEO_QUERY_FIELD + " >= '1f200364bda9c63d03' && " + GEO_QUERY_FIELD
-                        + " <= '1f35553ac3ffb0ebff'))) || ((_List_ = true) && ((id = '" + id + "') && (field = '" + GEO_QUERY_FIELD
-                        + "') && (params = '{\"ranges\":[[\"[1f0aaaaaaaaaaaaaaa\",\"1f1fffb0ebff104155]\"],[\"[1f2000228a00228a00\",\"1f20008a28008a2800]\"]]}')))",
-                        queryRanges.get(0));
+            Assert.assertEquals(1, queryRanges.size());
+            String id = queryRanges.get(0).substring(queryRanges.get(0).indexOf("id = '") + 6,
+                            queryRanges.get(0).indexOf("') && (field = '" + GEO_QUERY_FIELD + "')"));
+            Assert.assertEquals("((_Value_ = true) && ((_Bounded_ = true) && (" + GEO_QUERY_FIELD + " >= '1f200364bda9c63d03' && " + GEO_QUERY_FIELD
+                            + " <= '1f35553ac3ffb0ebff'))) || ((_List_ = true) && ((id = '" + id + "') && (field = '" + GEO_QUERY_FIELD
+                            + "') && (params = '{\"ranges\":[[\"[1f0aaaaaaaaaaaaaaa\",\"1f1fffb0ebff104155]\"],[\"[1f2000228a00228a00\",\"1f20008a28008a2800]\"]]}')))",
+                            queryRanges.get(0));
+        }
 
         List<DefaultEvent> events = getQueryResults(query);
         Assert.assertEquals(10, events.size());
@@ -424,8 +443,8 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
     public void valueListTest() throws Exception {
         // @formatter:off
         String query = "(" + GEO_QUERY_FIELD + " == '" + INDEX_1 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_2 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_3 + "' || " +
-                "" + GEO_QUERY_FIELD + " == '" + INDEX_5 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_6 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_7 + "' || " +
-                "" + GEO_QUERY_FIELD + " == '" + INDEX_9 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_10 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_11 + "')";
+                GEO_QUERY_FIELD + " == '" + INDEX_5 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_6 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_7 + "' || " +
+                GEO_QUERY_FIELD + " == '" + INDEX_9 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_10 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_11 + "')";
         // @formatter:on
 
         maxOrExpansionThreshold = 1;
@@ -437,8 +456,7 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
         List<DefaultEvent> events = getQueryResults(query);
         Assert.assertEquals(9, events.size());
 
-        List<String> pointList = new ArrayList<>();
-        pointList.addAll(Arrays.asList(POINT_1, POINT_2, POINT_3, POINT_5, POINT_6, POINT_7, POINT_9, POINT_10, POINT_11));
+        List<String> pointList = new ArrayList<>(Arrays.asList(POINT_1, POINT_2, POINT_3, POINT_5, POINT_6, POINT_7, POINT_9, POINT_10, POINT_11));
 
         for (DefaultEvent event : events) {
             List<String> wkt = new ArrayList<>();
@@ -471,8 +489,7 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
         List<DefaultEvent> events = getQueryResults(query);
         Assert.assertEquals(1, events.size());
 
-        List<String> pointList = new ArrayList<>();
-        pointList.addAll(Arrays.asList(POINT_13.split(";")));
+        List<String> pointList = new ArrayList<>(Arrays.asList(POINT_13.split(";")));
 
         for (DefaultEvent event : events) {
             List<String> wkt = new ArrayList<>();
@@ -494,8 +511,8 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
         // @formatter:off
         String query = "((_Bounded_ = true) && (" + GEO_QUERY_FIELD + " >= '" + INDEX_1 + "' && " + GEO_QUERY_FIELD + " <= '" + INDEX_12 + "')) && " +
                 "not(" + GEO_QUERY_FIELD + " == '" + INDEX_1 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_2 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_3 + "' || " +
-                "" + GEO_QUERY_FIELD + " == '" + INDEX_5 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_6 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_7 + "' || " +
-                "" + GEO_QUERY_FIELD + " == '" + INDEX_9 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_10 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_11 + "')";
+                GEO_QUERY_FIELD + " == '" + INDEX_5 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_6 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_7 + "' || " +
+                GEO_QUERY_FIELD + " == '" + INDEX_9 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_10 + "' || " + GEO_QUERY_FIELD + " == '" + INDEX_11 + "')";
         // @formatter:on
 
         maxOrExpansionThreshold = 1;

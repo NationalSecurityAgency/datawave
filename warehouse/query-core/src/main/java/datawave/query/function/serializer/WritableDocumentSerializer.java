@@ -26,7 +26,7 @@ public class WritableDocumentSerializer extends DocumentSerializer {
         DataOutputStream dos = new DataOutputStream(baos);
 
         try {
-            doc.write(dos, reducedResponse);
+            doc.write(dos);
         } catch (IOException e) {
             throw new RuntimeException("Could not convert Document through write().", e);
         }

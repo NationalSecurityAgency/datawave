@@ -38,7 +38,7 @@ public class SimpleDataTypeHelper implements InvocationHandler {
      */
     public static IngestHelperInterface create() {
         ClassLoader cl = SimpleDataTypeHelper.class.getClassLoader();
-        return (IngestHelperInterface) Proxy.newProxyInstance(cl, new Class[] {IngestHelperInterface.class}, new SimpleDataTypeHelper());
+        return (IngestHelperInterface) Proxy.newProxyInstance(cl, new Class<?>[] {IngestHelperInterface.class}, new SimpleDataTypeHelper());
     }
 
     @Override

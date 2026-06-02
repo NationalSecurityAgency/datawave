@@ -240,7 +240,7 @@ public class PartitionerCache {
     // that
     private Partitioner<BulkIngestKey,Value> createConfiguredPartitioner(Class<? extends Partitioner<BulkIngestKey,Value>> clazz, String prefix) {
         try {
-            Partitioner<BulkIngestKey,Value> partitioner = clazz.newInstance();
+            Partitioner<BulkIngestKey,Value> partitioner = clazz.getDeclaredConstructor().newInstance();
             if (partitioner instanceof Configurable) {
                 ((Configurable) partitioner).setConf(conf);
             }

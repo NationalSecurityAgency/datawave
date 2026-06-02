@@ -1,0 +1,5 @@
+datawave:
+  query:
+    metric:
+      correlator:
+        enabled: true

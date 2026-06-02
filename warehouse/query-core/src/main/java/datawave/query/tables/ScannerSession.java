@@ -11,6 +11,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
@@ -290,9 +291,16 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
                     }
                     startAsync();
                     try {
-                        // we have just started, so let's start and wait
-                        // until we've completed the start process
-                        awaitRunning();
+                        // we have just started, so let's start and wait until we've completed the start process
+                        // loop to prevent a possible deadlock in com.google.common.util.concurrent.Monitor
+                        // due to a lost signal when the receiving thread was in an interrupted state
+                        while (!state().equals(State.RUNNING)) {
+                            try {
+                                awaitRunning(250, TimeUnit.MILLISECONDS);
+                            } catch (TimeoutException e) {
+
+                            }
+                        }
                     } catch (IllegalStateException e) {
                         // This is thrown if the state is anything other than RUNNING
                         // STOPPING, and TERMINATED are valid as they indicate successful execution
@@ -325,6 +333,7 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
                     currentEntry = resultQueue.poll(getPollTime(), TimeUnit.MILLISECONDS);
 
                 } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                     log.trace("hasNext" + isRunning() + " interrupted");
                     log.error("Interrupted before finding next", e);
                     throw new RuntimeException(e);
@@ -391,6 +400,17 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
                 throw new RuntimeException(uncaughtExceptionHandler.getThrowable());
             }
         }
+    }
+
+    /**
+     * Some implementations of {@link ScannerSession} support seeking
+     *
+     * @param seekShard
+     *            the minimum shard to advance to
+     * @return the result of advancing the underlying iterator
+     */
+    public String seek(String seekShard) {
+        return seekShard;
     }
 
     /**
@@ -570,6 +590,7 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
                 try {
                     accepted = resultQueue.offer(myEntry, 200, TimeUnit.MILLISECONDS);
                 } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                     // keep trying
                 }
             }

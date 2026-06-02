@@ -39,7 +39,6 @@ import javax.ws.rs.core.UriInfo;
 
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.deltaspike.core.api.config.ConfigProperty;
-import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.log4j.Logger;
 import org.jboss.resteasy.annotations.GZIP;
@@ -48,7 +47,6 @@ import org.xbill.DNS.TextParseException;
 
 import datawave.annotation.DateFormat;
 import datawave.annotation.Required;
-import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.configuration.spring.SpringBean;
 import datawave.core.query.map.QueryGeometryHandler;
 import datawave.core.query.metric.QueryMetricHandler;
@@ -73,7 +71,6 @@ import datawave.webservice.query.exception.QueryException;
 @DependsOn("QueryMetricsWriter")
 @TransactionAttribute(TransactionAttributeType.NOT_SUPPORTED)
 @TransactionManagement(TransactionManagementType.BEAN)
-@Exclude(ifProjectStage = DatawaveEmbeddedProjectStageHolder.DatawaveEmbedded.class)
 public class QueryMetricsBean {
 
     private static final Logger log = Logger.getLogger(QueryMetricsBean.class);
@@ -252,6 +249,7 @@ public class QueryMetricsBean {
      * @deprecated use /summary/all instead
      */
     @GET
+    @Deprecated
     @Path("/summary")
     @Interceptors(ResponseInterceptor.class)
     @RolesAllowed({"Administrator", "MetricsAdministrator"})
@@ -279,6 +277,7 @@ public class QueryMetricsBean {
      * @deprecated use /summary/all instead
      */
     @GET
+    @Deprecated
     @Path("/summaryCounts")
     @Interceptors(ResponseInterceptor.class)
     @RolesAllowed({"Administrator", "MetricsAdministrator"})
@@ -335,6 +334,7 @@ public class QueryMetricsBean {
      * @deprecated use /summary/user instead
      */
     @GET
+    @Deprecated
     @Path("/summaryCounts/user")
     @Interceptors(ResponseInterceptor.class)
     public Object getQueryMetricsUserSummaryDeprecated(@QueryParam("begin") @DateFormat(defaultTime = "000000", defaultMillisec = "000") Date begin,

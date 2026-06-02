@@ -26,8 +26,8 @@ import org.junit.Test;
 
 import datawave.ingest.mapreduce.StandaloneStatusReporter;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
-import datawave.ingest.mapreduce.job.util.RFileUtil;
 import datawave.ingest.test.StandaloneTaskAttemptContext;
+import datawave.util.accumulo.RFileUtil;
 
 public class SpillingSortedContextWriterTest extends EasyMockSupport {
     private SpillingSortedContextWriter writer;

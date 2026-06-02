@@ -2,26 +2,25 @@ package datawave.query.tables.ssdeep;
 
 import static datawave.query.tables.ssdeep.util.SSDeepTestUtil.EXPECTED_2_3_OVERLAPS;
 import static datawave.query.tables.ssdeep.util.SSDeepTestUtil.TEST_SSDEEPS;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.easymock.EasyMock;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.api.easymock.PowerMock;
-import org.powermock.api.easymock.annotation.Mock;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
+import datawave.core.query.result.event.DefaultResponseObjectFactory;
 import datawave.marking.MarkingFunctions;
+import datawave.marking.MarkingFunctionsFactory;
 import datawave.microservice.query.Query;
+import datawave.microservice.query.QueryImpl;
 import datawave.query.config.SSDeepSimilarityQueryConfiguration;
 import datawave.util.ssdeep.NGramGenerator;
 import datawave.util.ssdeep.NGramTuple;
@@ -36,29 +35,22 @@ import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.DefaultEventQueryResponse;
 
-@RunWith(PowerMockRunner.class)
-@PowerMockIgnore({"javax.management.*", "javax.xml.*"})
 public class SSDeepSimilarityQueryTransformerTest {
 
-    @Mock
-    SSDeepSimilarityQueryConfiguration mockConfig;
+    private Query query;
+    private final MarkingFunctions markingFunctions = MarkingFunctionsFactory.createMarkingFunctions();
+    private final ResponseObjectFactory responseObjectFactory = new DefaultResponseObjectFactory();
 
-    @Mock
-    private Query mockQuery;
-
-    @Mock
-    private MarkingFunctions mockMarkingFunctions;
-
-    @Mock
-    private ResponseObjectFactory mockResponseFactory;
+    private SSDeepSimilarityQueryConfiguration config;
 
     private final Set<String> expectedFields = new HashSet<>();
 
-    public void basicExpects() {
-        EasyMock.expect(mockQuery.getQueryAuthorizations()).andReturn("A,B,C");
-        EasyMock.expect(mockResponseFactory.getEventQueryResponse()).andAnswer(DefaultEventQueryResponse::new);
-        EasyMock.expect(mockResponseFactory.getEvent()).andAnswer(DefaultEvent::new).times(1);
-        EasyMock.expect(mockResponseFactory.getField()).andAnswer(DefaultField::new).times(5);
+    @BeforeEach
+    public void beforeEach() {
+        query = new QueryImpl();
+        query.setQueryAuthorizations("A,B,C");
+
+        config = new SSDeepSimilarityQueryConfiguration();
 
         expectedFields.add("MATCHING_SSDEEP");
         expectedFields.add("QUERY_SSDEEP");
@@ -70,8 +62,7 @@ public class SSDeepSimilarityQueryTransformerTest {
     @Test
     public void transformTest() {
 
-        final SSDeepHashScorer<Set<NGramTuple>> ngramOverlapScorer = new SSDeepNGramOverlapScorer(NGramGenerator.DEFAULT_NGRAM_SIZE,
-                        SSDeepHash.DEFAULT_MAX_REPEATED_CHARACTERS, NGramGenerator.DEFAULT_MIN_HASH_SIZE);
+        final SSDeepHashScorer<Set<NGramTuple>> ngramOverlapScorer = new SSDeepNGramOverlapScorer(NGramGenerator.DEFAULT_NGRAM_SIZE);
         final SSDeepHashScorer<Integer> editDistanceScorer = new SSDeepHashEditDistanceScorer(SSDeepHash.DEFAULT_MAX_REPEATED_CHARACTERS);
 
         final SSDeepHash query = SSDeepHash.parse(TEST_SSDEEPS[2]);
@@ -80,32 +71,26 @@ public class SSDeepSimilarityQueryTransformerTest {
         final Integer editDistance = editDistanceScorer.apply(query, match);
         final ScoredSSDeepPair scoredSSDeepPair = new ScoredSSDeepPair(query, match, overlappingNGrams, editDistance);
 
-        basicExpects();
-
-        PowerMock.replayAll();
-
-        SSDeepSimilarityQueryTransformer transformer = new SSDeepSimilarityQueryTransformer(mockQuery, mockConfig, mockMarkingFunctions, mockResponseFactory);
+        SSDeepSimilarityQueryTransformer transformer = new SSDeepSimilarityQueryTransformer(this.query, config, markingFunctions, responseObjectFactory);
         EventBase transformedEvent = transformer.transform(scoredSSDeepPair);
         List<Object> resultList = new ArrayList<>();
         resultList.add(transformedEvent);
         BaseQueryResponse baseQueryResponse = transformer.createResponse(resultList);
 
-        PowerMock.verifyAll();
-
         assertNotNull(transformedEvent);
 
-        assertTrue(baseQueryResponse instanceof DefaultEventQueryResponse);
+        assertInstanceOf(DefaultEventQueryResponse.class, baseQueryResponse);
         DefaultEventQueryResponse defaultEventQueryResponse = (DefaultEventQueryResponse) baseQueryResponse;
 
         assertEquals(1, defaultEventQueryResponse.getEvents().size());
 
         EventBase eventBase = defaultEventQueryResponse.getEvents().iterator().next();
-        assertTrue(eventBase instanceof DefaultEvent);
+        assertInstanceOf(DefaultEvent.class, eventBase);
         DefaultEvent defaultEvent = (DefaultEvent) eventBase;
 
         List<DefaultField> fields = defaultEvent.getFields();
         for (DefaultField field : fields) {
-            assertTrue("Unexpected field: " + field.getName(), expectedFields.remove(field.getName()));
+            assertTrue(expectedFields.remove(field.getName()), "Unexpected field: " + field.getName());
             switch (field.getName()) {
                 case "MATCHING_SSDEEP":
                     assertEquals(TEST_SSDEEPS[3], field.getValueString());
@@ -125,9 +110,8 @@ public class SSDeepSimilarityQueryTransformerTest {
                 default:
                     fail("Unexpected field: " + field.getName());
             }
-
         }
         assertEquals(5, fields.size());
-        assertTrue("Did not observe all expected fields: " + expectedFields, expectedFields.isEmpty());
+        assertTrue(expectedFields.isEmpty(), "Did not observe all expected fields: " + expectedFields);
     }
 }

@@ -22,7 +22,6 @@ import datawave.data.hash.UID;
 import datawave.ingest.config.IngestConfigurationFactory;
 import datawave.ingest.config.RawRecordContainerImpl;
 import datawave.ingest.data.config.MarkingsHelper;
-import datawave.util.CompositeTimestamp;
 
 public class RawRecordContainerImplTest {
 
@@ -62,7 +61,7 @@ public class RawRecordContainerImplTest {
     private ValidatingRawRecordContainerImpl create() {
         ValidatingRawRecordContainerImpl event = new ValidatingRawRecordContainerImpl();
         event.setConf(conf);
-        event.setDate(now.getTime());
+        event.setTimestamp(now.getTime());
         event.setDataType(dataType);
         event.setRawFileName(rawFileName);
         event.setRawRecordNumber(rawRecordNumber);
@@ -202,7 +201,7 @@ public class RawRecordContainerImplTest {
     public void testMissingRecordNumber() {
         ValidatingRawRecordContainerImpl event = new ValidatingRawRecordContainerImpl();
         event.setConf(conf);
-        event.setDate(now.getTime());
+        event.setTimestamp(now.getTime());
         event.setDataType(dataType);
         event.setRawFileName(rawFileName);
         event.getIds().add(uuid);
@@ -327,7 +326,7 @@ public class RawRecordContainerImplTest {
 
         event = new ValidatingRawRecordContainerImpl();
         event.setConf(conf);
-        event.setDate(now.getTime());
+        event.setTimestamp(now.getTime());
         event.setDataType(dataType);
         event.setRawFileName(rawFileName);
         event.setRawRecordNumber(rawRecordNumber);

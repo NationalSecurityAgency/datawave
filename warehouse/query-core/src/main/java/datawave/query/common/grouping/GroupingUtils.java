@@ -57,6 +57,8 @@ public class GroupingUtils {
 
     /**
      * Create and return a new {@link Document} with the given group information embedded into it.
+     * <p>
+     * Do not use this method. If you are aggregating a list of keys only to use the most recent, rethink the approach
      *
      * @param group
      *            the group
@@ -68,11 +70,30 @@ public class GroupingUtils {
      *            the format to use when writing aggregated averages to the document
      * @return the new document
      */
+    @Deprecated
     public static Document createDocument(Group group, List<Key> keys, MarkingFunctions markingFunctions, AverageAggregatorWriteFormat averageWriteFormat) {
         Preconditions.checkState(!keys.isEmpty(), "No available keys for grouping results");
 
         // Use the last (most recent) key so a new iterator will know where to start.
         Key key = keys.get(keys.size() - 1);
+        return createDocument(group, key, markingFunctions, averageWriteFormat);
+    }
+
+    /**
+     * Create and return a new {@link Document} with the given group information embedded into it.
+     *
+     * @param group
+     *            the group
+     * @param key
+     *            the document key
+     * @param markingFunctions
+     *            the marking functions to use when combining column visibilities
+     * @param averageWriteFormat
+     *            the format to use when writing aggregated averages to the document
+     * @return the new document
+     */
+    public static Document createDocument(Group group, Key key, MarkingFunctions markingFunctions, AverageAggregatorWriteFormat averageWriteFormat) {
+        Preconditions.checkNotNull(key, "document key cannot be null");
         Document document = new Document(key, true);
 
         // Set the visibility for the document to the combined visibility of each previous document in which this grouping was seen in.
@@ -99,10 +120,8 @@ public class GroupingUtils {
                 for (Aggregator<?> aggregator : entry.getValue().values()) {
                     String field = aggregator.getField();
                     // Do not include an entry for the aggregation if it is null (indicating that no entries were found to be aggregated). The exception to this
-                    // is
-                    // the #COUNT aggregation. This will return a non-null value of 0 if no entries were found to be aggregated, and can be included in the
-                    // final
-                    // output.
+                    // is the #COUNT aggregation. This will return a non-null value of 0 if no entries were found to be aggregated, and can be included in the
+                    // final output.
                     if (aggregator.getAggregation() != null) {
                         switch (aggregator.getOperation()) {
                             case SUM:

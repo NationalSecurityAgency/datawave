@@ -7,8 +7,6 @@ import java.util.Map.Entry;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.curator.shaded.com.google.common.collect.ImmutableList;
 
 import datawave.core.query.exception.EmptyObjectException;
 import datawave.core.query.logic.BaseQueryLogicTransformer;
@@ -34,7 +32,7 @@ public class TermFrequencyQueryTransformer extends BaseQueryLogicTransformer<Ent
         super(markingFunctions);
         this.query = query;
         this.responseObjectFactory = responseObjectFactory;
-        this.auths = new Authorizations(StringUtils.split(this.query.getQueryAuthorizations(), ','));
+        this.auths = new Authorizations(this.query.getQueryAuthorizations().split(","));
     }
 
     @Override
@@ -50,6 +48,24 @@ public class TermFrequencyQueryTransformer extends BaseQueryLogicTransformer<Ent
         return response;
     }
 
+    /** Return the tf field name string prior to the dot index, otherwise return the entire field string */
+    private String getBaseFieldName(int dotIndex, TermFrequencyKeyValue tfkv) {
+        if (dotIndex > -1) {
+            return tfkv.getFieldName().substring(0, dotIndex);
+        }
+
+        return tfkv.getFieldName();
+    }
+
+    /** Return the tf field name string that appears after the dot index, otherwise return null */
+    private String getExtendedFieldName(int dotIndex, TermFrequencyKeyValue tfkv) {
+        if (dotIndex > -1 && dotIndex + 1 < tfkv.getFieldName().length()) {
+            return tfkv.getFieldName().substring(dotIndex + 1);
+        }
+
+        return null;
+    }
+
     @Override
     public EventBase transform(Entry<Key,Value> entry) throws EmptyObjectException {
         if (entry.getKey() == null && entry.getValue() == null) {
@@ -57,7 +73,7 @@ public class TermFrequencyQueryTransformer extends BaseQueryLogicTransformer<Ent
         }
 
         if (entry.getKey() == null || entry.getValue() == null) {
-            throw new IllegalArgumentException("Null keyy or value. Key:" + entry.getKey() + ", Value: " + entry.getValue());
+            throw new IllegalArgumentException("Null key or value. Key:" + entry.getKey() + ", Value: " + entry.getValue());
         }
 
         TermFrequencyKeyValue tfkv;
@@ -76,10 +92,23 @@ public class TermFrequencyQueryTransformer extends BaseQueryLogicTransformer<Ent
         m.setInternalId(tfkv.getUid());
         e.setMetadata(m);
 
-        List<FieldBase> fields = ImmutableList.of(createField(tfkv, entry, "FIELD_NAME", tfkv.getFieldName()),
-                        createField(tfkv, entry, "FIELD_VALUE", tfkv.getFieldValue()),
-                        createField(tfkv, entry, "OFFSET_COUNT", String.valueOf(tfkv.getCount())),
-                        createField(tfkv, entry, "OFFSETS", tfkv.getOffsets().toString()));
+        int dotIndex = tfkv.getFieldName().indexOf(".");
+        String baseFieldName = getBaseFieldName(dotIndex, tfkv);
+        String extendedFieldName = getExtendedFieldName(dotIndex, tfkv);
+        List<FieldBase> fields = new ArrayList<>();
+        fields.add(createField(tfkv, entry, "FIELD_NAME", baseFieldName));
+
+        if (extendedFieldName != null) {
+            fields.add(createField(tfkv, entry, "EXTENDED_FIELD_NAME", extendedFieldName));
+        }
+
+        fields.add(createField(tfkv, entry, "FIELD_VALUE", tfkv.getFieldValue()));
+        fields.add(createField(tfkv, entry, "OFFSET_COUNT", String.valueOf(tfkv.getCount())));
+        fields.add(createField(tfkv, entry, "OFFSETS", tfkv.getOffsets().toString()));
+
+        // make immutable
+        fields = List.copyOf(fields);
+
         e.setFields(fields);
 
         return e;

@@ -320,10 +320,10 @@ public class CompositeRange extends Composite {
     public int hashCode() {
         final int prime = 31;
         int result = super.hashCode();
-        result = prime * result + ((expressionListLowerBound == null) ? 0 : expressionListLowerBound.hashCode());
-        result = prime * result + ((jexlNodeListLowerBound == null) ? 0 : jexlNodeListLowerBound.hashCode());
-        result = prime * result + ((expressionListUpperBound == null) ? 0 : expressionListUpperBound.hashCode());
-        result = prime * result + ((jexlNodeListUpperBound == null) ? 0 : jexlNodeListUpperBound.hashCode());
+        result = prime * result + expressionListLowerBound.hashCode();
+        result = prime * result + jexlNodeListLowerBound.hashCode();
+        result = prime * result + expressionListUpperBound.hashCode();
+        result = prime * result + jexlNodeListUpperBound.hashCode();
         return result;
     }
 
@@ -338,25 +338,7 @@ public class CompositeRange extends Composite {
         if (!super.equals(obj))
             return false;
         CompositeRange other = (CompositeRange) obj;
-        if (expressionListLowerBound == null) {
-            if (other.expressionListLowerBound != null)
-                return false;
-        } else if (!expressionListLowerBound.equals(other.expressionListLowerBound))
-            return false;
-        if (jexlNodeListLowerBound == null) {
-            if (other.jexlNodeListLowerBound != null)
-                return false;
-        } else if (!jexlNodeListLowerBound.equals(other.jexlNodeListLowerBound))
-            return false;
-        if (expressionListUpperBound == null) {
-            if (other.expressionListUpperBound != null)
-                return false;
-        } else if (!expressionListUpperBound.equals(other.expressionListUpperBound))
-            return false;
-        if (jexlNodeListUpperBound == null) {
-            if (other.jexlNodeListUpperBound != null)
-                return false;
-        } else if (!jexlNodeListUpperBound.equals(other.jexlNodeListUpperBound))
+        if (!jexlNodeListUpperBound.equals(other.jexlNodeListUpperBound))
             return false;
         return true;
     }

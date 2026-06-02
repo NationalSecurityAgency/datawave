@@ -17,6 +17,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 
 public class IvaratorCacheDirConfig implements Serializable {
     private static final Logger log = Logger.getLogger(IvaratorCacheDir.class);
+    private static final long serialVersionUID = 7028134765339988371L;
 
     public static final int DEFAULT_PRIORITY = Integer.MAX_VALUE;
     public static final long DEFAULT_MIN_AVAILABLE_STORAGE_MiB = 0L;

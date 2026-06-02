@@ -18,6 +18,8 @@ datawave:
       instance-name: '${accumulo.instanceName}'
       username: '${accumulo.username}'
       password: '${accumulo.password}'
+    system:
+      system-name: "docker quick-start"
     edge:
       metadata-table-name: ${metadata.table.name:datawave.metadata}
       num-threads: 8

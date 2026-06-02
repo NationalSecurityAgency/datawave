@@ -132,7 +132,7 @@ public abstract class AppliedRule implements FilterRule {
     public FilterRule deepCopy(long scanStart, IteratorEnvironment iterEnv) {
         AppliedRule newFilter;
         try {
-            newFilter = (AppliedRule) super.getClass().newInstance();
+            newFilter = (AppliedRule) super.getClass().getDeclaredConstructor().newInstance();
             FilterOptions newOptions = new FilterOptions(currentOptions);
             newOptions.setOption(AgeOffConfigParams.SCAN_START_TIMESTAMP, Long.toString(scanStart));
             newFilter.iterEnv = iterEnv;
@@ -143,7 +143,7 @@ public abstract class AppliedRule implements FilterRule {
                 log.trace("Age off is " + newFilter.ageOffPeriod.getCutOffMilliseconds());
             }
             return newFilter;
-        } catch (InstantiationException | IllegalAccessException e) {
+        } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
             log.error(e);
         }
         return null;

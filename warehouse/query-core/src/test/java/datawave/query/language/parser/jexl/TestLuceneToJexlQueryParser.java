@@ -656,4 +656,20 @@ public class TestLuceneToJexlQueryParser {
         // @formatter:on
         Assert.assertEquals(expected, parseQuery("TOKFIELD:\"/home/datawave/README.md\""));
     }
+
+    @Test
+    public void testEqAndTextFunction() {
+        test("CONTINENT == 'europe'", "CONTINENT:europe");
+        test("f:includeText(_ANYFIELD_, 'Value')", "#TEXT(Value)");
+        test("CONTINENT == 'europe' && f:includeText(_ANYFIELD_, 'Value')", "CONTINENT:europe and #TEXT(Value)");
+    }
+
+    private void test(String expected, String query) {
+        try {
+            String result = parseQuery(query);
+            assertEquals(expected, result);
+        } catch (Exception e) {
+            fail("Failed for query: " + query);
+        }
+    }
 }

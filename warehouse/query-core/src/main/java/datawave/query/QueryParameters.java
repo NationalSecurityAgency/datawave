@@ -184,6 +184,7 @@ public class QueryParameters {
 
     public static final String GROUP_FIELDS_BATCH_SIZE = "group.fields.batch.size";
     public static final String UNIQUE_FIELDS = "unique.fields";
+    public static final String MOST_RECENT_UNIQUE = "most.recent.unique";
 
     /**
      * Used to specify fields which are excluded from QueryModel expansion
@@ -230,4 +231,9 @@ public class QueryParameters {
      * Used to specify model or DB fields that must be treated as strict (cannot be skipped if normalization fails)
      */
     public static final String STRICT_FIELDS = "strict.fields";
+
+    /**
+     * Enables the {@link datawave.next.scanner.DocumentScheduler} for query execution
+     */
+    public static final String DS_ENABLED = "ds.enabled";
 }

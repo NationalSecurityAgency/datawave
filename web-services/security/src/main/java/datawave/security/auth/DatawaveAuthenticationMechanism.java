@@ -279,6 +279,8 @@ public class DatawaveAuthenticationMechanism implements AuthenticationMechanism 
     }
 
     private static final class MultipleHeaderException extends Exception {
+        private static final long serialVersionUID = 456918082878759453L;
+
         public MultipleHeaderException(String message) {
             super(message);
         }

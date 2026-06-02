@@ -52,11 +52,8 @@ public class AccumuloTreeIterable<S,T extends Comparable<T>> implements Iterable
     }
 
     public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
-        Iterable<? extends NestedIterator<?>> leaves = tree.leaves();
-        for (NestedIterator<?> leaf : leaves) {
-            if (leaf instanceof SeekableIterator) {
-                ((SeekableIterator) leaf).seek(range, columnFamilies, inclusive);
-            }
+        for (NestedIterator<?> leaf : tree.leaves()) {
+            leaf.seek(range, columnFamilies, inclusive);
         }
         seenSeek = true;
     }

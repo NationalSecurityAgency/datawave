@@ -83,7 +83,7 @@ public class GroupFields implements Function<Entry<Key,Document>,Entry<Key,Docum
             for (Entry<String,Integer> groupFieldCountEntry : groupFieldsMap.entrySet()) {
                 Attribute<?> removedAttr = doc.remove(groupFieldCountEntry.getKey());
                 log.debug("removed from document:" + groupFieldCountEntry.getKey());
-                doc.put(groupFieldCountEntry.getKey(), new Numeric(groupFieldCountEntry.getValue(), doc.getMetadata(), removedAttr.isToKeep()), true, false);
+                doc.put(groupFieldCountEntry.getKey(), new Numeric(groupFieldCountEntry.getValue(), doc.getMetadata(), removedAttr.isToKeep()), true);
                 log.debug("added to document:" + groupFieldCountEntry.getKey() + " with count of " + groupFieldCountEntry.getValue());
             }
         }

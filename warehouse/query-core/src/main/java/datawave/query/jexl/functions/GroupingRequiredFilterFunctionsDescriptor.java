@@ -19,6 +19,8 @@ import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
+import datawave.webservice.query.exception.BadRequestQueryException;
+import datawave.webservice.query.exception.DatawaveErrorCode;
 
 public class GroupingRequiredFilterFunctionsDescriptor implements JexlFunctionArgumentDescriptorFactory {
 
@@ -160,8 +162,9 @@ public class GroupingRequiredFilterFunctionsDescriptor implements JexlFunctionAr
         try {
             Class<?> clazz = GetFunctionClass.get(node);
             if (!GroupingRequiredFilterFunctions.class.equals(clazz)) {
-                throw new IllegalArgumentException(
+                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.ARGUMENTDESCRIPTOR_NODE_FOR_FUNCTION,
                                 "Calling " + this.getClass().getSimpleName() + ".getArgumentDescriptor with node for a function in " + clazz);
+                throw new IllegalArgumentException(qe);
             }
             return new GroupingRequiredFilterJexlArgumentDescriptor(node);
         } catch (ClassNotFoundException e) {

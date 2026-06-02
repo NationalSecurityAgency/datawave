@@ -5,7 +5,8 @@ import java.util.Set;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.text.StrTokenizer;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -17,7 +18,7 @@ import datawave.util.StringUtils;
 
 public class CSVIngestHelper extends ContentBaseIngestHelper {
 
-    private static final Logger log = Logger.getLogger(CSVIngestHelper.class);
+    private static final Logger log = LoggerFactory.getLogger(CSVIngestHelper.class);
     protected CSVHelper helper = null;
 
     @Override
@@ -156,12 +157,12 @@ public class CSVIngestHelper extends ContentBaseIngestHelper {
                 }
             }
         } else {
-            log.error("Unable to process the following as a name=value pair: " + fieldValue);
+            log.error("Unable to process the following as a name=value pair: {}", fieldValue);
         }
     }
 
     /**
-     * Process a field. This will split multi-valued fields as necessary and call processField on each part.
+     * Process a field. This will split multivalued fields as necessary and call processField on each part.
      *
      * @param fields
      *            list of fields
@@ -173,7 +174,7 @@ public class CSVIngestHelper extends ContentBaseIngestHelper {
     protected void processPreSplitField(Multimap<String,String> fields, String fieldName, String fieldValue) {
         if (fieldValue != null) {
             if (helper.isMultiValuedField(fieldName)) {
-                // Value can be multiple parts, need to break on semi-colon
+                // Value can be multiple parts, need to break on semicolon
                 String singleFieldName = helper.usingMultiValuedFieldsDisallowlist() ? fieldName : helper.getMultiValuedFields().get(fieldName);
                 int limit = helper.getMultiFieldSizeThreshold();
                 int count = 0;

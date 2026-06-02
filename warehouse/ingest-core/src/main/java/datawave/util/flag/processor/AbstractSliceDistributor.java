@@ -73,7 +73,7 @@ public abstract class AbstractSliceDistributor<S extends Comparable<S>> implemen
         }
 
         if (totalMaps == 0)
-            return Collections.EMPTY_SET;
+            return Collections.emptySet();
         HashSet<InputFile> flagFiles = new HashSet<>();
         if (totalMaps < fc.getMaxFlags()) {
             // get everything
