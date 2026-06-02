@@ -39,12 +39,10 @@ public class BalancedShardPartitioner extends Partitioner<BulkIngestKey,Value> i
         hash, collapse;
 
         public static MissingShardStrategy getStrategy(String stratString) {
-            if (hash.name().equals(stratString)) {
-                return hash;
-            } else if (collapse.name().equals(stratString)) {
+            if (collapse.name().equals(stratString)) {
                 return collapse;
             } else {
-                throw new EnumConstantNotPresentException(BalancedShardPartitioner.MissingShardStrategy.class, stratString);
+                return hash;
             }
         }
     }
