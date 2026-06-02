@@ -1,11 +1,16 @@
 package datawave.query.jexl.lookups;
 
 import static datawave.core.iterators.TimeoutExceptionIterator.EXCEPTEDVALUE;
+import static org.apache.accumulo.core.client.ScannerBase.ConsistencyLevel;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
+import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -22,6 +27,8 @@ import datawave.query.tables.ScannerFactory;
 public class UnfieldedLiteralIndexLookupTest extends BaseIndexLookupTest {
 
     private static final Logger log = LoggerFactory.getLogger(UnfieldedLiteralIndexLookupTest.class);
+
+    private AsyncIndexLookup lookup;
 
     @Test
     public void testValueDoesNotExpand() {
@@ -96,6 +103,70 @@ public class UnfieldedLiteralIndexLookupTest extends BaseIndexLookupTest {
         }
     }
 
+    @Test
+    public void testExecutionHints_expansionPoolSelectedOverIndexTable() {
+        write("bar", "FIELD_A");
+        withQuery("_ANYFIELD_ == 'bar'");
+
+        Map<String,String> expansionHints = new HashMap<>();
+        expansionHints.put("scan_type", "expansion-pool-a");
+        expansionHints.put("priority", "2");
+
+        Map<String,String> indexHints = new HashMap<>();
+        indexHints.put("scan_type", "index-a");
+        indexHints.put("priority", "1");
+
+        Map<String,Map<String,String>> tableHints = new HashMap<>();
+        tableHints.put("expansion", expansionHints);
+        tableHints.put("shardIndex", indexHints);
+        config.setTableHints(tableHints);
+
+        executeLookup();
+        assertResultFields(Set.of("FIELD_A"));
+        assertResultValues("FIELD_A", Set.of("bar"));
+
+        assertNotNull(lookup.builder);
+        assertEquals(expansionHints, lookup.builder.getExecutionHints());
+    }
+
+    @Test
+    public void testExecutionHints_indexTableNameSelectedWhenNoExpansionPoolExists() {
+        write("bar", "FIELD_A");
+        withQuery("_ANYFIELD_ == 'bar'");
+
+        Map<String,String> indexHints = new HashMap<>();
+        indexHints.put("scan_type", "index-a");
+        indexHints.put("priority", "1");
+
+        Map<String,Map<String,String>> tableHints = new HashMap<>();
+        tableHints.put("shardIndex", indexHints);
+        config.setTableHints(tableHints);
+
+        executeLookup();
+        assertResultFields(Set.of("FIELD_A"));
+        assertResultValues("FIELD_A", Set.of("bar"));
+
+        assertNotNull(lookup.builder);
+        assertEquals(indexHints, lookup.builder.getExecutionHints());
+    }
+
+    @Test
+    public void testConsistencyLevel() {
+        write("bar", "FIELD_A");
+        withQuery("_ANYFIELD_ == 'bar'");
+
+        Map<String,ScannerBase.ConsistencyLevel> consistencyLevels = new HashMap<>();
+        consistencyLevels.put("shardIndex", ConsistencyLevel.EVENTUAL);
+        config.setTableConsistencyLevels(consistencyLevels);
+
+        executeLookup();
+        assertResultFields(Set.of("FIELD_A"));
+        assertResultValues("FIELD_A", Set.of("bar"));
+
+        assertNotNull(lookup.builder);
+        assertEquals(ConsistencyLevel.EVENTUAL, lookup.builder.getConsistencyLevel());
+    }
+
     @Override
     protected void executeLookup() {
         try {
@@ -107,7 +178,7 @@ public class UnfieldedLiteralIndexLookupTest extends BaseIndexLookupTest {
             Object literal = JexlASTHelper.getLiteralValueSafely(node);
             String value = String.valueOf(literal);
 
-            AsyncIndexLookup lookup = createLookup(value);
+            lookup = createLookup(value);
             executeLookup(lookup);
         } catch (Exception e) {
             log.error(e.getMessage(), e);

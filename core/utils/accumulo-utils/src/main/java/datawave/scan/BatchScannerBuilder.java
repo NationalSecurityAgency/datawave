@@ -1,4 +1,4 @@
-package datawave.query.scan;
+package datawave.scan;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchScanner;
