@@ -35,6 +35,22 @@ public class BalancedShardPartitioner extends Partitioner<BulkIngestKey,Value> i
     private String missingShardStrategy;
     int missingShardIdCount = 0;
 
+    public enum MissingShardStrategy {
+        HASH, COLLAPSE;
+
+        public static MissingShardStrategy getStrategy(String stratString) {
+            if (HASH.name().equals(stratString)) {
+                return HASH;
+            } else if (COLLAPSE.name().equals(stratString)) {
+                return COLLAPSE;
+            } else {
+                throw new EnumConstantNotPresentException(BalancedShardPartitioner.MissingShardStrategy.class, stratString);
+            }
+        }
+    }
+
+    private MissingShardStrategy strategy;
+
     public static final String MISSING_SHARD_STRATEGY_PROP = "datawave.ingest.mapreduce.partition.BalancedShardPartitioner.missing.shard.strategy";
 
     private ShardIdFactory shardIdFactory = null;
@@ -111,6 +127,7 @@ public class BalancedShardPartitioner extends Partitioner<BulkIngestKey,Value> i
         this.conf = conf;
         shardIdFactory = new ShardIdFactory(conf);
         missingShardStrategy = conf.get(MISSING_SHARD_STRATEGY_PROP, "hash");
+        MissingShardStrategy shardStrat = MissingShardStrategy.getStrategy(conf.get(MISSING_SHARD_STRATEGY_PROP));
         splitsCache = SplitsCache.getInstance(conf);
 
         defineOffsetsForTables(conf);
