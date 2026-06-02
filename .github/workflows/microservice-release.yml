@@ -59,7 +59,7 @@ on:
         required: false
         default: false
         type: boolean
-        description: "After a successful release, run versions:update-parent and versions:update-properties to bump every consumer in microservices/ that depends on the released artifact, and push an auto-update commit. Used by the cascade workflow."
+        description: "Before releasing, update this project's parent and dependency version properties to pick up earlier releases in the cascade. Used by the cascade workflow."
   workflow_call:
     inputs:
       projectToRelease:
@@ -191,47 +191,5 @@ jobs:
         -DdevelopmentVersion="${{ steps.version.outputs.NEXT_DEV_VERSION }}" \
         -Dtag="${{ steps.version.outputs.VERSION_TAG }}"
 
-    # When invoked from the cascade workflow, follow up the release by bumping every
-    # consumer POM in microservices/ that depends on the just-released artifact.
-    # versions:update-parent rewrites <parent><version>; versions:update-properties
-    # rewrites the version property used by each <dependency>'s <version>${...}</version>.
-    # Both look up the latest non-snapshot version of the targeted artifact in the
-    # configured repos (GitHub Packages, where release:perform just published).
-    - name: Bump downstream consumers
-      if: ${{ inputs.bumpDownstream }}
-      env:
-        ARTIFACT_ID: ${{ steps.version.outputs.ARTIFACT_ID }}
-        FINAL_VERSION: ${{ steps.version.outputs.FINAL_VERSION }}
-      run: |
-        set -euo pipefail
-        # Pick up release plugin's pushed commits, just in case.
-        git pull --rebase --autostash
-
-        # Activate the umbrella `services` and `starters` profiles so the
-        # reactor includes every microservice/starter module (modules under
-        # microservices/services and microservices/starters are gated on these
-        # profiles in their parent POMs).
-        # Exclude the just-released artifact itself from the reactor so that
-        # versions:update-properties resolves its version from the remote
-        # repository (where the release was just published) rather than the
-        # local reactor SNAPSHOT, which would otherwise bypass -DallowSnapshots=false.
-        cd microservices
-        mvn --batch-mode --no-transfer-progress \
-            -Dservices -Dstarters \
-            -pl "!:${ARTIFACT_ID}" \
-            versions:update-parent versions:update-properties \
-            -DallowSnapshots=false \
-            -DallowMajorUpdates=false \
-            -DgenerateBackupPoms=false \
-            -Dincludes="gov.nsa.datawave.microservice:${ARTIFACT_ID}"
-        cd "$GITHUB_WORKSPACE"
-
-        if git diff --quiet; then
-          echo "No downstream POMs needed updating for ${ARTIFACT_ID}=${FINAL_VERSION}."
-        else
-          git add -A
-          git commit -m "auto-update: bump ${ARTIFACT_ID} to ${FINAL_VERSION}"
-          git push
-        fi
 
 
