@@ -10,6 +10,7 @@ import java.util.concurrent.Future;
 
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.Scanner;
+import org.apache.accumulo.core.client.ScannerBase.ConsistencyLevel;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
@@ -28,6 +29,8 @@ import datawave.query.Constants;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.IllegalRangeArgumentException;
 import datawave.query.jexl.LiteralRange;
+import datawave.query.scan.ExecutionHintHelper;
+import datawave.query.scan.ScannerBuilder;
 import datawave.query.tables.ScannerFactory;
 import datawave.util.time.DateHelper;
 import datawave.webservice.query.exception.DatawaveErrorCode;
@@ -112,9 +115,27 @@ public class BoundedRangeIndexLookup extends AsyncIndexLookup {
      */
     protected Runnable createRunnable(String tableName, Authorizations auths) {
         return () -> {
-            try (Scanner scanner = config.getClient().createScanner(tableName, auths)) {
-                String hintKey = config.getTableHints().containsKey(EXPANSION_HINT_KEY) ? EXPANSION_HINT_KEY : config.getIndexTableName();
-                scanner.setExecutionHints(Map.of(tableName, hintKey));
+
+            //  @formatter:off
+            builder = ScannerBuilder.create(config.getClient())
+                    .setTableName(tableName)
+                    .setAuthorizations(auths);
+            //  @formatter:on
+
+            // only set the consistency level if configured
+            ConsistencyLevel consistencyLevel = ExecutionHintHelper.getConsistencyLevel(tableName, config.getTableConsistencyLevels());
+            if (consistencyLevel != null) {
+                builder.setConsistencyLevel(consistencyLevel);
+            }
+
+            // only set execution hints if configured
+            Map<String,String> executionHints = ExecutionHintHelper.getExecutionHints(EXPANSION_HINT_KEY, config.getIndexTableName(), config.getTableHints());
+            if (executionHints != null) {
+                builder.setScanType(ExecutionHintHelper.getScanType(executionHints));
+                builder.setScanPriority(ExecutionHintHelper.getPriority(executionHints));
+            }
+
+            try (Scanner scanner = builder.build()) {
                 scanner.setRange(scanRange);
                 scanner.fetchColumnFamily(literalRange.getFieldName());
 
