@@ -1,10 +1,17 @@
 package datawave.scan;
 
+import java.util.Iterator;
+
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.accumulo.core.security.Authorizations;
 
 import com.google.common.base.Preconditions;
+
+import datawave.security.util.AuthorizationsMinimizer;
+import datawave.security.util.ScannerHelper;
+import datawave.webservice.common.connection.ScannerDelegate;
 
 /**
  * The builder <b>must</b> specify the AccumuloClient, the table name, and the authorizations
@@ -49,17 +56,21 @@ public class ScannerBuilder extends ScanBuilder<ScannerBuilder> {
         Preconditions.checkNotNull(authorizations, "Authorizations must be set");
 
         try {
-            Scanner scanner = client.createScanner(tableName, authorizations);
+            // the first auth set is used to create the scanner, additional auths are added to the iterator stack
+            Iterator<Authorizations> iter = AuthorizationsMinimizer.minimize(authorizations).iterator();
+            Scanner scanner = client.createScanner(tableName, iter.next());
+            ScannerDelegate delegate = new ScannerDelegate(scanner);
+            ScannerHelper.addVisibilityFilters(iter, delegate);
 
             if (consistencyLevel != null) {
-                scanner.setConsistencyLevel(consistencyLevel);
+                delegate.setConsistencyLevel(consistencyLevel);
             }
 
             if (!executionHints.isEmpty()) {
-                scanner.setExecutionHints(executionHints);
+                delegate.setExecutionHints(executionHints);
             }
 
-            return scanner;
+            return delegate;
         } catch (TableNotFoundException e) {
             throw new RuntimeException("ScannerBuilder could not create scanner", e);
         }
