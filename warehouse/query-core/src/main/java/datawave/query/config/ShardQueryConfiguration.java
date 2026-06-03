@@ -3446,7 +3446,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getTruncatedIndexTableName(),
                 getOriginalJexlQuery(),
                 getAllHitsQueryConfig(),
-                    getWebserverOnlyUniqueFields()
+                getWebserverOnlyUniqueFields()
         );
         // @formatter:on
     }
