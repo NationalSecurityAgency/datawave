@@ -720,7 +720,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                         addOption(cfg, QueryOptions.UNIQUE_CACHE_BUFFER_SIZE, Integer.toString(config.getUniqueCacheBufferSize()), false);
                     }
                 } else {
+if (log.isDebugEnabled()) {
                     log.debug("Query contains unique with webserver-only fields. Unique transform will be skipped on the tserver side.");
+                    }
                 }
             }
         }
