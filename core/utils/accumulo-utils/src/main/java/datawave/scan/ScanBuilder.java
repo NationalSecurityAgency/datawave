@@ -2,7 +2,9 @@ package datawave.scan;
 
 import static org.apache.accumulo.core.client.ScannerBase.ConsistencyLevel;
 
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.accumulo.core.client.AccumuloClient;
@@ -14,6 +16,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Preconditions;
+
+import datawave.security.util.AuthorizationsMinimizer;
+import datawave.security.util.ScannerHelper;
 
 /**
  * Builder that contains the core logic for building implementations of a {@link ScannerBase}, specifically {@link Scanner} or {@link BatchScanner}
@@ -36,7 +41,7 @@ public abstract class ScanBuilder<B> {
     // required variables
     protected final AccumuloClient client;
     protected String tableName;
-    protected Authorizations authorizations;
+    protected Collection<Authorizations> authorizations;
 
     // optional variables
     protected ScannerBase.ConsistencyLevel consistencyLevel;
@@ -84,6 +89,20 @@ public abstract class ScanBuilder<B> {
      * @return this builder
      */
     public B setAuthorizations(Authorizations authorizations) {
+        this.authorizations = List.of(authorizations);
+        return self();
+    }
+
+    /**
+     * Set the collection {@link Authorizations} for the scanner
+     * <p>
+     * See {@link ScannerHelper} and {@link AuthorizationsMinimizer} for details.
+     *
+     * @param authorizations
+     *            the authorizations
+     * @return this builder
+     */
+    public B setAuthorizations(Collection<Authorizations> authorizations) {
         this.authorizations = authorizations;
         return self();
     }
@@ -182,7 +201,7 @@ public abstract class ScanBuilder<B> {
      *
      * @return the authorizations
      */
-    public Authorizations getAuthorizations() {
+    public Collection<Authorizations> getAuthorizations() {
         return authorizations;
     }
 
