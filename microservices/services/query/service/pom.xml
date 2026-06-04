@@ -8,7 +8,7 @@
         <relativePath>../../../microservice-service-parent/pom.xml</relativePath>
     </parent>
     <artifactId>query-service</artifactId>
-    <version>1.0.14-SNAPSHOT</version>
+    <version>1.0.15-SNAPSHOT</version>
     <description>DATAWAVE Query Microservice</description>
     <url>https://github.com/NationalSecurityAgency/datawave-query-service</url>
     <scm>
