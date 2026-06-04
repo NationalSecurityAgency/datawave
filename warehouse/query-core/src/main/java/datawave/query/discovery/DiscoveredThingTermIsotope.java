@@ -33,8 +33,6 @@ public class DiscoveredThingTermIsotope extends DiscoveredThing {
 
     @Override
     public int hashCode() {
-        // Ignore super results.
-        // super.hashCode();
         return new HashCodeBuilder().append(getTerm()).toHashCode();
     }
 }
