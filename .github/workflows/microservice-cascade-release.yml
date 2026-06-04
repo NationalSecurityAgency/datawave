@@ -6,10 +6,15 @@ name: Cascade Release Microservices
 # (committed with the "auto-update:" prefix), so the next project in the cascade
 # picks it up. The whole pipeline fails if the final compose-tests gate fails.
 #
-# Non-final releases run on a temporary branch (cascade-release/<run_id>) so that
-# the auto-update and release-plugin commits never touch the main branch. The
-# temp branch is deleted at the end regardless of success or failure. Published
-# artifacts and tags are independent of the branch and are kept.
+# All releases (final and non-final) run on a temporary branch
+# (cascade-release/<run_id>) so that auto-update and release-plugin commits
+# never touch the target branch during the multi-hour run. Published artifacts
+# and tags are independent of the branch and are always kept.
+#
+# For final releases the temporary branch is merged back into the target branch
+# after compose-tests pass. If the target branch has diverged and the merge
+# conflicts, a PR is opened for manual resolution and the branch is preserved.
+# For non-final releases the branch is always deleted.
 #
 # The dependency graph is computed at runtime from the live POMs by
 # .github/release/cascade-plan.py so it cannot drift. (Maven's `-pl :a -amd`
@@ -121,25 +126,122 @@ jobs:
           echo "count=$COUNT" >> "$GITHUB_OUTPUT"
           echo "cascade=$CASCADE_JSON" >> "$GITHUB_OUTPUT"
 
-      # Non-final releases use a throwaway branch so auto-update and
-      # release-plugin commits never land on the main branch.
-      - name: Create temporary branch for non-final release
+      - name: Create temporary release branch
+        if: ${{ inputs.dryRun == false }}
         id: branch
         run: |
-          if [ "${{ inputs.finalRelease }}" = "true" ]; then
-            echo "branch=" >> "$GITHUB_OUTPUT"
-          else
-            BRANCH="cascade-release/${{ github.run_id }}"
-            git checkout -b "$BRANCH"
-            git push -u origin "$BRANCH"
-            echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
-            echo "::notice::Non-final release will use temporary branch $BRANCH"
-          fi
+          BRANCH="cascade-release/${{ github.run_id }}"
+          git checkout -b "$BRANCH"
+          git push -u origin "$BRANCH"
+          echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
+          echo "::notice::Release will use temporary branch $BRANCH"
 
       - name: Dry-run summary
         if: ${{ inputs.dryRun }}
+        env:
+          CASCADE_JSON: ${{ steps.compute.outputs.cascade }}
+          FINAL_RELEASE: ${{ inputs.finalRelease }}
+          MODIFIER: ${{ inputs.modifier }}
         run: |
-          echo "::notice::Dry run only. ${{ steps.compute.outputs.count }} project(s) would be released starting from ${{ steps.compute.outputs.startArtifact }}. Re-run with dryRun=false to actually release."
+          echo "::notice::Dry run — no releases will be performed."
+          python3 <<'PYEOF'
+          import json, os, re, subprocess
+
+          cascade = json.loads(os.environ['CASCADE_JSON'])
+          final = os.environ['FINAL_RELEASE'] == 'true'
+          modifier = os.environ['MODIFIER']
+
+          # Fetch existing tags to detect already-released versions
+          result = subprocess.run(
+              ['git', 'ls-remote', '--tags', 'origin'],
+              capture_output=True, text=True
+          )
+          tags = set()
+          for line in result.stdout.strip().split('\n'):
+              if line and not line.endswith('^{}'):
+                  tags.add(line.split('\t')[1].replace('refs/tags/', ''))
+
+          # --- helpers ---
+          def artifact_to_prop(aid):
+              if aid.startswith('spring-boot-starter-datawave-'):
+                  return 'version.datawave.starter-' + aid[len('spring-boot-starter-datawave-'):]
+              if aid == 'spring-boot-starter-datawave':
+                  return 'version.datawave.starter'
+              return f'version.datawave.{aid}'
+
+          def read_pom_version(content):
+              no_parent = re.sub(r'<parent>.*?</parent>', '', content, flags=re.DOTALL)
+              m = re.search(r'<version>([\d.]+(?:-SNAPSHOT)?)</version>', no_parent)
+              return m.group(1) if m else None
+
+          def read_parent(content):
+              m = re.search(r'<parent>.*?<artifactId>(.*?)</artifactId>.*?<version>(.*?)</version>.*?</parent>', content, re.DOTALL)
+              return (m.group(1), m.group(2)) if m else (None, None)
+
+          def read_version_props(content):
+              return dict(re.findall(r'<(version\.datawave\.[^>]+)>([^<]+)</', content))
+
+          # --- build release map: artifactId -> release version ---
+          release_map = {}  # artifactId -> release_version
+          prop_release = {}  # property_name -> release_version
+          projects = []      # (path, raw_version, release_version, tag_exists)
+
+          for proj in cascade:
+              path, aid = proj['path'], proj['artifactId']
+              try:
+                  with open(os.path.join(path, 'pom.xml')) as f:
+                      content = f.read()
+                  raw = read_pom_version(content)
+                  if not raw:
+                      raise ValueError('no version')
+              except Exception:
+                  projects.append((path, aid, '???', '???', False, content if 'content' in dir() else ''))
+                  continue
+
+              base = raw.replace('-SNAPSHOT', '')
+              rel_ver = base if final else f'{base}-{modifier}'
+              tag = f'{path}-{rel_ver}'
+              exists = tag in tags
+
+              release_map[aid] = rel_ver
+              prop_release[artifact_to_prop(aid)] = rel_ver
+              projects.append((path, aid, raw, rel_ver, exists, content))
+
+          # --- print per-project details ---
+          skip_count = 0
+          for path, aid, raw, rel_ver, exists, content in projects:
+              status = 'SKIP (tag exists)' if exists else 'RELEASE'
+              if exists:
+                  skip_count += 1
+              print(f'=== {path} ===')
+              print(f'  Version: {raw} -> {rel_ver}  [{status}]')
+
+              # parent update
+              parent_aid, parent_ver = read_parent(content)
+              if parent_aid and parent_aid in release_map:
+                  new_ver = release_map[parent_aid]
+                  changed = ' (*)' if parent_ver != new_ver else ''
+                  print(f'  Parent:  {parent_aid} {parent_ver} -> {new_ver}{changed}')
+
+              # version property updates
+              props = read_version_props(content)
+              updates = []
+              for prop_name, cur_val in sorted(props.items()):
+                  if prop_name in prop_release:
+                      new_val = prop_release[prop_name]
+                      if cur_val != new_val:
+                          updates.append(f'    {prop_name}: {cur_val} -> {new_val}')
+              if updates:
+                  print('  Properties:')
+                  for u in updates:
+                      print(u)
+              print()
+
+          print(f'Total: {len(cascade)} project(s), '
+                f'{len(cascade) - skip_count} to release, '
+                f'{skip_count} already tagged.')
+          print('Re-run with dryRun=false to actually release.')
+          PYEOF
 
   release:
     name: Release ${{ matrix.project.artifactId }}
@@ -168,12 +270,76 @@ jobs:
       allow-snapshots: false
     secrets: inherit
 
-  # Clean up the temporary branch used by non-final releases.
-  # Runs on success or failure so the branch is always removed.
+  # For final releases, merge the temporary branch back into the target branch
+  # so that release-plugin and auto-update commits land on the mainline.
+  merge-back:
+    name: Merge release branch into ${{ github.ref_name }}
+    needs: [plan, compose-validation]
+    if: ${{ inputs.dryRun == false && inputs.finalRelease == true }}
+    runs-on: ubuntu-latest
+    outputs:
+      merged: ${{ steps.merge.outputs.merged }}
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout target branch
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GHCR_WRITE_ACCESS_TOKEN }}
+          ref: ${{ github.ref_name }}
+      - name: Merge or open PR
+        id: merge
+        env:
+          GH_TOKEN: ${{ secrets.GHCR_WRITE_ACCESS_TOKEN }}
+        run: |
+          set -euo pipefail
+          BRANCH="${{ needs.plan.outputs.branch }}"
+          git config user.email "datawave@github.com"
+          git config user.name "${{ secrets.GHCR_WRITE_USER_NAME }}"
+          git pull --ff-only
+          git fetch origin "$BRANCH"
+
+          if git merge --ff-only "origin/$BRANCH" 2>/dev/null; then
+            git push
+            echo "merged=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::Fast-forward merged $BRANCH into ${{ github.ref_name }}."
+          elif git merge -m "cascade-release: merge final release run ${{ github.run_id }}" "origin/$BRANCH" 2>/dev/null; then
+            git push
+            echo "merged=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::Merge-committed $BRANCH into ${{ github.ref_name }}."
+          else
+            git merge --abort || true
+
+            BODY="Automated merge-back from final cascade release.
+            **Run:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            **Starting project:** ${{ needs.plan.outputs.startArtifact }}
+            **Projects released:** ${{ needs.plan.outputs.count }}
+
+            This branch contains release-plugin and auto-update commits.
+            Resolve conflicts and merge to complete the release."
+
+            gh pr create \
+              --base "${{ github.ref_name }}" \
+              --head "$BRANCH" \
+              --title "cascade-release: merge back run ${{ github.run_id }}" \
+              --body "$BODY"
+            echo "merged=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Conflicts with ${{ github.ref_name }} — PR opened for manual merge-back."
+          fi
+
+  # Delete the temporary branch when it is no longer needed.
+  # Preserved when: final release and merge-back did not fully merge (PR opened
+  # or compose-validation failed before merge-back ran).
   cleanup:
     name: Delete cascade branch
-    needs: [plan, release, compose-validation]
-    if: ${{ always() && needs.plan.outputs.branch != '' }}
+    needs: [plan, release, compose-validation, merge-back]
+    if: >-
+      ${{ always()
+          && needs.plan.outputs.branch != ''
+          && (inputs.finalRelease != true
+              || needs.merge-back.outputs.merged == 'true') }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
