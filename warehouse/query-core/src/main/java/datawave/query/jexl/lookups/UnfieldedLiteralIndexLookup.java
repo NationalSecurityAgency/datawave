@@ -26,9 +26,9 @@ import com.google.common.base.Preconditions;
 import datawave.core.iterators.FieldExpansionIterator;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
-import datawave.query.scan.ExecutionHintHelper;
-import datawave.query.scan.ScannerBuilder;
 import datawave.query.tables.ScannerFactory;
+import datawave.scan.ExecutionHintHelper;
+import datawave.scan.ScannerBuilder;
 import datawave.util.time.DateHelper;
 
 /**

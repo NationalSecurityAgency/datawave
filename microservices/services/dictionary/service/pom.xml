@@ -8,7 +8,7 @@
         <relativePath>../../../microservice-service-parent/pom.xml</relativePath>
     </parent>
     <artifactId>dictionary-service</artifactId>
-    <version>4.0.12-SNAPSHOT</version>
+    <version>4.0.13-SNAPSHOT</version>
     <description>DATAWAVE Dictionary Service</description>
     <url>https://code.nsa.gov/datawave-dictionary-service</url>
     <scm>
@@ -20,9 +20,9 @@
     <properties>
         <node.downloadRoot>https://nodejs.org/dist/</node.downloadRoot>
         <node.npmRegistryUrl>https://registry.npmjs.org/</node.npmRegistryUrl>
-        <node.version>v18.0.0</node.version>
+        <node.version>v22.22.3</node.version>
         <npm.downloadRoot>https://registry.npmjs.org/npm/-/</npm.downloadRoot>
-        <npm.version>9.2.0</npm.version>
+        <npm.version>10.9.8</npm.version>
         <start-class>datawave.microservice.dictionary.DictionaryService</start-class>
         <version.accumulo>2.1.4-5792fed3-bulkv2</version.accumulo>
         <version.commons-collections>3.2.2</version.commons-collections>

@@ -49,6 +49,11 @@
             <artifactId>commons-beanutils</artifactId>
         </dependency>
         <dependency>
+            <!-- Accumulo BatchScanner requires IteratorChain class -->
+            <groupId>commons-collections</groupId>
+            <artifactId>commons-collections</artifactId>
+        </dependency>
+        <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>
             <artifactId>authorization-api</artifactId>
         </dependency>

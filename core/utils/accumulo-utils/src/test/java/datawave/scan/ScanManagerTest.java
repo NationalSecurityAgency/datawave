@@ -1,4 +1,4 @@
-package datawave.query.scan;
+package datawave.scan;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -24,7 +24,6 @@ import org.junit.jupiter.api.Test;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
-import datawave.util.TableName;
 
 public class ScanManagerTest {
 
@@ -32,7 +31,7 @@ public class ScanManagerTest {
 
     private static AccumuloClient client;
 
-    private static final String tableName = TableName.SHARD;
+    private static final String tableName = "shard";
     private final Authorizations authorizations = new Authorizations("VIZ-A", "VIZ-B");
 
     private ScanManagerForTest manager;
@@ -110,9 +109,9 @@ public class ScanManagerTest {
     }
 
     /**
-     * A {@link ScanManager} with some stats
+     * A {@link datawave.scan.ScanManager} with some stats
      */
-    private static class ScanManagerForTest extends ScanManager {
+    private static class ScanManagerForTest extends datawave.scan.ScanManager {
         int createCount = 0;
         int closeCount = 0;
 
