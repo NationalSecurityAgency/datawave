@@ -14,7 +14,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Properties;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.UUID;
@@ -31,14 +30,9 @@ import org.apache.accumulo.core.client.IsolatedScanner;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.RowIterator;
 import org.apache.accumulo.core.client.Scanner;
-import org.apache.accumulo.core.client.TableDeletedException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.TableOfflineException;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
-import org.apache.accumulo.core.clientImpl.ClientConfConverter;
-import org.apache.accumulo.core.clientImpl.ClientContext;
-import org.apache.accumulo.core.clientImpl.ClientInfo;
-import org.apache.accumulo.core.clientImpl.TabletLocator;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
@@ -48,14 +42,11 @@ import org.apache.accumulo.core.dataImpl.KeyExtent;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.user.RegExFilter;
 import org.apache.accumulo.core.iterators.user.VersioningIterator;
-import org.apache.accumulo.core.manager.state.tables.TableState;
 import org.apache.accumulo.core.metadata.MetadataTable;
 import org.apache.accumulo.core.metadata.schema.MetadataSchema;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.accumulo.core.security.TablePermission;
-import org.apache.accumulo.core.singletons.SingletonManager;
-import org.apache.accumulo.core.util.threads.Threads;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.hadoop.conf.Configuration;
@@ -80,8 +71,8 @@ import com.google.common.collect.Multimap;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
-import datawave.accumulo.inmemory.impl.InMemoryTabletLocator;
 import datawave.common.util.ArgumentChecker;
+import datawave.core.common.connection.AccumuloTableUtils;
 import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.mr.bulk.split.DefaultLocationStrategy;
 import datawave.mr.bulk.split.DefaultSplitStrategy;
@@ -1042,29 +1033,6 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
     }
 
     /**
-     * Initializes an Accumulo {@link TabletLocator} based on the configuration.
-     *
-     * @param conf
-     *            the Hadoop configuration object
-     * @return an accumulo tablet locator
-     * @throws TableNotFoundException
-     *             if the table name set on the configuration doesn't exist
-     * @throws IOException
-     *             if the input format is unable to read the password file from the FileSystem
-     */
-    protected static TabletLocator getTabletLocator(Configuration conf) throws TableNotFoundException, IOException {
-        if (conf.getBoolean(MOCK, false))
-            return new InMemoryTabletLocator();
-        String tableName = getTablename(conf);
-        Properties props = Accumulo.newClientProperties().to(conf.get(INSTANCE_NAME), conf.get(ZOOKEEPERS))
-                        .as(getUsername(conf), new PasswordToken(getPassword(conf))).build();
-        ClientInfo info = ClientInfo.from(props);
-        ClientContext context = new ClientContext(SingletonManager.getClientReservation(), info, ClientConfConverter.toAccumuloConf(info.getProperties()),
-                        Threads.UEH);
-        return TabletLocator.getLocator(context, context.getTableId(tableName));
-    }
-
-    /**
      * Read the metadata table to get tablets and match up ranges to them.
      */
     public List<InputSplit> getSplits(JobContext job) throws IOException {
@@ -1084,7 +1052,6 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
 
         // get the metadata information for these ranges
         Map<String,Map<KeyExtent,List<Range>>> binnedRanges = new HashMap<>();
-        TabletLocator tl;
         try {
             if (isOfflineScan(job.getConfiguration())) {
                 binnedRanges = binOfflineTable(job, tableName, ranges);
@@ -1095,28 +1062,17 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
                 }
             } else {
                 try (AccumuloClient client = getClient(job.getConfiguration())) {
-                    TableId tableId = null;
-                    tl = getTabletLocator(job.getConfiguration());
-                    // its possible that the cache could contain complete, but old information about a tables tablets... so clear it
-                    tl.invalidateCache();
-                    ClientInfo info = ClientInfo.from(cbHelper.newClientProperties());
-                    ClientContext context = new ClientContext(SingletonManager.getClientReservation(), info,
-                                    ClientConfConverter.toAccumuloConf(info.getProperties()), Threads.UEH);
-                    while (!tl.binRanges(context, ranges, binnedRanges).isEmpty()) {
-                        if (!(client instanceof InMemoryAccumuloClient)) {
-                            if (tableId == null)
-                                tableId = context.getTableId(tableName);
-                            if (!context.tableNodeExists(tableId))
-                                throw new TableDeletedException(tableId.canonical());
-                            if (context.getTableState(tableId) == TableState.OFFLINE)
-                                throw new TableOfflineException("Table (" + tableId.canonical() + ") is offline");
+                    // Validate table state using public API
+                    if (!(client instanceof InMemoryAccumuloClient)) {
+                        if (!client.tableOperations().exists(tableName)) {
+                            throw new TableNotFoundException(null, tableName, "Table does not exist");
                         }
-                        binnedRanges.clear();
-                        log.warn("Unable to locate bins for specified ranges. Retrying.");
-                        TimeUnit.MILLISECONDS.sleep(ThreadLocalRandom.current().nextInt(100, 200));
-                        tl.invalidateCache();
+                        if (!client.tableOperations().isOnline(tableName)) {
+                            throw new TableOfflineException("Table " + tableName + " is offline");
+                        }
                     }
-
+                    // REVIEW: retry semantics differ from original TabletLocator.binRanges() loop
+                    binnedRanges = AccumuloTableUtils.locateTablets(client, tableName, ranges);
                     clipRanges(binnedRanges);
                 }
             }
@@ -1174,9 +1130,14 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
         return splits;
     }
 
+    /**
+     * Truncates/clips the ranges in binnedRanges to fit within their assigned tablet boundaries. This makes it easier to identify what work needs to be redone
+     * when failures occur and tablets have merged or split. The method modifies binnedRanges in place.
+     *
+     * @param binnedRanges
+     *            the map of location -&gt; (extent -&gt; ranges) to clip
+     */
     private void clipRanges(Map<String,Map<KeyExtent,List<Range>>> binnedRanges) {
-        // truncate the ranges to within the tablets... this makes it easier to know what work
-        // needs to be redone when failures occurs and tablets have merged or split
         Map<String,Map<KeyExtent,List<Range>>> binnedRanges2 = new HashMap<>();
         for (Entry<String,Map<KeyExtent,List<Range>>> entry : binnedRanges.entrySet()) {
             Map<KeyExtent,List<Range>> tabletMap = new HashMap<>();
@@ -1185,8 +1146,9 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
                 Range tabletRange = tabletRanges.getKey().toDataRange();
                 List<Range> clippedRanges = new ArrayList<>();
                 tabletMap.put(tabletRanges.getKey(), clippedRanges);
-                for (Range range : tabletRanges.getValue())
+                for (Range range : tabletRanges.getValue()) {
                     clippedRanges.add(tabletRange.clip(range));
+                }
             }
         }
 
