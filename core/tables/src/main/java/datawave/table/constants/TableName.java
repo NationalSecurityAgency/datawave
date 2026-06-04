@@ -1,9 +1,8 @@
-package datawave.util;
+package datawave.table.constants;
 
 /**
  * Class that contains default table names
  */
-@Deprecated(forRemoval = true, since = "7.40.0")
 public final class TableName {
 
     public static final String DATE_INDEX = "dateIndex";
