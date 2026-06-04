@@ -2075,26 +2075,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         getConfig().setHitList(hitList);
     }
 
-    @Deprecated(since = "7.1.0", forRemoval = true)
-    public int getEventPerDayThreshold() {
-        return getConfig().getEventPerDayThreshold();
-    }
-
-    @Deprecated(since = "7.1.0", forRemoval = true)
-    public void setEventPerDayThreshold(int eventPerDayThreshold) {
-        getConfig().setEventPerDayThreshold(eventPerDayThreshold);
-    }
-
-    @Deprecated(since = "7.1.0", forRemoval = true)
-    public int getShardsPerDayThreshold() {
-        return getConfig().getShardsPerDayThreshold();
-    }
-
-    @Deprecated(since = "7.1.0", forRemoval = true)
-    public void setShardsPerDayThreshold(int shardsPerDayThreshold) {
-        getConfig().setShardsPerDayThreshold(shardsPerDayThreshold);
-    }
-
     public int getInitialMaxTermThreshold() {
         return getConfig().getInitialMaxTermThreshold();
     }

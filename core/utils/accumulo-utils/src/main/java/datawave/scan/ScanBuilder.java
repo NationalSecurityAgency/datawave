@@ -1,6 +1,10 @@
-package datawave.query.scan;
+package datawave.scan;
 
+import static org.apache.accumulo.core.client.ScannerBase.ConsistencyLevel;
+
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.accumulo.core.client.AccumuloClient;
@@ -8,8 +12,13 @@ import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.security.Authorizations;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Preconditions;
+
+import datawave.security.util.AuthorizationsMinimizer;
+import datawave.security.util.ScannerHelper;
 
 /**
  * Builder that contains the core logic for building implementations of a {@link ScannerBase}, specifically {@link Scanner} or {@link BatchScanner}
@@ -27,10 +36,12 @@ import com.google.common.base.Preconditions;
  */
 public abstract class ScanBuilder<B> {
 
+    private static final Logger log = LoggerFactory.getLogger(ScanBuilder.class);
+
     // required variables
     protected final AccumuloClient client;
     protected String tableName;
-    protected Authorizations authorizations;
+    protected Collection<Authorizations> authorizations;
 
     // optional variables
     protected ScannerBase.ConsistencyLevel consistencyLevel;
@@ -78,6 +89,20 @@ public abstract class ScanBuilder<B> {
      * @return this builder
      */
     public B setAuthorizations(Authorizations authorizations) {
+        this.authorizations = List.of(authorizations);
+        return self();
+    }
+
+    /**
+     * Set the collection {@link Authorizations} for the scanner
+     * <p>
+     * See {@link ScannerHelper} and {@link AuthorizationsMinimizer} for details.
+     *
+     * @param authorizations
+     *            the authorizations
+     * @return this builder
+     */
+    public B setAuthorizations(Collection<Authorizations> authorizations) {
         this.authorizations = authorizations;
         return self();
     }
@@ -96,6 +121,10 @@ public abstract class ScanBuilder<B> {
      * @return this builder
      */
     public B setConsistencyLevel(ScannerBase.ConsistencyLevel consistencyLevel) {
+        if (consistencyLevel == null) {
+            log.warn("Null consistencyLevel");
+            throw new IllegalArgumentException("consistencyLevel cannot be null");
+        }
         this.consistencyLevel = consistencyLevel;
         return self();
     }
@@ -114,7 +143,11 @@ public abstract class ScanBuilder<B> {
      * @return this builder
      */
     public B setConsistencyLevel(String consistencyLevel) {
-        this.consistencyLevel = ScannerBase.ConsistencyLevel.valueOf(consistencyLevel);
+        if (consistencyLevel == null) {
+            log.warn("Null consistencyLevel");
+            throw new IllegalArgumentException("consistencyLevel cannot be null");
+        }
+        this.consistencyLevel = ConsistencyLevel.valueOf(consistencyLevel);
         return self();
     }
 
@@ -128,6 +161,10 @@ public abstract class ScanBuilder<B> {
      * @return this builder
      */
     public B setScanType(String scanType) {
+        if (scanType == null) {
+            log.warn("Null scanType");
+            throw new IllegalArgumentException("scanType cannot be null");
+        }
         executionHints.put(SCAN_TYPE_KEY, scanType);
         return self();
     }
@@ -142,6 +179,10 @@ public abstract class ScanBuilder<B> {
      * @return this builder
      */
     public B setScanPriority(int scanPriority) {
+        if (scanPriority < 0) {
+            log.warn("Negative scanPriority");
+            throw new IllegalArgumentException("scanPriority cannot be negative");
+        }
         executionHints.put(PRIORITY_KEY, Integer.toString(scanPriority));
         return self();
     }
@@ -160,7 +201,7 @@ public abstract class ScanBuilder<B> {
      *
      * @return the authorizations
      */
-    public Authorizations getAuthorizations() {
+    public Collection<Authorizations> getAuthorizations() {
         return authorizations;
     }
 

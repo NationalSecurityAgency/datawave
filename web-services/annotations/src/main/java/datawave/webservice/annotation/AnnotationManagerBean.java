@@ -24,7 +24,6 @@ import javax.ejb.TransactionAttributeType;
 import javax.ejb.TransactionManagement;
 import javax.ejb.TransactionManagementType;
 import javax.inject.Inject;
-import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -262,8 +261,7 @@ public class AnnotationManagerBean implements AnnotationManager {
         final RequestContext context = new RequestContext(config, ctx, connectionFactory, accumuloConnectionRequestBean, responseObjectFactory);
         try {
             final Annotation rawAnnotation = AnnotationJsonUtils.annotationFromJson(body);
-            final Validator<Annotation> validator = AnnotationValidators.getAnnotationValidator();
-            final Validator.ValidationState<Annotation> validationState = validator.check(rawAnnotation);
+            final Validator.ValidationState<Annotation> validationState = AnnotationValidators.checkAnnotation(rawAnnotation);
             if (!validationState.isValid()) {
                 final String message = String.format("Invalid annotation json: %s", validationState.getErrors());
                 log.info(message);
@@ -328,8 +326,7 @@ public class AnnotationManagerBean implements AnnotationManager {
         final RequestContext context = new RequestContext(config, ctx, connectionFactory, accumuloConnectionRequestBean, responseObjectFactory);
         try {
             final Annotation rawAnnotation = AnnotationJsonUtils.annotationFromJson(body);
-            final Validator<Annotation> validator = AnnotationValidators.getAnnotationValidator();
-            final Validator.ValidationState<Annotation> validationState = validator.check(rawAnnotation);
+            final Validator.ValidationState<Annotation> validationState = AnnotationValidators.checkAnnotationUpdate(rawAnnotation);
             if (!validationState.isValid()) {
                 final String message = String.format("Invalid annotation json: %s", validationState.getErrors());
                 log.info(message);
@@ -359,7 +356,7 @@ public class AnnotationManagerBean implements AnnotationManager {
             //@formatter:on
 
             final AnnotationDataAccess annotationDataAccess = context.initializeAnnotationService();
-            Optional<Annotation> addResult = annotationDataAccess.updateAnnotation(localizedAnnotation);
+            Optional<Annotation> addResult = annotationDataAccess.updateAnnotation(annotationId, localizedAnnotation);
             if (addResult.isPresent()) {
                 log.debug("Successfully updated annotation: {}", addResult.get());
                 return jsonOk(addResult.get());
@@ -432,58 +429,6 @@ public class AnnotationManagerBean implements AnnotationManager {
         } finally {
             context.returnAccumuloClient();
         }
-    }
-
-    @POST
-    @Path("/{idType}/{id}/annotation/{annotationId}/segment")
-    @Consumes("application/json")
-    @Produces("application/json")
-    @RolesAllowed({"AnnotationWriter"})
-    @Override
-    public Response addSegment(@PathParam("idType") String idType, @PathParam("id") String id, @PathParam("annotationId") String annotationId, String body) {
-        final RequestContext context = new RequestContext(config, ctx, connectionFactory, accumuloConnectionRequestBean, responseObjectFactory);
-        try {
-            Segment segment = AnnotationJsonUtils.segmentFromJson(body);
-
-            final List<Metadata> metadataList = lookupDocumentIdentifier(context, idType, id);
-            if (metadataList.isEmpty()) {
-                final String message = String.format("No internal identifier found for '%s:%s'", idType, id);
-                log.info(message);
-                return jsonNotFound(message);
-            } else if (metadataList.size() > 1) {
-                final String message = String.format("Multiple internal identifiers found for '%s:%s' must choose an id with a single internal id: %s", idType,
-                                id, metadataList);
-                log.info(message);
-                return jsonError(message);
-            }
-            final Metadata metadata = metadataList.get(0);
-
-            final AnnotationDataAccess annotationDataAccess = context.initializeAnnotationService();
-            annotationDataAccess.addSegment(metadata.getRow(), metadata.getDataType(), metadata.getInternalId(), annotationId, segment);
-            return jsonOk(segment.getSegmentHash());
-        } catch (InvalidProtocolBufferException e) {
-            final String message = String.format("Invalid annotation json: %s", e.getMessage());
-            log.error(message, e);
-            return jsonError(message);
-        } catch (QueryException e) {
-            final String message = String.format("Internal error adding segment: %s", e.getMessage());
-            log.error(message, e);
-            return jsonError(message);
-        } finally {
-            context.returnAccumuloClient();
-        }
-    }
-
-    @PUT
-    @Path("/{idType}/{id}/annotation/{annotationId}/segment/{segmentHash}")
-    @Consumes("application/json")
-    @Produces("application/json")
-    @RolesAllowed({"AnnotationWriter"})
-    @Override
-    public Response updateSegment(@PathParam("idType") String idType, @PathParam("id") String id, @PathParam("annotationId") String annotationId,
-                    @PathParam("segmentHash") String segmentHash, String body) {
-        // TODO: determine update semantics.
-        return jsonError("Not implemented");
     }
 
     /**
