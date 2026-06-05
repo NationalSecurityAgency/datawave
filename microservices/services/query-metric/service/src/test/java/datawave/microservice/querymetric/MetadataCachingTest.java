@@ -80,6 +80,7 @@ public class MetadataCachingTest extends QueryMetricTestBase {
         metadataHelper.getFieldsForDatatype(LcNoDiacriticsType.class);
         metadataHelper.getFieldsToDatatypes(Collections.singleton("querymetrics"));
         metadataHelper.getContentFields(Collections.singleton("querymetrics"));
+        metadataHelper.getHiddenFields(Collections.singleton("querymetrics"));
         metadataHelper.getExpansionFields(Collections.singleton("querymetrics"));
         metadataHelper.getQueryModel(queryMetricHandlerProperties.getMetadataTableName(), "querymetrics");
         metadataHelper.getQueryModelNames(queryMetricHandlerProperties.getMetadataTableName());
