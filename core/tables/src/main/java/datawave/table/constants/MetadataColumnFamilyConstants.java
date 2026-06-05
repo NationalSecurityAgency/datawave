@@ -1,12 +1,11 @@
-package datawave.data;
+package datawave.table.constants;
 
 import org.apache.hadoop.io.Text;
 
 /**
- *
+ * Reserved ColumnFamily names for the DatawaveMetadata table
  */
-@Deprecated(forRemoval = true, since = "7.40.0")
-public interface ColumnFamilyConstants {
+public interface MetadataColumnFamilyConstants {
     /**
      * A colf of 'e' denotes event fields (shard table)
      */
