@@ -7,6 +7,11 @@ on:
         description: 'Allow snapshots in the pom'
         required: true
         type: boolean
+      ref:
+        description: 'Git ref (branch/tag/SHA) to check out. Defaults to the workflow default ref.'
+        required: false
+        type: string
+        default: ''
 
 jobs:
   configure-runner:
@@ -47,6 +52,8 @@ jobs:
           fi
       - name: Checkout Code
         uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.ref || github.sha }}
       # Clean up free space
       - uses: ./.github/actions/free-space
         with:
