@@ -1,4 +1,4 @@
-package datawave.ingest.table.aggregator.util;
+package datawave.table.key.parser;
 
 import org.apache.accumulo.core.data.Key;
 
@@ -11,7 +11,6 @@ import org.apache.accumulo.core.data.Key;
  * <li>sharded year index key</li>
  * </ul>
  */
-@Deprecated(forRemoval = true, since = "7.40.0")
 public interface IndexKeyParser {
 
     boolean isStandardKey();

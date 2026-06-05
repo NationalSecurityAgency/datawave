@@ -1,4 +1,4 @@
-package datawave.ingest.table.aggregator.util;
+package datawave.table.key.parser;
 
 import java.util.BitSet;
 
@@ -25,7 +25,6 @@ import org.apache.accumulo.core.data.Key;
  * yyyyMMdd0x00value FIELD:datatype (bitset offset)
  * </pre>
  */
-@Deprecated(forRemoval = true, since = "7.40.0")
 public class ShardedDayIndexKeyParser extends AbstractIndexKeyParser {
 
     @Override

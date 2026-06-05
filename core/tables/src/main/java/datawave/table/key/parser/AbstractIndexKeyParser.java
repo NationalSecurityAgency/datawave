@@ -1,4 +1,4 @@
-package datawave.ingest.table.aggregator.util;
+package datawave.table.key.parser;
 
 import java.util.BitSet;
 
@@ -7,7 +7,6 @@ import org.apache.accumulo.core.data.Key;
 /**
  * Holds common methods for the implementations of {@link IndexKeyParser}
  */
-@Deprecated(forRemoval = true, since = "7.40.0")
 public abstract class AbstractIndexKeyParser implements IndexKeyParser {
 
     protected final char NULL_CHAR = '\u0000';
