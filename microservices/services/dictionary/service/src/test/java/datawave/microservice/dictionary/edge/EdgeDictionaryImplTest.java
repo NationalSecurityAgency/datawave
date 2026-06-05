@@ -36,7 +36,6 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.SetMultimap;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.data.ColumnFamilyConstants;
 import datawave.metadata.protobuf.EdgeMetadata.MetadataValue;
 import datawave.security.authorization.JWTTokenHandler;
@@ -198,7 +197,7 @@ public class EdgeDictionaryImplTest {
         @Bean
         @Qualifier("warehouse")
         public AccumuloClient warehouseClient() throws AccumuloSecurityException, AccumuloException {
-            return new InMemoryAccumuloClient("root", new InMemoryInstance());
+            return new InMemoryAccumuloClient("root");
         }
     }
 }

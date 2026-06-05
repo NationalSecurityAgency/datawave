@@ -43,8 +43,8 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Queues;
 import com.google.common.collect.Sets;
 
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.core.query.configuration.Result;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.NumberType;
@@ -102,7 +102,7 @@ public class RangeStreamScannerTest {
 
     @BeforeClass
     public static void beforeClass() throws Exception {
-        InMemoryInstance instance = new InMemoryInstance();
+        InMemoryAccumulo instance = new InMemoryAccumulo();
         client = new InMemoryAccumuloClient("", instance);
         client.tableOperations().create(SHARD_INDEX);
 

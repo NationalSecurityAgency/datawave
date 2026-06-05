@@ -9,8 +9,8 @@ import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
 
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.util.TableName;
 
 /**
@@ -24,8 +24,8 @@ public class DayIndexIngestUtil {
 
     private final Set<String> indexedFields = Set.of("FIELD_A", "FIELD_B", "FIELD_C");
 
-    public DayIndexIngestUtil(InMemoryInstance instance) throws Exception {
-        client = new InMemoryAccumuloClient("user", instance);
+    public DayIndexIngestUtil(InMemoryAccumulo acu) throws Exception {
+        client = new InMemoryAccumuloClient("user", acu);
         client.tableOperations().create(DAY_INDEX_TABLE);
     }
 

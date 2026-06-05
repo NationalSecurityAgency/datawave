@@ -27,7 +27,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.slf4j.LoggerFactory;
 
-import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.core.common.cache.AccumuloTableCache;
 import datawave.core.common.result.ConnectionPoolProperties;
 import datawave.core.common.result.ConnectionPoolsProperties;
@@ -39,7 +39,7 @@ public class AccumuloConnectionFactoryTest extends EasyMockSupport {
     @Mock(type = MockType.STRICT)
     private AccumuloTableCache cache;
 
-    private InMemoryInstance instance = new InMemoryInstance();
+    private InMemoryAccumulo instance = new InMemoryAccumulo();
 
     @TestSubject
     private AccumuloConnectionFactoryImpl factory = createMockBuilder(AccumuloConnectionFactoryImpl.class).createStrictMock();
@@ -118,7 +118,7 @@ public class AccumuloConnectionFactoryTest extends EasyMockSupport {
     @Test
     public void testGetWarehouseConnection() throws Exception {
         resetAll();
-        EasyMock.expect(cache.getInstance()).andReturn(new InMemoryInstance());
+        EasyMock.expect(cache.getInstance()).andReturn(new InMemoryAccumulo());
         replayAll();
         AccumuloClient con = factory.getClient(null, null, "WAREHOUSE", AccumuloConnectionFactory.Priority.HIGH, new HashMap<>());
         verifyAll();
@@ -130,7 +130,7 @@ public class AccumuloConnectionFactoryTest extends EasyMockSupport {
     public void testGetContextConnection() throws Exception {
         System.setProperty("dw.accumulo.classLoader.context", "alternateContext");
         resetAll();
-        EasyMock.expect(cache.getInstance()).andReturn(new InMemoryInstance());
+        EasyMock.expect(cache.getInstance()).andReturn(new InMemoryAccumulo());
         replayAll();
         AccumuloClient con = factory.getClient(null, null, "WAREHOUSE", AccumuloConnectionFactory.Priority.HIGH, new HashMap<>());
         verifyAll();
@@ -142,7 +142,7 @@ public class AccumuloConnectionFactoryTest extends EasyMockSupport {
     @Test
     public void testGetMetricsConnection() throws Exception {
         resetAll();
-        EasyMock.expect(cache.getInstance()).andReturn(new InMemoryInstance());
+        EasyMock.expect(cache.getInstance()).andReturn(new InMemoryAccumulo());
         replayAll();
         AccumuloClient con = factory.getClient(null, null, "METRICS", AccumuloConnectionFactory.Priority.HIGH, new HashMap<>());
         verifyAll();

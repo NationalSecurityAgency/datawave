@@ -48,7 +48,6 @@ import org.apache.accumulo.core.dataImpl.KeyExtent;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.user.RegExFilter;
 import org.apache.accumulo.core.iterators.user.VersioningIterator;
-import org.apache.accumulo.core.manager.state.tables.TableState;
 import org.apache.accumulo.core.metadata.MetadataTable;
 import org.apache.accumulo.core.metadata.schema.MetadataSchema;
 import org.apache.accumulo.core.security.Authorizations;
@@ -78,8 +77,8 @@ import org.slf4j.LoggerFactory;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.accumulo.inmemory.impl.InMemoryTabletLocator;
 import datawave.common.util.ArgumentChecker;
 import datawave.ingest.data.config.ingest.AccumuloHelper;
@@ -516,7 +515,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
     protected static AccumuloClient getClient(Configuration conf) throws AccumuloException, AccumuloSecurityException, IOException {
         log.debug("Creating connector with user: {}", getUsername(conf));
         if (conf.getBoolean(MOCK, false)) {
-            InMemoryAccumuloClient client = new InMemoryAccumuloClient(getUsername(conf), new InMemoryInstance(conf.get(INSTANCE_NAME)));
+            InMemoryAccumuloClient client = new InMemoryAccumuloClient(getUsername(conf), InMemoryAccumulo.getInstance(conf.get(INSTANCE_NAME)));
             client.securityOperations().changeLocalUserPassword(client.whoami(), new PasswordToken(getPassword(conf)));
             return client;
         } else {
@@ -1105,10 +1104,10 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
                     while (!tl.binRanges(context, ranges, binnedRanges).isEmpty()) {
                         if (!(client instanceof InMemoryAccumuloClient)) {
                             if (tableId == null)
-                                tableId = context.getTableId(tableName);
-                            if (!context.tableNodeExists(tableId))
+                                tableId = TableId.of(client.tableOperations().tableIdMap().get(tableName));// TABLE ID todo:ensure this is correct
+                            if (!client.tableOperations().tableIdMap().containsKey(tableName))// CHECK IF TABLE ID EXISTS //todo same
                                 throw new TableDeletedException(tableId.canonical());
-                            if (context.getTableState(tableId) == TableState.OFFLINE)
+                            if (!client.tableOperations().isOnline(tableName)) // CHECK IF TABLE ID OFFLInE //todo same
                                 throw new TableOfflineException("Table (" + tableId.canonical() + ") is offline");
                         }
                         binnedRanges.clear();

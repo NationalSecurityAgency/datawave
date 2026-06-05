@@ -35,7 +35,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.core.common.cache.AccumuloTableCache;
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.security.authorization.DatawavePrincipal;
@@ -79,7 +79,7 @@ public class ModelBeanTest {
         ReflectionTestUtils.setField(bean, "connectionFactory", connectionFactory);
         ReflectionTestUtils.setField(bean, "cache", cache);
 
-        InMemoryInstance instance = new InMemoryInstance("test");
+        InMemoryAccumulo instance = InMemoryAccumulo.getInstance("test");
         client = new InMemoryAccumuloClient("root", instance);
 
         DatawaveUser user = new DatawaveUser(SubjectIssuerDNPair.of(userDN, issuerDN), UserType.USER, Arrays.asList(auths), null, null, 0L);

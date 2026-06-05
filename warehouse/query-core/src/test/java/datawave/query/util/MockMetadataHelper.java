@@ -33,7 +33,6 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.data.MetadataCardinalityCounts;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.Type;
@@ -85,7 +84,7 @@ public class MockMetadataHelper extends MetadataHelper {
 
     private static AccumuloClient getClient() {
         try {
-            return new InMemoryAccumuloClient("root", new InMemoryInstance());
+            return new InMemoryAccumuloClient("root");
         } catch (AccumuloSecurityException e) {
             throw new RuntimeException(e);
         }

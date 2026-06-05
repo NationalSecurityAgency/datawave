@@ -41,6 +41,9 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.io.Text;
 
 public class InMemoryAccumulo {
+    // Static registry for named instances (allows sharing state across multiple clients)
+    private static final Map<String,InMemoryAccumulo> namedInstances = Collections.synchronizedMap(new HashMap<>());
+
     final Map<String,InMemoryTable> tables = Collections.synchronizedMap(new HashMap<>());
     final Map<String,InMemoryNamespace> namespaces = Collections.synchronizedMap(new HashMap<>());
     final Map<String,String> systemProperties = Collections.synchronizedMap(new HashMap<>());
@@ -48,7 +51,36 @@ public class InMemoryAccumulo {
     final FileSystem fs;
     final AtomicInteger tableIdCounter = new AtomicInteger(0);
 
-    InMemoryAccumulo(FileSystem fs) {
+    /**
+     * Gets or creates a named InMemoryAccumulo instance. Named instances allow multiple clients to share the same underlying data (tables, users, etc).
+     *
+     * @param instanceName
+     *            the name for this instance
+     * @return the InMemoryAccumulo for the given name
+     */
+    public static InMemoryAccumulo getInstance(String instanceName) {
+        synchronized (namedInstances) {
+            return namedInstances.computeIfAbsent(instanceName, k -> new InMemoryAccumulo());
+        }
+    }
+
+    /**
+     * Clears all named instances. Useful for test cleanup.
+     */
+    public static void clearInstances() {
+        synchronized (namedInstances) {
+            namedInstances.clear();
+        }
+    }
+
+    /**
+     * Creates an InMemoryAccumulo with the default local filesystem.
+     */
+    public InMemoryAccumulo() {
+        this(getDefaultFileSystem());
+    }
+
+    public InMemoryAccumulo(FileSystem fs) {
         InMemoryUser root = new InMemoryUser("root", new PasswordToken(new byte[0]), Authorizations.EMPTY);
         root.permissions.add(SystemPermission.SYSTEM);
         users.put(root.name, root);
@@ -58,6 +90,17 @@ public class InMemoryAccumulo {
         createTable("root", MetadataTable.NAME, true, TimeType.LOGICAL);
         createTable("root", ReplicationTable.NAME, true, TimeType.LOGICAL);
         this.fs = fs;
+    }
+
+    private static FileSystem getDefaultFileSystem() {
+        try {
+            org.apache.hadoop.conf.Configuration conf = new org.apache.hadoop.conf.Configuration();
+            conf.set("fs.file.impl", "org.apache.hadoop.fs.LocalFileSystem");
+            conf.set("fs.default.name", "file:///");
+            return FileSystem.get(conf);
+        } catch (java.io.IOException ex) {
+            throw new RuntimeException(ex);
+        }
     }
 
     public FileSystem getFileSystem() {
