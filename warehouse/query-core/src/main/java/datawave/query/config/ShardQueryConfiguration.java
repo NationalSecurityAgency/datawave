@@ -128,6 +128,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private boolean reduceTypeMetadata = false;
     private boolean reduceTypeMetadataPerShard = false;
     private boolean collectTimingDetails = false;
+    private boolean collectQuerySubPlans = false;
     private boolean logTimingDetails = false;
     private boolean sendTimingToStatsd = true;
     private String statsdHost = "localhost";
@@ -639,6 +640,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setRebuildDatatypeFilterPerShard(other.isRebuildDatatypeFilterPerShard());
         this.setParseTldUids(other.getParseTldUids());
         this.setCollectTimingDetails(other.getCollectTimingDetails());
+        this.setCollectQuerySubPlans(other.getCollectQuerySubPlans());
         this.setLogTimingDetails(other.getLogTimingDetails());
         this.setSendTimingToStatsd(other.getSendTimingToStatsd());
         this.setStatsdHost(other.getStatsdHost());
@@ -2452,6 +2454,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     }
 
+    public boolean getCollectQuerySubPlans() {
+        return collectQuerySubPlans;
+    }
+
+    public void setCollectQuerySubPlans(boolean collectQuerySubPlans) {
+        this.collectQuerySubPlans = collectQuerySubPlans;
+    }
+
     public boolean getLogTimingDetails() {
         return logTimingDetails;
     }
@@ -2994,6 +3004,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 isRebuildDatatypeFilter() == that.isRebuildDatatypeFilter() &&
                 isRebuildDatatypeFilterPerShard() == that.isRebuildDatatypeFilterPerShard() &&
                 getCollectTimingDetails() == that.getCollectTimingDetails() &&
+                getCollectQuerySubPlans() == that.getCollectQuerySubPlans() &&
                 getLogTimingDetails() == that.getLogTimingDetails() &&
                 getSendTimingToStatsd() == that.getSendTimingToStatsd() &&
                 getStatsdPort() == that.getStatsdPort() &&
@@ -3232,6 +3243,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 isRebuildDatatypeFilter(),
                 isRebuildDatatypeFilterPerShard(),
                 getCollectTimingDetails(),
+                getCollectQuerySubPlans(),
                 getLogTimingDetails(),
                 getSendTimingToStatsd(),
                 getStatsdHost(),

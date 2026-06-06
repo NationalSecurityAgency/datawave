@@ -87,12 +87,14 @@ import datawave.microservice.querymetric.QueryMetric;
 import datawave.microservice.querymetric.QueryMetricFactory;
 import datawave.microservice.querymetric.QueryMetricListResponse;
 import datawave.microservice.querymetric.QueryMetricsSummaryResponse;
+import datawave.microservice.querymetric.RangeCounts;
 import datawave.query.iterator.QueryOptions;
 import datawave.query.jexl.visitors.JexlFormattedStringBuildingVisitor;
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.query.map.SimpleQueryGeometryHandler;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.util.WSAuthorizationsUtil;
+import datawave.util.StringUtils;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.exception.QueryExceptionType;
 import datawave.webservice.query.result.event.EventBase;
@@ -564,6 +566,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             List<FieldBase> field = event.getFields();
             m.setMarkings(event.getMarkings());
             TreeMap<Long,PageMetric> pageMetrics = Maps.newTreeMap();
+            Map<String,RangeCounts> subplans = new TreeMap<>();
 
             boolean createDateSet = false;
             for (FieldBase f : field) {
@@ -588,6 +591,13 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
                         m.setQuery(fieldValue);
                     } else if (fieldName.equals("PLAN")) {
                         m.setPlan(fieldValue);
+                    } else if (fieldName.equals("SUBPLAN")) {
+                        if (fieldValue != null) {
+                            String[] arr = fieldValue.split(" : ", 2);
+                            if (arr.length == 2) {
+                                subplans.put(arr[0], getRangeCounts(arr[1]));
+                            }
+                        }
                     } else if (fieldName.equals("QUERY_LOGIC")) {
                         m.setQueryLogic(fieldValue);
                     } else if (fieldName.equals("BEGIN_DATE")) {
@@ -707,11 +717,26 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
                 }
             }
             m.setPageTimes(new ArrayList<>(pageMetrics.values()));
+            m.setSubPlans(subplans);
             return m;
         } catch (Exception e) {
             log.warn("Unexpected error creating query metric. Returning null", e);
             return null;
         }
+    }
+
+    private static RangeCounts getRangeCounts(String s) {
+        RangeCounts ranges = new RangeCounts();
+        int index = 0;
+        for (String count : StringUtils.split(s, ",")) {
+            if (index == 0) {
+                ranges.setDocumentRangeCount(Integer.parseInt(count));
+            } else if (index == 1) {
+                ranges.setShardRangeCount(Integer.parseInt(count));
+            }
+            index++;
+        }
+        return ranges;
     }
 
     protected void createAndConfigureTablesIfNecessary(String[] tableNames, TableOperations tops, Configuration conf)

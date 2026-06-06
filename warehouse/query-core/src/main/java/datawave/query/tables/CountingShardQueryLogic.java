@@ -84,7 +84,7 @@ public class CountingShardQueryLogic extends ShardQueryLogic {
             }
         }
 
-        PushdownScheduler scheduler = new PushdownScheduler(config, scannerFactory, this.metadataHelperFactory);
+        PushdownScheduler scheduler = new PushdownScheduler(config, scannerFactory, this.metadataHelperFactory, this);
         scheduler.addSetting(new IteratorSetting(config.getBaseIteratorPriority() + 50, "counter", ResultCountingIterator.class.getName()));
         return scheduler;
     }

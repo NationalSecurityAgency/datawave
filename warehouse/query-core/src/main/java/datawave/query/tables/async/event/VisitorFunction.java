@@ -23,6 +23,7 @@ import javax.annotation.Nullable;
 
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ParseException;
@@ -39,7 +40,10 @@ import com.google.common.collect.Sets;
 
 import datawave.core.common.util.TypeFilter;
 import datawave.core.iterators.filesystem.FileSystemCache;
+import datawave.core.query.logic.QueryLogic;
+import datawave.core.query.logic.WritesQuerySubplanMetrics;
 import datawave.microservice.query.Query;
+import datawave.microservice.querymetric.RangeCounts;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.InvalidQueryException;
@@ -81,6 +85,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
     protected static FileSystemCache fileSystemCache = null;
 
     private ShardQueryConfiguration config;
+    private QueryLogic<?> logic;
     protected MetadataHelper metadataHelper;
     protected Set<String> indexedFields;
     protected Set<String> indexOnlyFields;
@@ -94,8 +99,9 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
 
     private static final Logger log = Logger.getLogger(VisitorFunction.class);
 
-    public VisitorFunction(ShardQueryConfiguration config, MetadataHelper metadataHelper) throws MalformedURLException {
+    public VisitorFunction(ShardQueryConfiguration config, MetadataHelper metadataHelper, QueryLogic<?> logic) throws MalformedURLException {
         this.config = config;
+        this.logic = logic;
 
         if (VisitorFunction.fileSystemCache == null && this.config.getHdfsSiteConfigURLs() != null) {
             VisitorFunction.fileSystemCache = new FileSystemCache(this.config.getHdfsSiteConfigURLs());
@@ -188,6 +194,20 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
         IteratorSetting newIteratorSetting = new IteratorSetting(setting.getPriority(), setting.getName(), setting.getIteratorClass());
 
         newIteratorSetting.addOptions(setting.getOptions());
+
+        int documentRangeCount = 0;
+        int shardRangeCount = 0;
+
+        for (Range range : ranges) {
+            Key key = range.getStartKey();
+            String cf = key.getColumnFamily().toString();
+            if (!cf.isEmpty()) {
+                documentRangeCount++;
+            } else {
+                shardRangeCount++;
+            }
+        }
+
         try {
 
             ASTJexlScript script = null;
@@ -380,7 +400,12 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                 DefaultQueryPlanner.logDebug(PrintingVisitor.formattedQueryStringList(script, DefaultQueryPlanner.getMaxChildNodesToPrint(),
                                 DefaultQueryPlanner.getMaxTermsToPrint()), "VistorFunction::apply method");
             }
-
+            if (logic instanceof WritesQuerySubplanMetrics) {
+                RangeCounts rangeCounts = new RangeCounts();
+                rangeCounts.setDocumentRangeCount(documentRangeCount);
+                rangeCounts.setShardRangeCount(shardRangeCount);
+                ((WritesQuerySubplanMetrics) logic).addSubPlan(newQuery, rangeCounts);
+            }
         } catch (ParseException e) {
             throw new DatawaveFatalQueryException(e);
         }
@@ -703,5 +728,9 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
             return path.toUri();
         }
         return null;
+    }
+
+    public QueryLogic<?> getLogic() {
+        return logic;
     }
 }

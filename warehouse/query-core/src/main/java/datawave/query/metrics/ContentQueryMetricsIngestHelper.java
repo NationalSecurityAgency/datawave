@@ -22,6 +22,7 @@ import datawave.microservice.query.QueryImpl.Parameter;
 import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.microservice.querymetric.BaseQueryMetric.PageMetric;
 import datawave.microservice.querymetric.BaseQueryMetric.Prediction;
+import datawave.microservice.querymetric.RangeCounts;
 
 public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements TermFrequencyIngestHelperInterface {
 
@@ -127,6 +128,13 @@ public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements 
             }
             if (updatedQueryMetric.getPlan() != null) {
                 fields.put("PLAN", updatedQueryMetric.getPlan());
+            }
+            Map<String,RangeCounts> subPlans = updatedQueryMetric.getSubPlans();
+            if (subPlans != null && !subPlans.isEmpty()) {
+                for (Map.Entry<String,RangeCounts> entry : subPlans.entrySet()) {
+                    fields.put("SUBPLAN",
+                                    entry.getKey() + " : [" + entry.getValue().getDocumentRangeCount() + ", " + entry.getValue().getShardRangeCount() + "]");
+                }
             }
             if (updatedQueryMetric.getQueryId() != null) {
                 fields.put("QUERY_ID", updatedQueryMetric.getQueryId());
