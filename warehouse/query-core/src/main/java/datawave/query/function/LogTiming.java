@@ -10,7 +10,6 @@ import org.apache.log4j.Logger;
 import com.google.common.base.Function;
 
 import datawave.query.attributes.Document;
-import datawave.query.attributes.Numeric;
 import datawave.query.attributes.TimingMetadata;
 import datawave.query.iterator.profile.QuerySpan;
 
@@ -19,7 +18,6 @@ import datawave.query.iterator.profile.QuerySpan;
  */
 public class LogTiming implements Function<Entry<Key,Document>,Entry<Key,Document>> {
 
-    public static final String TIMING_METADATA = "TIMING_METADATA";
     protected QuerySpan spanRunner;
     private static String host = null;
     private static Logger log = Logger.getLogger(QuerySpan.class);
@@ -65,12 +63,12 @@ public class LogTiming implements Function<Entry<Key,Document>,Entry<Key,Documen
                 double threshold = totalStageTimers * 0.05;
                 for (Entry<String,Long> e : querySpan.getStageTimers().entrySet()) {
                     if (e.getValue().longValue() >= threshold) {
-                        timingMetadata.addStageTimer(e.getKey(), new Numeric(e.getValue(), document.getMetadata(), document.isToKeep()));
+                        timingMetadata.addStageTimer(e.getKey(), e.getValue());
                     }
                 }
                 querySpan.reset();
             }
-            document.put(TIMING_METADATA, timingMetadata);
+            document.setTimingMetadata(timingMetadata);
         }
     }
 }

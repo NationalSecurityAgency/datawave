@@ -50,7 +50,6 @@ import datawave.query.attributes.DocumentKey;
 import datawave.query.attributes.TemporalGranularity;
 import datawave.query.attributes.TimingMetadata;
 import datawave.query.attributes.UniqueFields;
-import datawave.query.function.LogTiming;
 import datawave.query.iterator.profile.FinalDocumentTrackingIterator;
 import datawave.query.jexl.JexlASTHelper;
 
@@ -310,7 +309,7 @@ public class UniqueTransformTest {
         TimingMetadata timingMetadata = new TimingMetadata();
         timingMetadata.setNextCount(5l);
 
-        givenInputDocument(MARKER_STRING).withKeyValue(LogTiming.TIMING_METADATA, timingMetadata.toString()).isExpectedToBeUnique();
+        givenInputDocument(MARKER_STRING).withTimingMetadata(timingMetadata).isExpectedToBeUnique();
         givenInputDocument().withKeyValue("ATTR0", randomValues.get(0)).isExpectedToBeUnique();
         givenInputDocument().withKeyValue("ATTR1", randomValues.get(1)).isExpectedToBeUnique();
         givenInputDocument().withKeyValue("ATTR1", randomValues.get(2));
@@ -663,6 +662,11 @@ public class UniqueTransformTest {
         @SuppressWarnings("UnusedReturnValue")
         InputDocumentBuilder isExpectedToBeUnique() {
             expectedUniqueDocuments.add(document);
+            return this;
+        }
+
+        InputDocumentBuilder withTimingMetadata(TimingMetadata metadata) {
+            document.setTimingMetadata(metadata);
             return this;
         }
     }

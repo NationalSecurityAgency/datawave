@@ -3,7 +3,6 @@ package datawave.query.attributes;
 import java.io.Serializable;
 import java.util.Collection;
 
-import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.lang.mutable.MutableLong;
 import org.apache.log4j.Logger;
@@ -11,44 +10,51 @@ import org.apache.log4j.Logger;
 import com.google.common.collect.Sets;
 
 import datawave.marking.MarkingFunctions;
-import datawave.marking.MarkingFunctions.Exception;
+import datawave.marking.MarkingFunctionsFactory;
 
-public abstract class AttributeBag<T extends Comparable<T>> extends Attribute<T> implements Serializable {
+public class AttributeBagMetadata extends AttributeMetadata implements Serializable {
+    private static final long serialVersionUID = -1;
 
-    private static final long serialVersionUID = -5961455715747661898L;
-    private static final Logger log = Logger.getLogger(AttributeBag.class);
-    protected long shardTimestamp = Long.MAX_VALUE;
-    protected boolean validMetadata = false;
-
+    private static final Logger log = Logger.getLogger(AttributeBagMetadata.class);
     private static final long ONE_DAY_MS = 1000l * 60 * 60 * 24;
 
-    public MarkingFunctions getMarkingFunctions() {
-        return MarkingFunctions.Factory.createMarkingFunctions();
+    private static final MarkingFunctions markingFunctions = MarkingFunctionsFactory.createMarkingFunctions();
+
+    private long shardTimestamp = Long.MAX_VALUE;
+
+    public interface AttributesGetter {
+        Collection<Attribute<? extends Comparable<?>>> getAttributes();
+
+        Collection<Attribute<? extends Comparable<?>>> getRawAttributes();
     }
 
-    protected AttributeBag() {
-        this(true);
-    }
+    private final AttributesGetter attributes;
 
-    public AttributeBag(boolean toKeep) {
-        super(null, toKeep);
-    }
+    private boolean validMetadata = false;
 
-    public AttributeBag(Key metadata, boolean toKeep) {
-        super(metadata, toKeep);
-    }
-
-    public void invalidateMetadata() {
-        this.validMetadata = false;
+    public AttributeBagMetadata(AttributesGetter attributes) {
+        this.attributes = attributes;
     }
 
     public boolean isValidMetadata() {
         return (this.validMetadata && isMetadataSet());
     }
 
-    public abstract Collection<Attribute<? extends Comparable<?>>> getAttributes();
+    public void invalidateMetadata() {
+        setValidMetadata(false);
+    }
 
-    protected abstract Collection<Attribute<? extends Comparable<?>>> getRawAttributes();
+    public void setValidMetadata(boolean valid) {
+        this.validMetadata = valid;
+    }
+
+    public long getShardTimestamp() {
+        return shardTimestamp;
+    }
+
+    public void setShardTimestamp(long shardTimestamp) {
+        this.shardTimestamp = shardTimestamp;
+    }
 
     @Override
     public long getTimestamp() {
@@ -58,7 +64,6 @@ public abstract class AttributeBag<T extends Comparable<T>> extends Attribute<T>
         return super.getTimestamp();
     }
 
-    @Override
     public ColumnVisibility getColumnVisibility() {
         if (isValidMetadata() == false)
             this.updateMetadata();
@@ -69,25 +74,25 @@ public abstract class AttributeBag<T extends Comparable<T>> extends Attribute<T>
         long ts = updateTimestamps();
         ColumnVisibility vis = super.getColumnVisibility();
         try {
-            vis = this.combineAndSetColumnVisibilities(getRawAttributes());
-        } catch (Exception e) {
+            vis = this.combineAndSetColumnVisibilities(attributes.getRawAttributes());
+        } catch (MarkingFunctions.Exception e) {
             log.error("got error combining visibilities", e);
         }
         setMetadata(vis, ts);
-        validMetadata = true;
+        setValidMetadata(true);
     }
 
-    protected ColumnVisibility combineAndSetColumnVisibilities(Collection<Attribute<? extends Comparable<?>>> attributes) throws Exception {
+    protected ColumnVisibility combineAndSetColumnVisibilities(Collection<Attribute<? extends Comparable<?>>> attributes) throws MarkingFunctions.Exception {
         Collection<ColumnVisibility> columnVisibilities = Sets.newHashSet();
         for (Attribute<?> attr : attributes) {
             columnVisibilities.add(attr.getColumnVisibility());
         }
-        return MarkingFunctions.Factory.createMarkingFunctions().combine(columnVisibilities);
+        return markingFunctions.combine(columnVisibilities);
     }
 
     private long updateTimestamps() {
         MutableLong ts = new MutableLong(Long.MAX_VALUE);
-        for (Attribute<?> attribute : getRawAttributes()) {
+        for (Attribute<?> attribute : attributes.getRawAttributes()) {
             mergeTimestamps(attribute, ts);
         }
         return ts.longValue();
@@ -95,9 +100,9 @@ public abstract class AttributeBag<T extends Comparable<T>> extends Attribute<T>
 
     private void mergeTimestamps(Attribute<?> other, MutableLong ts) {
         // if this is a set of attributes, then examine each one. Note not recursing on a Document as it should have already applied the shard time.
-        if (other instanceof AttributeBag) {
+        if (other instanceof Attributes) {
             // recurse on the sub attributes
-            for (Attribute<?> attribute : ((AttributeBag<?>) other).getRawAttributes()) {
+            for (Attribute<?> attribute : ((Attributes) other).getRawAttributes()) {
                 mergeTimestamps(attribute, ts);
             }
         } else if (other.isMetadataSet()) {
@@ -142,9 +147,4 @@ public abstract class AttributeBag<T extends Comparable<T>> extends Attribute<T>
         }
     }
 
-    @Override
-    public void setToKeep(boolean toKeep) {
-        super.setToKeep(toKeep);
-        // do not change values of child attributes to avoid overriding earlier decisions
-    }
 }

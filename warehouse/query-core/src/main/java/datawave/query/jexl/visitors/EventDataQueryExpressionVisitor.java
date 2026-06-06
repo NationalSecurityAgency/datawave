@@ -33,8 +33,8 @@ import com.google.common.collect.ImmutableSet;
 import datawave.data.type.NoOpType;
 import datawave.data.type.Type;
 import datawave.query.attributes.Attribute;
-import datawave.query.attributes.AttributeBag;
 import datawave.query.attributes.AttributeFactory;
+import datawave.query.attributes.Attributes;
 import datawave.query.attributes.TypeAttribute;
 import datawave.query.data.parsers.DatawaveKey;
 import datawave.query.jexl.JexlASTHelper;
@@ -541,8 +541,8 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
                 TypeAttribute dta = (TypeAttribute) attr;
                 Type t = dta.getType();
                 types.add(t);
-            } else if (AttributeBag.class.isAssignableFrom(attr.getClass())) {
-                attrQueue.addAll(((AttributeBag<?>) attr).getAttributes());
+            } else if (Attributes.class.isAssignableFrom(attr.getClass())) {
+                attrQueue.addAll(((Attributes) attr).getAttributes());
             } else {
                 log.warn("Unexpected attribute type when extracting type: " + attr.getClass().getCanonicalName());
             }

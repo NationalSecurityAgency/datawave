@@ -1532,14 +1532,15 @@ public class QueryOptions implements OptionDescriber {
 
         if (options.containsKey(PROJECTION_FIELDS)) {
             this.projectResults = true;
-            this.useAllowListedFields = true;
 
             String option = options.get(PROJECTION_FIELDS);
             if (option != null) {
+                this.useAllowListedFields = true;
                 this.allowListedFields = new HashSet<>(Splitter.on(',').splitToList(option));
             }
 
             if (options.containsKey(HIT_LIST) && Boolean.parseBoolean(options.get(HIT_LIST))) {
+                this.useAllowListedFields = true;
                 this.allowListedFields.add(JexlEvaluation.HIT_TERM_FIELD);
             }
         }
@@ -1551,14 +1552,16 @@ public class QueryOptions implements OptionDescriber {
             }
 
             this.projectResults = true;
-            this.useDisallowListedFields = true;
 
             String fieldList = options.get(DISALLOWLISTED_FIELDS);
             if (fieldList != null && !fieldList.trim().equals("")) {
-                this.disallowListedFields = new HashSet<>();
+                this.useDisallowListedFields = true;
                 Collections.addAll(this.disallowListedFields, StringUtils.split(fieldList, Constants.PARAM_VALUE_SEP));
             }
         }
+
+        // if we never actually set an allow or deny list, then no need to project results
+        this.projectResults = this.useDisallowListedFields || this.useAllowListedFields;
 
         if (options.containsKey(FIELD_COUNTS)) {
             String serializedMap = options.get(FIELD_COUNTS);
