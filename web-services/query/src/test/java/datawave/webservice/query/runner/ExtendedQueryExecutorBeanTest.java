@@ -54,10 +54,9 @@ import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.powermock.api.easymock.PowerMock;
-import org.powermock.api.easymock.annotation.Mock;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.easymock.EasyMockRunner;
+import org.easymock.EasyMockSupport;
+import org.easymock.Mock;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
@@ -126,9 +125,8 @@ import datawave.webservice.result.QueryImplListResponse;
 import datawave.webservice.result.QueryLogicResponse;
 import datawave.webservice.result.VoidResponse;
 
-@RunWith(PowerMockRunner.class)
-@PowerMockIgnore("javax.security.auth.Subject")
-public class ExtendedQueryExecutorBeanTest {
+@RunWith(EasyMockRunner.class)
+public class ExtendedQueryExecutorBeanTest extends EasyMockSupport {
     private static final Throwable ILLEGAL_STATE_EXCEPTION = new IllegalStateException("INTENTIONALLY THROWN TEST EXCEPTION");
     @Mock
     AuditBean auditor;
@@ -242,7 +240,7 @@ public class ExtendedQueryExecutorBeanTest {
     @Before
     public void setupBefore() throws Exception {
 
-        queryLogic2 = PowerMock.createMock(QuerySyntaxParserQueryLogic.class);
+        queryLogic2 = createMock(QuerySyntaxParserQueryLogic.class);
 
         queryExpirationConf = new QueryExpirationProperties();
         queryExpirationConf.setShortCircuitCheckTime(45);
@@ -264,7 +262,7 @@ public class ExtendedQueryExecutorBeanTest {
         this.connectionFactory.returnClient(this.client);
 
         // Run the test
-        PowerMock.replayAll();
+        replayAll();
         QueryExecutorBean subject = new QueryExecutorBean();
         setInternalState(subject, AccumuloConnectionFactory.class, connectionFactory);
         setInternalState(subject, CreatedQueryLogicCacheBean.class, qlCache);
@@ -273,7 +271,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(connectionRequestBean, EJBContext.class, context);
         setInternalState(subject, AccumuloConnectionRequestBean.class, connectionRequestBean);
         VoidResponse result1 = subject.adminCancel(queryId.toString());
-        PowerMock.verifyAll();
+        verifyAll();
 
         // Verify results
         assertNotNull("Expected a non-null response", result1);
@@ -292,7 +290,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.persister.adminFindById(queryId.toString())).andReturn(Arrays.asList(this.query, this.query));
 
         // Run the test
-        PowerMock.replayAll();
+        replayAll();
         try {
             QueryExecutorBean subject = new QueryExecutorBean();
             setInternalState(subject, EJBContext.class, context);
@@ -308,7 +306,7 @@ public class ExtendedQueryExecutorBeanTest {
 
             subject.adminCancel(queryId.toString());
         } finally {
-            PowerMock.verifyAll();
+            verifyAll();
         }
     }
 
@@ -329,7 +327,7 @@ public class ExtendedQueryExecutorBeanTest {
         cache.remove(queryId.toString());
 
         // Run the test
-        PowerMock.replayAll();
+        replayAll();
         QueryExecutorBean subject = new QueryExecutorBean();
         setInternalState(subject, EJBContext.class, context);
         setInternalState(subject, AccumuloConnectionFactory.class, connectionFactory);
@@ -342,7 +340,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, AccumuloConnectionRequestBean.class, connectionRequestBean);
 
         VoidResponse result1 = subject.adminCancel(queryId.toString());
-        PowerMock.verifyAll();
+        verifyAll();
 
         // Verify results
         assertNotNull("Expected a non-null response", result1);
@@ -391,7 +389,7 @@ public class ExtendedQueryExecutorBeanTest {
         this.queryLogic1.close();
 
         // Run the test
-        PowerMock.replayAll();
+        replayAll();
         QueryExecutorBean subject = new QueryExecutorBean();
         setInternalState(subject, EJBContext.class, context);
         setInternalState(subject, AccumuloConnectionFactory.class, connectionFactory);
@@ -408,7 +406,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, AccumuloConnectionRequestBean.class, connectionRequestBean);
 
         VoidResponse result1 = subject.adminCancel(queryId.toString());
-        PowerMock.verifyAll();
+        verifyAll();
 
         // Verify results
         assertNotNull("Expected a non-null response", result1);
@@ -429,7 +427,7 @@ public class ExtendedQueryExecutorBeanTest {
         this.connectionFactory.returnClient(this.client);
 
         // Run the test
-        PowerMock.replayAll();
+        replayAll();
         QueryExecutorBean subject = new QueryExecutorBean();
         setInternalState(subject, AccumuloConnectionFactory.class, connectionFactory);
         setInternalState(subject, ResponseObjectFactory.class, responseObjectFactory);
@@ -438,7 +436,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, AccumuloConnectionRequestBean.class, connectionRequestBean);
         setInternalState(connectionRequestBean, EJBContext.class, context);
         VoidResponse result1 = subject.adminClose(queryId.toString());
-        PowerMock.verifyAll();
+        verifyAll();
 
         // Verify results
         assertNotNull("Expected a non-null response performing an admin close", result1);
@@ -457,7 +455,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.persister.adminFindById(queryId.toString())).andReturn(null);
 
         // Run the test
-        PowerMock.replayAll();
+        replayAll();
         try {
             QueryExecutorBean subject = new QueryExecutorBean();
             setInternalState(subject, EJBContext.class, context);
@@ -470,7 +468,7 @@ public class ExtendedQueryExecutorBeanTest {
             setInternalState(subject, AccumuloConnectionRequestBean.class, connectionRequestBean);
             subject.adminClose(queryId.toString());
         } finally {
-            PowerMock.verifyAll();
+            verifyAll();
         }
     }
 
@@ -498,7 +496,7 @@ public class ExtendedQueryExecutorBeanTest {
         this.connectionFactory.returnClient(this.client);
 
         // Run the test
-        PowerMock.replayAll();
+        replayAll();
         QueryExecutorBean subject = new QueryExecutorBean();
         setInternalState(subject, EJBContext.class, context);
         setInternalState(subject, AccumuloConnectionFactory.class, connectionFactory);
@@ -509,7 +507,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, AccumuloConnectionRequestBean.class, connectionRequestBean);
         setInternalState(subject, ClosedQueryCache.class, closedCache);
         VoidResponse result1 = subject.cancel(queryId.toString());
-        PowerMock.verifyAll();
+        verifyAll();
 
         // Verify results
         assertNotNull("Expected a non-null response", result1);
@@ -541,7 +539,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.persister.findById(queryId.toString())).andReturn(Arrays.asList((Query) this.query, this.query));
 
         // Run the test
-        PowerMock.replayAll();
+        replayAll();
         QueryExecutorBean subject = new QueryExecutorBean();
         setInternalState(subject, EJBContext.class, context);
         setInternalState(subject, AccumuloConnectionFactory.class, connectionFactory);
@@ -557,7 +555,7 @@ public class ExtendedQueryExecutorBeanTest {
         try {
             subject.cancel(queryId.toString());
         } finally {
-            PowerMock.verifyAll();
+            verifyAll();
         }
     }
 
@@ -591,7 +589,7 @@ public class ExtendedQueryExecutorBeanTest {
         cache.remove(queryId.toString());
 
         // Run the test
-        PowerMock.replayAll();
+        replayAll();
         QueryExecutorBean subject = new QueryExecutorBean();
         setInternalState(subject, EJBContext.class, context);
         setInternalState(subject, AccumuloConnectionFactory.class, connectionFactory);
@@ -603,7 +601,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(connectionRequestBean, EJBContext.class, context);
         setInternalState(subject, AccumuloConnectionRequestBean.class, connectionRequestBean);
         VoidResponse result1 = subject.cancel(queryId.toString());
-        PowerMock.verifyAll();
+        verifyAll();
 
         // Verify results
         assertNotNull("Expected a non-null response", result1);
@@ -633,7 +631,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.persister.findById(queryId.toString())).andReturn(new ArrayList<>(0));
 
         // Run the test
-        PowerMock.replayAll();
+        replayAll();
         QueryExecutorBean subject = new QueryExecutorBean();
         setInternalState(subject, EJBContext.class, context);
         setInternalState(subject, CreatedQueryLogicCacheBean.class, qlCache);
@@ -647,7 +645,7 @@ public class ExtendedQueryExecutorBeanTest {
         try {
             subject.close(queryId.toString());
         } finally {
-            PowerMock.verifyAll();
+            verifyAll();
         }
     }
 
@@ -670,11 +668,11 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.principal.getUserDN()).andReturn(SubjectIssuerDNPair.of(userName));
         expect(this.tuple.getLeft()).andReturn((QueryLogic) this.queryLogic1);
         this.queryLogic1.close();
-        PowerMock.expectLastCall().andThrow(ILLEGAL_STATE_EXCEPTION);
+        EasyMock.expectLastCall().andThrow(ILLEGAL_STATE_EXCEPTION);
         expect(this.tuple.getRight()).andThrow(ILLEGAL_STATE_EXCEPTION);
 
         // Run the test
-        PowerMock.replayAll();
+        replayAll();
         try {
             QueryExecutorBean subject = new QueryExecutorBean();
             setInternalState(subject, EJBContext.class, context);
@@ -688,7 +686,7 @@ public class ExtendedQueryExecutorBeanTest {
 
             subject.close(queryId.toString());
         } finally {
-            PowerMock.verifyAll();
+            verifyAll();
         }
     }
 
@@ -801,7 +799,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.query.findParameter(RemoteUserOperationsImpl.INCLUDE_REMOTE_SERVICES))
                         .andReturn(new QueryImpl.Parameter(RemoteUserOperationsImpl.INCLUDE_REMOTE_SERVICES, "true")).anyTimes();
         this.metrics.updateMetric(isA(QueryMetric.class));
-        PowerMock.expectLastCall().times(2);
+        EasyMock.expectLastCall().times(2);
         expect(this.query.getUserDN()).andReturn(userDN).anyTimes();
         expect(this.query.getDnList()).andReturn(dnList).anyTimes();
         expect(this.query.getSystemFrom()).andReturn(systemFrom).anyTimes();
@@ -822,7 +820,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(queryLogic1.getResultLimit(anyObject(QueryImpl.class))).andReturn(-1L);
 
         // Run the test
-        PowerMock.replayAll();
+        replayAll();
         QueryExecutorBean subject = new QueryExecutorBean();
         setInternalState(subject, EJBContext.class, context);
         setInternalState(subject, AccumuloConnectionFactory.class, connectionFactory);
@@ -844,7 +842,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, AccumuloConnectionRequestBean.class, connectionRequestBean);
         setInternalState(subject, QueryLimiter.class, queryLimiter);
         GenericResponse<String> result1 = subject.createQuery(queryLogicName, uriInfo, MapUtils.toMultivaluedMap(queryParameters), httpHeaders);
-        PowerMock.verifyAll();
+        verifyAll();
 
         // Verify results
         assertNotNull("Expected a non-null response", result1);
@@ -964,7 +962,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.query.findParameter(RemoteUserOperationsImpl.INCLUDE_REMOTE_SERVICES))
                         .andReturn(new QueryImpl.Parameter(RemoteUserOperationsImpl.INCLUDE_REMOTE_SERVICES, "true")).anyTimes();
         this.metrics.updateMetric(isA(QueryMetric.class));
-        PowerMock.expectLastCall().times(2);
+        EasyMock.expectLastCall().times(2);
         expect(this.query.getUserDN()).andReturn(userDN).anyTimes();
         expect(this.query.getDnList()).andReturn(dnList).anyTimes();
         expect(this.query.getSystemFrom()).andReturn(systemFrom).anyTimes();
@@ -990,7 +988,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(queryLogic1.getResultLimit(anyObject(QueryImpl.class))).andReturn(-1L);
 
         // Run the test
-        PowerMock.replayAll();
+        replayAll();
         QueryExecutorBean subject = new QueryExecutorBean();
         setInternalState(subject, EJBContext.class, context);
         setInternalState(subject, AccumuloConnectionFactory.class, connectionFactory);
@@ -1012,7 +1010,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, AccumuloConnectionRequestBean.class, connectionRequestBean);
         setInternalState(subject, QueryLimiter.class, queryLimiter);
         GenericResponse<String> result1 = subject.createQuery(queryLogicName, uriInfo, MapUtils.toMultivaluedMap(queryParameters), httpHeaders);
-        PowerMock.verifyAll();
+        verifyAll();
 
         // Verify results
         assertNotNull("Expected a non-null response", result1);
@@ -1129,7 +1127,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.query.findParameter(RemoteUserOperationsImpl.INCLUDE_REMOTE_SERVICES))
                         .andReturn(new QueryImpl.Parameter(RemoteUserOperationsImpl.INCLUDE_REMOTE_SERVICES, "true")).anyTimes();
         this.metrics.updateMetric(isA(QueryMetric.class));
-        PowerMock.expectLastCall().times(2);
+        EasyMock.expectLastCall().times(2);
         expect(this.query.getUserDN()).andReturn(userDN).anyTimes();
         expect(this.query.getDnList()).andReturn(dnList).anyTimes();
         expect(this.query.getSystemFrom()).andReturn(systemFrom).anyTimes();
@@ -1183,7 +1181,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.transaction.getStatus()).andReturn(Status.STATUS_ACTIVE).anyTimes();
         this.transaction.commit();
         // Run the test
-        PowerMock.replayAll();
+        replayAll();
         QueryExecutorBean subject = new QueryExecutorBean();
         setInternalState(subject, EJBContext.class, context);
         setInternalState(subject, AccumuloConnectionFactory.class, connectionFactory);
@@ -1205,7 +1203,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, AccumuloConnectionRequestBean.class, connectionRequestBean);
         setInternalState(subject, QueryLimiter.class, queryLimiter);
         BaseQueryResponse result1 = subject.createQueryAndNext(queryLogicName, MapUtils.toMultivaluedMap(queryParameters));
-        PowerMock.verifyAll();
+        verifyAll();
 
         // Verify results
         assertNotNull("Expected a non-null response", result1);
@@ -1320,7 +1318,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.query.findParameter(RemoteUserOperationsImpl.INCLUDE_REMOTE_SERVICES))
                         .andReturn(new QueryImpl.Parameter(RemoteUserOperationsImpl.INCLUDE_REMOTE_SERVICES, "true")).anyTimes();
         this.metrics.updateMetric(isA(QueryMetric.class));
-        PowerMock.expectLastCall().times(2);
+        EasyMock.expectLastCall().times(2);
         expect(this.query.getUserDN()).andReturn(userDN).anyTimes();
         expect(this.query.getDnList()).andReturn(dnList).anyTimes();
         expect(this.query.getSystemFrom()).andReturn(systemFrom).anyTimes();
@@ -1343,16 +1341,16 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.context.getUserTransaction()).andReturn(this.transaction).anyTimes();
         expect(this.transaction.getStatus()).andReturn(Status.STATUS_NO_TRANSACTION).anyTimes();
         cache.unlock("{id}");
-        PowerMock.expectLastCall().anyTimes();
+        EasyMock.expectLastCall().anyTimes();
         this.transaction.begin();
         this.transaction.setRollbackOnly();
-        PowerMock.expectLastCall().anyTimes();
+        EasyMock.expectLastCall().anyTimes();
 
         expect(this.responseObjectFactory.getEventQueryResponse()).andReturn(new DefaultEventQueryResponse());
         this.transaction.commit();
         QueryExecutorBean subject = new QueryExecutorBean();
         // Run the test
-        PowerMock.replayAll();
+        replayAll();
 
         setInternalState(subject, EJBContext.class, context);
         setInternalState(subject, AccumuloConnectionFactory.class, connectionFactory);
@@ -1489,7 +1487,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.query.getParameters()).andReturn((Set) Collections.emptySet()).anyTimes();
         expect(this.query.getUncaughtExceptionHandler()).andReturn(new QueryUncaughtExceptionHandler()).anyTimes();
         this.metrics.updateMetric(isA(QueryMetric.class));
-        PowerMock.expectLastCall().times(2);
+        EasyMock.expectLastCall().times(2);
         expect(this.query.getUserDN()).andReturn(userDN).anyTimes();
         expect(this.query.getDnList()).andReturn(dnList).anyTimes();
         expect(this.query.getSystemFrom()).andReturn(systemFrom).anyTimes();
@@ -1508,16 +1506,16 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.context.getUserTransaction()).andReturn(this.transaction).anyTimes();
         expect(this.transaction.getStatus()).andReturn(Status.STATUS_NO_TRANSACTION).anyTimes();
         cache.unlock("{id}");
-        PowerMock.expectLastCall().anyTimes();
+        EasyMock.expectLastCall().anyTimes();
         this.transaction.begin();
         this.transaction.setRollbackOnly();
-        PowerMock.expectLastCall().anyTimes();
+        EasyMock.expectLastCall().anyTimes();
 
         expect(this.responseObjectFactory.getEventQueryResponse()).andReturn(new DefaultEventQueryResponse());
         this.transaction.commit();
         QueryExecutorBean subject = new QueryExecutorBean();
         // Run the test
-        PowerMock.replayAll();
+        replayAll();
 
         setInternalState(subject, EJBContext.class, context);
         setInternalState(subject, AccumuloConnectionFactory.class, connectionFactory);
@@ -1654,7 +1652,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.query.getParameters()).andReturn((Set) Collections.emptySet()).anyTimes();
         expect(this.query.getUncaughtExceptionHandler()).andReturn(new QueryUncaughtExceptionHandler()).anyTimes();
         this.metrics.updateMetric(isA(QueryMetric.class));
-        PowerMock.expectLastCall().times(2);
+        EasyMock.expectLastCall().times(2);
         expect(this.query.getUserDN()).andReturn(userDN).anyTimes();
         expect(this.query.getDnList()).andReturn(dnList).anyTimes();
         expect(this.query.getSystemFrom()).andReturn(systemFrom).anyTimes();
@@ -1703,7 +1701,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.transaction.getStatus()).andReturn(Status.STATUS_ACTIVE).anyTimes();
         this.transaction.commit();
         // Run the test
-        PowerMock.replayAll();
+        replayAll();
         QueryExecutorBean subject = new QueryExecutorBean();
         setInternalState(subject, EJBContext.class, context);
         setInternalState(subject, AccumuloConnectionFactory.class, connectionFactory);
@@ -1850,7 +1848,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.query.findParameter(RemoteUserOperationsImpl.INCLUDE_REMOTE_SERVICES))
                         .andReturn(new QueryImpl.Parameter(RemoteUserOperationsImpl.INCLUDE_REMOTE_SERVICES, "true")).anyTimes();
         this.metrics.updateMetric(isA(QueryMetric.class));
-        PowerMock.expectLastCall().times(2);
+        EasyMock.expectLastCall().times(2);
         expect(this.query.getUserDN()).andReturn(userDN).anyTimes();
         expect(this.query.getDnList()).andReturn(dnList).anyTimes();
         expect(this.query.getSystemFrom()).andReturn(systemFrom).anyTimes();
@@ -1909,7 +1907,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(queryLogic1.getResultLimit(anyObject(QueryImpl.class))).andReturn(-1L);
 
         // Run the test
-        PowerMock.replayAll();
+        replayAll();
         QueryExecutorBean subject = new QueryExecutorBean();
         setInternalState(subject, EJBContext.class, context);
         setInternalState(subject, AccumuloConnectionFactory.class, connectionFactory);
@@ -1931,7 +1929,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, AccumuloConnectionRequestBean.class, connectionRequestBean);
         setInternalState(subject, QueryLimiter.class, queryLimiter);
         BaseQueryResponse result1 = subject.createQueryAndNext(queryLogicName, queryParameters);
-        PowerMock.verifyAll();
+        verifyAll();
 
         // Verify results
         assertNotNull("Expected a non-null response", result1);
@@ -2030,9 +2028,9 @@ public class ExtendedQueryExecutorBeanTest {
                         .andThrow(new IllegalStateException("INTENTIONALLY THROWN TEST EXCEPTION: PROBLEM ADDING QUERY LOGIC TO CACHE"));
         this.queryLogic1.close();
         this.connectionFactory.returnClient(this.client);
-        PowerMock.expectLastCall().andThrow(new IOException("INTENTIONALLY THROWN 2ND-LEVEL TEST EXCEPTION"));
+        EasyMock.expectLastCall().andThrow(new IOException("INTENTIONALLY THROWN 2ND-LEVEL TEST EXCEPTION"));
         this.persister.remove(this.query);
-        PowerMock.expectLastCall().andThrow(new IOException("INTENTIONALLY THROWN 3RD-LEVEL TEST EXCEPTION"));
+        EasyMock.expectLastCall().andThrow(new IOException("INTENTIONALLY THROWN 3RD-LEVEL TEST EXCEPTION"));
         expect(this.query.getId()).andReturn(queryId).anyTimes();
         expect(this.query.getQueryLogicName()).andReturn(queryLogicName).anyTimes();
         expect(this.query.getSystemFrom()).andReturn(systemFrom).anyTimes();
@@ -2042,7 +2040,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(queryLogic1.getResultLimit(anyObject(QueryImpl.class))).andReturn(-1L);
 
         // Run the test
-        PowerMock.replayAll();
+        replayAll();
         QueryExecutorBean subject = new QueryExecutorBean();
         setInternalState(subject, EJBContext.class, context);
         setInternalState(subject, QueryParameters.class, new DefaultQueryParameters());
@@ -2065,7 +2063,7 @@ public class ExtendedQueryExecutorBeanTest {
         } catch (DatawaveWebApplicationException e) {
             result1 = e.getCause();
         }
-        PowerMock.verifyAll();
+        verifyAll();
 
         // Verify results
         assertTrue("QueryException expected to have been thrown", result1 instanceof QueryException);
@@ -2181,7 +2179,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.query.findParameter(RemoteUserOperationsImpl.INCLUDE_REMOTE_SERVICES))
                         .andReturn(new QueryImpl.Parameter(RemoteUserOperationsImpl.INCLUDE_REMOTE_SERVICES, "true")).anyTimes();
         this.metrics.updateMetric(isA(QueryMetric.class));
-        PowerMock.expectLastCall().times(2);
+        EasyMock.expectLastCall().times(2);
         expect(this.query.getUserDN()).andReturn(userDN).anyTimes();
         expect(this.query.getDnList()).andReturn(dnList).anyTimes();
         expect(this.query.getSystemFrom()).andReturn(systemFrom).anyTimes();
@@ -2259,7 +2257,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(queryLogic1.getResultLimit(anyObject(QueryImpl.class))).andReturn(-1L);
 
         // Run the test
-        PowerMock.replayAll();
+        replayAll();
         try {
             QueryExecutorBean subject = new QueryExecutorBean();
             setInternalState(subject, EJBContext.class, context);
@@ -2284,7 +2282,7 @@ public class ExtendedQueryExecutorBeanTest {
 
             subject.createQueryAndNext(queryLogicName, queryParameters);
         } finally {
-            PowerMock.verifyAll();
+            verifyAll();
         }
     }
 
@@ -2313,7 +2311,7 @@ public class ExtendedQueryExecutorBeanTest {
                                         expirationDate, pagesize, pageTimeout, maxResultsOverride, persistenceMode, systemFrom, parameters, trace));
 
         // Run the test
-        PowerMock.replayAll();
+        replayAll();
         QueryExecutorBean subject = new QueryExecutorBean();
         setInternalState(subject, QueryParameters.class, new DefaultQueryParameters());
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
@@ -2325,7 +2323,7 @@ public class ExtendedQueryExecutorBeanTest {
         } catch (DatawaveWebApplicationException e) {
             result1 = e;
         }
-        PowerMock.verifyAll();
+        verifyAll();
 
         // Verify results
         assertTrue("BadRequestException expected to have been thrown", result1 instanceof BadRequestException);
@@ -2357,7 +2355,7 @@ public class ExtendedQueryExecutorBeanTest {
                                         expirationDate, pagesize, pageTimeout, maxResultsOverride, persistenceMode, systemFrom, parameters, trace));
 
         // Run the test
-        PowerMock.replayAll();
+        replayAll();
         QueryExecutorBean subject = new QueryExecutorBean();
         setInternalState(subject, QueryParameters.class, new DefaultQueryParameters());
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
@@ -2368,7 +2366,7 @@ public class ExtendedQueryExecutorBeanTest {
         } catch (DatawaveWebApplicationException e) {
             result1 = e;
         }
-        PowerMock.verifyAll();
+        verifyAll();
 
         // Verify results
         assertTrue("BadRequestException expected to have been thrown", result1 instanceof BadRequestException);
@@ -2424,7 +2422,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.queryLogic1.getMaxPageSize()).andReturn(10).times(4);
 
         // Run the test
-        PowerMock.replayAll();
+        replayAll();
         QueryExecutorBean subject = new QueryExecutorBean();
         setInternalState(subject, EJBContext.class, context);
         setInternalState(subject, QueryLogicFactory.class, queryLogicFactory);
@@ -2438,7 +2436,7 @@ public class ExtendedQueryExecutorBeanTest {
         } catch (DatawaveWebApplicationException e) {
             result1 = e.getCause();
         }
-        PowerMock.verifyAll();
+        verifyAll();
 
         // Verify results
         assertTrue("QueryException expected to have been thrown", result1 instanceof QueryException);
@@ -2471,7 +2469,7 @@ public class ExtendedQueryExecutorBeanTest {
                         .andThrow(new IllegalArgumentException("INTENTIONALLY THROWN TEST EXCEPTION: UNDEFINED QUERY LOGIC"));
 
         // Run the test
-        PowerMock.replayAll();
+        replayAll();
         QueryExecutorBean subject = new QueryExecutorBean();
         setInternalState(subject, QueryLogicFactory.class, queryLogicFactory);
         setInternalState(subject, EJBContext.class, context);
@@ -2489,7 +2487,7 @@ public class ExtendedQueryExecutorBeanTest {
         } catch (DatawaveWebApplicationException e) {
             result1 = e.getCause();
         }
-        PowerMock.verifyAll();
+        verifyAll();
 
         // Verify results
         assertTrue("QueryException expected to have been thrown", result1 instanceof QueryException);
@@ -2518,7 +2516,7 @@ public class ExtendedQueryExecutorBeanTest {
         boolean trace = false;
 
         // Run the test
-        PowerMock.replayAll();
+        replayAll();
         QueryExecutorBean subject = new QueryExecutorBean();
         setInternalState(subject, QueryParameters.class, new DefaultQueryParameters());
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
@@ -2533,7 +2531,7 @@ public class ExtendedQueryExecutorBeanTest {
         } catch (DatawaveWebApplicationException e) {
             result1 = e;
         }
-        PowerMock.verifyAll();
+        verifyAll();
 
         // Verify results
         assertTrue("BadRequestException expected to have been thrown", result1 instanceof BadRequestException);
@@ -2562,7 +2560,7 @@ public class ExtendedQueryExecutorBeanTest {
         boolean trace = false;
 
         // Run the test
-        PowerMock.replayAll();
+        replayAll();
         QueryExecutorBean subject = new QueryExecutorBean();
         setInternalState(subject, QueryParameters.class, new DefaultQueryParameters());
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
@@ -2576,7 +2574,7 @@ public class ExtendedQueryExecutorBeanTest {
         } catch (DatawaveWebApplicationException e) {
             result1 = e;
         }
-        PowerMock.verifyAll();
+        verifyAll();
 
         // Verify results
         assertTrue("BadRequestException expected to have been thrown", result1 instanceof BadRequestException);
@@ -2643,7 +2641,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.queryLogic1.getConnectionPriority()).andThrow(ILLEGAL_STATE_EXCEPTION);
 
         // Run the test
-        PowerMock.replayAll();
+        replayAll();
         try {
             QueryExecutorBean subject = new QueryExecutorBean();
             setInternalState(subject, EJBContext.class, context);
@@ -2656,7 +2654,7 @@ public class ExtendedQueryExecutorBeanTest {
             setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
             subject.defineQuery(queryLogicName, queryParameters);
         } finally {
-            PowerMock.verifyAll();
+            verifyAll();
         }
     }
 
@@ -2667,13 +2665,13 @@ public class ExtendedQueryExecutorBeanTest {
         this.traceCache.put("traceInfos", this.traceInfos);
 
         // Run the test
-        PowerMock.replayAll();
+        replayAll();
         QueryExecutorBean subject = new QueryExecutorBean();
         setInternalState(subject, Multimap.class, traceInfos);
         setInternalState(subject, QueryTraceCache.class, traceCache);
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         VoidResponse result1 = subject.disableAllTracing();
-        PowerMock.verifyAll();
+        verifyAll();
 
         // Verify results
         assertNotNull("Expected a non-null response", result1);
@@ -2692,7 +2690,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.traceInfos.remove(eq(user), notNull())).andReturn(true);
 
         // Run the test
-        PowerMock.replayAll();
+        replayAll();
         QueryExecutorBean subject = new QueryExecutorBean();
         setInternalState(subject, Multimap.class, traceInfos);
         setInternalState(subject, QueryTraceCache.class, traceCache);
@@ -2705,7 +2703,7 @@ public class ExtendedQueryExecutorBeanTest {
         }
         VoidResponse result2 = subject.disableTracing(null, user);
         VoidResponse result3 = subject.disableTracing(queryRegex, user);
-        PowerMock.verifyAll();
+        verifyAll();
 
         // Verify results
         assertNotNull("Expected a BadRequestException due to null regex and user values", result1);
@@ -2814,7 +2812,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.qlCache.poll(newQuery1.getId().toString())).andReturn(null);
 
         // Run the test
-        PowerMock.replayAll();
+        replayAll();
         QueryExecutorBean subject = new QueryExecutorBean();
         setInternalState(subject, EJBContext.class, context);
         setInternalState(subject, AccumuloConnectionFactory.class, connectionFactory);
@@ -2831,7 +2829,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         GenericResponse<String> result1 = subject.duplicateQuery(queryId.toString(), newQueryName, queryLogicName, query, queryVisibility, beginDate, endDate,
                         queryAuthorizations, expirationDate, pagesize, pageTimeout, maxResultsOverride, persistenceMode, parameters, trace);
-        PowerMock.verifyAll();
+        verifyAll();
 
         // Verify results
         assertNotNull("Expected a non-null response", result1);
@@ -2871,7 +2869,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.persister.findById(queryId.toString())).andReturn(null);
 
         // Run the test
-        PowerMock.replayAll();
+        replayAll();
         QueryExecutorBean subject = new QueryExecutorBean();
         setInternalState(subject, EJBContext.class, context);
         setInternalState(subject, QueryCache.class, cache);
@@ -2886,7 +2884,7 @@ public class ExtendedQueryExecutorBeanTest {
             subject.duplicateQuery(queryId.toString(), queryName, queryLogicName, query, queryVisibility, beginDate, endDate, queryAuthorizations,
                             expirationDate, pagesize, pageTimeout, maxResultsOverride, persistenceMode, parameters, trace);
         } finally {
-            PowerMock.verifyAll();
+            verifyAll();
         }
     }
 
@@ -2944,7 +2942,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.qlCache.poll(newQuery1.getId().toString())).andReturn(null);
 
         // Run the test
-        PowerMock.replayAll();
+        replayAll();
         QueryExecutorBean subject = new QueryExecutorBean();
         setInternalState(subject, EJBContext.class, context);
         setInternalState(subject, AccumuloConnectionFactory.class, connectionFactory);
@@ -2964,7 +2962,7 @@ public class ExtendedQueryExecutorBeanTest {
             subject.duplicateQuery(queryId.toString(), newQueryName, queryLogicName, query, queryVisibility, beginDate, endDate, queryAuthorizations,
                             expirationDate, pagesize, pageTimeout, maxResultsOverride, persistenceMode, parameters, trace);
         } finally {
-            PowerMock.verifyAll();
+            verifyAll();
         }
     }
 
@@ -2994,7 +2992,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.context.getCallerPrincipal()).andThrow(uncheckedException);
 
         // Run the test
-        PowerMock.replayAll();
+        replayAll();
         QueryExecutorBean subject = new QueryExecutorBean();
         setInternalState(subject, EJBContext.class, context);
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
@@ -3003,7 +3001,7 @@ public class ExtendedQueryExecutorBeanTest {
             subject.duplicateQuery(queryId.toString(), newQueryName, queryLogicName, query, queryVisibility, beginDate, endDate, queryAuthorizations,
                             expirationDate, pagesize, pageTimeout, maxResultsOverride, persistenceMode, parameters, trace);
         } finally {
-            PowerMock.verifyAll();
+            verifyAll();
         }
     }
 
@@ -3029,7 +3027,7 @@ public class ExtendedQueryExecutorBeanTest {
         String systemFrom = "test";
 
         // Run the test
-        PowerMock.replayAll();
+        replayAll();
         QueryExecutorBean subject = new QueryExecutorBean();
 
         Exception result1 = null;
@@ -3039,7 +3037,7 @@ public class ExtendedQueryExecutorBeanTest {
         } catch (DatawaveWebApplicationException e) {
             result1 = e;
         }
-        PowerMock.verifyAll();
+        verifyAll();
 
         assertNotNull("Expected a DatawaveWebApplicationException.", result1);
         assertEquals("Expected a Bad Request status code.", 400, ((DatawaveWebApplicationException) result1).getResponse().getStatus());
@@ -3051,7 +3049,7 @@ public class ExtendedQueryExecutorBeanTest {
         String user = "user";
         String queryRegex = "queryRegex";
 
-        PowerMock.resetAll();
+        resetAll();
 
         // Set expectations
         expect(traceInfos.containsEntry(user, PatternWrapper.wrap(queryRegex))).andReturn(false);
@@ -3059,7 +3057,7 @@ public class ExtendedQueryExecutorBeanTest {
         traceCache.put("traceInfos", traceInfos);
 
         // Run the test
-        PowerMock.replayAll();
+        replayAll();
         QueryExecutorBean subject = new QueryExecutorBean();
         setInternalState(subject, Multimap.class, traceInfos);
         setInternalState(subject, QueryTraceCache.class, traceCache);
@@ -3071,7 +3069,7 @@ public class ExtendedQueryExecutorBeanTest {
             result1 = e;
         }
         VoidResponse result2 = subject.enableTracing(queryRegex, user);
-        PowerMock.verifyAll();
+        verifyAll();
 
         // Verify results
         assertNotNull("Expected a BadRequestException due to null regex and user values", result1);
@@ -3097,14 +3095,14 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.query.getOwner()).andReturn(sid);
 
         // Run the test
-        PowerMock.replayAll();
+        replayAll();
         QueryExecutorBean subject = new QueryExecutorBean();
         setInternalState(subject, EJBContext.class, context);
         setInternalState(subject, QueryCache.class, cache);
         setInternalState(subject, ClosedQueryCache.class, closedCache);
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         QueryImplListResponse result1 = subject.get(queryId.toString());
-        PowerMock.verifyAll();
+        verifyAll();
 
         // Verify results
         assertNotNull("Expected non-null response", result1);
@@ -3129,7 +3127,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.runningQuery.getSettings()).andThrow(new IllegalStateException("INTENTIONALLY THROWN UNCHECKED TEST EXCEPTION"));
 
         // Run the test
-        PowerMock.replayAll();
+        replayAll();
         QueryExecutorBean subject = new QueryExecutorBean();
         setInternalState(subject, EJBContext.class, context);
         setInternalState(subject, QueryCache.class, cache);
@@ -3139,7 +3137,7 @@ public class ExtendedQueryExecutorBeanTest {
         try {
             subject.get(queryId.toString());
         } finally {
-            PowerMock.verifyAll();
+            verifyAll();
         }
     }
 
@@ -3161,7 +3159,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.query.getOwner()).andReturn("nonmatching_sid").times(2);
 
         // Run the test
-        PowerMock.replayAll();
+        replayAll();
         QueryExecutorBean subject = new QueryExecutorBean();
         setInternalState(subject, EJBContext.class, context);
         setInternalState(subject, QueryCache.class, cache);
@@ -3171,7 +3169,7 @@ public class ExtendedQueryExecutorBeanTest {
         try {
             subject.get(queryId.toString());
         } finally {
-            PowerMock.verifyAll();
+            verifyAll();
         }
     }
 
@@ -3192,7 +3190,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.lookupUUIDConfiguration.optionalParamsToMap()).andDelegateTo(tmpCfg);
 
         // Run the test
-        PowerMock.replayAll();
+        replayAll();
         QueryExecutorBean subject = new QueryExecutorBean();
         setInternalState(subject, EJBContext.class, context);
         setInternalState(subject, QueryTraceCache.class, traceCache);
@@ -3204,7 +3202,7 @@ public class ExtendedQueryExecutorBeanTest {
         try {
             subject.init();
         } finally {
-            PowerMock.verifyAll();
+            verifyAll();
         }
     }
 
@@ -3260,7 +3258,7 @@ public class ExtendedQueryExecutorBeanTest {
         this.cache.put(eq(queryId.toString()), isA(RunningQuery.class));
 
         // Run the test
-        PowerMock.replayAll();
+        replayAll();
         QueryExecutorBean subject = new QueryExecutorBean();
         setInternalState(subject, EJBContext.class, context);
         setInternalState(subject, QueryCache.class, cache);
@@ -3272,7 +3270,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         setInternalState(subject, UserOperationsBean.class, userOperations);
         QueryImplListResponse result1 = subject.list(queryName);
-        PowerMock.verifyAll();
+        verifyAll();
 
         // Verify results
         assertNotNull("QueryLogicResponse should not be returned null", result1);
@@ -3287,12 +3285,12 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.persister.findByUser(userSid)).andReturn(Arrays.asList(this.query));
 
         // Run the test
-        PowerMock.replayAll();
+        replayAll();
         QueryExecutorBean subject = new QueryExecutorBean();
         setInternalState(subject, Persister.class, persister);
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         QueryImplListResponse result1 = subject.listQueriesForUser(userSid);
-        PowerMock.verifyAll();
+        verifyAll();
 
         // Verify results
         assertNotNull("Expected a non-null response", result1);
@@ -3307,7 +3305,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.persister.findByUser(userSid)).andReturn(null);
 
         // Run the test
-        PowerMock.replayAll();
+        replayAll();
         QueryExecutorBean subject = new QueryExecutorBean();
         setInternalState(subject, Persister.class, persister);
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
@@ -3315,7 +3313,7 @@ public class ExtendedQueryExecutorBeanTest {
         try {
             subject.listQueriesForUser(userSid);
         } finally {
-            PowerMock.verifyAll();
+            verifyAll();
         }
     }
 
@@ -3328,7 +3326,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.persister.findByUser(userSid)).andThrow(ILLEGAL_STATE_EXCEPTION);
 
         // Run the test
-        PowerMock.replayAll();
+        replayAll();
         try {
             QueryExecutorBean subject = new QueryExecutorBean();
             setInternalState(subject, Persister.class, persister);
@@ -3336,7 +3334,7 @@ public class ExtendedQueryExecutorBeanTest {
 
             subject.listQueriesForUser(userSid);
         } finally {
-            PowerMock.verifyAll();
+            verifyAll();
         }
     }
 
@@ -3367,7 +3365,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.queryLogic2.getQuerySyntaxParsers()).andReturn((Map) parsers);
 
         // Run the test
-        PowerMock.replayAll();
+        replayAll();
         QueryExecutorBean subject = new QueryExecutorBean();
         setInternalState(subject, QueryLogicFactory.class, queryLogicFactory);
         setInternalState(subject, QueryExpirationProperties.class, queryExpirationConf);
@@ -3375,7 +3373,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, ResponseObjectFactory.class, responseObjectFactory);
         QueryLogicResponse result1 = subject.listQueryLogic();
         subject.close();
-        PowerMock.verifyAll();
+        verifyAll();
 
         // Verify results
         assertNotNull("QueryLogicResponse should not be returned null", result1);
@@ -3387,13 +3385,13 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.persister.findByUser()).andReturn(Arrays.asList(this.query));
 
         // Run the test
-        PowerMock.replayAll();
+        replayAll();
         QueryExecutorBean subject = new QueryExecutorBean();
         setInternalState(subject, Persister.class, persister);
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         QueryImplListResponse result1 = subject.listUserQueries();
         subject.close();
-        PowerMock.verifyAll();
+        verifyAll();
 
         // Verify results
         assertNotNull("Query response should not be returned null", result1);
@@ -3405,7 +3403,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.persister.findByUser()).andReturn(null);
 
         // Run the test
-        PowerMock.replayAll();
+        replayAll();
         Exception result1 = null;
         try {
             QueryExecutorBean subject = new QueryExecutorBean();
@@ -3415,7 +3413,7 @@ public class ExtendedQueryExecutorBeanTest {
         } catch (Exception e) {
             result1 = e;
         }
-        PowerMock.verifyAll();
+        verifyAll();
 
         assertNotNull("Expected a DatawaveWebApplicationException.", result1);
         assertEquals("Expected a No Results status code.", 204, ((DatawaveWebApplicationException) result1).getResponse().getStatus());
@@ -3428,7 +3426,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.persister.findByUser()).andThrow(uncheckedException);
 
         // Run the test
-        PowerMock.replayAll();
+        replayAll();
         QueryExecutorBean subject = new QueryExecutorBean();
         setInternalState(subject, Persister.class, persister);
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
@@ -3438,7 +3436,7 @@ public class ExtendedQueryExecutorBeanTest {
         } catch (DatawaveWebApplicationException e) {
             result1 = e;
         }
-        PowerMock.verifyAll();
+        verifyAll();
 
         // Verify results
         assertNotNull("Expected an exception to be thrown", result1);
@@ -3477,7 +3475,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.transaction.getStatus()).andThrow(ILLEGAL_STATE_EXCEPTION);
 
         // Run the test
-        PowerMock.replayAll();
+        replayAll();
         QueryExecutorBean subject = new QueryExecutorBean();
         setInternalState(subject, EJBContext.class, context);
         setInternalState(subject, QueryCache.class, cache);
@@ -3491,7 +3489,7 @@ public class ExtendedQueryExecutorBeanTest {
         } catch (DatawaveWebApplicationException e) {
             result1 = e;
         }
-        PowerMock.verifyAll();
+        verifyAll();
 
         // Verify results
         assertNotNull("Expected a DatawaveWebApplicationException to be thrown", result1);
@@ -3528,10 +3526,10 @@ public class ExtendedQueryExecutorBeanTest {
         this.transaction.setRollbackOnly();
         expect(this.transaction.getStatus()).andReturn(Status.STATUS_PREPARING).times(2);
         this.transaction.commit();
-        PowerMock.expectLastCall().andThrow(new HeuristicMixedException("INTENTIONALLY THROWN TEST EXCEPTION"));
+        EasyMock.expectLastCall().andThrow(new HeuristicMixedException("INTENTIONALLY THROWN TEST EXCEPTION"));
 
         // Run the test
-        PowerMock.replayAll();
+        replayAll();
         QueryExecutorBean subject = new QueryExecutorBean();
         setInternalState(subject, EJBContext.class, context);
         setInternalState(subject, QueryCache.class, cache);
@@ -3542,7 +3540,7 @@ public class ExtendedQueryExecutorBeanTest {
         try {
             subject.next(queryId.toString());
         } finally {
-            PowerMock.verifyAll();
+            verifyAll();
         }
     }
 
@@ -3583,7 +3581,7 @@ public class ExtendedQueryExecutorBeanTest {
         this.queryMetric.setError(isA(Throwable.class));
 
         // Run the test
-        PowerMock.replayAll();
+        replayAll();
         QueryExecutorBean subject = new QueryExecutorBean();
         setInternalState(subject, EJBContext.class, context);
         setInternalState(subject, QueryCache.class, cache);
@@ -3598,7 +3596,7 @@ public class ExtendedQueryExecutorBeanTest {
             assertTrue(e.getCause() instanceof QueryException);
             assertEquals("401-1", ((QueryException) e.getCause().getCause()).getErrorCode());
         }
-        PowerMock.verifyAll();
+        verifyAll();
 
         // Verify results
         assertNotNull("Expected a DatawaveWebApplicationException to be thrown due an unchecked exception", result1);
@@ -3626,13 +3624,13 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.persister.findById(queryId.toString())).andReturn(new ArrayList<>(0));
         cache.unlock(queryId.toString());
         this.transaction.setRollbackOnly();
-        PowerMock.expectLastCall().andThrow(ILLEGAL_STATE_EXCEPTION);
+        EasyMock.expectLastCall().andThrow(ILLEGAL_STATE_EXCEPTION);
         expect(this.transaction.getStatus()).andReturn(Status.STATUS_UNKNOWN).times(2);
         this.transaction.commit();
-        PowerMock.expectLastCall().andThrow(new HeuristicRollbackException("INTENTIONALLY THROWN TEST EXCEPTION"));
+        EasyMock.expectLastCall().andThrow(new HeuristicRollbackException("INTENTIONALLY THROWN TEST EXCEPTION"));
 
         // Run the test
-        PowerMock.replayAll();
+        replayAll();
         QueryExecutorBean subject = new QueryExecutorBean();
         setInternalState(subject, EJBContext.class, context);
         setInternalState(subject, QueryCache.class, cache);
@@ -3648,7 +3646,7 @@ public class ExtendedQueryExecutorBeanTest {
         } catch (DatawaveWebApplicationException e) {
             result1 = e;
         }
-        PowerMock.verifyAll();
+        verifyAll();
 
         assertNotNull("Expected a DatawaveWebApplicationException.", result1);
         assertEquals("Expected a Not Found status code.", 404, ((DatawaveWebApplicationException) result1).getResponse().getStatus());
@@ -3658,10 +3656,10 @@ public class ExtendedQueryExecutorBeanTest {
     public void testPurgeQueryCache_UncheckedException() throws Exception {
         // Set expectations
         this.cache.clear();
-        PowerMock.expectLastCall().andThrow(new IllegalStateException("INTENTIONALLY THROWN UNCHECKED TEST EXCEPTION"));
+        EasyMock.expectLastCall().andThrow(new IllegalStateException("INTENTIONALLY THROWN UNCHECKED TEST EXCEPTION"));
 
         // Run the test
-        PowerMock.replayAll();
+        replayAll();
         QueryExecutorBean subject = new QueryExecutorBean();
         setInternalState(subject, QueryCache.class, cache);
         setInternalState(subject, ClosedQueryCache.class, closedCache);
@@ -3670,7 +3668,7 @@ public class ExtendedQueryExecutorBeanTest {
         try {
             subject.purgeQueryCache();
         } finally {
-            PowerMock.verifyAll();
+            verifyAll();
         }
     }
 
@@ -3680,7 +3678,7 @@ public class ExtendedQueryExecutorBeanTest {
         this.cache.clear();
 
         // Run the test
-        PowerMock.replayAll();
+        replayAll();
         QueryExecutorBean subject = new QueryExecutorBean();
         setInternalState(subject, QueryCache.class, cache);
         setInternalState(subject, ClosedQueryCache.class, closedCache);
@@ -3690,7 +3688,7 @@ public class ExtendedQueryExecutorBeanTest {
         QueryLogicFactory result6 = subject.getQueryFactory();
         Persister result7 = subject.getPersister();
         QueryCache result8 = subject.getQueryCache();
-        PowerMock.verifyAll();
+        verifyAll();
 
         // Verify results
         assertNotNull("Expected a non-null response", result1);
@@ -3823,12 +3821,12 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.queryLogic1.getTransformIterator(this.query)).andReturn(this.transformIterator);
         expect(this.genericConfiguration.getQueryString()).andReturn(queryName).once();
         this.connectionFactory.returnClient(null); // These 2 lines prevent the bean's exception-handling logic (in combination
-        PowerMock.expectLastCall().anyTimes(); // with PowerMock) from masking an actual problem if one occurs.
+        EasyMock.expectLastCall().anyTimes(); // with PowerMock) from masking an actual problem if one occurs.
         cache.unlock(queryName);
         this.transaction.commit();
 
         // Run the test
-        PowerMock.replayAll();
+        replayAll();
         QueryExecutorBean subject = new QueryExecutorBean();
         setInternalState(subject, EJBContext.class, context);
         setInternalState(subject, AccumuloConnectionFactory.class, connectionFactory);
@@ -3847,7 +3845,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, AccumuloConnectionRequestBean.class, connectionRequestBean);
         setInternalState(subject, QueryLimiter.class, queryLimiter);
         VoidResponse result1 = subject.reset(queryName);
-        PowerMock.verifyAll();
+        verifyAll();
 
         // Verify results
         assertNotNull("VoidResponse should not be returned null", result1);
@@ -3882,10 +3880,10 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.runningQuery.getSettings()).andReturn(this.query);
         expect(this.runningQuery.getClient()).andReturn(this.client);
         this.runningQuery.closeConnection(this.connectionFactory);
-        PowerMock.expectLastCall().andThrow(new IOException("INTENTIONALLY THROWN 1ST-LEVEL TEST EXCEPTION"));
+        EasyMock.expectLastCall().andThrow(new IOException("INTENTIONALLY THROWN 1ST-LEVEL TEST EXCEPTION"));
         cache.unlock(queryName);
         this.transaction.commit();
-        PowerMock.expectLastCall().andThrow(new IllegalStateException("INTENTIONALLY THROWN 3RD-LEVEL TEST EXCEPTION"));
+        EasyMock.expectLastCall().andThrow(new IllegalStateException("INTENTIONALLY THROWN 3RD-LEVEL TEST EXCEPTION"));
 
         // Set expectations of the query limiter.
         expect(this.queryLimiter.checkForLimits(userSid, null, queryLogicName)).andReturn(QueryLimiterResponse.hasNotMetLimit());
@@ -3894,7 +3892,7 @@ public class ExtendedQueryExecutorBeanTest {
         expectLastCall();
 
         // Run the test
-        PowerMock.replayAll();
+        replayAll();
         QueryExecutorBean subject = new QueryExecutorBean();
         setInternalState(subject, EJBContext.class, context);
         setInternalState(subject, AccumuloConnectionFactory.class, connectionFactory);
@@ -3914,7 +3912,7 @@ public class ExtendedQueryExecutorBeanTest {
         } catch (DatawaveWebApplicationException e) {
             result1 = e.getCause();
         }
-        PowerMock.verifyAll();
+        verifyAll();
 
         // Verify results
         assertTrue("Query exception expected to have been thrown due to locking problem", result1 instanceof QueryException);
@@ -3944,12 +3942,12 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.cache.lock(queryName)).andReturn(false);
         expect(this.transaction.getStatus()).andReturn(Status.STATUS_NO_TRANSACTION).anyTimes();
         this.connectionFactory.returnClient(null); // These 2 lines prevent the bean's exception-handling logic (in combination
-        PowerMock.expectLastCall().anyTimes(); // with PowerMock) from masking an actual problem if one occurs.
+        EasyMock.expectLastCall().anyTimes(); // with PowerMock) from masking an actual problem if one occurs.
         cache.unlock(queryName);
         this.transaction.commit();
 
         // Run the test
-        PowerMock.replayAll();
+        replayAll();
         QueryExecutorBean subject = new QueryExecutorBean();
         setInternalState(subject, EJBContext.class, context);
         setInternalState(subject, AccumuloConnectionFactory.class, connectionFactory);
@@ -3968,7 +3966,7 @@ public class ExtendedQueryExecutorBeanTest {
         } catch (DatawaveWebApplicationException e) {
             result1 = e.getCause();
         }
-        PowerMock.verifyAll();
+        verifyAll();
 
         // Verify results
         assertTrue("Query exception expected to have been thrown", result1 instanceof QueryException);
@@ -3998,7 +3996,7 @@ public class ExtendedQueryExecutorBeanTest {
         String userSid = "userSid";
         String userDN = "userDN";
         String systemFrom = "test";
-        Query duplicateQuery = PowerMock.createMock(Query.class);
+        Query duplicateQuery = createMock(Query.class);
 
         MultiValueMap<String,String> p = new LinkedMultiValueMap<>();
         p.set(QueryParameters.QUERY_AUTHORIZATIONS, queryAuthorizations);
@@ -4062,7 +4060,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.queryLogic1.getAuditType(this.query)).andReturn(AuditType.LOCALONLY);
 
         // Run the test
-        PowerMock.replayAll();
+        replayAll();
         QueryExecutorBean subject = new QueryExecutorBean();
         setInternalState(subject, EJBContext.class, context);
         setInternalState(subject, QueryCache.class, cache);
@@ -4074,7 +4072,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         GenericResponse<String> result1 = subject.updateQuery(queryId.toString(), queryLogicName, query, queryVisibility, beginDate, endDate,
                         queryAuthorizations, expirationDate, pagesize, pageTimeout, maxResultsOverride, persistenceMode, parameters);
-        PowerMock.verifyAll();
+        verifyAll();
 
         // Verify results
         assertNotNull("Expected a non-null response performing an admin close", result1);
@@ -4124,7 +4122,7 @@ public class ExtendedQueryExecutorBeanTest {
         params.set(QueryParameters.QUERY_PERSISTENCE, persistenceMode.name());
         params.set(QueryParameters.QUERY_PARAMS, parameters);
 
-        QueryExecutorBean subject = PowerMock.createPartialMock(QueryExecutorBean.class, "createQuery");
+        QueryExecutorBean subject = partialMockBuilder(QueryExecutorBean.class).addMockedMethod("createQuery", String.class, MultivaluedMap.class).addMockedMethod("createQuery", String.class, UriInfo.class, MultivaluedMap.class, HttpHeaders.class).createMock();
 
         // Set expectations of the create logic
         expect(this.context.getCallerPrincipal()).andReturn(this.principal).anyTimes();
@@ -4141,7 +4139,7 @@ public class ExtendedQueryExecutorBeanTest {
         // return streaming response
 
         // Run the test
-        PowerMock.replayAll();
+        replayAll();
         setInternalState(subject, EJBContext.class, context);
         setInternalState(subject, AccumuloConnectionFactory.class, connectionFactory);
         setInternalState(subject, ResponseObjectFactory.class, responseObjectFactory);
@@ -4156,7 +4154,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, Multimap.class, traceInfos);
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         StreamingOutput result1 = subject.execute(queryLogicName, uriInfo, MapUtils.toMultivaluedMap(params), httpHeaders);
-        PowerMock.verifyAll();
+        verifyAll();
 
         // Verify results
         assertNotNull("Expected a non-null response", result1);
@@ -4190,7 +4188,7 @@ public class ExtendedQueryExecutorBeanTest {
         GenericResponse<String> createResponse = new GenericResponse<>();
         createResponse.setResult(queryId.toString());
 
-        QueryExecutorBean subject = PowerMock.createPartialMock(QueryExecutorBean.class, "createQuery");
+        QueryExecutorBean subject = partialMockBuilder(QueryExecutorBean.class).addMockedMethod("createQuery", String.class, MultivaluedMap.class).addMockedMethod("createQuery", String.class, UriInfo.class, MultivaluedMap.class, HttpHeaders.class).createMock();
 
         // Set expectations of the create logic
         expect(this.context.getCallerPrincipal()).andReturn(this.principal).anyTimes();
@@ -4198,7 +4196,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.httpHeaders.getAcceptableMediaTypes()).andReturn(mediaTypes).anyTimes();
 
         // Run the test
-        PowerMock.replayAll();
+        replayAll();
         setInternalState(subject, EJBContext.class, context);
         setInternalState(subject, AccumuloConnectionFactory.class, connectionFactory);
         setInternalState(subject, ResponseObjectFactory.class, responseObjectFactory);
@@ -4226,7 +4224,7 @@ public class ExtendedQueryExecutorBeanTest {
                 fail("Unknown exception type: " + e.getCause());
             }
         }
-        PowerMock.verifyAll();
+        verifyAll();
 
         // Verify results
         assertNull("Expected a non-null response", result1);
@@ -4234,9 +4232,9 @@ public class ExtendedQueryExecutorBeanTest {
 
     @Test
     public void testLookupUUID_happyPath() {
-        UUIDType uuidType = PowerMock.createMock(UUIDType.class);
-        BaseQueryResponse response = PowerMock.createMock(BaseQueryResponse.class);
-        ManagedExecutorService executor = PowerMock.createMock(ManagedExecutorService.class);
+        UUIDType uuidType = createMock(UUIDType.class);
+        BaseQueryResponse response = createMock(BaseQueryResponse.class);
+        ManagedExecutorService executor = createMock(ManagedExecutorService.class);
 
         expect(uriInfo.getQueryParameters()).andReturn(new MultivaluedHashMap<>());
         expect(lookupUUIDUtil.getUUIDType("uuidType")).andReturn(uuidType);
@@ -4246,7 +4244,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(context.getCallerPrincipal()).andReturn(principal);
         expect(executor.submit(isA(Runnable.class))).andReturn(null);
 
-        PowerMock.replayAll();
+        replayAll();
 
         QueryExecutorBean subject = new QueryExecutorBean();
         setInternalState(subject, EJBContext.class, context);
@@ -4262,15 +4260,15 @@ public class ExtendedQueryExecutorBeanTest {
 
         subject.lookupUUID("uuidType", "1234567890", uriInfo, httpHeaders);
 
-        PowerMock.verifyAll();
+        verifyAll();
     }
 
     @Test
     public void testLookupUUID_closeFail() {
-        QueryExecutorBean subject = PowerMock.createPartialMock(QueryExecutorBean.class, "close");
-        UUIDType uuidType = PowerMock.createMock(UUIDType.class);
-        BaseQueryResponse response = PowerMock.createMock(BaseQueryResponse.class);
-        ManagedExecutorService executor = PowerMock.createMock(ManagedExecutorService.class);
+        QueryExecutorBean subject = partialMockBuilder(QueryExecutorBean.class).addMockedMethod("close", String.class).createMock();
+        UUIDType uuidType = createMock(UUIDType.class);
+        BaseQueryResponse response = createMock(BaseQueryResponse.class);
+        ManagedExecutorService executor = createMock(ManagedExecutorService.class);
 
         expect(uriInfo.getQueryParameters()).andReturn(new MultivaluedHashMap<>());
         expect(lookupUUIDUtil.getUUIDType("uuidType")).andReturn(uuidType);
@@ -4281,7 +4279,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(executor.submit(isA(Runnable.class))).andThrow(new RejectedExecutionException("INTENTIONALLY THROWN TEST EXCEPTION: Async close rejected"));
         expect(subject.close("11111")).andReturn(null);
 
-        PowerMock.replayAll();
+        replayAll();
 
         setInternalState(subject, EJBContext.class, context);
         setInternalState(subject, QueryCache.class, cache);
@@ -4296,7 +4294,7 @@ public class ExtendedQueryExecutorBeanTest {
 
         subject.lookupUUID("uuidType", "1234567890", uriInfo, httpHeaders);
 
-        PowerMock.verifyAll();
+        verifyAll();
     }
 
     @Test
@@ -4411,7 +4409,7 @@ public class ExtendedQueryExecutorBeanTest {
         expectLastCall();
 
         // Run the test
-        PowerMock.replayAll();
+        replayAll();
         QueryExecutorBean subject = new QueryExecutorBean();
         setInternalState(subject, EJBContext.class, context);
         setInternalState(subject, AccumuloConnectionFactory.class, connectionFactory);
@@ -4433,7 +4431,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, AccumuloConnectionRequestBean.class, connectionRequestBean);
         setInternalState(subject, QueryLimiter.class, queryLimiter);
         GenericResponse<String> result1 = subject.planQuery(queryLogicName, uriInfo, queryParameters);
-        PowerMock.verifyAll();
+        verifyAll();
 
         // Verify results
         assertNotNull("Expected a non-null response", result1);
@@ -4541,7 +4539,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.query.getParameters()).andReturn((Set) Collections.emptySet()).anyTimes();
         expect(this.query.getUncaughtExceptionHandler()).andReturn(new QueryUncaughtExceptionHandler()).anyTimes();
         // this.metrics.updateMetric(isA(QueryMetric.class));
-        // PowerMock.expectLastCall().times(2);
+        // EasyMock.expectLastCall().times(2);
         expect(this.query.getUserDN()).andReturn(userDN).anyTimes();
         // expect(this.genericConfiguration.getQueryString()).andReturn(queryName).once();
         // expect(this.qlCache.poll(queryId.toString())).andReturn(null);
@@ -4560,7 +4558,7 @@ public class ExtendedQueryExecutorBeanTest {
         expectLastCall();
 
         // Run the test
-        PowerMock.replayAll();
+        replayAll();
         QueryExecutorBean subject = new QueryExecutorBean();
         setInternalState(subject, EJBContext.class, context);
         setInternalState(subject, AccumuloConnectionFactory.class, connectionFactory);
@@ -4582,7 +4580,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, AccumuloConnectionRequestBean.class, connectionRequestBean);
         setInternalState(subject, QueryLimiter.class, queryLimiter);
         GenericResponse<String> result1 = subject.planQuery(queryLogicName, uriInfo, MapUtils.toMultivaluedMap(queryParameters));
-        PowerMock.verifyAll();
+        verifyAll();
 
         // Verify results
         assertNotNull("Expected a non-null response", result1);
@@ -4645,7 +4643,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(auditor.audit(EasyMock.anyObject())).andThrow(new JMSRuntimeException("EXPECTED TESTING EXCEPTION"));
         queryLogic1.close();
 
-        PowerMock.replayAll();
+        replayAll();
 
         QueryExecutorBean executor = new QueryExecutorBean();
         setInternalState(executor, EJBContext.class, context);
@@ -4668,7 +4666,7 @@ public class ExtendedQueryExecutorBeanTest {
 
         executor.createQuery(queryLogicName, MapUtils.toMultivaluedMap(queryParameters));
 
-        PowerMock.verifyAll();
+        verifyAll();
     }
 
     @Test(expected = DatawaveWebApplicationException.class)
@@ -4740,7 +4738,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.queryLogic1.getLogicName()).andReturn(queryLogicName);
 
         // Run the test
-        PowerMock.replayAll();
+        replayAll();
 
         QueryExecutorBean subject = new QueryExecutorBean();
         setInternalState(subject, EJBContext.class, context);
@@ -4759,7 +4757,7 @@ public class ExtendedQueryExecutorBeanTest {
 
         subject.reset(queryName);
 
-        PowerMock.verifyAll();
+        verifyAll();
     }
 
     @Test(expected = DatawaveWebApplicationException.class)
@@ -4784,7 +4782,7 @@ public class ExtendedQueryExecutorBeanTest {
         String userSid = "userSid";
         String userDN = "userDN";
         String systemFrom = "test";
-        Query duplicateQuery = PowerMock.createMock(Query.class);
+        Query duplicateQuery = createMock(Query.class);
 
         MultiValueMap<String,String> p = new LinkedMultiValueMap<>();
         p.set(QueryParameters.QUERY_AUTHORIZATIONS, queryAuthorizations);
@@ -4841,7 +4839,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.auditor.audit(eq(auditMap))).andThrow(new Exception("INTENTIONALLY THROWN EXCEPTION"));
 
         // Run the test
-        PowerMock.replayAll();
+        replayAll();
 
         QueryExecutorBean subject = new QueryExecutorBean();
         setInternalState(subject, EJBContext.class, context);
@@ -4855,7 +4853,7 @@ public class ExtendedQueryExecutorBeanTest {
 
         subject.updateQuery(queryId.toString(), queryLogicName, query, queryVisibility, beginDate, endDate, queryAuthorizations, expirationDate, pagesize,
                         pageTimeout, maxResultsOverride, persistenceMode, parameters);
-        PowerMock.verifyAll();
+        verifyAll();
     }
 
     @Test
@@ -4904,7 +4902,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.queryLogic1.containsDNWithAccess(Collections.singletonList("userDN"))).andReturn(false);
 
         // Run the test
-        PowerMock.replayAll();
+        replayAll();
         QueryExecutorBean subject = new QueryExecutorBean();
         setInternalState(subject, EJBContext.class, context);
         setInternalState(subject, QueryLogicFactory.class, queryLogicFactory);
@@ -4918,7 +4916,7 @@ public class ExtendedQueryExecutorBeanTest {
         } catch (DatawaveWebApplicationException e) {
             result1 = e.getCause();
         }
-        PowerMock.verifyAll();
+        verifyAll();
 
         // Verify results
         assertTrue("QueryException expected to have been thrown", result1 instanceof QueryException);
@@ -4974,7 +4972,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.queryLogic1.containsDNWithAccess(Collections.singletonList("userDN"))).andReturn(false);
 
         // Run the test
-        PowerMock.replayAll();
+        replayAll();
         QueryExecutorBean subject = new QueryExecutorBean();
         setInternalState(subject, EJBContext.class, context);
         setInternalState(subject, QueryLogicFactory.class, queryLogicFactory);
@@ -4988,7 +4986,7 @@ public class ExtendedQueryExecutorBeanTest {
         } catch (DatawaveWebApplicationException e) {
             result1 = e.getCause();
         }
-        PowerMock.verifyAll();
+        verifyAll();
 
         // Verify results
         assertTrue("QueryException expected to have been thrown", result1 instanceof QueryException);
@@ -5044,7 +5042,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.queryLogic1.containsDNWithAccess(Collections.singletonList("userDN"))).andReturn(false);
 
         // Run the test
-        PowerMock.replayAll();
+        replayAll();
         QueryExecutorBean subject = new QueryExecutorBean();
         setInternalState(subject, EJBContext.class, context);
         setInternalState(subject, QueryLogicFactory.class, queryLogicFactory);
@@ -5058,7 +5056,7 @@ public class ExtendedQueryExecutorBeanTest {
         } catch (DatawaveWebApplicationException e) {
             result1 = e.getCause();
         }
-        PowerMock.verifyAll();
+        verifyAll();
 
         // Verify results
         assertTrue("QueryException expected to have been thrown", result1 instanceof QueryException);
@@ -5129,7 +5127,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(uriInfo.getQueryParameters()).andReturn(new MultivaluedHashMap<>());
 
         // Run the test
-        PowerMock.replayAll();
+        replayAll();
         QueryExecutorBean subject = new QueryExecutorBean();
         setInternalState(subject, EJBContext.class, context);
         setInternalState(subject, AccumuloConnectionFactory.class, connectionFactory);
@@ -5154,7 +5152,7 @@ public class ExtendedQueryExecutorBeanTest {
         } catch (DatawaveWebApplicationException e) {
             result1 = e.getCause();
         }
-        PowerMock.verifyAll();
+        verifyAll();
 
         // Verify results
         assertTrue("QueryException expected to have been thrown", result1 instanceof QueryException);
@@ -5224,7 +5222,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.queryLogic1.containsDNWithAccess(Collections.singletonList(userDN))).andReturn(false);
 
         // Run the test
-        PowerMock.replayAll();
+        replayAll();
         QueryExecutorBean subject = new QueryExecutorBean();
         setInternalState(subject, EJBContext.class, context);
         setInternalState(subject, AccumuloConnectionFactory.class, connectionFactory);
@@ -5249,7 +5247,7 @@ public class ExtendedQueryExecutorBeanTest {
         } catch (DatawaveWebApplicationException e) {
             result1 = e.getCause();
         }
-        PowerMock.verifyAll();
+        verifyAll();
 
         // Verify results
         assertTrue("QueryException expected to have been thrown", result1 instanceof QueryException);

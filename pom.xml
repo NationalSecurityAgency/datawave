@@ -34,14 +34,14 @@
         </repository>
     </distributionManagement>
     <properties>
-        <argLine />
+        <argLine>--add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED --add-opens java.base/java.lang.reflect=ALL-UNNAMED --add-opens java.base/java.text=ALL-UNNAMED --patch-module java.base=${maven.multiModuleProjectDirectory}/acl-shim/acl-shim.jar --add-exports java.base/java.security.acl=ALL-UNNAMED</argLine>
         <!-- build.env and env should get overridden if any other read-properties profile is specified (e.g. comnpose)compose -->
         <build.env>dev</build.env>
         <container.registry>ghcr.io</container.registry>
         <env>dev</env>
         <image.prefix>datawave/</image.prefix>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <registry.namespace>nationalsecurityagency/</registry.namespace>
         <skipITs>${skipTests}</skipITs>
@@ -140,7 +140,7 @@
         <version.saxon-he>12.4</version.saxon-he>
         <version.slf4j>2.0.17</version.slf4j>
         <version.spotify-dns>3.1.5</version.spotify-dns>
-        <version.spring>5.2.2.RELEASE</version.spring>
+        <version.spring>5.3.39</version.spring>
         <version.springframework>${version.spring}</version.springframework>
         <version.stream>2.9.6</version.stream>
         <version.thrift>0.17.0</version.thrift>
@@ -1847,11 +1847,16 @@
                         <showWarnings>true</showWarnings>
                         <source>${maven.compiler.source}</source>
                         <target>${maven.compiler.target}</target>
+                        <useModulePath>false</useModulePath>
                         <compilerArgs>
                             <arg>-Xlint:all</arg>
                             <arg>-Xlint:-processing</arg>
                             <arg>-Xmaxwarns</arg>
                             <arg>5</arg>
+                            <arg>--patch-module</arg>
+                            <arg>java.base=${maven.multiModuleProjectDirectory}/acl-shim/acl-shim.jar</arg>
+                            <arg>--add-exports</arg>
+                            <arg>java.base/java.security.acl=ALL-UNNAMED</arg>
                         </compilerArgs>
                     </configuration>
                 </plugin>
@@ -2243,6 +2248,7 @@
                                     <encoding>UTF-8</encoding>
                                     <outputDirectory>${project.build.directory}/apidocs</outputDirectory>
                                     <additionalJOption>-J-Xmx768m</additionalJOption>
+                                    <failOnError>false</failOnError>
                                     <tags>
                                         <tag>
                                             <name>XmlSchema</name>

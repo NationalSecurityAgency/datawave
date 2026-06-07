@@ -7,6 +7,8 @@ import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.geq;
 import static org.easymock.EasyMock.gt;
 import static org.easymock.EasyMock.isA;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mockStatic;
 import static org.powermock.reflect.Whitebox.setInternalState;
 
 import java.io.OutputStream;
@@ -37,10 +39,10 @@ import org.jboss.resteasy.util.HttpResponseCodes;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.powermock.api.easymock.PowerMock;
-import org.powermock.api.easymock.annotation.Mock;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.easymock.EasyMockRunner;
+import org.easymock.EasyMockSupport;
+import org.easymock.Mock;
+import org.mockito.MockedStatic;
 import org.powermock.reflect.Whitebox;
 
 import com.google.common.io.CountingOutputStream;
@@ -56,9 +58,8 @@ import datawave.webservice.query.metric.QueryMetricsBean;
 import datawave.webservice.query.runner.RunningQuery;
 import datawave.webservice.result.BaseQueryResponse;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(FindAnnotation.class)
-public class QueryMetricsEnrichmentInterceptorTest {
+@RunWith(EasyMockRunner.class)
+public class QueryMetricsEnrichmentInterceptorTest extends EasyMockSupport {
 
     @Mock
     private BaseQueryResponse baseQueryResponse;
@@ -121,9 +122,9 @@ public class QueryMetricsEnrichmentInterceptorTest {
         System.setProperty("dw.metadatahelper.all.auths", "A,B,C,D");
 
         // noinspection unchecked
-        requestHeaders = PowerMock.createStrictMock(MultivaluedMap.class);
+        requestHeaders = createStrictMock(MultivaluedMap.class);
         // noinspection unchecked
-        writeHeaders = PowerMock.createStrictMock(MultivaluedMap.class);
+        writeHeaders = createStrictMock(MultivaluedMap.class);
     }
 
     @Test
@@ -146,11 +147,11 @@ public class QueryMetricsEnrichmentInterceptorTest {
         requestContext.setProperty(eq((String) Whitebox.getInternalState(subject, "REQUEST_STATS_NAME")), anyObject());
 
         // Run the test
-        PowerMock.replayAll();
+        replayAll();
         subject.filter(requestContext);
 
         // Verify results
-        PowerMock.verifyAll();
+        verifyAll();
     }
 
     @Test
@@ -163,8 +164,6 @@ public class QueryMetricsEnrichmentInterceptorTest {
         expect(responseContext.getStatus()).andReturn(HttpResponseCodes.SC_OK);
         expect(responseContext.getJaxrsResponse()).andReturn(jaxrsResponse);
         expect(jaxrsResponse.getAnnotations()).andReturn(new Annotation[] {enrichQueryMetrics});
-        PowerMock.mockStaticPartial(FindAnnotation.class, "findAnnotation");
-        expect(FindAnnotation.findAnnotation(isA(Annotation[].class), eq(EnrichQueryMetrics.class))).andReturn(this.enrichQueryMetrics);
         expect(responseContext.getEntity()).andReturn(baseQueryResponse);
         expect(enrichQueryMetrics.methodType()).andReturn(EnrichQueryMetrics.MethodType.CREATE);
         expect(baseQueryResponse.getQueryId()).andReturn(UUID.randomUUID().toString());
@@ -172,9 +171,13 @@ public class QueryMetricsEnrichmentInterceptorTest {
         requestContext.setProperty(eq(QueryCall.class.getName()), isA(QueryCall.class));
 
         // Run the test
-        PowerMock.replayAll();
-        subject.filter(requestContext, responseContext);
-        PowerMock.verifyAll();
+        try (MockedStatic<FindAnnotation> findAnnotation = mockStatic(FindAnnotation.class)) {
+            findAnnotation.when(() -> FindAnnotation.findAnnotation(any(Annotation[].class), org.mockito.ArgumentMatchers.eq(EnrichQueryMetrics.class)))
+                            .thenReturn(this.enrichQueryMetrics);
+            replayAll();
+            subject.filter(requestContext, responseContext);
+            verifyAll();
+        }
     }
 
     @Test
@@ -193,8 +196,6 @@ public class QueryMetricsEnrichmentInterceptorTest {
         expect(responseContext.getJaxrsResponse()).andReturn(jaxrsResponse);
         requestContext.setProperty(eq((String) Whitebox.getInternalState(subject, "RESPONSE_STATS_NAME")), anyObject());
         expect(jaxrsResponse.getAnnotations()).andReturn(new Annotation[] {enrichQueryMetrics});
-        PowerMock.mockStaticPartial(FindAnnotation.class, "findAnnotation");
-        expect(FindAnnotation.findAnnotation(isA(Annotation[].class), eq(EnrichQueryMetrics.class))).andReturn(this.enrichQueryMetrics);
         expect(responseContext.getEntity()).andReturn(baseQueryResponse);
         expect(enrichQueryMetrics.methodType()).andReturn(EnrichQueryMetrics.MethodType.CREATE);
         expect(baseQueryResponse.getQueryId()).andReturn(UUID.randomUUID().toString());
@@ -216,22 +217,26 @@ public class QueryMetricsEnrichmentInterceptorTest {
         expect(runningQuery.getMetric()).andThrow(new IllegalStateException("INTENTIONALLY THROWN UNCHECKED TEST EXCEPTION"));
 
         // Run the test
-        PowerMock.replayAll();
+        try (MockedStatic<FindAnnotation> findAnnotation = mockStatic(FindAnnotation.class)) {
+            findAnnotation.when(() -> FindAnnotation.findAnnotation(any(Annotation[].class), org.mockito.ArgumentMatchers.eq(EnrichQueryMetrics.class)))
+                            .thenReturn(this.enrichQueryMetrics);
+            replayAll();
 
-        try {
-            // Set the initial context factory
-            System.setProperty(InitialContext.INITIAL_CONTEXT_FACTORY, TestInitialContextFactory.class.getName());
+            try {
+                // Set the initial context factory
+                System.setProperty(InitialContext.INITIAL_CONTEXT_FACTORY, TestInitialContextFactory.class.getName());
 
-            // Create and test the test subject
-            setInternalState(subject, QueryCache.class, queryCache);
-            setInternalState(subject, QueryMetricsBean.class, queryMetrics);
-            subject.filter(requestContext, responseContext);
-            subject.aroundWriteTo(writerContext);
-        } finally {
-            // Remove the initial context factory
-            System.clearProperty(InitialContext.INITIAL_CONTEXT_FACTORY);
+                // Create and test the test subject
+                setInternalState(subject, QueryCache.class, queryCache);
+                setInternalState(subject, QueryMetricsBean.class, queryMetrics);
+                subject.filter(requestContext, responseContext);
+                subject.aroundWriteTo(writerContext);
+            } finally {
+                // Remove the initial context factory
+                System.clearProperty(InitialContext.INITIAL_CONTEXT_FACTORY);
+            }
+            verifyAll();
         }
-        PowerMock.verifyAll();
     }
 
     @Test
@@ -250,8 +255,6 @@ public class QueryMetricsEnrichmentInterceptorTest {
         expect(responseContext.getJaxrsResponse()).andReturn(jaxrsResponse);
         requestContext.setProperty(eq((String) Whitebox.getInternalState(subject, "RESPONSE_STATS_NAME")), anyObject());
         expect(jaxrsResponse.getAnnotations()).andReturn(new Annotation[] {enrichQueryMetrics});
-        PowerMock.mockStaticPartial(FindAnnotation.class, "findAnnotation");
-        expect(FindAnnotation.findAnnotation(isA(Annotation[].class), eq(EnrichQueryMetrics.class))).andReturn(this.enrichQueryMetrics);
         expect(responseContext.getEntity()).andReturn(baseQueryResponse);
         expect(enrichQueryMetrics.methodType()).andReturn(EnrichQueryMetrics.MethodType.CREATE);
         expect(baseQueryResponse.getQueryId()).andReturn(UUID.randomUUID().toString());
@@ -276,22 +279,26 @@ public class QueryMetricsEnrichmentInterceptorTest {
         queryMetrics.updateMetric(queryMetric);
 
         // Run the test
-        PowerMock.replayAll();
+        try (MockedStatic<FindAnnotation> findAnnotation = mockStatic(FindAnnotation.class)) {
+            findAnnotation.when(() -> FindAnnotation.findAnnotation(any(Annotation[].class), org.mockito.ArgumentMatchers.eq(EnrichQueryMetrics.class)))
+                            .thenReturn(this.enrichQueryMetrics);
+            replayAll();
 
-        try {
-            // Set the initial context factory
-            System.setProperty(InitialContext.INITIAL_CONTEXT_FACTORY, TestInitialContextFactory.class.getName());
+            try {
+                // Set the initial context factory
+                System.setProperty(InitialContext.INITIAL_CONTEXT_FACTORY, TestInitialContextFactory.class.getName());
 
-            // Create and test the test subject
-            setInternalState(subject, QueryCache.class, queryCache);
-            setInternalState(subject, QueryMetricsBean.class, queryMetrics);
-            subject.filter(requestContext, responseContext);
-            subject.aroundWriteTo(writerContext);
-        } finally {
-            // Remove the initial context factory
-            System.clearProperty(InitialContext.INITIAL_CONTEXT_FACTORY);
+                // Create and test the test subject
+                setInternalState(subject, QueryCache.class, queryCache);
+                setInternalState(subject, QueryMetricsBean.class, queryMetrics);
+                subject.filter(requestContext, responseContext);
+                subject.aroundWriteTo(writerContext);
+            } finally {
+                // Remove the initial context factory
+                System.clearProperty(InitialContext.INITIAL_CONTEXT_FACTORY);
+            }
+            verifyAll();
         }
-        PowerMock.verifyAll();
     }
 
     @Test
@@ -310,8 +317,6 @@ public class QueryMetricsEnrichmentInterceptorTest {
         expect(responseContext.getJaxrsResponse()).andReturn(jaxrsResponse);
         requestContext.setProperty(eq((String) Whitebox.getInternalState(subject, "RESPONSE_STATS_NAME")), anyObject());
         expect(jaxrsResponse.getAnnotations()).andReturn(new Annotation[] {enrichQueryMetrics});
-        PowerMock.mockStaticPartial(FindAnnotation.class, "findAnnotation");
-        expect(FindAnnotation.findAnnotation(isA(Annotation[].class), eq(EnrichQueryMetrics.class))).andReturn(this.enrichQueryMetrics);
         expect(responseContext.getEntity()).andReturn(baseQueryResponse);
         expect(enrichQueryMetrics.methodType()).andReturn(EnrichQueryMetrics.MethodType.CREATE_AND_NEXT);
         expect(baseQueryResponse.getQueryId()).andReturn(UUID.randomUUID().toString());
@@ -341,22 +346,26 @@ public class QueryMetricsEnrichmentInterceptorTest {
         queryMetrics.updateMetric(queryMetric);
 
         // Run the test
-        PowerMock.replayAll();
+        try (MockedStatic<FindAnnotation> findAnnotation = mockStatic(FindAnnotation.class)) {
+            findAnnotation.when(() -> FindAnnotation.findAnnotation(any(Annotation[].class), org.mockito.ArgumentMatchers.eq(EnrichQueryMetrics.class)))
+                            .thenReturn(this.enrichQueryMetrics);
+            replayAll();
 
-        try {
-            // Set the initial context factory
-            System.setProperty(InitialContext.INITIAL_CONTEXT_FACTORY, TestInitialContextFactory.class.getName());
+            try {
+                // Set the initial context factory
+                System.setProperty(InitialContext.INITIAL_CONTEXT_FACTORY, TestInitialContextFactory.class.getName());
 
-            // Create and test the test subject
-            setInternalState(subject, QueryCache.class, queryCache);
-            setInternalState(subject, QueryMetricsBean.class, queryMetrics);
-            subject.filter(requestContext, responseContext);
-            subject.aroundWriteTo(writerContext);
-        } finally {
-            // Remove the initial context factory
-            System.clearProperty(InitialContext.INITIAL_CONTEXT_FACTORY);
+                // Create and test the test subject
+                setInternalState(subject, QueryCache.class, queryCache);
+                setInternalState(subject, QueryMetricsBean.class, queryMetrics);
+                subject.filter(requestContext, responseContext);
+                subject.aroundWriteTo(writerContext);
+            } finally {
+                // Remove the initial context factory
+                System.clearProperty(InitialContext.INITIAL_CONTEXT_FACTORY);
+            }
+            verifyAll();
         }
-        PowerMock.verifyAll();
     }
 
     @Test
@@ -375,8 +384,6 @@ public class QueryMetricsEnrichmentInterceptorTest {
         expect(responseContext.getJaxrsResponse()).andReturn(jaxrsResponse);
         requestContext.setProperty(eq((String) Whitebox.getInternalState(subject, "RESPONSE_STATS_NAME")), anyObject());
         expect(jaxrsResponse.getAnnotations()).andReturn(new Annotation[] {enrichQueryMetrics});
-        PowerMock.mockStaticPartial(FindAnnotation.class, "findAnnotation");
-        expect(FindAnnotation.findAnnotation(isA(Annotation[].class), eq(EnrichQueryMetrics.class))).andReturn(this.enrichQueryMetrics);
         expect(responseContext.getEntity()).andReturn(baseQueryResponse);
         expect(enrichQueryMetrics.methodType()).andReturn(EnrichQueryMetrics.MethodType.NEXT);
         expect(baseQueryResponse.getQueryId()).andReturn(UUID.randomUUID().toString());
@@ -404,22 +411,26 @@ public class QueryMetricsEnrichmentInterceptorTest {
         queryMetrics.updateMetric(queryMetric);
 
         // Run the test
-        PowerMock.replayAll();
+        try (MockedStatic<FindAnnotation> findAnnotation = mockStatic(FindAnnotation.class)) {
+            findAnnotation.when(() -> FindAnnotation.findAnnotation(any(Annotation[].class), org.mockito.ArgumentMatchers.eq(EnrichQueryMetrics.class)))
+                            .thenReturn(this.enrichQueryMetrics);
+            replayAll();
 
-        try {
-            // Set the initial context factory
-            System.setProperty(InitialContext.INITIAL_CONTEXT_FACTORY, TestInitialContextFactory.class.getName());
+            try {
+                // Set the initial context factory
+                System.setProperty(InitialContext.INITIAL_CONTEXT_FACTORY, TestInitialContextFactory.class.getName());
 
-            // Create and test the test subject
-            setInternalState(subject, QueryCache.class, queryCache);
-            setInternalState(subject, QueryMetricsBean.class, queryMetrics);
-            subject.filter(requestContext, responseContext);
-            subject.aroundWriteTo(writerContext);
-        } finally {
-            // Remove the initial context factory
-            System.clearProperty(InitialContext.INITIAL_CONTEXT_FACTORY);
+                // Create and test the test subject
+                setInternalState(subject, QueryCache.class, queryCache);
+                setInternalState(subject, QueryMetricsBean.class, queryMetrics);
+                subject.filter(requestContext, responseContext);
+                subject.aroundWriteTo(writerContext);
+            } finally {
+                // Remove the initial context factory
+                System.clearProperty(InitialContext.INITIAL_CONTEXT_FACTORY);
+            }
+            verifyAll();
         }
-        PowerMock.verifyAll();
     }
 
     public static class TestInitialContextFactory implements InitialContextFactory {

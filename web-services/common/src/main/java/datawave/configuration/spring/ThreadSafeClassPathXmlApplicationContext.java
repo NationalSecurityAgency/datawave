@@ -8,6 +8,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.function.Supplier;
 
 import org.springframework.beans.BeansException;
+import org.springframework.core.metrics.ApplicationStartup;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.ObjectProvider;
@@ -44,6 +45,21 @@ public class ThreadSafeClassPathXmlApplicationContext implements ConfigurableApp
     @Override
     public void setId(String id) {
         lockAndWrite(() -> configurableApplicationContext.setId(id));
+    }
+
+    @Override
+    public void setClassLoader(ClassLoader classLoader) {
+        lockAndWrite(() -> configurableApplicationContext.setClassLoader(classLoader));
+    }
+
+    @Override
+    public void setApplicationStartup(ApplicationStartup applicationStartup) {
+        lockAndWrite(() -> configurableApplicationContext.setApplicationStartup(applicationStartup));
+    }
+
+    @Override
+    public ApplicationStartup getApplicationStartup() {
+        return lockAndRead(configurableApplicationContext::getApplicationStartup);
     }
 
     @Override
@@ -172,8 +188,18 @@ public class ThreadSafeClassPathXmlApplicationContext implements ConfigurableApp
     }
 
     @Override
+    public <T> ObjectProvider<T> getBeanProvider(Class<T> requiredType, boolean allowEagerInit) {
+        return lockAndRead(() -> configurableApplicationContext.getBeanProvider(requiredType, allowEagerInit));
+    }
+
+    @Override
     public <T> ObjectProvider<T> getBeanProvider(ResolvableType resolvableType) {
         return lockAndRead(() -> configurableApplicationContext.getBeanProvider(resolvableType));
+    }
+
+    @Override
+    public <T> ObjectProvider<T> getBeanProvider(ResolvableType resolvableType, boolean allowEagerInit) {
+        return lockAndRead(() -> configurableApplicationContext.getBeanProvider(resolvableType, allowEagerInit));
     }
 
     @Override
@@ -274,6 +300,11 @@ public class ThreadSafeClassPathXmlApplicationContext implements ConfigurableApp
     @Override
     public <A extends Annotation> A findAnnotationOnBean(String beanName, Class<A> annotationType) throws NoSuchBeanDefinitionException {
         return lockAndRead(() -> configurableApplicationContext.findAnnotationOnBean(beanName, annotationType));
+    }
+
+    @Override
+    public <A extends Annotation> A findAnnotationOnBean(String beanName, Class<A> annotationType, boolean allowFactoryBeanInit) throws NoSuchBeanDefinitionException {
+        return lockAndRead(() -> configurableApplicationContext.findAnnotationOnBean(beanName, annotationType, allowFactoryBeanInit));
     }
 
     @Override

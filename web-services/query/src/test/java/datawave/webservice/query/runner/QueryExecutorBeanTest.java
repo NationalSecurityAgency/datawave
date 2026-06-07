@@ -5,10 +5,6 @@ import static org.easymock.EasyMock.eq;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.fail;
-import static org.powermock.api.easymock.PowerMock.createMock;
-import static org.powermock.api.easymock.PowerMock.createStrictMock;
-import static org.powermock.api.support.membermodification.MemberMatcher.constructor;
-import static org.powermock.api.support.membermodification.MemberModifier.suppress;
 import static org.powermock.reflect.Whitebox.setInternalState;
 
 import java.io.IOException;
@@ -51,10 +47,8 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.powermock.api.easymock.PowerMock;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.easymock.EasyMockRunner;
+import org.easymock.EasyMockSupport;
 import org.powermock.reflect.Whitebox;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
@@ -119,10 +113,8 @@ import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.query.util.MapUtils;
 import datawave.webservice.result.GenericResponse;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(QueryParameters.class)
-@PowerMockIgnore({"java.*", "javax.*", "com.*", "org.apache.*", "org.w3c.*", "net.sf.*"})
-public class QueryExecutorBeanTest {
+@RunWith(EasyMockRunner.class)
+public class QueryExecutorBeanTest extends EasyMockSupport {
     // Fields for building generic default queries
     private final String queryLogicName = "EventQueryLogic";
     private final String queryName = "Something";
@@ -288,9 +280,8 @@ public class QueryExecutorBeanTest {
         Arrays.sort(dns);
         List<String> dnList = Arrays.asList(dns);
 
-        PowerMock.resetAll();
+        resetAll();
         EasyMock.expect(ctx.getCallerPrincipal()).andReturn(principal).anyTimes();
-        suppress(constructor(DefaultQueryParameters.class));
         EasyMock.expect(persister.create(principal.getUserDN().subjectDN(), dnList, (SecurityMarking) Whitebox.getField(bean.getClass(), "marking").get(bean),
                         queryLogicName, (QueryParameters) Whitebox.getField(bean.getClass(), "qp").get(bean), optionalParameters)).andReturn(q);
         EasyMock.expect(queryLogicFactory.getQueryLogic(queryLogicName, principal)).andReturn(logic);
@@ -305,11 +296,11 @@ public class QueryExecutorBeanTest {
         EasyMock.expect(logic.getUserOperations()).andReturn(null);
         EasyMock.expect(responseObjectFactory.getQueryImpl()).andReturn(new QueryImpl());
         EasyMock.expect(logic.getResultLimit(anyObject(QueryImpl.class))).andReturn(-1L);
-        PowerMock.replayAll();
+        replayAll();
 
         bean.defineQuery(queryLogicName, p);
 
-        PowerMock.verifyAll();
+        verifyAll();
 
         Object cachedRunningQuery = cache.get(q.getId().toString());
         Assert.assertNotNull(cachedRunningQuery);
@@ -374,11 +365,10 @@ public class QueryExecutorBeanTest {
         Arrays.sort(dns);
         List<String> dnList = Arrays.asList(dns);
 
-        PowerMock.resetAll();
+        resetAll();
         EasyMock.expect(queryLimiter.checkForLimits(userDN.toLowerCase(), null, queryLogicName)).andReturn(QueryLimiterResponse.hasNotMetLimit());
 
         EasyMock.expect(ctx.getCallerPrincipal()).andReturn(principal).anyTimes();
-        suppress(constructor(DefaultQueryParameters.class));
         EasyMock.expect(persister.create(userDN, dnList, (SecurityMarking) Whitebox.getField(bean.getClass(), "marking").get(bean), queryLogicName,
                         (QueryParameters) Whitebox.getField(bean.getClass(), "qp").get(bean), optionalParameters)).andReturn(q);
 
@@ -401,11 +391,11 @@ public class QueryExecutorBeanTest {
         logic.close();
         EasyMock.expectLastCall();
         persister.remove(anyObject(Query.class));
-        PowerMock.replayAll();
+        replayAll();
 
         bean.createQuery(queryLogicName, p);
 
-        PowerMock.verifyAll();
+        verifyAll();
     }
 
     @SuppressWarnings("unchecked")
@@ -437,9 +427,8 @@ public class QueryExecutorBeanTest {
         Arrays.sort(dns);
         List<String> dnList = Arrays.asList(dns);
 
-        PowerMock.resetAll();
+        resetAll();
         EasyMock.expect(ctx.getCallerPrincipal()).andReturn(principal).anyTimes();
-        suppress(constructor(DefaultQueryParameters.class));
         EasyMock.expect(persister.create(principal.getUserDN().subjectDN(), dnList, (SecurityMarking) Whitebox.getField(bean.getClass(), "marking").get(bean),
                         queryLogicName, (QueryParameters) Whitebox.getField(bean.getClass(), "qp").get(bean), optionalParameters)).andReturn(q);
 
@@ -495,11 +484,11 @@ public class QueryExecutorBeanTest {
         EasyMock.expect(logic.getResultLimit(anyObject(QueryImpl.class))).andReturn(-1L);
         EasyMock.expect(predictor.predict(EasyMock.eq(testMetric))).andReturn(predictions);
 
-        PowerMock.replayAll();
+        replayAll();
 
         GenericResponse<String> response = bean.predictQuery(queryLogicName, p);
 
-        PowerMock.verifyAll();
+        verifyAll();
 
         Object cachedRunningQuery = cache.get(q.getId().toString());
         Assert.assertNull(cachedRunningQuery);
@@ -682,7 +671,7 @@ public class QueryExecutorBeanTest {
 
         MultivaluedMap<String,String> optionalParameters = createNewQueryParameters(q, queryParameters);
 
-        PowerMock.resetAll();
+        resetAll();
         EasyMock.expect(queryLimiter.checkForLimits(userDN.toLowerCase(), null, queryLogicName)).andReturn(QueryLimiterResponse.hasNotMetLimit()).anyTimes();
 
         queryLimiter.countQueryTowardsLimits(q.getId().toString(), userDN.toLowerCase(), null, queryLogicName);
@@ -773,7 +762,7 @@ public class QueryExecutorBeanTest {
 
         metrics.updateMetric(EasyMock.isA(QueryMetric.class));
 
-        PowerMock.replayAll();
+        replayAll();
         try {
             createQuery.start();
 
