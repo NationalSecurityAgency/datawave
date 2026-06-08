@@ -1,4 +1,4 @@
-package datawave.ingest.table.aggregator.util;
+package datawave.table.key.parser;
 
 import java.util.BitSet;
 import java.util.Calendar;
@@ -7,7 +7,6 @@ import org.apache.accumulo.core.data.Key;
 
 import datawave.util.time.DateHelper;
 
-@Deprecated(forRemoval = true, since = "7.40.0")
 public class ShardedYearIndexKeyParser extends AbstractIndexKeyParser {
 
     @Override

@@ -1,10 +1,8 @@
-package datawave.ingest.table.aggregator.util;
+package datawave.table.key.parser;
 
 import java.util.BitSet;
 
 import org.apache.accumulo.core.data.Key;
-
-import datawave.ingest.table.aggregator.TruncatedIndexConversionIterator;
 
 /**
  * A parser that can handle either a shard index key in either standard format or truncated format
@@ -21,9 +19,8 @@ import datawave.ingest.table.aggregator.TruncatedIndexConversionIterator;
  * value FIELD:yyyyMMdd0x00datatype (bitset offset)
  * </pre>
  *
- * Can be used in a map reduce job or in conjunction with the {@link TruncatedIndexConversionIterator}.
+ * Can be used in a map reduce job or in conjunction with the TruncatedIndexConversionIterator.
  */
-@Deprecated(forRemoval = true, since = "7.40.0")
 public class TruncatedIndexKeyParser extends AbstractIndexKeyParser {
 
     @Override
