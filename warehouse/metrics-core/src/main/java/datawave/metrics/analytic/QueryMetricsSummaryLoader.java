@@ -1,6 +1,7 @@
 package datawave.metrics.analytic;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
@@ -234,7 +235,7 @@ public class QueryMetricsSummaryLoader extends Configured implements Tool {
         }
 
         private Value makeValue(String value) {
-            return new Value(value.getBytes());
+            return new Value(value.getBytes(StandardCharsets.UTF_8));
         }
 
         private Value makeValue(long value) {

@@ -3,6 +3,7 @@ package datawave.metrics.analytic;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 
@@ -72,7 +73,7 @@ public class MetricsDailySummaryReducer extends Reducer<Key,Value,Text,Mutation>
 
         ColumnVisibility columnVisibility = new ColumnVisibility(key.getColumnVisibility());
         Mutation m = new Mutation(key.getRow());
-        m.put(key.getColumnFamily(), key.getColumnQualifier(), columnVisibility, new Value(sum.getReport().getBytes()));
+        m.put(key.getColumnFamily(), key.getColumnQualifier(), columnVisibility, new Value(sum.getReport().getBytes(StandardCharsets.UTF_8)));
         return m;
     }
 
@@ -110,13 +111,13 @@ public class MetricsDailySummaryReducer extends Reducer<Key,Value,Text,Mutation>
         ColumnVisibility columnVisibility = new ColumnVisibility(key.getColumnVisibility());
         Text columnFamily = key.getColumnFamily();
         Mutation m = new Mutation(key.getRow());
-        m.put(columnFamily, MIN_TEXT, columnVisibility, new Value(Long.toString(min).getBytes()));
-        m.put(columnFamily, MAX_TEXT, columnVisibility, new Value(Long.toString(max).getBytes()));
-        m.put(columnFamily, AVERAGE_TEXT, columnVisibility, new Value(average.getBytes()));
+        m.put(columnFamily, MIN_TEXT, columnVisibility, new Value(Long.toString(min).getBytes(StandardCharsets.UTF_8)));
+        m.put(columnFamily, MAX_TEXT, columnVisibility, new Value(Long.toString(max).getBytes(StandardCharsets.UTF_8)));
+        m.put(columnFamily, AVERAGE_TEXT, columnVisibility, new Value(average.getBytes(StandardCharsets.UTF_8)));
         if (numLongs <= MAX_MEDIAN_COUNT) {
             Collections.sort(longs);
             String median = "" + longs.get(longs.size() / 2);
-            m.put(columnFamily, MEDIAN_TEXT, columnVisibility, new Value(median.getBytes()));
+            m.put(columnFamily, MEDIAN_TEXT, columnVisibility, new Value(median.getBytes(StandardCharsets.UTF_8)));
         }
         return m;
     }
@@ -160,13 +161,13 @@ public class MetricsDailySummaryReducer extends Reducer<Key,Value,Text,Mutation>
         ColumnVisibility columnVisibility = new ColumnVisibility(key.getColumnVisibility());
         Text columnFamily = key.getColumnFamily();
         Mutation m = new Mutation(key.getRow());
-        m.put(columnFamily, MIN_TEXT, columnVisibility, new Value(Long.toString(min).getBytes()));
-        m.put(columnFamily, MAX_TEXT, columnVisibility, new Value(Long.toString(max).getBytes()));
-        m.put(columnFamily, AVERAGE_TEXT, columnVisibility, new Value(average.getBytes()));
+        m.put(columnFamily, MIN_TEXT, columnVisibility, new Value(Long.toString(min).getBytes(StandardCharsets.UTF_8)));
+        m.put(columnFamily, MAX_TEXT, columnVisibility, new Value(Long.toString(max).getBytes(StandardCharsets.UTF_8)));
+        m.put(columnFamily, AVERAGE_TEXT, columnVisibility, new Value(average.getBytes(StandardCharsets.UTF_8)));
         if (numPairs <= MAX_MEDIAN_COUNT) {
             Collections.sort(pairs);
             String median = "" + pairs.get(pairs.size() / 2).getValue();
-            m.put(columnFamily, MEDIAN_TEXT, columnVisibility, new Value(median.getBytes()));
+            m.put(columnFamily, MEDIAN_TEXT, columnVisibility, new Value(median.getBytes(StandardCharsets.UTF_8)));
 
             // Figure out the position in the list where the sum of the weights up to that point is
             // at the 95% percentile. We'll then take the value at that position. Go through the
@@ -179,7 +180,7 @@ public class MetricsDailySummaryReducer extends Reducer<Key,Value,Text,Mutation>
                 positionWeight -= pair.getWeight();
                 if (positionWeight < percentileWeight) { // this pair's weight contribution took us to or over the 95th percentile weight...
                     String percentile = "" + pair.getValue();
-                    m.put(columnFamily, PERCENTILE_TEXT, columnVisibility, new Value(percentile.getBytes()));
+                    m.put(columnFamily, PERCENTILE_TEXT, columnVisibility, new Value(percentile.getBytes(StandardCharsets.UTF_8)));
                     break;
                 }
             }
