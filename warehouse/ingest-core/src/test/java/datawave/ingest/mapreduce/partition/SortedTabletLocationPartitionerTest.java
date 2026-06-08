@@ -21,6 +21,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import datawave.ingest.mapreduce.job.BulkIngestKey;
+import datawave.ingest.mapreduce.job.SplitsCache;
+import datawave.ingest.mapreduce.job.SplitsConstants;
 import datawave.ingest.mapreduce.job.TableSplitsCache;
 
 public class SortedTabletLocationPartitionerTest {
@@ -37,10 +39,11 @@ public class SortedTabletLocationPartitionerTest {
         configuration = mockJob.getConfiguration();
         configuration.set("job.table.names", TABLE_NAME);
         configuration.setBoolean(TableSplitsCache.REFRESH_SPLITS, false);
-        configuration.set(TableSplitsCache.SPLITS_CACHE_DIR,
+        configuration.set(SplitsConstants.SPLITS_CACHE_DIR,
                         createUrl(splitsFileName).getPath().substring(0, createUrl(splitsFileName).getPath().lastIndexOf('/')));
-        configuration.set(TableSplitsCache.SPLITS_CACHE_FILE, splitsFileName);
+        configuration.set(SplitsConstants.SPLITS_CACHE_FILE, splitsFileName);
 
+        SplitsCache cache = SplitsCache.getInstance(configuration);
         TableSplitsCache.getCurrentCache(configuration);
 
     }

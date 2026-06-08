@@ -12,12 +12,14 @@ import org.apache.log4j.Logger;
 
 import com.google.common.collect.TreeMultimap;
 
+import datawave.ingest.mapreduce.job.SplitsCacheFactory;
 import datawave.ingest.mapreduce.job.SplitsFile;
 
 public class SortedTabletLocationPartitioner extends MultiTableRangePartitioner {
 
     private static final Logger log = Logger.getLogger(SortedTabletLocationPartitioner.class);
     private final Map<String,Map<Integer,Integer>> SPLIT_TO_REDUCER_MAP = new HashMap<>();
+    private SplitsFile splitsFile = (SplitsFile) SplitsCacheFactory.getSplitsCache(getConf());
 
     @Override
     protected int calculateIndex(int index, int numPartitions, String tableName, int cutPointArrayLength) {
@@ -36,10 +38,9 @@ public class SortedTabletLocationPartitioner extends MultiTableRangePartitioner 
     }
 
     private void assignPartitions(int numPartitions, String tableName, int cutPointArrayLength) throws IOException {
+        List<Text> splitsByTable = splitsFile.getSplits(getConf(), tableName);
 
-        List<Text> splitsByTable = SplitsFile.getSplits(getConf(), tableName);
-
-        Map<Text,String> currentTableSplitToLocation = SplitsFile.getSplitsAndLocations(getConf(), tableName);
+        Map<Text,String> currentTableSplitToLocation = splitsFile.getSplitsAndLocations(getConf(), tableName);
         Map<Integer,Integer> tempSplitReducerMap = new HashMap<>();
         Text[] cutPointArray = splitsByTable.toArray(new Text[0]);
 
