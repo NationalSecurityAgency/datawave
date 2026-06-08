@@ -2,6 +2,7 @@ package datawave.ingest.mapreduce.handler.error;
 
 import java.io.IOException;
 import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.Map;
 
@@ -305,7 +306,8 @@ public class ErrorDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedData
      */
     private Key createKey(String row, Text colf, Text colq, byte[] vis, long ts) {
         // Note: we can never reverse ingest from the error table
-        return new Key(row.getBytes(), colf.toString().getBytes(), colq.toString().getBytes(), vis, ts, false);
+        return new Key(row.getBytes(StandardCharsets.UTF_8), colf.toString().getBytes(StandardCharsets.UTF_8), colq.toString().getBytes(StandardCharsets.UTF_8),
+                        vis, ts, false);
     }
 
     /**
