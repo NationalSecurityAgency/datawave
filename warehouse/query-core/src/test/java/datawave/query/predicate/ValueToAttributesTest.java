@@ -48,7 +48,6 @@ import datawave.query.composite.CompositeMetadata;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.language.parser.ParseException;
 import datawave.query.tables.ShardQueryLogic;
-import datawave.query.tables.edge.BaseEdgeQueryTest;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.util.CompositeTestingIngest;
 import datawave.query.util.TypeMetadata;
@@ -71,9 +70,9 @@ public abstract class ValueToAttributesTest {
 
             CompositeTestingIngest.writeItAll(client, CompositeTestingIngest.WhatKindaRange.SHARD);
             Authorizations auths = new Authorizations("ALL");
-            PrintUtility.printTable(client, auths, TableName.SHARD);
-            PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
-            PrintUtility.printTable(client, auths, BaseEdgeQueryTest.MODEL_TABLE_NAME);
+            PrintUtility.printTableToLogDebug(client, auths, TableName.SHARD, PrintUtility.SHARD_TABLE_WRITER);
+            PrintUtility.printTableToLogDebug(client, auths, TableName.SHARD_INDEX, PrintUtility.SHARD_INDEX_TABLE_WRITER);
+            PrintUtility.printTableToLogDebug(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME, PrintUtility.MODEL_TABLE_WRITER);
         }
 
         @Before
@@ -100,9 +99,9 @@ public abstract class ValueToAttributesTest {
 
             CompositeTestingIngest.writeItAll(client, CompositeTestingIngest.WhatKindaRange.DOCUMENT);
             Authorizations auths = new Authorizations("ALL");
-            PrintUtility.printTable(client, auths, TableName.SHARD);
-            PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
-            PrintUtility.printTable(client, auths, BaseEdgeQueryTest.MODEL_TABLE_NAME);
+            PrintUtility.printTableToLogDebug(client, auths, TableName.SHARD, PrintUtility.SHARD_TABLE_WRITER);
+            PrintUtility.printTableToLogDebug(client, auths, TableName.SHARD_INDEX, PrintUtility.SHARD_INDEX_TABLE_WRITER);
+            PrintUtility.printTableToLogDebug(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME, PrintUtility.MODEL_TABLE_WRITER);
         }
 
         @Before

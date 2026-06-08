@@ -92,10 +92,10 @@ public abstract class ExecutableExpansionVisitorTest {
 
             WiseGuysIngest.writeItAll(client, WiseGuysIngest.WhatKindaRange.SHARD);
             Authorizations auths = new Authorizations("ALL");
-            PrintUtility.printTable(client, auths, TableName.SHARD);
-            PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
-            PrintUtility.printTable(client, auths, QueryTestTableHelper.METADATA_TABLE_NAME);
-            PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
+            PrintUtility.printTableToLogDebug(client, auths, TableName.SHARD, PrintUtility.SHARD_TABLE_WRITER);
+            PrintUtility.printTableToLogDebug(client, auths, TableName.SHARD_INDEX, PrintUtility.SHARD_INDEX_TABLE_WRITER);
+            PrintUtility.printTableToLogDebug(client, auths, QueryTestTableHelper.METADATA_TABLE_NAME, PrintUtility.METADATA_TABLE_WRITER);
+            PrintUtility.printTableToLogDebug(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME, PrintUtility.MODEL_TABLE_WRITER);
         }
 
         @Before
@@ -123,10 +123,10 @@ public abstract class ExecutableExpansionVisitorTest {
 
             WiseGuysIngest.writeItAll(client, WiseGuysIngest.WhatKindaRange.DOCUMENT);
             Authorizations auths = new Authorizations("ALL");
-            PrintUtility.printTable(client, auths, TableName.SHARD);
-            PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
-            PrintUtility.printTable(client, auths, QueryTestTableHelper.METADATA_TABLE_NAME);
-            PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
+            PrintUtility.printTableToLogDebug(client, auths, TableName.SHARD, PrintUtility.SHARD_TABLE_WRITER);
+            PrintUtility.printTableToLogDebug(client, auths, TableName.SHARD_INDEX, PrintUtility.SHARD_INDEX_TABLE_WRITER);
+            PrintUtility.printTableToLogDebug(client, auths, QueryTestTableHelper.METADATA_TABLE_NAME, PrintUtility.METADATA_TABLE_WRITER);
+            PrintUtility.printTableToLogDebug(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME, PrintUtility.MODEL_TABLE_WRITER);
         }
 
         @Before

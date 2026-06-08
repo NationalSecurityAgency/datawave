@@ -76,9 +76,9 @@ public abstract class TestLimitReturnedGroupsToHitTermGroups {
 
             // set to DEBUG if you want table output
             Logger.getLogger(PrintUtility.class).setLevel(Level.INFO);
-            PrintUtility.printTable(connector, auths, TableName.SHARD);
-            PrintUtility.printTable(connector, auths, TableName.SHARD_INDEX);
-            PrintUtility.printTable(connector, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
+            PrintUtility.printTableToLogDebug(connector, auths, TableName.SHARD, PrintUtility.SHARD_TABLE_WRITER);
+            PrintUtility.printTableToLogDebug(connector, auths, TableName.SHARD_INDEX, PrintUtility.SHARD_INDEX_TABLE_WRITER);
+            PrintUtility.printTableToLogDebug(connector, auths, QueryTestTableHelper.MODEL_TABLE_NAME, PrintUtility.MODEL_TABLE_WRITER);
 
         }
 
@@ -110,9 +110,9 @@ public abstract class TestLimitReturnedGroupsToHitTermGroups {
             Authorizations auths = new Authorizations("ALL");
             // set to DEBUG if you want table output
             Logger.getLogger(PrintUtility.class).setLevel(Level.INFO);
-            PrintUtility.printTable(connector, auths, TableName.SHARD);
-            PrintUtility.printTable(connector, auths, TableName.SHARD_INDEX);
-            PrintUtility.printTable(connector, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
+            PrintUtility.printTableToLogDebug(connector, auths, TableName.SHARD, PrintUtility.SHARD_TABLE_WRITER);
+            PrintUtility.printTableToLogDebug(connector, auths, TableName.SHARD_INDEX, PrintUtility.SHARD_INDEX_TABLE_WRITER);
+            PrintUtility.printTableToLogDebug(connector, auths, QueryTestTableHelper.MODEL_TABLE_NAME, PrintUtility.MODEL_TABLE_WRITER);
 
         }
 

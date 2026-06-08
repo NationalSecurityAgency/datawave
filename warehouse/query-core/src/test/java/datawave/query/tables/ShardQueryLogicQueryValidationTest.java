@@ -138,9 +138,9 @@ public class ShardQueryLogicQueryValidationTest {
         AccumuloClient client = new QueryTestTableHelper(ShardQueryLogicTest.ShardRange.class.toString(), log,
                         RebuildingScannerTestHelper.TEARDOWN.EVERY_OTHER_SANS_CONSISTENCY, RebuildingScannerTestHelper.INTERRUPT.EVERY_OTHER).client;
         WiseGuysIngest.writeItAll(client, WiseGuysIngest.WhatKindaRange.SHARD);
-        PrintUtility.printTable(client, auths, TableName.SHARD);
-        PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
-        PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
+        PrintUtility.printTableToLogDebug(client, auths, TableName.SHARD, PrintUtility.SHARD_TABLE_WRITER);
+        PrintUtility.printTableToLogDebug(client, auths, TableName.SHARD_INDEX, PrintUtility.SHARD_INDEX_TABLE_WRITER);
+        PrintUtility.printTableToLogDebug(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME, PrintUtility.MODEL_TABLE_WRITER);
         return client;
     }
 

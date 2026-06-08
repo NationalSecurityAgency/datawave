@@ -65,9 +65,9 @@ public abstract class SummaryTest {
             connector = qtth.client;
             WiseGuysIngest.writeItAll(connector, WiseGuysIngest.WhatKindaRange.SHARD);
             Authorizations auths = new Authorizations("ALL");
-            PrintUtility.printTable(connector, auths, TableName.SHARD);
-            PrintUtility.printTable(connector, auths, TableName.SHARD_INDEX);
-            PrintUtility.printTable(connector, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
+            PrintUtility.printTableToLogDebug(connector, auths, TableName.SHARD, PrintUtility.SHARD_TABLE_WRITER);
+            PrintUtility.printTableToLogDebug(connector, auths, TableName.SHARD_INDEX, PrintUtility.SHARD_INDEX_TABLE_WRITER);
+            PrintUtility.printTableToLogDebug(connector, auths, QueryTestTableHelper.MODEL_TABLE_NAME, PrintUtility.MODEL_TABLE_WRITER);
         }
 
         @Before
@@ -96,9 +96,9 @@ public abstract class SummaryTest {
 
             WiseGuysIngest.writeItAll(connector, WiseGuysIngest.WhatKindaRange.DOCUMENT);
             Authorizations auths = new Authorizations("ALL");
-            PrintUtility.printTable(connector, auths, TableName.SHARD);
-            PrintUtility.printTable(connector, auths, TableName.SHARD_INDEX);
-            PrintUtility.printTable(connector, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
+            PrintUtility.printTableToLogDebug(connector, auths, TableName.SHARD, PrintUtility.SHARD_TABLE_WRITER);
+            PrintUtility.printTableToLogDebug(connector, auths, TableName.SHARD_INDEX, PrintUtility.SHARD_INDEX_TABLE_WRITER);
+            PrintUtility.printTableToLogDebug(connector, auths, QueryTestTableHelper.MODEL_TABLE_NAME, PrintUtility.MODEL_TABLE_WRITER);
         }
 
         @Before

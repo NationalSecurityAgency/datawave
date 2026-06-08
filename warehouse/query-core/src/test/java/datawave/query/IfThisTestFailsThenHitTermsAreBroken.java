@@ -108,9 +108,9 @@ public abstract class IfThisTestFailsThenHitTermsAreBroken {
             MoreTestData.writeItAll(client, WhatKindaRange.SHARD);
             if (log.isDebugEnabled()) {
                 log.debug("testWithShardRange");
-                PrintUtility.printTable(client, auths, TableName.SHARD);
-                PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
-                PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
+                PrintUtility.printTableToLogDebug(client, auths, TableName.SHARD, PrintUtility.SHARD_TABLE_WRITER);
+                PrintUtility.printTableToLogDebug(client, auths, TableName.SHARD_INDEX, PrintUtility.SHARD_INDEX_TABLE_WRITER);
+                PrintUtility.printTableToLogDebug(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME, PrintUtility.MODEL_TABLE_WRITER);
             }
         }
 
@@ -132,9 +132,9 @@ public abstract class IfThisTestFailsThenHitTermsAreBroken {
             MoreTestData.writeItAll(client, WhatKindaRange.DOCUMENT);
             if (log.isDebugEnabled()) {
                 log.debug("testWithDocumentRange");
-                PrintUtility.printTable(client, auths, TableName.SHARD);
-                PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
-                PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
+                PrintUtility.printTableToLogDebug(client, auths, TableName.SHARD, PrintUtility.SHARD_TABLE_WRITER);
+                PrintUtility.printTableToLogDebug(client, auths, TableName.SHARD_INDEX, PrintUtility.SHARD_INDEX_TABLE_WRITER);
+                PrintUtility.printTableToLogDebug(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME, PrintUtility.MODEL_TABLE_WRITER);
             }
         }
 

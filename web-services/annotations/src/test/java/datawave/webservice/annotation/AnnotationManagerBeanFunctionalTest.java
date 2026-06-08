@@ -183,13 +183,11 @@ public class AnnotationManagerBeanFunctionalTest {
 
         addAnnotationTestData(client);
 
-        PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
-        PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
-        PrintUtility.printTable(client, auths, TableName.SHARD);
-        PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
-        PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
-        PrintUtility.printTable(client, auths, annotationTableName);
-        PrintUtility.printTable(client, auths, annotationSourceTableName);
+        PrintUtility.printTableToLogDebug(client, auths, TableName.SHARD_INDEX, PrintUtility.SHARD_INDEX_TABLE_WRITER);
+        PrintUtility.printTableToLogDebug(client, auths, TableName.SHARD, PrintUtility.SHARD_TABLE_WRITER);
+        PrintUtility.printTableToLogDebug(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME, PrintUtility.MODEL_TABLE_WRITER);
+        PrintUtility.printTableToLogDebug(client, auths, annotationTableName, PrintUtility.ANNOTATION_TABLE_WRITER);
+        PrintUtility.printTableToLogDebug(client, auths, annotationSourceTableName, PrintUtility.ANNOTATION_SOURCE_TABLE_WRITER);
     }
 
     @Before
