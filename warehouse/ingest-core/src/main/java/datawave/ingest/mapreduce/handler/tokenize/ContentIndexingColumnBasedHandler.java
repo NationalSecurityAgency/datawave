@@ -2,6 +2,7 @@ package datawave.ingest.mapreduce.handler.tokenize;
 
 import java.io.IOException;
 import java.io.StringReader;
+import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -604,7 +605,7 @@ public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractC
                         .append(nfv.getIndexedFieldName());
 
         BulkIngestKey bKey = new BulkIngestKey(new Text(this.getShardTableName()), new Key(shardId, ColumnFamilyConstants.TERM_FREQUENCY_TEXT.getBytes(),
-                        colq.toString().getBytes(), visibility, event.getTimestamp(), helper.getDeleteMode()));
+                        colq.toString().getBytes(StandardCharsets.UTF_8), visibility, event.getTimestamp(), helper.getDeleteMode()));
 
         values.put(bKey, value);
     }

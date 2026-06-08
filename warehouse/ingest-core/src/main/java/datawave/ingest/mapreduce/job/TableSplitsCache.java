@@ -8,6 +8,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -287,8 +288,8 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
     @VisibleForTesting
     public void writeLocations(PrintStream out, String table, List<Text> splits, Map<Text,String> splitLocations) {
         for (Text split : splits) {
-            out.println(tableCacheIds.get(table) + this.delimiter + new String(Base64.encodeBase64(split.toString().trim().getBytes())) + "\t"
-                            + splitLocations.get(split));
+            out.println(tableCacheIds.get(table) + this.delimiter + new String(Base64.encodeBase64(split.toString().trim().getBytes(StandardCharsets.UTF_8)))
+                            + "\t" + splitLocations.get(split));
         }
     }
 
