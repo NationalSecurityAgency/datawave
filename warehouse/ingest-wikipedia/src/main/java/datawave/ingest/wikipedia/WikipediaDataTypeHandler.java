@@ -3,6 +3,7 @@ package datawave.ingest.wikipedia;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.StringReader;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Set;
 import java.util.concurrent.Executors;
@@ -224,7 +225,7 @@ public class WikipediaDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends ExtendedCon
 
                 // Create the full content record
                 if (!content.isEmpty()) {
-                    createContentRecord(event, contextWriter, context, reporter, colf, visibility, this.shardId, content.getBytes());
+                    createContentRecord(event, contextWriter, context, reporter, colf, visibility, this.shardId, content.getBytes(StandardCharsets.UTF_8));
 
                     norm = new NormalizedFieldAndValue(contentPresenceFieldName, "true");
                     byte[] fieldVisibility = getVisibility(event, norm);
