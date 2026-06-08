@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -226,10 +227,31 @@ public class KeywordExtractingIterator implements SortedKeyValueIterator<Key,Val
             source.next();
         }
 
-        // extract keywords from the found content.
+        // order the found content by priority
+        final List<Map.Entry<String,VisibleContent>> orderedContent = new ArrayList<>();
+        for (String view : preferredViews) {
+            final String truncatedView = view.endsWith("*") ? view.substring(0, view.length() - 1) : null;
+            final Iterator<Map.Entry<String,VisibleContent>> iterator = foundContent.entrySet().iterator();
+
+            while (iterator.hasNext()) {
+                final Map.Entry<String,VisibleContent> entry = iterator.next();
+                final String foundView = entry.getKey();
+
+                if (truncatedView != null && foundView.startsWith(truncatedView)) {
+                    orderedContent.add(entry);
+                    iterator.remove();
+                } else if (foundView.equals(view)) {
+                    orderedContent.add(entry);
+                    iterator.remove();
+                    break;
+                }
+            }
+        }
+
+        // extract keywords from the ordered content.
         String documentUid = getDocumentIdentifier(top.getRow().toString(), dtUid);
         String language = documentLanguageMap.get(documentUid);
-        KeywordExtractor keywordExtractor = new KeywordExtractor(documentUid, preferredViews, foundContent, language, iteratorOptions);
+        KeywordExtractor keywordExtractor = new KeywordExtractor(documentUid, orderedContent, language, iteratorOptions);
         KeywordResults results = keywordExtractor.extractKeywords();
 
         if (results != EMPTY_RESULTS) {

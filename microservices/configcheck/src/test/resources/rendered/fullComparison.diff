@@ -43,7 +43,6 @@ doc.beans.BaseEventQuery.disableIndexOnlyDocuments: ${disable.index.only.documen
 doc.beans.BaseEventQuery.evaluationOnlyFields: ${evaluation.only.fields}
 >>>>>>> SECOND
 <<<<<<< FIRST
-doc.beans.BaseEventQuery.eventPerDayThreshold: ${datawave.query.logic.logics.BaseEventQuery.eventPerDayThreshold}
 =======
 >>>>>>> SECOND
 <<<<<<< FIRST
@@ -140,9 +139,7 @@ doc.beans.BaseEventQuery.sendTimingToStatsd: ${datawave.query.logic.logics.BaseE
 =======
 >>>>>>> SECOND
 <<<<<<< FIRST
-doc.beans.BaseEventQuery.shardsPerDayThreshold: ${datawave.query.logic.logics.BaseEventQuery.shardsPerDayThreshold}
 =======
-doc.beans.BaseEventQuery.shardsPerDayThreshold: ${beq.shardsPerDayThreshold}
 >>>>>>> SECOND
 <<<<<<< FIRST
 doc.beans.BaseEventQuery.statsdHost: ${datawave.query.logic.logics.BaseEventQuery.statsdHost}
@@ -411,7 +408,6 @@ doc.beans.HitHighlights.auditType: ${datawave.query.logic.logics.HitHighlights.a
 doc.beans.HitHighlights.checkpointable: ${datawave.query.logic.logics.HitHighlights.checkpointable}
 doc.beans.HitHighlights.dateIndexTableName: ${datawave.query.logic.logics.HitHighlights.dateIndexTableName}
 doc.beans.HitHighlights.defaultDateTypeName: ${datawave.query.logic.logics.HitHighlights.defaultDateTypeName}
-doc.beans.HitHighlights.eventPerDayThreshold: ${datawave.query.logic.logics.HitHighlights.eventPerDayThreshold}
 =======
 >>>>>>> SECOND
 <<<<<<< FIRST
@@ -492,12 +488,10 @@ doc.beans.HitHighlights.minimumSelectivity: ${datawave.query.logic.logics.HitHig
 <<<<<<< FIRST
 doc.beans.HitHighlights.queryThreads: ${datawave.query.logic.logics.HitHighlights.queryThreads}
 doc.beans.HitHighlights.reverseIndexTableName: ${datawave.query.logic.logics.HitHighlights.reverseIndexTableName}
-doc.beans.HitHighlights.shardsPerDayThreshold: ${datawave.query.logic.logics.HitHighlights.shardsPerDayThreshold}
 doc.beans.HitHighlights.tableName: ${datawave.query.logic.logics.HitHighlights.tableName}
 =======
 doc.beans.HitHighlights.queryThreads: ${index.query.threads}
 doc.beans.HitHighlights.reverseIndexTableName: ${rindex.table.name}
-doc.beans.HitHighlights.shardsPerDayThreshold: ${beq.shardsPerDayThreshold}
 doc.beans.HitHighlights.tableName: ${shard.table.name}
 >>>>>>> SECOND
 <<<<<<< FIRST
@@ -648,12 +642,10 @@ doc.beans.BaseEventQuery.enricherClassNames: "datawave.query.enrich.DatawaveTerm
 >>>>>>> SECOND
 doc.beans.BaseEventQuery.evaluationOnlyFields: ""
 <<<<<<< FIRST
-doc.beans.BaseEventQuery.eventPerDayThreshold: "${warehouse.defaults.eventPerDayThreshold}"
 doc.beans.BaseEventQuery.finalMaxTermThreshold: "${warehouse.defaults.finalMaxTermThreshold}"
 doc.beans.BaseEventQuery.fullTableScanEnabled: "${warehouse.defaults.fullTableScanEnabled}"
 doc.beans.BaseEventQuery.hdfsSiteConfigURLs: "${warehouse.defaults.hdfsSiteConfigURLs}"
 =======
-doc.beans.BaseEventQuery.eventPerDayThreshold: 40000
 doc.beans.BaseEventQuery.finalMaxTermThreshold: 2000
 doc.beans.BaseEventQuery.fullTableScanEnabled: false
 doc.beans.BaseEventQuery.hdfsSiteConfigURLs: "file:///etc/hadoop/conf/core-site.xml,file:///etc/hadoop/conf/hdfs-site.xml"
@@ -756,12 +748,10 @@ doc.beans.BaseEventQuery.reverseIndexTableName: "${table.name.shardReverseIndex}
 >>>>>>> SECOND
 doc.beans.BaseEventQuery.sendTimingToStatsd: false
 <<<<<<< FIRST
-doc.beans.BaseEventQuery.shardsPerDayThreshold: "${warehouse.defaults.shardsPerDayThreshold}"
 doc.beans.BaseEventQuery.statsdHost: "${warehouse.statsd.host}"
 doc.beans.BaseEventQuery.statsdPort: "${warehouse.statsd.port}"
 doc.beans.BaseEventQuery.tableName: "${warehouse.tables.shard.name}"
 =======
-doc.beans.BaseEventQuery.shardsPerDayThreshold: 20
 doc.beans.BaseEventQuery.statsdHost: "localhost"
 doc.beans.BaseEventQuery.statsdPort: 8125
 doc.beans.BaseEventQuery.tableName: "${table.name.shard}"
@@ -1011,7 +1001,6 @@ doc.beans.HitHighlights.dateIndexTableName: "${warehouse.tables.dateIndex.name}"
 doc.beans.HitHighlights.defaultDateTypeName: "EVENT"
 =======
 >>>>>>> SECOND
-doc.beans.HitHighlights.eventPerDayThreshold: 40000
 <<<<<<< FIRST
 doc.beans.HitHighlights.finalMaxTermThreshold: "${warehouse.defaults.finalMaxTermThreshold}"
 doc.beans.HitHighlights.fullTableScanEnabled: "${warehouse.defaults.fullTableScanEnabled}"
@@ -1077,12 +1066,10 @@ doc.beans.HitHighlights.querySyntaxParsers.JEXL: null
 <<<<<<< FIRST
 doc.beans.HitHighlights.queryThreads: "${warehouse.defaults.indexLookupThreads}"
 doc.beans.HitHighlights.reverseIndexTableName: "${warehouse.tables.reverseIndex.name}"
-doc.beans.HitHighlights.shardsPerDayThreshold: "${warehouse.defaults.shardsPerDayThreshold}"
 doc.beans.HitHighlights.tableName: "${warehouse.tables.shard.name}"
 =======
 doc.beans.HitHighlights.queryThreads: 100
 doc.beans.HitHighlights.reverseIndexTableName: "${table.name.shardReverseIndex}"
-doc.beans.HitHighlights.shardsPerDayThreshold: 20
 doc.beans.HitHighlights.tableName: "${table.name.shard}"
 >>>>>>> SECOND
 doc.beans.HitHighlights.useEnrichers: false
@@ -1244,10 +1231,12 @@ doc.beans.BaseEventQuery.filterClassNames: baseEventQueryFilterClassNames
 doc.beans.BaseEventQuery.filterOptions: baseEventQueryFilterOptions
 doc.beans.BaseEventQuery.hierarchyFieldOptions: baseEventQueryHierarchyFieldOptions
 doc.beans.BaseEventQuery.ivaratorCacheDirConfigs: baseEventQueryIvaratorCacheDirConfigs
+doc.beans.BaseEventQuery.localIvaratorCacheDirConfigs: baseEventQueryLocalIvaratorCacheDirConfigs
 =======
 doc.beans.BaseEventQuery.filterOptions: BaseEventQueryFilterOptions
 doc.beans.BaseEventQuery.hierarchyFieldOptions: BaseEventQueryHierarchyFieldOptions
 doc.beans.BaseEventQuery.ivaratorCacheDirConfigs: IvaratorCacheDirConfigs
+doc.beans.BaseEventQuery.localIvaratorCacheDirConfigs: LocalIvaratorCacheDirConfigs
 >>>>>>> SECOND
 doc.beans.BaseEventQuery.metadataHelperFactory: metadataHelperFactory
 doc.beans.BaseEventQuery.queryPlanner: DefaultQueryPlanner

@@ -18,7 +18,6 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.util.StringUtils;
 import org.apache.log4j.Logger;
 
-import datawave.ingest.mapreduce.handler.ExtendedDataTypeHandler;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.ingest.table.aggregator.BitSetCombiner;
 import datawave.ingest.table.aggregator.CombinerConfiguration;
@@ -28,6 +27,8 @@ import datawave.ingest.table.aggregator.KeepCountOnlyUidAggregator;
 import datawave.ingest.table.balancer.ShardedTableTabletBalancer;
 import datawave.ingest.table.bloomfilter.ShardIndexKeyFunctor;
 import datawave.ingest.table.bloomfilter.ShardKeyFunctor;
+import datawave.table.constants.ColumnFamilyConstants;
+import datawave.table.constants.LocalityGroupConstants;
 import datawave.util.TableName;
 
 public class ShardTableConfigHelper extends AbstractTableConfigHelper {
@@ -58,13 +59,14 @@ public class ShardTableConfigHelper extends AbstractTableConfigHelper {
     protected Logger log;
 
     public enum ShardTableType {
-        SHARD, GIDX, GRIDX, GLOBAL_DAY_INDEX, GLOBAL_YEAR_INDEX, DINDX
+        SHARD, GIDX, GRIDX, GLOBAL_BITSET_INDEX, GLOBAL_DAY_INDEX, GLOBAL_YEAR_INDEX, DINDX
     }
 
     protected Configuration conf;
     protected String tableName;
     protected String shardTableName; // shard table
     protected String shardGidxTableName; // global index
+    protected String shardBitsetIndexTableName;
     protected String shardDayIndexTableName; // global day index
     protected String shardYearIndexTableName; // global year index
     protected String shardGridxTableName; // global reverse index
@@ -79,6 +81,7 @@ public class ShardTableConfigHelper extends AbstractTableConfigHelper {
 
         shardTableName = conf.get(ShardedDataTypeHandler.SHARD_TNAME, null);
         shardGidxTableName = conf.get(ShardedDataTypeHandler.SHARD_GIDX_TNAME, null);
+        shardBitsetIndexTableName = conf.get(ShardedDataTypeHandler.SHARD_BITSET_INDEX_TABLE_NAME, null);
         shardDayIndexTableName = conf.get(ShardedDataTypeHandler.SHARD_DAY_INDEX_TABLE_NAME, null);
         shardYearIndexTableName = conf.get(ShardedDataTypeHandler.SHARD_YEAR_INDEX_TABLE_NAME, null);
         shardGridxTableName = conf.get(ShardedDataTypeHandler.SHARD_GRIDX_TNAME, null);
@@ -86,8 +89,8 @@ public class ShardTableConfigHelper extends AbstractTableConfigHelper {
         markingsSetupIteratorEnabled = conf.getBoolean(MARKINGS_SETUP_ITERATOR_ENABLED, markingsSetupIteratorEnabled);
         markingsSetupIteratorConfig = conf.get(MARKINGS_SETUP_ITERATOR_CONFIG, markingsSetupIteratorConfig);
 
-        if (shardTableName == null && shardGidxTableName == null && shardGridxTableName == null && shardDayIndexTableName == null
-                        && shardYearIndexTableName == null && shardDictionaryTableName == null) {
+        if (shardTableName == null && shardGidxTableName == null && shardGridxTableName == null && shardBitsetIndexTableName == null
+                        && shardDayIndexTableName == null && shardYearIndexTableName == null && shardDictionaryTableName == null) {
             throw new IllegalArgumentException("No Shard Tables Defined");
         }
 
@@ -104,9 +107,8 @@ public class ShardTableConfigHelper extends AbstractTableConfigHelper {
         String localityGroupsConf = null;
         if (tableName.equals(shardTableName)) {
             localityGroupsConf = conf.get(shardTableName + LOCALITY_GROUPS,
-                            ExtendedDataTypeHandler.FULL_CONTENT_LOCALITY_NAME + ':' + ExtendedDataTypeHandler.FULL_CONTENT_COLUMN_FAMILY + ','
-                                            + ExtendedDataTypeHandler.TERM_FREQUENCY_LOCALITY_NAME + ':'
-                                            + ExtendedDataTypeHandler.TERM_FREQUENCY_COLUMN_FAMILY);
+                            LocalityGroupConstants.FULL_CONTENT_LOCALITY + ':' + ColumnFamilyConstants.FULL_CONTENT + ','
+                                            + LocalityGroupConstants.TERM_FREQUENCY_LOCALITY + ':' + ColumnFamilyConstants.TERM_FREQUENCY);
             for (String localityGroupDefConf : StringUtils.split(localityGroupsConf)) {
                 String[] localityGroupDef = StringUtils.split(localityGroupDefConf, '\\', ':');
                 Set<Text> families = localityGroups.get(localityGroupDef[0]);
@@ -138,6 +140,8 @@ public class ShardTableConfigHelper extends AbstractTableConfigHelper {
             this.tableType = ShardTableType.GIDX;
         } else if (tableName.equals(shardGridxTableName)) {
             this.tableType = ShardTableType.GRIDX;
+        } else if (tableName.equals(shardBitsetIndexTableName)) {
+            this.tableType = ShardTableType.GLOBAL_BITSET_INDEX;
         } else if (tableName.equals(shardDayIndexTableName)) {
             this.tableType = ShardTableType.GLOBAL_DAY_INDEX;
         } else if (tableName.equals(shardYearIndexTableName)) {
@@ -163,6 +167,7 @@ public class ShardTableConfigHelper extends AbstractTableConfigHelper {
             case GRIDX:
                 configureGridxTable(tops);
                 break;
+            case GLOBAL_BITSET_INDEX:
             case GLOBAL_DAY_INDEX:
             case GLOBAL_YEAR_INDEX:
                 configureBitSetTable(tops);

@@ -299,6 +299,7 @@
         <property name="maxResults" value="${event.query.max.results}" />
         <property name="queryThreads" value="${shard.query.threads}" />
         <property name="yieldThresholdMs" value="${query.iterator.yield.threshold.ms}" />
+        <property name="maxYields" value="${query.iterator.max.yields}" />
         <property name="collectTimingDetails" value="${beq.collectTimingDetails}" />
         <property name="indexLookupThreads" value="${index.query.threads}" />
         <property name="dateIndexThreads" value="${date.index.threads}" />
@@ -405,7 +406,6 @@
         <property name="statsdPort" value="8125" />
         <property name="selectorExtractor" ref="DatawaveSelectorExtractor" />
         <property name="evaluationOnlyFields" value="${evaluation.only.fields}" />
-        <property name="lazySetMechanismEnabled" value="false" />
         <!--    control when to log warnings for long aggregations    -->
         <property name="docAggregationThresholdMs" value="-1" />
         <property name="tfAggregationThresholdMs" value="-1" />

@@ -1186,6 +1186,7 @@ public class EvaluationPhaseFilterFunctionsTest {
             assertTime(time("20211006165134")); // yyyyMMddHHmmss
             assertTime(time("20211006165134")); // yyyyMMddHHmmss
             assertTime(time("6 Oct 2021 16:51:34 GMT")); // d MMM yyyy HH:mm:ss 'GMT'
+            assertTime(time("2021:10:06 16:51:34")); // yyyy:MM:dd HH:mm:ss
 
             // Granular to second with timezone EST.
             givenExpectedTime(1633557094000L);
@@ -1244,6 +1245,7 @@ public class EvaluationPhaseFilterFunctionsTest {
             assertTime(nextTime("20211006165134")); // yyyyMMddHHmmss
             assertTime(nextTime("20211006165134")); // yyyyMMddHHmmss
             assertTime(nextTime("6 Oct 2021 16:51:34 GMT")); // d MMM yyyy HH:mm:ss 'GMT'
+            assertTime(nextTime("2021:10:06 16:51:34")); // yyyy:MM:dd HH:mm:ss
 
             // Granular to second with timezone EST. Should increase by one second.
             givenExpectedTime(1633557094000L + ONESECOND);

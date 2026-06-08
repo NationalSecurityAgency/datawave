@@ -292,15 +292,14 @@ public class UnfieldedIndexExpansionVisitorTest {
         test(query, expected, config, helper);
     }
 
-    // regex term fails to expand fields, marked with an exceeded term threshold marker
+    // regex term fails to expand fields, exception thrown
     @Test(expected = DatawaveFatalQueryException.class)
-    public void testExceededTermThreshold() throws Exception {
+    public void testMaxUnfieldedExpansionThreshold() throws Exception {
         ShardQueryConfiguration config = createConfig();
         config.setMaxUnfieldedExpansionThreshold(2);
 
         String query = "_ANYFIELD_ =~ 'dog.*'";
-        String expected = "((_Term_ = true) && (_ANYFIELD_ =~ 'dog.*'))";
-        test(query, expected, config);
+        test(query, null, config);
     }
 
     // regex term expands into fields, but values expansion fails by exceeding a threshold.

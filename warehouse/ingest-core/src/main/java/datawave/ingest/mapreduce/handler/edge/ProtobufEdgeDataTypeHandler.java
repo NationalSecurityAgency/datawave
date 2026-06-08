@@ -62,6 +62,7 @@ import datawave.ingest.mapreduce.job.writer.ContextWriter;
 import datawave.ingest.metadata.RawRecordMetadata;
 import datawave.ingest.table.config.LoadDateTableConfigHelper;
 import datawave.marking.MarkingFunctions;
+import datawave.metadata.protobuf.EdgeMetadata;
 import datawave.metadata.protobuf.EdgeMetadata.MetadataValue;
 import datawave.metadata.protobuf.EdgeMetadata.MetadataValue.Metadata;
 import datawave.util.StringUtils;
@@ -141,6 +142,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         try {
             edgeConfig = new EdgeIngestConfiguration(conf);
             newFormatStartDate = edgeConfig.getStartDateIfValid();
+            enableMetadata = edgeConfig.isEnableMetadata();
         } catch (Exception e) {
             if (setUpFailurePolicy == ProtobufEdgeDataTypeHandler.FailurePolicy.FAIL_JOB) {
                 throw e;
@@ -338,7 +340,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
 
         } // end edge defs
 
-        if (this.enableMetadata) {
+        if (edgeConfig.isEnableMetadata()) {
             writeMetadataMap(context, contextWriter, eventMetadataRegistry);
         }
         postProcessEdges(event, context, contextWriter, edgesCreated, baseEdgeBundle);
@@ -399,7 +401,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
                         // and the system doesn't timeout.
                         edgesCreated += writeEdgesForDateType(edgeValue, context, contextWriter);
 
-                        if (this.enableMetadata) {
+                        if (edgeConfig.isEnableMetadata()) {
                             registerEventMetadata(edgeValue, edgeDataBundle.getEdgeDefinition());
 
                         }
@@ -438,7 +440,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
                             // and the system doesn't timeout.
                             edgesCreated += writeEdgesForDateType(edgeValue, context, contextWriter);
 
-                            if (this.enableMetadata) {
+                            if (edgeConfig.isEnableMetadata()) {
                                 registerEventMetadata(edgeValue, edgeDataBundle.getEdgeDefinition());
 
                             }
@@ -573,37 +575,18 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         // add to the eventMetadataRegistry map
         Key baseKey = createMetadataEdgeKey(edgeValue, edgeValue.getSource(), edgeValue.getSource().getIndexedFieldValue(), edgeValue.getSink(),
                         edgeValue.getSink().getIndexedFieldValue(), this.getVisibility(edgeValue));
+
         Key fwdMetaKey = EdgeKey.getMetadataKey(baseKey);
-        Key revMetaKey = EdgeKey.getMetadataKey(EdgeKey.swapSourceSink(EdgeKey.decode(baseKey)).encode());
+        addMetadata(eventMetadataRegistry, enrichmentFieldName, edgeValue, jexlPrecondition, fwdMetaKey);
 
-        Set<Metadata> fwdMetaSet = eventMetadataRegistry.get(fwdMetaKey);
-        if (null == fwdMetaSet) {
-            fwdMetaSet = new HashSet<>();
-            eventMetadataRegistry.put(fwdMetaKey, fwdMetaSet);
+        if (isNullOrBidirectional(edgeValue.getEdgeDirection())) {
+            Key revMetaKey = EdgeKey.getMetadataKey(EdgeKey.swapSourceSink(EdgeKey.decode(baseKey)).encode());
+            addMetadata(eventMetadataRegistry, enrichmentFieldName, edgeValue, jexlPrecondition, revMetaKey);
         }
-        Set<Metadata> revMetaSet = eventMetadataRegistry.get(revMetaKey);
-        if (null == revMetaSet) {
-            revMetaSet = new HashSet<>();
-            eventMetadataRegistry.put(revMetaKey, revMetaSet);
-        }
+    }
 
-        // Build the Protobuf for the value
-        Metadata.Builder forwardBuilder = Metadata.newBuilder().setSource(edgeValue.getSource().getFieldName()).setSink(edgeValue.getSink().getFieldName())
-                        .setDate(DateHelper.format(new Date(edgeValue.getEventDate())));
-        Metadata.Builder reverseBuilder = Metadata.newBuilder().setDate(DateHelper.format(new Date(edgeValue.getEventDate())))
-                        .setSource(edgeValue.getSink().getFieldName()).setSink(edgeValue.getSource().getFieldName());
-        if (enrichmentFieldName != null) {
-            forwardBuilder.setEnrichment(enrichmentFieldName).setEnrichmentIndex(edgeValue.getEnrichedIndex());
-            reverseBuilder.setEnrichment(enrichmentFieldName).setEnrichmentIndex(edgeValue.getEnrichedIndex());
-        }
-
-        if (jexlPrecondition != null) {
-            forwardBuilder.setJexlPrecondition(jexlPrecondition);
-            reverseBuilder.setJexlPrecondition(jexlPrecondition);
-        }
-
-        fwdMetaSet.add(forwardBuilder.build());
-        revMetaSet.add(reverseBuilder.build());
+    private boolean isNullOrBidirectional(EdgeDirection direction) {
+        return direction == null || direction.equals(EdgeDirection.BIDIRECTIONAL);
     }
 
     @VisibleForTesting
@@ -794,6 +777,32 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         builder.setDeleted(edgeValue.isDeleting());
 
         return builder.build().encode();
+    }
+
+    private Set<EdgeMetadata.MetadataValue.Metadata> addMetadata(Map<Key,Set<EdgeMetadata.MetadataValue.Metadata>> metadataRegistry, String enrichmentFieldName,
+                    EdgeDataBundle edgeDataBundle, String jexlPrecondition, Key key) {
+        Set<Metadata> metadata = metadataRegistry.computeIfAbsent(key, k -> new HashSet<>());
+
+        // Build the Protobuf for the value
+        //@formatter:off
+        Metadata.Builder builder = Metadata.newBuilder()
+                .setSource(edgeDataBundle.getSource().getFieldName())
+                .setSink(edgeDataBundle
+                        .getSink()
+                        .getFieldName())
+                        .setDate(DateHelper.format(new Date(edgeDataBundle.getEventDate())));
+        //@formatter:on
+
+        if (enrichmentFieldName != null) {
+            builder.setEnrichment(enrichmentFieldName).setEnrichmentIndex(edgeDataBundle.getEnrichedIndex());
+        }
+        if (jexlPrecondition != null) {
+            builder.setJexlPrecondition(jexlPrecondition);
+        }
+
+        metadata.add(builder.build());
+
+        return metadata;
     }
 
     protected Key createStatsKey(STATS_TYPE statsType, EdgeDataBundle edgeValue, VertexValue vertex, String value, Text visibility,

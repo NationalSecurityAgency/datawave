@@ -7,7 +7,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.log4j.Logger;
@@ -15,6 +14,7 @@ import org.apache.log4j.Logger;
 import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.tables.ScannerFactory;
+import datawave.scan.ScannerBuilder;
 
 /**
  * Abstract index lookup which provides a framework for creating and populating the {@link IndexLookupMap} asynchronously in a separate thread. Async index
@@ -33,10 +33,8 @@ public abstract class AsyncIndexLookup extends IndexLookup {
     // flag for unfielded lookups
     protected final boolean unfieldedLookup;
 
-    // track state for common index expansion failures
-    protected final AtomicBoolean exceededTimeoutThreshold = new AtomicBoolean(false);
-    protected final AtomicBoolean exceededValueThreshold = new AtomicBoolean(false);
-    protected final AtomicBoolean exceptionSeen = new AtomicBoolean(false);
+    protected ScannerBuilder builder = null;
+    protected ScanMonitor monitor;
 
     public AsyncIndexLookup(ShardQueryConfiguration config, ScannerFactory scannerFactory, boolean unfieldedLookup, ExecutorService execService) {
         super(config, scannerFactory);
@@ -45,6 +43,10 @@ public abstract class AsyncIndexLookup extends IndexLookup {
 
         this.maxUnfieldedExpansionThreshold = config.getMaxUnfieldedExpansionThreshold();
         this.maxValueExpansionThreshold = config.getMaxValueExpansionThreshold();
+    }
+
+    public void setScanMonitor(ScanMonitor monitor) {
+        this.monitor = monitor;
     }
 
     /**

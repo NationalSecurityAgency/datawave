@@ -5,7 +5,6 @@ import java.util.Iterator;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iterators.Combiner;
 
 import datawave.util.TableName;
 
@@ -16,7 +15,7 @@ import datawave.util.TableName;
  * <p>
  * Deletes are not honored.
  */
-public class BitSetCombiner extends Combiner {
+public class BitSetCombiner extends PropogatingCombiner {
 
     @Override
     public Value reduce(Key key, Iterator<Value> iter) {

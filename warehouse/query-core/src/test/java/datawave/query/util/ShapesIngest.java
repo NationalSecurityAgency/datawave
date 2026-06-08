@@ -6,7 +6,9 @@ import static datawave.util.TableName.SHARD_INDEX;
 import static datawave.util.TableName.SHARD_RINDEX;
 
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.accumulo.core.client.AccumuloClient;
@@ -28,6 +30,8 @@ import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.ListType;
 import datawave.data.type.NumberType;
 import datawave.ingest.protobuf.Uid;
+import datawave.query.index.day.IndexIngestUtil;
+import datawave.test.MacTestUtil;
 import datawave.util.TableName;
 
 /**
@@ -107,8 +111,7 @@ public class ShapesIngest {
 
     private static final LongCombiner.VarLenEncoder encoder = new LongCombiner.VarLenEncoder();
 
-    private static final DayIndexIngest dayIndexIngest = new DayIndexIngest();
-    private static final YearIndexIngest yearIndexIngest = new YearIndexIngest();
+    private static final IndexIngestUtil ingestUtil = new IndexIngestUtil();
 
     protected static String normalizerForField(String field) {
         switch (field) {
@@ -139,14 +142,16 @@ public class ShapesIngest {
         tops.create(SHARD_RINDEX);
         tops.create(METADATA);
 
+        Map<String,String> additions = new HashMap<>();
         IteratorUtil.IteratorScope[] scopes = IteratorUtil.IteratorScope.values();
         for (IteratorUtil.IteratorScope scope : scopes) {
             String name = "table.iterator." + scope.name() + ".UIDAggregator";
             String opt = "table.iterator." + scope.name() + ".UIDAggregator.opt.*";
 
-            client.tableOperations().setProperty(SHARD_INDEX, name, "19,datawave.iterators.TotalAggregatingIterator");
-            client.tableOperations().setProperty(SHARD_INDEX, opt, "datawave.ingest.table.aggregator.KeepCountOnlyUidAggregator");
+            additions.put(name, "19,datawave.iterators.TotalAggregatingIterator");
+            additions.put(opt, "datawave.ingest.table.aggregator.KeepCountOnlyUidAggregator");
         }
+        MacTestUtil.addPropertiesAndWait(tops, SHARD_INDEX, additions);
 
         // grant root user all auths so they can scan the tables
         client.securityOperations().changeUserAuthorizations("root", new Authorizations("ALL"));
@@ -505,6 +510,24 @@ public class ShapesIngest {
         tokenize(client, bwConfig, "PROPERTIES", "convex,cyclic,equilateral,isogonal,isotoxal", type, hexagon, hexagonUid);
         tokenize(client, bwConfig, "PROPERTIES", "convex,cyclic,equilateral,isogonal,isotoxal", type, octagon, octagonUid);
 
+        tokenize(client, bwConfig, "DESCRIPTION", "all three angles are less than ninety degrees", type, triangle, acuteUid);
+        tokenize(client, bwConfig, "DESCRIPTION", "all three angles are sixty degrees", type, triangle, equilateralUid);
+        tokenize(client, bwConfig, "DESCRIPTION", "two angles are equal", type, triangle, isoscelesUid);
+
+        tokenize(client, bwConfig, "DESCRIPTION", "a parallelogram with four sides of equal length and four ninety degree angles", type, quadrilateral,
+                        squareUid);
+        tokenize(client, bwConfig, "DESCRIPTION", "a parallelogram with four ninety degree angles", type, quadrilateral, rectangleUid);
+        tokenize(client, bwConfig, "DESCRIPTION", "a parallelogram with four sides of equal length", type, quadrilateral, rhombusUid);
+        tokenize(client, bwConfig, "DESCRIPTION", "a parallelogram with adjacent sides that are not equal and angles are not ninety degrees", type,
+                        quadrilateral, rhomboidUid);
+        tokenize(client, bwConfig, "DESCRIPTION", "a quadrilateral with at least one pair of parallel sides", type, quadrilateral, trapezoidUid);
+        tokenize(client, bwConfig, "DESCRIPTION", "a quadrilateral with two pairs of equal length sides that are adjacent to each other", type, quadrilateral,
+                        kiteUid);
+
+        tokenize(client, bwConfig, "DESCRIPTION", "a shape with five straight sides and five interior angles", type, pentagon, pentagonUid);
+        tokenize(client, bwConfig, "DESCRIPTION", "a shape with six straight sides and six interior angles", type, hexagon, hexagonUid);
+        tokenize(client, bwConfig, "DESCRIPTION", "a shape with eight straight sides and eight interior angles", type, octagon, octagonUid);
+
         // metadata table
         try (BatchWriter bw = client.createBatchWriter(TableName.METADATA, bwConfig)) {
 
@@ -627,8 +650,7 @@ public class ShapesIngest {
 
         // this is hacky and highlights an opportunity to improve the test framework
         Authorizations auths = new Authorizations("ALL");
-        dayIndexIngest.convertToDayIndex(client, auths, TableName.SHARD_INDEX, TableName.SHARD_DAY_INDEX);
-        yearIndexIngest.convertToYearIndex(client, auths, TableName.SHARD_INDEX, TableName.SHARD_YEAR_INDEX);
+        ingestUtil.write(client, auths);
     }
 
     private static void tokenize(AccumuloClient client, BatchWriterConfig config, String field, String data, RangeType type, String datatype, String uid)

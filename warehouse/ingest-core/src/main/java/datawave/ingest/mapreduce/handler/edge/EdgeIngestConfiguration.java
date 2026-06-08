@@ -354,6 +354,10 @@ public class EdgeIngestConfiguration {
         return enableDisallowList;
     }
 
+    public boolean isEnableMetadata() {
+        return this.enableMetadata;
+    }
+
     public Map<String,Map<String,String>> getEdgeEnrichmentTypeLookup() {
         return edgeEnrichmentTypeLookup;
     }

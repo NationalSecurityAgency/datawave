@@ -3,6 +3,8 @@ package datawave.core.common.cache;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.lang.reflect.Field;
+
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.framework.recipes.shared.SharedCount;
@@ -18,7 +20,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.powermock.reflect.Whitebox;
 
 import datawave.common.test.integration.IntegrationTest;
 
@@ -43,7 +44,7 @@ public class SharedCacheCoordinatorTest {
         // (15000ms) and session timeout (60000ms).
         curatorClient = CuratorFrameworkFactory.builder().namespace("CredentialsCacheBeanTest").retryPolicy(new BoundedExponentialBackoffRetry(100, 200, 3))
                         .connectString(spec.getConnectString()).build();
-        Whitebox.setInternalState(cacheCoordinator, CuratorFramework.class, curatorClient);
+        setField(cacheCoordinator, "curatorClient", curatorClient);
 
         cacheCoordinator.start();
     }
@@ -56,7 +57,7 @@ public class SharedCacheCoordinatorTest {
 
     @Test
     public void testEphemeralNodeReconnect() throws Exception {
-        String ephemeralNodePath = Whitebox.getInternalState(cacheCoordinator, "serverIdentifierPath");
+        String ephemeralNodePath = getField(cacheCoordinator, "serverIdentifierPath");
         boolean exists = curatorClient.checkExists().forPath(ephemeralNodePath) != null;
         assertTrue("Ephemeral server node " + ephemeralNodePath + " doesn't exist before a zookeeper restart", exists);
 
@@ -150,7 +151,7 @@ public class SharedCacheCoordinatorTest {
         final ConnectionState[] state = new ConnectionState[] {ConnectionState.CONNECTED};
         final int[] count = new int[] {1};
 
-        CuratorFramework curatorFramework = Whitebox.getInternalState(cacheCoordinator, CuratorFramework.class);
+        CuratorFramework curatorFramework = getField(cacheCoordinator, "curatorClient");
         curatorFramework.getConnectionStateListenable().addListener((client, newState) -> state[0] = newState);
         cacheCoordinator.registerCounter(COUNTER, new SharedCountListener() {
             @Override
@@ -212,5 +213,18 @@ public class SharedCacheCoordinatorTest {
         } finally {
             counter.close();
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T> T getField(Object target, String fieldName) throws Exception {
+        Field field = target.getClass().getDeclaredField(fieldName);
+        field.setAccessible(true);
+        return (T) field.get(target);
+    }
+
+    private void setField(Object target, String fieldName, Object value) throws Exception {
+        Field field = target.getClass().getDeclaredField(fieldName);
+        field.setAccessible(true);
+        field.set(target, value);
     }
 }

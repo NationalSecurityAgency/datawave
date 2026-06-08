@@ -3,6 +3,7 @@ package datawave.util;
 /**
  * Class that contains default table names
  */
+@Deprecated(forRemoval = true, since = "7.40.0")
 public final class TableName {
 
     public static final String DATE_INDEX = "dateIndex";
@@ -20,6 +21,8 @@ public final class TableName {
     public static final String SHARD = "shard";
     public static final String SHARD_INDEX = "shardIndex";
     public static final String SHARD_RINDEX = "shardReverseIndex";
+
+    public static final String TRUNCATED_SHARD_INDEX = "truncatedShardIndex";
 
     // global primary index
     public static final String SHARD_YEAR_INDEX = "shardYearIndex";

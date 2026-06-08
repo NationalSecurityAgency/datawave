@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.core</groupId>
         <artifactId>datawave-utils-parent</artifactId>
-        <version>7.31.0-SNAPSHOT</version>
+        <version>7.40.0-SNAPSHOT</version>
     </parent>
     <artifactId>accumulo-utils</artifactId>
     <name>${project.artifactId}</name>
@@ -47,6 +47,11 @@
         <dependency>
             <groupId>commons-beanutils</groupId>
             <artifactId>commons-beanutils</artifactId>
+        </dependency>
+        <dependency>
+            <!-- Accumulo BatchScanner requires IteratorChain class -->
+            <groupId>commons-collections</groupId>
+            <artifactId>commons-collections</artifactId>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>

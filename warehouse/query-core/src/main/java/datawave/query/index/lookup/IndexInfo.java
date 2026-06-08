@@ -2,7 +2,6 @@ package datawave.query.index.lookup;
 
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DELAYED;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_OR;
-import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_TERM;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_VALUE;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.INDEX_HOLE;
 
@@ -281,7 +280,7 @@ public class IndexInfo implements Writable, KryoSerializable, UidIntersector {
 
     public static JexlNode getSourceNode(JexlNode delayedNode) {
         QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(delayedNode);
-        if (instance.isAnyTypeOf(DELAYED, EXCEEDED_OR, EXCEEDED_VALUE, EXCEEDED_TERM, INDEX_HOLE)) {
+        if (instance.isAnyTypeOf(DELAYED, EXCEEDED_OR, EXCEEDED_VALUE, INDEX_HOLE)) {
             return instance.getSource();
         } else {
             return delayedNode;

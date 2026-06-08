@@ -38,7 +38,6 @@ import datawave.ingest.data.tokenize.TokenizationHelper;
 import datawave.ingest.data.tokenize.TokenizationHelper.HeartBeatThread;
 import datawave.ingest.data.tokenize.TokenizationHelper.TokenizerTimeoutException;
 import datawave.ingest.data.tokenize.TruncateAttribute;
-import datawave.ingest.mapreduce.handler.ExtendedDataTypeHandler;
 import datawave.ingest.mapreduce.handler.shard.AbstractColumnBasedHandler;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.ingest.mapreduce.handler.shard.content.BoundedOffsetQueue;
@@ -52,6 +51,7 @@ import datawave.ingest.util.BloomFilterUtil;
 import datawave.ingest.util.BloomFilterWrapper;
 import datawave.ingest.util.Identity;
 import datawave.ingest.util.TimeoutStrategy;
+import datawave.table.constants.ColumnFamilyConstants;
 import datawave.util.TextUtil;
 
 /**
@@ -360,6 +360,10 @@ public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractC
         String modifiedFieldName = indexedFieldName + tokenFieldNameSuffix;
         String content = nci.getIndexedFieldValue();
 
+        if (tokenHelper.isContentContextEnabled()) {
+            modifiedFieldName = modifiedFieldName + "." + tokenHelper.getContentContextHash(content);
+        }
+
         TokenStream tokenizer = a.tokenStream(indexedFieldName, new StringReader(content));
         tokenizer.reset();
 
@@ -599,9 +603,8 @@ public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractC
         colq.append(this.eventDataTypeName).append('\u0000').append(this.eventUid).append('\u0000').append(nfv.getIndexedFieldValue()).append('\u0000')
                         .append(nfv.getIndexedFieldName());
 
-        BulkIngestKey bKey = new BulkIngestKey(new Text(this.getShardTableName()),
-                        new Key(shardId, ExtendedDataTypeHandler.TERM_FREQUENCY_COLUMN_FAMILY.getBytes(), colq.toString().getBytes(), visibility,
-                                        event.getTimestamp(), helper.getDeleteMode()));
+        BulkIngestKey bKey = new BulkIngestKey(new Text(this.getShardTableName()), new Key(shardId, ColumnFamilyConstants.TERM_FREQUENCY_TEXT.getBytes(),
+                        colq.toString().getBytes(), visibility, event.getTimestamp(), helper.getDeleteMode()));
 
         values.put(bKey, value);
     }

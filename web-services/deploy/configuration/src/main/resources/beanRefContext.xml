@@ -13,12 +13,13 @@
                 <value>classpath*:MetadataHelperContext.xml</value>
                 <value>classpath*:MetadataHelperCacheListenerContext.xml</value>
                 <value>classpath*:CacheContext.xml</value>
+                <value>classpath*:datawave/annotation/AnnotationManagerFactory.xml</value>
                 <value>classpath*:datawave/security/PrincipalFactory.xml</value>
                 <value>classpath*:datawave/query/QueryExpiration.xml</value>
                 <value>classpath*:datawave/query/QueryMetricsWriter.xml</value>
                 <value>classpath*:datawave/query/*QueryLogicFactory.xml</value>
+                <value>classpath*:datawave/query/QueryLimiterFactory.xml</value>
                 <value>classpath*:datawave/query/CachedResults*.xml</value>
-                <value>classpath*:datawave/mapreduce/MapReduceJobs.xml</value>
 				<value>classpath*:datawave/modification/ModificationServices.xml</value>
                 <value>classpath*:org/apache/accumulo/operations/LookupBean.xml</value>
                 ${security.testauthservice.context.entry}

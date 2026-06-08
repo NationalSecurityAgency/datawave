@@ -1,9 +1,13 @@
 package datawave.query.jexl.lookups;
 
+import static datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods.EXPANSION_HINT_KEY;
+
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 
 import org.apache.accumulo.core.client.IteratorSetting;
+import org.apache.accumulo.core.client.Scanner;
+import org.apache.accumulo.core.client.ScannerBase.ConsistencyLevel;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
@@ -12,11 +16,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Joiner;
+import com.google.common.base.Preconditions;
 
 import datawave.core.iterators.FieldedRegexExpansionIterator;
-import datawave.core.iterators.TimeoutExceptionIterator;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.tables.ScannerFactory;
+import datawave.scan.ExecutionHintHelper;
+import datawave.scan.ScannerBuilder;
 import datawave.util.time.DateHelper;
 
 /**
@@ -34,7 +40,10 @@ public class FieldedRegexIndexLookup extends BaseRegexIndexLookup {
                     Range range, boolean reverse) {
         super(config, scannerFactory, false, execService, pattern, range, reverse);
         this.field = field;
-        log.info("Created FieldedRegexIndexLookup with field {} and pattern {}", field, pattern);
+
+        if (log.isDebugEnabled()) {
+            log.debug("Created FieldedRegexIndexLookup with field {} and pattern {}", field, pattern);
+        }
     }
 
     @Override
@@ -46,60 +55,70 @@ public class FieldedRegexIndexLookup extends BaseRegexIndexLookup {
             if (config.getMaxIndexScanTimeMillis() == 0) {
                 indexLookupMap.put(field, "");
                 indexLookupMap.get(field).setThresholdExceeded();
-                latch.countDown();
                 return;
             }
 
-            execService.submit(() -> {
-                String tableName = getTableName();
-                try (var scanner = config.getClient().createScanner(tableName, config.getAuthorizations().iterator().next())) {
-                    String hintKey = getHintKey(tableName);
-                    scanner.setExecutionHints(Map.of(tableName, hintKey));
+            Preconditions.checkNotNull(monitor, "FieldedRegexIndexLookup requires a ScanMonitor");
+            Runnable runnable = createRunnable();
 
-                    IteratorSetting timeoutIterator = createTimeoutIterator();
-                    scanner.addScanIterator(timeoutIterator);
+            future = execService.submit(runnable);
+            monitor.registerTask(future, config.getMaxIndexScanTimeMillis());
+        }
+    }
 
-                    IteratorSetting regexIterator = createRegexIterator();
-                    scanner.addScanIterator(regexIterator);
+    /**
+     * The created runnable handles everything with configuring a scanner, parsing results and putting them into the {@link #indexLookupMap} and handling
+     * exceptions.
+     * <p>
+     * Note: it is critical that any scanner created here is used with a try-with-resources block.
+     *
+     */
+    protected Runnable createRunnable() {
+        return () -> {
+            String tableName = getTableName();
 
-                    IteratorSetting timeoutExceptionIterator = createTimeoutExceptionIterator();
-                    scanner.addScanIterator(timeoutExceptionIterator);
+            //  @formatter:off
+            builder = ScannerBuilder.create(config.getClient())
+                    .setTableName(tableName)
+                    .setAuthorizations(config.getAuthorizations().iterator().next());
+            //  @formatter:on
 
-                    scanner.setRange(range);
+            // only set the consistency level if configured
+            ConsistencyLevel consistencyLevel = ExecutionHintHelper.getConsistencyLevel(tableName, config.getTableConsistencyLevels());
+            if (consistencyLevel != null) {
+                builder.setConsistencyLevel(consistencyLevel);
+            }
 
-                    scanner.fetchColumnFamily(new Text(field));
+            // only set execution hints if configured
+            Map<String,String> executionHints = ExecutionHintHelper.getExecutionHints(EXPANSION_HINT_KEY, config.getIndexTableName(), config.getTableHints());
+            if (executionHints != null) {
+                builder.setScanType(ExecutionHintHelper.getScanType(executionHints));
+                builder.setScanPriority(ExecutionHintHelper.getPriority(executionHints));
+            }
 
-                    for (Map.Entry<Key,Value> entry : scanner) {
-                        Key key = entry.getKey();
+            try (Scanner scanner = builder.build()) {
 
-                        if (TimeoutExceptionIterator.exceededTimedValue(entry)) {
-                            exceededTimeoutThreshold.set(true);
-                            indexLookupMap.setTimeoutExceeded(true);
-                            indexLookupMap.put(field, "");
-                            indexLookupMap.get(field).setThresholdExceeded();
-                            break;
-                        }
+                IteratorSetting regexIterator = createRegexIterator();
+                scanner.addScanIterator(regexIterator);
 
-                        String value = key.getRow().toString();
-                        if (reverse) {
-                            value = reverse(value);
-                        }
+                scanner.setRange(range);
 
-                        indexLookupMap.put(field, value);
+                scanner.fetchColumnFamily(new Text(field));
+
+                for (Map.Entry<Key,Value> entry : scanner) {
+                    Key key = entry.getKey();
+                    String value = key.getRow().toString();
+                    if (reverse) {
+                        value = reverse(value);
                     }
 
-                } catch (ExceededThresholdException e) {
-                    log.info("ExceededThresholdException", e);
-                    exceededValueThreshold.set(true);
-                    indexLookupMap.get(field).setThresholdExceeded();
-                } catch (Exception e) {
-                    exceptionSeen.set(true);
-                    log.error(e.getMessage(), e);
-                } finally {
-                    latch.countDown();
+                    indexLookupMap.put(field, value);
                 }
-            });
-        }
+
+            } catch (Exception e) {
+                handleException(e);
+            }
+        };
     }
 
     @Override
@@ -121,5 +140,23 @@ public class FieldedRegexIndexLookup extends BaseRegexIndexLookup {
     public IndexLookupMap lookup() {
         await();
         return indexLookupMap;
+    }
+
+    /**
+     * An exception while expanding a fielded regex retains the field but clears all collected values, if any such values exist.
+     * <p>
+     * The entry is then marked as threshold exceeded.
+     *
+     * @param e
+     *            the exception
+     */
+    @Override
+    protected void handleException(Exception e) {
+        log.warn("FieldedRegexIndexLookup saw exception: {}", e.getMessage());
+        log.debug("marking fielded regex as exceeded value");
+        indexLookupMap.setExceptionSeen(true);
+        indexLookupMap.setTimeoutExceeded(true); // stub this out
+        indexLookupMap.put(field, "");
+        indexLookupMap.get(field).setThresholdExceeded();
     }
 }

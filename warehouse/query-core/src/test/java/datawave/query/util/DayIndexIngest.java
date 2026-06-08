@@ -27,13 +27,14 @@ import com.google.common.collect.TreeMultimap;
 
 import datawave.ingest.table.aggregator.BitSetCombiner;
 import datawave.query.data.parsers.ShardIndexKey;
+import datawave.query.index.day.AbstractIndexIngest;
 
 /**
  * Utility that converts a shard index to a shard day index table
  */
-public class DayIndexIngest {
+public class DayIndexIngest extends AbstractIndexIngest {
 
-    private final static Logger log = LoggerFactory.getLogger(DayIndexIngest.class);
+    private static final Logger log = LoggerFactory.getLogger(DayIndexIngest.class);
 
     private final ShardIndexKey parser = new ShardIndexKey();
 
@@ -41,8 +42,9 @@ public class DayIndexIngest {
 
     }
 
-    public void convertToDayIndex(AccumuloClient client, Authorizations auths, String shardIndexTableName, String dayIndexTableName) {
-        createAndConfigureDayIndex(client, dayIndexTableName);
+    @Override
+    public void convert(AccumuloClient client, Authorizations auths, String shardIndexTableName, String dayIndexTableName) {
+        configureDestination(client, dayIndexTableName);
 
         Comparator<Key> comparator = (left, right) -> left.compareTo(right, PartialKey.ROW_COLFAM_COLQUAL_COLVIS);
 
@@ -86,16 +88,11 @@ public class DayIndexIngest {
         }
     }
 
-    private void createAndConfigureDayIndex(AccumuloClient client, String dayIndexTableName) {
-
+    @Override
+    protected void configureDestination(AccumuloClient client, String dayIndexTableName) {
         try {
             TableOperations tops = client.tableOperations();
-
             tops.create(dayIndexTableName);
-
-            // TODO -- set combiner
-            // tops.setProperty();
-
         } catch (AccumuloException | AccumuloSecurityException | TableExistsException e) {
             log.error("Could not create {}", dayIndexTableName);
         }
