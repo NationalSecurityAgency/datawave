@@ -5,7 +5,7 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.hadoop.io.MapWritable;
 
 /**
- * A variant of DiscoveredThing in which equality if defined as comparing getTerm() only.
+ * A variant of DiscoveredThing in which equality is defined as comparing getTerm() only.
  */
 public class DiscoveredThingTermIsotope extends DiscoveredThing {
     public DiscoveredThingTermIsotope(String term, String field, String type, String date, String columnVisibility, long count,
