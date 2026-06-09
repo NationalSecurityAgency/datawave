@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FsStatus;
+import org.apache.hadoop.fs.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,24 +34,39 @@ public class IvaratorCacheDir {
         return fs;
     }
 
-    public boolean validateFS() {
-        FsStatus fsStatus = null;
+    public FsStatus getFsStatus() {
         try {
-            fsStatus = getFs().getStatus();
+            Path path = new Path(pathURI);
+            return getFs().getStatus(path);
         } catch (IOException e) {
             log.warn("Unable to determine status of the filesystem: {}", getFs());
         }
+        return null;
+    }
 
+    public boolean validateFS() {
         // determine whether this fs is a good candidate
-        if (fsStatus != null) {
-            long availableStorageMiB = fsStatus.getRemaining() / 0x100000L;
-            double availableStoragePercent = (double) fsStatus.getRemaining() / fsStatus.getCapacity();
+        FsStatus fsStatus = getFsStatus();
 
-            // if we are using less than our storage limit, the cache dir is valid
-            return availableStorageMiB >= config.getMinAvailableStorageMiB() && availableStoragePercent >= config.getMinAvailableStoragePercent();
+        if (fsStatus == null) {
+            return false;
         }
 
-        return false;
+        if (log.isTraceEnabled()) {
+            log.trace("remaining: {}", fsStatus.getRemaining());
+            log.trace("capacity: {}", fsStatus.getCapacity());
+        }
+
+        long availableStorageMiB = fsStatus.getRemaining() / 0x100000L;
+        double availableStoragePercent = (double) fsStatus.getRemaining() / fsStatus.getCapacity();
+
+        if (log.isTraceEnabled()) {
+            log.trace("availableStorageMiB: {}", availableStorageMiB);
+            log.trace("availableStoragePercent: {}", availableStoragePercent);
+        }
+
+        // if we are using less than our storage limit, the cache dir is valid
+        return availableStorageMiB >= config.getMinAvailableStorageMiB() && availableStoragePercent >= config.getMinAvailableStoragePercent();
     }
 
     public String getPathURI() {
