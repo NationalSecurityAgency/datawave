@@ -1,8 +1,8 @@
-package datawave.query.tld;
+package datawave.table.util;
 
-import static datawave.data.hash.UIDConstants.DEFAULT_SEPARATOR;
-import static datawave.query.Constants.MAX_UNICODE_STRING;
-import static datawave.query.Constants.NULL;
+import static datawave.table.constants.QueryConstants.MAX_UNICODE_STRING;
+import static datawave.table.constants.QueryConstants.NULL;
+import static datawave.table.hash.UIDConstants.DEFAULT_SEPARATOR;
 
 import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.ByteSequence;
@@ -18,7 +18,6 @@ import org.apache.hadoop.io.Text;
  * <li>Builds parent keys for seeking</li>
  * </ul>
  */
-@Deprecated(forRemoval = true, since = "7.40.0")
 public class TLD {
     private static final char NULL_BYTE = '\u0000';
     private static final char DOT = '.';

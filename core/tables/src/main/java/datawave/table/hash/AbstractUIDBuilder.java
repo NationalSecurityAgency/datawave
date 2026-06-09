@@ -1,8 +1,8 @@
-package datawave.data.hash;
+package datawave.table.hash;
 
-import static datawave.data.hash.UIDConstants.CONFIG_MACHINE_ID_KEY;
-import static datawave.data.hash.UIDConstants.CONFIG_UID_TYPE_KEY;
-import static datawave.data.hash.UIDConstants.UID_TYPE_OPT;
+import static datawave.table.hash.UIDConstants.CONFIG_MACHINE_ID_KEY;
+import static datawave.table.hash.UIDConstants.CONFIG_UID_TYPE_KEY;
+import static datawave.table.hash.UIDConstants.UID_TYPE_OPT;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -14,14 +14,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Deprecated, use {@link datawave.table.hash.AbstractUIDBuilder}
- * <p>
  * Abstract implementation of the UIDBuilder
  *
  * @param <UID_TYPE>
  *            - type of the AbstractUIDBuilder
  */
-@Deprecated(forRemoval = true, since = "7.40.0")
 public abstract class AbstractUIDBuilder<UID_TYPE extends UID> implements UIDBuilder<UID_TYPE> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractUIDBuilder.class);
@@ -38,7 +35,7 @@ public abstract class AbstractUIDBuilder<UID_TYPE extends UID> implements UIDBui
                         // Look for one of the 4 types of UID options
                         final String key = option.getLongOpt();
                         final String value;
-                        if (UIDConstants.UID_TYPE_OPT.equals(key)) {
+                        if (UID_TYPE_OPT.equals(key)) {
                             value = option.getValue(HashUID.class.getSimpleName());
                         } else if (UIDConstants.HOST_INDEX_OPT.equals(key)) {
                             value = option.getValue();
@@ -58,7 +55,7 @@ public abstract class AbstractUIDBuilder<UID_TYPE extends UID> implements UIDBui
                             // Stop looping if we've got everything we need
                             if (uidOptions.size() >= 4) {
                                 break;
-                            } else if (UIDConstants.UID_TYPE_OPT.equals(key) && HashUID.class.getSimpleName().equals(value)) {
+                            } else if (UID_TYPE_OPT.equals(key) && HashUID.class.getSimpleName().equals(value)) {
                                 break;
                             }
                         }
@@ -116,7 +113,7 @@ public abstract class AbstractUIDBuilder<UID_TYPE extends UID> implements UIDBui
         }
     }
 
-    @SuppressWarnings({"unchecked", "static-access"})
+    @SuppressWarnings("unchecked")
     @Override
     public UID_TYPE newId(final UID template, final String... extras) {
         // Validate to account for edge cases like StringUID

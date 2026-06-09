@@ -1,20 +1,17 @@
-package datawave.data.hash;
+package datawave.table.hash;
 
-import static datawave.data.hash.UIDConstants.DEFAULT_SEPARATOR;
-import static datawave.data.hash.UIDConstants.MILLISECONDS_PER_DAY;
+import static datawave.table.hash.UIDConstants.DEFAULT_SEPARATOR;
+import static datawave.table.hash.UIDConstants.MILLISECONDS_PER_DAY;
 
 import java.io.DataInput;
 import java.io.IOException;
 import java.math.BigInteger;
 
-import org.apache.commons.lang.builder.CompareToBuilder;
-import org.apache.commons.lang.builder.HashCodeBuilder;
-
-import datawave.util.StringUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.builder.CompareToBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 /**
- * Deprecated, use {@link datawave.table.hash.SnowflakeUID}
- * <p>
  * Internal, DATAWAVE-specific, unique identifier. Instead of using a UID based on hash values, however, this class uses a 96-bit ID based on a 52-bit
  * timestamp, 20-bit machine ID, and a 24-bit one-up sequence ID.
  * <p>
@@ -25,7 +22,6 @@ import datawave.util.StringUtils;
  * A {@link SnowflakeUID} cannot be used like a {@link HashUID} to recreate equivalent instances from duplicate data. The trade-off is that it helps contiguous
  * entries compress <i>much</i> better in Accumulo.
  */
-@Deprecated(forRemoval = true, since = "7.40.0")
 public class SnowflakeUID extends UID {
 
     private static final long serialVersionUID = 1856715886248436235L;
@@ -389,7 +385,6 @@ public class SnowflakeUID extends UID {
      *            string of the UID
      * @return SnowflakeUID
      */
-    @SuppressWarnings("unchecked")
     public static SnowflakeUID parse(final String s) {
         return parse(s, -1);
     }
@@ -403,7 +398,6 @@ public class SnowflakeUID extends UID {
      *            is the number of pieces of the extra portion to include. -1 means all, 0 means none.
      * @return UID
      */
-    @SuppressWarnings("unchecked")
     public static SnowflakeUID parse(final String s, int maxExtraParts) {
         return parse(s, DEFAULT_RADIX, maxExtraParts);
     }
@@ -455,7 +449,6 @@ public class SnowflakeUID extends UID {
      *            string of the UID
      * @return UID
      */
-    @SuppressWarnings("unchecked")
     public static SnowflakeUID parseBase(final String s) {
         return parse(s, 0);
     }
