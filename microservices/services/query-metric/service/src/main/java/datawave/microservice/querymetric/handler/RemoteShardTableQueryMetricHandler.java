@@ -25,7 +25,6 @@ import datawave.microservice.querymetric.factory.QueryMetricQueryLogicFactory;
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.JWTTokenHandler;
-import datawave.security.util.DnProperties;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.result.BaseQueryResponse;
 
@@ -41,9 +40,8 @@ public class RemoteShardTableQueryMetricHandler<T extends BaseQueryMetric> exten
     public RemoteShardTableQueryMetricHandler(QueryMetricHandlerProperties queryMetricHandlerProperties, AccumuloConnectionFactory connectionFactory,
                     QueryMetricQueryLogicFactory logicFactory, QueryMetricFactory metricFactory, MarkingFunctions markingFunctions,
                     QueryMetricCombiner queryMetricCombiner, LuceneToJexlQueryParser luceneToJexlQueryParser, ResponseObjectFactory responseObjectFactory,
-                    WebClient.Builder webClientBuilder, JWTTokenHandler jwtTokenHandler, DnProperties dnProperties) {
-        super(queryMetricHandlerProperties, connectionFactory, logicFactory, metricFactory, markingFunctions, queryMetricCombiner, luceneToJexlQueryParser,
-                        dnProperties);
+                    WebClient.Builder webClientBuilder, JWTTokenHandler jwtTokenHandler) {
+        super(queryMetricHandlerProperties, connectionFactory, logicFactory, metricFactory, markingFunctions, queryMetricCombiner, luceneToJexlQueryParser);
 
         this.responseObjectFactory = responseObjectFactory;
 

@@ -55,7 +55,6 @@ import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.DateIndexHelperFactory;
 import datawave.security.authorization.JWTTokenHandler;
-import datawave.security.util.DnProperties;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 
 @Configuration
@@ -101,15 +100,14 @@ public class QueryMetricHandlerConfiguration {
                     AccumuloConnectionFactory connectionFactory, QueryMetricQueryLogicFactory logicFactory, QueryMetricFactory metricFactory,
                     MarkingFunctions markingFunctions, QueryMetricCombiner queryMetricCombiner, LuceneToJexlQueryParser luceneToJexlQueryParser,
                     ResponseObjectFactory responseObjectFactory, WebClient.Builder webClientBuilder,
-                    @Autowired(required = false) JWTTokenHandler jwtTokenHandler, DnProperties dnProperties,
-                    QueryMetricResponseFactory queryMetricResponseFactory) {
+                    @Autowired(required = false) JWTTokenHandler jwtTokenHandler, QueryMetricResponseFactory queryMetricResponseFactory) {
         ShardTableQueryMetricHandler handler;
         if (queryMetricHandlerProperties.isUseRemoteQuery()) {
             handler = new RemoteShardTableQueryMetricHandler(queryMetricHandlerProperties, connectionFactory, logicFactory, metricFactory, markingFunctions,
-                            queryMetricCombiner, luceneToJexlQueryParser, responseObjectFactory, webClientBuilder, jwtTokenHandler, dnProperties);
+                            queryMetricCombiner, luceneToJexlQueryParser, responseObjectFactory, webClientBuilder, jwtTokenHandler);
         } else {
             handler = new LocalShardTableQueryMetricHandler(queryMetricHandlerProperties, connectionFactory, logicFactory, metricFactory, markingFunctions,
-                            queryMetricCombiner, luceneToJexlQueryParser, dnProperties);
+                            queryMetricCombiner, luceneToJexlQueryParser);
         }
         handler.setQueryMetricResponseFactory(queryMetricResponseFactory);
         return handler;

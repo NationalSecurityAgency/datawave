@@ -62,7 +62,6 @@ import datawave.microservice.querymetric.handler.ShardTableQueryMetricHandler;
 import datawave.microservice.querymetric.handler.SimpleQueryGeometryHandler;
 import datawave.query.jexl.visitors.JexlFormattedStringBuildingVisitor;
 import datawave.security.authorization.DatawaveUser;
-import datawave.security.util.DnProperties;
 import datawave.security.util.DnUtils;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
@@ -98,7 +97,6 @@ public class QueryMetricOperations {
     private static Set<String> inProcess = Collections.synchronizedSet(new HashSet<>());
 
     private final QueryMetricClient queryMetricClient;
-    private final DnProperties dnProperties;
 
     /**
      * The enum Default datetime.
@@ -142,7 +140,7 @@ public class QueryMetricOperations {
     public QueryMetricOperations(@Qualifier("queryMetricCacheManager") CacheManager cacheManager, ShardTableQueryMetricHandler handler,
                     QueryGeometryHandler geometryHandler, MarkingFunctions markingFunctions, QueryMetricResponseFactory queryMetricResponseFactory,
                     MergeLockLifecycleListener mergeLock, Correlator correlator, MetricUpdateEntryProcessorFactory entryProcessorFactory,
-                    QueryMetricOperationsStats stats, QueryMetricClient queryMetricClient, DnProperties dnProperties) {
+                    QueryMetricOperationsStats stats, QueryMetricClient queryMetricClient) {
         this.handler = handler;
         this.geometryHandler = geometryHandler;
         this.cacheManager = cacheManager;
@@ -154,7 +152,6 @@ public class QueryMetricOperations {
         this.entryProcessorFactory = entryProcessorFactory;
         this.stats = stats;
         this.queryMetricClient = queryMetricClient;
-        this.dnProperties = dnProperties;
     }
 
     @PreDestroy
