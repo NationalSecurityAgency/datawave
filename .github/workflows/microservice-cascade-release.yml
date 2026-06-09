@@ -127,6 +127,7 @@ jobs:
           echo "cascade=$CASCADE_JSON" >> "$GITHUB_OUTPUT"
 
       - name: Create temporary release branch
+        if: ${{ inputs.dryRun == false }}
         id: branch
         run: |
           BRANCH="cascade-release/${{ github.run_id }}"
@@ -137,8 +138,110 @@ jobs:
 
       - name: Dry-run summary
         if: ${{ inputs.dryRun }}
+        env:
+          CASCADE_JSON: ${{ steps.compute.outputs.cascade }}
+          FINAL_RELEASE: ${{ inputs.finalRelease }}
+          MODIFIER: ${{ inputs.modifier }}
         run: |
-          echo "::notice::Dry run only. ${{ steps.compute.outputs.count }} project(s) would be released starting from ${{ steps.compute.outputs.startArtifact }}. Re-run with dryRun=false to actually release."
+          echo "::notice::Dry run — no releases will be performed."
+          python3 <<'PYEOF'
+          import json, os, re, subprocess
+
+          cascade = json.loads(os.environ['CASCADE_JSON'])
+          final = os.environ['FINAL_RELEASE'] == 'true'
+          modifier = os.environ['MODIFIER']
+
+          # Fetch existing tags to detect already-released versions
+          result = subprocess.run(
+              ['git', 'ls-remote', '--tags', 'origin'],
+              capture_output=True, text=True
+          )
+          tags = set()
+          for line in result.stdout.strip().split('\n'):
+              if line and not line.endswith('^{}'):
+                  tags.add(line.split('\t')[1].replace('refs/tags/', ''))
+
+          # --- helpers ---
+          def artifact_to_prop(aid):
+              if aid.startswith('spring-boot-starter-datawave-'):
+                  return 'version.datawave.starter-' + aid[len('spring-boot-starter-datawave-'):]
+              if aid == 'spring-boot-starter-datawave':
+                  return 'version.datawave.starter'
+              return f'version.datawave.{aid}'
+
+          def read_pom_version(content):
+              no_parent = re.sub(r'<parent>.*?</parent>', '', content, flags=re.DOTALL)
+              m = re.search(r'<version>([\d.]+(?:-SNAPSHOT)?)</version>', no_parent)
+              return m.group(1) if m else None
+
+          def read_parent(content):
+              m = re.search(r'<parent>.*?<artifactId>(.*?)</artifactId>.*?<version>(.*?)</version>.*?</parent>', content, re.DOTALL)
+              return (m.group(1), m.group(2)) if m else (None, None)
+
+          def read_version_props(content):
+              return dict(re.findall(r'<(version\.datawave\.[^>]+)>([^<]+)</', content))
+
+          # --- build release map: artifactId -> release version ---
+          release_map = {}  # artifactId -> release_version
+          prop_release = {}  # property_name -> release_version
+          projects = []      # (path, raw_version, release_version, tag_exists)
+
+          for proj in cascade:
+              path, aid = proj['path'], proj['artifactId']
+              try:
+                  with open(os.path.join(path, 'pom.xml')) as f:
+                      content = f.read()
+                  raw = read_pom_version(content)
+                  if not raw:
+                      raise ValueError('no version')
+              except Exception:
+                  projects.append((path, aid, '???', '???', False, content if 'content' in dir() else ''))
+                  continue
+
+              base = raw.replace('-SNAPSHOT', '')
+              rel_ver = base if final else f'{base}-{modifier}'
+              tag = f'{path}-{rel_ver}'
+              exists = tag in tags
+
+              release_map[aid] = rel_ver
+              prop_release[artifact_to_prop(aid)] = rel_ver
+              projects.append((path, aid, raw, rel_ver, exists, content))
+
+          # --- print per-project details ---
+          skip_count = 0
+          for path, aid, raw, rel_ver, exists, content in projects:
+              status = 'SKIP (tag exists)' if exists else 'RELEASE'
+              if exists:
+                  skip_count += 1
+              print(f'=== {path} ===')
+              print(f'  Version: {raw} -> {rel_ver}  [{status}]')
+
+              # parent update
+              parent_aid, parent_ver = read_parent(content)
+              if parent_aid and parent_aid in release_map:
+                  new_ver = release_map[parent_aid]
+                  changed = ' (*)' if parent_ver != new_ver else ''
+                  print(f'  Parent:  {parent_aid} {parent_ver} -> {new_ver}{changed}')
+
+              # version property updates
+              props = read_version_props(content)
+              updates = []
+              for prop_name, cur_val in sorted(props.items()):
+                  if prop_name in prop_release:
+                      new_val = prop_release[prop_name]
+                      if cur_val != new_val:
+                          updates.append(f'    {prop_name}: {cur_val} -> {new_val}')
+              if updates:
+                  print('  Properties:')
+                  for u in updates:
+                      print(u)
+              print()
+
+          print(f'Total: {len(cascade)} project(s), '
+                f'{len(cascade) - skip_count} to release, '
+                f'{skip_count} already tagged.')
+          print('Re-run with dryRun=false to actually release.')
+          PYEOF
 
   release:
     name: Release ${{ matrix.project.artifactId }}
@@ -160,11 +263,12 @@ jobs:
 
   compose-validation:
     name: Validate compose stack
-    needs: release
+    needs: [plan, release]
     if: ${{ inputs.dryRun == false }}
     uses: ./.github/workflows/compose-tests.yml
     with:
       allow-snapshots: false
+      ref: ${{ needs.plan.outputs.branch }}
     secrets: inherit
 
   # For final releases, merge the temporary branch back into the target branch

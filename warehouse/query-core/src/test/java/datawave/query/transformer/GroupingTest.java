@@ -749,6 +749,25 @@ public class GroupingTest extends AbstractQueryTest {
         assertGroups();
     }
 
+    @Test
+    public void testGroupByWithFieldAsTerm() throws Exception {
+        givenNonModelData();
+        givenLuceneParserForLogic();
+        givenParameter(QueryParameters.INCLUDE_GROUPING_CONTEXT, "false");
+        givenQuery("AGE:22 AND #ISNOTNULL(GENDER) AND #GROUPBY(AGE)");
+        expectPlan("AGE == '+bE2.2' && !(GENDER == null)");
+
+        // we receive all AGEs for each event where at least one AGE is 22
+        expectGroup(Group.of("22").withCount(2));
+        expectGroup(Group.of("18").withCount(1));
+        expectGroup(Group.of("20").withCount(1));
+        expectGroup(Group.of("24").withCount(1));
+        expectGroup(Group.of("40").withCount(1));
+        collectQueryResults();
+        assertGroups();
+        queryResults.clear();
+    }
+
     /**
      * Verify that specifying group fields via a LUCENE function works correctly.
      */
