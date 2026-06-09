@@ -1,10 +1,12 @@
 package datawave.query.util.sortedmap;
 
 import java.io.File;
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
@@ -18,8 +20,7 @@ import org.junit.rules.TemporaryFolder;
 
 import datawave.query.iterator.ivarator.IvaratorCacheDir;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
-import datawave.query.util.sortedset.FileSortedSet;
-import datawave.query.util.sortedset.HdfsBackedSortedSet;
+import datawave.query.util.sortedset.FileSortedSet.PersistOptions;
 
 public class HdfsBackedSortedMapTest {
 
@@ -41,8 +42,8 @@ public class HdfsBackedSortedMapTest {
 
         FsStatus fsStatus = fs.getStatus();
 
-        // set the min remaining MB to something which will cause the 'small' directiory to be skipped
-        long minRemainingMB = (fsStatus.getRemaining() / 0x100000L) + 4096l;
+        // set the min remaining MB to something which will cause the 'small' directory to be skipped
+        long minRemainingMB = (fsStatus.getRemaining() / 0x100000L) + 4096L;
 
         List<IvaratorCacheDir> ivaratorCacheDirs = new ArrayList<>();
         ivaratorCacheDirs
@@ -53,21 +54,21 @@ public class HdfsBackedSortedMapTest {
 
         // @formatter:off
         @SuppressWarnings("unchecked")
-        datawave.query.util.sortedset.HdfsBackedSortedSet<String> sortedSet = (datawave.query.util.sortedset.HdfsBackedSortedSet<String>) datawave.query.util.sortedset.HdfsBackedSortedSet.builder()
+        HdfsBackedSortedMap<String, String> sortedMap = (HdfsBackedSortedMap<String, String>) HdfsBackedSortedMap.builder()
                 .withIvaratorCacheDirs(ivaratorCacheDirs)
                 .withUniqueSubPath(uniquePath)
                 .withMaxOpenFiles(9999)
                 .withNumRetries(2)
-                .withPersistOptions(new datawave.query.util.sortedset.FileSortedSet.PersistOptions())
+                .withPersistOptions(new PersistOptions())
                 .build();
         // @formatter:on
 
         // Add an entry to the sorted set
         String someTestString = "some test string";
-        sortedSet.add(someTestString);
+        sortedMap.put("key", someTestString);
 
         // persist the sorted set
-        sortedSet.persist();
+        sortedMap.persist();
 
         Path smallPath = new Path(smallDir.toURI().toString());
         Path smallSubPath = new Path(smallPath, uniquePath);
@@ -81,22 +82,22 @@ public class HdfsBackedSortedMapTest {
 
         FileStatus[] fileStatuses = fs.listStatus(largeSubPath);
         Assert.assertEquals(1, fileStatuses.length);
-        Assert.assertTrue(fileStatuses[0].getPath().getName().startsWith("SortedSet"));
+        Assert.assertTrue(fileStatuses[0].getPath().getName().startsWith("SortedMap"));
 
         // Now make sure reloading an ivarator cache dir works
         // @formatter:off
         @SuppressWarnings("unchecked")
-        datawave.query.util.sortedset.HdfsBackedSortedSet<String> reloadedSortedSet = (datawave.query.util.sortedset.HdfsBackedSortedSet<String>) datawave.query.util.sortedset.HdfsBackedSortedSet.builder()
+        HdfsBackedSortedMap<String, String> reloadedSortedMap = (HdfsBackedSortedMap<String, String>) HdfsBackedSortedMap.builder()
                 .withIvaratorCacheDirs(ivaratorCacheDirs)
                 .withUniqueSubPath(uniquePath)
                 .withMaxOpenFiles(9999)
                 .withNumRetries(2)
-                .withPersistOptions(new datawave.query.util.sortedset.FileSortedSet.PersistOptions())
+                .withPersistOptions(new PersistOptions())
                 .build();
         // @formatter:on
 
-        Assert.assertEquals(1, reloadedSortedSet.size());
-        Assert.assertEquals(someTestString, reloadedSortedSet.first());
+        Assert.assertEquals(1, reloadedSortedMap.size());
+        Assert.assertEquals(someTestString, reloadedSortedMap.get("key"));
     }
 
     @Test
@@ -130,39 +131,39 @@ public class HdfsBackedSortedMapTest {
 
         // @formatter:off
         @SuppressWarnings("unchecked")
-        datawave.query.util.sortedset.HdfsBackedSortedSet<String> firstSortedSet = (datawave.query.util.sortedset.HdfsBackedSortedSet<String>) datawave.query.util.sortedset.HdfsBackedSortedSet.builder()
+        HdfsBackedSortedMap<String, String> firstSortedMap = (HdfsBackedSortedMap<String, String>) HdfsBackedSortedMap.builder()
                 .withIvaratorCacheDirs(Collections.singletonList(ivaratorCacheDirs.get(0)))
                 .withUniqueSubPath(uniquePath)
                 .withMaxOpenFiles(9999)
                 .withNumRetries(2)
-                .withPersistOptions(new datawave.query.util.sortedset.FileSortedSet.PersistOptions())
+                .withPersistOptions(new PersistOptions())
                 .build();
         // @formatter:on
 
         // Add an entry to the first sorted set
         String someTestString = "some test string";
-        firstSortedSet.add(someTestString);
+        firstSortedMap.put("key1", someTestString);
 
         // persist the sorted set
-        firstSortedSet.persist();
+        firstSortedMap.persist();
 
         // @formatter:off
         @SuppressWarnings("unchecked")
-        datawave.query.util.sortedset.HdfsBackedSortedSet<String> thirdSortedSet = (datawave.query.util.sortedset.HdfsBackedSortedSet<String>) datawave.query.util.sortedset.HdfsBackedSortedSet.builder()
+        HdfsBackedSortedMap<String, String> thirdSortedMap = (HdfsBackedSortedMap<String, String>) HdfsBackedSortedMap.builder()
                 .withIvaratorCacheDirs(Collections.singletonList(ivaratorCacheDirs.get(2)))
                 .withUniqueSubPath(uniquePath)
                 .withMaxOpenFiles(9999)
                 .withNumRetries(2)
-                .withPersistOptions(new datawave.query.util.sortedset.FileSortedSet.PersistOptions())
+                .withPersistOptions(new PersistOptions())
                 .build();
         // @formatter:on
 
         // Add an entry to the third sorted set
         String anotherTestString = "another test string";
-        thirdSortedSet.add(anotherTestString);
+        thirdSortedMap.put("key2", anotherTestString);
 
         // persist the sorted set
-        thirdSortedSet.persist();
+        thirdSortedMap.persist();
 
         // ensure that data was written to the first and third folders
         Assert.assertTrue(fs.exists(subPaths[0]));
@@ -175,43 +176,43 @@ public class HdfsBackedSortedMapTest {
         // ensure that 1 file was written to the first folder
         FileStatus[] fileStatuses = fs.listStatus(subPaths[0]);
         Assert.assertEquals(1, fileStatuses.length);
-        Assert.assertTrue(fileStatuses[0].getPath().getName().startsWith("SortedSet"));
+        Assert.assertTrue(fileStatuses[0].getPath().getName().startsWith("SortedMap"));
 
         // ensure that 1 file was written to the third folder
         fileStatuses = fs.listStatus(subPaths[2]);
         Assert.assertEquals(1, fileStatuses.length);
-        Assert.assertTrue(fileStatuses[0].getPath().getName().startsWith("SortedSet"));
+        Assert.assertTrue(fileStatuses[0].getPath().getName().startsWith("SortedMap"));
 
         // Now make sure reloading an ivarator cache dir works, and set maxOpenFiles to 1 so that we compact during the next persist
         // @formatter:off
         @SuppressWarnings("unchecked")
-        datawave.query.util.sortedset.HdfsBackedSortedSet<String> reloadedSortedSet = (datawave.query.util.sortedset.HdfsBackedSortedSet<String>) datawave.query.util.sortedset.HdfsBackedSortedSet.builder()
+        HdfsBackedSortedMap<String, String> reloadedSortedMap = (HdfsBackedSortedMap<String, String>) HdfsBackedSortedMap.builder()
                 .withIvaratorCacheDirs(ivaratorCacheDirs)
                 .withUniqueSubPath(uniquePath)
                 .withMaxOpenFiles(1)
                 .withNumRetries(2)
-                .withPersistOptions(new datawave.query.util.sortedset.FileSortedSet.PersistOptions())
+                .withPersistOptions(new PersistOptions())
                 .build();
         // @formatter:on
 
         // Ensure that we have 2 entries total
-        Assert.assertEquals(2, reloadedSortedSet.size());
+        Assert.assertEquals(2, reloadedSortedMap.size());
 
         // This is what we expect to be loaded by the set
-        List<String> results = new ArrayList<>();
-        results.add(someTestString);
-        results.add(anotherTestString);
+        List<Map.Entry<String,String>> results = new ArrayList<>();
+        results.add(new AbstractMap.SimpleEntry<>("key1", someTestString));
+        results.add(new AbstractMap.SimpleEntry<>("key2", anotherTestString));
 
         // for each result we find, remove it from the results list and ensure that the list is empty when we're done
-        reloadedSortedSet.iterator().forEachRemaining(results::remove);
+        reloadedSortedMap.entrySet().forEach(results::remove);
         Assert.assertTrue(results.isEmpty());
 
         // Finally, add an entry to the reloaded sorted set
         String lastTestString = "last test string";
-        reloadedSortedSet.add(lastTestString);
+        reloadedSortedMap.put("key3", lastTestString);
 
         // persist the sorted set (this should cause a compaction down to 1 file)
-        reloadedSortedSet.persist();
+        reloadedSortedMap.persist();
 
         // ensure that data was not written to the second folder
         Assert.assertFalse(fs.exists(subPaths[1]));
@@ -224,31 +225,31 @@ public class HdfsBackedSortedMapTest {
         // ensure that all data exists in the first folder
         fileStatuses = fs.listStatus(subPaths[0]);
         Assert.assertEquals(1, fileStatuses.length);
-        Assert.assertTrue(fileStatuses[0].getPath().getName().startsWith("SortedSet"));
+        Assert.assertTrue(fileStatuses[0].getPath().getName().startsWith("SortedMap"));
 
         // Finally, make sure that the compacted data can be reloaded
         // @formatter:off
         @SuppressWarnings("unchecked")
-        datawave.query.util.sortedset.HdfsBackedSortedSet<String> compactedSortedSet = (datawave.query.util.sortedset.HdfsBackedSortedSet<String>) HdfsBackedSortedSet.builder()
+        HdfsBackedSortedMap<String, String> compactedSortedMap = (HdfsBackedSortedMap<String, String>) HdfsBackedSortedMap.builder()
                 .withIvaratorCacheDirs(ivaratorCacheDirs)
                 .withUniqueSubPath(uniquePath)
                 .withMaxOpenFiles(9999)
                 .withNumRetries(2)
-                .withPersistOptions(new FileSortedSet.PersistOptions())
+                .withPersistOptions(new PersistOptions())
                 .build();
         // @formatter:on
 
         // Ensure that we have 3 entries total
-        Assert.assertEquals(3, compactedSortedSet.size());
+        Assert.assertEquals(3, compactedSortedMap.size());
 
         // This is what we expect to be loaded by the set
         results.clear();
-        results.add(someTestString);
-        results.add(anotherTestString);
-        results.add(lastTestString);
+        results.add(new AbstractMap.SimpleEntry<>("key1", someTestString));
+        results.add(new AbstractMap.SimpleEntry<>("key2", anotherTestString));
+        results.add(new AbstractMap.SimpleEntry<>("key3", lastTestString));
 
         // for each result we find, remove it from the results list and ensure that the list is empty when we're done
-        compactedSortedSet.iterator().forEachRemaining(results::remove);
+        compactedSortedMap.entrySet().forEach(results::remove);
         Assert.assertTrue(results.isEmpty());
     }
 }
