@@ -1,5 +1,9 @@
 package datawave.query.util.sortedmap;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import java.io.File;
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -13,7 +17,6 @@ import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FsStatus;
 import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
-import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -32,10 +35,10 @@ public class HdfsBackedSortedMapTest {
         File tempDir = temporaryFolder.newFolder();
 
         File smallDir = new File(tempDir, "small");
-        Assert.assertTrue(smallDir.mkdirs());
+        assertTrue(smallDir.mkdirs());
 
         File largeDir = new File(tempDir, "large");
-        Assert.assertTrue(largeDir.mkdirs());
+        assertTrue(largeDir.mkdirs());
 
         LocalFileSystem fs = new LocalFileSystem();
         fs.initialize(tempDir.toURI(), new Configuration());
@@ -76,13 +79,13 @@ public class HdfsBackedSortedMapTest {
         Path largeSubPath = new Path(largePath, uniquePath);
 
         // ensure that data was written to the large folder, not the small folder
-        Assert.assertFalse(fs.exists(smallSubPath));
-        Assert.assertEquals(0, fs.listStatus(smallPath).length);
-        Assert.assertTrue(fs.exists(largeSubPath));
+        assertFalse(fs.exists(smallSubPath));
+        assertEquals(0, fs.listStatus(smallPath).length);
+        assertTrue(fs.exists(largeSubPath));
 
         FileStatus[] fileStatuses = fs.listStatus(largeSubPath);
-        Assert.assertEquals(1, fileStatuses.length);
-        Assert.assertTrue(fileStatuses[0].getPath().getName().startsWith("SortedMap"));
+        assertEquals(1, fileStatuses.length);
+        assertTrue(fileStatuses[0].getPath().getName().startsWith("SortedMap"));
 
         // Now make sure reloading an ivarator cache dir works
         // @formatter:off
@@ -96,8 +99,8 @@ public class HdfsBackedSortedMapTest {
                 .build();
         // @formatter:on
 
-        Assert.assertEquals(1, reloadedSortedMap.size());
-        Assert.assertEquals(someTestString, reloadedSortedMap.get("key"));
+        assertEquals(1, reloadedSortedMap.size());
+        assertEquals(someTestString, reloadedSortedMap.get("key"));
     }
 
     @Test
@@ -107,7 +110,7 @@ public class HdfsBackedSortedMapTest {
         File[] dirs = new File[] {new File(tempDir, "first"), new File(tempDir, "second"), new File(tempDir, "third")};
 
         for (File dir : dirs)
-            Assert.assertTrue(dir.mkdirs());
+            assertTrue(dir.mkdirs());
 
         String uniquePath = "blah";
 
@@ -166,22 +169,22 @@ public class HdfsBackedSortedMapTest {
         thirdSortedMap.persist();
 
         // ensure that data was written to the first and third folders
-        Assert.assertTrue(fs.exists(subPaths[0]));
-        Assert.assertTrue(fs.exists(subPaths[2]));
+        assertTrue(fs.exists(subPaths[0]));
+        assertTrue(fs.exists(subPaths[2]));
 
         // ensure that data was not written to the second folder
-        Assert.assertFalse(fs.exists(subPaths[1]));
-        Assert.assertEquals(0, fs.listStatus(paths[1]).length);
+        assertFalse(fs.exists(subPaths[1]));
+        assertEquals(0, fs.listStatus(paths[1]).length);
 
         // ensure that 1 file was written to the first folder
         FileStatus[] fileStatuses = fs.listStatus(subPaths[0]);
-        Assert.assertEquals(1, fileStatuses.length);
-        Assert.assertTrue(fileStatuses[0].getPath().getName().startsWith("SortedMap"));
+        assertEquals(1, fileStatuses.length);
+        assertTrue(fileStatuses[0].getPath().getName().startsWith("SortedMap"));
 
         // ensure that 1 file was written to the third folder
         fileStatuses = fs.listStatus(subPaths[2]);
-        Assert.assertEquals(1, fileStatuses.length);
-        Assert.assertTrue(fileStatuses[0].getPath().getName().startsWith("SortedMap"));
+        assertEquals(1, fileStatuses.length);
+        assertTrue(fileStatuses[0].getPath().getName().startsWith("SortedMap"));
 
         // Now make sure reloading an ivarator cache dir works, and set maxOpenFiles to 1 so that we compact during the next persist
         // @formatter:off
@@ -196,7 +199,7 @@ public class HdfsBackedSortedMapTest {
         // @formatter:on
 
         // Ensure that we have 2 entries total
-        Assert.assertEquals(2, reloadedSortedMap.size());
+        assertEquals(2, reloadedSortedMap.size());
 
         // This is what we expect to be loaded by the set
         List<Map.Entry<String,String>> results = new ArrayList<>();
@@ -205,7 +208,7 @@ public class HdfsBackedSortedMapTest {
 
         // for each result we find, remove it from the results list and ensure that the list is empty when we're done
         reloadedSortedMap.entrySet().forEach(results::remove);
-        Assert.assertTrue(results.isEmpty());
+        assertTrue(results.isEmpty());
 
         // Finally, add an entry to the reloaded sorted set
         String lastTestString = "last test string";
@@ -215,17 +218,17 @@ public class HdfsBackedSortedMapTest {
         reloadedSortedMap.persist();
 
         // ensure that data was not written to the second folder
-        Assert.assertFalse(fs.exists(subPaths[1]));
-        Assert.assertEquals(0, fs.listStatus(paths[1]).length);
+        assertFalse(fs.exists(subPaths[1]));
+        assertEquals(0, fs.listStatus(paths[1]).length);
 
         // ensure that while the folder still exists, data no longer exists for the third folder
-        Assert.assertTrue(fs.exists(subPaths[2]));
-        Assert.assertEquals(0, fs.listStatus(subPaths[2]).length);
+        assertTrue(fs.exists(subPaths[2]));
+        assertEquals(0, fs.listStatus(subPaths[2]).length);
 
         // ensure that all data exists in the first folder
         fileStatuses = fs.listStatus(subPaths[0]);
-        Assert.assertEquals(1, fileStatuses.length);
-        Assert.assertTrue(fileStatuses[0].getPath().getName().startsWith("SortedMap"));
+        assertEquals(1, fileStatuses.length);
+        assertTrue(fileStatuses[0].getPath().getName().startsWith("SortedMap"));
 
         // Finally, make sure that the compacted data can be reloaded
         // @formatter:off
@@ -240,7 +243,7 @@ public class HdfsBackedSortedMapTest {
         // @formatter:on
 
         // Ensure that we have 3 entries total
-        Assert.assertEquals(3, compactedSortedMap.size());
+        assertEquals(3, compactedSortedMap.size());
 
         // This is what we expect to be loaded by the set
         results.clear();
@@ -250,6 +253,6 @@ public class HdfsBackedSortedMapTest {
 
         // for each result we find, remove it from the results list and ensure that the list is empty when we're done
         compactedSortedMap.entrySet().forEach(results::remove);
-        Assert.assertTrue(results.isEmpty());
+        assertTrue(results.isEmpty());
     }
 }
