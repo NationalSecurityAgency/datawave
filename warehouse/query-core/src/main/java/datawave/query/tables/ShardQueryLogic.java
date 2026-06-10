@@ -1429,7 +1429,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
             }
         }
 
-        return new PushdownScheduler(config, scannerFactory, this.metadataHelperFactory);
+        return new PushdownScheduler(config, this.metadataHelperFactory);
     }
 
     protected VisitorFunction getVisitorFunction(MetadataHelper metadataHelper) {
