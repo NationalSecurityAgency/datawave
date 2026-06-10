@@ -20,6 +20,12 @@ public class IvaratorCacheDir {
     // the path for caching ivarator output for this query
     final protected String pathURI;
 
+    public IvaratorCacheDir() {
+        this.config = null;
+        this.fs = null;
+        this.pathURI = "/";
+    }
+
     public IvaratorCacheDir(IvaratorCacheDirConfig config, FileSystem fs, String pathURI) {
         this.config = config;
         this.fs = fs;
@@ -40,6 +46,7 @@ public class IvaratorCacheDir {
             return getFs().getStatus(path);
         } catch (IOException e) {
             log.warn("Unable to determine status of the filesystem: {}", getFs());
+            log.warn("Exception : {}", e.getMessage());
         }
         return null;
     }

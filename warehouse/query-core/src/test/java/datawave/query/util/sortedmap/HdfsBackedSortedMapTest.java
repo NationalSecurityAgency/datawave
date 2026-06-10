@@ -5,7 +5,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
-import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -203,8 +202,8 @@ public class HdfsBackedSortedMapTest {
 
         // This is what we expect to be loaded by the set
         List<Map.Entry<String,String>> results = new ArrayList<>();
-        results.add(new AbstractMap.SimpleEntry<>("key1", someTestString));
-        results.add(new AbstractMap.SimpleEntry<>("key2", anotherTestString));
+        results.add(Map.entry("key1", someTestString));
+        results.add(Map.entry("key2", anotherTestString));
 
         // for each result we find, remove it from the results list and ensure that the list is empty when we're done
         reloadedSortedMap.entrySet().forEach(results::remove);
@@ -247,9 +246,9 @@ public class HdfsBackedSortedMapTest {
 
         // This is what we expect to be loaded by the set
         results.clear();
-        results.add(new AbstractMap.SimpleEntry<>("key1", someTestString));
-        results.add(new AbstractMap.SimpleEntry<>("key2", anotherTestString));
-        results.add(new AbstractMap.SimpleEntry<>("key3", lastTestString));
+        results.add(Map.entry("key1", someTestString));
+        results.add(Map.entry("key2", anotherTestString));
+        results.add(Map.entry("key3", lastTestString));
 
         // for each result we find, remove it from the results list and ensure that the list is empty when we're done
         compactedSortedMap.entrySet().forEach(results::remove);
