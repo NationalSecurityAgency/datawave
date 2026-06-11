@@ -38,7 +38,7 @@ public class ScanManager implements Closeable {
                 log.warn("ScanManager closed, closing scanner");
                 scanner.close();
             } else {
-                if(log.isTraceEnabled()) {
+                if (log.isTraceEnabled()) {
                     log.trace("Adding scanner {}", scanner);
                 }
                 this.baseInstances.add(scanner);
@@ -69,8 +69,8 @@ public class ScanManager implements Closeable {
     @Override
     public void close() {
         synchronized (closed) {
-            if(log.isTraceEnabled()) {
-                 log.trace("ScannerManager asked to close all tracked scanners");
+            if (log.isTraceEnabled()) {
+                log.trace("ScannerManager asked to close all tracked scanners");
             }
             closed.set(true);
 
