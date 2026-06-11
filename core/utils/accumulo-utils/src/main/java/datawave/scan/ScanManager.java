@@ -69,7 +69,9 @@ public class ScanManager implements Closeable {
     @Override
     public void close() {
         synchronized (closed) {
-            log.trace("ScannerManager asked to close all tracked scanners");
+            if(log.isTraceEnabled()) {
+                 log.trace("ScannerManager asked to close all tracked scanners");
+            }
             closed.set(true);
 
             for (ScannerBase scanner : new HashSet<>(baseInstances)) {
