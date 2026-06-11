@@ -362,21 +362,7 @@
             </map>
         </property>
 
-        <property name="tableHints">
-            <map key-type="java.lang.String" value-type="java.util.Map">
-                <entry key="shard">
-                    <map><entry key="scan_type" value="shard-table-executor-event"/></map>
-                </entry>
-                <entry key="shardIndex">
-                    <map><entry key="scan_type" value="index-table-executor-event"/></map>
-                </entry>
-                <!-- NOTE: this execution hint is reserved by datawave -->
-                <entry key="expansion">
-                    <map><entry key="scan_type" value="index-expansion-executor"/></map>
-                </entry>
-            </map>
-        </property>
-
+        <property name="tableHints" ref="DefaultTableHints"/>
         <property name="useQueryTreeScanHintRules" value="true"/>
         <property name="queryTreeScanHintRules" ref="IvaratorScanHintRule"/>
 
@@ -452,16 +438,7 @@
                 <value>datawave.query.function.NormalizedVersionPredicate</value>
             </list>
         </property>
-        <property name="tableHints">
-            <map key-type="java.lang.String" value-type="java.util.Map">
-                <entry key="shard">
-                    <map><entry key="scan_type" value="shard-table-executor-tld"/></map>
-                </entry>
-                <entry key="shardIndex">
-                    <map><entry key="scan_type" value="index-table-executor-tld"/></map>
-                </entry>
-            </map>
-        </property>
+        <property name="tableHints" ref="TLDTableHints"/>
     </bean>
 
     <bean id="FacetedQuery" parent="BaseEventQuery" scope="prototype" class="datawave.query.tables.facets.FacetedQueryLogic">
@@ -718,4 +695,48 @@
         <!-- default timeout of one hour -->
         <property name="pageWaitTimeMillis" value="3600000"/>
     </bean>
+
+    <util:map id="DefaultTableHints" scope="prototype" key-type="java.lang.String" value-type="java.util.Map">
+        <entry key="shard">
+            <map>
+                <entry key="scan_type" value="shard-table-executor-event"/>
+                <entry key="priority" value="1"/>
+            </map>
+        </entry>
+        <entry key="shardIndex">
+            <map>
+                <entry key="scan_type" value="index-table-executor-event"/>
+                <entry key="priority" value="1"/>
+            </map>
+        </entry>
+        <!-- NOTE: this execution hint is reserved by datawave -->
+        <entry key="expansion">
+            <map>
+                <entry key="scan_type" value="index-expansion-executor"/>
+                <entry key="priority" value="1"/>
+            </map>
+        </entry>
+    </util:map>
+
+    <util:map id="TLDTableHints" scope="prototype" key-type="java.lang.String" value-type="java.util.Map">
+        <entry key="shard">
+            <map>
+                <entry key="scan_type" value="shard-table-executor-tld"/>
+                <entry key="priority" value="1"/>
+            </map>
+        </entry>
+        <entry key="shardIndex">
+            <map>
+                <entry key="scan_type" value="index-table-executor-tld"/>
+                <entry key="priority" value="1"/>
+            </map>
+        </entry>
+        <!-- NOTE: this execution hint is reserved by datawave -->
+        <entry key="expansion">
+            <map>
+                <entry key="scan_type" value="index-expansion-executor"/>
+                <entry key="priority" value="1"/>
+            </map>
+        </entry>
+    </util:map>
 </beans>
