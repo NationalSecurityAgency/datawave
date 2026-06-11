@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave</groupId>
         <artifactId>datawave-warehouse-parent</artifactId>
-        <version>7.39.0-SNAPSHOT</version>
+        <version>7.41.0-SNAPSHOT</version>
     </parent>
     <artifactId>datawave-ingest-core</artifactId>
     <packaging>jar</packaging>
@@ -45,6 +45,10 @@
             <groupId>gov.nsa.datawave.core</groupId>
             <artifactId>datawave-core-common-util</artifactId>
             <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.core</groupId>
+            <artifactId>datawave-core-tables</artifactId>
         </dependency>
         <dependency>
             <groupId>io.dropwizard.metrics</groupId>
