@@ -38,7 +38,9 @@ public class ScanManager implements Closeable {
                 log.warn("ScanManager closed, closing scanner");
                 scanner.close();
             } else {
-                log.trace("Adding scanner {}", scanner);
+                if(log.isTraceEnabled()) {
+                    log.trace("Adding scanner {}", scanner);
+                }
                 this.baseInstances.add(scanner);
             }
         }
