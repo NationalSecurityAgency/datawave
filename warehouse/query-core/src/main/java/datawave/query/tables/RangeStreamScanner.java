@@ -130,7 +130,7 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
         myExecutor = service;
     }
 
-    @Deprecated(forRemoval = true, since = "7.39.0")
+    @Deprecated(forRemoval = true, since = "7.41.0")
     public RangeStreamScanner setScannerFactory(ScannerFactory factory) {
         this.scannerFactory = factory;
         return this;

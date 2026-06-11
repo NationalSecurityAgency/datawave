@@ -43,7 +43,7 @@ public class ShardRangeStream extends RangeStream {
         super(config, helper);
     }
 
-    @Deprecated(forRemoval = true, since = "7.39.0")
+    @Deprecated(forRemoval = true, since = "7.41.0")
     public ShardRangeStream(ShardQueryConfiguration config, ScannerFactory scanners, MetadataHelper helper) {
         super(config, scanners, helper);
     }

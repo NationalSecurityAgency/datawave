@@ -19,7 +19,7 @@ public class AncestorRangeStream extends RangeStream {
         super(config, metadataHelper);
     }
 
-    @Deprecated(forRemoval = true, since = "7.39.0")
+    @Deprecated(forRemoval = true, since = "7.41.0")
     public AncestorRangeStream(ShardQueryConfiguration config, ScannerFactory scanners, MetadataHelper metadataHelper) {
         super(config, scanners, metadataHelper);
     }

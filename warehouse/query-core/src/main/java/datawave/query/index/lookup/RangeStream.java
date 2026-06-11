@@ -171,7 +171,7 @@ public class RangeStream extends BaseVisitor implements QueryPlanStream {
         this(config, null, metadataHelper);
     }
 
-    @Deprecated(forRemoval = true, since = "7.39.0")
+    @Deprecated(forRemoval = true, since = "7.41.0")
     public RangeStream(ShardQueryConfiguration config, ScannerFactory scanners, MetadataHelper metadataHelper) {
         this.config = config;
         this.client = config.getClient();
