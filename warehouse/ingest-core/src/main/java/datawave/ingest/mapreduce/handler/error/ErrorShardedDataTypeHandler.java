@@ -44,7 +44,6 @@ import datawave.ingest.mapreduce.handler.shard.AbstractColumnBasedHandler;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.writer.ContextWriter;
-import datawave.marking.AccessExpressionUtil;
 import datawave.table.constants.ColumnFamilyConstants;
 
 /**
