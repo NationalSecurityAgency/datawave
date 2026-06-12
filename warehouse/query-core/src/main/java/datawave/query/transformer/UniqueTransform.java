@@ -19,8 +19,11 @@ import java.util.TreeSet;
 
 import javax.annotation.Nullable;
 
+import datawave.core.iterators.DatawaveFieldIndexCachingIteratorJexl;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.iterators.YieldCallback;
+import org.apache.hadoop.fs.FSDataInputStream;
+import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
@@ -614,5 +617,170 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
     private static Key getDocKey(Document doc) {
         return getRootDocKeyAttr(doc).getMetadata();
     }
+
+
+    public class HdfsBackedControl {
+        public static final String OWNERSHIP_FILE = "ownership";
+        public static final String COMPLETE_FILE = "complete";
+
+        private final int bufferSize = 128;
+
+        protected Path getOwnershipFile(String row) {
+            return new Path(getRowDir(controlDir, row), OWNERSHIP_FILE);
+        }
+
+        protected Path getCompleteFile(String row) {
+            return new Path(getRowDir(controlDir, row), COMPLETE_FILE);
+        }
+
+        protected String getOwnerId(Object owner) {
+            return DatawaveFieldIndexCachingIteratorJexl.getHostname() + "://" + Integer.toString(System.identityHashCode(owner));
+        }
+
+        public void takeOwnership(String row, Object owner) throws IOException {
+            Path file = getOwnershipFile(row);
+            writeFile(file, getOwnerId(owner).getBytes());
+        }
+
+        public boolean hasOwnership(String row, Object owner) throws IOException {
+            byte[] ownerId = getOwnerId(owner).getBytes();
+
+            Path file = getOwnershipFile(row);
+            if (controlFs.exists(file)) {
+                return hasContents(file, ownerId);
+            }
+            return false;
+        }
+
+        private boolean hasContents(Path file, byte[] contents) throws IOException {
+            FSDataInputStream stream = controlFs.open(file, this.bufferSize);
+            int len;
+            byte[] buffer;
+            try {
+                buffer = new byte[this.bufferSize];
+                len = stream.read(buffer);
+            } finally {
+                stream.close();
+            }
+
+            if (len == contents.length) {
+                for (int i = 0; i < len; i++) {
+                    if (contents[i] != buffer[i]) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+            return false;
+        }
+
+        public boolean isCancelledQuery() {
+            // if we have not determined we are cancelled yet, then check
+            if (!cancelled && queryLock != null) {
+                // but only if the last check was so long ago
+                long now = System.currentTimeMillis();
+                if ((now - lastCancelledCheck) > CANCELLED_CHECK_INTERVAL) {
+                    synchronized (this) {
+                        // now recheck the cancelled flag and timeout to ensure we really need to make the hdfs calls
+                        if (!cancelled && ((now - lastCancelledCheck) > CANCELLED_CHECK_INTERVAL)) {
+                            cancelled = !queryLock.isQueryRunning();
+                            lastCancelledCheck = now;
+                        }
+                    }
+                }
+            }
+            return cancelled;
+        }
+
+        public void setCancelled() {
+            this.cancelled = true;
+        }
+
+        public void setCompleteAndPersisted(String row) throws IOException {
+            Path file = getCompleteFile(row);
+            writeFile(file, "complete".getBytes());
+        }
+
+        public boolean isCompleteAndPersisted(String row) throws IOException {
+            Path file = getCompleteFile(row);
+            return controlFs.exists(file);
+        }
+
+        private void writeFile(Path file, byte[] value) throws IOException {
+            // if a cancelled query, then return immediately
+            if (isCancelledQuery()) {
+                return;
+            }
+
+            int count = 0;
+            boolean done = false;
+            boolean append = false;
+            String reason = null;
+            Exception exc = null;
+
+            while (!done && count <= numRetries) {
+                count++;
+                try {
+                    FSDataOutputStream stream = null;
+                    if (append) {
+                        try {
+                            stream = controlFs.append(file, bufferSize);
+                        } catch (IOException ioe) {
+                            if (ioe.getMessage().equals("Not supported")) {
+                                stream = controlFs.create(file, true, bufferSize);
+                            } else {
+                                throw ioe;
+                            }
+                        }
+                    } else {
+                        stream = controlFs.create(file, true, bufferSize);
+                    }
+                    try {
+                        stream.write(value);
+                    } finally {
+                        stream.close();
+                    }
+                    exc = null;
+                    done = true;
+                } catch (Exception e) {
+                    exc = e;
+                    try {
+                        // see if we can determine why
+                        if (controlFs.exists(controlDir)) {
+                            // so the directory exists, try the row dir
+                            if (controlFs.exists(new Path(controlDir, currentRow))) {
+                                // so the directory exists, how about the file
+                                if (controlFs.exists(file)) {
+                                    append = true;
+                                    reason = "Failed to create file, but the file exists: " + file;
+                                    // check if the contents actually got written
+                                    if (hasContents(file, value)) {
+                                        // we have a file with the correct contents, we are done...with success
+                                        exc = null;
+                                        done = true;
+                                    }
+                                } else {
+                                    reason = "Failed to create file, the file does not exist: " + file;
+                                }
+                            } else {
+                                reason = "Failed to create file, row dir does not exist: " + file;
+                            }
+                        } else {
+                            reason = "Failed to create file, query dir does not exist: " + file;
+                            // in this case, we really want to stop this iterator as we are cancelled
+                            count = numRetries + 1;
+                        }
+                    } catch (Exception e2) {
+                        reason = "Failed to create file: " + file;
+                    }
+                }
+            }
+            if (exc != null) {
+                throw new IOException(reason, exc);
+            }
+        }
+
+    }
+
 
 }
