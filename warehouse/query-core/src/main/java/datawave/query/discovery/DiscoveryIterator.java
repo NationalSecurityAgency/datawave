@@ -19,6 +19,8 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.MapWritable;
@@ -41,11 +43,14 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
 
     private Key key;
     private Value value;
+    private Range lastRange;
+    private Collection<ByteSequence> columnFamilies;
     private SortedKeyValueIterator<Key,Value> iterator;
     private boolean separateCountsByColVis = false;
     private boolean showReferenceCount = false;
     private boolean reverseIndex = false;
     private boolean sumCounts = false;
+    private boolean valuesOnly = false;
 
     @Override
     public DiscoveryIterator deepCopy(IteratorEnvironment env) {
@@ -84,15 +89,23 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
         Multimap<String,TermEntry> terms = ArrayListMultimap.create();
         Key start = new Key(iterator.getTopKey());
         Key key;
-        // If we should sum up counts, we want to collect the term entries for each date seen for the current field and term of start. Otherwise, we only want
-        // to collect the term entries for the current field, term, and date of start.
+
+        // If we should sum up counts, we want to collect the term entries for each date seen for the current field and term of start.
+        // Otherwise, we only want to collect the term entries for the current field, term, and date of start.
         BiFunction<Key,Key,Boolean> dateMatchingFunction = sumCounts ? (first, second) -> true : this::datesMatch;
+
         // Find all matching entries and parse term entries from them.
         while (iterator.hasTop() && start.equals((key = iterator.getTopKey()), PartialKey.ROW_COLFAM) && dateMatchingFunction.apply(start, key)) {
             TermEntry termEntry = new TermEntry(key, iterator.getTopValue());
-            if (termEntry.isValid())
+            if (termEntry.isValid()) {
                 terms.put(termEntry.getDatatype(), termEntry);
-            else {
+                // if 'values only' is selected, then we only need a single TermEntry, the first one. The value of each
+                // term in TermEntry should be the identical as we iterate in this 'while' loop. Therefore, the first
+                // one encountered will suffice.
+                if (valuesOnly) {
+                    return terms;
+                }
+            } else {
                 if (log.isTraceEnabled()) {
                     log.trace("Received invalid term entry from key: " + key);
                 }
@@ -179,9 +192,10 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
     /**
      * Set the top {@link Key} and {@link Value} of this iterator, created from the given list of {@link DiscoveredThing} instances.
      */
-    private void setTop(List<DiscoveredThing> things) {
-        // We want the key to be the last possible key for this date. Return the key as it is in the index (reversed if necessary) to ensure the keys are
-        // consistent with the initial seek range.
+    private void setTop(List<DiscoveredThing> things) throws IOException {
+
+        // We want the key to be the last possible key for this date. Return the key as it is in the index (reversed if
+        // necessary) to ensure the keys are consistent with the initial seek range.
         DiscoveredThing thing = things.get(0);
         String row = (this.reverseIndex ? new StringBuilder().append(thing.getTerm()).reverse().toString() : thing.getTerm());
         Key newKey = new Key(row, thing.getField(), thing.getDate() + "\uffff");
@@ -189,13 +203,29 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
         // Create a value from the list of things.
         ArrayWritable thingArray = new ArrayWritable(DiscoveredThing.class, things.toArray(new DiscoveredThing[0]));
         Value newValue = new Value(WritableUtils.toByteArray(thingArray));
+        if (valuesOnly) {
+            Key skipKey = new Key(row, "\uffff");
+            if (!columnFamilies.isEmpty()) {
+                skipKey = new Key(row, thing.getField(), "\uffff");
+            }
 
-        this.key = newKey;
+            if (lastRange.contains(skipKey)) {
+                this.key = skipKey;
+                Range nextRange = new Range(skipKey, false, lastRange.getEndKey(), lastRange.isEndKeyInclusive());
+                this.iterator.seek(nextRange, columnFamilies, false);
+            }
+        } else {
+            this.key = newKey;
+
+        }
+
         this.value = newValue;
     }
 
     @Override
     public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
+        this.lastRange = range;
+        this.columnFamilies = columnFamilies;
         this.iterator.seek(range, columnFamilies, inclusive);
         if (log.isTraceEnabled()) {
             log.trace("My source " + (this.iterator.hasTop() ? "does" : "does not") + " have a top.");
@@ -210,6 +240,10 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
         this.showReferenceCount = Boolean.parseBoolean(options.get(DiscoveryLogic.SHOW_REFERENCE_COUNT));
         this.reverseIndex = Boolean.parseBoolean(options.get(DiscoveryLogic.REVERSE_INDEX));
         this.sumCounts = Boolean.parseBoolean(options.get(DiscoveryLogic.SUM_COUNTS));
+        this.valuesOnly = Boolean.parseBoolean(options.get(DiscoveryLogic.VALUES_ONLY));
+        if (valuesOnly) {
+            sumCounts = false;
+        }
 
         if (log.isTraceEnabled()) {
             log.trace("Source: " + source.getClass().getName());
@@ -217,6 +251,7 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
             log.trace("Show reference counts only: " + this.showReferenceCount);
             log.trace("Reverse index: " + this.reverseIndex);
             log.trace("Sum counts: " + this.sumCounts);
+            log.trace("Values only: " + this.valuesOnly);
         }
     }
 
@@ -324,6 +359,33 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
 
         public boolean isValid() {
             return valid;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (o instanceof TermEntry) {
+                //  @formatter:off
+                TermEntry other = (TermEntry) o;
+                return new EqualsBuilder().append(getTerm(), other.getTerm())
+                        .append(getField(), other.getField())
+                        .append(getVisibility(), other.getVisibility())
+                        .append(getDate(), other.getDate())
+                        .append(getDatatype(), other.getDatatype())
+                        .append(getUidCount(), other.getUidCount())
+                        .append(getUidListSize(), other.getUidListSize()).isEquals();
+                //  @formatter:on
+            }
+            return false;
+        }
+
+        @Override
+        public int hashCode() {
+            //  @formatter:off
+            return new HashCodeBuilder().append(getTerm())
+                    .append(getField()).append(getVisibility())
+                    .append(getDate()).append(getDatatype())
+                    .append(getUidCount()).append(getUidListSize()).toHashCode();
+            //  @formatter:on
         }
     }
 }
