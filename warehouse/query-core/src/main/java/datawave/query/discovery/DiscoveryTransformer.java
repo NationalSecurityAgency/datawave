@@ -1,11 +1,17 @@
 package datawave.query.discovery;
 
+import static datawave.query.discovery.DiscoveryLogic.VALUES_ONLY;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 
 import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.io.Writable;
 
 import com.google.common.base.Preconditions;
@@ -16,9 +22,9 @@ import datawave.core.query.logic.BaseQueryLogicTransformer;
 import datawave.marking.MarkingFunctions;
 import datawave.marking.MarkingFunctions.Exception;
 import datawave.microservice.query.Query;
+import datawave.microservice.query.QueryImpl;
 import datawave.query.model.QueryModel;
 import datawave.webservice.query.cachedresults.CacheableQueryRow;
-import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
 import datawave.webservice.query.result.event.Metadata;
@@ -26,12 +32,14 @@ import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.EventQueryResponseBase;
 
+@SuppressWarnings({"rawtypes"})
 public class DiscoveryTransformer extends BaseQueryLogicTransformer<DiscoveredThing,EventBase> implements CacheableLogic {
     private List<String> variableFieldList = null;
-    private BaseQueryLogic<DiscoveredThing> logic = null;
-    private QueryModel myQueryModel = null;
+    private final BaseQueryLogic<DiscoveredThing> logic;
+    private QueryModel myQueryModel;
     private MarkingFunctions markingFunctions;
-    private ResponseObjectFactory responseObjectFactory;
+    private final ResponseObjectFactory responseObjectFactory;
+    private boolean valuesOnly = false;
 
     public DiscoveryTransformer(BaseQueryLogic<DiscoveredThing> logic, Query settings, QueryModel qm) {
         super(new MarkingFunctions.Default());
@@ -39,46 +47,80 @@ public class DiscoveryTransformer extends BaseQueryLogicTransformer<DiscoveredTh
         this.responseObjectFactory = logic.getResponseObjectFactory();
         this.logic = logic;
         this.myQueryModel = qm;
+        this.valuesOnly = getOrDefaultBoolean(settings, VALUES_ONLY, false);
     }
 
+    /**
+     * Variant of a field list that contains only a value field.
+     */
+    BiFunction<DiscoveredThing,Map<String,String>,List<FieldBase>> generateValuesOnlyFieldList = (x, y) -> {
+        List<FieldBase> fields = new ArrayList<>();
+
+        fields.add(this.makeField("VALUE", y, "", 0L, x.getTerm()));
+
+        return fields;
+    };
+
+    /**
+     * Variant of field list that contains a standard, default set of fields.
+     */
+    BiFunction<DiscoveredThing,Map<String,String>,List<FieldBase>> generateFieldList = (x, y) -> {
+        List<FieldBase> fields = new ArrayList<>();
+
+        fields.add(this.makeField("VALUE", y, "", 0L, x.getTerm()));
+        /*
+         * Added query model to alias FIELD, if DiscoveredThing::field both not NULL and not empty.
+         */
+        Optional<String> fieldOFThing = Optional.ofNullable(x.getField());
+        fieldOFThing.filter(i -> !i.isBlank()).ifPresent(i -> fields.add(this.makeField("FIELD", y, "", 0L, myQueryModel.aliasFieldNameReverseModel(i))));
+
+        fields.add(this.makeField("DATE", y, "", 0L, x.getDate()));
+        fields.add(this.makeField("DATA TYPE", y, "", 0L, x.getType()));
+
+        // If requested return counts separated by colvis, all counts by colvis could be > total record count
+        if (x.getCountsByColumnVisibility() != null && !x.getCountsByColumnVisibility().isEmpty()) {
+            for (Map.Entry<Writable,Writable> entry : x.getCountsByColumnVisibility().entrySet()) {
+                try {
+                    this.markingFunctions.translateFromColumnVisibility(new ColumnVisibility(entry.getKey().toString()));
+                    fields.add(this.makeField("RECORD COUNT", new HashMap<>(), entry.getKey().toString(), 0L, entry.getValue().toString()));
+                } catch (Exception e) {
+                    throw new RuntimeException("could not parse to markings: " + x.getColumnVisibility());
+                }
+
+            }
+        } else {
+            fields.add(this.makeField("RECORD COUNT", y, "", 0L, Long.toString(x.getCount())));
+        }
+        return fields;
+    };
+
+    final Map<String,BiFunction<DiscoveredThing,Map<String,String>,List<FieldBase>>> mapMapGenerator = new HashMap<>();
+    {
+        mapMapGenerator.put("VALUES_ONLY", generateValuesOnlyFieldList);
+        mapMapGenerator.put("STANDARD", generateFieldList);
+    }
+
+    /**
+     * Factory to get a particular field list generator. Different scenarios may call for different field lists.
+     *
+     * @param isValuesOnly
+     * @return
+     */
+    BiFunction<DiscoveredThing,Map<String,String>,List<FieldBase>> getMapGenerator(boolean isValuesOnly) {
+        return mapMapGenerator.get(isValuesOnly ? "VALUES_ONLY" : "STANDARD");
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
     @Override
     public EventBase transform(DiscoveredThing thing) {
         Preconditions.checkNotNull(thing, "Received a null object to transform!");
 
         EventBase event = this.responseObjectFactory.getEvent();
-        Map<String,String> markings;
-        try {
-            markings = this.markingFunctions.translateFromColumnVisibility(new ColumnVisibility(thing.getColumnVisibility()));
-        } catch (Exception e) {
-            throw new RuntimeException("could not parse to markings: " + thing.getColumnVisibility());
-        }
+
+        Map<String,String> markings = markingsFromVisibility.apply(thing.getColumnVisibility());
         event.setMarkings(markings);
 
-        List<FieldBase> fields = new ArrayList<>();
-
-        fields.add(this.makeField("VALUE", markings, "", 0L, thing.getTerm()));
-        /**
-         * Added query model to alias FIELD
-         */
-        fields.add(this.makeField("FIELD", markings, "", 0L, myQueryModel.aliasFieldNameReverseModel(thing.getField())));
-        fields.add(this.makeField("DATE", markings, "", 0L, thing.getDate()));
-        fields.add(this.makeField("DATA TYPE", markings, "", 0L, thing.getType()));
-
-        // If requested return counts separated by colvis, all counts by colvis could be > total record count
-        if (thing.getCountsByColumnVisibility() != null && !thing.getCountsByColumnVisibility().isEmpty()) {
-            for (Map.Entry<Writable,Writable> entry : thing.getCountsByColumnVisibility().entrySet()) {
-                try {
-                    Map<String,String> eMarkings = this.markingFunctions.translateFromColumnVisibility(new ColumnVisibility(entry.getKey().toString()));
-                    fields.add(this.makeField("RECORD COUNT", new HashMap<>(), entry.getKey().toString(), 0L, entry.getValue().toString()));
-                } catch (Exception e) {
-                    throw new RuntimeException("could not parse to markings: " + thing.getColumnVisibility());
-                }
-
-            }
-        } else {
-            fields.add(this.makeField("RECORD COUNT", markings, "", 0L, Long.toString(thing.getCount())));
-        }
-
+        List<FieldBase> fields = getMapGenerator(valuesOnly).apply(thing, markings);
         event.setFields(fields);
         event.setSizeInBytes(fields.size() * 6L);
 
@@ -92,8 +134,9 @@ public class DiscoveryTransformer extends BaseQueryLogicTransformer<DiscoveredTh
         return event;
     }
 
-    protected FieldBase<?> makeField(String name, Map<String,String> markings, String columnVisibility, Long timestamp, Object value) {
-        FieldBase<?> field = this.responseObjectFactory.getField();
+    @SuppressWarnings({"rawtypes"})
+    protected FieldBase makeField(String name, Map<String,String> markings, String columnVisibility, Long timestamp, Object value) {
+        FieldBase field = this.responseObjectFactory.getField();
         field.setName(name);
         field.setMarkings(markings);
         field.setColumnVisibility(columnVisibility);
@@ -102,6 +145,7 @@ public class DiscoveryTransformer extends BaseQueryLogicTransformer<DiscoveredTh
         return field;
     }
 
+    @SuppressWarnings({"rawtypes"})
     @Override
     public BaseQueryResponse createResponse(List<Object> resultList) {
         EventQueryResponseBase response = this.responseObjectFactory.getEventQueryResponse();
@@ -116,8 +160,9 @@ public class DiscoveryTransformer extends BaseQueryLogicTransformer<DiscoveredTh
         return response;
     }
 
+    @SuppressWarnings({"unchecked"})
     @Override
-    public CacheableQueryRow writeToCache(Object o) throws QueryException {
+    public CacheableQueryRow writeToCache(Object o) {
         EventBase event = (EventBase) o;
 
         CacheableQueryRow cqo = responseObjectFactory.getCacheableQueryRow();
@@ -135,6 +180,7 @@ public class DiscoveryTransformer extends BaseQueryLogicTransformer<DiscoveredTh
         return cqo;
     }
 
+    @SuppressWarnings({"unchecked"})
     @Override
     public Object readFromCache(CacheableQueryRow cacheableQueryRow) {
         if (this.variableFieldList == null) {
@@ -175,4 +221,29 @@ public class DiscoveryTransformer extends BaseQueryLogicTransformer<DiscoveredTh
         event.setFields(fieldList);
         return event;
     }
+
+    Function<String,Map<String,String>> markingsFromVisibility = x -> {
+        try {
+            return this.markingFunctions.translateFromColumnVisibility(new ColumnVisibility(x));
+        } catch (Exception e) {
+            throw new RuntimeException("could not parse to markings: " + x);
+        }
+    };
+
+    /**
+     * If present, return the value of the given parameter from the given settings as a boolean, or return the default value otherwise.
+     */
+    private boolean getOrDefaultBoolean(Query settings, String parameterName, boolean defaultValue) {
+        String value = getTrimmedParameter(settings, parameterName);
+        return StringUtils.isBlank(value) ? defaultValue : Boolean.parseBoolean(value);
+    }
+
+    /**
+     * Return the trimmed value of the given parameter from the given settings, or null if a value is not present.
+     */
+    private String getTrimmedParameter(Query settings, String parameterName) {
+        QueryImpl.Parameter parameter = settings.findParameter(parameterName);
+        return parameter != null ? parameter.getParameterValue().trim() : null;
+    }
+
 }
