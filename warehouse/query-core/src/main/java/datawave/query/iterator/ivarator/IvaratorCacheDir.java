@@ -65,7 +65,8 @@ public class IvaratorCacheDir {
         }
 
         long availableStorageMiB = fsStatus.getRemaining() / 0x100000L;
-        double availableStoragePercent = (double) fsStatus.getRemaining() / fsStatus.getCapacity();
+        // Using the RawLocalFileSystem for unit tests will return zero remaining/capacity
+        double availableStoragePercent = (double) fsStatus.getRemaining() / Math.max(1, fsStatus.getCapacity());
 
         if (log.isTraceEnabled()) {
             log.trace("availableStorageMiB: {}", availableStorageMiB);
