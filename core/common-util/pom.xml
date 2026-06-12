@@ -15,10 +15,6 @@
     <dependencies>
         <dependency>
             <groupId>gov.nsa.datawave.core</groupId>
-            <artifactId>accumulo-utils</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>gov.nsa.datawave.core</groupId>
             <artifactId>datawave-core-connection-pool</artifactId>
             <version>${project.version}</version>
         </dependency>

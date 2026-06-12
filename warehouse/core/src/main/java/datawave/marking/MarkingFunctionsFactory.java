@@ -21,13 +21,14 @@ public class MarkingFunctionsFactory {
 
     @Inject
     @SpringBean(refreshable = true)
-    private static MarkingFunctions applicationMarkingFunctions;
+    private static MarkingFunctions<?> applicationMarkingFunctions;
 
     public static final Logger log = LoggerFactory.getLogger(MarkingFunctionsFactory.class);
 
     private static volatile MarkingFunctions markingFunctions;
+    private static MarkingFunctions<?> markingFunctions;
 
-    public static synchronized MarkingFunctions createMarkingFunctions() {
+    public static synchronized MarkingFunctions<?> createMarkingFunctions() {
         if (markingFunctions != null)
             return markingFunctions;
 
