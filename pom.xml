@@ -75,14 +75,14 @@
         <version.commons-text>1.11.0</version.commons-text>
         <version.curator>5.9.0</version.curator>
         <version.curator.test>5.9.0</version.curator.test>
-        <version.datawave.accumulo-api>4.0.4-SNAPSHOT</version.datawave.accumulo-api>
+        <version.datawave.accumulo-api>4.0.4</version.datawave.accumulo-api>
         <version.datawave.audit-api>4.0.0</version.datawave.audit-api>
         <version.datawave.authorization-api>4.0.0</version.datawave.authorization-api>
-        <version.datawave.dictionary-api>4.0.9-SNAPSHOT</version.datawave.dictionary-api>
+        <version.datawave.dictionary-api>4.0.9</version.datawave.dictionary-api>
         <version.datawave.mapreduce-query-api>1.0.0</version.datawave.mapreduce-query-api>
         <version.datawave.metrics-reporter>3.0.0</version.datawave.metrics-reporter>
         <version.datawave.query-api>1.0.0</version.datawave.query-api>
-        <version.datawave.query-metric-api>4.1.6-SNAPSHOT</version.datawave.query-metric-api>
+        <version.datawave.query-metric-api>4.1.6</version.datawave.query-metric-api>
         <version.deltaspike>1.9.0</version.deltaspike>
         <version.dnsjava>3.6.3</version.dnsjava>
         <version.easymock>5.2.0</version.easymock>
