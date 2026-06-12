@@ -39,13 +39,13 @@ public class DefaultMetadataFieldScanner {
     private static final String TIMESTAMP_FORMAT = "yyyyMMddHHmmss";
     private static final Value EMPTY_VALUE = new Value();
 
-    private final MarkingFunctions markingFunctions;
+    private final MarkingFunctions<?> markingFunctions;
     private final ResponseObjectFactory<DefaultDescription,?,DefaultMetadataField,?,?> responseObjectFactory;
     private final Map<String,String> normalizationMap;
     private final Connection connectionConfig;
     private final int numThreads;
 
-    public DefaultMetadataFieldScanner(MarkingFunctions markingFunctions,
+    public DefaultMetadataFieldScanner(MarkingFunctions<?> markingFunctions,
                     ResponseObjectFactory<DefaultDescription,DefaultDataDictionary,DefaultMetadataField,DefaultDictionaryField,DefaultFields> responseObjectFactory,
                     Map<String,String> normalizationMap, Connection connectionConfig, int numThreads) {
         this.markingFunctions = markingFunctions;

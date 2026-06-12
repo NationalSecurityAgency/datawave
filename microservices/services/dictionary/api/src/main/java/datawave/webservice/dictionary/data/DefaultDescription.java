@@ -2,17 +2,17 @@ package datawave.webservice.dictionary.data;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Objects;
 
 import javax.xml.bind.annotation.XmlAccessOrder;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorOrder;
 import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlTransient;
 
-import datawave.webservice.query.result.event.MapSchema;
+import datawave.marking.AccessExpressionMarkings;
+import datawave.marking.Markings;
 import io.protostuff.Input;
 import io.protostuff.Message;
 import io.protostuff.Output;
@@ -29,11 +29,12 @@ public class DefaultDescription extends DescriptionBase<DefaultDescription> impl
         this.description = description;
     }
 
-    public DefaultDescription(String description, Map<String,String> markings) {
+    public DefaultDescription(String description, Markings<?> markings) {
         this.description = description;
         this.markings = markings;
     }
 
+    @XmlElement(name = "description")
     public String getDescription() {
         return description;
     }
@@ -43,12 +44,14 @@ public class DefaultDescription extends DescriptionBase<DefaultDescription> impl
     }
 
     @Override
-    public void setMarkings(Map<String,String> markings) {
-        this.markings = markings;
+    @XmlElement(name = "markings", type = AccessExpressionMarkings.class)
+    public Markings<?> getMarkings() {
+        return this.markings;
     }
 
-    public Map<String,String> getMarkings() {
-        return this.markings;
+    @Override
+    public void setMarkings(Markings<?> markings) {
+        this.markings = markings;
     }
 
     @Override
@@ -86,7 +89,7 @@ public class DefaultDescription extends DescriptionBase<DefaultDescription> impl
     }
 
     @XmlTransient
-    private static final Schema<DefaultDescription> SCHEMA = new Schema<DefaultDescription>() {
+    private static final Schema<DefaultDescription> SCHEMA = new Schema<>() {
         public DefaultDescription newMessage() {
             return new DefaultDescription();
         }
@@ -112,7 +115,7 @@ public class DefaultDescription extends DescriptionBase<DefaultDescription> impl
                 output.writeString(1, message.description, false);
             }
             if (message.markings != null)
-                output.writeObject(1, message.markings, MapSchema.SCHEMA, false);
+                output.writeObject(2, (AccessExpressionMarkings) message.markings, AccessExpressionMarkings.SCHEMA, false);
         }
 
         public void mergeFrom(Input input, DefaultDescription message) throws IOException {
@@ -123,8 +126,8 @@ public class DefaultDescription extends DescriptionBase<DefaultDescription> impl
                         message.description = input.readString();
                         break;
                     case 2:
-                        message.markings = new HashMap<String,String>();
-                        input.mergeObject(message.markings, MapSchema.SCHEMA);
+                        message.markings = AccessExpressionMarkings.builder().build();
+                        input.mergeObject((AccessExpressionMarkings) message.markings, AccessExpressionMarkings.SCHEMA);
                         break;
                     default:
                         input.handleUnknownField(number, this);

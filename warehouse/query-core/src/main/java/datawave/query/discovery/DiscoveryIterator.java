@@ -33,13 +33,13 @@ import com.google.common.collect.Multimap;
 import com.google.protobuf.InvalidProtocolBufferException;
 
 import datawave.ingest.protobuf.Uid;
+import datawave.marking.AccessExpressionUtil;
 import datawave.marking.MarkingFunctions;
 import datawave.query.Constants;
 
 public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
 
     private static final Logger log = Logger.getLogger(DiscoveryIterator.class);
-    private static final MarkingFunctions markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
 
     private Key key;
     private Value value;
@@ -50,6 +50,7 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
     private boolean showReferenceCount = false;
     private boolean reverseIndex = false;
     private boolean sumCounts = false;
+    private MarkingFunctions<?> markingFunctions;
     private boolean valuesOnly = false;
 
     @Override
@@ -175,10 +176,15 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
             } else {
                 // Otherwise, combine the visibilities, and return the aggregated result.
                 try {
-                    ColumnVisibility visibility = markingFunctions.combine(visibilities);
+                    if (null == markingFunctions) {
+                        markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
+                    }
+                    ColumnVisibility visibility = markingFunctions.combineVisibilities(visibilities);
+
                     MapWritable countsByVis = new MapWritable();
                     visibilityToCounts.forEach((key, value) -> countsByVis.put(new Text(key), new LongWritable(value)));
-                    return new DiscoveredThing(term, first.getField(), first.getDatatype(), date, new String(visibility.flatten()), count, countsByVis);
+                    String normalizedVis = AccessExpressionUtil.normalize(visibility).getExpression();
+                    return new DiscoveredThing(term, first.getField(), first.getDatatype(), date, normalizedVis, count, countsByVis);
                 } catch (Exception e) {
                     if (log.isTraceEnabled()) {
                         log.warn("Invalid column visibilities after combining " + visibilities);
