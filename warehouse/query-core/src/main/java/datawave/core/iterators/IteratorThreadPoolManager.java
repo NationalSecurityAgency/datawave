@@ -38,6 +38,7 @@ public class IteratorThreadPoolManager {
     private static final long DEFAULT_IVARATOR_RUNNABLE_TIMEOUT_MINUTES = 60;
 
     private Map<String,ThreadPoolExecutor> threadPools = new TreeMap<>();
+    private List<ScheduledExecutorService> scheduledExecutors = new ArrayList<>();
     private Cache<String,IvaratorFuture> ivaratorFutures;
     // Each Ivarator has a scanTimeout. This is a system-wide limit which could be useful in terminating
     // all Ivarators if necessary. It is also used to ensure that abandoned IvaratorFutures are removed.
@@ -62,7 +63,9 @@ public class IteratorThreadPoolManager {
         ivaratorRunnableTimeoutMinutes = getLongPropertyValue(IVARATOR_RUNNABLE_TIMEOUT_MINUTES_PROP, DEFAULT_IVARATOR_RUNNABLE_TIMEOUT_MINUTES, pluginEnv);
         log.info("Using " + ivaratorRunnableTimeoutMinutes + " minutes for " + IVARATOR_RUNNABLE_TIMEOUT_MINUTES_PROP);
         // This thread will check for changes to ivaratorRunnableTimeoutMinutes
-        Executors.newSingleThreadScheduledExecutor().scheduleWithFixedDelay(() -> {
+        ScheduledExecutorService timeoutMonitor = Executors.newSingleThreadScheduledExecutor();
+        scheduledExecutors.add(timeoutMonitor);
+        timeoutMonitor.scheduleWithFixedDelay(() -> {
             try {
                 long value = getLongPropertyValue(IVARATOR_RUNNABLE_TIMEOUT_MINUTES_PROP, DEFAULT_IVARATOR_RUNNABLE_TIMEOUT_MINUTES, pluginEnv);
                 if (ivaratorRunnableTimeoutMinutes != value) {
@@ -115,7 +118,9 @@ public class IteratorThreadPoolManager {
 
         // If Ivarator has been running for a time greater than either its scanTimeout or the ivaratorRunnableTimeoutMinutes,
         // then stop the Ivarator and remove the future from the cache
-        Executors.newSingleThreadScheduledExecutor().scheduleWithFixedDelay(() -> {
+        ScheduledExecutorService ivaratorTimeoutMonitor = Executors.newSingleThreadScheduledExecutor();
+        scheduledExecutors.add(ivaratorTimeoutMonitor);
+        ivaratorTimeoutMonitor.scheduleWithFixedDelay(() -> {
             Map<String,Integer> queryToTaskMap = new TreeMap<>();
             long now = System.currentTimeMillis();
             ivaratorFutures.asMap().forEach((String taskName, IvaratorFuture future) -> {
@@ -158,7 +163,9 @@ public class IteratorThreadPoolManager {
         int maxThreads = getIntPropertyValue(prop, DEFAULT_THREAD_POOL_SIZE, pluginEnv);
         final ThreadPoolExecutor service = createExecutorService(maxThreads, name + " (" + instanceId + ')');
         threadPools.put(name, service);
-        Executors.newScheduledThreadPool(maxThreads).scheduleWithFixedDelay(() -> {
+        ScheduledExecutorService poolMonitor = Executors.newScheduledThreadPool(maxThreads);
+        scheduledExecutors.add(poolMonitor);
+        poolMonitor.scheduleWithFixedDelay(() -> {
             try {
                 // Very important to not use the accumuloConfiguration in this thread and instead use the pluginEnv
                 // The accumuloConfiguration caches table ids which may no longer exist down the road.
@@ -294,5 +301,27 @@ public class IteratorThreadPoolManager {
 
     public static Future<?> executeEvaluation(Runnable task, String taskName, IteratorEnvironment env) {
         return instance(env).execute(EVALUATOR_THREAD_NAME, task, taskName);
+    }
+
+    public static void shutdown(IteratorEnvironment env) {
+        IteratorThreadPoolManager mgr = instance;
+        if (mgr != null) {
+            mgr.shutdownInstance();
+        }
+    }
+
+    private void shutdownInstance() {
+        for (ThreadPoolExecutor pool : threadPools.values()) {
+            pool.shutdownNow();
+        }
+        threadPools.clear();
+        for (ScheduledExecutorService scheduler : scheduledExecutors) {
+            scheduler.shutdownNow();
+        }
+        scheduledExecutors.clear();
+        if (ivaratorFutures != null) {
+            ivaratorFutures.invalidateAll();
+        }
+        log.info("IteratorThreadPoolManager shutdown complete");
     }
 }

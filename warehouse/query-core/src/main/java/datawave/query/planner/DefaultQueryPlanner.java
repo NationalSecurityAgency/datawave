@@ -263,14 +263,14 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     private static Cache<String,Multimap<String,Type<?>>> dataTypeMap = CacheBuilder.newBuilder().maximumSize(100).concurrencyLevel(100)
                     .expireAfterAccess(24, TimeUnit.HOURS).build();
 
-    private static Multimap<String,Type<?>> queryFieldsAsDataTypeMap;
+    private Multimap<String,Type<?>> queryFieldsAsDataTypeMap;
 
-    private static Multimap<String,Type<?>> normalizedFieldAsDataTypeMap;
+    private Multimap<String,Type<?>> normalizedFieldAsDataTypeMap;
 
     // These are caches of the complete set of indexed and normalized fields
-    private static Set<String> cachedIndexedFields = null;
-    private static Set<String> cachedReverseIndexedFields = null;
-    private static Set<String> cachedNormalizedFields = null;
+    private Set<String> cachedIndexedFields = null;
+    private Set<String> cachedReverseIndexedFields = null;
+    private Set<String> cachedNormalizedFields = null;
 
     protected List<PushDownRule> rules = Lists.newArrayList();
 

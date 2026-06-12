@@ -25,7 +25,7 @@ public class MarkingFunctionsFactory {
 
     public static final Logger log = LoggerFactory.getLogger(MarkingFunctionsFactory.class);
 
-    private static MarkingFunctions markingFunctions;
+    private static volatile MarkingFunctions markingFunctions;
 
     public static synchronized MarkingFunctions createMarkingFunctions() {
         if (markingFunctions != null)
@@ -59,7 +59,7 @@ public class MarkingFunctionsFactory {
     }
 
     @PostConstruct
-    public static void postContruct() {
+    public static synchronized void postContruct() {
         markingFunctions = applicationMarkingFunctions;
     }
 }
