@@ -122,7 +122,7 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
     }
 
     @Override
-    public void initialize(Query settings, MarkingFunctions markingFunctions) {
+    public void initialize(Query settings, MarkingFunctions<?> markingFunctions) {
         super.initialize(settings, markingFunctions);
 
         // handle query parameters for configuration overrides

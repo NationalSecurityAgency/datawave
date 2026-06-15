@@ -31,6 +31,7 @@ import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.core.query.result.event.DefaultResponseObjectFactory;
 import datawave.marking.MarkingFunctions;
+import datawave.marking.Markings;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
 import datawave.query.QueryParameters;
@@ -113,7 +114,7 @@ public class DiscoveryTransformerTest {
 
         EventBase expectedEventBase = new DefaultEvent();
         expectedEventBase.setMetadata(discoveredThingToMetadata(thing));
-        Map<String,String> markings = markingsFromVisibility.apply(thing.getColumnVisibility());
+        Markings<?> markings = markingsFromVisibility.apply(thing.getColumnVisibility());
 
         expectedEventBase.setMarkings(markings);
         expectedEventBase.setFields(discoveredThingToFieldValuesOnly(thing, markings));
@@ -149,7 +150,7 @@ public class DiscoveryTransformerTest {
 
         EventBase expectedEventBase = new DefaultEvent();
         expectedEventBase.setMetadata(discoveredThingToMetadata(thing));
-        Map<String,String> markings = markingsFromVisibility.apply(thing.getColumnVisibility());
+        Markings<?> markings = markingsFromVisibility.apply(thing.getColumnVisibility());
 
         expectedEventBase.setMarkings(markings);
         expectedEventBase.setFields(discoveredThingToFieldValuesOnly(thing, markings));
@@ -185,7 +186,7 @@ public class DiscoveryTransformerTest {
 
         EventBase expectedEventBase = new DefaultEvent();
         expectedEventBase.setMetadata(discoveredThingToMetadata(thing));
-        Map<String,String> markings = markingsFromVisibility.apply(thing.getColumnVisibility());
+        Markings<?> markings = markingsFromVisibility.apply(thing.getColumnVisibility());
 
         expectedEventBase.setMarkings(markings);
         expectedEventBase.setFields(discoveredThingToField(thing, markings));
@@ -216,7 +217,7 @@ public class DiscoveryTransformerTest {
         return bos.toString();
     };
 
-    private final Function<String,Map<String,String>> markingsFromVisibility = x -> {
+    private final Function<String,Markings<?>> markingsFromVisibility = x -> {
         try {
             return this.logic.getMarkingFunctions().translateFromColumnVisibility(new ColumnVisibility(x));
         } catch (MarkingFunctions.Exception e) {
@@ -225,7 +226,7 @@ public class DiscoveryTransformerTest {
     };
 
     @SuppressWarnings("rawtypes")
-    private List<FieldBase> discoveredThingToFieldValuesOnly(DiscoveredThing thing, Map<String,String> markings) {
+    private List<FieldBase> discoveredThingToFieldValuesOnly(DiscoveredThing thing, Markings<?> markings) {
         List<FieldBase> fields = new ArrayList<>();
 
         if (Optional.ofNullable(thing.getTerm()).isPresent()) {
@@ -235,7 +236,7 @@ public class DiscoveryTransformerTest {
     }
 
     @SuppressWarnings("rawtypes")
-    private List<FieldBase> discoveredThingToField(DiscoveredThing thing, Map<String,String> markings) {
+    private List<FieldBase> discoveredThingToField(DiscoveredThing thing, Markings<?> markings) {
         List<FieldBase> fields = new ArrayList<>();
 
         if (Optional.ofNullable(thing.getTerm()).isPresent()) {
@@ -270,7 +271,7 @@ public class DiscoveryTransformerTest {
     }
 
     @SuppressWarnings("rawtypes")
-    private FieldBase makeField(String name, Map<String,String> markings, String columnVisibility, Long timestamp, Object value) {
+    private FieldBase makeField(String name, Markings<?> markings, String columnVisibility, Long timestamp, Object value) {
         FieldBase field = new DefaultField();
         field.setName(name);
         field.setMarkings(markings);

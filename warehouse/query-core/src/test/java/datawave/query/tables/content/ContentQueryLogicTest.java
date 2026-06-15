@@ -55,7 +55,7 @@ public class ContentQueryLogicTest {
     private ContentQueryConfiguration mockContentConfig;
     private Query query;
 
-    private final MarkingFunctions markingFunctions = MarkingFunctionsFactory.createMarkingFunctions();
+    private final MarkingFunctions<?> markingFunctions = MarkingFunctionsFactory.createMarkingFunctions();
 
     @BeforeEach
     public void setup() throws TableNotFoundException {

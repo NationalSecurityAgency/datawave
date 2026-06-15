@@ -8,7 +8,7 @@
         <relativePath>../../../microservice-service-parent/pom.xml</relativePath>
     </parent>
     <artifactId>dictionary-service</artifactId>
-    <version>4.0.14-SNAPSHOT</version>
+    <version>4.0.15-SNAPSHOT</version>
     <description>DATAWAVE Dictionary Service</description>
     <url>https://code.nsa.gov/datawave-dictionary-service</url>
     <scm>
@@ -28,10 +28,10 @@
         <version.commons-collections>3.2.2</version.commons-collections>
         <version.commons-lang3>3.20.0</version.commons-lang3>
         <version.curator>5.2.0</version.curator>
-        <version.datawave>7.37.3</version.datawave>
+        <version.datawave>7.41.1</version.datawave>
         <version.datawave.authorization-api>4.0.4</version.datawave.authorization-api>
-        <version.datawave.dictionary-api>4.0.8</version.datawave.dictionary-api>
-        <version.datawave.starter>4.0.9</version.datawave.starter>
+        <version.datawave.dictionary-api>4.0.10</version.datawave.dictionary-api>
+        <version.datawave.starter>4.0.11</version.datawave.starter>
         <version.datawave.starter-metadata>3.0.6</version.datawave.starter-metadata>
         <version.guava>31.1-jre</version.guava>
         <version.hadoop>3.3.4</version.hadoop>

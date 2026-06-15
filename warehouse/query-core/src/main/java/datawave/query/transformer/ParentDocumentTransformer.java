@@ -17,12 +17,12 @@ import datawave.webservice.query.result.event.ResponseObjectFactory;
 
 public class ParentDocumentTransformer extends DocumentTransformer {
 
-    public ParentDocumentTransformer(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, MarkingFunctions markingFunctions,
+    public ParentDocumentTransformer(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, MarkingFunctions<?> markingFunctions,
                     ResponseObjectFactory responseObjectFactory) {
         super(logic, settings, markingFunctions, responseObjectFactory);
     }
 
-    public ParentDocumentTransformer(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, MarkingFunctions markingFunctions,
+    public ParentDocumentTransformer(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, MarkingFunctions<?> markingFunctions,
                     ResponseObjectFactory responseObjectFactory, Boolean cellLevelVisibility) {
         super(logic, settings, markingFunctions, responseObjectFactory, cellLevelVisibility);
     }
