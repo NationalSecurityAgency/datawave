@@ -5,7 +5,6 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
@@ -17,6 +16,7 @@ import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import datawave.marking.Markings;
 import datawave.webservice.query.util.OptionallyEncodedStringAdapter;
 import io.protostuff.Input;
 import io.protostuff.Message;
@@ -30,7 +30,7 @@ public class DefaultEdge implements EdgeBase, Serializable, Message<DefaultEdge>
 
     private static final long serialVersionUID = -1621626861385080614L;
 
-    protected Map<String,String> markings;
+    protected Markings<?> markings;
 
     // The visibility of this edge
     @XmlElement(name = "ColumnVisibility", required = true, nillable = false)
@@ -208,12 +208,12 @@ public class DefaultEdge implements EdgeBase, Serializable, Message<DefaultEdge>
     }
 
     @Override
-    public void setMarkings(Map<String,String> markings) {
+    public void setMarkings(Markings<?> markings) {
         this.markings = markings;
-        this.setColumnVisibility(markings.get(COLUMN_VISIBILITY));
     }
 
-    public Map<String,String> getMarkings() {
+    @Override
+    public Markings<?> getMarkings() {
         return this.markings;
     }
 

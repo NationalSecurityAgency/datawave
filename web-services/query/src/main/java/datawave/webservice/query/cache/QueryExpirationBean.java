@@ -43,45 +43,27 @@ public class QueryExpirationBean {
 
     private static final Logger log = Logger.getLogger(QueryExpirationBean.class);
 
-    private QueryCache queryCache;
-    private QueryExpirationProperties config;
-    private AccumuloConnectionFactory connectionFactory;
-    private CreatedQueryLogicCacheBean queryLogicCacheBean;
-    private QueryMetricsBean metricsBean;
-    private QueryLimiter queryLimiter;
-
-    private boolean clearAll = false;
-
     @Inject
-    public void setQueryCache(QueryCache cache) {
-        this.queryCache = cache;
-    }
+    private QueryCache queryCache;
 
     @Inject
     @SpringBean(refreshable = true)
-    public void setQueryExpirationProperties(QueryExpirationProperties properties) {
-        this.config = properties;
-    }
+    private QueryExpirationProperties config;
 
     @Inject
-    public void setConnectionFactory(AccumuloConnectionFactory connectionFactory) {
-        this.connectionFactory = connectionFactory;
-    }
+    private AccumuloConnectionFactory connectionFactory;
 
     @Inject
-    public void setCreatedQueryLogicCacheBean(CreatedQueryLogicCacheBean cacheBean) {
-        this.queryLogicCacheBean = cacheBean;
-    }
+    private CreatedQueryLogicCacheBean queryLogicCacheBean;
 
     @Inject
-    public void setQueryMetricsBean(QueryMetricsBean metrics) {
-        this.metricsBean = metrics;
-    }
+    private QueryMetricsBean metricsBean;
 
     @Inject
-    public void setQueryLimiter(QueryLimiter queryLimiter) {
-        this.queryLimiter = queryLimiter;
-    }
+    @SpringBean(name = "queryLimiter")
+    private QueryLimiter queryLimiter;
+
+    private boolean clearAll = false;
 
     @PostConstruct
     public void init() {
