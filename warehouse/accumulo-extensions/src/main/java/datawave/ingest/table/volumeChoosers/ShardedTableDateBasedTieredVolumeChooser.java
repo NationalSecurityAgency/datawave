@@ -19,7 +19,7 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
+//change to make tests run
 //@formatter:off
 /**
  * This class is used to configure a date based volume chooser for sharded tables. To configure, this relies on a few accumulo properties being set on the
