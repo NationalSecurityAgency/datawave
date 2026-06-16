@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
@@ -15,6 +14,7 @@ import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
 
+import datawave.marking.Markings;
 import datawave.webservice.query.exception.QueryExceptionType;
 import datawave.webservice.query.result.EdgeQueryResponseBase;
 import datawave.webservice.query.result.edge.DefaultEdge;
@@ -53,12 +53,13 @@ public class DefaultEdgeQueryResponse extends EdgeQueryResponseBase implements S
         return securityMarkings;
     }
 
-    public void setMarkings(Map<String,String> markings) {
+    @Override
+    public void setMarkings(Markings<?> markings) {
         this.markings = markings;
-        this.setSecurityMarkings(markings.get("security"));
     }
 
-    public Map<String,String> getMarkings() {
+    @Override
+    public Markings<?> getMarkings() {
         return markings;
     }
 
