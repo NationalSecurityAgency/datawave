@@ -127,6 +127,9 @@ public class ModelKeyParser {
     }
 
     public static Key createKey(FieldMapping mapping, String modelName) {
+        if (null == mapping.getColumnVisibility()) {
+            throw new RuntimeException("ColumnVisibility was null, unable to create Accumulo mutation");
+        }
         ColumnVisibility cv = new ColumnVisibility(mapping.getColumnVisibility());
 
         String dataType = StringUtils.isEmpty(mapping.getDatatype()) ? "" : NULL_BYTE + mapping.getDatatype().trim();
@@ -185,6 +188,9 @@ public class ModelKeyParser {
     }
 
     public static Mutation createMutation(FieldMapping mapping, String modelName) {
+        if (null == mapping.getColumnVisibility()) {
+            throw new RuntimeException("ColumnVisibility was null, unable to create Accumulo mutation");
+        }
         ColumnVisibility cv = new ColumnVisibility(mapping.getColumnVisibility());
         Mutation m;
         String dataType = StringUtils.isEmpty(mapping.getDatatype()) ? "" : NULL_BYTE + mapping.getDatatype().trim();
@@ -208,6 +214,9 @@ public class ModelKeyParser {
     }
 
     public static Mutation createDeleteMutation(FieldMapping mapping, String modelName) {
+        if (null == mapping.getColumnVisibility()) {
+            throw new RuntimeException("ColumnVisibility was null, unable to create Accumulo mutation");
+        }
         ColumnVisibility cv = new ColumnVisibility(mapping.getColumnVisibility());
         Mutation m;
         String dataType = StringUtils.isEmpty(mapping.getDatatype()) ? "" : NULL_BYTE + mapping.getDatatype().trim();

@@ -1,24 +1,16 @@
 package datawave.marking;
 
-import java.util.Map;
-
-import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.accumulo.access.AccessExpression;
 
 import datawave.validation.ParameterValidator;
 
 public interface SecurityMarking extends ParameterValidator {
 
-    ColumnVisibility toColumnVisibility() throws MarkingFunctions.Exception;
+    AccessExpression toAccessExpression() throws MarkingFunctions.Exception;
 
-    String toColumnVisibilityString();
+    String toAccessExpressionString();
 
-    Map<String,String> toMap();
-
-    void fromMap(Map<String,String> map);
-
-    String mapToString();
-
-    void fromString(String xmlString);
+    Markings<?> toMarkings() throws MarkingFunctions.Exception;
 
     void clear();
 }

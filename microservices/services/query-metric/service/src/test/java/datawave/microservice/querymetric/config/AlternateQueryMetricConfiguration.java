@@ -48,7 +48,7 @@ public class AlternateQueryMetricConfiguration {
     @Bean
     public ShardTableQueryMetricHandler shardTableQueryMetricHandler(QueryMetricHandlerProperties queryMetricHandlerProperties,
                     AccumuloConnectionFactory connectionFactory, QueryMetricQueryLogicFactory logicFactory, QueryMetricFactory metricFactory,
-                    MarkingFunctions markingFunctions, QueryMetricCombiner queryMetricCombiner, LuceneToJexlQueryParser luceneToJexlQueryParser,
+                    MarkingFunctions<?> markingFunctions, QueryMetricCombiner queryMetricCombiner, LuceneToJexlQueryParser luceneToJexlQueryParser,
                     DnUtils dnUtils) {
         return new AlternateShardTableQueryMetricHandler(queryMetricHandlerProperties, connectionFactory, logicFactory, metricFactory, markingFunctions,
                         queryMetricCombiner, luceneToJexlQueryParser, dnUtils);
