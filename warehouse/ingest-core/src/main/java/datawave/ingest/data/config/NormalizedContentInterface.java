@@ -1,8 +1,7 @@
 package datawave.ingest.data.config;
 
-import java.util.Map;
-
 import datawave.data.type.Type;
+import datawave.marking.Markings;
 
 /**
  * Interface utilized to reference the original and transformed content and labels for a value pair ingested into accumulo.
@@ -66,7 +65,7 @@ public interface NormalizedContentInterface extends Cloneable {
      * @param markings
      *            the markings to set
      */
-    void setMarkings(Map<String,String> markings);
+    void setMarkings(Markings<?> markings);
 
     /**
      * When we fail to process a field (e.g. normalize), then an error can be set which in the EventMapper results in the event being dropped from normal
@@ -82,7 +81,7 @@ public interface NormalizedContentInterface extends Cloneable {
      *
      * @return The field specific markings, or null if the overall event markings are to be used.
      */
-    Map<String,String> getMarkings();
+    Markings<?> getMarkings();
 
     /**
      * Get the processing error for this field if any.

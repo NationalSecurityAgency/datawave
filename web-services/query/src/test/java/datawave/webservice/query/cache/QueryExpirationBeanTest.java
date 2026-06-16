@@ -50,7 +50,6 @@ public class QueryExpirationBeanTest {
         queryLimiter = Mockito.mock(QueryLimiter.class);
 
         this.bean = new QueryExpirationBean();
-
         ReflectionTestUtils.setField(bean, "queryCache", queryCache);
         ReflectionTestUtils.setField(bean, "config", properties);
         ReflectionTestUtils.setField(bean, "connectionFactory", connectionFactory);
