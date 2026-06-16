@@ -14,7 +14,7 @@ import datawave.query.attributes.Document;
 
 public interface DocumentTransform extends Function<Map.Entry<Key,Document>,Map.Entry<Key,Document>> {
     // called when adding the document transform
-    void initialize(Query settings, MarkingFunctions markingFunctions);
+    void initialize(Query settings, MarkingFunctions<?> markingFunctions);
 
     // called after the last document is passed through to get any remaining aggregated results.
     Map.Entry<Key,Document> flush();
@@ -30,11 +30,11 @@ public interface DocumentTransform extends Function<Map.Entry<Key,Document>,Map.
 
     class DefaultDocumentTransform implements DocumentTransform {
         protected Query settings;
-        protected MarkingFunctions markingFunctions;
+        protected MarkingFunctions<?> markingFunctions;
         protected long queryExecutionForPageStartTime;
 
         @Override
-        public void initialize(Query settings, MarkingFunctions markingFunctions) {
+        public void initialize(Query settings, MarkingFunctions<?> markingFunctions) {
             this.settings = settings;
             this.markingFunctions = markingFunctions;
             this.queryExecutionForPageStartTime = System.currentTimeMillis();
