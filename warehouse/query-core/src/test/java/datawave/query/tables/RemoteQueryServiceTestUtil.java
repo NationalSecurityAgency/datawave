@@ -23,7 +23,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
@@ -155,7 +154,7 @@ public class RemoteQueryServiceTestUtil extends RemoteServiceUtil {
             DefaultEventQueryResponse response = new DefaultEventQueryResponse();
             if (nextCount < totalNext) {
                 DefaultEvent event = new DefaultEvent();
-                event.setFields(Collections.singletonList(new DefaultField("FOO" + nextCount, "FOO|BAR", new HashMap(), -1L, "FOOBAR" + nextCount)));
+                event.setFields(Collections.singletonList(new DefaultField("FOO" + nextCount, "FOO|BAR", -1L, "FOOBAR" + nextCount)));
                 response.setEvents(Collections.singletonList(event));
                 response.setReturnedEvents(1L);
             } else {

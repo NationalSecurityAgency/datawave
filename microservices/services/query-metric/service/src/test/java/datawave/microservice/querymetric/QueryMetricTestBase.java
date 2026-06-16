@@ -1,5 +1,6 @@
 package datawave.microservice.querymetric;
 
+import static datawave.marking.AccessExpressionMarkings.ACCESS;
 import static datawave.microservice.querymetric.config.HazelcastMetricCacheConfiguration.INCOMING_METRICS;
 import static datawave.security.authorization.DatawaveUser.UserType.USER;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -12,13 +13,13 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.accumulo.access.AccessExpression;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.BatchWriter;
@@ -65,7 +66,8 @@ import com.hazelcast.spring.cache.HazelcastCacheManager;
 
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.ingest.protobuf.Uid;
-import datawave.marking.MarkingFunctions;
+import datawave.marking.AccessExpressionMarkings;
+import datawave.marking.Markings;
 import datawave.microservice.authorization.preauth.ProxiedEntityX509Filter;
 import datawave.microservice.authorization.user.DatawaveUserDetails;
 import datawave.microservice.querymetric.config.QueryMetricClientProperties;
@@ -145,14 +147,14 @@ public class QueryMetricTestBase {
     protected DatawaveUserDetails nonAdminUser;
     protected static boolean isHazelCast;
     protected static CacheManager staticCacheManager;
-    protected static Map<String,String> metricMarkings;
+    protected static Markings<?> metricMarkings;
     protected List<String> tables;
     protected Collection<String> auths;
     protected AccumuloClient accumuloClient;
 
     static {
-        metricMarkings = new HashMap<>();
-        metricMarkings.put(MarkingFunctions.Default.COLUMN_VISIBILITY, "A&C");
+        AccessExpression ae = ACCESS.newExpression("A&C");
+        metricMarkings = AccessExpressionMarkings.builder().accessExpression(ae).build();
     }
 
     @AfterAll

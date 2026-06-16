@@ -87,7 +87,7 @@ public class QueryMetricOperations {
     private QueryGeometryHandler geometryHandler;
     private CacheManager cacheManager;
     private Cache incomingQueryMetricsCache;
-    private MarkingFunctions markingFunctions;
+    private MarkingFunctions<?> markingFunctions;
     private QueryMetricResponseFactory queryMetricResponseFactory;
     private MergeLockLifecycleListener mergeLock;
     private Correlator correlator;
@@ -138,7 +138,7 @@ public class QueryMetricOperations {
      */
     @Autowired
     public QueryMetricOperations(@Qualifier("queryMetricCacheManager") CacheManager cacheManager, ShardTableQueryMetricHandler handler,
-                    QueryGeometryHandler geometryHandler, MarkingFunctions markingFunctions, QueryMetricResponseFactory queryMetricResponseFactory,
+                    QueryGeometryHandler geometryHandler, MarkingFunctions<?> markingFunctions, QueryMetricResponseFactory queryMetricResponseFactory,
                     MergeLockLifecycleListener mergeLock, Correlator correlator, MetricUpdateEntryProcessorFactory entryProcessorFactory,
                     QueryMetricOperationsStats stats, QueryMetricClient queryMetricClient) {
         this.handler = handler;
@@ -474,11 +474,14 @@ public class QueryMetricOperations {
 
     private boolean canViewMetric(DatawaveUserDetails currentUser, BaseQueryMetric metric) throws Exception {
         boolean userCanViewMetric = true;
-        ColumnVisibility columnVisibility = this.markingFunctions.translateToColumnVisibility(metric.getMarkings());
+        ColumnVisibility columnVisibility = null;
+        if (null != metric.getMarkings()) {
+            columnVisibility = metric.getMarkings().toColumnVisibility();
+        }
         for (DatawaveUser user : currentUser.getProxiedUsers()) {
             Authorizations authorizations = new Authorizations(user.getAuths().toArray(new String[0]));
             VisibilityEvaluator visibilityEvaluator = new VisibilityEvaluator(authorizations);
-            if (visibilityEvaluator.evaluate(columnVisibility) == false) {
+            if (!visibilityEvaluator.evaluate(columnVisibility)) {
                 userCanViewMetric = false;
                 break;
             }
