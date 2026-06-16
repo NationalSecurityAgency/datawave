@@ -32,7 +32,7 @@ public class DocumentTransformerTest {
 
     // variables used to build the transformer
     private final Query query = new QueryImpl();
-    private final MarkingFunctions markingFunctions = MarkingFunctionsFactory.createMarkingFunctions();
+    private final MarkingFunctions<?> markingFunctions = MarkingFunctionsFactory.createMarkingFunctions();
     private final ResponseObjectFactory responseObjectFactory = new DefaultResponseObjectFactory();
     private final KryoDocumentSerializer serializer = new KryoDocumentSerializer();
 
