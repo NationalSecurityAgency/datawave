@@ -241,6 +241,8 @@
                                             <exclude>log4j:log4j</exclude>
                                             <exclude>org.slf4j:slf4j-log4j12</exclude>
                                             <exclude>ch.qos.logback:logback-classic</exclude>
+                                            <!-- exclude all versions of log4j before version.log4j -->
+                                            <exclude>org.apache.logging.log4j:*:(,${version.log4j})</exclude>
                                         </excludes>
                                     </bannedDependencies>
                                 </rules>
