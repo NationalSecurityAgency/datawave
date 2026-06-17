@@ -82,7 +82,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
     private long maxResults = 0;
     private int currentTimeoutcount = 0;
     private boolean allowIntermediateEmptyPages = false;
-    private boolean useResultsThread = true;
+    private boolean useResultsThread = false;
 
     public RunningQuery() {
         super(new QueryMetricFactoryImpl());
