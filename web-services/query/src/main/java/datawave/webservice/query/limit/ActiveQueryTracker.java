@@ -36,7 +36,6 @@ public class ActiveQueryTracker implements AutoCloseable {
     private static final String SYSTEMS_CONTAINER_PATH = "/systems";
     private static final String USERS_CONTAINER_PATH = "/users";
 
-    private final CuratorFrameworkFactory.Builder clientFactory;
     private LockedZkClientDispatcher clientDispatcher;
 
     /**
@@ -44,22 +43,22 @@ public class ActiveQueryTracker implements AutoCloseable {
      *
      * @param zookeeperConfig
      *            the zookeeper config
-     * @param clientCleanupInterval
-     *            the interval in milliseconds after which the zookeeper client should be cleaned up since its last access
      * @throws ConfigException
      *             if an error occurs when verifying the zookeeper configuration
      */
-    public ActiveQueryTracker(String zookeeperConfig, long clientCleanupInterval) throws ConfigException {
+    public ActiveQueryTracker(String zookeeperConfig) throws ConfigException {
         zookeeperConfig = ZkUtils.getQuorumPeerConfig(zookeeperConfig);
         // @formatter:off
-        clientFactory = CuratorFrameworkFactory.builder()
+        CuratorFrameworkFactory.Builder clientFactory = CuratorFrameworkFactory.builder()
                         .namespace(ZOOKEEPER_NAMESPACE)
                         .connectString(zookeeperConfig)
                         .sessionTimeoutMs(60000)
                         .connectionTimeoutMs(60000)
                         .retryPolicy(new RetryNTimes(10, 1000));
         // @formatter:on
-        clientDispatcher = new LockedZkClientDispatcher(clientFactory, clientCleanupInterval, clientCleanupInterval, TimeUnit.MILLISECONDS);
+
+        // Create a client dispatcher that will not periodically clean up its internal zookeeper client.
+        clientDispatcher = new LockedZkClientDispatcher(clientFactory);
     }
 
     /**
@@ -140,13 +139,11 @@ public class ActiveQueryTracker implements AutoCloseable {
                 }
 
                 // Create ephemeral nodes for the query ID. These nodes will not persist beyond the lifetime of the client created here.
-                CuratorFramework heartbeatClient = clientFactory.build();
-                heartbeatClient.start();
                 List<PersistentNode> nodes = new ArrayList<>();
-                nodes.add(new PersistentNode(heartbeatClient, CreateMode.EPHEMERAL, false, systemQueryIdPath, EMPTY_DATA, false));
+                nodes.add(new PersistentNode(client, CreateMode.EPHEMERAL, false, systemQueryIdPath, EMPTY_DATA, false));
                 if (systemCountsAgainstUserLimit) {
                     String userQueryIdPath = getUserQueryIdPath(userDn, queryLogic, queryId);
-                    nodes.add(new PersistentNode(heartbeatClient, CreateMode.EPHEMERAL, false, userQueryIdPath, EMPTY_DATA, false));
+                    nodes.add(new PersistentNode(client, CreateMode.EPHEMERAL, false, userQueryIdPath, EMPTY_DATA, false));
                 }
 
                 // Persist each node to Zookeeper.
@@ -473,8 +470,9 @@ public class ActiveQueryTracker implements AutoCloseable {
                 clientDispatcher.close();
             } catch (Exception e) {
                 log.error("Failed to close client dispatcher", e);
+            } finally {
+                clientDispatcher = null;
             }
-            clientDispatcher = null;
         }
     }
 }

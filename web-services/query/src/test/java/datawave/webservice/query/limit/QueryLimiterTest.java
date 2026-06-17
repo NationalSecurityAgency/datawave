@@ -21,7 +21,6 @@ import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.retry.RetryNTimes;
 import org.apache.curator.test.TestingServer;
-import org.apache.zookeeper.server.quorum.QuorumPeerConfig;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -543,7 +542,7 @@ class QueryLimiterTest {
         assertEquals(1000, updatedConfig.getDefaultSystemQueryLimit());
     }
 
-    private QueryLimiter getLimiter(String system) throws QuorumPeerConfig.ConfigException {
+    private QueryLimiter getLimiter(String system) throws Exception {
         if (systemToLimiter.containsKey(system)) {
             return systemToLimiter.get(system);
         } else {

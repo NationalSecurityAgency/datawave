@@ -430,7 +430,7 @@ public class QueryLimiter {
      */
     private ActiveQueryTracker getActiveQueryTracker() throws QuorumPeerConfig.ConfigException {
         if (this.activeQueryTracker == null) {
-            this.activeQueryTracker = new ActiveQueryTracker(zookeeperConfig, 120000L);
+            this.activeQueryTracker = new ActiveQueryTracker(zookeeperConfig);
         }
         return this.activeQueryTracker;
     }

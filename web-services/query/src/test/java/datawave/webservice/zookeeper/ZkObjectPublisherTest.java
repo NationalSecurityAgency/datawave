@@ -28,8 +28,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import datawave.webservice.query.limit.QueryLimitConfiguration;
 import datawave.webservice.query.limit.QueryLimitConfigurationValidator;
@@ -37,7 +35,6 @@ import datawave.webservice.query.limit.QueryLimitConfigurationValidator;
 public class ZkObjectPublisherTest {
 
     private static final String NAMESPACE = "QueryLimitConfig";
-    private static final Logger log = LoggerFactory.getLogger(ZkObjectPublisherTest.class);
 
     private static String validJsonFile;
     private static String validXmlFile;
@@ -840,7 +837,7 @@ public class ZkObjectPublisherTest {
         assertEquals(expectedData, actualData, "Expected data for node " + path + " to be '" + expectedData + "'");
     }
 
-    private void createPublisher() {
+    private void createPublisher() throws Exception {
         publisher = new ZkObjectPublisher(NAMESPACE, server.getConnectString(), null, QueryLimitConfiguration.class,
                         List.of(new QueryLimitConfigurationValidator()));
         try {

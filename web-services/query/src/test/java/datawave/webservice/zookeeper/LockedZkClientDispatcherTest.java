@@ -1,5 +1,7 @@
 package datawave.webservice.zookeeper;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -42,20 +44,20 @@ class LockedZkClientDispatcherTest {
     }
 
     /**
-     * Verify that when a {@link LockedZkClientDispatcher} created with an infinite maxElapsedAccessTime (0 or negative), the executor service is not created
-     * when {@link LockedZkClientDispatcher#getLockedClient()} is called.
+     * Verify that when using {@link LockedZkClientDispatcher#LockedZkClientDispatcher(CuratorFrameworkFactory.Builder)}, the executor service is not created
+     * when {@link LockedZkClientDispatcher#getLockedClient()} is called and thus no periodic cleanup will occur.
      */
     @Test
-    void testDispatcherWithInfiniteMaxElapsedAccessTime() throws Exception {
-        ExposedDispatcher dispatcher = new ExposedDispatcher(createClientFactory(), -1, TimeUnit.MILLISECONDS);
+    void testDispatcherConstructorWithoutCleanupArg() throws Exception {
+        ExposedDispatcher dispatcher = new ExposedDispatcher(createClientFactory());
         // Verify the inner client and executor service are null before the first call to getLockedClient();
         assertNull(dispatcher.getClient());
         assertNull(dispatcher.getExecutor());
 
         LockedZkClientDispatcher.LockedClient lockedClient = dispatcher.getLockedClient();
 
-        // Verify the lastClientAccess time was updated.
-        assertNotEquals(0L, dispatcher.getLastClientAccess());
+        // Verify the lastClientAccess time was not updated.
+        assertEquals(0L, dispatcher.getLastClientAccess());
 
         // Verify the cleanup executor service is not created.
         assertNull(dispatcher.getExecutor());
@@ -81,12 +83,141 @@ class LockedZkClientDispatcherTest {
     }
 
     /**
-     * Verify that when a {@link LockedZkClientDispatcher} created with an finite maxElapsedAccessTime (0 or negative), the executor service is created when
+     * Verify that when a {@link LockedZkClientDispatcher} created with a clientCleanupInterval of 0, the executor service is not created when
+     * {@link LockedZkClientDispatcher#getLockedClient()} is called and thus no periodic cleanup will occur.
+     */
+    @Test
+    void testDispatcherWithClientCleanupIntervalOfZero() throws Exception {
+        ExposedDispatcher dispatcher = new ExposedDispatcher(createClientFactory(), 0, 120000, TimeUnit.MILLISECONDS);
+        // Verify the inner client and executor service are null before the first call to getLockedClient();
+        assertNull(dispatcher.getClient());
+        assertNull(dispatcher.getExecutor());
+
+        LockedZkClientDispatcher.LockedClient lockedClient = dispatcher.getLockedClient();
+
+        // Verify the lastClientAccess time was not updated.
+        assertEquals(0L, dispatcher.getLastClientAccess());
+
+        // Verify the cleanup executor service is not created.
+        assertNull(dispatcher.getExecutor());
+
+        // Verify the client was initialized and accessible via the lockedClient.
+        assertNotNull(dispatcher.getClient());
+        assertSame(dispatcher.getClient(), lockedClient.getClient());
+
+        // Verify the client lock is locked.
+        assertTrue(dispatcher.getClientLock().isLocked());
+
+        lockedClient.close();
+
+        // Verify the client lock is unlocked after closing the locked client.
+        assertFalse(dispatcher.getClientLock().isLocked());
+
+        // Close the client.
+        dispatcher.close();
+
+        // Verify the client and executor are null.
+        assertNull(dispatcher.getClient());
+        assertNull(dispatcher.getExecutor());
+    }
+
+    /**
+     * Verify that when a {@link LockedZkClientDispatcher} created with a negative clientCleanupInterval, the executor service is not created when
+     * {@link LockedZkClientDispatcher#getLockedClient()} is called and thus no periodic cleanup will occur.
+     */
+    @Test
+    void testDispatcherWithNegativeClientCleanupInterval() throws Exception {
+        ExposedDispatcher dispatcher = new ExposedDispatcher(createClientFactory(), -1, 120000, TimeUnit.MILLISECONDS);
+        // Verify the inner client and executor service are null before the first call to getLockedClient();
+        assertNull(dispatcher.getClient());
+        assertNull(dispatcher.getExecutor());
+
+        LockedZkClientDispatcher.LockedClient lockedClient = dispatcher.getLockedClient();
+
+        // Verify the lastClientAccess time was not updated.
+        assertEquals(0L, dispatcher.getLastClientAccess());
+
+        // Verify the cleanup executor service is not created.
+        assertNull(dispatcher.getExecutor());
+
+        // Verify the client was initialized and accessible via the lockedClient.
+        assertNotNull(dispatcher.getClient());
+        assertSame(dispatcher.getClient(), lockedClient.getClient());
+
+        // Verify the client lock is locked.
+        assertTrue(dispatcher.getClientLock().isLocked());
+
+        lockedClient.close();
+
+        // Verify the client lock is unlocked after closing the locked client.
+        assertFalse(dispatcher.getClientLock().isLocked());
+
+        // Close the client.
+        dispatcher.close();
+
+        // Verify the client and executor are null.
+        assertNull(dispatcher.getClient());
+        assertNull(dispatcher.getExecutor());
+    }
+
+    /**
+     * Verify that when a {@link LockedZkClientDispatcher} created with a non-zero, positive clientCleanupInterval, the executor service is created when
      * {@link LockedZkClientDispatcher#getLockedClient()} is called.
      */
     @Test
-    void testDispatcherWithFiniteMaxElapsedAccessTime() throws Exception {
-        ExposedDispatcher dispatcher = new ExposedDispatcher(createClientFactory(), 120000, TimeUnit.MILLISECONDS);
+    void testDispatcherWithNonZeroPositiveClientCleanupInterval() throws Exception {
+        ExposedDispatcher dispatcher = new ExposedDispatcher(createClientFactory(), 120000, 120000, TimeUnit.MILLISECONDS);
+        // Verify the inner client and executor service are null before the first call to getLockedClient();
+        assertNull(dispatcher.getClient());
+        assertNull(dispatcher.getExecutor());
+
+        LockedZkClientDispatcher.LockedClient lockedClient = dispatcher.getLockedClient();
+
+        // Verify the lastClientAccess time was updated.
+        assertNotEquals(0L, dispatcher.getLastClientAccess());
+
+        // Verify the cleanup executor service was created, and a task was added to it to handle cleanup.
+        ScheduledThreadPoolExecutor executor = dispatcher.getExecutor();
+        assertNotNull(executor);
+        assertFalse(executor.getQueue().isEmpty());
+
+        // Verify the client was initialized and accessible via the lockedClient.
+        assertNotNull(dispatcher.getClient());
+        assertSame(dispatcher.getClient(), lockedClient.getClient());
+
+        // Verify the client lock is locked.
+        assertTrue(dispatcher.getClientLock().isLocked());
+
+        lockedClient.close();
+
+        // Verify the client lock is unlocked after closing the locked client.
+        assertFalse(dispatcher.getClientLock().isLocked());
+
+        // Close the client.
+        dispatcher.close();
+
+        // Verify the client and executor are null.
+        assertNull(dispatcher.getClient());
+        assertNull(dispatcher.getExecutor());
+    }
+
+    /**
+     * Verify that when a {@link LockedZkClientDispatcher} created with a non-zero, positive clientCleanupInterval, and a null timeUnit, an exception is thrown.
+     */
+    @Test
+    void testDispatcherWithNonZeroPositiveClientCleanupIntervalAndNullTimeUnit() {
+        assertThatThrownBy(() -> new ExposedDispatcher(createClientFactory(), 120000, 120000, null)).isInstanceOf(NullPointerException.class)
+                        .hasMessage("timeUnit must not be null");
+    }
+
+    /**
+     * Verify that when a {@link LockedZkClientDispatcher} created with a non-zero, positive clientCleanupInterval, and a negative maxElapsedAccessTime, the
+     * maxElapsedAccessTime defaults to 0 and cleanup will occur everytime the cleanup task is called. {@link LockedZkClientDispatcher#getLockedClient()} is
+     * called.
+     */
+    @Test
+    void testDispatcherWithClientCleanupIntervalAndNegativeMaxElapsedTime() throws Exception {
+        ExposedDispatcher dispatcher = new ExposedDispatcher(createClientFactory(), 120000, -120, TimeUnit.MILLISECONDS);
         // Verify the inner client and executor service are null before the first call to getLockedClient();
         assertNull(dispatcher.getClient());
         assertNull(dispatcher.getExecutor());
@@ -126,7 +257,7 @@ class LockedZkClientDispatcherTest {
      */
     @Test
     void testCleanupTaskReschedulesSelfIfNotTimedOut() throws Exception {
-        ExposedDispatcher dispatcher = new ExposedDispatcher(createClientFactory(), 500, TimeUnit.MILLISECONDS);
+        ExposedDispatcher dispatcher = new ExposedDispatcher(createClientFactory(), 500, 500, TimeUnit.MILLISECONDS);
 
         // The task should get rescheduled at least 4 times.
         for (int i = 0; i < 10; i++) {
@@ -148,7 +279,7 @@ class LockedZkClientDispatcherTest {
      */
     @Test
     void testClientIsCleanedUpWhenMaxElapsedAccessTimeIsReached() throws Exception {
-        ExposedDispatcher dispatcher = new ExposedDispatcher(createClientFactory(), 500, TimeUnit.MILLISECONDS);
+        ExposedDispatcher dispatcher = new ExposedDispatcher(createClientFactory(), 500, 500, TimeUnit.MILLISECONDS);
         // Verify the client and executor service are initialized after the first call to get the client.
         try (LockedZkClientDispatcher.LockedClient ignored = dispatcher.getLockedClient()) {
             assertNotNull(dispatcher.getClient());
@@ -175,7 +306,7 @@ class LockedZkClientDispatcherTest {
      */
     @Test
     void testGetClientAfterCleanUp() throws Exception {
-        ExposedDispatcher dispatcher = new ExposedDispatcher(createClientFactory(), 500, TimeUnit.MILLISECONDS);
+        ExposedDispatcher dispatcher = new ExposedDispatcher(createClientFactory(), 500, 500, TimeUnit.MILLISECONDS);
         // Verify the client and executor service are initialized after the first call to get the client.
         try (LockedZkClientDispatcher.LockedClient ignored = dispatcher.getLockedClient()) {
             assertNotNull(dispatcher.getClient());
@@ -218,8 +349,12 @@ class LockedZkClientDispatcherTest {
      */
     public static class ExposedDispatcher extends LockedZkClientDispatcher {
 
-        public ExposedDispatcher(CuratorFrameworkFactory.Builder clientFactory, long maxElapsedAccessTime, TimeUnit timeUnit) {
-            super(clientFactory, maxElapsedAccessTime, maxElapsedAccessTime, timeUnit);
+        public ExposedDispatcher(CuratorFrameworkFactory.Builder clientFactory) {
+            super(clientFactory);
+        }
+
+        public ExposedDispatcher(CuratorFrameworkFactory.Builder clientFactory, long clientCleanupInterval, long maxElapsedAccessTime, TimeUnit timeUnit) {
+            super(clientFactory, clientCleanupInterval, maxElapsedAccessTime, timeUnit);
         }
 
         public CuratorFramework getClient() {

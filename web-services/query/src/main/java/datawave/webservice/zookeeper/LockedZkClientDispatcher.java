@@ -17,7 +17,7 @@ import com.google.common.base.Preconditions;
  * of a try-with-resources statement. For example:
  *
  * <pre>
- * LockedZkClientDispatcher dispatcher = new LockedZkClientDispatcher(clientFactory, cleanupTaskInterval, maxElapsedAccessTime, timeUnit);
+ * LockedZkClientDispatcher dispatcher = new LockedZkClientDispatcher(clientFactory, clientCleanupInterval, maxElapsedAccessTime, timeUnit);
  * // Obtain guarded access to the client.
  * try (LockedZkClientDispatcher.LockedClient lockedClient = dispatcher.getLockedClient()) {
  *      CuratorFramework client = lockedClient.getClient();
@@ -29,7 +29,7 @@ import com.google.common.base.Preconditions;
  *
  * If {@link LockedZkClientDispatcher#getLockedClient()} is not used with a try-with-resources statement, care must be taken to ensure
  * {@link LockedClient#close()} is called when you are finished with the client to release the lock. The underlying client will be cleaned up and resources
- * released if the {@link LockedZkClientDispatcher} is created with a non-zero, positive maxElapsedAccessTime, and the time since
+ * released if the {@link LockedZkClientDispatcher} is created with a non-zero, positive clientCleanupInterval, and the time since
  * {@link LockedZkClientDispatcher#getLockedClient()} meets or exceeds the max elapsed time.
  */
 public class LockedZkClientDispatcher implements AutoCloseable {
@@ -44,7 +44,7 @@ public class LockedZkClientDispatcher implements AutoCloseable {
     /**
      * The interval in milliseconds between checks for client access timeouts.
      */
-    protected final long cleanupTaskInterval;
+    protected final long clientCleanupInterval;
 
     /**
      * The max time in milliseconds that can elapse since the last client access before cleanup will trigger on the next cleanup task.
@@ -71,13 +71,45 @@ public class LockedZkClientDispatcher implements AutoCloseable {
      */
     protected long lastClientAccess = 0L;
 
-    public LockedZkClientDispatcher(CuratorFrameworkFactory.Builder clientFactory, long cleanupTaskInterval, long maxElapsedAccessTime, TimeUnit timeUnit) {
+    /**
+     * Create and return a new {@link LockedZkClientDispatcher} that will not periodically clean up the internal zookeeper client.
+     *
+     * @param clientFactory
+     *            the client factory
+     */
+    public LockedZkClientDispatcher(CuratorFrameworkFactory.Builder clientFactory) {
+        this(clientFactory, -1, -1, null);
+    }
+
+    /**
+     * Create and return a new {@link LockedZkClientDispatcher} with the given cleanup interval configuration. No cleanup of the client will occur if
+     * clientCleanupInterval is 0 or less.
+     *
+     * @param clientFactory
+     *            the client factory
+     * @param clientCleanupInterval
+     *            the interval at which the dispatcher will periodically clean up and close the client if maxElapsedAccessTime has elapsed since the last client
+     *            access. A value of 0 or less will result in no client cleanup.
+     * @param maxElapsedAccessTime
+     *            the max time that may elapse between client accesses before cleanup of the client will be allowed. If the value is negative and a non-zero
+     *            cleanup interval is provided, the maxElapsedAccessTime will default to 0.
+     * @param timeUnit
+     *            the time unit for both clientCleanupInterval and maxElapsedAccessTime
+     */
+    public LockedZkClientDispatcher(CuratorFrameworkFactory.Builder clientFactory, long clientCleanupInterval, long maxElapsedAccessTime, TimeUnit timeUnit) {
         Preconditions.checkNotNull(clientFactory, "clientFactory must not be null");
-        Preconditions.checkNotNull(timeUnit, "timeUnit must not be null");
 
         this.clientFactory = clientFactory;
-        this.maxElapsedAccessTime = timeUnit.toMillis(maxElapsedAccessTime);
-        this.cleanupTaskInterval = timeUnit.toMillis(cleanupTaskInterval);
+
+        if (clientCleanupInterval > 0) {
+            Preconditions.checkNotNull(timeUnit, "timeUnit must not be null");
+            // If the maxElapsedAccessTime is negative, default to 0.
+            this.maxElapsedAccessTime = maxElapsedAccessTime > 0 ? timeUnit.toMillis(clientCleanupInterval) : 0;
+            this.clientCleanupInterval = timeUnit.toMillis(clientCleanupInterval);
+        } else {
+            this.clientCleanupInterval = -1L;
+            this.maxElapsedAccessTime = -1L;
+        }
     }
 
     /**
@@ -107,16 +139,18 @@ public class LockedZkClientDispatcher implements AutoCloseable {
                 client = clientFactory.build();
                 client.start();
 
-                // If we have a finite timeout, create the cleanup task.
-                if (maxElapsedAccessTime > 0) {
+                // If we have a non-zero cleanup interval, create the cleanup task.
+                if (clientCleanupInterval > 0) {
                     createCleanupTask();
                 }
             } finally {
                 clientLock.unlock();
             }
         }
-        // Update the last-accessed time.
-        lastClientAccess = System.currentTimeMillis();
+        // Update the last-accessed time if we are periodically cleaning up the client.
+        if (clientCleanupInterval > 0) {
+            lastClientAccess = System.currentTimeMillis();
+        }
     }
 
     /**
@@ -135,13 +169,13 @@ public class LockedZkClientDispatcher implements AutoCloseable {
                     cleanupClient();
                 } else {
                     // Otherwise, schedule another task to check again after the designated interval.
-                    executor.schedule(this, cleanupTaskInterval, TimeUnit.MILLISECONDS);
+                    executor.schedule(this, clientCleanupInterval, TimeUnit.MILLISECONDS);
                 }
             }
         };
 
         // Schedule the task.
-        executor.schedule(task, cleanupTaskInterval, TimeUnit.MILLISECONDS);
+        executor.schedule(task, clientCleanupInterval, TimeUnit.MILLISECONDS);
     }
 
     /**

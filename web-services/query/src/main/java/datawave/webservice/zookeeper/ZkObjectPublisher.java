@@ -216,7 +216,8 @@ public class ZkObjectPublisher {
      */
     private LockedZkClientDispatcher clientDispatcher;
 
-    public ZkObjectPublisher(String namespace, String zookeeperConfig, String hdfsConfigUrls, Class<?> objectClass, List<ObjectValidator> objectValidators) {
+    public ZkObjectPublisher(String namespace, String zookeeperConfig, String hdfsConfigUrls, Class<?> objectClass, List<ObjectValidator> objectValidators)
+                    throws Exception {
         Preconditions.checkArgument((namespace != null && !namespace.isBlank()), "namespace must not be null or blank");
         Preconditions.checkArgument((zookeeperConfig != null && !zookeeperConfig.isBlank()), "zookeeperConfig must not be null or blank");
         Preconditions.checkNotNull(objectClass, "objectClass must not be null");
@@ -272,9 +273,14 @@ public class ZkObjectPublisher {
                 .retryPolicy(new RetryNTimes(10, 1000));
         // @formatter:on
 
-        clientDispatcher = new LockedZkClientDispatcher(clientFactory, 120000, 120000, TimeUnit.MILLISECONDS);
-        this.pathCache = createCache(NODE_PATH, clientFactory, () -> createPathCacheListener(pathCacheInitialized));
-        this.triggerCache = createCache(NODE_TRIGGER, clientFactory, () -> createTriggerCacheListener(triggerCacheInitialized));
+        // Create a client dispatcher that will not periodically clean up its internal zookeeper client.
+        clientDispatcher = new LockedZkClientDispatcher(clientFactory);
+
+        // Use the underlying zookeeper client of the dispatcher to create the zookeeper cache listeners.
+        try (LockedZkClientDispatcher.LockedClient lockedClient = clientDispatcher.getLockedClient()) {
+            this.pathCache = createCache(NODE_PATH, lockedClient.getClient(), () -> createPathCacheListener(pathCacheInitialized));
+            this.triggerCache = createCache(NODE_TRIGGER, lockedClient.getClient(), () -> createTriggerCacheListener(triggerCacheInitialized));
+        }
     }
 
     /**
@@ -287,10 +293,8 @@ public class ZkObjectPublisher {
      *            the listener supplier
      * @return the new cache
      */
-    private CuratorCache createCache(String node, CuratorFrameworkFactory.Builder clientFactory, Supplier<CuratorCacheListener> listenerSupplier) {
+    private CuratorCache createCache(String node, CuratorFramework client, Supplier<CuratorCacheListener> listenerSupplier) {
         try {
-            CuratorFramework client = clientFactory.build();
-            client.start();
             CuratorCache cache = CuratorCache.build(client, node, CuratorCache.Options.SINGLE_NODE_CACHE);
             // Add the desired listeners to the cache.
             CuratorCacheListener cacheListener = listenerSupplier.get();
