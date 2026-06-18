@@ -8,6 +8,8 @@ import java.util.function.Supplier;
 
 import org.apache.accumulo.core.client.PluginEnvironment;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
+import org.apache.accumulo.core.conf.Property;
+import org.apache.accumulo.core.conf.PropertyType;
 
 /**
  * A utility class that wraps an AccumuloConfiguration and implements PluginEnvironment.Configuration. This replaces the non-public
@@ -33,6 +35,12 @@ public class AccumuloConfigurationWrapper implements PluginEnvironment.Configura
 
     @Override
     public Map<String,String> getWithPrefix(String prefix) {
+        // For a defined prefix property, defer to AccumuloConfiguration.getAllPropertiesWithPrefix, which returns a
+        // consistent snapshot taken under the configuration's lock. Mirrors the non-public ConfigurationImpl behavior.
+        Property propertyPrefix = Property.getPropertyByKey(prefix);
+        if (propertyPrefix != null && propertyPrefix.getType() == PropertyType.PREFIX) {
+            return conf.getAllPropertiesWithPrefix(propertyPrefix);
+        }
         Map<String,String> result = new HashMap<>();
         for (Map.Entry<String,String> entry : conf) {
             if (entry.getKey().startsWith(prefix)) {
