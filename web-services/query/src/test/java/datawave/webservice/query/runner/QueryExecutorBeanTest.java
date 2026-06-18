@@ -50,10 +50,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.stubbing.Answer;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import org.mockito.stubbing.Answer;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
@@ -280,8 +280,8 @@ public class QueryExecutorBeanTest {
         List<String> dnList = Arrays.asList(dns);
 
         when(ctx.getCallerPrincipal()).thenReturn(principal);
-        when(persister.create(eq(principal.getUserDN().subjectDN()), eq(dnList), any(SecurityMarking.class),
-                        eq(queryLogicName), any(QueryParameters.class), eq(optionalParameters))).thenReturn(q);
+        when(persister.create(eq(principal.getUserDN().subjectDN()), eq(dnList), any(SecurityMarking.class), eq(queryLogicName), any(QueryParameters.class),
+                        eq(optionalParameters))).thenReturn(q);
         when(queryLogicFactory.getQueryLogic(queryLogicName, principal)).thenReturn(logic);
         when(logic.getRequiredQueryParameters()).thenReturn(Collections.emptySet());
         when(logic.getConnectionPriority()).thenReturn(AccumuloConnectionFactory.Priority.NORMAL);
@@ -360,8 +360,8 @@ public class QueryExecutorBeanTest {
 
         when(queryLimiter.checkForLimits(userDN.toLowerCase(), null, queryLogicName)).thenReturn(QueryLimiterResponse.hasNotMetLimit());
         when(ctx.getCallerPrincipal()).thenReturn(principal);
-        when(persister.create(eq(userDN), eq(dnList), any(SecurityMarking.class),
-                        eq(queryLogicName), any(QueryParameters.class), eq(optionalParameters))).thenReturn(q);
+        when(persister.create(eq(userDN), eq(dnList), any(SecurityMarking.class), eq(queryLogicName), any(QueryParameters.class), eq(optionalParameters)))
+                        .thenReturn(q);
         when(responseObjectFactory.getQueryImpl()).thenReturn(new QueryImpl());
         when(logic.getResultLimit(any())).thenReturn(-1L);
         when(queryLogicFactory.getQueryLogic(queryLogicName, principal)).thenReturn(logic);
@@ -411,8 +411,8 @@ public class QueryExecutorBeanTest {
         List<String> dnList = Arrays.asList(dns);
 
         when(ctx.getCallerPrincipal()).thenReturn(principal);
-        when(persister.create(eq(principal.getUserDN().subjectDN()), eq(dnList), any(SecurityMarking.class),
-                        eq(queryLogicName), any(QueryParameters.class), eq(optionalParameters))).thenReturn(q);
+        when(persister.create(eq(principal.getUserDN().subjectDN()), eq(dnList), any(SecurityMarking.class), eq(queryLogicName), any(QueryParameters.class),
+                        eq(optionalParameters))).thenReturn(q);
         when(queryLogicFactory.getQueryLogic(queryLogicName, principal)).thenReturn(logic);
         when(logic.getRequiredQueryParameters()).thenReturn(Collections.emptySet());
         when(logic.containsDNWithAccess(dnList)).thenReturn(true);
