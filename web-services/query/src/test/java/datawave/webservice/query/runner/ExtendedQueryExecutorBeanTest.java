@@ -291,19 +291,19 @@ public class ExtendedQueryExecutorBeanTest {
 
         // Run the test
 
-            QueryExecutorBean subject = new QueryExecutorBean();
-            ReflectionTestUtils.setField(subject, "ctx", context);
-            ReflectionTestUtils.setField(subject, "connectionFactory", connectionFactory);
-            ReflectionTestUtils.setField(subject, "responseObjectFactory", responseObjectFactory);
-            ReflectionTestUtils.setField(subject, "qlCache", qlCache);
-            ReflectionTestUtils.setField(subject, "queryCache", cache);
-            ReflectionTestUtils.setField(subject, "closedQueryCache", closedCache);
-            ReflectionTestUtils.setField(subject, "persister", persister);
-            ReflectionTestUtils.setField(subject, "metricFactory", new QueryMetricFactoryImpl());
-            ReflectionTestUtils.setField(connectionRequestBean, "ctx", context);
-            ReflectionTestUtils.setField(subject, "accumuloConnectionRequestBean", connectionRequestBean);
+        QueryExecutorBean subject = new QueryExecutorBean();
+        ReflectionTestUtils.setField(subject, "ctx", context);
+        ReflectionTestUtils.setField(subject, "connectionFactory", connectionFactory);
+        ReflectionTestUtils.setField(subject, "responseObjectFactory", responseObjectFactory);
+        ReflectionTestUtils.setField(subject, "qlCache", qlCache);
+        ReflectionTestUtils.setField(subject, "queryCache", cache);
+        ReflectionTestUtils.setField(subject, "closedQueryCache", closedCache);
+        ReflectionTestUtils.setField(subject, "persister", persister);
+        ReflectionTestUtils.setField(subject, "metricFactory", new QueryMetricFactoryImpl());
+        ReflectionTestUtils.setField(connectionRequestBean, "ctx", context);
+        ReflectionTestUtils.setField(subject, "accumuloConnectionRequestBean", connectionRequestBean);
 
-            assertThrows(DatawaveWebApplicationException.class, () -> subject.adminCancel(queryId.toString()));
+        assertThrows(DatawaveWebApplicationException.class, () -> subject.adminCancel(queryId.toString()));
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -445,16 +445,16 @@ public class ExtendedQueryExecutorBeanTest {
 
         // Run the test
 
-            QueryExecutorBean subject = new QueryExecutorBean();
-            ReflectionTestUtils.setField(subject, "ctx", context);
-            ReflectionTestUtils.setField(subject, "qlCache", qlCache);
-            ReflectionTestUtils.setField(subject, "queryCache", cache);
-            ReflectionTestUtils.setField(subject, "closedQueryCache", closedCache);
-            ReflectionTestUtils.setField(subject, "persister", persister);
-            ReflectionTestUtils.setField(subject, "metricFactory", new QueryMetricFactoryImpl());
-            ReflectionTestUtils.setField(connectionRequestBean, "ctx", context);
-            ReflectionTestUtils.setField(subject, "accumuloConnectionRequestBean", connectionRequestBean);
-            assertThrows(DatawaveWebApplicationException.class, () -> subject.adminClose(queryId.toString()));
+        QueryExecutorBean subject = new QueryExecutorBean();
+        ReflectionTestUtils.setField(subject, "ctx", context);
+        ReflectionTestUtils.setField(subject, "qlCache", qlCache);
+        ReflectionTestUtils.setField(subject, "queryCache", cache);
+        ReflectionTestUtils.setField(subject, "closedQueryCache", closedCache);
+        ReflectionTestUtils.setField(subject, "persister", persister);
+        ReflectionTestUtils.setField(subject, "metricFactory", new QueryMetricFactoryImpl());
+        ReflectionTestUtils.setField(connectionRequestBean, "ctx", context);
+        ReflectionTestUtils.setField(subject, "accumuloConnectionRequestBean", connectionRequestBean);
+        assertThrows(DatawaveWebApplicationException.class, () -> subject.adminClose(queryId.toString()));
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
@@ -643,17 +643,17 @@ public class ExtendedQueryExecutorBeanTest {
 
         // Run the test
 
-            QueryExecutorBean subject = new QueryExecutorBean();
-            ReflectionTestUtils.setField(subject, "ctx", context);
-            ReflectionTestUtils.setField(subject, "qlCache", qlCache);
-            ReflectionTestUtils.setField(subject, "queryCache", cache);
-            ReflectionTestUtils.setField(subject, "closedQueryCache", closedCache);
-            ReflectionTestUtils.setField(subject, "persister", persister);
-            ReflectionTestUtils.setField(subject, "metricFactory", new QueryMetricFactoryImpl());
-            ReflectionTestUtils.setField(connectionRequestBean, "ctx", context);
-            ReflectionTestUtils.setField(subject, "accumuloConnectionRequestBean", connectionRequestBean);
+        QueryExecutorBean subject = new QueryExecutorBean();
+        ReflectionTestUtils.setField(subject, "ctx", context);
+        ReflectionTestUtils.setField(subject, "qlCache", qlCache);
+        ReflectionTestUtils.setField(subject, "queryCache", cache);
+        ReflectionTestUtils.setField(subject, "closedQueryCache", closedCache);
+        ReflectionTestUtils.setField(subject, "persister", persister);
+        ReflectionTestUtils.setField(subject, "metricFactory", new QueryMetricFactoryImpl());
+        ReflectionTestUtils.setField(connectionRequestBean, "ctx", context);
+        ReflectionTestUtils.setField(subject, "accumuloConnectionRequestBean", connectionRequestBean);
 
-            assertThrows(DatawaveWebApplicationException.class, () -> subject.close(queryId.toString()));
+        assertThrows(DatawaveWebApplicationException.class, () -> subject.close(queryId.toString()));
     }
 
     @Test
@@ -2157,28 +2157,28 @@ public class ExtendedQueryExecutorBeanTest {
 
         // Run the test
 
-            QueryExecutorBean subject = new QueryExecutorBean();
-            ReflectionTestUtils.setField(subject, "ctx", context);
-            ReflectionTestUtils.setField(subject, "connectionFactory", connectionFactory);
-            ReflectionTestUtils.setField(subject, "responseObjectFactory", responseObjectFactory);
-            ReflectionTestUtils.setField(subject, "userOperationsBean", userOperations);
-            ReflectionTestUtils.setField(subject, "qlCache", qlCache);
-            ReflectionTestUtils.setField(subject, "queryCache", cache);
-            ReflectionTestUtils.setField(subject, "closedQueryCache", closedCache);
-            ReflectionTestUtils.setField(subject, "persister", persister);
-            ReflectionTestUtils.setField(subject, "queryLogicFactory", queryLogicFactory);
-            ReflectionTestUtils.setField(subject, "queryExpirationConf", queryExpirationConf);
-            ReflectionTestUtils.setField(subject, "auditor", auditor);
-            ReflectionTestUtils.setField(subject, "metrics", metrics);
-            ReflectionTestUtils.setField(subject, "traceInfos", traceInfos);
-            ReflectionTestUtils.setField(subject, "marking", new ColumnVisibilitySecurityMarking());
-            ReflectionTestUtils.setField(subject, "qp", new DefaultQueryParameters());
-            ReflectionTestUtils.setField(subject, "metricFactory", new QueryMetricFactoryImpl());
-            ReflectionTestUtils.setField(connectionRequestBean, "ctx", context);
-            ReflectionTestUtils.setField(subject, "accumuloConnectionRequestBean", connectionRequestBean);
-            ReflectionTestUtils.setField(subject, "queryLimiter", queryLimiter);
+        QueryExecutorBean subject = new QueryExecutorBean();
+        ReflectionTestUtils.setField(subject, "ctx", context);
+        ReflectionTestUtils.setField(subject, "connectionFactory", connectionFactory);
+        ReflectionTestUtils.setField(subject, "responseObjectFactory", responseObjectFactory);
+        ReflectionTestUtils.setField(subject, "userOperationsBean", userOperations);
+        ReflectionTestUtils.setField(subject, "qlCache", qlCache);
+        ReflectionTestUtils.setField(subject, "queryCache", cache);
+        ReflectionTestUtils.setField(subject, "closedQueryCache", closedCache);
+        ReflectionTestUtils.setField(subject, "persister", persister);
+        ReflectionTestUtils.setField(subject, "queryLogicFactory", queryLogicFactory);
+        ReflectionTestUtils.setField(subject, "queryExpirationConf", queryExpirationConf);
+        ReflectionTestUtils.setField(subject, "auditor", auditor);
+        ReflectionTestUtils.setField(subject, "metrics", metrics);
+        ReflectionTestUtils.setField(subject, "traceInfos", traceInfos);
+        ReflectionTestUtils.setField(subject, "marking", new ColumnVisibilitySecurityMarking());
+        ReflectionTestUtils.setField(subject, "qp", new DefaultQueryParameters());
+        ReflectionTestUtils.setField(subject, "metricFactory", new QueryMetricFactoryImpl());
+        ReflectionTestUtils.setField(connectionRequestBean, "ctx", context);
+        ReflectionTestUtils.setField(subject, "accumuloConnectionRequestBean", connectionRequestBean);
+        ReflectionTestUtils.setField(subject, "queryLimiter", queryLimiter);
 
-            assertThrows(NoResultsException.class, () -> subject.createQueryAndNext(queryLogicName, queryParameters));
+        assertThrows(NoResultsException.class, () -> subject.createQueryAndNext(queryLogicName, queryParameters));
     }
 
     @Test
@@ -2378,7 +2378,8 @@ public class ExtendedQueryExecutorBeanTest {
 
         // Verify results
         assertTrue(result1 instanceof QueryException, "QueryException expected to have been thrown");
-        assertTrue(result1.getCause().getMessage().toLowerCase().contains("undefined query logic"), "Thrown exception expected to have been due to undefined query logic");
+        assertTrue(result1.getCause().getMessage().toLowerCase().contains("undefined query logic"),
+                        "Thrown exception expected to have been due to undefined query logic");
     }
 
     @Test
@@ -2524,15 +2525,15 @@ public class ExtendedQueryExecutorBeanTest {
 
         // Run the test
 
-            QueryExecutorBean subject = new QueryExecutorBean();
-            ReflectionTestUtils.setField(subject, "ctx", context);
-            ReflectionTestUtils.setField(subject, "persister", persister);
-            ReflectionTestUtils.setField(subject, "queryLogicFactory", queryLogicFactory);
-            ReflectionTestUtils.setField(subject, "queryExpirationConf", queryExpirationConf);
-            ReflectionTestUtils.setField(subject, "traceInfos", traceInfos);
-            ReflectionTestUtils.setField(subject, "marking", new ColumnVisibilitySecurityMarking());
-            ReflectionTestUtils.setField(subject, "qp", new DefaultQueryParameters());
-            ReflectionTestUtils.setField(subject, "metricFactory", new QueryMetricFactoryImpl());
+        QueryExecutorBean subject = new QueryExecutorBean();
+        ReflectionTestUtils.setField(subject, "ctx", context);
+        ReflectionTestUtils.setField(subject, "persister", persister);
+        ReflectionTestUtils.setField(subject, "queryLogicFactory", queryLogicFactory);
+        ReflectionTestUtils.setField(subject, "queryExpirationConf", queryExpirationConf);
+        ReflectionTestUtils.setField(subject, "traceInfos", traceInfos);
+        ReflectionTestUtils.setField(subject, "marking", new ColumnVisibilitySecurityMarking());
+        ReflectionTestUtils.setField(subject, "qp", new DefaultQueryParameters());
+        ReflectionTestUtils.setField(subject, "metricFactory", new QueryMetricFactoryImpl());
     }
 
     @Test
@@ -2859,8 +2860,9 @@ public class ExtendedQueryExecutorBeanTest {
         ReflectionTestUtils.setField(subject, "ctx", context);
         ReflectionTestUtils.setField(subject, "metricFactory", new QueryMetricFactoryImpl());
 
-        assertThrows(DatawaveWebApplicationException.class, () -> subject.duplicateQuery(queryId.toString(), newQueryName, queryLogicName, query, queryVisibility, beginDate, endDate, queryAuthorizations,
-                        expirationDate, pagesize, pageTimeout, maxResultsOverride, persistenceMode, parameters, trace));
+        assertThrows(DatawaveWebApplicationException.class,
+                        () -> subject.duplicateQuery(queryId.toString(), newQueryName, queryLogicName, query, queryVisibility, beginDate, endDate,
+                                        queryAuthorizations, expirationDate, pagesize, pageTimeout, maxResultsOverride, persistenceMode, parameters, trace));
     }
 
     @Test
@@ -2904,7 +2906,6 @@ public class ExtendedQueryExecutorBeanTest {
         // Set local test input
         String user = "user";
         String queryRegex = "queryRegex";
-
 
         // Set expectations
         when(traceInfos.containsEntry(user, PatternWrapper.wrap(queryRegex))).thenReturn(false);
@@ -3155,11 +3156,11 @@ public class ExtendedQueryExecutorBeanTest {
 
         // Run the test
 
-            QueryExecutorBean subject = new QueryExecutorBean();
-            ReflectionTestUtils.setField(subject, "persister", persister);
-            ReflectionTestUtils.setField(subject, "metricFactory", new QueryMetricFactoryImpl());
+        QueryExecutorBean subject = new QueryExecutorBean();
+        ReflectionTestUtils.setField(subject, "persister", persister);
+        ReflectionTestUtils.setField(subject, "metricFactory", new QueryMetricFactoryImpl());
 
-            assertThrows(DatawaveWebApplicationException.class, () -> subject.listQueriesForUser(userSid));
+        assertThrows(DatawaveWebApplicationException.class, () -> subject.listQueriesForUser(userSid));
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -3305,7 +3306,8 @@ public class ExtendedQueryExecutorBeanTest {
 
         // Verify results
         assertNotNull(result1, "Expected a DatawaveWebApplicationException to be thrown");
-        assertEquals("500-9", ((QueryException) result1.getCause().getCause()).getErrorCode(), "Expected DatawaveWebApplicationException to have been caused by a locked cache entry");
+        assertEquals("500-9", ((QueryException) result1.getCause().getCause()).getErrorCode(),
+                        "Expected DatawaveWebApplicationException to have been caused by a locked cache entry");
     }
 
     @Test
@@ -4009,7 +4011,6 @@ public class ExtendedQueryExecutorBeanTest {
         when(context.getCallerPrincipal()).thenReturn(principal);
         when(executor.submit(isA(Runnable.class))).thenReturn(null);
 
-
         QueryExecutorBean subject = new QueryExecutorBean();
         ReflectionTestUtils.setField(subject, "ctx", context);
         ReflectionTestUtils.setField(subject, "queryCache", cache);
@@ -4041,7 +4042,6 @@ public class ExtendedQueryExecutorBeanTest {
         when(context.getCallerPrincipal()).thenReturn(principal);
         when(executor.submit(isA(Runnable.class))).thenThrow(new RejectedExecutionException("INTENTIONALLY THROWN TEST EXCEPTION: Async close rejected"));
         doReturn(null).when(subject).close("11111");
-
 
         ReflectionTestUtils.setField(subject, "ctx", context);
         ReflectionTestUtils.setField(subject, "queryCache", cache);
@@ -4219,7 +4219,7 @@ public class ExtendedQueryExecutorBeanTest {
         List<String> dnList = Collections.singletonList(userDN);
         UUID queryId = UUID.randomUUID();
 
-        HashMap<String, Collection<String>> authsMap = new HashMap<>();
+        HashMap<String,Collection<String>> authsMap = new HashMap<>();
         authsMap.put("userdn", Arrays.asList(queryAuthorizations));
 
         MultiValueMap<String,String> queryParameters = new LinkedMultiValueMap<>();
@@ -4362,7 +4362,7 @@ public class ExtendedQueryExecutorBeanTest {
         UUID queryId = UUID.randomUUID();
         long pageNumber = 0L;
 
-        HashMap<String, Collection<String>> authsMap = new HashMap<>();
+        HashMap<String,Collection<String>> authsMap = new HashMap<>();
         authsMap.put("USERDN", Arrays.asList(queryAuthorizations));
         MultiValueMap<String,String> queryParameters = new LinkedMultiValueMap<>();
         queryParameters.set(QueryParameters.QUERY_STRING, query);
@@ -4395,7 +4395,6 @@ public class ExtendedQueryExecutorBeanTest {
         when(queryLogic1.getResultLimit(any(QueryImpl.class))).thenReturn(-1L);
         when(auditor.audit(any())).thenThrow(new JMSRuntimeException("EXPECTED TESTING EXCEPTION"));
         queryLogic1.close();
-
 
         QueryExecutorBean executor = new QueryExecutorBean();
         ReflectionTestUtils.setField(executor, "ctx", context);
@@ -4595,8 +4594,8 @@ public class ExtendedQueryExecutorBeanTest {
         ReflectionTestUtils.setField(subject, "auditor", auditor);
         ReflectionTestUtils.setField(subject, "metricFactory", new QueryMetricFactoryImpl());
 
-        assertThrows(DatawaveWebApplicationException.class, () -> subject.updateQuery(queryId.toString(), queryLogicName, query, queryVisibility, beginDate, endDate, queryAuthorizations, expirationDate, pagesize,
-                        pageTimeout, maxResultsOverride, persistenceMode, parameters));
+        assertThrows(DatawaveWebApplicationException.class, () -> subject.updateQuery(queryId.toString(), queryLogicName, query, queryVisibility, beginDate,
+                        endDate, queryAuthorizations, expirationDate, pagesize, pageTimeout, maxResultsOverride, persistenceMode, parameters));
     }
 
     @Test
@@ -4662,7 +4661,8 @@ public class ExtendedQueryExecutorBeanTest {
         // Verify results
         assertTrue(result1 instanceof QueryException, "QueryException expected to have been thrown");
         assertEquals("401", ((QueryException) result1).getErrorCode(), "Thrown exception expected to have been due to access denied");
-        assertEquals("None of the DNs used have access to this query logic: [userDN]", result1.getMessage(), "Thrown exception expected to detail reason for access denial");
+        assertEquals("None of the DNs used have access to this query logic: [userDN]", result1.getMessage(),
+                        "Thrown exception expected to detail reason for access denial");
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
@@ -4729,7 +4729,8 @@ public class ExtendedQueryExecutorBeanTest {
         // Verify results
         assertTrue(result1 instanceof QueryException, "QueryException expected to have been thrown");
         assertEquals("401", ((QueryException) result1).getErrorCode(), "Thrown exception expected to have been due to access denied");
-        assertEquals("None of the DNs used have access to this query logic: [userDN]", result1.getMessage(), "Thrown exception expected to detail reason for access denial");
+        assertEquals("None of the DNs used have access to this query logic: [userDN]", result1.getMessage(),
+                        "Thrown exception expected to detail reason for access denial");
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
@@ -4796,7 +4797,8 @@ public class ExtendedQueryExecutorBeanTest {
         // Verify results
         assertTrue(result1 instanceof QueryException, "QueryException expected to have been thrown");
         assertEquals("401", ((QueryException) result1).getErrorCode(), "Thrown exception expected to have been due to access denied");
-        assertEquals("None of the DNs used have access to this query logic: [userDN]", result1.getMessage(), "Thrown exception expected to detail reason for access denial");
+        assertEquals("None of the DNs used have access to this query logic: [userDN]", result1.getMessage(),
+                        "Thrown exception expected to detail reason for access denial");
     }
 
     @Test
@@ -4889,7 +4891,8 @@ public class ExtendedQueryExecutorBeanTest {
         // Verify results
         assertTrue(result1 instanceof QueryException, "QueryException expected to have been thrown");
         assertEquals("401", ((QueryException) result1).getErrorCode(), "Thrown exception expected to have been due to access denied");
-        assertEquals("None of the DNs used have access to this query logic: [userDN]", result1.getMessage(), "Thrown exception expected to detail reason for access denial");
+        assertEquals("None of the DNs used have access to this query logic: [userDN]", result1.getMessage(),
+                        "Thrown exception expected to detail reason for access denial");
     }
 
     @Test
@@ -4981,7 +4984,8 @@ public class ExtendedQueryExecutorBeanTest {
         // Verify results
         assertTrue(result1 instanceof QueryException, "QueryException expected to have been thrown");
         assertEquals("401", ((QueryException) result1).getErrorCode(), "Thrown exception expected to have been due to access denied");
-        assertEquals("None of the DNs used have access to this query logic: [userDN]", result1.getMessage(), "Thrown exception expected to detail reason for access denial");
+        assertEquals("None of the DNs used have access to this query logic: [userDN]", result1.getMessage(),
+                        "Thrown exception expected to detail reason for access denial");
     }
 
     public class TestQuery extends QueryImpl {
