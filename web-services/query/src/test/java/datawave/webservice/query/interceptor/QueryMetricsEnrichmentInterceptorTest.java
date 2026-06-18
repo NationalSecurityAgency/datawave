@@ -13,6 +13,7 @@ import java.io.OutputStream;
 import java.lang.annotation.Annotation;
 import java.net.URI;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
@@ -125,10 +126,13 @@ public class QueryMetricsEnrichmentInterceptorTest {
 
         when(requestContext.getUriInfo()).thenReturn(uriInfo);
         when(uriInfo.getRequestUri()).thenReturn(requestUri);
+        when(requestContext.getMethod()).thenReturn(null);
         when(requestContext.getHeaders()).thenReturn(requestHeaders);
+        when(requestHeaders.keySet()).thenReturn(new HashSet<>());
         when(requestContext.getMediaType()).thenReturn(MediaType.APPLICATION_FORM_URLENCODED_TYPE);
         when(requestContext.getHttpRequest()).thenReturn(httpRequest);
         when(httpRequest.getDecodedFormParameters()).thenReturn(decodedFormParameters);
+        when(decodedFormParameters.keySet()).thenReturn(new HashSet<>());
 
         subject.filter(requestContext);
 
@@ -141,6 +145,7 @@ public class QueryMetricsEnrichmentInterceptorTest {
         String responseStatsName = (String) ReflectionTestUtils.getField(subject, "RESPONSE_STATS_NAME");
 
         when(responseContext.getHeaders()).thenReturn(writeHeaders);
+        when(writeHeaders.keySet()).thenReturn(new HashSet<>());
         when(responseContext.getStatus()).thenReturn(HttpResponseCodes.SC_OK);
         when(responseContext.getJaxrsResponse()).thenReturn(jaxrsResponse);
         when(jaxrsResponse.getAnnotations()).thenReturn(new Annotation[] {enrichQueryMetrics});
