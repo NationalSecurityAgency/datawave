@@ -11,7 +11,7 @@ import org.apache.log4j.Logger;
 
 /**
  * Represents a heartbeat for an active query. As long as the connection to Zookeeper is not disrupted, the heartbeat will persist and indicate that a query is
- * currently running. Multiple heartbeats can be obtained for the same query.
+ * currently running.
  */
 public class QueryHeartbeat {
 
