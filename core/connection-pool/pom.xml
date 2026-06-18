@@ -38,6 +38,11 @@
             <artifactId>base-rest-responses</artifactId>
         </dependency>
         <dependency>
+            <groupId>gov.nsa.datawave.core</groupId>
+            <artifactId>type-utils</artifactId>
+            <!-- No direct dependencies. But has transitive dependencies. Adding here to avoid race condition where type utils builds after connection pool -->
+        </dependency>
+        <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>
             <artifactId>accumulo-api</artifactId>
         </dependency>
