@@ -192,7 +192,6 @@ public class QueryLimiter {
         }
 
         userDn = userDn.trim().toLowerCase();
-        queryLogic = queryLogic.trim();
         // Ensure the system is non-null if empty
         if (system == null || system.isBlank()) {
             system = EMPTY_SYSTEM_FROM;
@@ -247,7 +246,7 @@ public class QueryLimiter {
      */
     private ActiveQueryTracker getActiveQueryTracker() throws QuorumPeerConfig.ConfigException {
         if (this.activeQueryTracker == null) {
-            this.activeQueryTracker = new ActiveQueryTracker(zookeeperConfig, 120000L);
+            this.activeQueryTracker = new ActiveQueryTracker(zookeeperConfig);
         }
         return this.activeQueryTracker;
     }
