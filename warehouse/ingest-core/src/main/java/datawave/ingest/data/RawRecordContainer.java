@@ -4,11 +4,11 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Date;
-import java.util.Map;
 
 import org.apache.accumulo.core.security.ColumnVisibility;
 
 import datawave.data.hash.UID;
+import datawave.marking.Markings;
 import datawave.util.CompositeTimestamp;
 
 /**
@@ -17,13 +17,9 @@ import datawave.util.CompositeTimestamp;
  */
 public interface RawRecordContainer {
 
-    Map<String,String> getSecurityMarkings();
+    Markings<?> getSecurityMarkings();
 
-    void setSecurityMarkings(Map<String,String> securityMarkings);
-
-    void addSecurityMarking(String domain, String marking);
-
-    boolean hasSecurityMarking(String domain, String marking);
+    void setSecurityMarkings(Markings<?> securityMarkings);
 
     UID getId();
 

@@ -11,6 +11,7 @@ import java.text.SimpleDateFormat;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +24,7 @@ import java.util.concurrent.Executors;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
+import org.apache.accumulo.core.client.ScannerBase.ConsistencyLevel;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.Key;
@@ -239,6 +241,70 @@ public class BoundedRangeIndexLookupTest extends EasyMockSupport {
         withDateRange("20240701", "20240709");
         BoundedRangeIndexLookup lookup = createLookup("FIELD_A", "absent-lower", "absent-upper");
         test(lookup, "FIELD_A");
+    }
+
+    @Test
+    public void testExecutionHints_expansionPoolSelectedOverIndexTable() {
+        withDateRange("20240701", "20240701");
+        withDatatypeFilter(Set.of("datatype-b"));
+        withExpected(Set.of("value-1"));
+
+        Map<String,String> expansionHints = new HashMap<>();
+        expansionHints.put("scan_type", "expansion-pool-a");
+        expansionHints.put("priority", "2");
+
+        Map<String,String> indexHints = new HashMap<>();
+        indexHints.put("scan_type", "index-a");
+        indexHints.put("priority", "1");
+
+        Map<String,Map<String,String>> tableHints = new HashMap<>();
+        tableHints.put("expansion", expansionHints);
+        tableHints.put("shardIndex", indexHints);
+        config.setTableHints(tableHints);
+
+        BoundedRangeIndexLookup lookup = createLookup("FIELD_A", "value-1", "value-1");
+        test(lookup, "FIELD_A");
+
+        assertNotNull(lookup.builder);
+        assertEquals(expansionHints, lookup.builder.getExecutionHints());
+    }
+
+    @Test
+    public void testExecutionHints_indexTableNameSelectedWhenNoExpansionPoolExists() {
+        withDateRange("20240701", "20240701");
+        withDatatypeFilter(Set.of("datatype-b"));
+        withExpected(Set.of("value-1"));
+
+        Map<String,String> indexHints = new HashMap<>();
+        indexHints.put("scan_type", "index-a");
+        indexHints.put("priority", "1");
+
+        Map<String,Map<String,String>> tableHints = new HashMap<>();
+        tableHints.put("shardIndex", indexHints);
+        config.setTableHints(tableHints);
+
+        BoundedRangeIndexLookup lookup = createLookup("FIELD_A", "value-1", "value-1");
+        test(lookup, "FIELD_A");
+
+        assertNotNull(lookup.builder);
+        assertEquals(indexHints, lookup.builder.getExecutionHints());
+    }
+
+    @Test
+    public void testConsistencyLevel() {
+        withDateRange("20240701", "20240701");
+        withDatatypeFilter(Set.of("datatype-b"));
+        withExpected(Set.of("value-1"));
+
+        Map<String,ConsistencyLevel> consistencyLevels = new HashMap<>();
+        consistencyLevels.put("shardIndex", ConsistencyLevel.EVENTUAL);
+        config.setTableConsistencyLevels(consistencyLevels);
+
+        BoundedRangeIndexLookup lookup = createLookup("FIELD_A", "value-1", "value-1");
+        test(lookup, "FIELD_A");
+
+        assertNotNull(lookup.builder);
+        assertEquals(ConsistencyLevel.EVENTUAL, lookup.builder.getConsistencyLevel());
     }
 
     private void test(BoundedRangeIndexLookup lookup, String field) {
