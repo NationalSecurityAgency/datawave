@@ -21,7 +21,7 @@ jobs:
           echo "runner=${{vars.RUNNER_TYPE}}" >> $GITHUB_OUTPUT
           if [[ "${{ vars.RUNNER_TYPE }}" == "self-hosted" ]]; then
             echo "We have hit the true case"
-            echo "cache_settings=-Dmaven.build.cache.enabled=true -Dmaven.build.cache.remote.enabled=true -Dmaven.build.cache.remote.url=http://localhost:12345" >> $GITHUB_OUTPUT
+            echo "cache_settings=-Dmaven.build.cache.enabled=false -Dmaven.build.cache.remote.enabled=false -Dmaven.build.cache.remote.url=http://localhost:12345" >> $GITHUB_OUTPUT
           else
             echo "We have reached the false case"
             echo cache_settings="" >> $GITHUB_OUTPUT
@@ -52,7 +52,7 @@ jobs:
       with:
         tool-cache: false
     - name: Set up JDK ${{env.JAVA_VERSION}}
-      uses: actions/setup-java@v4
+      uses: actions/setup-java@v5
       with:
         distribution: ${{env.JAVA_DISTRIBUTION}}
         java-version: ${{env.JAVA_VERSION}}
