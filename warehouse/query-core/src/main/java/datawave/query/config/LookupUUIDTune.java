@@ -34,7 +34,6 @@ public class LookupUUIDTune implements Profile {
     protected int eventFieldSeek = -1;
     protected int eventNextSeek = -1;
     protected String queryIteratorClass = TLDQueryIterator.class.getCanonicalName();
-    protected int maxShardsPerDayThreshold = -1;
     protected int pageByteTrigger = -1;
     protected int maxPageSize = -1;
     protected Map<String,List<String>> primaryToSecondaryFieldMap = Collections.emptyMap();
@@ -130,9 +129,6 @@ public class LookupUUIDTune implements Profile {
             rsqc.setSerializeQueryIterator(true);
             rsqc.setMaxEvaluationPipelines(1);
             rsqc.setMaxPipelineCachedResults(1);
-            if (maxShardsPerDayThreshold != -1) {
-                rsqc.setShardsPerDayThreshold(maxShardsPerDayThreshold);
-            }
 
             rsqc.setFiFieldSeek(getFiFieldSeek());
             rsqc.setFiNextSeek(getFiNextSeek());
@@ -242,16 +238,6 @@ public class LookupUUIDTune implements Profile {
 
     public String getQueryIteratorClass() {
         return queryIteratorClass;
-    }
-
-    @Deprecated(since = "7.1.0", forRemoval = true)
-    public int getMaxShardsPerDayThreshold() {
-        return maxShardsPerDayThreshold;
-    }
-
-    @Deprecated(since = "7.1.0", forRemoval = true)
-    public void setMaxShardsPerDayThreshold(int maxShardsPerDayThreshold) {
-        this.maxShardsPerDayThreshold = maxShardsPerDayThreshold;
     }
 
     public int getPageByteTrigger() {

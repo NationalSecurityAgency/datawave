@@ -30,6 +30,7 @@ import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.writer.ContextWriter;
 import datawave.ingest.metadata.RawRecordMetadata;
 import datawave.marking.MarkingFunctions;
+import datawave.marking.Markings;
 import datawave.util.StringUtils;
 import datawave.util.TextUtil;
 
@@ -63,7 +64,7 @@ public class AtomDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataT
     protected String[] fieldOverrides = null;
     protected HashMap<String,Set<String>> subCategories;
     protected String[] sCategories = null;
-    protected MarkingFunctions markingFunctions;
+    protected MarkingFunctions<?> markingFunctions;
 
     protected Configuration conf;
 
@@ -254,16 +255,11 @@ public class AtomDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataT
      *            the value
      * @return the visibility
      */
-
     protected String getColumnQualifier(RawRecordContainer event, NormalizedContentInterface value) {
         ColumnVisibility visibility = event.getVisibility();
-        if (value.getMarkings() != null && !value.getMarkings().isEmpty()) {
-            try {
-                visibility = markingFunctions.translateToColumnVisibility(value.getMarkings());
-            } catch (MarkingFunctions.Exception e) {
-                throw new RuntimeException("Cannot convert record-level markings into a column visibility", e);
-
-            }
+        Markings<?> markings = value.getMarkings();
+        if (markings != null && !markings.isEmpty()) {
+            visibility = markings.toColumnVisibility();
         }
         return flatten(visibility);
     }

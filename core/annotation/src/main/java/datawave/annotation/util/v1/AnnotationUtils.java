@@ -25,13 +25,25 @@ import datawave.annotation.protobuf.v1.SegmentValue;
 
 public class AnnotationUtils {
     protected static final Logger log = LoggerFactory.getLogger(AnnotationUtils.class);
+    public static final String UPDATE_REFERENCE = "updates";
 
     public static Annotation injectAnnotationSource(Annotation a, AnnotationSource as) {
         return a.toBuilder().clearSource().setSource(as).clearAnalyticSourceHash().setAnalyticSourceHash(as.getAnalyticSourceHash()).build();
     }
 
     /**
-     * Calculate and assign all necessary hashes to annotations, segments and segment values.
+     * Calculate and assign all necessary hashes to annotation sources.
+     *
+     * @param annotationSource
+     *            the annotation sources to assign identifiers to.
+     * @return the modified annotation source with identifiers injected.
+     */
+    public static AnnotationSource injectAllHashes(AnnotationSource annotationSource) {
+        return injectAnnotationSourceHashes(annotationSource);
+    }
+
+    /**
+     * Calculate and assign all necessary hashes to annotations, annotation sources, segments and segment values.
      *
      * @param annotation
      *            the annotation to assign identifiers to.
@@ -41,20 +53,38 @@ public class AnnotationUtils {
         // first assign segment ids and collect the updated segments
         final List<Segment> updatedSegments = new ArrayList<>();
         for (Segment segment : annotation.getSegmentsList()) {
-            final List<SegmentValue> updatedSegmentValues = new ArrayList<>();
-            for (SegmentValue value : segment.getValuesList()) {
-                SegmentValue hashedValue = injectSegmentValueHash(value);
-                updatedSegmentValues.add(hashedValue);
-            }
-            Segment segmentHashedValues = segment.toBuilder().clearValues().addAllValues(updatedSegmentValues).build();
-            Segment hashedSegment = AnnotationUtils.injectSegmentHash(segmentHashedValues);
+            Segment hashedSegment = injectAllHashes(segment);
             updatedSegments.add(hashedSegment);
         }
         // next, add the updated segments to a new annotation
-        final Annotation updatedAnnotation = annotation.toBuilder().clearSegments().addAllSegments(updatedSegments).build();
+        Annotation updatedAnnotation = annotation.toBuilder().clearSegments().addAllSegments(updatedSegments).build();
+
+        // if an annotation source is present, assign the hashes and ids and update the annotation.
+        if (updatedAnnotation.hasSource()) {
+            AnnotationSource baseSource = updatedAnnotation.getSource();
+            AnnotationSource updatedSource = AnnotationUtils.injectAllHashes(baseSource);
+            updatedAnnotation = updatedAnnotation.toBuilder().clearSource().setSource(updatedSource).build();
+        }
 
         // finally, generate the annotation id for the updated annotation
         return AnnotationUtils.injectAnnotationHash(updatedAnnotation);
+    }
+
+    /**
+     * Calculate and assign all necessary hashes to segments and segment values.
+     *
+     * @param segment
+     *            the segment to assign identifiers to.
+     * @return the modified segment with identifiers injected.
+     */
+    public static Segment injectAllHashes(Segment segment) {
+        final List<SegmentValue> updatedSegmentValues = new ArrayList<>();
+        for (SegmentValue value : segment.getValuesList()) {
+            SegmentValue hashedValue = injectSegmentValueHash(value);
+            updatedSegmentValues.add(hashedValue);
+        }
+        Segment segmentHashedValues = segment.toBuilder().clearValues().addAllValues(updatedSegmentValues).build();
+        return AnnotationUtils.injectSegmentHash(segmentHashedValues);
     }
 
     /**
@@ -109,6 +139,21 @@ public class AnnotationUtils {
     }
 
     /**
+     * Inject a reference to another annotation into an annotation's metadata table. This is used for updates, where both the original and update are kept, and
+     * these references are used to maintain linkages between the two annotations. If an update reference already exists in the metadata, it will be overwritten
+     * with the new reference.
+     *
+     * @param update
+     *            the annotation updating the target
+     * @param updateTargetId
+     *            the identifier of the target being updated.
+     * @return the updated annotation containing the reference to the update target in its metadata table.
+     */
+    public static Annotation injectUpdateReference(Annotation update, String updateTargetId) {
+        return update.toBuilder().putMetadata(UPDATE_REFERENCE, updateTargetId).build();
+    }
+
+    /**
      * Calculate the 32-bit murmur3 hash used to group by annotation source, see {@link #calculateSourceHash(HashFunction, AnnotationSource)} for the fields
      * used in the hash.
      *
@@ -137,6 +182,7 @@ public class AnnotationUtils {
      * <ul>
      * <li>the annotation source engine</li>
      * <li>the annotation source model</li>
+     * <li>the annotation source platform</li>
      * <li>the annotation source configuration</li>
      * </ul>
      *
@@ -152,6 +198,7 @@ public class AnnotationUtils {
         return hashFunction.newHasher()
                 .putUnencodedChars(annotationSource.getEngine())
                 .putUnencodedChars(annotationSource.getModel())
+                .putUnencodedChars(annotationSource.getPlatform())
                 .putObject(annotationSource.getConfigurationMap(), stringMapFunnel)
                 .hash()
                 .toString()

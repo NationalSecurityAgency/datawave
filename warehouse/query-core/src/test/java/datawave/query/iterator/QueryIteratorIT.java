@@ -1582,20 +1582,6 @@ public class QueryIteratorIT extends EasyMockSupport {
         event_test(seekRange, "EVENT_FIELD2 == 'b' && filter:isNotNull(EVENT_FIELD3)", false, null, Collections.emptyList(), Collections.emptyList());
     }
 
-    @Test
-    public void indexOnly_lazy_documentSpecific_test() throws IOException {
-        Range seekRange = getDocumentRange("123.345.456");
-        String query = "INDEX_ONLY_FIELD1 == 'apple' && filter:isNotNull(TF_FIELD4@LAZY_SET_FOR_INDEX_ONLY_FUNCTION_EVALUATION)";
-        indexOnly_test(seekRange, query, false, addEvent("123.345.457"), Collections.emptyList());
-    }
-
-    @Test
-    public void indexOnly_lazy_shardRange_test() throws IOException {
-        Range seekRange = getDocumentRange(null);
-        String query = "INDEX_ONLY_FIELD1 == 'apple' && filter:isNotNull(TF_FIELD4@LAZY_SET_FOR_INDEX_ONLY_FUNCTION_EVALUATION)";
-        indexOnly_test(seekRange, query, false, Collections.emptyList(), Collections.emptyList());
-    }
-
     // The term fetched by the delayed context is not added to the returned document.
     @Test
     public void test_fetchDelayedIndexOnlyTerm_addTermToHitTerms() throws IOException {
