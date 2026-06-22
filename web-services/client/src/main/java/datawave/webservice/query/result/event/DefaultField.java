@@ -3,7 +3,6 @@ package datawave.webservice.query.result.event;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.HashMap;
-import java.util.Map;
 
 import javax.xml.bind.annotation.XmlAccessOrder;
 import javax.xml.bind.annotation.XmlAccessType;
@@ -12,7 +11,6 @@ import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlTransient;
-import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
@@ -20,8 +18,9 @@ import org.apache.commons.lang.builder.HashCodeBuilder;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import datawave.data.type.Type;
+import datawave.marking.AccessExpressionMarkings;
+import datawave.marking.Markings;
 import datawave.webservice.query.util.TypedValue;
-import datawave.webservice.xml.util.StringMapAdapter;
 import io.protostuff.Input;
 import io.protostuff.Message;
 import io.protostuff.Output;
@@ -38,9 +37,8 @@ public class DefaultField extends FieldBase<DefaultField> implements Serializabl
 
     private static final long serialVersionUID = -3982566563059126017L;
 
-    @XmlElement(name = "Markings")
-    @XmlJavaTypeAdapter(StringMapAdapter.class)
-    private HashMap<String,String> markings;
+    @XmlElement(name = "Markings", type = AccessExpressionMarkings.class)
+    private Markings<?> markings;
     @XmlAttribute(name = "columnVisibility")
     private String columnVisibility;
     @XmlAttribute(name = "timestamp")
@@ -52,10 +50,10 @@ public class DefaultField extends FieldBase<DefaultField> implements Serializabl
 
     public DefaultField() {}
 
-    public DefaultField(String name, String columnVisibility, Map<String,String> markings, Long timestamp, Object value) {
+    public DefaultField(String name, String columnVisibility, Markings<?> markings, Long timestamp, Object value) {
         super();
         this.name = name;
-        this.markings = new HashMap<String,String>(markings);
+        this.markings = markings;
         this.columnVisibility = columnVisibility;
         this.timestamp = timestamp;
         this.value = new TypedValue(value);
@@ -69,17 +67,13 @@ public class DefaultField extends FieldBase<DefaultField> implements Serializabl
         this.value = new TypedValue(value);
     }
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see datawave.webservice.query.result.event.FieldInterface#setMarkings(java.util.Map)
-     */
     @Override
-    public void setMarkings(Map<String,String> markings) {
-        this.markings = new HashMap<String,String>(markings);
+    public void setMarkings(Markings<?> markings) {
+        this.markings = markings;
     }
 
-    public Map<String,String> getMarkings() {
+    @Override
+    public Markings<?> getMarkings() {
         return markings;
     }
 
@@ -216,7 +210,7 @@ public class DefaultField extends FieldBase<DefaultField> implements Serializabl
         @Override
         public void writeTo(Output output, DefaultField message) throws IOException {
             if (message.markings != null)
-                output.writeObject(1, message.markings, MapSchema.SCHEMA, false);
+                output.writeObject(1, (AccessExpressionMarkings) message.markings, AccessExpressionMarkings.SCHEMA, false);
             if (message.columnVisibility != null)
                 output.writeString(2, message.columnVisibility, false);
             output.writeUInt64(3, message.timestamp, false);
@@ -232,8 +226,8 @@ public class DefaultField extends FieldBase<DefaultField> implements Serializabl
             while ((number = input.readFieldNumber(this)) != 0) {
                 switch (number) {
                     case 1:
-                        message.markings = new HashMap<String,String>();
-                        input.mergeObject(message.markings, MapSchema.SCHEMA);
+                        message.markings = AccessExpressionMarkings.builder().build();
+                        input.mergeObject((AccessExpressionMarkings) message.markings, AccessExpressionMarkings.SCHEMA);
                         break;
                     case 2:
                         message.columnVisibility = input.readString();

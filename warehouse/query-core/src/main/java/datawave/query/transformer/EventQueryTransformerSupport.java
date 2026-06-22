@@ -21,7 +21,9 @@ import com.google.common.collect.Lists;
 import datawave.core.query.cachedresults.CacheableLogic;
 import datawave.core.query.logic.BaseQueryLogic;
 import datawave.core.query.logic.BaseQueryLogicTransformer;
+import datawave.marking.AccessExpressionUtil;
 import datawave.marking.MarkingFunctions;
+import datawave.marking.Markings;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl.Parameter;
 import datawave.query.model.QueryModel;
@@ -57,7 +59,7 @@ public abstract class EventQueryTransformerSupport<I,O> extends BaseQueryLogicTr
     protected String tableName;
     protected ResponseObjectFactory responseObjectFactory;
 
-    public EventQueryTransformerSupport(String tableName, Query settings, MarkingFunctions markingFunctions, ResponseObjectFactory responseObjectFactory) {
+    public EventQueryTransformerSupport(String tableName, Query settings, MarkingFunctions<?> markingFunctions, ResponseObjectFactory responseObjectFactory) {
         super(markingFunctions);
         this.settings = settings;
         this.auths = new Authorizations(settings.getQueryAuthorizations().split(","));
@@ -65,7 +67,7 @@ public abstract class EventQueryTransformerSupport<I,O> extends BaseQueryLogicTr
         this.responseObjectFactory = responseObjectFactory;
     }
 
-    public EventQueryTransformerSupport(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, MarkingFunctions markingFunctions,
+    public EventQueryTransformerSupport(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, MarkingFunctions<?> markingFunctions,
                     ResponseObjectFactory responseObjectFactory) {
         this(logic.getTableName(), settings, markingFunctions, responseObjectFactory);
         this.logic = logic;
@@ -102,7 +104,7 @@ public abstract class EventQueryTransformerSupport<I,O> extends BaseQueryLogicTr
 
     @Override
     public Object readFromCache(CacheableQueryRow cacheableQueryRow) {
-        Map<String,String> markings = cacheableQueryRow.getMarkings();
+        Markings<?> markings = cacheableQueryRow.getMarkings();
         String dataType = cacheableQueryRow.getDataType();
         String internalId = cacheableQueryRow.getEventId();
         String row = cacheableQueryRow.getRow();
@@ -122,7 +124,7 @@ public abstract class EventQueryTransformerSupport<I,O> extends BaseQueryLogicTr
         for (Entry<String,String> entry : columnValueMap.entrySet()) {
             String columnName = entry.getKey();
             String columnValue = entry.getValue();
-            Map<String,String> columnMarkings = cacheableQueryRow.getColumnMarkings(columnName);
+            Markings<?> columnMarkings = cacheableQueryRow.getColumnMarkings(columnName);
             String columnVisibility = cacheableQueryRow.getColumnVisibility(columnName);
             Long columnTimestamp = cacheableQueryRow.getColumnTimestamp(columnName);
             FieldBase<?> field = this.makeField(columnName, columnMarkings, columnVisibility, columnTimestamp, columnValue);
@@ -151,7 +153,7 @@ public abstract class EventQueryTransformerSupport<I,O> extends BaseQueryLogicTr
         return response;
     }
 
-    protected FieldBase<?> makeField(String name, Map<String,String> markings, String columnVisibility, Long timestamp, Object value) {
+    protected FieldBase<?> makeField(String name, Markings<?> markings, String columnVisibility, Long timestamp, Object value) {
         FieldBase<?> field = this.responseObjectFactory.getField();
         field.setName(name);
         field.setMarkings(markings);
@@ -161,9 +163,9 @@ public abstract class EventQueryTransformerSupport<I,O> extends BaseQueryLogicTr
         return field;
     }
 
-    protected FieldBase<?> makeField(String name, Map<String,String> markings, ColumnVisibility columnVisibility, Long timestamp, Object value) {
+    protected FieldBase<?> makeField(String name, Markings<?> markings, ColumnVisibility columnVisibility, Long timestamp, Object value) {
         FieldBase<?> field = makeField(name, markings, (String) null, timestamp, value);
-        field.setColumnVisibility(columnVisibility);
+        field.setColumnVisibility(AccessExpressionUtil.toAccessExpression(columnVisibility));
         return field;
     }
 
