@@ -7,7 +7,7 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import datawave.query.scan.ScanManager;
+import datawave.scan.ScanManager;
 
 /**
  * An extension of {@link ScanManager} that also tracks {@link ScannerSession} instances in addition to {@link org.apache.accumulo.core.client.Scanner} and

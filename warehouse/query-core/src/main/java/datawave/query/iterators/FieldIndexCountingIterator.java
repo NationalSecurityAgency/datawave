@@ -91,6 +91,7 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
     public static final Text fi_PREFIX_TEXT = new Text("fi\u0000");
 
     private Set<Text> visibilitySet = new HashSet<>();
+    private MarkingFunctions<?> markingFunctions;
 
     // -------------------------------------------------------------------------
     // ------------- Constructors
@@ -585,15 +586,18 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
         for (Text t : this.visibilitySet) {
             columnVisibilities.add(new ColumnVisibility(t));
         }
-        ColumnVisibility cv;
+        ColumnVisibility columnVisibility;
         try {
-            cv = MarkingFunctions.Factory.createMarkingFunctions().combine(columnVisibilities);
-        } catch (MarkingFunctions.Exception e) {
-            log.error("Could not combine visibilities: " + visibilitySet + "  " + e);
+            if (null == markingFunctions) {
+                markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
+            }
+            columnVisibility = markingFunctions.combineVisibilities(columnVisibilities);
+        } catch (Exception e) {
+            log.warn("Invalid columnvisibility after combining!", e);
             return null;
         }
 
-        return new Key(this.currentRow, new Text(this.currentFieldName), cq, new Text(cv.getExpression()), this.maxTimeStamp);
+        return new Key(this.currentRow, new Text(this.currentFieldName), cq, new Text(columnVisibility.getExpression()), this.maxTimeStamp);
     }
 
     /* TODO: make this a mutable long, also check wrap up current method */

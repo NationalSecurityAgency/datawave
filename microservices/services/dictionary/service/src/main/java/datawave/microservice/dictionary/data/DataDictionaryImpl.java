@@ -32,14 +32,14 @@ import datawave.webservice.metadata.DefaultMetadataField;
 
 public class DataDictionaryImpl implements DataDictionary<DefaultMetadataField,DefaultDescription,DefaultDictionaryField> {
 
-    private final MarkingFunctions markingFunctions;
+    private final MarkingFunctions<?> markingFunctions;
     private final ResponseObjectFactory<DefaultDescription,DefaultDataDictionary,DefaultMetadataField,DefaultDictionaryField,DefaultFields> responseObjectFactory;
     private final MetadataHelperFactory metadataHelperFactory;
     private final MetadataDescriptionsHelperFactory<DefaultDescription> metadataDescriptionsHelperFactory;
     private Map<String,String> normalizationMap = Maps.newHashMap();
     private String dataDictionarySystem = "";
 
-    public DataDictionaryImpl(MarkingFunctions markingFunctions,
+    public DataDictionaryImpl(MarkingFunctions<?> markingFunctions,
                     ResponseObjectFactory<DefaultDescription,DefaultDataDictionary,DefaultMetadataField,DefaultDictionaryField,DefaultFields> responseObjectFactory,
                     MetadataHelperFactory metadataHelperFactory, MetadataDescriptionsHelperFactory<DefaultDescription> metadataDescriptionsHelperFactory) {
         this.markingFunctions = markingFunctions;
