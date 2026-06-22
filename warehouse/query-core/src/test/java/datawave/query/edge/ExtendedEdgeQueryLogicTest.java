@@ -85,6 +85,21 @@ public class ExtendedEdgeQueryLogicTest extends EdgeQueryFunctionalTest {
         compareResults(logic, factory, expected);
     }
 
+    @Test
+    public void testUnfieldedQueryThrowsClearError() throws Exception {
+        // a bare, unfielded LUCENE term is mapped to _ANYFIELD_ and is not supported by edge queries
+        QueryImpl q = configQuery("JUPITER", auths);
+        q.addParameter("query.syntax", "LUCENE");
+        try {
+            runLogic(q, auths);
+            Assert.fail("expected an IllegalArgumentException for an unfielded edge query");
+        } catch (IllegalArgumentException e) {
+            String message = e.getMessage();
+            Assert.assertNotNull(message);
+            Assert.assertTrue("error should mention unfielded terms, but was: " + message, message.contains("unfielded terms"));
+        }
+    }
+
     @Test(expected = UnsupportedOperationException.class)
     public void testUnknownFunction() throws Exception {
 
