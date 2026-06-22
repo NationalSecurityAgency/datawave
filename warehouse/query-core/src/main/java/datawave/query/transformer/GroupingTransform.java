@@ -70,7 +70,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
      * @param markingFunctions
      *            the marking functions
      */
-    public GroupingTransform(GroupFields groupFields, MarkingFunctions markingFunctions, long queryExecutionForPageTimeout) {
+    public GroupingTransform(GroupFields groupFields, MarkingFunctions<?> markingFunctions, long queryExecutionForPageTimeout) {
         super.initialize(settings, markingFunctions);
         this.queryExecutionForPageTimeout = queryExecutionForPageTimeout;
         this.groups = new Groups();

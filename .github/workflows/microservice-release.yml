@@ -59,7 +59,7 @@ on:
         required: false
         default: false
         type: boolean
-        description: "After a successful release, run versions:update-parent and versions:update-properties to bump every consumer in microservices/ that depends on the released artifact, and push an auto-update commit. Used by the cascade workflow."
+        description: "Before releasing, update this project's parent and dependency version properties to pick up earlier releases in the cascade. Used by the cascade workflow."
   workflow_call:
     inputs:
       projectToRelease:
@@ -108,7 +108,7 @@ jobs:
       run: git pull --ff-only
 
     - name: Set up JDK
-      uses: actions/setup-java@v4
+      uses: actions/setup-java@v5
       with:
         distribution: ${{env.JAVA_DISTRIBUTION}}
         java-version: ${{env.JAVA_VERSION}}
@@ -118,7 +118,7 @@ jobs:
         server-username: GITHUB_USERNAME
         server-password: GITHUB_PASSWORD
     - name: Log in to the Container registry
-      uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
+      uses: docker/login-action@v4
       with:
         registry: ${{ env.GITHUB_REGISTRY }}
         username: ${{ secrets.GHCR_WRITE_USER_NAME }}
@@ -133,13 +133,36 @@ jobs:
         set -euo pipefail
         git config user.email "datawave@github.com"
         git config user.name "${{ secrets.GHCR_WRITE_USER_NAME }}"
+
+        # Build a version-rules file that filters out old qualified releases.
+        # Final: ignore every version containing a hyphen (qualifiers).
+        # Non-final: ignore qualified versions except the current modifier
+        #            so the cascade picks up its own earlier releases.
+        if [ "${{ inputs.finalRelease }}" = "true" ]; then
+          IGNORE_REGEX=".*-.*"
+        else
+          IGNORE_REGEX=".*-(?!${{ inputs.modifier }}\$).*"
+        fi
+
+        cat > /tmp/cascade-version-rules.xml <<RULES_EOF
+        <ruleset comparisonMethod="maven"
+                 xmlns="http://mojo.codehaus.org/versions-maven-plugin/rule/2.0.0"
+                 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                 xsi:schemaLocation="http://mojo.codehaus.org/versions-maven-plugin/rule/2.0.0 https://www.mojohaus.org/versions-maven-plugin/xsd/rule-2.0.0.xsd">
+          <ignoreVersions>
+            <ignoreVersion type="regex">${IGNORE_REGEX}</ignoreVersion>
+          </ignoreVersions>
+        </ruleset>
+        RULES_EOF
+
         cd "${{ inputs.projectToRelease }}"
         mvn --batch-mode --no-transfer-progress \
             versions:update-parent versions:update-properties \
             -DallowSnapshots=false \
             -DallowMajorUpdates=false \
             -DgenerateBackupPoms=false \
-            -Dincludes="gov.nsa.datawave.microservice:*"
+            -Dincludes="gov.nsa.datawave.microservice:*" \
+            -Dmaven.version.rules="file:///tmp/cascade-version-rules.xml"
         cd "$GITHUB_WORKSPACE"
         if git diff --quiet; then
           echo "No dependency updates needed for ${{ inputs.projectToRelease }}."
@@ -173,7 +196,38 @@ jobs:
         echo "FINAL_VERSION=$FINAL_VERSION" >> $GITHUB_OUTPUT
         echo "NEXT_DEV_VERSION=$NEXT_DEV_VERSION" >> $GITHUB_OUTPUT
         echo "VERSION_TAG=${{ inputs.projectToRelease }}-$FINAL_VERSION" >> $GITHUB_OUTPUT
+    - name: Check if already released
+      id: check
+      run: |
+        TAG="${{ steps.version.outputs.VERSION_TAG }}"
+        if git ls-remote --tags origin "refs/tags/$TAG" | grep -q .; then
+          echo "::notice::Tag $TAG already exists — skipping release (already published in a prior run)."
+          echo "released=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "released=false" >> "$GITHUB_OUTPUT"
+        fi
+    # If a prior run already released this version, skip the release but
+    # advance the POM to the next development version so the cascade
+    # branch ends up in the correct state for merge-back.
+    - name: Advance to next development version (already released)
+      if: ${{ steps.check.outputs.released == 'true' }}
+      run: |
+        cd "${{ inputs.projectToRelease }}"
+        git config user.email "datawave@github.com"
+        git config user.name "${{ secrets.GHCR_WRITE_USER_NAME }}"
+        mvn --batch-mode versions:set \
+            -DnewVersion="${{ steps.version.outputs.NEXT_DEV_VERSION }}" \
+            -DgenerateBackupPoms=false
+        cd "$GITHUB_WORKSPACE"
+        if git diff --quiet; then
+          echo "POM already at development version."
+        else
+          git add -A
+          git commit -m "[maven-release-plugin] prepare for next development iteration"
+          git push
+        fi
     - name: Release with Maven
+      if: ${{ steps.check.outputs.released != 'true' }}
       run: |
         cd "${{ inputs.projectToRelease }}"
         #Github actions bot user id + user.login. See https://api.github.com/users/github-actions%5Bbot%5D
@@ -191,47 +245,5 @@ jobs:
         -DdevelopmentVersion="${{ steps.version.outputs.NEXT_DEV_VERSION }}" \
         -Dtag="${{ steps.version.outputs.VERSION_TAG }}"
 
-    # When invoked from the cascade workflow, follow up the release by bumping every
-    # consumer POM in microservices/ that depends on the just-released artifact.
-    # versions:update-parent rewrites <parent><version>; versions:update-properties
-    # rewrites the version property used by each <dependency>'s <version>${...}</version>.
-    # Both look up the latest non-snapshot version of the targeted artifact in the
-    # configured repos (GitHub Packages, where release:perform just published).
-    - name: Bump downstream consumers
-      if: ${{ inputs.bumpDownstream }}
-      env:
-        ARTIFACT_ID: ${{ steps.version.outputs.ARTIFACT_ID }}
-        FINAL_VERSION: ${{ steps.version.outputs.FINAL_VERSION }}
-      run: |
-        set -euo pipefail
-        # Pick up release plugin's pushed commits, just in case.
-        git pull --rebase --autostash
-
-        # Activate the umbrella `services` and `starters` profiles so the
-        # reactor includes every microservice/starter module (modules under
-        # microservices/services and microservices/starters are gated on these
-        # profiles in their parent POMs).
-        # Exclude the just-released artifact itself from the reactor so that
-        # versions:update-properties resolves its version from the remote
-        # repository (where the release was just published) rather than the
-        # local reactor SNAPSHOT, which would otherwise bypass -DallowSnapshots=false.
-        cd microservices
-        mvn --batch-mode --no-transfer-progress \
-            -Dservices -Dstarters \
-            -pl "!:${ARTIFACT_ID}" \
-            versions:update-parent versions:update-properties \
-            -DallowSnapshots=false \
-            -DallowMajorUpdates=false \
-            -DgenerateBackupPoms=false \
-            -Dincludes="gov.nsa.datawave.microservice:${ARTIFACT_ID}"
-        cd "$GITHUB_WORKSPACE"
-
-        if git diff --quiet; then
-          echo "No downstream POMs needed updating for ${ARTIFACT_ID}=${FINAL_VERSION}."
-        else
-          git add -A
-          git commit -m "auto-update: bump ${ARTIFACT_ID} to ${FINAL_VERSION}"
-          git push
-        fi
 
 

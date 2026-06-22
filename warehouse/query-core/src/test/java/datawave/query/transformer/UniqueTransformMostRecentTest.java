@@ -1,5 +1,7 @@
 package datawave.query.transformer;
 
+import static org.junit.Assert.assertNotNull;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -30,6 +32,7 @@ public class UniqueTransformMostRecentTest extends UniqueTransformTest {
 
         // setup the hadoop configuration
         URL hadoopConfig = this.getClass().getResource("/testhadoop.config");
+        assertNotNull("hadoop config cannot be null", hadoopConfig);
         logic.setHdfsSiteConfigURLs(hadoopConfig.toExternalForm());
 
         // setup a directory for cache results
