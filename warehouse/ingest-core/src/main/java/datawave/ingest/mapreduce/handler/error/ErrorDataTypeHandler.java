@@ -1,11 +1,13 @@
 package datawave.ingest.mapreduce.handler.error;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
-import java.util.Map;
 
+import org.apache.accumulo.access.AccessExpression;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
@@ -110,7 +112,7 @@ public class ErrorDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedData
 
     private byte[] defaultVisibility = null;
     protected MarkingsHelper markingsHelper;
-    protected MarkingFunctions markingFunctions;
+    protected MarkingFunctions<?> markingFunctions;
 
     private String tableName = null;
 
@@ -134,11 +136,11 @@ public class ErrorDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedData
 
         this.conf = context.getConfiguration();
 
-        try {
-            Map<String,String> defaultMarkings = markingsHelper.getDefaultMarkings();
-            defaultVisibility = flatten(markingFunctions.translateToColumnVisibility(defaultMarkings));
-        } catch (MarkingFunctions.Exception e) {
-            throw new IllegalArgumentException("Failed to convert default markings to a ColumnVisibility.", e);
+        if (markingsHelper != null && markingsHelper.getDefaultMarkings() != null) {
+            AccessExpression ae = markingsHelper.getDefaultMarkings().toAccessExpression();
+            if (ae != null) {
+                defaultVisibility = ae.getExpression().getBytes(UTF_8);
+            }
         }
 
         // Initialize a UID builder based on the configuration
@@ -322,12 +324,7 @@ public class ErrorDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedData
     protected byte[] getVisibility(RawRecordContainer event, NormalizedContentInterface value) {
         byte[] visibility;
         if (value != null && value.getMarkings() != null && !value.getMarkings().isEmpty()) {
-            try {
-                visibility = flatten(markingFunctions.translateToColumnVisibility(value.getMarkings()));
-            } catch (MarkingFunctions.Exception e) {
-                log.error("Failed to create visibility from markings, using default", e);
-                visibility = defaultVisibility;
-            }
+            visibility = flatten(value.getMarkings().toColumnVisibility());
         } else if (event.getVisibility() != null) {
             visibility = flatten(event.getVisibility());
         } else {
@@ -337,14 +334,14 @@ public class ErrorDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedData
     }
 
     /**
-     * Create a flattened visibility, using the cache if possible
+     * Normalize a ColumnVisibility expression via AccessExpression and return the expression bytes.
      *
      * @param vis
      *            the visibility
-     * @return the flattened visibility
+     * @return the normalized visibility bytes
      */
     protected byte[] flatten(ColumnVisibility vis) {
-        return markingFunctions.flatten(vis);
+        return markingFunctions == null ? vis.flatten() : markingFunctions.flatten(vis);
     }
 
     @Override

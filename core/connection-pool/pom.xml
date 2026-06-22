@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.core</groupId>
         <artifactId>datawave-core-parent</artifactId>
-        <version>7.41.0-SNAPSHOT</version>
+        <version>7.42.0-SNAPSHOT</version>
     </parent>
     <artifactId>datawave-core-connection-pool</artifactId>
     <name>${project.artifactId}</name>
@@ -36,6 +36,11 @@
         <dependency>
             <groupId>gov.nsa.datawave.core</groupId>
             <artifactId>base-rest-responses</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.core</groupId>
+            <artifactId>type-utils</artifactId>
+            <!-- No direct dependencies. But has transitive dependencies. Adding here to avoid race condition where type utils builds after connection pool -->
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>
