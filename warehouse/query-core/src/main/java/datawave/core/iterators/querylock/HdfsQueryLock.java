@@ -134,4 +134,8 @@ public class HdfsQueryLock implements QueryLock {
         return true;
     }
 
+    @Override
+    protected void finalize() throws Throwable {
+        cleanup();
+    }
 }

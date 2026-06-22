@@ -162,7 +162,7 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
 
     protected Set<String> sequenceFileNames = new HashSet<>();
 
-    protected MarkingFunctions markingFunctions;
+    protected MarkingFunctions<?> markingFunctions;
 
     private boolean metricsEnabled = false;
     private MetricsService<K2,V2> metricsService;
