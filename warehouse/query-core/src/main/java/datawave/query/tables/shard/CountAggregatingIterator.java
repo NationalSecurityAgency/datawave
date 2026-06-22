@@ -57,7 +57,7 @@ public class CountAggregatingIterator extends TransformIterator {
      * @param markingFunctions
      *            the marking functions
      */
-    public CountAggregatingIterator(Iterator<Entry<Key,Value>> iterator, Transformer transformer, MarkingFunctions markingFunctions) {
+    public CountAggregatingIterator(Iterator<Entry<Key,Value>> iterator, Transformer transformer, MarkingFunctions<?> markingFunctions) {
         this(iterator, transformer, markingFunctions, DEFAULT_PAGE_WAIT_TIME_MILLIS);
     }
 
@@ -74,7 +74,8 @@ public class CountAggregatingIterator extends TransformIterator {
      *            the time to wait for the next page
      */
     @SuppressWarnings("unchecked")
-    public CountAggregatingIterator(Iterator<Entry<Key,Value>> iterator, Transformer transformer, MarkingFunctions markingFunctions, long pageWaitTimeMillis) {
+    public CountAggregatingIterator(Iterator<Entry<Key,Value>> iterator, Transformer transformer, MarkingFunctions<?> markingFunctions,
+                    long pageWaitTimeMillis) {
         super(iterator, transformer);
         this.aggregator = new CountEntryAggregator(transformer, markingFunctions);
         this.pageWaitTimeMillis = pageWaitTimeMillis;
@@ -121,12 +122,12 @@ public class CountAggregatingIterator extends TransformIterator {
     private static class CountEntryAggregator {
 
         private final AtomicLong count = new AtomicLong(0L);
-        private final Set<ColumnVisibility> cvs = new HashSet<>();
+        private final Set<ColumnVisibility> columnVisibilities = new HashSet<>();
 
         private final Transformer transformer;
-        private final MarkingFunctions markingFunctions;
+        private MarkingFunctions<?> markingFunctions;
 
-        public CountEntryAggregator(Transformer transformer, MarkingFunctions markingFunctions) {
+        public CountEntryAggregator(Transformer transformer, MarkingFunctions<?> markingFunctions) {
             this.transformer = transformer;
             this.markingFunctions = markingFunctions;
         }
@@ -136,13 +137,13 @@ public class CountAggregatingIterator extends TransformIterator {
         }
 
         public void addColumnVisibility(ColumnVisibility cv) {
-            this.cvs.add(cv);
+            this.columnVisibilities.add(cv);
         }
 
         @SuppressWarnings("unchecked")
         public Object getAggregatedEvent() {
-            if (cvs.isEmpty() && count.get() == 0L) {
-                cvs.add(new ColumnVisibility(""));
+            if (columnVisibilities.isEmpty() && count.get() == 0L) {
+                columnVisibilities.add(new ColumnVisibility(""));
             }
 
             ColumnVisibility cv = getCombinedColumnVisibility();
@@ -151,7 +152,10 @@ public class CountAggregatingIterator extends TransformIterator {
 
         private ColumnVisibility getCombinedColumnVisibility() {
             try {
-                return markingFunctions.combine(cvs);
+                if (null == markingFunctions) {
+                    markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
+                }
+                return markingFunctions.combineVisibilities(columnVisibilities);
             } catch (Exception e) {
                 log.error("Could not combine columnVisibilities for the count", e);
                 return null;
