@@ -719,7 +719,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
             return this.transformerInstance;
         }
 
-        MarkingFunctions markingFunctions = this.getMarkingFunctions();
+        MarkingFunctions<?> markingFunctions = this.getMarkingFunctions();
         ResponseObjectFactory responseObjectFactory = this.getResponseObjectFactory();
 
         boolean reducedInSettings = false;
@@ -747,7 +747,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         return this.transformerInstance;
     }
 
-    protected DocumentTransformer createDocumentTransformer(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, MarkingFunctions markingFunctions,
+    protected DocumentTransformer createDocumentTransformer(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, MarkingFunctions<?> markingFunctions,
                     ResponseObjectFactory responseObjectFactory, Boolean reducedResponse) {
         return new DocumentTransformer(logic, settings, markingFunctions, responseObjectFactory, reducedResponse);
     }
@@ -1429,7 +1429,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
             }
         }
 
-        return new PushdownScheduler(config, scannerFactory, this.metadataHelperFactory);
+        return new PushdownScheduler(config, this.metadataHelperFactory);
     }
 
     protected VisitorFunction getVisitorFunction(MetadataHelper metadataHelper) {
@@ -2073,26 +2073,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
     public void setHitList(boolean hitList) {
         getConfig().setHitList(hitList);
-    }
-
-    @Deprecated(since = "7.1.0", forRemoval = true)
-    public int getEventPerDayThreshold() {
-        return getConfig().getEventPerDayThreshold();
-    }
-
-    @Deprecated(since = "7.1.0", forRemoval = true)
-    public void setEventPerDayThreshold(int eventPerDayThreshold) {
-        getConfig().setEventPerDayThreshold(eventPerDayThreshold);
-    }
-
-    @Deprecated(since = "7.1.0", forRemoval = true)
-    public int getShardsPerDayThreshold() {
-        return getConfig().getShardsPerDayThreshold();
-    }
-
-    @Deprecated(since = "7.1.0", forRemoval = true)
-    public void setShardsPerDayThreshold(int shardsPerDayThreshold) {
-        getConfig().setShardsPerDayThreshold(shardsPerDayThreshold);
     }
 
     public int getInitialMaxTermThreshold() {
@@ -3392,14 +3372,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
     public void setWhindexFieldMappings(Map<String,Map<String,String>> whindexFieldMappings) {
         getConfig().setWhindexFieldMappings(whindexFieldMappings);
-    }
-
-    public boolean isLazySetMechanismEnabled() {
-        return getConfig().isLazySetMechanismEnabled();
-    }
-
-    public void setLazySetMechanismEnabled(boolean lazySetMechanismEnabled) {
-        getConfig().setLazySetMechanismEnabled(lazySetMechanismEnabled);
     }
 
     public long getVisitorFunctionMaxWeight() {

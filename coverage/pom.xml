@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave</groupId>
         <artifactId>datawave-parent</artifactId>
-        <version>7.39.0-SNAPSHOT</version>
+        <version>7.42.0-SNAPSHOT</version>
     </parent>
     <artifactId>coverage</artifactId>
     <name>Datawave Code Coverage Aggregate Report</name>
@@ -98,14 +98,19 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>gov.nsa.datawave.core</groupId>
+            <artifactId>datawave-core-tables</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>
             <artifactId>accumulo-api</artifactId>
             <version>${version.datawave.accumulo-api}</version>
         </dependency>
         <dependency>
-            <groupId>gov.nsa.datawave.microservice</groupId>
+            <groupId>gov.nsa.datawave.core</groupId>
             <artifactId>accumulo-utils</artifactId>
-            <version>${version.datawave.accumulo-utils}</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>
@@ -118,14 +123,14 @@
             <version>${version.datawave.authorization-api}</version>
         </dependency>
         <dependency>
-            <groupId>gov.nsa.datawave.microservice</groupId>
+            <groupId>gov.nsa.datawave.core</groupId>
             <artifactId>base-rest-responses</artifactId>
-            <version>${version.datawave.base-rest-responses}</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>gov.nsa.datawave.microservice</groupId>
+            <groupId>gov.nsa.datawave.core</groupId>
             <artifactId>common-utils</artifactId>
-            <version>${version.datawave.common-utils}</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>
@@ -138,9 +143,9 @@
             <version>${version.datawave.mapreduce-query-api}</version>
         </dependency>
         <dependency>
-            <groupId>gov.nsa.datawave.microservice</groupId>
+            <groupId>gov.nsa.datawave.core</groupId>
             <artifactId>metadata-utils</artifactId>
-            <version>${version.datawave.metadata-utils}</version>
+            <version>${project.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>log4j</groupId>
@@ -208,9 +213,9 @@
             </exclusions>
         </dependency>
         <dependency>
-            <groupId>gov.nsa.datawave.microservice</groupId>
+            <groupId>gov.nsa.datawave.core</groupId>
             <artifactId>type-utils</artifactId>
-            <version>${version.datawave.type-utils}</version>
+            <version>${project.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>log4j</groupId>
@@ -282,9 +287,9 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>gov.nsa.datawave.microservice</groupId>
+            <groupId>gov.nsa.datawave.core</groupId>
             <artifactId>base-rest-responses</artifactId>
-            <version>${version.datawave.base-rest-responses}</version>
+            <version>${project.version}</version>
             <classifier>tests</classifier>
             <type>test-jar</type>
             <scope>test</scope>
