@@ -26,7 +26,7 @@ jobs:
           echo "runner=${{vars.RUNNER_TYPE}}" >> $GITHUB_OUTPUT
           if [[ "${{ vars.RUNNER_TYPE }}" == "self-hosted" ]]; then
             echo "runner is self-hosted"
-            echo "cache_settings=-Dmaven.build.cache.remote.save.enabled=true -Dmaven.build.cache.enabled=true -Dmaven.build.cache.remote.enabled=true -Dmaven.build.cache.remote.url=http://localhost:12345" >> $GITHUB_OUTPUT
+            echo "cache_settings=-Dmaven.build.cache.remote.save.enabled=false -Dmaven.build.cache.enabled=false -Dmaven.build.cache.remote.enabled=false -Dmaven.build.cache.remote.url=http://localhost:12345" >> $GITHUB_OUTPUT
           else
             echo "runner is not self-hosted"
             echo cache_settings="" >> $GITHUB_OUTPUT
