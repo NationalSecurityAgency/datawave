@@ -48,7 +48,7 @@ public class LocalShardTableQueryMetricHandler<T extends BaseQueryMetric> extend
     protected ExecutorService executorService;
 
     public LocalShardTableQueryMetricHandler(QueryMetricHandlerProperties queryMetricHandlerProperties, AccumuloConnectionFactory connectionFactory,
-                    QueryMetricQueryLogicFactory logicFactory, QueryMetricFactory metricFactory, MarkingFunctions markingFunctions,
+                    QueryMetricQueryLogicFactory logicFactory, QueryMetricFactory metricFactory, MarkingFunctions<?> markingFunctions,
                     QueryMetricCombiner queryMetricCombiner, LuceneToJexlQueryParser luceneToJexlQueryParser, DnUtils dnUtils) {
         super(queryMetricHandlerProperties, connectionFactory, logicFactory, metricFactory, markingFunctions, queryMetricCombiner, luceneToJexlQueryParser,
                         dnUtils);

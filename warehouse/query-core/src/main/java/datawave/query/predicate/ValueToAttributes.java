@@ -24,7 +24,6 @@ import datawave.data.type.OneToManyNormalizerType;
 import datawave.data.type.Type;
 import datawave.ingest.data.config.ingest.CompositeIngest;
 import datawave.marking.MarkingFunctions;
-import datawave.marking.MarkingFunctions.Exception;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.AttributeFactory;
 import datawave.query.attributes.Attributes;
@@ -45,13 +44,13 @@ public class ValueToAttributes implements Function<Entry<Key,String>,Iterable<En
 
     private Map<String,Multimap<String,String>> compositeToFieldMap;
     private Map<String,Map<String,String>> compositeFieldSeparatorsByType;
-    private final MarkingFunctions markingFunctions;
     private final Multimap<String,Attribute<?>> componentFieldToValues = ArrayListMultimap.create();
 
     private final EventDataQueryFilter attrFilter;
 
     // Whether the value is from the index
     private final boolean fromIndex;
+    private MarkingFunctions<?> markingFunctions;
 
     /**
      * Constructor that accepts raw components
@@ -67,8 +66,8 @@ public class ValueToAttributes implements Function<Entry<Key,String>,Iterable<En
      * @param fromIndex
      *            flag denoting if this class is operating on values from the field index
      */
-    public ValueToAttributes(CompositeMetadata compositeMetadata, TypeMetadata typeMetadata, EventDataQueryFilter attrFilter, MarkingFunctions markingFunctions,
-                    boolean fromIndex) {
+    public ValueToAttributes(CompositeMetadata compositeMetadata, TypeMetadata typeMetadata, EventDataQueryFilter attrFilter,
+                    MarkingFunctions<?> markingFunctions, boolean fromIndex) {
         // in Java 25 we can create the attribute factory first
         this(new AttributeFactory(typeMetadata), compositeMetadata, attrFilter, markingFunctions, fromIndex);
     }
@@ -88,7 +87,7 @@ public class ValueToAttributes implements Function<Entry<Key,String>,Iterable<En
      *            flag denoting if this class is operating on values from the field index
      */
     public ValueToAttributes(AttributeFactory attributeFactory, CompositeMetadata compositeMetadata, EventDataQueryFilter attrFilter,
-                    MarkingFunctions markingFunctions, boolean fromIndex) {
+                    MarkingFunctions<?> markingFunctions, boolean fromIndex) {
         this.attrFactory = attributeFactory;
         this.markingFunctions = markingFunctions;
         this.attrFilter = attrFilter;
@@ -171,7 +170,7 @@ public class ValueToAttributes implements Function<Entry<Key,String>,Iterable<En
             // finally create the composite from what we have
             try {
                 return Arrays.asList(Maps.immutableEntry(compositeField, joinAttributes(compositeField, currentAttributes, isOverloadedComposite, separator)));
-            } catch (Exception e) {
+            } catch (MarkingFunctions.Exception e) {
                 log.debug("could not join attributes:", e);
             }
         } else {
@@ -224,7 +223,8 @@ public class ValueToAttributes implements Function<Entry<Key,String>,Iterable<En
         return attr;
     }
 
-    public Attribute<?> joinAttributes(String compositeName, Collection<Attribute<?>> in, boolean isOverloadedComposite, String separator) throws Exception {
+    public Attribute<?> joinAttributes(String compositeName, Collection<Attribute<?>> in, boolean isOverloadedComposite, String separator)
+                    throws MarkingFunctions.Exception {
         Collection<ColumnVisibility> columnVisibilities = Sets.newHashSet();
         List<String> dataList = new ArrayList<>();
         long timestamp = 0;
@@ -290,8 +290,18 @@ public class ValueToAttributes implements Function<Entry<Key,String>,Iterable<En
         if (log.isDebugEnabled()) {
             log.debug("dataList is " + dataList);
         }
-        ColumnVisibility combinedColumnVisibility = this.markingFunctions.combine(columnVisibilities);
-        metadata = new Key(metadata.getRow(), metadata.getColumnFamily(), new Text(), combinedColumnVisibility, timestamp);
+        ColumnVisibility columnVisibility;
+        try {
+            if (null == markingFunctions) {
+                markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
+            }
+            columnVisibility = markingFunctions.combineVisibilities(columnVisibilities);
+        } catch (Exception e) {
+            log.warn("Invalid column visibility after combining!", e);
+            return null;
+        }
+
+        metadata = new Key(metadata.getRow(), metadata.getColumnFamily(), new Text(), columnVisibility, timestamp);
         if (dataList.size() == 1) {
             return this.attrFactory.create(compositeName, dataList.get(0), metadata, toKeep, true);
         } else {
@@ -319,7 +329,7 @@ public class ValueToAttributes implements Function<Entry<Key,String>,Iterable<En
             return (type instanceof OneToManyNormalizerType) ? ((OneToManyNormalizerType<?>) type).getNormalizedValues()
                             : Arrays.asList(type.getNormalizedValue());
         } else {
-            new Exception().printStackTrace(System.err);
+            new MarkingFunctions.Exception().printStackTrace(System.err);
             return Arrays.asList(String.valueOf(attr.getData()));
         }
     }

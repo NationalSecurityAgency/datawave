@@ -23,7 +23,6 @@ import java.util.TreeMap;
 
 import org.apache.commons.collections.keyvalue.UnmodifiableMapEntry;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -88,22 +87,29 @@ public abstract class BufferedFileBackedSortedMapTest<K,V> {
             sortedOrder[i * 2] = sortedTemplate[i] + sortedTemplate.length;
             sortedOrder[i * 2 + 1] = sortedTemplate[i];
         }
-        map = new datawave.query.util.sortedmap.BufferedFileBackedSortedMap.Builder().withComparator(getComparator()).withRewriteStrategy(getRewriteStrategy())
-                        .withBufferPersistThreshold(5).withMaxOpenFiles(7).withNumRetries(2).withHandlerFactories(
-                                        Collections.singletonList(new datawave.query.util.sortedmap.BufferedFileBackedSortedMap.SortedMapFileHandlerFactory() {
-                                            @Override
-                                            public FileSortedMap.SortedMapFileHandler createHandler() throws IOException {
-                                                datawave.query.util.sortedmap.SortedMapTempFileHandler fileHandler = new datawave.query.util.sortedmap.SortedMapTempFileHandler();
-                                                tempFileHandlers.add(fileHandler);
-                                                return fileHandler;
-                                            }
-
-                                            @Override
-                                            public boolean isValid() {
-                                                return true;
-                                            }
-                                        }))
-                        .withMapFactory(getFactory()).build();
+        //  @formatter:off
+        map = new BufferedFileBackedSortedMap.Builder()
+                .withComparator(getComparator())
+                .withRewriteStrategy(getRewriteStrategy())
+                .withBufferPersistThreshold(5)
+                .withMaxOpenFiles(7)
+                .withNumRetries(2)
+                .withHandlerFactories(
+                        Collections.singletonList(new BufferedFileBackedSortedMap.SortedMapFileHandlerFactory() {
+                            @Override
+                            public FileSortedMap.SortedMapFileHandler createHandler() throws IOException {
+                                SortedMapTempFileHandler fileHandler = new SortedMapTempFileHandler();
+                                tempFileHandlers.add(fileHandler);
+                                return fileHandler;
+                            }
+                            @Override
+                            public boolean isValid() {
+                                return true;
+                            }
+                        }))
+                .withMapFactory(getFactory())
+                .build();
+        //  @formatter:on
 
         // adding in the data map multiple times to create underlying files with duplicate values making the
         // MergeSortIterator's job a little tougher...
@@ -151,7 +157,7 @@ public abstract class BufferedFileBackedSortedMapTest<K,V> {
 
     private void tryDelete(File file) {
         if (file.exists()) {
-            Assert.assertTrue("Failed to delete file " + file, file.delete());
+            assertTrue("Failed to delete file " + file, file.delete());
         }
     }
 

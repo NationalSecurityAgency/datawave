@@ -12,7 +12,7 @@ import datawave.util.StringUtils;
 /** Parses results returned from the KeywordExtractingIterator. Expects 'd' column keys, and serialized bytes as the value */
 public class KeywordKeyValueFactory {
 
-    public static KeywordKeyValue parse(Key key, Value value, Authorizations auths, MarkingFunctions markingFunctions) throws MarkingFunctions.Exception {
+    public static KeywordKeyValue parse(Key key, Value value, Authorizations auths, MarkingFunctions<?> markingFunctions) throws MarkingFunctions.Exception {
 
         if (null == key)
             throw new IllegalArgumentException("Cannot pass null key to KeywordKeyValueFactory");

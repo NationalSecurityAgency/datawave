@@ -1,5 +1,7 @@
 package datawave.util.keyword;
 
+import static datawave.marking.AccessExpressionMarkings.ACCESS;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -12,6 +14,8 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+import org.apache.accumulo.access.AccessExpression;
+
 import com.google.gson.Gson;
 
 /** A tag cloud - a collection of tags that have a keyword, score, frequency and list of sources from which they originated */
@@ -22,8 +26,8 @@ public class TagCloud {
     /** metadata for the cloud */
     final Map<String,String> metadata;
 
-    /** the 'visibility' of this cloud */
-    final Map<String,String> visibility;
+    /** the combined visibility expression string for this cloud (stored as String for Gson serialization) */
+    final String visibility;
 
     /** the sorted set of keywords in this cloud, including scores and sources */
     final SortedSet<TagCloudEntry> results;
@@ -34,11 +38,11 @@ public class TagCloud {
      * @param metadata
      *            metadata for the tag cloud
      * @param visibility
-     *            the visibility of the cloud, some form of visibility marking
+     *            the combined ColumnVisibility for the cloud, or {@code null}
      * @param results
      *            the entries that belong in the tag cloud.
      */
-    protected TagCloud(Map<String,String> metadata, Map<String,String> visibility, SortedSet<TagCloudEntry> results) {
+    protected TagCloud(Map<String,String> metadata, String visibility, SortedSet<TagCloudEntry> results) {
         this.metadata = metadata;
         this.visibility = visibility;
         this.results = results;
@@ -48,8 +52,12 @@ public class TagCloud {
         return metadata;
     }
 
-    public Map<String,String> getVisibility() {
-        return visibility;
+    /** Return the combined visibility as an {@link AccessExpression}. */
+    public AccessExpression getVisibility() {
+        if (visibility == null || visibility.isEmpty()) {
+            return null;
+        }
+        return ACCESS.newExpression(visibility);
     }
 
     public Collection<TagCloudEntry> getResults() {
@@ -213,7 +221,7 @@ public class TagCloud {
                 final SortedSet<TagCloudEntry> results = new TreeSet<>(comparator);
                 results.addAll(e.getValue());
                 String partition = getPartition(e.getKey());
-                Map<String,String> visibility = utils.generateCombinedVisibility(visibilities.get(partition));
+                String visibility = utils.generateCombinedVisibility(visibilities.get(partition));
                 Map<String,String> tagCloudMetadata = utils.generateCombinedMetadata(this.metadata.get(partition));
                 tagClouds.add(new TagCloud(tagCloudMetadata, visibility, results));
             }
