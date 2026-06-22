@@ -204,7 +204,7 @@ import datawave.webservice.query.exception.NotFoundQueryException;
 import datawave.webservice.query.exception.PreConditionFailedQueryException;
 import datawave.webservice.query.exception.QueryException;
 
-public class DefaultQueryPlanner extends QueryPlanner implements Cloneable, AutoCloseable {
+public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
     private static final Logger log = ThreadConfigurableLogger.getLogger(DefaultQueryPlanner.class);
 
@@ -1430,8 +1430,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable, Auto
         // if we have to force it down the field-index path with event-specific
         // ranges
         if (!compositeFields.isEmpty()) {
-            boolean functionsEnabled = config.isCompositeFilterFunctionsEnabled();
-            containsComposites = !SetMembershipVisitor.getMembers(compositeFields.keySet(), config, config.getQueryTree(), functionsEnabled).isEmpty();
+            containsComposites = !SetMembershipVisitor.getMembers(compositeFields.keySet(), config.getQueryTree()).isEmpty();
         }
 
         // Print the nice log message
@@ -1526,7 +1525,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable, Auto
         Set<String> termFrequencyFields = getTermFrequencyFields();
 
         if (!termFrequencyFields.isEmpty()) {
-            queryTfFields = SetMembershipVisitor.getMembers(termFrequencyFields, config, config.getQueryTree());
+            queryTfFields = SetMembershipVisitor.getMembers(termFrequencyFields, config.getQueryTree());
 
             // Print the nice log message
             if (log.isDebugEnabled()) {
@@ -1894,8 +1893,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable, Auto
         boolean containsIndexOnlyFields;
         TraceStopwatch stopwatch = timers.newStartedStopwatch(stage);
         try {
-            boolean functionsEnabled = config.isIndexOnlyFilterFunctionsEnabled();
-            containsIndexOnlyFields = !SetMembershipVisitor.getMembers(indexOnlyFields, config, script, functionsEnabled).isEmpty();
+            containsIndexOnlyFields = !SetMembershipVisitor.getMembers(indexOnlyFields, script).isEmpty();
 
             // Print the nice log message
             if (log.isDebugEnabled()) {
@@ -3576,7 +3574,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable, Auto
     }
 
     @Override
-    public void close() {
+    public void finalize() {
         if (null != executor) {
             executor.shutdown();
         }

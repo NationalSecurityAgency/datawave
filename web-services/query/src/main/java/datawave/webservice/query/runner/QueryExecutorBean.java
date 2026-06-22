@@ -616,7 +616,7 @@ public class QueryExecutorBean implements QueryExecutor {
         // These are parameters that aren't passed in by the user, but rather are computed from other sources.
         PrivateAuditConstants.stripPrivateParameters(queryParameters);
         queryParameters.add(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
-        queryParameters.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, marking.toColumnVisibilityString());
+        queryParameters.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, marking.toAccessExpressionString());
         queryParameters.add(PrivateAuditConstants.USER_DN, qd.userDn);
 
         return qd;

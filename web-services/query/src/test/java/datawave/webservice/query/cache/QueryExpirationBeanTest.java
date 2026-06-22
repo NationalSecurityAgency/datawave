@@ -12,6 +12,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.core.query.logic.QueryLogic;
@@ -49,12 +50,12 @@ public class QueryExpirationBeanTest {
         queryLimiter = Mockito.mock(QueryLimiter.class);
 
         this.bean = new QueryExpirationBean();
-        bean.setQueryCache(queryCache);
-        bean.setQueryExpirationProperties(properties);
-        bean.setConnectionFactory(connectionFactory);
-        bean.setCreatedQueryLogicCacheBean(queryLogicCache);
-        bean.setQueryMetricsBean(metricsBean);
-        bean.setQueryLimiter(queryLimiter);
+        ReflectionTestUtils.setField(bean, "queryCache", queryCache);
+        ReflectionTestUtils.setField(bean, "config", properties);
+        ReflectionTestUtils.setField(bean, "connectionFactory", connectionFactory);
+        ReflectionTestUtils.setField(bean, "queryLogicCacheBean", queryLogicCache);
+        ReflectionTestUtils.setField(bean, "metricsBean", metricsBean);
+        ReflectionTestUtils.setField(bean, "queryLimiter", queryLimiter);
 
         bean.init();
     }
