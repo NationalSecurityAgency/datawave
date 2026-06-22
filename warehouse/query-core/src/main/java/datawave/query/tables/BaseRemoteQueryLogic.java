@@ -130,7 +130,7 @@ public abstract class BaseRemoteQueryLogic<T> extends BaseQueryLogic<T> implemen
         return transformerInstance;
     }
 
-    public abstract QueryLogicTransformer<T,T> createTransformer(Query settings, MarkingFunctions markingFunctions,
+    public abstract QueryLogicTransformer<T,T> createTransformer(Query settings, MarkingFunctions<?> markingFunctions,
                     ResponseObjectFactory responseObjectFactory);
 
     @Override

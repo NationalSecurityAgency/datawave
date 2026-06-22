@@ -19,9 +19,9 @@ import datawave.webservice.query.result.event.FieldBase;
 public class CountResultPostprocessor implements ResultPostprocessor {
     private static final Logger log = Logger.getLogger(CountResultPostprocessor.class);
 
-    private final MarkingFunctions markingFunctions;
+    private MarkingFunctions<?> markingFunctions;
 
-    public CountResultPostprocessor(MarkingFunctions markingFunctions) {
+    public CountResultPostprocessor(MarkingFunctions<?> markingFunctions) {
         this.markingFunctions = markingFunctions;
     }
 
@@ -70,7 +70,10 @@ public class CountResultPostprocessor implements ResultPostprocessor {
             if (success) {
                 ColumnVisibility columnVisibility = null;
                 try {
-                    columnVisibility = markingFunctions.combine(columnVisibilities);
+                    if (null == markingFunctions) {
+                        markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
+                    }
+                    columnVisibility = markingFunctions.combineVisibilities(columnVisibilities);
                 } catch (Exception e) {
                     log.error("Could not create combined columnVisibilities for the count", e);
                 }

@@ -126,7 +126,7 @@ class MutableMetadataHandlerTestSupport {
         request.setFieldName(fieldName);
         request.setFieldValue(fieldValue);
         Map<String,String> markings = new HashMap<>();
-        markings.put(MarkingFunctions.Default.COLUMN_VISIBILITY, columnVisibility);
+        markings.put("columnVisibility", columnVisibility);
         request.setFieldMarkings(markings);
         request.setColumnVisibility(null);
         return request;
