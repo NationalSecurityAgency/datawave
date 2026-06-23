@@ -53,7 +53,7 @@
         <sonar.sourceEncoding>UTF-8</sonar.sourceEncoding>
         <spotbugs.excludes.file />
         <surefire.forkCount>1C</surefire.forkCount>
-        <version.datawave-commons-security>7.41.0-3508-RC1</version.datawave-commons-security>
+        <version.datawave-commons-security>7.42.0-3508-RC1</version.datawave-commons-security>
         <version.hadoop>3.3.4</version.hadoop>
         <!-- 2.14.X is the maximum version of jackson without snakeyaml version 2 causing spring-boot 2.7.1 conflict -->
         <version.jackson>2.14.3</version.jackson>
