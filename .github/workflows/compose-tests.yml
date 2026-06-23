@@ -58,13 +58,7 @@ jobs:
       - uses: ./.github/actions/free-space
         with:
           tool-cache: false
-      - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v5
-        with:
-          distribution: ${{ env.JAVA_DISTRIBUTION }}
-          java-version: ${{ env.JAVA_VERSION }}
-          overwrite-settings: false
-      - name: Configure Maven Central mirror
+      - name: Configure Maven Settings
         run: |
           mkdir -p ~/.m2
           cat > ~/.m2/settings.xml <<'EOF'
@@ -88,6 +82,12 @@ jobs:
           </mirrors>
           </settings>
           EOF
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v5
+        with:
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+          java-version: ${{ env.JAVA_VERSION }}
+          overwrite-settings: false
       - uses: actions/cache@v4
         if: ${{ !inputs.allow-snapshots }}
         with:

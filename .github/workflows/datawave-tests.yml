@@ -51,6 +51,30 @@ jobs:
     - uses: ./.github/actions/free-space
       with:
         tool-cache: false
+    - name: Configure Maven Settings
+      run: |
+        mkdir -p ~/.m2
+        cat > ~/.m2/settings.xml <<'EOF'
+        <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+               xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 https://maven.apache.org/xsd/settings-1.0.0.xsd">
+        <servers>
+         <server>
+           <id>github-datawave</id>
+           <username>${env.GITHUB_USERNAME}</username>
+           <password>${env.GITHUB_PASSWORD}</password>
+         </server>
+        </servers>
+        <mirrors>
+         <mirror>
+           <id>google-maven-central</id>
+           <name>Google Cloud Maven Central Mirror</name>
+           <url>https://maven-central.storage-download.googleapis.com/maven2/</url>
+           <mirrorOf>central</mirrorOf>
+         </mirror>
+        </mirrors>
+        </settings>
+        EOF
     - name: Set up JDK ${{env.JAVA_VERSION}}
       uses: actions/setup-java@v5
       with:
@@ -58,30 +82,6 @@ jobs:
         java-version: ${{env.JAVA_VERSION}}
         cache: 'maven'
         overwrite-settings: false
-    - name: Configure Maven Central mirror
-      run: |
-        mkdir -p ~/.m2
-        cat > ~/.m2/settings.xml <<'EOF'
-        <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
-                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                  xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 https://maven.apache.org/xsd/settings-1.0.0.xsd">
-          <servers>
-            <server>
-              <id>github-datawave</id>
-              <username>${env.GITHUB_USERNAME}</username>
-              <password>${env.GITHUB_PASSWORD}</password>
-            </server>
-          </servers>
-          <mirrors>
-            <mirror>
-              <id>google-maven-central</id>
-              <name>Google Cloud Maven Central Mirror</name>
-              <url>https://maven-central.storage-download.googleapis.com/maven2/</url>
-              <mirrorOf>central</mirrorOf>
-            </mirror>
-          </mirrors>
-        </settings>
-        EOF
     - name: Build and Run Unit Tests
       run: |
           mvn --show-version --batch-mode --errors --no-transfer-progress "-Dstyle.color=always" -Pexamples,assemble,spotbugs  ${{ needs.configure-runner.outputs.cache_settings }} -Ddeploy -Ddist -T1C clean install -Dsurefire.rerunFailingTestsCount=3 -Dutils -DskipITs -DskipFormat
