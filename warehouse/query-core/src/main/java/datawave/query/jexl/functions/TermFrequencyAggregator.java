@@ -15,8 +15,8 @@ import datawave.query.attributes.AttributeFactory;
 import datawave.query.attributes.Document;
 import datawave.query.data.parsers.DatawaveKey;
 import datawave.query.predicate.EventDataQueryFilter;
-import datawave.query.tld.TLD;
 import datawave.query.util.Tuple2;
+import datawave.table.util.TLD;
 
 /**
  * Aggregator for TF keys. TF keys that will be aggregated will be matching row and dataType/uid. FIELD/VALUE are not evaluated for performance reasons since
