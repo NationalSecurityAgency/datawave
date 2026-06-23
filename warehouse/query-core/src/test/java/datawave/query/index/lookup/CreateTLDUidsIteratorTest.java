@@ -4,7 +4,7 @@ import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
 
-import datawave.query.tld.TLD;
+import datawave.table.util.TLD;
 
 public class CreateTLDUidsIteratorTest {
 
