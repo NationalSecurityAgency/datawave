@@ -6,9 +6,13 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.apache.accumulo.access.AccessExpression;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
+import org.apache.accumulo.core.security.ColumnVisibility;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.core.query.logic.BaseQueryLogicTransformer;
 import datawave.marking.MarkingFunctions;
@@ -35,12 +39,14 @@ public class TagCloudTransformer extends BaseQueryLogicTransformer<Entry<Key,Val
     protected final KeywordQueryState state;
     private final Set<TagCloudInputTransformer<?>> transformers;
 
+    private static final Logger log = LoggerFactory.getLogger(TagCloudTransformer.class);
+
     public enum ResponseVersion {
         V1, V2
     }
 
     // TODO-crwill9 pass in state data, not the state object so this is more reusable
-    public TagCloudTransformer(String responseVersion, Query query, KeywordQueryState state, MarkingFunctions markingFunctions,
+    public TagCloudTransformer(String responseVersion, Query query, KeywordQueryState state, MarkingFunctions<?> markingFunctions,
                     ResponseObjectFactory responseObjectFactory, Set<TagCloudInputTransformer<?>> transformers) {
         super(markingFunctions);
         this.responseVersion = getResponseVersion(responseVersion);
@@ -183,9 +189,7 @@ public class TagCloudTransformer extends BaseQueryLogicTransformer<Entry<Key,Val
                 }
             }
         }
-        if (!tagCloud.getVisibility().isEmpty()) {
-            base.setMarkings(tagCloud.getVisibility());
-        }
+        convertAndSetMarkings(base, tagCloud.getVisibility());
         base.setTags(generateTagCloudEntries(tagCloud));
     }
 
@@ -193,10 +197,19 @@ public class TagCloudTransformer extends BaseQueryLogicTransformer<Entry<Key,Val
         if (tagCloud.getMetadata() != null && !tagCloud.getMetadata().isEmpty()) {
             base.setMetadata(tagCloud.getMetadata());
         }
-        if (!tagCloud.getVisibility().isEmpty()) {
-            base.setMarkings(tagCloud.getVisibility());
-        }
+        convertAndSetMarkings(base, tagCloud.getVisibility());
         base.setTags(generateTagCloudEntries(tagCloud));
+    }
+
+    @SuppressWarnings("unchecked")
+    private void convertAndSetMarkings(TagCloudBase base, AccessExpression visibility) {
+        if (visibility != null && !visibility.getExpression().isEmpty()) {
+            try {
+                base.setMarkings(markingFunctions.translateFromColumnVisibility(new ColumnVisibility(visibility.getExpression())));
+            } catch (MarkingFunctions.Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
     private void configureTagCloud(TagCloudBase base, TagCloud tagCloud) {
