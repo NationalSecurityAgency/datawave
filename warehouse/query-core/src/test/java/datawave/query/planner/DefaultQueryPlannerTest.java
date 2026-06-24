@@ -1,12 +1,14 @@
 package datawave.query.planner;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Set;
 
+import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,6 +27,8 @@ import datawave.query.common.grouping.GroupFields;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.DatawaveQueryException;
+import datawave.query.iterator.QueryIterator;
+import datawave.query.iterator.QueryOptions;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.util.DateIndexHelper;
@@ -35,6 +39,46 @@ import datawave.test.JexlNodeAssert;
 import datawave.util.time.DateHelper;
 
 class DefaultQueryPlannerTest {
+
+    @Nested
+    class DocumentMatchOptionTests {
+
+        @Test
+        void testAddDocumentMatchOptionsWithoutContextRequired() {
+            DefaultQueryPlanner planner = new DefaultQueryPlanner();
+            ShardQueryConfiguration config = new ShardQueryConfiguration();
+            config.setDocumentMatchContextRequired(false);
+            config.setDocumentMatchMaxEncodedSize(111);
+            config.setDocumentMatchMaxDecodedSize(222);
+            config.setDocumentMatchMaxEncodedContextSize(333);
+            IteratorSetting cfg = new IteratorSetting(10, "query", QueryIterator.class);
+
+            planner.configureDocumentMatchOptions(config, cfg);
+
+            assertEquals("false", cfg.getOptions().get(QueryOptions.DOCUMENT_MATCH_CONTEXT_REQUIRED));
+            assertFalse(cfg.getOptions().containsKey(QueryOptions.DOCUMENT_MATCH_MAX_ENCODED_SIZE));
+            assertFalse(cfg.getOptions().containsKey(QueryOptions.DOCUMENT_MATCH_MAX_DECODED_SIZE));
+            assertFalse(cfg.getOptions().containsKey(QueryOptions.DOCUMENT_MATCH_MAX_ENCODED_CONTEXT_SIZE));
+        }
+
+        @Test
+        void testAddDocumentMatchOptionsWithContextRequired() {
+            DefaultQueryPlanner planner = new DefaultQueryPlanner();
+            ShardQueryConfiguration config = new ShardQueryConfiguration();
+            config.setDocumentMatchContextRequired(true);
+            config.setDocumentMatchMaxEncodedSize(111);
+            config.setDocumentMatchMaxDecodedSize(222);
+            config.setDocumentMatchMaxEncodedContextSize(333);
+            IteratorSetting cfg = new IteratorSetting(10, "query", QueryIterator.class);
+
+            planner.configureDocumentMatchOptions(config, cfg);
+
+            assertEquals("true", cfg.getOptions().get(QueryOptions.DOCUMENT_MATCH_CONTEXT_REQUIRED));
+            assertEquals("111", cfg.getOptions().get(QueryOptions.DOCUMENT_MATCH_MAX_ENCODED_SIZE));
+            assertEquals("222", cfg.getOptions().get(QueryOptions.DOCUMENT_MATCH_MAX_DECODED_SIZE));
+            assertEquals("333", cfg.getOptions().get(QueryOptions.DOCUMENT_MATCH_MAX_ENCODED_CONTEXT_SIZE));
+        }
+    }
 
     /**
      * Contains tests for

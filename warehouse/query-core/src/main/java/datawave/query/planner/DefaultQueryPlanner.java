@@ -119,6 +119,7 @@ import datawave.query.jexl.visitors.BoundedRangeIndexExpansionVisitor;
 import datawave.query.jexl.visitors.ConjunctionEliminationVisitor;
 import datawave.query.jexl.visitors.DepthVisitor;
 import datawave.query.jexl.visitors.DisjunctionEliminationVisitor;
+import datawave.query.jexl.visitors.DocumentMatchFunctionVisitor;
 import datawave.query.jexl.visitors.ExecutableDeterminationVisitor;
 import datawave.query.jexl.visitors.ExecutableDeterminationVisitor.STATE;
 import datawave.query.jexl.visitors.ExecutableExpansionVisitor;
@@ -733,6 +734,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         addOption(cfg, QueryOptions.TRACK_SIZES, Boolean.toString(config.isTrackSizes()), false);
         addOption(cfg, QueryOptions.ACTIVE_QUERY_LOG_NAME, config.getActiveQueryLogName(), false);
 
+        // Add the thresholds for document matching if required
+        configureDocumentMatchOptions(config, cfg);
+
         // Set the start and end dates
         configureTypeMappings(config, cfg, metadataHelper, getCompressOptionMappings(), false);
     }
@@ -1191,6 +1195,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             expandPushdownPullup(config, metadataHelper, timers, scannerFactory);
         }
 
+        // rewrite document:match() functions to include the documentMatchContext variable.
+        config.setQueryTree(timedRewriteDocumentMatchFunctions(timers, config));
+
         return config.getQueryTree();
     }
 
@@ -1643,6 +1650,19 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
     protected ASTJexlScript timedRewriteNullFunctions(QueryStopwatch timers, ASTJexlScript queryTree) throws DatawaveQueryException {
         return visitorManager.timedVisit(timers, "Rewrite Null Functions", () -> RewriteNullFunctionsVisitor.rewriteNullFunctions(queryTree));
+    }
+
+    protected ASTJexlScript timedRewriteDocumentMatchFunctions(QueryStopwatch timers, ShardQueryConfiguration config) throws DatawaveQueryException {
+        return visitorManager.timedVisit(timers, "Rewrite Document Match Functions", () -> {
+            ASTJexlScript queryTree = config.getQueryTree();
+            DocumentMatchFunctionVisitor.rewrite(queryTree);
+            config.setDocumentMatchContextRequired(DocumentMatchFunctionVisitor.requiresDocumentMatchContext(queryTree));
+            if (log.isDebugEnabled()) {
+                logQuery(queryTree, "Computed that the query " + (config.isDocumentMatchContextRequired() ? "requires" : "does not require")
+                                + " document-match context lookup");
+            }
+            return queryTree;
+        });
     }
 
     protected ASTJexlScript timedEnforceUniqueTermsWithinExpressions(QueryStopwatch timers, final ASTJexlScript script) throws DatawaveQueryException {
@@ -2388,6 +2408,16 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      */
     protected void configureAdditionalOptions(ShardQueryConfiguration config, IteratorSetting cfg) {
         // no-op
+    }
+
+    protected void configureDocumentMatchOptions(ShardQueryConfiguration config, IteratorSetting cfg) {
+        boolean documentMatchContextRequired = config.isDocumentMatchContextRequired();
+        addOption(cfg, QueryOptions.DOCUMENT_MATCH_CONTEXT_REQUIRED, Boolean.toString(documentMatchContextRequired), false);
+        if (documentMatchContextRequired) {
+            addOption(cfg, QueryOptions.DOCUMENT_MATCH_MAX_ENCODED_SIZE, Integer.toString(config.getDocumentMatchMaxEncodedSize()), false);
+            addOption(cfg, QueryOptions.DOCUMENT_MATCH_MAX_DECODED_SIZE, Integer.toString(config.getDocumentMatchMaxDecodedSize()), false);
+            addOption(cfg, QueryOptions.DOCUMENT_MATCH_MAX_ENCODED_CONTEXT_SIZE, Integer.toString(config.getDocumentMatchMaxEncodedContextSize()), false);
+        }
     }
 
     protected Future<IteratorSetting> loadQueryIterator(final MetadataHelper metadataHelper, final ShardQueryConfiguration config, final Boolean isFullTable,

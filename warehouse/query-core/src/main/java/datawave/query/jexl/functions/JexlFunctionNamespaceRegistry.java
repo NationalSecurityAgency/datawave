@@ -25,6 +25,7 @@ public class JexlFunctionNamespaceRegistry {
 
     static {
         registeredFunctions.put(ContentFunctions.CONTENT_FUNCTION_NAMESPACE, ContentFunctions.class);
+        registeredFunctions.put(DocumentFunctions.DOCUMENT_FUNCTION_NAMESPACE, DocumentFunctions.class);
         registeredFunctions.put(NormalizationFunctions.NORMALIZATION_FUNCTION_NAMESPACE, NormalizationFunctions.class);
         registeredFunctions.put(EvaluationPhaseFilterFunctions.EVAL_PHASE_FUNCTION_NAMESPACE, EvaluationPhaseFilterFunctions.class);
         registeredFunctions.put(GroupingRequiredFilterFunctions.GROUPING_REQUIRED_FUNCTION_NAMESPACE, GroupingRequiredFilterFunctions.class);

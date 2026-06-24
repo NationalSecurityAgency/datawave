@@ -46,6 +46,7 @@ import datawave.query.attributes.SummaryOptions;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.common.grouping.GroupFields;
 import datawave.query.config.annotation.AllHitsQueryConfig;
+import datawave.query.function.DocumentMatchContext;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.iterator.logic.ContentSummaryIterator;
 import datawave.query.iterator.logic.TermFrequencyExcerptIterator;
@@ -659,6 +660,14 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("allHitsQueryConfig", new AllHitsQueryConfig());
         defaultValues.put("originalJexlQuery", null);
         updatedValues.put("originalJexlQuery", "FIELD == 'VALUE'");
+        defaultValues.put("documentMatchMaxEncodedSize", DocumentMatchContext.DEFAULT_MAX_ENCODED_SIZE);
+        updatedValues.put("documentMatchMaxEncodedSize", DocumentMatchContext.DEFAULT_MAX_ENCODED_SIZE + 1);
+        defaultValues.put("documentMatchMaxDecodedSize", DocumentMatchContext.DEFAULT_MAX_DECODED_SIZE);
+        updatedValues.put("documentMatchMaxDecodedSize", DocumentMatchContext.DEFAULT_MAX_DECODED_SIZE + 1);
+        defaultValues.put("documentMatchMaxEncodedContextSize", DocumentMatchContext.DEFAULT_MAX_ENCODED_CONTEXT_SIZE);
+        updatedValues.put("documentMatchMaxEncodedContextSize", DocumentMatchContext.DEFAULT_MAX_ENCODED_CONTEXT_SIZE + 1);
+        defaultValues.put("documentMatchContextRequired", false);
+        updatedValues.put("documentMatchContextRequired", true);
     }
 
     private Query createQuery(String query) {
