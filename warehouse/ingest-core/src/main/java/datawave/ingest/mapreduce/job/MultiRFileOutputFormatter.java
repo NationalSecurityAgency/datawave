@@ -727,7 +727,6 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
                         // If we don't have a location, then just use the rowKey itself.
                         String fallback = conf.get("shard.fallback.name." + rowKey.toString(), "extra");
                         shardLocation = splitsCache.getExactLocation(tableName, rowKey, () -> fallback);
-                        // in the case we have a shard id that has no split. Lets put this in one "extra" file
                         shardLocation = shardLocation.replace(":", "_");
                     }
                     // Combine table name with shard location so that we end up

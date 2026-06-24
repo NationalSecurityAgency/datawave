@@ -36,13 +36,13 @@ public class BalancedShardPartitioner extends Partitioner<BulkIngestKey,Value> i
     int missingShardIdCount = 0;
 
     public enum MissingShardStrategy {
-        hash, collapse;
+        HASH, COLLAPSE;
 
         public static MissingShardStrategy getStrategy(String stratString) {
-            if (collapse.name().equals(stratString)) {
-                return collapse;
+            if (COLLAPSE.name().equals(stratString)) {
+                return COLLAPSE;
             } else {
-                return hash;
+                return HASH;
             }
         }
     }
@@ -76,7 +76,7 @@ public class BalancedShardPartitioner extends Partitioner<BulkIngestKey,Value> i
         // or not all shards were created for the day
 
         switch (missingShardStrategy) {
-            case "hash":
+            case "HASH":
                 int partition = splitsCache.getExactPartition(tableName, shardId);
                 if (partition >= 0) {
                     return partition;
@@ -87,7 +87,7 @@ public class BalancedShardPartitioner extends Partitioner<BulkIngestKey,Value> i
                     missingShardIdCount++;
                 }
                 return (shardId.hashCode() & Integer.MAX_VALUE);
-            case "collapse":
+            case "COLLAPSE":
                 return splitsCache.getNearestPartition(tableName, shardId);
             default:
                 throw new RuntimeException("Unsupported missing shard strategy " + MISSING_SHARD_STRATEGY_PROP + "=" + missingShardStrategy);
@@ -124,7 +124,7 @@ public class BalancedShardPartitioner extends Partitioner<BulkIngestKey,Value> i
     public void setConf(Configuration conf) {
         this.conf = conf;
         shardIdFactory = new ShardIdFactory(conf);
-        missingShardStrategy = conf.get(MISSING_SHARD_STRATEGY_PROP, "hash");
+        missingShardStrategy = conf.get(MISSING_SHARD_STRATEGY_PROP, "HASH");
         MissingShardStrategy shardStrat = MissingShardStrategy.getStrategy(conf.get(MISSING_SHARD_STRATEGY_PROP));
         splitsCache = SplitsCache.getInstance(conf);
 

@@ -155,7 +155,7 @@ public class BalancedShardPartitionerTest {
         // See issues #45
         String tableName = "shard2";
 
-        simulateDifferentNumberShardsPerDay("collapse", tableName);
+        simulateDifferentNumberShardsPerDay(BalancedShardPartitioner.MissingShardStrategy.COLLAPSE.name(), tableName);
 
         // 1 day ago should get SHARDS_PER_DAY partitions
         assertPartitionsForDay(partitioner, tableName, 1, SHARDS_PER_DAY);
@@ -194,7 +194,7 @@ public class BalancedShardPartitionerTest {
         // hashing is the default implementation, so null is passed in
         String tableName = "shard3";
 
-        simulateDifferentNumberShardsPerDay("hash", tableName);
+        simulateDifferentNumberShardsPerDay(BalancedShardPartitioner.MissingShardStrategy.HASH.name(), tableName);
 
         // 1 day ago should get SHARDS_PER_DAY partitions
         assertPartitionsForDay(partitioner, tableName, 1, SHARDS_PER_DAY);
@@ -208,7 +208,7 @@ public class BalancedShardPartitionerTest {
     public void testDifferentNumberShardsPerDayCollapseButOutsideRange() throws IOException {
         String tableName = "shard4";
 
-        simulateDifferentNumberShardsPerDay("collapse", tableName);
+        simulateDifferentNumberShardsPerDay(BalancedShardPartitioner.MissingShardStrategy.COLLAPSE.name(), tableName);
 
         String formattedDay = formatDay(3);
         String shardId = formattedDay + ("_" + (99999999)); // should go to first partition for 2 days ago
