@@ -137,6 +137,22 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
     boolean isLongRunningQuery();
 
     /**
+     * Whether the query is a type that is expected to run quickly. In this case we can do things like avoid an asynchronous thread in the running query
+     * mechanism.
+     *
+     * @return Return whether the query is a type that is expected to run very quickly
+     */
+    boolean isShortRunningQuery();
+
+    /**
+     * Check whether this query logic can bypass the query limiter mechanism. For example UUID queries which must remain as fast as possible may avoid the
+     * zookeeper overhead incurred by the query limit mechanism.
+     *
+     * @return Return true if we can bypass the query limiter
+     */
+    boolean bypassQueryLimiter();
+
+    /**
      * release resources
      */
     void close();

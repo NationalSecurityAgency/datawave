@@ -396,22 +396,24 @@ public class CachedResultsBean {
             try {
                 rq = getQueryById(queryId);
 
-                try {
-                    // Check if submitting a new query would exceed any configured concurrent query limits.
-                    Query settings = rq.getSettings();
-                    QueryLimiterResponse limiterResponse = queryLimiter.checkForLimits(settings.getUserDN(), settings.getSystemFrom(),
-                                    settings.getQueryLogicName());
-                    if (limiterResponse.metLimit()) {
-                        BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.CONCURRENT_QUERY_LIMIT_EXCEEDED,
-                                        limiterResponse.getMessage());
+                if (!rq.getLogic().bypassQueryLimiter()) {
+                    try {
+                        // Check if submitting a new query would exceed any configured concurrent query limits.
+                        Query settings = rq.getSettings();
+                        QueryLimiterResponse limiterResponse = queryLimiter.checkForLimits(settings.getUserDN(), settings.getSystemFrom(),
+                                        settings.getQueryLogicName());
+                        if (limiterResponse.metLimit()) {
+                            BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.CONCURRENT_QUERY_LIMIT_EXCEEDED,
+                                            limiterResponse.getMessage());
+                            response.addException(qe);
+                            throw new BadRequestException(qe, response);
+                        }
+                    } catch (Exception e) {
+                        log.error("Error checking concurrent query limits", e);
+                        QueryException qe = new QueryException(DatawaveErrorCode.CONCURRENT_QUERY_LIMIT_ERROR, e);
                         response.addException(qe);
-                        throw new BadRequestException(qe, response);
+                        throw qe;
                     }
-                } catch (Exception e) {
-                    log.error("Error checking concurrent query limits", e);
-                    QueryException qe = new QueryException(DatawaveErrorCode.CONCURRENT_QUERY_LIMIT_ERROR, e);
-                    response.addException(qe);
-                    throw qe;
                 }
 
                 // prevent duplicate calls to load with the same queryId
@@ -522,7 +524,9 @@ public class CachedResultsBean {
                     query.setMetric(queryMetric);
                     query.setQueryMetrics(metrics);
                     query.setClient(client);
-                    queryLimiter.countQueryTowardsLimits(q.getId().toString(), userDn, q.getSystemFrom(), logic.getLogicName());
+                    if (!logic.bypassQueryLimiter()) {
+                        queryLimiter.countQueryTowardsLimits(q.getId().toString(), userDn, q.getSystemFrom(), logic.getLogicName());
+                    }
                 } finally {
                     qlCache.poll(q.getId().toString());
                 }
@@ -761,10 +765,12 @@ public class CachedResultsBean {
                 } catch (Exception e) {
                     response.addException(new QueryException(DatawaveErrorCode.QUERY_CLOSE_ERROR, e).getBottomQueryException());
                 }
-                try {
-                    queryLimiter.stopCountingQueryTowardsLimits(query.getSettings().getId().toString());
-                } catch (Exception e) {
-                    log.error("Failed to stop counting query " + query.getSettings().getId().toString() + " towards limits", e);
+                if (!query.getLogic().bypassQueryLimiter()) {
+                    try {
+                        queryLimiter.stopCountingQueryTowardsLimits(query.getSettings().getId().toString());
+                    } catch (Exception e) {
+                        log.error("Failed to stop counting query " + query.getSettings().getId().toString() + " towards limits", e);
+                    }
                 }
             } else if (client != null) {
                 try {
@@ -2177,33 +2183,36 @@ public class CachedResultsBean {
 
         RunningQuery query = runningQueryCache.get(id);
 
-        if (null == query) {
-            List<Query> queries = persister.findById(id);
-            if (null == queries || queries.isEmpty())
-                throw new NotFoundQueryException(DatawaveErrorCode.NO_QUERY_OBJECT_MATCH);
-            if (queries.size() > 1)
-                throw new NotFoundQueryException(DatawaveErrorCode.TOO_MANY_QUERY_OBJECT_MATCHES);
-            else {
-                Query q = queries.get(0);
+        try {
+            if (null == query) {
+                List<Query> queries = persister.findById(id);
+                if (null == queries || queries.isEmpty())
+                    throw new NotFoundQueryException(DatawaveErrorCode.NO_QUERY_OBJECT_MATCH);
+                if (queries.size() > 1)
+                    throw new NotFoundQueryException(DatawaveErrorCode.TOO_MANY_QUERY_OBJECT_MATCHES);
+                else {
+                    Query q = queries.get(0);
 
-                // will throw IllegalArgumentException if not defined
-                QueryLogic<?> logic = queryFactory.getQueryLogic(q.getQueryLogicName(), (DatawavePrincipal) p);
-                AccumuloConnectionFactory.Priority priority = logic.getConnectionPriority();
-                query = new RunningQuery(metrics, null, priority, logic, q, q.getQueryAuthorizations(), p,
-                                new RunningQueryTimingImpl(queryExpirationConf, q.getPageTimeout()), predictor, userOperationsBean, metricFactory);
-                query.setExecutor(executor);
-                query.setActiveCall(true);
-                // Put in the cache by id and name, we will have two copies that reference the same object
-                runningQueryCache.put(q.getId().toString(), query);
+                    // will throw IllegalArgumentException if not defined
+                    QueryLogic<?> logic = queryFactory.getQueryLogic(q.getQueryLogicName(), (DatawavePrincipal) p);
+                    AccumuloConnectionFactory.Priority priority = logic.getConnectionPriority();
+                    query = new RunningQuery(metrics, null, priority, logic, q, q.getQueryAuthorizations(), p,
+                                    new RunningQueryTimingImpl(queryExpirationConf, q.getPageTimeout()), predictor, userOperationsBean, metricFactory);
+                    query.setExecutor(executor);
+                    query.setActiveCall(true);
+                    // Put in the cache by id and name, we will have two copies that reference the same object
+                    runningQueryCache.put(q.getId().toString(), query);
+                }
+            } else {
+                // Check to make sure that this query belongs to current user.
+                if (!query.getSettings().getOwner().equals(owner)) {
+                    throw new UnauthorizedQueryException(DatawaveErrorCode.QUERY_OWNER_MISMATCH,
+                                    MessageFormat.format("{0} != {1}", owner, query.getSettings().getOwner()));
+                }
             }
-        } else {
-            // Check to make sure that this query belongs to current user.
-            if (!query.getSettings().getOwner().equals(owner)) {
-                throw new UnauthorizedQueryException(DatawaveErrorCode.QUERY_OWNER_MISMATCH,
-                                MessageFormat.format("{0} != {1}", owner, query.getSettings().getOwner()));
-            }
+        } finally {
+            query.setActiveCall(false);
         }
-        query.setActiveCall(false);
         return query;
     }
 

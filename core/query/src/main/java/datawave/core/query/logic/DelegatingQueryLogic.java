@@ -114,6 +114,16 @@ public abstract class DelegatingQueryLogic implements QueryLogic<Object> {
     }
 
     @Override
+    public boolean isShortRunningQuery() {
+        return delegate.isShortRunningQuery();
+    }
+
+    @Override
+    public boolean bypassQueryLimiter() {
+        return delegate.bypassQueryLimiter();
+    }
+
+    @Override
     public void close() {
         delegate.close();
     }
