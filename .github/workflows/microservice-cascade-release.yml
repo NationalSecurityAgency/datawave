@@ -263,11 +263,12 @@ jobs:
 
   compose-validation:
     name: Validate compose stack
-    needs: release
+    needs: [plan, release]
     if: ${{ inputs.dryRun == false }}
     uses: ./.github/workflows/compose-tests.yml
     with:
       allow-snapshots: false
+      ref: ${{ needs.plan.outputs.branch }}
     secrets: inherit
 
   # For final releases, merge the temporary branch back into the target branch

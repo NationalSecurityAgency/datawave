@@ -42,6 +42,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
 import datawave.marking.MarkingFunctions;
+import datawave.marking.Markings;
 import datawave.webservice.query.util.OptionallyEncodedString;
 import datawave.webservice.request.UpdateRequest;
 import datawave.webservice.request.objects.MutationEntry;
@@ -68,11 +69,11 @@ import datawave.webservice.result.VoidResponse;
 public class AdminService {
 
     private final Logger log = LoggerFactory.getLogger(this.getClass());
-    private final MarkingFunctions markingFunctions;
+    private final MarkingFunctions<?> markingFunctions;
     private final AccumuloClient warehouseAccumuloClient;
 
     @Autowired
-    public AdminService(@Qualifier("warehouse") AccumuloClient warehouseAccumuloClient, MarkingFunctions markingFunctions) {
+    public AdminService(@Qualifier("warehouse") AccumuloClient warehouseAccumuloClient, MarkingFunctions<?> markingFunctions) {
         this.warehouseAccumuloClient = warehouseAccumuloClient;
         this.markingFunctions = markingFunctions;
     }
@@ -569,7 +570,7 @@ public class AdminService {
                     vis.setValid(false);
                     visibilityList.add(vis);
                     try {
-                        Map<String,String> markings = markingFunctions.translateFromColumnVisibilityForAuths(new ColumnVisibility(v), authorizations);
+                        Markings<?> markings = markingFunctions.translateFromColumnVisibilityForAuths(new ColumnVisibility(v), authorizations);
                         vis.setVisibility(v);
                         vis.setValid(true);
                         vis.setMarkings(markings);
