@@ -133,7 +133,7 @@
         <version.netty>4.1.42.Final</version.netty>
         <version.objenesis>3.3</version.objenesis>
         <version.picketbox>5.0.3.Final</version.picketbox>
-<version.proto-google-common-protos>2.61.0</version.proto-google-common-protos>
+        <version.proto-google-common-protos>2.61.0</version.proto-google-common-protos>
         <version.protobuf>3.16.3</version.protobuf>
         <version.protobuf-java-util>3.16.3</version.protobuf-java-util>
         <version.protostuff>1.6.2</version.protostuff>
