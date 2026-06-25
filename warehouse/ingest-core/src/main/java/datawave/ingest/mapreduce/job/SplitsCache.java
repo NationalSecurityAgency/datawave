@@ -18,8 +18,20 @@ public interface SplitsCache extends AutoCloseable {
         return SplitsCacheFactory.getSplitsCache(conf);
     }
 
+    /**
+     * Initializing the cache
+     *
+     * @param conf
+     *            - configuration to use
+     */
     void init(Configuration conf);
 
+    /**
+     * Take the cache file and add it to the job configuration.
+     *
+     * @param job
+     *            - the job to setup
+     */
     void setupJob(final Job job) throws IOException;
 
     /**
