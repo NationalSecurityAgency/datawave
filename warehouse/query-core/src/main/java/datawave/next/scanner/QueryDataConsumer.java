@@ -68,8 +68,10 @@ public class QueryDataConsumer implements Runnable {
                 }
                 stats.incrementQueryDataSeen();
 
-                Preconditions.checkArgument(queryData.getSettings() != null && queryData.getSettings().size() == 1, "expected exactly one settings entry");
-                Preconditions.checkArgument(queryData.getRanges() != null && queryData.getRanges().size() == 1, "expected exactly one range");
+                Preconditions.checkNotNull(queryData.getSettings(), "query data settings must not be null");
+                Preconditions.checkArgument(queryData.getSettings().size() == 1, "expected exactly one settings entry");
+                Preconditions.checkNotNull(queryData.getRanges(), "query data ranges must not be null");
+                Preconditions.checkArgument(queryData.getRanges().size() == 1, "expected exactly one range");
 
                 if (log.isDebugEnabled()) {
                     log.debug("got query data: {}", queryData.getRanges().iterator().next().getStartKey().toStringNoTime());
