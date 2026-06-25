@@ -12,6 +12,8 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.accumulo.core.client.Accumulo;
+
+import datawave.scan.ScannerBuilder;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
@@ -202,13 +204,10 @@ public class AccumuloCacheStore<K extends Serializable,V> implements AdvancedLoa
     }
 
     public MarshalledEntry<K,V> _load(Object key, boolean loadValue, boolean loadMetadata) {
-        Scanner scanner;
+        Scanner scanner = ScannerBuilder.create(accumuloClient).setTableName(tableName).setAuthorizations(authorizations).build();
         try {
-            scanner = accumuloClient.createScanner(tableName, authorizations);
             byte[] keyBytes = ctx.getMarshaller().objectToByteBuffer(key);
             scanner.setRange(new Range(new Text(keyBytes)));
-        } catch (TableNotFoundException e) {
-            throw new PersistenceException(e);
         } catch (IOException e) {
             throw new PersistenceException("Unable to serialize key " + key, e);
         } catch (InterruptedException e) {
@@ -247,12 +246,10 @@ public class AccumuloCacheStore<K extends Serializable,V> implements AdvancedLoa
 
     @Override
     public boolean contains(Object key) {
-        try (Scanner scanner = accumuloClient.createScanner(tableName, authorizations)) {
+        try (Scanner scanner = ScannerBuilder.create(accumuloClient).setTableName(tableName).setAuthorizations(authorizations).build()) {
             scanner.setRange(new Range(String.valueOf(key)));
             Iterator<Map.Entry<Key,Value>> iterator = scanner.iterator();
             return iterator.hasNext();
-        } catch (TableNotFoundException e) {
-            throw new PersistenceException(e);
         }
     }
 

@@ -14,6 +14,8 @@ import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.Scanner;
+
+import datawave.scan.ScannerBuilder;
 import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.admin.TableOperations;
@@ -225,7 +227,7 @@ public class NumShards {
         try (AccumuloClient client = aHelper.newClient()) {
             ensureTableExists(client, metadataTableName);
 
-            try (Scanner scanner = client.createScanner(metadataTableName, new Authorizations())) {
+            try (Scanner scanner = ScannerBuilder.create(client).setTableName(metadataTableName).setAuthorizations(new Authorizations()).build()) {
                 scanner.setRange(Range.exact(NUM_SHARDS, NUM_SHARDS_CF));
 
                 for (Map.Entry<Key,Value> entry : scanner) {

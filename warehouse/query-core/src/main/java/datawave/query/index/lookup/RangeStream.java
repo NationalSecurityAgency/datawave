@@ -102,6 +102,7 @@ import datawave.query.util.MetadataHelper;
 import datawave.query.util.QueryScannerHelper;
 import datawave.query.util.Tuple2;
 import datawave.query.util.Tuples;
+import datawave.scan.ScannerBuilder;
 import datawave.table.constants.TableName;
 import datawave.util.time.DateHelper;
 import datawave.webservice.query.exception.DatawaveErrorCode;
@@ -937,7 +938,10 @@ public class RangeStream extends BaseVisitor implements QueryPlanStream {
                 log.warn("no client configured, will not populate num shards");
                 return;
             }
-            try (Scanner scanner = client.createScanner(TableName.METADATA)) {
+            try (Scanner scanner = ScannerBuilder.create(client)
+                    .setTableName(TableName.METADATA)
+                    .setAuthorizations(client.securityOperations().getUserAuthorizations(client.whoami()))
+                    .build()) {
                 scanner.setRange(Range.exact(NumShards.NUM_SHARDS, NumShards.NUM_SHARDS_CF));
                 int scannedKeys = 0;
                 for (Map.Entry<Key,Value> entry : scanner) {
@@ -957,7 +961,7 @@ public class RangeStream extends BaseVisitor implements QueryPlanStream {
                 if (scannedKeys == 0) {
                     log.fatal("no entries in num_shards cache");
                 }
-            } catch (TableNotFoundException | AccumuloException | AccumuloSecurityException e) {
+            } catch (AccumuloException | AccumuloSecurityException e) {
                 // an exception here shouldn't kill the query
                 log.warn("exception thrown while trying to scan num shards cache: " + e.getMessage());
             }

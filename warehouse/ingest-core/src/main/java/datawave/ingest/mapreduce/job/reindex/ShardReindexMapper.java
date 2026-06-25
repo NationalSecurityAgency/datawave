@@ -26,7 +26,8 @@ import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.Scanner;
-import org.apache.accumulo.core.client.TableNotFoundException;
+
+import datawave.scan.ScannerBuilder;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -498,7 +499,10 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
                 // is it an event field?
                 if (!fieldHelper.isShardExcluded(field)) {
                     // do the lookup into the event
-                    try (Scanner eventScanner = this.accumuloClient.createScanner(context.getConfiguration().get(SHARD_TNAME))) {
+                    try (Scanner eventScanner = ScannerBuilder.create(this.accumuloClient)
+                            .setTableName(context.getConfiguration().get(SHARD_TNAME))
+                            .setAuthorizations(this.accumuloClient.securityOperations().getUserAuthorizations(this.accumuloClient.whoami()))
+                            .build()) {
                         // create a single key range that looks up the value in the reverse index table
                         // event key structure = shard_id dataType\0uid field\0value, but the value is normalized, so only look for the field
                         Key startKey = new Key(key.getRow().toString(), dataType + '\u0000' + parsedFi.getUid(), field + '\u0000');
@@ -508,7 +512,7 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
                         eventScanner.setRange(r);
                         // if there is a hit on this field value it is in the event
                         this.dataTypeEventLookupMap.put(dataType, eventScanner.iterator().hasNext());
-                    } catch (TableNotFoundException | AccumuloSecurityException | AccumuloException e) {
+                    } catch (AccumuloSecurityException | AccumuloException e) {
                         throw new RuntimeException("failed to lookup event field in accumulo", e);
                     }
                 } else {
@@ -529,7 +533,10 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
                 // is it a reverse index field?
                 if (fieldHelper.isReverseIndexedField(field)) {
                     // do the lookup
-                    try (Scanner reverseIndexScanner = this.accumuloClient.createScanner(context.getConfiguration().get(SHARD_GRIDX_TNAME))) {
+                    try (Scanner reverseIndexScanner = ScannerBuilder.create(this.accumuloClient)
+                            .setTableName(context.getConfiguration().get(SHARD_GRIDX_TNAME))
+                            .setAuthorizations(this.accumuloClient.securityOperations().getUserAuthorizations(this.accumuloClient.whoami()))
+                            .build()) {
                         // create a single key range that looks up the value in the reverse index table
                         // global index key structure = value field shard\0dataType
                         Key startKey = new Key(reverse(parsedFi.getValue().toString()), field, key.getRow().toString() + '\u0000' + dataType);
@@ -537,7 +544,7 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
                         reverseIndexScanner.setRange(r);
                         // if there is a hit on this field value it is in the reverse index table
                         this.dataTypeReverseMetadataLookupMap.put(dataType, reverseIndexScanner.iterator().hasNext());
-                    } catch (TableNotFoundException | AccumuloSecurityException | AccumuloException e) {
+                    } catch (AccumuloSecurityException | AccumuloException e) {
                         throw new RuntimeException("failed to lookup reverse index field in accumulo", e);
                     }
                 } else {
@@ -563,7 +570,10 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
                 // this idea has been implemented into the RestrictedIngestHelper
                 if (tfFieldHelper.isContentIndexField(field) || tfFieldHelper.isReverseContentIndexField(field)) {
                     // do the lookup
-                    try (Scanner scanner = this.accumuloClient.createScanner(context.getConfiguration().get(SHARD_TNAME))) {
+                    try (Scanner scanner = ScannerBuilder.create(this.accumuloClient)
+                            .setTableName(context.getConfiguration().get(SHARD_TNAME))
+                            .setAuthorizations(this.accumuloClient.securityOperations().getUserAuthorizations(this.accumuloClient.whoami()))
+                            .build()) {
                         // tf key structure row tf datatype\0uid\0fieldValue\0fieldName
                         // the tf came from a dataType/uid but the fieldValue may not match so worst case
                         // iterate over all the tf keys for a document to find that the target field isn't there
@@ -579,7 +589,7 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
                         scanner.setRange(r);
                         // if there is at least one result the field/dataType is tokenized
                         this.dataTypeTermFrequencyLookupMap.put(dataType, scanner.iterator().hasNext());
-                    } catch (TableNotFoundException | AccumuloException | AccumuloSecurityException e) {
+                    } catch (AccumuloException | AccumuloSecurityException e) {
                         throw new RuntimeException("failed to lookup tf in accumulo", e);
                     }
                 } else {

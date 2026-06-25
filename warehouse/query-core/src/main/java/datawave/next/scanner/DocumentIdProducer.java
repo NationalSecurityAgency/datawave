@@ -12,6 +12,8 @@ import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.ScannerBase.ConsistencyLevel;
 import org.apache.accumulo.core.client.TableNotFoundException;
+
+import datawave.scan.ScannerBuilder;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
@@ -106,7 +108,7 @@ public class DocumentIdProducer implements RunnableWithContext {
             throw new RuntimeException("Scan range differed from input range");
         }
 
-        Scanner scanner = config.getClient().createScanner(context.getTableName(), config.getAuthorizations());
+        Scanner scanner = ScannerBuilder.create(config.getClient()).setTableName(context.getTableName()).setAuthorizations(config.getAuthorizations()).build();
         scanner.setRange(range);
         scanner.addScanIterator(createIteratorSetting());
 

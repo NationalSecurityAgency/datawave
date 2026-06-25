@@ -8,7 +8,7 @@ import java.util.Set;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.IteratorSetting;
-import org.apache.accumulo.core.client.TableNotFoundException;
+import datawave.scan.ScannerBuilder;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
@@ -139,7 +139,7 @@ public class TruncatedIndexScanner implements Iterator<Tuple2<String,IndexInfo>>
     private BitSet scanNextDay(String date) {
         Objects.requireNonNull(tableName, "must set the index table name");
         Objects.requireNonNull(auths, "authorizations must be set");
-        try (var scanner = client.createScanner(tableName, auths)) {
+        try (var scanner = ScannerBuilder.create(client).setTableName(tableName).setAuthorizations(auths).build()) {
 
             Range range = createScanRange(value, field, date);
             scanner.setRange(range);
@@ -168,8 +168,6 @@ public class TruncatedIndexScanner implements Iterator<Tuple2<String,IndexInfo>>
             }
 
             return bitset;
-        } catch (TableNotFoundException e) {
-            throw new RuntimeException(e);
         }
     }
 

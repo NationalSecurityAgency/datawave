@@ -24,6 +24,8 @@ import com.google.common.base.Preconditions;
 import com.google.common.cache.CacheLoader;
 import com.google.common.collect.Sets;
 
+import datawave.scan.ScannerBuilder;
+
 import datawave.query.util.Tuple2;
 
 /**
@@ -57,7 +59,7 @@ public class MetadataCacheLoader extends CacheLoader<Range,Set<Tuple2<String,Set
         Key endKey = new Key(new KeyExtent(tableId, null, null).toMetaRow()).followingKey(PartialKey.ROW);
         Range metadataRange = new Range(inputKey.getStartKey(), inputKey.isStartKeyInclusive(), endKey, false);
 
-        Scanner scanner = client.createScanner(MetadataTable.NAME, Authorizations.EMPTY);
+        Scanner scanner = ScannerBuilder.create(client).setTableName(MetadataTable.NAME).setAuthorizations(Authorizations.EMPTY).build();
         MetadataSchema.TabletsSection.TabletColumnFamily.PREV_ROW_COLUMN.fetch(scanner);
         scanner.fetchColumnFamily(MetadataSchema.TabletsSection.LastLocationColumnFamily.NAME);
         scanner.fetchColumnFamily(MetadataSchema.TabletsSection.DataFileColumnFamily.NAME);

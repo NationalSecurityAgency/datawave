@@ -31,6 +31,7 @@ import datawave.next.retrieval.DocumentIterator;
 import datawave.next.retrieval.DocumentIteratorOptions;
 import datawave.next.stats.ScanTimeStats;
 import datawave.query.iterator.QueryOptions;
+import datawave.scan.ScannerBuilder;
 
 /**
  * Retrieves the document specified by the {@link KeyWithContext}.
@@ -153,7 +154,7 @@ public class DocumentRangeScan implements RunnableWithContext {
      */
     private Scanner createScanner() throws Exception {
         String tableName = keyWithContext.getContext().getTableName();
-        Scanner scanner = config.getClient().createScanner(tableName, auths);
+        Scanner scanner = ScannerBuilder.create(config.getClient()).setTableName(tableName).setAuthorizations(auths).build();
 
         if (config.getRetrievalScanHintTable() != null && config.getRetrievalScanHintPool() != null) {
             Preconditions.checkArgument(tableName.equals(config.getRetrievalScanHintTable()), "Table name did not match execution hint");
@@ -190,7 +191,7 @@ public class DocumentRangeScan implements RunnableWithContext {
             setting.addOption(QueryOptions.QUERY, queryData.getQuery());
         }
 
-        try (Scanner scanner = config.getClient().createScanner(keyWithContext.getContext().getTableName(), auths)) {
+        try (Scanner scanner = ScannerBuilder.create(config.getClient()).setTableName(keyWithContext.getContext().getTableName()).setAuthorizations(auths).build()) {
             scanner.addScanIterator(setting);
 
             Key start = new Key(keyWithContext.getKey().getRow());

@@ -16,6 +16,9 @@ import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.BatchWriter;
+import org.apache.accumulo.core.client.Scanner;
+
+import datawave.scan.ScannerBuilder;
 import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.client.MutationsRejectedException;
 import org.apache.accumulo.core.client.TableExistsException;
@@ -109,7 +112,7 @@ public class EdgeKeyVersioningCache {
         try (AccumuloClient client = cbHelper.newClient()) {
             ensureTableExists(client);
 
-            try (org.apache.accumulo.core.client.Scanner scanner = client.createScanner(metadataTableName, new Authorizations())) {
+            try (Scanner scanner = ScannerBuilder.create(client).setTableName(metadataTableName).setAuthorizations(new Authorizations()).build()) {
                 scanner.setRange(new Range(EDGE_KEY_VERSION_ROW));
 
                 // Read the edge key version dates from the datawave metadata table

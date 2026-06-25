@@ -22,6 +22,8 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
+
+import datawave.scan.ScannerBuilder;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.Text;
@@ -108,7 +110,7 @@ public class IndexStatsClient {
         try {
             Authorizations auths = client.securityOperations().getUserAuthorizations(client.whoami());
             if (fields.isEmpty()) {
-                scanner = client.createScanner(table, auths);
+                scanner = ScannerBuilder.create(client).setTableName(table).setAuthorizations(auths).build();
             } else {
                 BatchScanner bScanner = client.createBatchScanner(table, auths, fields.size());
                 bScanner.setRanges(buildRanges(fields));

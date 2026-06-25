@@ -10,7 +10,8 @@ import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.Scanner;
-import org.apache.accumulo.core.client.TableNotFoundException;
+
+import datawave.scan.ScannerBuilder;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -111,7 +112,10 @@ public class AccumuloUtil {
 
         Text currentRow = null;
         List<String> files = null;
-        try (Scanner s = accumuloClient.createScanner(accumuloMetadataTable)) {
+        try (Scanner s = ScannerBuilder.create(accumuloClient)
+                .setTableName(accumuloMetadataTable)
+                .setAuthorizations(accumuloClient.securityOperations().getUserAuthorizations(accumuloClient.whoami()))
+                .build()) {
             s.setRange(new Range(new Key(tableId + ";" + startRow), true, new Key(tableId + endRow), true));
             s.fetchColumnFamily("file");
             Iterator<Map.Entry<Key,Value>> metarator = s.iterator();

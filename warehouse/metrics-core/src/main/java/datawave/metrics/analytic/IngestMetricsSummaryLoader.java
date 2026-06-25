@@ -18,7 +18,7 @@ import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.Scanner;
-import org.apache.accumulo.core.client.TableNotFoundException;
+import datawave.scan.ScannerBuilder;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
@@ -87,9 +87,7 @@ public class IngestMetricsSummaryLoader extends Configured implements Tool {
             useHourlyPrecision = HourlyPrecisionHelper.checkForHourlyPrecisionOption(context.getConfiguration(), log);
 
             try (AccumuloClient client = Accumulo.newClient().to(instance, zookeepers).as(user, password).build()) {
-                ingestScanner = client.createScanner(conf.get(MetricsConfig.INGEST_TABLE, MetricsConfig.DEFAULT_INGEST_TABLE), Authorizations.EMPTY);
-            } catch (TableNotFoundException e) {
-                throw new IOException(e);
+                ingestScanner = ScannerBuilder.create(client).setTableName(conf.get(MetricsConfig.INGEST_TABLE, MetricsConfig.DEFAULT_INGEST_TABLE)).setAuthorizations(Authorizations.EMPTY).build();
             }
         }
 

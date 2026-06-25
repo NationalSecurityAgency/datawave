@@ -18,6 +18,7 @@ import org.apache.hadoop.io.Text;
 import com.google.common.collect.Multimap;
 
 import datawave.query.index.day.BitSetIndexEntry;
+import datawave.scan.ScannerBuilder;
 import datawave.query.index.day.BitSetIndexEntrySerializer;
 import datawave.query.index.day.DayIndexConfig;
 import datawave.query.index.day.DayIndexEntryIterator;
@@ -44,27 +45,23 @@ public class YearIndexScanner {
     public BitSetIndexEntry scan(String row) {
 
         // scan the thing
-        try {
-            Scanner scanner = client.createScanner(indexTableName, auths);
-            scanner.setRange(Range.exact(row));
+        Scanner scanner = ScannerBuilder.create(client).setTableName(indexTableName).setAuthorizations(auths).build();
+        scanner.setRange(Range.exact(row));
 
-            for (String field : valuesAndFields.values()) {
-                scanner.fetchColumnFamily(new Text(field));
-            }
-
-            IteratorSetting setting = new IteratorSetting(30, DayIndexEntryIterator.class.getSimpleName(), DayIndexEntryIterator.class);
-            setting.addOption(DayIndexEntryIterator.VALUES_AND_FIELDS, DayIndexEntryIterator.mapToString(valuesAndFields));
-            scanner.addScanIterator(setting);
-
-            for (Map.Entry<Key,Value> entry : scanner) {
-                // should only have one entry per tablet
-                return serDe.deserialize(entry.getValue().get());
-            }
-
-            return null;
-        } catch (TableNotFoundException e) {
-            throw new RuntimeException(e);
+        for (String field : valuesAndFields.values()) {
+            scanner.fetchColumnFamily(new Text(field));
         }
+
+        IteratorSetting setting = new IteratorSetting(30, DayIndexEntryIterator.class.getSimpleName(), DayIndexEntryIterator.class);
+        setting.addOption(DayIndexEntryIterator.VALUES_AND_FIELDS, DayIndexEntryIterator.mapToString(valuesAndFields));
+        scanner.addScanIterator(setting);
+
+        for (Map.Entry<Key,Value> entry : scanner) {
+            // should only have one entry per tablet
+            return serDe.deserialize(entry.getValue().get());
+        }
+
+        return null;
     }
 
     public Set<BitSetIndexEntry> scan(Set<String> rows) {
