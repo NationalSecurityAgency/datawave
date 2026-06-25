@@ -10,7 +10,7 @@ import org.junit.Test;
 
 import com.google.common.collect.Multimap;
 
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 
 public class MetricsConfigurationTest {
 
