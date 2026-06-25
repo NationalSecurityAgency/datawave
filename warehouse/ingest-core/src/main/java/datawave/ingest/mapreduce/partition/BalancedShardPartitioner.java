@@ -75,22 +75,19 @@ public class BalancedShardPartitioner extends Partitioner<BulkIngestKey,Value> i
         // if the partitionId is not there, either shards were not created for the day
         // or not all shards were created for the day
 
-        switch (missingShardStrategy) {
-            case "HASH":
-                int partition = splitsCache.getExactPartition(tableName, shardId);
-                if (partition >= 0) {
-                    return partition;
-                }
-                // only warn a few times per partitioner to avoid flooding the logs
-                if (missingShardIdCount < 10) {
-                    log.warn("shardId didn't have a partition assigned to it: " + shardId);
-                    missingShardIdCount++;
-                }
-                return (shardId.hashCode() & Integer.MAX_VALUE);
-            case "COLLAPSE":
-                return splitsCache.getNearestPartition(tableName, shardId);
-            default:
-                throw new RuntimeException("Unsupported missing shard strategy " + MISSING_SHARD_STRATEGY_PROP + "=" + missingShardStrategy);
+        if (missingShardStrategy.equals(MissingShardStrategy.HASH.name())) {
+            int partition = splitsCache.getExactPartition(tableName, shardId);
+            if (partition >= 0) {
+                return partition;
+            }
+            // only warn a few times per partitioner to avoid flooding the logs
+            if (missingShardIdCount < 10) {
+                log.warn("shardId didn't have a partition assigned to it: " + shardId);
+                missingShardIdCount++;
+            }
+            return (shardId.hashCode() & Integer.MAX_VALUE);
+        } else {
+            return splitsCache.getNearestPartition(tableName, shardId);
         }
     }
 
