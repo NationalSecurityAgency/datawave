@@ -1,0 +1,302 @@
+package datawave;
+
+import java.io.IOException;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import org.apache.accumulo.core.client.Accumulo;
+import org.apache.accumulo.core.client.AccumuloClient;
+import org.apache.accumulo.core.client.AccumuloException;
+import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.accumulo.core.client.admin.TableOperations;
+import org.apache.accumulo.core.clientImpl.ClientContext;
+import org.apache.accumulo.core.conf.ConfigurationCopy;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.TableId;
+import org.apache.accumulo.core.dataImpl.KeyExtent;
+import org.apache.accumulo.core.file.FileOperations;
+import org.apache.accumulo.core.file.FileSKVIterator;
+import org.apache.accumulo.core.metadata.StoredTabletFile;
+import org.apache.accumulo.core.metadata.schema.TabletMetadata;
+import org.apache.accumulo.core.metadata.schema.TabletsMetadata;
+import org.apache.accumulo.core.spi.crypto.NoCryptoServiceFactory;
+import org.apache.accumulo.tserver.tablet.Tablet;
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.io.Text;
+
+import com.beust.jcommander.IStringConverter;
+import com.beust.jcommander.JCommander;
+import com.beust.jcommander.Parameter;
+import com.beust.jcommander.ParameterException;
+
+/**
+ * A utility that will identify tablets that require compaction within a given table for a given range and lists recommended compaction commands.
+ */
+public final class TabletExtentChecker {
+
+    /**
+     * Converts a string argument to a {@link Text} instance.
+     */
+    private static class TextConverter implements IStringConverter<Text> {
+        @Override
+        public Text convert(String s) {
+            return s == null ? null : new Text(s);
+        }
+    }
+
+    /**
+     * Represents a set of options that can parsed and used via {@link TabletExtentChecker#main(String[])}.
+     */
+    private static class Opts {
+
+        @Parameter(names = {"-t", "--table"}, description = "The table name", required = true)
+        public String tableName = null;
+
+        @Parameter(names = {"-p", "--properties"}, description = "The path to accumulo-client.properties", required = true)
+        public String propsPath = null;
+
+        @Parameter(names = {"-h", "-?", "--help", "-help"}, help = true)
+        public boolean help = false;
+
+        @Parameter(names = {"-b", "--begin"}, description = "The starting row (exclusive) of the range of tablets to scan", converter = TextConverter.class)
+        public Text beginRow = null;
+
+        @Parameter(names = {"-e", "--end"}, description = "The ending row (inclusive) of the range of tablets to scan", converter = TextConverter.class)
+        public Text endRow = null;
+
+        @Parameter(names = {"-m", "--merge", "--merge-extents"}, description = "Merges suggested compaction ranges for neighboring compactable tablets")
+        public boolean mergeExtents = false;
+
+        /**
+         * Validate the arguments in this {@link Opts}.
+         */
+        public void validateArgs() {
+            if (propsPath == null) {
+                throw new IllegalArgumentException("accumulo-client.properties must be set!");
+            }
+
+            if (!Paths.get(propsPath).toFile().exists()) {
+                throw new IllegalArgumentException(propsPath + " does not exist!");
+            }
+        }
+
+        /**
+         * Parse the given arguments array and populate this {@link Opts}.
+         *
+         * @param args
+         *            the arguments to parse.
+         */
+        public void parseArgs(String[] args) {
+            JCommander commander = JCommander.newBuilder().addObject(this).programName(TabletExtentChecker.class.getSimpleName()).build();
+
+            try {
+                commander.parse(args);
+            } catch (ParameterException ex) {
+                commander.usage();
+                System.err.println(ex.getMessage());
+                System.exit(1);
+            }
+
+            if (help) {
+                commander.usage();
+                System.exit(0);
+            }
+        }
+    }
+
+    /**
+     * Parses the user-provided arguments and prints out recommended ranges for compaction.
+     *
+     * @param args
+     *            the arguments
+     * @throws AccumuloException
+     *             if an error occurs while connecting to Accumulo
+     * @throws TableNotFoundException
+     *             if the specified table does not exist
+     * @throws IOException
+     *             if an error occurs while reading the client properties file
+     */
+    public static void main(String[] args) throws AccumuloException, TableNotFoundException, IOException {
+        // Parse the arguments.
+        Opts opts = new Opts();
+        opts.parseArgs(args);
+        opts.validateArgs();
+
+        // Fetch the recommended tablet ranges to compact.
+        List<Pair<Text,Text>> compactionExtents = TabletExtentChecker.checkTablets(opts.propsPath, opts.tableName, opts.beginRow, opts.endRow,
+                        opts.mergeExtents);
+
+        // Print out the recommended compaction commands.
+        for (Pair<Text,Text> pair : compactionExtents) {
+            Text startRow = pair.getLeft();
+            Text endRow = pair.getRight();
+            System.out.println("compact -t " + opts.tableName + formatArg("-b", startRow) + formatArg("-e", endRow));
+
+        }
+    }
+
+    /**
+     * Return the given value formatted as an argument snippet if the value is not null.
+     *
+     * @param arg
+     *            the argument option
+     * @param value
+     *            the value
+     * @return the formatted arg to value command snippet if the value is not null, otherwise returns an empty string
+     */
+    private static String formatArg(String arg, Text value) {
+        if (value == null) {
+            return "";
+        } else {
+            return " " + arg + " " + value;
+        }
+    }
+
+    /**
+     * Returns a list of pairs consisting of the extents of tablets that require compaction.
+     *
+     * @param clientProperties
+     *            the fully qualified path to the accumulo-client.properties file to use when connecting to Accumulo
+     * @param tableName
+     *            the name of the table to evaluate for tablet compaction
+     * @param begin
+     *            the starting row (exclusive) of the range to search for tablets within. A null value implies no starting boundary.
+     * @param end
+     *            the ending row (inclusive) of the range to search for tablets within. A null value implies no ending boundary
+     * @param mergeExtents
+     *            will merge recommended ranges of neighboring tablets requiring compaction
+     * @return the list of tablet boundaries recommended for compaction
+     * @throws AccumuloException
+     *             if an error occurs while connecting to Accumulo
+     * @throws TableNotFoundException
+     *             if the specified table does not exist
+     * @throws IOException
+     *             if an error occurs while reading the client properties file
+     */
+    static List<Pair<Text,Text>> checkTablets(String clientProperties, String tableName, Text begin, Text end, boolean mergeExtents)
+                    throws AccumuloException, TableNotFoundException, IOException {
+        List<Pair<Text,Text>> compactionExtents = new ArrayList<>();
+        try (AccumuloClient client = Accumulo.newClient().from(clientProperties).build()) {
+            TableId tableId = getTableId(client, tableName);
+            ClientContext context = (ClientContext) client;
+            // Fetch the metadata for all tablets in the given table whose extents overlap with the user provided range of tablets to scan.
+            try (TabletsMetadata tablets = context.getAmple().readTablets().forTable(tableId).overlapping(begin, false, end)
+                            .fetch(TabletMetadata.ColumnType.PREV_ROW, TabletMetadata.ColumnType.FILES).build()) {
+
+                // Tracks compaction ranges if we are merging extents.
+                boolean foundCompactableTablet = false;
+                Text compactionStart = null;
+                Text compactionEnd = null;
+
+                // Iterate over each tablet.
+                for (TabletMetadata tablet : tablets) {
+                    // Determine whether the tablet needs compaction.
+                    boolean tabletRequiresCompaction = tabletRequiresCompaction(context, tableName, tablet);
+                    KeyExtent extent = tablet.getExtent();
+
+                    // The current tablet requires compaction.
+                    if (tabletRequiresCompaction) {
+                        // If we are merging extents, update the current compaction start and end based on whether the previous tablet also required compaction.
+                        if (mergeExtents) {
+                            // The previous tablet did not require compaction. Update the compaction range to reflect the current tablet.
+                            if (!foundCompactableTablet) {
+                                compactionStart = extent.prevEndRow();
+                                compactionEnd = extent.endRow();
+                                foundCompactableTablet = true;
+                            } else {
+                                // The previous tablet needs compaction, along with the current tablet. Update the end row.
+                                compactionEnd = extent.endRow();
+                            }
+                        } else {
+                            compactionExtents.add(Pair.of(extent.prevEndRow(), extent.endRow()));
+                        }
+                        // The current tablet does not require compaction.
+                    } else {
+                        // We are merging tablet extents, and the previous tablet requires compaction.
+                        if (mergeExtents && foundCompactableTablet) {
+                            // Add a new recommended compaction range and reset our compaction boundaries.
+                            compactionExtents.add(Pair.of(compactionStart, compactionEnd));
+                            compactionStart = null;
+                            compactionEnd = null;
+                            foundCompactableTablet = false;
+                        }
+                    }
+                }
+
+                // Handle case where last tablet needs compaction when we are merging extents.
+                if (mergeExtents && foundCompactableTablet) {
+                    compactionExtents.add(Pair.of(compactionStart, compactionEnd));
+                }
+
+            }
+        }
+        return compactionExtents;
+    }
+
+    /**
+     * Return the table ID for the given table
+     *
+     * @param client
+     *            the client to use when connecting to Accumulo
+     * @param tableName
+     *            the table name
+     * @return the table ID
+     */
+    private static TableId getTableId(AccumuloClient client, String tableName) {
+        TableOperations tableOperations = client.tableOperations();
+        if (tableOperations.exists(tableName)) {
+            return TableId.of(tableOperations.tableIdMap().get(tableName));
+        } else {
+            throw new IllegalArgumentException("Table " + tableName + " does not exist");
+        }
+    }
+
+    /**
+     * Return whether the given tablet requires compaction. This method represents a merging of the functions
+     * {@link org.apache.accumulo.tserver.tablet.CompactableUtils#getFirstAndLastKeys(Tablet, Set)} and
+     * {@link org.apache.accumulo.tserver.tablet.CompactableUtils#findChopFiles(KeyExtent, Map, Collection)} that is designed to return true as soon as we find
+     * an RFile that is empty, or whose first or last keys fall outside the tablet's extent.
+     *
+     * @param context
+     *            the context to use when connecting to Accumulo
+     * @param tableName
+     *            the tablet name
+     * @param tablet
+     *            the tablet metadata
+     * @return true if the tablet requires compaction, or false
+     */
+    private static boolean tabletRequiresCompaction(ClientContext context, String tableName, TabletMetadata tablet)
+                    throws AccumuloException, TableNotFoundException, IOException {
+        // Fetch the list of RFiles for the tablet.
+        ConfigurationCopy tableConf = new ConfigurationCopy(context.tableOperations().getConfiguration(tableName));
+        KeyExtent extent = tablet.getExtent();
+        Set<StoredTabletFile> allFiles = new HashSet<>(tablet.getFiles());
+        final FileOperations fileFactory = FileOperations.getInstance();
+
+        // Examine each file and determine whether any of them would be cleaned up/optimized by a compaction.
+        for (StoredTabletFile file : allFiles) {
+            FileSystem ns = FileSystem.get(file.getPath().toUri(), context.getHadoopConf());
+            try (FileSKVIterator openReader = fileFactory.newReaderBuilder().forFile(file.getPathStr(), ns, ns.getConf(), NoCryptoServiceFactory.NONE)
+                            .withTableConfiguration(tableConf).seekToBeginning().build()) {
+                Key first = openReader.getFirstKey();
+                Key last = openReader.getLastKey();
+
+                // A tablet requires a compaction if any of the following are true:
+                // - The file is empty (first and last are null)
+                // - The first key is outside the tablet's extent.
+                // - The last key is outside the tablet's extent.
+                if ((first == null && last == null) || (first != null && !extent.contains(first.getRow()))
+                                || (last != null && !extent.contains(last.getRow()))) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+}
