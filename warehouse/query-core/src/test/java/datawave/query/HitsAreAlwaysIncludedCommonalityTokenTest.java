@@ -48,7 +48,7 @@ import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.util.CommonalityTokenTestDataIngest;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 
 /**

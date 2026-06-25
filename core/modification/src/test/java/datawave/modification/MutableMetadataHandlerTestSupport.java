@@ -43,7 +43,7 @@ import datawave.query.util.MetadataHelperFactory;
 import datawave.query.util.WiseGuysIngest;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.ProxiedUserDetails;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 import datawave.webservice.modification.DefaultModificationRequest;
 import datawave.webservice.modification.EventIdentifier;
 import datawave.webservice.modification.ModificationRequestBase.MODE;
