@@ -1,5 +1,7 @@
 package datawave.query.lucene.visitors;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.List;
@@ -46,8 +48,6 @@ import org.junit.jupiter.api.Test;
 
 import datawave.query.language.parser.lucene.AccumuloSyntaxParser;
 import datawave.query.language.parser.lucene.EscapeQuerySyntaxImpl;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class LuceneQueryStringBuildingVisitorTest {
 
