@@ -18,7 +18,8 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.hadoop.io.WritableUtils;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.clearspring.analytics.stream.cardinality.HyperLogLogPlus;
 
@@ -39,7 +40,7 @@ import datawave.util.CompositeTimestamp;
  */
 public final class PrintUtility {
 
-    private static final Logger log = Logger.getLogger(PrintUtility.class);
+    private static final Logger log = LoggerFactory.getLogger(PrintUtility.class);
 
     private static final DateTimeFormatter ISO_DATE_TIME_MILLIS = DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss").withZone(ZoneId.systemDefault());
 
@@ -359,7 +360,7 @@ public final class PrintUtility {
     public static void printTableToLogDebug(final AccumuloClient client, final Authorizations authorizations, final String tableName, final TableWriter writer)
                     throws TableNotFoundException {
         if (log.isDebugEnabled()) {
-            printTable(client, authorizations, tableName, writer, Output.ApacheLog4JOutput.debug(log));
+            printTable(client, authorizations, tableName, writer, Output.Slf4jOutput.debug(log));
         }
     }
 
@@ -468,7 +469,7 @@ public final class PrintUtility {
     }
 
     /**
-     * Decode the given value as an compressed and encoded document.
+     * Decode the given value as a compressed and encoded document.
      */
     private static String decodeDocument(Value value) {
         try {

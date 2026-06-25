@@ -2,8 +2,8 @@ package datawave.helpers;
 
 import java.io.PrintStream;
 
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.event.Level;
 
 public interface Output {
 
@@ -15,25 +15,25 @@ public interface Output {
 
     void flush();
 
-    class ApacheLog4JOutput implements Output {
+    class Slf4jOutput implements Output {
 
         private final StringBuilder sb = new StringBuilder();
         private final Logger log;
         private final Level level;
 
-        public static ApacheLog4JOutput info(Logger log) {
-            return new ApacheLog4JOutput(log, Level.INFO);
+        public static Slf4jOutput info(Logger log) {
+            return new Slf4jOutput(log, Level.INFO);
         }
 
-        public static ApacheLog4JOutput debug(Logger log) {
-            return new ApacheLog4JOutput(log, Level.DEBUG);
+        public static Slf4jOutput debug(Logger log) {
+            return new Slf4jOutput(log, Level.DEBUG);
         }
 
-        public static ApacheLog4JOutput trace(Logger log) {
-            return new ApacheLog4JOutput(log, Level.TRACE);
+        public static Slf4jOutput trace(Logger log) {
+            return new Slf4jOutput(log, Level.TRACE);
         }
 
-        public ApacheLog4JOutput(Logger log, Level level) {
+        public Slf4jOutput(Logger log, Level level) {
             this.log = log;
             this.level = level;
         }
@@ -45,7 +45,7 @@ public interface Output {
 
         @Override
         public void flush() {
-            log.log(level, sb.toString());
+            log.atLevel(level).log(sb.toString());
             sb.setLength(0);
         }
     }
