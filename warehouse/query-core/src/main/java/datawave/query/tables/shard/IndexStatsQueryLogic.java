@@ -41,7 +41,7 @@ import datawave.query.index.stats.IndexStatsRecord;
 import datawave.query.index.stats.IndexStatsSummingIterator;
 import datawave.query.index.stats.MinMaxIterator;
 import datawave.security.util.ScannerHelper;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 import datawave.util.time.DateHelper;
 import datawave.webservice.query.result.istat.FieldStat;
 import datawave.webservice.query.result.istat.IndexStatsResponse;
