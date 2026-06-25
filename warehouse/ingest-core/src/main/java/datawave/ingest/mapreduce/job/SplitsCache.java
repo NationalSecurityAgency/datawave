@@ -77,6 +77,16 @@ public interface SplitsCache extends AutoCloseable {
      */
     int getNearestPartition(String table, Text key);
 
+    /**
+     * Look up the tablet server location which is serving the rowkey - if no location is found then use the rowkey as the default.
+     *
+     * @param table
+     *            - the table to look up
+     * @param key
+     *            - the row key to search for
+     * @param defaultFn
+     *            - the callback function to return the rowkey if nothing is found via the lookup
+     */
     String getExactLocation(String table, Text key, Supplier<String> defaultFn);
 
     List<Text> getSplits(Configuration conf, String tableName) throws IOException;
