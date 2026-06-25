@@ -34,7 +34,7 @@ import datawave.data.type.NumberType;
 import datawave.helpers.PrintUtility;
 import datawave.ingest.protobuf.Uid;
 import datawave.query.QueryTestTableHelper;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 
 /**
  * Populates Accumulo with data utilizes the Grouping format.

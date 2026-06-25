@@ -28,7 +28,7 @@ import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.query.index.lookup.IndexInfo;
 import datawave.query.util.Tuple2;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 
 public class TruncatedIndexScannerTest {
 

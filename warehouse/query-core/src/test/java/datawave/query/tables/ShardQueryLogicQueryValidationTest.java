@@ -63,7 +63,7 @@ import datawave.query.rules.UnescapedWildcardsInPhrasesRule;
 import datawave.query.rules.UnfieldedTermsRule;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.util.WiseGuysIngest;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.QueryException;

@@ -18,7 +18,7 @@ import datawave.query.attributes.Document;
 import datawave.query.attributes.FieldValueCardinality;
 import datawave.query.data.parsers.DatawaveKey;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.tld.TLD;
+import datawave.table.util.TLD;
 
 public class CardinalityAggregator extends IdentityAggregator {
 

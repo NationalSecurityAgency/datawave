@@ -52,7 +52,7 @@ import datawave.query.tables.ShardQueryLogicTest;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.transformer.TermFrequencyQueryTransformer;
 import datawave.query.util.WiseGuysIngest;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.webservice.query.result.event.DefaultField;
 import datawave.webservice.query.result.event.EventBase;

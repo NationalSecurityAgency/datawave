@@ -54,8 +54,8 @@ import datawave.query.tables.ShardQueryLogic;
 import datawave.query.util.DateIndexHelperFactory;
 import datawave.query.util.MetadataHelperFactory;
 import datawave.security.util.ScannerHelper;
+import datawave.table.constants.TableName;
 import datawave.test.HitTermAssertions;
-import datawave.util.TableName;
 
 /**
  *

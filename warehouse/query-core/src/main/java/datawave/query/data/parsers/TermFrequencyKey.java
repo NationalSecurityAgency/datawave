@@ -3,7 +3,7 @@ package datawave.query.data.parsers;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 
-import datawave.query.tld.TLD;
+import datawave.table.util.TLD;
 
 /**
  * A {@link KeyParser} for TermFrequency keys

@@ -52,7 +52,7 @@ import datawave.query.jexl.visitors.TreeEqualityVisitor;
 import datawave.query.planner.QueryPlan;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.util.MockMetadataHelper;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 
 /**
  * Integration test for asserting correct query plans coming off the RangeStream

@@ -45,7 +45,7 @@ import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.util.AbstractQueryTest;
 import datawave.query.util.ColorsIngest;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 
 /**
  * A set of tests that exercises multi-shard, multi-day queries

@@ -101,7 +101,7 @@ import datawave.query.transformer.annotation.SegmentValueByScoreComparator;
 import datawave.query.transformer.annotation.TermExtractor;
 import datawave.query.transformer.annotation.model.AllHits;
 import datawave.query.util.WiseGuysIngest;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.webservice.query.result.event.DefaultField;
 import datawave.webservice.query.result.event.EventBase;
