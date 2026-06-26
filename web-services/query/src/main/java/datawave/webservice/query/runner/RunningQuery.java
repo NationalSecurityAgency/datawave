@@ -13,6 +13,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
@@ -63,9 +64,9 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
     private AccumuloConnectionFactory.Priority connectionPriority = null;
     private transient QueryLogic<?> logic = null;
     private Query settings = null;
-    private volatile int currentPageCount = 0;
-    private volatile long numResults = 0;
-    private volatile long lastPageNumber = 0;
+    private int currentPageCount = 0;
+    private long numResults = 0;
+    private volatile AtomicLong lastPageNumber = new AtomicLong(0);
     private volatile transient TransformIterator iter = null;
     private Set<Authorizations> calculatedAuths = null;
     private volatile boolean finished = false;
@@ -75,7 +76,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
     private ExecutorService executor = null;
     private volatile Future<Object> future = null;
     private final BlockingQueue<Object> resultsThreadQueue = new ArrayBlockingQueue<>(1);
-    private volatile Thread currentThread;
+    private transient volatile Thread currentThread;
     private volatile Exception resultsThreadException = null;
     private final AtomicInteger hasNext = new AtomicInteger(0);
     private final AtomicInteger gotNext = new AtomicInteger(0);
@@ -204,7 +205,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             }
             long start = System.currentTimeMillis();
             GenericQueryConfiguration configuration = this.logic.initialize(this.client, this.settings, this.calculatedAuths);
-            this.lastPageNumber = 0;
+            this.lastPageNumber.set(0);
             this.logic.setupQuery(configuration);
             this.iter = this.logic.getTransformIterator(this.settings);
             this.allowIntermediateEmptyPages = logic.isLongRunningQuery();
@@ -644,7 +645,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                     this.getMetric().setPlan(baseLogic.getConfig().getQueryString());
                 }
             }
-            this.lastPageNumber++;
+            this.lastPageNumber.incrementAndGet();
             if (!resultList.isEmpty()) {
                 this.getMetric().setLifecycle(QueryMetric.Lifecycle.RESULTS);
             }
@@ -813,7 +814,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
 
     @Override
     public long getLastPageNumber() {
-        return this.lastPageNumber;
+        return this.lastPageNumber.get();
     }
 
     @Override
