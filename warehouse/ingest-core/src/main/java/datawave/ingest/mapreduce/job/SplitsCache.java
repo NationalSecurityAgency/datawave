@@ -64,6 +64,7 @@ public interface SplitsCache extends AutoCloseable {
      *            - table where we wish to look up the key
      * @param key
      *            - key to look up
+     * @return index of the key in the table mappings
      */
     int getExactPartition(String table, Text key);
 
@@ -86,8 +87,18 @@ public interface SplitsCache extends AutoCloseable {
      *            - the row key to search for
      * @param defaultFn
      *            - the callback function to return the rowkey if nothing is found via the lookup
+     * @return the name of the tserver
      */
     String getExactLocation(String table, Text key, Supplier<String> defaultFn);
 
+    /**
+     * Retrieve the splits from the requested table
+     *
+     * @param conf
+     *            - the configuration to reference
+     * @param tableName
+     *            - name of the table
+     * @return the list of splits
+     */
     List<Text> getSplits(Configuration conf, String tableName) throws IOException;
 }
