@@ -52,7 +52,7 @@ import datawave.query.tables.edge.BaseEdgeQueryTest;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.util.CompositeTestingIngest;
 import datawave.query.util.TypeMetadata;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 
 /**

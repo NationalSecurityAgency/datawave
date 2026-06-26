@@ -31,7 +31,7 @@ import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.SplitsCacheFactory;
 import datawave.ingest.mapreduce.job.TableSplitsCache;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 import datawave.util.time.DateHelper;
 
 public class BalancedShardPartitionerTest {

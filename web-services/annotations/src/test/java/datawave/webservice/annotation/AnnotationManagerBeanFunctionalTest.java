@@ -73,7 +73,7 @@ import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.authorization.UserOperations;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.query.runner.AccumuloConnectionRequestBean;
 import datawave.webservice.query.runner.QueryExecutorBean;
