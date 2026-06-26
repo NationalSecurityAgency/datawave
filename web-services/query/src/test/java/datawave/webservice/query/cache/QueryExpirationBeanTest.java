@@ -248,6 +248,7 @@ public class QueryExpirationBeanTest {
         // Mock up methods needed to verify interactions with the metrics bean.
         @SuppressWarnings("rawtypes")
         QueryLogic queryLogic = Mockito.mock(QueryLogic.class);
+        when(queryLogic.isQueryLimiterEnabled()).thenReturn(true);
         when(queryLogic.getCollectQueryMetrics()).thenReturn(true);
         // noinspection unchecked
         when(query.getLogic()).thenReturn(queryLogic);
