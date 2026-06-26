@@ -1695,6 +1695,11 @@
                     </configuration>
                     <dependencies>
                         <dependency>
+                            <groupId>org.apache.logging.log4j</groupId>
+                            <artifactId>log4j-to-slf4j</artifactId>
+                            <version>${version.log4j}</version>
+                        </dependency>
+                        <dependency>
                             <groupId>org.apache.maven.doxia</groupId>
                             <artifactId>doxia-sink-api</artifactId>
                             <version>2.0.0</version>
