@@ -72,7 +72,7 @@ public class UserLimitProvider {
                     if (StringUtils.isBlank(groupPattern)) {
                         throw new IllegalArgumentException("User group query limit configuration given with blank group pattern for user '" + userDn + "'");
                     }
-                    if (!groupPattern.equals(QueryLimitConstants.ASTERISK)) {
+                    if (!groupPattern.equals(QueryLimiterUtils.SIMPLE_WILDCARD)) {
                         try {
                             Pattern.compile(groupPattern);
                         } catch (PatternSyntaxException e) {

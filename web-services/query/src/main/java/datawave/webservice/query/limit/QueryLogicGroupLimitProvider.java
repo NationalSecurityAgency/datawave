@@ -9,22 +9,31 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
+
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
 
 /**
  * This class is responsible for identifying and providing limits that should be enforced for query logic groups.
  */
 public class QueryLogicGroupLimitProvider {
 
+    private static final Logger log = Logger.getLogger(QueryLogicGroupLimitProvider.class);
+
     private final long maxCacheSize;
-
     private Map<String,QueryLogicGroupLimit> groupsToLimits = Map.of();
-
     private GroupLimitCache groupLimitCache;
+
+    private final ReadWriteLock groupCacheLock = new ReentrantReadWriteLock();
+    private final Multimap<String,String> groupsToQueryLogics = HashMultimap.create();
 
     public QueryLogicGroupLimitProvider(long maxCacheSize, Collection<QueryLogicGroupLimitConfiguration> configs) {
         this.maxCacheSize = maxCacheSize;
@@ -73,7 +82,7 @@ public class QueryLogicGroupLimitProvider {
 
             // Verify that the pattern compiles if it is not simply a * as is occasionally used as a wildcard in configurations.
             try {
-                if (!queryLogicPattern.equals(QueryLimitConstants.ASTERISK)) {
+                if (!queryLogicPattern.equals(QueryLimiterUtils.SIMPLE_WILDCARD)) {
                     Pattern.compile(queryLogicPattern);
                 }
             } catch (PatternSyntaxException e) {
@@ -159,6 +168,70 @@ public class QueryLogicGroupLimitProvider {
         Map<String,Matcher> map = new HashMap<>();
         groups.forEach(group -> map.put(group, groupsToLimits.get(group).getMatcher()));
         return map;
+    }
+
+    public Collection<String> getQueryLogicsForGroup(String group) {
+        this.groupCacheLock.readLock().lock();
+        try {
+            return groupsToQueryLogics.get(group);
+        } finally {
+            this.groupCacheLock.readLock().unlock();
+        }
+    }
+
+    public void updateQueryLogics(Set<String> queryLogics) {
+        this.groupCacheLock.writeLock().lock();
+        try {
+            this.groupsToQueryLogics.clear();
+            for (Map.Entry<String,QueryLogicGroupLimit> entry : this.groupsToLimits.entrySet()) {
+                String group = entry.getKey();
+                QueryLogicGroupLimit limit = entry.getValue();
+                Set<String> matching = limit.getMatcher().getMatches(queryLogics);
+                this.groupsToQueryLogics.putAll(group, matching);
+            }
+        } catch (Exception e) {
+            log.error("Failed to update query logics");
+            throw new RuntimeException("Failed to update query logics", e);
+        } finally {
+            this.groupCacheLock.writeLock().unlock();
+        }
+    }
+
+    public QueryLogicsUpdateListener createQueryLogicsUpdateListener() {
+        return new QueryLogicsUpdateListener() {
+
+            @Override
+            public void forCreate(String queryLogic) {
+                groupCacheLock.writeLock().lock();
+                try {
+                    for (Map.Entry<String,QueryLogicGroupLimit> entry : groupsToLimits.entrySet()) {
+                        String group = entry.getKey();
+                        QueryLogicGroupLimit limit = entry.getValue();
+                        if (limit.getMatcher().matches(queryLogic)) {
+                            groupsToQueryLogics.put(group, queryLogic);
+                        }
+                    }
+                } catch (Exception e) {
+                    log.error("Failed to add query logic " + queryLogic);
+                    throw new RuntimeException("Failed to add query logic " + queryLogic, e);
+                } finally {
+                    groupCacheLock.writeLock().unlock();
+                }
+            }
+
+            @Override
+            public void forDelete(String queryLogic) {
+                groupCacheLock.writeLock().lock();
+                try {
+                    groupsToQueryLogics.values().removeAll(Collections.singleton(queryLogic));
+                } catch (Exception e) {
+                    log.error("Failed to remove query logic " + queryLogic);
+                    throw new RuntimeException("Failed to remove query logic " + queryLogic, e);
+                } finally {
+                    groupCacheLock.writeLock().unlock();
+                }
+            }
+        };
     }
 
     /**

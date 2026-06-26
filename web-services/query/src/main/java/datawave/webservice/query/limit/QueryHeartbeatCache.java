@@ -6,7 +6,11 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import org.apache.curator.framework.CuratorFramework;
 import org.apache.log4j.Logger;
 
 import com.github.benmanes.caffeine.cache.Cache;
@@ -19,11 +23,17 @@ public class QueryHeartbeatCache {
 
     private static final Logger log = Logger.getLogger(QueryHeartbeatCache.class);
 
-    private final Cache<String,QueryHeartbeat> cache = Caffeine.newBuilder().removalListener((key, value, cause) -> {
-        if (cause.wasEvicted()) {
-            log.debug("Evicted heartbeat for query " + key);
-        }
-    }).build();
+    // @formatter:off
+    private final Cache<String,QueryHeartbeat> cache = Caffeine.newBuilder()
+                    .removalListener((key, value, cause) -> {
+                        if (cause.wasEvicted() && log.isTraceEnabled()) {
+                            log.trace("Evicted heartbeat for query " + key);
+                        }
+                    }).build();
+    // @formatter:on
+
+    private final ReadWriteLock lock = new ReentrantReadWriteLock();
+    private final AtomicBoolean clientConnected = new AtomicBoolean(true);
 
     private long cleanupInterval = 10;
     private TimeUnit cleanupUnit = TimeUnit.MINUTES;
@@ -71,14 +81,22 @@ public class QueryHeartbeatCache {
      * Set up this heartbeat cache.
      */
     public void setup() {
-        // If the PersistentNodes within a QueryHeartbeat are ever stopped due to a connection failure, and not via to QueryHeartbeat.stop(), the heartbeat will
-        // not automatically evict itself from the cache. Use a scheduled task to check for any heartbeats that were stopped and evict them to prevent bloating.
-        this.scheduler = Executors.newSingleThreadScheduledExecutor();
-        this.scheduler.scheduleAtFixedRate(this::removeAllStoppedHeartbeats, cleanupInterval, cleanupInterval, cleanupUnit);
+        lock.writeLock().lock();
+        try {
+            // If the PersistentNodes within a QueryHeartbeat are ever stopped due to a connection failure, and not via to QueryHeartbeat.stop(), the heartbeat
+            // will
+            // not automatically evict itself from the cache. Use a scheduled task to check for any heartbeats that were stopped and evict them to prevent
+            // bloating.
+            this.scheduler = Executors.newSingleThreadScheduledExecutor();
+            this.scheduler.scheduleAtFixedRate(this::removeAllStoppedHeartbeats, cleanupInterval, cleanupInterval, cleanupUnit);
 
-        if (log.isDebugEnabled()) {
-            log.debug("Initializing with cleanup schedule that will run every " + cleanupInterval + " " + cleanupUnit);
+            if (log.isDebugEnabled()) {
+                log.debug("Initializing with cleanup schedule that will run every " + cleanupInterval + " " + cleanupUnit);
+            }
+        } finally {
+            lock.writeLock().unlock();
         }
+
     }
 
     /**
@@ -89,10 +107,18 @@ public class QueryHeartbeatCache {
      *            the heartbeat
      */
     public void put(QueryHeartbeat heartbeat) {
-        // Add a listener to the heartbeat that will automatically trigger the heartbeat's eviction if it is ever stopped outside the cache's stop and remove
-        // method.
-        heartbeat.setListener(new HeartbeatStoppedListener(this));
-        this.cache.put(heartbeat.getQueryId(), heartbeat);
+        // Use a read lock that allows concurrent puts, but blocks if setup() or shutdown() is holding the write lock.
+        lock.readLock().lock();
+        try {
+            // Add a listener to the heartbeat that will automatically trigger the heartbeat's eviction if it is ever stopped outside the cache's stop and
+            // remove
+            // method.
+            heartbeat.setListener(new HeartbeatStoppedListener(this));
+            this.cache.put(heartbeat.getQueryId(), heartbeat);
+        } finally {
+            lock.readLock().unlock();
+        }
+
     }
 
     /**
@@ -103,7 +129,13 @@ public class QueryHeartbeatCache {
      * @return the heartbeat, possibly null
      */
     public QueryHeartbeat get(String queryId) {
-        return this.cache.getIfPresent(queryId);
+        // Use a read lock that allows concurrent reads, but blocks if setup() or shutdown() is holding the write lock.
+        lock.readLock().lock();
+        try {
+            return this.cache.getIfPresent(queryId);
+        } finally {
+            lock.readLock().unlock();
+        }
     }
 
     /**
@@ -112,7 +144,13 @@ public class QueryHeartbeatCache {
      * @return the query IDs
      */
     public Set<String> getQueryIds() {
-        return cache.asMap().keySet();
+        // Use a read lock that allows concurrent reads, but blocks if setup() or shutdown() is holding the write lock.
+        lock.readLock().lock();
+        try {
+            return cache.asMap().keySet();
+        } finally {
+            lock.readLock().unlock();
+        }
     }
 
     /**
@@ -185,23 +223,80 @@ public class QueryHeartbeatCache {
     }
 
     /**
+     * Listen for state changes to the given Zookeeper client. This client should be the Zookeeper client used by the {@link QueryLimiter} to track active
+     * queries and create heartbeats with.
+     *
+     * @param client
+     *            the client
+     */
+    public void listenForConnectionStateChanges(CuratorFramework client) {
+        client.getConnectionStateListenable().addListener((c, newState) -> {
+            switch (newState) {
+                case CONNECTED:
+                case RECONNECTED:
+                    this.clientConnected.set(true);
+                    if (log.isTraceEnabled()) {
+                        log.trace("Connection state change: " + newState + ": setting clientConnected=true");
+                    }
+                    break;
+                case SUSPENDED:
+                case LOST:
+                case READ_ONLY:
+                    this.clientConnected.set(false);
+                    if (log.isTraceEnabled()) {
+                        log.trace("Connection state change: " + newState + ": setting clientConnected=false");
+                    }
+                    break;
+            }
+        });
+    }
+
+    /**
      * Closes this {@link QueryHeartbeatCache} and shuts down the scheduled cleanup task.
      */
     public void shutdown() {
-        log.debug("Shutting down");
+        lock.writeLock().lock();
         try {
-            if (this.scheduler != null) {
-                this.scheduler.shutdown();
+            log.debug("Shutting down");
+            try {
+                if (this.scheduler != null) {
+                    this.scheduler.shutdown();
+                }
+            } catch (Exception e) {
+                log.error("Error shutting down scheduled executor service", e);
             }
-        } catch (Exception e) {
-            log.error("Error shutting down scheduled executor service", e);
-        }
 
-        // Clear the cache and stop all the heartbeats.
-        try {
-            this.cache.asMap().keySet().forEach(this::stopAndRemoveHeartbeat);
-        } catch (Exception e) {
-            log.error("Error clearing heartbeat cache", e);
+            // Clear the cache. If the client
+            try {
+                // If the client is considered connected, attempt to stop the heartbeats before removing them from the cache to gracefully delete the
+                // ephemeral nodes. If the client is not connected, we do not want to call any of the QueryHeartbeat stop methods, as the retry policy for the
+                // backing PersistentNode may attempt multiple times to reconnect to Zookeeper before giving up. This would potentially cause a significant
+                // delay in shutting down the cache.
+                if (clientConnected.get()) {
+                    Set<String> queryIds = this.cache.asMap().keySet();
+                    for (String queryId : queryIds) {
+                        // Check if the client connection status has changed.
+                        if (clientConnected.get()) {
+                            try {
+                                stopAndRemoveHeartbeat(queryId);
+                            } catch (Exception e) {
+                                log.error("Error stopping heartbeat for query " + queryId);
+                            }
+                        } else {
+                            // If the client is not connected, simply clear the cache.
+                            this.cache.invalidateAll();
+                            break;
+                        }
+                    }
+                } else {
+                    // If the client is not connected, simply clear the cache.
+                    this.cache.invalidateAll();
+                }
+            } catch (Exception e) {
+                log.error("Error clearing heartbeat cache", e);
+            }
+        } finally {
+            lock.writeLock().unlock();
         }
     }
 

@@ -3,8 +3,6 @@ package datawave.webservice.query.limit;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.curator.framework.CuratorFramework;
@@ -21,16 +19,22 @@ import org.junit.jupiter.api.Test;
 class QueryHeartbeatTest {
 
     private TestingServer server;
+    private CuratorFramework client;
 
     @BeforeEach
     void setUp() throws Exception {
         server = new TestingServer();
+        client = CuratorFrameworkFactory.newClient(server.getConnectString(), new RetryOneTime(10));
+        client.start();
     }
 
     @AfterEach
     void tearDown() throws IOException {
         if (server != null) {
             server.close();
+        }
+        if (this.client != null) {
+            this.client.close();
         }
     }
 
@@ -131,36 +135,17 @@ class QueryHeartbeatTest {
     }
 
     private QueryHeartbeat createHeartbeat() throws InterruptedException {
-        CuratorFramework client = getClient();
-
-        List<PersistentNode> nodes = new ArrayList<>();
-        nodes.add(createNode(client, "/path1"));
-        nodes.add(createNode(client, "/path2"));
-        nodes.add(createNode(client, "/path3"));
-
-        return new QueryHeartbeat("queryId", nodes);
-    }
-
-    private CuratorFramework getClient() {
-        CuratorFramework client = CuratorFrameworkFactory.newClient(server.getConnectString(), new RetryOneTime(1));
-        client.start();
-        return client;
-    }
-
-    private PersistentNode createNode(CuratorFramework client, String path) throws InterruptedException {
-        PersistentNode node = new PersistentNode(client, CreateMode.EPHEMERAL, false, path, new byte[0], false);
+        PersistentNode node = new PersistentNode(client, CreateMode.EPHEMERAL, false, "/path", new byte[0], false);
         node.start();
         node.waitForInitialCreate(1, TimeUnit.SECONDS);
-        return node;
+        return new QueryHeartbeat("queryId", node);
     }
 
     private void assertNodesStarted(QueryHeartbeat heartbeat) {
-        // Verify that all the nodes are started.
-        heartbeat.getNodes().forEach(node -> assertThat(node.getActualPath()).isNotNull());
+        assertThat(heartbeat.getNode().getActualPath()).isNotNull();
     }
 
     private void assertNodesStopped(QueryHeartbeat heartbeat) {
-        // Verify that all the nodes are started.
-        heartbeat.getNodes().forEach(node -> assertThat(node.getActualPath()).isNull());
+        assertThat(heartbeat.getNode().getActualPath()).isNull();
     }
 }

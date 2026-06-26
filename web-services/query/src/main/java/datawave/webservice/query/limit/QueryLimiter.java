@@ -1,97 +1,307 @@
 package datawave.webservice.query.limit;
 
+import static datawave.webservice.query.limit.QueryLimiterUtils.ZOOKEEPER_NAMESPACE;
+import static datawave.webservice.query.limit.QueryLimiterUtils.normalizeQueryLogic;
+import static datawave.webservice.query.limit.QueryLimiterUtils.normalizeSystem;
+import static datawave.webservice.query.limit.QueryLimiterUtils.normalizeUserDn;
+import static datawave.zookeeper.ZkUtils.getQuorumPeerConfig;
+
+import java.util.Comparator;
 import java.util.HashSet;
-import java.util.List;
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.stream.Collectors;
 
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.CuratorFrameworkFactory;
+import org.apache.curator.retry.RetryNTimes;
 import org.apache.log4j.Logger;
-import org.apache.zookeeper.server.quorum.QuorumPeerConfig;
+import org.awaitility.Awaitility;
+import org.awaitility.core.ConditionTimeoutException;
+
+import com.google.common.base.Preconditions;
 
 /**
  * This class is responsible for determining if any concurrent query limits are going to be exceeded for a user, system, or query logic when a new query is
- * submitted.
+ * submitted. It is expected that only a singleton instance of {@link QueryLimiter} will be created via CDI.
  */
 public class QueryLimiter {
 
     private static final Logger log = Logger.getLogger(QueryLimiter.class);
 
-    // The string to use to connect to zookeeper.
-    private String zookeeperConfig;
-
-    // The configuration to initialize the limit providers with.
-    private QueryLimitConfiguration configuration;
-
-    // A cache to store heartbeats of active queries within.
-    private QueryHeartbeatCache heartbeatCache;
-
-    // Provides configured limits for query logic groups.
-    private QueryLogicGroupLimitProvider queryLogicGroupLimitProvider;
-
-    // Provides configured limits for users.
-    private UserLimitProvider userLimitProvider;
-
-    // Provides configured limits for systems.
-    private SystemLimitProvider systemLimitProvider;
-
-    // The tracker responsible for interfacing with Zookeeper.
-    private ActiveQueryTracker activeQueryTracker;
-
-    public static final String EMPTY_SYSTEM_FROM = "EMPTY_SYSTEM_FROM";
+    /**
+     * A read-write lock that prevents queries from
+     */
+    private final ReadWriteLock limiterLock = new ReentrantReadWriteLock();
 
     /**
-     * Return the zookeeper connection string.
+     * Whether this {@link QueryLimiter} is considered configured and activated.
+     */
+    private final AtomicBoolean activated = new AtomicBoolean(false);
+
+    /**
+     * A Zookeeper connect string or a path to a Zookeeper config file.
+     */
+    private String zookeeperConfig;
+
+    /**
+     * The query limits to enforce within this {@link QueryLimiter}.
+     */
+    private QueryLimitConfiguration configuration;
+
+    /**
+     * The timeout in milliseconds for {@link #client} to successfully connect to Zookeeper when {@link #activate()} is called. Defaults to 3 minutes.
+     */
+    private long zookeeperClientTimeoutMs = TimeUnit.MINUTES.toMillis(3);
+
+    /**
+     * The timeout in milliseconds for {@link #queryLogicCache} to reach an initial healthy state when {@link #activate()} is called. Defaults to 3 minutes.
+     */
+    private long queryLogicCacheTimeoutMs = TimeUnit.MINUTES.toMillis(3);
+
+    /**
+     * The timeout in milliseconds for {@link #queryCountsCache} to reach an initial healthy state when {@link #activate()} is called. Defaults to 3 minutes.
+     */
+    private long queryCountsCacheTimeoutMs = TimeUnit.MINUTES.toMillis(3);
+
+    /**
+     * The cache responsible for storing the heartbeats of active queries.
+     */
+    private QueryHeartbeatCache heartbeatCache;
+
+    /**
+     * The provider for query logic group limits.
+     */
+    private QueryLogicGroupLimitProvider queryLogicGroupLimitProvider;
+
+    /**
+     * The provider for user limits.
+     */
+    private UserLimitProvider userLimitProvider;
+
+    /**
+     * The provider for system limits.
+     */
+    private SystemLimitProvider systemLimitProvider;
+
+    /**
+     * The Zookeeper client.
+     */
+    private CuratorFramework client;
+
+    /**
+     * The tracker that handles tracking new active queries in Zookeeper.
+     */
+    private ActiveQueryTracker activeQueryTracker;
+
+    /**
+     * A local mirror cache of the distinct query logics stored in Zookeeper by {@link ActiveQueryTracker}.
+     */
+    private QueryLogicCache queryLogicCache;
+
+    /**
+     * A local mirror cache of the active queries stored in Zookeeper by {@link ActiveQueryTracker}.
+     */
+    private QueryCountsCache queryCountsCache;
+
+    /**
+     * Return the Zookeeper connection string or path to a Zookeeper config file.
      *
-     * @return the zookeeper connection string
+     * @return the Zookeeper configuration
      */
     public String getZookeeperConfig() {
         return zookeeperConfig;
     }
 
     /**
-     * Set the zookeeper connection string
+     * Set the Zookeeper configuration that is a connection string or path to a Zookeeper config file. Changes will not take effect until {@link #setup()} is
+     * called.
      *
      * @param zookeeperConfig
      *            the zookeeper connection string
      */
     public void setZookeeperConfig(String zookeeperConfig) {
-        this.zookeeperConfig = zookeeperConfig;
+        limiterLock.writeLock().lock();
+        try {
+            this.zookeeperConfig = zookeeperConfig;
+        } finally {
+            limiterLock.writeLock().unlock();
+        }
     }
 
     /**
-     * Set the configuration to use to set up this {@link QueryLimiter}
+     * Set the configuration to use to set up this {@link QueryLimiter}. Changes will not take effect until {@link #setup()} is called.
      *
      * @param queryLimitConfiguration
      *            the config
      */
     public void setConfiguration(QueryLimitConfiguration queryLimitConfiguration) {
-        this.configuration = queryLimitConfiguration;
+        limiterLock.writeLock().lock();
+        try {
+            this.configuration = queryLimitConfiguration;
+        } finally {
+            limiterLock.writeLock().unlock();
+        }
     }
 
     /**
-     * Return the configuration used to set up this {@link QueryLimiter}
+     * Return the configuration used to set up this {@link QueryLimiter}.
      *
      * @return the config
      */
     public QueryLimitConfiguration getConfiguration() {
-        return configuration;
-    }
-
-    public void setHeartbeatCache(QueryHeartbeatCache heartbeatCache) {
-        this.heartbeatCache = heartbeatCache;
+        limiterLock.readLock().lock();
+        try {
+            return configuration;
+        } finally {
+            limiterLock.readLock().unlock();
+        }
     }
 
     /**
-     * Validate the configuration and extract the query limits to enforce. In practice this should be marked as the init method for the {@link QueryLimiter}
-     * instance configured in bean XMLs. For testing purposes, this method should be called after setting the zookeeper config and query limit configs.
+     * Return the timeout in milliseconds for the Zookeeper client to successfully connect to Zookeeper during setup.
+     *
+     * @return the timeout
+     */
+    public long getZookeeperClientTimeoutMs() {
+        limiterLock.readLock().lock();
+        try {
+            return zookeeperClientTimeoutMs;
+        } finally {
+            limiterLock.readLock().unlock();
+        }
+    }
+
+    /**
+     * Set the timeout in milliseconds for the Zookeeper client to successfully connect to Zookeeper during setup.
+     *
+     * @param zookeeperClientTimeoutMs
+     *            the timeout
+     */
+    public void setZookeeperClientTimeoutMs(long zookeeperClientTimeoutMs) {
+        limiterLock.writeLock().lock();
+        try {
+            this.zookeeperClientTimeoutMs = zookeeperClientTimeoutMs;
+        } finally {
+            limiterLock.writeLock().unlock();
+        }
+    }
+
+    /**
+     * Return the timeout in milliseconds for the query logic cache to reach a healthy state during setup.
+     *
+     * @return the timeout
+     */
+    public long getQueryLogicCacheTimeoutMs() {
+        limiterLock.readLock().lock();
+        try {
+            return queryLogicCacheTimeoutMs;
+        } finally {
+            limiterLock.readLock().unlock();
+        }
+    }
+
+    /**
+     * Set the timeout in milliseconds for the query logic cache to reach a healthy state during setup.
+     *
+     * @param queryLogicCacheTimeoutMs
+     *            the timeout
+     */
+    public void setQueryLogicCacheTimeoutMs(long queryLogicCacheTimeoutMs) {
+        limiterLock.writeLock().lock();
+        try {
+            this.queryLogicCacheTimeoutMs = queryLogicCacheTimeoutMs;
+        } finally {
+            limiterLock.writeLock().unlock();
+        }
+    }
+
+    /**
+     * Return the timeout in milliseconds for the query count cache to reach a healthy state during setup.
+     *
+     * @return the timeout
+     */
+    public long getQueryCountsCacheTimeoutMs() {
+        limiterLock.readLock().lock();
+        try {
+            return queryCountsCacheTimeoutMs;
+        } finally {
+            limiterLock.readLock().unlock();
+        }
+    }
+
+    /**
+     * Set the timeout in milliseconds for the query count cache to reach a healthy state during setup.
+     *
+     * @param queryCountsCacheTimeoutMs
+     *            the timeout
+     */
+    public void setQueryCountsCacheTimeoutMs(long queryCountsCacheTimeoutMs) {
+        limiterLock.writeLock().lock();
+        try {
+            this.queryCountsCacheTimeoutMs = queryCountsCacheTimeoutMs;
+        } finally {
+            limiterLock.writeLock().unlock();
+        }
+    }
+
+    /**
+     * Set the heartbeat cache to store query heartbeats in
+     *
+     * @param heartbeatCache
+     *            the heartbeat cache
+     */
+    public void setHeartbeatCache(QueryHeartbeatCache heartbeatCache) {
+        limiterLock.writeLock().lock();
+        try {
+            this.heartbeatCache = heartbeatCache;
+        } finally {
+            limiterLock.writeLock().unlock();
+        }
+    }
+
+    /**
+     * Set up this {@link QueryLimiter} to become ready to enforce limits. In practice, this should be marked as the init method for the {@link QueryLimiter}
+     * instance configured in bean configuration files.
      */
     public void setup() {
-        if (log.isDebugEnabled()) {
-            log.debug("Initializing with zookeeperConfig: '" + zookeeperConfig + "' and query limit config: " + configuration);
-        }
+        log.info("Setting up query limiter.");
+        limiterLock.writeLock().lock();
+        try {
+            if (log.isDebugEnabled()) {
+                log.debug("Setting up with zookeeperConfig: '" + zookeeperConfig + "' and query limit config: " + configuration);
+            }
 
-        if (this.configuration != null) {
+            if (this.configuration != null) {
+                activate();
+            } else {
+                clear();
+            }
+
+            log.info("Setup complete.");
+        } finally {
+            limiterLock.writeLock().unlock();
+        }
+    }
+
+    /**
+     * Activate this {@link QueryLimiter}. The limiter will be deactivated if already active, and then internal caches, and limit providers will be
+     * reinitialized based on the current configuration. NOTE: the Zookeeper client {@link #client} will be created only if it does not exist. Otherwise, the
+     * pre-existing instance will be used.
+     */
+    private void activate() {
+        // Exclusive lock. Blocks all calls that track queries/check for limits until the limiter is updated.
+        limiterLock.writeLock().lock();
+        try {
             if (this.configuration.getDefaultUserQueryLimit() < 1) {
                 throw new IllegalArgumentException("Default user query limit must be greater than 0");
             }
@@ -100,41 +310,189 @@ public class QueryLimiter {
                 throw new IllegalArgumentException("Internal cache max size must be greater than 0");
             }
 
+            if (this.heartbeatCache == null) {
+                throw new IllegalStateException("No heartbeat cache set");
+            }
+
+            // Create the limit providers.
             this.queryLogicGroupLimitProvider = new QueryLogicGroupLimitProvider(configuration.getInternalCacheMaxSize(),
                             configuration.getQueryLogicGroupConfigs());
             this.userLimitProvider = new UserLimitProvider(configuration.getDefaultUserQueryLimit(), configuration.getInternalCacheMaxSize(),
                             configuration.getUserConfigs(), queryLogicGroupLimitProvider);
             this.systemLimitProvider = new SystemLimitProvider(configuration.getDefaultSystemQueryLimit(), configuration.getInternalCacheMaxSize(),
                             configuration.getSystemConfigs(), queryLogicGroupLimitProvider);
-        } else {
+
+            // Create the Zookeeper client only if it is not already done so. In the case where the configuration for this QueryLimiter is later updated, we
+            // want to preserve the pre-existing client so that we do not lose the ephemeral nodes maintained in the heartbeat cache.
+            if (this.client == null) {
+                // @formatter:off
+                this.client = CuratorFrameworkFactory.builder()
+                                .namespace(ZOOKEEPER_NAMESPACE)
+                                .connectString(getQuorumPeerConfig(zookeeperConfig))
+                                .sessionTimeoutMs(60000)
+                                .connectionTimeoutMs(60000)
+                                .retryPolicy(new RetryNTimes(10, 1000))
+                                .build();
+                // @formatter:on
+
+                // Start the client and wait for it connect to Zookeeper.
+                this.client.start();
+
+                // @formatter:off
+                try{
+                    if (log.isDebugEnabled()) {
+                        log.debug("Waiting for zookeeper client to connect with a timeout of " + zookeeperClientTimeoutMs + "ms");
+                    }
+
+                    Awaitility.await().alias("Zookeeper client connection")
+                            .atMost(zookeeperClientTimeoutMs, TimeUnit.MILLISECONDS)
+                            .untilAsserted(() -> this.client.blockUntilConnected());
+                } catch (ConditionTimeoutException e){
+                    log.warn("Zookeeper client failed to connect within timeout of " + zookeeperClientTimeoutMs + "ms");
+                }
+                // @formatter:on
+
+                // Let the heartbeat cache listen for connection state changes.
+                this.heartbeatCache.listenForConnectionStateChanges(this.client);
+            }
+
+            // The active query tracker instance can be reused between configuration updates.
+            if (this.activeQueryTracker == null) {
+                this.activeQueryTracker = new ActiveQueryTracker(client);
+            }
+
+            // The query logics cache instance can be reused between configuration updates.
+            if (this.queryLogicCache == null) {
+                // Create the query logic cache and wait for it to reach a healthy state.
+                this.queryLogicCache = new QueryLogicCache(client);
+                try {
+                    if (log.isDebugEnabled()) {
+                        log.debug("Waiting for query logic cache to reach healthy state with a timeout of " + queryLogicCacheTimeoutMs + "ms");
+                    }
+
+                    // @formatter:off
+                    Awaitility.await().alias("Query logic cache initialization")
+                            .atMost(queryLogicCacheTimeoutMs, TimeUnit.MILLISECONDS)
+                            .until(() -> this.queryLogicCache.isHealthy());
+                    // @formatter:off
+                } catch (ConditionTimeoutException e){
+                    log.warn("Query logic cache failed to initialize within timeout of " + queryLogicCacheTimeoutMs + "ms");
+                }
+
+            }
+
+            // Create the query counts cache if it doesn't exist and wait for it to reach a healthy state.
+            if(this.queryCountsCache == null) {
+                this.queryCountsCache = new QueryCountsCache(client, systemLimitProvider);
+            } else {
+                // If the query counts cache already exists, we need to update the system limit provider. This will trigger a rebuild of the internal map of
+                // user query counts that may be impacted by changes to systems that count against user limits.
+                if(log.isDebugEnabled()) {
+                    log.debug("Query counts cache already exists. Updating system limits and rebuilding cache.");
+                }
+                this.queryCountsCache.setSystemLimitProvider(systemLimitProvider);
+            }
+
+            try{
+                if(log.isDebugEnabled()) {
+                    log.debug("Waiting for query counts cache to reach healthy state with a timeout of " + queryCountsCacheTimeoutMs + "ms");
+                }
+
+                // @formatter:on
+                Awaitility.await().alias("Query counts cache initialization").atMost(queryCountsCacheTimeoutMs, TimeUnit.MILLISECONDS)
+                                .until(() -> this.queryCountsCache.isHealthy());
+                // @formatter:on
+            } catch (ConditionTimeoutException e) {
+                log.warn("Query counts cache failed to initialize within timeout of " + queryCountsCacheTimeoutMs + "ms");
+            }
+
+            // Update the query logic limit provider with the existing set of distinct query logics, and register a listener so that it will be notified of any
+            // query logic additions/removals.
+            this.queryLogicGroupLimitProvider.updateQueryLogics(this.queryLogicCache.getQueryLogics());
+            this.queryLogicCache.addListener(this.queryLogicGroupLimitProvider.createQueryLogicsUpdateListener());
+
+            this.activated.set(true);
+        } catch (Exception e) {
+            log.error("Activation failed. Deactivating query limiter.", e);
+            clear();
+            throw new QueryLimiterException("Activation failed.", e);
+        } finally {
+            limiterLock.writeLock().unlock();
+        }
+    }
+
+    /**
+     * Deactivate this {@link QueryLimiter}. Internal caches and limit providers will be closed and cleared. NOTE: The Zookeeper client {@link #client} and the
+     * heartbeat cache {@link #heartbeatCache} are specifically NOT closed here. The Zookeeper client and heartbeat cache must be preserved and reused through
+     * calls to this method and {@link #activate()} to preserve the existence of any ephemeral nodes maintained in the heartbeat cache. They should only be
+     * cleaned up when {@link #shutdown()} is called.
+     */
+    private void clear() {
+        // Exclusive lock. Blocks all calls that track queries/check for limits until the limiter is updated.
+        limiterLock.writeLock().lock();
+        try {
+            this.activated.set(false);
+
+            // Close the query logic cache.
+            if (this.queryLogicCache != null) {
+                try {
+                    this.queryLogicCache.close();
+                } catch (Exception e) {
+                    log.warn("Error closing query logic cache", e);
+                } finally {
+                    this.queryLogicCache = null;
+                }
+            }
+
+            // Close the query count cache.
+            if (this.queryCountsCache != null) {
+                try {
+                    this.queryCountsCache.close();
+                } catch (Exception e) {
+                    log.warn("Error closing query counts cache", e);
+                }
+            }
+
+            // Clear the limit providers.
             this.queryLogicGroupLimitProvider = null;
             this.userLimitProvider = null;
             this.systemLimitProvider = null;
+            this.activeQueryTracker = null;
+        } finally {
+            limiterLock.writeLock().unlock();
         }
     }
 
     /**
-     * Releases internal resources and cleans up connections and scheduled tasks.
+     * Deactivate this {@link QueryLimiter} and close all connections and resources.
      */
     public void shutdown() {
-        if (this.heartbeatCache != null) {
-            try {
-                this.heartbeatCache.shutdown();
-            } catch (Exception e) {
-                log.error("Error closing heartbeat cache", e);
+        log.info("Shutting down.");
+
+        // Exclusive lock. Blocks all calls that track queries/check for limits until the limiter is updated.
+        limiterLock.writeLock().lock();
+        try {
+            // Clear the query limiter.
+            clear();
+
+            // Close the Zookeeper client.
+            if (this.client != null) {
+                try {
+                    this.client.close();
+                } catch (Exception e) {
+                    log.warn("Error closing zookeeper client", e);
+                } finally {
+                    this.client = null;
+                }
             }
-        }
-        if (this.activeQueryTracker != null) {
-            try {
-                this.activeQueryTracker.close();
-            } catch (Exception e) {
-                log.error("Error closing active query tracker", e);
-            }
+        } finally {
+            limiterLock.writeLock().lock();
         }
     }
 
     /**
-     * Check if the user is allowed to create another query based on the given query logic on the current system.
+     * Check if the user is allowed to create another query based on the given query logic on the current system. If the provided system is null or blank, a
+     * default value of {@value QueryLimiterUtils#EMPTY_SYSTEM_FROM} will be used as the system.
      *
      * @param userDn
      *            the user DN
@@ -147,33 +505,53 @@ public class QueryLimiter {
      *             if an exception occurs
      */
     public QueryLimiterResponse checkForLimits(String userDn, String system, String queryLogic) throws Exception {
-        // Cast the user DN to lowercase to ensure a consistent format.
-        userDn = userDn.trim().toLowerCase();
+        long start = System.nanoTime();
+        try {
+            Preconditions.checkArgument(userDn != null && !userDn.isBlank(), "userDn must not be blank");
+            Preconditions.checkArgument(queryLogic != null && !queryLogic.isBlank(), "query logic must not be blank");
 
-        // Do not cast the system or query logic to lowercase, they will be getting matched against regex patterns.
-        queryLogic = queryLogic.trim();
+            // Use a read lock that allows for concurrent query tracking, but blocks if the query limiter configuration is being updated, and potentially the
+            // caches are being rebuilt.
+            limiterLock.readLock().lock();
+            try {
+                if (isEnforcingLimits()) {
+                    userDn = normalizeUserDn(userDn);
+                    queryLogic = normalizeQueryLogic(queryLogic);
+                    system = normalizeSystem(system);
 
-        // Ensure the system is non-null if empty
-        if (system == null || system.isBlank()) {
-            system = EMPTY_SYSTEM_FROM;
+                    if (log.isDebugEnabled()) {
+                        log.debug("Checking limits - userDn: " + userDn + ", system: " + system + ", queryLogic: " + queryLogic);
+                    }
+
+                    // Check if the snapshot reveals that any limits have been met.
+                    LimitChecker checker = new LimitChecker(userDn, system, queryLogic);
+                    checker.checkLimits();
+                    if (checker.metLimit) {
+                        return QueryLimiterResponse.metLimit(checker.message);
+                    } else {
+                        return QueryLimiterResponse.hasNotMetLimit();
+                    }
+                } else {
+                    if (log.isDebugEnabled()) {
+                        log.debug("Query limits are not enforced.");
+                    }
+                    return QueryLimiterResponse.hasNotMetLimit();
+                }
+            } finally {
+                limiterLock.readLock().unlock();
+            }
+        } finally {
+            long end = System.nanoTime();
+            long total = end - start;
+            log.debug("checkForLimits(): " + total);
         }
 
-        if (log.isDebugEnabled()) {
-            log.debug("Checking limits - userDn: " + userDn + ", system: " + system + ", queryLogic: " + queryLogic);
-        }
-
-        // Check if the snapshot reveals that any limits have been met.
-        LimitChecker checker = new LimitChecker(userDn, system, queryLogic);
-        checker.checkLimits();
-        if (checker.metLimit) {
-            return QueryLimiterResponse.metLimit(checker.message);
-        } else {
-            return QueryLimiterResponse.hasNotMetLimit();
-        }
     }
 
     /**
-     * Track the following information for the given query on Zookeeper for the current system, and count it towards any configured query limits.
+     * Track the following information for the given query on Zookeeper for the current system, and count it towards any configured query limits. If the
+     * provided system is null or blank, a default value of {@value QueryLimiterUtils#EMPTY_SYSTEM_FROM} will be used as the system. If this
+     * {@link QueryLimiter} is not currently enforcing limits,
      *
      * @param queryId
      *            the query ID
@@ -187,21 +565,47 @@ public class QueryLimiter {
      *             if an error occurs
      */
     public void countQueryTowardsLimits(String queryId, String userDn, String system, String queryLogic) throws Exception {
-        if (log.isDebugEnabled()) {
-            log.debug("Start counting query " + queryId + " towards limits");
+        Preconditions.checkArgument(userDn != null && !userDn.isBlank(), "userDn must not be blank");
+        Preconditions.checkArgument(queryLogic != null && !queryLogic.isBlank(), "query logic must not be blank");
+
+        // Use a read lock that allows for concurrent query tracking, but blocks if the query limiter configuration is being updated, and potentially the
+        // caches are being rebuilt.
+        limiterLock.readLock().lock();
+        try {
+            if (isEnforcingLimits()) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Start counting query " + queryId + " towards limits");
+                }
+                userDn = normalizeUserDn(userDn);
+                system = normalizeSystem(system);
+                queryLogic = normalizeQueryLogic(queryLogic);
+
+                // Track the query in Zookeeper and store the provided heartbeat in the heartbeat cache. This acts as a means to keep the ephemeral node stored
+                // in the heartbeat alive until explicitly closed.
+                QueryHeartbeat heartbeat = this.activeQueryTracker.trackQuery(queryId, userDn, system, queryLogic);
+                heartbeatCache.put(heartbeat);
+            } else {
+                if (log.isDebugEnabled()) {
+                    log.debug("Query limits are not enforced, query will not be tracked.");
+                }
+            }
+        } finally {
+            limiterLock.readLock().unlock();
         }
+    }
 
-        userDn = userDn.trim().toLowerCase();
-        // Ensure the system is non-null if empty
-        if (system == null || system.isBlank()) {
-            system = EMPTY_SYSTEM_FROM;
+    /**
+     * Return whether this {@link QueryLimiter} is currently enforcing limits, i.e. it has been initialized and the caches are trustworthy.
+     *
+     * @return true if this {@link QueryLimiter} is enforcing limits, or false otherwise
+     */
+    public boolean isEnforcingLimits() {
+        limiterLock.readLock().lock();
+        try {
+            return activated.get() && queryLogicCache.isHealthy() && queryCountsCache.isHealthy();
+        } finally {
+            limiterLock.readLock().unlock();
         }
-
-        boolean systemCountsTowardsUserLimits = systemLimitProvider.countsAgainstUserLimit(system);
-
-        QueryHeartbeat heartbeat = getActiveQueryTracker().trackQuery(queryId, userDn, system, queryLogic, systemCountsTowardsUserLimits);
-        // Store the heartbeat into the cache. This acts as a means to keep the connection to Zookeeper alive for the ephemeral nodes stored in the heartbeat.
-        heartbeatCache.put(heartbeat);
     }
 
     /**
@@ -210,7 +614,12 @@ public class QueryLimiter {
      * @return the set of IDs for active queries
      */
     public Set<String> getActiveQueries() {
-        return heartbeatCache.getQueryIds();
+        limiterLock.readLock().lock();
+        try {
+            return heartbeatCache != null ? heartbeatCache.getQueryIds() : Set.of();
+        } finally {
+            limiterLock.readLock().unlock();
+        }
     }
 
     /**
@@ -223,7 +632,14 @@ public class QueryLimiter {
         if (log.isDebugEnabled()) {
             log.debug("Stopping counting queries towards limits: " + queryIds);
         }
-        heartbeatCache.stopAndRemoveHeartbeats(queryIds);
+        limiterLock.readLock().lock();
+        try {
+            if (heartbeatCache != null) {
+                heartbeatCache.stopAndRemoveHeartbeats(queryIds);
+            }
+        } finally {
+            limiterLock.readLock().unlock();
+        }
     }
 
     /**
@@ -236,19 +652,14 @@ public class QueryLimiter {
         if (log.isDebugEnabled()) {
             log.debug("Stop counting query " + queryId + " towards limits");
         }
-        heartbeatCache.stopAndRemoveHeartbeat(queryId);
-    }
-
-    /**
-     * Return the {@link ActiveQueryTracker} instance, initializing it if needed.
-     *
-     * @return the active query tracker
-     */
-    private ActiveQueryTracker getActiveQueryTracker() throws QuorumPeerConfig.ConfigException {
-        if (this.activeQueryTracker == null) {
-            this.activeQueryTracker = new ActiveQueryTracker(zookeeperConfig);
+        limiterLock.readLock().lock();
+        try {
+            if (heartbeatCache != null) {
+                heartbeatCache.stopAndRemoveHeartbeat(queryId);
+            }
+        } finally {
+            limiterLock.readLock().unlock();
         }
-        return this.activeQueryTracker;
     }
 
     /**
@@ -262,7 +673,6 @@ public class QueryLimiter {
 
         private boolean metLimit;
         private String message;
-        private List<String> distinctQueryLogics;
 
         public LimitChecker(String userDn, String system, String queryLogic) {
             this.userDn = userDn;
@@ -273,7 +683,7 @@ public class QueryLimiter {
         /**
          * Check against any configured limits, and update whether a limit has been met.
          */
-        public void checkLimits() throws Exception {
+        public void checkLimits() {
             // Check against any configured user limits.
             checkUserLimits();
             if (metLimit) {
@@ -287,9 +697,9 @@ public class QueryLimiter {
         /**
          * Check the limits configured for the user.
          */
-        private void checkUserLimits() throws Exception {
+        private void checkUserLimits() {
             // If there are custom limits configured for the user, check against them. Otherwise, check against the default user limits.
-            if (userLimitProvider.hasCustomLimits(userDn)) {
+            if (userLimitProvider.hasCustomLimits(this.userDn)) {
                 checkCustomUserLimits();
             } else {
                 checkDefaultQueryLogicLimits();
@@ -299,15 +709,15 @@ public class QueryLimiter {
         /**
          * Check against custom user limits.
          */
-        private void checkCustomUserLimits() throws Exception {
-            UserLimits userLimits = userLimitProvider.getCustomLimits(userDn);
+        private void checkCustomUserLimits() {
+            UserLimits userLimits = userLimitProvider.getCustomLimits(this.userDn);
             Map<String,Integer> groupLimits;
             // If the user has custom query logic group limits, check query logic totals against them. Otherwise, check query logic totals against the default
             // query logic group limits.
             if (userLimits.overridesAnyGroupLimits()) {
-                groupLimits = userLimits.getBestGroupLimits(queryLogic);
+                groupLimits = userLimits.getBestGroupLimits(this.queryLogic);
             } else {
-                groupLimits = queryLogicGroupLimitProvider.getBestGroupLimits(queryLogic);
+                groupLimits = queryLogicGroupLimitProvider.getBestGroupLimits(this.queryLogic);
             }
 
             checkUserLimits(groupLimits, userLimits.getQueryLimit());
@@ -316,8 +726,8 @@ public class QueryLimiter {
         /**
          * Check against the default user limit and query logic group limits.
          */
-        private void checkDefaultQueryLogicLimits() throws Exception {
-            Map<String,Integer> groupLimits = queryLogicGroupLimitProvider.getBestGroupLimits(queryLogic);
+        private void checkDefaultQueryLogicLimits() {
+            Map<String,Integer> groupLimits = queryLogicGroupLimitProvider.getBestGroupLimits(this.queryLogic);
             checkUserLimits(groupLimits, userLimitProvider.getDefaultUserQueryLimit());
         }
 
@@ -329,122 +739,134 @@ public class QueryLimiter {
          * @param queryLimit
          *            the max allowed queries
          */
-        private void checkUserLimits(Map<String,Integer> groupLimits, int queryLimit) throws Exception {
-            Set<String> queryLogics = new HashSet<>();
-            int totalUserQueries = 0;
-            ActiveQueryTracker tracker = getActiveQueryTracker();
+        private void checkUserLimits(Map<String,Integer> groupLimits, int queryLimit) {
+            // Check if the total user queries meets the limit.
+            int totalUserQueries = queryCountsCache.getTotalUserQueries(this.userDn);
+            if (totalUserQueries >= queryLimit) {
+                this.metLimit = true;
+                this.message = "User '" + this.userDn + "' has reached limit of " + queryLimit + " running queries";
+                return;
+            }
 
-            // If groupsLimit is not empty, then we found one or more best-matching groups for the query logic.
+            // We're only interested in query logic group limits where the limit is less than or equal to the total user queries.
+            // @formatter:off
+            groupLimits = groupLimits.entrySet().stream()
+                            .filter(e -> e.getValue() <= queryLimit)
+                            .collect(Collectors.toMap(
+                                            Map.Entry::getKey,
+                                            Map.Entry::getValue,
+                                            (oldValue, newValue) -> oldValue,
+                                            LinkedHashMap::new));
+            // @formatter:off
+
+            // If we have any query logic group limits to check, do so.
             if (!groupLimits.isEmpty()) {
-                // Create a set of limit checkers for each query logic group.
-                Set<QueryLogicGroupLimitChecker> limitCheckers = getQueryLogicLimitCheckers(groupLimits);
+                // Create a set of limit checkers for each query logic group. This will only return limit checkers for groups where the group limit is equal to
+                // or less than the total user queries. This set will be in order of lowest limit to highest.
+                SortedSet<QueryLogicGroupLimitChecker> limitCheckers = getQueryLogicLimitCheckers(groupLimits);
 
-                // Load the distinct query logics, and fetch all query logics that fall within the target groups.
-                loadDistinctQueryLogics();
-                limitCheckers.forEach(limitChecker -> queryLogics.addAll(limitChecker.matcher.getMatches(distinctQueryLogics)));
+                //  Identify all query logics that fall within the target groups.
+                Set<String> queryLogics = new HashSet<>();
+                limitCheckers.forEach(limitChecker -> queryLogics.addAll(queryLogicGroupLimitProvider.getQueryLogicsForGroup(limitChecker.group)));
 
                 // Fetch the total running queries for each query logic for the user.
                 for (String queryLogic : queryLogics) {
-                    int totalQueriesForQueryLogic = tracker.getTotalUserQueriesForQueryLogic(userDn, queryLogic);
+                    int totalQueriesForQueryLogic = queryCountsCache.getTotalUserQueries(this.userDn, queryLogic);
                     // Update each group limit checker with the total. If we met a limit after doing so, update our status and return early.
                     for (QueryLogicGroupLimitChecker limitChecker : limitCheckers) {
                         limitChecker.incrementTotal(queryLogic, totalQueriesForQueryLogic);
                         if (limitChecker.limitMet()) {
                             this.metLimit = true;
-                            this.message = "User '" + userDn + "' has reached limit of " + limitChecker.limit + " running queries for query logic group '"
+                            this.message = "User '" + this.userDn + "' has reached limit of " + limitChecker.limit + " running queries for query logic group '"
                                             + limitChecker.group + "'";
                             return;
                         }
                     }
-
-                    // Update the current total user queries, and check if we've met a limit. If so, update our status the return early.
-                    totalUserQueries += totalQueriesForQueryLogic;
-                    if (totalUserQueries >= queryLimit) {
-                        this.metLimit = true;
-                        this.message = "User '" + userDn + "' has reached limit of " + queryLimit + " running queries";
-                        return;
-                    }
                 }
-            }
-
-            // If we've reached this point, we did not meet any user limits configured for the query logic. Check if the total number of queries for the user
-            // meets their max query limit. Pass in the query logics we already counted as well as the current total to avoid unnecessary scanning in Zookeeper.
-            if (tracker.totalUserQueriesMeetsLimit(userDn, queryLimit, queryLogics, totalUserQueries)) {
-                this.metLimit = true;
-                this.message = "User '" + userDn + "' has reached limit of " + queryLimit + " running queries";
             }
         }
 
         /**
          * Check if the system has met the limit for either the target query logic or their max query limit.
          */
-        private void checkSystemLimits() throws Exception {
-            Set<String> queryLogics = new HashSet<>();
-            int totalSystemQueries = 0;
-            int queryLimit = systemLimitProvider.getDefaultSystemQueryLimit();
-            ActiveQueryTracker tracker = getActiveQueryTracker();
+        private void checkSystemLimits() {
+            int queryLimit;
+            Map<String,Integer> groupLimits = null;
 
-            // Check if any custom limits apply for the system.
-            Optional<SystemLimits> optional = systemLimitProvider.getCustomLimits(system);
+            // Check if custom limits were configured for the system.
+            Optional<SystemLimits> optional = systemLimitProvider.getCustomLimits(this.system);
             if (optional.isPresent()) {
+                // If so, fetch the custom system query limit and any configured query logic group limits.
                 SystemLimits systemLimits = optional.get();
-                // If so, update the system query limit to use the custom value.
                 queryLimit = systemLimits.getQueryLimit();
+                // Fetch any custom query logic group limits defined for the system for the query's logic.
+                if(systemLimits.overridesAnyGroupLimits()) {
+                    Map<String,Integer> bestGroupLimits = systemLimits.getBestGroupLimits(this.queryLogic);
+                    if (!bestGroupLimits.isEmpty()) {
+                        groupLimits = bestGroupLimits;
+                    }
+                }
+            } else {
+                queryLimit = systemLimitProvider.getDefaultSystemQueryLimit();
+            }
 
-                // If the system has any custom query logic group limits, check if the query logic applies to any of the groups.
-                if (systemLimits.overridesAnyGroupLimits()) {
-                    Map<String,Integer> groupLimits = systemLimits.getBestGroupLimits(queryLogic);
-                    // If groupsLimit is not empty, then we found one or more best-matching groups for the query logic.
-                    if (!groupLimits.isEmpty()) {
-                        // Create a set of limit checkers for each query logic group.
-                        Set<QueryLogicGroupLimitChecker> limitCheckers = getQueryLogicLimitCheckers(groupLimits);
-
-                        // Load the distinct query logics, and fetch all query logics that fall within the target groups.
-                        loadDistinctQueryLogics();
-                        limitCheckers.forEach(limitChecker -> queryLogics.addAll(limitChecker.matcher.getMatches(distinctQueryLogics)));
-
-                        // Fetch the total running queries for each query logic for the system.
-                        for (String queryLogic : queryLogics) {
-                            int totalQueriesForQueryLogic = tracker.getTotalSystemQueriesForQueryLogic(system, queryLogic);
-                            // Update each group limit checker with the total. If we met a limit after doing so, update our status and return early.
-                            for (QueryLogicGroupLimitChecker limitChecker : limitCheckers) {
-                                limitChecker.incrementTotal(queryLogic, totalQueriesForQueryLogic);
-                                if (limitChecker.limitMet()) {
-                                    this.metLimit = true;
-                                    this.message = "System '" + system + "' has reached limit of " + limitChecker.limit
-                                                    + " running queries for query logic group '" + limitChecker.group + "'";
-                                    return;
-                                }
-                            }
-
-                            // If the system has a query limit, check if we've reached it.
-                            if (queryLimit != QueryLimitConstants.NO_LIMIT) {
-                                // Update the current total system queries, and check if we've met a limit. If so, update our status the return early.
-                                totalSystemQueries += totalQueriesForQueryLogic;
-                                if (totalSystemQueries >= queryLimit) {
-                                    this.metLimit = true;
-                                    this.message = "System '" + system + "' has reached limit of " + queryLimit + " running queries";
-                                    return;
-                                }
-                            }
-                        }
+            // If the system has a query limit, check if we've met it.
+            if (queryLimit != QueryLimiterUtils.NO_LIMIT) {
+                int totalSystemQueries = queryCountsCache.getTotalSystemQueries(this.system);
+                // We've met the total system query limit. Update the status and return early.
+                if(totalSystemQueries >= queryLimit) {
+                    this.metLimit = true;
+                    this.message = "System '" + this.system + "' has reached limit of " + queryLimit + " running queries";
+                    return;
+                } else {
+                    // We're only interested in query logic group limits where the limit is less than or equal to the total system queries.
+                    if(groupLimits != null) {
+                        // @formatter:off
+                        groupLimits = groupLimits.entrySet().stream()
+                                        .filter(e -> e.getValue() <= queryLimit)
+                                        .collect(Collectors.toMap(
+                                                        Map.Entry::getKey,
+                                                        Map.Entry::getValue,
+                                                        (oldValue, newValue) -> oldValue,
+                                                        LinkedHashMap::new));
+                        // @formatter:off
                     }
                 }
             }
 
-            // If we've reached this point, we did not meet any system limits configured for the query logic. Check if the total number of queries for the
-            // system meets their max query limit. Pass in the query logics we already counted as well as the current total to avoid unnecessary scanning in
-            // Zookeeper.
-            if (queryLimit != QueryLimitConstants.NO_LIMIT) {
-                if (tracker.totalSystemQueriesMeetsLimit(system, queryLimit, queryLogics, totalSystemQueries)) {
-                    this.metLimit = true;
-                    this.message = "System '" + system + "' has reached limit of " + queryLimit + " running queries";
+            // If we have any query logic group limits, check them.
+            if (groupLimits != null && !groupLimits.isEmpty()) {
+                // Create a set of limit checkers for each query logic group. This set will be in order of lowest limit to highest.
+                SortedSet<QueryLogicGroupLimitChecker> limitCheckers = getQueryLogicLimitCheckers(groupLimits);
+
+                // Identify all query logics that fall within the target groups.
+                Set<String> queryLogics = new HashSet<>();
+                limitCheckers.forEach(limitChecker -> queryLogics.addAll(queryLogicGroupLimitProvider.getQueryLogicsForGroup(limitChecker.group)));
+
+                // Fetch the total running queries for each query logic for the system.
+                for (String queryLogic : queryLogics) {
+                    int totalQueriesForQueryLogic = queryCountsCache.getTotalSystemQueries(this.system, queryLogic);
+                    // Update each group limit checker with the total. If we met a limit after doing so, update our status and return early.
+                    for (QueryLogicGroupLimitChecker limitChecker : limitCheckers) {
+                        limitChecker.incrementTotal(queryLogic, totalQueriesForQueryLogic);
+                        if (limitChecker.limitMet()) {
+                            this.metLimit = true;
+                            this.message = "System '" + this.system + "' has reached limit of " + limitChecker.limit
+                                            + " running queries for query logic group '" + limitChecker.group + "'";
+                            return;
+                        }
+                    }
                 }
             }
         }
 
-        private Set<QueryLogicGroupLimitChecker> getQueryLogicLimitCheckers(Map<String,Integer> groupsToLimits) {
-            Set<QueryLogicGroupLimitChecker> checkers = new HashSet<>();
+        /**
+         * Return a set of {@link QueryLogicGroupLimitChecker} for the given groups to group limits map, in order of lowest limit to highest.
+         * @param groupsToLimits the groups to group limits map
+         * @return a sorted set of limit checkers
+         */
+        private SortedSet<QueryLogicGroupLimitChecker> getQueryLogicLimitCheckers(Map<String,Integer> groupsToLimits) {
+            SortedSet<QueryLogicGroupLimitChecker> checkers = new TreeSet<>();
 
             // If any relevant groups were found, include any other query logics that match against at least one of the relevant groups.
             // We track query logics that we have seen before (on this system and others) in Zookeeper.
@@ -456,21 +878,13 @@ public class QueryLimiter {
 
             return checkers;
         }
-
-        /**
-         * Load the set of distinct query logics from Zookeeper if not yet loaded.
-         */
-        private void loadDistinctQueryLogics() throws QuorumPeerConfig.ConfigException {
-            if (distinctQueryLogics == null) {
-                distinctQueryLogics = getActiveQueryTracker().getDistinctQueryLogics();
-            }
-        }
     }
 
     /**
-     * Contains logic for making it easier to aggregate totals against a query logic group limit.
+     * Contains logic for making it easier to aggregate totals against a query logic group limit. If sorted, {@link QueryLogicGroupLimitChecker} will be sorted
+     * by the limit in ascending order, and then the group name.
      */
-    private static class QueryLogicGroupLimitChecker {
+    private static class QueryLogicGroupLimitChecker implements Comparable<QueryLogicGroupLimitChecker> {
 
         private final String group;
         private final Matcher matcher;
@@ -497,5 +911,13 @@ public class QueryLimiter {
             return total >= limit;
         }
 
+        @Override
+        public int compareTo(QueryLogicGroupLimitChecker other) {
+            int result = Objects.compare(this.limit, other.limit, Comparator.naturalOrder());
+            if (result != 0) {
+                result = Objects.compare(this.group, other.group, Comparator.naturalOrder());
+            }
+            return result;
+        }
     }
 }

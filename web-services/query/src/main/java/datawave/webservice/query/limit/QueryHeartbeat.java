@@ -1,10 +1,9 @@
 package datawave.webservice.query.limit;
 
 import java.io.IOException;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.Objects;
 import java.util.StringJoiner;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.curator.framework.recipes.nodes.PersistentNode;
 import org.apache.log4j.Logger;
@@ -18,15 +17,16 @@ public class QueryHeartbeat {
     private static final Logger log = Logger.getLogger(QueryHeartbeat.class);
 
     private final String queryId;
-    private final Collection<PersistentNode> nodes;
-    private boolean stopped = false;
+    private final PersistentNode node;
+    private final AtomicBoolean stopped = new AtomicBoolean(false);
+
     private QueryHeartbeatCache.HeartbeatStoppedListener listener;
 
-    public QueryHeartbeat(String queryId, Collection<PersistentNode> nodes) {
+    public QueryHeartbeat(String queryId, PersistentNode node) {
         Objects.requireNonNull(queryId, "Parameter queryId must not be null");
-        Objects.requireNonNull(nodes, "Parameter node must not be null");
+        Objects.requireNonNull(node, "Parameter node must not be null");
         this.queryId = queryId;
-        this.nodes = Collections.unmodifiableCollection(nodes);
+        this.node = node;
     }
 
     /**
@@ -43,8 +43,8 @@ public class QueryHeartbeat {
      *
      * @return the nodes
      */
-    public Collection<PersistentNode> getNodes() {
-        return nodes;
+    public PersistentNode getNode() {
+        return node;
     }
 
     /**
@@ -55,8 +55,8 @@ public class QueryHeartbeat {
      */
     public void stop() throws IOException {
         stopWithoutNotifyingListener();
-        if (listener != null) {
-            listener.heartbeatStopped(queryId);
+        if (this.listener != null) {
+            this.listener.heartbeatStopped(this.queryId);
         }
     }
 
@@ -64,16 +64,13 @@ public class QueryHeartbeat {
      * Stop and delete the heartbeat without notifying the internal listener. This is used by {@link QueryHeartbeatCache} to avoid necessary looping calls.
      */
     public void stopWithoutNotifyingListener() {
-        if (!stopped) {
-            for (PersistentNode node : nodes) {
-                try {
-                    node.close();
-                } catch (Exception e) {
-                    log.error("Error closing ephemeral node", e);
-                }
+        if (!this.stopped.getAndSet(true)) {
+            try {
+                this.node.close();
+            } catch (Exception e) {
+                log.error("Error closing ephemeral node", e);
             }
         }
-        stopped = true;
     }
 
     /**
@@ -82,16 +79,7 @@ public class QueryHeartbeat {
      * @return true if the heartbeat is stopped, or false otherwise
      */
     public boolean isStopped() {
-        if (!stopped) {
-            // The heartbeat is stopped if none of the ephemeral nodes exist.
-            for (PersistentNode node : nodes) {
-                if (node.getActualPath() != null) {
-                    return false;
-                }
-            }
-            this.stopped = true;
-        }
-        return true;
+        return this.stopped.get();
     }
 
     /**
@@ -109,17 +97,17 @@ public class QueryHeartbeat {
         if (o == null || getClass() != o.getClass())
             return false;
         QueryHeartbeat heartbeat = (QueryHeartbeat) o;
-        return Objects.equals(queryId, heartbeat.queryId) && Objects.equals(nodes, heartbeat.nodes) && Objects.equals(listener, heartbeat.listener);
+        return Objects.equals(queryId, heartbeat.queryId) && Objects.equals(node, heartbeat.node) && Objects.equals(listener, heartbeat.listener);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(queryId, nodes, listener);
+        return Objects.hash(queryId, node, listener);
     }
 
     @Override
     public String toString() {
-        return new StringJoiner(", ", QueryHeartbeat.class.getSimpleName() + "[", "]").add("queryId=" + queryId).add("nodes=" + nodes)
-                        .add("listener=" + listener).toString();
+        return new StringJoiner(", ", QueryHeartbeat.class.getSimpleName() + "[", "]").add("queryId=" + queryId).add("node=" + node).add("listener=" + listener)
+                        .toString();
     }
 }

@@ -48,7 +48,7 @@ public class GroupLimitCache {
     }
 
     /**
-     * Return a map of groups that match against the query logic to their limits.
+     * Return a map of groups that match against the query logic to their limits. The map will be in order of lowest value to highest.
      *
      * @param queryLogic
      *            the query logic

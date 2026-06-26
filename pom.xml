@@ -56,6 +56,7 @@
         <version.arquillian-weld-ee-embedded>1.0.0.Final</version.arquillian-weld-ee-embedded>
         <version.assertj>3.20.2</version.assertj>
         <version.avro>1.11.4</version.avro>
+        <version.awaitutility>4.3.0</version.awaitutility>
         <version.byte-buddy>1.14.11</version.byte-buddy>
         <version.caffeine>3.1.0</version.caffeine>
         <version.commons-beanutils>1.9.4</version.commons-beanutils>
@@ -1136,6 +1137,11 @@
                         <artifactId>logback-classic</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.awaitility</groupId>
+                <artifactId>awaitility</artifactId>
+                <version>${version.awaitutility}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.emf</groupId>
