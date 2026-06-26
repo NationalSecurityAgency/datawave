@@ -148,9 +148,9 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
      * Check whether this query logic can bypass the query limiter mechanism. For example UUID queries which must remain as fast as possible may avoid the
      * zookeeper overhead incurred by the query limit mechanism.
      *
-     * @return Return true if we can bypass the query limiter
+     * @return Return false if we can bypass the query limiter
      */
-    boolean bypassQueryLimiter();
+    boolean isQueryLimiterEnabled();
 
     /**
      * release resources

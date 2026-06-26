@@ -426,6 +426,7 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
      *
      * @return Return whether the query is a type that is expected to run very quickly
      */
+    @Override
     public boolean isShortRunningQuery() {
         return false;
     }
@@ -434,10 +435,11 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
      * Check whether this query logic can bypass the query limiter mechanism. For example UUID queries which must remain as fast as possible may avoid the
      * zookeeper overhead incurred by the query limit mechanism. Implementations should override this if the default is not appropriate.
      *
-     * @return Return true if we can bypass the query limiter
+     * @return Return false if we can bypass the query limiter
      */
-    public boolean bypassQueryLimiter() {
-        return false;
+    @Override
+    public boolean isQueryLimiterEnabled() {
+        return true;
     }
 
     public ResponseEnricherBuilder getResponseEnricherBuilder() {

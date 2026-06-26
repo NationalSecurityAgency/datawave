@@ -259,7 +259,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.connectionRequestBean.adminCancelConnectionRequest(queryId.toString())).andReturn(false);
         expect(this.qlCache.poll(queryId.toString())).andReturn(this.tuple);
         expect(this.tuple.getLeft()).andReturn((QueryLogic) this.queryLogic1);
-        expect(this.queryLogic1.bypassQueryLimiter()).andReturn(false);
+        expect(this.queryLogic1.isQueryLimiterEnabled()).andReturn(true);
         this.queryLogic1.close();
         expect(this.tuple.getRight()).andReturn(this.client);
         this.connectionFactory.returnClient(this.client);
@@ -329,7 +329,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.runningQuery.getLogic()).andReturn((QueryLogic) queryLogic1);
         expect(this.query.getId()).andReturn(queryId);
         cache.remove(queryId.toString());
-        expect(this.queryLogic1.bypassQueryLimiter()).andReturn(false);
+        expect(this.queryLogic1.isQueryLimiterEnabled()).andReturn(true);
 
         // Run the test
         PowerMock.replayAll();
@@ -383,7 +383,7 @@ public class ExtendedQueryExecutorBeanTest {
                         .andReturn(new QueryImpl.Parameter(RemoteUserOperationsImpl.INCLUDE_REMOTE_SERVICES, "true")).anyTimes();
         expect(context.getCallerPrincipal()).andReturn(principal);
         expect(this.queryLogicFactory.getQueryLogic("ql1", principal)).andReturn((QueryLogic) this.queryLogic1);
-        expect(this.queryLogic1.bypassQueryLimiter()).andReturn(false);
+        expect(this.queryLogic1.isQueryLimiterEnabled()).andReturn(true);
         expect(this.queryLogic1.getConnectionPriority()).andReturn(Priority.NORMAL);
         expect(this.queryLogic1.getCollectQueryMetrics()).andReturn(false);
         expect(this.queryLogic1.getResultLimit(this.query)).andReturn(-1L);
@@ -429,7 +429,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.qlCache.poll(queryId.toString())).andReturn(this.tuple);
         expect(this.tuple.getLeft()).andReturn((QueryLogic) this.queryLogic1);
         this.queryLogic1.close();
-        expect(this.queryLogic1.bypassQueryLimiter()).andReturn(false);
+        expect(this.queryLogic1.isQueryLimiterEnabled()).andReturn(true);
         expect(this.tuple.getRight()).andReturn(this.client);
         this.connectionFactory.returnClient(this.client);
 
@@ -499,7 +499,7 @@ public class ExtendedQueryExecutorBeanTest {
         this.closedCache.remove(queryId.toString());
         expect(this.tuple.getLeft()).andReturn((QueryLogic) this.queryLogic1);
         this.queryLogic1.close();
-        expect(this.queryLogic1.bypassQueryLimiter()).andReturn(false);
+        expect(this.queryLogic1.isQueryLimiterEnabled()).andReturn(true);
         expect(this.tuple.getRight()).andReturn(this.client);
         this.connectionFactory.returnClient(this.client);
 
@@ -592,7 +592,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.runningQuery.getSettings()).andReturn(this.query).times(2);
         expect(this.query.getOwner()).andReturn(userSid);
         expect(this.runningQuery.getLogic()).andReturn((QueryLogic) queryLogic1);
-        expect(this.queryLogic1.bypassQueryLimiter()).andReturn(false);
+        expect(this.queryLogic1.isQueryLimiterEnabled()).andReturn(true);
         this.runningQuery.cancel();
         this.runningQuery.closeConnection(this.connectionFactory);
         expect(this.query.getId()).andReturn(queryId);
@@ -677,7 +677,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.qlCache.pollIfOwnedBy(queryId.toString(), userSid)).andReturn(this.tuple);
         expect(this.principal.getUserDN()).andReturn(SubjectIssuerDNPair.of(userName));
         expect(this.tuple.getLeft()).andReturn((QueryLogic) this.queryLogic1);
-        expect(this.queryLogic1.bypassQueryLimiter()).andReturn(false);
+        expect(this.queryLogic1.isQueryLimiterEnabled()).andReturn(true);
         this.queryLogic1.close();
         PowerMock.expectLastCall().andThrow(ILLEGAL_STATE_EXCEPTION);
         expect(this.tuple.getRight()).andThrow(ILLEGAL_STATE_EXCEPTION);
@@ -780,7 +780,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.queryLogic1.getAuditType(this.query)).andReturn(AuditType.NONE);
         expect(this.queryLogic1.getConnectionPriority()).andReturn(Priority.NORMAL);
         expect(this.queryLogic1.getConnPoolName()).andReturn("connPool1");
-        expect(this.queryLogic1.bypassQueryLimiter()).andReturn(false).anyTimes();
+        expect(this.queryLogic1.isQueryLimiterEnabled()).andReturn(true).anyTimes();
         expect(this.queryLogic1.isLongRunningQuery()).andReturn(false);
         expect(this.queryLogic1.isShortRunningQuery()).andReturn(false);
         expect(this.connectionFactory.getTrackingMap(isA(StackTraceElement[].class))).andReturn(null);
@@ -945,7 +945,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.queryLogic1.getAuditType(this.query)).andReturn(AuditType.NONE);
         expect(this.queryLogic1.getConnectionPriority()).andReturn(Priority.NORMAL);
         expect(this.queryLogic1.getConnPoolName()).andReturn("connPool1");
-        expect(this.queryLogic1.bypassQueryLimiter()).andReturn(false).anyTimes();
+        expect(this.queryLogic1.isQueryLimiterEnabled()).andReturn(true).anyTimes();
         expect(this.queryLogic1.isLongRunningQuery()).andReturn(false);
         expect(this.queryLogic1.isShortRunningQuery()).andReturn(false);
         expect(this.connectionFactory.getTrackingMap(isA(StackTraceElement[].class))).andReturn(null);
@@ -1112,7 +1112,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.queryLogic1.getAuditType(this.query)).andReturn(AuditType.NONE);
         expect(this.queryLogic1.getConnectionPriority()).andReturn(Priority.NORMAL);
         expect(this.queryLogic1.getConnPoolName()).andReturn("connPool1");
-        expect(this.queryLogic1.bypassQueryLimiter()).andReturn(false).anyTimes();
+        expect(this.queryLogic1.isQueryLimiterEnabled()).andReturn(true).anyTimes();
         expect(this.queryLogic1.isLongRunningQuery()).andReturn(false);
         expect(this.queryLogic1.isShortRunningQuery()).andReturn(false);
         expect(this.connectionFactory.getTrackingMap(isA(StackTraceElement[].class))).andReturn(null);
@@ -1305,7 +1305,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.queryLogic1.getAuditType(this.query)).andReturn(AuditType.NONE);
         expect(this.queryLogic1.getConnectionPriority()).andReturn(Priority.NORMAL);
         expect(this.queryLogic1.getConnPoolName()).andReturn("connPool1");
-        expect(this.queryLogic1.bypassQueryLimiter()).andReturn(false).anyTimes();
+        expect(this.queryLogic1.isQueryLimiterEnabled()).andReturn(true).anyTimes();
         expect(this.queryLogic1.isLongRunningQuery()).andReturn(false);
         expect(this.queryLogic1.isShortRunningQuery()).andReturn(false);
         expect(this.connectionFactory.getTrackingMap(isA(StackTraceElement[].class))).andReturn(null);
@@ -1871,7 +1871,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.query.getUserDN()).andReturn(userDN).anyTimes();
         expect(this.query.getDnList()).andReturn(dnList).anyTimes();
         expect(this.query.getSystemFrom()).andReturn(systemFrom).anyTimes();
-        expect(this.queryLogic1.bypassQueryLimiter()).andReturn(false).anyTimes();
+        expect(this.queryLogic1.isQueryLimiterEnabled()).andReturn(true).anyTimes();
         expect(this.queryLogic1.isLongRunningQuery()).andReturn(false);
         expect(this.queryLogic1.isShortRunningQuery()).andReturn(false);
         expect(this.queryLogic1.getResultLimit(this.query)).andReturn(-1L);
@@ -2047,7 +2047,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.query.getUncaughtExceptionHandler()).andReturn(new QueryUncaughtExceptionHandler()).anyTimes();
         expect(this.qlCache.add(queryId.toString(), userSid, this.queryLogic1, this.client))
                         .andThrow(new IllegalStateException("INTENTIONALLY THROWN TEST EXCEPTION: PROBLEM ADDING QUERY LOGIC TO CACHE"));
-        expect(this.queryLogic1.bypassQueryLimiter()).andReturn(false).anyTimes();
+        expect(this.queryLogic1.isQueryLimiterEnabled()).andReturn(true).anyTimes();
         this.queryLogic1.close();
         this.connectionFactory.returnClient(this.client);
         PowerMock.expectLastCall().andThrow(new IOException("INTENTIONALLY THROWN 2ND-LEVEL TEST EXCEPTION"));
@@ -2205,7 +2205,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.query.getUserDN()).andReturn(userDN).anyTimes();
         expect(this.query.getDnList()).andReturn(dnList).anyTimes();
         expect(this.query.getSystemFrom()).andReturn(systemFrom).anyTimes();
-        expect(this.queryLogic1.bypassQueryLimiter()).andReturn(false).anyTimes();
+        expect(this.queryLogic1.isQueryLimiterEnabled()).andReturn(true).anyTimes();
         expect(this.queryLogic1.isLongRunningQuery()).andReturn(false);
         expect(this.queryLogic1.isShortRunningQuery()).andReturn(false);
         expect(this.queryLogic1.getResultLimit(this.query)).andReturn(-1L);
@@ -3793,7 +3793,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.query.getUserDN()).andReturn(userDN).anyTimes();
         expect(this.query.getDnList()).andReturn(dnList).anyTimes();
         expect(this.query.getSystemFrom()).andReturn(null).anyTimes();
-        expect(this.queryLogic1.bypassQueryLimiter()).andReturn(false).anyTimes();
+        expect(this.queryLogic1.isQueryLimiterEnabled()).andReturn(true).anyTimes();
         expect(this.queryLogic1.isLongRunningQuery()).andReturn(false);
         expect(this.queryLogic1.isShortRunningQuery()).andReturn(false);
         expect(this.queryLogic1.getResultLimit(this.query)).andReturn(-1L);
@@ -3902,7 +3902,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.runningQuery.getSettings()).andReturn(this.query);
         expect(this.runningQuery.getClient()).andReturn(this.client);
         expect(this.runningQuery.getLogic()).andReturn((QueryLogic) queryLogic1).anyTimes();
-        expect(this.queryLogic1.bypassQueryLimiter()).andReturn(false).anyTimes();
+        expect(this.queryLogic1.isQueryLimiterEnabled()).andReturn(true).anyTimes();
         this.runningQuery.closeConnection(this.connectionFactory);
         PowerMock.expectLastCall().andThrow(new IOException("INTENTIONALLY THROWN 1ST-LEVEL TEST EXCEPTION"));
         cache.unlock(queryName);
@@ -3962,7 +3962,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.cache.get(queryName)).andReturn(this.runningQuery);
         expect(this.runningQuery.getSettings()).andReturn(this.query);
         expect(this.runningQuery.getLogic()).andReturn((QueryLogic) queryLogic1);
-        expect(this.queryLogic1.bypassQueryLimiter()).andReturn(false);
+        expect(this.queryLogic1.isQueryLimiterEnabled()).andReturn(true);
         expect(this.query.getOwner()).andReturn(userSid);
         // expect(this.runningQuery.getTraceInfo()).andReturn(this.traceInfo);
         expect(this.cache.lock(queryName)).andReturn(false);
@@ -4659,7 +4659,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(principal.getUserDN()).andReturn(userDNpair);
         expect(principal.getDNs()).andReturn(new String[] {userDN});
         expect(this.principal.getProxyServers()).andReturn(new ArrayList<>(0)).anyTimes();
-        expect(this.queryLogic1.bypassQueryLimiter()).andReturn(false);
+        expect(this.queryLogic1.isQueryLimiterEnabled()).andReturn(true);
         expect(this.queryLogic1.containsDNWithAccess(Collections.singletonList(userDN))).andReturn(true);
         expect(this.queryLogic1.getAuditType(null)).andReturn(AuditType.ACTIVE);
         expect(this.principal.getAuthorizations()).andReturn((Collection) Arrays.asList(Arrays.asList(queryAuthorizations)));
@@ -4744,7 +4744,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.query.getQueryLogicName()).andReturn(queryLogicName).anyTimes();
         expect(this.queryLogicFactory.getQueryLogic(queryLogicName, principal)).andReturn((QueryLogic) this.queryLogic1);
         expect(this.runningQuery.getLogic()).andReturn((QueryLogic) queryLogic1);
-        expect(this.queryLogic1.bypassQueryLimiter()).andReturn(false);
+        expect(this.queryLogic1.isQueryLimiterEnabled()).andReturn(true);
         expect(this.queryLogic1.getConnectionPriority()).andReturn(Priority.NORMAL);
         expect(this.query.getQueryAuthorizations()).andReturn(authorization).anyTimes();
         expect(this.queryLogic1.getCollectQueryMetrics()).andReturn(false);

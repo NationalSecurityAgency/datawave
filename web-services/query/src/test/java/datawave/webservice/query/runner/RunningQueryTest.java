@@ -123,7 +123,7 @@ public class RunningQueryTest {
         TransformIterator<?,?> iter = new TransformIterator<>();
         expect(logic.getCollectQueryMetrics()).andReturn(Boolean.FALSE);
         expect(logic.getTransformIterator(settings)).andReturn(iter);
-        expect(logic.bypassQueryLimiter()).andReturn(false).anyTimes();
+        expect(logic.isQueryLimiterEnabled()).andReturn(true).anyTimes();
         expect(logic.isLongRunningQuery()).andReturn(false);
         expect(logic.isShortRunningQuery()).andReturn(false);
         expect(logic.getResultLimit(settings)).andReturn(-1L);

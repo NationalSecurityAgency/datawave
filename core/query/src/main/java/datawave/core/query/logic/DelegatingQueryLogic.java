@@ -119,8 +119,8 @@ public abstract class DelegatingQueryLogic implements QueryLogic<Object> {
     }
 
     @Override
-    public boolean bypassQueryLimiter() {
-        return delegate.bypassQueryLimiter();
+    public boolean isQueryLimiterEnabled() {
+        return delegate.isQueryLimiterEnabled();
     }
 
     @Override

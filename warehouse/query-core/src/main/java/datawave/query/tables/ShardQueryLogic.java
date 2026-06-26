@@ -1746,7 +1746,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         if (config == null) {
             config = ShardQueryConfiguration.create();
         }
-
         return config;
     }
 
@@ -3612,5 +3611,23 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
     public void setMultDocPerGroup(boolean value) {
         getConfig().getGroupFields().setOneDocPerGroup(!value);
+    }
+
+    public void setQueryLimiterEnabled(boolean value) {
+        getConfig().setQueryLimiterEnabled(value);
+    }
+
+    @Override
+    public boolean isQueryLimiterEnabled() {
+        return getConfig().isQueryLimiterEnabled();
+    }
+
+    public void setShortRunningQuery(boolean shortRunningQuery) {
+        getConfig().setShortRunningQuery(shortRunningQuery);
+    }
+
+    @Override
+    public boolean isShortRunningQuery() {
+        return getConfig().isShortRunningQuery();
     }
 }

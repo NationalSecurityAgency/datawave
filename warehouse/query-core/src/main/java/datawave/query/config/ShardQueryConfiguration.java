@@ -95,7 +95,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private boolean isShortRunningQuery = false;
 
     // can this query logic bypass the query limiter mechanism (probably for performance purposes)
-    private boolean bypassQueryLimiter = false;
+    private boolean queryLimiterEnabled = true;
 
     // is this a tld query, explicitly default to false
     private boolean tldQuery = false;
@@ -622,7 +622,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
         // ShardQueryConfiguration copy
         this.setShortRunningQuery(other.isShortRunningQuery());
-        this.setBypassQueryLimiter(other.isBypassQueryLimiter());
+        this.setQueryLimiterEnabled(other.isQueryLimiterEnabled());
         this.setCheckpointable(other.isCheckpointable());
         this.setTldQuery(other.isTldQuery());
         this.putFilterOptions(other.getFilterOptions());
@@ -2984,7 +2984,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         ShardQueryConfiguration that = (ShardQueryConfiguration) o;
         return isTldQuery() == that.isTldQuery() &&
                 isShortRunningQuery() == that.isShortRunningQuery() &&
-                isBypassQueryLimiter() == that.isBypassQueryLimiter() &&
+                isQueryLimiterEnabled() == that.isQueryLimiterEnabled() &&
                 isDisableIndexOnlyDocuments() == that.isDisableIndexOnlyDocuments() &&
                 getMaxScannerBatchSize() == that.getMaxScannerBatchSize() &&
                 getMaxIndexBatchSize() == that.getMaxIndexBatchSize() &&
@@ -3221,7 +3221,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         return Objects.hash(
                 super.hashCode(),
                 isShortRunningQuery(),
-                isBypassQueryLimiter(),
+                isQueryLimiterEnabled(),
                 isTldQuery(),
                 getFilterOptions(),
                 isDisableIndexOnlyDocuments(),
@@ -3605,11 +3605,11 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         isShortRunningQuery = shortRunningQuery;
     }
 
-    public boolean isBypassQueryLimiter() {
-        return bypassQueryLimiter;
+    public boolean isQueryLimiterEnabled() {
+        return queryLimiterEnabled;
     }
 
-    public void setBypassQueryLimiter(boolean bypassQueryLimiter) {
-        this.bypassQueryLimiter = bypassQueryLimiter;
+    public void setQueryLimiterEnabled(boolean queryLimiterEnabled) {
+        this.queryLimiterEnabled = queryLimiterEnabled;
     }
 }

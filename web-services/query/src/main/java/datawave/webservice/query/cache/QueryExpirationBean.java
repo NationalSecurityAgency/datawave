@@ -160,7 +160,7 @@ public class QueryExpirationBean {
                 String queryId = settings.getId().toString();
 
                 // Stop counting the query towards query limits.
-                if (!query.getLogic().bypassQueryLimiter()) {
+                if (query.getLogic().isQueryLimiterEnabled()) {
                     try {
                         queryLimiter.stopCountingQueryTowardsLimits(queryId);
                     } catch (Exception e) {

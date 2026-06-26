@@ -212,7 +212,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             if (this.allowIntermediateEmptyPages) {
                 this.useResultsThread = true;
             } else {
-                // force us to not 8use asynchronous results thread is a short running query
+                // force us to not use asynchronous results thread is a short running query
                 if (logic.isShortRunningQuery()) {
                     this.useResultsThread = false;
                 }

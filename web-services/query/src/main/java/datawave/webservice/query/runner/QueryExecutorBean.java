@@ -824,7 +824,6 @@ public class QueryExecutorBean implements QueryExecutor {
             // close the logic on exception
             try {
                 if (null != qd.logic) {
-                    t.printStackTrace();
                     qd.logic.close();
                 }
             } catch (Exception e) {
@@ -3998,7 +3997,7 @@ public class QueryExecutorBean implements QueryExecutor {
      *             if an error occurs
      */
     private void checkForQueryLimits(QueryLogic logic, BaseResponse response, String userDn, String systemFrom, String queryLogicName) throws QueryException {
-        if (!logic.bypassQueryLimiter()) {
+        if (logic.isQueryLimiterEnabled()) {
             try {
                 // Check if submitting a new query would exceed any configured concurrent query limits.
                 QueryLimiterResponse limiterResponse = queryLimiter.checkForLimits(userDn, systemFrom, queryLogicName);
@@ -4028,7 +4027,7 @@ public class QueryExecutorBean implements QueryExecutor {
      * @throws Exception
      */
     private void markQueryAsActive(QueryLogic logic, String queryId, String userDn, String system, String queryLogicName) throws Exception {
-        if (!logic.bypassQueryLimiter()) {
+        if (logic.isQueryLimiterEnabled()) {
             try {
                 queryLimiter.countQueryTowardsLimits(queryId, userDn, system, queryLogicName);
             } catch (Exception e) {
@@ -4044,7 +4043,7 @@ public class QueryExecutorBean implements QueryExecutor {
      * @param queryId
      */
     private void markQueryAsInactive(QueryLogic logic, String queryId) {
-        if (!logic.bypassQueryLimiter()) {
+        if (logic.isQueryLimiterEnabled()) {
             try {
                 queryLimiter.stopCountingQueryTowardsLimits(queryId);
             } catch (Exception e) {
