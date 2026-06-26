@@ -990,7 +990,7 @@ public class RangeStream extends BaseVisitor implements QueryPlanStream {
                         log.fatal("no entries in num_shards cache");
                     }
                 }
-            } catch (AccumuloException | AccumuloSecurityException e) {
+            } catch (AccumuloException | AccumuloSecurityException | RuntimeException e) {
                 // an exception here shouldn't kill the query
                 log.warn("exception thrown while trying to scan num shards cache: " + e.getMessage());
             }
