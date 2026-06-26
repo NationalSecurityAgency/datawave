@@ -30,13 +30,11 @@ public class QueryPatternsVisitor extends ShortCircuitBaseVisitor {
      */
     public static Set<String> findPatterns(ASTJexlScript query) {
         Set<String> patterns = new HashSet<>();
-        if (query == null) {
-            return patterns;
-        } else {
+        if (query != null) {
             QueryPatternsVisitor visitor = new QueryPatternsVisitor();
             query.jjtAccept(visitor, patterns);
-            return patterns;
         }
+        return patterns;
     }
 
     @Override
