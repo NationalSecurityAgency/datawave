@@ -27,8 +27,8 @@ import org.apache.hadoop.io.Text;
 
 import datawave.data.ColumnFamilyConstants;
 import datawave.ingest.protobuf.Uid;
+import datawave.table.constants.TableName;
 import datawave.test.MacTestUtil;
-import datawave.util.TableName;
 
 public class IndexExpansionIngest {
 
