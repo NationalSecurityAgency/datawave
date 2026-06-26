@@ -12,8 +12,6 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.accumulo.core.client.Accumulo;
-
-import datawave.scan.ScannerBuilder;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
@@ -42,6 +40,8 @@ import org.infinispan.persistence.spi.InitializationContext;
 import org.infinispan.persistence.spi.PersistenceException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import datawave.scan.ScannerBuilder;
 
 @ConfiguredBy(AccumuloCacheStoreConfiguration.class)
 public class AccumuloCacheStore<K extends Serializable,V> implements AdvancedLoadWriteStore<K,V> {

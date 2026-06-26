@@ -8,6 +8,7 @@ import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.Scanner;
+import org.apache.accumulo.core.client.ScannerBase.ConsistencyLevel;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -17,6 +18,7 @@ import org.apache.hadoop.io.Text;
 
 import com.google.common.collect.Multimap;
 
+import datawave.scan.ExecutionHintHelper;
 import datawave.scan.ScannerBuilder;
 
 /**
@@ -27,6 +29,8 @@ public class DayIndexScanner {
     private final String indexTableName;
     private final Authorizations auths;
     private final AccumuloClient client;
+    private final Map<String,ConsistencyLevel> consistencyLevels;
+    private final Map<String,Map<String,String>> tableHints;
     private final Multimap<String,String> valuesAndFields;
 
     private final BitSetIndexEntrySerializer serDe = new BitSetIndexEntrySerializer();
@@ -35,26 +39,46 @@ public class DayIndexScanner {
         indexTableName = config.getDayIndexTableName();
         auths = config.getAuths().iterator().next();
         client = config.getClient();
+        consistencyLevels = config.getConsistencyLevels();
+        tableHints = config.getTableHints();
         valuesAndFields = config.getValuesAndFields();
     }
 
     public BitSetIndexEntry scan(String row) {
 
-        // scan the thing
-        Scanner scanner = ScannerBuilder.create(client).setTableName(indexTableName).setAuthorizations(auths).build();
-        scanner.setRange(Range.exact(row));
+        //  @formatter:off
+        ScannerBuilder builder = ScannerBuilder.create(client)
+                .setTableName(indexTableName)
+                .setAuthorizations(auths);
+        //  @formatter:on
 
-        for (String field : valuesAndFields.values()) {
-            scanner.fetchColumnFamily(new Text(field));
+        ConsistencyLevel consistencyLevel = ExecutionHintHelper.getConsistencyLevel(indexTableName, consistencyLevels);
+        if (consistencyLevel != null) {
+            builder.setConsistencyLevel(consistencyLevel);
         }
 
-        IteratorSetting setting = new IteratorSetting(30, DayIndexEntryIterator.class.getSimpleName(), DayIndexEntryIterator.class);
-        setting.addOption(DayIndexEntryIterator.VALUES_AND_FIELDS, DayIndexEntryIterator.mapToString(valuesAndFields));
-        scanner.addScanIterator(setting);
+        Map<String,String> hints = ExecutionHintHelper.getExecutionHints(indexTableName, tableHints);
+        if (hints != null) {
+            builder.setScanType(ExecutionHintHelper.getScanType(hints));
+            builder.setScanPriority(ExecutionHintHelper.getPriority(hints));
+        }
 
-        for (Map.Entry<Key,Value> entry : scanner) {
-            // should only have one entry per tablet
-            return serDe.deserialize(entry.getValue().get());
+        // scan the thing
+        try (Scanner scanner = builder.build()) {
+            scanner.setRange(Range.exact(row));
+
+            for (String field : valuesAndFields.values()) {
+                scanner.fetchColumnFamily(new Text(field));
+            }
+
+            IteratorSetting setting = new IteratorSetting(30, DayIndexEntryIterator.class.getSimpleName(), DayIndexEntryIterator.class);
+            setting.addOption(DayIndexEntryIterator.VALUES_AND_FIELDS, DayIndexEntryIterator.mapToString(valuesAndFields));
+            scanner.addScanIterator(setting);
+
+            for (Map.Entry<Key,Value> entry : scanner) {
+                // should only have one entry per tablet
+                return serDe.deserialize(entry.getValue().get());
+            }
         }
 
         return null;

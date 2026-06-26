@@ -8,8 +8,6 @@ import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.Scanner;
-
-import datawave.scan.ScannerBuilder;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -22,6 +20,7 @@ import org.apache.log4j.Logger;
 
 import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.ingest.protobuf.TermWeight;
+import datawave.scan.ScannerBuilder;
 import datawave.util.accumulo.RFileUtil;
 
 public class ShardReindexVerificationMapper extends Mapper<Range,String,Key,Value> {

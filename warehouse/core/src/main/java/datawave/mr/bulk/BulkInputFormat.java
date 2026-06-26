@@ -23,8 +23,6 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.accumulo.core.client.Accumulo;
 import org.apache.accumulo.core.client.AccumuloClient;
-
-import datawave.scan.ScannerBuilder;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.BatchScanner;
@@ -90,6 +88,7 @@ import datawave.mr.bulk.split.DefaultSplitStrategy;
 import datawave.mr.bulk.split.LocationStrategy;
 import datawave.mr.bulk.split.RangeSplit;
 import datawave.mr.bulk.split.SplitStrategy;
+import datawave.scan.ScannerBuilder;
 import datawave.util.TextUtil;
 
 public class BulkInputFormat extends InputFormat<Key,Value> {

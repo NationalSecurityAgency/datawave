@@ -22,8 +22,6 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
-
-import datawave.scan.ScannerBuilder;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.Text;
@@ -34,6 +32,7 @@ import com.google.common.collect.ImmutableMap;
 import datawave.core.iterators.filter.CsvKeyFilter;
 import datawave.iterators.IteratorSettingHelper;
 import datawave.query.Constants;
+import datawave.scan.ScannerBuilder;
 import datawave.table.constants.TableName;
 
 /**

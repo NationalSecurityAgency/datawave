@@ -14,8 +14,6 @@ import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.Scanner;
-
-import datawave.scan.ScannerBuilder;
 import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.admin.TableOperations;
@@ -33,6 +31,7 @@ import org.slf4j.LoggerFactory;
 
 import datawave.ingest.data.config.ConfigurationHelper;
 import datawave.ingest.data.config.ingest.AccumuloHelper;
+import datawave.scan.ScannerBuilder;
 import datawave.util.time.DateHelper;
 
 public class NumShards {
