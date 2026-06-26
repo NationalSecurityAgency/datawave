@@ -31,6 +31,7 @@ import org.junit.jupiter.api.Test;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.data.ColumnFamilyConstants;
+import datawave.marking.AccessExpressionMarkings;
 import datawave.marking.MarkingFunctions;
 import datawave.microservice.Connection;
 import datawave.microservice.dictionary.config.ResponseObjectFactory;
@@ -50,7 +51,7 @@ public class DefaultMetadataFieldScannerTest {
     private static final String[] AUTH = {"PRIVATE"};
     private static final Set<Authorizations> AUTHS = Collections.singleton(new Authorizations(AUTH));
 
-    private static final ResponseObjectFactory<DefaultDescription,DefaultDataDictionary,DefaultMetadataField,DefaultDictionaryField,DefaultFields> RESPONSE_OBJECT_FACTORY = new ResponseObjectFactory<DefaultDescription,DefaultDataDictionary,DefaultMetadataField,DefaultDictionaryField,DefaultFields>() {
+    private static final ResponseObjectFactory<DefaultDescription,DefaultDataDictionary,DefaultMetadataField,DefaultDictionaryField,DefaultFields> RESPONSE_OBJECT_FACTORY = new ResponseObjectFactory<>() {
         @Override
         public DefaultDataDictionary getDataDictionary() {
             return null;
@@ -276,11 +277,7 @@ public class DefaultMetadataFieldScannerTest {
     private DefaultDescription createDescription(String descriptionText) {
         DefaultDescription description = new DefaultDescription();
         description.setDescription(descriptionText);
-
-        Map<String,String> markings = new HashMap<>();
-        markings.put("columnVisibility", "PRIVATE}");
-        description.setMarkings(markings);
-
+        description.setMarkings(AccessExpressionMarkings.create("PRIVATE"));
         return description;
     }
 }

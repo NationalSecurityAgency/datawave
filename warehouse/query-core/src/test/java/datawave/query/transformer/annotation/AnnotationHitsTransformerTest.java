@@ -42,6 +42,7 @@ import datawave.annotation.protobuf.v1.Segment;
 import datawave.annotation.protobuf.v1.SegmentBoundary;
 import datawave.annotation.protobuf.v1.SegmentValue;
 import datawave.data.normalizer.Normalizer;
+import datawave.marking.AccessExpressionMarkings;
 import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
@@ -117,7 +118,7 @@ public class AnnotationHitsTransformerTest {
     private ShardQueryConfiguration shardQueryConfiguration;
 
     private Query settings;
-    private MarkingFunctions markingFunctions;
+    private MarkingFunctions<AccessExpressionMarkings> markingFunctions;
 
     private List<Annotation> annotations;
     private AnnotationSource annotationSource;

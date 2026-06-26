@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Test;
 import datawave.ingest.mapreduce.job.TableConfigHelperFactory;
 import datawave.ingest.table.config.ShardTableConfigHelper;
 import datawave.ingest.table.config.TableConfigHelper;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 
 /**
  * Test uses mini accumulo cluster. Files are stored in warehouse/ingest-core/target/mac/datawave.ingest.mapreduce.TableConfigHelperFactoryTest

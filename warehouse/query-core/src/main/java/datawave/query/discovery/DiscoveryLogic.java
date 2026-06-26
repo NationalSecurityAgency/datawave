@@ -27,6 +27,7 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
+import org.apache.commons.collections4.iterators.UniqueFilterIterator;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.LongRange;
@@ -89,6 +90,11 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
     public static final String SUM_COUNTS = "sum.counts";
 
     /**
+     * Used to specify a unique list of values not associated with a field.
+     */
+    public static final String VALUES_ONLY = "values.only";
+
+    /**
      * Used to specify whether to search against the reversed index.
      */
     public static final String REVERSE_INDEX = "reverse.index";
@@ -113,6 +119,11 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
         super(other);
         this.config = new DiscoveryQueryConfiguration(other.config);
         this.metadataHelper = other.metadataHelper;
+    }
+
+    @Override
+    public Iterator<DiscoveredThing> iterator() {
+        return getValuesOnly() ? new UniqueFilterIterator<>(this.iterator) : this.iterator;
     }
 
     @Override
@@ -150,6 +161,9 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
 
         // Check if counts should be summed.
         setSumCounts(getOrDefaultBoolean(settings, SUM_COUNTS, getSumCounts()));
+
+        // Specify values only. Treat associated field, data type, and the like as "don't care."
+        setValuesOnly(getOrDefaultBoolean(settings, VALUES_ONLY, false));
 
         // Check if any datatype filters were specified.
         getConfig().setDatatypeFilter(getOrDefaultSet(settings, QueryParameters.DATATYPE_FILTER_SET, getConfig().getDatatypeFilter()));
@@ -580,6 +594,7 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
         setting.addOption(SEPARATE_COUNTS_BY_COLVIS, Boolean.toString(config.getSeparateCountsByColVis()));
         setting.addOption(SHOW_REFERENCE_COUNT, Boolean.toString(config.getShowReferenceCount()));
         setting.addOption(SUM_COUNTS, Boolean.toString(config.getSumCounts()));
+        setting.addOption(VALUES_ONLY, Boolean.toString(config.getValuesOnly()));
         return setting;
     }
 
@@ -630,14 +645,14 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
      */
     private Iterator<DiscoveredThing> transformScanner(final BatchScanner scanner, final QueryData queryData, Set<String> indexedFields) {
         return concat(transform(scanner.iterator(), new Function<Entry<Key,Value>,Iterator<DiscoveredThing>>() {
-            DataInputBuffer in = new DataInputBuffer();
+            final DataInputBuffer in = new DataInputBuffer();
 
             @Override
             public Iterator<DiscoveredThing> apply(Entry<Key,Value> from) {
                 queryData.setLastResult(from.getKey());
                 Value value = from.getValue();
                 in.reset(value.get(), value.getSize());
-                ArrayWritable aw = new ArrayWritable(DiscoveredThing.class);
+                ArrayWritable aw = new ArrayWritable(DiscoveredThingTermIsotope.class);
                 try {
                     aw.readFields(in);
                 } catch (IOException e) {
@@ -663,6 +678,7 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
         Set<String> params = super.getOptionalQueryParameters();
         params.add(SEPARATE_COUNTS_BY_COLVIS);
         params.add(SUM_COUNTS);
+        params.add(VALUES_ONLY);
         return params;
     }
 
@@ -688,5 +704,13 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
 
     public void setSumCounts(boolean sumCounts) {
         getConfig().setSumCounts(sumCounts);
+    }
+
+    public void setValuesOnly(boolean valuesOnly) {
+        getConfig().setValuesOnly(valuesOnly);
+    }
+
+    public boolean getValuesOnly() {
+        return getConfig().getValuesOnly();
     }
 }

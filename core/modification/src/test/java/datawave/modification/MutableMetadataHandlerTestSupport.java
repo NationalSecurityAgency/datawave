@@ -43,7 +43,7 @@ import datawave.query.util.MetadataHelperFactory;
 import datawave.query.util.WiseGuysIngest;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.ProxiedUserDetails;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 import datawave.webservice.modification.DefaultModificationRequest;
 import datawave.webservice.modification.EventIdentifier;
 import datawave.webservice.modification.ModificationRequestBase.MODE;
@@ -126,7 +126,7 @@ class MutableMetadataHandlerTestSupport {
         request.setFieldName(fieldName);
         request.setFieldValue(fieldValue);
         Map<String,String> markings = new HashMap<>();
-        markings.put(MarkingFunctions.Default.COLUMN_VISIBILITY, columnVisibility);
+        markings.put("columnVisibility", columnVisibility);
         request.setFieldMarkings(markings);
         request.setColumnVisibility(null);
         return request;

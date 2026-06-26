@@ -94,7 +94,7 @@ import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.testframework.MockStatusReporter;
 import datawave.table.constants.ColumnFamilyConstants;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.webservice.query.result.event.DefaultEvent;
 import datawave.webservice.query.result.event.DefaultField;
