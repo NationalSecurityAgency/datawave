@@ -75,7 +75,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
     private ExecutorService executor = null;
     private volatile Future<Object> future = null;
     private final BlockingQueue<Object> resultsThreadQueue = new ArrayBlockingQueue<>(1);
-    private Thread currentThread;
+    private volatile Thread currentThread;
     private volatile Exception resultsThreadException = null;
     private final AtomicInteger hasNext = new AtomicInteger(0);
     private final AtomicInteger gotNext = new AtomicInteger(0);
