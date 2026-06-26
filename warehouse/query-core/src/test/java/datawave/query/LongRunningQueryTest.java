@@ -42,7 +42,7 @@ import datawave.query.util.VisibilityWiseGuysIngest;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.SubjectIssuerDNPair;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 import datawave.webservice.query.cache.RunningQueryTimingImpl;
 import datawave.webservice.query.runner.RunningQuery;
 
