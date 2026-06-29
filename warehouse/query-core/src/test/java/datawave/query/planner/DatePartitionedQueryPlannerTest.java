@@ -63,7 +63,7 @@ import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.transformer.DocumentTransformer;
 import datawave.query.util.IndexFieldHoleDataIngest;
 import datawave.query.util.MetadataHelper;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.result.DefaultEventQueryResponse;

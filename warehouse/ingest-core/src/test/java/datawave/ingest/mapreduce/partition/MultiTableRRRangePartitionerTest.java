@@ -28,7 +28,7 @@ import org.junit.Test;
 
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.TableSplitsCache;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 
 public class MultiTableRRRangePartitionerTest {
 
