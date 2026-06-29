@@ -56,7 +56,7 @@ import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.util.DateIndexHelperFactory;
 import datawave.query.util.MetadataHelperFactory;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 
 /**
  *

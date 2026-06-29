@@ -36,7 +36,7 @@ import datawave.ingest.mapreduce.handler.edge.ProtobufEdgeDataTypeHandler;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.ingest.mapreduce.handler.tokenize.ContentIndexingColumnBasedHandler;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 
 public class ContentCSVIndexingColumnBasedHandlerTest {
 

@@ -23,8 +23,8 @@ import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.ingest.protobuf.Uid;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.index.day.IndexIngestUtil;
+import datawave.table.constants.TableName;
 import datawave.util.CompositeTimestamp;
-import datawave.util.TableName;
 
 /**
  * write data in accumulo for testing of the limit.fields function on data with a commonality token
