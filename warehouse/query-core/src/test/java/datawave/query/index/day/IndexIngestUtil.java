@@ -7,7 +7,7 @@ import datawave.query.util.DayIndexIngest;
 import datawave.query.util.NoUidIndexIngest;
 import datawave.query.util.TestIndexTableNames;
 import datawave.query.util.YearIndexIngest;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 
 /**
  * A wrapper that allows multiple types of index tables to be written given a source index table in standard format

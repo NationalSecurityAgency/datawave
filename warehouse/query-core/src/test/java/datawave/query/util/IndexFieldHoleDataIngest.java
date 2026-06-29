@@ -37,7 +37,7 @@ import datawave.data.type.OneToManyNormalizerType;
 import datawave.data.type.util.Geometry;
 import datawave.ingest.protobuf.Uid;
 import datawave.query.QueryTestTableHelper;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 
 /**
  * Test data that contains field index holes.

@@ -1695,6 +1695,11 @@
                     </configuration>
                     <dependencies>
                         <dependency>
+                            <groupId>org.apache.logging.log4j</groupId>
+                            <artifactId>log4j-to-slf4j</artifactId>
+                            <version>${version.log4j}</version>
+                        </dependency>
+                        <dependency>
                             <groupId>org.apache.maven.doxia</groupId>
                             <artifactId>doxia-sink-api</artifactId>
                             <version>2.0.0</version>
@@ -1910,9 +1915,13 @@
                                             <exclude>log4j:log4j</exclude>
                                             <exclude>ch.qos.reload4j:reload4j</exclude>
                                             <exclude>ch.qos.logback:logback-classic</exclude>
+                                            <!-- exclude all versions of log4j before version.log4j -->
+                                            <exclude>org.apache.logging.log4j:*:(,${version.log4j})</exclude>
                                             <exclude>org.slf4j:slf4j-reload4j</exclude>
                                             <exclude>org.slf4j:slf4j-log4j12</exclude>
                                             <exclude>joda-time:joda-time</exclude>
+                                            <!-- exclude all versions of log4j before version.log4j -->
+                                            <exclude>org.apache.logging.log4j:*:(,${version.log4j})</exclude>
                                         </excludes>
                                     </bannedDependencies>
                                 </rules>
