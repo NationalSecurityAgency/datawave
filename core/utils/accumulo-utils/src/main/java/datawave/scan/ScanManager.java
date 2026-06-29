@@ -22,6 +22,8 @@ public class ScanManager implements Closeable {
 
     protected final AtomicBoolean closed = new AtomicBoolean(false);
 
+    private final Object lock = new Object();
+
     public ScanManager() {
         // empty constructor
     }
@@ -33,7 +35,7 @@ public class ScanManager implements Closeable {
      *            a ScannerBase instance
      */
     public void addScanner(ScannerBase scanner) {
-        synchronized (closed) {
+        synchronized (lock) {
             if (closed.get()) {
                 log.warn("ScanManager closed, closing scanner");
                 scanner.close();
@@ -68,10 +70,8 @@ public class ScanManager implements Closeable {
      */
     @Override
     public void close() {
-        synchronized (closed) {
-            if (log.isTraceEnabled()) {
-                log.trace("ScannerManager asked to close all tracked scanners");
-            }
+        synchronized (lock) {
+            log.trace("ScannerManager asked to close all tracked scanners");
             closed.set(true);
 
             for (ScannerBase scanner : new HashSet<>(baseInstances)) {
