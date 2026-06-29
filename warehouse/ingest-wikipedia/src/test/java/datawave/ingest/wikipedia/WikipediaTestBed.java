@@ -27,7 +27,7 @@ import datawave.ingest.data.config.ingest.BaseIngestHelper;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.ingest.mapreduce.handler.tokenize.ExtendedContentIndexingColumnBasedHandler;
 import datawave.policy.ExampleIngestPolicyEnforcer;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 
 /**
  *

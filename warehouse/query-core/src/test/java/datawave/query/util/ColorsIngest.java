@@ -21,7 +21,7 @@ import datawave.data.ColumnFamilyConstants;
 import datawave.data.hash.UID;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.ingest.protobuf.Uid;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 import datawave.util.time.DateHelper;
 
 /**

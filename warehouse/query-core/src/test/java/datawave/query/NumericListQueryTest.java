@@ -49,8 +49,8 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.util.CommonalityTokenTestDataIngest;
+import datawave.table.constants.TableName;
 import datawave.test.JexlNodeAssert;
-import datawave.util.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 
 /**
