@@ -79,7 +79,7 @@ import datawave.query.jexl.visitors.GeoWaveQueryInfoVisitor;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.testframework.MockStatusReporter;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 
 @RunWith(Arquillian.class)

@@ -49,7 +49,7 @@ import datawave.ingest.test.StandaloneStatusReporter;
 import datawave.query.MockAccumuloRecordWriter;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.RebuildingScannerTestHelper;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 
 public class AccumuloSetup extends ExternalResource {
 
