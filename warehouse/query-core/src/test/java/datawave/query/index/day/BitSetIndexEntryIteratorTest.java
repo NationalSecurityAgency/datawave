@@ -27,7 +27,7 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
 import datawave.accumulo.inmemory.InMemoryInstance;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 
 /**
  * Day Index key structure

@@ -48,6 +48,7 @@ import datawave.query.predicate.TLDEventDataFilter;
 import datawave.query.predicate.TLDFieldIndexQueryFilter;
 import datawave.query.util.Tuple2;
 import datawave.query.util.Tuple3;
+import datawave.table.util.TLD;
 import datawave.util.StringUtils;
 
 /**

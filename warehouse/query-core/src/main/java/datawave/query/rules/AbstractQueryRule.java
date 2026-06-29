@@ -3,6 +3,9 @@ package datawave.query.rules;
 import java.util.Objects;
 import java.util.StringJoiner;
 
+/**
+ * A base implementation of {@link QueryRule}.
+ */
 public abstract class AbstractQueryRule implements QueryRule {
 
     protected String name;
