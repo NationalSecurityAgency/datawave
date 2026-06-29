@@ -32,7 +32,7 @@ import com.google.common.collect.ImmutableMap;
 import datawave.core.iterators.filter.CsvKeyFilter;
 import datawave.iterators.IteratorSettingHelper;
 import datawave.query.Constants;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 
 /**
  * API for getting stats for field names and data types.

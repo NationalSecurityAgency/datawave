@@ -25,7 +25,7 @@ import datawave.data.normalizer.NumberNormalizer;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.NumberType;
 import datawave.ingest.protobuf.Uid;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 import datawave.util.time.DateHelper;
 
 public class MultiNormalizerIngest {

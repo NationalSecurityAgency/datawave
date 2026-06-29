@@ -131,6 +131,11 @@
                         <artifactId>mapreduce-layout-factory</artifactId>
                         <version>${version.datawave.mapreduce-layout-factory}</version>
                     </dependency>
+                    <dependency>
+                        <groupId>org.apache.logging.log4j</groupId>
+                        <artifactId>log4j-slf4j2-impl</artifactId>
+                        <version>${version.log4j}</version>
+                    </dependency>
                 </dependencies>
                 <executions>
                     <execution>

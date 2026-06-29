@@ -46,7 +46,7 @@ import datawave.query.tables.ResponseQueryDriver;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.tables.keyword.transform.TagCloudPartitionTransformer;
 import datawave.query.util.WiseGuysIngest;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 import datawave.util.keyword.TagCloudInput;
 import datawave.util.keyword.TagCloudPartition;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;

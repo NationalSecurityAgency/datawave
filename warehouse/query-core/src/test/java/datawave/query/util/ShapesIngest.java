@@ -31,8 +31,8 @@ import datawave.data.type.ListType;
 import datawave.data.type.NumberType;
 import datawave.ingest.protobuf.Uid;
 import datawave.query.index.day.IndexIngestUtil;
+import datawave.table.constants.TableName;
 import datawave.test.MacTestUtil;
-import datawave.util.TableName;
 
 /**
  * Data for complex testing of ingest types, normalizers, query models, visibilities and more.
