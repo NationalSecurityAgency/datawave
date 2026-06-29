@@ -43,7 +43,7 @@ import datawave.microservice.query.QueryImpl;
 import datawave.query.MockAccumuloRecordWriter;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.util.MetadataHelperFactory;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 
 public class DiscoveryLogicTest {
 

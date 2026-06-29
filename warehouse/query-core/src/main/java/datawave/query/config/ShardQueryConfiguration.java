@@ -66,7 +66,7 @@ import datawave.query.model.QueryModel;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tld.TLDQueryIterator;
 import datawave.query.util.QueryStopwatch;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 
 /**
  * <p>
