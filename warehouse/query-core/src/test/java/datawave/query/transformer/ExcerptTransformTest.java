@@ -1,41 +1,27 @@
 package datawave.query.transformer;
 
-import static datawave.query.iterator.logic.TermFrequencyExcerptIterator.Configuration.END_OFFSET;
-import static datawave.query.iterator.logic.TermFrequencyExcerptIterator.Configuration.FIELD_NAME;
-import static datawave.query.iterator.logic.TermFrequencyExcerptIterator.Configuration.START_OFFSET;
-import static org.easymock.EasyMock.and;
-import static org.easymock.EasyMock.anyObject;
-import static org.easymock.EasyMock.capture;
-import static org.easymock.EasyMock.eq;
-import static org.easymock.EasyMock.expect;
-import static org.easymock.EasyMock.isA;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-import java.io.IOException;
 import java.util.AbstractMap;
+import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iterators.IteratorEnvironment;
-import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
+import org.apache.accumulo.core.iteratorsImpl.system.SortedMapIterator;
 import org.apache.hadoop.io.Text;
-import org.easymock.Capture;
-import org.easymock.EasyMockRunner;
-import org.easymock.EasyMockSupport;
-import org.easymock.Mock;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
+
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Multimap;
 
 import datawave.ingest.protobuf.TermWeight;
 import datawave.query.Constants;
@@ -48,36 +34,37 @@ import datawave.query.function.JexlEvaluation;
 import datawave.query.iterator.logic.TermFrequencyExcerptIterator;
 import datawave.query.postprocessing.tf.PhraseIndexes;
 
-@RunWith(EasyMockRunner.class)
-public class ExcerptTransformTest extends EasyMockSupport {
+/**
+ * Tests for {@link ExcerptTransform}. These tests exercise the transform against a real {@link TermFrequencyExcerptIterator} backed by a
+ * {@link SortedMapIterator} over term-frequency data, rather than mocking the iterator and source. This way the excerpts are actually generated from the
+ * term-frequency entries, exercising both the hit-term offset resolution in {@code getOffset} and the excerpt generation in the iterator.
+ */
+public class ExcerptTransformTest {
 
-    @Mock
-    private TermFrequencyExcerptIterator iterator;
+    // the document under test: row=shard, cf=dt\0uid, so the event id is shard\0dt\0uid
+    private static final String DATATYPE = "dt";
+    private static final String UID = "uid";
+    private static final Text SHARD = new Text("shard");
+    private static final Key DOC_KEY = new Key(SHARD, new Text(DATATYPE + Constants.NULL + UID));
+    // the event id as computed by ExcerptTransform.keyToEventId(DOC_KEY): row + NUL + columnFamily
+    private static final String EVENT_ID = "shard" + Constants.NULL + DATATYPE + Constants.NULL + UID;
 
-    @Mock
-    private IteratorEnvironment env;
+    // token streams used to build term-frequency data. each token occupies the offset matching its index in the phrase.
+    private static final String BODY_TEXT = "the quick brown fox jumped over the lazy dog and the cat sat on the mat near the red barn";
+    private static final String CONTENT_TEXT = "alpha beta gamma delta epsilon zeta eta theta";
 
-    @Mock
-    private SortedKeyValueIterator<Key,Value> source;
-
+    private final TreeMap<Key,Value> termFrequencyData = new TreeMap<>();
     private PhraseIndexes phraseIndexes;
     private ExcerptFields excerptFields;
 
     private Document document;
     private ExcerptTransform excerptTransform;
 
-    private static final String EVENT_ID = "shard\u0000dt\u0000uid";
-
     @Before
     public void setUp() {
+        termFrequencyData.clear();
         phraseIndexes = new PhraseIndexes();
         excerptFields = new ExcerptFields();
-    }
-
-    @After
-    public void tearDown() {
-        document = null;
-        excerptTransform = null;
     }
 
     /**
@@ -86,11 +73,7 @@ public class ExcerptTransformTest extends EasyMockSupport {
     @Test
     public void testNullDocumentEntry() {
         initTransform();
-
-        replayAll();
-
         assertNull(excerptTransform.apply(null));
-        verifyAll();
     }
 
     /**
@@ -98,252 +81,163 @@ public class ExcerptTransformTest extends EasyMockSupport {
      */
     @Test
     public void testNonToKeepDocumentEntry() {
-        givenDocument(new Document(new Key(), false));
+        document = new Document(DOC_KEY, false);
         initTransform();
-        replayAll();
 
         applyTransform();
 
         assertFalse(document.containsKey(ExcerptTransform.HIT_EXCERPT));
-        verifyAll();
     }
 
     /**
-     * Verify that excerpts are not added for documents that don't have PHRASE_INDEXES_ATTRIBUTE.
+     * Verify that excerpts are not added for documents that don't have any phrase indexes or hit terms.
      */
     @Test
-    public void testNullPhraseIndexes() {
-        givenDocument(new Document(new Key(), true));
+    public void testNoPhraseIndexesOrHitTerms() {
+        document = new Document(DOC_KEY, true);
         initTransform();
-        replayAll();
 
         applyTransform();
 
         assertFalse(document.containsKey(ExcerptTransform.HIT_EXCERPT));
-        verifyAll();
     }
 
     /**
-     * Verify that excerpts are retrieved with the expected inputs.
+     * Verify that excerpts are generated for both a phrase-function phrase index and a separate, non-overlapping hit term.
      */
     @Test
-    public void testExcerpts() throws IOException {
-        // Setup our excerpts to match 2 words on either side of the BODY
+    public void testExcerpts() {
         givenExcerptField("BODY", 2);
+        givenTermFrequencyData("BODY", BODY_TEXT);
 
-        // setup a matching phrase at 10-14
-        // end offset is inclusive
-        givenPhraseIndex("BODY", 10, 14);
-
-        // setup a matching term for BODY:word
-        givenMockDocumentWithHitTerm("BODY", "word");
-        givenMatchingTermFrequencies("BODY", new int[][] {{24, 24}}, "word");
-        // end offset is inclusive
-        givenMatchingPhrase("BODY", 22, 26, "and the [word] from bird", List.of("word"));
-
-        // also setup a phrase to match on either side of the matching phrase
-        // end offset is inclusive
-        givenMatchingPhrase("BODY", 8, 16, "the quick brown fox jumped over the lazy dog", List.of("word"));
-
-        Capture<Attributes> capturedArg = Capture.newInstance();
-        document.put(eq(ExcerptTransform.HIT_EXCERPT), and(capture(capturedArg), isA(Attributes.class)));
-
-        initTransform();
-        replayAll();
-
-        applyTransform();
-        verifyAll();
-
-        Attributes arg = capturedArg.getValue();
-        assertEquals(2, arg.size());
-        Set<String> excerpts = arg.getAttributes().stream().map(a -> a.getData().toString()).collect(Collectors.toSet());
-        // both excerpts should be returned
-        assertTrue(excerpts.contains("and the [word] from bird"));
-        assertTrue(excerpts.contains("the quick brown fox jumped over the lazy dog"));
-    }
-
-    /**
-     * Verify that excerpts are retrieved with the expected inputs.
-     */
-    @Test
-    public void testExcerptOverlapped() throws IOException {
-        // Setup our excerpts to match 2 words on either side of the BODY
-        givenExcerptField("BODY", 2);
-
-        // setup a matching phrase at 10-14
-        // end offset is inclusive
-        givenPhraseIndex("BODY", 10, 14);
-
-        // setup a matching term for BODY:quick brown overlapping the phrase match
-        givenMockDocumentWithHitTerm("BODY", "quick brown");
-        givenMatchingTermFrequencies("BODY", new int[][] {{1, 2}, {2, 3}, {9, 10}, {20, 21}}, "quick brown", true);
-        // note that the start is relative to index 9 (i.e. 9-2=7) because the overlapping term starts at 9
-        // end offset is inclusive
-        givenMatchingPhrase("BODY", 7, 16, "and the [quick] [brown] fox jumped over the lazy dog", List.of("quick", "brown"));
-
-        Capture<Attributes> capturedArg = Capture.newInstance();
-        document.put(eq(ExcerptTransform.HIT_EXCERPT), and(capture(capturedArg), isA(Attributes.class)));
-
-        initTransform();
-        replayAll();
-
-        applyTransform();
-        verifyAll();
-
-        Attributes arg = capturedArg.getValue();
-        assertEquals(1, arg.size());
-        String excerpt = arg.getAttributes().iterator().next().getData().toString();
-        // only one excerpt should return
-        assertEquals("and the [quick] [brown] fox jumped over the lazy dog", excerpt);
-    }
-
-    /**
-     * Verify that excerpts are retrieved with the expected inputs.
-     */
-    @Test
-    public void testExcerptOverlappedAndPhraseOverlapped() throws IOException {
-        // Setup our excerpts to match 2 words on either side of the BODY
-        givenExcerptField("BODY", 2);
-
-        // setup a matching phrase at 10-14, ...
-        // end offset is inclusive
-        givenPhraseIndex("BODY", 10, 14);
-        givenPhraseIndex("BODY", 25, 26);
+        // a phrase function matched "jumped over" at offsets 4-5
         givenPhraseIndex("BODY", 4, 5);
-
-        // setup a matching term for BODY:quick brown overlapping the phrase match
-        givenMockDocumentWithHitTerm("BODY", "quick brown");
-        givenMatchingTermFrequencies("BODY", new int[][] {{1, 2}, {2, 3}, {9, 10}, {20, 21}}, "quick brown", true);
-        // end offset is inclusive
-        givenMatchingPhrase("BODY", 23, 28, "Jack and Jill jumped over the", List.of("quick", "brown"));
-        // note that the start is relative to overlapping term index 9 (i.e. 9-2=7) because the overlapping term starts at 9
-        // AND then we combined the phrase from 2 to 7 with the one from 7 to 16
-        givenMatchingPhrase("BODY", 2, 16, "the [brown] chicken layed an egg and the [quick] [brown] fox jumped over the lazy dog", List.of("quick", "brown"));
-
-        Capture<Attributes> capturedArg = Capture.newInstance();
-        document.put(eq(ExcerptTransform.HIT_EXCERPT), and(capture(capturedArg), isA(Attributes.class)));
+        // and BODY:cat is a hit term, found at offset 11, which does not overlap the phrase
+        givenDocumentWithHitTerms("BODY:cat");
 
         initTransform();
-        replayAll();
-
         applyTransform();
-        verifyAll();
 
-        Attributes arg = capturedArg.getValue();
-        assertEquals(2, arg.size());
-        Set<String> excerpts = arg.getAttributes().stream().map(a -> a.getData().toString()).collect(Collectors.toSet());
-        // all excerpts should be returned
-        assertTrue(excerpts.contains("Jack and Jill jumped over the"));
-        assertTrue(excerpts.contains("the [brown] chicken layed an egg and the [quick] [brown] fox jumped over the lazy dog"));
+        Set<String> excerpts = getExcerpts();
+        assertEquals(2, excerpts.size());
+        // window around the phrase [4,5] +/- 2 -> offsets 2..7
+        assertTrue(excerpts.contains("brown fox jumped over the lazy"));
+        // window around the hit term at 11 +/- 2 -> offsets 9..13, with the hit term bracketed
+        assertTrue(excerpts.contains("and the [cat] sat on"));
     }
 
     /**
-     * Verify that when a start index is less than the specified excerpt offset, that the excerpt start defaults to 0.
+     * Verify that a hit term overlapping a phrase index is merged into a single excerpt.
      */
     @Test
-    public void testOffsetGreaterThanStartIndex() throws IOException {
-        givenExcerptField("CONTENT", 2);
-        // end offset is inclusive
-        givenPhraseIndex("CONTENT", 1, 5);
-
-        givenMockDocument();
-        // end offset is inclusive
-        givenMatchingPhrase("CONTENT", 0, 7, "the quick brown fox jumped over the lazy dog", Collections.emptyList());
-
-        Capture<Attributes> capturedArg = Capture.newInstance();
-        document.put(eq(ExcerptTransform.HIT_EXCERPT), and(capture(capturedArg), isA(Attributes.class)));
-
-        initTransform();
-        replayAll();
-
-        applyTransform();
-        verifyAll();
-
-        Attributes arg = capturedArg.getValue();
-        assertEquals(1, arg.size());
-        Attribute<?>[] attributes = arg.getAttributes().toArray(new Attribute[0]);
-        assertEquals("the quick brown fox jumped over the lazy dog", ((Content) attributes[0]).getContent());
-    }
-
-    /**
-     * Verify that a phrase index with the end before the start does not mess us up
-     */
-    @Test
-    public void testEmptyPhraseIndexes() throws IOException {
-        // Setup our excerpts to match 2 words on either side of the BODY
+    public void testExcerptOverlapped() {
         givenExcerptField("BODY", 2);
+        givenTermFrequencyData("BODY", BODY_TEXT);
 
-        // setup a matching term for BODY:word with an empty phrase index attribute
-        givenMockDocumentWithHitTerm("BODY", "word");
-        givenMatchingTermFrequencies("BODY", new int[][] {{24, 24}}, "word");
-        // end offset is inclusive
-        givenMatchingPhrase("BODY", 22, 26, "and the [word] from bird", List.of("word"));
-
-        Capture<Attributes> capturedArg = Capture.newInstance();
-        document.put(eq(ExcerptTransform.HIT_EXCERPT), and(capture(capturedArg), isA(Attributes.class)));
+        // a phrase function matched "jumped over" at offsets 4-5
+        givenPhraseIndex("BODY", 4, 5);
+        // and BODY:jumped is a hit term at offset 4, which overlaps the phrase, so the two are merged
+        givenDocumentWithHitTerms("BODY:jumped");
 
         initTransform();
-        replayAll();
-
         applyTransform();
-        verifyAll();
 
-        Attributes arg = capturedArg.getValue();
-        assertEquals(1, arg.size());
-        Set<String> excerpts = arg.getAttributes().stream().map(a -> a.getData().toString()).collect(Collectors.toSet());
-        // both excerpts should be returned
-        assertTrue(excerpts.contains("and the [word] from bird"));
+        Set<String> excerpts = getExcerpts();
+        assertEquals(1, excerpts.size());
+        assertTrue(excerpts.contains("brown fox [jumped] over the lazy"));
+    }
+
+    /**
+     * Verify that multiple phrase indexes each produce an excerpt, while a hit term overlapping one of them is merged in.
+     */
+    @Test
+    public void testExcerptOverlappedAndPhraseOverlapped() {
+        givenExcerptField("BODY", 2);
+        givenTermFrequencyData("BODY", BODY_TEXT);
+
+        // phrase indexes spaced far enough apart that their +/- 2 windows do not overlap and merge
+        givenPhraseIndex("BODY", 4, 5);
+        givenPhraseIndex("BODY", 11, 12);
+        givenPhraseIndex("BODY", 18, 19);
+        // BODY:jumped at offset 4 overlaps the first phrase index and is merged into it
+        givenDocumentWithHitTerms("BODY:jumped");
+
+        initTransform();
+        applyTransform();
+
+        Set<String> excerpts = getExcerpts();
+        assertEquals(3, excerpts.size());
+        assertTrue(excerpts.contains("brown fox [jumped] over the lazy"));
+        assertTrue(excerpts.contains("and the cat sat on the"));
+        assertTrue(excerpts.contains("near the red barn"));
+    }
+
+    /**
+     * Verify that when a phrase index start is less than the specified excerpt offset, the excerpt start defaults to 0.
+     */
+    @Test
+    public void testOffsetGreaterThanStartIndex() {
+        givenExcerptField("CONTENT", 5);
+        givenTermFrequencyData("CONTENT", CONTENT_TEXT);
+
+        // phrase index [1,2] with offset 5 would start at -4, which should be clamped to 0
+        givenPhraseIndex("CONTENT", 1, 2);
+        givenDocumentWithPhraseIndexesOnly();
+
+        initTransform();
+        applyTransform();
+
+        Set<String> excerpts = getExcerpts();
+        assertEquals(1, excerpts.size());
+        assertTrue(excerpts.contains("alpha beta gamma delta epsilon zeta eta theta"));
+    }
+
+    /**
+     * Verify that an excerpt is generated for a hit term even when there are no phrase indexes.
+     */
+    @Test
+    public void testNoPhraseIndexes() {
+        givenExcerptField("BODY", 2);
+        givenTermFrequencyData("BODY", BODY_TEXT);
+
+        // no phrase indexes, only a hit term
+        givenDocumentWithHitTerms("BODY:cat");
+
+        initTransform();
+        applyTransform();
+
+        Set<String> excerpts = getExcerpts();
+        assertEquals(1, excerpts.size());
+        assertTrue(excerpts.contains("and the [cat] sat on"));
+    }
+
+    /**
+     * Verify that an excerpt requested for a base field is generated from term frequencies stored under a grouped variant of that field (e.g. BODY.A1B2C3).
+     * This exercises both the grouped-field-aware hit-term offset resolution in {@code getOffset} and the grouped-field matching in the iterator.
+     */
+    @Test
+    public void testExcerptForGroupedField() {
+        givenExcerptField("BODY", 2);
+        // the term frequencies are stored under a grouped field name rather than the base field name
+        givenTermFrequencyData("BODY.A1B2C3", BODY_TEXT);
+
+        givenDocumentWithHitTerms("BODY:cat");
+
+        initTransform();
+        applyTransform();
+
+        Set<String> excerpts = getExcerpts();
+        assertEquals(1, excerpts.size());
+        assertTrue(excerpts.contains("and the [cat] sat on"));
     }
 
     private void initTransform() {
-        excerptTransform = new ExcerptTransform(excerptFields, env, source, iterator);
+        SortedMapIterator source = new SortedMapIterator(termFrequencyData);
+        excerptTransform = new ExcerptTransform(excerptFields, null, source, new TermFrequencyExcerptIterator());
     }
 
     private void applyTransform() {
-        excerptTransform.apply(getDocumentEntry());
-    }
-
-    private void givenMockDocument() {
-        Document document = mock(Document.class);
-
-        expect(document.isToKeep()).andReturn(true);
-        expect(document.containsKey(ExcerptTransform.PHRASE_INDEXES_ATTRIBUTE)).andReturn(true);
-        Key metadata = new Key("Row", "cf", "cq");
-        @SuppressWarnings("rawtypes")
-        Attribute phraseIndexAttribute = new Content(phraseIndexes.toString(), metadata, false);
-        // noinspection unchecked
-        expect(document.get(ExcerptTransform.PHRASE_INDEXES_ATTRIBUTE)).andReturn(phraseIndexAttribute);
-
-        expect(document.containsKey(JexlEvaluation.HIT_TERM_FIELD)).andReturn(false);
-
-        givenDocument(document);
-    }
-
-    @SuppressWarnings("rawtypes")
-    private void givenMockDocumentWithHitTerm(String field, String value) {
-        Document document = mock(Document.class);
-
-        expect(document.isToKeep()).andReturn(true);
-        expect(document.containsKey(ExcerptTransform.PHRASE_INDEXES_ATTRIBUTE)).andReturn(true);
-        Key metadata = new Key("shard", "dt\u0000uid");
-        Attribute phraseIndexAttribute = new Content(phraseIndexes.toString(), metadata, false);
-        // noinspection unchecked
-        expect(document.get(ExcerptTransform.PHRASE_INDEXES_ATTRIBUTE)).andReturn(phraseIndexAttribute);
-
-        expect(document.containsKey(JexlEvaluation.HIT_TERM_FIELD)).andReturn(true);
-
-        Attribute hitTerms = new Attributes(Collections.singletonList(new Content(field + ":" + value, metadata, true)), true);
-        expect(document.get(JexlEvaluation.HIT_TERM_FIELD)).andReturn(hitTerms);
-
-        givenDocument(document);
-    }
-
-    private void givenDocument(Document document) {
-        this.document = document;
-    }
-
-    private Map.Entry<Key,Document> getDocumentEntry() {
-        return new AbstractMap.SimpleEntry<>(new Key(), document);
+        excerptTransform.apply(new AbstractMap.SimpleEntry<>(new Key(), document));
     }
 
     private void givenExcerptField(String field, int offset) {
@@ -355,63 +249,59 @@ public class ExcerptTransformTest extends EasyMockSupport {
         phraseIndexes.addIndexTriplet(field, EVENT_ID, start, end);
     }
 
-    private void givenMatchingPhrase(String field, int start, int end, String phrase, List<String> hitTerms) throws IOException {
-        Map<String,String> options = getOptions(field, start, end);
-        iterator.init(source, options, env);
-        iterator.setHitTermsList(hitTerms);
-        iterator.setDirection("BOTH");
-        iterator.setOrigHalfSize((float) ((end + 1) - start) / 2);
-        iterator.seek(anyObject(), anyObject(), eq(false));
-        if (phrase != null) {
-            expect(iterator.hasTop()).andReturn(true);
-            Key key = new Key(new Text("row"), new Text("cf"),
-                            new Text(field + Constants.NULL + "XXXNOTSCOREDXXX" + Constants.NULL + phrase + Constants.NULL + "XXXNOTSCOREDXXX"));
-            expect(iterator.getTopKey()).andReturn(key);
-        } else {
-            expect(iterator.hasTop()).andReturn(false);
+    /** Build a document with the accumulated phrase indexes and the given {@code FIELD:value} hit terms. */
+    private void givenDocumentWithHitTerms(String... hitTerms) {
+        document = new Document(DOC_KEY, true);
+        document.put(ExcerptTransform.PHRASE_INDEXES_ATTRIBUTE, new Content(phraseIndexes.toString(), DOC_KEY, false));
+
+        List<Attribute<? extends Comparable<?>>> hits = new ArrayList<>();
+        for (String hitTerm : hitTerms) {
+            hits.add(new Content(hitTerm, DOC_KEY, true));
         }
+        document.put(JexlEvaluation.HIT_TERM_FIELD, new Attributes(hits, true));
     }
 
-    private void givenMatchingTermFrequencies(String field, int[][] offsets, String value) throws IOException {
-        givenMatchingTermFrequencies(field, offsets, value, false);
+    /** Build a document with the accumulated phrase indexes and no hit terms. */
+    private void givenDocumentWithPhraseIndexesOnly() {
+        document = new Document(DOC_KEY, true);
+        document.put(ExcerptTransform.PHRASE_INDEXES_ATTRIBUTE, new Content(phraseIndexes.toString(), DOC_KEY, false));
     }
 
     /**
-     * Script the term-frequency {@code source} consulted by {@code getOffset()}, which scans the requested field and any grouped variants of it. When
-     * {@code overlapFound} is true, an overlapping phrase position is expected so {@code getOffset()} returns as soon as the first matching entry is inspected;
-     * otherwise it advances past the entry and reaches the end of the scan.
+     * Add term-frequency entries for the given field, one entry per distinct token, where each token occupies the offset matching its position in the phrase.
+     *
+     * @param field
+     *            the field name to store the term frequencies under (may be a grouped field name such as BODY.A1B2C3)
+     * @param phrase
+     *            the space-separated tokens to index
      */
-    private void givenMatchingTermFrequencies(String field, int[][] offsets, String value, boolean overlapFound) throws IOException {
-        TermWeight.Info.Builder builder = TermWeight.Info.newBuilder();
-        for (int[] offset : offsets) {
-            builder.addTermOffset(offset[1]);
-            builder.addPrevSkips(offset[1] - offset[0]);
-            builder.addScore(1);
+    private void givenTermFrequencyData(String field, String phrase) {
+        String[] tokens = phrase.split(" ");
+        Multimap<String,Integer> wordOffsets = ArrayListMultimap.create();
+        for (int i = 0; i < tokens.length; i++) {
+            wordOffsets.put(tokens[i], i);
         }
 
-        Value tfpb = new Value(builder.build().toByteArray());
+        for (String word : wordOffsets.keySet()) {
+            List<Integer> offsets = new ArrayList<>(wordOffsets.get(word));
+            Collections.sort(offsets);
 
-        // The term-frequency key whose column qualifier ends with the requested field; getOffset() inspects each entry's
-        // field before consuming the value.
-        Key tfKey = new Key(new Text("row"), new Text("tf"), new Text("dt" + Constants.NULL + "uid" + Constants.NULL + value + Constants.NULL + field));
+            TermWeight.Info.Builder builder = TermWeight.Info.newBuilder();
+            for (int offset : offsets) {
+                builder.addTermOffset(offset);
+                builder.addPrevSkips(0);
+                builder.addScore(-1);
+            }
 
-        source.seek(anyObject(), anyObject(), eq(false));
-        expect(source.hasTop()).andReturn(true);
-        expect(source.getTopKey()).andReturn(tfKey);
-        expect(source.getTopValue()).andReturn(tfpb);
-        if (!overlapFound) {
-            // no overlapping position is found, so getOffset advances and reaches the end of the scan
-            source.next();
-            expect(source.hasTop()).andReturn(false);
+            Text colq = new Text(DATATYPE + Constants.NULL + UID + Constants.NULL + word + Constants.NULL + field);
+            Key key = new Key(SHARD, Constants.TERM_FREQUENCY_COLUMN_FAMILY, colq);
+            termFrequencyData.put(key, new Value(builder.build().toByteArray()));
         }
     }
 
-    private Map<String,String> getOptions(String field, int start, int end) {
-        Map<String,String> options = new HashMap<>();
-        options.put(FIELD_NAME, field);
-        options.put(START_OFFSET, String.valueOf(start));
-        // for the options, the end offset is exclusive so add 1
-        options.put(END_OFFSET, String.valueOf(end + 1));
-        return options;
+    private Set<String> getExcerpts() {
+        assertTrue("expected HIT_EXCERPT to be populated", document.containsKey(ExcerptTransform.HIT_EXCERPT));
+        Attributes attributes = (Attributes) document.get(ExcerptTransform.HIT_EXCERPT);
+        return attributes.getAttributes().stream().map(a -> a.getData().toString()).collect(Collectors.toSet());
     }
 }
