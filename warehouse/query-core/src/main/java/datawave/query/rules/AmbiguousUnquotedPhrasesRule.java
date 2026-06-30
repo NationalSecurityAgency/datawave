@@ -11,7 +11,7 @@ import datawave.query.lucene.visitors.BaseVisitor;
 import datawave.query.lucene.visitors.LuceneQueryStringBuildingVisitor;
 
 /**
- * An implementation of {@link QueryRule} that checks a LUCENE query for any unquoted phrases that are implicitly ANDED with a preceding fielded terms, e.g.
+ * An implementation of {@link QueryRule} that checks a LUCENE query for any unquoted phrases that are implicitly AND'd with a preceding fielded term, e.g.
  * {@code FOO:term1 term2 term3} should be {@code FOO:"term1 term2 term3"}.
  */
 public class AmbiguousUnquotedPhrasesRule extends ShardQueryRule {

@@ -1,6 +1,6 @@
 package datawave.query.jexl.functions;
 
-import static datawave.query.tld.TLD.parseDatatypeAndRootUidFromEvent;
+import static datawave.table.util.TLD.parseDatatypeAndRootUidFromEvent;
 
 import org.apache.accumulo.core.data.ByteSequence;
 
