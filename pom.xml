@@ -133,7 +133,6 @@
         <version.netty>4.1.42.Final</version.netty>
         <version.objenesis>3.3</version.objenesis>
         <version.picketbox>5.0.3.Final</version.picketbox>
-        <version.powermock>2.0.9</version.powermock>
         <version.proto-google-common-protos>2.61.0</version.proto-google-common-protos>
         <version.protobuf>3.16.3</version.protobuf>
         <version.protobuf-java-util>3.16.3</version.protobuf-java-util>
@@ -1542,36 +1541,6 @@
                 <version>${version.mockito}</version>
                 <scope>test</scope>
             </dependency>
-            <dependency>
-                <groupId>org.powermock</groupId>
-                <artifactId>powermock-api-easymock</artifactId>
-                <version>${version.powermock}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.powermock</groupId>
-                <artifactId>powermock-api-mockito2</artifactId>
-                <version>${version.powermock}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.powermock</groupId>
-                <artifactId>powermock-module-junit4</artifactId>
-                <version>${version.powermock}</version>
-                <scope>test</scope>
-                <exclusions>
-                    <exclusion>
-                        <groupId>junit</groupId>
-                        <artifactId>junit</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.powermock</groupId>
-                <artifactId>powermock-reflect</artifactId>
-                <version>${version.powermock}</version>
-                <scope>test</scope>
-            </dependency>
         </dependencies>
     </dependencyManagement>
     <dependencies>
@@ -1922,6 +1891,7 @@
                                             <exclude>joda-time:joda-time</exclude>
                                             <!-- exclude all versions of log4j before version.log4j -->
                                             <exclude>org.apache.logging.log4j:*:(,${version.log4j})</exclude>
+                                            <exclude>org.powermock:*</exclude>
                                         </excludes>
                                     </bannedDependencies>
                                 </rules>
@@ -1945,6 +1915,10 @@
                                         <!-- Cannot ban hamcrest dependency until fully migrated to JUnit5, so ban the import to prevent reintroduction -->
                                         <reason>Use JUnit5 instead of hamcrest</reason>
                                         <bannedImport>org.hamcrest.**</bannedImport>
+                                    </restrictImports>
+                                    <restrictImports>
+                                        <reason>Use Mockito instead of PowerMock</reason>
+                                        <bannedImport>org.powermock.**</bannedImport>
                                     </restrictImports>
                                 </rules>
                             </configuration>
