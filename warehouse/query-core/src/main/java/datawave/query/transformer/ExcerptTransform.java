@@ -109,6 +109,8 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
      * @return the phrase indexes
      */
     private PhraseIndexes getPhraseIndexes(Document document) {
+        // clear any hit term values accumulated for a previous document so they do not leak into this one
+        hitTermValues.clear();
         PhraseIndexes phraseIndexes = null;
         PhraseIndexes allPhraseIndexes = new PhraseIndexes();
         // first lets find all the phrase indexes that came from phrase functions
