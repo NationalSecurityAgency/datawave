@@ -22,6 +22,8 @@ public class ScanSessionManager extends ScanManager {
 
     protected final AtomicBoolean sessionsClosed = new AtomicBoolean(false);
 
+    private final Object sessionLock = new Object();
+
     public ScanSessionManager() {
         // empty constructor
     }
@@ -33,7 +35,7 @@ public class ScanSessionManager extends ScanManager {
      *            a ScannerSession instance
      */
     public void addScanner(ScannerSession scanner) {
-        synchronized (sessionsClosed) {
+        synchronized (sessionLock) {
             if (sessionsClosed.get()) {
                 log.warn("ScanSessionManager closed, closing ScannerSession");
                 scanner.close();
@@ -64,7 +66,7 @@ public class ScanSessionManager extends ScanManager {
      */
     @Override
     public void close() {
-        synchronized (sessionsClosed) {
+        synchronized (sessionLock) {
             sessionsClosed.set(true);
 
             log.trace("ScannerManager asked to close all tracked scanners");
