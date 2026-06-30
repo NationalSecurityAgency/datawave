@@ -94,6 +94,8 @@ import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
 import datawave.query.jexl.visitors.order.OrderByCostVisitor;
 import datawave.query.planner.QueryPlan;
 import datawave.query.tables.RangeStreamScanner;
+import datawave.query.tables.RangeStreamScannerBuilder;
+import datawave.query.tables.ScanSessionManager;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.tables.SessionOptions;
 import datawave.query.util.MetadataHelper;
@@ -154,8 +156,25 @@ public class RangeStream extends BaseVisitor implements QueryPlanStream {
     protected int maxLinesToPrint = -1;
     protected int linesPrinted = 0;
 
+    protected final AccumuloClient client;
+    protected final ScanSessionManager sessionManager = new ScanSessionManager();
+
+    /**
+     * Constructor that accepts a query config and metadata helper
+     *
+     * @param config
+     *            the config
+     * @param metadataHelper
+     *            the metadata helper
+     */
+    public RangeStream(ShardQueryConfiguration config, MetadataHelper metadataHelper) {
+        this(config, null, metadataHelper);
+    }
+
+    @Deprecated(forRemoval = true, since = "7.41.0")
     public RangeStream(ShardQueryConfiguration config, ScannerFactory scanners, MetadataHelper metadataHelper) {
         this.config = config;
+        this.client = config.getClient();
         this.scanners = scanners;
         this.metadataHelper = metadataHelper;
         int maxLookup = (int) Math.max(config.getNumIndexLookupThreads(), 1);
@@ -587,7 +606,16 @@ public class RangeStream extends BaseVisitor implements QueryPlanStream {
 
             if (limitScanners) {
                 // Setup the CreateUidsIterator
-                scannerSession = scanners.newRangeScanner(config.getIndexTableName(), config.getAuthorizations(), config.getQuery());
+
+                //  @formatter:off
+                scannerSession = RangeStreamScannerBuilder.create(client)
+                        .setTableName(config.getIndexTableName())
+                        .setAuthorizations(config.getAuthorizations())
+                        .setQuery(config.getQuery())
+                        .setConfig(config)
+                        .build();
+                sessionManager.addScanner(scannerSession);
+                 // @formatter:on
 
                 uidSetting = new IteratorSetting(stackStart++, createUidsIteratorClass);
                 uidSetting.addOption(CreateUidsIterator.COLLAPSE_UIDS, Boolean.toString(collapseUids));
@@ -597,7 +625,15 @@ public class RangeStream extends BaseVisitor implements QueryPlanStream {
 
             } else {
                 // Setup so this is a pass-through
-                scannerSession = scanners.newRangeScanner(config.getIndexTableName(), config.getAuthorizations(), config.getQuery());
+                //  @formatter:off
+                scannerSession = RangeStreamScannerBuilder.create(client)
+                        .setTableName(config.getIndexTableName())
+                        .setAuthorizations(config.getAuthorizations())
+                        .setQuery(config.getQuery())
+                        .setConfig(config)
+                        .build();
+                sessionManager.addScanner(scannerSession);
+                // @formatter:on
 
                 uidSetting = new IteratorSetting(stackStart++, createUidsIteratorClass);
                 uidSetting.addOption(CreateUidsIterator.COLLAPSE_UIDS, Boolean.toString(false));
@@ -1102,6 +1138,8 @@ public class RangeStream extends BaseVisitor implements QueryPlanStream {
 
     @Override
     public void close() {
+        // close range scanners first
+        sessionManager.close();
         streamExecutor.shutdownNow();
         executor.shutdownNow();
     }
