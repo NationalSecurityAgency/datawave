@@ -43,6 +43,7 @@ import datawave.query.attributes.ExcerptFields;
 import datawave.query.attributes.ValueTuple;
 import datawave.query.function.JexlEvaluation;
 import datawave.query.iterator.logic.TermFrequencyExcerptIterator;
+import datawave.query.jexl.JexlASTHelper;
 import datawave.query.postprocessing.tf.PhraseIndexes;
 import datawave.query.postprocessing.tf.PhraseOffset;
 
@@ -164,30 +165,45 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
         // get the key at which we would find the term frequencies
         Key tfKey = new Key(docKey.getRow().toString(), Constants.TERM_FREQUENCY_COLUMN_FAMILY.toString(),
                         docKey.getColumnFamily().toString() + '\u0000' + hitTuple.getValue() + '\u0000' + hitTuple.getFieldName());
-        Range range = new Range(tfKey, tfKey.followingKey(PartialKey.ROW_COLFAM_COLQUAL));
+        // The term frequencies for this term may be stored under the exact field name, or under grouped variants of it
+        // (e.g. CONTENT.A1B2C3) that preserve token context across multiple instances of the same field. Widen the scan
+        // from the exact key (tfKey) through all of its grouped variants, and consider every matching entry.
+        String cqPrefix = tfKey.getColumnQualifier().toString();
+        Key endTfKey = new Key(tfKey.getRow().toString(), Constants.TERM_FREQUENCY_COLUMN_FAMILY.toString(),
+                        cqPrefix + JexlASTHelper.GROUPING_CHARACTER_SEPARATOR + Constants.MAX_UNICODE_STRING);
+        Range range = new Range(tfKey, true, endTfKey, true);
         try {
-            // seek directly to that key
+            // seek to the beginning of the matching term frequency entries
             source.seek(range, Collections.emptyList(), false);
-            if (source.hasTop()) {
-                TermWeightPosition pos = null;
 
-                // parse the term frequencies
-                TermWeight.Info twInfo = TermWeight.Info.parseFrom(source.getTopValue().get());
+            TermWeightPosition firstPos = null;
+            while (source.hasTop()) {
+                Key top = source.getTopKey();
+                // only consider entries whose field is the requested field or a grouped variant of it
+                if (fieldMatches(fieldName, getFieldFromTfKey(top))) {
+                    // parse the term frequencies
+                    TermWeight.Info twInfo = TermWeight.Info.parseFrom(source.getTopValue().get());
 
-                // if we have phrase indexes, then find one that overlaps if any
-                if (phraseIndexes != null) {
-                    pos = phraseIndexes.getOverlappingPosition(fieldName, eventId, twInfo);
+                    // if we have phrase indexes, then return an overlapping position if any
+                    if (phraseIndexes != null) {
+                        TermWeightPosition pos = phraseIndexes.getOverlappingPosition(fieldName, eventId, twInfo);
+                        if (pos != null) {
+                            return pos;
+                        }
+                    }
+
+                    // otherwise remember the first position seen as the fallback
+                    if (firstPos == null) {
+                        TermWeightPosition.Builder position = new TermWeightPosition.Builder();
+                        position.setTermWeightOffsetInfo(twInfo, 0);
+                        firstPos = position.build();
+                    }
                 }
-
-                // if no overlapping phrases, then return the first position
-                if (pos == null) {
-                    TermWeightPosition.Builder position = new TermWeightPosition.Builder();
-                    position.setTermWeightOffsetInfo(twInfo, 0);
-                    pos = position.build();
-                }
-
-                return pos;
+                source.next();
             }
+
+            // if no overlapping phrase position was found, fall back to the first position from a matching entry (may be null)
+            return firstPos;
 
         } catch (InvalidProtocolBufferException e) {
             log.error("Value passed to aggregator was not of type TermWeight.Info for {}", tfKey, e);
@@ -195,6 +211,33 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
             log.error("Failed to scan for term frequencies at {}", tfKey, e);
         }
         return null;
+    }
+
+    /**
+     * Determine whether a term-frequency field name matches the requested excerpt field, accepting an exact match as well as grouped variants of the requested
+     * base field (e.g. requested {@code CONTENT} matching {@code CONTENT.A1B2C3}).
+     *
+     * @param requestedField
+     *            the base field name the excerpt was requested for
+     * @param candidateField
+     *            the field name found in the term-frequency key
+     * @return true if the candidate field is the requested field or a grouped variant of it
+     */
+    private static boolean fieldMatches(String requestedField, String candidateField) {
+        return requestedField.equals(candidateField) || JexlASTHelper.isGroupedFieldMatch(requestedField, candidateField);
+    }
+
+    /**
+     * Extract the field name (the final null-separated component) from a term-frequency key's column qualifier, which has the form
+     * {@code datatype<NUL>uid<NUL>value<NUL>FIELD}.
+     *
+     * @param tfKey
+     *            the term-frequency key
+     * @return the field name
+     */
+    private static String getFieldFromTfKey(Key tfKey) {
+        String cq = tfKey.getColumnQualifier().toString();
+        return cq.substring(cq.lastIndexOf(Constants.NULL) + 1);
     }
 
     /**

@@ -28,6 +28,7 @@ import com.google.protobuf.InvalidProtocolBufferException;
 
 import datawave.ingest.protobuf.TermWeight;
 import datawave.query.Constants;
+import datawave.query.jexl.JexlASTHelper;
 
 /**
  * This iterator is intended to scan the term frequencies for a specified document, field, and offset range. The result will be excerpts for the field specified
@@ -366,8 +367,9 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
             // get the field and value
             String[] fieldAndValue = getFieldAndValue(top);
 
-            // if this is for the field we are summarizing
-            if (fieldName.equals(fieldAndValue[0])) {
+            // if this is for the field we are summarizing. The term frequency field name may carry grouping/dot
+            // notation (e.g. CONTENT.A1B2C3) to preserve token context, so accept grouped variants of the base field.
+            if (fieldMatches(fieldName, fieldAndValue[0])) {
                 try {
                     // get the protobuf that contains all the extra information for the TFs from the value
                     TermWeight.Info info = TermWeight.Info.parseFrom(source.getTopValue().get());
@@ -892,6 +894,21 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
         int index2 = cq.lastIndexOf(Constants.NULL, index - 1);
         String fieldValue = cq.substring(index2 + 1, index);
         return new String[] {fieldName, fieldValue};
+    }
+
+    /**
+     * Determine whether a term-frequency field name matches the requested excerpt field. This accepts an exact match as well as grouped variants of the
+     * requested base field, e.g. requested {@code CONTENT} matching {@code CONTENT.A1B2C3}. Term-frequency entries carry this grouping/dot notation to preserve
+     * token context across multiple instances of the same field.
+     *
+     * @param requestedField
+     *            the base field name the excerpt was requested for
+     * @param candidateField
+     *            the field name found in the term-frequency key
+     * @return true if the candidate field is the requested field or a grouped variant of it
+     */
+    private static boolean fieldMatches(String requestedField, String candidateField) {
+        return requestedField.equals(candidateField) || JexlASTHelper.isGroupedFieldMatch(requestedField, candidateField);
     }
 
     /**

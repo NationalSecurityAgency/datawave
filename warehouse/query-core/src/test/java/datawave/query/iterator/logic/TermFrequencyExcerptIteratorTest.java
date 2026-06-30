@@ -62,7 +62,36 @@ public class TermFrequencyExcerptIteratorTest extends EasyMockSupport {
         givenData("email", "111.222.333", "BODY", "the coldest tale <eps> ever told");
         givenData("email", "111.222.333", "CONTENT", "somewhere far along <eps> the street they <eps> lost their soul <eps> to a person so mean");
         givenData("email", "333.222.111", "BODY", "we like to repeat stuff do not ask questions we like to repeat stuff");
+        // Term frequencies whose field-name portion carries grouping/dot notation (e.g. CONTENT.A1B2C3), as produced
+        // when token context is preserved to distinguish multiple instances of the same field. An excerpt requested for
+        // the base field CONTENT must still match these entries.
+        givenGroupedData("email", "444.555.666", "CONTENT", "A1B2C3", "annotation indexing makes content grouped");
         multiWordsAtOneOffsetBuilder();
+    }
+
+    /**
+     * Add term frequency data whose field name in the column qualifier includes grouping/dot notation (e.g. {@code CONTENT.A1B2C3}) while the requested excerpt
+     * field is the ungrouped base name (e.g. {@code CONTENT}).
+     */
+    private static void givenGroupedData(String datatype, String uid, String baseFieldName, String group, String phrase) {
+        String groupedFieldName = baseFieldName + '.' + group;
+        Multimap<String,Integer> termIndexes = getIndexes(phrase);
+        for (String term : termIndexes.keySet()) {
+            NormalizedFieldAndValue nfv = new NormalizedFieldAndValue(baseFieldName, term);
+            Text colq = new Text(datatype + Constants.NULL + uid + Constants.NULL + nfv.getIndexedFieldValue() + Constants.NULL + groupedFieldName);
+            // @formatter:off
+            TermWeight.Info info = TermWeight.Info.newBuilder()
+                            .addAllTermOffset(termIndexes.get(term))
+                            .addScore(-1)
+                            .addPrevSkips(0)
+                            .setZeroOffsetMatch(true)
+                            .build();
+            // @formatter:on
+            Key key = new Key(row, colf, colq, new ColumnVisibility("ALL"), new Date().getTime());
+            Value value = new Value(info.toByteArray());
+            Map.Entry<Key,Value> entry = new AbstractMap.SimpleEntry<>(key, value);
+            source.add(entry);
+        }
     }
 
     private static void givenData(String datatype, String uid, String fieldName, String phrase) {
@@ -167,6 +196,31 @@ public class TermFrequencyExcerptIteratorTest extends EasyMockSupport {
         assertEquals(new Text("email" + Constants.NULL + "123.456.789"), topKey.getColumnFamily());
         assertEquals(new Text("BODY" + Constants.NULL + "XXXNOTSCOREDXXX" + Constants.NULL + "quick brown fox jumped" + Constants.NULL + "XXXNOTSCOREDXXX"),
                         topKey.getColumnQualifier());
+    }
+
+    /**
+     * Verify that an excerpt requested for a base field (CONTENT) is generated from term frequencies whose field name carries grouping/dot notation
+     * (CONTENT.A1B2C3). Before the fix, the iterator only matched the field name with an exact {@code equals}, so grouped term frequencies were skipped and the
+     * excerpt came back blank.
+     */
+    @Test
+    public void testMatchFoundForGroupedField() throws IOException {
+        givenOptions("CONTENT", 0, 5);
+        initIterator();
+
+        Key startKey = new Key(row, new Text("email" + Constants.NULL + "444.555.666"));
+        Range range = new Range(startKey, true, startKey.followingKey(PartialKey.ROW_COLFAM), false);
+
+        iterator.setHitTermsList(new ArrayList<>(List.of("")));
+        iterator.seek(range, Collections.emptyList(), false);
+
+        assertTrue(iterator.hasTop());
+
+        Key topKey = iterator.getTopKey();
+        assertEquals(row, topKey.getRow());
+        assertEquals(new Text("email" + Constants.NULL + "444.555.666"), topKey.getColumnFamily());
+        assertEquals(new Text("CONTENT" + Constants.NULL + "XXXNOTSCOREDXXX" + Constants.NULL + "annotation indexing makes content grouped" + Constants.NULL
+                        + "XXXNOTSCOREDXXX"), topKey.getColumnQualifier());
     }
 
     /**

@@ -176,7 +176,7 @@ public class ExcerptTransformTest extends EasyMockSupport {
 
         // setup a matching term for BODY:quick brown overlapping the phrase match
         givenMockDocumentWithHitTerm("BODY", "quick brown");
-        givenMatchingTermFrequencies("BODY", new int[][] {{1, 2}, {2, 3}, {9, 10}, {20, 21}}, "quick brown");
+        givenMatchingTermFrequencies("BODY", new int[][] {{1, 2}, {2, 3}, {9, 10}, {20, 21}}, "quick brown", true);
         // note that the start is relative to index 9 (i.e. 9-2=7) because the overlapping term starts at 9
         // end offset is inclusive
         givenMatchingPhrase("BODY", 7, 16, "and the [quick] [brown] fox jumped over the lazy dog", List.of("quick", "brown"));
@@ -213,7 +213,7 @@ public class ExcerptTransformTest extends EasyMockSupport {
 
         // setup a matching term for BODY:quick brown overlapping the phrase match
         givenMockDocumentWithHitTerm("BODY", "quick brown");
-        givenMatchingTermFrequencies("BODY", new int[][] {{1, 2}, {2, 3}, {9, 10}, {20, 21}}, "quick brown");
+        givenMatchingTermFrequencies("BODY", new int[][] {{1, 2}, {2, 3}, {9, 10}, {20, 21}}, "quick brown", true);
         // end offset is inclusive
         givenMatchingPhrase("BODY", 23, 28, "Jack and Jill jumped over the", List.of("quick", "brown"));
         // note that the start is relative to overlapping term index 9 (i.e. 9-2=7) because the overlapping term starts at 9
@@ -373,6 +373,15 @@ public class ExcerptTransformTest extends EasyMockSupport {
     }
 
     private void givenMatchingTermFrequencies(String field, int[][] offsets, String value) throws IOException {
+        givenMatchingTermFrequencies(field, offsets, value, false);
+    }
+
+    /**
+     * Script the term-frequency {@code source} consulted by {@code getOffset()}, which scans the requested field and any grouped variants of it. When
+     * {@code overlapFound} is true, an overlapping phrase position is expected so {@code getOffset()} returns as soon as the first matching entry is inspected;
+     * otherwise it advances past the entry and reaches the end of the scan.
+     */
+    private void givenMatchingTermFrequencies(String field, int[][] offsets, String value, boolean overlapFound) throws IOException {
         TermWeight.Info.Builder builder = TermWeight.Info.newBuilder();
         for (int[] offset : offsets) {
             builder.addTermOffset(offset[1]);
@@ -382,9 +391,19 @@ public class ExcerptTransformTest extends EasyMockSupport {
 
         Value tfpb = new Value(builder.build().toByteArray());
 
+        // The term-frequency key whose column qualifier ends with the requested field; getOffset() inspects each entry's
+        // field before consuming the value.
+        Key tfKey = new Key(new Text("row"), new Text("tf"), new Text("dt" + Constants.NULL + "uid" + Constants.NULL + value + Constants.NULL + field));
+
         source.seek(anyObject(), anyObject(), eq(false));
         expect(source.hasTop()).andReturn(true);
+        expect(source.getTopKey()).andReturn(tfKey);
         expect(source.getTopValue()).andReturn(tfpb);
+        if (!overlapFound) {
+            // no overlapping position is found, so getOffset advances and reaches the end of the scan
+            source.next();
+            expect(source.hasTop()).andReturn(false);
+        }
     }
 
     private Map<String,String> getOptions(String field, int start, int end) {
