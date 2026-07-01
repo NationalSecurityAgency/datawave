@@ -44,7 +44,7 @@
         <version.jaxb-api>2.3.1</version.jaxb-api>
         <version.jboss-servlet-api>2.0.0.Final</version.jboss-servlet-api>
         <!-- dependency declared in datawave-microservice-parent, but the version can be overridden here -->
-        <version.log4j>2.25.3</version.log4j>
+        <version.log4j>2.26.0</version.log4j>
         <!-- dependency declared in datawave-microservice-parent, but the version can be overridden here -->
         <version.slf4j>2.0.17</version.slf4j>
         <version.springframework>5.3.39</version.springframework>
