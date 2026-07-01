@@ -8,6 +8,7 @@ import static datawave.microservice.query.cachedresults.status.CachedResultsQuer
 import static datawave.microservice.query.cachedresults.status.CachedResultsQueryStatus.CACHED_RESULTS_STATE.LOADED;
 import static datawave.microservice.query.cachedresults.status.CachedResultsQueryStatus.CACHED_RESULTS_STATE.LOADING;
 import static datawave.microservice.query.cachedresults.status.CachedResultsQueryStatus.CACHED_RESULTS_STATE.NONE;
+import static datawave.util.StringUtils.EMPTY_STRING;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -429,7 +430,7 @@ public class CachedResultsQueryService {
                         ps.setString(6, cacheableQueryRow.getRow());
                         ps.setString(7, cacheableQueryRow.getColFam());
 
-                        String visibility = "";
+                        String visibility = EMPTY_STRING;
                         if (cacheableQueryRow.getMarkings() != null) {
                             AccessExpression ae = cacheableQueryRow.getMarkings().toAccessExpression();
                             if (ae != null) {
