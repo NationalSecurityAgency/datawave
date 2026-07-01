@@ -317,7 +317,7 @@ public class ExtendedQueryExecutorBeanTest {
         when(this.qlCache.poll(queryId.toString())).thenReturn(null);
         when(this.cache.get(queryId.toString())).thenReturn(this.runningQuery);
         when(this.runningQuery.getSettings()).thenReturn(this.query);
-        when(this.runningQuery.getLogic()).thenReturn((QueryLogic)this.queryLogic1);
+        when(this.runningQuery.getLogic()).thenReturn((QueryLogic) this.queryLogic1);
         this.runningQuery.cancel();
         this.runningQuery.closeConnection(this.connectionFactory);
         when(this.query.getId()).thenReturn(queryId);
@@ -561,7 +561,7 @@ public class ExtendedQueryExecutorBeanTest {
         when(this.cache.get(queryId.toString())).thenReturn(this.runningQuery);
         this.closedCache.remove(queryId.toString());
         when(this.runningQuery.getSettings()).thenReturn(this.query);
-        when(this.runningQuery.getLogic()).thenReturn((QueryLogic)this.queryLogic1);
+        when(this.runningQuery.getLogic()).thenReturn((QueryLogic) this.queryLogic1);
         when(this.query.getOwner()).thenReturn(userSid);
         this.runningQuery.cancel();
         this.runningQuery.closeConnection(this.connectionFactory);
@@ -3718,7 +3718,7 @@ public class ExtendedQueryExecutorBeanTest {
         when(this.principal.getAuthorizations()).thenReturn((Collection) Arrays.asList(Arrays.asList(authorization)));
         when(this.cache.get(queryName)).thenReturn(this.runningQuery);
         when(this.runningQuery.getSettings()).thenReturn(this.query);
-        when(this.runningQuery.getLogic()).thenReturn((QueryLogic)this.queryLogic1);
+        when(this.runningQuery.getLogic()).thenReturn((QueryLogic) this.queryLogic1);
         when(this.query.getOwner()).thenReturn(userSid);
         // when(this.runningQuery.getTraceInfo()).thenReturn(this.traceInfo);
         when(this.cache.lock(queryName)).thenReturn(false);
