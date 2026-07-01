@@ -290,6 +290,44 @@ public class ExcerptTransformTest extends EasyMockSupport {
     }
 
     /**
+     * Verify that hit terms collected for one document do not leak into excerpts generated for a later document.
+     */
+    @Test
+    @SuppressWarnings("rawtypes")
+    public void testHitTermsClearedBetweenDocuments() throws IOException {
+        givenExcerptField("BODY", 2);
+
+        Key metadata = new Key("shard", "dt\u0000uid");
+        Document firstDocument = mock(Document.class);
+        expect(firstDocument.isToKeep()).andReturn(true);
+        expect(firstDocument.containsKey(ExcerptTransform.PHRASE_INDEXES_ATTRIBUTE)).andReturn(false);
+        expect(firstDocument.containsKey(JexlEvaluation.HIT_TERM_FIELD)).andReturn(true);
+        Attribute firstHitTerms = new Attributes(Collections.singletonList(new Content("BODY:first", metadata, true)), true);
+        expect(firstDocument.get(JexlEvaluation.HIT_TERM_FIELD)).andReturn(firstHitTerms);
+        givenMatchingTermFrequencies("BODY", new int[][] {{2, 2}}, "first");
+        givenMatchingPhrase("BODY", 0, 4, "the [first] document excerpt", List.of("first"));
+        firstDocument.put(eq(ExcerptTransform.HIT_EXCERPT), isA(Attributes.class));
+
+        PhraseIndexes secondPhraseIndexes = new PhraseIndexes();
+        secondPhraseIndexes.addIndexTriplet("BODY", EVENT_ID, 4, 4);
+        Document secondDocument = mock(Document.class);
+        expect(secondDocument.isToKeep()).andReturn(true);
+        expect(secondDocument.containsKey(ExcerptTransform.PHRASE_INDEXES_ATTRIBUTE)).andReturn(true);
+        Attribute phraseIndexAttribute = new Content(secondPhraseIndexes.toString(), metadata, false);
+        expect(secondDocument.get(ExcerptTransform.PHRASE_INDEXES_ATTRIBUTE)).andReturn(phraseIndexAttribute);
+        expect(secondDocument.containsKey(JexlEvaluation.HIT_TERM_FIELD)).andReturn(false);
+        givenMatchingPhrase("BODY", 2, 6, "the second document excerpt", Collections.emptyList());
+        secondDocument.put(eq(ExcerptTransform.HIT_EXCERPT), isA(Attributes.class));
+
+        initTransform();
+        replayAll();
+
+        excerptTransform.apply(new AbstractMap.SimpleEntry<>(new Key(), firstDocument));
+        excerptTransform.apply(new AbstractMap.SimpleEntry<>(new Key(), secondDocument));
+        verifyAll();
+    }
+
+    /**
      * Verify that when a start index is less than the specified excerpt offset, that the excerpt start defaults to 0.
      */
     @Test
