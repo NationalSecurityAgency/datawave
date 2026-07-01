@@ -238,6 +238,58 @@ public class ExcerptTransformTest extends EasyMockSupport {
     }
 
     /**
+     * Verify that a grouped phrase index can be excerpted when the base field is requested.
+     */
+    @Test
+    public void testGroupedPhraseIndexUsesBaseExcerptField() throws IOException {
+        givenExcerptField("BODY", 2);
+        givenPhraseIndex("BODY.hash1", 10, 14);
+
+        givenMockDocument();
+        givenMatchingPhrase("BODY.hash1", 8, 16, "the quick brown fox jumped over the lazy dog", Collections.emptyList());
+
+        Capture<Attributes> capturedArg = Capture.newInstance();
+        document.put(eq(ExcerptTransform.HIT_EXCERPT), and(capture(capturedArg), isA(Attributes.class)));
+
+        initTransform();
+        replayAll();
+
+        applyTransform();
+        verifyAll();
+
+        Attributes arg = capturedArg.getValue();
+        assertEquals(1, arg.size());
+        String excerpt = arg.getAttributes().iterator().next().getData().toString();
+        assertEquals("the quick brown fox jumped over the lazy dog", excerpt);
+    }
+
+    /**
+     * Verify that a grouped hit term drives excerpt generation using the concrete grouped field while still using base field excerpt options.
+     */
+    @Test
+    public void testGroupedHitTermUsesGroupedFieldForExcerpt() throws IOException {
+        givenExcerptField("BODY", 2);
+
+        givenMockDocumentWithHitTerm("BODY.hash1", "word");
+        givenMatchingTermFrequencies("BODY.hash1", new int[][] {{24, 24}}, "word");
+        givenMatchingPhrase("BODY.hash1", 22, 26, "and the [word] from bird", List.of("word"));
+
+        Capture<Attributes> capturedArg = Capture.newInstance();
+        document.put(eq(ExcerptTransform.HIT_EXCERPT), and(capture(capturedArg), isA(Attributes.class)));
+
+        initTransform();
+        replayAll();
+
+        applyTransform();
+        verifyAll();
+
+        Attributes arg = capturedArg.getValue();
+        assertEquals(1, arg.size());
+        String excerpt = arg.getAttributes().iterator().next().getData().toString();
+        assertEquals("and the [word] from bird", excerpt);
+    }
+
+    /**
      * Verify that when a start index is less than the specified excerpt offset, that the excerpt start defaults to 0.
      */
     @Test
