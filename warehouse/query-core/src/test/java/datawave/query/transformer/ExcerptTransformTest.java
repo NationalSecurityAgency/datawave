@@ -15,7 +15,6 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
-import java.util.AbstractMap;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -322,8 +321,8 @@ public class ExcerptTransformTest extends EasyMockSupport {
         initTransform();
         replayAll();
 
-        excerptTransform.apply(new AbstractMap.SimpleEntry<>(new Key(), firstDocument));
-        excerptTransform.apply(new AbstractMap.SimpleEntry<>(new Key(), secondDocument));
+        excerptTransform.apply(Map.entry(new Key(), firstDocument));
+        excerptTransform.apply(Map.entry(new Key(), secondDocument));
         verifyAll();
     }
 
@@ -433,7 +432,7 @@ public class ExcerptTransformTest extends EasyMockSupport {
     }
 
     private Map.Entry<Key,Document> getDocumentEntry() {
-        return new AbstractMap.SimpleEntry<>(new Key(), document);
+        return Map.entry(new Key(), document);
     }
 
     private void givenExcerptField(String field, int offset) {
