@@ -43,6 +43,7 @@ import datawave.query.attributes.ExcerptFields;
 import datawave.query.attributes.ValueTuple;
 import datawave.query.function.JexlEvaluation;
 import datawave.query.iterator.logic.TermFrequencyExcerptIterator;
+import datawave.query.jexl.JexlASTHelper;
 import datawave.query.postprocessing.tf.PhraseIndexes;
 import datawave.query.postprocessing.tf.PhraseOffset;
 
@@ -108,6 +109,8 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
      * @return the phrase indexes
      */
     private PhraseIndexes getPhraseIndexes(Document document) {
+        // Clear hit terms from the previously transformed document before collecting terms for this one.
+        hitTermValues.clear();
         PhraseIndexes phraseIndexes = null;
         PhraseIndexes allPhraseIndexes = new PhraseIndexes();
         // first lets find all the phrase indexes that came from phrase functions
@@ -123,14 +126,14 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
             for (Attribute<?> attr : hitList.getAttributes()) {
                 ValueTuple hitTuple = attributeToHitTuple(attr);
                 // if this is for a requested excerpt field
-                if (excerptFields.containsField(hitTuple.getFieldName())) {
+                if (getMatchingExcerptField(hitTuple.getFieldName(), excerptFields) != null) {
                     // get the offset, preferring offsets that overlap with existing phrases for this field/eventId
-                    TermWeightPosition pos = getOffset(hitTuple, phraseIndexes);
-                    if (pos != null) {
+                    HitOffset hitOffset = getOffset(hitTuple, phraseIndexes);
+                    if (hitOffset != null) {
                         // add the term as a phrase as defined in the term weight position. Note that this will collapse with any overlapping phrases already in
                         // the list.
-                        allPhraseIndexes.addIndexTriplet(String.valueOf(hitTuple.getFieldName()), keyToEventId(attr.getMetadata()), pos.getLowOffset(),
-                                        pos.getOffset());
+                        allPhraseIndexes.addIndexTriplet(hitOffset.getField(), keyToEventId(attr.getMetadata()), hitOffset.getPosition().getLowOffset(),
+                                        hitOffset.getPosition().getOffset());
                     }
                     // save the hit term for later call-out
                     Collections.addAll(hitTermValues, ((String) hitTuple.getValue()).split(Constants.SPACE));
@@ -143,15 +146,16 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
 
     /**
      * Get the term weight position (offset) for the specified hit term. This will return an offset overlapping a phrase in the existing phrase index map first.
-     * Otherwise, the first position will be returned.
+     * Otherwise, the first position will be returned. The returned {@link HitOffset} also carries the concrete term-frequency field that was used to resolve
+     * the offset so that excerpt generation can remain scoped to the matched content context.
      *
      * @param hitTuple
      *            The hit term tuple
      * @param phraseIndexes
      *            The phrase indexes
-     * @return The TermWeightPosition for the given hit term
+     * @return the concrete field and offset for the given hit term
      */
-    private TermWeightPosition getOffset(ValueTuple hitTuple, PhraseIndexes phraseIndexes) {
+    private HitOffset getOffset(ValueTuple hitTuple, PhraseIndexes phraseIndexes) {
         Key docKey = hitTuple.getSource().getMetadata();
         // if we do not know the source document key, then we cannot find the term offset
         if (docKey == null) {
@@ -186,7 +190,7 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
                     pos = position.build();
                 }
 
-                return pos;
+                return new HitOffset(fieldName, pos);
             }
 
         } catch (InvalidProtocolBufferException e) {
@@ -328,7 +332,7 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
                 excerptIteratorOptions.put(END_OFFSET, String.valueOf(expandedEnd));
 
                 if (log.isDebugEnabled()) {
-                    log.debug("size of excerpt requested: {}", excerptFields.getOffset(field) * 2);
+                    log.debug("size of excerpt requested: {}", getExcerptOffset(field) * 2);
                     log.debug("original range is ({},{}) and the expanded range is ({},{})", start, end, expandedStart, expandedEnd);
                 }
             }
@@ -337,7 +341,7 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
                 // set all of our options for the iterator
                 excerptIterator.init(source, excerptIteratorOptions, env);
                 excerptIterator.setHitTermsList(hitTermValues);
-                excerptIterator.setDirection(excerptFields.getDirection(field).toUpperCase().trim());
+                excerptIterator.setDirection(getExcerptDirection(field).toUpperCase().trim());
                 excerptIterator.setOrigHalfSize(origHalfSize);
                 // if this is the second attempt, we want the iterator to trim the excerpt down to the size we want.
                 // (remember we run the iterator with an expanded range the second time so we can potentially have a bigger excerpt than needed even after
@@ -404,11 +408,12 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
      */
     private static PhraseIndexes getOffsetPhraseIndexes(PhraseIndexes phraseIndexes, ExcerptFields excerptFields) {
         PhraseIndexes offsetPhraseIndexes = new PhraseIndexes();
-        for (String field : excerptFields.getFields()) {
+        for (String field : phraseIndexes.getFields()) {
             // Filter out phrases that are not in desired fields.
-            Collection<PhraseOffset> indexes = phraseIndexes.getPhraseOffsets(field);
+            String excerptField = getMatchingExcerptField(field, excerptFields);
+            Collection<PhraseOffset> indexes = excerptField == null ? null : phraseIndexes.getPhraseOffsets(field);
             if (indexes != null) {
-                int offset = excerptFields.getOffset(field);
+                int offset = excerptFields.getOffset(excerptField);
                 // Ensure the offset is modified to encompass the target excerpt range.
                 for (PhraseOffset indexPair : indexes) {
                     String eventId = indexPair.getEventId();
@@ -419,6 +424,38 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
             }
         }
         return offsetPhraseIndexes;
+    }
+
+    private int getExcerptOffset(String field) {
+        return excerptFields.getOffset(getMatchingExcerptField(field, excerptFields));
+    }
+
+    private String getExcerptDirection(String field) {
+        return excerptFields.getDirection(getMatchingExcerptField(field, excerptFields));
+    }
+
+    /**
+     * Return the configured excerpt field that should be used for the given concrete phrase-index field. The concrete field may include grouping/context
+     * notation, while the excerpt configuration may only specify the base field.
+     *
+     * @param field
+     *            a concrete phrase-index or term-frequency field
+     * @param excerptFields
+     *            the configured excerpt fields
+     * @return the matching configured excerpt field, or null if no match exists
+     */
+    private static String getMatchingExcerptField(String field, ExcerptFields excerptFields) {
+        if (excerptFields.containsField(field)) {
+            return field;
+        }
+
+        for (String excerptField : excerptFields.getFields()) {
+            if (JexlASTHelper.isGroupedFieldMatch(excerptField, field)) {
+                return excerptField;
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -526,6 +563,28 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
         @Override
         public int hashCode() {
             return Objects.hash(excerptWithScores, excerptWithoutScores, excerptOneBest, source);
+        }
+    }
+
+    /**
+     * Holds the concrete term-frequency field and position selected for a hit term. The field is preserved separately from the requested excerpt field so that
+     * later excerpt scans do not merge sibling content contexts such as {@code QUOTE} and {@code QUOTE.hash1}.
+     */
+    private static class HitOffset {
+        private final String field;
+        private final TermWeightPosition position;
+
+        public HitOffset(String field, TermWeightPosition position) {
+            this.field = field;
+            this.position = position;
+        }
+
+        public String getField() {
+            return field;
+        }
+
+        public TermWeightPosition getPosition() {
+            return position;
         }
     }
 
