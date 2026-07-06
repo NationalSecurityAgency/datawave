@@ -2,9 +2,7 @@ package datawave;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.io.BufferedWriter;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -36,7 +34,6 @@ class TabletExtentCheckerTest {
 
     @TempDir
     private static Path tempDir;
-    private static String clientPropertiesPath;
     private static MiniAccumuloCluster mac;
 
     private AccumuloClient client;
@@ -51,11 +48,6 @@ class TabletExtentCheckerTest {
     static void beforeAll() throws IOException, InterruptedException {
         mac = new MiniAccumuloCluster(tempDir.resolve("mac").toFile(), "secret");
         mac.start();
-        Path propertiesFile = tempDir.resolve("accumulo-client.properties");
-        try (BufferedWriter out = Files.newBufferedWriter(propertiesFile)) {
-            mac.getClientProperties().store(out, null);
-        }
-        clientPropertiesPath = propertiesFile.toAbsolutePath().toString();
     }
 
     @AfterAll
