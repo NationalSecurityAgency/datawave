@@ -35,41 +35,43 @@ public interface SplitsCache extends AutoCloseable {
     void setupJob(final Job job) throws IOException;
 
     /**
-     * Does the cache have any splits?
+     * Check whether the cache contains any splits.
      */
     boolean hasSplits();
 
     /**
-     * Receive a count of the splits.
+     * Get the count of splits for the specified table.
      *
      * @param table
      *            - table where we wish to retrieve the count
+     * @return the count of splits for the specified table
      */
     int getSplitsCount(String table);
 
     /**
-     * Obtain the split location based on the key, using the table mappings as a reference.
+     * Get the binary search index of the key within the sorted splits, indicating which tablet interval contains the key.
      *
      * @param table
      *            - table where we wish to look up the index location
      * @param key
      *            - key to look up
+     * @return a positive index if the key exactly matches a split, or a negative value (-insertionPoint - 1) indicating the tablet interval
      */
     int getExactIndex(String table, Text key);
 
     /**
-     * Obtain then partition that is storing the key, based on the table mappings.
+     * Obtain the partition that is storing the key, based on the table mappings.
      *
      * @param table
-     *            - table where we wish to look up the key
-     * @param key
-     *            - key to look up
+     *            - table where we wish to look up the shard
+     * @param shardId
+     *            - shard ID to look up
      * @return index of the key in the table mappings
      */
-    int getExactPartition(String table, Text key);
+    int getExactPartition(String table, Text shardId);
 
     /**
-     * Obtain then partition that is storing the key, and if unable to get an exact match find the nearest partition.
+     * Obtain the partition that is storing the key, and if unable to get an exact match find the nearest partition.
      *
      * @param table
      *            - table where we wish to look up the key
