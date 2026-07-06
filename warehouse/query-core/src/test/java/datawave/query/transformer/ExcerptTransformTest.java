@@ -15,7 +15,6 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
-import java.util.AbstractMap;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -238,6 +237,96 @@ public class ExcerptTransformTest extends EasyMockSupport {
     }
 
     /**
+     * Verify that a grouped phrase index can be excerpted when the base field is requested.
+     */
+    @Test
+    public void testGroupedPhraseIndexUsesBaseExcerptField() throws IOException {
+        givenExcerptField("BODY", 2);
+        givenPhraseIndex("BODY.hash1", 10, 14);
+
+        givenMockDocument();
+        givenMatchingPhrase("BODY.hash1", 8, 16, "the quick brown fox jumped over the lazy dog", Collections.emptyList());
+
+        Capture<Attributes> capturedArg = Capture.newInstance();
+        document.put(eq(ExcerptTransform.HIT_EXCERPT), and(capture(capturedArg), isA(Attributes.class)));
+
+        initTransform();
+        replayAll();
+
+        applyTransform();
+        verifyAll();
+
+        Attributes arg = capturedArg.getValue();
+        assertEquals(1, arg.size());
+        String excerpt = arg.getAttributes().iterator().next().getData().toString();
+        assertEquals("the quick brown fox jumped over the lazy dog", excerpt);
+    }
+
+    /**
+     * Verify that a grouped hit term drives excerpt generation using the concrete grouped field while still using base field excerpt options.
+     */
+    @Test
+    public void testGroupedHitTermUsesGroupedFieldForExcerpt() throws IOException {
+        givenExcerptField("BODY", 2);
+
+        givenMockDocumentWithHitTerm("BODY.hash1", "word");
+        givenMatchingTermFrequencies("BODY.hash1", new int[][] {{24, 24}}, "word");
+        givenMatchingPhrase("BODY.hash1", 22, 26, "and the [word] from bird", List.of("word"));
+
+        Capture<Attributes> capturedArg = Capture.newInstance();
+        document.put(eq(ExcerptTransform.HIT_EXCERPT), and(capture(capturedArg), isA(Attributes.class)));
+
+        initTransform();
+        replayAll();
+
+        applyTransform();
+        verifyAll();
+
+        Attributes arg = capturedArg.getValue();
+        assertEquals(1, arg.size());
+        String excerpt = arg.getAttributes().iterator().next().getData().toString();
+        assertEquals("and the [word] from bird", excerpt);
+    }
+
+    /**
+     * Verify that hit terms collected for one document do not leak into excerpts generated for a later document.
+     */
+    @Test
+    @SuppressWarnings("rawtypes")
+    public void testHitTermsClearedBetweenDocuments() throws IOException {
+        givenExcerptField("BODY", 2);
+
+        Key metadata = new Key("shard", "dt\u0000uid");
+        Document firstDocument = mock(Document.class);
+        expect(firstDocument.isToKeep()).andReturn(true);
+        expect(firstDocument.containsKey(ExcerptTransform.PHRASE_INDEXES_ATTRIBUTE)).andReturn(false);
+        expect(firstDocument.containsKey(JexlEvaluation.HIT_TERM_FIELD)).andReturn(true);
+        Attribute firstHitTerms = new Attributes(Collections.singletonList(new Content("BODY:first", metadata, true)), true);
+        expect(firstDocument.get(JexlEvaluation.HIT_TERM_FIELD)).andReturn(firstHitTerms);
+        givenMatchingTermFrequencies("BODY", new int[][] {{2, 2}}, "first");
+        givenMatchingPhrase("BODY", 0, 4, "the [first] document excerpt", List.of("first"));
+        firstDocument.put(eq(ExcerptTransform.HIT_EXCERPT), isA(Attributes.class));
+
+        PhraseIndexes secondPhraseIndexes = new PhraseIndexes();
+        secondPhraseIndexes.addIndexTriplet("BODY", EVENT_ID, 4, 4);
+        Document secondDocument = mock(Document.class);
+        expect(secondDocument.isToKeep()).andReturn(true);
+        expect(secondDocument.containsKey(ExcerptTransform.PHRASE_INDEXES_ATTRIBUTE)).andReturn(true);
+        Attribute phraseIndexAttribute = new Content(secondPhraseIndexes.toString(), metadata, false);
+        expect(secondDocument.get(ExcerptTransform.PHRASE_INDEXES_ATTRIBUTE)).andReturn(phraseIndexAttribute);
+        expect(secondDocument.containsKey(JexlEvaluation.HIT_TERM_FIELD)).andReturn(false);
+        givenMatchingPhrase("BODY", 2, 6, "the second document excerpt", Collections.emptyList());
+        secondDocument.put(eq(ExcerptTransform.HIT_EXCERPT), isA(Attributes.class));
+
+        initTransform();
+        replayAll();
+
+        excerptTransform.apply(Map.entry(new Key(), firstDocument));
+        excerptTransform.apply(Map.entry(new Key(), secondDocument));
+        verifyAll();
+    }
+
+    /**
      * Verify that when a start index is less than the specified excerpt offset, that the excerpt start defaults to 0.
      */
     @Test
@@ -343,7 +432,7 @@ public class ExcerptTransformTest extends EasyMockSupport {
     }
 
     private Map.Entry<Key,Document> getDocumentEntry() {
-        return new AbstractMap.SimpleEntry<>(new Key(), document);
+        return Map.entry(new Key(), document);
     }
 
     private void givenExcerptField(String field, int offset) {
