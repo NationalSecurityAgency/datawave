@@ -1,7 +1,6 @@
 package datawave;
 
 import java.io.IOException;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -9,9 +8,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.accumulo.core.cli.ClientOpts;
 import org.apache.accumulo.core.client.Accumulo;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
+import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.accumulo.core.clientImpl.ClientContext;
@@ -54,15 +55,24 @@ public final class TabletExtentChecker {
      * Represents a set of options that can parsed and used via {@link TabletExtentChecker#main(String[])}.
      */
     private static class Opts {
+        @Parameter(names = {"-h", "-?", "--help", "-help"}, help = true)
+        public boolean help = false;
+
+        @Parameter(names = {"-a", "--accumulo-instance"}, description = "The Accumulo instance.", required = true)
+        public String accumuloInstance = null;
+
+        @Parameter(names = {"-z", "--zookeper-instance"}, description = "The Zookeeper instance.", required = true)
+        public String zookeeperInstance = null;
+
+        @Parameter(names = {"-u", "--username"}, description = "The Accumulo username.", required = true)
+        public String username = null;
+
+        @Parameter(names = {"-p", "--password"}, description = "The Accumulo password. Can be supplied from an environment variable via env:ENV_VARIABLE",
+                        converter = ClientOpts.PasswordConverter.class, required = true)
+        public String password = null;
 
         @Parameter(names = {"-t", "--table"}, description = "The table name", required = true)
         public String tableName = null;
-
-        @Parameter(names = {"-p", "--properties"}, description = "The path to accumulo-client.properties", required = true)
-        public String propsPath = null;
-
-        @Parameter(names = {"-h", "-?", "--help", "-help"}, help = true)
-        public boolean help = false;
 
         @Parameter(names = {"-b", "--begin"}, description = "The starting row (exclusive) of the range of tablets to scan", converter = TextConverter.class)
         public Text beginRow = null;
@@ -73,16 +83,24 @@ public final class TabletExtentChecker {
         @Parameter(names = {"-m", "--merge", "--merge-extents"}, description = "Merges suggested compaction ranges for neighboring compactable tablets")
         public boolean mergeExtents = false;
 
+        @Parameter(names = {"-c", "--compact"}, description = "Compact tablets that have been identified as candidates for needing compaction")
+        public boolean compactTablets = false;
+
         /**
          * Validate the arguments in this {@link Opts}.
          */
         public void validateArgs() {
-            if (propsPath == null) {
-                throw new IllegalArgumentException("accumulo-client.properties must be set!");
+            if (accumuloInstance == null) {
+                throw new IllegalArgumentException("Accumulo instance name must be entered!");
             }
-
-            if (!Paths.get(propsPath).toFile().exists()) {
-                throw new IllegalArgumentException(propsPath + " does not exist!");
+            if (zookeeperInstance == null) {
+                throw new IllegalArgumentException("Zookeeper instance must be entered!");
+            }
+            if (username == null) {
+                throw new IllegalArgumentException("Username must be entered!");
+            }
+            if (password == null) {
+                throw new IllegalArgumentException("Password must be entered!");
             }
         }
 
@@ -122,22 +140,30 @@ public final class TabletExtentChecker {
      * @throws IOException
      *             if an error occurs while reading the client properties file
      */
-    public static void main(String[] args) throws AccumuloException, TableNotFoundException, IOException {
+    public static void main(String[] args) throws AccumuloException, TableNotFoundException, IOException, AccumuloSecurityException {
         // Parse the arguments.
         Opts opts = new Opts();
         opts.parseArgs(args);
         opts.validateArgs();
+        try (AccumuloClient client = Accumulo.newClient().to(opts.accumuloInstance, opts.zookeeperInstance).as(opts.username, opts.password).build()) {
+            // Fetch the recommended tablet ranges to compact.
+            List<Pair<Text,Text>> compactionExtents = TabletExtentChecker.checkTablets(client, opts.tableName, opts.beginRow, opts.endRow, opts.mergeExtents);
 
-        // Fetch the recommended tablet ranges to compact.
-        List<Pair<Text,Text>> compactionExtents = TabletExtentChecker.checkTablets(opts.propsPath, opts.tableName, opts.beginRow, opts.endRow,
-                        opts.mergeExtents);
-
-        // Print out the recommended compaction commands.
-        for (Pair<Text,Text> pair : compactionExtents) {
-            Text startRow = pair.getLeft();
-            Text endRow = pair.getRight();
-            System.out.println("compact -t " + opts.tableName + formatArg("-b", startRow) + formatArg("-e", endRow));
-
+            // Print a message when compactionExtents is empty
+            if (compactionExtents.isEmpty()) {
+                System.out.println("No candidates suitable for compaction.");
+            } else {
+                for (Pair<Text,Text> pair : compactionExtents) {
+                    Text startRow = pair.getLeft();
+                    Text endRow = pair.getRight();
+                    if (opts.compactTablets) {
+                        System.out.println("Compacting range from " + startRow + "-" + endRow);
+                        client.tableOperations().compact(opts.tableName, startRow, endRow, true, true);
+                    } else {
+                        System.out.println("compact -t " + opts.tableName + formatArg("-b", startRow) + formatArg("-e", endRow));
+                    }
+                }
+            }
         }
     }
 
@@ -161,8 +187,6 @@ public final class TabletExtentChecker {
     /**
      * Returns a list of pairs consisting of the extents of tablets that require compaction.
      *
-     * @param clientProperties
-     *            the fully qualified path to the accumulo-client.properties file to use when connecting to Accumulo
      * @param tableName
      *            the name of the table to evaluate for tablet compaction
      * @param begin
@@ -179,63 +203,63 @@ public final class TabletExtentChecker {
      * @throws IOException
      *             if an error occurs while reading the client properties file
      */
-    static List<Pair<Text,Text>> checkTablets(String clientProperties, String tableName, Text begin, Text end, boolean mergeExtents)
+    static List<Pair<Text,Text>> checkTablets(AccumuloClient client, String tableName, Text begin, Text end, boolean mergeExtents)
                     throws AccumuloException, TableNotFoundException, IOException {
         List<Pair<Text,Text>> compactionExtents = new ArrayList<>();
-        try (AccumuloClient client = Accumulo.newClient().from(clientProperties).build()) {
-            TableId tableId = getTableId(client, tableName);
-            ClientContext context = (ClientContext) client;
-            // Fetch the metadata for all tablets in the given table whose extents overlap with the user provided range of tablets to scan.
-            try (TabletsMetadata tablets = context.getAmple().readTablets().forTable(tableId).overlapping(begin, false, end)
-                            .fetch(TabletMetadata.ColumnType.PREV_ROW, TabletMetadata.ColumnType.FILES).build()) {
 
-                // Tracks compaction ranges if we are merging extents.
-                boolean foundCompactableTablet = false;
-                Text compactionStart = null;
-                Text compactionEnd = null;
+        TableId tableId = getTableId(client, tableName);
+        ClientContext context = (ClientContext) client;
+        // Fetch the metadata for all tablets in the given table whose extents overlap with the user provided range of tablets to scan.
+        try (TabletsMetadata tablets = context.getAmple().readTablets().forTable(tableId).overlapping(begin, false, end)
+                        .fetch(TabletMetadata.ColumnType.PREV_ROW, TabletMetadata.ColumnType.FILES).build()) {
 
-                // Iterate over each tablet.
-                for (TabletMetadata tablet : tablets) {
-                    // Determine whether the tablet needs compaction.
-                    boolean tabletRequiresCompaction = tabletRequiresCompaction(context, tableName, tablet);
-                    KeyExtent extent = tablet.getExtent();
+            // Tracks compaction ranges if we are merging extents.
+            boolean foundCompactableTablet = false;
+            Text compactionStart = null;
+            Text compactionEnd = null;
 
-                    // The current tablet requires compaction.
-                    if (tabletRequiresCompaction) {
-                        // If we are merging extents, update the current compaction start and end based on whether the previous tablet also required compaction.
-                        if (mergeExtents) {
-                            // The previous tablet did not require compaction. Update the compaction range to reflect the current tablet.
-                            if (!foundCompactableTablet) {
-                                compactionStart = extent.prevEndRow();
-                                compactionEnd = extent.endRow();
-                                foundCompactableTablet = true;
-                            } else {
-                                // The previous tablet needs compaction, along with the current tablet. Update the end row.
-                                compactionEnd = extent.endRow();
-                            }
+            // Iterate over each tablet.
+            for (TabletMetadata tablet : tablets) {
+                // Determine whether the tablet needs compaction.
+                boolean tabletRequiresCompaction = tabletRequiresCompaction(context, tableName, tablet);
+                KeyExtent extent = tablet.getExtent();
+
+                // The current tablet requires compaction.
+                if (tabletRequiresCompaction) {
+                    // If we are merging extents, update the current compaction start and end based on whether the previous tablet also required compaction.
+                    if (mergeExtents) {
+                        // The previous tablet did not require compaction. Update the compaction range to reflect the current tablet.
+                        if (!foundCompactableTablet) {
+                            compactionStart = extent.prevEndRow();
+                            compactionEnd = extent.endRow();
+                            foundCompactableTablet = true;
                         } else {
-                            compactionExtents.add(Pair.of(extent.prevEndRow(), extent.endRow()));
+                            // The previous tablet needs compaction, along with the current tablet. Update the end row.
+                            compactionEnd = extent.endRow();
                         }
-                        // The current tablet does not require compaction.
                     } else {
-                        // We are merging tablet extents, and the previous tablet requires compaction.
-                        if (mergeExtents && foundCompactableTablet) {
-                            // Add a new recommended compaction range and reset our compaction boundaries.
-                            compactionExtents.add(Pair.of(compactionStart, compactionEnd));
-                            compactionStart = null;
-                            compactionEnd = null;
-                            foundCompactableTablet = false;
-                        }
+                        compactionExtents.add(Pair.of(extent.prevEndRow(), extent.endRow()));
+                    }
+                    // The current tablet does not require compaction.
+                } else {
+                    // We are merging tablet extents, and the previous tablet requires compaction.
+                    if (mergeExtents && foundCompactableTablet) {
+                        // Add a new recommended compaction range and reset our compaction boundaries.
+                        compactionExtents.add(Pair.of(compactionStart, compactionEnd));
+                        compactionStart = null;
+                        compactionEnd = null;
+                        foundCompactableTablet = false;
                     }
                 }
-
-                // Handle case where last tablet needs compaction when we are merging extents.
-                if (mergeExtents && foundCompactableTablet) {
-                    compactionExtents.add(Pair.of(compactionStart, compactionEnd));
-                }
-
             }
+
+            // Handle case where last tablet needs compaction when we are merging extents.
+            if (mergeExtents && foundCompactableTablet) {
+                compactionExtents.add(Pair.of(compactionStart, compactionEnd));
+            }
+
         }
+
         return compactionExtents;
     }
 
@@ -288,11 +312,9 @@ public final class TabletExtentChecker {
                 Key last = openReader.getLastKey();
 
                 // A tablet requires a compaction if any of the following are true:
-                // - The file is empty (first and last are null)
                 // - The first key is outside the tablet's extent.
                 // - The last key is outside the tablet's extent.
-                if ((first == null && last == null) || (first != null && !extent.contains(first.getRow()))
-                                || (last != null && !extent.contains(last.getRow()))) {
+                if ((first != null && !extent.contains(first.getRow())) || (last != null && !extent.contains(last.getRow()))) {
                     return true;
                 }
             }
