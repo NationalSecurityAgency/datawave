@@ -21,7 +21,7 @@ public final class TermWeight {
          *
          * @return A list containing the termOffset.
          */
-        java.util.List<java.lang.Integer> getTermOffsetList();
+        java.util.List<Integer> getTermOffsetList();
 
         /**
          * <code>repeated uint32 termOffset = 3;</code>
@@ -44,7 +44,7 @@ public final class TermWeight {
          *
          * @return A list containing the prevSkips.
          */
-        java.util.List<java.lang.Integer> getPrevSkipsList();
+        java.util.List<Integer> getPrevSkipsList();
 
         /**
          * <code>repeated uint32 prevSkips = 4;</code>
@@ -67,7 +67,7 @@ public final class TermWeight {
          *
          * @return A list containing the score.
          */
-        java.util.List<java.lang.Integer> getScoreList();
+        java.util.List<Integer> getScoreList();
 
         /**
          * <code>repeated uint32 score = 5;</code>
@@ -120,13 +120,13 @@ public final class TermWeight {
             zeroOffsetMatch_ = true;
         }
 
-        @java.lang.Override
+        @Override
         @SuppressWarnings({"unused"})
-        protected java.lang.Object newInstance(UnusedPrivateParameter unused) {
+        protected Object newInstance(UnusedPrivateParameter unused) {
             return new Info();
         }
 
-        @java.lang.Override
+        @Override
         public final com.google.protobuf.UnknownFieldSet getUnknownFields() {
             return this.unknownFields;
         }
@@ -135,7 +135,7 @@ public final class TermWeight {
                         throws com.google.protobuf.InvalidProtocolBufferException {
             this();
             if (extensionRegistry == null) {
-                throw new java.lang.NullPointerException();
+                throw new NullPointerException();
             }
             int mutable_bitField0_ = 0;
             com.google.protobuf.UnknownFieldSet.Builder unknownFields = com.google.protobuf.UnknownFieldSet.newBuilder();
@@ -243,13 +243,12 @@ public final class TermWeight {
         }
 
         public static final com.google.protobuf.Descriptors.Descriptor getDescriptor() {
-            return datawave.ingest.protobuf.TermWeight.internal_static_datawave_ingest_protobuf_Info_descriptor;
+            return TermWeight.internal_static_datawave_ingest_protobuf_Info_descriptor;
         }
 
-        @java.lang.Override
-        protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable internalGetFieldAccessorTable() {
-            return datawave.ingest.protobuf.TermWeight.internal_static_datawave_ingest_protobuf_Info_fieldAccessorTable.ensureFieldAccessorsInitialized(
-                            datawave.ingest.protobuf.TermWeight.Info.class, datawave.ingest.protobuf.TermWeight.Info.Builder.class);
+        @Override
+        protected FieldAccessorTable internalGetFieldAccessorTable() {
+            return TermWeight.internal_static_datawave_ingest_protobuf_Info_fieldAccessorTable.ensureFieldAccessorsInitialized(Info.class, Builder.class);
         }
 
         private int bitField0_;
@@ -261,8 +260,8 @@ public final class TermWeight {
          *
          * @return A list containing the termOffset.
          */
-        @java.lang.Override
-        public java.util.List<java.lang.Integer> getTermOffsetList() {
+        @Override
+        public java.util.List<Integer> getTermOffsetList() {
             return termOffset_;
         }
 
@@ -294,8 +293,8 @@ public final class TermWeight {
          *
          * @return A list containing the prevSkips.
          */
-        @java.lang.Override
-        public java.util.List<java.lang.Integer> getPrevSkipsList() {
+        @Override
+        public java.util.List<Integer> getPrevSkipsList() {
             return prevSkips_;
         }
 
@@ -327,8 +326,8 @@ public final class TermWeight {
          *
          * @return A list containing the score.
          */
-        @java.lang.Override
-        public java.util.List<java.lang.Integer> getScoreList() {
+        @Override
+        public java.util.List<Integer> getScoreList() {
             return score_;
         }
 
@@ -360,7 +359,7 @@ public final class TermWeight {
          *
          * @return Whether the zeroOffsetMatch field is set.
          */
-        @java.lang.Override
+        @Override
         public boolean hasZeroOffsetMatch() {
             return ((bitField0_ & 0x00000001) != 0);
         }
@@ -370,14 +369,14 @@ public final class TermWeight {
          *
          * @return The zeroOffsetMatch.
          */
-        @java.lang.Override
+        @Override
         public boolean getZeroOffsetMatch() {
             return zeroOffsetMatch_;
         }
 
         private byte memoizedIsInitialized = -1;
 
-        @java.lang.Override
+        @Override
         public final boolean isInitialized() {
             byte isInitialized = memoizedIsInitialized;
             if (isInitialized == 1)
@@ -389,7 +388,7 @@ public final class TermWeight {
             return true;
         }
 
-        @java.lang.Override
+        @Override
         public void writeTo(com.google.protobuf.CodedOutputStream output) throws java.io.IOException {
             for (int i = 0; i < termOffset_.size(); i++) {
                 output.writeUInt32(3, termOffset_.getInt(i));
@@ -406,7 +405,7 @@ public final class TermWeight {
             unknownFields.writeTo(output);
         }
 
-        @java.lang.Override
+        @Override
         public int getSerializedSize() {
             int size = memoizedSize;
             if (size != -1)
@@ -445,15 +444,15 @@ public final class TermWeight {
             return size;
         }
 
-        @java.lang.Override
-        public boolean equals(final java.lang.Object obj) {
+        @Override
+        public boolean equals(final Object obj) {
             if (obj == this) {
                 return true;
             }
-            if (!(obj instanceof datawave.ingest.protobuf.TermWeight.Info)) {
+            if (!(obj instanceof Info)) {
                 return super.equals(obj);
             }
-            datawave.ingest.protobuf.TermWeight.Info other = (datawave.ingest.protobuf.TermWeight.Info) obj;
+            Info other = (Info) obj;
 
             if (!getTermOffsetList().equals(other.getTermOffsetList()))
                 return false;
@@ -472,7 +471,7 @@ public final class TermWeight {
             return true;
         }
 
-        @java.lang.Override
+        @Override
         public int hashCode() {
             if (memoizedHashCode != 0) {
                 return memoizedHashCode;
@@ -500,62 +499,60 @@ public final class TermWeight {
             return hash;
         }
 
-        public static datawave.ingest.protobuf.TermWeight.Info parseFrom(java.nio.ByteBuffer data) throws com.google.protobuf.InvalidProtocolBufferException {
+        public static Info parseFrom(java.nio.ByteBuffer data) throws com.google.protobuf.InvalidProtocolBufferException {
             return PARSER.parseFrom(data);
         }
 
-        public static datawave.ingest.protobuf.TermWeight.Info parseFrom(java.nio.ByteBuffer data, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        public static Info parseFrom(java.nio.ByteBuffer data, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
                         throws com.google.protobuf.InvalidProtocolBufferException {
             return PARSER.parseFrom(data, extensionRegistry);
         }
 
-        public static datawave.ingest.protobuf.TermWeight.Info parseFrom(com.google.protobuf.ByteString data)
-                        throws com.google.protobuf.InvalidProtocolBufferException {
+        public static Info parseFrom(com.google.protobuf.ByteString data) throws com.google.protobuf.InvalidProtocolBufferException {
             return PARSER.parseFrom(data);
         }
 
-        public static datawave.ingest.protobuf.TermWeight.Info parseFrom(com.google.protobuf.ByteString data,
-                        com.google.protobuf.ExtensionRegistryLite extensionRegistry) throws com.google.protobuf.InvalidProtocolBufferException {
-            return PARSER.parseFrom(data, extensionRegistry);
-        }
-
-        public static datawave.ingest.protobuf.TermWeight.Info parseFrom(byte[] data) throws com.google.protobuf.InvalidProtocolBufferException {
-            return PARSER.parseFrom(data);
-        }
-
-        public static datawave.ingest.protobuf.TermWeight.Info parseFrom(byte[] data, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        public static Info parseFrom(com.google.protobuf.ByteString data, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
                         throws com.google.protobuf.InvalidProtocolBufferException {
             return PARSER.parseFrom(data, extensionRegistry);
         }
 
-        public static datawave.ingest.protobuf.TermWeight.Info parseFrom(java.io.InputStream input) throws java.io.IOException {
+        public static Info parseFrom(byte[] data) throws com.google.protobuf.InvalidProtocolBufferException {
+            return PARSER.parseFrom(data);
+        }
+
+        public static Info parseFrom(byte[] data, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+                        throws com.google.protobuf.InvalidProtocolBufferException {
+            return PARSER.parseFrom(data, extensionRegistry);
+        }
+
+        public static Info parseFrom(java.io.InputStream input) throws java.io.IOException {
             return com.google.protobuf.GeneratedMessageV3.parseWithIOException(PARSER, input);
         }
 
-        public static datawave.ingest.protobuf.TermWeight.Info parseFrom(java.io.InputStream input, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        public static Info parseFrom(java.io.InputStream input, com.google.protobuf.ExtensionRegistryLite extensionRegistry) throws java.io.IOException {
+            return com.google.protobuf.GeneratedMessageV3.parseWithIOException(PARSER, input, extensionRegistry);
+        }
+
+        public static Info parseDelimitedFrom(java.io.InputStream input) throws java.io.IOException {
+            return com.google.protobuf.GeneratedMessageV3.parseDelimitedWithIOException(PARSER, input);
+        }
+
+        public static Info parseDelimitedFrom(java.io.InputStream input, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+                        throws java.io.IOException {
+            return com.google.protobuf.GeneratedMessageV3.parseDelimitedWithIOException(PARSER, input, extensionRegistry);
+        }
+
+        public static Info parseFrom(com.google.protobuf.CodedInputStream input) throws java.io.IOException {
+            return com.google.protobuf.GeneratedMessageV3.parseWithIOException(PARSER, input);
+        }
+
+        public static Info parseFrom(com.google.protobuf.CodedInputStream input, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
                         throws java.io.IOException {
             return com.google.protobuf.GeneratedMessageV3.parseWithIOException(PARSER, input, extensionRegistry);
         }
 
-        public static datawave.ingest.protobuf.TermWeight.Info parseDelimitedFrom(java.io.InputStream input) throws java.io.IOException {
-            return com.google.protobuf.GeneratedMessageV3.parseDelimitedWithIOException(PARSER, input);
-        }
-
-        public static datawave.ingest.protobuf.TermWeight.Info parseDelimitedFrom(java.io.InputStream input,
-                        com.google.protobuf.ExtensionRegistryLite extensionRegistry) throws java.io.IOException {
-            return com.google.protobuf.GeneratedMessageV3.parseDelimitedWithIOException(PARSER, input, extensionRegistry);
-        }
-
-        public static datawave.ingest.protobuf.TermWeight.Info parseFrom(com.google.protobuf.CodedInputStream input) throws java.io.IOException {
-            return com.google.protobuf.GeneratedMessageV3.parseWithIOException(PARSER, input);
-        }
-
-        public static datawave.ingest.protobuf.TermWeight.Info parseFrom(com.google.protobuf.CodedInputStream input,
-                        com.google.protobuf.ExtensionRegistryLite extensionRegistry) throws java.io.IOException {
-            return com.google.protobuf.GeneratedMessageV3.parseWithIOException(PARSER, input, extensionRegistry);
-        }
-
-        @java.lang.Override
+        @Override
         public Builder newBuilderForType() {
             return newBuilder();
         }
@@ -564,17 +561,17 @@ public final class TermWeight {
             return DEFAULT_INSTANCE.toBuilder();
         }
 
-        public static Builder newBuilder(datawave.ingest.protobuf.TermWeight.Info prototype) {
+        public static Builder newBuilder(Info prototype) {
             return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
         }
 
-        @java.lang.Override
+        @Override
         public Builder toBuilder() {
             return this == DEFAULT_INSTANCE ? new Builder() : new Builder().mergeFrom(this);
         }
 
-        @java.lang.Override
-        protected Builder newBuilderForType(com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
+        @Override
+        protected Builder newBuilderForType(BuilderParent parent) {
             Builder builder = new Builder(parent);
             return builder;
         }
@@ -584,15 +581,14 @@ public final class TermWeight {
          */
         public static final class Builder extends com.google.protobuf.GeneratedMessageV3.Builder<Builder> implements
                         // @@protoc_insertion_point(builder_implements:datawave.ingest.protobuf.Info)
-                        datawave.ingest.protobuf.TermWeight.InfoOrBuilder {
+                        InfoOrBuilder {
             public static final com.google.protobuf.Descriptors.Descriptor getDescriptor() {
-                return datawave.ingest.protobuf.TermWeight.internal_static_datawave_ingest_protobuf_Info_descriptor;
+                return TermWeight.internal_static_datawave_ingest_protobuf_Info_descriptor;
             }
 
-            @java.lang.Override
-            protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable internalGetFieldAccessorTable() {
-                return datawave.ingest.protobuf.TermWeight.internal_static_datawave_ingest_protobuf_Info_fieldAccessorTable.ensureFieldAccessorsInitialized(
-                                datawave.ingest.protobuf.TermWeight.Info.class, datawave.ingest.protobuf.TermWeight.Info.Builder.class);
+            @Override
+            protected FieldAccessorTable internalGetFieldAccessorTable() {
+                return TermWeight.internal_static_datawave_ingest_protobuf_Info_fieldAccessorTable.ensureFieldAccessorsInitialized(Info.class, Builder.class);
             }
 
             // Construct using datawave.ingest.protobuf.TermWeight.Info.newBuilder()
@@ -600,7 +596,7 @@ public final class TermWeight {
                 maybeForceBuilderInitialization();
             }
 
-            private Builder(com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
+            private Builder(BuilderParent parent) {
                 super(parent);
                 maybeForceBuilderInitialization();
             }
@@ -609,7 +605,7 @@ public final class TermWeight {
                 if (com.google.protobuf.GeneratedMessageV3.alwaysUseFieldBuilders) {}
             }
 
-            @java.lang.Override
+            @Override
             public Builder clear() {
                 super.clear();
                 termOffset_ = emptyIntList();
@@ -623,28 +619,28 @@ public final class TermWeight {
                 return this;
             }
 
-            @java.lang.Override
+            @Override
             public com.google.protobuf.Descriptors.Descriptor getDescriptorForType() {
-                return datawave.ingest.protobuf.TermWeight.internal_static_datawave_ingest_protobuf_Info_descriptor;
+                return TermWeight.internal_static_datawave_ingest_protobuf_Info_descriptor;
             }
 
-            @java.lang.Override
-            public datawave.ingest.protobuf.TermWeight.Info getDefaultInstanceForType() {
-                return datawave.ingest.protobuf.TermWeight.Info.getDefaultInstance();
+            @Override
+            public Info getDefaultInstanceForType() {
+                return Info.getDefaultInstance();
             }
 
-            @java.lang.Override
-            public datawave.ingest.protobuf.TermWeight.Info build() {
-                datawave.ingest.protobuf.TermWeight.Info result = buildPartial();
+            @Override
+            public Info build() {
+                Info result = buildPartial();
                 if (!result.isInitialized()) {
                     throw newUninitializedMessageException(result);
                 }
                 return result;
             }
 
-            @java.lang.Override
-            public datawave.ingest.protobuf.TermWeight.Info buildPartial() {
-                datawave.ingest.protobuf.TermWeight.Info result = new datawave.ingest.protobuf.TermWeight.Info(this);
+            @Override
+            public Info buildPartial() {
+                Info result = new Info(this);
                 int from_bitField0_ = bitField0_;
                 int to_bitField0_ = 0;
                 if (((bitField0_ & 0x00000001) != 0)) {
@@ -671,48 +667,48 @@ public final class TermWeight {
                 return result;
             }
 
-            @java.lang.Override
+            @Override
             public Builder clone() {
                 return super.clone();
             }
 
-            @java.lang.Override
-            public Builder setField(com.google.protobuf.Descriptors.FieldDescriptor field, java.lang.Object value) {
+            @Override
+            public Builder setField(com.google.protobuf.Descriptors.FieldDescriptor field, Object value) {
                 return super.setField(field, value);
             }
 
-            @java.lang.Override
+            @Override
             public Builder clearField(com.google.protobuf.Descriptors.FieldDescriptor field) {
                 return super.clearField(field);
             }
 
-            @java.lang.Override
+            @Override
             public Builder clearOneof(com.google.protobuf.Descriptors.OneofDescriptor oneof) {
                 return super.clearOneof(oneof);
             }
 
-            @java.lang.Override
-            public Builder setRepeatedField(com.google.protobuf.Descriptors.FieldDescriptor field, int index, java.lang.Object value) {
+            @Override
+            public Builder setRepeatedField(com.google.protobuf.Descriptors.FieldDescriptor field, int index, Object value) {
                 return super.setRepeatedField(field, index, value);
             }
 
-            @java.lang.Override
-            public Builder addRepeatedField(com.google.protobuf.Descriptors.FieldDescriptor field, java.lang.Object value) {
+            @Override
+            public Builder addRepeatedField(com.google.protobuf.Descriptors.FieldDescriptor field, Object value) {
                 return super.addRepeatedField(field, value);
             }
 
-            @java.lang.Override
+            @Override
             public Builder mergeFrom(com.google.protobuf.Message other) {
-                if (other instanceof datawave.ingest.protobuf.TermWeight.Info) {
-                    return mergeFrom((datawave.ingest.protobuf.TermWeight.Info) other);
+                if (other instanceof Info) {
+                    return mergeFrom((Info) other);
                 } else {
                     super.mergeFrom(other);
                     return this;
                 }
             }
 
-            public Builder mergeFrom(datawave.ingest.protobuf.TermWeight.Info other) {
-                if (other == datawave.ingest.protobuf.TermWeight.Info.getDefaultInstance())
+            public Builder mergeFrom(Info other) {
+                if (other == Info.getDefaultInstance())
                     return this;
                 if (!other.termOffset_.isEmpty()) {
                     if (termOffset_.isEmpty()) {
@@ -752,19 +748,19 @@ public final class TermWeight {
                 return this;
             }
 
-            @java.lang.Override
+            @Override
             public final boolean isInitialized() {
                 return true;
             }
 
-            @java.lang.Override
+            @Override
             public Builder mergeFrom(com.google.protobuf.CodedInputStream input, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
                             throws java.io.IOException {
-                datawave.ingest.protobuf.TermWeight.Info parsedMessage = null;
+                Info parsedMessage = null;
                 try {
                     parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
                 } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-                    parsedMessage = (datawave.ingest.protobuf.TermWeight.Info) e.getUnfinishedMessage();
+                    parsedMessage = (Info) e.getUnfinishedMessage();
                     throw e.unwrapIOException();
                 } finally {
                     if (parsedMessage != null) {
@@ -790,7 +786,7 @@ public final class TermWeight {
              *
              * @return A list containing the termOffset.
              */
-            public java.util.List<java.lang.Integer> getTermOffsetList() {
+            public java.util.List<Integer> getTermOffsetList() {
                 return ((bitField0_ & 0x00000001) != 0) ? java.util.Collections.unmodifiableList(termOffset_) : termOffset_;
             }
 
@@ -851,7 +847,7 @@ public final class TermWeight {
              *            The termOffset to add.
              * @return This builder for chaining.
              */
-            public Builder addAllTermOffset(java.lang.Iterable<? extends java.lang.Integer> values) {
+            public Builder addAllTermOffset(Iterable<? extends Integer> values) {
                 ensureTermOffsetIsMutable();
                 com.google.protobuf.AbstractMessageLite.Builder.addAll(values, termOffset_);
                 onChanged();
@@ -884,7 +880,7 @@ public final class TermWeight {
              *
              * @return A list containing the prevSkips.
              */
-            public java.util.List<java.lang.Integer> getPrevSkipsList() {
+            public java.util.List<Integer> getPrevSkipsList() {
                 return ((bitField0_ & 0x00000002) != 0) ? java.util.Collections.unmodifiableList(prevSkips_) : prevSkips_;
             }
 
@@ -945,7 +941,7 @@ public final class TermWeight {
              *            The prevSkips to add.
              * @return This builder for chaining.
              */
-            public Builder addAllPrevSkips(java.lang.Iterable<? extends java.lang.Integer> values) {
+            public Builder addAllPrevSkips(Iterable<? extends Integer> values) {
                 ensurePrevSkipsIsMutable();
                 com.google.protobuf.AbstractMessageLite.Builder.addAll(values, prevSkips_);
                 onChanged();
@@ -978,7 +974,7 @@ public final class TermWeight {
              *
              * @return A list containing the score.
              */
-            public java.util.List<java.lang.Integer> getScoreList() {
+            public java.util.List<Integer> getScoreList() {
                 return ((bitField0_ & 0x00000004) != 0) ? java.util.Collections.unmodifiableList(score_) : score_;
             }
 
@@ -1039,7 +1035,7 @@ public final class TermWeight {
              *            The score to add.
              * @return This builder for chaining.
              */
-            public Builder addAllScore(java.lang.Iterable<? extends java.lang.Integer> values) {
+            public Builder addAllScore(Iterable<? extends Integer> values) {
                 ensureScoreIsMutable();
                 com.google.protobuf.AbstractMessageLite.Builder.addAll(values, score_);
                 onChanged();
@@ -1065,7 +1061,7 @@ public final class TermWeight {
              *
              * @return Whether the zeroOffsetMatch field is set.
              */
-            @java.lang.Override
+            @Override
             public boolean hasZeroOffsetMatch() {
                 return ((bitField0_ & 0x00000008) != 0);
             }
@@ -1075,7 +1071,7 @@ public final class TermWeight {
              *
              * @return The zeroOffsetMatch.
              */
-            @java.lang.Override
+            @Override
             public boolean getZeroOffsetMatch() {
                 return zeroOffsetMatch_;
             }
@@ -1106,12 +1102,12 @@ public final class TermWeight {
                 return this;
             }
 
-            @java.lang.Override
+            @Override
             public final Builder setUnknownFields(final com.google.protobuf.UnknownFieldSet unknownFields) {
                 return super.setUnknownFields(unknownFields);
             }
 
-            @java.lang.Override
+            @Override
             public final Builder mergeUnknownFields(final com.google.protobuf.UnknownFieldSet unknownFields) {
                 return super.mergeUnknownFields(unknownFields);
             }
@@ -1120,18 +1116,18 @@ public final class TermWeight {
         }
 
         // @@protoc_insertion_point(class_scope:datawave.ingest.protobuf.Info)
-        private static final datawave.ingest.protobuf.TermWeight.Info DEFAULT_INSTANCE;
+        private static final Info DEFAULT_INSTANCE;
         static {
-            DEFAULT_INSTANCE = new datawave.ingest.protobuf.TermWeight.Info();
+            DEFAULT_INSTANCE = new Info();
         }
 
-        public static datawave.ingest.protobuf.TermWeight.Info getDefaultInstance() {
+        public static Info getDefaultInstance() {
             return DEFAULT_INSTANCE;
         }
 
-        @java.lang.Deprecated
+        @Deprecated
         public static final com.google.protobuf.Parser<Info> PARSER = new com.google.protobuf.AbstractParser<Info>() {
-            @java.lang.Override
+            @Override
             public Info parsePartialFrom(com.google.protobuf.CodedInputStream input, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
                             throws com.google.protobuf.InvalidProtocolBufferException {
                 return new Info(input, extensionRegistry);
@@ -1142,13 +1138,13 @@ public final class TermWeight {
             return PARSER;
         }
 
-        @java.lang.Override
+        @Override
         public com.google.protobuf.Parser<Info> getParserForType() {
             return PARSER;
         }
 
-        @java.lang.Override
-        public datawave.ingest.protobuf.TermWeight.Info getDefaultInstanceForType() {
+        @Override
+        public Info getDefaultInstanceForType() {
             return DEFAULT_INSTANCE;
         }
 
@@ -1163,7 +1159,7 @@ public final class TermWeight {
 
     private static com.google.protobuf.Descriptors.FileDescriptor descriptor;
     static {
-        java.lang.String[] descriptorData = {
+        String[] descriptorData = {
                 "\n\020TermWeight.proto\022\030datawave.ingest.prot" + "obuf\"[\n\004Info\022\022\n\ntermOffset\030\003 \003(\r\022\021\n\tprev"
                                 + "Skips\030\004 \003(\r\022\r\n\005score\030\005 \003(\r\022\035\n\017zeroOffset"
                                 + "Match\030\006 \001(\010:\004trueB\034\n\030datawave.ingest.pro" + "tobufH\001"};
@@ -1171,8 +1167,7 @@ public final class TermWeight {
                         new com.google.protobuf.Descriptors.FileDescriptor[] {});
         internal_static_datawave_ingest_protobuf_Info_descriptor = getDescriptor().getMessageTypes().get(0);
         internal_static_datawave_ingest_protobuf_Info_fieldAccessorTable = new com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
-                        internal_static_datawave_ingest_protobuf_Info_descriptor,
-                        new java.lang.String[] {"TermOffset", "PrevSkips", "Score", "ZeroOffsetMatch",});
+                        internal_static_datawave_ingest_protobuf_Info_descriptor, new String[] {"TermOffset", "PrevSkips", "Score", "ZeroOffsetMatch",});
     }
 
     // @@protoc_insertion_point(outer_class_scope)

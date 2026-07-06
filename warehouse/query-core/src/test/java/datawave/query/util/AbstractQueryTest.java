@@ -104,6 +104,10 @@ public abstract class AbstractQueryTest {
     // the test framework is opinionated about asserting the final query plan
     private boolean queryPlanAssertionEnabled = true;
 
+    // the test framework is opinionated about asserting the full JEXL query tree
+    // disabling this option falls back to asserting the plan strings
+    private boolean assertQueryTree = true;
+
     public abstract ShardQueryLogic getLogic();
 
     /**
@@ -138,6 +142,13 @@ public abstract class AbstractQueryTest {
      */
     protected void disableQueryPlanAssertion() {
         queryPlanAssertionEnabled = false;
+    }
+
+    /**
+     * Sometimes you cannot assert the full query tree. Disabling query tree assertions will fall back to
+     */
+    protected void disableQueryTreeAssertions() {
+        assertQueryTree = false;
     }
 
     public void setClientForTest(AccumuloClient client) {
@@ -478,6 +489,18 @@ public abstract class AbstractQueryTest {
         }
 
         assertNotNull(expectedQueryPlan, "The expected query plan must be set ");
+
+        if (!assertQueryTree) {
+            // fallback to asserting the strings
+            String planString = logic.getConfig().getQueryString();
+            if (!expectedQueryPlan.equals(planString)) {
+                log.info("expected: {}", expectedQueryPlan);
+                log.info("planned : {}", planString);
+                fail("expected " + expectedQueryPlan + " but got " + planString);
+            }
+            return;
+        }
+
         try {
             ASTJexlScript expected = JexlASTHelper.parseAndFlattenJexlQuery(expectedQueryPlan);
             ASTJexlScript plannedScript = logic.getConfig().getQueryTree();

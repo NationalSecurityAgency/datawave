@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.PriorityBlockingQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.TableNotFoundException;
@@ -16,9 +18,11 @@ import datawave.core.query.configuration.QueryData;
 import datawave.core.query.configuration.Result;
 import datawave.core.query.logic.QueryCheckpoint;
 import datawave.core.query.logic.QueryKey;
+import datawave.next.stats.DocumentSchedulerStats;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.scheduler.PushdownScheduler;
 import datawave.query.scheduler.Scheduler;
+import datawave.query.scheduler.SingleRangeQueryDataIterator;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.tables.async.event.VisitorFunction;
 import datawave.query.tables.stats.ScanSessionStats;
@@ -45,7 +49,21 @@ public class DocumentScheduler extends Scheduler {
         this.config.setAuthorizations(AuthorizationsMinimizer.minimize(config.getAuthorizations()).iterator().next());
         this.config.setQueryId(config.getQuery().getId().toString());
 
-        this.queryDataIterator = config.getQueriesIter();
+        // the DocumentScannerConfig instance is shared/cloned across every query run through this query logic, but
+        // numSearchScans/numRetrievalScans/stats are per-query runtime state. Reusing them would let a still-unwinding
+        // scan from a prior query (after this.close() calls shutdownNow(), which interrupts but does not wait for
+        // termination) race with and corrupt the counts this query relies on to know when it is done, causing results
+        // to be dropped. Give each query a fresh instance so straggling threads from the previous query only touch
+        // objects nobody is reading anymore.
+        this.config.setNumSearchScans(new AtomicInteger(0));
+        this.config.setNumRetrievalScans(new AtomicInteger(0));
+        this.config.setStats(new DocumentSchedulerStats());
+        this.config.setQueryDataConsumerExecuting(new AtomicBoolean(true));
+        this.config.setDocumentIdConsumerExecuting(new AtomicBoolean(true));
+
+        // the field index and document scans below assume each QueryData carries exactly one range, so split any
+        // multi-range QueryData (e.g. produced when a query spans multiple shards) into single-range copies
+        this.queryDataIterator = new SingleRangeQueryDataIterator(config.getQueriesIter());
     }
 
     public void setVisitorFunction(VisitorFunction visitorFunction) {

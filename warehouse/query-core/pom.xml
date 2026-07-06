@@ -281,6 +281,12 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>gov.nsa.datawave.core</groupId>
+            <artifactId>datawave-core-test</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>gov.nsa.datawave.webservices</groupId>
             <artifactId>datawave-ws-cached-results</artifactId>
             <version>${project.version}</version>
