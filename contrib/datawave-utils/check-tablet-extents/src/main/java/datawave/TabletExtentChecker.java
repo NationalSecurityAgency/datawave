@@ -26,6 +26,7 @@ import org.apache.accumulo.core.metadata.StoredTabletFile;
 import org.apache.accumulo.core.metadata.schema.TabletMetadata;
 import org.apache.accumulo.core.metadata.schema.TabletsMetadata;
 import org.apache.accumulo.core.spi.crypto.NoCryptoServiceFactory;
+import org.apache.accumulo.start.spi.KeywordExecutable;
 import org.apache.accumulo.tserver.tablet.Tablet;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.hadoop.fs.FileSystem;
@@ -35,11 +36,13 @@ import com.beust.jcommander.IStringConverter;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
+import com.google.auto.service.AutoService;
 
 /**
  * A utility that will identify tablets that require compaction within a given table for a given range and lists recommended compaction commands.
  */
-public final class TabletExtentChecker {
+@AutoService(KeywordExecutable.class)
+public final class TabletExtentChecker implements KeywordExecutable {
 
     /**
      * Converts a string argument to a {@link Text} instance.
@@ -52,7 +55,7 @@ public final class TabletExtentChecker {
     }
 
     /**
-     * Represents a set of options that can parsed and used via {@link TabletExtentChecker#main(String[])}.
+     * Represents a set of options that can parsed and used via {@link TabletExtentChecker#execute(String[])}.
      */
     private static class Opts {
         @Parameter(names = {"-h", "-?", "--help", "-help"}, help = true)
@@ -110,6 +113,16 @@ public final class TabletExtentChecker {
         }
     }
 
+    @Override
+    public String keyword() {
+        return "check-tablets";
+    }
+
+    @Override
+    public String description() {
+        return "A utility that will identify tablets that require compaction within a given table for a given range and lists recommended compaction commands.";
+    }
+
     /**
      * Parses the user-provided arguments and prints out recommended ranges for compaction.
      *
@@ -122,7 +135,8 @@ public final class TabletExtentChecker {
      * @throws IOException
      *             if an error occurs while reading the client properties file
      */
-    public static void main(String[] args) throws AccumuloException, TableNotFoundException, IOException, AccumuloSecurityException {
+    @Override
+    public void execute(String[] args) throws AccumuloException, TableNotFoundException, IOException, AccumuloSecurityException {
         // Parse the arguments.
         Opts opts = new Opts();
         opts.parseArgs(args);
@@ -147,6 +161,13 @@ public final class TabletExtentChecker {
             }
         }
     }
+
+    // Redundant main usage should be avoided and may remove after testing.
+    /*
+    public static void main(String[] args) throws AccumuloException, TableNotFoundException, IOException, AccumuloSecurityException {
+        new TabletExtentChecker().execute(args);
+    }
+    */
 
     /**
      * Return the given value formatted as an argument snippet if the value is not null.
