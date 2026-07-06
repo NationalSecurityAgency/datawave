@@ -83,26 +83,8 @@ public final class TabletExtentChecker {
         @Parameter(names = {"-m", "--merge", "--merge-extents"}, description = "Merges suggested compaction ranges for neighboring compactable tablets")
         public boolean mergeExtents = false;
 
-        @Parameter(names = {"-c", "--compact"}, description = "Compact tablets that have been identified as candidates for needing compaction")
+        @Parameter(names = {"-c", "--compact"}, description = "Compact the tablets")
         public boolean compactTablets = false;
-
-        /**
-         * Validate the arguments in this {@link Opts}.
-         */
-        public void validateArgs() {
-            if (accumuloInstance == null) {
-                throw new IllegalArgumentException("Accumulo instance name must be entered!");
-            }
-            if (zookeeperInstance == null) {
-                throw new IllegalArgumentException("Zookeeper instance must be entered!");
-            }
-            if (username == null) {
-                throw new IllegalArgumentException("Username must be entered!");
-            }
-            if (password == null) {
-                throw new IllegalArgumentException("Password must be entered!");
-            }
-        }
 
         /**
          * Parse the given arguments array and populate this {@link Opts}.
@@ -144,7 +126,6 @@ public final class TabletExtentChecker {
         // Parse the arguments.
         Opts opts = new Opts();
         opts.parseArgs(args);
-        opts.validateArgs();
         try (AccumuloClient client = Accumulo.newClient().to(opts.accumuloInstance, opts.zookeeperInstance).as(opts.username, opts.password).build()) {
             // Fetch the recommended tablet ranges to compact.
             List<Pair<Text,Text>> compactionExtents = TabletExtentChecker.checkTablets(client, opts.tableName, opts.beginRow, opts.endRow, opts.mergeExtents);

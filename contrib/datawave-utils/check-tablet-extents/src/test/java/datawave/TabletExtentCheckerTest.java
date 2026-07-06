@@ -507,7 +507,7 @@ class TabletExtentCheckerTest {
 
         /**
          * Verify that given a table with a compactable tablet, and given a key extent range that is contained within a tablet's range,
-         * {@link TabletExtentChecker#checkTablets(String, String, String, String, String, Text, Text, boolean )} will return the full extent of the tablet.
+         * {@link TabletExtentChecker#checkTablets(AccumuloClient, String, Text, Text, boolean )} will return the full extent of the tablet.
          */
         @Test
         void testInputInCompactableTabletRange()

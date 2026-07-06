@@ -26,8 +26,13 @@ Use the `--help` option to list all available options:
 $ java -cp path/to/check-tablet-extents-shaded.jar datawave.TabletExtentChecker -h
 Usage: TabletExtentChecker [options]
   Options:
+  * -a, --accumulo-instance
+      The Accumulo instance.
     -b, --begin
       The starting row (exclusive) of the range of tablets to scan
+    -c, --compact
+      Compact the tablets
+      Default: false
     -e, --end
       The ending row (inclusive) of the range of tablets to scan
     -h, -?, --help, -help
@@ -35,10 +40,15 @@ Usage: TabletExtentChecker [options]
     -m, --merge, --merge-extents
       Merges suggested compaction ranges for neighboring compactable tablets
       Default: false
-  * -p, --properties
-      The path to accumulo-client.properties
+  * -p, --password
+      The Accumulo password. Can be supplied from an environment variable via
+      env:ENV_VARIABLE
   * -t, --table
       The table name
+  * -u, --username
+      The Accumulo username.
+  * -z, --zookeper-instance
+      The Zookeeper instance.
 ```
 
 The tool will list a set of recommended compaction commands if it finds any tablets that require compaction. For example, given a table `test_table` that has tablets with data outside the tablet extents for the following extents:
@@ -67,3 +77,5 @@ SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
 compact -t chop_test -b 2000 -e 5000
 compact -t chop_test -b 8000 -e 9000
 ```
+
+If the option `--compact` was specified above, the tablets would be compacted. 
