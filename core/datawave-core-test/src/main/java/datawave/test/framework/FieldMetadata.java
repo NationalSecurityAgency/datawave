@@ -230,6 +230,37 @@ public class FieldMetadata {
         return results;
     }
 
+    /**
+     * Get all event ids whose value, once normalized, falls within {@code [lowValue, highValue]} inclusive.
+     * <p>
+     * Bounds are normalized with this field's own normalizer before comparison, so a range built from two of this field's own raw values (as
+     * {@code BoundedRangeTerm} does) always includes those two values' event ids, plus any other of this field's values that normalize into the same span.
+     *
+     * @param lowValue
+     *            the inclusive lower bound, as a raw (unnormalized) value
+     * @param highValue
+     *            the inclusive upper bound, as a raw (unnormalized) value
+     * @return the list of event ids whose normalized value falls within the bounds
+     */
+    public List<Integer> getEventIdsForRange(String lowValue, String highValue) {
+        Preconditions.checkNotNull(lowValue, "Cannot find event ids for a null lower bound");
+        Preconditions.checkNotNull(highValue, "Cannot find event ids for a null upper bound");
+        Preconditions.checkState(normalizers.size() == 1, "range lookups require exactly one normalizer");
+        Type<?> normalizer = normalizers.get(0);
+        String normalizedLow = normalizer.normalize(lowValue);
+        String normalizedHigh = normalizer.normalize(highValue);
+
+        List<Integer> results = new ArrayList<>();
+        for (int i = 0; i < eventIds.size(); i++) {
+            int modifiedIndex = i % values.size();
+            String normalizedValue = normalizer.normalize(values.get(modifiedIndex));
+            if (normalizedValue.compareTo(normalizedLow) >= 0 && normalizedValue.compareTo(normalizedHigh) <= 0) {
+                results.add(eventIds.get(i));
+            }
+        }
+        return results;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o)

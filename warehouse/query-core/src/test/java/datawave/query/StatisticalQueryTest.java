@@ -38,6 +38,7 @@ import datawave.test.framework.IngestMetadataBuilder;
 import datawave.test.framework.TableCreator;
 import datawave.test.framework.generators.query.QueryGenerator;
 import datawave.test.framework.generators.query.QueryMetadata;
+import datawave.test.framework.generators.query.term.BoundedRangeTerm;
 import datawave.test.framework.generators.query.term.EqTerm;
 import datawave.test.framework.generators.query.term.IsNotNullTerm;
 import datawave.test.framework.generators.query.term.IsNullTerm;
@@ -164,6 +165,22 @@ public class StatisticalQueryTest extends AbstractQueryTest {
         executeQueryMetadata(queryMetadata);
     }
 
+    // ((_Bounded_ = true) && (INDEXED >= 'low' && INDEXED <= 'high'))
+    @Test
+    public void testSingleOfIndexedBoundedRange() throws Exception {
+        List<QueryMetadata> queryMetadata = queryGenerator.singleTermIndexed(new BoundedRangeTerm()).getQueries();
+        assertEquals(16, queryMetadata.size(), ASSERTION_MESSAGE);
+        executeQueryMetadata(queryMetadata);
+    }
+
+    // ((_Bounded_ = true) && (INDEX_ONLY >= 'low' && INDEX_ONLY <= 'high'))
+    @Test
+    public void testSingleOfIndexOnlyBoundedRange() throws Exception {
+        List<QueryMetadata> queryMetadata = queryGenerator.singleTermIndexOnly(new BoundedRangeTerm()).getQueries();
+        assertEquals(8, queryMetadata.size(), ASSERTION_MESSAGE);
+        executeQueryMetadata(queryMetadata);
+    }
+
     // ---- Content ----
 
     // content:phrase(TOKENIZED_INDEX_ONLY, termOffsetMap, 'w1', 'w2')
@@ -218,6 +235,22 @@ public class StatisticalQueryTest extends AbstractQueryTest {
         executeQueryMetadata(queryMetadata);
     }
 
+    // INDEXED == 'value' && ((_Bounded_ = true) && (INDEXED >= 'low' && INDEXED <= 'high'))
+    @Test
+    public void testIntersectionOfIndexedEqAndIndexedBoundedRange() throws Exception {
+        List<QueryMetadata> queryMetadata = queryGenerator.intersectionIndexedTerms(new EqTerm(), new BoundedRangeTerm()).getQueries();
+        assertEquals(304, queryMetadata.size(), ASSERTION_MESSAGE);
+        executeQueryMetadata(queryMetadata);
+    }
+
+    // ((_Bounded_ = true) && (INDEXED >= 'low' && INDEXED <= 'high')) && ((_Bounded_ = true) && (INDEXED >= 'low' && INDEXED <= 'high'))
+    @Test
+    public void testIntersectionOfIndexedBoundedRangeAndIndexedBoundedRange() throws Exception {
+        List<QueryMetadata> queryMetadata = queryGenerator.intersectionIndexedTerms(new BoundedRangeTerm(), new BoundedRangeTerm()).getQueries();
+        assertEquals(120, queryMetadata.size(), ASSERTION_MESSAGE);
+        executeQueryMetadata(queryMetadata);
+    }
+
     // ---- Intersection, indexOnly + indexOnly, self-composed ----
 
     // INDEX_ONLY == 'value1' && INDEX_ONLY == 'value2'
@@ -233,6 +266,22 @@ public class StatisticalQueryTest extends AbstractQueryTest {
     public void testIntersectionOfIndexOnlyEqAndIndexOnlyNe() throws Exception {
         List<QueryMetadata> queryMetadata = queryGenerator.intersectionIndexOnlyTerms(new EqTerm(), new NeTerm()).getQueries();
         assertEquals(264, queryMetadata.size(), ASSERTION_MESSAGE);
+        executeQueryMetadata(queryMetadata);
+    }
+
+    // INDEX_ONLY == 'value' && ((_Bounded_ = true) && (INDEX_ONLY >= 'low' && INDEX_ONLY <= 'high'))
+    @Test
+    public void testIntersectionOfIndexOnlyEqAndIndexOnlyBoundedRange() throws Exception {
+        List<QueryMetadata> queryMetadata = queryGenerator.intersectionIndexOnlyTerms(new EqTerm(), new BoundedRangeTerm()).getQueries();
+        assertEquals(72, queryMetadata.size(), ASSERTION_MESSAGE);
+        executeQueryMetadata(queryMetadata);
+    }
+
+    // ((_Bounded_ = true) && (INDEX_ONLY >= 'low' && INDEX_ONLY <= 'high')) && ((_Bounded_ = true) && (INDEX_ONLY >= 'low' && INDEX_ONLY <= 'high'))
+    @Test
+    public void testIntersectionOfIndexOnlyBoundedRangeAndIndexOnlyBoundedRange() throws Exception {
+        List<QueryMetadata> queryMetadata = queryGenerator.intersectionIndexOnlyTerms(new BoundedRangeTerm(), new BoundedRangeTerm()).getQueries();
+        assertEquals(28, queryMetadata.size(), ASSERTION_MESSAGE);
         executeQueryMetadata(queryMetadata);
     }
 
@@ -270,6 +319,14 @@ public class StatisticalQueryTest extends AbstractQueryTest {
         executeQueryMetadata(queryMetadata);
     }
 
+    // ((_Bounded_ = true) && (INDEXED >= 'low' && INDEXED <= 'high')) && EVENT_ONLY == 'value'
+    @Test
+    public void testIntersectionOfIndexedBoundedRangeAndEventOnlyEq() throws Exception {
+        List<QueryMetadata> queryMetadata = queryGenerator.intersectionIndexedAndEventOnly(new BoundedRangeTerm(), new EqTerm()).getQueries();
+        assertEquals(384, queryMetadata.size(), ASSERTION_MESSAGE);
+        executeQueryMetadata(queryMetadata);
+    }
+
     // ---- Intersection, indexOnly + eventOnly ----
 
     // INDEX_ONLY == 'value' && EVENT_ONLY == 'value'
@@ -301,6 +358,14 @@ public class StatisticalQueryTest extends AbstractQueryTest {
     public void testIntersectionOfIndexOnlyEqAndEventOnlyIsNull() throws Exception {
         List<QueryMetadata> queryMetadata = queryGenerator.intersectionIndexOnlyAndEventOnly(new EqTerm(), new IsNullTerm()).getQueries();
         assertEquals(288, queryMetadata.size(), ASSERTION_MESSAGE);
+        executeQueryMetadata(queryMetadata);
+    }
+
+    // ((_Bounded_ = true) && (INDEX_ONLY >= 'low' && INDEX_ONLY <= 'high')) && EVENT_ONLY == 'value'
+    @Test
+    public void testIntersectionOfIndexOnlyBoundedRangeAndEventOnlyEq() throws Exception {
+        List<QueryMetadata> queryMetadata = queryGenerator.intersectionIndexOnlyAndEventOnly(new BoundedRangeTerm(), new EqTerm()).getQueries();
+        assertEquals(192, queryMetadata.size(), ASSERTION_MESSAGE);
         executeQueryMetadata(queryMetadata);
     }
 
