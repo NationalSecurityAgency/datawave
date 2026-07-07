@@ -198,9 +198,12 @@ public class TermFrequencyIterator extends WrappingIterator {
                 topKey = k;
                 topValue = source.getTopValue();
                 break;
-            } else if (!uidMatches() || shouldSeekByValue() || shouldSeekByCount(count)) {
-                seekToNext(k);
-                count = 0; // reset count
+            //@formatter:off
+            // we believe that seekToNext may be calculating an incorrect range when tf grouping contexts are used.
+            //} else if (!uidMatches() || shouldSeekByValue() || shouldSeekByCount(count)) {
+            //    seekToNext(k);
+            //    count = 0; // reset count
+            //@formatter:on
             } else {
                 source.next();
                 count++;
