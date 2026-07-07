@@ -414,7 +414,7 @@
                                                     <id>wildfly-scripts</id>
                                                     <fileSets>
                                                         <fileSet>
-                                                            <directory>{project.build.directory}/wildfly</directory>
+                                                            <directory>${project.build.directory}/wildfly</directory>
                                                             <!-- target/docker/<image path>/build -->
                                                             <outputDirectory>.</outputDirectory>
                                                             <includes>*.sh</includes>
