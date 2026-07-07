@@ -162,12 +162,9 @@ public final class TabletExtentChecker implements KeywordExecutable {
         }
     }
 
-    // Redundant main usage should be avoided and may remove after testing.
-    /*
     public static void main(String[] args) throws AccumuloException, TableNotFoundException, IOException, AccumuloSecurityException {
         new TabletExtentChecker().execute(args);
     }
-    */
 
     /**
      * Return the given value formatted as an argument snippet if the value is not null.
@@ -254,14 +251,11 @@ public final class TabletExtentChecker implements KeywordExecutable {
                     }
                 }
             }
-
             // Handle case where last tablet needs compaction when we are merging extents.
             if (mergeExtents && foundCompactableTablet) {
                 compactionExtents.add(Pair.of(compactionStart, compactionEnd));
             }
-
         }
-
         return compactionExtents;
     }
 
