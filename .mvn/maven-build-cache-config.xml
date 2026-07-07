@@ -175,6 +175,15 @@
                         <goal>build-info</goal>
                     </goals>
                 </goalsList>
+                <!-- Always (re)assemble the EAR. It is built with a classifier and consumed by
+                     downstream file path (kubernetes-maven-plugin image + assemble tar), so a
+                     cache hit that skips the ear goal leaves no artifact at the expected path. -->
+                <goalsList artifactId="maven-ear-plugin">
+                    <goals>
+                        <goal>generate-application-xml</goal>
+                        <goal>ear</goal>
+                    </goals>
+                </goalsList>
                 <!-- Always run Maven dependency plugin for artifact copying and unpacking -->
                 <goalsList artifactId="maven-dependency-plugin">
                     <goals>

@@ -40,7 +40,7 @@ module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.ap
 /subsystem=io/worker=default/:write-attribute(name=task-max-threads,value=${wildfly.io.worker.default.task-max-threads})
 /subsystem=io/worker=default/:write-attribute(name=io-threads,value=${wildfly.io.worker.default.io-threads})
 
-#
+# test
 # System properties
 #
 /system-property=cluster.name:add(value=${cluster.name})
