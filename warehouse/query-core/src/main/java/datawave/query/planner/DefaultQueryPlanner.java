@@ -3109,7 +3109,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             }
             TraceStopwatch stopwatch = config.getTimers().newStartedStopwatch("DefaultQueryPlanner - Begin stream of ranges from inverted index");
 
-            QueryPlanStream stream = getQueryPlanStream(config, scannerFactory, metadataHelper);
+            QueryPlanStream stream = getQueryPlanStream(config, metadataHelper);
             ranges = stream.streamPlans(queryTree);
 
             if (stream instanceof RangeStream) {
@@ -3180,16 +3180,16 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         });
     }
 
-    protected QueryPlanStream getQueryPlanStream(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper metadataHelper) {
+    protected QueryPlanStream getQueryPlanStream(ShardQueryConfiguration config, MetadataHelper metadataHelper) {
 
         if (config.isUseShardedIndex()) {
             return getDayIndexStream(config);
         } else if (config.isUseTruncatedIndex()) {
             this.rangeStreamClass = TruncatedRangeStream.class.getCanonicalName();
             this.createUidsIteratorClass = TruncatedIndexIterator.class;
-            return initializeRangeStream(config, scannerFactory, metadataHelper);
+            return initializeRangeStream(config, metadataHelper);
         } else {
-            return initializeRangeStream(config, scannerFactory, metadataHelper);
+            return initializeRangeStream(config, metadataHelper);
         }
     }
 
@@ -3198,19 +3198,16 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      *
      * @param config
      *            the shard configuration
-     * @param scannerFactory
-     *            the scanner factory
      * @param metadataHelper
      *            the metadata helper
      * @return the range stream
      */
-    private RangeStream initializeRangeStream(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper metadataHelper) {
+    private RangeStream initializeRangeStream(ShardQueryConfiguration config, MetadataHelper metadataHelper) {
         Class<? extends RangeStream> rstream;
         try {
             rstream = Class.forName(rangeStreamClass).asSubclass(RangeStream.class);
 
-            RangeStream stream = rstream.getConstructor(ShardQueryConfiguration.class, ScannerFactory.class, MetadataHelper.class).newInstance(config,
-                            scannerFactory, metadataHelper);
+            RangeStream stream = rstream.getConstructor(ShardQueryConfiguration.class, MetadataHelper.class).newInstance(config, metadataHelper);
 
             //  @formatter:off
             return stream.setUidIntersector(uidIntersector)
