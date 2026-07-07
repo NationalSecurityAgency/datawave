@@ -22,6 +22,8 @@
         <version.datawave>7.37.3</version.datawave>
         <version.datawave.starter-query>1.0.12</version.datawave.starter-query>
         <version.jakarta>2.3.3</version.jakarta>
+        <!-- dependency declared in datawave-microservice-parent, but the version can be overridden here -->
+        <version.log4j>2.26.0</version.log4j>
         <!-- this version should be compatible with the version that spring boot is using -->
         <version.springframework>5.3.39</version.springframework>
         <version.validation-api>2.0.2</version.validation-api>

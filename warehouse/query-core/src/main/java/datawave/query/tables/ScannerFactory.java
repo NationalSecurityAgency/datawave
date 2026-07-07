@@ -407,10 +407,12 @@ public class ScannerFactory {
      * @throws Exception
      *             if there are issues
      */
+    @Deprecated(forRemoval = true, since = "7.41.0")
     public RangeStreamScanner newRangeScanner(final String tableName, final Set<Authorizations> auths, final Query settings) throws Exception {
         return newRangeScanner(tableName, auths, settings, Integer.MAX_VALUE);
     }
 
+    @Deprecated(forRemoval = true, since = "7.41.0")
     public RangeStreamScanner newRangeScanner(String tableName, Set<Authorizations> auths, Query query, int shardsPerDayThreshold) throws Exception {
         return newLimitedScanner(RangeStreamScanner.class, tableName, auths, settings).setScannerFactory(this);
     }
