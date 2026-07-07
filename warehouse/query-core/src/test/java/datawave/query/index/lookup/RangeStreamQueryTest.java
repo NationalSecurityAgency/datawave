@@ -50,9 +50,8 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.visitors.TreeEqualityVisitor;
 import datawave.query.planner.QueryPlan;
-import datawave.query.tables.ScannerFactory;
 import datawave.query.util.MockMetadataHelper;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 
 /**
  * Integration test for asserting correct query plans coming off the RangeStream
@@ -387,8 +386,7 @@ public class RangeStreamQueryTest {
 
         // Run a standard limited-scanner range stream.
         count++;
-        ScannerFactory scannerFactory = new ScannerFactory(config);
-        rangeStream = new RangeStream(config, scannerFactory, helper);
+        rangeStream = new RangeStream(config, helper);
         rangeStream.setLimitScanners(true);
 
         script = JexlASTHelper.parseAndFlattenJexlQuery(query);

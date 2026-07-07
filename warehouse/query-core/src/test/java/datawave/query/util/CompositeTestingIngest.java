@@ -29,7 +29,7 @@ import datawave.ingest.protobuf.Uid;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.index.day.IndexIngestUtil;
 import datawave.query.parser.JavaRegexAnalyzer;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 
 public class CompositeTestingIngest {
 
