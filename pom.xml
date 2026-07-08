@@ -123,7 +123,7 @@
         <version.jython>2.7.2b2</version.jython>
         <version.kryo>2.20</version.kryo>
         <version.kryonet>2.20</version.kryonet>
-        <version.log4j>2.26.0</version.log4j>
+        <version.log4j>2.26.1</version.log4j>
         <version.lombok>1.18.36</version.lombok>
         <version.lucene>7.5.0</version.lucene>
         <version.metrics-cdi>1.6.0</version.metrics-cdi>
