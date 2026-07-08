@@ -1788,7 +1788,8 @@
                     <artifactId>maven-checkstyle-plugin</artifactId>
                     <version>3.6.0</version>
                     <configuration>
-                        <configLocation>checkstyle.xml</configLocation>
+                        <!-- Use multiModuleProjectDirectory to prevent child modules form looking inside their own sub-folders for checkstyle.xml. -->
+                        <configLocation>${maven.multiModuleProjectDirectory}/checkstyle.xml</configLocation>
                         <failsOnError>true</failsOnError>
                         <failOnViolation>false</failOnViolation>
                         <consoleOutput>true</consoleOutput>
