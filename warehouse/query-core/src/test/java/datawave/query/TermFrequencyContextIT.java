@@ -20,7 +20,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
-import datawave.data.type.LcNoDiacriticsType;
+import datawave.data.type.LcType;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.util.AbstractIngest;
 import datawave.query.util.AbstractQueryTest;
@@ -85,18 +85,19 @@ public class TermFrequencyContextIT extends AbstractQueryTest {
         client = new InMemoryAccumuloClient("", i);
 
         ingest = new AbstractIngest(client, auths);
-        ingest.registerField("TF", new LcNoDiacriticsType());
+        ingest.registerField("TF", new LcType());
         ingest.registerColumns("TF", List.of("i", "tf"));
 
-        ingest.registerField("ID", new LcNoDiacriticsType());
+        ingest.registerField("ID", new LcType());
         ingest.registerColumns("ID", List.of("i", "e"));
 
-        // mark ID (and only ID) as a content-expansion field, i.e. a field eligible for unfielded content:phrase() queries.
+        // mark TOK (and only TOK) as a content-expansion field, i.e. a field eligible for unfielded content:phrase() queries.
         // this mirrors real deployments where content expansion fields are explicitly curated, so TF is *not* a content
         // expansion field. this matters because TermOffsetPopulator only writes a TF-column entry with
         // contentExpansionField=true when the field is (or is unconfigured and therefore defaults to) a content expansion
         // field; otherwise it writes contentExpansionField=false.
-        ingest.registerColumns("ID", List.of("content"));
+        ingest.registerField("TOK", new LcType());
+        ingest.registerColumns("TOK", List.of("content"));
 
         // simple event
         ingest.writeFV(1, "ID", "1");

@@ -93,6 +93,10 @@ public class AbstractIngest {
     }
 
     public void registerColumns(String field, List<String> columns) {
+        registerColumns(field, DATATYPE, columns);
+    }
+
+    public void registerColumns(String field, String datatype, List<String> columns) {
         try (BatchWriter bw = client.createBatchWriter(METADATA)) {
             Mutation m = new Mutation(field);
             for (String column : columns) {
@@ -103,7 +107,7 @@ public class AbstractIngest {
                     case "tf":
                     case "content":
                         fieldColumns.putAll(field, columns);
-                        m.put(column, DATATYPE, EMPTY_VALUE);
+                        m.put(column, datatype, EMPTY_VALUE);
                         break;
                     case "t":
                         // ignore
