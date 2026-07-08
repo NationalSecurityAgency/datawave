@@ -101,6 +101,7 @@ public class AbstractIngest {
                     case "ri":
                     case "e":
                     case "tf":
+                    case "content":
                         fieldColumns.putAll(field, columns);
                         m.put(column, DATATYPE, EMPTY_VALUE);
                         break;

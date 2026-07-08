@@ -91,6 +91,13 @@ public class TermFrequencyContextIT extends AbstractQueryTest {
         ingest.registerField("ID", new LcNoDiacriticsType());
         ingest.registerColumns("ID", List.of("i", "e"));
 
+        // mark ID (and only ID) as a content-expansion field, i.e. a field eligible for unfielded content:phrase() queries.
+        // this mirrors real deployments where content expansion fields are explicitly curated, so TF is *not* a content
+        // expansion field. this matters because TermOffsetPopulator only writes a TF-column entry with
+        // contentExpansionField=true when the field is (or is unconfigured and therefore defaults to) a content expansion
+        // field; otherwise it writes contentExpansionField=false.
+        ingest.registerColumns("ID", List.of("content"));
+
         // simple event
         ingest.writeFV(1, "ID", "1");
 
