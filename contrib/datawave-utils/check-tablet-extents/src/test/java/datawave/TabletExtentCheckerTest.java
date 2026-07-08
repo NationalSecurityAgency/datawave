@@ -19,6 +19,7 @@ import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.minicluster.MiniAccumuloCluster;
+import org.apache.accumulo.server.ServerContext;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.hadoop.io.Text;
 import org.junit.jupiter.api.AfterAll;
@@ -90,7 +91,7 @@ class TabletExtentCheckerTest {
          */
         @Test
         void testAllSingleTabletsNeedCompaction()
-                        throws AccumuloException, TableNotFoundException, TableExistsException, AccumuloSecurityException, IOException {
+                throws AccumuloException, TableNotFoundException, TableExistsException, AccumuloSecurityException, IOException {
             createTableAndWriteData();
 
             // Tablet Extents: (null,2500) , (2500,4000) , (4000,7000) (7000,null)
@@ -110,7 +111,7 @@ class TabletExtentCheckerTest {
          */
         @Test
         void testOnlyFirstTabletNeedsCompaction()
-                        throws AccumuloException, TableNotFoundException, TableExistsException, AccumuloSecurityException, IOException {
+                throws AccumuloException, TableNotFoundException, TableExistsException, AccumuloSecurityException, IOException {
             createTableAndWriteData();
 
             // Tablet Extents: (null,2500) , (2500,4000) , (4000,7000) (7000,null)
@@ -131,7 +132,7 @@ class TabletExtentCheckerTest {
          */
         @Test
         void testOnlyLastTabletNeedsCompaction()
-                        throws AccumuloException, TableNotFoundException, TableExistsException, AccumuloSecurityException, IOException {
+                throws AccumuloException, TableNotFoundException, TableExistsException, AccumuloSecurityException, IOException {
             createTableAndWriteData();
             // Tablet Extents: (null,2500) , (2500,4000) , (4000,7000) (7000,null)
             addSplits("2500", "4000", "7000");
@@ -166,7 +167,7 @@ class TabletExtentCheckerTest {
          */
         @Test
         void testOnlyFirstAndLastTabletsNeedCompaction()
-                        throws AccumuloException, TableNotFoundException, TableExistsException, AccumuloSecurityException, IOException {
+                throws AccumuloException, TableNotFoundException, TableExistsException, AccumuloSecurityException, IOException {
             createTableAndWriteData();
 
             addSplits("2500", "4000", "7000");
@@ -225,7 +226,7 @@ class TabletExtentCheckerTest {
          */
         @Test
         void testMultipleInnerCompactionRanges()
-                        throws AccumuloException, TableNotFoundException, TableExistsException, AccumuloSecurityException, IOException {
+                throws AccumuloException, TableNotFoundException, TableExistsException, AccumuloSecurityException, IOException {
             createTableAndWriteData();
             addSplits("1000", "1500", "2000", "2500", "3000", "4000", "5500", "6500", "7000", "7500", "8500", "9000");
             // Tablet Extents: (null, 1000), (1000, 1500), (1500,2000), (2000,2500), (2500,3000), (3000,4000), (4000,5500),
@@ -262,7 +263,7 @@ class TabletExtentCheckerTest {
          */
         @Test
         void testCompactableTabletOutsideInputRange()
-                        throws AccumuloException, TableNotFoundException, TableExistsException, AccumuloSecurityException, IOException {
+                throws AccumuloException, TableNotFoundException, TableExistsException, AccumuloSecurityException, IOException {
             createTableAndWriteData();
 
             // Tablet Extents: (null, 1000), (1000, 1500), (1500,2000), (2000,2500), (2500,3000), (3000,4000), (4000,5500),
@@ -283,7 +284,7 @@ class TabletExtentCheckerTest {
          */
         @Test
         void testInputInCompactableTabletRange()
-                        throws AccumuloException, TableNotFoundException, TableExistsException, AccumuloSecurityException, IOException {
+                throws AccumuloException, TableNotFoundException, TableExistsException, AccumuloSecurityException, IOException {
             createTableAndWriteData();
 
             // Tablet Extents: (null, 1000), (1000, 1500), (1500,2000), (2000,2500), (2500,3000), (3000,4000), (4000,5500),
@@ -338,7 +339,7 @@ class TabletExtentCheckerTest {
          */
         @Test
         void testOnlyFirstTabletNeedsCompaction()
-                        throws AccumuloException, TableNotFoundException, TableExistsException, AccumuloSecurityException, IOException {
+                throws AccumuloException, TableNotFoundException, TableExistsException, AccumuloSecurityException, IOException {
             createTableAndWriteData();
 
             // Tablet Extents: (null,2500) , (2500,4000) , (4000,7000) (7000,null)
@@ -358,7 +359,7 @@ class TabletExtentCheckerTest {
          */
         @Test
         void testOnlyLastTabletNeedsCompaction()
-                        throws AccumuloException, TableNotFoundException, TableExistsException, AccumuloSecurityException, IOException {
+                throws AccumuloException, TableNotFoundException, TableExistsException, AccumuloSecurityException, IOException {
             createTableAndWriteData();
 
             // Tablet Extents: (null,2500) , (2500,4000) , (4000,7000) (7000,null)
@@ -395,7 +396,7 @@ class TabletExtentCheckerTest {
          */
         @Test
         void testOnlyFirstAndLastTabletsNeedCompaction()
-                        throws AccumuloException, TableNotFoundException, TableExistsException, AccumuloSecurityException, IOException {
+                throws AccumuloException, TableNotFoundException, TableExistsException, AccumuloSecurityException, IOException {
             createTableAndWriteData();
 
             // Tablet Extents: (null,2500) , (2500,4000) , (4000,7000) (7000,null)
@@ -455,7 +456,7 @@ class TabletExtentCheckerTest {
          */
         @Test
         void testMultipleInnerCompactionRanges()
-                        throws AccumuloException, TableNotFoundException, TableExistsException, AccumuloSecurityException, IOException {
+                throws AccumuloException, TableNotFoundException, TableExistsException, AccumuloSecurityException, IOException {
             createTableAndWriteData();
 
             // Tablet Extents: (null, 1000), (1000, 1500), (1500,2000), (2000,2500), (2500,3000), (3000,4000), (4000,5500),
@@ -481,7 +482,7 @@ class TabletExtentCheckerTest {
          */
         @Test
         void testCompactableTabletOutsideInputRange()
-                        throws AccumuloException, TableNotFoundException, TableExistsException, AccumuloSecurityException, IOException {
+                throws AccumuloException, TableNotFoundException, TableExistsException, AccumuloSecurityException, IOException {
             createTableAndWriteData();
 
             // Tablet Extents: (null, 1000), (1000, 1500), (1500,2000), (2000,2500), (2500,3000), (3000,4000), (4000,5500),
@@ -503,7 +504,7 @@ class TabletExtentCheckerTest {
          */
         @Test
         void testInputInCompactableTabletRange()
-                        throws AccumuloException, TableNotFoundException, TableExistsException, AccumuloSecurityException, IOException {
+                throws AccumuloException, TableNotFoundException, TableExistsException, AccumuloSecurityException, IOException {
             createTableAndWriteData();
 
             // Tablet Extents: (null, 1000), (1000, 1500), (1500,2000), (2000,2500), (2500,3000), (3000,4000), (4000,5500),
@@ -563,7 +564,8 @@ class TabletExtentCheckerTest {
     }
 
     private void assertResult() throws AccumuloException, TableNotFoundException, IOException {
-        List<Pair<Text,Text>> result = TabletExtentChecker.checkTablets(client, TABLE_NAME, getText(begin), getText(end), mergeExtents);
+        //broken ServerContext cast to be changed
+        List<Pair<Text,Text>> result = TabletExtentChecker.checkTablets((ServerContext)(client), TABLE_NAME, getText(begin), getText(end), mergeExtents);
         assertEquals(expectedExtents, result);
     }
 

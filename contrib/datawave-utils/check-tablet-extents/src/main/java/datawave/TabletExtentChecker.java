@@ -8,14 +8,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.accumulo.core.cli.ClientOpts;
-import org.apache.accumulo.core.client.Accumulo;
-import org.apache.accumulo.core.client.AccumuloClient;
+import org.apache.accumulo.core.cli.ConfigOpts;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.admin.TableOperations;
-import org.apache.accumulo.core.clientImpl.ClientContext;
 import org.apache.accumulo.core.conf.ConfigurationCopy;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.TableId;
@@ -26,6 +23,7 @@ import org.apache.accumulo.core.metadata.StoredTabletFile;
 import org.apache.accumulo.core.metadata.schema.TabletMetadata;
 import org.apache.accumulo.core.metadata.schema.TabletsMetadata;
 import org.apache.accumulo.core.spi.crypto.NoCryptoServiceFactory;
+import org.apache.accumulo.server.ServerContext;
 import org.apache.accumulo.start.spi.KeywordExecutable;
 import org.apache.accumulo.tserver.tablet.Tablet;
 import org.apache.commons.lang3.tuple.Pair;
@@ -56,24 +54,9 @@ public final class TabletExtentChecker implements KeywordExecutable {
 
     /**
      * Represents a set of options that can parsed and used via {@link TabletExtentChecker#execute(String[])}.
+     * ConfigOpts provides getSiteConfiguration() to be used to create ServerContext
      */
-    private static class Opts {
-        @Parameter(names = {"-h", "-?", "--help", "-help"}, help = true)
-        public boolean help = false;
-
-        @Parameter(names = {"-a", "--accumulo-instance"}, description = "The Accumulo instance.", required = true)
-        public String accumuloInstance = null;
-
-        @Parameter(names = {"-z", "--zookeper-instance"}, description = "The Zookeeper instance.", required = true)
-        public String zookeeperInstance = null;
-
-        @Parameter(names = {"-u", "--username"}, description = "The Accumulo username.", required = true)
-        public String username = null;
-
-        @Parameter(names = {"-p", "--password"}, description = "The Accumulo password. Can be supplied from an environment variable via env:ENV_VARIABLE",
-                        converter = ClientOpts.PasswordConverter.class, required = true)
-        public String password = null;
-
+    private static class Opts extends ConfigOpts {
         @Parameter(names = {"-t", "--table"}, description = "The table name", required = true)
         public String tableName = null;
 
@@ -95,7 +78,8 @@ public final class TabletExtentChecker implements KeywordExecutable {
          * @param args
          *            the arguments to parse.
          */
-        public void parseArgs(String[] args) {
+        @Override
+        public void parseArgs(String programName, String[] args, Object... others) {
             JCommander commander = JCommander.newBuilder().addObject(this).programName(TabletExtentChecker.class.getSimpleName()).build();
 
             try {
@@ -139,10 +123,17 @@ public final class TabletExtentChecker implements KeywordExecutable {
     public void execute(String[] args) throws AccumuloException, TableNotFoundException, IOException, AccumuloSecurityException {
         // Parse the arguments.
         Opts opts = new Opts();
-        opts.parseArgs(args);
-        try (AccumuloClient client = Accumulo.newClient().to(opts.accumuloInstance, opts.zookeeperInstance).as(opts.username, opts.password).build()) {
+
+        opts.parseArgs(TabletExtentChecker.class.getName(), args);
+
+        if (opts.getPropertiesPath() == null) {
+            System.out.println("ERROR: null props path");
+            System.exit(1);
+        }
+        System.out.println("Site Configuration: " + opts.getSiteConfiguration());
+        try (ServerContext context = new ServerContext(opts.getSiteConfiguration())) {
             // Fetch the recommended tablet ranges to compact.
-            List<Pair<Text,Text>> compactionExtents = TabletExtentChecker.checkTablets(client, opts.tableName, opts.beginRow, opts.endRow, opts.mergeExtents);
+            List<Pair<Text,Text>> compactionExtents = TabletExtentChecker.checkTablets(context, opts.tableName, opts.beginRow, opts.endRow, opts.mergeExtents);
 
             // Print a message when compactionExtents is empty
             if (compactionExtents.isEmpty()) {
@@ -153,7 +144,7 @@ public final class TabletExtentChecker implements KeywordExecutable {
                     Text endRow = pair.getRight();
                     if (opts.compactTablets) {
                         System.out.println("Compacting range from " + startRow + "-" + endRow);
-                        client.tableOperations().compact(opts.tableName, startRow, endRow, true, true);
+                        context.tableOperations().compact(opts.tableName, startRow, endRow, true, true);
                     } else {
                         System.out.println("compact -t " + opts.tableName + formatArg("-b", startRow) + formatArg("-e", endRow));
                     }
@@ -202,12 +193,11 @@ public final class TabletExtentChecker implements KeywordExecutable {
      * @throws IOException
      *             if an error occurs while reading the client properties file
      */
-    static List<Pair<Text,Text>> checkTablets(AccumuloClient client, String tableName, Text begin, Text end, boolean mergeExtents)
+    static List<Pair<Text,Text>> checkTablets(ServerContext context, String tableName, Text begin, Text end, boolean mergeExtents)
                     throws AccumuloException, TableNotFoundException, IOException {
         List<Pair<Text,Text>> compactionExtents = new ArrayList<>();
 
-        TableId tableId = getTableId(client, tableName);
-        ClientContext context = (ClientContext) client;
+        TableId tableId = getTableId(context, tableName);
         // Fetch the metadata for all tablets in the given table whose extents overlap with the user provided range of tablets to scan.
         try (TabletsMetadata tablets = context.getAmple().readTablets().forTable(tableId).overlapping(begin, false, end)
                         .fetch(TabletMetadata.ColumnType.PREV_ROW, TabletMetadata.ColumnType.FILES).build()) {
@@ -262,14 +252,14 @@ public final class TabletExtentChecker implements KeywordExecutable {
     /**
      * Return the table ID for the given table
      *
-     * @param client
-     *            the client to use when connecting to Accumulo
+     * @param context
+     *            the context to use when connecting to Accumulo
      * @param tableName
      *            the table name
      * @return the table ID
      */
-    private static TableId getTableId(AccumuloClient client, String tableName) {
-        TableOperations tableOperations = client.tableOperations();
+    private static TableId getTableId(ServerContext context, String tableName) {
+        TableOperations tableOperations = context.tableOperations();
         if (tableOperations.exists(tableName)) {
             return TableId.of(tableOperations.tableIdMap().get(tableName));
         } else {
@@ -291,7 +281,7 @@ public final class TabletExtentChecker implements KeywordExecutable {
      *            the tablet metadata
      * @return true if the tablet requires compaction, or false
      */
-    private static boolean tabletRequiresCompaction(ClientContext context, String tableName, TabletMetadata tablet)
+    private static boolean tabletRequiresCompaction(ServerContext context, String tableName, TabletMetadata tablet)
                     throws AccumuloException, TableNotFoundException, IOException {
         // Fetch the list of RFiles for the tablet.
         ConfigurationCopy tableConf = new ConfigurationCopy(context.tableOperations().getConfiguration(tableName));
@@ -310,6 +300,10 @@ public final class TabletExtentChecker implements KeywordExecutable {
                 // A tablet requires a compaction if any of the following are true:
                 // - The first key is outside the tablet's extent.
                 // - The last key is outside the tablet's extent.
+                System.out.println("Extent: " + extent);
+                System.out.println("First key: " + first);
+                System.out.println("Last key: " + last);
+
                 if ((first != null && !extent.contains(first.getRow())) || (last != null && !extent.contains(last.getRow()))) {
                     return true;
                 }
