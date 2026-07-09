@@ -81,7 +81,7 @@ public class CountMap extends HashMap<String,Integer> {
             return super.put(key, value);
         } else {
             value = remove(key);
-            return value;
+            return value != null ? value : ZERO;
         }
     }
 }
