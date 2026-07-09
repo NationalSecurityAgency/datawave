@@ -129,6 +129,46 @@ public class LimitFieldsTest {
         assertNoOriginalCount("FIELD_A");
     }
 
+    /**
+     * Two hit terms may share the same value while remaining distinct attributes, e.g. when the value was matched in both its event form (TypeAttribute) and
+     * its index form (PreNormalizedAttribute). Both attributes must be recognized as hits.
+     */
+    @Test
+    public void testDoNotLimitHitTermsWithSameValueFromEventAndIndexSources() {
+        createEvent("FIELD_A", "value-a", true);
+        createIndex("FIELD_B", "value-a", true);
+        withLimit("FIELD_A", -1);
+        withLimit("FIELD_B", -1);
+        withHitTerm("FIELD_A", "value-a");
+        withIndexHitTerm("FIELD_B", "value-a");
+        drive();
+        assertFieldCount("FIELD_A", 1);
+        assertFieldCount("FIELD_B", 1);
+        assertNoOriginalCount("FIELD_A");
+        assertNoOriginalCount("FIELD_B");
+    }
+
+    /**
+     * Two hit terms may share the same value under different metadata, e.g. different column visibilities within the same document. Each attribute must be
+     * matched against the hit-term key it belongs to, so both must be kept.
+     */
+    @Test
+    public void testDoNotLimitHitTermsWithSameValueUnderDifferentVisibilities() {
+        Key keyVisA = new Key("20250202_0", "datatype\0uid", "", "VIS_A", 0L);
+        Key keyVisB = new Key("20250202_0", "datatype\0uid", "", "VIS_B", 0L);
+        createEvent("FIELD_A", "value-a", keyVisA);
+        createEvent("FIELD_B", "value-a", keyVisB);
+        withLimit("FIELD_A", -1);
+        withLimit("FIELD_B", -1);
+        withHitTerm("FIELD_A", "value-a", keyVisA);
+        withHitTerm("FIELD_B", "value-a", keyVisB);
+        drive();
+        assertFieldCount("FIELD_A", 1);
+        assertFieldCount("FIELD_B", 1);
+        assertNoOriginalCount("FIELD_A");
+        assertNoOriginalCount("FIELD_B");
+    }
+
     @Test
     public void testContextBuild() {
         Key docKey = new Key("shard", "datatype\0uid");
@@ -187,7 +227,16 @@ public class LimitFieldsTest {
     }
 
     private void withHitTerm(String field, String value) {
+        withHitTerm(field, value, key);
+    }
+
+    private void withHitTerm(String field, String value, Key key) {
         Attribute<?> source = getAttributeFactory().create(field, value, key, true);
+        document.put("HIT_TERM", new Content(field + ":" + value, key, true, source));
+    }
+
+    private void withIndexHitTerm(String field, String value) {
+        Attribute<?> source = getPreNormalizedAttributeFactory().create(field, value, key, true);
         document.put("HIT_TERM", new Content(field + ":" + value, key, true, source));
     }
 
@@ -196,6 +245,14 @@ public class LimitFieldsTest {
     }
 
     private void createEvent(String field, String value, boolean toKeep) {
+        createEvent(field, value, key, toKeep);
+    }
+
+    private void createEvent(String field, String value, Key key) {
+        createEvent(field, value, key, true);
+    }
+
+    private void createEvent(String field, String value, Key key, boolean toKeep) {
         document.put(field, getAttributeFactory().create(field, value, key, toKeep));
     }
 

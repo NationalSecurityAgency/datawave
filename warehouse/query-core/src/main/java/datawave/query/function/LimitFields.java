@@ -1,12 +1,11 @@
 package datawave.query.function;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.apache.accumulo.core.data.Key;
 import org.slf4j.Logger;
@@ -443,13 +442,18 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
         private final Set<String> termNames;
         private final Set<CommonalityAndGroup> groupingSet;
         private final Set<Attribute<?>> termAttributes;
-        private final Map<String,BackingData> termDataMap;
+        // hit term value string to the metadata keys of the hit term attributes carrying that value. Multiple hit terms
+        // may share a value (e.g. the same value under different visibilities, or in event and index forms).
+        private final Map<String,Set<Key>> termDataMap;
 
         HitTermContext(Set<String> fieldNames, Set<CommonalityAndGroup> groupingSet, Set<Attribute<?>> attributes) {
             this.termNames = fieldNames;
             this.groupingSet = groupingSet;
             this.termAttributes = attributes;
-            this.termDataMap = attributes.stream().map(HitTermContext::getBackingData).collect(Collectors.toMap(BackingData::getData, x -> x));
+            this.termDataMap = new HashMap<>(attributes.size());
+            for (Attribute<?> attr : attributes) {
+                this.termDataMap.computeIfAbsent(getDataString(attr), k -> new HashSet<>()).add(attr.getMetadata());
+            }
         }
 
         /**
@@ -491,15 +495,12 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
          * @return true if the attribute is also a hit term
          */
         boolean isAttributeHitTerm(Attribute<?> attr) {
-            // Get the backing data for the attribute
-            BackingData attrData = getBackingData(attr);
+            // Check if the attribute value matches one of the hit-term source values
+            Set<Key> hitTermKeys = termDataMap.get(getDataString(attr));
 
-            // Check if the attribute source value matches one of the hit-term source values
-            BackingData hitTermAttrData = termDataMap.get(attrData.getData());
-
-            // Check if the get was successful (meaning a match) and then double-check the keys match between
-            // the attribute and the hit-term attribute
-            return hitTermAttrData != null && hitTermAttrData.getKey().equals(attrData.getKey());
+            // Check if the get was successful (meaning a value match) and then double-check the attribute's key
+            // matches one of the hit-term attributes carrying that value
+            return hitTermKeys != null && hitTermKeys.contains(attr.getMetadata());
         }
 
         /**
@@ -520,48 +521,14 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
             return groupingSet;
         }
 
-        private static BackingData getBackingData(Attribute<?> attr) {
+        private static String getDataString(Attribute<?> attr) {
             if (attr instanceof PreNormalizedAttribute) {
-                return new BackingData(attr.getMetadata(), ((PreNormalizedAttribute) attr).getValue());
+                return ((PreNormalizedAttribute) attr).getValue();
             }
             if (attr instanceof TypeAttribute) {
-                return new BackingData(attr.getMetadata(), ((TypeAttribute<?>) attr).getType().getDelegateAsString());
+                return ((TypeAttribute<?>) attr).getType().getDelegateAsString();
             }
-            return new BackingData(attr.getMetadata(), String.valueOf(attr.getData()));
-        }
-
-        static class BackingData {
-            private final Key key;
-            private final String data;
-
-            BackingData(Key key, String data) {
-                this.key = key;
-                this.data = data;
-            }
-
-            public Key getKey() {
-                return key;
-            }
-
-            public String getData() {
-                return data;
-            }
-
-            @Override
-            public final boolean equals(Object o) {
-                if (!(o instanceof BackingData))
-                    return false;
-
-                BackingData that = (BackingData) o;
-                return Objects.equals(data, that.data) && Objects.equals(key, that.key);
-            }
-
-            @Override
-            public int hashCode() {
-                int result = Objects.hashCode(key);
-                result = 31 * result + Objects.hashCode(data);
-                return result;
-            }
+            return String.valueOf(attr.getData());
         }
 
         static class Builder {
