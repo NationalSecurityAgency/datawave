@@ -171,7 +171,9 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
                 // split the content into its fieldname:value
                 String contentString = content.getContent();
                 String fieldName = contentString.substring(0, contentString.indexOf(COLON));
-                builder.putHitField(fieldName, content.getSource());
+                if (content.getSource() != null) {
+                    builder.putHitField(fieldName, content.getSource());
+                }
             }
         }
     }
