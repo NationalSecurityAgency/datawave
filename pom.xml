@@ -139,7 +139,7 @@
         <version.proto-google-common-protos>2.61.0</version.proto-google-common-protos>
         <version.protobuf>3.16.3</version.protobuf>
         <version.protobuf-java-util>3.16.3</version.protobuf-java-util>
-        <version.protostuff>1.6.2</version.protostuff>
+        <version.protostuff>1.7.4</version.protostuff>
         <version.saxon-he>12.4</version.saxon-he>
         <version.slf4j>2.0.17</version.slf4j>
         <version.spotify-dns>3.1.5</version.spotify-dns>
