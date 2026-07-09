@@ -16,7 +16,6 @@ import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
 
 import datawave.data.ColumnFamilyConstants;
-import datawave.data.hash.UID;
 import datawave.data.normalizer.AbstractNormalizer;
 import datawave.data.type.BaseType;
 import datawave.data.type.DateType;
@@ -30,6 +29,7 @@ import datawave.query.QueryTestTableHelper;
 import datawave.query.index.day.IndexIngestUtil;
 import datawave.query.parser.JavaRegexAnalyzer;
 import datawave.table.constants.TableName;
+import datawave.table.hash.UID;
 
 public class CompositeTestingIngest {
 

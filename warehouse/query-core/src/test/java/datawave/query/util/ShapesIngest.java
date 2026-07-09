@@ -24,7 +24,6 @@ import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
 
 import datawave.data.ColumnFamilyConstants;
-import datawave.data.hash.UID;
 import datawave.data.type.LcNoDiacriticsListType;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.ListType;
@@ -32,6 +31,7 @@ import datawave.data.type.NumberType;
 import datawave.ingest.protobuf.Uid;
 import datawave.query.index.day.IndexIngestUtil;
 import datawave.table.constants.TableName;
+import datawave.table.hash.UID;
 import datawave.test.MacTestUtil;
 
 /**

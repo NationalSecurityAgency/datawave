@@ -18,7 +18,6 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
 import datawave.data.ColumnFamilyConstants;
-import datawave.data.hash.UID;
 import datawave.data.normalizer.LcNoDiacriticsNormalizer;
 import datawave.data.normalizer.Normalizer;
 import datawave.data.normalizer.NumberNormalizer;
@@ -26,6 +25,7 @@ import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.NumberType;
 import datawave.ingest.protobuf.Uid;
 import datawave.table.constants.TableName;
+import datawave.table.hash.UID;
 import datawave.util.time.DateHelper;
 
 public class MultiNormalizerIngest {

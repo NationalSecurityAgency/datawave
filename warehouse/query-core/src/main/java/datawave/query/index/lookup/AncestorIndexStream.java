@@ -10,8 +10,8 @@ import java.util.TreeSet;
 
 import org.apache.commons.jexl3.parser.JexlNode;
 
-import datawave.data.hash.UIDConstants;
 import datawave.query.util.Tuple2;
+import datawave.table.hash.UIDConstants;
 
 /**
  * Specialty AncestorIndexStream implementation. Wraps existing IndexStream delegate to prevent returning overlapping ranges from ancestors during expansions

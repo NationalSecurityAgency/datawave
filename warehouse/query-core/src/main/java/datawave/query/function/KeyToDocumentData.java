@@ -32,14 +32,14 @@ import com.google.common.base.Function;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
-import datawave.data.hash.UID;
-import datawave.data.hash.UIDConstants;
 import datawave.query.attributes.Document;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.iterator.QueryOptions;
 import datawave.query.iterator.aggregation.DocumentData;
 import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.util.Tuple3;
+import datawave.table.hash.UID;
+import datawave.table.hash.UIDConstants;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 

@@ -32,9 +32,6 @@ import com.google.common.collect.Sets;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
-import datawave.data.hash.HashUID;
-import datawave.data.hash.UID;
-import datawave.data.hash.UIDBuilder;
 import datawave.query.attributes.AttributeFactory;
 import datawave.query.attributes.Document;
 import datawave.query.data.parsers.EventKey;
@@ -44,6 +41,9 @@ import datawave.query.jexl.functions.FieldIndexAggregator;
 import datawave.query.jexl.functions.IdentityAggregator;
 import datawave.query.tld.TLDFieldIndexAggregator;
 import datawave.query.util.TypeMetadata;
+import datawave.table.hash.HashUID;
+import datawave.table.hash.UID;
+import datawave.table.hash.UIDBuilder;
 
 /**
  * Integration test for several field index related items

@@ -1,8 +1,8 @@
 package datawave.query.tld;
 
-import static datawave.data.hash.UIDConstants.DEFAULT_SEPARATOR;
 import static datawave.query.Constants.MAX_UNICODE_STRING;
 import static datawave.query.Constants.NULL;
+import static datawave.table.hash.UIDConstants.DEFAULT_SEPARATOR;
 
 import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.ByteSequence;

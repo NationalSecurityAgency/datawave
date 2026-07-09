@@ -14,7 +14,6 @@ import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
 
 import datawave.data.ColumnFamilyConstants;
-import datawave.data.hash.UID;
 import datawave.data.type.DateType;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.Type;
@@ -22,6 +21,7 @@ import datawave.ingest.protobuf.Uid;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.index.day.IndexIngestUtil;
 import datawave.table.constants.TableName;
+import datawave.table.hash.UID;
 
 /**
  * write data in accumulo for testing of the limit.fields function

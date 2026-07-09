@@ -26,7 +26,6 @@ import org.apache.hadoop.io.Text;
 import org.javatuples.Pair;
 
 import datawave.data.ColumnFamilyConstants;
-import datawave.data.hash.UID;
 import datawave.data.type.BaseType;
 import datawave.data.type.DateType;
 import datawave.data.type.GeometryType;
@@ -38,6 +37,7 @@ import datawave.data.type.util.Geometry;
 import datawave.ingest.protobuf.Uid;
 import datawave.query.QueryTestTableHelper;
 import datawave.table.constants.TableName;
+import datawave.table.hash.UID;
 
 /**
  * Test data that contains field index holes.

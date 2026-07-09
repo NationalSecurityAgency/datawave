@@ -28,9 +28,9 @@ import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.Lists;
 
-import datawave.data.hash.UID;
 import datawave.query.iterator.QueryOptions;
 import datawave.query.util.Tuple3;
+import datawave.table.hash.UID;
 
 /**
  * Tests for the {@link DescendantCountFunction}

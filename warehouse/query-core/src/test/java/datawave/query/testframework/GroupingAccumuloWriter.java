@@ -25,7 +25,6 @@ import org.junit.Assert;
 import com.google.common.collect.Multimap;
 
 import datawave.data.ColumnFamilyConstants;
-import datawave.data.hash.UID;
 import datawave.data.normalizer.LcNoDiacriticsNormalizer;
 import datawave.data.normalizer.Normalizer;
 import datawave.data.normalizer.NumberNormalizer;
@@ -35,6 +34,7 @@ import datawave.helpers.PrintUtility;
 import datawave.ingest.protobuf.Uid;
 import datawave.query.QueryTestTableHelper;
 import datawave.table.constants.TableName;
+import datawave.table.hash.UID;
 
 /**
  * Populates Accumulo with data utilizes the Grouping format.

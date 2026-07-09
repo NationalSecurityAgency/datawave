@@ -15,7 +15,6 @@ import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
 
 import datawave.data.ColumnFamilyConstants;
-import datawave.data.hash.UID;
 import datawave.data.type.DateType;
 import datawave.data.type.IpAddressType;
 import datawave.data.type.LcNoDiacriticsType;
@@ -25,6 +24,7 @@ import datawave.ingest.protobuf.Uid;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.index.day.IndexIngestUtil;
 import datawave.table.constants.TableName;
+import datawave.table.hash.UID;
 
 public class VisibilityWiseGuysNoGroupingIngestWithModel {
 

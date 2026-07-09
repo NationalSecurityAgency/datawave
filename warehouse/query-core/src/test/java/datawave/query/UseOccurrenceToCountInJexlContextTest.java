@@ -37,7 +37,6 @@ import com.google.common.collect.Multimap;
 
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.data.ColumnFamilyConstants;
-import datawave.data.hash.UID;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.Type;
 import datawave.helpers.PrintUtility;
@@ -57,6 +56,7 @@ import datawave.query.tables.ShardQueryLogic;
 import datawave.query.util.DateIndexHelperFactory;
 import datawave.query.util.MetadataHelperFactory;
 import datawave.table.constants.TableName;
+import datawave.table.hash.UID;
 
 /**
  *

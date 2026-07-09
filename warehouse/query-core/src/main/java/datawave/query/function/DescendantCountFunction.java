@@ -28,11 +28,11 @@ import org.apache.log4j.Logger;
 
 import com.google.common.collect.Lists;
 
-import datawave.data.hash.UID;
-import datawave.data.hash.UIDConstants;
 import datawave.query.Constants;
 import datawave.query.iterator.QueryOptions;
 import datawave.query.util.Tuple3;
+import datawave.table.hash.UID;
+import datawave.table.hash.UIDConstants;
 
 /**
  * Count and output the number of descendant events, immediate child events, or both based on the specified tuple elements, including:

@@ -24,8 +24,8 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 
 import au.com.bytecode.opencsv.CSVReader;
-import datawave.data.hash.UID;
 import datawave.data.normalizer.Normalizer;
+import datawave.table.hash.UID;
 
 /**
  * Creates accumulo data as grouping data. However, that does not limit additional test classes for other purposes.

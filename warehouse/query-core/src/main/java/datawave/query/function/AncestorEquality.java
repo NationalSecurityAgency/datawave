@@ -1,6 +1,6 @@
 package datawave.query.function;
 
-import static datawave.data.hash.UIDConstants.DEFAULT_SEPARATOR;
+import static datawave.table.hash.UIDConstants.DEFAULT_SEPARATOR;
 
 import org.apache.accumulo.core.data.Key;
 
