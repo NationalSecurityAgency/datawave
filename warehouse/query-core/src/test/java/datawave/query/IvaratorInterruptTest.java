@@ -5,6 +5,7 @@ import java.net.URL;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -25,8 +26,10 @@ import datawave.query.iterator.QueryOptions;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.util.AbstractQueryTest;
+import datawave.query.util.TestIndexTableNames;
 import datawave.query.util.WiseGuysIngest;
 import datawave.query.util.WiseGuysIngest.WhatKindaRange;
+import datawave.table.constants.TableName;
 
 @ExtendWith(SpringExtension.class)
 @ComponentScan(basePackages = "datawave.query")
@@ -65,6 +68,16 @@ public class IvaratorInterruptTest extends AbstractQueryTest {
     @Override
     protected void extraAssertions() {
         // no-op
+    }
+
+    /**
+     * Only run tests against two index table types
+     *
+     * @return a subset of the standard index tables
+     */
+    @Override
+    protected List<String> getIndexTableNames() {
+        return List.of(TableName.SHARD_INDEX, TestIndexTableNames.NO_UID_INDEX);
     }
 
     private void init(WhatKindaRange range, Path tempDir) throws Exception {
