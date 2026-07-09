@@ -23,8 +23,6 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Sets;
 
-import datawave.data.hash.UID;
-import datawave.data.hash.UIDBuilder;
 import datawave.data.normalizer.DateNormalizer;
 import datawave.ingest.config.IngestConfiguration;
 import datawave.ingest.config.IngestConfigurationFactory;
@@ -36,6 +34,8 @@ import datawave.ingest.data.config.DataTypeHelperImpl;
 import datawave.ingest.data.config.MarkingsHelper;
 import datawave.policy.IngestPolicyEnforcer;
 import datawave.policy.Policy;
+import datawave.table.hash.UID;
+import datawave.table.hash.UIDBuilder;
 
 public abstract class AbstractEventRecordReader<K> extends RecordReader<LongWritable,K> implements EventRecordReader {
 

@@ -17,7 +17,6 @@ import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
-import datawave.data.hash.UID;
 import datawave.ingest.config.IngestConfigurationFactory;
 import datawave.ingest.data.RawDataErrorNames;
 import datawave.ingest.data.RawRecordContainer;
@@ -31,6 +30,7 @@ import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.writer.ContextWriter;
 import datawave.marking.MarkingFunctions;
 import datawave.marking.Markings;
+import datawave.table.hash.UID;
 
 /**
  * This class differs from the parent in that when it sees a field name of ERROR it creates a category name using the field name and value.

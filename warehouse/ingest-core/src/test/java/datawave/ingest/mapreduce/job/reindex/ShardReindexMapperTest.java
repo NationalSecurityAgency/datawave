@@ -61,7 +61,6 @@ import org.junit.Test;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.TreeMultimap;
 
-import datawave.data.hash.HashUID;
 import datawave.data.type.NoOpType;
 import datawave.ingest.config.RawRecordContainerImpl;
 import datawave.ingest.data.RawRecordContainer;
@@ -77,6 +76,7 @@ import datawave.ingest.protobuf.TermWeight;
 import datawave.iterators.FrequencyMetadataAggregator;
 import datawave.query.iterator.SortedListKeyValueIterator;
 import datawave.query.model.DateFrequencyMap;
+import datawave.table.hash.HashUID;
 import datawave.util.accumulo.RFileUtil;
 
 public class ShardReindexMapperTest extends EasyMockSupport {

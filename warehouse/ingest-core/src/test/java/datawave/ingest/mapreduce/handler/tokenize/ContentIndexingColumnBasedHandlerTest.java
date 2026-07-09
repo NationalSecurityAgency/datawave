@@ -28,7 +28,6 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
 
-import datawave.data.hash.UID;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.NumberType;
 import datawave.ingest.config.RawRecordContainerImpl;
@@ -42,6 +41,7 @@ import datawave.ingest.data.tokenize.TokenizationHelper;
 import datawave.ingest.input.reader.EventRecordReader;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.policy.IngestPolicyEnforcer;
+import datawave.table.hash.UID;
 
 public class ContentIndexingColumnBasedHandlerTest {
 

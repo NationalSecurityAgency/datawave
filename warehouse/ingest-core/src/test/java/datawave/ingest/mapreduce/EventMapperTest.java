@@ -30,7 +30,6 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
-import datawave.data.hash.UIDConstants;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.Type;
 import datawave.ingest.data.TypeRegistry;
@@ -41,6 +40,7 @@ import datawave.ingest.mapreduce.job.metrics.Metric;
 import datawave.ingest.mapreduce.job.metrics.MetricsConfiguration;
 import datawave.ingest.mapreduce.job.metrics.TestEventCountMetricsReceiver;
 import datawave.ingest.mapreduce.job.writer.ContextWriter;
+import datawave.table.hash.UIDConstants;
 
 public class EventMapperTest {
 

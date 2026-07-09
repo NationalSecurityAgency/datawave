@@ -21,7 +21,6 @@ import org.junit.Test;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
-import datawave.data.hash.UID;
 import datawave.ingest.config.RawRecordContainerImpl;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.Type;
@@ -32,6 +31,7 @@ import datawave.ingest.data.config.NormalizedFieldAndValue;
 import datawave.ingest.data.config.ingest.FakeIngestHelper;
 import datawave.ingest.mapreduce.SimpleDataTypeHandler;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
+import datawave.table.hash.UID;
 
 public class ProtobufEdgeDeletePreconditionTest {
 

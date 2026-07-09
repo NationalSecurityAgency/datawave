@@ -14,14 +14,14 @@ import org.apache.accumulo.access.AccessExpression;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Writable;
 
-import datawave.data.hash.HashUID;
-import datawave.data.hash.UID;
-import datawave.data.hash.UIDBuilder;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.Type;
 import datawave.ingest.data.TypeRegistry;
 import datawave.marking.AccessExpressionMarkings;
 import datawave.marking.Markings;
+import datawave.table.hash.HashUID;
+import datawave.table.hash.UID;
+import datawave.table.hash.UIDBuilder;
 import datawave.util.CompositeTimestamp;
 
 /**

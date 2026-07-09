@@ -24,10 +24,10 @@ import org.junit.Rule;
 import org.junit.Test;
 
 import datawave.common.test.logging.TestLogCollector;
-import datawave.data.hash.UID;
 import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
+import datawave.table.hash.UID;
 
 public class CBMutationOutputFormatterTest {
 

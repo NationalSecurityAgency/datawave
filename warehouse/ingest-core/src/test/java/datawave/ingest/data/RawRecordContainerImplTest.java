@@ -18,10 +18,10 @@ import org.apache.hadoop.conf.Configuration;
 import org.junit.Before;
 import org.junit.Test;
 
-import datawave.data.hash.UID;
 import datawave.ingest.config.IngestConfigurationFactory;
 import datawave.ingest.config.RawRecordContainerImpl;
 import datawave.ingest.data.config.MarkingsHelper;
+import datawave.table.hash.UID;
 
 public class RawRecordContainerImplTest {
 

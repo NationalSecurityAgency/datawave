@@ -15,7 +15,7 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import datawave.ingest.table.aggregator.util.TruncatedIndexKeyParser;
+import datawave.table.key.parser.TruncatedIndexKeyParser;
 
 /**
  * This iterator can transform a global index table to a truncated index where the shard number becomes an index in a bitset

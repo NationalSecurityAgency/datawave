@@ -44,7 +44,6 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
-import datawave.data.hash.HashUID;
 import datawave.ingest.config.RawRecordContainerImpl;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.Type;
@@ -62,6 +61,7 @@ import datawave.ingest.mapreduce.job.writer.ContextWriter;
 import datawave.ingest.mapreduce.partition.MultiTableRangePartitioner;
 import datawave.ingest.metadata.EventMetadata;
 import datawave.ingest.protobuf.Uid;
+import datawave.table.hash.HashUID;
 
 public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
     private static final String CLASS_NAME = ShardReindexMapper.class.getName();

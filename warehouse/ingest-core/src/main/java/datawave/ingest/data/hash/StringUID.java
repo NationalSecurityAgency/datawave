@@ -2,10 +2,10 @@ package datawave.ingest.data.hash;
 
 import com.google.common.base.Objects;
 
-import datawave.data.hash.HashUID;
-import datawave.data.hash.SnowflakeUID;
-import datawave.data.hash.UID;
-import datawave.data.hash.UIDConstants;
+import datawave.table.hash.HashUID;
+import datawave.table.hash.SnowflakeUID;
+import datawave.table.hash.UID;
+import datawave.table.hash.UIDConstants;
 import datawave.util.StringUtils;
 
 /**
