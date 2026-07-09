@@ -28,8 +28,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.protobuf.ByteString;
 
-import datawave.data.hash.UID;
-import datawave.data.hash.UIDBuilder;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.Type;
 import datawave.ingest.data.TypeRegistry;
@@ -38,6 +36,8 @@ import datawave.ingest.data.config.ingest.IgnorableErrorHelperInterface;
 import datawave.ingest.protobuf.RawRecordContainer.Data;
 import datawave.marking.AccessExpressionMarkings;
 import datawave.marking.Markings;
+import datawave.table.hash.UID;
+import datawave.table.hash.UIDBuilder;
 import datawave.util.CompositeTimestamp;
 
 public class RawRecordContainerImpl implements Writable, Configurable, RawRecordContainer {

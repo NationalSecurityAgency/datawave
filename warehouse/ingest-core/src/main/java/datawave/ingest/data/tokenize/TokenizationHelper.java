@@ -10,9 +10,9 @@ import org.apache.lucene.analysis.CharArraySet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import datawave.data.hash.HashUID;
-import datawave.data.hash.UID;
 import datawave.ingest.data.config.DataTypeHelper;
+import datawave.table.hash.HashUID;
+import datawave.table.hash.UID;
 import datawave.util.ObjectFactory;
 
 public class TokenizationHelper {

@@ -7,8 +7,8 @@ import java.util.Date;
 
 import org.apache.accumulo.core.security.ColumnVisibility;
 
-import datawave.data.hash.UID;
 import datawave.marking.Markings;
+import datawave.table.hash.UID;
 import datawave.util.CompositeTimestamp;
 
 /**

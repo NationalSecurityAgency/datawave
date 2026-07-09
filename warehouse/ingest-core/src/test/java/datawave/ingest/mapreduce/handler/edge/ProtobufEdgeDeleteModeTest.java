@@ -34,7 +34,6 @@ import org.junit.Test;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
-import datawave.data.hash.UID;
 import datawave.data.normalizer.DateNormalizer;
 import datawave.ingest.config.RawRecordContainerImpl;
 import datawave.ingest.data.RawRecordContainer;
@@ -53,6 +52,7 @@ import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.writer.ContextWriter;
 import datawave.ingest.time.Now;
 import datawave.metadata.protobuf.EdgeMetadata;
+import datawave.table.hash.UID;
 import datawave.util.time.DateHelper;
 
 public class ProtobufEdgeDeleteModeTest {

@@ -2,9 +2,9 @@ package datawave.ingest.input.reader.event;
 
 import org.apache.hadoop.mapreduce.lib.input.SequenceFileRecordReader;
 
-import datawave.data.hash.UID;
 import datawave.ingest.data.RawDataErrorNames;
 import datawave.ingest.data.RawRecordContainer;
+import datawave.table.hash.UID;
 
 /**
  * Reads Event objects from a sequence file. Users of this class need to be aware that the Event object may not have validated and may contain errors.

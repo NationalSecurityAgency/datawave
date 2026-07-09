@@ -23,7 +23,6 @@ import org.junit.Test;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
-import datawave.data.hash.HashUID;
 import datawave.ingest.config.RawRecordContainerImpl;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.Type;
@@ -40,6 +39,7 @@ import datawave.ingest.table.config.TableConfigHelper;
 import datawave.policy.IngestPolicyEnforcer;
 import datawave.query.model.Direction;
 import datawave.table.constants.TableName;
+import datawave.table.hash.HashUID;
 import datawave.util.CompositeTimestamp;
 
 public class ShardedDataTypeHandlerTest {

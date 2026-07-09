@@ -6,13 +6,13 @@ import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import datawave.data.hash.HashUID;
 import datawave.ingest.config.RawRecordContainerImpl;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.RawRecordContainerImplTest;
 import datawave.ingest.data.Type;
 import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.data.config.ingest.CSVIngestHelper;
+import datawave.table.hash.HashUID;
 import datawave.util.time.DateHelper;
 
 class ShardIdFactoryTest {

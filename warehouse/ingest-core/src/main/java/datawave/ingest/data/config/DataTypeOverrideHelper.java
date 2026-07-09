@@ -8,12 +8,12 @@ import java.util.Map;
 
 import org.apache.hadoop.conf.Configuration;
 
-import datawave.data.hash.UID;
-import datawave.data.hash.UIDBuilder;
-import datawave.data.hash.UIDConstants;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.Type;
 import datawave.ingest.input.reader.event.RecordFilter;
+import datawave.table.hash.UID;
+import datawave.table.hash.UIDBuilder;
+import datawave.table.hash.UIDConstants;
 import datawave.util.StringUtils;
 
 /**

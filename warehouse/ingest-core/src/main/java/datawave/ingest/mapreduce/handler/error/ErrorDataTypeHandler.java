@@ -21,8 +21,6 @@ import org.apache.log4j.Logger;
 
 import com.google.common.collect.Multimap;
 
-import datawave.data.hash.UID;
-import datawave.data.hash.UIDBuilder;
 import datawave.ingest.config.IngestConfiguration;
 import datawave.ingest.config.IngestConfigurationFactory;
 import datawave.ingest.data.RawDataErrorNames;
@@ -38,6 +36,8 @@ import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.writer.ContextWriter;
 import datawave.ingest.metadata.RawRecordMetadata;
 import datawave.marking.MarkingFunctions;
+import datawave.table.hash.UID;
+import datawave.table.hash.UIDBuilder;
 import datawave.util.TextUtil;
 import datawave.util.time.DateHelper;
 
