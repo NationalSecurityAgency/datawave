@@ -59,7 +59,6 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
 
     public static final String ORIGINAL_COUNT_SUFFIX = "_ORIGINAL_COUNT";
 
-    private static final CommonalityAndGroupParser FIELD_PARSER = new CommonalityAndGroupParser();
     private static final String COLON = ":";
 
     // A map of fields and the number of values to limit the fields by.
@@ -124,16 +123,16 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
 
             if (isLimited(keyNoGrouping)) { // look for the key without the grouping context
                 log.trace("limitFieldsMap contains {}", keyNoGrouping);
-
+                FieldName fieldName = FieldName.parse(keyWithGrouping);
                 Attribute<?> attr = de.getValue();
                 if (attr instanceof Attributes) {
                     Attributes attrs = (Attributes) attr;
                     Set<Attribute<? extends Comparable<?>>> attrSet = attrs.getAttributes();
                     for (Attribute<? extends Comparable<?>> value : attrSet) {
-                        evaluateForHit(tracker, hitTermContext, keyWithGrouping, keyNoGrouping, value);
+                        evaluateForHit(tracker, hitTermContext, fieldName, keyNoGrouping, value);
                     }
                 } else {
-                    evaluateForHit(tracker, hitTermContext, keyWithGrouping, keyNoGrouping, attr);
+                    evaluateForHit(tracker, hitTermContext, fieldName, keyNoGrouping, attr);
                 }
             }
         }
@@ -147,7 +146,7 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
      * @return the hit term map
      */
     private HitTermContext getHitTermContext(Document document) {
-        HitTermContext.Builder builder = new HitTermContext.Builder(FIELD_PARSER);
+        HitTermContext.Builder builder = new HitTermContext.Builder();
         fillHitTermBuilder(document.get(JexlEvaluation.HIT_TERM_FIELD), builder);
         return builder.build();
     }
@@ -185,23 +184,23 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
      *            the tracker
      * @param hitTermContext
      *            the hit term context
-     * @param keyWithGrouping
-     *            the key with the grouping context
+     * @param fieldName
+     *            the parsed field name
      * @param keyNoGrouping
      *            the key without the grouping context
      * @param value
      *            the attribute
      */
-    private void evaluateForHit(LimitFieldsTracker tracker, HitTermContext hitTermContext, String keyWithGrouping, String keyNoGrouping,
-                    Attribute<? extends Comparable<?>> value) {
-        if (isHit(keyWithGrouping, value, hitTermContext)) {
+    private void evaluateForHit(LimitFieldsTracker tracker, HitTermContext hitTermContext, FieldName fieldName, String keyNoGrouping,
+                                Attribute<? extends Comparable<?>> value) {
+        if (isHit(fieldName, value, hitTermContext)) {
             tracker.incrementHit(keyNoGrouping);
             tracker.addHit(keyNoGrouping, value);
         } else {
             value.setToKeep(false);
             tracker.incrementNonHit(keyNoGrouping);
             tracker.incrementAttributesToDrop();
-            tracker.addPotential(keyNoGrouping, keyWithGrouping, value);
+            tracker.addPotential(keyNoGrouping, fieldName.getName(), value);
         }
         tracker.incrementFieldCount(keyNoGrouping);
     }
@@ -210,26 +209,24 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
      * Determine whether this attribute is one of the hits. It is a hit if it has a matching value, or if another attribute in the same group has a hit. This
      * allows us to keep all attributes that are part of the same group.
      *
-     * @param keyWithGrouping
-     *            the string key
+     * @param fieldName
+     *            the parsed field name
      * @param attr
      *            the attribute
      * @param hitTermContext
      *            the hit term context
      * @return true if a hit
      */
-    private boolean isHit(String keyWithGrouping, Attribute<?> attr, HitTermContext hitTermContext) {
+    private boolean isHit(FieldName fieldName, Attribute<?> attr, HitTermContext hitTermContext) {
         if (hitTermContext.isEmpty()) {
             return false;
-        } else if (hitTermContext.containsFieldWithGrouping(keyWithGrouping) && hitTermContext.isAttributeHitTerm(attr)) {
+        } else if (hitTermContext.containsFieldWithGrouping(fieldName.getName()) && hitTermContext.isAttributeHitTerm(attr)) {
             return true;
         }
 
-        CommonalityAndGroup fieldToken = FIELD_PARSER.parse(keyWithGrouping);
-
         // If not already returned as a value match, then lets include those that are
         // part of the same group and instance as some other hit.
-        if (fieldToken != null && hitTermContext.hasCommonalityAndGrouping(fieldToken)) {
+        if (fieldName.isGrouped() && hitTermContext.hasGroupAndInstance(fieldName.getGroupAndInstance())) {
             return true;
         }
 
@@ -440,13 +437,13 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
 
     static class HitTermContext {
         private final Set<String> termNames;
-        private final Set<CommonalityAndGroup> groupingSet;
+        private final Set<FieldName.GroupAndInstance> groupingSet;
         private final Set<Attribute<?>> termAttributes;
         // hit term value string to the metadata keys of the hit term attributes carrying that value. Multiple hit terms
         // may share a value (e.g. the same value under different visibilities, or in event and index forms).
         private final Map<String,Set<Key>> termDataMap;
 
-        HitTermContext(Set<String> fieldNames, Set<CommonalityAndGroup> groupingSet, Set<Attribute<?>> attributes) {
+        HitTermContext(Set<String> fieldNames, Set<FieldName.GroupAndInstance> groupingSet, Set<Attribute<?>> attributes) {
             this.termNames = fieldNames;
             this.groupingSet = groupingSet;
             this.termAttributes = attributes;
@@ -457,13 +454,13 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
         }
 
         /**
-         * Checks if the commonality/group is present in the context
+         * Checks if the group and instance is present in the context
          *
          * @param token
-         *            the commonality/group to test
-         * @return true if the commonality/group is present, otherwise false
+         *            the group and instance to test
+         * @return true if the group and instance is present, otherwise false
          */
-        boolean hasCommonalityAndGrouping(CommonalityAndGroup token) {
+        boolean hasGroupAndInstance(FieldName.GroupAndInstance token) {
             return groupingSet.contains(token);
         }
 
@@ -513,11 +510,11 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
         }
 
         /**
-         * Get the grouping set for hit-term fields
+         * Get the group and instance set for hit-term fields
          *
-         * @return the commonality/grouping set
+         * @return the group and instance set
          */
-        Set<CommonalityAndGroup> getGroupingSet() {
+        Set<FieldName.GroupAndInstance> getGroupAndInstanceSet() {
             return groupingSet;
         }
 
@@ -532,12 +529,10 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
         }
 
         static class Builder {
-            private final CommonalityAndGroupParser fieldParser;
             private final Set<String> hitTermFields;
             private final HashSet<Attribute<?>> hitTermSourceAttributes;
 
-            Builder(CommonalityAndGroupParser fieldParser) {
-                this.fieldParser = fieldParser;
+            Builder() {
                 this.hitTermFields = new HashSet<>();
                 this.hitTermSourceAttributes = new HashSet<>();
             }
@@ -549,11 +544,11 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
             }
 
             HitTermContext build() {
-                Set<CommonalityAndGroup> groupSet = new HashSet<>(hitTermFields.size());
-                for (String fieldName : hitTermFields) {
-                    CommonalityAndGroup token = fieldParser.parse(fieldName);
-                    if (token != null) {
-                        groupSet.add(token);
+                Set<FieldName.GroupAndInstance> groupSet = new HashSet<>(hitTermFields.size());
+                for (String field : hitTermFields) {
+                    FieldName fieldName = FieldName.parse(field);
+                    if (fieldName.isGrouped()) {
+                        groupSet.add(fieldName.getGroupAndInstance());
                     }
                 }
                 return new HitTermContext(hitTermFields, groupSet, hitTermSourceAttributes);

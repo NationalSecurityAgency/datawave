@@ -17,7 +17,6 @@ import datawave.query.attributes.Attribute;
 public class LimitFieldsTracker {
 
     private static final Joiner JOINER = Joiner.on(".");
-    private static final CommonalityAndGroupParser FIELD_PARSER = new CommonalityAndGroupParser();
 
     private final Multimap<String,MatchingFieldHits> matchingFieldGroups;
     private final Set<String> matchingGroups;
@@ -39,16 +38,17 @@ public class LimitFieldsTracker {
     }
 
     /**
-     * Return the commonality and grouping context of the given field, delimited by periods.
+     * Return the group and instance of the given field, joined by a period.
      *
      * @param fieldWithGrouping
      *            the field
-     * @return the commonality and grouping context
+     * @return the group and instance key, or null if the field has no group and instance
      */
-    private static String getGroup(String fieldWithGrouping) {
-        CommonalityAndGroup fieldTokens = FIELD_PARSER.parse(fieldWithGrouping);
-        if (fieldTokens != null) {
-            return JOINER.join(fieldTokens.getKeyCommonality(), fieldTokens.getGroup());
+    private static String getGroupInstanceKey(String fieldWithGrouping) {
+        FieldName fieldName = FieldName.parse(fieldWithGrouping);
+        if (fieldName.isGrouped()) {
+            FieldName.GroupAndInstance groupAndInstance = fieldName.getGroupAndInstance();
+            return JOINER.join(groupAndInstance.getGroup(), groupAndInstance.getInstance());
         }
         return null;
     }
@@ -95,9 +95,9 @@ public class LimitFieldsTracker {
      */
     public void addPotential(String fieldNoGrouping, String fieldWithGrouping, Attribute<?> attr) {
         if (matchingFieldGroups.containsKey(fieldNoGrouping)) {
-            String group = getGroup(fieldWithGrouping);
-            if (group != null) {
-                potentialMatches.put(fieldNoGrouping, new String[] {group, getStringValue(attr)});
+            String groupKey = getGroupInstanceKey(fieldWithGrouping);
+            if (groupKey != null) {
+                potentialMatches.put(fieldNoGrouping, new String[] {groupKey, getStringValue(attr)});
             }
         }
     }
@@ -139,9 +139,9 @@ public class LimitFieldsTracker {
      * @return true if there is a matching group, or false otherwise
      */
     public boolean isMatchingGroup(String fieldWithGrouping) {
-        String group = getGroup(fieldWithGrouping);
-        if (group != null) {
-            return matchingGroups.contains(group);
+        String groupKey = getGroupInstanceKey(fieldWithGrouping);
+        if (groupKey != null) {
+            return matchingGroups.contains(groupKey);
         }
         return false;
     }

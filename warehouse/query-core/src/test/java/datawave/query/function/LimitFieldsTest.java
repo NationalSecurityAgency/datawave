@@ -23,7 +23,6 @@ import datawave.query.attributes.PreNormalizedAttributeFactory;
 import datawave.query.util.TypeMetadata;
 
 public class LimitFieldsTest {
-    private static final CommonalityAndGroupParser FIELD_PARSER = new CommonalityAndGroupParser();
 
     private final Key key = new Key("20250202_0", "datatype\0uid");
 
@@ -178,7 +177,7 @@ public class LimitFieldsTest {
         Content attr4 = new Content("d", docKey, true);
 
         // @formatter:off
-        LimitFields.HitTermContext context = new LimitFields.HitTermContext.Builder(FIELD_PARSER)
+        LimitFields.HitTermContext context = new LimitFields.HitTermContext.Builder()
             .putHitField("FIELD_1.FIELD.5.3", attr1)
             .putHitField("FIELD_1.FIELD.5.3", attr2)
             .putHitField("FIELD_2.FIELD.5.3", attr3)
@@ -186,13 +185,13 @@ public class LimitFieldsTest {
             .build();
         // @formatter:on
 
-        assertEquals(2, context.getGroupingSet().size());
+        assertEquals(2, context.getGroupAndInstanceSet().size());
 
         assertTrue(context.containsFieldWithGrouping("FIELD_1.FIELD.5.3"));
-        assertTrue(context.hasCommonalityAndGrouping(FIELD_PARSER.parse("FOO_3.FIELD.7.3")));
-        assertTrue(context.hasCommonalityAndGrouping(FIELD_PARSER.parse("VAL_2.BAR.6.3")));
-        assertTrue(context.hasCommonalityAndGrouping(FIELD_PARSER.parse("VAL_2.BAR.7.3")));
-        assertTrue(context.hasCommonalityAndGrouping(FIELD_PARSER.parse("VAL_1.BAR.7.3")));
+        assertTrue(context.hasGroupAndInstance(FieldName.parse("FOO_3.FIELD.7.3").getGroupAndInstance()));
+        assertTrue(context.hasGroupAndInstance(FieldName.parse("VAL_2.BAR.6.3").getGroupAndInstance()));
+        assertTrue(context.hasGroupAndInstance(FieldName.parse("VAL_2.BAR.7.3").getGroupAndInstance()));
+        assertTrue(context.hasGroupAndInstance(FieldName.parse("VAL_1.BAR.7.3").getGroupAndInstance()));
         assertEquals(Set.of(attr1, attr2, attr3, attr4), Set.copyOf(context.getHitTermAttributes()));
     }
 
