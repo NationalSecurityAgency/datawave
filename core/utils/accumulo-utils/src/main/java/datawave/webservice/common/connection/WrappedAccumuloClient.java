@@ -17,14 +17,13 @@ import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.admin.InstanceOperations;
 import org.apache.accumulo.core.client.admin.NamespaceOperations;
-import org.apache.accumulo.core.client.admin.ReplicationOperations;
+import org.apache.accumulo.core.client.admin.ResourceGroupOperations;
 import org.apache.accumulo.core.client.admin.SecurityOperations;
 import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.accumulo.core.security.Authorizations;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@SuppressWarnings("deprecation")
 public class WrappedAccumuloClient implements AccumuloClient {
     private static final Logger log = LoggerFactory.getLogger(WrappedAccumuloClient.class);
 
@@ -261,8 +260,8 @@ public class WrappedAccumuloClient implements AccumuloClient {
     }
 
     @Override
-    public ReplicationOperations replicationOperations() {
-        return real.replicationOperations();
+    public ResourceGroupOperations resourceGroupOperations() {
+        return real.resourceGroupOperations();
     }
 
     @Override
