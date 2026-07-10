@@ -86,7 +86,7 @@ public final class TabletExtentChecker implements KeywordExecutable {
             try {
                 commander.parse(args);
             } catch (ParameterException ex) {
-                System.err.println("ERROR :"+ex.getMessage());
+                System.err.println("ERROR :" + ex.getMessage());
                 commander.usage();
                 System.exit(1);
             }
@@ -105,7 +105,7 @@ public final class TabletExtentChecker implements KeywordExecutable {
 
     @Override
     public String description() {
-        return "A utility that will identify tablets that require compaction within a given table for a given range and lists recommended compaction commands.";
+        return "Identifies tablets with data outside their extents and if specified, compacts them.";
     }
 
     /**
@@ -127,10 +127,6 @@ public final class TabletExtentChecker implements KeywordExecutable {
 
         opts.parseArgs(TabletExtentChecker.class.getName(), args);
 
-        if (opts.getPropertiesPath() == null) {
-            System.out.println("ERROR: null props path");
-            System.exit(1);
-        }
         try (ServerContext context = new ServerContext(opts.getSiteConfiguration())) {
             // Fetch the recommended tablet ranges to compact.
             checkTablets(context, opts.tableName, opts.beginRow, opts.endRow, opts.mergeExtents, opts.compactTablets);
