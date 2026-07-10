@@ -39,7 +39,7 @@ public class TestLogCollector extends ExternalResource {
 
     @Override
     protected void before() {
-        StringLayout layout = PatternLayout.newBuilder().withPattern(PatternLayout.DEFAULT_CONVERSION_PATTERN).build();
+        StringLayout layout = PatternLayout.newBuilder().setPattern(PatternLayout.DEFAULT_CONVERSION_PATTERN).build();
         Appender appender = WriterAppender.newBuilder().setName(TestLogCollector.class.getSimpleName()).setFilter(FilterAdapter.adapt(new Filter() {
             @Override
             public int decide(LoggingEvent event) {
@@ -48,12 +48,12 @@ public class TestLogCollector extends ExternalResource {
             }
         })).setLayout(layout).setTarget(writer).build();
         appender.start();
-        this.loggers.stream().forEach(l -> l.setAppender(appender));
+        this.loggers.forEach(l -> l.setAppender(appender));
     }
 
     @Override
     protected void after() {
-        this.loggers.stream().forEach(l -> l.reset());
+        this.loggers.forEach(LogAppender::reset);
         clearMessages();
         try {
             writer.close();
