@@ -17,9 +17,9 @@ import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
+import org.apache.accumulo.core.clientImpl.ClientContext;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.minicluster.MiniAccumuloCluster;
-import org.apache.accumulo.server.ServerContext;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.hadoop.io.Text;
 import org.junit.jupiter.api.AfterAll;
@@ -74,8 +74,8 @@ class TabletExtentCheckerTest {
     }
 
     /**
-     * Contains test methods that verify {@link TabletExtentChecker#checkTablets(AccumuloClient, String, Text, Text, boolean )} tracks individual unmerged
-     * tablet extents given a table, tablet range, and mergeExtents == false.
+     * Contains test methods that verify {@link TabletExtentChecker#findCompactableTablets(ClientContext, String, Text, Text, boolean )} tracks individual
+     * unmerged tablet extents given a table, tablet range, and mergeExtents == false.
      */
     @Nested
     class MergeExtentsDisabledTests {
@@ -87,11 +87,12 @@ class TabletExtentCheckerTest {
 
         /**
          * Verify that given a table where all tablets require compaction, and given a tablet range,
-         * {@link TabletExtentChecker#checkTablets(AccumuloClient, String, Text, Text, boolean )} returns multiple ranges to compact each tablet individually.
+         * {@link TabletExtentChecker#findCompactableTablets(ClientContext, String, Text, Text, boolean )} returns multiple ranges to compact each tablet
+         * individually.
          */
         @Test
         void testAllSingleTabletsNeedCompaction()
-                throws AccumuloException, TableNotFoundException, TableExistsException, AccumuloSecurityException, IOException {
+                        throws AccumuloException, TableNotFoundException, TableExistsException, AccumuloSecurityException, IOException {
             createTableAndWriteData();
 
             // Tablet Extents: (null,2500) , (2500,4000) , (4000,7000) (7000,null)
@@ -106,12 +107,12 @@ class TabletExtentCheckerTest {
 
         /**
          * Verify that given a table where only the first tablet requires compaction, and given a tablet range,
-         * {@link TabletExtentChecker#checkTablets(AccumuloClient, String, Text, Text, boolean )} returns a single range that would compact only the first
-         * tablet.
+         * {@link TabletExtentChecker#findCompactableTablets(ClientContext, String, Text, Text, boolean )} returns a single range that would compact only the
+         * first tablet.
          */
         @Test
         void testOnlyFirstTabletNeedsCompaction()
-                throws AccumuloException, TableNotFoundException, TableExistsException, AccumuloSecurityException, IOException {
+                        throws AccumuloException, TableNotFoundException, TableExistsException, AccumuloSecurityException, IOException {
             createTableAndWriteData();
 
             // Tablet Extents: (null,2500) , (2500,4000) , (4000,7000) (7000,null)
@@ -127,12 +128,12 @@ class TabletExtentCheckerTest {
 
         /**
          * Verify that given a table where only the last tablet requires compaction, and given a tablet range,
-         * {@link TabletExtentChecker#checkTablets(AccumuloClient, String, Text, Text, boolean )} returns a single range that would compact only the last
-         * tablet.
+         * {@link TabletExtentChecker#findCompactableTablets(ClientContext, String, Text, Text, boolean )} returns a single range that would compact only the
+         * last tablet.
          */
         @Test
         void testOnlyLastTabletNeedsCompaction()
-                throws AccumuloException, TableNotFoundException, TableExistsException, AccumuloSecurityException, IOException {
+                        throws AccumuloException, TableNotFoundException, TableExistsException, AccumuloSecurityException, IOException {
             createTableAndWriteData();
             // Tablet Extents: (null,2500) , (2500,4000) , (4000,7000) (7000,null)
             addSplits("2500", "4000", "7000");
@@ -146,7 +147,7 @@ class TabletExtentCheckerTest {
 
         /**
          * Verify that given a table where no tablets require compaction, and given a tablet range,
-         * {@link TabletExtentChecker#checkTablets(AccumuloClient, String, Text, Text, boolean )} returns an empty list.
+         * {@link TabletExtentChecker#findCompactableTablets(ClientContext, String, Text, Text, boolean )} returns an empty list.
          */
         @Test
         void testNoTabletsNeedCompaction() throws AccumuloException, TableNotFoundException, TableExistsException, AccumuloSecurityException, IOException {
@@ -162,12 +163,12 @@ class TabletExtentCheckerTest {
 
         /**
          * Verify that given a table where only the first and last tablets require compaction, and given a tablet range,
-         * {@link TabletExtentChecker#checkTablets(AccumuloClient, String, Text, Text, boolean )} returns separate ranges for the first and last compactable
-         * tablets.
+         * {@link TabletExtentChecker#findCompactableTablets(ClientContext, String, Text, Text, boolean )} returns separate ranges for the first and last
+         * compactable tablets.
          */
         @Test
         void testOnlyFirstAndLastTabletsNeedCompaction()
-                throws AccumuloException, TableNotFoundException, TableExistsException, AccumuloSecurityException, IOException {
+                        throws AccumuloException, TableNotFoundException, TableExistsException, AccumuloSecurityException, IOException {
             createTableAndWriteData();
 
             addSplits("2500", "4000", "7000");
@@ -184,7 +185,7 @@ class TabletExtentCheckerTest {
 
         /**
          * Verify that given a table where only the last two tablets require compaction, and given a tablet range,
-         * {@link TabletExtentChecker#checkTablets(AccumuloClient, String, Text, Text, boolean )} returns separate ranges for those tablets.
+         * {@link TabletExtentChecker#findCompactableTablets(ClientContext, String, Text, Text, boolean )} returns separate ranges for those tablets.
          */
         @Test
         void testLastTwoTabletsNeedCompaction() throws AccumuloException, TableNotFoundException, TableExistsException, AccumuloSecurityException, IOException {
@@ -203,7 +204,7 @@ class TabletExtentCheckerTest {
 
         /**
          * Verify that given a table where only the middle tablet requires compaction, and given a tablet range,
-         * {@link TabletExtentChecker#checkTablets(AccumuloClient, String, Text, Text, boolean )} returns a range to compact that middle tablet.
+         * {@link TabletExtentChecker#findCompactableTablets(ClientContext, String, Text, Text, boolean )} returns a range to compact that middle tablet.
          */
         @Test
         void testMiddleTabletNeedsCompaction() throws AccumuloException, TableNotFoundException, TableExistsException, AccumuloSecurityException, IOException {
@@ -221,12 +222,12 @@ class TabletExtentCheckerTest {
 
         /**
          * Verify that given a table where multiple series of tablets at different locations require compaction, and given a tablet range,
-         * {@link TabletExtentChecker#checkTablets(AccumuloClient, String, Text, Text, boolean )} returns multiple compaction ranges that includes a series of
-         * contiguous compactable tablets by merging their extents.
+         * {@link TabletExtentChecker#findCompactableTablets(ClientContext, String, Text, Text, boolean )} returns multiple compaction ranges that includes a
+         * series of contiguous compactable tablets by merging their extents.
          */
         @Test
         void testMultipleInnerCompactionRanges()
-                throws AccumuloException, TableNotFoundException, TableExistsException, AccumuloSecurityException, IOException {
+                        throws AccumuloException, TableNotFoundException, TableExistsException, AccumuloSecurityException, IOException {
             createTableAndWriteData();
             addSplits("1000", "1500", "2000", "2500", "3000", "4000", "5500", "6500", "7000", "7500", "8500", "9000");
             // Tablet Extents: (null, 1000), (1000, 1500), (1500,2000), (2000,2500), (2500,3000), (3000,4000), (4000,5500),
@@ -259,11 +260,11 @@ class TabletExtentCheckerTest {
 
         /**
          * Verify that given a table where all tablets starting from row 2000 to null are compacted, and given a tablet range from row 2000 to null,
-         * {@link TabletExtentChecker#checkTablets(AccumuloClient, String, Text, Text, boolean )} returns an empty list.
+         * {@link TabletExtentChecker#findCompactableTablets(ClientContext, String, Text, Text, boolean )} returns an empty list.
          */
         @Test
         void testCompactableTabletOutsideInputRange()
-                throws AccumuloException, TableNotFoundException, TableExistsException, AccumuloSecurityException, IOException {
+                        throws AccumuloException, TableNotFoundException, TableExistsException, AccumuloSecurityException, IOException {
             createTableAndWriteData();
 
             // Tablet Extents: (null, 1000), (1000, 1500), (1500,2000), (2000,2500), (2500,3000), (3000,4000), (4000,5500),
@@ -280,11 +281,11 @@ class TabletExtentCheckerTest {
 
         /**
          * Verify that given a table with a compactable tablet, and given a key extent range that is contained within a tablet's range,
-         * {@link TabletExtentChecker#checkTablets(AccumuloClient, String, Text, Text, boolean )} will return the full extent of the tablet.
+         * {@link TabletExtentChecker#findCompactableTablets(ClientContext, String, Text, Text, boolean )} will return the full extent of the tablet.
          */
         @Test
         void testInputInCompactableTabletRange()
-                throws AccumuloException, TableNotFoundException, TableExistsException, AccumuloSecurityException, IOException {
+                        throws AccumuloException, TableNotFoundException, TableExistsException, AccumuloSecurityException, IOException {
             createTableAndWriteData();
 
             // Tablet Extents: (null, 1000), (1000, 1500), (1500,2000), (2000,2500), (2500,3000), (3000,4000), (4000,5500),
@@ -302,11 +303,33 @@ class TabletExtentCheckerTest {
             assertResult();
         }
 
+        /**
+         * Verify that given a table with compactable tablets, a key extent range, starting row and ending row, mergeExtents = false, and compactTablets = true,
+         * {@link TabletExtentChecker#findCompactableTablets(ClientContext, String, Text, Text, boolean )} will return an empty list after compacting the
+         * tablets automatically in {@link TabletExtentChecker#checkTablets(ClientContext, String, Text, Text, boolean, boolean)}.
+         *
+         * @throws TableNotFoundException
+         * @throws TableExistsException
+         * @throws AccumuloSecurityException
+         * @throws IOException
+         */
+
+        @Test
+        void testCompactionParameter() throws AccumuloException, TableNotFoundException, TableExistsException, AccumuloSecurityException, IOException {
+            createTableAndWriteData();
+
+            // Tablet Extents: (null, 1000), (1000, 1500), (1500,2000), (2000,2500), (2500,3000), (3000,4000), (4000,5500),
+            // (5500, 6500), (6500,7000), (7000,7500), (7500,8500) (8500,9000)
+            addSplits("1000", "1500", "2000", "2500", "3000", "4000", "5500", "6500", "7000", "7500", "8500", "9000");
+
+            assertCompactedResult();
+        }
+
     }
 
     /**
-     * Contains test methods that verify {@link TabletExtentChecker#checkTablets(AccumuloClient, String, Text, Text, boolean )} tracks individual unmerged
-     * tablet extents given client properties, the table name, a user provided tablet range, and mergeExtents == true.
+     * Contains test methods that verify {@link TabletExtentChecker#findCompactableTablets(ClientContext, String, Text, Text, boolean )} tracks individual
+     * unmerged tablet extents given client properties, the table name, a user provided tablet range, and mergeExtents == true.
      */
     @Nested
     class MergeExtentsEnabledTests {
@@ -318,8 +341,8 @@ class TabletExtentCheckerTest {
 
         /**
          * Verify that given a table where all tablets require compaction, and given a tablet range,
-         * {@link TabletExtentChecker#checkTablets(AccumuloClient, String, Text, Text, boolean )} returns a single compaction range that would compact the
-         * entire table.
+         * {@link TabletExtentChecker#findCompactableTablets(ClientContext, String, Text, Text, boolean )} returns a single compaction range that would compact
+         * the entire table.
          */
         @Test
         void testAllTabletsNeedCompaction() throws AccumuloException, TableExistsException, AccumuloSecurityException, TableNotFoundException, IOException {
@@ -334,12 +357,12 @@ class TabletExtentCheckerTest {
 
         /**
          * Verify that given a table where only the first tablet requires compaction, and given a tablet range,
-         * {@link TabletExtentChecker#checkTablets(AccumuloClient, String, Text, Text, boolean )} returns a single range that would compact only the first
-         * tablet.
+         * {@link TabletExtentChecker#findCompactableTablets(ClientContext, String, Text, Text, boolean )} returns a single range that would compact only the
+         * first tablet.
          */
         @Test
         void testOnlyFirstTabletNeedsCompaction()
-                throws AccumuloException, TableNotFoundException, TableExistsException, AccumuloSecurityException, IOException {
+                        throws AccumuloException, TableNotFoundException, TableExistsException, AccumuloSecurityException, IOException {
             createTableAndWriteData();
 
             // Tablet Extents: (null,2500) , (2500,4000) , (4000,7000) (7000,null)
@@ -354,12 +377,12 @@ class TabletExtentCheckerTest {
 
         /**
          * Verify that given a table where only the last tablet requires compaction, and given a tablet range,
-         * {@link TabletExtentChecker#checkTablets(AccumuloClient, String, Text, Text, boolean )} returns a single range that would compact only the last
-         * tablet.
+         * {@link TabletExtentChecker#findCompactableTablets(ClientContext, String, Text, Text, boolean )} returns a single range that would compact only the
+         * last tablet.
          */
         @Test
         void testOnlyLastTabletNeedsCompaction()
-                throws AccumuloException, TableNotFoundException, TableExistsException, AccumuloSecurityException, IOException {
+                        throws AccumuloException, TableNotFoundException, TableExistsException, AccumuloSecurityException, IOException {
             createTableAndWriteData();
 
             // Tablet Extents: (null,2500) , (2500,4000) , (4000,7000) (7000,null)
@@ -374,7 +397,7 @@ class TabletExtentCheckerTest {
 
         /**
          * Verify that given a table where no tablets require compaction, and given a tablet range,
-         * {@link TabletExtentChecker#checkTablets(AccumuloClient, String, Text, Text, boolean )} returns an empty list.
+         * {@link TabletExtentChecker#findCompactableTablets(ClientContext, String, Text, Text, boolean )} returns an empty list.
          */
         @Test
         void testNoTabletsNeedCompaction() throws AccumuloException, TableNotFoundException, TableExistsException, AccumuloSecurityException, IOException {
@@ -391,12 +414,12 @@ class TabletExtentCheckerTest {
 
         /**
          * Verify that given a table where only the first and last tablets require compaction, and given a tablet range,
-         * {@link TabletExtentChecker#checkTablets(AccumuloClient, String, Text, Text, boolean )} returns separate ranges for the first and last compactable
-         * tablets.
+         * {@link TabletExtentChecker#findCompactableTablets(ClientContext, String, Text, Text, boolean )} returns separate ranges for the first and last
+         * compactable tablets.
          */
         @Test
         void testOnlyFirstAndLastTabletsNeedCompaction()
-                throws AccumuloException, TableNotFoundException, TableExistsException, AccumuloSecurityException, IOException {
+                        throws AccumuloException, TableNotFoundException, TableExistsException, AccumuloSecurityException, IOException {
             createTableAndWriteData();
 
             // Tablet Extents: (null,2500) , (2500,4000) , (4000,7000) (7000,null)
@@ -413,7 +436,8 @@ class TabletExtentCheckerTest {
 
         /**
          * Verify that given a table where only the last two tablets require compaction, and given a tablet range,
-         * {@link TabletExtentChecker#checkTablets(AccumuloClient, String, Text, Text, boolean )} returns a single range that compacts the last two tablets.
+         * {@link TabletExtentChecker#findCompactableTablets(ClientContext, String, Text, Text, boolean )} returns a single range that compacts the last two
+         * tablets.
          */
         @Test
         void testLastTwoTabletsNeedCompaction() throws AccumuloException, TableNotFoundException, TableExistsException, AccumuloSecurityException, IOException {
@@ -432,7 +456,7 @@ class TabletExtentCheckerTest {
 
         /**
          * Verify that given a table where only the middle tablet requires compaction, and given a tablet range,
-         * {@link TabletExtentChecker#checkTablets(AccumuloClient, String, Text, Text, boolean )} returns a range to compact that middle tablet.
+         * {@link TabletExtentChecker#findCompactableTablets(ClientContext, String, Text, Text, boolean )} returns a range to compact that middle tablet.
          */
         @Test
         void testMiddleTabletNeedsCompaction() throws AccumuloException, TableNotFoundException, TableExistsException, AccumuloSecurityException, IOException {
@@ -451,12 +475,12 @@ class TabletExtentCheckerTest {
 
         /**
          * Verify that given a table where multiple series of tablets at different locations require compaction, and given a tablet range,
-         * {@link TabletExtentChecker#checkTablets(AccumuloClient, String, Text, Text, boolean )} returns multiple compaction ranges that includes a series of
-         * contiguous compactable tablets by merging their extents.
+         * {@link TabletExtentChecker#findCompactableTablets(ClientContext, String, Text, Text, boolean )} returns multiple compaction ranges that includes a
+         * series of contiguous compactable tablets by merging their extents.
          */
         @Test
         void testMultipleInnerCompactionRanges()
-                throws AccumuloException, TableNotFoundException, TableExistsException, AccumuloSecurityException, IOException {
+                        throws AccumuloException, TableNotFoundException, TableExistsException, AccumuloSecurityException, IOException {
             createTableAndWriteData();
 
             // Tablet Extents: (null, 1000), (1000, 1500), (1500,2000), (2000,2500), (2500,3000), (3000,4000), (4000,5500),
@@ -478,11 +502,11 @@ class TabletExtentCheckerTest {
 
         /**
          * Verify that given a table where all tablets starting from row 2000 to null are compacted, and given a tablet range from row 2000 to null,
-         * {@link TabletExtentChecker#checkTablets(AccumuloClient, String, Text, Text, boolean )} returns an empty list.
+         * {@link TabletExtentChecker#findCompactableTablets(ClientContext, String, Text, Text, boolean )} returns an empty list.
          */
         @Test
         void testCompactableTabletOutsideInputRange()
-                throws AccumuloException, TableNotFoundException, TableExistsException, AccumuloSecurityException, IOException {
+                        throws AccumuloException, TableNotFoundException, TableExistsException, AccumuloSecurityException, IOException {
             createTableAndWriteData();
 
             // Tablet Extents: (null, 1000), (1000, 1500), (1500,2000), (2000,2500), (2500,3000), (3000,4000), (4000,5500),
@@ -500,11 +524,11 @@ class TabletExtentCheckerTest {
 
         /**
          * Verify that given a table with a compactable tablet, and given a key extent range that is contained within a tablet's range,
-         * {@link TabletExtentChecker#checkTablets(AccumuloClient, String, Text, Text, boolean )} will return the full extent of the tablet.
+         * {@link TabletExtentChecker#findCompactableTablets(ClientContext, String, Text, Text, boolean )} will return the full extent of the tablet.
          */
         @Test
         void testInputInCompactableTabletRange()
-                throws AccumuloException, TableNotFoundException, TableExistsException, AccumuloSecurityException, IOException {
+                        throws AccumuloException, TableNotFoundException, TableExistsException, AccumuloSecurityException, IOException {
             createTableAndWriteData();
 
             // Tablet Extents: (null, 1000), (1000, 1500), (1500,2000), (2000,2500), (2500,3000), (3000,4000), (4000,5500),
@@ -521,6 +545,29 @@ class TabletExtentCheckerTest {
             expectExtent("1000", "1500");
             assertResult();
         }
+
+        /**
+         * Verify that given a table with compactable tablets, a key extent range, starting row and ending row, mergeExtents = true, and compactTablets = true,
+         * {@link TabletExtentChecker#findCompactableTablets(ClientContext, String, Text, Text, boolean )} will return an empty list after compacting the
+         * tablets automatically in {@link TabletExtentChecker#checkTablets(ClientContext, String, Text, Text, boolean, boolean)}.
+         *
+         * @throws TableNotFoundException
+         * @throws TableExistsException
+         * @throws AccumuloSecurityException
+         * @throws IOException
+         */
+
+        @Test
+        void testCompactionParameter() throws AccumuloException, TableNotFoundException, TableExistsException, AccumuloSecurityException, IOException {
+            createTableAndWriteData();
+
+            // Tablet Extents: (null, 1000), (1000, 1500), (1500,2000), (2000,2500), (2500,3000), (3000,4000), (4000,5500),
+            // (5500, 6500), (6500,7000), (7000,7500), (7500,8500) (8500,9000)
+            addSplits("1000", "1500", "2000", "2500", "3000", "4000", "5500", "6500", "7000", "7500", "8500", "9000");
+
+            assertCompactedResult();
+        }
+
     }
 
     private void createTableAndWriteData() throws AccumuloException, TableExistsException, AccumuloSecurityException, TableNotFoundException {
@@ -564,9 +611,27 @@ class TabletExtentCheckerTest {
     }
 
     private void assertResult() throws AccumuloException, TableNotFoundException, IOException {
-        //broken ServerContext cast to be changed
-        List<Pair<Text,Text>> result = TabletExtentChecker.checkTablets((ServerContext)(client), TABLE_NAME, getText(begin), getText(end), mergeExtents);
+        List<Pair<Text,Text>> result = TabletExtentChecker.findCompactableTablets((ClientContext) client, TABLE_NAME, getText(begin), getText(end),
+                        mergeExtents);
         assertEquals(expectedExtents, result);
+    }
+
+    private void assertCompactedResult() throws AccumuloException, TableNotFoundException, AccumuloSecurityException, IOException {
+        // Build the list of compactable tablets
+        List<Pair<Text,Text>> result = TabletExtentChecker.findCompactableTablets((ClientContext) client, TABLE_NAME, getText(begin), getText(end),
+                        mergeExtents);
+
+        // Compact the tablets instead of suggesting compactions (compactTablets == true)
+        TabletExtentChecker.checkTablets((ClientContext) client, TABLE_NAME, getText(begin), getText(end), mergeExtents, true);
+
+        List<Pair<Text,Text>> result2 = TabletExtentChecker.findCompactableTablets((ClientContext) client, TABLE_NAME, getText(begin), getText(end),
+                        mergeExtents);
+
+        // Create empty list for comparison
+        List<Pair<Text,Text>> lst = new ArrayList<>();
+
+        // Resulting list should be empty since all tablets have been compacted
+        assertEquals(lst, result2);
     }
 
 }

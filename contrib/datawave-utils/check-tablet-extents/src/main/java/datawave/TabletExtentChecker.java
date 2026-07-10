@@ -13,6 +13,7 @@ import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.admin.TableOperations;
+import org.apache.accumulo.core.clientImpl.ClientContext;
 import org.apache.accumulo.core.conf.ConfigurationCopy;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.TableId;
@@ -53,8 +54,8 @@ public final class TabletExtentChecker implements KeywordExecutable {
     }
 
     /**
-     * Represents a set of options that can parsed and used via {@link TabletExtentChecker#execute(String[])}.
-     * ConfigOpts provides getSiteConfiguration() to be used to create ServerContext
+     * Represents a set of options that can parsed and used via {@link TabletExtentChecker#execute(String[])}. ConfigOpts provides getSiteConfiguration() to be
+     * used to create ServerContext
      */
     private static class Opts extends ConfigOpts {
         @Parameter(names = {"-t", "--table"}, description = "The table name", required = true)
@@ -85,8 +86,8 @@ public final class TabletExtentChecker implements KeywordExecutable {
             try {
                 commander.parse(args);
             } catch (ParameterException ex) {
+                System.err.println("ERROR :"+ex.getMessage());
                 commander.usage();
-                System.err.println(ex.getMessage());
                 System.exit(1);
             }
 
@@ -130,26 +131,9 @@ public final class TabletExtentChecker implements KeywordExecutable {
             System.out.println("ERROR: null props path");
             System.exit(1);
         }
-        System.out.println("Site Configuration: " + opts.getSiteConfiguration());
         try (ServerContext context = new ServerContext(opts.getSiteConfiguration())) {
             // Fetch the recommended tablet ranges to compact.
-            List<Pair<Text,Text>> compactionExtents = TabletExtentChecker.checkTablets(context, opts.tableName, opts.beginRow, opts.endRow, opts.mergeExtents);
-
-            // Print a message when compactionExtents is empty
-            if (compactionExtents.isEmpty()) {
-                System.out.println("No candidates suitable for compaction.");
-            } else {
-                for (Pair<Text,Text> pair : compactionExtents) {
-                    Text startRow = pair.getLeft();
-                    Text endRow = pair.getRight();
-                    if (opts.compactTablets) {
-                        System.out.println("Compacting range from " + startRow + "-" + endRow);
-                        context.tableOperations().compact(opts.tableName, startRow, endRow, true, true);
-                    } else {
-                        System.out.println("compact -t " + opts.tableName + formatArg("-b", startRow) + formatArg("-e", endRow));
-                    }
-                }
-            }
+            checkTablets(context, opts.tableName, opts.beginRow, opts.endRow, opts.mergeExtents, opts.compactTablets);
         }
     }
 
@@ -193,7 +177,7 @@ public final class TabletExtentChecker implements KeywordExecutable {
      * @throws IOException
      *             if an error occurs while reading the client properties file
      */
-    static List<Pair<Text,Text>> checkTablets(ServerContext context, String tableName, Text begin, Text end, boolean mergeExtents)
+    static List<Pair<Text,Text>> findCompactableTablets(ClientContext context, String tableName, Text begin, Text end, boolean mergeExtents)
                     throws AccumuloException, TableNotFoundException, IOException {
         List<Pair<Text,Text>> compactionExtents = new ArrayList<>();
 
@@ -258,7 +242,7 @@ public final class TabletExtentChecker implements KeywordExecutable {
      *            the table name
      * @return the table ID
      */
-    private static TableId getTableId(ServerContext context, String tableName) {
+    private static TableId getTableId(ClientContext context, String tableName) {
         TableOperations tableOperations = context.tableOperations();
         if (tableOperations.exists(tableName)) {
             return TableId.of(tableOperations.tableIdMap().get(tableName));
@@ -281,7 +265,7 @@ public final class TabletExtentChecker implements KeywordExecutable {
      *            the tablet metadata
      * @return true if the tablet requires compaction, or false
      */
-    private static boolean tabletRequiresCompaction(ServerContext context, String tableName, TabletMetadata tablet)
+    private static boolean tabletRequiresCompaction(ClientContext context, String tableName, TabletMetadata tablet)
                     throws AccumuloException, TableNotFoundException, IOException {
         // Fetch the list of RFiles for the tablet.
         ConfigurationCopy tableConf = new ConfigurationCopy(context.tableOperations().getConfiguration(tableName));
@@ -310,5 +294,26 @@ public final class TabletExtentChecker implements KeywordExecutable {
             }
         }
         return false;
+    }
+
+    public static void checkTablets(ClientContext context, String tableName, Text begin, Text end, boolean mergeExtents, boolean compactTablets)
+                    throws AccumuloException, TableNotFoundException, IOException, AccumuloSecurityException {
+        List<Pair<Text,Text>> compactionExtents = findCompactableTablets(context, tableName, begin, end, mergeExtents);
+
+        // Print a message when compactionExtents is empty
+        if (compactionExtents.isEmpty()) {
+            System.out.println("No candidates suitable for compaction.");
+        } else {
+            for (Pair<Text,Text> pair : compactionExtents) {
+                Text startRow = pair.getLeft();
+                Text endRow = pair.getRight();
+                if (compactTablets) {
+                    System.out.println("Compacting range from " + startRow + "-" + endRow);
+                    context.tableOperations().compact(tableName, startRow, endRow, true, true);
+                } else {
+                    System.out.println("compact -t " + tableName + formatArg("-b", startRow) + formatArg("-e", endRow));
+                }
+            }
+        }
     }
 }
