@@ -1,5 +1,8 @@
 package datawave.configuration.spring;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.enterprise.context.spi.CreationalContext;
 import javax.enterprise.inject.spi.AnnotatedType;
 import javax.enterprise.inject.spi.BeanManager;
@@ -12,6 +15,7 @@ import javax.enterprise.inject.spi.InjectionTarget;
  * this, {@link InjectCDIBeanPostProcessor} would not be able to perform injection on non-prototype spring beans.
  */
 public class BeanProvider {
+    private static Logger log = LoggerFactory.getLogger(BeanProvider.class);
     private static BeanProvider instance = null;
     private BeanManager beanManager;
 
@@ -30,6 +34,9 @@ public class BeanProvider {
         CreationalContext creationalContext = beanManager.createCreationalContext(null);
         AnnotatedType annotatedType = beanManager.createAnnotatedType(bean.getClass());
         InjectionTarget injectionTarget = beanManager.createInjectionTarget(annotatedType);
+        if (log.isDebugEnabled()) {
+            log.debug("Injecting bean " + bean.getClass() + " at injection points " + injectionTarget.getInjectionPoints());
+        }
         // noinspection unchecked
         injectionTarget.inject(bean, creationalContext);
     }
