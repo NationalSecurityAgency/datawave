@@ -8,9 +8,30 @@ embed-server --server-config=standalone-full.xml
 /system-property=dw.warehouse.accumulo.password:add(value=${env.ACCUMULO_PASSWORD})
 /system-property=dw.metrics.accumulo.password:add(value=${env.ACCUMULO_PASSWORD})
 /system-property=dw.uuid.accumulo.password:add(value=${env.ACCUMULO_PASSWORD})
-/core-service=management/security-realm=SSLRealm/server-identity=ssl/:add(enabled-protocols=["TLSv1.1","TLSv1.2"],keystore-path=${env.KEYSTORE},keystore-provider=${env.KEYSTORE_TYPE},keystore-password="${env.KEYSTORE_PASSWORD}")
-/core-service=management/security-realm=SSLRealm/authentication=truststore/:add(keystore-path=${env.TRUSTSTORE},keystore-provider=${env.TRUSTSTORE_TYPE},keystore-password="${env.TRUSTSTORE_PASSWORD}")
-/subsystem=security/security-domain=datawave/jsse=classic:add(keystore={type="${env.KEYSTORE_TYPE}",password="${env.KEYSTORE_PASSWORD}",url="file://${env.KEYSTORE}"},truststore={type="${env.TRUSTSTORE_TYPE}",password="${env.TRUSTSTORE_PASSWORD}",url="file://${env.TRUSTSTORE}"})
+
+/system-property=dw.ssl.context.info.keyStoreURL:add(value=file://${env.KEYSTORE})
+/system-property=dw.ssl.context.info.keyStoreType:add(value="${env.KEYSTORE_TYPE}")
+/system-property=dw.ssl.context.info.keyStorePassword:add(value="${env.KEYSTORE_PASSWORD}")
+/system-property=dw.ssl.context.info.trustStoreURL:add(value=file://${env.TRUSTSTORE})
+/system-property=dw.ssl.context.info.trustStoreType:add(value="${env.TRUSTSTORE_TYPE}")
+/system-property=dw.ssl.context.info.trustStorePassword:add(value="${env.TRUSTSTORE_PASSWORD}")
+
+# Security configuration via the legacy security framework
+#/core-service=management/security-realm=SSLRealm/server-identity=ssl/:add(enabled-protocols=["TLSv1.1","TLSv1.2"],keystore-path=${env.KEYSTORE},keystore-provider=${env.KEYSTORE_TYPE},keystore-password="${env.KEYSTORE_PASSWORD}")
+#/core-service=management/security-realm=SSLRealm/authentication=truststore/:add(keystore-path=${env.TRUSTSTORE},keystore-provider=${env.TRUSTSTORE_TYPE},keystore-password="${env.TRUSTSTORE_PASSWORD}")
+#/subsystem=security/security-domain=datawave/jsse=classic:add(keystore={type="${env.KEYSTORE_TYPE}",password="${env.KEYSTORE_PASSWORD}",url="file://${env.KEYSTORE}"},truststore={type="${env.TRUSTSTORE_TYPE}",password="${env.TRUSTSTORE_PASSWORD}",url="file://${env.TRUSTSTORE}"})
+
+
+#
+# Security configuration via the Elytron framework
+#
+/subsystem=elytron/key-store=httpsKeyStore:add(path=${KEYSTORE},credential-reference={clear-text="${env.KEYSTORE_PASSWORD}"},type=${env.KEYSTORE_TYPE})
+/subsystem=elytron/key-manager=httpsKeyManager:add(key-store=httpsKeyStore,credential-reference={clear-text=${env.KEYSTORE_PASSWORD})
+/subsystem=elytron/key-store=httpsTrustStore:add(path=${TRUSTSTORE},credential-reference={clear-text="${env.TRUSTSTORE_PASSWORD}"},type=${env.TRUSTSTORE_TYPE})
+/subsystem=elytron/trust-manager=httpsTrustManager:add(key-store=httpsTrustStore)
+/subsystem=elytron/server-ssl-context=httpsSSLContext:add(key-manager=httpsKeyManager,trust-manager=httpsTrustManager,protocols=["TLSv1.1","TLSv1.2"])
+/subsystem=elytron/key-store-realm=ksRealm:add(key-store=httpsKeyStore)
+/subsystem=elytron/security-domain=datawave:add(default-realm=ksRealm,realms=[ksRealm])
 
 # Run the batch commands (MUST BE LAST)
 run-batch

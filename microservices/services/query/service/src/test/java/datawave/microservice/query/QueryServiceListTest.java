@@ -27,7 +27,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import datawave.microservice.authorization.service.RemoteAuthorizationServiceUserDetailsService;
 import datawave.microservice.authorization.user.DatawaveUserDetails;
-import datawave.security.util.ProxiedEntityUtils;
+import datawave.security.util.DnUtils;
 import datawave.webservice.query.result.logic.QueryLogicDescription;
 import datawave.webservice.result.QueryImplListResponse;
 import datawave.webservice.result.QueryLogicResponse;
@@ -272,7 +272,7 @@ public class QueryServiceListTest extends AbstractQueryServiceTest {
         DatawaveUserDetails authUser = createUserDetails();
         DatawaveUserDetails adminUser = createAltUserDetails(Arrays.asList("AuthorizedUser", "Administrator"), null);
 
-        String user = ProxiedEntityUtils.getShortName(authUser.getPrimaryUser().getDn().subjectDN());
+        String user = DnUtils.getShortName(authUser.getPrimaryUser().getDn().subjectDN());
 
         String uniqueQueryName = "Unique Query";
 
@@ -344,7 +344,7 @@ public class QueryServiceListTest extends AbstractQueryServiceTest {
         DatawaveUserDetails authUser = createUserDetails();
         DatawaveUserDetails altAuthUser = createAltUserDetails();
 
-        String user = ProxiedEntityUtils.getShortName(authUser.getPrimaryUser().getDn().subjectDN());
+        String user = DnUtils.getShortName(authUser.getPrimaryUser().getDn().subjectDN());
 
         String uniqueQueryName = "Unique Query";
 

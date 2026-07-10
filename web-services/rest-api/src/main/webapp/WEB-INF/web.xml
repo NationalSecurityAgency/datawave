@@ -113,8 +113,8 @@
             datawave.webservice.result.VoidResponseHtmlMessageBodyWriter,
             datawave.resteasy.util.DateParamConverterProvider,
             datawave.security.authorization.DatawaveUserHtmlMessageBodyWriter,
-            org.jboss.resteasy.plugins.interceptors.encoding.GZIPEncodingInterceptor,
-            org.jboss.resteasy.plugins.interceptors.encoding.GZIPDecodingInterceptor,
+            org.jboss.resteasy.plugins.interceptors.GZIPEncodingInterceptor,
+            org.jboss.resteasy.plugins.interceptors.GZIPDecodingInterceptor,
             datawave.security.user.TextMessageBodyWriter
         </param-value>
     </context-param>
@@ -144,7 +144,7 @@
     -->
     <login-config>
         <auth-method>DATAWAVE-AUTH</auth-method>
-        <realm-name>DATAWAVE Web Services</realm-name>
+        <realm-name>datawave</realm-name>
     </login-config>
 
     <security-constraint>

@@ -59,10 +59,10 @@ import datawave.microservice.query.QueryParameters;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.SubjectIssuerDNPair;
-import datawave.security.util.DnUtils;
+import datawave.security.util.DnProperties;
 import datawave.webservice.common.json.DefaultMapperDecorator;
 import datawave.webservice.common.remote.RemoteServiceUtil;
-import datawave.webservice.common.remote.TestJSSESecurityDomain;
+import datawave.webservice.common.remote.TestSSLStores;
 import datawave.webservice.query.remote.RemoteQueryServiceImpl;
 import datawave.webservice.query.result.event.DefaultEvent;
 import datawave.webservice.query.result.event.DefaultField;
@@ -103,7 +103,7 @@ public class RemoteQueryServiceTestUtil extends RemoteServiceUtil {
         super.initialize();
 
         final ObjectMapper objectMapper = new DefaultMapperDecorator().decorate(new ObjectMapper());
-        System.setProperty(DnUtils.SUBJECT_DN_PATTERN_PROPERTY, ".*ou=server.*");
+        System.setProperty(DnProperties.SUBJECT_DN_PATTERN_PROPERTY, ".*ou=server.*");
         KeyPairGenerator generater = null;
         try {
             generater = KeyPairGenerator.getInstance("RSA");
@@ -199,7 +199,7 @@ public class RemoteQueryServiceTestUtil extends RemoteServiceUtil {
         remote.setExecutorService(null);
         remote.setObjectMapperDecorator(new DefaultMapperDecorator());
         remote.setResponseObjectFactory(new DefaultResponseObjectFactory());
-        remote.setJsseSecurityDomain(new TestJSSESecurityDomain(alias, privateKey, keyPass, chain));
+        remote.setSslStores(new TestSSLStores(alias, privateKey, keyPass, chain));
 
         return remote;
     }

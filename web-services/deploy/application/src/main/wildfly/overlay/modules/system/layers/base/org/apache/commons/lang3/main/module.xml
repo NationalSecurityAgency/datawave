@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="org.apache.commons.lang3" xmlns="urn:jboss:module:1.9">
+
+    <properties>
+        <property name="jboss.api" value="private"/>
+    </properties>
+
+    <resources>
+        <resource-root path="commons-lang3-${version.commons-lang3}.jar"/>
+    </resources>
+
+    <dependencies>
+        <module name="java.desktop"/>
+    </dependencies>
+</module>

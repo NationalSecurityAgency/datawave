@@ -10,6 +10,10 @@
     <packaging>pom</packaging>
     <name>${project.artifactId}</name>
     <properties>
+        <!-- The base path for the wildfly modules directory where custom JBOSS modules should be added. -->
+        <base.wildfly.modules.dir>${project.build.directory}/wildfly/overlay/modules</base.wildfly.modules.dir>
+        <!-- The base path for the wildfly core application modules directory where library versions can be overridden. -->
+        <base.wildfly.system.modules.dir>${base.wildfly.modules.dir}/system/layers/base</base.wildfly.system.modules.dir>
         <!-- jkube kubernetes-maven-plugin only has access to project properties so we redefine them to properly render the Dockerfile-->
         <project.build.finalName>${project.build.finalName}</project.build.finalName>
         <version.slf4j-jboss-logmanager>2.0.2.Final</version.slf4j-jboss-logmanager>
@@ -571,6 +575,178 @@
                     <plugin>
                         <artifactId>maven-dependency-plugin</artifactId>
                         <executions>
+
+                            <!-- Override version of libraries for JBOSS module org.apache.commons.lang3 -->
+                            <execution>
+                                <id>copy-org-apache-commons-lang3</id>
+                                <goals>
+                                    <goal>copy</goal>
+                                </goals>
+                                <phase>process-resources</phase>
+                                <configuration>
+                                    <outputDirectory>${base.wildfly.system.modules.dir}/org/apache/commons/lang3/main</outputDirectory>
+                                    <artifactItems>
+                                        <artifactItem>
+                                            <groupId>org.apache.commons</groupId>
+                                            <artifactId>commons-lang3</artifactId>
+                                            <version>${version.commons-lang3}</version>
+                                        </artifactItem>
+                                    </artifactItems>
+                                </configuration>
+                            </execution>
+
+                            <!-- Copy resources for JBOSS module org.apache.commons.commons-text -->
+                            <execution>
+                                <id>copy-org-apache-commons-text</id>
+                                <goals>
+                                    <goal>copy</goal>
+                                </goals>
+                                <phase>process-resources</phase>
+                                <configuration>
+                                    <outputDirectory>${base.wildfly.modules.dir}/org/apache/commons/commons-text/main</outputDirectory>
+                                    <artifactItems>
+                                        <artifactItem>
+                                            <groupId>org.apache.commons</groupId>
+                                            <artifactId>commons-text</artifactId>
+                                            <version>${version.commons-text}</version>
+                                        </artifactItem>
+                                    </artifactItems>
+                                </configuration>
+                            </execution>
+
+                            <!-- Copy resources for JBOSS module io.jsonwebtoken.jjwt-api -->
+                            <execution>
+                                <id>copy-io-jsonwebtoken-jjwt-api</id>
+                                <goals>
+                                    <goal>copy</goal>
+                                </goals>
+                                <phase>process-resources</phase>
+                                <configuration>
+                                    <outputDirectory>${base.wildfly.modules.dir}/io/jsonwebtoken/jjwt-api/main</outputDirectory>
+                                    <artifactItems>
+                                        <artifactItem>
+                                            <groupId>io.jsonwebtoken</groupId>
+                                            <artifactId>jjwt-api</artifactId>
+                                            <version>${version.jjwt}</version>
+                                        </artifactItem>
+                                    </artifactItems>
+                                </configuration>
+                            </execution>
+
+                            <!-- Copy resources for JBOSS module io.jsonwebtoken.jjwt-impl -->
+                            <execution>
+                                <id>copy-io-jsonwebtoken-jjwt-impl</id>
+                                <goals>
+                                    <goal>copy</goal>
+                                </goals>
+                                <phase>process-resources</phase>
+                                <configuration>
+                                    <outputDirectory>${base.wildfly.modules.dir}/io/jsonwebtoken/jjwt-impl/main</outputDirectory>
+                                    <artifactItems>
+                                        <artifactItem>
+                                            <groupId>io.jsonwebtoken</groupId>
+                                            <artifactId>jjwt-impl</artifactId>
+                                            <version>${version.jjwt}</version>
+                                        </artifactItem>
+                                    </artifactItems>
+                                </configuration>
+                            </execution>
+
+                            <!-- Copy resources for JBOSS module com.fasterxml.jackson.datatype.jackson-datatype-guava -->
+                            <execution>
+                                <id>copy-com-fasterxml-jackson-datatype-jackson-datatype-guava</id>
+                                <goals>
+                                    <goal>copy</goal>
+                                </goals>
+                                <phase>process-resources</phase>
+                                <configuration>
+                                    <outputDirectory>${base.wildfly.modules.dir}/com/fasterxml/jackson/datatype/jackson-datatype-guava/main</outputDirectory>
+                                    <artifactItems>
+                                        <artifactItem>
+                                            <groupId>com.fasterxml.jackson.datatype</groupId>
+                                            <artifactId>jackson-datatype-guava</artifactId>
+                                            <version>${version.jackson}</version>
+                                        </artifactItem>
+                                    </artifactItems>
+                                </configuration>
+                            </execution>
+
+                            <!-- Copy resources for JBOSS module com.fasterxml.jackson.module.jackson-module-jaxb-annotations -->
+                            <execution>
+                                <id>copy-com-fasterxml-jackson-module-jackson-module-jaxb-annotations</id>
+                                <goals>
+                                    <goal>copy</goal>
+                                </goals>
+                                <phase>process-resources</phase>
+                                <configuration>
+                                    <outputDirectory>${base.wildfly.modules.dir}/com/fasterxml/jackson/module/jackson-module-jaxb-annotations/main</outputDirectory>
+                                    <artifactItems>
+                                        <artifactItem>
+                                            <groupId>com.fasterxml.jackson.module</groupId>
+                                            <artifactId>jackson-module-jaxb-annotations</artifactId>
+                                            <version>${version.jackson}</version>
+                                        </artifactItem>
+                                    </artifactItems>
+                                </configuration>
+                            </execution>
+
+                            <!-- Copy resources for JBOSS module datawave.commons.datawave-commons-security. -->
+                            <execution>
+                                <id>copy-datawave-commons-security</id>
+                                <goals>
+                                    <goal>copy</goal>
+                                </goals>
+                                <phase>process-resources</phase>
+                                <configuration>
+                                    <outputDirectory>${base.wildfly.modules.dir}/datawave/commons/datawave-commons-security/main</outputDirectory>
+                                    <artifactItems>
+                                        <artifactItem>
+                                            <groupId>gov.nsa.datawave.commons</groupId>
+                                            <artifactId>datawave-commons-security</artifactId>
+                                            <version>${project.version}</version>
+                                        </artifactItem>
+                                    </artifactItems>
+                                </configuration>
+                            </execution>
+
+                            <!-- Copy resources for JBOSS module datawave.webservice.datawave-security-elytron. -->
+                            <execution>
+                                <id>copy-datawave-ws-security-elytron</id>
+                                <goals>
+                                    <goal>copy</goal>
+                                </goals>
+                                <phase>process-resources</phase>
+                                <configuration>
+                                    <outputDirectory>${base.wildfly.modules.dir}/datawave/webservice/datawave-security-elytron/main</outputDirectory>
+                                    <artifactItems>
+                                        <artifactItem>
+                                            <groupId>gov.nsa.datawave.webservices</groupId>
+                                            <artifactId>datawave-ws-security-elytron</artifactId>
+                                            <version>${project.version}</version>
+                                        </artifactItem>
+                                    </artifactItems>
+                                </configuration>
+                            </execution>
+
+                            <!-- Copy resources for JBOSS module datawave.webservice.datawave-security-elytron-module. -->
+                            <execution>
+                                <id>copy-datawave-ws-security-elytron-module</id>
+                                <goals>
+                                    <goal>copy</goal>
+                                </goals>
+                                <phase>process-resources</phase>
+                                <configuration>
+                                    <outputDirectory>${base.wildfly.modules.dir}/datawave/webservice/datawave-security-elytron-module/main</outputDirectory>
+                                    <artifactItems>
+                                        <artifactItem>
+                                            <groupId>gov.nsa.datawave.webservices</groupId>
+                                            <artifactId>datawave-ws-security-elytron-module</artifactId>
+                                            <version>${project.version}</version>
+                                        </artifactItem>
+                                    </artifactItems>
+                                </configuration>
+                            </execution>
+
                             <!--
                                 Copy the MySQL connector jar to a known place so we can deploy it to Wildfly in the setup script.
                             -->
@@ -601,7 +777,7 @@
                                 </goals>
                                 <phase>process-resources</phase>
                                 <configuration>
-                                    <outputDirectory>${project.build.directory}/wildfly/overlay/modules/org/apache/hadoop/common/main</outputDirectory>
+                                    <outputDirectory>${base.wildfly.modules.dir}/org/apache/hadoop/common/main</outputDirectory>
                                     <artifactItems>
                                         <artifactItem>
                                             <groupId>org.apache.hadoop</groupId>
@@ -650,10 +826,6 @@
                                             <artifactId>commons-configuration2</artifactId>
                                         </artifactItem>
                                         <artifactItem>
-                                            <groupId>org.apache.commons</groupId>
-                                            <artifactId>commons-text</artifactId>
-                                        </artifactItem>
-                                        <artifactItem>
                                             <groupId>javax.servlet</groupId>
                                             <artifactId>servlet-api</artifactId>
                                             <version>2.5</version>
@@ -682,14 +854,18 @@
                                             <artifactId>javax.inject</artifactId>
                                             <version>1</version>
                                         </artifactItem>
-                                        <artifactItem>
-                                            <groupId>javax.enterprise</groupId>
-                                            <artifactId>cdi-api</artifactId>
-                                        </artifactItem>
-                                        <artifactItem>
+                                        <dependency>
+                                            <groupId>jakarta.enterprise</groupId>
+                                            <artifactId>jakarta.enterprise.cdi-api</artifactId>
+                                        </dependency>
+                                        <dependency>
                                             <groupId>org.jboss.resteasy</groupId>
-                                            <artifactId>resteasy-jaxrs</artifactId>
-                                        </artifactItem>
+                                            <artifactId>resteasy-core</artifactId>
+                                        </dependency>
+                                        <dependency>
+                                            <groupId>org.jboss.resteasy</groupId>
+                                            <artifactId>resteasy-core-spi</artifactId>
+                                        </dependency>
                                         <artifactItem>
                                             <groupId>org.jboss.spec.javax.annotation</groupId>
                                             <artifactId>jboss-annotations-api_1.3_spec</artifactId>
@@ -720,7 +896,7 @@
                                         </artifactItem>
                                         <artifactItem>
                                             <groupId>org.jboss.spec.javax.transaction</groupId>
-                                            <artifactId>jboss-transaction-api_1.2_spec</artifactId>
+                                            <artifactId>jboss-transaction-api_1.3_spec</artifactId>
                                         </artifactItem>
                                         <artifactItem>
                                             <groupId>xerces</groupId>
@@ -729,6 +905,7 @@
                                     </artifactItems>
                                 </configuration>
                             </execution>
+
                             <execution>
                                 <id>copy-slf4j-api-dependencies</id>
                                 <goals>
@@ -736,7 +913,7 @@
                                 </goals>
                                 <phase>process-resources</phase>
                                 <configuration>
-                                    <outputDirectory>${project.build.directory}/wildfly/overlay/modules/system/layers/base/org/slf4j/main</outputDirectory>
+                                    <outputDirectory>${base.wildfly.system.modules.dir}/org/slf4j/main</outputDirectory>
                                     <artifactItems>
                                         <artifactItem>
                                             <groupId>org.slf4j</groupId>
@@ -745,6 +922,7 @@
                                     </artifactItems>
                                 </configuration>
                             </execution>
+
                             <execution>
                                 <id>copy-slf4j-impl-dependencies</id>
                                 <goals>
@@ -752,7 +930,7 @@
                                 </goals>
                                 <phase>process-resources</phase>
                                 <configuration>
-                                    <outputDirectory>${project.build.directory}/wildfly/overlay/modules/system/layers/base/org/slf4j/impl/main</outputDirectory>
+                                    <outputDirectory>${base.wildfly.system.modules.dir}/org/slf4j/impl/main</outputDirectory>
                                     <artifactItems>
                                         <artifactItem>
                                             <groupId>org.jboss.slf4j</groupId>

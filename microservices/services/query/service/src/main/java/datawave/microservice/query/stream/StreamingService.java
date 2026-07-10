@@ -11,7 +11,7 @@ import datawave.microservice.query.QueryManagementService;
 import datawave.microservice.query.stream.listener.StreamingResponseListener;
 import datawave.microservice.query.stream.runner.StreamingCall;
 import datawave.microservice.querymetric.QueryMetricClient;
-import datawave.security.util.ProxiedEntityUtils;
+import datawave.security.util.DnUtils;
 import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.NoResultsQueryException;
 import datawave.webservice.query.exception.QueryException;
@@ -72,7 +72,7 @@ public class StreamingService {
      */
     public String createAndExecute(String queryLogicName, MultiValueMap<String,String> parameters, String pool, DatawaveUserDetails currentUser,
                     DatawaveUserDetails serverUser, StreamingResponseListener listener) throws QueryException {
-        String user = ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName());
+        String user = DnUtils.getShortName(currentUser.getPrimaryUser().getName());
         if (log.isDebugEnabled()) {
             log.info("Request: {}/createAndExecute from {} with params: {}", queryLogicName, user, parameters);
         } else {
@@ -101,7 +101,7 @@ public class StreamingService {
      *            the listener which will handle the result pages, not null
      */
     public void execute(String queryId, DatawaveUserDetails currentUser, DatawaveUserDetails serverUser, StreamingResponseListener listener) {
-        log.info("Request: {}/execute from {}", queryId, ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName()));
+        log.info("Request: {}/execute from {}", queryId, DnUtils.getShortName(currentUser.getPrimaryUser().getName()));
 
         submitStreamingCall(queryId, currentUser, serverUser, listener);
     }
