@@ -34,12 +34,12 @@ public class AnnotationSyncListener implements EntryAddedListener<String,Object>
     @Override
     public void entryAdded(EntryEvent<String,Object> event) {
         if (event.getName().equals("annotations")) {
-            log.info("syncing to docAnnotations");
             if (!(event.getValue() instanceof Annotation)) {
                 log.trace("unexpected value: " + event.getValue().getClass() + " " + event.getValue());
                 return;
             }
             Annotation annotation = (Annotation) event.getValue();
+            log.info("syncing to docAnnotations");
             if (instance != null) {
                 log.info("pushing to alt map");
                 IMap<String,List<String>> annotationsMap = instance.getMap("docAnnotations");
