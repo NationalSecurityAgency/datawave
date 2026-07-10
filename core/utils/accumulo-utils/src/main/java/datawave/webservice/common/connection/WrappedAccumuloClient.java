@@ -38,14 +38,11 @@ public class WrappedAccumuloClient implements AccumuloClient {
         this.mock = mock;
     }
 
-    public void setClientConfig(AccumuloClientConfiguration clientConfig) {
-        this.clientConfig = clientConfig;
-    }
-
     /**
      * This will update the client configuration with overrides
      *
      * @param clientConfig
+     *            The config to load for overrides
      */
     public void updateClientConfig(AccumuloClientConfiguration clientConfig) {
         AccumuloClientConfiguration merged = new AccumuloClientConfiguration();
