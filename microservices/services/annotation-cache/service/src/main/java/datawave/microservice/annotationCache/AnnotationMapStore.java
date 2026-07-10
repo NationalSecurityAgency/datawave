@@ -12,14 +12,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.AmqpException;
 import org.springframework.amqp.rabbit.connection.CorrelationData;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.messaging.Message;
-import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.stereotype.Component;
-import org.springframework.util.MimeType;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
@@ -34,16 +31,11 @@ public class AnnotationMapStore implements MapStore<String,Object>, HazelcastIns
 
     private HazelcastInstance hazelcastInstance;
 
-    // currently unused, couldn't get exchange not exist, topic not exist to bounce when sending through this
     private final StreamBridge streamBridge;
 
-    private final RabbitTemplate rabbitTemplate;
-
-    public AnnotationMapStore(StreamBridge streamBridge, RabbitTemplate rabbitTemplate) {
+    public AnnotationMapStore(StreamBridge streamBridge) {
         this.streamBridge = streamBridge;
-        this.rabbitTemplate = rabbitTemplate;
         log.info("injected bridge: " + streamBridge);
-        log.info("injected template: " + rabbitTemplate);
     }
 
     // this is done by hazelcast to inject the instance
@@ -70,14 +62,17 @@ public class AnnotationMapStore implements MapStore<String,Object>, HazelcastIns
         CorrelationData correlationData = new CorrelationData(correlationId);
 
         Message<Annotation> message = MessageBuilder.withPayload((Annotation) o).setHeader("amqp_correlationData", correlationData)
-                        .setHeader("amqp_publishConfirmCorrelation", correlationData)
-                        .setHeader(MessageHeaders.CONTENT_TYPE, MimeType.valueOf("application/x-protobuf")).build();
+                        .setHeader("amqp_publishConfirmCorrelation", correlationData).build();
 
         log.info("Sending message synchronously, ID: {}", correlationId);
 
         try {
-            rabbitTemplate.convertAndSend("annotation", "", o, correlationData);
-            // streamBridge.send("persisted-out-0", message);
+            log.info("sending with streamBridge");
+            boolean sent = streamBridge.send("persisted-out-0", message);
+
+            if (!sent) {
+                throw new RuntimeException("StreamBridge failed to hand off the message to the internal channel.");
+            }
 
             // 2. BLOCK the current thread until RabbitMQ responds with an ACK/NACK (or times out)
             // Adjust timeout (e.g., 5 seconds) to match your SLA requirements
