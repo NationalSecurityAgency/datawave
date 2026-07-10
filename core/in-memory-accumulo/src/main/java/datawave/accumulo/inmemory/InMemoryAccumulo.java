@@ -16,6 +16,7 @@
  */
 package datawave.accumulo.inmemory;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -29,39 +30,81 @@ import org.apache.accumulo.core.client.admin.TimeType;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.clientImpl.Namespace;
 import org.apache.accumulo.core.data.Mutation;
-import org.apache.accumulo.core.metadata.MetadataTable;
-import org.apache.accumulo.core.metadata.RootTable;
-import org.apache.accumulo.core.replication.ReplicationTable;
+import org.apache.accumulo.core.metadata.SystemTables;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.NamespacePermission;
 import org.apache.accumulo.core.security.SystemPermission;
 import org.apache.accumulo.core.security.TablePermission;
 import org.apache.accumulo.core.util.tables.TableNameUtil;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.io.Text;
 
 public class InMemoryAccumulo {
+
+    public static final String INSTANCE_NAME = "mock-instance";
+
+    public static class CachedConfiguration {
+        private static org.apache.hadoop.conf.Configuration configuration = null;
+
+        public static synchronized org.apache.hadoop.conf.Configuration getInstance() {
+            if (configuration == null)
+                setInstance(new org.apache.hadoop.conf.Configuration());
+            return configuration;
+        }
+
+        public static synchronized org.apache.hadoop.conf.Configuration setInstance(org.apache.hadoop.conf.Configuration update) {
+            org.apache.hadoop.conf.Configuration result = configuration;
+            configuration = update;
+            return result;
+        }
+    }
+
+    static FileSystem getDefaultFileSystem() {
+        try {
+            Configuration conf = CachedConfiguration.getInstance();
+            conf.set("fs.file.impl", "org.apache.hadoop.fs.LocalFileSystem");
+            conf.set("fs.default.name", "file:///");
+            return FileSystem.get(CachedConfiguration.getInstance());
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
     final Map<String,InMemoryTable> tables = Collections.synchronizedMap(new HashMap<>());
     final Map<String,InMemoryNamespace> namespaces = Collections.synchronizedMap(new HashMap<>());
     final Map<String,String> systemProperties = Collections.synchronizedMap(new HashMap<>());
     final Map<String,InMemoryUser> users = Collections.synchronizedMap(new HashMap<>());
     final FileSystem fs;
     final AtomicInteger tableIdCounter = new AtomicInteger(0);
+    final String instanceName;
 
-    InMemoryAccumulo(FileSystem fs) {
+    public InMemoryAccumulo() {
+        this(INSTANCE_NAME, getDefaultFileSystem());
+    }
+
+    public InMemoryAccumulo(String instanceName) {
+        this(instanceName, getDefaultFileSystem());
+    }
+
+    public InMemoryAccumulo(String instanceName, FileSystem fs) {
         InMemoryUser root = new InMemoryUser("root", new PasswordToken(new byte[0]), Authorizations.EMPTY);
         root.permissions.add(SystemPermission.SYSTEM);
         users.put(root.name, root);
         namespaces.put(Namespace.DEFAULT.name(), new InMemoryNamespace());
         namespaces.put(Namespace.ACCUMULO.name(), new InMemoryNamespace());
-        createTable("root", RootTable.NAME, true, TimeType.LOGICAL);
-        createTable("root", MetadataTable.NAME, true, TimeType.LOGICAL);
-        createTable("root", ReplicationTable.NAME, true, TimeType.LOGICAL);
+        createTable("root", SystemTables.ROOT.tableName(), true, TimeType.LOGICAL);
+        createTable("root", SystemTables.METADATA.tableName(), true, TimeType.LOGICAL);
         this.fs = fs;
+        this.instanceName = instanceName;
     }
 
     public FileSystem getFileSystem() {
         return fs;
+    }
+
+    public String getInstanceID() {
+        return "mock-instance-id";
     }
 
     void setProperty(String key, String value) {

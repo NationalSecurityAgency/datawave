@@ -92,10 +92,11 @@ public class InMemoryTable {
     private String namespaceName;
     private String tableId;
 
+    // TODO: Remove limitVersion later
     InMemoryTable(boolean limitVersion, TimeType timeType, String tableId) {
         this.timeType = timeType;
         this.tableId = tableId;
-        settings = IteratorConfigUtil.generateInitialTableProperties(limitVersion);
+        settings = IteratorConfigUtil.getInitialTableProperties();
         for (Entry<String,String> entry : DefaultConfiguration.getInstance()) {
             String key = entry.getKey();
             if (key.startsWith(Property.TABLE_PREFIX.getKey()))

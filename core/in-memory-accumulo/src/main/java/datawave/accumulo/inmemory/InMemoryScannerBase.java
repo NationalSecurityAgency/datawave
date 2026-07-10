@@ -28,7 +28,6 @@ import org.apache.accumulo.core.client.SampleNotPresentException;
 import org.apache.accumulo.core.client.sample.SamplerConfiguration;
 import org.apache.accumulo.core.clientImpl.ScannerOptions;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
-import org.apache.accumulo.core.conf.DefaultConfiguration;
 import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Column;
@@ -46,7 +45,6 @@ import org.apache.accumulo.core.iteratorsImpl.system.DeletingIterator;
 import org.apache.accumulo.core.iteratorsImpl.system.MultiIterator;
 import org.apache.accumulo.core.iteratorsImpl.system.VisibilityFilter;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.accumulo.core.spi.common.ServiceEnvironment;
 
 public class InMemoryScannerBase extends ScannerOptions {
 
@@ -71,29 +69,26 @@ public class InMemoryScannerBase extends ScannerOptions {
     static class InMemoryIteratorEnvironment implements IteratorEnvironment {
 
         private final Authorizations auths;
+        private final InMemoryTable table;
 
-        InMemoryIteratorEnvironment(Authorizations auths) {
+        InMemoryIteratorEnvironment(Authorizations auths, InMemoryTable table) {
             this.auths = auths;
-        }
-
-        @Override
-        public SortedKeyValueIterator<Key,Value> reserveMapFileReader(String mapFileName) throws IOException {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public AccumuloConfiguration getConfig() {
-            return DefaultConfiguration.getInstance();
+            this.table = table;
         }
 
         @Override
         public PluginEnvironment getPluginEnv() {
-            return MockPluginEnvironment.newInstance(getConfig());
+            return MockPluginEnvironment.newInstance(table);
         }
 
         @Override
         public TableId getTableId() {
-            return null;
+            return TableId.of(table.getTableId());
+        }
+
+        @Override
+        public boolean isRunningLowOnMemory() {
+            return false;
         }
 
         @Override
@@ -110,17 +105,7 @@ public class InMemoryScannerBase extends ScannerOptions {
             return false;
         }
 
-        @Override
-        public ServiceEnvironment getServiceEnv() {
-            return null;
-        }
-
         private ArrayList<SortedKeyValueIterator<Key,Value>> topLevelIterators = new ArrayList<>();
-
-        @Override
-        public void registerSideChannel(SortedKeyValueIterator<Key,Value> iter) {
-            topLevelIterators.add(iter);
-        }
 
         @Override
         public Authorizations getAuthorizations() {
@@ -151,13 +136,13 @@ public class InMemoryScannerBase extends ScannerOptions {
         }
     }
 
-    public SortedKeyValueIterator<Key,Value> createFilter(SortedKeyValueIterator<Key,Value> inner) throws IOException {
+    public SortedKeyValueIterator<Key,Value> createFilter(SortedKeyValueIterator<Key,Value> inner) throws IOException, ReflectiveOperationException {
         byte[] defaultLabels = {};
         inner = new ColumnFamilySkippingIterator(DeletingIterator.wrap(inner, false, DeletingIterator.Behavior.PROCESS));
         SortedKeyValueIterator<Key,Value> cqf = ColumnQualifierFilter.wrap(inner, new HashSet<>(fetchedColumns));
         SortedKeyValueIterator<Key,Value> wrappedFilter = VisibilityFilter.wrap(cqf, auths, defaultLabels);
         AccumuloConfiguration conf = new InMemoryConfiguration(table.settings);
-        InMemoryIteratorEnvironment iterEnv = new InMemoryIteratorEnvironment(auths);
+        InMemoryIteratorEnvironment iterEnv = new InMemoryIteratorEnvironment(auths, table);
         SortedKeyValueIterator<Key,Value> injectedIterators = applyInjectedIterators(wrappedFilter);
         IteratorBuilder.IteratorBuilderEnv iterLoad = IteratorConfigUtil.loadIterConf(IteratorScope.scan, serverSideIteratorList, serverSideIteratorOptions,
                         conf);
@@ -187,10 +172,11 @@ public class InMemoryScannerBase extends ScannerOptions {
      * Apply all injected iterators in order to the base wrapped iterator
      *
      * @param base
-     * @return
+     *            iterator to use as the base
+     * @return a stack of iterators
      */
     private SortedKeyValueIterator<Key,Value> applyInjectedIterators(SortedKeyValueIterator<Key,Value> base) {
-        SortedKeyValueIterator prev = base;
+        SortedKeyValueIterator<Key,Value> prev = base;
         for (SortedKeyValueIterator<Key,Value> injected : injectedIterators) {
             try {
                 injected.init(prev, null, null);
@@ -207,6 +193,7 @@ public class InMemoryScannerBase extends ScannerOptions {
      * Add an iterator to the front of the iterator stack
      *
      * @param injectedIterator
+     *            iterator to add
      */
     public void addInjectedIterator(SortedKeyValueIterator<Key,Value> injectedIterator) {
         injectedIterators.add(injectedIterator);

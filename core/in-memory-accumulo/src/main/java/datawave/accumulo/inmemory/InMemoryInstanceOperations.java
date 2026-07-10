@@ -16,20 +16,26 @@
  */
 package datawave.accumulo.inmemory;
 
+import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.ConcurrentModificationException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiPredicate;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.admin.ActiveCompaction;
 import org.apache.accumulo.core.client.admin.ActiveScan;
 import org.apache.accumulo.core.client.admin.InstanceOperations;
+import org.apache.accumulo.core.client.admin.servers.ServerId;
 import org.apache.accumulo.core.data.InstanceId;
+import org.apache.accumulo.core.data.ResourceGroupId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -74,6 +80,11 @@ class InMemoryInstanceOperations implements InstanceOperations {
     }
 
     @Override
+    public Map<String,String> getSystemProperties() throws AccumuloException, AccumuloSecurityException {
+        return Map.of();
+    }
+
+    @Override
     public List<String> getManagerLocations() {
         return null;
     }
@@ -89,8 +100,28 @@ class InMemoryInstanceOperations implements InstanceOperations {
     }
 
     @Override
+    public ServerId getServer(ServerId.Type type, ResourceGroupId resourceGroupId, String s, int i) {
+        return null;
+    }
+
+    @Override
+    public Set<ServerId> getServers(ServerId.Type type) {
+        return Set.of();
+    }
+
+    @Override
+    public Set<ServerId> getServers(ServerId.Type type, Predicate<ResourceGroupId> predicate, BiPredicate<String,Integer> biPredicate) {
+        return Set.of();
+    }
+
+    @Override
     public List<ActiveScan> getActiveScans(String tserver) throws AccumuloException, AccumuloSecurityException {
         return new ArrayList<>();
+    }
+
+    @Override
+    public List<ActiveScan> getActiveScans(Collection<ServerId> collection) throws AccumuloException, AccumuloSecurityException {
+        return List.of();
     }
 
     @Override
@@ -115,7 +146,17 @@ class InMemoryInstanceOperations implements InstanceOperations {
     }
 
     @Override
+    public List<ActiveCompaction> getActiveCompactions(Collection<ServerId> collection) throws AccumuloException, AccumuloSecurityException {
+        return List.of();
+    }
+
+    @Override
     public void ping(String tserver) throws AccumuloException {
+
+    }
+
+    @Override
+    public void ping(ServerId serverId) throws AccumuloException {
 
     }
 
@@ -123,12 +164,12 @@ class InMemoryInstanceOperations implements InstanceOperations {
     public void waitForBalance() throws AccumuloException {}
 
     @Override
-    public String getInstanceID() {
-        return "in-memory-instance";
+    public InstanceId getInstanceId() {
+        return InstanceId.of("in-memory-instance");
     }
 
     @Override
-    public InstanceId getInstanceId() {
-        return InstanceId.of("in-memory-instance");
+    public Duration getManagerTime() throws AccumuloException, AccumuloSecurityException {
+        return null;
     }
 }

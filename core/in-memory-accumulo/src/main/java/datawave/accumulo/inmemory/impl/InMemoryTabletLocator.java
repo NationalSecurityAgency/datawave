@@ -20,22 +20,25 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiConsumer;
 
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
+import org.apache.accumulo.core.client.InvalidTabletHostingRequestException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.clientImpl.ClientContext;
-import org.apache.accumulo.core.clientImpl.TabletLocator;
+import org.apache.accumulo.core.clientImpl.ClientTabletCache;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.TableId;
 import org.apache.accumulo.core.dataImpl.KeyExtent;
 import org.apache.hadoop.io.Text;
 
-public class InMemoryTabletLocator extends TabletLocator {
+public class InMemoryTabletLocator extends ClientTabletCache {
+
     @Override
-    public TabletLocation locateTablet(ClientContext context, Text row, boolean skipRow, boolean retry)
-                    throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
+    public CachedTablet findTablet(ClientContext clientContext, Text text, boolean b, LocationNeed locationNeed, int i, Range range)
+                    throws AccumuloException, AccumuloSecurityException, TableNotFoundException, InvalidTabletHostingRequestException {
         throw new UnsupportedOperationException();
     }
 
@@ -46,6 +49,12 @@ public class InMemoryTabletLocator extends TabletLocator {
         for (T m : mutations)
             tsm.addMutation(new KeyExtent(TableId.of(""), new Text(), new Text()), m);
         binnedMutations.put("", tsm);
+    }
+
+    @Override
+    public List<Range> findTablets(ClientContext clientContext, List<Range> list, BiConsumer<CachedTablet,Range> biConsumer, LocationNeed locationNeed)
+                    throws AccumuloException, AccumuloSecurityException, TableNotFoundException, InvalidTabletHostingRequestException {
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -63,7 +72,4 @@ public class InMemoryTabletLocator extends TabletLocator {
 
     @Override
     public void invalidateCache() {}
-
-    @Override
-    public void invalidateCache(ClientContext context, String server) {}
 }

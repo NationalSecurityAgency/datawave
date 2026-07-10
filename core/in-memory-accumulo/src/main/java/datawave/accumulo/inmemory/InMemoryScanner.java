@@ -102,7 +102,7 @@ public class InMemoryScanner extends InMemoryScannerBase implements Scanner, Sca
             i = new RangeFilter(createFilter(i), range);
             i.seek(range, createColumnBSS(fetchedColumns), !fetchedColumns.isEmpty());
             return new IteratorAdapter(i);
-        } catch (IOException e) {
+        } catch (IOException | ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }
 

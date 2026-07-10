@@ -53,7 +53,7 @@ public class InMemoryBatchScanner extends InMemoryScannerBase implements BatchSc
 
     @Override
     public void setRanges(Collection<Range> ranges) {
-        if (ranges == null || ranges.size() == 0) {
+        if (ranges == null || ranges.isEmpty()) {
             throw new IllegalArgumentException("ranges must be non null and contain at least 1 range");
         }
 
@@ -76,7 +76,7 @@ public class InMemoryBatchScanner extends InMemoryScannerBase implements BatchSc
                 if (i.hasTop()) {
                     chain.addIterator(new IteratorAdapter(i));
                 }
-            } catch (IOException e) {
+            } catch (IOException | ReflectiveOperationException e) {
                 throw new RuntimeException(e);
             }
         }
@@ -108,7 +108,7 @@ public class InMemoryBatchScanner extends InMemoryScannerBase implements BatchSc
                 for (Range r : ranges) {
                     rangesForPrint.append(r.toString());
                 }
-                throw new IllegalStateException("Did not find specified key in previous set of ranges: " + rangesForPrint.toString() + " key: " + lastKey);
+                throw new IllegalStateException("Did not find specified key in previous set of ranges: " + rangesForPrint + " key: " + lastKey);
             }
             this.ranges = newRanges;
         }

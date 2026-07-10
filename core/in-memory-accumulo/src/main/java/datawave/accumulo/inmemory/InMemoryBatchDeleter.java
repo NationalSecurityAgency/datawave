@@ -56,8 +56,7 @@ public class InMemoryBatchDeleter extends InMemoryBatchScanner implements BatchD
     @Override
     public void delete() throws MutationsRejectedException, TableNotFoundException {
 
-        BatchWriter writer = new InMemoryBatchWriter(acc, tableName);
-        try {
+        try (BatchWriter writer = new InMemoryBatchWriter(acc, tableName)) {
             Iterator<Entry<Key,Value>> iter = super.iterator();
             while (iter.hasNext()) {
                 Entry<Key,Value> next = iter.next();
@@ -66,8 +65,6 @@ public class InMemoryBatchDeleter extends InMemoryBatchScanner implements BatchD
                 m.putDelete(k.getColumnFamily(), k.getColumnQualifier(), new ColumnVisibility(k.getColumnVisibility()), k.getTimestamp());
                 writer.addMutation(m);
             }
-        } finally {
-            writer.close();
         }
     }
 

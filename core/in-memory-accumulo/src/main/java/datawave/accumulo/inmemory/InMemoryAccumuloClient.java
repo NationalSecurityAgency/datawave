@@ -32,7 +32,6 @@ import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.admin.InstanceOperations;
 import org.apache.accumulo.core.client.admin.NamespaceOperations;
-import org.apache.accumulo.core.client.admin.ReplicationOperations;
 import org.apache.accumulo.core.client.admin.SecurityOperations;
 import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
@@ -42,19 +41,18 @@ import org.apache.accumulo.core.clientImpl.thrift.SecurityErrorCode;
 import org.apache.accumulo.core.conf.DefaultConfiguration;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.SystemPermission;
-import org.apache.accumulo.core.singletons.SingletonReservation;
 
 public class InMemoryAccumuloClient extends ClientContext implements AccumuloClient {
 
     String username;
     private final InMemoryAccumulo acu;
 
-    public InMemoryAccumuloClient(String username, InMemoryInstance instance) throws AccumuloSecurityException {
-        this(new Credentials(username, new PasswordToken(new byte[0])), instance.acu);
+    public InMemoryAccumuloClient(String username, InMemoryAccumulo acu) throws AccumuloSecurityException {
+        this(new Credentials(username, new PasswordToken(new byte[0])), acu);
     }
 
     public InMemoryAccumuloClient(Credentials credentials, InMemoryAccumulo acu) throws AccumuloSecurityException {
-        super(SingletonReservation.noop(), new InMemoryClientInfo(credentials), DefaultConfiguration.getInstance(), null);
+        super(new InMemoryClientInfo(credentials), DefaultConfiguration.getInstance(), null);
         if (credentials.getToken().isDestroyed())
             throw new AccumuloSecurityException(credentials.getPrincipal(), SecurityErrorCode.TOKEN_EXPIRED);
         this.username = credentials.getPrincipal();
@@ -158,12 +156,6 @@ public class InMemoryAccumuloClient extends ClientContext implements AccumuloCli
 
     @Override
     public ConditionalWriter createConditionalWriter(String tableName, ConditionalWriterConfig config) {
-        // TODO add implementation
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public ReplicationOperations replicationOperations() {
         // TODO add implementation
         throw new UnsupportedOperationException();
     }
