@@ -1056,7 +1056,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
         Properties props = Accumulo.newClientProperties().to(conf.get(INSTANCE_NAME), conf.get(ZOOKEEPERS))
                         .as(getUsername(conf), new PasswordToken(getPassword(conf))).build();
         ClientInfo info = ClientInfo.from(props);
-        ClientContext context = new ClientContext(SingletonManager.getClientReservation(), info, ClientConfConverter.toAccumuloConf(info.getProperties()),
+        ClientContext context = new ClientContext(info, ClientConfConverter.toAccumuloConf(info.getClientProperties()),
                         Threads.UEH);
         return TabletLocator.getLocator(context, context.getTableId(tableName));
     }
