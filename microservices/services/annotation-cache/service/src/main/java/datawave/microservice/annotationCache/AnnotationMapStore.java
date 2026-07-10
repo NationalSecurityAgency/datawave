@@ -3,12 +3,23 @@ package datawave.microservice.annotationCache;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Properties;
+import java.util.UUID;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.amqp.AmqpException;
+import org.springframework.amqp.rabbit.connection.CorrelationData;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.cloud.stream.function.StreamBridge;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageHeaders;
+import org.springframework.messaging.MessagingException;
+import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.stereotype.Component;
+import org.springframework.util.MimeType;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
@@ -23,8 +34,9 @@ public class AnnotationMapStore implements MapStore<String,Object>, HazelcastIns
 
     private HazelcastInstance hazelcastInstance;
 
+    // currently unused, couldn't get exchange not exist, topic not exist to bounce when sending through this
     private final StreamBridge streamBridge;
-    // not actively used, trying to use streamBridge instead
+
     private final RabbitTemplate rabbitTemplate;
 
     public AnnotationMapStore(StreamBridge streamBridge, RabbitTemplate rabbitTemplate) {
@@ -54,46 +66,41 @@ public class AnnotationMapStore implements MapStore<String,Object>, HazelcastIns
             log.trace("ignoring non-annotation object of type: " + o.getClass() + " value: " + o);
             return;
         }
-        if (streamBridge.send("persisted-out-0", o)) {
-            log.info("Stored " + s + " with value " + o);
-        } else {
-            log.warn("failed to persist");
-        }
-        // Haven't gotten this mechanism to work yet, but I think it's the preferred way
-        //
-        // CorrelationData correlationData = new CorrelationData();
-        // rabbitTemplate.convertAndSend("annotation", "", o, correlationData);
-        //
-        // try {
-        // CorrelationData.Confirm confirm = correlationData.getFuture().get(5, TimeUnit.SECONDS);
-        // if (!confirm.isAck()) {
-        // log.info("failed!");
-        // } else {
-        // log.info("stored!");
-        // }
-        // } catch (InterruptedException e) {
-        // throw new RuntimeException(e);
-        // } catch (ExecutionException e) {
-        // throw new RuntimeException(e);
-        // } catch (TimeoutException e) {
-        // throw new RuntimeException(e);
-        // }
-    }
+        String correlationId = UUID.randomUUID().toString();
+        CorrelationData correlationData = new CorrelationData(correlationId);
 
-    // no loner needed with producer.sync=true streamBridge.send() will block until confirmed
-    //
-    // @ServiceActivator(inputChannel = "producerAckChannel")
-    // public MessageHandler ackHandler() {
-    // return message -> {
-    // Boolean isAck = message.getHeaders().get(AmqpHeaders.PUBLISH_CONFIRM, Boolean.class);
-    // if (Boolean.TRUE.equals(isAck)) {
-    // System.out.println("Broker Confirmed delivery.");
-    // } else {
-    // String reason = message.getHeaders().get(AmqpHeaders.PUBLISH_CONFIRM_NACK_CAUSE, String.class);
-    // System.err.println("Broker NACKed message. Reason: " + reason);
-    // }
-    // };
-    // }
+        Message<Annotation> message = MessageBuilder.withPayload((Annotation) o).setHeader("amqp_correlationData", correlationData)
+                        .setHeader("amqp_publishConfirmCorrelation", correlationData)
+                        .setHeader(MessageHeaders.CONTENT_TYPE, MimeType.valueOf("application/x-protobuf")).build();
+
+        log.info("Sending message synchronously, ID: {}", correlationId);
+
+        try {
+            rabbitTemplate.convertAndSend("annotation", "", o, correlationData);
+            // streamBridge.send("persisted-out-0", message);
+
+            // 2. BLOCK the current thread until RabbitMQ responds with an ACK/NACK (or times out)
+            // Adjust timeout (e.g., 5 seconds) to match your SLA requirements
+            CorrelationData.Confirm confirm = correlationData.getFuture().get(5, TimeUnit.SECONDS);
+
+            if (correlationData.getReturned() != null) {
+                String replyText = correlationData.getReturned().getReplyText();
+                throw new RuntimeException("Message was RETURNED by broker (No queue bound to exchange!). Reason: " + replyText);
+            }
+
+            if (confirm.isAck()) {
+                log.info("Successfully delivered and ACKed by broker for ID: {}", correlationId);
+            } else {
+                // This covers Nack scenarios (e.g., broker disk full, internal rabbit errors)
+                throw new RuntimeException("Broker rejected message (NACK). Reason: " + confirm.getReason());
+            }
+        } catch (MessagingException | AmqpException e) {
+            log.info("caught messaging exception", e);
+            throw new RuntimeException(e);
+        } catch (ExecutionException | InterruptedException | TimeoutException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     @Override
     public void storeAll(Map<String,Object> map) {
