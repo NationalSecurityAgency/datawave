@@ -6,6 +6,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.InetAddress;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -107,8 +108,6 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
     protected static final String RACKSTRATEGY = PREFIX + ".rack.strategy.class";
     protected static final String RANGESPLITSTRATEGY = PREFIX + ".split.strategy.class";
     protected static final String MOCK = ".useInMemoryInstance";
-
-    protected static final String UTF8 = "UTF-8";
 
     protected static final String RANGES = PREFIX + ".ranges";
     protected static final String AUTO_ADJUST_RANGES = PREFIX + ".ranges.autoAdjust";
@@ -1258,12 +1257,8 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
         public AccumuloIteratorOption(String iteratorOption) {
             StringTokenizer tokenizer = new StringTokenizer(iteratorOption, FIELD_SEP);
             this.iteratorName = tokenizer.nextToken();
-            try {
-                this.key = URLDecoder.decode(tokenizer.nextToken(), UTF8);
-                this.value = URLDecoder.decode(tokenizer.nextToken(), UTF8);
-            } catch (UnsupportedEncodingException e) {
-                throw new RuntimeException(e);
-            }
+            this.key = URLDecoder.decode(tokenizer.nextToken(), StandardCharsets.UTF_8);
+            this.value = URLDecoder.decode(tokenizer.nextToken(), StandardCharsets.UTF_8);
         }
 
         public String getIteratorName() {
@@ -1281,7 +1276,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
         @Override
         public String toString() {
             try {
-                return iteratorName + FIELD_SEP + URLEncoder.encode(key, "UTF8") + FIELD_SEP + URLEncoder.encode(value, "UTF8");
+                return iteratorName + FIELD_SEP + URLEncoder.encode(key, StandardCharsets.UTF_8) + FIELD_SEP + URLEncoder.encode(value, "UTF8");
             } catch (UnsupportedEncodingException e) {
                 throw new RuntimeException(e);
             }
