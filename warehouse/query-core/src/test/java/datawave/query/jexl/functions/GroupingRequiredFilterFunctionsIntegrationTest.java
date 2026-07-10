@@ -1,12 +1,13 @@
 package datawave.query.jexl.functions;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import java.util.List;
 import java.util.TimeZone;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -101,9 +102,9 @@ public class GroupingRequiredFilterFunctionsIntegrationTest extends AbstractQuer
     @Override
     protected void extraAssertions() {
         if (expectNoResults) {
-            Assertions.assertThat(response.getEvents()).isNull();
+            assertThat(response.getEvents()).isNull();
         } else {
-            Assertions.assertThat(response.getEvents()).hasSize(expectedEventCount);
+            assertThat(response.getEvents()).hasSize(expectedEventCount);
         }
     }
 
