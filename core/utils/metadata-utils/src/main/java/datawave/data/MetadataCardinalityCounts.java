@@ -57,6 +57,7 @@ public class MetadataCardinalityCounts implements Serializable {
      * This method can be used to merge multiple cardinality counts.
      *
      * @param counts
+     *            the counts to merge together
      */
     public void merge(MetadataCardinalityCounts counts) {
         // average the instance counts together avoiding overflows
