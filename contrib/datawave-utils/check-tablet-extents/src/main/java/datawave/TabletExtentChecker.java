@@ -73,6 +73,9 @@ public final class TabletExtentChecker implements KeywordExecutable {
         @Parameter(names = {"-c", "--compact"}, description = "Compact the tablets")
         public boolean compactTablets = false;
 
+        @Parameter(names = {"-d", "--debug"}, description = "Display tool debug info")
+        public boolean debug = false;
+
         /**
          * Parse the given arguments array and populate this {@link Opts}.
          *
@@ -129,7 +132,7 @@ public final class TabletExtentChecker implements KeywordExecutable {
 
         try (ServerContext context = new ServerContext(opts.getSiteConfiguration())) {
             // Fetch the recommended tablet ranges to compact.
-            checkTablets(context, opts.tableName, opts.beginRow, opts.endRow, opts.mergeExtents, opts.compactTablets);
+            checkTablets(context, opts.tableName, opts.beginRow, opts.endRow, opts.mergeExtents, opts.compactTablets, opts.debug);
         }
     }
 
@@ -173,7 +176,7 @@ public final class TabletExtentChecker implements KeywordExecutable {
      * @throws IOException
      *             if an error occurs while reading the client properties file
      */
-    static List<Pair<Text,Text>> findCompactableTablets(ClientContext context, String tableName, Text begin, Text end, boolean mergeExtents)
+    static List<Pair<Text,Text>> findCompactableTablets(ClientContext context, String tableName, Text begin, Text end, boolean mergeExtents, boolean debug)
                     throws AccumuloException, TableNotFoundException, IOException {
         List<Pair<Text,Text>> compactionExtents = new ArrayList<>();
 
@@ -190,7 +193,7 @@ public final class TabletExtentChecker implements KeywordExecutable {
             // Iterate over each tablet.
             for (TabletMetadata tablet : tablets) {
                 // Determine whether the tablet needs compaction.
-                boolean tabletRequiresCompaction = tabletRequiresCompaction(context, tableName, tablet);
+                boolean tabletRequiresCompaction = tabletRequiresCompaction(context, tableName, tablet, debug);
                 KeyExtent extent = tablet.getExtent();
 
                 // The current tablet requires compaction.
@@ -261,7 +264,7 @@ public final class TabletExtentChecker implements KeywordExecutable {
      *            the tablet metadata
      * @return true if the tablet requires compaction, or false
      */
-    private static boolean tabletRequiresCompaction(ClientContext context, String tableName, TabletMetadata tablet)
+    private static boolean tabletRequiresCompaction(ClientContext context, String tableName, TabletMetadata tablet, boolean debug)
                     throws AccumuloException, TableNotFoundException, IOException {
         // Fetch the list of RFiles for the tablet.
         ConfigurationCopy tableConf = new ConfigurationCopy(context.tableOperations().getConfiguration(tableName));
@@ -277,12 +280,15 @@ public final class TabletExtentChecker implements KeywordExecutable {
                 Key first = openReader.getFirstKey();
                 Key last = openReader.getLastKey();
 
+                if (debug) {
+                    System.out.println("Extent: " + extent);
+                    System.out.println("First key: " + first);
+                    System.out.println("Last key: " + last);
+                }
+
                 // A tablet requires a compaction if any of the following are true:
                 // - The first key is outside the tablet's extent.
                 // - The last key is outside the tablet's extent.
-                System.out.println("Extent: " + extent);
-                System.out.println("First key: " + first);
-                System.out.println("Last key: " + last);
 
                 if ((first != null && !extent.contains(first.getRow())) || (last != null && !extent.contains(last.getRow()))) {
                     return true;
@@ -292,9 +298,9 @@ public final class TabletExtentChecker implements KeywordExecutable {
         return false;
     }
 
-    public static void checkTablets(ClientContext context, String tableName, Text begin, Text end, boolean mergeExtents, boolean compactTablets)
+    public static void checkTablets(ClientContext context, String tableName, Text begin, Text end, boolean mergeExtents, boolean compactTablets, boolean debug)
                     throws AccumuloException, TableNotFoundException, IOException, AccumuloSecurityException {
-        List<Pair<Text,Text>> compactionExtents = findCompactableTablets(context, tableName, begin, end, mergeExtents);
+        List<Pair<Text,Text>> compactionExtents = findCompactableTablets(context, tableName, begin, end, mergeExtents, debug);
 
         // Print a message when compactionExtents is empty
         if (compactionExtents.isEmpty()) {

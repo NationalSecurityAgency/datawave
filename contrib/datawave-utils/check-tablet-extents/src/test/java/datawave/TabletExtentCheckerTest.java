@@ -74,8 +74,8 @@ class TabletExtentCheckerTest {
     }
 
     /**
-     * Contains test methods that verify {@link TabletExtentChecker#findCompactableTablets(ClientContext, String, Text, Text, boolean )} tracks individual
-     * unmerged tablet extents given a table, tablet range, and mergeExtents == false.
+     * Contains test methods that verify {@link TabletExtentChecker#findCompactableTablets(ClientContext, String, Text, Text, boolean, boolean)} tracks
+     * individual unmerged tablet extents given a table, tablet range, and mergeExtents == false.
      */
     @Nested
     class MergeExtentsDisabledTests {
@@ -87,8 +87,8 @@ class TabletExtentCheckerTest {
 
         /**
          * Verify that given a table where all tablets require compaction, and given a tablet range,
-         * {@link TabletExtentChecker#findCompactableTablets(ClientContext, String, Text, Text, boolean )} returns multiple ranges to compact each tablet
-         * individually.
+         * {@link TabletExtentChecker#findCompactableTablets(ClientContext, String, Text, Text, boolean, boolean)} returns multiple ranges to compact each
+         * tablet individually.
          */
         @Test
         void testAllSingleTabletsNeedCompaction()
@@ -107,8 +107,8 @@ class TabletExtentCheckerTest {
 
         /**
          * Verify that given a table where only the first tablet requires compaction, and given a tablet range,
-         * {@link TabletExtentChecker#findCompactableTablets(ClientContext, String, Text, Text, boolean )} returns a single range that would compact only the
-         * first tablet.
+         * {@link TabletExtentChecker#findCompactableTablets(ClientContext, String, Text, Text, boolean, boolean)} returns a single range that would compact
+         * only the first tablet.
          */
         @Test
         void testOnlyFirstTabletNeedsCompaction()
@@ -128,7 +128,7 @@ class TabletExtentCheckerTest {
 
         /**
          * Verify that given a table where only the last tablet requires compaction, and given a tablet range,
-         * {@link TabletExtentChecker#findCompactableTablets(ClientContext, String, Text, Text, boolean )} returns a single range that would compact only the
+         * {@link TabletExtentChecker#findCompactableTablets(ClientContext, String, Text, Text, boolean, boolean)} a single range that would compact only the
          * last tablet.
          */
         @Test
@@ -147,7 +147,7 @@ class TabletExtentCheckerTest {
 
         /**
          * Verify that given a table where no tablets require compaction, and given a tablet range,
-         * {@link TabletExtentChecker#findCompactableTablets(ClientContext, String, Text, Text, boolean )} returns an empty list.
+         * {@link TabletExtentChecker#findCompactableTablets(ClientContext, String, Text, Text, boolean, boolean)} returns an empty list.
          */
         @Test
         void testNoTabletsNeedCompaction() throws AccumuloException, TableNotFoundException, TableExistsException, AccumuloSecurityException, IOException {
@@ -163,8 +163,8 @@ class TabletExtentCheckerTest {
 
         /**
          * Verify that given a table where only the first and last tablets require compaction, and given a tablet range,
-         * {@link TabletExtentChecker#findCompactableTablets(ClientContext, String, Text, Text, boolean )} returns separate ranges for the first and last
-         * compactable tablets.
+         * {@link TabletExtentChecker#findCompactableTablets(ClientContext, String, Text, Text, boolean, boolean)} returns separate ranges for the first and
+         * last compactable tablets.
          */
         @Test
         void testOnlyFirstAndLastTabletsNeedCompaction()
@@ -185,7 +185,7 @@ class TabletExtentCheckerTest {
 
         /**
          * Verify that given a table where only the last two tablets require compaction, and given a tablet range,
-         * {@link TabletExtentChecker#findCompactableTablets(ClientContext, String, Text, Text, boolean )} returns separate ranges for those tablets.
+         * {@link TabletExtentChecker#findCompactableTablets(ClientContext, String, Text, Text, boolean, boolean)} returns separate ranges for those tablets.
          */
         @Test
         void testLastTwoTabletsNeedCompaction() throws AccumuloException, TableNotFoundException, TableExistsException, AccumuloSecurityException, IOException {
@@ -204,7 +204,8 @@ class TabletExtentCheckerTest {
 
         /**
          * Verify that given a table where only the middle tablet requires compaction, and given a tablet range,
-         * {@link TabletExtentChecker#findCompactableTablets(ClientContext, String, Text, Text, boolean )} returns a range to compact that middle tablet.
+         * {@link TabletExtentChecker#findCompactableTablets(ClientContext, String, Text, Text, boolean, boolean)} returns a range to compact that middle
+         * tablet.
          */
         @Test
         void testMiddleTabletNeedsCompaction() throws AccumuloException, TableNotFoundException, TableExistsException, AccumuloSecurityException, IOException {
@@ -222,8 +223,8 @@ class TabletExtentCheckerTest {
 
         /**
          * Verify that given a table where multiple series of tablets at different locations require compaction, and given a tablet range,
-         * {@link TabletExtentChecker#findCompactableTablets(ClientContext, String, Text, Text, boolean )} returns multiple compaction ranges that includes a
-         * series of contiguous compactable tablets by merging their extents.
+         * {@link TabletExtentChecker#findCompactableTablets(ClientContext, String, Text, Text, boolean, boolean)} returns multiple compaction ranges that
+         * includes a series of contiguous compactable tablets by merging their extents.
          */
         @Test
         void testMultipleInnerCompactionRanges()
@@ -260,7 +261,7 @@ class TabletExtentCheckerTest {
 
         /**
          * Verify that given a table where all tablets starting from row 2000 to null are compacted, and given a tablet range from row 2000 to null,
-         * {@link TabletExtentChecker#findCompactableTablets(ClientContext, String, Text, Text, boolean )} returns an empty list.
+         * {@link TabletExtentChecker#findCompactableTablets(ClientContext, String, Text, Text, boolean, boolean)} returns an empty list.
          */
         @Test
         void testCompactableTabletOutsideInputRange()
@@ -281,7 +282,7 @@ class TabletExtentCheckerTest {
 
         /**
          * Verify that given a table with a compactable tablet, and given a key extent range that is contained within a tablet's range,
-         * {@link TabletExtentChecker#findCompactableTablets(ClientContext, String, Text, Text, boolean )} will return the full extent of the tablet.
+         * {@link TabletExtentChecker#findCompactableTablets(ClientContext, String, Text, Text, boolean, boolean)} will return the full extent of the tablet.
          */
         @Test
         void testInputInCompactableTabletRange()
@@ -305,8 +306,8 @@ class TabletExtentCheckerTest {
 
         /**
          * Verify that given a table with compactable tablets, a key extent range, starting row and ending row, mergeExtents = false, and compactTablets = true,
-         * {@link TabletExtentChecker#findCompactableTablets(ClientContext, String, Text, Text, boolean )} will return an empty list after compacting the
-         * tablets automatically in {@link TabletExtentChecker#checkTablets(ClientContext, String, Text, Text, boolean, boolean)}.
+         * {@link TabletExtentChecker#findCompactableTablets(ClientContext, String, Text, Text, boolean, boolean)} will return an empty list after compacting
+         * the tablets automatically in {@link TabletExtentChecker#checkTablets(ClientContext, String, Text, Text, boolean, boolean, boolean)} .
          *
          * @throws TableNotFoundException
          * @throws TableExistsException
@@ -328,8 +329,8 @@ class TabletExtentCheckerTest {
     }
 
     /**
-     * Contains test methods that verify {@link TabletExtentChecker#findCompactableTablets(ClientContext, String, Text, Text, boolean )} tracks individual
-     * unmerged tablet extents given client properties, the table name, a user provided tablet range, and mergeExtents == true.
+     * Contains test methods that verify {@link TabletExtentChecker#findCompactableTablets(ClientContext, String, Text, Text, boolean, boolean)} tracks
+     * individual unmerged tablet extents given client properties, the table name, a user provided tablet range, and mergeExtents == true.
      */
     @Nested
     class MergeExtentsEnabledTests {
@@ -341,8 +342,8 @@ class TabletExtentCheckerTest {
 
         /**
          * Verify that given a table where all tablets require compaction, and given a tablet range,
-         * {@link TabletExtentChecker#findCompactableTablets(ClientContext, String, Text, Text, boolean )} returns a single compaction range that would compact
-         * the entire table.
+         * {@link TabletExtentChecker#findCompactableTablets(ClientContext, String, Text, Text, boolean, boolean)} returns a single compaction range that would
+         * compact the entire table.
          */
         @Test
         void testAllTabletsNeedCompaction() throws AccumuloException, TableExistsException, AccumuloSecurityException, TableNotFoundException, IOException {
@@ -357,8 +358,8 @@ class TabletExtentCheckerTest {
 
         /**
          * Verify that given a table where only the first tablet requires compaction, and given a tablet range,
-         * {@link TabletExtentChecker#findCompactableTablets(ClientContext, String, Text, Text, boolean )} returns a single range that would compact only the
-         * first tablet.
+         * {@link TabletExtentChecker#findCompactableTablets(ClientContext, String, Text, Text, boolean, boolean)} returns a single range that would compact
+         * only the first tablet.
          */
         @Test
         void testOnlyFirstTabletNeedsCompaction()
@@ -377,8 +378,8 @@ class TabletExtentCheckerTest {
 
         /**
          * Verify that given a table where only the last tablet requires compaction, and given a tablet range,
-         * {@link TabletExtentChecker#findCompactableTablets(ClientContext, String, Text, Text, boolean )} returns a single range that would compact only the
-         * last tablet.
+         * {@link TabletExtentChecker#findCompactableTablets(ClientContext, String, Text, Text, boolean, boolean)} returns a single range that would compact
+         * only the last tablet.
          */
         @Test
         void testOnlyLastTabletNeedsCompaction()
@@ -397,7 +398,7 @@ class TabletExtentCheckerTest {
 
         /**
          * Verify that given a table where no tablets require compaction, and given a tablet range,
-         * {@link TabletExtentChecker#findCompactableTablets(ClientContext, String, Text, Text, boolean )} returns an empty list.
+         * {@link TabletExtentChecker#findCompactableTablets(ClientContext, String, Text, Text, boolean, boolean)} returns an empty list.
          */
         @Test
         void testNoTabletsNeedCompaction() throws AccumuloException, TableNotFoundException, TableExistsException, AccumuloSecurityException, IOException {
@@ -414,8 +415,8 @@ class TabletExtentCheckerTest {
 
         /**
          * Verify that given a table where only the first and last tablets require compaction, and given a tablet range,
-         * {@link TabletExtentChecker#findCompactableTablets(ClientContext, String, Text, Text, boolean )} returns separate ranges for the first and last
-         * compactable tablets.
+         * {@link TabletExtentChecker#findCompactableTablets(ClientContext, String, Text, Text, boolean, boolean)} returns separate ranges for the first and
+         * last compactable tablets.
          */
         @Test
         void testOnlyFirstAndLastTabletsNeedCompaction()
@@ -436,8 +437,8 @@ class TabletExtentCheckerTest {
 
         /**
          * Verify that given a table where only the last two tablets require compaction, and given a tablet range,
-         * {@link TabletExtentChecker#findCompactableTablets(ClientContext, String, Text, Text, boolean )} returns a single range that compacts the last two
-         * tablets.
+         * {@link TabletExtentChecker#findCompactableTablets(ClientContext, String, Text, Text, boolean, boolean)} returns a single range that compacts the last
+         * two tablets.
          */
         @Test
         void testLastTwoTabletsNeedCompaction() throws AccumuloException, TableNotFoundException, TableExistsException, AccumuloSecurityException, IOException {
@@ -456,7 +457,8 @@ class TabletExtentCheckerTest {
 
         /**
          * Verify that given a table where only the middle tablet requires compaction, and given a tablet range,
-         * {@link TabletExtentChecker#findCompactableTablets(ClientContext, String, Text, Text, boolean )} returns a range to compact that middle tablet.
+         * {@link TabletExtentChecker#findCompactableTablets(ClientContext, String, Text, Text, boolean, boolean)} returns a range to compact that middle
+         * tablet.
          */
         @Test
         void testMiddleTabletNeedsCompaction() throws AccumuloException, TableNotFoundException, TableExistsException, AccumuloSecurityException, IOException {
@@ -475,8 +477,8 @@ class TabletExtentCheckerTest {
 
         /**
          * Verify that given a table where multiple series of tablets at different locations require compaction, and given a tablet range,
-         * {@link TabletExtentChecker#findCompactableTablets(ClientContext, String, Text, Text, boolean )} returns multiple compaction ranges that includes a
-         * series of contiguous compactable tablets by merging their extents.
+         * {@link TabletExtentChecker#findCompactableTablets(ClientContext, String, Text, Text, boolean, boolean)} returns multiple compaction ranges that
+         * includes a series of contiguous compactable tablets by merging their extents.
          */
         @Test
         void testMultipleInnerCompactionRanges()
@@ -502,7 +504,7 @@ class TabletExtentCheckerTest {
 
         /**
          * Verify that given a table where all tablets starting from row 2000 to null are compacted, and given a tablet range from row 2000 to null,
-         * {@link TabletExtentChecker#findCompactableTablets(ClientContext, String, Text, Text, boolean )} returns an empty list.
+         * {@link TabletExtentChecker#findCompactableTablets(ClientContext, String, Text, Text, boolean, boolean)} returns an empty list.
          */
         @Test
         void testCompactableTabletOutsideInputRange()
@@ -524,7 +526,7 @@ class TabletExtentCheckerTest {
 
         /**
          * Verify that given a table with a compactable tablet, and given a key extent range that is contained within a tablet's range,
-         * {@link TabletExtentChecker#findCompactableTablets(ClientContext, String, Text, Text, boolean )} will return the full extent of the tablet.
+         * {@link TabletExtentChecker#findCompactableTablets(ClientContext, String, Text, Text, boolean, boolean)} will return the full extent of the tablet.
          */
         @Test
         void testInputInCompactableTabletRange()
@@ -548,8 +550,8 @@ class TabletExtentCheckerTest {
 
         /**
          * Verify that given a table with compactable tablets, a key extent range, starting row and ending row, mergeExtents = true, and compactTablets = true,
-         * {@link TabletExtentChecker#findCompactableTablets(ClientContext, String, Text, Text, boolean )} will return an empty list after compacting the
-         * tablets automatically in {@link TabletExtentChecker#checkTablets(ClientContext, String, Text, Text, boolean, boolean)}.
+         * {@link TabletExtentChecker#findCompactableTablets(ClientContext, String, Text, Text, boolean, boolean)} will return an empty list after compacting
+         * the tablets automatically in {@link TabletExtentChecker#checkTablets(ClientContext, String, Text, Text, boolean, boolean, boolean)}.
          *
          * @throws TableNotFoundException
          * @throws TableExistsException
@@ -612,20 +614,20 @@ class TabletExtentCheckerTest {
 
     private void assertResult() throws AccumuloException, TableNotFoundException, IOException {
         List<Pair<Text,Text>> result = TabletExtentChecker.findCompactableTablets((ClientContext) client, TABLE_NAME, getText(begin), getText(end),
-                        mergeExtents);
+                        mergeExtents, true);
         assertEquals(expectedExtents, result);
     }
 
     private void assertCompactedResult() throws AccumuloException, TableNotFoundException, AccumuloSecurityException, IOException {
         // Build the list of compactable tablets
         List<Pair<Text,Text>> result = TabletExtentChecker.findCompactableTablets((ClientContext) client, TABLE_NAME, getText(begin), getText(end),
-                        mergeExtents);
+                        mergeExtents, true);
 
         // Compact the tablets instead of suggesting compactions (compactTablets == true)
-        TabletExtentChecker.checkTablets((ClientContext) client, TABLE_NAME, getText(begin), getText(end), mergeExtents, true);
+        TabletExtentChecker.checkTablets((ClientContext) client, TABLE_NAME, getText(begin), getText(end), mergeExtents, true, true);
 
         List<Pair<Text,Text>> result2 = TabletExtentChecker.findCompactableTablets((ClientContext) client, TABLE_NAME, getText(begin), getText(end),
-                        mergeExtents);
+                        mergeExtents, true);
 
         // Create empty list for comparison
         List<Pair<Text,Text>> lst = new ArrayList<>();
