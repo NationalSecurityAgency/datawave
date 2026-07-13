@@ -167,7 +167,7 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
 
         AccumuloConfiguration conf;
 
-        //TODO: See if this is unused
+        // TODO: See if this is unused
         public RFileEnvironment(AccumuloConfiguration conf) {
             this.conf = conf;
         }
