@@ -10,6 +10,7 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.file.FileOperations;
 import org.apache.accumulo.core.file.FileSKVIterator;
+import org.apache.accumulo.core.metadata.UnreferencedTabletFile;
 import org.apache.accumulo.core.spi.crypto.CryptoEnvironment;
 import org.apache.accumulo.core.spi.crypto.CryptoService;
 import org.apache.hadoop.fs.FileSystem;
@@ -36,8 +37,8 @@ public class RFileRecordReader extends RecordReader<Key,Value> {
         pos = start;
 
         FileOperations ops = FileOperations.getInstance();
-        String file = fileSplit.getPath().toString();
         FileSystem fs = fileSplit.getPath().getFileSystem(context.getConfiguration());
+        UnreferencedTabletFile file = new UnreferencedTabletFile(fs, fileSplit.getPath());
         CryptoService cs = CryptoFactoryLoader.getServiceForClient(CryptoEnvironment.Scope.TABLE,
                         context.getConfiguration().getPropsWithPrefix(TABLE_CRYPTO_PREFIX.name()));
         fileIterator = ops.newReaderBuilder().forFile(file, fs, context.getConfiguration(), cs).withTableConfiguration(DefaultConfiguration.getInstance())
