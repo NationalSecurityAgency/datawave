@@ -18,7 +18,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 
 public class QueriesTableAgeOffIteratorTest {
 
@@ -26,7 +26,7 @@ public class QueriesTableAgeOffIteratorTest {
 
     @Test
     public void testAgeOffIterator() throws Exception {
-        AccumuloClient client = new InMemoryAccumuloClient("root", new InMemoryInstance());
+        AccumuloClient client = new InMemoryAccumuloClient("root", new InMemoryAccumulo());
 
         client.tableOperations().create(TABLE_NAME);
         IteratorSetting iteratorCfg = new IteratorSetting(19, "ageoff", QueriesTableAgeOffIterator.class);
