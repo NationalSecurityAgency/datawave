@@ -14,18 +14,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.SortedMap;
 import java.util.TreeMap;
-import java.util.stream.Collectors;
 
-import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.accumulo.core.clientImpl.ClientContext;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.dataImpl.KeyExtent;
-import org.apache.accumulo.core.metadata.MetadataServicer;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
@@ -81,14 +75,9 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
 
     private PartitionerCache partitionerCache;
 
+    //TODO: Accumulo4 Return split point location data
     private Map<Text,String> getSplitsWithLocation(String table) throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
-        SortedMap<KeyExtent,String> tabletLocations = new TreeMap<>();
-
-        AccumuloClient client = accumuloHelper.newClient();
-        MetadataServicer.forTableName((ClientContext) client, table).getTabletLocations(tabletLocations);
-
-        return tabletLocations.entrySet().stream().filter(k -> k.getKey().endRow() != null).collect(
-                        Collectors.toMap(e -> e.getKey().endRow(), e -> e.getValue() == null ? NO_LOCATION : e.getValue(), (o1, o2) -> o1, TreeMap::new));
+        return Map.of(new Text(""), "");
     }
 
     /**

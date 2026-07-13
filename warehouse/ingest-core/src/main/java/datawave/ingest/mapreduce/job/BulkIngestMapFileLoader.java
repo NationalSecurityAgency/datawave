@@ -33,13 +33,7 @@ import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
-import org.apache.accumulo.core.clientImpl.ClientContext;
 import org.apache.accumulo.core.data.LoadPlan;
-import org.apache.accumulo.core.manager.thrift.ManagerClientService;
-import org.apache.accumulo.core.manager.thrift.ManagerMonitorInfo;
-import org.apache.accumulo.core.manager.thrift.TableInfo;
-import org.apache.accumulo.core.rpc.ThriftUtil;
-import org.apache.accumulo.core.rpc.clients.ThriftClientTypes;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
@@ -715,30 +709,9 @@ public final class BulkIngestMapFileLoader implements Runnable {
     }
 
     private int getMajorCompactionCount() {
-        int majC = 0;
-
-        ManagerClientService.Client client = null;
-        ClientContext context = (ClientContext) accumuloClient;
-        try {
-            client = ThriftClientTypes.MANAGER.getConnection(context);
-            ManagerMonitorInfo mmi = client.getManagerStats(null, context.rpcCreds());
-            Map<String,TableInfo> tableStats = mmi.getTableMap();
-
-            for (java.util.Map.Entry<String,TableInfo> e : tableStats.entrySet()) {
-                majC += e.getValue().getMajors().getQueued();
-                majC += e.getValue().getMajors().getRunning();
-            }
-        } catch (Exception e) {
-            // Accumulo API changed, catch exception for now until we redeploy
-            // accumulo on lightning.
-            log.error("Unable to retrieve major compaction stats: " + e.getMessage());
-        } finally {
-            if (client != null) {
-                ThriftUtil.close(client, context);
-            }
-        }
-
-        return majC;
+        //TODO: Accumulo4 Fetch Major Compaction Metrics
+        log.error("Fetching MUnable to retrieve major compaction stats: ");
+        return 0;
     }
 
     /**
@@ -970,19 +943,6 @@ public final class BulkIngestMapFileLoader implements Runnable {
 
                 // @formatter:off
                 switch (importMode) {
-                    case V1:
-                        // create the failures directory
-                        String failuresDir = mapFilesDir + "/failures/" + tableName;
-                        Path failuresPath = new Path(failuresDir);
-                        FileSystem fileSystem = FileSystem.get(srcHdfs, new Configuration());
-                        if (fileSystem.exists(failuresPath)) {
-                            log.fatal("Cannot bring map files online because a failures directory already exists: " + failuresDir);
-                            throw new IOException("Cannot bring map files online because a failures directory already exists: " + failuresDir);
-                        }
-                        fileSystem.mkdirs(failuresPath);
-                        accumuloClient.tableOperations()
-                           .importDirectory(tableName, tableDir.toString(), failuresDir, false);
-                        break;
                     case V2:
                         accumuloClient.tableOperations().importDirectory(tableDir.toString())
                            .to(tableName)
