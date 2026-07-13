@@ -117,15 +117,16 @@ public class RFileUtil {
             Key startKey = null;
             for (String rfile : paths) {
                 RFile.Reader reader = getRFileReader(config, new Path(rfile));
-                if (lastKey == null || reader.getLastKey().compareTo(lastKey) > 0) {
-                    lastKey = reader.getLastKey();
+                // TODO ACCUMULO4: Verify that this implementation is correct.
+                if (lastKey == null || reader.getFileRange().rowRange.getEndKey().compareTo(lastKey) > 0) {
+                    lastKey = reader.getFileRange().rowRange.getEndKey();
                 }
-                if (startKey == null || reader.getFirstKey().compareTo(startKey) < 0) {
-                    startKey = reader.getFirstKey();
+                if (startKey == null || reader.getFileRange().rowRange.getStartKey().compareTo(startKey) < 0) {
+                    startKey = reader.getFileRange().rowRange.getStartKey();
                 }
                 readers.add(reader);
                 // get the index iterator from the reader
-                SortedKeyValueIterator indexIterator = reader.getIndex();
+                SortedKeyValueIterator<Key,Value> indexIterator = reader.getIndex();
                 indexIterators.add(indexIterator);
             }
 
