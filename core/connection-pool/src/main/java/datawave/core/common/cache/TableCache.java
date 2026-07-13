@@ -5,7 +5,7 @@ import java.util.Date;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 
-import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.core.common.connection.AccumuloConnectionFactory;
 
 public interface TableCache extends Callable<Boolean>, Serializable {
@@ -24,7 +24,7 @@ public interface TableCache extends Callable<Boolean>, Serializable {
 
     AccumuloConnectionFactory getConnectionFactory();
 
-    InMemoryInstance getInstance();
+    InMemoryAccumulo getInstance();
 
     SharedCacheCoordinator getWatcher();
 
@@ -44,7 +44,7 @@ public interface TableCache extends Callable<Boolean>, Serializable {
 
     void setConnectionFactory(AccumuloConnectionFactory connectionFactory);
 
-    void setInstance(InMemoryInstance instance);
+    void setInstance(InMemoryAccumulo instance);
 
     void setWatcher(SharedCacheCoordinator watcher);
 
