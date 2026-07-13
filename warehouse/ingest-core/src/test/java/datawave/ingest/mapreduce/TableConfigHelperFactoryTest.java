@@ -46,8 +46,8 @@ public class TableConfigHelperFactoryTest {
         assertTrue(macDir.mkdirs(), "Could not create directory for MiniAccumuloCluster");
 
         MiniAccumuloConfig config = new MiniAccumuloConfig(macDir, "pass");
-        config.setNumTservers(1);
-
+        // TODO: Fix MiniAccumuloCluster first.
+        // config.setNumTservers(1);
         mac = new MiniAccumuloCluster(config);
         mac.start();
     }

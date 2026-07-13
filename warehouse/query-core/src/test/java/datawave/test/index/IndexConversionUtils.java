@@ -75,7 +75,8 @@ public abstract class IndexConversionUtils {
     @BeforeAll
     public static void beforeAll() throws Exception {
         MiniAccumuloConfig config = new MiniAccumuloConfig(macFolder.toFile(), PASS);
-        config.setNumTservers(1);
+        // TODO: Fix MiniAccumulo Cluster
+        // cfg.setNumTservers(1);
 
         mac = new MiniAccumuloCluster(config);
         mac.start();

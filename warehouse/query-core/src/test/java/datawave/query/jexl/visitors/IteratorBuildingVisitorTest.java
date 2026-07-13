@@ -21,7 +21,6 @@ import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.IteratorUtil;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.accumulo.core.spi.common.ServiceEnvironment;
 import org.apache.commons.jexl3.parser.ASTEQNode;
 import org.apache.commons.jexl3.parser.ASTERNode;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
@@ -1072,10 +1071,6 @@ public class IteratorBuildingVisitorTest {
     }
 
     private static class TestIteratorEnvironment implements IteratorEnvironment {
-        @Override
-        public SortedKeyValueIterator<Key,Value> reserveMapFileReader(String s) throws IOException {
-            return null;
-        }
 
         @Override
         public IteratorUtil.IteratorScope getIteratorScope() {
@@ -1085,11 +1080,6 @@ public class IteratorBuildingVisitorTest {
         @Override
         public boolean isFullMajorCompaction() {
             return false;
-        }
-
-        @Override
-        public void registerSideChannel(SortedKeyValueIterator<Key,Value> sortedKeyValueIterator) {
-
         }
 
         @Override
@@ -1117,11 +1107,6 @@ public class IteratorBuildingVisitorTest {
         }
 
         @Override
-        public ServiceEnvironment getServiceEnv() {
-            return null;
-        }
-
-        @Override
         public PluginEnvironment getPluginEnv() {
             return null;
         }
@@ -1129,6 +1114,11 @@ public class IteratorBuildingVisitorTest {
         @Override
         public TableId getTableId() {
             return null;
+        }
+
+        @Override
+        public boolean isRunningLowOnMemory() {
+            return false;
         }
     }
 }

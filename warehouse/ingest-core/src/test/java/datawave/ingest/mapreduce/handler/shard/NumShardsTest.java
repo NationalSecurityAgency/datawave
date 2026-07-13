@@ -193,13 +193,12 @@ public class NumShardsTest {
         conf.set(AccumuloHelper.USERNAME, "root");
         conf.set(AccumuloHelper.INSTANCE_NAME, "mock");
         conf.set(AccumuloHelper.PASSWORD, noPasswordToken.toString());
-        conf.set(AccumuloHelper.ZOOKEEPERS, i.getZooKeepers());
         conf.set(ShardedDataTypeHandler.METADATA_TABLE_NAME, TableName.METADATA);
 
         client.tableOperations().create(conf.get(ShardedDataTypeHandler.METADATA_TABLE_NAME));
         BatchWriter recordWriter = client.createBatchWriter(conf.get(ShardedDataTypeHandler.METADATA_TABLE_NAME), new BatchWriterConfig());
 
-        // write a couiple of entries for multiple numshards
+        // write a couple of entries for multiple numshards
         Mutation m = new Mutation(NumShards.NUM_SHARDS);
         m.put(NumShards.NUM_SHARDS_CF.toString(), "20170101_13", "");
 
@@ -267,13 +266,12 @@ public class NumShardsTest {
         conf.set(AccumuloHelper.USERNAME, "root");
         conf.set(AccumuloHelper.INSTANCE_NAME, "mock2");
         conf.set(AccumuloHelper.PASSWORD, noPasswordToken.toString());
-        conf.set(AccumuloHelper.ZOOKEEPERS, i.getZooKeepers());
         conf.set(ShardedDataTypeHandler.METADATA_TABLE_NAME, TableName.METADATA);
 
         client.tableOperations().create(conf.get(ShardedDataTypeHandler.METADATA_TABLE_NAME));
         BatchWriter recordWriter = client.createBatchWriter(conf.get(ShardedDataTypeHandler.METADATA_TABLE_NAME), new BatchWriterConfig());
 
-        // write a couiple of entries for multiple numshards
+        // write a couple of entries for multiple numshards
         Mutation m = new Mutation(NumShards.NUM_SHARDS);
         m.put(NumShards.NUM_SHARDS_CF + "blah", "20171102_19", "");
 

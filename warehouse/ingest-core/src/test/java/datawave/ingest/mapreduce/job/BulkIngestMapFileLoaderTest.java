@@ -6,6 +6,9 @@ import static datawave.ingest.mapreduce.job.BulkIngestMapFileLoader.FAILED_FILE_
 import static datawave.ingest.mapreduce.job.BulkIngestMapFileLoader.INPUT_FILES_MARKER;
 import static datawave.ingest.mapreduce.job.BulkIngestMapFileLoader.LOADING_FILE_MARKER;
 import static datawave.ingest.mapreduce.job.BulkIngestMapFileLoader.LOADPLAN_FILE_GLOB;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.mock;
@@ -24,15 +27,13 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.DirectoryStream;
-import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedSet;
@@ -48,10 +49,12 @@ import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.rfile.RFile;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.conf.DefaultConfiguration;
+import org.apache.accumulo.core.conf.Property;
 import org.apache.accumulo.core.data.LoadPlan;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.file.FileOperations;
 import org.apache.accumulo.core.file.FileSKVIterator;
+import org.apache.accumulo.core.metadata.UnreferencedTabletFile;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.spi.crypto.NoCryptoServiceFactory;
 import org.apache.accumulo.minicluster.MiniAccumuloCluster;
@@ -73,7 +76,6 @@ import org.apache.log4j.Logger;
 import org.easymock.EasyMock;
 import org.junit.After;
 import org.junit.AfterClass;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
@@ -82,6 +84,7 @@ import org.junit.Test;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
+import org.junit.rules.TestName;
 
 import com.google.common.collect.Multimap;
 
@@ -99,7 +102,7 @@ import datawave.ingest.mapreduce.job.BulkIngestMapFileLoader.ImportMode;
 public class BulkIngestMapFileLoaderTest {
 
     @ClassRule
-    public static TemporaryFolder temporaryFolder = new TemporaryFolder();
+    public static TemporaryFolder temporaryFolder = new TemporaryFolder(new File("target"));
 
     protected static final URI FILE_SYSTEM_URI = URI.create("file:///");
 
@@ -121,11 +124,15 @@ public class BulkIngestMapFileLoaderTest {
 
     private static MiniAccumuloCluster cluster;
     private static File tmpDir;
+    private static java.nio.file.Path macDir;
     private static java.nio.file.Path workPath;
     private static java.nio.file.Path flaggedPath;
     private static java.nio.file.Path loadedPath;
     private static URI metadataRfile;
     private static URI shardRfile;
+
+    @Rule
+    public TestName testName = new TestName();
 
     @Rule
     public final ExpectedSystemExit exit = ExpectedSystemExit.none();
@@ -138,11 +145,30 @@ public class BulkIngestMapFileLoaderTest {
     private List<String> systemProperties;
     private Configuration conf = new Configuration();
 
+    private static void deleteRecursively(java.nio.file.Path dir) {
+        if (dir == null || !Files.exists(dir))
+            return;
+        try (var walk = Files.walk(dir)) {
+            walk.sorted(Comparator.reverseOrder()).forEach(p -> {
+                try {
+                    Files.delete(p);
+                } catch (IOException e) {
+                    throw new RuntimeException("Failed to delete " + p, e);
+                }
+            });
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to walk " + dir, e);
+        }
+    }
+
     @BeforeClass
     public static void setupClass() throws AccumuloSecurityException, AccumuloException, TableExistsException, TableNotFoundException, IOException,
                     InterruptedException, URISyntaxException {
-        tmpDir = temporaryFolder.newFolder();
-        cluster = new MiniAccumuloCluster(tmpDir, PASSWORD);
+        tmpDir = temporaryFolder.newFolder("Junit4-mock-dir");
+        macDir = Paths.get("target", "mac");
+        deleteRecursively(macDir);
+        Files.createDirectory(macDir);
+        cluster = new MiniAccumuloCluster(macDir.toFile(), PASSWORD);
         cluster.start();
 
         workPath = Paths.get(tmpDir.getAbsolutePath(), "datawave", "ingest", "work");
@@ -162,6 +188,9 @@ public class BulkIngestMapFileLoaderTest {
                 client.tableOperations().create(SHARD_TABLE);
             }
             client.securityOperations().changeUserAuthorizations(USER, USER_AUTHS);
+            // Have to up the property's default setting because so far there is a single file attempting to go to 111 tablets.
+            client.tableOperations().setProperty(METADATA_TABLE, Property.TABLE_BULK_MAX_TABLETS.getKey(), "120");
+            client.tableOperations().setProperty(SHARD_TABLE, Property.TABLE_BULK_MAX_TABLETS.getKey(), "120");
         }
     }
 
@@ -174,22 +203,21 @@ public class BulkIngestMapFileLoaderTest {
      *            desired sleep time (in ms) for the bulk loader
      * @param mode
      *            Desired bulk mode
-     *
      * @return BulkIngestMapFileLoader instance for running the job
      * @throws IOException
      */
     private BulkIngestMapFileLoader newJobCompleteLoader(String jobName, int loaderSleepTime, ImportMode mode) throws Exception {
 
-        Assert.assertFalse("jobName can't be null/empty", jobName == null || jobName.isEmpty());
+        assertFalse("jobName can't be null/empty", jobName == null || jobName.isEmpty());
 
         java.nio.file.Path metaSrc, metaDest, shardSrc, shardDest, inputFilesPath, inputFile, jobPathsFile;
 
         var parentDir = workPath.toString();
         var mapFilesDir = "mapFiles";
 
-        Assert.assertFalse(jobName + " directory already exists", Files.exists(Paths.get(parentDir, jobName)));
-        Assert.assertFalse(jobName + " flagged directory already exists", Files.exists(Paths.get(flaggedPath.toString(), jobName)));
-        Assert.assertFalse(jobName + " loaded directory already exists", Files.exists(Paths.get(loadedPath.toString(), jobName)));
+        assertFalse(jobName + " directory already exists", Files.exists(Paths.get(parentDir, jobName)));
+        assertFalse(jobName + " flagged directory already exists", Files.exists(Paths.get(flaggedPath.toString(), jobName)));
+        assertFalse(jobName + " loaded directory already exists", Files.exists(Paths.get(loadedPath.toString(), jobName)));
 
         // Copy metadata rfile into jobName/mapFiles/DW_METADATA_TABLE dir
         metaSrc = Paths.get(metadataRfile);
@@ -283,7 +311,7 @@ public class BulkIngestMapFileLoaderTest {
      */
     private void runLoaderHappyTest(String jobName, ImportMode bulkMode) throws Exception {
         List<String> log = logCollector.getMessages();
-        Assert.assertTrue("Unexpected log messages", log.isEmpty());
+        assertTrue("Unexpected log messages", log.isEmpty());
 
         BulkIngestMapFileLoader loader = null;
 
@@ -302,15 +330,15 @@ public class BulkIngestMapFileLoaderTest {
                     break;
                 }
             }
-            Assert.assertTrue("Unexpected log output", log.contains("Bringing Map Files online for " + METADATA_TABLE));
-            Assert.assertTrue("Unexpected log output", log.contains("Bringing Map Files online for " + SHARD_TABLE));
-            Assert.assertTrue("Unexpected log output", log.contains("Completed bringing map files online for " + METADATA_TABLE));
-            Assert.assertTrue("Unexpected log output", log.contains("Completed bringing map files online for " + SHARD_TABLE));
-            Assert.assertTrue("Unexpected log output", log.contains("Marking 1 sequence files from flagged to loaded"));
+            assertTrue("Unexpected log output", log.contains("Bringing Map Files online for " + METADATA_TABLE));
+            assertTrue("Unexpected log output", log.contains("Bringing Map Files online for " + SHARD_TABLE));
+            assertTrue("Unexpected log output", log.contains("Completed bringing map files online for " + METADATA_TABLE));
+            assertTrue("Unexpected log output", log.contains("Completed bringing map files online for " + SHARD_TABLE));
+            assertTrue("Unexpected log output", log.contains("Marking 1 sequence files from flagged to loaded"));
 
             verifyImportedData(SHARD_TABLE, METADATA_TABLE);
 
-            Assert.assertTrue(jobDir + " still exists, but should've been cleaned up by the loader", !Files.exists(jobDir));
+            assertFalse(jobDir + " still exists, but should've been cleaned up by the loader", Files.exists(jobDir));
 
         } finally {
             if (loader != null) {
@@ -331,7 +359,7 @@ public class BulkIngestMapFileLoaderTest {
      */
     private void runLoaderSadTest(String jobName, ImportMode bulkMode) throws Exception {
         List<String> log = logCollector.getMessages();
-        Assert.assertTrue("Unexpected log messages", log.isEmpty());
+        assertTrue("Unexpected log messages", log.isEmpty());
 
         java.nio.file.Path metaRfilePath, shardRfilePath, expectedFailedMarker, mapFilesDir;
 
@@ -345,27 +373,26 @@ public class BulkIngestMapFileLoaderTest {
 
             // rfile to corrupt...
             metaRfilePath = Paths.get(mapFilesDir.toString(), METADATA_TABLE, new Path(metadataRfile).getName());
-            Assert.assertTrue(metaRfilePath + " missing after setup", Files.exists(metaRfilePath));
+            assertTrue(metaRfilePath + " missing after setup", Files.exists(metaRfilePath));
 
             // Overwrite the staged metadata rfile with bad content
             Files.delete(metaRfilePath);
             Files.createFile(metaRfilePath);
-            Files.write(metaRfilePath, "Intentionally invalid rfile content here!!!".getBytes(StandardCharsets.UTF_8));
+            Files.writeString(metaRfilePath, "Intentionally invalid rfile content here!!!");
 
             try {
                 validateRfile(metaRfilePath.toAbsolutePath().toString(), conf);
-                Assert.fail();
+                fail();
             } catch (IOException e) {
                 // Ignore
             }
 
             // rfile that should succeed...
             shardRfilePath = Paths.get(mapFilesDir.toString(), SHARD_TABLE, new Path(shardRfile).getName());
-            Assert.assertTrue(shardRfilePath + " missing after setup", Files.exists(shardRfilePath));
+            assertTrue(shardRfilePath + " missing after setup", Files.exists(shardRfilePath));
 
             if (bulkMode == ImportMode.V2) {
                 // TODO: Should client side Accumulo or DataWave code detect a corrupt rfile at this point in a load planning scenario?
-
                 // For V2, corrupting the rfile alone isn't enough to trigger a client- or server-side import failure,
                 // assuming the rfile has an associated LoadPlan already written for it. So, without additional action
                 // here, the import would succeed with no way to know there's a problem until later, if/when a scan or
@@ -392,38 +419,25 @@ public class BulkIngestMapFileLoaderTest {
                 }
             }
 
-            Assert.assertTrue("Unexpected log output", log.contains("Bringing Map Files online for " + METADATA_TABLE));
+            assertTrue("Unexpected log output", log.contains("Bringing Map Files online for " + METADATA_TABLE));
 
             switch (bulkMode) {
-                case V1:
-                    // Verify failures dir has corrupted rfile, which was renamed by Accumulo
-                    var failDir = Paths.get(workPath.toString(), jobName, "mapFiles", "failures", METADATA_TABLE);
-                    Assert.assertTrue(Files.exists(failDir));
-
-                    boolean found = false;
-                    var failMatcher = FileSystems.getDefault().getPathMatcher("glob:I*.rf");
-                    try (DirectoryStream<java.nio.file.Path> dirStream = Files.newDirectoryStream(failDir)) {
-                        for (java.nio.file.Path p : dirStream) {
-                            Assert.assertTrue(failMatcher.matches(p.getFileName()));
-                            logger.info("Found " + p.getFileName() + " in " + failDir);
-                            found = true;
-                        }
-                    }
-                    Assert.assertTrue("We found " + failDir + "as expected, but rfile was missing", found);
+                case V2_LOCAL:
+                    // Optional stage for testing a mix of V2 load plans and load plans based on Rfile Information
                     break;
                 case V2:
                     // Verify that metadata rfile remains in place
-                    Assert.assertTrue("metadata rfile should've remained in place after failure", Files.exists(metaRfilePath));
+                    assertTrue("metadata rfile should've remained in place after failure", Files.exists(metaRfilePath));
                     break;
                 default:
                     throw new RuntimeException("Unsupported import mode " + bulkMode);
             }
 
-            Assert.assertTrue(shardRfilePath + " should've been imported but it got left behind", !Files.exists(shardRfilePath));
+            assertFalse(shardRfilePath + " should've been imported but it got left behind", Files.exists(shardRfilePath));
 
             verifyImportedData(SHARD_TABLE);
 
-            Assert.assertTrue("Missing " + FAILED_FILE_MARKER + " marker after failed import", Files.exists(expectedFailedMarker));
+            assertTrue("Missing " + FAILED_FILE_MARKER + " marker after failed import", Files.exists(expectedFailedMarker));
 
         } finally {
             if (loader != null) {
@@ -437,26 +451,22 @@ public class BulkIngestMapFileLoaderTest {
      */
     private static void validateRfile(String rfilePath, Configuration conf) throws Exception {
         FileOperations fops = FileOperations.getInstance();
-        try (FileSKVIterator reader = fops.newReaderBuilder().forFile(rfilePath, FileSystem.getLocal(conf), conf, NoCryptoServiceFactory.NONE)
-                        .withTableConfiguration(DefaultConfiguration.getInstance()).build()) {}
+        try (FileSKVIterator reader = fops.newReaderBuilder().forFile(UnreferencedTabletFile.of(FileSystem.getLocal(conf), new Path(rfilePath)),
+                        FileSystem.getLocal(conf), conf, NoCryptoServiceFactory.NONE).withTableConfiguration(DefaultConfiguration.getInstance()).build()) {}
     }
 
     private static void verifyImportedData(String... tables) throws TableNotFoundException {
         for (String table : tables) {
-            Assert.assertTrue("Unexpected table name: " + table, EXPECTED_TABLE_KEYCOUNT.containsKey(table));
+            assertTrue("Unexpected table name: " + table, EXPECTED_TABLE_KEYCOUNT.containsKey(table));
             long actualKeyCount = 0;
-            Collection ranges = Collections.singleton(new Range());
+            Collection<Range> ranges = Collections.singleton(new Range());
             try (AccumuloClient client = cluster.createAccumuloClient(USER, new PasswordToken(PASSWORD))) {
                 try (BatchScanner scanner = client.createBatchScanner(table, USER_AUTHS)) {
                     scanner.setRanges(ranges);
-                    Iterator it = scanner.iterator();
-                    while (it.hasNext()) {
-                        it.next();
-                        actualKeyCount++;
-                    }
+                    actualKeyCount = scanner.stream().count();
                 }
             }
-            Assert.assertEquals("Unexpected number of " + table + " entries", (long) EXPECTED_TABLE_KEYCOUNT.get(table), actualKeyCount);
+            assertEquals((long) EXPECTED_TABLE_KEYCOUNT.get(table), actualKeyCount, "Unexpected number of " + table + " entries");
         }
     }
 
@@ -817,11 +827,11 @@ public class BulkIngestMapFileLoaderTest {
 
             int procResults = proc.waitFor();
 
-            Assert.assertEquals("BulkIngestMapLoader#main failed to return the expected value.", ProcessUtils.SYSTEM_EXIT_MINUS_ONE, procResults);
+            assertEquals(ProcessUtils.SYSTEM_EXIT_MINUS_ONE, procResults, "BulkIngestMapLoader#main failed to return the expected value.");
 
             List<String> stdOut = ProcessUtils.getStandardOutDumps(proc);
 
-            Assert.assertTrue("BulkIngestMapLoader#main failed to generate the expected error message",
+            assertTrue("BulkIngestMapLoader#main failed to generate the expected error message",
                             processOutputContains(stdOut, "usage: BulkIngestMapFileLoader "));
 
         } finally {
@@ -854,11 +864,11 @@ public class BulkIngestMapFileLoaderTest {
 
             int procResults = proc.waitFor();
 
-            Assert.assertEquals("BulkIngestMapLoader#main failed to return the expected value.", ProcessUtils.SYSTEM_EXIT_MINUS_TWO, procResults);
+            assertEquals(ProcessUtils.SYSTEM_EXIT_MINUS_TWO, procResults, "BulkIngestMapLoader#main failed to return the expected value.");
 
             List<String> stdOut = ProcessUtils.getStandardOutDumps(proc);
 
-            Assert.assertTrue("BulkIngestMapLoader#main failed to generate the expected error message",
+            assertTrue("BulkIngestMapLoader#main failed to generate the expected error message",
                             processOutputContains(stdOut, "Configured data types is empty"));
 
         } finally {
@@ -921,11 +931,11 @@ public class BulkIngestMapFileLoaderTest {
 
             int procResults = proc.waitFor();
 
-            Assert.assertEquals("BulkIngestMapLoader#main failed to return the expected value.", ProcessUtils.SYSTEM_EXIT_MINUS_TWO, procResults);
+            assertEquals(ProcessUtils.SYSTEM_EXIT_MINUS_TWO, procResults, "BulkIngestMapLoader#main failed to return the expected value.");
 
             List<String> stdOut = ProcessUtils.getStandardOutDumps(proc);
 
-            Assert.assertTrue("BulkIngestMapLoader#main failed to generate the expected error message",
+            assertTrue("BulkIngestMapLoader#main failed to generate the expected error message",
                             processOutputContains(stdOut, "Configured data types is empty"));
 
         } finally {
@@ -936,33 +946,13 @@ public class BulkIngestMapFileLoaderTest {
     }
 
     /**
-     * Verify that loader in bulk V1 mode behaves as expected in the typical use case, utilizing MiniAccumuloCluster
-     */
-    @Test
-    public void testLoaderV1SucceedsWithMAC() throws Exception {
-        BulkIngestMapFileLoaderTest.logger.info("testLoaderV1SucceedsWithMAC called...");
-        runLoaderHappyTest("job_shouldSucceed_V1", ImportMode.V1);
-        BulkIngestMapFileLoaderTest.logger.info("testLoaderV1SucceedsWithMAC completed.");
-    }
-
-    /**
      * Verify that loader in bulk V2 mode behaves as expected in the typical use case, utilizing MiniAccumuloCluster
      */
     @Test
     public void testLoaderV2SucceedsWithMAC() throws Exception {
         BulkIngestMapFileLoaderTest.logger.info("testLoaderV2SucceedsWithMAC called...");
-        runLoaderHappyTest("job_shouldSucceed_V2", ImportMode.V2);
+        runLoaderHappyTest("job_shouldSucceed", ImportMode.V2);
         BulkIngestMapFileLoaderTest.logger.info("testLoaderV2SucceedsWithMAC completed.");
-    }
-
-    /**
-     * Verify that loader in bulk V1 mode behaves as expected when an importDirectory failure occurs, utilizing MiniAccumuloCluster
-     */
-    @Test
-    public void testLoaderV1FailsWithMAC() throws Exception {
-        BulkIngestMapFileLoaderTest.logger.info("testLoaderV1FailsWithMAC called...");
-        runLoaderSadTest("job_shouldFail_V1", ImportMode.V1);
-        BulkIngestMapFileLoaderTest.logger.info("testLoaderV1FailsWithMAC completed.");
     }
 
     /**
@@ -1001,7 +991,7 @@ public class BulkIngestMapFileLoaderTest {
 
             int procResults = proc.waitFor();
 
-            Assert.assertEquals("BulkIngestMapLoader#main failed to return the expected value.", ProcessUtils.SYSTEM_EXIT_MINUS_TWO, procResults);
+            assertEquals(ProcessUtils.SYSTEM_EXIT_MINUS_TWO, procResults, "BulkIngestMapLoader#main failed to return the expected value.");
 
         } finally {
 
@@ -1036,7 +1026,7 @@ public class BulkIngestMapFileLoaderTest {
 
             int procResults = proc.waitFor();
 
-            Assert.assertEquals("BulkIngestMapLoader#main failed to return the expected value.", ProcessUtils.SYSTEM_EXIT_MINUS_TWO, procResults);
+            assertEquals(ProcessUtils.SYSTEM_EXIT_MINUS_TWO, procResults, "BulkIngestMapLoader#main failed to return the expected value.");
 
         } finally {
 
@@ -1072,11 +1062,11 @@ public class BulkIngestMapFileLoaderTest {
 
             int procResults = proc.waitFor();
 
-            Assert.assertEquals("BulkIngestMapLoader#main failed to return the expected value.", ProcessUtils.SYSTEM_EXIT_MINUS_TWO, procResults);
+            assertEquals(ProcessUtils.SYSTEM_EXIT_MINUS_TWO, procResults, "BulkIngestMapLoader#main failed to return the expected value.");
 
             List<String> stdOut = ProcessUtils.getStandardOutDumps(proc);
 
-            Assert.assertTrue("BulkIngestMapLoader#main failed to generate the expected SleepTime error message",
+            assertTrue("BulkIngestMapLoader#main failed to generate the expected SleepTime error message",
                             processOutputContains(stdOut, "-sleepTime must be followed by the number of ms to sleep between checks for map files."));
 
         } finally {
@@ -1112,11 +1102,11 @@ public class BulkIngestMapFileLoaderTest {
 
             int procResults = proc.waitFor();
 
-            Assert.assertEquals("BulkIngestMapLoader#main failed to return the expected value.", ProcessUtils.SYSTEM_EXIT_MINUS_TWO, procResults);
+            assertEquals(ProcessUtils.SYSTEM_EXIT_MINUS_TWO, procResults, "BulkIngestMapLoader#main failed to return the expected value.");
 
             List<String> stdOut = ProcessUtils.getStandardOutDumps(proc);
 
-            Assert.assertTrue("BulkIngestMapLoader#main failed to generate the expected SleepTime error message",
+            assertTrue("BulkIngestMapLoader#main failed to generate the expected SleepTime error message",
                             processOutputContains(stdOut, "-sleepTime must be followed by the number of ms to sleep between checks for map files."));
 
         } finally {
@@ -1153,11 +1143,11 @@ public class BulkIngestMapFileLoaderTest {
 
             int procResults = proc.waitFor();
 
-            Assert.assertEquals("BulkIngestMapLoader#main failed to return the expected value.", ProcessUtils.SYSTEM_EXIT_MINUS_TWO, procResults);
+            assertEquals(ProcessUtils.SYSTEM_EXIT_MINUS_TWO, procResults, "BulkIngestMapLoader#main failed to return the expected value.");
 
             List<String> stdOut = ProcessUtils.getStandardOutDumps(proc);
 
-            Assert.assertTrue("BulkIngestMapLoader#main failed to generate the expected error message",
+            assertTrue("BulkIngestMapLoader#main failed to generate the expected error message",
                             processOutputContains(stdOut, "-majcThreshold must be followed by the maximum number of major compactions allowed before waiting"));
 
         } finally {
@@ -1193,11 +1183,11 @@ public class BulkIngestMapFileLoaderTest {
 
             int procResults = proc.waitFor();
 
-            Assert.assertEquals("BulkIngestMapLoader#main failed to return the expected value.", ProcessUtils.SYSTEM_EXIT_MINUS_TWO, procResults);
+            assertEquals(ProcessUtils.SYSTEM_EXIT_MINUS_TWO, procResults, "BulkIngestMapLoader#main failed to return the expected value.");
 
             List<String> stdOut = ProcessUtils.getStandardOutDumps(proc);
 
-            Assert.assertTrue("BulkIngestMapLoader#main failed to generate the expected error message",
+            assertTrue("BulkIngestMapLoader#main failed to generate the expected error message",
                             processOutputContains(stdOut, "-majcThreshold must be followed by the maximum number of major compactions allowed before waiting"));
 
         } finally {
@@ -1234,11 +1224,11 @@ public class BulkIngestMapFileLoaderTest {
 
             int procResults = proc.waitFor();
 
-            Assert.assertEquals("BulkIngestMapLoader#main failed to return the expected value.", ProcessUtils.SYSTEM_EXIT_MINUS_TWO, procResults);
+            assertEquals(ProcessUtils.SYSTEM_EXIT_MINUS_TWO, procResults, "BulkIngestMapLoader#main failed to return the expected value.");
 
             List<String> stdOut = ProcessUtils.getStandardOutDumps(proc);
 
-            Assert.assertTrue("BulkIngestMapLoader#main failed to generate the expected error message", processOutputContains(stdOut,
+            assertTrue("BulkIngestMapLoader#main failed to generate the expected error message", processOutputContains(stdOut,
                             "-majcDelay must be followed by the minimum number of ms to elapse between bringing map files online"));
         } finally {
 
@@ -1273,11 +1263,11 @@ public class BulkIngestMapFileLoaderTest {
 
             int procResults = proc.waitFor();
 
-            Assert.assertEquals("BulkIngestMapLoader#main failed to return the expected value.", ProcessUtils.SYSTEM_EXIT_MINUS_TWO, procResults);
+            assertEquals(ProcessUtils.SYSTEM_EXIT_MINUS_TWO, procResults, "BulkIngestMapLoader#main failed to return the expected value.");
 
             List<String> stdOut = ProcessUtils.getStandardOutDumps(proc);
 
-            Assert.assertTrue("BulkIngestMapLoader#main failed to generate the expected error message", processOutputContains(stdOut,
+            assertTrue("BulkIngestMapLoader#main failed to generate the expected error message", processOutputContains(stdOut,
                             "-majcDelay must be followed by the minimum number of ms to elapse between bringing map files online"));
         } finally {
 
@@ -1313,11 +1303,11 @@ public class BulkIngestMapFileLoaderTest {
 
             int procResults = proc.waitFor();
 
-            Assert.assertEquals("BulkIngestMapLoader#main failed to return the expected value.", ProcessUtils.SYSTEM_EXIT_MINUS_TWO, procResults);
+            assertEquals(ProcessUtils.SYSTEM_EXIT_MINUS_TWO, procResults, "BulkIngestMapLoader#main failed to return the expected value.");
 
             List<String> stdOut = ProcessUtils.getStandardOutDumps(proc);
 
-            Assert.assertTrue("BulkIngestMapLoader#main failed to generate the expected error message",
+            assertTrue("BulkIngestMapLoader#main failed to generate the expected error message",
                             processOutputContains(stdOut, "-maxDirectories must be followed a number of directories"));
 
         } finally {
@@ -1353,11 +1343,11 @@ public class BulkIngestMapFileLoaderTest {
 
             int procResults = proc.waitFor();
 
-            Assert.assertEquals("BulkIngestMapLoader#main failed to return the expected value.", ProcessUtils.SYSTEM_EXIT_MINUS_TWO, procResults);
+            assertEquals(ProcessUtils.SYSTEM_EXIT_MINUS_TWO, procResults, "BulkIngestMapLoader#main failed to return the expected value.");
 
             List<String> stdOut = ProcessUtils.getStandardOutDumps(proc);
 
-            Assert.assertTrue("BulkIngestMapLoader#main failed to generate the expected error message",
+            assertTrue("BulkIngestMapLoader#main failed to generate the expected error message",
                             processOutputContains(stdOut, "-maxDirectories must be followed a number of directories"));
 
         } finally {
@@ -1394,11 +1384,11 @@ public class BulkIngestMapFileLoaderTest {
 
             int procResults = proc.waitFor();
 
-            Assert.assertEquals("BulkIngestMapLoader#main failed to return the expected value.", ProcessUtils.SYSTEM_EXIT_MINUS_TWO, procResults);
+            assertEquals(ProcessUtils.SYSTEM_EXIT_MINUS_TWO, procResults, "BulkIngestMapLoader#main failed to return the expected value.");
 
             List<String> stdOut = ProcessUtils.getStandardOutDumps(proc);
 
-            Assert.assertTrue("BulkIngestMapLoader#main failed to generate the expected error message",
+            assertTrue("BulkIngestMapLoader#main failed to generate the expected error message",
                             processOutputContains(stdOut, "-seqFileHdfs must be followed a file system URI (e.g. hdfs://hostname:54310)."));
 
         } finally {
@@ -1434,11 +1424,11 @@ public class BulkIngestMapFileLoaderTest {
 
             int procResults = proc.waitFor();
 
-            Assert.assertEquals("BulkIngestMapLoader#main failed to return the expected value.", ProcessUtils.SYSTEM_EXIT_MINUS_TWO, procResults);
+            assertEquals(ProcessUtils.SYSTEM_EXIT_MINUS_TWO, procResults, "BulkIngestMapLoader#main failed to return the expected value.");
 
             List<String> stdOut = ProcessUtils.getStandardOutDumps(proc);
 
-            Assert.assertTrue("BulkIngestMapLoader#main failed to generate the expected error message",
+            assertTrue("BulkIngestMapLoader#main failed to generate the expected error message",
                             processOutputContains(stdOut, "-seqFileHdfs must be followed a file system URI (e.g. hdfs://hostname:54310)."));
 
         } finally {
@@ -1475,11 +1465,11 @@ public class BulkIngestMapFileLoaderTest {
 
             int procResults = proc.waitFor();
 
-            Assert.assertEquals("BulkIngestMapLoader#main failed to return the expected value.", ProcessUtils.SYSTEM_EXIT_MINUS_TWO, procResults);
+            assertEquals(ProcessUtils.SYSTEM_EXIT_MINUS_TWO, procResults, "BulkIngestMapLoader#main failed to return the expected value.");
 
             List<String> stdOut = ProcessUtils.getStandardOutDumps(proc);
 
-            Assert.assertTrue("BulkIngestMapLoader#main failed to generate the expected error message",
+            assertTrue("BulkIngestMapLoader#main failed to generate the expected error message",
                             processOutputContains(stdOut, "-srcHdfs must be followed a file system URI (e.g. hdfs://hostname:54310)."));
 
         } finally {
@@ -1515,11 +1505,11 @@ public class BulkIngestMapFileLoaderTest {
 
             int procResults = proc.waitFor();
 
-            Assert.assertEquals("BulkIngestMapLoader#main failed to return the expected value.", ProcessUtils.SYSTEM_EXIT_MINUS_TWO, procResults);
+            assertEquals(ProcessUtils.SYSTEM_EXIT_MINUS_TWO, procResults, "BulkIngestMapLoader#main failed to return the expected value.");
 
             List<String> stdOut = ProcessUtils.getStandardOutDumps(proc);
 
-            Assert.assertTrue("BulkIngestMapLoader#main failed to generate the expected error message",
+            assertTrue("BulkIngestMapLoader#main failed to generate the expected error message",
                             processOutputContains(stdOut, "-srcHdfs must be followed a file system URI (e.g. hdfs://hostname:54310)."));
 
         } finally {
@@ -1556,11 +1546,11 @@ public class BulkIngestMapFileLoaderTest {
 
             int procResults = proc.waitFor();
 
-            Assert.assertEquals("BulkIngestMapLoader#main failed to return the expected value.", ProcessUtils.SYSTEM_EXIT_MINUS_TWO, procResults);
+            assertEquals(ProcessUtils.SYSTEM_EXIT_MINUS_TWO, procResults, "BulkIngestMapLoader#main failed to return the expected value.");
 
             List<String> stdOut = ProcessUtils.getStandardOutDumps(proc);
 
-            Assert.assertTrue("BulkIngestMapLoader#main failed to generate the expected error message",
+            assertTrue("BulkIngestMapLoader#main failed to generate the expected error message",
                             processOutputContains(stdOut, "-destHdfs must be followed a file system URI (e.g. hdfs://hostname:54310)."));
 
         } finally {
@@ -1596,11 +1586,11 @@ public class BulkIngestMapFileLoaderTest {
 
             int procResults = proc.waitFor();
 
-            Assert.assertEquals("BulkIngestMapLoader#main failed to return the expected value.", ProcessUtils.SYSTEM_EXIT_MINUS_TWO, procResults);
+            assertEquals(ProcessUtils.SYSTEM_EXIT_MINUS_TWO, procResults, "BulkIngestMapLoader#main failed to return the expected value.");
 
             List<String> stdOut = ProcessUtils.getStandardOutDumps(proc);
 
-            Assert.assertTrue("BulkIngestMapLoader#main failed to generate the expected error message",
+            assertTrue("BulkIngestMapLoader#main failed to generate the expected error message",
                             processOutputContains(stdOut, "-destHdfs must be followed a file system URI (e.g. hdfs://hostname:54310)."));
 
         } finally {
@@ -1636,11 +1626,11 @@ public class BulkIngestMapFileLoaderTest {
 
             int procResults = proc.waitFor();
 
-            Assert.assertEquals("BulkIngestMapLoader#main failed to return the expected value.", ProcessUtils.SYSTEM_EXIT_MINUS_TWO, procResults);
+            assertEquals(ProcessUtils.SYSTEM_EXIT_MINUS_TWO, procResults, "BulkIngestMapLoader#main failed to return the expected value.");
 
             List<String> stdOut = ProcessUtils.getStandardOutDumps(proc);
 
-            Assert.assertTrue("BulkIngestMapLoader#main failed to generate the expected error message",
+            assertTrue("BulkIngestMapLoader#main failed to generate the expected error message",
                             processOutputContains(stdOut, "-jt must be followed a jobtracker (e.g. hostname:54311)."));
 
         } finally {
@@ -1677,11 +1667,11 @@ public class BulkIngestMapFileLoaderTest {
 
             int procResults = proc.waitFor();
 
-            Assert.assertEquals("BulkIngestMapLoader#main failed to return the expected value.", ProcessUtils.SYSTEM_EXIT_MINUS_TWO, procResults);
+            assertEquals(ProcessUtils.SYSTEM_EXIT_MINUS_TWO, procResults, "BulkIngestMapLoader#main failed to return the expected value.");
 
             List<String> stdOut = ProcessUtils.getStandardOutDumps(proc);
 
-            Assert.assertTrue("BulkIngestMapLoader#main failed to generate the expected error message",
+            assertTrue("BulkIngestMapLoader#main failed to generate the expected error message",
                             processOutputContains(stdOut, "-shutdownPort must be followed a port number"));
 
         } finally {
@@ -1717,11 +1707,11 @@ public class BulkIngestMapFileLoaderTest {
 
             int procResults = proc.waitFor();
 
-            Assert.assertEquals("BulkIngestMapLoader#main failed to return the expected value.", ProcessUtils.SYSTEM_EXIT_MINUS_TWO, procResults);
+            assertEquals(ProcessUtils.SYSTEM_EXIT_MINUS_TWO, procResults, "BulkIngestMapLoader#main failed to return the expected value.");
 
             List<String> stdOut = ProcessUtils.getStandardOutDumps(proc);
 
-            Assert.assertTrue("BulkIngestMapLoader#main failed to generate the expected error message",
+            assertTrue("BulkIngestMapLoader#main failed to generate the expected error message",
                             processOutputContains(stdOut, "-shutdownPort must be followed a port number"));
 
         } finally {
@@ -1757,11 +1747,11 @@ public class BulkIngestMapFileLoaderTest {
 
             int procResults = proc.waitFor();
 
-            Assert.assertEquals("BulkIngestMapLoader#main failed to return the expected value.", ProcessUtils.SYSTEM_EXIT_MINUS_TWO, procResults);
+            assertEquals(ProcessUtils.SYSTEM_EXIT_MINUS_TWO, procResults, "BulkIngestMapLoader#main failed to return the expected value.");
 
             List<String> stdOut = ProcessUtils.getStandardOutDumps(proc);
 
-            Assert.assertTrue("BulkIngestMapLoader#main failed to generate the expected error message",
+            assertTrue("BulkIngestMapLoader#main failed to generate the expected error message",
                             processOutputContains(stdOut, "WARN: skipping bad property configuration -property1"));
 
         } finally {
@@ -1788,7 +1778,7 @@ public class BulkIngestMapFileLoaderTest {
             BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, "user", new PasswordToken("pass"),
                             seqFileHdfs, srcHdfs, destHdfs, jobtracker, tablePriorities, conf, 0);
 
-            Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
+            assertNotNull(uut, "BulkIngestMapFileLoader constructor failed to create an instance.");
 
             uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, "user", new PasswordToken("pass"), seqFileHdfs, srcHdfs,
                             destHdfs, jobtracker, tablePriorities, conf, 0);
@@ -1817,11 +1807,11 @@ public class BulkIngestMapFileLoaderTest {
 
             BulkIngestMapFileLoader uut = createBulkIngestFileMapLoader(url);
 
-            Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
+            assertNotNull(uut, "BulkIngestMapFileLoader constructor failed to create an instance.");
 
             uut = createBulkIngestFileMapLoader(url);
 
-            Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
+            assertNotNull(uut, "BulkIngestMapFileLoader constructor failed to create an instance.");
 
         } finally {
 
@@ -1842,7 +1832,7 @@ public class BulkIngestMapFileLoaderTest {
 
             BulkIngestMapFileLoader uut = createBulkIngestFileMapLoader(url);
 
-            Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
+            assertNotNull(uut, "BulkIngestMapFileLoader constructor failed to create an instance.");
 
             BulkIngestMapFileLoaderTest.WrappedLocalFileSystem fs = new BulkIngestMapFileLoaderTest.WrappedLocalFileSystem(createMockInputStream(), null, true,
                             true, false, false, null, false, false);
@@ -1855,23 +1845,19 @@ public class BulkIngestMapFileLoaderTest {
 
             List<String> calls = fs.callsLogs();
 
-            Assert.assertTrue("BulkIngestMapFileLoader#cleanUpJobDirectory failed to call FileSystem#mkdirs",
-                            processOutputContains(calls, "FileSystem#mkdirs("));
-            Assert.assertTrue("BulkIngestMapFileLoader#cleanUpJobDirectory failed to call FileSystem#rename",
-                            processOutputContains(calls, "FileSystem#rename("));
-            Assert.assertTrue("BulkIngestMapFileLoader#cleanUpJobDirectory failed to call FileSystem#delete",
-                            processOutputContains(calls, "FileSystem#delete("));
+            assertTrue("BulkIngestMapFileLoader#cleanUpJobDirectory failed to call FileSystem#mkdirs", processOutputContains(calls, "FileSystem#mkdirs("));
+            assertTrue("BulkIngestMapFileLoader#cleanUpJobDirectory failed to call FileSystem#rename", processOutputContains(calls, "FileSystem#rename("));
+            assertTrue("BulkIngestMapFileLoader#cleanUpJobDirectory failed to call FileSystem#delete", processOutputContains(calls, "FileSystem#delete("));
 
         } catch (IOException ioe) {
 
             String msg = ioe.getMessage();
 
-            Assert.assertTrue("BulkIngestMapFileLoader#markSourceFilesLoaded failed to throw the excepted IOException.", msg.startsWith("Unable to rename "));
+            assertTrue("BulkIngestMapFileLoader#markSourceFilesLoaded failed to throw the excepted IOException.", msg.startsWith("Unable to rename "));
 
         } catch (Throwable t) {
 
-            Assert.fail(String.format("BulkIngestMapFileLoader unexpectedly threw an exception: %s with message of '%s'", t.getClass().getName(),
-                            t.getMessage()));
+            fail(String.format("BulkIngestMapFileLoader unexpectedly threw an exception: %s with message of '%s'", t.getClass().getName(), t.getMessage()));
 
         } finally {
 
@@ -1893,39 +1879,33 @@ public class BulkIngestMapFileLoaderTest {
 
             BulkIngestMapFileLoader uut = createBulkIngestFileMapLoader(url);
 
-            Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
+            assertNotNull(uut, "BulkIngestMapFileLoader constructor failed to create an instance.");
 
             BulkIngestMapFileLoaderTest.WrappedLocalFileSystem fs = new BulkIngestMapFileLoaderTest.WrappedLocalFileSystem(createMockInputStream(), null, true,
                             false, false, false, new HashMap<>(), false, false);
 
             try {
                 addFileSystemForTesting(BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
-            } catch (IOException ioException) {
-                Assert.fail(ioException.getMessage());
             } catch (Exception e) {
-                Assert.fail(e.getMessage());
+                fail(e.getMessage());
             }
             Path mapFilesDir = createNewPath(url);
 
             uut.cleanUpJobDirectory(mapFilesDir);
-
-            Assert.fail();
+            fail();
 
         } catch (IOException ioe) {
 
             String msg = ioe.getMessage();
-
-            Assert.assertTrue("BulkIngestMapFileLoader#markSourceFilesLoaded failed to throw the excepted IOException.", msg.startsWith("Unable to rename "));
+            assertTrue("BulkIngestMapFileLoader#markSourceFilesLoaded failed to throw the excepted IOException.", msg.startsWith("Unable to rename "));
 
         } catch (Throwable t) {
 
-            Assert.fail(String.format("BulkIngestMapFileLoader unexpectedly threw an exception: %s with message of '%s'", t.getClass().getName(),
-                            t.getMessage()));
+            fail(String.format("BulkIngestMapFileLoader unexpectedly threw an exception: %s with message of '%s'", t.getClass().getName(), t.getMessage()));
 
         } finally {
 
             addFileSystemForTesting(BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, null, null);
-
             BulkIngestMapFileLoaderTest.logger.info("testCleanUpJobDirectoryMakesDirectory completed.");
         }
 
@@ -1939,10 +1919,8 @@ public class BulkIngestMapFileLoaderTest {
         try {
 
             URL url = BulkIngestMapFileLoaderTest.class.getResource("/datawave/ingest/mapreduce/job/all-splits.txt");
-
             BulkIngestMapFileLoader uut = createBulkIngestFileMapLoader(url);
-
-            Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
+            assertNotNull(uut, "BulkIngestMapFileLoader constructor failed to create an instance.");
 
             BulkIngestMapFileLoaderTest.WrappedLocalFileSystem fs = new BulkIngestMapFileLoaderTest.WrappedLocalFileSystem(
                             createMockInputStream(new String[] {"/dummy/entry"}), null, false, false, false, false, null, false, false);
@@ -1950,30 +1928,24 @@ public class BulkIngestMapFileLoaderTest {
             try {
                 addFileSystemForTesting(BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
             } catch (Exception e) {
-                Assert.fail(e.getMessage());
+                fail(e.getMessage());
             }
             Path mapFilesDir = createNewPath(url);
-
             uut.cleanUpJobDirectory(mapFilesDir);
-
-            Assert.fail();
+            fail();
 
         } catch (IOException ioe) {
 
             String msg = ioe.getMessage();
-
-            Assert.assertTrue("BulkIngestMapFileLoader#markSourceFilesLoaded failed to throw the excepted IOException. actually received" + msg,
+            assertTrue("BulkIngestMapFileLoader#markSourceFilesLoaded failed to throw the excepted IOException. actually received" + msg,
                             msg.startsWith("Unable to create parent dir "));
 
         } catch (Throwable t) {
 
-            Assert.fail(String.format("BulkIngestMapFileLoader unexpectedly threw an exception: %s with message of '%s'", t.getClass().getName(),
-                            t.getMessage()));
+            fail(String.format("BulkIngestMapFileLoader unexpectedly threw an exception: %s with message of '%s'", t.getClass().getName(), t.getMessage()));
 
         } finally {
-
             addFileSystemForTesting(BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, null, null);
-
             BulkIngestMapFileLoaderTest.logger.info("testCleanUpJobDirectoryUnableToMakeDirectory completed.");
         }
 
@@ -1987,40 +1959,34 @@ public class BulkIngestMapFileLoaderTest {
         try {
 
             URL url = BulkIngestMapFileLoaderTest.class.getResource("/datawave/ingest/mapreduce/job/all-splits.txt");
-
             BulkIngestMapFileLoader uut = createBulkIngestFileMapLoader(url);
-
-            Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
+            assertNotNull(uut, "BulkIngestMapFileLoader constructor failed to create an instance.");
 
             BulkIngestMapFileLoaderTest.WrappedLocalFileSystem fs = new BulkIngestMapFileLoaderTest.WrappedLocalFileSystem(createMockInputStream(),
                             new FileStatus[0], false, false, false, false, null, false, false);
             try {
                 addFileSystemForTesting(BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
             } catch (Exception e) {
-                Assert.fail(e.getMessage());
+                fail(e.getMessage());
             }
             Path mapFilesDir = createNewPath(url);
-
             uut.cleanUpJobDirectory(mapFilesDir);
 
-            Assert.fail();
+            fail();
 
         } catch (IOException ioe) {
 
             String msg = ioe.getMessage();
-
-            Assert.assertTrue("BulkIngestMapFileLoader#markSourceFilesLoaded failed to throw the excepted IOException.",
+            assertTrue("BulkIngestMapFileLoader#markSourceFilesLoaded failed to throw the excepted IOException.",
                             msg.startsWith("Unable to create parent dir "));
 
         } catch (Throwable t) {
 
-            Assert.fail(String.format("BulkIngestMapFileLoader unexpectedly threw an exception: %s with message of '%s'", t.getClass().getName(),
-                            t.getMessage()));
+            fail(String.format("BulkIngestMapFileLoader unexpectedly threw an exception: %s with message of '%s'", t.getClass().getName(), t.getMessage()));
 
         } finally {
 
             addFileSystemForTesting(BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, null, null);
-
             BulkIngestMapFileLoaderTest.logger.info("testCleanUpJobDirectoryJobSuccess completed.");
         }
 
@@ -2037,7 +2003,7 @@ public class BulkIngestMapFileLoaderTest {
 
             BulkIngestMapFileLoader uut = createBulkIngestFileMapLoader(url);
 
-            Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
+            assertNotNull(uut, "BulkIngestMapFileLoader constructor failed to create an instance.");
 
             BulkIngestMapFileLoaderTest.WrappedLocalFileSystem fs = new BulkIngestMapFileLoaderTest.WrappedLocalFileSystem(createMockInputStream(),
                             new FileStatus[] {createMockFileStatus()}, false, false, false, false, null, false, false);
@@ -2050,29 +2016,26 @@ public class BulkIngestMapFileLoaderTest {
 
             List<String> uutLogEntries = retrieveUUTLogs();
 
-            Assert.assertTrue("BulkIngestMapFileLoader#cleanUpJobDirectory failed to call FileSystem#mkdirs",
+            assertTrue("BulkIngestMapFileLoader#cleanUpJobDirectory failed to call FileSystem#mkdirs",
                             processOutputContains(uutLogEntries, "There were failures bringing map files online."));
-            Assert.assertTrue("BulkIngestMapFileLoader#cleanUpJobDirectory failed to call FileSystem#rename",
+            assertTrue("BulkIngestMapFileLoader#cleanUpJobDirectory failed to call FileSystem#rename",
                             processOutputContains(uutLogEntries, "Unable to rename map files directory "));
-            Assert.assertTrue("BulkIngestMapFileLoader#cleanUpJobDirectory failed to call FileSystem#delete",
+            assertTrue("BulkIngestMapFileLoader#cleanUpJobDirectory failed to call FileSystem#delete",
                             processOutputContains(uutLogEntries, "Unable to create job.failed file in "));
 
         } catch (IOException ioe) {
 
             String msg = ioe.getMessage();
-
-            Assert.assertTrue("BulkIngestMapFileLoader#markSourceFilesLoaded failed to throw the excepted IOException.",
+            assertTrue("BulkIngestMapFileLoader#markSourceFilesLoaded failed to throw the excepted IOException.",
                             msg.startsWith("Unable to create parent dir "));
 
         } catch (Throwable t) {
 
-            Assert.fail(String.format("BulkIngestMapFileLoader unexpectedly threw an exception: %s with message of '%s'", t.getClass().getName(),
-                            t.getMessage()));
+            fail(String.format("BulkIngestMapFileLoader unexpectedly threw an exception: %s with message of '%s'", t.getClass().getName(), t.getMessage()));
 
         } finally {
 
             addFileSystemForTesting(BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, null, null);
-
             BulkIngestMapFileLoaderTest.logger.info("testCleanUpJobDirectoryWithFailedJobAndFailedCreateNewFile completed.");
         }
 
@@ -2089,7 +2052,7 @@ public class BulkIngestMapFileLoaderTest {
 
             BulkIngestMapFileLoader uut = createBulkIngestFileMapLoader(url);
 
-            Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
+            assertNotNull(uut, "BulkIngestMapFileLoader constructor failed to create an instance.");
 
             BulkIngestMapFileLoaderTest.WrappedLocalFileSystem fs = new BulkIngestMapFileLoaderTest.WrappedLocalFileSystem(createMockInputStream(),
                             new FileStatus[] {createMockFileStatus()}, false, false, false, true, null, false, false);
@@ -2102,27 +2065,20 @@ public class BulkIngestMapFileLoaderTest {
 
             List<String> uutLogEntries = retrieveUUTLogs();
 
-            Assert.assertTrue("BulkIngestMapFileLoader#cleanUpJobDirectory failed to call FileSystem#mkdirs",
+            assertTrue("BulkIngestMapFileLoader#cleanUpJobDirectory failed to call FileSystem#mkdirs",
                             processOutputContains(uutLogEntries, "There were failures bringing map files online."));
-            Assert.assertTrue("BulkIngestMapFileLoader#cleanUpJobDirectory failed to call FileSystem#rename",
+            assertTrue("BulkIngestMapFileLoader#cleanUpJobDirectory failed to call FileSystem#rename",
                             processOutputContains(uutLogEntries, "Unable to rename map files directory "));
 
         } catch (IOException ioe) {
-
             String msg = ioe.getMessage();
-
-            Assert.assertTrue("BulkIngestMapFileLoader#markSourceFilesLoaded failed to throw the excepted IOException.",
+            assertTrue("BulkIngestMapFileLoader#markSourceFilesLoaded failed to throw the excepted IOException.",
                             msg.startsWith("Unable to create parent dir "));
 
         } catch (Throwable t) {
-
-            Assert.fail(String.format("BulkIngestMapFileLoader unexpectedly threw an exception: %s with message of '%s'", t.getClass().getName(),
-                            t.getMessage()));
-
+            fail(String.format("BulkIngestMapFileLoader unexpectedly threw an exception: %s with message of '%s'", t.getClass().getName(), t.getMessage()));
         } finally {
-
             addFileSystemForTesting(BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, null, null);
-
             BulkIngestMapFileLoaderTest.logger.info("testCleanUpJobDirectoryWithFailedJobAndFailedRenames completed.");
         }
 
@@ -2134,42 +2090,28 @@ public class BulkIngestMapFileLoaderTest {
         BulkIngestMapFileLoaderTest.logger.info("testCleanUpJobDirectoryWithFailedJob called...");
 
         try {
-
             URL url = BulkIngestMapFileLoaderTest.class.getResource("/datawave/ingest/mapreduce/job/");
-
             BulkIngestMapFileLoader uut = createBulkIngestFileMapLoader(url);
-
-            Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
+            assertNotNull(uut, "BulkIngestMapFileLoader constructor failed to create an instance.");
 
             BulkIngestMapFileLoaderTest.WrappedLocalFileSystem fs = new BulkIngestMapFileLoaderTest.WrappedLocalFileSystem(createMockInputStream(),
                             new FileStatus[] {createMockFileStatus()}, false, true, false, true, null, false, false);
 
             addFileSystemForTesting(BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
-
             Path mapFilesDir = createNewPath(url);
-
             uut.cleanUpJobDirectory(mapFilesDir);
-
             List<String> uutLogEntries = retrieveUUTLogs();
-
-            Assert.assertTrue("BulkIngestMapFileLoader#cleanUpJobDirectory failed to call FileSystem#mkdirs",
+            assertTrue("BulkIngestMapFileLoader#cleanUpJobDirectory failed to call FileSystem#mkdirs",
                             processOutputContains(uutLogEntries, "There were failures bringing map files online."));
         } catch (IOException ioe) {
-
             String msg = ioe.getMessage();
-
-            Assert.assertTrue("BulkIngestMapFileLoader#markSourceFilesLoaded failed to throw the excepted IOException.",
+            assertTrue("BulkIngestMapFileLoader#markSourceFilesLoaded failed to throw the excepted IOException.",
                             msg.startsWith("Unable to create parent dir "));
-
         } catch (Throwable t) {
-
-            Assert.fail(String.format("BulkIngestMapFileLoader unexpectedly threw an exception: %s with message of '%s'", t.getClass().getName(),
-                            t.getMessage()));
-
+            fail(String.format("BulkIngestMapFileLoader unexpectedly threw an exception: %s with message of '%s'", t.getClass().getName(), t.getMessage()));
         } finally {
 
             addFileSystemForTesting(BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, null, null);
-
             BulkIngestMapFileLoaderTest.logger.info("testCleanUpJobDirectoryWithFailedJob completed.");
         }
 
@@ -2186,7 +2128,7 @@ public class BulkIngestMapFileLoaderTest {
 
             BulkIngestMapFileLoader uut = createBulkIngestFileMapLoader(url);
 
-            Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
+            assertNotNull(uut, "BulkIngestMapFileLoader constructor failed to create an instance.");
 
             Map<String,Boolean> exists = new HashMap<>();
             String filePath = String.format("%s%s", url.toString(), LOADING_FILE_MARKER);
@@ -2204,17 +2146,16 @@ public class BulkIngestMapFileLoaderTest {
 
             boolean results = uut.takeOwnershipJobDirectory(jobDirectory);
 
-            Assert.assertTrue("BulkIngestMapFileLoader#takeOwnershipJobDirectory failed to return true as expected.", results);
+            assertTrue("BulkIngestMapFileLoader#takeOwnershipJobDirectory failed to return true as expected.", results);
 
             List<String> uutLogEntries = retrieveUUTLogs();
 
             List<String> calls = fs.callsLogs();
 
-            Assert.assertTrue("BulkIngestMapFileLoader#takeOwnershipJobDirectory failed generate a renamed message",
-                            processOutputContains(uutLogEntries, "Renamed"));
-            Assert.assertTrue("BulkIngestMapFileLoader#takeOwnershipJobDirectory failed to call FileSystem#rename",
+            assertTrue("BulkIngestMapFileLoader#takeOwnershipJobDirectory failed generate a renamed message", processOutputContains(uutLogEntries, "Renamed"));
+            assertTrue("BulkIngestMapFileLoader#takeOwnershipJobDirectory failed to call FileSystem#rename",
                             processOutputContains(calls, "FileSystem#rename("));
-            Assert.assertTrue("BulkIngestMapFileLoader#takeOwnershipJobDirectory failed to call FileSystem#exists",
+            assertTrue("BulkIngestMapFileLoader#takeOwnershipJobDirectory failed to call FileSystem#exists",
                             processOutputContains(calls, "FileSystem#exists("));
         } finally {
 
@@ -2235,7 +2176,7 @@ public class BulkIngestMapFileLoaderTest {
 
             BulkIngestMapFileLoader uut = createBulkIngestFileMapLoader(url);
 
-            Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
+            assertNotNull(uut, "BulkIngestMapFileLoader constructor failed to create an instance.");
 
             Map<String,Boolean> existsResults = new HashMap<>();
             String filePath = String.format("%s%s", url, LOADING_FILE_MARKER);
@@ -2252,19 +2193,18 @@ public class BulkIngestMapFileLoaderTest {
 
             boolean results = uut.takeOwnershipJobDirectory(jobDirectory);
 
-            Assert.assertFalse("BulkIngestMapFileLoader#takeOwnershipJobDirectory failed to return false as expected.", results);
+            assertFalse("BulkIngestMapFileLoader#takeOwnershipJobDirectory failed to return false as expected.", results);
 
             List<String> uutLogEntries = retrieveUUTLogs();
 
             List<String> calls = fs.callsLogs();
 
-            Assert.assertTrue("BulkIngestMapFileLoader#takeOwnershipJobDirectory failed generate a renamed message",
-                            processOutputContains(uutLogEntries, "Renamed"));
-            Assert.assertTrue("BulkIngestMapFileLoader#takeOwnershipJobDirectory failed generate a failed to take ownership message",
+            assertTrue("BulkIngestMapFileLoader#takeOwnershipJobDirectory failed generate a renamed message", processOutputContains(uutLogEntries, "Renamed"));
+            assertTrue("BulkIngestMapFileLoader#takeOwnershipJobDirectory failed generate a failed to take ownership message",
                             processOutputContains(uutLogEntries, "Rename returned success but yet we did not take ownership of"));
-            Assert.assertTrue("BulkIngestMapFileLoader#takeOwnershipJobDirectory failed to call FileSystem#rename",
+            assertTrue("BulkIngestMapFileLoader#takeOwnershipJobDirectory failed to call FileSystem#rename",
                             processOutputContains(calls, "FileSystem#rename("));
-            Assert.assertTrue("BulkIngestMapFileLoader#takeOwnershipJobDirectory failed to call FileSystem#exists",
+            assertTrue("BulkIngestMapFileLoader#takeOwnershipJobDirectory failed to call FileSystem#exists",
                             processOutputContains(calls, "FileSystem#exists("));
         } finally {
 
@@ -2286,7 +2226,7 @@ public class BulkIngestMapFileLoaderTest {
 
             BulkIngestMapFileLoader uut = createBulkIngestFileMapLoader(url);
 
-            Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
+            assertNotNull(uut, "BulkIngestMapFileLoader constructor failed to create an instance.");
 
             Map<String,Boolean> existsResults = new HashMap<>();
             String filePath = String.format("%s%s", url, LOADING_FILE_MARKER);
@@ -2303,19 +2243,18 @@ public class BulkIngestMapFileLoaderTest {
 
             boolean results = uut.takeOwnershipJobDirectory(jobDirectory);
 
-            Assert.assertFalse("BulkIngestMapFileLoader#takeOwnershipJobDirectory failed to return false as expected.", results);
+            assertFalse("BulkIngestMapFileLoader#takeOwnershipJobDirectory failed to return false as expected.", results);
 
             List<String> uutLogEntries = retrieveUUTLogs();
 
             List<String> calls = fs.callsLogs();
 
-            Assert.assertTrue("BulkIngestMapFileLoader#takeOwnershipJobDirectory failed generate a renamed message",
-                            processOutputContains(uutLogEntries, "Renamed"));
-            Assert.assertTrue("BulkIngestMapFileLoader#takeOwnershipJobDirectory failed generate a failed to take ownership message",
+            assertTrue("BulkIngestMapFileLoader#takeOwnershipJobDirectory failed generate a renamed message", processOutputContains(uutLogEntries, "Renamed"));
+            assertTrue("BulkIngestMapFileLoader#takeOwnershipJobDirectory failed generate a failed to take ownership message",
                             processOutputContains(uutLogEntries, "Rename returned success but yet we did not"));
-            Assert.assertTrue("BulkIngestMapFileLoader#takeOwnershipJobDirectory failed to call FileSystem#rename",
+            assertTrue("BulkIngestMapFileLoader#takeOwnershipJobDirectory failed to call FileSystem#rename",
                             processOutputContains(calls, "FileSystem#rename("));
-            Assert.assertTrue("BulkIngestMapFileLoader#takeOwnershipJobDirectory failed to call FileSystem#exists",
+            assertTrue("BulkIngestMapFileLoader#takeOwnershipJobDirectory failed to call FileSystem#exists",
                             processOutputContains(calls, "FileSystem#exists("));
         } finally {
 
@@ -2337,7 +2276,7 @@ public class BulkIngestMapFileLoaderTest {
 
             BulkIngestMapFileLoader uut = createBulkIngestFileMapLoader(url);
 
-            Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
+            assertNotNull(uut, "BulkIngestMapFileLoader constructor failed to create an instance.");
 
             Map<String,Boolean> existsResults = new HashMap<>();
             String filePath = String.format("%s%s", url, LOADING_FILE_MARKER);
@@ -2352,19 +2291,18 @@ public class BulkIngestMapFileLoaderTest {
 
             boolean results = uut.takeOwnershipJobDirectory(jobDirectory);
 
-            Assert.assertFalse("BulkIngestMapFileLoader#takeOwnershipJobDirectory failed to return false as expected.", results);
+            assertFalse("BulkIngestMapFileLoader#takeOwnershipJobDirectory failed to return false as expected.", results);
 
             List<String> uutLogEntries = retrieveUUTLogs();
 
             List<String> calls = fs.callsLogs();
 
-            Assert.assertTrue("BulkIngestMapFileLoader#takeOwnershipJobDirectory failed generate a renamed message",
-                            processOutputContains(uutLogEntries, "Renamed"));
-            Assert.assertTrue("BulkIngestMapFileLoader#takeOwnershipJobDirectory failed generate another process took ownership message",
+            assertTrue("BulkIngestMapFileLoader#takeOwnershipJobDirectory failed generate a renamed message", processOutputContains(uutLogEntries, "Renamed"));
+            assertTrue("BulkIngestMapFileLoader#takeOwnershipJobDirectory failed generate another process took ownership message",
                             processOutputContains(uutLogEntries, "Another process already took ownership of "));
-            Assert.assertTrue("BulkIngestMapFileLoader#takeOwnershipJobDirectory failed to call FileSystem#rename",
+            assertTrue("BulkIngestMapFileLoader#takeOwnershipJobDirectory failed to call FileSystem#rename",
                             processOutputContains(calls, "FileSystem#rename("));
-            Assert.assertTrue("BulkIngestMapFileLoader#takeOwnershipJobDirectory failed to call FileSystem#exists",
+            assertTrue("BulkIngestMapFileLoader#takeOwnershipJobDirectory failed to call FileSystem#exists",
                             processOutputContains(calls, "FileSystem#exists("));
         } finally {
 
@@ -2386,7 +2324,7 @@ public class BulkIngestMapFileLoaderTest {
 
             BulkIngestMapFileLoader uut = createBulkIngestFileMapLoader(url);
 
-            Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
+            assertNotNull(uut, "BulkIngestMapFileLoader constructor failed to create an instance.");
 
             Map<String,Boolean> existsResults = new HashMap<>();
 
@@ -2402,19 +2340,18 @@ public class BulkIngestMapFileLoaderTest {
 
             boolean results = uut.takeOwnershipJobDirectory(jobDirectory);
 
-            Assert.assertFalse("BulkIngestMapFileLoader#takeOwnershipJobDirectory failed to return false as expected.", results);
+            assertFalse("BulkIngestMapFileLoader#takeOwnershipJobDirectory failed to return false as expected.", results);
 
             List<String> uutLogEntries = retrieveUUTLogs();
 
             List<String> calls = fs.callsLogs();
 
-            Assert.assertTrue("BulkIngestMapFileLoader#takeOwnershipJobDirectory failed generate a renamed message",
-                            processOutputContains(uutLogEntries, "Renamed"));
-            Assert.assertTrue("BulkIngestMapFileLoader#takeOwnershipJobDirectory failed generate unable to take ownership message",
+            assertTrue("BulkIngestMapFileLoader#takeOwnershipJobDirectory failed generate a renamed message", processOutputContains(uutLogEntries, "Renamed"));
+            assertTrue("BulkIngestMapFileLoader#takeOwnershipJobDirectory failed generate unable to take ownership message",
                             processOutputContains(uutLogEntries, "Unable to take ownership of "));
-            Assert.assertTrue("BulkIngestMapFileLoader#takeOwnershipJobDirectory failed to call FileSystem#rename",
+            assertTrue("BulkIngestMapFileLoader#takeOwnershipJobDirectory failed to call FileSystem#rename",
                             processOutputContains(calls, "FileSystem#rename("));
-            Assert.assertTrue("BulkIngestMapFileLoader#takeOwnershipJobDirectory failed to call FileSystem#exists",
+            assertTrue("BulkIngestMapFileLoader#takeOwnershipJobDirectory failed to call FileSystem#exists",
                             processOutputContains(calls, "FileSystem#exists("));
         } finally {
 
@@ -2436,7 +2373,7 @@ public class BulkIngestMapFileLoaderTest {
 
             BulkIngestMapFileLoader uut = createBulkIngestFileMapLoader(url);
 
-            Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
+            assertNotNull(uut, "BulkIngestMapFileLoader constructor failed to create an instance.");
 
             Map<String,Boolean> existsResults = new HashMap<>();
 
@@ -2452,17 +2389,17 @@ public class BulkIngestMapFileLoaderTest {
 
             boolean results = uut.takeOwnershipJobDirectory(jobDirectory);
 
-            Assert.assertFalse("BulkIngestMapFileLoader#takeOwnershipJobDirectory failed to return false as expected.", results);
+            assertFalse("BulkIngestMapFileLoader#takeOwnershipJobDirectory failed to return false as expected.", results);
 
             List<String> uutLogEntries = retrieveUUTLogs();
 
             List<String> calls = fs.callsLogs();
 
-            Assert.assertTrue("BulkIngestMapFileLoader#takeOwnershipJobDirectory failed generate unable to take ownership message",
+            assertTrue("BulkIngestMapFileLoader#takeOwnershipJobDirectory failed generate unable to take ownership message",
                             processOutputContains(uutLogEntries, "Exception while marking "));
-            Assert.assertTrue("BulkIngestMapFileLoader#takeOwnershipJobDirectory failed to call FileSystem#rename",
+            assertTrue("BulkIngestMapFileLoader#takeOwnershipJobDirectory failed to call FileSystem#rename",
                             processOutputContains(calls, "FileSystem#rename("));
-            Assert.assertTrue("BulkIngestMapFileLoader#takeOwnershipJobDirectory failed to call FileSystem#exists",
+            assertTrue("BulkIngestMapFileLoader#takeOwnershipJobDirectory failed to call FileSystem#exists",
                             processOutputContains(calls, "FileSystem#exists("));
         } finally {
 
@@ -2484,7 +2421,7 @@ public class BulkIngestMapFileLoaderTest {
 
             BulkIngestMapFileLoader uut = createBulkIngestFileMapLoader(url);
 
-            Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
+            assertNotNull(uut, "BulkIngestMapFileLoader constructor failed to create an instance.");
 
             Map<String,Boolean> existsResults = new HashMap<>();
 
@@ -2500,19 +2437,18 @@ public class BulkIngestMapFileLoaderTest {
 
             boolean results = uut.takeOwnershipJobDirectory(jobDirectory);
 
-            Assert.assertFalse("BulkIngestMapFileLoader#takeOwnershipJobDirectory failed to return false as expected.", results);
+            assertFalse("BulkIngestMapFileLoader#takeOwnershipJobDirectory failed to return false as expected.", results);
 
             List<String> uutLogEntries = retrieveUUTLogs();
 
             List<String> calls = fs.callsLogs();
 
-            Assert.assertTrue("BulkIngestMapFileLoader#takeOwnershipJobDirectory failed generate a renamed message",
-                            processOutputContains(uutLogEntries, "Renamed"));
-            Assert.assertTrue("BulkIngestMapFileLoader#takeOwnershipJobDirectory failed generate unable to take ownership message",
+            assertTrue("BulkIngestMapFileLoader#takeOwnershipJobDirectory failed generate a renamed message", processOutputContains(uutLogEntries, "Renamed"));
+            assertTrue("BulkIngestMapFileLoader#takeOwnershipJobDirectory failed generate unable to take ownership message",
                             processOutputContains(uutLogEntries, "Exception while marking "));
-            Assert.assertTrue("BulkIngestMapFileLoader#takeOwnershipJobDirectory failed to call FileSystem#rename",
+            assertTrue("BulkIngestMapFileLoader#takeOwnershipJobDirectory failed to call FileSystem#rename",
                             processOutputContains(calls, "FileSystem#rename("));
-            Assert.assertTrue("BulkIngestMapFileLoader#takeOwnershipJobDirectory failed to call FileSystem#exists",
+            assertTrue("BulkIngestMapFileLoader#takeOwnershipJobDirectory failed to call FileSystem#exists",
                             processOutputContains(calls, "FileSystem#exists("));
         } finally {
 
@@ -2710,7 +2646,7 @@ public class BulkIngestMapFileLoaderTest {
 
             BulkIngestMapFileLoader uut = createBulkIngestFileMapLoader(url);
 
-            Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
+            assertNotNull(uut, "BulkIngestMapFileLoader constructor failed to create an instance.");
 
             BulkIngestMapFileLoaderTest.WrappedLocalFileSystem fs = new BulkIngestMapFileLoaderTest.WrappedLocalFileSystem(null, null, false, false, false,
                             false, null, false, false);
@@ -2721,17 +2657,16 @@ public class BulkIngestMapFileLoaderTest {
 
             boolean results = uut.markJobDirectoryFailed(url.toURI(), jobDirectory);
 
-            Assert.assertFalse("BulkIngestMapFileLoader#markJobDirectoryFailed failed to return false as expected.", results);
+            assertFalse("BulkIngestMapFileLoader#markJobDirectoryFailed failed to return false as expected.", results);
 
             List<String> uutLogEntries = retrieveUUTLogs();
 
             List<String> calls = fs.callsLogs();
 
-            Assert.assertTrue("BulkIngestMapFileLoader#markJobDirectoryFailed failed generate an unable to create message",
+            assertTrue("BulkIngestMapFileLoader#markJobDirectoryFailed failed generate an unable to create message",
                             processOutputContains(uutLogEntries, "Unable to create "));
-            Assert.assertTrue("BulkIngestMapFileLoader#markJobDirectoryFailed failed to call FileSystem#rename",
-                            processOutputContains(calls, "FileSystem#rename("));
-            Assert.assertTrue("BulkIngestMapFileLoader#markJobDirectoryFailed failed to call FileSystem#createNewFile",
+            assertTrue("BulkIngestMapFileLoader#markJobDirectoryFailed failed to call FileSystem#rename", processOutputContains(calls, "FileSystem#rename("));
+            assertTrue("BulkIngestMapFileLoader#markJobDirectoryFailed failed to call FileSystem#createNewFile",
                             processOutputContains(calls, "FileSystem#createNewFile("));
         } finally {
 
@@ -2753,7 +2688,7 @@ public class BulkIngestMapFileLoaderTest {
 
             BulkIngestMapFileLoader uut = createBulkIngestFileMapLoader(url);
 
-            Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
+            assertNotNull(uut, "BulkIngestMapFileLoader constructor failed to create an instance.");
 
             BulkIngestMapFileLoaderTest.WrappedLocalFileSystem fs = new BulkIngestMapFileLoaderTest.WrappedLocalFileSystem(null, null, false, false, false,
                             true, null, false, false);
@@ -2766,10 +2701,9 @@ public class BulkIngestMapFileLoaderTest {
 
             List<String> calls = fs.callsLogs();
 
-            Assert.assertTrue("BulkIngestMapFileLoader#markJobDirectoryFailed failed to return true as expected.", results);
-            Assert.assertTrue("BulkIngestMapFileLoader#markJobDirectoryFailed failed to call FileSystem#rename",
-                            processOutputContains(calls, "FileSystem#rename("));
-            Assert.assertTrue("BulkIngestMapFileLoader#markJobDirectoryFailed failed to call FileSystem#createNewFile",
+            assertTrue("BulkIngestMapFileLoader#markJobDirectoryFailed failed to return true as expected.", results);
+            assertTrue("BulkIngestMapFileLoader#markJobDirectoryFailed failed to call FileSystem#rename", processOutputContains(calls, "FileSystem#rename("));
+            assertTrue("BulkIngestMapFileLoader#markJobDirectoryFailed failed to call FileSystem#createNewFile",
                             processOutputContains(calls, "FileSystem#createNewFile("));
         } finally {
 
@@ -2791,7 +2725,7 @@ public class BulkIngestMapFileLoaderTest {
 
             BulkIngestMapFileLoader uut = createBulkIngestFileMapLoader(url);
 
-            Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
+            assertNotNull(uut, "BulkIngestMapFileLoader constructor failed to create an instance.");
 
             BulkIngestMapFileLoaderTest.WrappedLocalFileSystem fs = new BulkIngestMapFileLoaderTest.WrappedLocalFileSystem(null, null, false, true, false,
                             false, null, false, false);
@@ -2804,9 +2738,8 @@ public class BulkIngestMapFileLoaderTest {
 
             List<String> calls = fs.callsLogs();
 
-            Assert.assertTrue("BulkIngestMapFileLoader#markJobDirectoryFailed failed to return true as expected.", results);
-            Assert.assertTrue("BulkIngestMapFileLoader#markJobDirectoryFailed failed to call FileSystem#rename",
-                            processOutputContains(calls, "FileSystem#rename("));
+            assertTrue("BulkIngestMapFileLoader#markJobDirectoryFailed failed to return true as expected.", results);
+            assertTrue("BulkIngestMapFileLoader#markJobDirectoryFailed failed to call FileSystem#rename", processOutputContains(calls, "FileSystem#rename("));
         } finally {
 
             addFileSystemForTesting(BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, null, null);
@@ -2827,7 +2760,7 @@ public class BulkIngestMapFileLoaderTest {
 
             BulkIngestMapFileLoader uut = createBulkIngestFileMapLoader(url);
 
-            Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
+            assertNotNull(uut, "BulkIngestMapFileLoader constructor failed to create an instance.");
 
             BulkIngestMapFileLoaderTest.WrappedLocalFileSystem fs = new BulkIngestMapFileLoaderTest.WrappedLocalFileSystem(null, null, false, false, false,
                             false, null, true, false);
@@ -2838,13 +2771,13 @@ public class BulkIngestMapFileLoaderTest {
 
             boolean results = uut.markJobDirectoryFailed(url.toURI(), jobDirectory);
 
-            Assert.assertFalse("BulkIngestMapFileLoader#markJobDirectoryFailed failed to return false as expected.", results);
+            assertFalse("BulkIngestMapFileLoader#markJobDirectoryFailed failed to return false as expected.", results);
 
             List<String> uutLogEntries = retrieveUUTLogs();
 
-            Assert.assertTrue("BulkIngestMapFileLoader#markJobDirectoryFailed failed generate a Exception thrown message",
+            assertTrue("BulkIngestMapFileLoader#markJobDirectoryFailed failed generate a Exception thrown message",
                             processOutputContains(uutLogEntries, "Exception while marking "));
-            Assert.assertTrue("BulkIngestMapFileLoader#markJobDirectoryFailed failed to call FileSystem#rename",
+            assertTrue("BulkIngestMapFileLoader#markJobDirectoryFailed failed to call FileSystem#rename",
                             processOutputContains(fs.callsLogs(), "FileSystem#rename("));
         } finally {
 
@@ -2865,7 +2798,7 @@ public class BulkIngestMapFileLoaderTest {
 
             BulkIngestMapFileLoader uut = createBulkIngestFileMapLoader(url);
 
-            Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
+            assertNotNull(uut, "BulkIngestMapFileLoader constructor failed to create an instance.");
 
             Map<String,Boolean> exists = new HashMap<>();
             String filePath = String.format("%s%s", url, CLEANUP_FILE_MARKER);
@@ -2883,7 +2816,7 @@ public class BulkIngestMapFileLoaderTest {
 
             boolean results = uut.markDirectoryForCleanup(jobDirectory, url.toURI());
 
-            Assert.assertTrue("BulkIngestMapFileLoader#markDirectoryForCleanup failed to return true as expected.", results);
+            assertTrue("BulkIngestMapFileLoader#markDirectoryForCleanup failed to return true as expected.", results);
         } finally {
 
             addFileSystemForTesting(BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, null, null);
@@ -2905,7 +2838,7 @@ public class BulkIngestMapFileLoaderTest {
 
             BulkIngestMapFileLoader uut = createBulkIngestFileMapLoader(url);
 
-            Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
+            assertNotNull(uut, "BulkIngestMapFileLoader constructor failed to create an instance.");
 
             Map<String,Boolean> exists = new HashMap<>();
             String filePath = String.format("%s%s", url, CLEANUP_FILE_MARKER);
@@ -2923,12 +2856,9 @@ public class BulkIngestMapFileLoaderTest {
 
             uut.cleanJobDirectoriesOnStartup();
 
-            Assert.assertTrue("BulkIngestMapFileLoader#cleanUpJobDirectory failed to call FileSystem#mkdirs",
-                            processOutputContains(calls, "FileSystem#mkdirs("));
-            Assert.assertTrue("BulkIngestMapFileLoader#cleanUpJobDirectory failed to call FileSystem#rename",
-                            processOutputContains(calls, "FileSystem#rename("));
-            Assert.assertTrue("BulkIngestMapFileLoader#cleanUpJobDirectory failed to call FileSystem#delete",
-                            processOutputContains(calls, "FileSystem#delete("));
+            assertTrue("BulkIngestMapFileLoader#cleanUpJobDirectory failed to call FileSystem#mkdirs", processOutputContains(calls, "FileSystem#mkdirs("));
+            assertTrue("BulkIngestMapFileLoader#cleanUpJobDirectory failed to call FileSystem#rename", processOutputContains(calls, "FileSystem#rename("));
+            assertTrue("BulkIngestMapFileLoader#cleanUpJobDirectory failed to call FileSystem#delete", processOutputContains(calls, "FileSystem#delete("));
 
         } finally {
 

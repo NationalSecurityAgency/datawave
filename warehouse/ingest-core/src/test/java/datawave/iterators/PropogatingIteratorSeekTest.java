@@ -19,7 +19,6 @@ import org.apache.accumulo.core.iterators.IteratorUtil;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iteratorsImpl.system.SortedMapIterator;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.accumulo.core.spi.common.ServiceEnvironment;
 import org.apache.hadoop.io.Text;
 import org.junit.Assert;
 import org.junit.Before;
@@ -147,11 +146,6 @@ public class PropogatingIteratorSeekTest {
         }
 
         @Override
-        public ServiceEnvironment getServiceEnv() {
-            return null;
-        }
-
-        @Override
         public PluginEnvironment getPluginEnv() {
             return null;
         }
@@ -162,8 +156,8 @@ public class PropogatingIteratorSeekTest {
         }
 
         @Override
-        public SortedKeyValueIterator<Key,Value> reserveMapFileReader(String s) throws IOException {
-            return null;
+        public boolean isRunningLowOnMemory() {
+            return false;
         }
 
         public IteratorUtil.IteratorScope getIteratorScope() {
@@ -173,11 +167,6 @@ public class PropogatingIteratorSeekTest {
         @Override
         public boolean isFullMajorCompaction() {
             return false;
-        }
-
-        @Override
-        public void registerSideChannel(SortedKeyValueIterator<Key,Value> sortedKeyValueIterator) {
-
         }
 
         @Override

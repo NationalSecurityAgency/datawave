@@ -32,7 +32,7 @@ import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.admin.InstanceOperations;
 import org.apache.accumulo.core.client.admin.NamespaceOperations;
-import org.apache.accumulo.core.client.admin.ReplicationOperations;
+import org.apache.accumulo.core.client.admin.ResourceGroupOperations;
 import org.apache.accumulo.core.client.admin.SecurityOperations;
 import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.accumulo.core.client.sample.SamplerConfiguration;
@@ -558,7 +558,7 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
         try {
             runTest(query, Collections.emptyList());
         } catch (FullTableScansDisallowedException e) {
-            // ok, essential no matches in index
+            // ok, essentially no matches in index
         }
 
         // add the metadata back in
@@ -1592,8 +1592,8 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
         }
 
         @Override
-        public ReplicationOperations replicationOperations() {
-            return client.replicationOperations();
+        public ResourceGroupOperations resourceGroupOperations() {
+            return client.resourceGroupOperations();
         }
 
         @Override

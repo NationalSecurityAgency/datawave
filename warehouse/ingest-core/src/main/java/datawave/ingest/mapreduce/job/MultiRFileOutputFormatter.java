@@ -194,7 +194,7 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
     }
 
     public static boolean loadPlanningEnabled(Configuration conf) {
-        return conf.getEnum(BULK_IMPORT_MODE_CONFIG, ImportMode.V1).equals(ImportMode.V2);
+        return conf.getEnum(BULK_IMPORT_MODE_CONFIG, ImportMode.V2).equals(ImportMode.V2);
     }
 
     /**

@@ -26,7 +26,7 @@ import org.slf4j.LoggerFactory;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
-import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.table.constants.TableName;
 
 /**
@@ -53,7 +53,7 @@ public class BitSetIndexEntryIteratorTest {
     @BeforeAll
     public static void setup() throws Exception {
         // should port over to MiniAccumuloCluster at some point
-        InMemoryInstance instance = new InMemoryInstance(BitSetIndexEntryIteratorTest.class.getName());
+        InMemoryAccumulo instance = new InMemoryAccumulo(BitSetIndexEntryIteratorTest.class.getName());
         ingestUtil = new DayIndexIngestUtil(instance);
         ingestUtil.writeData();
     }

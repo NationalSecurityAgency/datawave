@@ -27,12 +27,12 @@ public class TestPluginEnv implements PluginEnvironment {
     }
 
     @Override
-    public <T> T instantiate(String className, Class<T> base) throws Exception {
+    public <T> T instantiate(String className, Class<T> base) throws ReflectiveOperationException {
         return null;
     }
 
     @Override
-    public <T> T instantiate(TableId tableId, String className, Class<T> base) throws Exception {
+    public <T> T instantiate(TableId tableId, String className, Class<T> base) throws ReflectiveOperationException {
         return null;
     }
 }

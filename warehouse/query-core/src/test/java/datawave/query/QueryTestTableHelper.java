@@ -22,7 +22,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
-import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.helpers.PrintUtility;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.ingest.table.config.MetadataTableConfigHelper;
@@ -61,7 +61,7 @@ public class QueryTestTableHelper {
     public QueryTestTableHelper(String instanceName, Logger log, RebuildingScannerTestHelper.TEARDOWN teardown, RebuildingScannerTestHelper.INTERRUPT interrupt)
                     throws AccumuloSecurityException, AccumuloException, TableExistsException, TableNotFoundException {
         // create mock instance and connector
-        InMemoryInstance i = new InMemoryInstance(instanceName);
+        InMemoryAccumulo i = new InMemoryAccumulo(instanceName);
         this.client = RebuildingScannerTestHelper.getClient(i, "root", new PasswordToken(""), teardown, interrupt);
         this.log = log;
 

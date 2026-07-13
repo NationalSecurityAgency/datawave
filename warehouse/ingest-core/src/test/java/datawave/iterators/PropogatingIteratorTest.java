@@ -29,7 +29,6 @@ import org.apache.accumulo.core.iterators.IteratorUtil.IteratorScope;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.accumulo.core.spi.common.ServiceEnvironment;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -104,11 +103,6 @@ public class PropogatingIteratorTest {
         }
 
         @Override
-        public AccumuloConfiguration getConfig() {
-            return conf;
-        }
-
-        @Override
         public IteratorScope getIteratorScope() {
             if (major) {
                 return IteratorScope.majc;
@@ -127,11 +121,6 @@ public class PropogatingIteratorTest {
         }
 
         @Override
-        public ServiceEnvironment getServiceEnv() {
-            return null;
-        }
-
-        @Override
         public PluginEnvironment getPluginEnv() {
             return null;
         }
@@ -142,8 +131,8 @@ public class PropogatingIteratorTest {
         }
 
         @Override
-        public void registerSideChannel(SortedKeyValueIterator<Key,Value> iter) {
-            throw new UnsupportedOperationException();
+        public boolean isRunningLowOnMemory() {
+            return false;
         }
 
         @Override
@@ -163,11 +152,6 @@ public class PropogatingIteratorTest {
 
         @Override
         public SamplerConfiguration getSamplerConfiguration() {
-            return null;
-        }
-
-        @Override
-        public SortedKeyValueIterator<Key,Value> reserveMapFileReader(String arg0) {
             return null;
         }
     }

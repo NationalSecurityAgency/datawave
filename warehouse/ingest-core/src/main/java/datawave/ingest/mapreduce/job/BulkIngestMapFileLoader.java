@@ -32,7 +32,10 @@ import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.accumulo.core.client.admin.ActiveCompaction;
+import org.apache.accumulo.core.client.admin.servers.ServerId;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
+import org.apache.accumulo.core.clientImpl.ClientContext;
 import org.apache.accumulo.core.data.LoadPlan;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.conf.Configurable;
@@ -84,7 +87,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
     private static boolean FIFO = true;
     private static boolean INGEST_METRICS = true;
     protected static String DELAY_PATH_PATTERN;
-    private static ImportMode BULK_IMPORT_MODE = ImportMode.V1;
+    private static ImportMode BULK_IMPORT_MODE = ImportMode.V2;
 
     public static final String CLEANUP_FILE_MARKER = "job.cleanup";
     public static final String COMPLETE_FILE_MARKER = "job.complete";
@@ -114,10 +117,9 @@ public final class BulkIngestMapFileLoader implements Runnable {
 
     public enum ImportMode {
         /**
-         * Accumulo's 1.x bulk api will be used to import rfiles.
+         * Placeholder for optional bulk V2 stage
          */
-        @Deprecated
-        V1,
+        V2_LOCAL,
         /**
          * Accumulo's 2.x bulk api will be used to import rfiles. All rfile-to-tablet mappings are determined from precomputed
          * {@link org.apache.accumulo.core.data.LoadPlan} files created in {@link MultiRFileOutputFormatter}
@@ -333,7 +335,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
             }
         }
 
-        BULK_IMPORT_MODE = conf.getEnum(BULK_IMPORT_MODE_CONFIG, ImportMode.V1);
+        BULK_IMPORT_MODE = conf.getEnum(BULK_IMPORT_MODE_CONFIG, ImportMode.V2);
 
         log.info("Set sleep time to " + SLEEP_TIME + "ms");
         log.info("Will wait to bring map files online if there are more than " + MAJC_THRESHOLD + " running or queued major compactions.");
@@ -422,7 +424,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
             throw new IllegalStateException("Cannot create FileSystem", e);
         }
 
-        //TODO DEPRECATED SINCE JAVA 9
+        // TODO DEPRECATED SINCE JAVA 9
         for (Observer observer : jobObservers) {
             this.jobObservable.addObserver(observer);
             if (observer instanceof Configurable) {
@@ -710,9 +712,20 @@ public final class BulkIngestMapFileLoader implements Runnable {
     }
 
     private int getMajorCompactionCount() {
-        // TODO: Accumulo4 Fetch Major Compaction Metrics
-        log.error("Fetching MUnable to retrieve major compaction stats: ");
-        return 0;
+        int majC = 0;
+        ClientContext context = (ClientContext) accumuloClient;
+        try {
+            // ACCUMULO4_TODO this code used to contact the monitor and get the running+queued compactions. Now it is only getting the running compaction count
+            // and it is getting that count in a very inefficient way. The following call to getActiveCompactions() will reach out to every tserver and
+            // compactor process and ask what it is compacting. It would be better to get this from a place where the information is already summarized like
+            // the metrics system, monitor, or manager. This change was made to get things compiling, but it is a terrible way to do things and must be fixed at
+            // some point. Opened accumulo issue #4939 based partially on this.
+            majC = (int) accumuloClient.instanceOperations().getActiveCompactions(accumuloClient.instanceOperations().getServers(ServerId.Type.COMPACTOR))
+                            .stream().filter(activeCompaction -> activeCompaction.getType() != ActiveCompaction.CompactionType.MINOR).count();
+        } catch (AccumuloSecurityException | AccumuloException e) {
+            log.error("Unable to retrieve major compaction stats: " + e.getMessage());
+        }
+        return majC;
     }
 
     /**

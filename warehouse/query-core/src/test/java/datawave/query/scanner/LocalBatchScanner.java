@@ -27,7 +27,6 @@ import org.apache.accumulo.core.iterators.WrappingIterator;
 import org.apache.accumulo.core.iteratorsImpl.IteratorBuilder;
 import org.apache.accumulo.core.iteratorsImpl.IteratorConfigUtil;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.accumulo.core.spi.common.ServiceEnvironment;
 
 import datawave.query.iterator.SortedListKeyValueIterator;
 import datawave.query.tables.SessionOptions;
@@ -116,10 +115,6 @@ public class LocalBatchScanner extends SessionOptions implements BatchScanner {
     }
 
     public static class LocalIteratorEnvironment implements IteratorEnvironment {
-        @Override
-        public SortedKeyValueIterator<Key,Value> reserveMapFileReader(String s) throws IOException {
-            return null;
-        }
 
         @Override
         public IteratorUtil.IteratorScope getIteratorScope() {
@@ -129,11 +124,6 @@ public class LocalBatchScanner extends SessionOptions implements BatchScanner {
         @Override
         public boolean isUserCompaction() {
             return false;
-        }
-
-        @Override
-        public ServiceEnvironment getServiceEnv() {
-            return null;
         }
 
         @Override
@@ -147,13 +137,13 @@ public class LocalBatchScanner extends SessionOptions implements BatchScanner {
         }
 
         @Override
-        public boolean isFullMajorCompaction() {
+        public boolean isRunningLowOnMemory() {
             return false;
         }
 
         @Override
-        public void registerSideChannel(SortedKeyValueIterator<Key,Value> sortedKeyValueIterator) {
-
+        public boolean isFullMajorCompaction() {
+            return false;
         }
 
         @Override

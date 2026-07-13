@@ -193,7 +193,8 @@ public class IndexExpansionQueryTest extends AbstractQueryTest {
     public static void beforeAll() throws Exception {
         if (useMAC) {
             MiniAccumuloConfig cfg = new MiniAccumuloConfig(folder.toFile(), PASSWORD);
-            cfg.setNumTservers(1);
+            // TODO: Fix MiniAccumulo Cluster
+            // cfg.setNumTservers(1);
             mac = new MiniAccumuloCluster(cfg);
             mac.start();
 

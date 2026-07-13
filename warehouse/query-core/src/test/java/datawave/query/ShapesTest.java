@@ -132,7 +132,8 @@ public class ShapesTest extends AbstractQueryTest {
     @BeforeAll
     public static void beforeAll() throws Exception {
         MiniAccumuloConfig cfg = new MiniAccumuloConfig(folder.toFile(), PASSWORD);
-        cfg.setNumTservers(1);
+        // TODO: Fix MiniAccumulo Cluster
+        // cfg.setNumTservers(1);
         mac = new MiniAccumuloCluster(cfg);
         mac.start();
 

@@ -22,23 +22,17 @@ import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.sample.SamplerConfiguration;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
 import org.apache.accumulo.core.conf.DefaultConfiguration;
-import org.apache.accumulo.core.crypto.CryptoFactoryLoader;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.TableId;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.file.rfile.RFileOperations;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.IteratorUtil.IteratorScope;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iteratorsImpl.system.SortedMapIterator;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.accumulo.core.spi.common.ServiceEnvironment;
-import org.apache.accumulo.core.spi.crypto.CryptoEnvironment;
-import org.apache.accumulo.core.spi.crypto.CryptoService;
 import org.apache.accumulo.core.util.ConfigurationImpl;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -354,22 +348,8 @@ public class SourceManagerTest {
 
         AccumuloConfiguration conf;
 
-        public MockIteratorEnvironment(AccumuloConfiguration conf) {
-            this.conf = conf;
-        }
-
         public MockIteratorEnvironment() {
             this.conf = DefaultConfiguration.getInstance();
-        }
-
-        @Override
-        public SortedKeyValueIterator<Key,Value> reserveMapFileReader(String mapFileName) throws IOException {
-            Configuration conf = new Configuration();
-            FileSystem fs = FileSystem.get(conf);
-            CryptoService cs = CryptoFactoryLoader.getServiceForClient(CryptoEnvironment.Scope.TABLE,
-                            DefaultConfiguration.getInstance().getAllCryptoProperties());
-            return RFileOperations.getInstance().newReaderBuilder().forFile(mapFileName, fs, conf, cs)
-                            .withTableConfiguration(DefaultConfiguration.getInstance()).seekToBeginning().build();
         }
 
         @Override
@@ -383,8 +363,8 @@ public class SourceManagerTest {
         }
 
         @Override
-        public AccumuloConfiguration getConfig() {
-            return conf;
+        public boolean isRunningLowOnMemory() {
+            return false;
         }
 
         @Override
@@ -400,11 +380,6 @@ public class SourceManagerTest {
         @Override
         public boolean isUserCompaction() {
             return false;
-        }
-
-        @Override
-        public ServiceEnvironment getServiceEnv() {
-            return null;
         }
 
         @Override
@@ -427,11 +402,6 @@ public class SourceManagerTest {
             return null;
         }
 
-        @Override
-        public void registerSideChannel(SortedKeyValueIterator<Key,Value> iter) {
-            throw new UnsupportedOperationException();
-        }
-
         public class MockPluginEnvironment implements PluginEnvironment {
             @Override
             public Configuration getConfiguration() {
@@ -449,12 +419,12 @@ public class SourceManagerTest {
             }
 
             @Override
-            public <T> T instantiate(String className, Class<T> base) throws Exception {
+            public <T> T instantiate(String className, Class<T> base) throws ReflectiveOperationException {
                 return null;
             }
 
             @Override
-            public <T> T instantiate(TableId tableId, String className, Class<T> base) throws Exception {
+            public <T> T instantiate(TableId tableId, String className, Class<T> base) throws ReflectiveOperationException {
                 return null;
             }
         }

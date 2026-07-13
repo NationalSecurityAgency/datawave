@@ -27,8 +27,8 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryAccumulo;
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 
 /**
  * This is the test class for AccumuloIndexAgeDisplay. It will create an instance of accumulo, load it with data and verify AccumuloIndexAgeDisplay shows the

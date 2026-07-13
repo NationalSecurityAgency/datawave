@@ -24,8 +24,8 @@ public class MetricsTableConfigHelperTest {
 
     private static final String CONFIG_LOC = "/datawave/ingest/mapreduce/job/metrics/test-metrics-config.xml";
 
-    private Logger logger = Logger.getLogger(this.getClass());
-    private Configuration conf = getClasspathConfig(CONFIG_LOC);
+    private final Logger logger = Logger.getLogger(this.getClass());
+    private final Configuration conf = getClasspathConfig(CONFIG_LOC);
     private MetricsTableConfigHelper configHelper;
     private TableOperations tops;
 
