@@ -28,8 +28,8 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Lists;
 
-import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryAccumulo;
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryTableOperations;
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.common.connection.WrappedAccumuloClient;

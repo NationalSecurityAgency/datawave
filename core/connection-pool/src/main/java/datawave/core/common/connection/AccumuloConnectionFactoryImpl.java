@@ -212,7 +212,7 @@ public class AccumuloConnectionFactoryImpl implements AccumuloConnectionFactory 
             AccumuloClient mock = new InMemoryAccumuloClient(pool.getFactory().getUsername(), cache.getInstance());
             WrappedAccumuloClient wrappedAccumuloClient = new WrappedAccumuloClient(accumuloClient, mock);
             if (connectionPoolsConfiguration.getClientConfiguration(poolName) != null) {
-                wrappedAccumuloClient.setClientConfig(connectionPoolsConfiguration.getClientConfiguration(poolName).getConfiguration());
+                wrappedAccumuloClient.updateClientConfig(connectionPoolsConfiguration.getClientConfiguration(poolName).getConfiguration());
             }
             String classLoaderContext = System.getProperty("dw.accumulo.classLoader.context");
             if (classLoaderContext != null) {
