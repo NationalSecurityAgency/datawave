@@ -422,6 +422,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
             throw new IllegalStateException("Cannot create FileSystem", e);
         }
 
+        //TODO DEPRECATED SINCE JAVA 9
         for (Observer observer : jobObservers) {
             this.jobObservable.addObserver(observer);
             if (observer instanceof Configurable) {
