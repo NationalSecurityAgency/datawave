@@ -39,6 +39,7 @@ import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.clientImpl.ClientConfConverter;
 import org.apache.accumulo.core.clientImpl.ClientContext;
 import org.apache.accumulo.core.clientImpl.ClientInfo;
+import org.apache.accumulo.core.clientImpl.ClientTabletCache;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
@@ -1039,7 +1040,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
     }
 
     /**
-     * Initializes an Accumulo {@link TabletLocator} based on the configuration.
+     * Initializes an Accumulo {@link ClientTabletCache} based on the configuration.
      *
      * @param conf
      *            the Hadoop configuration object
@@ -1049,16 +1050,16 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
      * @throws IOException
      *             if the input format is unable to read the password file from the FileSystem
      */
-    protected static TabletLocator getTabletLocator(Configuration conf) throws TableNotFoundException, IOException {
+    protected static ClientTabletCache getTabletLocator(Configuration conf) throws TableNotFoundException, IOException {
         if (conf.getBoolean(MOCK, false))
             return new InMemoryTabletLocator();
         String tableName = getTablename(conf);
         Properties props = Accumulo.newClientProperties().to(conf.get(INSTANCE_NAME), conf.get(ZOOKEEPERS))
                         .as(getUsername(conf), new PasswordToken(getPassword(conf))).build();
         ClientInfo info = ClientInfo.from(props);
-        ClientContext context = new ClientContext(info, ClientConfConverter.toAccumuloConf(info.getClientProperties()),
-                        Threads.UEH);
-        return TabletLocator.getLocator(context, context.getTableId(tableName));
+        ClientContext context = new ClientContext(info, ClientConfConverter.toAccumuloConf(info.getClientProperties()), Threads.UEH);
+        TableId tableId = context.getTableId(tableName);
+        return context.getTabletLocationCache(tableId);
     }
 
     /**
@@ -1081,7 +1082,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
 
         // get the metadata information for these ranges
         Map<String,Map<KeyExtent,List<Range>>> binnedRanges = new HashMap<>();
-        TabletLocator tl;
+        ClientTabletCache clientTabletCache;
         try {
             if (isOfflineScan(job.getConfiguration())) {
                 binnedRanges = binOfflineTable(job, tableName, ranges);
@@ -1093,13 +1094,12 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
             } else {
                 try (AccumuloClient client = getClient(job.getConfiguration())) {
                     TableId tableId = null;
-                    tl = getTabletLocator(job.getConfiguration());
+                    clientTabletCache = getTabletLocator(job.getConfiguration());
                     // its possible that the cache could contain complete, but old information about a tables tablets... so clear it
-                    tl.invalidateCache();
+                    clientTabletCache.invalidateCache();
                     ClientInfo info = ClientInfo.from(cbHelper.newClientProperties());
-                    ClientContext context = new ClientContext(SingletonManager.getClientReservation(), info,
-                                    ClientConfConverter.toAccumuloConf(info.getProperties()), Threads.UEH);
-                    while (!tl.binRanges(context, ranges, binnedRanges).isEmpty()) {
+                    ClientContext context = new ClientContext(info, ClientConfConverter.toAccumuloConf(info.getClientProperties()), Threads.UEH);
+                    while (!clientTabletCache.binRanges(context, ranges, binnedRanges).isEmpty()) {
                         if (!(client instanceof InMemoryAccumuloClient)) {
                             if (tableId == null)
                                 tableId = context.getTableId(tableName);
@@ -1111,7 +1111,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
                         binnedRanges.clear();
                         log.warn("Unable to locate bins for specified ranges. Retrying.");
                         TimeUnit.MILLISECONDS.sleep(ThreadLocalRandom.current().nextInt(100, 200));
-                        tl.invalidateCache();
+                        clientTabletCache.invalidateCache();
                     }
 
                     clipRanges(binnedRanges);
