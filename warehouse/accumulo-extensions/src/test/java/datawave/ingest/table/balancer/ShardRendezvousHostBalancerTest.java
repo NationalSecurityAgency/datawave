@@ -24,12 +24,17 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import org.apache.accumulo.core.client.admin.TabletInformation;
+import org.apache.accumulo.core.data.ResourceGroupId;
+import org.apache.accumulo.core.data.RowRange;
 import org.apache.accumulo.core.data.TableId;
 import org.apache.accumulo.core.data.TabletId;
 import org.apache.accumulo.core.dataImpl.KeyExtent;
 import org.apache.accumulo.core.dataImpl.TabletIdImpl;
 import org.apache.accumulo.core.manager.balancer.TabletServerIdImpl;
+import org.apache.accumulo.core.metadata.schema.Ample;
 import org.apache.accumulo.core.spi.balancer.BalancerEnvironment;
 import org.apache.accumulo.core.spi.balancer.TabletBalancer;
 import org.apache.accumulo.core.spi.balancer.data.TServerStatus;
@@ -158,12 +163,14 @@ public class ShardRendezvousHostBalancerTest {
         private final SortedMap<TabletServerId,TServerStatus> currentStatus;
         private final Map<TabletId,TabletServerId> unassigned;
         private final Map<TabletId,TabletServerId> assignments;
+        private final Map<ResourceGroupId,Set<TabletServerId>> tservers;
 
         public TestAssignmentParams(SortedMap<TabletServerId,TServerStatus> currentStatus, Map<TabletId,TabletServerId> unassigned,
-                        Map<TabletId,TabletServerId> assignments) {
+                        Map<TabletId,TabletServerId> assignments, Map<ResourceGroupId,Set<TabletServerId>> currentGroups) {
             this.currentStatus = currentStatus;
             this.unassigned = unassigned;
             this.assignments = assignments;
+            this.tservers = currentGroups;
         }
 
         @Override
@@ -180,6 +187,11 @@ public class ShardRendezvousHostBalancerTest {
         public void addAssignment(TabletId tabletId, TabletServerId tabletServerId) {
             assignments.put(tabletId, tabletServerId);
         }
+
+        @Override
+        public Map<ResourceGroupId,Set<TabletServerId>> currentResourceGroups() {
+            return tservers;
+        }
     }
 
     private static class TestBalanceParams implements TabletBalancer.BalanceParameters {
@@ -187,11 +199,16 @@ public class ShardRendezvousHostBalancerTest {
         private final SortedMap<TabletServerId,TServerStatus> currentStatus;
         private final Set<TabletId> migrations;
         private final List<TabletMigration> migrationsOut;
+        private final Map<ResourceGroupId,Set<TabletServerId>> tserverResourceGroups;
+        private final Ample.DataLevel currentDataLevel;
 
-        private TestBalanceParams(SortedMap<TabletServerId,TServerStatus> currentStatus, Set<TabletId> migrations, List<TabletMigration> migrationsOut) {
+        private TestBalanceParams(SortedMap<TabletServerId,TServerStatus> currentStatus, Set<TabletId> migrations, List<TabletMigration> migrationsOut,
+                        Map<ResourceGroupId,Set<TabletServerId>> currentGroups, Ample.DataLevel currentLevel) {
             this.currentStatus = currentStatus;
             this.migrations = migrations;
             this.migrationsOut = migrationsOut;
+            this.tserverResourceGroups = currentGroups;
+            this.currentDataLevel = currentLevel;
         }
 
         @Override
@@ -210,8 +227,13 @@ public class ShardRendezvousHostBalancerTest {
         }
 
         @Override
-        public String partitionName() {
-            return "Null Partition";
+        public Map<ResourceGroupId,Set<TabletServerId>> currentResourceGroups() {
+            return tserverResourceGroups;
+        }
+
+        @Override
+        public String currentLevel() {
+            return this.currentDataLevel.name();
         }
 
         @Override
@@ -229,7 +251,8 @@ public class ShardRendezvousHostBalancerTest {
         var tservers = generateTabletServers(0, 29, 3);
         tservers.forEach(testTServers::addTServer);
 
-        balancer.getAssignments(new TestAssignmentParams(testTServers.getCurrent(), testTServers.getUnassigned(tablets), aout));
+        balancer.getAssignments(new TestAssignmentParams(testTServers.getCurrent(), testTServers.getUnassigned(tablets), aout,
+                        Map.of(ResourceGroupId.DEFAULT, testTServers.getCurrent().keySet())));
         testTServers.applyAssignments(aout);
 
         var shardStats = ShardStats.compute(filter("host0000.*", testTServers.getLocationProvider()));
@@ -238,12 +261,14 @@ public class ShardRendezvousHostBalancerTest {
         shardStats.check(10, 31, 19, 3);
 
         // nothing changed so should not migrate anything
-        balancer.balance(new TestBalanceParams(testTServers.getCurrent(), Set.of(), migrations));
+        balancer.balance(new TestBalanceParams(testTServers.getCurrent(), Set.of(), migrations,
+                        Map.of(ResourceGroupId.DEFAULT, testTServers.getCurrent().keySet()), Ample.DataLevel.of(tableId)));
         assertEquals(0, migrations.size());
 
         // move forward by one day, should cause tablets to move
         today.set(parseDay("20010131"));
-        balancer.balance(new TestBalanceParams(testTServers.getCurrent(), Set.of(), migrations));
+        balancer.balance(new TestBalanceParams(testTServers.getCurrent(), Set.of(), migrations,
+                        Map.of(ResourceGroupId.DEFAULT, testTServers.getCurrent().keySet()), Ample.DataLevel.of(tableId)));
         // should migrate all shards in a single day
         assertEquals(31, migrations.size());
         testTServers.applyMigrations(migrations);
@@ -255,13 +280,15 @@ public class ShardRendezvousHostBalancerTest {
         shardStats.check(11, 31, 19, 3);
         // should be stable now
         migrations.clear();
-        balancer.balance(new TestBalanceParams(testTServers.getCurrent(), Set.of(), migrations));
+        balancer.balance(new TestBalanceParams(testTServers.getCurrent(), Set.of(), migrations,
+                        Map.of(ResourceGroupId.DEFAULT, testTServers.getCurrent().keySet()), Ample.DataLevel.of(tableId)));
         assertTrue(migrations.isEmpty());
 
         // add two tservers
         generateTabletServers(30, 2, 3).forEach(testTServers::addTServer);
         migrations.clear();
-        balancer.balance(new TestBalanceParams(testTServers.getCurrent(), Set.of(), migrations));
+        balancer.balance(new TestBalanceParams(testTServers.getCurrent(), Set.of(), migrations,
+                        Map.of(ResourceGroupId.DEFAULT, testTServers.getCurrent().keySet()), Ample.DataLevel.of(tableId)));
         testTServers.applyMigrations(migrations);
         // The first set of tservers should stay the same
         shardStats = ShardStats.compute(filter("host0000.*", testTServers.getLocationProvider()));
@@ -271,7 +298,8 @@ public class ShardRendezvousHostBalancerTest {
         shardStats.check(11, 31, 21, 3);
         // should be stable now
         migrations.clear();
-        balancer.balance(new TestBalanceParams(testTServers.getCurrent(), Set.of(), migrations));
+        balancer.balance(new TestBalanceParams(testTServers.getCurrent(), Set.of(), migrations,
+                        Map.of(ResourceGroupId.DEFAULT, testTServers.getCurrent().keySet()), Ample.DataLevel.of(tableId)));
         assertTrue(migrations.isEmpty());
 
         // remove a tablet server for case where there are more shards per day than tservers
@@ -279,15 +307,18 @@ public class ShardRendezvousHostBalancerTest {
         assertTrue(tabletsOnH09 > 0);
         testTServers.removeTServers(tabletServerId -> tabletServerId.getHost().equals("host00009"));
         migrations.clear();
-        balancer.balance(new TestBalanceParams(testTServers.getCurrent(), Set.of(), migrations));
+        balancer.balance(new TestBalanceParams(testTServers.getCurrent(), Set.of(), migrations,
+                        Map.of(ResourceGroupId.DEFAULT, testTServers.getCurrent().keySet()), Ample.DataLevel.of(tableId)));
         // balancing will not migrate unassigned tablet, so this should be a noop
         assertTrue(migrations.isEmpty());
         aout.clear();
-        balancer.getAssignments(new TestAssignmentParams(testTServers.getCurrent(), testTServers.getUnassigned(tablets), aout));
+        balancer.getAssignments(new TestAssignmentParams(testTServers.getCurrent(), testTServers.getUnassigned(tablets), aout,
+                        Map.of(ResourceGroupId.DEFAULT, testTServers.getCurrent().keySet())));
         assertEquals(tabletsOnH09, aout.size());
         testTServers.applyAssignments(aout);
         migrations.clear();
-        balancer.balance(new TestBalanceParams(testTServers.getCurrent(), Set.of(), migrations));
+        balancer.balance(new TestBalanceParams(testTServers.getCurrent(), Set.of(), migrations,
+                        Map.of(ResourceGroupId.DEFAULT, testTServers.getCurrent().keySet()), Ample.DataLevel.of(tableId)));
         // assignment should have put everything in its place such that balancing was not needed
         assertTrue(migrations.isEmpty());
         // The first set of tservers lost a tserver, so should balance tablets across the remaining
@@ -298,7 +329,8 @@ public class ShardRendezvousHostBalancerTest {
         shardStats.check(11, 31, 21, 3);
         // should be stable now
         migrations.clear();
-        balancer.balance(new TestBalanceParams(testTServers.getCurrent(), Set.of(), migrations));
+        balancer.balance(new TestBalanceParams(testTServers.getCurrent(), Set.of(), migrations,
+                        Map.of(ResourceGroupId.DEFAULT, testTServers.getCurrent().keySet()), Ample.DataLevel.of(tableId)));
         assertTrue(migrations.isEmpty());
 
         // remove a tablet server for case where there are more tservers than shards per day
@@ -306,15 +338,18 @@ public class ShardRendezvousHostBalancerTest {
         assertTrue(tabletsOnH19 > 0);
         testTServers.removeTServers(tabletServerId -> tabletServerId.getHost().equals("host00019"));
         migrations.clear();
-        balancer.balance(new TestBalanceParams(testTServers.getCurrent(), Set.of(), migrations));
+        balancer.balance(new TestBalanceParams(testTServers.getCurrent(), Set.of(), migrations,
+                        Map.of(ResourceGroupId.DEFAULT, testTServers.getCurrent().keySet()), Ample.DataLevel.of(tableId)));
         // balancing will not migrate unassigned tablet, so this should be a noop
         assertTrue(migrations.isEmpty());
         aout.clear();
-        balancer.getAssignments(new TestAssignmentParams(testTServers.getCurrent(), testTServers.getUnassigned(tablets), aout));
+        balancer.getAssignments(new TestAssignmentParams(testTServers.getCurrent(), testTServers.getUnassigned(tablets), aout,
+                        Map.of(ResourceGroupId.DEFAULT, testTServers.getCurrent().keySet())));
         assertEquals(tabletsOnH19, aout.size());
         testTServers.applyAssignments(aout);
         migrations.clear();
-        balancer.balance(new TestBalanceParams(testTServers.getCurrent(), Set.of(), migrations));
+        balancer.balance(new TestBalanceParams(testTServers.getCurrent(), Set.of(), migrations,
+                        Map.of(ResourceGroupId.DEFAULT, testTServers.getCurrent().keySet()), Ample.DataLevel.of(tableId)));
         // assignment should have put everything in its place such that balancing was not needed
         assertTrue(migrations.isEmpty());
         // The first set of tablet servers should stay the same
@@ -325,7 +360,8 @@ public class ShardRendezvousHostBalancerTest {
         shardStats.check(11, 31, 20, 3);
         // should be stable now
         migrations.clear();
-        balancer.balance(new TestBalanceParams(testTServers.getCurrent(), Set.of(), migrations));
+        balancer.balance(new TestBalanceParams(testTServers.getCurrent(), Set.of(), migrations,
+                        Map.of(ResourceGroupId.DEFAULT, testTServers.getCurrent().keySet()), Ample.DataLevel.of(tableId)));
         assertTrue(migrations.isEmpty());
     }
 
@@ -350,7 +386,8 @@ public class ShardRendezvousHostBalancerTest {
 
         testTServers.applyAssignments(aout);
 
-        balancer.getAssignments(new TestAssignmentParams(testTServers.getCurrent(), testTServers.getUnassigned(tablets), aout));
+        balancer.getAssignments(new TestAssignmentParams(testTServers.getCurrent(), testTServers.getUnassigned(tablets), aout,
+                        Map.of(ResourceGroupId.DEFAULT, testTServers.getCurrent().keySet())));
         testTServers.applyAssignments(aout);
 
         var shardStats = ShardStats.compute(
@@ -368,7 +405,8 @@ public class ShardRendezvousHostBalancerTest {
         var tservers = generateTabletServers(0, 29, 3);
         tservers.forEach(testTServers::addTServer);
 
-        balancer.getAssignments(new TestAssignmentParams(testTServers.getCurrent(), testTServers.getUnassigned(tablets), aout));
+        balancer.getAssignments(new TestAssignmentParams(testTServers.getCurrent(), testTServers.getUnassigned(tablets), aout,
+                        Map.of(ResourceGroupId.DEFAULT, testTServers.getCurrent().keySet())));
         testTServers.applyAssignments(aout);
 
         var shardStats = ShardStats.compute(filter("host0000.*", testTServers.getLocationProvider()));
@@ -385,12 +423,14 @@ public class ShardRendezvousHostBalancerTest {
         var tservers = generateTabletServers(0, 29, 3);
         tservers.forEach(testTServers::addTServer);
 
-        balancer.getAssignments(new TestAssignmentParams(testTServers.getCurrent(), testTServers.getUnassigned(tablets), aout));
+        balancer.getAssignments(new TestAssignmentParams(testTServers.getCurrent(), testTServers.getUnassigned(tablets), aout,
+                        Map.of(ResourceGroupId.DEFAULT, testTServers.getCurrent().keySet())));
         testTServers.applyAssignments(aout);
 
         assertEquals(1000, balancer.getMaxMigrations());
 
-        balancer.balance(new TestBalanceParams(testTServers.getCurrent(), Set.of(), migrations));
+        balancer.balance(new TestBalanceParams(testTServers.getCurrent(), Set.of(), migrations,
+                        Map.of(ResourceGroupId.DEFAULT, testTServers.getCurrent().keySet()), Ample.DataLevel.of(tableId)));
         assertTrue(migrations.isEmpty());
 
         var shardStats = ShardStats.compute(filter("host0000.*", testTServers.getLocationProvider()));
@@ -401,7 +441,8 @@ public class ShardRendezvousHostBalancerTest {
         // Change the table config, should cause tablets to move around
         tableProps.put("table.custom.volume.tiered.t2.days.back", "10");
 
-        balancer.balance(new TestBalanceParams(testTServers.getCurrent(), Set.of(), migrations));
+        balancer.balance(new TestBalanceParams(testTServers.getCurrent(), Set.of(), migrations,
+                        Map.of(ResourceGroupId.DEFAULT, testTServers.getCurrent().keySet()), Ample.DataLevel.of(tableId)));
         assertEquals(310, migrations.size());
         testTServers.applyMigrations(migrations);
         shardStats = ShardStats.compute(filter("host0000.*", testTServers.getLocationProvider()));
@@ -414,12 +455,14 @@ public class ShardRendezvousHostBalancerTest {
         tableProps.put("table.custom.sharded.balancer.max.migrations", "100");
         for (int i = 0; i < 3; i++) {
             migrations.clear();
-            balancer.balance(new TestBalanceParams(testTServers.getCurrent(), Set.of(), migrations));
+            balancer.balance(new TestBalanceParams(testTServers.getCurrent(), Set.of(), migrations,
+                            Map.of(ResourceGroupId.DEFAULT, testTServers.getCurrent().keySet()), Ample.DataLevel.of(tableId)));
             assertEquals(100, migrations.size());
             testTServers.applyMigrations(migrations);
         }
         migrations.clear();
-        balancer.balance(new TestBalanceParams(testTServers.getCurrent(), Set.of(), migrations));
+        balancer.balance(new TestBalanceParams(testTServers.getCurrent(), Set.of(), migrations,
+                        Map.of(ResourceGroupId.DEFAULT, testTServers.getCurrent().keySet()), Ample.DataLevel.of(tableId)));
         assertEquals(10, migrations.size());
         testTServers.applyMigrations(migrations);
 
@@ -441,9 +484,10 @@ public class ShardRendezvousHostBalancerTest {
 
         tableProps.clear();
 
-        assertThrows(IllegalStateException.class,
-                        () -> balancer.getAssignments(new TestAssignmentParams(testTServers.getCurrent(), testTServers.getUnassigned(tablets), aout)));
-        assertThrows(IllegalStateException.class, () -> balancer.balance(new TestBalanceParams(testTServers.getCurrent(), Set.of(), migrations)));
+        assertThrows(IllegalStateException.class, () -> balancer.getAssignments(new TestAssignmentParams(testTServers.getCurrent(),
+                        testTServers.getUnassigned(tablets), aout, Map.of(ResourceGroupId.DEFAULT, testTServers.getCurrent().keySet()))));
+        assertThrows(IllegalStateException.class, () -> balancer.balance(new TestBalanceParams(testTServers.getCurrent(), Set.of(), migrations,
+                        Map.of(ResourceGroupId.DEFAULT, testTServers.getCurrent().keySet()), Ample.DataLevel.of(tableId))));
 
         // set the config and it should start working
         tableProps.put("table.custom.volume.tier.names", "t1,t2");
@@ -453,12 +497,14 @@ public class ShardRendezvousHostBalancerTest {
         tableProps.put("table.custom.volume.tiered.t2.tservers", "host000[1-9].*");
         tableProps.put("table.custom.sharded.balancer.max.migrations", "1000");
 
-        balancer.getAssignments(new TestAssignmentParams(testTServers.getCurrent(), testTServers.getUnassigned(tablets), aout));
+        balancer.getAssignments(new TestAssignmentParams(testTServers.getCurrent(), testTServers.getUnassigned(tablets), aout,
+                        Map.of(ResourceGroupId.DEFAULT, testTServers.getCurrent().keySet())));
         testTServers.applyAssignments(aout);
 
         assertEquals(1000, balancer.getMaxMigrations());
 
-        balancer.balance(new TestBalanceParams(testTServers.getCurrent(), Set.of(), migrations));
+        balancer.balance(new TestBalanceParams(testTServers.getCurrent(), Set.of(), migrations,
+                        Map.of(ResourceGroupId.DEFAULT, testTServers.getCurrent().keySet()), Ample.DataLevel.of(tableId)));
         assertTrue(migrations.isEmpty());
 
         var shardStats = ShardStats.compute(filter("host0000.*", testTServers.getLocationProvider()));
@@ -477,26 +523,30 @@ public class ShardRendezvousHostBalancerTest {
 
         // set an invalid regex
         tableProps.put("table.custom.volume.tiered.t2.tservers", "host000[1-9).*");
-        assertThrows(PatternSyntaxException.class,
-                        () -> balancer.getAssignments(new TestAssignmentParams(testTServers.getCurrent(), testTServers.getUnassigned(tablets), aout)));
-        assertThrows(PatternSyntaxException.class, () -> balancer.balance(new TestBalanceParams(testTServers.getCurrent(), Set.of(), migrations)));
+        assertThrows(PatternSyntaxException.class, () -> balancer.getAssignments(new TestAssignmentParams(testTServers.getCurrent(),
+                        testTServers.getUnassigned(tablets), aout, Map.of(ResourceGroupId.DEFAULT, testTServers.getCurrent().keySet()))));
+        assertThrows(PatternSyntaxException.class, () -> balancer.balance(new TestBalanceParams(testTServers.getCurrent(), Set.of(), migrations,
+                        Map.of(ResourceGroupId.DEFAULT, testTServers.getCurrent().keySet()), Ample.DataLevel.of(tableId))));
 
         // fix regex and set invalid day
         tableProps.put("table.custom.volume.tiered.t2.days.back", "twenty");
         tableProps.put("table.custom.volume.tiered.t2.tservers", "host000[1-9].*");
-        assertThrows(NumberFormatException.class,
-                        () -> balancer.getAssignments(new TestAssignmentParams(testTServers.getCurrent(), testTServers.getUnassigned(tablets), aout)));
-        assertThrows(NumberFormatException.class, () -> balancer.balance(new TestBalanceParams(testTServers.getCurrent(), Set.of(), migrations)));
+        assertThrows(NumberFormatException.class, () -> balancer.getAssignments(new TestAssignmentParams(testTServers.getCurrent(),
+                        testTServers.getUnassigned(tablets), aout, Map.of(ResourceGroupId.DEFAULT, testTServers.getCurrent().keySet()))));
+        assertThrows(NumberFormatException.class, () -> balancer.balance(new TestBalanceParams(testTServers.getCurrent(), Set.of(), migrations,
+                        Map.of(ResourceGroupId.DEFAULT, testTServers.getCurrent().keySet()), Ample.DataLevel.of(tableId))));
 
         // fix the config and it should start working
         tableProps.put("table.custom.volume.tiered.t2.days.back", "20");
 
-        balancer.getAssignments(new TestAssignmentParams(testTServers.getCurrent(), testTServers.getUnassigned(tablets), aout));
+        balancer.getAssignments(new TestAssignmentParams(testTServers.getCurrent(), testTServers.getUnassigned(tablets), aout,
+                        Map.of(ResourceGroupId.DEFAULT, testTServers.getCurrent().keySet())));
         testTServers.applyAssignments(aout);
 
         assertEquals(1000, balancer.getMaxMigrations());
 
-        balancer.balance(new TestBalanceParams(testTServers.getCurrent(), Set.of(), migrations));
+        balancer.balance(new TestBalanceParams(testTServers.getCurrent(), Set.of(), migrations,
+                        Map.of(ResourceGroupId.DEFAULT, testTServers.getCurrent().keySet()), Ample.DataLevel.of(tableId)));
         assertTrue(migrations.isEmpty());
 
         var shardStats = ShardStats.compute(filter("host0000.*", testTServers.getLocationProvider()));
@@ -511,9 +561,11 @@ public class ShardRendezvousHostBalancerTest {
         tablets.addAll(createShards(tableId, "20010101", 30, 31));
         today.set(parseDay("20010130"));
 
-        balancer.getAssignments(new TestAssignmentParams(testTServers.getCurrent(), testTServers.getUnassigned(tablets), aout));
+        balancer.getAssignments(new TestAssignmentParams(testTServers.getCurrent(), testTServers.getUnassigned(tablets), aout,
+                        Map.of(ResourceGroupId.DEFAULT, testTServers.getCurrent().keySet())));
         assertTrue(aout.isEmpty());
-        balancer.balance(new TestBalanceParams(testTServers.getCurrent(), Set.of(), migrations));
+        balancer.balance(new TestBalanceParams(testTServers.getCurrent(), Set.of(), migrations,
+                        Map.of(ResourceGroupId.DEFAULT, testTServers.getCurrent().keySet()), Ample.DataLevel.of(tableId)));
         assertTrue(migrations.isEmpty());
     }
 
@@ -530,7 +582,8 @@ public class ShardRendezvousHostBalancerTest {
 
         generateTabletServers(0, 29, 3).forEach(testTServers::addTServer);
 
-        balancer.getAssignments(new TestAssignmentParams(testTServers.getCurrent(), testTServers.getUnassigned(tablets), aout));
+        balancer.getAssignments(new TestAssignmentParams(testTServers.getCurrent(), testTServers.getUnassigned(tablets), aout,
+                        Map.of(ResourceGroupId.DEFAULT, testTServers.getCurrent().keySet())));
         testTServers.applyAssignments(aout);
 
         var shardStats = ShardStats.compute(filter("host0000.*", testTServers.getLocationProvider()));
@@ -541,7 +594,8 @@ public class ShardRendezvousHostBalancerTest {
 
         assertEquals(1000, balancer.getMaxMigrations());
 
-        balancer.balance(new TestBalanceParams(testTServers.getCurrent(), Set.of(), migrations));
+        balancer.balance(new TestBalanceParams(testTServers.getCurrent(), Set.of(), migrations,
+                        Map.of(ResourceGroupId.DEFAULT, testTServers.getCurrent().keySet()), Ample.DataLevel.of(tableId)));
         assertTrue(migrations.isEmpty());
     }
 
@@ -570,7 +624,8 @@ public class ShardRendezvousHostBalancerTest {
         unassigned.put(tablet20010114, tserver0006); // should be assigned here
         unassigned.put(tablet20010127, tserver0025); // should not be assigned here
 
-        balancer.getAssignments(new TestAssignmentParams(testTServers.getCurrent(), unassigned, aout));
+        balancer.getAssignments(new TestAssignmentParams(testTServers.getCurrent(), unassigned, aout,
+                        Map.of(ResourceGroupId.DEFAULT, testTServers.getCurrent().keySet())));
         testTServers.applyAssignments(aout);
 
         var shardStats = ShardStats.compute(filter("host0000.*", testTServers.getLocationProvider()));
@@ -606,7 +661,8 @@ public class ShardRendezvousHostBalancerTest {
         tablets.add(tablet1);
         tablets.add(makeTablet(tableId, "2001a_90"));
         tablets.add(makeTablet(tableId, "2001a_33"));
-        balancer.getAssignments(new TestAssignmentParams(testTServers.getCurrent(), testTServers.getUnassigned(tablets), aout));
+        balancer.getAssignments(new TestAssignmentParams(testTServers.getCurrent(), testTServers.getUnassigned(tablets), aout,
+                        Map.of(ResourceGroupId.DEFAULT, testTServers.getCurrent().keySet())));
         testTServers.applyAssignments(aout);
 
         var shardStats = ShardStats.compute(filter("host0000.*", testTServers.getLocationProvider()));
@@ -621,7 +677,8 @@ public class ShardRendezvousHostBalancerTest {
         var tserver1 = testTServers.tservers.stream().filter(tabletServerId -> tabletServerId.getHost().matches("host0000.*")).findFirst().orElseThrow();
         testTServers.setLocation(tablet1, tserver1);
 
-        balancer.balance(new TestBalanceParams(testTServers.getCurrent(), Set.of(), migrations));
+        balancer.balance(new TestBalanceParams(testTServers.getCurrent(), Set.of(), migrations,
+                        Map.of(ResourceGroupId.DEFAULT, testTServers.getCurrent().keySet()), Ample.DataLevel.of(tableId)));
         assertEquals(Set.of(tserver1.getHost()),
                         migrations.stream().map(TabletMigration::getOldTabletServer).map(TabletServerId::getHost).collect(Collectors.toSet()));
         assertEquals(Set.of(tablet1), migrations.stream().map(TabletMigration::getTablet).collect(Collectors.toSet()));
@@ -637,7 +694,8 @@ public class ShardRendezvousHostBalancerTest {
         // add another bad tablet
         tablets.add(makeTablet(tableId, "2001$#%^&@$0101_33"));
         aout.clear();
-        balancer.getAssignments(new TestAssignmentParams(testTServers.getCurrent(), testTServers.getUnassigned(tablets), aout));
+        balancer.getAssignments(new TestAssignmentParams(testTServers.getCurrent(), testTServers.getUnassigned(tablets), aout,
+                        Map.of(ResourceGroupId.DEFAULT, testTServers.getCurrent().keySet())));
         testTServers.applyAssignments(aout);
 
         shardStats = ShardStats.compute(filter("host0000.*", testTServers.getLocationProvider()));
@@ -672,7 +730,8 @@ public class ShardRendezvousHostBalancerTest {
         tableProps.put("table.custom.volume.tiered.t2.days.back", "20");
         tableProps.put("table.custom.volume.tiered.t2.tservers", "host000[2345].*");
 
-        balancer.getAssignments(new TestAssignmentParams(testTServers.getCurrent(), testTServers.getUnassigned(tablets), aout));
+        balancer.getAssignments(new TestAssignmentParams(testTServers.getCurrent(), testTServers.getUnassigned(tablets), aout,
+                        Map.of(ResourceGroupId.DEFAULT, testTServers.getCurrent().keySet())));
         testTServers.applyAssignments(aout);
 
         /*
@@ -700,12 +759,14 @@ public class ShardRendezvousHostBalancerTest {
         shardStats = ShardStats.compute(filter("host0004.*", testTServers.getLocationProvider()));
         shardStats.check(11, 6, 5, 2);
 
-        balancer.balance(new TestBalanceParams(testTServers.getCurrent(), Set.of(), migrations));
+        balancer.balance(new TestBalanceParams(testTServers.getCurrent(), Set.of(), migrations,
+                        Map.of(ResourceGroupId.DEFAULT, testTServers.getCurrent().keySet()), Ample.DataLevel.of(tableId)));
         assertEquals(0, migrations.size());
 
         // add a few tablet servers
         generateTabletServers(50, 1, 3).forEach(testTServers::addTServer);
-        balancer.balance(new TestBalanceParams(testTServers.getCurrent(), Set.of(), migrations));
+        balancer.balance(new TestBalanceParams(testTServers.getCurrent(), Set.of(), migrations,
+                        Map.of(ResourceGroupId.DEFAULT, testTServers.getCurrent().keySet()), Ample.DataLevel.of(tableId)));
         assertTrue(migrations.stream().map(tm -> tm.getNewTabletServer().getHost()).noneMatch(h -> h.matches("host000[01].*")));
         testTServers.applyMigrations(migrations);
         shardStats = ShardStats.compute(filter("host000[23].*", testTServers.getLocationProvider()));
@@ -730,7 +791,8 @@ public class ShardRendezvousHostBalancerTest {
 
         // There are 502 total tserver. The two host with one tserver should have round(2/502*31)=0 tablets from the 31 shards per day assigned to them. All
         // tablets should go to the 100 host with 5 tservers.
-        balancer.getAssignments(new TestAssignmentParams(testTServers.getCurrent(), testTServers.getUnassigned(tablets), aout));
+        balancer.getAssignments(new TestAssignmentParams(testTServers.getCurrent(), testTServers.getUnassigned(tablets), aout,
+                        Map.of(ResourceGroupId.DEFAULT, testTServers.getCurrent().keySet())));
         testTServers.applyAssignments(aout);
 
         var shardStats = ShardStats.compute(filter("host000.*", testTServers.getLocationProvider()));
@@ -745,7 +807,8 @@ public class ShardRendezvousHostBalancerTest {
 
         // Add 98 host with 1 tserver. For the 31 shards per day the should now partition as round(500/600*31)=26 and round(100/600*31)=5.
         generateTabletServers(202, 98, 1).forEach(testTServers::addTServer);
-        balancer.balance(new TestBalanceParams(testTServers.getCurrent(), Set.of(), migrations));
+        balancer.balance(new TestBalanceParams(testTServers.getCurrent(), Set.of(), migrations,
+                        Map.of(ResourceGroupId.DEFAULT, testTServers.getCurrent().keySet()), Ample.DataLevel.of(tableId)));
         testTServers.applyMigrations(migrations);
         shardStats = ShardStats.compute(filter("host000.*", testTServers.getLocationProvider()));
         shardStats.check(395, 26, 100, 5);
@@ -778,7 +841,8 @@ public class ShardRendezvousHostBalancerTest {
         tablets.addAll(createShards(tableId, "20000101", 1, 16));
         today.set(parseDay("20000101"));
 
-        balancer.getAssignments(new TestAssignmentParams(testTServers.getCurrent(), testTServers.getUnassigned(tablets), aout));
+        balancer.getAssignments(new TestAssignmentParams(testTServers.getCurrent(), testTServers.getUnassigned(tablets), aout,
+                        Map.of(ResourceGroupId.DEFAULT, testTServers.getCurrent().keySet())));
         testTServers.applyAssignments(aout);
 
         String regex = "host00002.*";
@@ -986,6 +1050,11 @@ public class ShardRendezvousHostBalancerTest {
 
         @Override
         public String tableContext(TableId tableId) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Stream<TabletInformation> getTabletInformation(TableId tableId, List<RowRange> list, TabletInformation.Field... fields) {
             throw new UnsupportedOperationException();
         }
     }
