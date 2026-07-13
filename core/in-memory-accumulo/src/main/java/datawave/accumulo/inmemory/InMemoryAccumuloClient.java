@@ -146,7 +146,7 @@ public class InMemoryAccumuloClient extends ClientContext implements AccumuloCli
 
     @Override
     public InstanceOperations instanceOperations() {
-        return new InMemoryInstanceOperations(acu);
+        return new InMemoryAccumuloOperations(acu);
     }
 
     @Override

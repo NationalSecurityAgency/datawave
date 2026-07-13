@@ -24,8 +24,8 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.query.index.lookup.IndexInfo;
 import datawave.query.util.Tuple2;
 import datawave.table.constants.TableName;
@@ -34,7 +34,7 @@ public class TruncatedIndexScannerTest {
 
     private static final Logger log = LoggerFactory.getLogger(TruncatedIndexScannerTest.class);
 
-    private final InMemoryInstance instance = new InMemoryInstance(TruncatedIndexScannerTest.class.getName());
+    private final InMemoryAccumulo instance = new InMemoryAccumulo(TruncatedIndexScannerTest.class.getName());
     private final AccumuloClient client = new InMemoryAccumuloClient("", instance);
     private final Authorizations auths = new Authorizations("VIZ-A", "VIZ-B", "VIZ-C");
     private final String indexTableName = TableName.TRUNCATED_SHARD_INDEX;

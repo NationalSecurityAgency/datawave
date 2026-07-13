@@ -17,7 +17,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 
 public class AccumuloMonitorLocatorTest {
 
@@ -38,7 +38,7 @@ public class AccumuloMonitorLocatorTest {
     public void setup() throws Exception {
         Properties testProperties = new Properties();
         testProperties.setProperty(ClientProperty.INSTANCE_ZOOKEEPERS.getKey(), String.format("localhost:%d", ZK_PORT));
-        accumuloClient = new InMemoryAccumuloClient("root", new InMemoryInstance("testInstance")) {
+        accumuloClient = new InMemoryAccumuloClient("root", new InMemoryAccumulo("testInstance")) {
             @Override
             public Properties properties() {
                 return testProperties;

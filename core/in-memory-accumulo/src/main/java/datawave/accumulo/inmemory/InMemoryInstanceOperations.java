@@ -39,11 +39,11 @@ import org.apache.accumulo.core.data.ResourceGroupId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-class InMemoryInstanceOperations implements InstanceOperations {
-    private static final Logger log = LoggerFactory.getLogger(InMemoryInstanceOperations.class);
+class InMemoryAccumuloOperations implements InstanceOperations {
+    private static final Logger log = LoggerFactory.getLogger(InMemoryAccumuloOperations.class);
     InMemoryAccumulo acu;
 
-    public InMemoryInstanceOperations(InMemoryAccumulo acu) {
+    public InMemoryAccumuloOperations(InMemoryAccumulo acu) {
         this.acu = acu;
     }
 

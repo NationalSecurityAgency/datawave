@@ -31,8 +31,8 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Joiner;
 
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.data.ColumnFamilyConstants;
 import datawave.util.time.DateHelper;
 
@@ -62,7 +62,7 @@ class MetadataFColumnSeekingFilterTest {
 
     @BeforeAll
     public static void setup() throws Exception {
-        InMemoryInstance instance = new InMemoryInstance(MetadataFColumnSeekingFilterTest.class.getName());
+        InMemoryAccumulo instance = new InMemoryAccumulo(MetadataFColumnSeekingFilterTest.class.getName());
         client = new InMemoryAccumuloClient("", instance);
         client.tableOperations().create(METADATA_TABLE_NAME);
         writeData();

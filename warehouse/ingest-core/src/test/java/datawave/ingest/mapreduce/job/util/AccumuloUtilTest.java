@@ -16,16 +16,16 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
 
 public class AccumuloUtilTest {
-    private InMemoryInstance instance;
+    private InMemoryAccumulo instance;
     private AccumuloClient accumuloClient;
 
     @Before
     public void setup() throws AccumuloSecurityException, AccumuloException, TableExistsException, TableNotFoundException {
-        instance = new InMemoryInstance(this.getClass().toString());
+        instance = new InMemoryAccumulo(this.getClass().toString());
         accumuloClient = new InMemoryAccumuloClient("root", instance);
 
         // test1 will act as a simulated metadata table

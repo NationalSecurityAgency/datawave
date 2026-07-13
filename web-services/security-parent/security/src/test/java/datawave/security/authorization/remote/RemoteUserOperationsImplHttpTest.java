@@ -231,7 +231,7 @@ public class RemoteUserOperationsImplHttpTest {
         AuthorizationsListBase returnedAuths = remote.listEffectiveAuthorizations(principal);
         assertEquals(2, returnedAuths.getAllAuths().size());
 
-        GenericResponse flush = remote.flushCachedCredentials(principal);
+        GenericResponse<String> flush = remote.flushCachedCredentials(principal);
         assertEquals("test flush result", flush.getResult());
 
         ProxiedUserDetails returnedUser = remote.getRemoteUser(principal);

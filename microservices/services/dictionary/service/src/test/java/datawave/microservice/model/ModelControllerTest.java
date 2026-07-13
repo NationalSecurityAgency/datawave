@@ -36,7 +36,7 @@ import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.microservice.ControllerIT;
 import datawave.microservice.model.config.ModelProperties;
 import datawave.query.model.FieldMapping;
@@ -60,7 +60,7 @@ public class ModelControllerTest extends ControllerIT {
         @Bean
         @Qualifier("warehouse")
         public AccumuloClient warehouseClient() throws AccumuloSecurityException {
-            return new InMemoryAccumuloClient("root", new InMemoryInstance());
+            return new InMemoryAccumuloClient("root", new InMemoryAccumulo());
         }
     }
 

@@ -24,8 +24,8 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import com.google.common.base.Preconditions;
 
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.ingest.data.TypeRegistry;
 import datawave.query.MultiNormalizerIngest;
 import datawave.query.QueryParameters;
@@ -70,7 +70,7 @@ public class MultiNormalizerTest extends AbstractQueryTest {
         return auths;
     }
 
-    private static final InMemoryInstance instance = new InMemoryInstance(MultiNormalizerTest.class.getName());
+    private static final InMemoryAccumulo instance = new InMemoryAccumulo(MultiNormalizerTest.class.getName());
     private static AccumuloClient clientForSetup;
     private static final IndexIngestUtil ingestUtil = new IndexIngestUtil();
 

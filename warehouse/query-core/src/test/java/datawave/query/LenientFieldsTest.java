@@ -23,8 +23,8 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.query.index.day.IndexIngestUtil;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.util.AbstractQueryTest;
@@ -60,7 +60,7 @@ public class LenientFieldsTest extends AbstractQueryTest {
 
     @BeforeAll
     public static void beforeAll() throws Exception {
-        InMemoryInstance instance = new InMemoryInstance(LenientFieldsTest.class.getName());
+        InMemoryAccumulo instance = new InMemoryAccumulo(LenientFieldsTest.class.getName());
         client = new InMemoryAccumuloClient("root", instance);
 
         QueryTestTableHelper tableHelper = new QueryTestTableHelper(client, log);

@@ -20,12 +20,12 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
 
 public class BatchScannerBuilderTest {
 
-    private static final InMemoryInstance instance = new InMemoryInstance(BatchScannerBuilderTest.class.getName());
+    private static final InMemoryAccumulo instance = new InMemoryAccumulo(BatchScannerBuilderTest.class.getName());
 
     private static AccumuloClient client;
     private static final String tableName = "shard";

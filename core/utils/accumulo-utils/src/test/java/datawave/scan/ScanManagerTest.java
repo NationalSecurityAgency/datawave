@@ -22,12 +22,12 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
 
 public class ScanManagerTest {
 
-    private static final InMemoryInstance instance = new InMemoryInstance(ScanManagerTest.class.getName());
+    private static final InMemoryAccumulo instance = new InMemoryAccumulo(ScanManagerTest.class.getName());
 
     private static AccumuloClient client;
 

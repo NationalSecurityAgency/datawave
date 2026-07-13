@@ -17,8 +17,8 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.query.QueryParameters;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.util.AbstractQueryTest;
@@ -79,7 +79,7 @@ public class NoExpansionTests extends AbstractQueryTest {
 
     @BeforeAll
     public static void beforeAll() throws Exception {
-        InMemoryInstance instance = new InMemoryInstance(NoExpansionTests.class.getName());
+        InMemoryAccumulo instance = new InMemoryAccumulo(NoExpansionTests.class.getName());
         clientForSetup = new InMemoryAccumuloClient("", instance);
 
         // this helper class will generate the extra index tables

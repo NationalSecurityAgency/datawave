@@ -29,7 +29,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.data.ColumnFamilyConstants;
 import datawave.marking.AccessExpressionMarkings;
 import datawave.marking.MarkingFunctions;
@@ -76,7 +76,7 @@ public class DefaultMetadataFieldScannerTest {
 
     @BeforeEach
     public void setUp() throws Exception {
-        InMemoryInstance instance = new InMemoryInstance();
+        InMemoryAccumulo instance = new InMemoryAccumulo();
         connector = new InMemoryAccumuloClient("root", instance);
         connector.securityOperations().changeUserAuthorizations("root", new Authorizations(AUTH));
         connector.tableOperations().create(METADATA_TABLE);

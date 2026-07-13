@@ -41,8 +41,8 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.core.iterators.IteratorTimeoutException;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
@@ -201,7 +201,7 @@ public class IndexExpansionQueryTest extends AbstractQueryTest {
         } else {
             // do not use a rebuilding scanner because the test requires exceptions to propagate
             // all the way back to the client.
-            InMemoryInstance instance = new InMemoryInstance(IndexExpansionQueryTest.class.getName());
+            InMemoryAccumulo instance = new InMemoryAccumulo(IndexExpansionQueryTest.class.getName());
             client = new InMemoryAccumuloClient("root", instance);
         }
 

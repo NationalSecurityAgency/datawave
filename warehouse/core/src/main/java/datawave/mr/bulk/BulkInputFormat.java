@@ -108,7 +108,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
     protected static final String ZOOKEEPERS = PREFIX + ".zooKeepers";
     protected static final String RACKSTRATEGY = PREFIX + ".rack.strategy.class";
     protected static final String RANGESPLITSTRATEGY = PREFIX + ".split.strategy.class";
-    protected static final String MOCK = ".useInMemoryInstance";
+    protected static final String MOCK = ".useInMemoryAccumulo";
 
     protected static final String RANGES = PREFIX + ".ranges";
     protected static final String AUTO_ADJUST_RANGES = PREFIX + ".ranges.autoAdjust";
@@ -271,7 +271,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
      * @param instanceName
      *            the accumulo instance name
      */
-    public static void setInMemoryInstance(Configuration conf, String instanceName) {
+    public static void setInMemoryAccumulo(Configuration conf, String instanceName) {
         conf.setBoolean(INSTANCE_HAS_BEEN_SET, true);
         conf.setBoolean(MOCK, true);
         conf.set(INSTANCE_NAME, instanceName);

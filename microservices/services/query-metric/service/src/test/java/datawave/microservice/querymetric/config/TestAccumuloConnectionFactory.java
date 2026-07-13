@@ -9,7 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.core.common.connection.AccumuloClientPool;
 import datawave.core.common.connection.AccumuloClientPoolFactory;
 import datawave.core.common.connection.AccumuloConnectionFactory;
@@ -64,7 +64,7 @@ class TestAccumuloConnectionFactory extends AccumuloConnectionFactoryImpl {
             super(connectionPoolProperties.getUsername(), connectionPoolProperties.getPassword(), "mock", "mock");
             this.connectionPoolProperties = connectionPoolProperties;
             try (AccumuloClient accumuloClient = new InMemoryAccumuloClient(connectionPoolProperties.getUsername(),
-                            new InMemoryInstance(connectionPoolProperties.getInstance()))) {
+                            new InMemoryAccumulo(connectionPoolProperties.getInstance()))) {
                 accumuloClient.securityOperations().changeUserAuthorizations(accumuloClient.whoami(), new Authorizations("PUBLIC", "A", "B", "C"));
             } catch (AccumuloSecurityException e) {
                 log.error(e.getMessage(), e);
@@ -73,7 +73,7 @@ class TestAccumuloConnectionFactory extends AccumuloConnectionFactoryImpl {
 
         public PooledObject<AccumuloClient> makeObject() throws Exception {
             return new DefaultPooledObject(new InMemoryAccumuloClient(this.connectionPoolProperties.getUsername(),
-                            new InMemoryInstance(connectionPoolProperties.getInstance())));
+                            new InMemoryAccumulo(connectionPoolProperties.getInstance())));
         }
     }
 }

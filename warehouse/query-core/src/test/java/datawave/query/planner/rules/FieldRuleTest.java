@@ -23,8 +23,8 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
@@ -78,7 +78,7 @@ public class FieldRuleTest extends AbstractQueryTest {
 
     @BeforeAll
     public static void beforeAll() throws Exception {
-        InMemoryInstance instance = new InMemoryInstance(FieldRuleTest.class.getSimpleName());
+        InMemoryAccumulo instance = new InMemoryAccumulo(FieldRuleTest.class.getSimpleName());
         clientForTest = new InMemoryAccumuloClient("", instance);
         VisibilityWiseGuysIngestWithModel.writeItAll(clientForTest);
     }

@@ -28,8 +28,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.configuration.QueryData;
 import datawave.microservice.query.Query;
@@ -41,7 +41,7 @@ import datawave.table.constants.TableName;
 
 public class ScanSessionManagerTest {
 
-    private static final InMemoryInstance instance = new InMemoryInstance(ScanSessionManagerTest.class.getSimpleName());
+    private static final InMemoryAccumulo instance = new InMemoryAccumulo(ScanSessionManagerTest.class.getSimpleName());
     private static AccumuloClient client;
 
     private final String tableName = TableName.SHARD;

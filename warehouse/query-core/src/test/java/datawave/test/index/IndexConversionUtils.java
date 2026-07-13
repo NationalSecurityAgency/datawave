@@ -43,7 +43,6 @@ import com.google.protobuf.InvalidProtocolBufferException;
 
 import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.ingest.protobuf.Uid;
 import datawave.table.constants.TableName;
 import datawave.test.MacTestUtil;
@@ -84,7 +83,7 @@ public abstract class IndexConversionUtils {
         macClient = mac.createAccumuloClient("root", new PasswordToken(PASS));
         macTops = macClient.tableOperations();
 
-        InMemoryInstance instance = new InMemoryInstance(IndexConversionUtils.class.getName());
+        InMemoryAccumulo instance = new InMemoryAccumulo(IndexConversionUtils.class.getName());
         imaClient = new InMemoryAccumuloClient("root", instance);
         imaTops = imaClient.tableOperations();
 

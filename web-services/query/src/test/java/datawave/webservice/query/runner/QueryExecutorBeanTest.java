@@ -62,8 +62,8 @@ import org.xml.sax.SAXException;
 
 import com.google.common.collect.HashMultimap;
 
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.core.common.audit.PrivateAuditConstants;
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.core.query.configuration.GenericQueryConfiguration;
@@ -345,7 +345,7 @@ public class QueryExecutorBeanTest {
         p.putSingle(QueryParameters.QUERY_PERSISTENCE, persist.name());
         p.putSingle(ColumnVisibilitySecurityMarking.VISIBILITY_MARKING, "PRIVATE|PUBLIC");
 
-        InMemoryInstance instance = new InMemoryInstance();
+        InMemoryAccumulo instance = new InMemoryAccumulo();
         AccumuloClient client = new InMemoryAccumuloClient("root", instance);
 
         QueryParameters qp = new DefaultQueryParameters();
@@ -640,7 +640,7 @@ public class QueryExecutorBeanTest {
         Arrays.sort(dns);
         List<String> dnList = Arrays.asList(dns);
 
-        InMemoryInstance instance = new InMemoryInstance();
+        InMemoryAccumulo instance = new InMemoryAccumulo();
         AccumuloClient c = new InMemoryAccumuloClient("root", instance);
 
         MultivaluedMap<String,String> optionalParameters = createNewQueryParameters(q, queryParameters);

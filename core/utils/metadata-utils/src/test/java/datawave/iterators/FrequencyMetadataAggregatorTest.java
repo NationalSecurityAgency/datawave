@@ -38,8 +38,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.query.model.DateFrequencyMap;
 import datawave.query.util.TestUtils;
 import datawave.security.util.ScannerHelper;
@@ -65,7 +65,7 @@ public class FrequencyMetadataAggregatorTest {
 
     @BeforeEach
     public void setUp() throws Exception {
-        accumuloClient = new InMemoryAccumuloClient("root", new InMemoryInstance(FrequencyMetadataAggregatorTest.class.toString()));
+        accumuloClient = new InMemoryAccumuloClient("root", new InMemoryAccumulo(FrequencyMetadataAggregatorTest.class.toString()));
         if (!accumuloClient.tableOperations().exists(TABLE_METADATA)) {
             accumuloClient.tableOperations().create(TABLE_METADATA);
         }

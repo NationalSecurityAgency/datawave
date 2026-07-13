@@ -30,8 +30,8 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.common.util.ArgumentChecker;
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.core.common.connection.AccumuloConnectionFactory.Priority;
@@ -60,7 +60,7 @@ public class AccumuloRecordWriter extends RecordWriter<Text,Mutation> {
 
     private static final String INSTANCE_NAME = PREFIX + ".instanceName";
     private static final String ZOOKEEPERS = PREFIX + ".zooKeepers";
-    private static final String MOCK = ".useInMemoryInstance";
+    private static final String MOCK = ".useInMemoryAccumulo";
 
     private static final String CREATETABLES = PREFIX + ".createtables";
     private static final String LOGLEVEL = PREFIX + ".loglevel";
@@ -273,7 +273,7 @@ public class AccumuloRecordWriter extends RecordWriter<Text,Mutation> {
         conf.set(ZOOKEEPERS, zooKeepers);
     }
 
-    public static void setInMemoryInstance(Configuration conf, String instanceName) {
+    public static void setInMemoryAccumulo(Configuration conf, String instanceName) {
         conf.setBoolean(INSTANCE_HAS_BEEN_SET, true);
         conf.setBoolean(MOCK, true);
         conf.set(INSTANCE_NAME, instanceName);
@@ -329,7 +329,7 @@ public class AccumuloRecordWriter extends RecordWriter<Text,Mutation> {
 
     protected static AccumuloClient getClient(Configuration conf) throws AccumuloSecurityException, AccumuloException {
         if (conf.getBoolean(MOCK, false)) {
-            InMemoryAccumuloClient client = new InMemoryAccumuloClient(getUsername(conf), new InMemoryInstance(conf.get(INSTANCE_NAME)));
+            InMemoryAccumuloClient client = new InMemoryAccumuloClient(getUsername(conf), new InMemoryAccumulo(conf.get(INSTANCE_NAME)));
             client.securityOperations().changeLocalUserPassword(client.whoami(), new PasswordToken(getPassword(conf)));
             return client;
         } else {

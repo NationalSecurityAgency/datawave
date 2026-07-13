@@ -28,7 +28,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 
 /**
  * This is the test class for AccumuloIndexAgeDisplay. It will create an instance of accumulo, load it with data and verify AccumuloIndexAgeDisplay shows the
@@ -66,8 +66,8 @@ public class AccumuloIndexAgeDisplayTest {
     public void setup() throws AccumuloException, AccumuloSecurityException, TableExistsException, TableNotFoundException {
         // set hadoop.home.dir so we don't get an IOException about it. Doesn't appear to be used though
         System.setProperty("hadoop.home.dir", "/tmp");
-        // May need to replace InMemoryInstance with MiniCluster. Apparently InMemoryInstance isn't kept up as well.
-        client = new InMemoryAccumuloClient(userName, new InMemoryInstance());
+        // May need to replace InMemoryAccumulo with MiniCluster. Apparently InMemoryAccumulo isn't kept up as well.
+        client = new InMemoryAccumuloClient(userName, new InMemoryAccumulo());
         client.securityOperations().changeUserAuthorizations(userName, auths);
         client.tableOperations().create(tableName);
     }
