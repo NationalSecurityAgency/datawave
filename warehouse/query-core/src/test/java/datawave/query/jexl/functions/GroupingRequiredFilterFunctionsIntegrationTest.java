@@ -30,7 +30,6 @@ import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.transformer.DocumentTransformer;
 import datawave.query.util.AbstractQueryTest;
-import datawave.query.util.TestIndexTableNames;
 import datawave.table.constants.TableName;
 import datawave.webservice.result.DefaultEventQueryResponse;
 
@@ -75,17 +74,6 @@ public class GroupingRequiredFilterFunctionsIntegrationTest extends AbstractQuer
     @Override
     protected void extraConfigurations() {
         disableQueryPlanAssertion();
-    }
-
-    /**
-     * The IndexIngestUtil-derived NO_UID_INDEX/TRUNCATED_INDEX variants do not correctly locate results for this dataset's field-indexed lookups (verified
-     * empirically: only the raw SHARD_INDEX table returns correct results for the equality-based tests below; the full-table-scan tests are unaffected either
-     * way). Restrict to the raw index, matching the precedent set by IvaratorInterruptTest for narrowing index table variants when the derived tables don't
-     * apply.
-     */
-    @Override
-    protected List<String> getIndexTableNames() {
-        return List.of(TestIndexTableNames.SHARD_INDEX);
     }
 
     @Override
