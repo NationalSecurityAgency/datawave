@@ -28,7 +28,7 @@ Core components include:
 - value generators (string, number, etc)
 
 #### Misc. Features
-- events are sharded and assigned a day deterministically via the event id (see `ShardKeyUtil`)
+- events are sharded, assigned a day, and assigned a time-of-day deterministically via the event id (see `ShardKeyUtil`); the time-of-day spreads events evenly across each day to simulate continual ingest rather than a single ingest at midnight
 
 #### FieldMetadata
 

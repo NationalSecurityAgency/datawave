@@ -6,8 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -34,6 +32,7 @@ import com.google.common.collect.Sets;
 
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.microservice.query.DefaultQueryParameters;
 import datawave.microservice.query.QueryImpl;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Document;
@@ -83,7 +82,6 @@ public abstract class AbstractQueryTest {
 
     private static final Logger log = LoggerFactory.getLogger(AbstractQueryTest.class);
 
-    protected final DateFormat format = new SimpleDateFormat("yyyyMMdd");
     protected final KryoDocumentDeserializer deserializer = new KryoDocumentDeserializer();
 
     private AccumuloClient clientForTest;
@@ -162,12 +160,19 @@ public abstract class AbstractQueryTest {
 
     protected Date getStartDate() throws Exception {
         assertNotNull(startDate);
-        return format.parse(startDate);
+        return DefaultQueryParameters.parseStartDate(startDate);
     }
 
+    /**
+     * The end date is widened to the end of the day (23:59:59.999), mirroring {@link DefaultQueryParameters#parseEndDate(String)}'s production default. Without
+     * this, a date-only end date would parse to midnight, and events ingested later that same day (e.g. via {@link datawave.test.framework.util.ShardKeyUtil}'s
+     * dynamic timestamps) would fall outside the query's time filter.
+     *
+     * @return the end date, inclusive of the entire day
+     */
     protected Date getEndDate() throws Exception {
         assertNotNull(endDate);
-        return format.parse(endDate);
+        return DefaultQueryParameters.parseEndDate(endDate);
     }
 
     protected Map<String,String> getParameters() {
