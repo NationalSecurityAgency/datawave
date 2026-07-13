@@ -26,7 +26,7 @@ import datawave.annotation.protobuf.v1.AnnotationSource;
 /**
  * Federates read operations across multiple Annotation Data Access objects and returns the combined set of annotations or annotation sources retrieved
  */
-public class FederatedAnnotationReader {
+public class FederatedAnnotationReader implements AnnotationSourceReader, AnnotationReader {
 
     protected static final Logger log = LoggerFactory.getLogger(FederatedAnnotationReader.class);
     private static final long DEFAULT_DAO_TIMEOUT_MILLIS = 5000L;
@@ -45,6 +45,59 @@ public class FederatedAnnotationReader {
         this.daoTimeoutMillis = daoTimeoutMillis;
     }
 
+    @Override
+    public Optional<AnnotationSource> getAnnotationSource(String analyticHash) {
+        List<Optional<AnnotationSource>> daoResults = callDaosWithTimeout(dao -> dao.getAnnotationSource(analyticHash), "analyticHash %s", analyticHash);
+        final List<AnnotationSource> results = new ArrayList<>();
+        daoResults.forEach(optional -> optional.ifPresent(results::add));
+        return getBest(results);
+    }
+
+    @Override
+    public Optional<Annotation> getAnnotation(String shard, String datatype, String uid, String annotationType, String annotationUid) {
+        List<Optional<Annotation>> daoResults = callDaosWithTimeout(dao -> dao.getAnnotation(shard, datatype, uid, annotationType, annotationUid),
+                        "annotation uid %s type %s for %s/%s/%s", annotationUid, annotationType, shard, datatype, uid);
+        final List<Annotation> results = new ArrayList<>();
+        daoResults.forEach(optional -> optional.ifPresent(results::add));
+        return getBest(results);
+    }
+
+    @Override
+    public Optional<Annotation> getAnnotation(String shard, String datatype, String uid, String annotationId) {
+        List<Optional<Annotation>> daoResults = callDaosWithTimeout(dao -> dao.getAnnotation(shard, datatype, uid, annotationId),
+                        "annotation id %s for %s/%s/%s", annotationId, shard, datatype, uid);
+        final List<Annotation> results = new ArrayList<>();
+        daoResults.forEach(optional -> optional.ifPresent(results::add));
+        return getBest(results);
+    }
+
+    @Override
+    public Collection<String> getAnnotationTypes(String shard, String datatype, String uid) {
+        final Set<String> result = new TreeSet<>();
+        List<Collection<String>> daoResults = callDaosWithTimeout(dao -> dao.getAnnotationTypes(shard, datatype, uid), "annotation types for %s/%s/%s", shard,
+                        datatype, uid);
+        daoResults.forEach(result::addAll);
+        return result;
+    }
+
+    @Override
+    public List<Annotation> getAnnotations(String shard, String datatype, String uid) {
+        final Set<Annotation> result = new LinkedHashSet<>();
+        List<List<Annotation>> daoResults = callDaosWithTimeout(dao -> dao.getAnnotations(shard, datatype, uid), "annotations for %s/%s/%s", shard, datatype,
+                        uid);
+        daoResults.forEach(result::addAll);
+        return new ArrayList<>(result);
+    }
+
+    @Override
+    public List<Annotation> getAnnotationsForType(String shard, String datatype, String uid, String annotationType) {
+        final Set<Annotation> result = new LinkedHashSet<>();
+        List<List<Annotation>> daoResults = callDaosWithTimeout(dao -> dao.getAnnotationsForType(shard, datatype, uid, annotationType),
+                        "annotations for type %s for %s/%s/%s", annotationType, shard, datatype, uid);
+        daoResults.forEach(result::addAll);
+        return new ArrayList<>(result);
+    }
+
     /**
      * Given a list of results and the desire to populate a singular Optional result, produce the best Optional we can under the circumstances.
      *
@@ -54,7 +107,7 @@ public class FederatedAnnotationReader {
      * @param <T>
      *            the type of object in the results to return as the optional.
      */
-    public static <T> Optional<T> getBest(List<T> results) {
+    protected static <T> Optional<T> getBest(List<T> results) {
         if (results.isEmpty()) {
             return Optional.empty();
         } else if (results.size() == 1) {
@@ -70,53 +123,6 @@ public class FederatedAnnotationReader {
             }
             return Optional.of(first);
         }
-    }
-
-    public Optional<AnnotationSource> getAnnotationSource(String analyticHash) {
-        List<Optional<AnnotationSource>> daoResults = callDaosWithTimeout(dao -> dao.getAnnotationSource(analyticHash), "analyticHash %s", analyticHash);
-        final List<AnnotationSource> results = new ArrayList<>();
-        daoResults.forEach(optional -> optional.ifPresent(results::add));
-        return getBest(results);
-    }
-
-    public Optional<Annotation> getAnnotation(String shard, String datatype, String uid, String annotationType, String annotationUid) {
-        List<Optional<Annotation>> daoResults = callDaosWithTimeout(dao -> dao.getAnnotation(shard, datatype, uid, annotationType, annotationUid),
-                        "annotation uid %s type %s for %s/%s/%s", annotationUid, annotationType, shard, datatype, uid);
-        final List<Annotation> results = new ArrayList<>();
-        daoResults.forEach(optional -> optional.ifPresent(results::add));
-        return getBest(results);
-    }
-
-    public Optional<Annotation> getAnnotation(String shard, String datatype, String uid, String annotationId) {
-        List<Optional<Annotation>> daoResults = callDaosWithTimeout(dao -> dao.getAnnotation(shard, datatype, uid, annotationId),
-                        "annotation id %s for %s/%s/%s", annotationId, shard, datatype, uid);
-        final List<Annotation> results = new ArrayList<>();
-        daoResults.forEach(optional -> optional.ifPresent(results::add));
-        return getBest(results);
-    }
-
-    public Collection<String> getAnnotationTypes(String shard, String datatype, String uid) {
-        final Set<String> result = new TreeSet<>();
-        List<Collection<String>> daoResults = callDaosWithTimeout(dao -> dao.getAnnotationTypes(shard, datatype, uid), "annotation types for %s/%s/%s", shard,
-                        datatype, uid);
-        daoResults.forEach(result::addAll);
-        return result;
-    }
-
-    public List<Annotation> getAnnotations(String shard, String datatype, String uid) {
-        final Set<Annotation> result = new LinkedHashSet<>();
-        List<List<Annotation>> daoResults = callDaosWithTimeout(dao -> dao.getAnnotations(shard, datatype, uid), "annotations for %s/%s/%s", shard, datatype,
-                        uid);
-        daoResults.forEach(result::addAll);
-        return new ArrayList<>(result);
-    }
-
-    public List<Annotation> getAnnotationsForType(String shard, String datatype, String uid, String annotationType) {
-        final Set<Annotation> result = new LinkedHashSet<>();
-        List<List<Annotation>> daoResults = callDaosWithTimeout(dao -> dao.getAnnotationsForType(shard, datatype, uid, annotationType),
-                        "annotations for type %s for %s/%s/%s", annotationType, shard, datatype, uid);
-        daoResults.forEach(result::addAll);
-        return new ArrayList<>(result);
     }
 
     /**
@@ -138,7 +144,7 @@ public class FederatedAnnotationReader {
      *            the result type produced by the DAO operation
      * @return a list of successful results, in DAO iteration order
      */
-    private <T> List<T> callDaosWithTimeout(DaoCall<T> daoCall, String messageTemplate, String... templateArgs) {
+    protected <T> List<T> callDaosWithTimeout(DaoCall<T> daoCall, String messageTemplate, String... templateArgs) {
         if (annotationDataAccesses.isEmpty()) {
             return Collections.emptyList();
         }
@@ -208,7 +214,7 @@ public class FederatedAnnotationReader {
      *            the result type produced by the DAO operation
      */
     @FunctionalInterface
-    private interface DaoCall<T> {
+    protected interface DaoCall<T> {
         T call(AnnotationDataAccess dao);
     }
 }
