@@ -276,7 +276,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
 
         // update ActiveQueryLog with (potentially) updated config
         if (env != null) {
-            ActiveQueryLog.setConfig(env.getConfig());
+            ActiveQueryLog.setConfig(env.getPluginEnv().getConfiguration(env.getTableId()));
         }
 
         DatawaveFieldIndexListIteratorJexl.FSTManager.setHdfsFileSystem(this.getFileSystemCache());
