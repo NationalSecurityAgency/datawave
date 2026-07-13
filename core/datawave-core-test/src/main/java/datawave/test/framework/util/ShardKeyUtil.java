@@ -78,4 +78,26 @@ public class ShardKeyUtil {
         long timeOfDay = shard * (MILLIS_PER_DAY / numShards);
         return dayStart + timeOfDay;
     }
+
+    /**
+     * Determine the day-truncated (midnight) timestamp for the given event id.
+     * <p>
+     * DataWave's global index (the {@code shardIndex}/{@code shardReverseIndex} tables) is day-granular by design: real ingest truncates index-table timestamps
+     * to midnight (see {@code ShardedDataTypeHandler#getIndexTimestamp}), and {@code GlobalIndexUidAggregator} defensively re-truncates any untruncated
+     * timestamp back to midnight at scan/compaction time. Global index writers should use this method rather than {@link #buildTimestamp}, whose sub-day spread
+     * has no observable effect there and only risks combiner-grouping subtleties.
+     *
+     * @param eventId
+     *            the event id
+     * @param numShards
+     *            the number of shards per day
+     * @param numDays
+     *            the number of days
+     * @return the epoch millis for the event's date, truncated to midnight
+     */
+    public static long buildIndexTimestamp(int eventId, int numShards, int numDays) {
+        Preconditions.checkArgument(numShards > 0, "numShards must be greater than 0");
+        Preconditions.checkArgument(numDays > 0, "numDays must be greater than 0");
+        return DateHelper.parse(buildDate(eventId, numShards, numDays)).getTime();
+    }
 }

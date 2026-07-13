@@ -29,6 +29,7 @@ Core components include:
 
 #### Misc. Features
 - events are sharded, assigned a day, and assigned a time-of-day deterministically via the event id (see `ShardKeyUtil`); the time-of-day spreads events evenly across each day to simulate continual ingest rather than a single ingest at midnight
+- the shard table (`ShardTableWriter`) uses this spread, sub-day timestamp, but the global index tables (`ShardIndexTableWriter`, i.e. `shardIndex`/`shardReverseIndex`) always use a day-truncated (midnight) timestamp via `ShardKeyUtil#buildIndexTimestamp`, matching real ingest's day-granular global index (`ShardedDataTypeHandler#getIndexTimestamp`) and `GlobalIndexUidAggregator`'s defensive re-truncation at scan time
 
 #### FieldMetadata
 

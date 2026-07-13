@@ -48,6 +48,9 @@ public class ShardKeyUtilTest {
 
         Exception e3 = assertThrows(IllegalArgumentException.class, () -> ShardKeyUtil.buildTimestamp(0, 0, 1));
         assertEquals("numShards must be greater than 0", e3.getMessage());
+
+        Exception e4 = assertThrows(IllegalArgumentException.class, () -> ShardKeyUtil.buildIndexTimestamp(0, 0, 1));
+        assertEquals("numShards must be greater than 0", e4.getMessage());
     }
 
     @Test
@@ -60,6 +63,9 @@ public class ShardKeyUtilTest {
 
         Exception e3 = assertThrows(IllegalArgumentException.class, () -> ShardKeyUtil.buildTimestamp(0, 10, 0));
         assertEquals("numDays must be greater than 0", e3.getMessage());
+
+        Exception e4 = assertThrows(IllegalArgumentException.class, () -> ShardKeyUtil.buildIndexTimestamp(0, 10, 0));
+        assertEquals("numDays must be greater than 0", e4.getMessage());
     }
 
     @Test
@@ -94,5 +100,21 @@ public class ShardKeyUtilTest {
         long day0Timestamp = ShardKeyUtil.buildTimestamp(5, numShards, numDays);
         long day1Timestamp = ShardKeyUtil.buildTimestamp(15, numShards, numDays);
         assertEquals(24L * 60L * 60L * 1000L, day1Timestamp - day0Timestamp);
+    }
+
+    @Test
+    public void testIndexTimestampIsTruncatedToMidnight() {
+        int numShards = 10;
+        int numDays = 2;
+        long day0Start = DateHelper.parse(ShardKeyUtil.BASE_DATE).getTime();
+
+        // unlike buildTimestamp, buildIndexTimestamp is midnight for every shard on the same day
+        for (int eventId = 0; eventId < numShards; eventId++) {
+            assertEquals(day0Start, ShardKeyUtil.buildIndexTimestamp(eventId, numShards, numDays));
+        }
+
+        // it still advances by a full day once the day offset rolls over
+        long day1Start = ShardKeyUtil.buildIndexTimestamp(numShards, numShards, numDays);
+        assertEquals(day0Start + 24L * 60L * 60L * 1000L, day1Start);
     }
 }
