@@ -13,8 +13,6 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.accumulo.core.client.PluginEnvironment;
-import org.apache.accumulo.core.conf.AccumuloConfiguration;
-import org.apache.accumulo.core.conf.DefaultConfiguration;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.log4j.Logger;
 import org.checkerframework.checker.index.qual.NonNegative;
@@ -47,14 +45,11 @@ public class IteratorThreadPoolManager {
     private static volatile IteratorThreadPoolManager instance;
 
     private IteratorThreadPoolManager(IteratorEnvironment env) {
-        final AccumuloConfiguration accumuloConfiguration;
         final PluginEnvironment pluginEnv;
         if (env != null) {
             pluginEnv = env.getPluginEnv();
-            accumuloConfiguration = env.getConfig();
         } else {
             pluginEnv = null;
-            accumuloConfiguration = DefaultConfiguration.getInstance();
         }
         // create the thread pools
         createExecutorService(IVARATOR_THREAD_PROP, IVARATOR_THREAD_NAME, env);
