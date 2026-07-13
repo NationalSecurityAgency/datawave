@@ -33,6 +33,7 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.file.FileOperations;
 import org.apache.accumulo.core.file.FileSKVIterator;
 import org.apache.accumulo.core.file.rfile.RFile;
+import org.apache.accumulo.core.metadata.UnreferencedTabletFile;
 import org.apache.accumulo.core.spi.crypto.CryptoEnvironment;
 import org.apache.accumulo.core.spi.crypto.CryptoService;
 import org.apache.accumulo.core.spi.file.rfile.compression.NoCompression;
@@ -272,6 +273,8 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
         startWriteTime = System.currentTimeMillis();
         // @formatter:off
 
+
+        // ACCUMULO4_TODO this could be converted to use accumulo's public API for writing rfiles, this was done in PR 2582
         var builder = org.apache.accumulo.core.client.rfile.RFile.newWriter().to(filename).withFileSystem(fs).withTableProperties(tableConf);
         if(this.loadPlanningEnabled) {
             var splits = SplitsFile.getSplits(conf, table);
@@ -694,9 +697,10 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
                     Path path = entry.getValue();
                     String table = writerTableNames.get(entry.getKey());
                     try {
+                        // ACCUMULO4_TODO this could be converted to use accumulo's public API for reading rfiles
                         CryptoService cs = CryptoFactoryLoader.getServiceForClient(CryptoEnvironment.Scope.TABLE,
                                         context.getConfiguration().getPropsWithPrefix(TABLE_CRYPTO_PREFIX.name()));
-                        FileSKVIterator openReader = fops.newReaderBuilder().forFile(path.toString(), fs, conf, cs)
+                        FileSKVIterator openReader = fops.newReaderBuilder().forFile(UnreferencedTabletFile.of(fs,path), fs, conf, cs)
                                         .withTableConfiguration(tableConfigs.get(table)).build();
                         FileStatus fileStatus = fs.getFileStatus(path);
                         long fileSize = fileStatus.getLen();
