@@ -271,8 +271,8 @@ public class TableConfigurationUtil {
                 if (!tops.exists(table)) {
                     boolean disableVersioning = conf != null && conf.getBoolean(table + DISABLE_VERSIONING_ITERATOR, false);
                     if (disableVersioning) {
-                        tops.create(table, new NewTableConfiguration().withoutDefaultIterators());
-                        // withoutDefaultIterators will also skip the default table constraint, so set that
+                        tops.create(table, new NewTableConfiguration().withoutDefaults());
+                        // withoutDefaults will also skip the default table constraint, so set that
                         tops.setProperty(table, Property.TABLE_CONSTRAINT_PREFIX + "1", DefaultKeySizeConstraint.class.getName());
                     } else {
                         tops.create(table);

@@ -492,16 +492,6 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
             StubbedIteratorEnvironment() {}
 
             @Override
-            public AccumuloConfiguration getConfig() {
-                return null;
-            }
-
-            @Override
-            public SortedKeyValueIterator<Key,Value> reserveMapFileReader(String mapFileName) throws IOException {
-                return null;
-            }
-
-            @Override
             public IteratorUtil.IteratorScope getIteratorScope() {
                 return null;
             }
@@ -512,11 +502,6 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
             }
 
             @Override
-            public ServiceEnvironment getServiceEnv() {
-                return null;
-            }
-
-            @Override
             public PluginEnvironment getPluginEnv() {
                 return null;
             }
@@ -524,6 +509,11 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
             @Override
             public TableId getTableId() {
                 return null;
+            }
+
+            @Override
+            public boolean isRunningLowOnMemory() {
+                return false;
             }
 
             @Override
@@ -551,10 +541,6 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
                 return null;
             }
 
-            @Override
-            public void registerSideChannel(SortedKeyValueIterator<Key,Value> iter) {
-
-            }
         }
     }
 }

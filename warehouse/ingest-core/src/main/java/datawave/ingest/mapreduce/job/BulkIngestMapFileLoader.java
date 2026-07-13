@@ -709,7 +709,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
     }
 
     private int getMajorCompactionCount() {
-        //TODO: Accumulo4 Fetch Major Compaction Metrics
+        // TODO: Accumulo4 Fetch Major Compaction Metrics
         log.error("Fetching MUnable to retrieve major compaction stats: ");
         return 0;
     }

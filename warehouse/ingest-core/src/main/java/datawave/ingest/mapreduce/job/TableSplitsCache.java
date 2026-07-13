@@ -75,7 +75,7 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
 
     private PartitionerCache partitionerCache;
 
-    //TODO: Accumulo4 Return split point location data
+    // TODO: Accumulo4 Return split point location data
     private Map<Text,String> getSplitsWithLocation(String table) throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
         return Map.of(new Text(""), "");
     }
