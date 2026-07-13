@@ -51,7 +51,6 @@ import org.apache.accumulo.core.iteratorsImpl.system.MultiIterator;
 import org.apache.accumulo.core.iteratorsImpl.system.VisibilityFilter;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.accumulo.core.spi.common.ServiceEnvironment;
 import org.apache.accumulo.core.spi.crypto.CryptoEnvironment;
 import org.apache.accumulo.core.spi.crypto.CryptoService;
 import org.apache.hadoop.conf.Configuration;
@@ -168,22 +167,13 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
 
         AccumuloConfiguration conf;
 
+        //TODO: See if this is unused
         public RFileEnvironment(AccumuloConfiguration conf) {
             this.conf = conf;
         }
 
         public RFileEnvironment() {
             this.conf = DefaultConfiguration.getInstance();
-        }
-
-        @Override
-        public SortedKeyValueIterator<Key,Value> reserveMapFileReader(String s) throws IOException {
-            return null;
-        }
-
-        @Override
-        public AccumuloConfiguration getConfig() {
-            return conf;
         }
 
         @Override
@@ -194,11 +184,6 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
         @Override
         public boolean isFullMajorCompaction() {
             throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void registerSideChannel(SortedKeyValueIterator<Key,Value> sortedKeyValueIterator) {
-
         }
 
         @Override
@@ -227,11 +212,6 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
         }
 
         @Override
-        public ServiceEnvironment getServiceEnv() {
-            return null;
-        }
-
-        @Override
         public PluginEnvironment getPluginEnv() {
             return null;
         }
@@ -239,6 +219,11 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
         @Override
         public TableId getTableId() {
             return null;
+        }
+
+        @Override
+        public boolean isRunningLowOnMemory() {
+            return false;
         }
     }
 
