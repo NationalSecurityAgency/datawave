@@ -2,7 +2,6 @@ package datawave.query;
 
 import java.nio.file.Path;
 import java.util.Collections;
-import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -13,6 +12,7 @@ import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -29,7 +29,6 @@ import datawave.query.jexl.functions.QueryFunctions;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.util.AbstractQueryTest;
 import datawave.query.util.WiseGuysIngest;
-import datawave.query.util.WiseGuysIngest.WhatKindaRange;
 import datawave.table.constants.TableName;
 
 /**
@@ -56,7 +55,7 @@ public class QueryFunctionQueryTest extends AbstractQueryTest {
     private static final Logger log = Logger.getLogger(QueryFunctionQueryTest.class);
     private static final Authorizations auths = new Authorizations("ALL");
 
-    private static final Map<WhatKindaRange,AccumuloClient> clients = new EnumMap<>(WhatKindaRange.class);
+    private static AccumuloClient client;
 
     @Autowired
     @Qualifier("EventQuery")
@@ -84,25 +83,21 @@ public class QueryFunctionQueryTest extends AbstractQueryTest {
 
     @BeforeAll
     public static void beforeAll(@TempDir Path tempDir) throws Exception {
-        for (WhatKindaRange range : WhatKindaRange.values()) {
-            System.setProperty("type.metadata.dir", tempDir.toFile().getCanonicalPath() + "/" + range.name());
+        System.setProperty("type.metadata.dir", tempDir.toFile().getCanonicalPath());
 
-            QueryTestTableHelper qtth = new QueryTestTableHelper(QueryFunctionQueryTest.class.toString() + "-" + range, log);
-            AccumuloClient client = qtth.client;
+        QueryTestTableHelper qtth = new QueryTestTableHelper(QueryFunctionQueryTest.class.toString(), log);
+        client = qtth.client;
 
-            WiseGuysIngest.writeItAll(client, range);
-            PrintUtility.printTable(client, auths, TableName.SHARD);
-            PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
-            PrintUtility.printTable(client, auths, QueryTestTableHelper.METADATA_TABLE_NAME);
-            PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
-
-            clients.put(range, client);
-        }
+        WiseGuysIngest.writeItAll(client, WiseGuysIngest.WhatKindaRange.DOCUMENT);
+        PrintUtility.printTable(client, auths, TableName.SHARD);
+        PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
+        PrintUtility.printTable(client, auths, QueryTestTableHelper.METADATA_TABLE_NAME);
+        PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
     }
 
-    private void setupLogic(WhatKindaRange range) {
-        setClientForTest(clients.get(range));
-        eventQueryLogic.setCollapseUids(range == WhatKindaRange.SHARD);
+    @BeforeEach
+    public void setup() {
+        setClientForTest(client);
         eventQueryLogic.setMaxEvaluationPipelines(1);
     }
 
@@ -115,28 +110,25 @@ public class QueryFunctionQueryTest extends AbstractQueryTest {
 
     private static Stream<Arguments> phraseFunctionsWithHashesArgs() {
         // @formatter:off
-        Object[][] cases = {
+        return Stream.of(
                 // this is added to the new tfs added with dot notation check if they can even be queried
-                {"QUOTE == 'never' && QUOTE == 'refuse'", List.of("CORLEONE")},
+                Arguments.of("QUOTE == 'never' && QUOTE == 'refuse'", List.of("CORLEONE")),
                 // check if a content phrase across these same dot notation fields can get a hit
-                {"content:phrase(termOffsetMap, 'i', 'never', 'refuse') && QUOTE == 'i' && QUOTE == 'never' && QUOTE == 'refuse'", List.of("CORLEONE")},
+                Arguments.of("content:phrase(termOffsetMap, 'i', 'never', 'refuse') && QUOTE == 'i' && QUOTE == 'never' && QUOTE == 'refuse'", List.of("CORLEONE")),
                 // check that there is no cross contamination between the dot notation tfs and normal tfs
-                {"content:phrase(termOffsetMap, 'gonna', 'refuse') && QUOTE == 'gonna' && QUOTE == 'refuse'", Collections.emptyList()},
+                Arguments.of("content:phrase(termOffsetMap, 'gonna', 'refuse') && QUOTE == 'gonna' && QUOTE == 'refuse'", Collections.emptyList()),
                 // check that if no tf set with dot notation satisfies a query it will be short circuited in tf eval
-                {"content:phrase(termOffsetMap, 'never', 'offer') && QUOTE == 'never' && QUOTE == 'offer'", Collections.emptyList()},
+                Arguments.of("content:phrase(termOffsetMap, 'never', 'offer') && QUOTE == 'never' && QUOTE == 'offer'", Collections.emptyList()),
                 // verify tfs from another section of the query don't help this resolve
-                {"content:phrase(QUOTE, termOffsetMap, 'never', 'refuse') && QUOTE == 'never' && QUOTE == 'refuse' && content:phrase(PHILOSOPHY, termOffsetMap, 'absolute', 'power') && PHILOSOPHY == 'absolute' && PHILOSOPHY == 'power'", List.of("CORLEONE")},
+                Arguments.of("content:phrase(QUOTE, termOffsetMap, 'never', 'refuse') && QUOTE == 'never' && QUOTE == 'refuse' && content:phrase(PHILOSOPHY, termOffsetMap, 'absolute', 'power') && PHILOSOPHY == 'absolute' && PHILOSOPHY == 'power'", List.of("CORLEONE")),
                 // invert the targets
-                {"content:phrase(PHILOSOPHY, termOffsetMap, 'never', 'refuse') && QUOTE == 'never' && QUOTE == 'refuse' && content:phrase(QUOTE, termOffsetMap, 'absolute', 'power') && PHILOSOPHY == 'absolute' && PHILOSOPHY == 'power'", Collections.emptyList()},
-        };
+                Arguments.of("content:phrase(PHILOSOPHY, termOffsetMap, 'never', 'refuse') && QUOTE == 'never' && QUOTE == 'refuse' && content:phrase(QUOTE, termOffsetMap, 'absolute', 'power') && PHILOSOPHY == 'absolute' && PHILOSOPHY == 'power'", Collections.emptyList()));
         // @formatter:on
-        return Stream.of(WhatKindaRange.values()).flatMap(range -> Stream.of(cases).map(c -> Arguments.of(range, c[0], c[1])));
     }
 
     @ParameterizedTest
     @MethodSource("phraseFunctionsWithHashesArgs")
-    public void testPhraseFunctionsWithHashes(WhatKindaRange range, String query, List<String> expected) throws Exception {
-        setupLogic(range);
+    public void testPhraseFunctionsWithHashes(String query, List<String> expected) throws Exception {
         eventQueryLogic.setInitialMaxTermThreshold(20);
         eventQueryLogic.setIntermediateMaxTermThreshold(20);
         eventQueryLogic.setFinalMaxTermThreshold(20);
@@ -150,20 +142,16 @@ public class QueryFunctionQueryTest extends AbstractQueryTest {
 
     private static Stream<Arguments> includeTextArgs() {
         // @formatter:off
-        Object[][] cases = {
-                {"UUID == 'corleone' && f:includeText(GENERE, 'FEMALE')", List.of("CORLEONE")},
-                {"UUID == 'corleone' && f:includeText(GENERE, 'male')", Collections.emptyList()}, //  misses because includeText is case-sensitive
-                {"UUID == 'corleone' && f:includeText(NUMBER, '25')", List.of("CORLEONE")},
-        };
+        return Stream.of(
+                Arguments.of("UUID == 'corleone' && f:includeText(GENERE, 'FEMALE')", List.of("CORLEONE")),
+                Arguments.of("UUID == 'corleone' && f:includeText(GENERE, 'male')", Collections.emptyList()), //  misses because includeText is case-sensitive
+                Arguments.of("UUID == 'corleone' && f:includeText(NUMBER, '25')", List.of("CORLEONE")));
         // @formatter:on
-        return Stream.of(WhatKindaRange.values()).flatMap(range -> Stream.of(cases).map(c -> Arguments.of(range, c[0], c[1])));
     }
 
     @ParameterizedTest
     @MethodSource("includeTextArgs")
-    public void testIncludeText(WhatKindaRange range, String query, List<String> expected) throws Exception {
-        setupLogic(range);
-
+    public void testIncludeText(String query, List<String> expected) throws Exception {
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("hit.list", "true");
 
@@ -177,21 +165,17 @@ public class QueryFunctionQueryTest extends AbstractQueryTest {
 
     private static Stream<Arguments> matchRegexArgs() {
         // @formatter:off
-        Object[][] cases = {
-                {"UUID == 'corleone' && f:matchRegex(GENERE, '.*MALE')", List.of("CORLEONE")},
-                {"UUID == 'corleone' && f:matchRegex(GENERE, '.*male')", List.of("CORLEONE")},
-                {"UUID == 'corleone' && f:matchRegex(NUMBER, '2.*')", List.of("CORLEONE")},
-                {"UUID == 'corleone' && f:matchRegex(GENERE, '[A-Z]+')", List.of("CORLEONE")},
-        };
+        return Stream.of(
+                Arguments.of("UUID == 'corleone' && f:matchRegex(GENERE, '.*MALE')", List.of("CORLEONE")),
+                Arguments.of("UUID == 'corleone' && f:matchRegex(GENERE, '.*male')", List.of("CORLEONE")),
+                Arguments.of("UUID == 'corleone' && f:matchRegex(NUMBER, '2.*')", List.of("CORLEONE")),
+                Arguments.of("UUID == 'corleone' && f:matchRegex(GENERE, '[A-Z]+')", List.of("CORLEONE")));
         // @formatter:on
-        return Stream.of(WhatKindaRange.values()).flatMap(range -> Stream.of(cases).map(c -> Arguments.of(range, c[0], c[1])));
     }
 
     @ParameterizedTest
     @MethodSource("matchRegexArgs")
-    public void testMatchRegex(WhatKindaRange range, String query, List<String> expected) throws Exception {
-        setupLogic(range);
-
+    public void testMatchRegex(String query, List<String> expected) throws Exception {
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("hit.list", "true");
 
