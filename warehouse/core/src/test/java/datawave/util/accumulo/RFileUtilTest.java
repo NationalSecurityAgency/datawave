@@ -18,6 +18,7 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.file.FileSKVWriter;
 import org.apache.accumulo.core.file.rfile.RFileOperations;
+import org.apache.accumulo.core.metadata.UnreferencedTabletFile;
 import org.apache.accumulo.core.spi.crypto.CryptoEnvironment;
 import org.apache.accumulo.core.spi.crypto.CryptoService;
 import org.apache.hadoop.conf.Configuration;
@@ -191,7 +192,7 @@ public class RFileUtilTest {
         CryptoService cs = CryptoFactoryLoader.getServiceForClient(CryptoEnvironment.Scope.TABLE,
                         new Configuration().getPropsWithPrefix(TABLE_CRYPTO_PREFIX.name()));
 
-        FileSKVWriter writer = RFileOperations.getInstance().newWriterBuilder().forFile(tmpFile.getCanonicalPath(), fs, new Configuration(), cs)
+        FileSKVWriter writer = RFileOperations.getInstance().newWriterBuilder().forFile(UnreferencedTabletFile.of(fs, tmpFile), fs, new Configuration(), cs)
                         .withTableConfiguration(DefaultConfiguration.getInstance()).build();
         writer.startDefaultLocalityGroup();
 
