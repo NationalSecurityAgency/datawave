@@ -20,11 +20,10 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.EnumSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.ComponentScan;
@@ -42,7 +41,6 @@ import datawave.query.config.TermFrequencyQueryConfiguration;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.transformer.TermFrequencyQueryTransformer;
 import datawave.query.util.WiseGuysIngest;
-import datawave.query.util.WiseGuysIngest.WhatKindaRange;
 import datawave.table.constants.TableName;
 import datawave.webservice.query.result.event.DefaultField;
 import datawave.webservice.query.result.event.EventBase;
@@ -66,6 +64,8 @@ public class TermFrequencyQueryTableTest {
     private static final Authorizations auths = new Authorizations("ALL");
     private static final Set<Authorizations> authSet = Collections.singleton(auths);
 
+    private static AccumuloClient client;
+
     @Autowired
     @Qualifier("TermFrequencyQuery")
     protected TermFrequencyQueryTable logic;
@@ -75,19 +75,21 @@ public class TermFrequencyQueryTableTest {
 
     private String query;
 
-    @BeforeEach
-    public void setup() {
-        this.deserializer = new KryoDocumentDeserializer();
-    }
-
-    private AccumuloClient createClient(WhatKindaRange range) throws Exception {
-        AccumuloClient client = new QueryTestTableHelper(TermFrequencyQueryTableTest.class.toString(), log,
-                        RebuildingScannerTestHelper.TEARDOWN.EVERY_OTHER_SANS_CONSISTENCY, RebuildingScannerTestHelper.INTERRUPT.EVERY_OTHER).client;
-        WiseGuysIngest.writeItAll(client, range);
+    @BeforeAll
+    public static void beforeAll() throws Exception {
+        // WhatKindaRange only affects how UIDs are encoded in the global index, which this
+        // query logic never scans, so a single ingest is sufficient here.
+        client = new QueryTestTableHelper(TermFrequencyQueryTableTest.class.toString(), log, RebuildingScannerTestHelper.TEARDOWN.EVERY_OTHER_SANS_CONSISTENCY,
+                        RebuildingScannerTestHelper.INTERRUPT.EVERY_OTHER).client;
+        WiseGuysIngest.writeItAll(client, WiseGuysIngest.WhatKindaRange.DOCUMENT);
         PrintUtility.printTable(client, auths, TableName.SHARD);
         PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
         PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
-        return client;
+    }
+
+    @BeforeEach
+    public void setup() {
+        this.deserializer = new KryoDocumentDeserializer();
     }
 
     private Query createSettings() {
@@ -105,9 +107,8 @@ public class TermFrequencyQueryTableTest {
         assertNotNull(logic);
     }
 
-    @ParameterizedTest
-    @EnumSource(WhatKindaRange.class)
-    public void corleoneTest(WhatKindaRange range) throws Exception {
+    @Test
+    public void corleoneTest() throws Exception {
         String shard = "20130101_0";
         String dataType = "test";
         String uid = corleoneUID;
@@ -129,11 +130,10 @@ public class TermFrequencyQueryTableTest {
         expectedTfs.add("QUOTE,,refuse,1,[8]");
         expectedTfs.add("QUOTE,hash1,refuse,1,[2]");
 
-        runQuery(shard, dataType, uid, "QUOTE", expectedTfs, range);
+        runQuery(shard, dataType, uid, "QUOTE", expectedTfs);
     }
 
-    private void runQuery(String shard, String dataType, String uid, String fieldLimit, List<String> expectedTfs, WhatKindaRange range) throws Exception {
-        AccumuloClient client = createClient(range);
+    private void runQuery(String shard, String dataType, String uid, String fieldLimit, List<String> expectedTfs) throws Exception {
         Query settings = createSettings();
         GenericQueryConfiguration config = logic.initialize(client, settings, authSet);
 
