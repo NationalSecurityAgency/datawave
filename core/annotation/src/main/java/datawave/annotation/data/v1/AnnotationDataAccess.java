@@ -42,8 +42,14 @@ import datawave.annotation.protobuf.v1.Segment;
 import datawave.annotation.util.v1.AnnotationUtils;
 import datawave.security.util.ScannerHelper;
 
-/** Used to read and write annotation data to Accumulo */
-public class AnnotationDataAccess {
+/**
+ * Accumulo-backed reader and writer for annotation data.
+ * <p>
+ * Annotations are addressed by document shard. The annotation table stores document-scoped annotations under column families composed of {@code datatype},
+ * {@code uid}, and annotation type, separated by {@link #NULL}. Column qualifiers begin with the annotation id, which allows scans to target either a known
+ * annotation type or all types for a document. Annotation sources are stored separately and addressed by analytic hash.
+ */
+public class AnnotationDataAccess implements AnnotationReader, AnnotationWriter, AnnotationSourceReader, AnnotationSourceWriter {
 
     public static final char NULL = '\u0000';
     public static final char MAX = '\uFFFF';
@@ -57,23 +63,28 @@ public class AnnotationDataAccess {
     final AnnotationSerializer<Iterator<Map.Entry<Key,Value>>,Annotation> annotationSerializer;
     final AnnotationSerializer<Iterator<Map.Entry<Key,Value>>,AnnotationSource> annotationSourceSerializer;
 
-    // TODO: feature flags for now.
+    // TODO: feature flags for now, ultimately these might get externalized in a configuration object.
     boolean blockAnnotationSourceOverwrites = false;
     boolean blockAnnotationOverwrites = false;
 
     /**
-     * Create the annotation data access object
+     * Creates an Accumulo annotation data access object.
+     * <p>
+     * The supplied serializers define the physical key/value representation used by all read and write operations. The same authorizations are used for every
+     * scanner created by this instance.
      *
      * @param accumuloClient
-     *            the accumulo client to use
+     *            the Accumulo client used to create scanners and batch writers
      * @param authorizations
-     *            the authorizations used for these operations
+     *            the authorizations used when scanning annotation data
      * @param annotationTableName
-     *            the accumulo annotation table to use
+     *            the Accumulo table that stores annotations
      * @param annotationSourceTableName
-     *            the accumulo annotation source table to use
+     *            the Accumulo table that stores annotation sources
      * @param annotationSerializer
-     *            the serializer to transform protobuf to accumulo entries
+     *            the serializer that transforms annotations to and from Accumulo entries
+     * @param annotationSourceSerializer
+     *            the serializer that transforms annotation sources to and from Accumulo entries
      */
     public AnnotationDataAccess(AccumuloClient accumuloClient, Set<Authorizations> authorizations, String annotationTableName, String annotationSourceTableName,
                     AnnotationSerializer<Iterator<Map.Entry<Key,Value>>,Annotation> annotationSerializer,
@@ -86,22 +97,56 @@ public class AnnotationDataAccess {
         this.annotationSourceSerializer = annotationSourceSerializer;
     }
 
+    /**
+     * Indicates whether this instance rejects writes for annotations whose generated id already exists.
+     *
+     * @return {@code true} when annotation id conflicts cause writes to fail
+     */
     public boolean isBlockAnnotationOverwrites() {
         return blockAnnotationOverwrites;
     }
 
+    /**
+     * Configures whether this instance rejects writes for annotations whose generated id already exists.
+     *
+     * @param blockAnnotationOverwrites
+     *            {@code true} to reject annotation id conflicts, or {@code false} to allow overwrites
+     */
     public void setBlockAnnotationOverwrites(boolean blockAnnotationOverwrites) {
         this.blockAnnotationOverwrites = blockAnnotationOverwrites;
     }
 
+    /**
+     * Indicates whether this instance rejects writes for annotation sources whose generated analytic hash already exists.
+     *
+     * @return {@code true} when annotation source id conflicts cause writes to fail
+     */
     public boolean isBlockAnnotationSourceOverwrites() {
         return blockAnnotationSourceOverwrites;
     }
 
+    /**
+     * Configures whether this instance rejects writes for annotation sources whose generated analytic hash already exists.
+     *
+     * @param blockAnnotationSourceOverwrites
+     *            {@code true} to reject annotation source id conflicts, or {@code false} to allow overwrites
+     */
     public void setBlockAnnotationSourceOverwrites(boolean blockAnnotationSourceOverwrites) {
         this.blockAnnotationSourceOverwrites = blockAnnotationSourceOverwrites;
     }
 
+    /**
+     * Reads an annotation source from the annotation source table using an exact row range on the analytic hash.
+     * <p>
+     * The source serializer consumes all entries in the row and returns {@code null} when the row contains no visible source data.
+     *
+     * @param analyticHash
+     *            the analytic hash row to scan
+     * @return the deserialized annotation source, or {@link Optional#empty()} when no source is found
+     * @throws AnnotationReadException
+     *             if the source table is missing or the entries cannot be deserialized
+     */
+    @Override
     public Optional<AnnotationSource> getAnnotationSource(String analyticHash) {
         try (Scanner scanner = ScannerHelper.createScanner(accumuloClient, annotationSourceTableName, authorizations)) {
             final Range range = new Range(analyticHash);
@@ -116,20 +161,26 @@ public class AnnotationDataAccess {
     }
 
     /**
-     * Get a specific annotation by id and type
+     * Reads a single annotation when the annotation type and id are both known.
+     * <p>
+     * This method narrows the scan to a single shard, the exact annotation column family ({@code datatype\0uid\0annotationType}), and the column qualifier
+     * range for {@code annotationUid}. A {@link RegExFilter} is also applied so only entries for the requested annotation id are deserialized.
      *
      * @param shard
-     *            the shard for the document related to this annotation.
+     *            the shard for the annotated document
      * @param datatype
-     *            the datatype of the document related to this annotation.
+     *            the datatype for the annotated document
      * @param uid
-     *            the document id related to this annotation
+     *            the unique id for the annotated document
      * @param annotationType
-     *            the type of annotation we're seeing.
+     *            the annotation type to search
      * @param annotationUid
-     *            the annotation id of the annotation we want to fetch.
-     * @return an Optional that will contain the retrieved annotation if found.
+     *            the annotation id to retrieve
+     * @return the deserialized annotation, or {@link Optional#empty()} when no matching entries are visible
+     * @throws AnnotationReadException
+     *             if the annotation table is missing or the entries cannot be deserialized
      */
+    @Override
     public Optional<Annotation> getAnnotation(String shard, String datatype, String uid, String annotationType, String annotationUid) {
         try (Scanner scanner = ScannerHelper.createScanner(accumuloClient, annotationTableName, authorizations)) {
             final String columnFamily = datatype + NULL + uid + NULL + annotationType;
@@ -156,18 +207,25 @@ public class AnnotationDataAccess {
     }
 
     /**
-     * Get the annotation with the specified annotationId without specifying a type
+     * Reads a single annotation by id without requiring the caller to know its annotation type.
+     * <p>
+     * This method scans all annotation type column families for the document ({@code datatype\0uid\0*}) and filters column qualifiers that begin with
+     * {@code annotationId\0}. If entries deserialize into more than one annotation, the data is considered ambiguous and an {@link AnnotationReadException} is
+     * thrown.
      *
      * @param shard
-     *            the shard for the document.
+     *            the shard for the annotated document
      * @param datatype
-     *            the datatype of the document.
+     *            the datatype for the annotated document
      * @param uid
-     *            the document id.
+     *            the unique id for the annotated document
      * @param annotationId
      *            the id of the annotation we want to retrieve
-     * @return an Optional that will contain the retrieved annotation if found.
+     * @return the matching annotation, or {@link Optional#empty()} when no matching entries are visible
+     * @throws AnnotationReadException
+     *             if the annotation table is missing, the entries cannot be deserialized, or multiple annotations share the requested id for the document
      */
+    @Override
     public Optional<Annotation> getAnnotation(String shard, String datatype, String uid, String annotationId) {
         try (Scanner scanner = ScannerHelper.createScanner(accumuloClient, annotationTableName, authorizations)) {
             final String columnFamily = datatype + NULL + uid + NULL;
@@ -200,16 +258,22 @@ public class AnnotationDataAccess {
     }
 
     /**
-     * Get the annotation types for a document
+     * Reads the distinct annotation types for a document.
+     * <p>
+     * The scan is bounded to the document's annotation column-family prefix ({@code datatype\0uid\0}) and extracts the last column-family component from each
+     * visible entry. Returned values are distinct and naturally ordered by the backing {@link TreeSet}.
      *
      * @param shard
-     *            the shard for the document.
+     *            the shard for the annotated document
      * @param datatype
-     *            the datatype of the document.
+     *            the datatype for the annotated document
      * @param uid
-     *            the document id.
-     * @return a collection of annotation types we have for this document.
+     *            the unique id for the annotated document
+     * @return the distinct annotation types visible for the document, never {@code null}
+     * @throws AnnotationReadException
+     *             if the annotation table is missing
      */
+    @Override
     public Collection<String> getAnnotationTypes(String shard, String datatype, String uid) {
         try (Scanner scanner = ScannerHelper.createScanner(accumuloClient, annotationTableName, authorizations)) {
             final String columnFamilyPrefix = datatype + NULL + uid + NULL;
@@ -233,16 +297,22 @@ public class AnnotationDataAccess {
     }
 
     /**
-     * Get all annotations for a document
+     * Reads all annotations for a document across all annotation types.
+     * <p>
+     * The scan is bounded to the document's annotation column-family prefix ({@code datatype\0uid\0}) and filtered to entries in the requested shard. Entries
+     * are grouped by annotation id before deserialization.
      *
      * @param shard
-     *            the shard for the document.
+     *            the shard for the annotated document
      * @param datatype
-     *            the datatype of the document.
+     *            the datatype for the annotated document
      * @param uid
-     *            the document id.
-     * @return a collection of annotation types we have for this document.
+     *            the unique id for the annotated document
+     * @return the annotations visible for the document, never {@code null}
+     * @throws AnnotationReadException
+     *             if the annotation table is missing or any grouped annotation cannot be deserialized
      */
+    @Override
     public List<Annotation> getAnnotations(String shard, String datatype, String uid) {
         try (Scanner scanner = ScannerHelper.createScanner(accumuloClient, annotationTableName, authorizations)) {
             final String columnFamilyPrefix = datatype + NULL + uid + NULL;
@@ -265,18 +335,24 @@ public class AnnotationDataAccess {
     }
 
     /**
-     * Get all annotations of a specific type for a document
+     * Reads all annotations of a specific type for a document.
+     * <p>
+     * This method scans the exact annotation column family ({@code datatype\0uid\0annotationType}) for the requested shard. Entries are grouped by annotation
+     * id before deserialization.
      *
      * @param shard
-     *            the shard for the document.
+     *            the shard for the annotated document
      * @param datatype
-     *            the datatype of the document.
+     *            the datatype for the annotated document
      * @param uid
-     *            the document id.
+     *            the unique id for the annotated document
      * @param annotationType
-     *            the annotation types we're interested
-     * @return a list of annotations for this document of the specified type.
+     *            the annotation type to retrieve
+     * @return the matching annotations visible for the document and type, never {@code null}
+     * @throws AnnotationReadException
+     *             if the annotation table is missing or any grouped annotation cannot be deserialized
      */
+    @Override
     public List<Annotation> getAnnotationsForType(String shard, String datatype, String uid, String annotationType) {
         try (Scanner scanner = ScannerHelper.createScanner(accumuloClient, annotationTableName, authorizations)) {
             final String columnFamily = datatype + NULL + uid + NULL + annotationType;
@@ -299,12 +375,18 @@ public class AnnotationDataAccess {
     }
 
     /**
-     * Save a new annotation source
+     * Writes an annotation source to the annotation source table.
+     * <p>
+     * Before writing, this method validates that the caller has not supplied a store-managed id, injects annotation source hashes, and checks for id conflicts
+     * according to {@link #isBlockAnnotationSourceOverwrites()}. The prepared source is serialized and written as a non-delete mutation.
      *
      * @param annotationSource
-     *            the annotation to save.
-     * @return an Optional containing the save annotation if the save was successful.
+     *            the annotation source to save
+     * @return the saved annotation source, including generated hashes
+     * @throws AnnotationWriteException
+     *             if validation, serialization, table access, or mutation writing fails
      */
+    @Override
     public Optional<AnnotationSource> addAnnotationSource(AnnotationSource annotationSource) {
         AnnotationSource addedAnnotationSource = prepareAnnotationSourceForAdd(annotationSource);
         try (BatchWriter writer = accumuloClient.createBatchWriter(annotationSourceTableName)) {
@@ -318,12 +400,19 @@ public class AnnotationDataAccess {
     }
 
     /**
-     * Save a new annotation.
+     * Writes an annotation to the annotation table.
+     * <p>
+     * Before writing, this method validates that the caller has not supplied store-managed annotation or segment ids, injects all annotation and segment
+     * hashes, and checks for id conflicts according to {@link #isBlockAnnotationOverwrites()}. The prepared annotation is serialized and written as a
+     * non-delete mutation.
      *
      * @param annotation
-     *            the annotation to save.
-     * @return an Optional containing the save annotation if the save was successful.
+     *            the annotation to save
+     * @return the saved annotation, including generated annotation and segment ids
+     * @throws AnnotationWriteException
+     *             if validation, serialization, table access, or mutation writing fails
      */
+    @Override
     public Optional<Annotation> addAnnotation(Annotation annotation) {
         Annotation addedAnnotation = prepareAnnotationForAdd(annotation);
         try (BatchWriter writer = accumuloClient.createBatchWriter(annotationTableName)) {
@@ -337,15 +426,23 @@ public class AnnotationDataAccess {
     }
 
     /**
-     * Update an annotation. This isn't a deletion of the old annotation and an add of the new annotation, instead we maintain both versions of the annotation
-     * and link them together via metadata. We will not perform any update unless the new data is valid and the existing annotationId exists.
+     * Writes a new annotation version that references an existing annotation id.
+     * <p>
+     * This implementation first verifies that {@code targetAnnotationId} exists for the document identified by the replacement annotation. It then injects an
+     * update reference into the replacement annotation and delegates to {@link #addAnnotation(Annotation)}. The original annotation remains stored; this method
+     * does not overwrite or delete it.
      *
      * @param targetAnnotationId
-     *            the identifier for the annotation we are providing an update for.
+     *            the identifier for the existing annotation being updated
      * @param annotation
-     *            the annotation that contains the updated annotation.
-     * @return an Optional containing the updated annotation if the update was successful.
+     *            the replacement annotation data to save as a new version
+     * @return the saved update annotation, including generated annotation and segment ids
+     * @throws AnnotationUpdateException
+     *             if the target annotation cannot be found or the update annotation cannot be saved
+     * @throws AnnotationWriteException
+     *             if the delegated add operation fails validation, serialization, table access, or mutation writing
      */
+    @Override
     public Optional<Annotation> updateAnnotation(String targetAnnotationId, Annotation annotation) {
         String shard = annotation.getShard();
         String datatype = annotation.getDataType();
@@ -369,18 +466,24 @@ public class AnnotationDataAccess {
     }
 
     /**
-     * Deletes all entries for annotation that matches the provided criteria
+     * Deletes all Accumulo entries for an annotation id on a document.
+     * <p>
+     * This method scans all annotation type column families for the document and filters entries whose column qualifier begins with {@code annotationId\0}. The
+     * matching entries are converted to delete mutations and written back to the annotation table.
      *
      * @param shard
-     *            the shard for the document.
+     *            the shard for the annotated document
      * @param datatype
-     *            the datatype of the document.
+     *            the datatype for the annotated document
      * @param uid
-     *            the document id.
+     *            the unique id for the annotated document
      * @param annotationId
-     *            the id of the annotation we want to delete.
+     *            the annotation id to delete
+     * @throws AnnotationUpdateException
+     *             if table access, serialization, or mutation writing fails
      */
-    public void delete(String shard, String datatype, String uid, String annotationId) {
+    @Override
+    public void deleteAnnotation(String shard, String datatype, String uid, String annotationId) {
         try (Scanner scanner = ScannerHelper.createScanner(accumuloClient, annotationTableName, authorizations);
                         BatchWriter writer = accumuloClient.createBatchWriter(annotationTableName)) {
             final String columnFamily = datatype + NULL + uid + NULL;
@@ -407,72 +510,18 @@ public class AnnotationDataAccess {
     }
 
     /**
-     * Add a segment to an existing annotation.
-     *
-     * @param shard
-     *            the shard for the document.
-     * @param datatype
-     *            the datatype of the document.
-     * @param uid
-     *            the document id.
-     * @param annotationId
-     *            the id of the annotation to which we want to add the segment.
-     * @param segment
-     *            the segment to add.
-     */
-    public void addSegment(String shard, String datatype, String uid, String annotationId, Segment segment) {
-        // TODO: implement me
-    }
-
-    /**
-     * Update a segment in an existing annotation.
-     *
-     * @param shard
-     *            the shard for the document.
-     * @param datatype
-     *            the datatype of the document.
-     * @param uid
-     *            the document id.
-     * @param annotationId
-     *            the id of the annotation to which we want to add the segment.
-     * @param segment
-     *            the segment to update.
-     */
-    public void updateSegment(String shard, String datatype, String uid, String annotationId, Segment segment) {
-        // TODO: implement me
-    }
-
-    /**
-     * Deletes any segments with the id specified in an existing annotation.
-     *
-     * @param shard
-     *            the shard for the document.
-     * @param datatype
-     *            the datatype of the document.
-     * @param uid
-     *            the document id.
-     * @param annotationId
-     *            the id of the annotation to which we want to add the segment.
-     * @param segmentId
-     *            the id of the segment to delete.
-     */
-    public void deleteSegment(String shard, String datatype, String uid, String annotationId, String segmentId) {
-        // TODO: implement me
-    }
-
-    /**
-     * prepare the annotation source for the addition to the datastore by performing the following:
+     * Prepares an annotation source for insertion into Accumulo.
      * <ol>
-     * <li>validate</li>
-     * <li>assign identifiers</li>
-     * <li>check for conflicts</li>
+     * <li>validate that caller-managed data does not include store-managed ids</li>
+     * <li>assign deterministic annotation source hashes</li>
+     * <li>check the generated analytic hash for conflicts</li>
      * </ol>
      *
      * @param annotationSource
-     *            the annotation to prepare for addition
-     * @return the prepared annotation/segments that should be written.
+     *            the annotation source to prepare
+     * @return the annotation source that should be serialized and written
      * @throws AnnotationWriteException
-     *             if there's an issue encountered when preparing and the annotation should not be written as a result.
+     *             if validation or conflict checks fail
      */
     protected AnnotationSource prepareAnnotationSourceForAdd(AnnotationSource annotationSource) {
         validateAnnotationSourceForAdd(annotationSource);
@@ -482,13 +531,15 @@ public class AnnotationDataAccess {
     }
 
     /**
-     * Validate the basic structure of the provided annotation source. This will error if the datastructures already have an id assigned because we don't want
-     * folks to assume they can assign their own ids to new annotations, that is the job of the data access object.
+     * Validates source data before this implementation assigns annotation source hashes.
+     * <p>
+     * Callers are not allowed to provide the analytic hash for a new source because the hash is a store-managed identifier derived by
+     * {@link AnnotationUtils#injectAnnotationSourceHashes(AnnotationSource)}.
      *
      * @param annotationSource
-     *            the annotation to validate
+     *            the annotation source to validate
      * @throws AnnotationWriteException
-     *             if there's a validation failure.
+     *             if the annotation source already has an analytic hash
      */
     protected void validateAnnotationSourceForAdd(AnnotationSource annotationSource) {
         if (StringUtils.isNotBlank(annotationSource.getAnalyticHash())) {
@@ -498,16 +549,16 @@ public class AnnotationDataAccess {
     }
 
     /**
-     * Check the annotation source for conflicts. if we allow this annotation to be written.
+     * Checks whether a prepared annotation source can be written.
      * <ol>
-     * <li>source id is assigned</li>
-     * <li>optional: no annotation source exists with the same id</li>
+     * <li>the generated analytic hash must be present</li>
+     * <li>when overwrite blocking is enabled, no visible annotation source may already exist for the same analytic hash</li>
      * </ol>
      *
      * @param annotationSource
-     *            the annotation to check
+     *            the prepared annotation source to check
      * @throws AnnotationWriteException
-     *             if a check fails.
+     *             if the analytic hash is missing or a blocked conflict is found
      */
     protected void checkAnnotationSourceForConflicts(AnnotationSource annotationSource) {
         // check that the annotation has an id assigned.
@@ -528,18 +579,18 @@ public class AnnotationDataAccess {
     }
 
     /**
-     * prepare the annotation for the addition to the datastore by performing the following:
+     * Prepares an annotation for insertion into Accumulo.
      * <ol>
-     * <li>validate</li>
-     * <li>assign identifiers</li>
-     * <li>check for conflicts</li>
+     * <li>validate that caller-managed data does not include store-managed ids</li>
+     * <li>assign deterministic annotation and segment hashes</li>
+     * <li>check the generated annotation and segment ids for conflicts</li>
      * </ol>
      *
      * @param annotation
-     *            the annotation to prepare for addition
-     * @return the prepared annotation/segments that should be written.
+     *            the annotation to prepare
+     * @return the annotation that should be serialized and written
      * @throws AnnotationWriteException
-     *             if there's an issue encountered when preparing and the annotation should not be written as a result.
+     *             if validation or conflict checks fail
      */
     protected Annotation prepareAnnotationForAdd(Annotation annotation) {
         validateAnnotationForAdd(annotation);
@@ -549,13 +600,15 @@ public class AnnotationDataAccess {
     }
 
     /**
-     * Validate the basic structure of the provided annotation. This will error if the datastructures already have an id assigned because we don't want folks to
-     * assume they can assign their own ids to new annotations, that is the job of the data access object.
+     * Validates annotation data before this implementation assigns annotation and segment hashes.
+     * <p>
+     * Callers are not allowed to provide annotation or segment ids for a new annotation because those are store-managed identifiers derived by
+     * {@link AnnotationUtils#injectAllHashes(Annotation)}.
      *
      * @param annotation
      *            the annotation to validate
      * @throws AnnotationWriteException
-     *             if there's a validation failure.
+     *             if the annotation already has an annotation id or any segment already has a segment hash
      */
     protected void validateAnnotationForAdd(Annotation annotation) {
         if (StringUtils.isNotBlank(annotation.getAnnotationId())) {
@@ -570,17 +623,18 @@ public class AnnotationDataAccess {
     }
 
     /**
-     * Check the annotation for conflicts
+     * Checks whether a prepared annotation can be written.
      * <ol>
-     * <li>annotation id is assigned</li>
-     * <li>all segment ids are assigned and there are no duplicates</li>
-     * <li>optional: no annotation exists with the same id if overwrites are disabled</li>
+     * <li>the generated annotation id must be present</li>
+     * <li>every segment must have a generated id</li>
+     * <li>segment ids must be unique within the annotation</li>
+     * <li>when overwrite blocking is enabled, no visible annotation may already exist for the same document and annotation id</li>
      * </ol>
      *
      * @param annotation
-     *            the annotation to check
+     *            the prepared annotation to check
      * @throws AnnotationWriteException
-     *             if a check fails.
+     *             if ids are missing, duplicate segment ids are found, or a blocked annotation conflict is found
      */
     protected void checkAnnotationForConflicts(Annotation annotation) {
         // check that the annotation has an id assigned.
@@ -611,11 +665,14 @@ public class AnnotationDataAccess {
     }
 
     /**
-     * The annotation type is always stored in the last slot of the column family, extract all the types found in the iterator to a set.
+     * Extracts distinct annotation types from Accumulo entries.
+     * <p>
+     * Annotation column families are encoded as {@code datatype\0uid\0annotationType}; this method returns the component after the last {@link #NULL} delimiter
+     * for each entry. Results are returned in natural order.
      *
      * @param it
-     *            the iterator to process for input.
-     * @return a list of distinct annotation types.
+     *            the Accumulo entry iterator to inspect
+     * @return distinct annotation types found in the iterator, never {@code null}
      */
     public static Collection<String> extractTypesFromIterator(Iterator<Map.Entry<Key,Value>> it) {
         final Set<String> annotationTypes = new TreeSet<>();
@@ -630,13 +687,16 @@ public class AnnotationDataAccess {
     }
 
     /**
-     * Extract the data referenced by the interator into a collection of Annotation objects.
+     * Groups Accumulo entries by annotation id and deserializes each group into an annotation.
+     * <p>
+     * This method expects entries to be ordered so all key/value pairs for a given annotation id are contiguous. The annotation id is read from the first
+     * component of the column qualifier before the first {@link #NULL} delimiter. Each completed group is passed to the configured annotation serializer.
      *
      * @param it
-     *            the iterator to process for input
-     * @return a list of zero to many Annotations extracted from the iterator. Never null.
+     *            the Accumulo entry iterator to process
+     * @return annotations deserialized from the iterator, never {@code null}
      * @throws AnnotationSerializationException
-     *             if there is a problem deserializing any portions of the Accumulo entries.
+     *             if any grouped annotation entries cannot be deserialized
      */
     public List<Annotation> extractAnnotationsFromIterator(Iterator<Map.Entry<Key,Value>> it) throws AnnotationSerializationException {
         final List<Map.Entry<Key,Value>> buffer = new ArrayList<>();
