@@ -700,7 +700,7 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
                         // ACCUMULO4_TODO this could be converted to use accumulo's public API for reading rfiles
                         CryptoService cs = CryptoFactoryLoader.getServiceForClient(CryptoEnvironment.Scope.TABLE,
                                         context.getConfiguration().getPropsWithPrefix(TABLE_CRYPTO_PREFIX.name()));
-                        FileSKVIterator openReader = fops.newReaderBuilder().forFile(UnreferencedTabletFile.of(fs,path), fs, conf, cs)
+                        FileSKVIterator openReader = fops.newReaderBuilder().forFile(UnreferencedTabletFile.of(fs, path), fs, conf, cs)
                                         .withTableConfiguration(tableConfigs.get(table)).build();
                         FileStatus fileStatus = fs.getFileStatus(path);
                         long fileSize = fileStatus.getLen();
