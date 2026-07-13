@@ -168,6 +168,26 @@ public class LimitFieldsTest {
         assertNoOriginalCount("FIELD_B");
     }
 
+    /**
+     * A HIT_TERM may carry a null source, for example when the underlying hit tuple has no source attribute (see JexlEvaluation, which handles a null
+     * hit-tuple source and still emits the Content). Such a hit term cannot participate in exact value matching, but its field name must still drive
+     * group-based retention so that every field in the same group instance is kept. Here NAME.PERSON.1 and AGE.PERSON.1 share group instance PERSON.1 and a
+     * single null-source hit term is present for AGE.PERSON.1, so both grouped fields must be retained even though neither is an exact value match.
+     */
+    @Test
+    public void testDoNotLimitGroupedFieldsWithNullSourceHitTerm() {
+        createGroupedEvent("NAME.PERSON.1", "sam");
+        createGroupedEvent("AGE.PERSON.1", "10");
+        withLimit("NAME", -1);
+        withLimit("AGE", -1);
+        withNullSourceHitTerm("AGE.PERSON.1", "10");
+        drive();
+        assertFieldCount("NAME.PERSON.1", 1);
+        assertFieldCount("AGE.PERSON.1", 1);
+        assertNoOriginalCount("NAME");
+        assertNoOriginalCount("AGE");
+    }
+
     @Test
     public void testContextBuild() {
         Key docKey = new Key("shard", "datatype\0uid");
@@ -188,10 +208,10 @@ public class LimitFieldsTest {
         assertEquals(2, context.getGroupAndInstanceSet().size());
 
         assertTrue(context.containsFieldWithGrouping("FIELD_1.FIELD.5.3"));
-        assertTrue(context.hasGroupAndInstance(FieldName.parse("FOO_3.FIELD.7.3").getGroupAndInstance()));
-        assertTrue(context.hasGroupAndInstance(FieldName.parse("VAL_2.BAR.6.3").getGroupAndInstance()));
-        assertTrue(context.hasGroupAndInstance(FieldName.parse("VAL_2.BAR.7.3").getGroupAndInstance()));
-        assertTrue(context.hasGroupAndInstance(FieldName.parse("VAL_1.BAR.7.3").getGroupAndInstance()));
+        assertTrue(context.hasGroupAndInstance(FieldName.of("FOO_3.FIELD.7.3").getGroupAndInstance()));
+        assertTrue(context.hasGroupAndInstance(FieldName.of("VAL_2.BAR.6.3").getGroupAndInstance()));
+        assertTrue(context.hasGroupAndInstance(FieldName.of("VAL_2.BAR.7.3").getGroupAndInstance()));
+        assertTrue(context.hasGroupAndInstance(FieldName.of("VAL_1.BAR.7.3").getGroupAndInstance()));
         assertEquals(Set.of(attr1, attr2, attr3, attr4), Set.copyOf(context.getHitTermAttributes()));
     }
 
@@ -239,6 +259,10 @@ public class LimitFieldsTest {
         document.put("HIT_TERM", new Content(field + ":" + value, key, true, source));
     }
 
+    private void withNullSourceHitTerm(String field, String value) {
+        document.put("HIT_TERM", new Content(field + ":" + value, key, true, null));
+    }
+
     private void createEvent(String field, String value) {
         createEvent(field, value, true);
     }
@@ -253,6 +277,12 @@ public class LimitFieldsTest {
 
     private void createEvent(String field, String value, Key key, boolean toKeep) {
         document.put(field, getAttributeFactory().create(field, value, key, toKeep));
+    }
+
+    private void createGroupedEvent(String field, String value) {
+        // Preserve the grouping context in the document key (put with includeGroupingContext=true); the default put deconstructs
+        // the identifier and would strip the group and instance, collapsing e.g. NAME.PERSON.1 down to NAME.
+        document.put(field, getAttributeFactory().create(field, value, key, true), true);
     }
 
     private void createIndex(String field, String value) {

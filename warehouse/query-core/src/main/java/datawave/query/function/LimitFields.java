@@ -22,6 +22,8 @@ import datawave.query.attributes.Numeric;
 import datawave.query.attributes.PreNormalizedAttribute;
 import datawave.query.attributes.TypeAttribute;
 
+import static datawave.query.Constants.COLON;
+
 /**
  * <p>
  * LimitFields will reduce the attributes in a document given the limits specified for fields. Attributes that are in the set of hits for a document will never
@@ -58,8 +60,6 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
     private static final Logger log = LoggerFactory.getLogger(LimitFields.class);
 
     public static final String ORIGINAL_COUNT_SUFFIX = "_ORIGINAL_COUNT";
-
-    private static final String COLON = ":";
 
     // A map of fields and the number of values to limit the fields by.
     private final Map<String,Integer> limitFieldsMap;
@@ -109,8 +109,8 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
 
         // first pass is to set all of the hits to be kept, the misses to drop, and count em all
         for (Map.Entry<String,Attribute<? extends Comparable<?>>> de : document.entrySet()) {
-            String keyWithGrouping = de.getKey();
-            String keyNoGrouping = removeGrouping(keyWithGrouping);
+            FieldName fieldName = FieldName.of(de.getKey());
+            String keyNoGrouping = fieldName.getBaseName();
 
             // if there is an _ANYFIELD_ entry in the limitFieldsMap, then insert every key that is not yet in the map, using the
             // limit value for _ANYFIELD_
@@ -123,27 +123,26 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
 
             if (isLimited(keyNoGrouping)) { // look for the key without the grouping context
                 log.trace("limitFieldsMap contains {}", keyNoGrouping);
-                FieldName fieldName = FieldName.parse(keyWithGrouping);
                 Attribute<?> attr = de.getValue();
                 if (attr instanceof Attributes) {
                     Attributes attrs = (Attributes) attr;
                     Set<Attribute<? extends Comparable<?>>> attrSet = attrs.getAttributes();
                     for (Attribute<? extends Comparable<?>> value : attrSet) {
-                        evaluateForHit(tracker, hitTermContext, fieldName, keyNoGrouping, value);
+                        evaluateForHit(tracker, hitTermContext, fieldName, value);
                     }
                 } else {
-                    evaluateForHit(tracker, hitTermContext, fieldName, keyNoGrouping, attr);
+                    evaluateForHit(tracker, hitTermContext, fieldName, attr);
                 }
             }
         }
     }
 
     /**
-     * Return a hit term map constructed from the document's {@value JexlEvaluation#HIT_TERM_FIELD} entry.
+     * Return a hit term context constructed from the document's {@value JexlEvaluation#HIT_TERM_FIELD} entry.
      *
      * @param document
      *            the document
-     * @return the hit term map
+     * @return the hit term context
      */
     private HitTermContext getHitTermContext(Document document) {
         HitTermContext.Builder builder = new HitTermContext.Builder();
@@ -169,9 +168,9 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
                 // split the content into its fieldname:value
                 String contentString = content.getContent();
                 String fieldName = contentString.substring(0, contentString.indexOf(COLON));
-                if (content.getSource() != null) {
-                    builder.putHitField(fieldName, content.getSource());
-                }
+                // Always register the field name so it drives the empty check and group-based retention. The source may be
+                // null (see JexlEvaluation), in which case the builder records only the field name and not a value-match candidate.
+                builder.putHitField(fieldName, content.getSource());
             }
         }
     }
@@ -185,22 +184,20 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
      * @param hitTermContext
      *            the hit term context
      * @param fieldName
-     *            the parsed field name
-     * @param keyNoGrouping
-     *            the key without the grouping context
+     *            the field name
      * @param value
      *            the attribute
      */
-    private void evaluateForHit(LimitFieldsTracker tracker, HitTermContext hitTermContext, FieldName fieldName, String keyNoGrouping,
-                                Attribute<? extends Comparable<?>> value) {
+    private void evaluateForHit(LimitFieldsTracker tracker, HitTermContext hitTermContext, FieldName fieldName, Attribute<? extends Comparable<?>> value) {
+        String keyNoGrouping = fieldName.getBaseName();
         if (isHit(fieldName, value, hitTermContext)) {
             tracker.incrementHit(keyNoGrouping);
-            tracker.addHit(keyNoGrouping, value);
+            tracker.addHit(fieldName, value);
         } else {
             value.setToKeep(false);
             tracker.incrementNonHit(keyNoGrouping);
             tracker.incrementAttributesToDrop();
-            tracker.addPotential(keyNoGrouping, fieldName.getName(), value);
+            tracker.addPotential(fieldName, value);
         }
         tracker.incrementFieldCount(keyNoGrouping);
     }
@@ -246,14 +243,13 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
         tracker.processMatches();
         if (tracker.hasMatches()) {
             for (Map.Entry<String,Attribute<? extends Comparable<?>>> de : document.entrySet()) {
-                String keyWithGrouping = de.getKey();
-                String keyNoGrouping = removeGrouping(keyWithGrouping);
+                FieldName fieldName = FieldName.of(de.getKey());
 
                 // if this was a limited field
-                if (isLimited(keyNoGrouping)) {
+                if (isLimited(fieldName.getBaseName())) {
 
                     // if we have matching group
-                    if (tracker.isMatchingGroup(keyWithGrouping)) {
+                    if (tracker.isMatchingGroup(fieldName)) {
                         Attribute<?> attr = de.getValue();
                         if (attr instanceof Attributes) {
                             Attributes attrs = (Attributes) attr;
@@ -262,13 +258,13 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
                             for (Attribute<? extends Comparable<?>> value : attrSet) {
                                 // if this was an attribute previously set to not keep, then it is one of the misses (not a hit)
                                 if (!value.isToKeep()) {
-                                    markNonHitAsHit(keyNoGrouping, tracker, value);
+                                    markNonHitAsHit(fieldName, tracker, value);
                                 }
                             }
                         } else {
                             // if this was an attribute previously set to not keep, then it is one of the misses (not a hit)
                             if (!attr.isToKeep()) {
-                                markNonHitAsHit(keyNoGrouping, tracker, attr);
+                                markNonHitAsHit(fieldName, tracker, attr);
                             }
                         }
                     }
@@ -288,8 +284,8 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
     private void retainNonHitsUpToLimit(Document document, LimitFieldsTracker tracker) {
         // Third pass is to set any misses back to be kept if the limit allows
         for (Map.Entry<String,Attribute<? extends Comparable<?>>> de : document.entrySet()) {
-            String keyWithGrouping = de.getKey();
-            String keyNoGrouping = removeGrouping(keyWithGrouping);
+            FieldName fieldName = FieldName.of(de.getKey());
+            String keyNoGrouping = fieldName.getBaseName();
 
             // Look for the key without the grouping context
             if (isLimited(keyNoGrouping)) {
@@ -314,7 +310,7 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
                         for (Attribute<? extends Comparable<?>> value : attrSet) {
                             // if this was an attribute previously set to not keep, then it is one of the misses (not a hit)
                             if (!value.isToKeep()) {
-                                markNonHitAsHit(keyNoGrouping, tracker, value);
+                                markNonHitAsHit(fieldName, tracker, value);
                                 missesToSet--;
                                 if (missesToSet == 0) {
                                     break;
@@ -324,7 +320,7 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
                     } else {
                         // if this was an attribute previously set to not keep, then it is one of the misses (not a hit)
                         if (!attr.isToKeep()) {
-                            markNonHitAsHit(keyNoGrouping, tracker, attr);
+                            markNonHitAsHit(fieldName, tracker, attr);
                         }
                     }
                 }
@@ -333,35 +329,19 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
     }
 
     /**
-     * Return the given key without its grouping context.
-     *
-     * @param key
-     *            the key
-     * @return the key stripped of its grouping context
-     */
-    private String removeGrouping(String key) {
-        // if we have grouping context on, remove the grouping context
-        int index = key.indexOf('.');
-        if (index != -1) {
-            key = key.substring(0, index);
-        }
-        return key;
-    }
-
-    /**
      * Mark the given attribute as to keep, and move a non-hit to a hit in the tracker.
      *
-     * @param keyNoGrouping
-     *            the key without grouping context
+     * @param fieldName
+     *            the field name
      * @param tracker
      *            the tracker
      * @param attribute
      *            the attribute
      */
-    private void markNonHitAsHit(String keyNoGrouping, LimitFieldsTracker tracker, Attribute<?> attribute) {
+    private void markNonHitAsHit(FieldName fieldName, LimitFieldsTracker tracker, Attribute<?> attribute) {
         attribute.setToKeep(true);
-        tracker.incrementHit(keyNoGrouping);
-        tracker.decrementNonHit(keyNoGrouping);
+        tracker.incrementHit(fieldName.getBaseName());
+        tracker.decrementNonHit(fieldName.getBaseName());
         tracker.decrementAttributesToDrop();
     }
 
@@ -537,16 +517,29 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
                 this.hitTermSourceAttributes = new HashSet<>();
             }
 
+            /**
+             * Register a hit-term field with the builder. The field name is always recorded so that it contributes to the empty check and to group-based
+             * retention. The source attribute is only recorded as a value-match candidate when it is non-null; a null source still registers its field name
+             * for group-based retention but never participates in exact value matching (and must be excluded to avoid a null in the source-attribute set).
+             *
+             * @param fieldName
+             *            the hit-term field name, including any grouping context
+             * @param sourceAttribute
+             *            the source attribute backing the hit term, or null when the hit term has no source
+             * @return this builder
+             */
             HitTermContext.Builder putHitField(String fieldName, Attribute<?> sourceAttribute) {
                 hitTermFields.add(fieldName);
-                hitTermSourceAttributes.add(sourceAttribute);
+                if (sourceAttribute != null) {
+                    hitTermSourceAttributes.add(sourceAttribute);
+                }
                 return this;
             }
 
             HitTermContext build() {
                 Set<FieldName.GroupAndInstance> groupSet = new HashSet<>(hitTermFields.size());
                 for (String field : hitTermFields) {
-                    FieldName fieldName = FieldName.parse(field);
+                    FieldName fieldName = FieldName.of(field);
                     if (fieldName.isGrouped()) {
                         groupSet.add(fieldName.getGroupAndInstance());
                     }
