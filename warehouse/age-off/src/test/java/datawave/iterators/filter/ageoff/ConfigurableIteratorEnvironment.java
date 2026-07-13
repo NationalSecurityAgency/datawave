@@ -1,20 +1,14 @@
 package datawave.iterators.filter.ageoff;
 
-import java.io.IOException;
-
 import org.apache.accumulo.core.client.PluginEnvironment;
 import org.apache.accumulo.core.client.SampleNotPresentException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.sample.SamplerConfiguration;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
-import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.TableId;
-import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.IteratorUtil;
-import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.accumulo.core.spi.common.ServiceEnvironment;
 import org.apache.accumulo.core.util.ConfigurationImpl;
 import org.apache.commons.lang.NotImplementedException;
 
@@ -43,29 +37,18 @@ public class ConfigurableIteratorEnvironment implements IteratorEnvironment {
     }
 
     @Override
-    public SortedKeyValueIterator<Key,Value> reserveMapFileReader(String s) throws IOException {
-        return null;
-    }
-
-    @Override
-    public AccumuloConfiguration getConfig() {
-        return conf;
-    }
-
-    @Override
     public TableId getTableId() {
         throw new NotImplementedException();
     }
 
     @Override
-    public IteratorUtil.IteratorScope getIteratorScope() {
-        return scope;
+    public boolean isRunningLowOnMemory() {
+        return false;
     }
 
     @Override
-    @Deprecated
-    public ServiceEnvironment getServiceEnv() {
-        return null;
+    public IteratorUtil.IteratorScope getIteratorScope() {
+        return scope;
     }
 
     @Override
@@ -75,11 +58,6 @@ public class ConfigurableIteratorEnvironment implements IteratorEnvironment {
 
     @Override
     public boolean isUserCompaction() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void registerSideChannel(SortedKeyValueIterator<Key,Value> sortedKeyValueIterator) {
         throw new UnsupportedOperationException();
     }
 
@@ -123,12 +101,12 @@ public class ConfigurableIteratorEnvironment implements IteratorEnvironment {
             }
 
             @Override
-            public <T> T instantiate(String s, Class<T> aClass) throws Exception {
+            public <T> T instantiate(String s, Class<T> aClass) throws ReflectiveOperationException {
                 return null;
             }
 
             @Override
-            public <T> T instantiate(TableId tableId, String s, Class<T> aClass) throws Exception {
+            public <T> T instantiate(TableId tableId, String s, Class<T> aClass) throws ReflectiveOperationException {
                 return null;
             }
         };
