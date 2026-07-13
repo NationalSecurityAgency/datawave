@@ -69,6 +69,17 @@ public class IngestMetadataTest {
     }
 
     @Test
+    public void testDefaultNumDays() {
+        List<MetadataColumn> metadataColumns = List.of(I, E);
+        List<Type<?>> normalizers = List.of(new LcNoDiacriticsType());
+
+        IngestMetadata metadata = IngestMetadataBuilder.builder().setMetadataColumns(metadataColumns).addNormalizers(normalizers).enableAlphabeticFields()
+                        .build();
+
+        assertEquals(IngestMetadata.DEFAULT_NUM_DAYS, metadata.getNumDays());
+    }
+
+    @Test
     public void testSimpleCreate() {
         List<MetadataColumn> metadataColumns = List.of(I, E);
         List<Type<?>> normalizers = List.of(new LcNoDiacriticsType());

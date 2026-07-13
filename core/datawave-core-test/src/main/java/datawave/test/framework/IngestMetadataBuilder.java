@@ -16,6 +16,7 @@ public class IngestMetadataBuilder {
     private boolean alphabeticFieldsEnabled = false;
     private boolean numericFieldsEnabled = false;
     private int numShards = IngestMetadata.DEFAULT_NUM_SHARDS;
+    private int numDays = IngestMetadata.DEFAULT_NUM_DAYS;
     private final List<MetadataColumn> metadataColumns = new ArrayList<>();
     private final List<Type<?>> normalizers = new ArrayList<>();
 
@@ -63,10 +64,16 @@ public class IngestMetadataBuilder {
         return this;
     }
 
+    public IngestMetadataBuilder setNumDays(int numDays) {
+        Preconditions.checkArgument(numDays > 0, "numDays must be greater than 0");
+        this.numDays = numDays;
+        return this;
+    }
+
     public IngestMetadata build() {
         Preconditions.checkState(!metadataColumns.isEmpty(), "metadataColumns must be set");
         Preconditions.checkState(!normalizers.isEmpty(), "normalizers must be set");
         Preconditions.checkState(alphabeticFieldsEnabled || numericFieldsEnabled, "alphabetic or numeric fields must be enabled");
-        return new IngestMetadata(metadataColumns, normalizers, alphabeticFieldsEnabled, numericFieldsEnabled, numShards);
+        return new IngestMetadata(metadataColumns, normalizers, alphabeticFieldsEnabled, numericFieldsEnabled, numShards, numDays);
     }
 }

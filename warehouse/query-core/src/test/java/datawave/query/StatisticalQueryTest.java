@@ -99,7 +99,7 @@ public class StatisticalQueryTest extends AbstractQueryTest {
         // need to create and configure tables
         TableCreator.createTables(client);
 
-        TableWriter.write(client, fieldMetadata, metadata.getNumShards());
+        TableWriter.write(client, fieldMetadata, metadata.getNumShards(), metadata.getNumDays());
 
         client.securityOperations().changeUserAuthorizations("root", auths);
 

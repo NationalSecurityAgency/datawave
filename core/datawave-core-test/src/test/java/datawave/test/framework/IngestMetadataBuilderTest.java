@@ -99,6 +99,37 @@ public class IngestMetadataBuilderTest {
     }
 
     @Test
+    public void testInvalidNumDays() {
+        List<MetadataColumn> metadataColumns = List.of(I, E);
+        List<Type<?>> normalizers = List.of(new LcNoDiacriticsType());
+
+        Exception e1 = assertThrows(IllegalArgumentException.class, () -> IngestMetadataBuilder.builder().setMetadataColumns(metadataColumns)
+                        .addNormalizers(normalizers).enableAlphabeticFields().setNumDays(0).build());
+        assertEquals("numDays must be greater than 0", e1.getMessage());
+
+        Exception e2 = assertThrows(IllegalArgumentException.class, () -> IngestMetadataBuilder.builder().setMetadataColumns(metadataColumns)
+                        .addNormalizers(normalizers).enableAlphabeticFields().setNumDays(-1).build());
+        assertEquals("numDays must be greater than 0", e2.getMessage());
+    }
+
+    @Test
+    public void testCustomNumDays() {
+        List<MetadataColumn> metadataColumns = List.of(I, E);
+        List<Type<?>> normalizers = List.of(new LcNoDiacriticsType());
+
+        //  @formatter:off
+        IngestMetadata metadata = IngestMetadataBuilder.builder()
+                .setMetadataColumns(metadataColumns)
+                .addNormalizers(normalizers)
+                .enableAlphabeticFields()
+                .setNumDays(3)
+                .build();
+        //  @formatter:on
+
+        assertEquals(3, metadata.getNumDays());
+    }
+
+    @Test
     public void testValidBuild() {
         List<MetadataColumn> metadataColumns = List.of(I, E);
         List<Type<?>> normalizers = List.of(new LcNoDiacriticsType());

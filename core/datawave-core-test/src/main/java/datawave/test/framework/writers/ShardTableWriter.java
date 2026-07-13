@@ -1,7 +1,5 @@
 package datawave.test.framework.writers;
 
-import static datawave.test.framework.writers.TableWriter.TIMESTAMP;
-
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,19 +28,19 @@ public class ShardTableWriter {
         // enforce static access
     }
 
-    public static void write(AccumuloClient client, List<FieldMetadata> fields, int numShards) {
+    public static void write(AccumuloClient client, List<FieldMetadata> fields, int numShards, int numDays) {
         try (BatchWriter bw = client.createBatchWriter(TableName.SHARD)) {
             for (FieldMetadata field : fields) {
                 for (MetadataColumn col : field.getMetadataColumns()) {
                     switch (col) {
                         case I:
-                            createFieldIndexColumn(bw, field, numShards);
+                            createFieldIndexColumn(bw, field, numShards, numDays);
                             break;
                         case E:
-                            createEventColumn(bw, field, numShards);
+                            createEventColumn(bw, field, numShards, numDays);
                             break;
                         case TF:
-                            createTermFrequencyColumn(bw, field, numShards);
+                            createTermFrequencyColumn(bw, field, numShards, numDays);
                             break;
                         case RI:
                         case T:
@@ -58,13 +56,14 @@ public class ShardTableWriter {
         }
     }
 
-    private static void createFieldIndexColumn(BatchWriter bw, FieldMetadata field, int numShards) {
+    private static void createFieldIndexColumn(BatchWriter bw, FieldMetadata field, int numShards, int numDays) {
         // row fi<null>FIELD : value<null>datatype<null>uid VIZ
         String cf = "fi\0" + field.getFieldName();
         Map<String,Mutation> mutationsByRow = new LinkedHashMap<>();
         for (String datatype : field.getDatatypes()) {
             for (int eventId : field.getEventIds()) {
-                String row = ShardKeyUtil.buildRow(eventId, numShards);
+                String row = ShardKeyUtil.buildRow(eventId, numShards, numDays);
+                long timestamp = ShardKeyUtil.buildTimestamp(eventId, numShards, numDays);
                 Mutation m = mutationsByRow.computeIfAbsent(row, Mutation::new);
 
                 String value = field.getValueForEventId(eventId);
@@ -74,7 +73,7 @@ public class ShardTableWriter {
 
                     // TODO: viz
                     String cq = normalizedValue + "\0" + datatype + "\0" + uid;
-                    Key key = new Key(row, cf, cq, "ALL", TIMESTAMP);
+                    Key key = new Key(row, cf, cq, "ALL", timestamp);
                     m.put(key.getColumnFamily(), key.getColumnQualifier(), key.getColumnVisibilityParsed(), key.getTimestamp(), EMPTY_VALUE);
 
                     if (field.isContentField()) {
@@ -82,7 +81,7 @@ public class ShardTableWriter {
                         for (String token : value.split(" ")) {
                             String normalizedToken = normalizer.normalize(token);
                             String tokenCq = normalizedToken + "\0" + datatype + "\0" + uid;
-                            Key tokenKey = new Key(row, cf, tokenCq, "ALL", TIMESTAMP);
+                            Key tokenKey = new Key(row, cf, tokenCq, "ALL", timestamp);
                             m.put(tokenKey.getColumnFamily(), tokenKey.getColumnQualifier(), tokenKey.getColumnVisibilityParsed(), tokenKey.getTimestamp(),
                                             EMPTY_VALUE);
                         }
@@ -100,12 +99,13 @@ public class ShardTableWriter {
         }
     }
 
-    private static void createEventColumn(BatchWriter bw, FieldMetadata field, int numShards) {
+    private static void createEventColumn(BatchWriter bw, FieldMetadata field, int numShards, int numDays) {
         // row dt<null>uid : FIELD<null>value
         Map<String,Mutation> mutationsByRow = new LinkedHashMap<>();
         for (String datatype : field.getDatatypes()) {
             for (int eventId : field.getEventIds()) {
-                String row = ShardKeyUtil.buildRow(eventId, numShards);
+                String row = ShardKeyUtil.buildRow(eventId, numShards, numDays);
+                long timestamp = ShardKeyUtil.buildTimestamp(eventId, numShards, numDays);
                 Mutation m = mutationsByRow.computeIfAbsent(row, Mutation::new);
 
                 String uid = UidGenerator.uid(String.valueOf(eventId));
@@ -113,7 +113,7 @@ public class ShardTableWriter {
 
                 String value = field.getValueForEventId(eventId);
                 String cq = field.getFieldName() + "\0" + value;
-                Key key = new Key(row, cf, cq, "ALL", TIMESTAMP);
+                Key key = new Key(row, cf, cq, "ALL", timestamp);
                 m.put(key.getColumnFamily(), key.getColumnQualifier(), key.getColumnVisibilityParsed(), key.getTimestamp(), EMPTY_VALUE);
             }
         }
@@ -126,7 +126,7 @@ public class ShardTableWriter {
         }
     }
 
-    private static void createTermFrequencyColumn(BatchWriter bw, FieldMetadata field, int numShards) {
+    private static void createTermFrequencyColumn(BatchWriter bw, FieldMetadata field, int numShards, int numDays) {
         // row shard : tf : datatype<null>uid<null>normalizedToken<null>FIELD : TermWeight.Info(termOffset)
         // field.isContentField() is guaranteed true here (the TF column is only dispatched for content fields), and its value is a space-joined phrase
         // normalized with LcNoDiacriticsType (see IngestMetadata's TF/normalizer skip rule).
@@ -134,7 +134,8 @@ public class ShardTableWriter {
         Map<String,Mutation> mutationsByRow = new LinkedHashMap<>();
         for (String datatype : field.getDatatypes()) {
             for (int eventId : field.getEventIds()) {
-                String row = ShardKeyUtil.buildRow(eventId, numShards);
+                String row = ShardKeyUtil.buildRow(eventId, numShards, numDays);
+                long timestamp = ShardKeyUtil.buildTimestamp(eventId, numShards, numDays);
                 Mutation m = mutationsByRow.computeIfAbsent(row, Mutation::new);
 
                 String value = field.getValueForEventId(eventId);
@@ -145,7 +146,7 @@ public class ShardTableWriter {
                     String cq = datatype + "\0" + uid + "\0" + normalizedToken + "\0" + field.getFieldName();
                     TermWeight.Info info = TermWeight.Info.newBuilder().addTermOffset(position).build();
                     Value tfValue = new Value(info.toByteArray());
-                    Key key = new Key(row, "tf", cq, "ALL", TIMESTAMP);
+                    Key key = new Key(row, "tf", cq, "ALL", timestamp);
                     m.put(key.getColumnFamily(), key.getColumnQualifier(), key.getColumnVisibilityParsed(), key.getTimestamp(), tfValue);
                 }
             }

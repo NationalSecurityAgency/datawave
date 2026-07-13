@@ -45,6 +45,7 @@ public class IngestMetadata {
     private static final int DEFAULT_EVENT_COUNT = 25;
     private static final int DEFAULT_VALUES_PER_FIELD = 2;
     public static final int DEFAULT_NUM_SHARDS = 10;
+    public static final int DEFAULT_NUM_DAYS = 1;
 
     /**
      * The field name of the synthetic, per-event unique identifier field. Callers that need to build queries against it should use
@@ -55,6 +56,7 @@ public class IngestMetadata {
     private final boolean alphabeticFieldsEnabled;
     private final boolean numericFieldsEnabled;
     private final int numShards;
+    private final int numDays;
     private final List<MetadataColumn> baseMetadataColumns;
     private final List<String> baseDatatypes = List.of("datatype-a");
     private final List<Type<?>> baseNormalizers;
@@ -78,15 +80,18 @@ public class IngestMetadata {
      * @param numericFieldsEnabled
      *            flag that enables numeric fields
      * @param numShards
-     *            the number of shards to distribute events across
+     *            the number of shards per day to distribute events across
+     * @param numDays
+     *            the number of days to distribute events across
      */
     public IngestMetadata(List<MetadataColumn> baseMetadataColumns, List<Type<?>> baseNormalizers, boolean alphabeticFieldsEnabled,
-                    boolean numericFieldsEnabled, int numShards) {
+                    boolean numericFieldsEnabled, int numShards, int numDays) {
         this.baseMetadataColumns = baseMetadataColumns;
         this.baseNormalizers = baseNormalizers;
         this.alphabeticFieldsEnabled = alphabeticFieldsEnabled;
         this.numericFieldsEnabled = numericFieldsEnabled;
         this.numShards = numShards;
+        this.numDays = numDays;
     }
 
     /**
@@ -349,5 +354,9 @@ public class IngestMetadata {
 
     public int getNumShards() {
         return numShards;
+    }
+
+    public int getNumDays() {
+        return numDays;
     }
 }

@@ -28,7 +28,7 @@ Core components include:
 - value generators (string, number, etc)
 
 #### Misc. Features
-- events are sharded deterministically via the event id 
+- events are sharded and assigned a day deterministically via the event id (see `ShardKeyUtil`)
 
 #### FieldMetadata
 
@@ -41,7 +41,6 @@ which event ids should be returned for a given query.
 - additional Normalizers — only `LcNoDiacriticsType` and `NumberType` are supported today; `IpAddressType` and `DateType` are explicitly rejected (`IngestMetadata.getValueGeneratorForType` throws), and Geo/Point/Hex/List normalizers aren't attempted. Each addition needs a matching `ValueGenerator` that produces values compatible with the normalizer.
 - Datatypes — every field is written under a single hardcoded datatype (`"datatype-a"`, `IngestMetadata.baseDatatypes`); no field or event varies its datatype. Supporting multiple datatypes would let tests exercise datatype-scoped queries and same-field-different-type collisions.
 - Visibilities — every key is written with a single hardcoded visibility (`"ALL"`; see the `// TODO: viz` markers in `ShardTableWriter`). Needs a visibility generator/config so tests can exercise column-visibility filtering and auth combinations.
-- Timestamps — every key uses one fixed timestamp (`TableWriter.TIMESTAMP`, derived from a single hardcoded date). Needs support for varying timestamps/dates per event so date-range and age-off-style queries can be exercised.
 - additional QueryTerms — `EqTerm`, `NeTerm`, `IsNullTerm`, `IsNotNullTerm`, and `PhraseTerm` (`content:phrase`) exist today. Still missing: regex and range terms (see below), plus terms for the remaining content functions (`content:within`, `content:adjacent`, `content:scoredPhrase`).
 - Regex — no `QueryTerm` exists for regex-style matching (e.g. `FIELD =~ 'pattern'`); would need a generator that derives a pattern guaranteed to match a field's known values.
 - Range — no `QueryTerm` exists for bounded range queries (e.g. `FIELD > 'a' && FIELD < 'z'`); needs a generator that can compute the expected event ids for an arbitrary bound against a field's normalized values, most naturally paired with the `NumberType` normalizer.
