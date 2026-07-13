@@ -145,7 +145,7 @@ public class AnnotationHelper {
             annotationTableNames[tableNames.length] = this.annotationTableName;
             annotationTableNames[tableNames.length + 1] = this.annotationSourceTableName;
             annotationTableNames[tableNames.length + 2] = this.truthmarkTableName;
-            annotationTableNames[tableNames.length + 4] = this.truthmarkSourceTableName;
+            annotationTableNames[tableNames.length + 3] = this.truthmarkSourceTableName;
             return annotationTableNames;
         }
     }
@@ -158,14 +158,15 @@ public class AnnotationHelper {
      */
     public int[] getAnnotationTableLoaderPriorities(int[] tableLoaderPriorities) {
         if (tableLoaderPriorities == null || tableLoaderPriorities.length == 0) {
-            return new int[] {this.annotationTableLoaderPriority, this.annotationSourceTableLoaderPriority, this.truthmarkTableLoaderPriority, this.truthmarkSourceTableLoaderPriority};
+            return new int[] {this.annotationTableLoaderPriority, this.annotationSourceTableLoaderPriority, this.truthmarkTableLoaderPriority,
+                    this.truthmarkSourceTableLoaderPriority};
         } else {
             int[] annotationTableLoaderPriorities = new int[tableLoaderPriorities.length + 4];
             System.arraycopy(tableLoaderPriorities, 0, annotationTableLoaderPriorities, 0, tableLoaderPriorities.length);
             annotationTableLoaderPriorities[tableLoaderPriorities.length] = this.annotationTableLoaderPriority;
             annotationTableLoaderPriorities[tableLoaderPriorities.length + 1] = this.annotationSourceTableLoaderPriority;
             annotationTableLoaderPriorities[tableLoaderPriorities.length + 2] = this.truthmarkTableLoaderPriority;
-            annotationTableLoaderPriorities[tableLoaderPriorities.length + 4] = this.truthmarkSourceTableLoaderPriority;
+            annotationTableLoaderPriorities[tableLoaderPriorities.length + 3] = this.truthmarkSourceTableLoaderPriority;
 
             return annotationTableLoaderPriorities;
         }

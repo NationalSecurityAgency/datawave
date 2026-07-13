@@ -46,7 +46,8 @@ public class AnnotationConfig implements Serializable {
     @Override
     public int hashCode() {
         // formatter:off
-        return Objects.hash(getAnnotationTableName(), getAnnotationSourceTableName(), getTruthmarkTableName(), getTruthmarkSourceTableName(), getVisibilityTransformer(), getTimestampTransformer());
+        return Objects.hash(getAnnotationTableName(), getAnnotationSourceTableName(), getTruthmarkTableName(), getTruthmarkSourceTableName(),
+                        getVisibilityTransformer(), getTimestampTransformer());
         // formatter:on
     }
 
