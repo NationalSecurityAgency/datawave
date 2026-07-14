@@ -1,22 +1,21 @@
-package datawave.query.tld;
+package datawave.table.util;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import datawave.query.Constants;
+import datawave.table.constants.QueryConstants;
 
 /**
  * Unit test for {@link TLD}.
  */
-@Deprecated(forRemoval = true)
 public class TLDTest {
 
     // Default values for events
@@ -239,7 +238,7 @@ public class TLDTest {
         Key parentKey = buildEventDataKey(rootId);
         Key nextParent = TLD.getNextParentKey(parentKey);
 
-        String cf = datatype + '\u0000' + rootId + '.' + Constants.MAX_UNICODE_STRING;
+        String cf = datatype + '\u0000' + rootId + '.' + QueryConstants.MAX_UNICODE_STRING;
         String cq = field + '\u0000' + value;
         Key expectedKey = new Key(row, cf, cq, cv, 0L);
         assertEquals(expectedKey, nextParent);
