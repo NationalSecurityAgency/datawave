@@ -165,8 +165,8 @@ public interface ObjectSizeOf {
                                             } else {
                                                 size += REFERENCE;
                                                 boolean accessible = field.isAccessible();
-                                                field.setAccessible(true);
                                                 try {
+                                                    field.setAccessible(true);
                                                     Object fieldObject = field.get(o);
                                                     if (fieldObject != null) {
                                                         stack.push(new ObjectInstance(fieldObject));
