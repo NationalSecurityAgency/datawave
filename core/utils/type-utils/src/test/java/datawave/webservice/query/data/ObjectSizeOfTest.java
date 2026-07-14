@@ -71,7 +71,7 @@ public class ObjectSizeOfTest {
 
     @Test
     public void testObjects() {
-        List<Object> list = new ArrayList<Object>(10);
+        List<Object> list = new ArrayList<>(10);
         list.add(Long.valueOf(1));
         list.add(Double.valueOf(1));
         int overhead = 8;
