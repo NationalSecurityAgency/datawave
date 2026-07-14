@@ -1,6 +1,7 @@
 package datawave;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -308,11 +309,6 @@ class TabletExtentCheckerTest {
          * Verify that given a table with compactable tablets, a key extent range, starting row and ending row, mergeExtents = false, and compactTablets = true,
          * {@link TabletExtentChecker#findCompactableTablets(ClientContext, String, Text, Text, boolean, boolean)} will return an empty list after compacting
          * the tablets automatically in {@link TabletExtentChecker#checkTablets(ClientContext, String, Text, Text, boolean, boolean, boolean)} .
-         *
-         * @throws TableNotFoundException
-         * @throws TableExistsException
-         * @throws AccumuloSecurityException
-         * @throws IOException
          */
 
         @Test
@@ -552,11 +548,6 @@ class TabletExtentCheckerTest {
          * Verify that given a table with compactable tablets, a key extent range, starting row and ending row, mergeExtents = true, and compactTablets = true,
          * {@link TabletExtentChecker#findCompactableTablets(ClientContext, String, Text, Text, boolean, boolean)} will return an empty list after compacting
          * the tablets automatically in {@link TabletExtentChecker#checkTablets(ClientContext, String, Text, Text, boolean, boolean, boolean)}.
-         *
-         * @throws TableNotFoundException
-         * @throws TableExistsException
-         * @throws AccumuloSecurityException
-         * @throws IOException
          */
 
         @Test
@@ -629,11 +620,12 @@ class TabletExtentCheckerTest {
         List<Pair<Text,Text>> result2 = TabletExtentChecker.findCompactableTablets((ClientContext) client, TABLE_NAME, getText(begin), getText(end),
                         mergeExtents, true);
 
-        // Create empty list for comparison
-        List<Pair<Text,Text>> lst = new ArrayList<>();
+        // Fetch the list of compactable tablets within the same range.
+        List<Pair<Text,Text>> extents = TabletExtentChecker.findCompactableTablets((ClientContext) client, TABLE_NAME, getText(begin), getText(end),
+                        mergeExtents, false);
 
-        // Resulting list should be empty since all tablets have been compacted
-        assertEquals(lst, result2);
+        // Verify the list is empty, indicating success.
+        assertTrue(extents.isEmpty());
     }
 
 }
