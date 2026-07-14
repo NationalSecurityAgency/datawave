@@ -310,8 +310,10 @@ public class StatisticalQueryTest extends AbstractQueryTest {
             givenQuery(metadata.getQuery());
             expectPlan(metadata.getPlan());
             expectResultCount(metadata.getIds().size());
-            // log.info("query: {}", metadata.getQuery());
-            // log.info(" plan: {}", metadata.getPlan());
+            if (log.isDebugEnabled()) {
+                log.debug("query: {}", metadata.getQuery());
+                log.debug(" plan: {}", metadata.getPlan());
+            }
             planAndExecuteQuery();
             // clean after each query
             afterEach();
