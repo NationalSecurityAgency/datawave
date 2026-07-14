@@ -56,8 +56,8 @@ public class DocumentScannerConfig implements Serializable {
     private int maxRetrievalTasks = 2;
 
     // the current number of field index/document scans
-    private AtomicInteger numSearchScans = new AtomicInteger(0);
-    private AtomicInteger numRetrievalScans = new AtomicInteger(0);
+    private final AtomicInteger numSearchScans = new AtomicInteger(0);
+    private final AtomicInteger numRetrievalScans = new AtomicInteger(0);
 
     private AtomicBoolean queryDataConsumerExecuting = new AtomicBoolean(false);
     private AtomicBoolean documentIdConsumerExecuting = new AtomicBoolean(false);
@@ -86,7 +86,7 @@ public class DocumentScannerConfig implements Serializable {
     private String searchConsistencyLevel;
     private String retrievalConsistencyLevel;
 
-    private DocumentSchedulerStats stats = new DocumentSchedulerStats();
+    private final DocumentSchedulerStats stats = new DocumentSchedulerStats();
 
     public DocumentScannerConfig() {
         // empty constructor
@@ -192,16 +192,8 @@ public class DocumentScannerConfig implements Serializable {
         return numSearchScans;
     }
 
-    public void setNumSearchScans(AtomicInteger numSearchScans) {
-        this.numSearchScans = numSearchScans;
-    }
-
     public AtomicInteger getNumRetrievalScans() {
         return numRetrievalScans;
-    }
-
-    public void setNumRetrievalScans(AtomicInteger numRetrievalScans) {
-        this.numRetrievalScans = numRetrievalScans;
     }
 
     public AtomicBoolean getQueryDataConsumerExecuting() {
@@ -230,10 +222,6 @@ public class DocumentScannerConfig implements Serializable {
 
     public DocumentSchedulerStats getStats() {
         return stats;
-    }
-
-    public void setStats(DocumentSchedulerStats stats) {
-        this.stats = stats;
     }
 
     @Override
