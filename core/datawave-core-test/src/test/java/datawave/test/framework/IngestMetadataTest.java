@@ -80,7 +80,7 @@ public class IngestMetadataTest {
                 .enableAlphabeticFields()
                 .build();
         //  @formater:on
-        metadata.create();
+        metadata.createEvents();
     }
 
     /**
@@ -97,11 +97,11 @@ public class IngestMetadataTest {
 
         IngestMetadata small = IngestMetadataBuilder.builder().setMetadataColumns(metadataColumns).addNormalizers(normalizers).enableAlphabeticFields()
                         .build();
-        small.create(10);
+        small.createEvents(10);
 
         IngestMetadata large = IngestMetadataBuilder.builder().setMetadataColumns(metadataColumns).addNormalizers(normalizers).enableAlphabeticFields()
                         .build();
-        large.create(200);
+        large.createEvents(200);
 
         List<QueryMetadata> smallQueries = QueryGenerator.create(small.getFieldMetadata()).singleTermIndexed(new EqTerm()).getQueries();
         List<QueryMetadata> largeQueries = QueryGenerator.create(large.getFieldMetadata()).singleTermIndexed(new EqTerm()).getQueries();

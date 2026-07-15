@@ -1,5 +1,6 @@
 package datawave.test.framework.generators.query;
 
+import java.util.HashSet;
 import java.util.Set;
 
 import datawave.test.framework.generators.query.term.QueryTerm;
@@ -25,15 +26,18 @@ public class IntersectionFactory extends BinaryTermFactory {
     @Override
     protected Set<Integer> combine(Set<Integer> leftIds, boolean leftNegated, Set<Integer> rightIds, boolean rightNegated) {
         if (leftNegated) {
-            rightIds.removeAll(leftIds);
-            return rightIds;
+            Set<Integer> result = new HashSet<>(rightIds);
+            result.removeAll(leftIds);
+            return result;
         }
         if (rightNegated) {
-            leftIds.removeAll(rightIds);
-            return leftIds;
+            Set<Integer> result = new HashSet<>(leftIds);
+            result.removeAll(rightIds);
+            return result;
         }
-        leftIds.retainAll(rightIds);
-        return leftIds;
+        Set<Integer> result = new HashSet<>(leftIds);
+        result.retainAll(rightIds);
+        return result;
     }
 
     @Override

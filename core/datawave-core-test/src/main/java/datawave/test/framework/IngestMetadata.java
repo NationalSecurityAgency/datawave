@@ -151,8 +151,8 @@ public class IngestMetadata {
      * Then, for each field (alpha, numeric) apply appropriate data (fixed, random)
      * </pre>
      */
-    public void create() {
-        create(DEFAULT_EVENT_COUNT, DEFAULT_VALUES_PER_FIELD);
+    public void createEvents() {
+        createEvents(DEFAULT_EVENT_COUNT, DEFAULT_VALUES_PER_FIELD);
     }
 
     /**
@@ -166,8 +166,8 @@ public class IngestMetadata {
      * Then, for each field (alpha, numeric) apply appropriate data (fixed, random)
      * </pre>
      */
-    public void create(int eventCount) {
-        create(eventCount, DEFAULT_VALUES_PER_FIELD);
+    public void createEvents(int eventCount) {
+        createEvents(eventCount, DEFAULT_VALUES_PER_FIELD);
     }
 
     /**
@@ -184,8 +184,9 @@ public class IngestMetadata {
      * @param eventCount
      *            the number of events to generate
      */
-    public void create(int eventCount, int valuesPerField) {
+    public void createEvents(int eventCount, int valuesPerField) {
         Preconditions.checkArgument(eventCount > 0, "Event count must be positive");
+        this.valuesPerField = valuesPerField;
         List<List<MetadataColumn>> metadataColumns = Combination.getAllCombinations(baseMetadataColumns);
         log.info("creating {} metadata columns", metadataColumns.size());
         log.info("creating {} normalizers", baseNormalizers.size());

@@ -93,7 +93,7 @@ public class StatisticalQueryTest extends AbstractQueryTest {
                 .build();
         //  @formatter:on
 
-        metadata.create(75);
+        metadata.createEvents(75);
         List<FieldMetadata> fieldMetadata = metadata.getFieldMetadata();
 
         // need to create and configure tables

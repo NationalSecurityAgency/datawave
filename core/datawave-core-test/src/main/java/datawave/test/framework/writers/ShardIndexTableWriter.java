@@ -9,9 +9,9 @@ import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.MutationsRejectedException;
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.security.ColumnVisibility;
 
 import datawave.data.type.Type;
 import datawave.ingest.protobuf.Uid;
@@ -21,6 +21,8 @@ import datawave.test.framework.util.ShardKeyUtil;
 import datawave.test.framework.util.UidGenerator;
 
 public class ShardIndexTableWriter {
+
+    private static final ColumnVisibility VISIBILITY = new ColumnVisibility(TableWriter.DEFAULT_VISIBILITY);
 
     private ShardIndexTableWriter() {
         // enforce static access
@@ -72,11 +74,11 @@ public class ShardIndexTableWriter {
         Mutation m = new Mutation(indexedValue);
         for (int eventId : eventIds) {
             String shardRow = ShardKeyUtil.buildRow(eventId, numShards);
-            Key key = new Key(indexedValue, fieldName, shardRow + "\u0000" + datatype, "ALL", TIMESTAMP);
+            String cq = shardRow + "\u0000" + datatype;
 
             String uid = UidGenerator.uid(String.valueOf(eventId));
             Value tv = createValue(uid);
-            m.put(key.getColumnFamily(), key.getColumnQualifier(), key.getColumnVisibilityParsed(), key.getTimestamp(), tv);
+            m.put(fieldName, cq, VISIBILITY, TIMESTAMP, tv);
         }
         bw.addMutation(m);
     }

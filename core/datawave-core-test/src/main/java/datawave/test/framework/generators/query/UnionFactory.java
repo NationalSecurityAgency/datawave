@@ -1,5 +1,6 @@
 package datawave.test.framework.generators.query;
 
+import java.util.HashSet;
 import java.util.Set;
 
 import datawave.test.framework.generators.query.term.QueryTerm;
@@ -22,8 +23,9 @@ public class UnionFactory extends BinaryTermFactory {
 
     @Override
     protected Set<Integer> combine(Set<Integer> leftIds, boolean leftNegated, Set<Integer> rightIds, boolean rightNegated) {
-        leftIds.addAll(rightIds);
-        return leftIds;
+        Set<Integer> result = new HashSet<>(leftIds);
+        result.addAll(rightIds);
+        return result;
     }
 
     @Override

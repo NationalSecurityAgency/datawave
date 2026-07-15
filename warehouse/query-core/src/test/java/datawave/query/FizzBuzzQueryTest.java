@@ -212,7 +212,8 @@ public class FizzBuzzQueryTest extends AbstractQueryTest {
                 log.debug(" plan: {}", metadata.getPlan());
             }
             planAndExecuteQuery();
-            // clean after each query
+            // Multiple queries run within a single @Test method here, so teardown must happen once per iteration.
+            // JUnit's @AfterEach only fires once the test method returns, which is too late to reset state between queries.
             afterEach();
         }
     }

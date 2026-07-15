@@ -84,6 +84,7 @@ public abstract class BinaryTermFactory implements QueryMetadataFactory {
                         }
 
                         Set<Integer> ids = combine(new HashSet<>(leftIds), leftTerm.isNegated(), new HashSet<>(rightIds), rightTerm.isNegated());
+                        // combine() treats leftIds/rightIds as immutable and returns a fresh result set
                         metadata.add(QueryMetadata.of(query, plan, new ArrayList<>(ids)));
                     }
                 }

@@ -10,9 +10,9 @@ import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.MutationsRejectedException;
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.security.ColumnVisibility;
 
 import datawave.data.type.Type;
 import datawave.ingest.protobuf.TermWeight;
@@ -25,6 +25,7 @@ import datawave.test.framework.util.UidGenerator;
 public class ShardTableWriter {
 
     private static final Value EMPTY_VALUE = new Value();
+    private static final ColumnVisibility VISIBILITY = new ColumnVisibility(TableWriter.DEFAULT_VISIBILITY);
 
     private ShardTableWriter() {
         // enforce static access
@@ -72,19 +73,15 @@ public class ShardTableWriter {
                 for (Type<?> normalizer : field.getNormalizers()) {
                     String normalizedValue = normalizer.normalize(value);
 
-                    // TODO: viz
                     String cq = normalizedValue + "\0" + datatype + "\0" + uid;
-                    Key key = new Key(row, cf, cq, "ALL", TIMESTAMP);
-                    m.put(key.getColumnFamily(), key.getColumnQualifier(), key.getColumnVisibilityParsed(), key.getTimestamp(), EMPTY_VALUE);
+                    m.put(cf, cq, VISIBILITY, TIMESTAMP, EMPTY_VALUE);
 
                     if (field.isContentField()) {
                         // index each token individually so content:phrase's FIELD == 'word' index-expansion can resolve
                         for (String token : value.split(" ")) {
                             String normalizedToken = normalizer.normalize(token);
                             String tokenCq = normalizedToken + "\0" + datatype + "\0" + uid;
-                            Key tokenKey = new Key(row, cf, tokenCq, "ALL", TIMESTAMP);
-                            m.put(tokenKey.getColumnFamily(), tokenKey.getColumnQualifier(), tokenKey.getColumnVisibilityParsed(), tokenKey.getTimestamp(),
-                                            EMPTY_VALUE);
+                            m.put(cf, tokenCq, VISIBILITY, TIMESTAMP, EMPTY_VALUE);
                         }
                     }
                 }
@@ -113,8 +110,7 @@ public class ShardTableWriter {
 
                 String value = field.getValueForEventId(eventId);
                 String cq = field.getFieldName() + "\0" + value;
-                Key key = new Key(row, cf, cq, "ALL", TIMESTAMP);
-                m.put(key.getColumnFamily(), key.getColumnQualifier(), key.getColumnVisibilityParsed(), key.getTimestamp(), EMPTY_VALUE);
+                m.put(cf, cq, VISIBILITY, TIMESTAMP, EMPTY_VALUE);
             }
         }
         try {
@@ -145,8 +141,7 @@ public class ShardTableWriter {
                     String cq = datatype + "\0" + uid + "\0" + normalizedToken + "\0" + field.getFieldName();
                     TermWeight.Info info = TermWeight.Info.newBuilder().addTermOffset(position).build();
                     Value tfValue = new Value(info.toByteArray());
-                    Key key = new Key(row, "tf", cq, "ALL", TIMESTAMP);
-                    m.put(key.getColumnFamily(), key.getColumnQualifier(), key.getColumnVisibilityParsed(), key.getTimestamp(), tfValue);
+                    m.put("tf", cq, VISIBILITY, TIMESTAMP, tfValue);
                 }
             }
         }

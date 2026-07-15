@@ -15,6 +15,9 @@ public class TableWriter {
 
     public static final Long TIMESTAMP = DateHelper.parse(ShardKeyUtil.DATE).getTime();
 
+    // TODO: viz - the test framework does not yet support per-entry visibility; every entry is written with this constant.
+    public static final String DEFAULT_VISIBILITY = "ALL";
+
     private TableWriter() {
         // enforce static access
     }
@@ -30,7 +33,7 @@ public class TableWriter {
      *            the number of shards to distribute events across
      */
     public static void write(AccumuloClient client, List<FieldMetadata> metadata, int numShards) {
-        MetadataTableWriter.write(client, MetadataTableConverter.convert(metadata));
+        MetadataTableWriter.write(client, metadata);
         ShardIndexTableWriter.write(client, metadata, numShards);
         ShardTableWriter.write(client, metadata, numShards);
     }
