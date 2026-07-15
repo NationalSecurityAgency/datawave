@@ -1,12 +1,8 @@
 package datawave.iterators.filter.ageoff;
 
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 
-import org.apache.accumulo.core.conf.AccumuloConfiguration;
-import org.apache.accumulo.core.conf.DefaultConfiguration;
-import org.apache.accumulo.core.conf.Property;
+import org.apache.accumulo.core.client.PluginEnvironment;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.junit.Assert;
@@ -21,53 +17,15 @@ public class FieldAgeOffFilterTest {
     private static final int ONE_SEC = 1000;
     private static final int ONE_MIN = 60 * ONE_SEC;
 
-    private ConfigurableIteratorEnvironment iterEnv = new ConfigurableIteratorEnvironment();
-
-    public class EditableAccumuloConfiguration extends AccumuloConfiguration {
-
-        private Map<String,String> map = new HashMap<>();
-
-        public EditableAccumuloConfiguration(AccumuloConfiguration source) {
-            for (Map.Entry<String,String> item : source) {
-                map.put(item.getKey(), item.getValue());
-            }
-        }
-
-        public void put(String k, String v) {
-            map.put(k, v);
-        }
-
-        @Override
-        public String get(Property property) {
-            return map.get(property.getKey());
-        }
-
-        @Override
-        public void getProperties(Map<String,String> props, java.util.function.Predicate<String> filter) {
-            map.keySet().forEach(k -> {
-                if (filter.test(k)) {
-                    props.put(k, map.get(k));
-                }
-            });
-        }
-
-        @Override
-        public Iterator<Map.Entry<String,String>> iterator() {
-            return map.entrySet().iterator();
-        }
-
-        @Override
-        public boolean isPropertySet(Property property) {
-            return map.containsKey(property);
-        }
-
+    public static PluginEnvironment.Configuration newConfig(Map<String,String> props) {
+        return PluginEnvironment.Configuration.from(props, true);
     }
+
+    private ConfigurableIteratorEnvironment iterEnv = new ConfigurableIteratorEnvironment(newConfig(Map.of()), null);
 
     @Test
     public void testIndexTrueUsesDefaultWhenFieldLacksTtl() {
-        EditableAccumuloConfiguration conf = new EditableAccumuloConfiguration(DefaultConfiguration.getInstance());
-        conf.put("table.custom.isindextable", "true");
-        iterEnv.setConf(conf);
+        iterEnv.setConf(newConfig(Map.of("table.custom.isindextable", "true")));
 
         long tenSecondsAgo = System.currentTimeMillis() - (10L * ONE_SEC);
 
@@ -93,9 +51,7 @@ public class FieldAgeOffFilterTest {
 
     @Test
     public void testIterEnvNotLostOnDeepCopy() {
-        EditableAccumuloConfiguration conf = new EditableAccumuloConfiguration(DefaultConfiguration.getInstance());
-        conf.put("table.custom.isindextable", "true");
-        iterEnv.setConf(conf);
+        iterEnv.setConf(newConfig(Map.of("table.custom.isindextable", "true")));
 
         long tenSecondsAgo = System.currentTimeMillis() - (10L * ONE_SEC);
 
@@ -120,9 +76,7 @@ public class FieldAgeOffFilterTest {
 
     @Test
     public void testIndexFalseUsesDefaultWhenFieldLacksTtl() {
-        EditableAccumuloConfiguration conf = new EditableAccumuloConfiguration(DefaultConfiguration.getInstance());
-        conf.put("isindextable", "false");
-        iterEnv.setConf(conf);
+        iterEnv.setConf(newConfig(Map.of("isindextable", "false")));
 
         long tenSecondsAgo = System.currentTimeMillis() - (10L * ONE_SEC);
 
@@ -147,8 +101,7 @@ public class FieldAgeOffFilterTest {
 
     @Test
     public void testLegacyIndexTrueUsesDefaultWhenFieldLacksTtl() {
-        EditableAccumuloConfiguration conf = new EditableAccumuloConfiguration(DefaultConfiguration.getInstance());
-        iterEnv.setConf(conf);
+        iterEnv.setConf(newConfig(Map.of()));
 
         long tenSecondsAgo = System.currentTimeMillis() - (10L * ONE_SEC);
 
@@ -174,8 +127,7 @@ public class FieldAgeOffFilterTest {
 
     @Test
     public void testLegacyIndexFalseUsesDefaultWhenFieldLacksTtl() {
-        EditableAccumuloConfiguration conf = new EditableAccumuloConfiguration(DefaultConfiguration.getInstance());
-        iterEnv.setConf(conf);
+        iterEnv.setConf(newConfig(Map.of()));
 
         long tenSecondsAgo = System.currentTimeMillis() - (10L * ONE_SEC);
 
@@ -201,8 +153,7 @@ public class FieldAgeOffFilterTest {
 
     @Test
     public void testIndexTrueDefaultFalseWhenFieldLacksTtl() {
-        EditableAccumuloConfiguration conf = new EditableAccumuloConfiguration(DefaultConfiguration.getInstance());
-        iterEnv.setConf(conf);
+        iterEnv.setConf(newConfig(Map.of()));
 
         long tenSecondsAgo = System.currentTimeMillis() - (10L * ONE_SEC);
 
@@ -240,9 +191,7 @@ public class FieldAgeOffFilterTest {
 
     @Test
     public void testCompositeTimestamp() {
-        EditableAccumuloConfiguration conf = new EditableAccumuloConfiguration(DefaultConfiguration.getInstance());
-        conf.put("table.custom.isindextable", "true");
-        iterEnv.setConf(conf);
+        iterEnv.setConf(newConfig(Map.of("table.custom.isindextable", "true")));
 
         long tenSecondsAgo = System.currentTimeMillis() - (10L * ONE_SEC);
         long tomorrow = System.currentTimeMillis() + CompositeTimestamp.MILLIS_PER_DAY;
