@@ -31,11 +31,6 @@ import java.util.concurrent.atomic.LongAdder;
  * Compare performance of AtomicInteger operations vs LongAdder operations
  */
 public class BenchmarkEx {
-    /*
-    Possible test cases:
-    - Increment counter
-    - Increment counter and get value
-     */
 
     @Param({ "100", "500", "1000", "2500", "5000" })
     public int iterations;
@@ -51,21 +46,54 @@ public class BenchmarkEx {
     }
 
     @Benchmark
-    public void benchAtomicInteger() {
+    public AtomicInteger benchAtomicIntegerIncrement() {
         for (int i = iterations; i > 0; i--) {
             atomicInteger.incrementAndGet();
+
         }
+
+        return atomicInteger;
     }
 
     @Benchmark
-    public void benchLongAdder(){
+    public AtomicInteger benchAtomicIntegerAdd5() {
+        for (int i = 50; i > 0; i--) {
+            atomicInteger.addAndGet(5);
+        }
+        return atomicInteger;
+    }
+
+    @Benchmark
+    public LongAdder benchLongAdderIncrement(){
         for (int i = iterations; i > 0; i--) {
             longAdder.increment();
         }
+        return longAdder;
+    }
+
+    @Benchmark
+    public LongAdder benchLongAdderAdd5(){
+        for (int i = 50; i > 0; i--) {
+            longAdder.add(5);
+            longAdder.sum();
+        }
+        return longAdder;
     }
 
     public static void main(String[] args) throws RunnerException {
-        Options opt = new OptionsBuilder().include(BenchmarkEx.class.getSimpleName()).build();
-        new Runner(opt).run();
+        int[] threadCounts = {1,2,4,6,8,10,12,14};
+
+        for(int t: threadCounts){
+            System.out.println("===========================================");
+            System.out.println("Thread Count: "+ t);
+            System.out.println("===========================================");
+            Options opt = new OptionsBuilder().include(BenchmarkEx.class.getSimpleName())
+                    .threads(t).
+                    forks(1).build();
+            new Runner(opt).run();
+        }
+
+
     }
 }
+
