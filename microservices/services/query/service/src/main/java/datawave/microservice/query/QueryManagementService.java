@@ -2174,7 +2174,7 @@ public class QueryManagementService implements QueryRequestHandler {
 
         // if we haven't already, validate the markings
         SecurityMarking requestSecurityMarking = querySecurityMarking.get();
-        if (requestSecurityMarking.toColumnVisibilityString() == null) {
+        if (requestSecurityMarking.toAccessExpressionString() == null) {
             validateSecurityMarkings(parameters);
         }
 
@@ -2359,7 +2359,7 @@ public class QueryManagementService implements QueryRequestHandler {
 
         Query query = responseObjectFactory.getQueryImpl();
         query.initialize(userDn, dnList, queryLogicName, requestQueryParameters, requestQueryParameters.getUnknownParameters(parameters));
-        query.setColumnVisibility(requestSecurityMarking.toColumnVisibilityString());
+        query.setColumnVisibility(requestSecurityMarking.toAccessExpressionString());
         query.setUncaughtExceptionHandler(new QueryUncaughtExceptionHandler());
         Thread.currentThread().setUncaughtExceptionHandler(query.getUncaughtExceptionHandler());
         if (queryId != null) {
@@ -2602,7 +2602,7 @@ public class QueryManagementService implements QueryRequestHandler {
         // These are parameters that aren't passed in by the user, but rather are computed from other sources.
         PrivateAuditConstants.stripPrivateParameters(parameters);
         parameters.add(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
-        parameters.set(PrivateAuditConstants.COLUMN_VISIBILITY, querySecurityMarking.get().toColumnVisibilityString());
+        parameters.set(PrivateAuditConstants.COLUMN_VISIBILITY, querySecurityMarking.get().toAccessExpressionString());
         parameters.add(PrivateAuditConstants.USER_DN, userDn);
     }
 
