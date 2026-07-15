@@ -169,7 +169,9 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
 
         String eventId = keyToEventId(docKey);
 
-        // get the key at which we would find the term frequencies
+        // Term Frequency ranges have to include the baseFieldName through the <baseFieldName>.\uFFFF
+        // Our field names are always alphanumeric with _ and now potentially . for the content hash
+        // Since . is before _ and also all alphanumeric characters this should give all possible field values before the possibility of a false positive
         Key beginTfKey = new Key(docKey.getRow().toString(), Constants.TERM_FREQUENCY_COLUMN_FAMILY.toString(),
                         docKey.getColumnFamily().toString() + '\u0000' + hitTuple.getValue() + '\u0000' + hitTuple.getFieldName());
         Key endTfKey = new Key(docKey.getRow().toString(), Constants.TERM_FREQUENCY_COLUMN_FAMILY.toString(),
@@ -180,6 +182,7 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
             // seek directly to that key
             source.seek(range, Collections.emptyList(), false);
             if (source.hasTop()) {
+                // parse the actual field name of the TF key to use for excerpt generation
                 final String[] splits = source.getTopKey().getColumnQualifier().toString().split(NULL_BYTE);
                 String parsedFieldName = splits[splits.length - 1];
 
@@ -200,7 +203,7 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
                     pos = position.build();
                 }
 
-                return new HitOffset(fieldName, pos);
+                return new HitOffset(parsedFieldName, pos);
             }
 
         } catch (InvalidProtocolBufferException e) {

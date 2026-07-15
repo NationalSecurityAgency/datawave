@@ -3,6 +3,7 @@ package datawave.query.transformer;
 import static datawave.query.iterator.logic.TermFrequencyExcerptIterator.Configuration.END_OFFSET;
 import static datawave.query.iterator.logic.TermFrequencyExcerptIterator.Configuration.FIELD_NAME;
 import static datawave.query.iterator.logic.TermFrequencyExcerptIterator.Configuration.START_OFFSET;
+import static datawave.query.transformer.ExcerptTransform.HIT_EXCERPT;
 import static org.easymock.EasyMock.and;
 import static org.easymock.EasyMock.anyObject;
 import static org.easymock.EasyMock.capture;
@@ -11,6 +12,7 @@ import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.isA;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
@@ -103,7 +105,7 @@ public class ExcerptTransformTest extends EasyMockSupport {
 
         applyTransform();
 
-        assertFalse(document.containsKey(ExcerptTransform.HIT_EXCERPT));
+        assertFalse(document.containsKey(HIT_EXCERPT));
         verifyAll();
     }
 
@@ -118,7 +120,7 @@ public class ExcerptTransformTest extends EasyMockSupport {
 
         applyTransform();
 
-        assertFalse(document.containsKey(ExcerptTransform.HIT_EXCERPT));
+        assertFalse(document.containsKey(HIT_EXCERPT));
         verifyAll();
     }
 
@@ -145,7 +147,7 @@ public class ExcerptTransformTest extends EasyMockSupport {
         givenMatchingPhrase("BODY", 8, 16, "the quick brown fox jumped over the lazy dog", List.of("word"));
 
         Capture<Attributes> capturedArg = Capture.newInstance();
-        document.put(eq(ExcerptTransform.HIT_EXCERPT), and(capture(capturedArg), isA(Attributes.class)));
+        document.put(eq(HIT_EXCERPT), and(capture(capturedArg), isA(Attributes.class)));
 
         initTransform();
         replayAll();
@@ -181,7 +183,7 @@ public class ExcerptTransformTest extends EasyMockSupport {
         givenMatchingPhrase("BODY", 7, 16, "and the [quick] [brown] fox jumped over the lazy dog", List.of("quick", "brown"));
 
         Capture<Attributes> capturedArg = Capture.newInstance();
-        document.put(eq(ExcerptTransform.HIT_EXCERPT), and(capture(capturedArg), isA(Attributes.class)));
+        document.put(eq(HIT_EXCERPT), and(capture(capturedArg), isA(Attributes.class)));
 
         initTransform();
         replayAll();
@@ -220,7 +222,7 @@ public class ExcerptTransformTest extends EasyMockSupport {
         givenMatchingPhrase("BODY", 2, 16, "the [brown] chicken layed an egg and the [quick] [brown] fox jumped over the lazy dog", List.of("quick", "brown"));
 
         Capture<Attributes> capturedArg = Capture.newInstance();
-        document.put(eq(ExcerptTransform.HIT_EXCERPT), and(capture(capturedArg), isA(Attributes.class)));
+        document.put(eq(HIT_EXCERPT), and(capture(capturedArg), isA(Attributes.class)));
 
         initTransform();
         replayAll();
@@ -248,7 +250,7 @@ public class ExcerptTransformTest extends EasyMockSupport {
         givenMatchingPhrase("BODY.hash1", 8, 16, "the quick brown fox jumped over the lazy dog", Collections.emptyList());
 
         Capture<Attributes> capturedArg = Capture.newInstance();
-        document.put(eq(ExcerptTransform.HIT_EXCERPT), and(capture(capturedArg), isA(Attributes.class)));
+        document.put(eq(HIT_EXCERPT), and(capture(capturedArg), isA(Attributes.class)));
 
         initTransform();
         replayAll();
@@ -274,7 +276,7 @@ public class ExcerptTransformTest extends EasyMockSupport {
         givenMatchingPhrase("BODY.hash1", 22, 26, "and the [word] from bird", List.of("word"));
 
         Capture<Attributes> capturedArg = Capture.newInstance();
-        document.put(eq(ExcerptTransform.HIT_EXCERPT), and(capture(capturedArg), isA(Attributes.class)));
+        document.put(eq(HIT_EXCERPT), and(capture(capturedArg), isA(Attributes.class)));
 
         initTransform();
         replayAll();
@@ -305,7 +307,7 @@ public class ExcerptTransformTest extends EasyMockSupport {
         expect(firstDocument.get(JexlEvaluation.HIT_TERM_FIELD)).andReturn(firstHitTerms);
         givenMatchingTermFrequencies("BODY", new int[][] {{2, 2}}, "first");
         givenMatchingPhrase("BODY", 0, 4, "the [first] document excerpt", List.of("first"));
-        firstDocument.put(eq(ExcerptTransform.HIT_EXCERPT), isA(Attributes.class));
+        firstDocument.put(eq(HIT_EXCERPT), isA(Attributes.class));
 
         PhraseIndexes secondPhraseIndexes = new PhraseIndexes();
         secondPhraseIndexes.addIndexTriplet("BODY", EVENT_ID, 4, 4);
@@ -316,7 +318,7 @@ public class ExcerptTransformTest extends EasyMockSupport {
         expect(secondDocument.get(ExcerptTransform.PHRASE_INDEXES_ATTRIBUTE)).andReturn(phraseIndexAttribute);
         expect(secondDocument.containsKey(JexlEvaluation.HIT_TERM_FIELD)).andReturn(false);
         givenMatchingPhrase("BODY", 2, 6, "the second document excerpt", Collections.emptyList());
-        secondDocument.put(eq(ExcerptTransform.HIT_EXCERPT), isA(Attributes.class));
+        secondDocument.put(eq(HIT_EXCERPT), isA(Attributes.class));
 
         initTransform();
         replayAll();
@@ -340,7 +342,7 @@ public class ExcerptTransformTest extends EasyMockSupport {
         givenMatchingPhrase("CONTENT", 0, 7, "the quick brown fox jumped over the lazy dog", Collections.emptyList());
 
         Capture<Attributes> capturedArg = Capture.newInstance();
-        document.put(eq(ExcerptTransform.HIT_EXCERPT), and(capture(capturedArg), isA(Attributes.class)));
+        document.put(eq(HIT_EXCERPT), and(capture(capturedArg), isA(Attributes.class)));
 
         initTransform();
         replayAll();
@@ -352,6 +354,39 @@ public class ExcerptTransformTest extends EasyMockSupport {
         assertEquals(1, arg.size());
         Attribute<?>[] attributes = arg.getAttributes().toArray(new Attribute[0]);
         assertEquals("the quick brown fox jumped over the lazy dog", ((Content) attributes[0]).getContent());
+    }
+
+    @Test
+    public void testContextTFAgainstFiBodyHitTerms() throws IOException {
+        givenExcerptField("BODY", 2);
+
+        // setup a document with hit terms only, no phrase hits
+        this.document = new Document(new Key("20260715_0", "sample" + '\u0000' + "123.234.345"), true);
+        Attributes attributes = new Attributes(true);
+        attributes.add(new Content("BODY:fox", new Key("20260715_0", "sample" + '\u0000' + "123.234.345"), true));
+        document.put(JexlEvaluation.HIT_TERM_FIELD, attributes);
+
+        // term frequencies will occur in the context BODY.1234, not BODY directly
+        givenMatchingTermFrequencies("BODY.1234", new int[][] {{24, 24}}, "fox");
+
+        // verify what actually gets seeked is the BODY.1234
+        givenMatchingPhrase("BODY.1234", 22, 26, "and the [fox] from bird", List.of("fox"));
+
+        replayAll();
+
+        initTransform();
+        applyTransform();
+
+        verifyAll();
+
+        // verify the document got the EXCERPT
+        assertNotNull(document.get(HIT_EXCERPT));
+        Attribute<?> a = document.get(HIT_EXCERPT);
+        assertTrue(a instanceof Attributes);
+        Attributes allAttributes = (Attributes) a;
+        assertEquals(1, allAttributes.size());
+        Content c = (Content) allAttributes.getAttributes().iterator().next();
+        assertEquals("and the [fox] from bird", c.getContent());
     }
 
     /**
@@ -369,7 +404,7 @@ public class ExcerptTransformTest extends EasyMockSupport {
         givenMatchingPhrase("BODY", 22, 26, "and the [word] from bird", List.of("word"));
 
         Capture<Attributes> capturedArg = Capture.newInstance();
-        document.put(eq(ExcerptTransform.HIT_EXCERPT), and(capture(capturedArg), isA(Attributes.class)));
+        document.put(eq(HIT_EXCERPT), and(capture(capturedArg), isA(Attributes.class)));
 
         initTransform();
         replayAll();
