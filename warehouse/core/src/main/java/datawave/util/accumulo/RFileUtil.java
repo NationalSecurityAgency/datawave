@@ -118,11 +118,14 @@ public class RFileUtil {
             for (String rfile : paths) {
                 RFile.Reader reader = getRFileReader(config, new Path(rfile));
                 // TODO ACCUMULO4: Verify that this implementation is correct.
-                if (lastKey == null || reader.getFileRange().rowRange.getEndKey().compareTo(lastKey) > 0) {
-                    lastKey = reader.getFileRange().rowRange.getEndKey();
-                }
-                if (startKey == null || reader.getFileRange().rowRange.getStartKey().compareTo(startKey) < 0) {
-                    startKey = reader.getFileRange().rowRange.getStartKey();
+                // Cannot determine splits if range is undefined
+                if (!reader.getFileRange().empty) {
+                    if (lastKey == null || reader.getFileRange().rowRange.getEndKey().compareTo(lastKey) > 0) {
+                        lastKey = reader.getFileRange().rowRange.getEndKey();
+                    }
+                    if (startKey == null || reader.getFileRange().rowRange.getStartKey().compareTo(startKey) < 0) {
+                        startKey = reader.getFileRange().rowRange.getStartKey();
+                    }
                 }
                 readers.add(reader);
                 // get the index iterator from the reader
