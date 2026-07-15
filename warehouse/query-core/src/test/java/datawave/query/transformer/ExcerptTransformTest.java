@@ -473,6 +473,9 @@ public class ExcerptTransformTest extends EasyMockSupport {
 
         source.seek(anyObject(), anyObject(), eq(false));
         expect(source.hasTop()).andReturn(true);
+        // The getTopKey() is called to extract the parsed field name from the column qualifier
+        Key tfKey = new Key(new Text("row"), new Text("cf"), new Text("cf\u0000" + value + "\u0000" + field));
+        expect(source.getTopKey()).andReturn(tfKey);
         expect(source.getTopValue()).andReturn(tfpb);
     }
 
