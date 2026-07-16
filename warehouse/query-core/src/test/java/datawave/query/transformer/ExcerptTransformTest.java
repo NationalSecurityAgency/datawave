@@ -9,6 +9,7 @@ import static org.easymock.EasyMock.anyObject;
 import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.expectLastCall;
 import static org.easymock.EasyMock.isA;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -435,6 +436,72 @@ public class ExcerptTransformTest extends EasyMockSupport {
     }
 
     /**
+     * Verify that when a hit term's value/base-field pair exists in more than one grouped term-frequency context (e.g. {@code BODY.1234} and
+     * {@code BODY.5678}), {@link ExcerptTransform#getOffset} searches all candidates in the seeked range for the one that overlaps a phrase already recorded in
+     * {@code PHRASE_INDEXES_ATTRIBUTE}, rather than blindly trusting the first (lexicographically smallest) grouped entry.
+     * <p>
+     * Here, "fox" occurs in both {@code BODY.1234} ("alpha beta fox gamma delta") and {@code BODY.5678} ("wolf quick brown fox jumps"), and only the
+     * {@code BODY.5678} occurrence overlaps a phrase already found by a {@code #PHRASE()} function elsewhere in the query (offsets [11,13], "quick brown fox").
+     * Even though {@code BODY.1234} sorts first and is seen first during the seek, the hit term must be resolved against {@code BODY.5678} and merged into the
+     * existing phrase, yielding a single excerpt -- not a second, spurious excerpt for the unrelated {@code BODY.1234} occurrence.
+     */
+    @Test
+    public void testHitTermInMultipleGroupedContextsResolvesOverlapInLaterEntry() throws IOException {
+        givenExcerptField("BODY", 2);
+
+        Key docKey = new Key("20260715_0", "sample" + '\u0000' + "123.234.345");
+        String eventId = "20260715_0" + '\u0000' + "sample" + '\u0000' + "123.234.345";
+
+        this.document = new Document(docKey, true);
+
+        // an existing phrase, found via a #PHRASE() function elsewhere in the query, anchored to the BODY.5678
+        // grouped instance and covering "quick brown fox" (offsets 11-13)
+        phraseIndexes.addIndexTriplet("BODY.5678", eventId, 11, 13);
+        document.put(ExcerptTransform.PHRASE_INDEXES_ATTRIBUTE, new Content(phraseIndexes.toString(), docKey, true));
+
+        // the hit term itself only reports the base field, "BODY", with no grouping context
+        Attributes hitTerms = new Attributes(true);
+        hitTerms.add(new Content("BODY:fox", docKey, true));
+        document.put(JexlEvaluation.HIT_TERM_FIELD, hitTerms);
+
+        String cf = "sample" + '\u0000' + "123.234.345";
+        SortedMap<Key,Value> data = new TreeMap<>();
+
+        // BODY.1234: "alpha beta fox gamma delta" -- unrelated to any pre-existing phrase
+        putTf(data, cf, "alpha", "BODY.1234", 0);
+        putTf(data, cf, "beta", "BODY.1234", 1);
+        putTf(data, cf, "fox", "BODY.1234", 2);
+        putTf(data, cf, "gamma", "BODY.1234", 3);
+        putTf(data, cf, "delta", "BODY.1234", 4);
+
+        // BODY.5678: "wolf quick brown fox jumps" -- the "fox" here overlaps the pre-existing phrase [11,13]
+        putTf(data, cf, "wolf", "BODY.5678", 10);
+        putTf(data, cf, "quick", "BODY.5678", 11);
+        putTf(data, cf, "brown", "BODY.5678", 12);
+        putTf(data, cf, "fox", "BODY.5678", 13);
+        putTf(data, cf, "jumps", "BODY.5678", 14);
+
+        SortedKeyValueIterator<Key,Value> source = new SortedMapIterator(data);
+        excerptTransform = new ExcerptTransform(excerptFields, env, source, new TermFrequencyExcerptIterator());
+        excerptTransform.apply(getDocumentEntry());
+
+        Attribute<?> a = document.get(HIT_EXCERPT);
+        assertNotNull(a);
+        assertTrue(a instanceof Attributes);
+        Attributes allAttributes = (Attributes) a;
+        Set<String> excerpts = allAttributes.getAttributes().stream().map(attr -> ((Content) attr).getContent()).collect(Collectors.toSet());
+
+        // the "fox" hit term must be merged into the already-known BODY.5678 phrase, producing exactly one excerpt --
+        // not a second, spurious excerpt for the unrelated BODY.1234 occurrence.
+        assertEquals(1, excerpts.size());
+        assertTrue("expected the fox hit term to be merged into the existing BODY.5678 phrase excerpt", excerpts.contains("wolf quick brown [fox] jumps"));
+    }
+
+    private void putTf(SortedMap<Key,Value> data, String cf, String word, String field, int offset) throws IOException {
+        data.put(new Key("20260715_0", "tf", cf + '\u0000' + word + '\u0000' + field), getTfValue(new int[][] {{offset, offset}}, null));
+    }
+
+    /**
      * Verify that a phrase index with the end before the start does not mess us up
      */
     @Test
@@ -563,6 +630,11 @@ public class ExcerptTransformTest extends EasyMockSupport {
         Key tfKey = new Key(new Text("row"), new Text("cf"), new Text("cf\u0000" + value + "\u0000" + field));
         expect(source.getTopKey()).andReturn(tfKey);
         expect(source.getTopValue()).andReturn(tfpb);
+        // getOffset() searches beyond the first entry for one that overlaps an existing phrase, so simulate a range
+        // with no further entries after this one
+        source.next();
+        expectLastCall().anyTimes();
+        expect(source.hasTop()).andReturn(false).anyTimes();
     }
 
     private Map<String,String> getOptions(String field, int start, int end) {

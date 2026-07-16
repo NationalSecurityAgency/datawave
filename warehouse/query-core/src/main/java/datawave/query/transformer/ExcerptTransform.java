@@ -179,31 +179,38 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
         Range range = new Range(beginTfKey, endTfKey);
 
         try {
-            // seek directly to that key
+            // seek to the range covering every grouped instance of this field
             source.seek(range, Collections.emptyList(), false);
             if (source.hasTop()) {
-                // parse the actual field name of the TF key to use for excerpt generation
-                final String[] splits = source.getTopKey().getColumnQualifier().toString().split(NULL_BYTE);
-                String parsedFieldName = splits[splits.length - 1];
+                // remember the first candidate as a fallback in case none of the candidates in this range overlap an
+                // already-known phrase
+                String fallbackFieldName = parseFieldName(source.getTopKey());
+                TermWeight.Info fallbackTwInfo = TermWeight.Info.parseFrom(source.getTopValue().get());
 
-                TermWeightPosition pos = null;
-
-                // parse the term frequencies
-                TermWeight.Info twInfo = TermWeight.Info.parseFrom(source.getTopValue().get());
-
-                // if we have phrase indexes, then find one that overlaps if any
+                // the range may span multiple grouped instances of the field (e.g. BODY.1234 and BODY.5678) that all
+                // share the same hit value. Search all of them for the one that overlaps an already-known phrase
+                // instead of trusting only the first (lexicographically smallest) one.
                 if (phraseIndexes != null) {
-                    pos = phraseIndexes.getOverlappingPosition(parsedFieldName, eventId, twInfo);
+                    String candidateFieldName = fallbackFieldName;
+                    TermWeight.Info twInfo = fallbackTwInfo;
+                    while (true) {
+                        TermWeightPosition overlap = phraseIndexes.getOverlappingPosition(candidateFieldName, eventId, twInfo);
+                        if (overlap != null) {
+                            return new HitOffset(candidateFieldName, overlap);
+                        }
+                        source.next();
+                        if (!source.hasTop()) {
+                            break;
+                        }
+                        candidateFieldName = parseFieldName(source.getTopKey());
+                        twInfo = TermWeight.Info.parseFrom(source.getTopValue().get());
+                    }
                 }
 
-                // if no overlapping phrases, then return the first position
-                if (pos == null) {
-                    TermWeightPosition.Builder position = new TermWeightPosition.Builder();
-                    position.setTermWeightOffsetInfo(twInfo, 0);
-                    pos = position.build();
-                }
-
-                return new HitOffset(parsedFieldName, pos);
+                // no candidate overlapped an existing phrase; fall back to the first position of the first entry found
+                TermWeightPosition.Builder position = new TermWeightPosition.Builder();
+                position.setTermWeightOffsetInfo(fallbackTwInfo, 0);
+                return new HitOffset(fallbackFieldName, position.build());
             }
 
         } catch (InvalidProtocolBufferException e) {
@@ -212,6 +219,18 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
             log.error("Failed to scan for term frequencies in range {}", range, e);
         }
         return null;
+    }
+
+    /**
+     * Parse the concrete term-frequency field name (including any grouping context) out of a term-frequency key's column qualifier.
+     *
+     * @param tfKey
+     *            a term-frequency key
+     * @return the concrete field name
+     */
+    private static String parseFieldName(Key tfKey) {
+        String[] splits = tfKey.getColumnQualifier().toString().split(NULL_BYTE);
+        return splits[splits.length - 1];
     }
 
     /**
