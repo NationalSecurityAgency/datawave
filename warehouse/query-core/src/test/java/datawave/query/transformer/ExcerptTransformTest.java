@@ -22,12 +22,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
+import org.apache.accumulo.core.iteratorsImpl.system.SortedMapIterator;
 import org.apache.hadoop.io.Text;
 import org.easymock.Capture;
 import org.easymock.EasyMockRunner;
@@ -389,6 +392,48 @@ public class ExcerptTransformTest extends EasyMockSupport {
         assertEquals("and the [fox] from bird", c.getContent());
     }
 
+    // the behavior mocked in testContextTFAgainstFiBodyHitTerms() leaves too much room for accidental decoupling to reality. Added this test to verify the real
+    // interactions
+    @Test
+    public void testContextTFAgainstFiBodyHitTermsUnmocked() throws IOException {
+        givenExcerptField("BODY", 2);
+
+        // setup a document with hit terms only, no phrase hits
+        this.document = new Document(new Key("20260715_0", "sample" + '\u0000' + "123.234.345"), true);
+        Attributes attributes = new Attributes(true);
+        attributes.add(new Content("BODY:fox", new Key("20260715_0", "sample" + '\u0000' + "123.234.345"), true));
+        document.put(JexlEvaluation.HIT_TERM_FIELD, attributes);
+
+        TermFrequencyExcerptIterator termFrequencyIterator = new TermFrequencyExcerptIterator();
+        SortedMap<Key,Value> data = new TreeMap<>();
+
+        // add the tf value to the data
+        data.put(new Key("20260715_0", "tf", "sample" + '\u0000' + "123.234.345" + '\u0000' + "and" + '\u0000' + "BODY.1234"),
+                        getTfValue(new int[][] {{22, 22}}, null));
+        data.put(new Key("20260715_0", "tf", "sample" + '\u0000' + "123.234.345" + '\u0000' + "the" + '\u0000' + "BODY.1234"),
+                        getTfValue(new int[][] {{23, 23}}, null));
+        data.put(new Key("20260715_0", "tf", "sample" + '\u0000' + "123.234.345" + '\u0000' + "fox" + '\u0000' + "BODY.1234"),
+                        getTfValue(new int[][] {{24, 24}}, null));
+        data.put(new Key("20260715_0", "tf", "sample" + '\u0000' + "123.234.345" + '\u0000' + "from" + '\u0000' + "BODY.1234"),
+                        getTfValue(new int[][] {{25, 25}}, null));
+        data.put(new Key("20260715_0", "tf", "sample" + '\u0000' + "123.234.345" + '\u0000' + "bird" + '\u0000' + "BODY.1234"),
+                        getTfValue(new int[][] {{26, 26}}, null));
+
+        SortedKeyValueIterator<Key,Value> source = new SortedMapIterator(data);
+
+        excerptTransform = new ExcerptTransform(excerptFields, env, source, termFrequencyIterator);
+        excerptTransform.apply(getDocumentEntry());
+
+        // verify the document got the EXCERPT
+        assertNotNull(document.get(HIT_EXCERPT));
+        Attribute<?> a = document.get(HIT_EXCERPT);
+        assertTrue(a instanceof Attributes);
+        Attributes allAttributes = (Attributes) a;
+        assertEquals(1, allAttributes.size());
+        Content c = (Content) allAttributes.getAttributes().iterator().next();
+        assertEquals("and the [fox] from bird", c.getContent());
+    }
+
     /**
      * Verify that a phrase index with the end before the start does not mess us up
      */
@@ -496,15 +541,21 @@ public class ExcerptTransformTest extends EasyMockSupport {
         }
     }
 
-    private void givenMatchingTermFrequencies(String field, int[][] offsets, String value) throws IOException {
+    private Value getTfValue(int[][] offsets, Integer score) throws IOException {
         TermWeight.Info.Builder builder = TermWeight.Info.newBuilder();
         for (int[] offset : offsets) {
             builder.addTermOffset(offset[1]);
             builder.addPrevSkips(offset[1] - offset[0]);
-            builder.addScore(1);
+            if (score != null) {
+                builder.addScore(score);
+            }
         }
 
-        Value tfpb = new Value(builder.build().toByteArray());
+        return new Value(builder.build().toByteArray());
+    }
+
+    private void givenMatchingTermFrequencies(String field, int[][] offsets, String value) throws IOException {
+        Value tfpb = getTfValue(offsets, 1);
 
         source.seek(anyObject(), anyObject(), eq(false));
         expect(source.hasTop()).andReturn(true);
