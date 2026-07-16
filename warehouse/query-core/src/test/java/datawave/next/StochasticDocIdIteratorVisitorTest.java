@@ -16,7 +16,6 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -132,7 +131,6 @@ public class StochasticDocIdIteratorVisitorTest extends FieldIndexDataTestUtil {
         }
     }
 
-    @Disabled
     @Test
     public void testNestedUnionWithNegations() {
         for (int i = 0; i < max; i++) {

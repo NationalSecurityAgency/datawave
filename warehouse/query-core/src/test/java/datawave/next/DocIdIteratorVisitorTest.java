@@ -133,6 +133,144 @@ public class DocIdIteratorVisitorTest extends FieldIndexDataTestUtil {
     }
 
     @Test
+    public void testAnchorWithNegatedUnion() {
+        // model-expanded anchor: (FIELD_A || FIELD_B), model-expanded negation: !(FIELD_C || FIELD_C)
+        writeData("FIELD_A", "value-a", 10);
+        writeIndex("FIELD_C", "value-c", "datatype-a", 3);
+        withQuery("(FIELD_A == 'value-a' || FIELD_B == 'value-b') && !(FIELD_C == 'value-c' || FIELD_C == 'value-c2')");
+        drive();
+        assertResultSize(9);
+    }
+
+    /**
+     * Regression test: a negated union whose children are all non-executable (e.g. no synonym field is indexed) previously wiped the entire intersection result
+     * instead of leaving it unrestricted.
+     */
+    @Test
+    public void testAnchorWithFullyNonExecutableNegatedUnion() {
+        writeData("FIELD_A", "value-a", 10);
+        // NON_INDEXED_1 / NON_INDEXED_2 are deliberately absent from indexedFields: this simulates a model-expanded
+        // negated field where none of the synonym sub-fields are indexed
+        withQuery("FIELD_A == 'value-a' && !(NON_INDEXED_1 == 'value-b' || NON_INDEXED_2 == 'value-c')");
+        drive();
+        assertResultSize(10);
+    }
+
+    /**
+     * A union of fully negated terms, e.g. {@code !B || !C}, is equivalent to {@code !(B && C)} and removes candidates matching every de-negated term.
+     */
+    @Test
+    public void testAnchorWithUnionOfFullyNegatedTermsDefeatsCandidates() {
+        writeRange("FIELD_A", "value-a", 1, 10);
+        writeRange("FIELD_B", "value-b", 3, 5);
+        writeRange("FIELD_C", "value-c", 4, 6);
+
+        withQuery("FIELD_A == 'value-a' && (!(FIELD_B == 'value-b') || !(FIELD_C == 'value-c'))");
+        drive();
+        assertResultSize(8);
+    }
+
+    /**
+     * Companion to {@link #testAnchorWithUnionOfFullyNegatedTermsDefeatsCandidates()}: no document matches every de-negated term, so nothing is removed.
+     */
+    @Test
+    public void testAnchorWithUnionOfFullyNegatedTermsNoOverlapRemovesNothing() {
+        writeRange("FIELD_A", "value-a", 1, 10);
+        writeRange("FIELD_B", "value-b", 1, 3);
+        writeRange("FIELD_C", "value-c", 8, 10);
+
+        withQuery("FIELD_A == 'value-a' && (!(FIELD_B == 'value-b') || !(FIELD_C == 'value-c'))");
+        drive();
+        assertResultSize(10);
+    }
+
+    /**
+     * A non-executable de-negated term (e.g. a non-indexed field) is presumed to never match, so its negation is presumed always true and the candidate set is
+     * left unrestricted.
+     */
+    @Test
+    public void testAnchorWithUnionOfFullyNegatedTermsOneNonExecutable() {
+        writeRange("FIELD_A", "value-a", 1, 10);
+        writeRange("FIELD_B", "value-b", 3, 5);
+        // NON_INDEXED is deliberately absent from indexedFields
+
+        withQuery("FIELD_A == 'value-a' && (!(FIELD_B == 'value-b') || !(NON_INDEXED == 'value-z'))");
+        drive();
+        assertResultSize(10);
+    }
+
+    /**
+     * A union mixing a positive and a negated term, e.g. {@code B || !C}, is false exactly when {@code !B && C} holds, and removes those candidates.
+     */
+    @Test
+    public void testAnchorWithMixedUnionDefeatsCandidates() {
+        writeRange("FIELD_A", "value-a", 1, 10);
+        writeRange("FIELD_B", "value-b", 1, 5);
+        writeRange("FIELD_C", "value-c", 4, 8);
+
+        withQuery("FIELD_A == 'value-a' && (FIELD_B == 'value-b' || !(FIELD_C == 'value-c'))");
+        drive();
+        assertResultSize(7);
+    }
+
+    /**
+     * Companion to {@link #testAnchorWithMixedUnionDefeatsCandidates()}: FIELD_C only matches uids already covered by FIELD_B, so nothing is removed.
+     */
+    @Test
+    public void testAnchorWithMixedUnionNoOverlapRemovesNothing() {
+        writeRange("FIELD_A", "value-a", 1, 10);
+        writeRange("FIELD_B", "value-b", 1, 5);
+        writeRange("FIELD_C", "value-c", 1, 3);
+
+        withQuery("FIELD_A == 'value-a' && (FIELD_B == 'value-b' || !(FIELD_C == 'value-c'))");
+        drive();
+        assertResultSize(10);
+    }
+
+    /**
+     * When the positive disjunct's union already covers every candidate, {@code !B} is never true, so the union is trivially true everywhere.
+     */
+    @Test
+    public void testAnchorWithMixedUnionPositiveCoversEverythingRemovesNothing() {
+        writeRange("FIELD_A", "value-a", 1, 10);
+        writeRange("FIELD_B", "value-b", 1, 10);
+        writeRange("FIELD_C", "value-c", 4, 6);
+
+        withQuery("FIELD_A == 'value-a' && (FIELD_B == 'value-b' || !(FIELD_C == 'value-c'))");
+        drive();
+        assertResultSize(10);
+    }
+
+    /**
+     * A non-executable positive disjunct contributes nothing to the union, same as a non-executable member of any other union, so the remaining negated
+     * disjunct still restricts the candidate set.
+     */
+    @Test
+    public void testAnchorWithMixedUnionNonExecutablePositiveTerm() {
+        writeRange("FIELD_A", "value-a", 1, 10);
+        writeRange("FIELD_C", "value-c", 4, 6);
+        // NON_INDEXED is deliberately absent from indexedFields
+
+        withQuery("FIELD_A == 'value-a' && (NON_INDEXED == 'value-z' || !(FIELD_C == 'value-c'))");
+        drive();
+        assertResultSize(7);
+    }
+
+    /**
+     * A non-executable negated disjunct is presumed always true, so the union is trivially true for every candidate regardless of the other disjunct.
+     */
+    @Test
+    public void testAnchorWithMixedUnionNonExecutableNegatedTerm() {
+        writeRange("FIELD_A", "value-a", 1, 10);
+        writeRange("FIELD_B", "value-b", 1, 5);
+        // NON_INDEXED is deliberately absent from indexedFields
+
+        withQuery("FIELD_A == 'value-a' && (FIELD_B == 'value-b' || !(NON_INDEXED == 'value-z'))");
+        drive();
+        assertResultSize(10);
+    }
+
+    @Test
     public void testValueMarker() {
         writeData("FIELD_A", "abc", "datatype-a", 2);
         writeData("FIELD_A", "abd", "datatype-b", 3);
