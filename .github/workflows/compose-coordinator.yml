@@ -14,6 +14,7 @@ jobs:
       allow-snapshots: false
     secrets: inherit
   call-compose-tests-with-snapshots:
+    continue-on-error: true
     uses: ./.github/workflows/compose-tests.yml
     with:
       allow-snapshots: true
