@@ -110,7 +110,7 @@ public class InMemoryTableOperations extends TableOperationsHelper {
 
     @Override
     public void create(String tableName, NewTableConfiguration ntc) throws AccumuloException, AccumuloSecurityException, TableExistsException {
-        String namespace = TableNameUtil.qualify(tableName).getFirst();
+        String namespace = TableNameUtil.qualify(tableName).namespaceName();
         Validators.NEW_TABLE_NAME.validate(tableName);
         if (exists(tableName))
             throw new TableExistsException(tableName, tableName, "");
@@ -177,7 +177,7 @@ public class InMemoryTableOperations extends TableOperationsHelper {
         if ((!force) && exists(newTableName))
             throw new TableExistsException(newTableName, newTableName, "");
         InMemoryTable t = acu.tables.remove(oldTableName);
-        String namespace = TableNameUtil.qualify(newTableName).getFirst();
+        String namespace = TableNameUtil.qualify(newTableName).namespaceName();
         InMemoryNamespace n = acu.namespaces.get(namespace);
         if (n == null) {
             n = new InMemoryNamespace();
@@ -215,7 +215,7 @@ public class InMemoryTableOperations extends TableOperationsHelper {
 
     @Override
     public Map<String,String> getConfiguration(String tableName) throws AccumuloException, TableNotFoundException {
-        String namespace = TableNameUtil.qualify(tableName).getFirst();
+        String namespace = TableNameUtil.qualify(tableName).namespaceName();
         if (!exists(tableName)) {
             if (!namespaceExists(namespace))
                 throw new TableNotFoundException(tableName, new NamespaceNotFoundException(null, namespace, null));

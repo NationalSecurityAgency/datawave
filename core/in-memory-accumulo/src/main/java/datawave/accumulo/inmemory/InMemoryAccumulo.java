@@ -130,7 +130,7 @@ public class InMemoryAccumulo {
     }
 
     public void createTable(String username, String tableName, boolean useVersions, TimeType timeType, Map<String,String> properties) {
-        String namespace = TableNameUtil.qualify(tableName).getFirst();
+        String namespace = TableNameUtil.qualify(tableName).namespaceName();
 
         if (!namespaceExists(namespace)) {
             return;
@@ -145,7 +145,7 @@ public class InMemoryAccumulo {
     }
 
     public void createTable(String username, String tableName, TimeType timeType, Map<String,String> properties) {
-        String namespace = TableNameUtil.qualify(tableName).getFirst();
+        String namespace = TableNameUtil.qualify(tableName).namespaceName();
         HashMap<String,String> props = new HashMap<>(properties);
 
         if (!namespaceExists(namespace)) {

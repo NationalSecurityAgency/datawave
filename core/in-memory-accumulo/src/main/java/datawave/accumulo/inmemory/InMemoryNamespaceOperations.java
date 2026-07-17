@@ -85,7 +85,7 @@ class InMemoryNamespaceOperations extends NamespaceOperationsHelper {
 
         InMemoryNamespace n = acu.namespaces.get(oldNamespaceName);
         for (String t : n.getTables(acu)) {
-            String tt = newNamespaceName + "." + TableNameUtil.qualify(t).getSecond();
+            String tt = newNamespaceName + "." + TableNameUtil.qualify(t).tableName();
             acu.tables.put(tt, acu.tables.remove(t));
         }
         acu.namespaces.put(newNamespaceName, acu.namespaces.remove(oldNamespaceName));
