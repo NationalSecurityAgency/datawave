@@ -52,13 +52,37 @@ public class TLDTermFrequencyEventDataQueryFilter implements EventDataQueryFilte
     @Override
     public boolean keep(Key k) {
         DatawaveKey key = new DatawaveKey(k);
-        return (!isRootPointer.test(k) || indexOnlyFields.contains(key.getFieldName())) && fieldMatches(k);
+        return (!isRootPointer.test(k) || containsField(indexOnlyFields, key.getFieldName())) && fieldMatches(k);
     }
 
     private boolean fieldMatches(Key key) {
         DatawaveKey parser = new DatawaveKey(key);
         String fieldName = JexlASTHelper.deconstructIdentifier(parser.getFieldName());
-        return fields.contains(fieldName);
+        return containsField(fields, fieldName);
+    }
+
+    /**
+     * Return whether the given set of (un-grouped) field names contains the candidate field, accepting both exact matches and grouped/content-context variants
+     * of a field in the set, e.g. {@code QUOTE} in the set matching a candidate of {@code QUOTE.1234}.
+     *
+     * @param fieldNames
+     *            a set of field names, expected to not carry grouping/content-context notation
+     * @param candidateField
+     *            the field to check, which may carry grouping/content-context notation
+     * @return true if the candidate field is present in, or a grouped variant of a field in, the given set
+     */
+    private static boolean containsField(Set<String> fieldNames, String candidateField) {
+        if (fieldNames.contains(candidateField)) {
+            return true;
+        }
+
+        for (String fieldName : fieldNames) {
+            if (JexlASTHelper.isGroupedFieldMatch(fieldName, candidateField)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     @Override
