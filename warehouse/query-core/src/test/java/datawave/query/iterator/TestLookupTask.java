@@ -26,8 +26,7 @@ public class TestLookupTask<T extends QueryIterator> {
 
     private static final Logger log = Logger.getLogger(TestLookupTask.class);
     private TypeMetadata typeMetadata = null;
-    private Class<T> iteratorClass;
-    private QueryIterator iterator;
+    private final Class<T> iteratorClass;
 
     private boolean includeGroupingContext = false;
 
@@ -39,7 +38,7 @@ public class TestLookupTask<T extends QueryIterator> {
         this.typeMetadata = typeMetadata;
     }
 
-    private QueryIterator init(SortedKeyValueIterator<Key,Value> source, Map<String,String> options, IteratorEnvironment env, YieldCallback yield)
+    private QueryIterator init(SortedKeyValueIterator<Key,Value> source, Map<String,String> options, IteratorEnvironment env, YieldCallback<Key> yield)
                     throws IOException {
         try {
             QueryIterator iter = this.iteratorClass.getDeclaredConstructor().newInstance();
@@ -63,22 +62,22 @@ public class TestLookupTask<T extends QueryIterator> {
         }
 
         List<Map.Entry<Key,Document>> results = new ArrayList<>();
-        YieldCallback<Key> yield = new YieldCallback();
-        this.iterator = init(source, options, env, yield);
+        YieldCallback<Key> yield = new YieldCallback<>();
+        QueryIterator iterator = init(source, options, env, yield);
         for (Range range : ranges) {
             boolean rangeCompleted = false;
             Range r = range;
             while (!rangeCompleted) {
                 log.trace("Seeking to range:" + r);
-                this.iterator.seek(r, Collections.emptyList(), false);
-                while (this.iterator.hasTop()) {
-                    Document document = deserializeAndFilterDocument(this.iterator.getTopValue());
-                    if (document.getDictionary().size() > 0) {
-                        results.add(new AbstractMap.SimpleEntry(this.iterator.getTopKey(), document));
+                iterator.seek(r, Collections.emptyList(), false);
+                while (iterator.hasTop()) {
+                    Document document = deserializeAndFilterDocument(iterator.getTopValue());
+                    if (!document.getDictionary().isEmpty()) {
+                        results.add(new AbstractMap.SimpleEntry<>(iterator.getTopKey(), document));
                     } else {
                         log.trace("Filtering out invalid document");
                     }
-                    this.iterator.next();
+                    iterator.next();
                 }
                 if (yield.hasYielded()) {
                     Key yieldKey = yield.getPositionAndReset();
@@ -94,7 +93,7 @@ public class TestLookupTask<T extends QueryIterator> {
                     }
                     log.debug("Yielded at " + yieldKey + " after seeking range " + r);
                     yield = new YieldCallback<>();
-                    this.iterator = init(source, options, env, yield);
+                    iterator = init(source, options, env, yield);
                     r = new Range(yieldKey, false, r.getEndKey(), r.isEndKeyInclusive());
                 } else {
                     rangeCompleted = true;
@@ -108,9 +107,9 @@ public class TestLookupTask<T extends QueryIterator> {
         Map.Entry<Key,Document> deserializedValue = deserialize(value);
         Document d = deserializedValue.getValue();
         Document filteredDocument = new Document();
-        d.getDictionary().entrySet().stream().forEach(e -> {
-            if (!e.getKey().equals(TIMING_METADATA) && !e.getKey().equals(WAIT_WINDOW_OVERRUN)) {
-                filteredDocument.put(e.getKey(), e.getValue(), includeGroupingContext);
+        d.getDictionary().forEach((key, value1) -> {
+            if (!key.equals(TIMING_METADATA) && !key.equals(WAIT_WINDOW_OVERRUN)) {
+                filteredDocument.put(key, value1, includeGroupingContext);
             }
         });
         return filteredDocument;
@@ -118,6 +117,6 @@ public class TestLookupTask<T extends QueryIterator> {
 
     private Map.Entry<Key,Document> deserialize(Value value) {
         KryoDocumentDeserializer dser = new KryoDocumentDeserializer();
-        return dser.apply(new AbstractMap.SimpleEntry(null, value));
+        return dser.apply(new AbstractMap.SimpleEntry<>(null, value));
     }
 }
