@@ -123,7 +123,7 @@
         <version.jython>2.7.2b2</version.jython>
         <version.kryo>2.20</version.kryo>
         <version.kryonet>2.20</version.kryonet>
-        <version.log4j>2.26.0</version.log4j>
+        <version.log4j>2.26.1</version.log4j>
         <version.lombok>1.18.36</version.lombok>
         <version.lucene>7.5.0</version.lucene>
         <version.metrics-cdi>1.6.0</version.metrics-cdi>
@@ -1722,8 +1722,9 @@
                 <plugin>
                     <groupId>io.github.git-commit-id</groupId>
                     <artifactId>git-commit-id-maven-plugin</artifactId>
-                    <version>9.0.1</version>
+                    <version>9.2.0</version>
                     <configuration>
+                        <useNativeGit>true</useNativeGit>
                         <dotGitDirectory>${maven.multiModuleProjectDirectory}/.git</dotGitDirectory>
                         <dateFormat>yyyy-MM-dd'T'HH:mm:ssZ</dateFormat>
                         <generateGitPropertiesFile>true</generateGitPropertiesFile>
@@ -1783,7 +1784,8 @@
                     <artifactId>maven-checkstyle-plugin</artifactId>
                     <version>3.6.0</version>
                     <configuration>
-                        <configLocation>checkstyle.xml</configLocation>
+                        <!-- Use multiModuleProjectDirectory to prevent child modules form looking inside their own sub-folders for checkstyle.xml. -->
+                        <configLocation>${maven.multiModuleProjectDirectory}/checkstyle.xml</configLocation>
                         <failsOnError>true</failsOnError>
                         <failOnViolation>false</failOnViolation>
                         <consoleOutput>true</consoleOutput>

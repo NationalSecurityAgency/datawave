@@ -40,6 +40,8 @@ public interface MarkingFunctions<T extends Markings<?>> {
 
     Markings<?> translateFromColumnVisibilityForAuths(ColumnVisibility columnVisibility, Authorizations authorizations) throws MarkingFunctions.Exception;
 
+    ColumnVisibility translateToColumnVisibility(Markings<?> markings) throws MarkingFunctions.Exception;
+
     byte[] flatten(ColumnVisibility vis);
 
     class Exception extends java.lang.Exception {
@@ -160,6 +162,20 @@ public interface MarkingFunctions<T extends Markings<?>> {
         @Override
         public Markings<?> translateFromColumnVisibilityForAuths(ColumnVisibility columnVisibility, Authorizations authorizations) {
             return translateFromColumnVisibility(columnVisibility);
+        }
+
+        @Override
+        public ColumnVisibility translateToColumnVisibility(Markings<?> markings) {
+            if (markings == null) {
+                return null;
+            }
+
+            if (markings instanceof AccessExpressionMarkings) {
+                AccessExpressionMarkings aem = (AccessExpressionMarkings) markings;
+                return aem.toColumnVisibility();
+            }
+
+            throw new RuntimeException(String.format("Unknown markings class %s or %s", markings.getClass().getName()));
         }
 
         @Override

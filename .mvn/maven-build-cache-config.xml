@@ -153,6 +153,18 @@
                         <goal>push</goal>
                     </goals>
                 </goalsList>
+                <!-- Always load properties for resource filtering -->
+                <goalsList artifactId="read-properties">
+                    <goals>
+                        <goal>read-properties</goal>
+                    </goals>
+                </goalsList>
+                <!-- Always load the rpm version for resource filtering -->
+                <goalsList artifactId="rpm-maven-plugin">
+                    <goals>
+                        <goal>version</goal>
+                    </goals>
+                </goalsList>
                 <!-- Always run resource copying and processing for proper configuration -->
                 <goalsList artifactId="maven-resources-plugin">
                     <goals>
