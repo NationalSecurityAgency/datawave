@@ -2,6 +2,7 @@ package datawave.ingest.mapreduce.job;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Supplier;
 
 import org.apache.hadoop.conf.Configuration;
@@ -103,4 +104,6 @@ public interface SplitsCache extends AutoCloseable {
      * @return the list of splits
      */
     List<Text> getSplits(Configuration conf, String tableName) throws IOException;
+
+    Map<Text,String> getSplitsAndLocationByTable(String table) throws IOException;
 }

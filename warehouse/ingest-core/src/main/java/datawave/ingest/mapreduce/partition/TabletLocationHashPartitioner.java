@@ -1,6 +1,8 @@
 package datawave.ingest.mapreduce.partition;
 
+import java.io.IOException;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configurable;
@@ -20,8 +22,19 @@ public class TabletLocationHashPartitioner extends Partitioner<BulkIngestKey,Val
     private static final Logger log = Logger.getLogger(TabletLocationHashPartitioner.class);
 
     private Configuration conf;
-    private Map<String,Map<Text,Integer>> shardHashes;
     private SplitsCache splitsCache;
+    private Map<String,Map<Text,String>> locationsByTable = new ConcurrentHashMap<>();
+
+    private Map<Text,String> getLocationsByTable(String table) throws IOException {
+        Map<Text,String> cached = locationsByTable.get(table);
+        if (cached == null) {
+            cached = splitsCache.getSplitsAndLocationByTable(table);
+            if (cached != null) {
+                locationsByTable.put(table, cached);
+            }
+        }
+        return cached;
+    }
 
     /**
      * Given a map of shard IDs to tablet server locations, this method determines a partition for a given key's shard ID. The goal is that we want to ensure
@@ -36,7 +49,16 @@ public class TabletLocationHashPartitioner extends Partitioner<BulkIngestKey,Val
     @Override
     public int getPartition(BulkIngestKey key, Value value, int numReduceTasks) {
         Text shardId = key.getKey().getRow();
-        String location = splitsCache.getExactLocation(key.getTableName().toString(), shardId, () -> null);
+        String tableName = key.getTableName().toString();
+        Map<Text,String> locations = null;
+        try {
+            locations = getLocationsByTable(tableName);
+        } catch (IOException e) {
+            log.error("IOException: ", e);
+            throw new RuntimeException(e);
+        }
+        String location = locations != null ? locations.get(shardId) : null;
+
         if (location != null) {
             int hash = location.hashCode();
             return (hash & Integer.MAX_VALUE) % numReduceTasks;

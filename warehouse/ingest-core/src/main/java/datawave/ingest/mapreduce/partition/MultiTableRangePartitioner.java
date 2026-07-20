@@ -81,9 +81,6 @@ public class MultiTableRangePartitioner extends Partitioner<BulkIngestKey,Value>
         key.getKey().getRow(holder);
 
         int splitSize = splitsCache.getSplitsCount(tableName);
-        if (splitSize < 0) {
-            return (tableName.hashCode() & Integer.MAX_VALUE) % numPartitions;
-        }
 
         int index = splitsCache.getExactIndex(tableName, holder);
 

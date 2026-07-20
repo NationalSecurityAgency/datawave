@@ -15,6 +15,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import datawave.ingest.mapreduce.job.BulkIngestKey;
+import datawave.ingest.mapreduce.job.SplitsCacheFactory;
 import datawave.ingest.mapreduce.job.SplitsConstants;
 import datawave.ingest.mapreduce.job.TableSplitsCache;
 
@@ -31,7 +32,8 @@ public class SplitBasedHashPartitionerTest {
         conf.set(SplitsConstants.SPLITS_CACHE_DIR, testFilePath.substring(0, testFilePath.lastIndexOf('/')));
         conf.set(SplitsConstants.SPLITS_CACHE_FILE, "full_splits.txt");
 
-        TableSplitsCache.getCurrentCache(conf).clear();
+        TableSplitsCache.clear();
+        SplitsCacheFactory.clearInstance();
 
         MultiTableRangePartitioner.context = getTaskInputOutputContext(testFilePath, conf);
 

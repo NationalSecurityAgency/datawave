@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
@@ -41,8 +42,8 @@ public class SplitsFile implements SplitsCache {
     public static final String CONFIGURED_SHARDED_TABLE_NAMES = ShardedDataTypeHandler.SHARDED_TNAMES + ".configured";
     public static final String DIST_CACHE_LABEL = "splitsFile";
 
-    private static final long NOW = System.currentTimeMillis();
-    private static final String TODAY = formatDay(0);
+    private final long now;
+    private final String today;
 
     private ConcurrentHashMap<String,Map<Text,Integer>> shardPartitionsByTable;
     private TableSplitsCache instance;
@@ -50,6 +51,8 @@ public class SplitsFile implements SplitsCache {
 
     public SplitsFile() {
         this.shardPartitionsByTable = new ConcurrentHashMap<>();
+        this.now = System.currentTimeMillis();
+        this.today = formatDay(0);
     }
 
     @Override
@@ -173,7 +176,6 @@ public class SplitsFile implements SplitsCache {
         }
 
         List<Text> keys = new ArrayList<>(assignments.keySet());
-        Collections.sort(keys);
         int closestAssignment = Collections.binarySearch(keys, shardId);
         if (closestAssignment >= 0) {
             log.warn("Something is screwy, found {} on the second try", shardId);
@@ -247,7 +249,7 @@ public class SplitsFile implements SplitsCache {
      * @throws IOException
      *             if there is an issue with read or write
      */
-    private HashMap<Text,Integer> getPartitionsByShardId(String tableName) throws IOException {
+    private TreeMap<Text,Integer> getPartitionsByShardId(String tableName) throws IOException {
         if (log.isDebugEnabled())
             log.debug("Loading splits data for " + tableName);
 
@@ -275,11 +277,11 @@ public class SplitsFile implements SplitsCache {
      *            the map of shard ids and their location
      * @return shardId to
      */
-    private HashMap<Text,Integer> assignPartitionsForEachShard(List<Text> sortedShardIds, Map<Text,String> shardIdToLocations) {
+    private TreeMap<Text,Integer> assignPartitionsForEachShard(List<Text> sortedShardIds, Map<Text,String> shardIdToLocations) {
         int totalNumUniqueTServers = calculateNumberOfUniqueTservers(shardIdToLocations);
 
         HashMap<String,Integer> partitionsByTServer = getTServerAssignments(totalNumUniqueTServers, sortedShardIds, shardIdToLocations);
-        HashMap<Text,Integer> partitionsByShardId = getShardIdAssignments(shardIdToLocations, partitionsByTServer);
+        TreeMap<Text,Integer> partitionsByShardId = getShardIdAssignments(shardIdToLocations, partitionsByTServer);
 
         if (log.isDebugEnabled())
             log.debug("Number of shardIds assigned: " + partitionsByShardId.size());
@@ -323,15 +325,15 @@ public class SplitsFile implements SplitsCache {
         if (shardIdStr.length() < 8) {
             return true;
         }
-        return shardIdStr.substring(0, 8).compareTo(TODAY) > 0;
+        return shardIdStr.substring(0, 8).compareTo(today) > 0;
     }
 
-    private static String formatDay(int numDaysBack) {
-        return DateHelper.format(NOW - (DateUtils.MILLIS_PER_DAY * numDaysBack));
+    private String formatDay(int numDaysBack) {
+        return DateHelper.format(now - (DateUtils.MILLIS_PER_DAY * numDaysBack));
     }
 
-    private HashMap<Text,Integer> getShardIdAssignments(Map<Text,String> shardIdsToTservers, HashMap<String,Integer> partitionsByTServer) {
-        HashMap<Text,Integer> partitionsByShardId = new HashMap<>();
+    private TreeMap<Text,Integer> getShardIdAssignments(Map<Text,String> shardIdsToTservers, HashMap<String,Integer> partitionsByTServer) {
+        TreeMap<Text,Integer> partitionsByShardId = new TreeMap<>();
         for (Map.Entry<Text,String> entry : shardIdsToTservers.entrySet()) {
             partitionsByShardId.put(entry.getKey(), partitionsByTServer.get(entry.getValue()));
         }
@@ -442,5 +444,14 @@ public class SplitsFile implements SplitsCache {
         Text endRow = position == tableSplits.size() ? null : tableSplits.get(position);
 
         return new LoadPlan.TableSplits(prevRow, endRow);
+    }
+
+    /**
+     * @param table
+     * @return map of splits to tablet locations for the table
+     * @throws IOException
+     */
+    public Map<Text,String> getSplitsAndLocationByTable(String table) throws IOException {
+        return instance.getSplitsAndLocationByTable(table);
     }
 }
