@@ -313,9 +313,9 @@ public class BoundedRangeIndexLookupTest extends EasyMockSupport {
         IndexLookupMap lookupMap = lookup.lookup();
 
         if (expected.isEmpty()) {
-            assertTrue(lookupMap.keySet().isEmpty());
+            assertTrue(lookupMap.isEmpty());
         } else {
-            assertTrue(lookupMap.containsKey(field));
+            assertTrue("Map " + lookupMap.size() + " does not contain field " + field + " Instead: " + lookupMap.keySet(), lookupMap.containsKey(field));
             Set<String> values = new HashSet<>(lookupMap.get(field));
             assertEquals(expected, values);
         }
