@@ -42,6 +42,7 @@ import org.apache.accumulo.core.conf.DefaultConfiguration;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.data.TableId;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.util.ConfigurationImpl;
@@ -111,7 +112,7 @@ public class QueryIteratorIT extends EasyMockSupport {
 
     protected static final Value EMPTY_VALUE = new Value();
 
-    protected Class getIteratorClass() {
+    protected Class<QueryIterator> getIteratorClass() {
         return QueryIterator.class;
     }
 
@@ -172,7 +173,9 @@ public class QueryIteratorIT extends EasyMockSupport {
 
         iterEnv = createMock(IteratorEnvironment.class);
         pluginEnv = createMock(PluginEnvironment.class);
+        EasyMock.expect(iterEnv.getTableId()).andReturn(TableId.of("test")).anyTimes();
         EasyMock.expect(iterEnv.getPluginEnv()).andReturn(pluginEnv).anyTimes();
+        EasyMock.expect(pluginEnv.getConfiguration(TableId.of("test"))).andReturn(new ConfigurationImpl(DefaultConfiguration.getInstance())).anyTimes();
         EasyMock.expect(pluginEnv.getConfiguration()).andReturn(new ConfigurationImpl(DefaultConfiguration.getInstance())).anyTimes();
         filter = createMock(EventDataQueryFilter.class);
     }
@@ -1340,7 +1343,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         additionalOptions.put(QueryParameters.MOST_RECENT_UNIQUE, "true");
         Range seekRange = getShardRange();
         String query = "EVENT_FIELD1 == 'a' && EVENT_FIELD4 == 'd' && EVENT_FIELD6 == 'f' && f:most_recent_unique('EVENT_FIELD2')";
-        event_test(seekRange, query, false, hitOverride, otherData, Collections.EMPTY_LIST, additionalOptions);
+        event_test(seekRange, query, false, hitOverride, otherData, List.of(), additionalOptions);
     }
 
     protected void configureIterator() {
@@ -1349,7 +1352,7 @@ public class QueryIteratorIT extends EasyMockSupport {
 
     protected void event_test(Range seekRange, String query, boolean miss, Map.Entry<Key,Map<String,List<String>>> hitOverride,
                     List<Map.Entry<Key,Value>> otherData, List<Map.Entry<Key,Map<String,List<String>>>> otherHits) throws IOException {
-        event_test(seekRange, query, miss, hitOverride, otherData, otherHits, Collections.EMPTY_MAP);
+        event_test(seekRange, query, miss, hitOverride, otherData, otherHits, Map.of());
     }
 
     /**
@@ -1592,7 +1595,7 @@ public class QueryIteratorIT extends EasyMockSupport {
     }
 
     protected Key getHitKey(String row, String dataType, String uid) {
-        return new Key(row, dataType + Constants.NULL + uid);
+        return new Key(row, dataType + Constants.NULL_BYTE_STRING + uid);
     }
 
     protected Map.Entry<Key,Map<String,List<String>>> getBaseExpectedEvent(String uid) {
@@ -1658,8 +1661,7 @@ public class QueryIteratorIT extends EasyMockSupport {
             int baseSize = d.getDictionary().size() - 1;
             int docSize = isExpectHitTerm() ? baseSize - 1 : baseSize;
 
-            assertEquals("Unexpected doc size: " + d.getDictionary().size() + "\nGot: " + docSize + "\n" + "expected: " + docKeys, docKeys.keySet().size(),
-                            docSize);
+            assertEquals("Unexpected doc size: " + d.getDictionary().size() + "\nGot: " + docSize + "\n" + "expected: " + docKeys, docKeys.size(), docSize);
 
             // validate the hit list
             assertEquals("HIT_TERM presence expected: " + isExpectHitTerm() + " actual: " + (d.getDictionary().get(JexlEvaluation.HIT_TERM_FIELD) != null),
@@ -1740,6 +1742,6 @@ public class QueryIteratorIT extends EasyMockSupport {
     }
 
     protected Key getEvent(String row, String field, String value, String dataType, String uid, long eventTimestamp) {
-        return new Key(row, dataType + Constants.NULL + uid, field + Constants.NULL + value, eventTimestamp);
+        return new Key(row, dataType + Constants.NULL_BYTE_STRING + uid, field + Constants.NULL_BYTE_STRING + value, eventTimestamp);
     }
 }
