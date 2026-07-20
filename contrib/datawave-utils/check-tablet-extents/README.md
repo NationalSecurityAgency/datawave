@@ -55,6 +55,9 @@ Usage: TabletExtentChecker [options]
     -c, --compact
       Compact the tablets
       Default: false
+    -d, --debug
+      Display tool debug info
+      Default: false
     -e, --end
       The ending row (inclusive) of the range of tablets to scan
     -h, -?, --help, -help
