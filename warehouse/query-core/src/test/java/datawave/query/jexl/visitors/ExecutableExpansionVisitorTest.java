@@ -31,6 +31,7 @@ import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.ParserTreeConstants;
 import org.apache.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -116,7 +117,8 @@ public class ExecutableExpansionVisitorTest extends AbstractQueryTest {
         PrintUtility.printTable(sharedClient, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
     }
 
-    private void setupLogic() {
+    @BeforeEach
+    public void setupLogic() {
         setClientForTest(sharedClient);
         logic.setFullTableScanEnabled(false);
         logic.setMaxDepthThreshold(11);
@@ -138,8 +140,6 @@ public class ExecutableExpansionVisitorTest extends AbstractQueryTest {
 
     @Test
     public void testMixedIndexOnly() {
-        setupLogic();
-
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
@@ -150,8 +150,6 @@ public class ExecutableExpansionVisitorTest extends AbstractQueryTest {
 
     @Test
     public void testExpansion() throws Exception {
-        setupLogic();
-
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
@@ -161,8 +159,6 @@ public class ExecutableExpansionVisitorTest extends AbstractQueryTest {
 
     @Test
     public void testGeowaveExpansion() throws Exception {
-        setupLogic();
-
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
@@ -206,8 +202,6 @@ public class ExecutableExpansionVisitorTest extends AbstractQueryTest {
 
     @Test
     public void testNestedOrExpansion() throws Exception {
-        setupLogic();
-
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
@@ -218,8 +212,6 @@ public class ExecutableExpansionVisitorTest extends AbstractQueryTest {
 
     @Test
     public void testMethodNoExpansion() throws Exception {
-        setupLogic();
-
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
@@ -229,8 +221,6 @@ public class ExecutableExpansionVisitorTest extends AbstractQueryTest {
 
     @Test
     public void testNumericExpansion() throws Exception {
-        setupLogic();
-
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
@@ -246,8 +236,6 @@ public class ExecutableExpansionVisitorTest extends AbstractQueryTest {
 
     @Test
     public void testNumericExpansionIndexOnly() throws Exception {
-        setupLogic();
-
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
@@ -263,8 +251,6 @@ public class ExecutableExpansionVisitorTest extends AbstractQueryTest {
 
     @Test
     public void testAnyfieldNumericExpansion() throws Exception {
-        setupLogic();
-
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
@@ -282,8 +268,6 @@ public class ExecutableExpansionVisitorTest extends AbstractQueryTest {
 
     @Test
     public void testAnyfieldTypeExclusion() throws Exception {
-        setupLogic();
-
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
@@ -300,8 +284,6 @@ public class ExecutableExpansionVisitorTest extends AbstractQueryTest {
 
     @Test
     public void testLeadingNumericExpansion() throws Exception {
-        setupLogic();
-
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
@@ -316,8 +298,6 @@ public class ExecutableExpansionVisitorTest extends AbstractQueryTest {
 
     @Test
     public void testMethodExpansion() throws Exception {
-        setupLogic();
-
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
@@ -327,8 +307,6 @@ public class ExecutableExpansionVisitorTest extends AbstractQueryTest {
 
     @Test
     public void testNonEventExpansion() throws Exception {
-        setupLogic();
-
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
@@ -338,8 +316,6 @@ public class ExecutableExpansionVisitorTest extends AbstractQueryTest {
 
     @Test
     public void testFilterExpansion() throws Exception {
-        setupLogic();
-
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
@@ -349,8 +325,6 @@ public class ExecutableExpansionVisitorTest extends AbstractQueryTest {
 
     @Test
     public void testDisableExpansion() throws Exception {
-        setupLogic();
-
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
@@ -373,8 +347,6 @@ public class ExecutableExpansionVisitorTest extends AbstractQueryTest {
     @ParameterizedTest
     @MethodSource("delayedBridgeExpansionArgs")
     public void testDelayedBridgeExpansion(String query, List<String> expected) throws Exception {
-        setupLogic();
-
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
@@ -384,8 +356,6 @@ public class ExecutableExpansionVisitorTest extends AbstractQueryTest {
 
     @Test
     public void testMultipleExpansionsRequired() throws Exception {
-        setupLogic();
-
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
@@ -399,8 +369,6 @@ public class ExecutableExpansionVisitorTest extends AbstractQueryTest {
 
     @Test
     public void testMinimumExpansion() throws Exception {
-        setupLogic();
-
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
@@ -411,8 +379,6 @@ public class ExecutableExpansionVisitorTest extends AbstractQueryTest {
 
     @Test
     public void testIndexOnlyNoType() throws Exception {
-        setupLogic();
-
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
@@ -422,8 +388,6 @@ public class ExecutableExpansionVisitorTest extends AbstractQueryTest {
 
     @Test
     public void testTypedAndNotIndexed() throws Exception {
-        setupLogic();
-
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
