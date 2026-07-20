@@ -12,6 +12,7 @@ import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -129,7 +130,8 @@ public class ExcerptTest extends AbstractQueryTest {
         PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
     }
 
-    private void setupLogic() {
+    @BeforeEach
+    public void setupLogic() {
         setClientForTest(client);
         logic.setFullTableScanEnabled(true);
 
@@ -163,7 +165,6 @@ public class ExcerptTest extends AbstractQueryTest {
 
     @Test
     public void simpleTest() throws Exception {
-        setupLogic();
         String queryString = "QUOTE:(farther) #EXCERPT_FIELDS(QUOTE/2)";
 
         // not sure why the timestamp and delete flag are present
@@ -174,7 +175,6 @@ public class ExcerptTest extends AbstractQueryTest {
 
     @Test
     public void simpleTestBefore() throws Exception {
-        setupLogic();
         String queryString = "QUOTE:(farther) #EXCERPT_FIELDS(QUOTE/2/before)";
 
         // not sure why the timestamp and delete flag are present
@@ -185,7 +185,6 @@ public class ExcerptTest extends AbstractQueryTest {
 
     @Test
     public void simpleTestAfter() throws Exception {
-        setupLogic();
         String queryString = "QUOTE:(farther) #EXCERPT_FIELDS(QUOTE/2/after)";
 
         // not sure why the timestamp and delete flag are present
@@ -196,7 +195,6 @@ public class ExcerptTest extends AbstractQueryTest {
 
     @Test
     public void lessSimpleBeforeTest() throws Exception {
-        setupLogic();
         String queryString = "QUOTE:(he cant refuse) #EXCERPT_FIELDS(QUOTE/2/before)";
 
         addExpectedResult("HIT_EXCERPT:an offer [he] [cant] [refuse]");
@@ -206,7 +204,6 @@ public class ExcerptTest extends AbstractQueryTest {
 
     @Test
     public void lessSimpleAfterTest() throws Exception {
-        setupLogic();
         String queryString = "QUOTE:(he cant refuse) #EXCERPT_FIELDS(QUOTE/2/after)";
 
         addExpectedResult("HIT_EXCERPT:[he] [cant] [refuse]");
@@ -216,7 +213,6 @@ public class ExcerptTest extends AbstractQueryTest {
 
     @Test
     public void lessSimpleTest() throws Exception {
-        setupLogic();
         String queryString = "QUOTE:(he cant refuse) #EXCERPT_FIELDS(QUOTE/2)";
 
         addExpectedResult("HIT_EXCERPT:an offer [he] [cant] [refuse]");
@@ -226,7 +222,6 @@ public class ExcerptTest extends AbstractQueryTest {
 
     @Test
     public void biggerRangeThanQuoteLength() throws Exception {
-        setupLogic();
         String queryString = "QUOTE:(he cant refuse) #EXCERPT_FIELDS(QUOTE/20)";
 
         addExpectedResult("HIT_EXCERPT:im gonna make him an offer [he] [cant] [refuse]");
@@ -236,7 +231,6 @@ public class ExcerptTest extends AbstractQueryTest {
 
     @Test
     public void biggerRangeThanQuoteLengthBeforeTest() throws Exception {
-        setupLogic();
         String queryString = "QUOTE:(he cant refuse) #EXCERPT_FIELDS(QUOTE/20/before)";
 
         addExpectedResult("HIT_EXCERPT:im gonna make him an offer [he] [cant] [refuse]");
@@ -246,7 +240,6 @@ public class ExcerptTest extends AbstractQueryTest {
 
     @Test
     public void biggerRangeThanQuoteLengthAfterTest() throws Exception {
-        setupLogic();
         String queryString = "QUOTE:(he cant refuse) #EXCERPT_FIELDS(QUOTE/20/after)";
 
         addExpectedResult("HIT_EXCERPT:[he] [cant] [refuse]");
@@ -256,7 +249,6 @@ public class ExcerptTest extends AbstractQueryTest {
 
     @Test
     public void wholeQuote() throws Exception {
-        setupLogic();
         String queryString = "QUOTE:(im gonna make him an offer he cant refuse) #EXCERPT_FIELDS(QUOTE/20)";
 
         addExpectedResult("HIT_EXCERPT:[im] [gonna] [make] [him] [an] [offer] [he] [cant] [refuse]");
@@ -266,7 +258,6 @@ public class ExcerptTest extends AbstractQueryTest {
 
     @Test
     public void anotherFirstTerm() throws Exception {
-        setupLogic();
         updateQueryParam("return.fields", "HIT_EXCERPT,UUID");
 
         // "if" is the first term for one event
@@ -280,7 +271,6 @@ public class ExcerptTest extends AbstractQueryTest {
 
     @Test
     public void anotherFirstTermBeforeTest() throws Exception {
-        setupLogic();
         updateQueryParam("return.fields", "HIT_EXCERPT,UUID");
 
         // "if" is the first term for one event
@@ -294,7 +284,6 @@ public class ExcerptTest extends AbstractQueryTest {
 
     @Test
     public void anotherFirstTermAfterTest() throws Exception {
-        setupLogic();
         updateQueryParam("return.fields", "HIT_EXCERPT,UUID");
 
         // "if" is the first term for one event
