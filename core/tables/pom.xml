@@ -54,4 +54,33 @@
             <artifactId>zookeeper-jute</artifactId>
         </dependency>
     </dependencies>
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-enforcer-plugin</artifactId>
+                    <executions>
+                        <execution>
+                            <id>enforce-junit-5</id>
+                            <goals>
+                                <goal>enforce</goal>
+                            </goals>
+                            <phase>process-sources</phase>
+                            <configuration>
+                                <rules>
+                                    <restrictImports>
+                                        <!-- core-tables module enforces JUnit5 -->
+                                        <reason>Use JUnit5 instead of JUnit4</reason>
+                                        <bannedImport>org.junit.**</bannedImport>
+                                        <allowedImport>org.junit.jupiter.**</allowedImport>
+                                    </restrictImports>
+                                </rules>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
 </project>
