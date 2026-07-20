@@ -383,7 +383,7 @@ public class AnnotationDataAccessTest {
         assertTrue(existingAnnotation.isPresent());
 
         // Delete the annotation
-        dao.delete(shard, dataType, uid, annotationIdToDelete);
+        dao.deleteAnnotation(shard, dataType, uid, annotationIdToDelete);
 
         // Verify the annotation no longer exists
         Optional<Annotation> deletedAnnotation = dao.getAnnotation(shard, dataType, uid, annotationIdToDelete);
@@ -401,7 +401,7 @@ public class AnnotationDataAccessTest {
         // This should not throw an exception (delete handles empty iterator gracefully)
         // Note: if delete returns null mutation, writer.addMutation is called with null which throws
         try {
-            dao.delete(shard, dataType, uid, annotationId);
+            dao.deleteAnnotation(shard, dataType, uid, annotationId);
             // If we get here, delete handled empty results correctly
         } catch (IllegalArgumentException e) {
             // This is expected if mutationAdapter returns null and writer.addMutation is called with null
