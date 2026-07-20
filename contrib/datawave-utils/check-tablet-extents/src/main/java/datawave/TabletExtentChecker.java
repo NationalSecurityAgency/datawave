@@ -57,7 +57,7 @@ public final class TabletExtentChecker implements KeywordExecutable {
      * Represents a set of options that can parsed and used via {@link TabletExtentChecker#execute(String[])}. ConfigOpts provides getSiteConfiguration() to be
      * used to create ServerContext
      */
-    private static class Opts extends ConfigOpts {
+    public static class Opts extends ConfigOpts {
         @Parameter(names = {"-t", "--table"}, description = "The table name", required = true)
         public String tableName = null;
 
@@ -101,14 +101,25 @@ public final class TabletExtentChecker implements KeywordExecutable {
         }
     }
 
+
+    /**
+     * @return the keyword to use this tool on the command line using $ accumulo {keyword}
+     */
     @Override
     public String keyword() {
         return "check-tablets";
     }
 
+    /**
+     * @return the description of this tablet extent checker tool
+     */
     @Override
     public String description() {
         return "Identifies tablets with data outside their extents and if specified, compacts them.";
+    }
+
+    public static void main(String[] args) throws AccumuloException, TableNotFoundException, IOException, AccumuloSecurityException {
+        new TabletExtentChecker().execute(args);
     }
 
     /**
@@ -132,12 +143,43 @@ public final class TabletExtentChecker implements KeywordExecutable {
 
         try (ServerContext context = new ServerContext(opts.getSiteConfiguration())) {
             // Fetch the recommended tablet ranges to compact.
-            checkTablets(context, opts.tableName, opts.beginRow, opts.endRow, opts.mergeExtents, opts.compactTablets, opts.debug);
+            checkTablets(context, opts);
         }
     }
 
-    public static void main(String[] args) throws AccumuloException, TableNotFoundException, IOException, AccumuloSecurityException {
-        new TabletExtentChecker().execute(args);
+    /**
+     *
+     * @param context
+     *             the context to use when connecting to Accumulo
+     * @param opts
+     *             the Opts object providing options to configure the tool
+     * @throws AccumuloException
+     *             if an error occurs while connecting to Accumulo
+     * @throws TableNotFoundException
+     *             if the specified table does not exist
+     * @throws IOException
+     *             if an error occurs while reading the client properties file
+     * @throws AccumuloSecurityException
+     *             if an error occurs during authentication
+     */
+    public static void checkTablets(ClientContext context, Opts opts) throws AccumuloException, TableNotFoundException, IOException, AccumuloSecurityException {
+        List<Pair<Text,Text>> compactionExtents = findCompactableTablets(context, opts);
+
+        // Print a message when compactionExtents is empty
+        if (compactionExtents.isEmpty()) {
+            System.out.println("No candidates suitable for compaction.");
+        } else {
+            for (Pair<Text,Text> pair : compactionExtents) {
+                Text startRow = pair.getLeft();
+                Text endRow = pair.getRight();
+                if (opts.compactTablets) {
+                    System.out.println("Compacting range from " + startRow + "-" + endRow);
+                    context.tableOperations().compact(opts.tableName, startRow, endRow, true, true);
+                } else {
+                    System.out.println("compact -t " + opts.tableName + formatArg("-b", startRow) + formatArg("-e", endRow));
+                }
+            }
+        }
     }
 
     /**
@@ -160,14 +202,10 @@ public final class TabletExtentChecker implements KeywordExecutable {
     /**
      * Returns a list of pairs consisting of the extents of tablets that require compaction.
      *
-     * @param tableName
-     *            the name of the table to evaluate for tablet compaction
-     * @param begin
-     *            the starting row (exclusive) of the range to search for tablets within. A null value implies no starting boundary.
-     * @param end
-     *            the ending row (inclusive) of the range to search for tablets within. A null value implies no ending boundary
-     * @param mergeExtents
-     *            will merge recommended ranges of neighboring tablets requiring compaction
+     * @param context
+     *         the context to use when connecting to Accumulo
+     * @param opts
+     *         the Opts object providing options to configure the tool
      * @return the list of tablet boundaries recommended for compaction
      * @throws AccumuloException
      *             if an error occurs while connecting to Accumulo
@@ -176,13 +214,12 @@ public final class TabletExtentChecker implements KeywordExecutable {
      * @throws IOException
      *             if an error occurs while reading the client properties file
      */
-    static List<Pair<Text,Text>> findCompactableTablets(ClientContext context, String tableName, Text begin, Text end, boolean mergeExtents, boolean debug)
-                    throws AccumuloException, TableNotFoundException, IOException {
+    static List<Pair<Text,Text>> findCompactableTablets(ClientContext context, Opts opts) throws AccumuloException, TableNotFoundException, IOException {
         List<Pair<Text,Text>> compactionExtents = new ArrayList<>();
 
-        TableId tableId = getTableId(context, tableName);
+        TableId tableId = getTableId(context, opts.tableName);
         // Fetch the metadata for all tablets in the given table whose extents overlap with the user provided range of tablets to scan.
-        try (TabletsMetadata tablets = context.getAmple().readTablets().forTable(tableId).overlapping(begin, false, end)
+        try (TabletsMetadata tablets = context.getAmple().readTablets().forTable(tableId).overlapping(opts.beginRow, false, opts.endRow)
                         .fetch(TabletMetadata.ColumnType.PREV_ROW, TabletMetadata.ColumnType.FILES).build()) {
 
             // Tracks compaction ranges if we are merging extents.
@@ -193,13 +230,13 @@ public final class TabletExtentChecker implements KeywordExecutable {
             // Iterate over each tablet.
             for (TabletMetadata tablet : tablets) {
                 // Determine whether the tablet needs compaction.
-                boolean tabletRequiresCompaction = tabletRequiresCompaction(context, tableName, tablet, debug);
+                boolean tabletRequiresCompaction = tabletRequiresCompaction(context, opts.tableName, tablet, opts.debug);
                 KeyExtent extent = tablet.getExtent();
 
                 // The current tablet requires compaction.
                 if (tabletRequiresCompaction) {
                     // If we are merging extents, update the current compaction start and end based on whether the previous tablet also required compaction.
-                    if (mergeExtents) {
+                    if (opts.mergeExtents) {
                         // The previous tablet did not require compaction. Update the compaction range to reflect the current tablet.
                         if (!foundCompactableTablet) {
                             compactionStart = extent.prevEndRow();
@@ -215,7 +252,7 @@ public final class TabletExtentChecker implements KeywordExecutable {
                     // The current tablet does not require compaction.
                 } else {
                     // We are merging tablet extents, and the previous tablet requires compaction.
-                    if (mergeExtents && foundCompactableTablet) {
+                    if (opts.mergeExtents && foundCompactableTablet) {
                         // Add a new recommended compaction range and reset our compaction boundaries.
                         compactionExtents.add(Pair.of(compactionStart, compactionEnd));
                         compactionStart = null;
@@ -225,7 +262,7 @@ public final class TabletExtentChecker implements KeywordExecutable {
                 }
             }
             // Handle case where last tablet needs compaction when we are merging extents.
-            if (mergeExtents && foundCompactableTablet) {
+            if (opts.mergeExtents && foundCompactableTablet) {
                 compactionExtents.add(Pair.of(compactionStart, compactionEnd));
             }
         }
@@ -262,6 +299,8 @@ public final class TabletExtentChecker implements KeywordExecutable {
      *            the tablet name
      * @param tablet
      *            the tablet metadata
+     * @param debug
+     *            the flag to control logging of this tool
      * @return true if the tablet requires compaction, or false
      */
     private static boolean tabletRequiresCompaction(ClientContext context, String tableName, TabletMetadata tablet, boolean debug)
@@ -296,26 +335,5 @@ public final class TabletExtentChecker implements KeywordExecutable {
             }
         }
         return false;
-    }
-
-    public static void checkTablets(ClientContext context, String tableName, Text begin, Text end, boolean mergeExtents, boolean compactTablets, boolean debug)
-                    throws AccumuloException, TableNotFoundException, IOException, AccumuloSecurityException {
-        List<Pair<Text,Text>> compactionExtents = findCompactableTablets(context, tableName, begin, end, mergeExtents, debug);
-
-        // Print a message when compactionExtents is empty
-        if (compactionExtents.isEmpty()) {
-            System.out.println("No candidates suitable for compaction.");
-        } else {
-            for (Pair<Text,Text> pair : compactionExtents) {
-                Text startRow = pair.getLeft();
-                Text endRow = pair.getRight();
-                if (compactTablets) {
-                    System.out.println("Compacting range from " + startRow + "-" + endRow);
-                    context.tableOperations().compact(tableName, startRow, endRow, true, true);
-                } else {
-                    System.out.println("compact -t " + tableName + formatArg("-b", startRow) + formatArg("-e", endRow));
-                }
-            }
-        }
     }
 }
