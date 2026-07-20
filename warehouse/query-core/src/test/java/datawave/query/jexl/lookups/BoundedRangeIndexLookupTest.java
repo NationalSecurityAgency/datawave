@@ -4,9 +4,11 @@ import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.isA;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -21,24 +23,24 @@ import java.util.TreeSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import org.apache.accumulo.core.client.Accumulo;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.client.ScannerBase.ConsistencyLevel;
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.minicluster.MiniAccumuloCluster;
+import org.apache.accumulo.minicluster.MiniAccumuloConfig;
+import org.apache.commons.io.FileUtils;
 import org.easymock.EasyMockSupport;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.ClassRule;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
 
 import datawave.microservice.query.QueryImpl;
 import datawave.query.config.ShardQueryConfiguration;
@@ -51,10 +53,8 @@ import datawave.util.time.DateHelper;
 
 public class BoundedRangeIndexLookupTest extends EasyMockSupport {
 
-    @ClassRule
-    public static TemporaryFolder temporaryFolder = new TemporaryFolder();
-
     private static final String PASSWORD = "password";
+    private static File testDir;
 
     private static final String shard = "2024070";
     private static final Set<String> fields = Set.of("FIELD_A", "FIELD_B", "FIELD_C", "FIELD_D", "FIELD_E");
@@ -78,11 +78,21 @@ public class BoundedRangeIndexLookupTest extends EasyMockSupport {
 
     @BeforeClass
     public static void setupClass() throws Exception {
-        cluster = new MiniAccumuloCluster(temporaryFolder.newFolder(), PASSWORD);
+
+        // Setup Mini Accumulo Logging
+        File baseDir = new File(System.getProperty("user.dir") + "/target/mini-tests");
+        assertTrue(baseDir.mkdirs() || baseDir.isDirectory());
+        testDir = new File(baseDir, BoundedRangeIndexLookupTest.class.getName());
+        FileUtils.deleteQuietly(testDir);
+        assertTrue(testDir.mkdir());
+
+        MiniAccumuloConfig config = new MiniAccumuloConfig(testDir, PASSWORD).setJDWPEnabled(true);
+        config.setZooKeeperPort(0);
+        HashMap<String,String> site = new HashMap<>();
+        config.setSiteConfig(site);
+        cluster = new MiniAccumuloCluster(config);
         cluster.start();
-
-        client = cluster.createAccumuloClient("root", new PasswordToken(PASSWORD));
-
+        client = Accumulo.newClient().from(cluster.getClientProperties()).build();
         writeData();
     }
 
@@ -130,6 +140,8 @@ public class BoundedRangeIndexLookupTest extends EasyMockSupport {
                 bw.addMutation(m);
             }
         }
+        // flush the data so the Scan Server has something to try to read
+        client.tableOperations().flush(TableName.SHARD_INDEX, null, null, true);
     }
 
     @Test
@@ -315,7 +327,7 @@ public class BoundedRangeIndexLookupTest extends EasyMockSupport {
         if (expected.isEmpty()) {
             assertTrue(lookupMap.isEmpty());
         } else {
-            assertTrue("Map " + lookupMap.size() + " does not contain field " + field + " Instead: " + lookupMap.keySet(), lookupMap.containsKey(field));
+            assertFalse("Lookup Map is empty", lookupMap.isEmpty());
             Set<String> values = new HashSet<>(lookupMap.get(field));
             assertEquals(expected, values);
         }
