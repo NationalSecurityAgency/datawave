@@ -34,9 +34,48 @@ public class BalancedShardPartitioner extends Partitioner<BulkIngestKey,Value> i
     private String missingShardStrategy;
     int missingShardIdCount = 0;
 
+    /**
+     * Strategy for handling shard IDs that don't have an assigned partition.
+     *
+     * This situation occurs when shards were not created for a particular day,
+     * or when not all expected shards were created for the day.
+     */
     public enum MissingShardStrategy {
-        HASH, COLLAPSE;
+        /**
+         * Hash-based fallback strategy.
+         *
+         * When a shard ID has no assigned partition, computes the partition using
+         * the shard ID's hashCode. This provides a deterministic mapping but may
+         * result in uneven distribution across reducers since the hash is computed
+         * independently of tablet server assignments.
+         *
+         * Logs warnings (up to 10) when missing shard IDs are encountered.
+         *
+         * Use when: You need a simple fallback and uneven distribution is acceptable.
+         */
+        HASH,
 
+        /**
+         * Collapse/nearest-neighbor strategy.
+         *
+         * When a shard ID has no assigned partition, finds and returns the nearest
+         * existing partition (based on shard ID ordering). This maps missing shards
+         * to the closest existing shard's partition, maintaining shard locality better
+         * than HASH strategy.
+         *
+         * Does not log warnings.
+         *
+         * Use when: You want missing shards to be consistently co-located with nearby
+         * shards for better locality and balanced distribution.
+         */
+        COLLAPSE;
+
+        /**
+         * Parse strategy from configuration string.
+         *
+         * @param stratString the strategy name from configuration (case-insensitive)
+         * @return COLLAPSE if stratString equals "COLLAPSE", otherwise HASH (default)
+         */
         public static MissingShardStrategy getStrategy(String stratString) {
             if (COLLAPSE.name().equals(stratString)) {
                 return COLLAPSE;
@@ -54,6 +93,7 @@ public class BalancedShardPartitioner extends Partitioner<BulkIngestKey,Value> i
 
     @Override
     public int getPartition(BulkIngestKey key, Value value, int numReduceTasks) {
+        // No synchronization needed: SplitsCache handles thread-safe access to splits data with double-checked locking
         try {
             // partition will be balanced for a given day, more so for recent days
             int partition = getAssignedPartition(key.getTableName().toString(), key.getKey().getRow());
@@ -61,7 +101,9 @@ public class BalancedShardPartitioner extends Partitioner<BulkIngestKey,Value> i
             // the offsets should help send today's shard data to a different set of reducers than today's error shard data
             if (null == offsetsFactorByTable.get(key.getTableName())) {
                 log.error("We have received a key for a table we are not configured for.  Please verify your sharded table configurations.");
+                throw new RuntimeException();
             }
+
             int offsetForTable = shardIdFactory.getNumShards(key.getKey().getTimestamp()) * offsetsFactorByTable.get(key.getTableName());
 
             return (partition + offsetForTable) % numReduceTasks;
