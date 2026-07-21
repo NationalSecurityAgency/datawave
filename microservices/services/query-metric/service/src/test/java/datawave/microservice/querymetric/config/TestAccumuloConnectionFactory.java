@@ -8,8 +8,8 @@ import org.apache.commons.pool2.impl.DefaultPooledObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryAccumulo;
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.core.common.connection.AccumuloClientPool;
 import datawave.core.common.connection.AccumuloClientPoolFactory;
 import datawave.core.common.connection.AccumuloConnectionFactory;

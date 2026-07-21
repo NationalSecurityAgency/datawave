@@ -28,8 +28,8 @@ import org.apache.hadoop.io.Text;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryAccumulo;
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.data.ColumnFamilyConstants;
 import datawave.marking.AccessExpressionMarkings;
 import datawave.marking.MarkingFunctions;

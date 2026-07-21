@@ -29,8 +29,8 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryAccumulo;
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.microservice.audit.auditors.accumulo.config.AccumuloAuditProperties;
 import datawave.microservice.audit.auditors.accumulo.config.AccumuloAuditProperties.Accumulo;
 import datawave.webservice.common.audit.AuditParameters;

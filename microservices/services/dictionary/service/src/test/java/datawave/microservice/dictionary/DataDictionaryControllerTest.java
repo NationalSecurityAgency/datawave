@@ -28,8 +28,8 @@ import org.springframework.web.util.UriComponentsBuilder;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
-import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryAccumulo;
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.marking.AccessExpressionMarkings;
 import datawave.microservice.ControllerIT;
 import datawave.microservice.dictionary.config.DataDictionaryProperties;

@@ -35,8 +35,8 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.SetMultimap;
 
-import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryAccumulo;
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.data.ColumnFamilyConstants;
 import datawave.metadata.protobuf.EdgeMetadata.MetadataValue;
 import datawave.security.authorization.JWTTokenHandler;
