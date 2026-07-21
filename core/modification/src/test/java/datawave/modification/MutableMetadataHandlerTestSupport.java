@@ -33,7 +33,6 @@ import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
-import datawave.data.ColumnFamilyConstants;
 import datawave.data.hash.HashUID;
 import datawave.data.hash.UID;
 import datawave.ingest.protobuf.Uid;
@@ -43,6 +42,7 @@ import datawave.query.util.MetadataHelperFactory;
 import datawave.query.util.WiseGuysIngest;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.ProxiedUserDetails;
+import datawave.table.constants.MetadataColumnFamilyConstants;
 import datawave.table.constants.TableName;
 import datawave.webservice.modification.DefaultModificationRequest;
 import datawave.webservice.modification.EventIdentifier;
@@ -254,7 +254,7 @@ class MutableMetadataHandlerTestSupport {
      * Asserts that the shard-table term-frequency row exists for the token and derived field name.
      */
     void assertTermFrequencyRowPresent(String fieldName, String token, String visibility) throws Exception {
-        assertEntryPresent(TableName.SHARD, SHARD_ID, ColumnFamilyConstants.COLF_TF.toString(), termFrequencyQualifier(token, fieldName), visibility,
+        assertEntryPresent(TableName.SHARD, SHARD_ID, MetadataColumnFamilyConstants.COLF_TF.toString(), termFrequencyQualifier(token, fieldName), visibility,
                         CAPONE_EVENT_TIMESTAMP, NULL_VALUE);
     }
 
@@ -262,7 +262,7 @@ class MutableMetadataHandlerTestSupport {
      * Asserts that the shard-table term-frequency row has been removed for the token and derived field name.
      */
     void assertTermFrequencyRowAbsent(String fieldName, String token) throws Exception {
-        assertEntryAbsent(TableName.SHARD, SHARD_ID, ColumnFamilyConstants.COLF_TF.toString(), termFrequencyQualifier(token, fieldName));
+        assertEntryAbsent(TableName.SHARD, SHARD_ID, MetadataColumnFamilyConstants.COLF_TF.toString(), termFrequencyQualifier(token, fieldName));
     }
 
     /**
@@ -339,7 +339,7 @@ class MutableMetadataHandlerTestSupport {
      * Asserts that the latest metadata frequency row for the field stores the expected summed frequency value.
      */
     void assertLatestMetadataFrequencyValue(String fieldName, long count) throws Exception {
-        Entry<Key,Value> entry = findEntry(METADATA_TABLE, fieldName, ColumnFamilyConstants.COLF_F.toString(), metadataFrequencyQualifier());
+        Entry<Key,Value> entry = findEntry(METADATA_TABLE, fieldName, MetadataColumnFamilyConstants.COLF_F.toString(), metadataFrequencyQualifier());
         assertNotNull(entry, "Missing metadata frequency entry for " + fieldName);
         assertEquals(entry.getValue(), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(count)), "Unexpected metadata frequency value for " + fieldName);
     }
@@ -390,7 +390,7 @@ class MutableMetadataHandlerTestSupport {
      * Asserts that metadata state has not changed by comparing the frequency value to a previously recorded value.
      */
     void assertMetadataUnchanged(String fieldName, Value beforeValue) throws Exception {
-        Entry<Key,Value> entry = findEntry(METADATA_TABLE, fieldName, ColumnFamilyConstants.COLF_F.toString(), metadataFrequencyQualifier());
+        Entry<Key,Value> entry = findEntry(METADATA_TABLE, fieldName, MetadataColumnFamilyConstants.COLF_F.toString(), metadataFrequencyQualifier());
         assertEquals(entry.getValue(), beforeValue, "Metadata changed unexpectedly for " + fieldName);
     }
 
@@ -410,7 +410,7 @@ class MutableMetadataHandlerTestSupport {
      * Retrieves a metadata frequency value snapshot for later comparison via {@link #assertMetadataUnchanged(String, Value)}.
      */
     Value captureMetadataFrequencyValue(String fieldName) throws Exception {
-        Entry<Key,Value> entry = findEntry(METADATA_TABLE, fieldName, ColumnFamilyConstants.COLF_F.toString(), metadataFrequencyQualifier());
+        Entry<Key,Value> entry = findEntry(METADATA_TABLE, fieldName, MetadataColumnFamilyConstants.COLF_F.toString(), metadataFrequencyQualifier());
         return entry != null ? entry.getValue() : null;
     }
 
@@ -426,7 +426,7 @@ class MutableMetadataHandlerTestSupport {
      */
     void setupTokenField(String tokenFieldName, String tokenValue, String termFrequencyFieldName) throws Exception {
         put(TableName.SHARD, SHARD_ID, FIELD_INDEX_PREFIX + tokenFieldName, fieldIndexQualifier(tokenValue), VIS_ALL, CAPONE_EVENT_TIMESTAMP, NULL_VALUE);
-        put(TableName.SHARD, SHARD_ID, ColumnFamilyConstants.COLF_TF.toString(), termFrequencyQualifier(tokenValue, termFrequencyFieldName), VIS_ALL,
+        put(TableName.SHARD, SHARD_ID, MetadataColumnFamilyConstants.COLF_TF.toString(), termFrequencyQualifier(tokenValue, termFrequencyFieldName), VIS_ALL,
                         CAPONE_EVENT_TIMESTAMP, NULL_VALUE);
         put(TableName.SHARD_INDEX, tokenValue, tokenFieldName, globalIndexQualifier(), VIS_ALL, DAY_TIMESTAMP, uidListValue(CAPONE_UID, 1));
     }
