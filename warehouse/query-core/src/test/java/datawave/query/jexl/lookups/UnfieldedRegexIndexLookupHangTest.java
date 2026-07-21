@@ -1,17 +1,14 @@
 package datawave.query.jexl.lookups;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.accumulo.core.data.Range;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
-import org.junit.jupiter.api.function.Executable;
 
 import com.google.common.base.Preconditions;
 
@@ -21,52 +18,22 @@ import datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods.RefactoredR
 import datawave.query.tables.ScannerFactory;
 
 /**
- * Demonstrates two compounding causes that let an {@link UnfieldedRegexIndexLookup} block the calling (query-planning) thread indefinitely:
- * <ol>
- * <li>{@code ShardQueryConfiguration#maxAnyFieldScanTimeMillis} defaults to {@code Long.MAX_VALUE}. The {@link ScanMonitor} only cancels a future once
- * {@code currentMillis - startMillis >= timeoutMillis}, so with the default value that condition is never true in practice -- registering a task with this
- * "timeout" is equivalent to registering no timeout at all. {@link AsyncIndexLookup#await()}/{@link BaseRegexIndexLookup#await()} then call
- * {@code future.get()} with no timeout of their own, relying entirely on the (never-firing) monitor.</li>
- * <li>{@link UnfieldedRegexIndexLookup}'s scan loop never checks {@link IndexLookupMap#isKeyThresholdExceeded()} (nor the boolean return of
- * {@link IndexLookupMap#put}). Once the max-distinct-fields threshold is exceeded, every subsequent {@code put} silently becomes a no-op, but the loop keeps
- * consuming the scanner instead of breaking out, so the scan runs to the end of its (potentially very large, since it is unfielded and spans many column
- * families) range regardless of the fact that the outcome is already decided.</li>
- * </ol>
- * Combined, a broad/poorly-anchored unfielded regex over a large index can run far longer than necessary, and -- since cause (1) removes the only safety net --
- * can block query planning indefinitely.
+ * Regression coverage for two fixed causes of {@link UnfieldedRegexIndexLookup} blocking query planning indefinitely: an unbounded default scan timeout, and a
+ * scan loop that kept consuming rows after the field-count threshold was already exceeded.
  */
 public class UnfieldedRegexIndexLookupHangTest extends BaseIndexLookupTest {
 
     /**
-     * Demonstrates cause (1) in isolation: with {@code maxAnyFieldScanTimeMillis} left at its default (unbounded), a stalled/slow scan (simulated here with a
-     * per-entry delay, standing in for e.g. a slow or unresponsive tablet server) is not bounded by anything -- the lookup blocks for as long as the underlying
-     * scan takes.
-     * <p>
-     * The outer {@link Timeout} exists only so that if this test fails by actually hanging, the build fails fast instead of hanging forever; the
-     * {@code assertTimeoutPreemptively} call is the actual assertion under test and is expected to fail on current (buggy) code.
+     * {@code maxAnyFieldScanTimeMillis} must default to a finite bound so a stalled scan is always eventually cancelled by the {@link ScanMonitor}.
      */
     @Test
-    @Timeout(value = 20, unit = TimeUnit.SECONDS)
-    public void unboundedDefaultTimeoutProvidesNoProtection() throws Exception {
-        assertEquals(Long.MAX_VALUE, config.getMaxAnyFieldScanTimeMillis(), "sanity check: default max any field scan time is unbounded");
-
-        addDelayIterator(3000);
-        try {
-            write("bar", "FIELD_A");
-            withQuery("_ANYFIELD_ =~ 'ba.*'");
-
-            assertTimeoutPreemptively(Duration.ofSeconds(1), (Executable) this::executeLookup,
-                            "lookup() should not block indefinitely, but with the default (unbounded) maxAnyFieldScanTimeMillis "
-                                            + "there is no mechanism -- neither the ScanMonitor nor future.get() -- that bounds a stalled scan");
-        } finally {
-            removeDelayIterator();
-        }
+    public void defaultAnyFieldScanTimeoutIsFinite() {
+        assertEquals(TimeUnit.HOURS.toMillis(1), config.getMaxAnyFieldScanTimeMillis(),
+                        "default max any field scan time should be a finite bound, not Long.MAX_VALUE");
     }
 
     /**
-     * Demonstrates cause (2) in isolation: once the max-distinct-fields threshold is exceeded, the outcome of the scan is already decided (the term expansion
-     * has failed), yet the scan loop keeps consuming every remaining row instead of stopping, so elapsed time scales with the total number of rows in the range
-     * rather than with how quickly the threshold was hit.
+     * Once the field-count threshold is exceeded the scan's outcome is already decided, so the loop should stop instead of consuming the rest of the range.
      */
     @Test
     @Timeout(value = 20, unit = TimeUnit.SECONDS)

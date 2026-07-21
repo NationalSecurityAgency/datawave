@@ -10,6 +10,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 
 import org.apache.accumulo.core.client.ScannerBase;
@@ -158,9 +159,9 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("maxIndexBatchSize", 1100);
         defaultValues.put("allTermsIndexOnly", false);
         updatedValues.put("allTermsIndexOnly", true);
-        defaultValues.put("maxIndexScanTimeMillis", Long.MAX_VALUE);
+        defaultValues.put("maxIndexScanTimeMillis", TimeUnit.HOURS.toMillis(1));
         updatedValues.put("maxIndexScanTimeMillis", 100000L);
-        defaultValues.put("maxAnyFieldScanTimeMillis", Long.MAX_VALUE);
+        defaultValues.put("maxAnyFieldScanTimeMillis", TimeUnit.HOURS.toMillis(1));
         updatedValues.put("maxAnyFieldScanTimeMillis", 100000L);
         defaultValues.put("useNewIndexLookups", false);
         updatedValues.put("useNewIndexLookups", true);

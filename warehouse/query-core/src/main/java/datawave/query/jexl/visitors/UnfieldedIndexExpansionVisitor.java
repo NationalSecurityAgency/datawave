@@ -153,14 +153,22 @@ public class UnfieldedIndexExpansionVisitor extends RegexIndexExpansionVisitor {
 
     @Override
     public Object visit(ASTEQNode node, Object data) {
-        return buildIndexLookup(node, true, negated, () -> createUnfieldedLiteralIndexLookup(node));
+        if (config.isUseNewIndexLookups()) {
+            return buildIndexLookup(node, true, negated, () -> createUnfieldedLiteralIndexLookup(node));
+        } else {
+            return buildIndexLookup(node, true, negated, () -> createLookup(node));
+        }
     }
 
     @Override
     public Object visit(ASTNENode node, Object data) {
         toggleNegation();
         try {
-            return buildIndexLookup(node, true, negated, () -> createUnfieldedLiteralIndexLookup(node));
+            if (config.isUseNewIndexLookups()) {
+                return buildIndexLookup(node, true, negated, () -> createUnfieldedLiteralIndexLookup(node));
+            } else {
+                return buildIndexLookup(node, true, negated, () -> createLookup(node));
+            }
         } finally {
             toggleNegation();
         }

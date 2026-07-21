@@ -34,15 +34,8 @@ import datawave.table.constants.TableName;
 import datawave.util.time.DateHelper;
 
 /**
- * Demonstrates that {@link ShardQueryConfiguration#isUseNewIndexLookups()} does not actually gate unfielded literal (EQ/NE) expansion in
- * {@link UnfieldedIndexExpansionVisitor}.
- * <p>
- * {@code visit(ASTERNode)}/{@code visit(ASTNRNode)} explicitly branch on the flag between the new lookup ({@code createUnfieldedRegexIndexLookup}) and the
- * deprecated old path ({@code createLookup(node)}, which dispatches through {@code ShardIndexQueryTableStaticMethods.expandQueryTerms()} and ultimately the
- * {@code @Deprecated} {@code FieldNameIndexLookup}). {@code visit(ASTEQNode)}/{@code visit(ASTNENode)} do not perform the same check -- they unconditionally
- * call {@code createUnfieldedLiteralIndexLookup}, regardless of the flag's value. As a result, setting {@code useNewIndexLookups=false} to request the
- * old/deprecated behavior for a literal unfielded term has no effect: the old code path (and {@code FieldNameIndexLookup}) can never be reached for
- * {@code ==}/{@code !=} terms.
+ * Regression coverage for {@link ShardQueryConfiguration#isUseNewIndexLookups()} gating unfielded literal ({@code ==}/{@code !=}) expansion in
+ * {@link UnfieldedIndexExpansionVisitor}, the same way it already gates regex ({@code =~}/{@code !~}) expansion.
  */
 public class UnfieldedIndexExpansionVisitorFlagTest {
 
@@ -102,8 +95,7 @@ public class UnfieldedIndexExpansionVisitorFlagTest {
     }
 
     /**
-     * Sanity check: the flag DOES correctly gate the old lookup path for a regex ({@code =~}) unfielded term -- when {@code useNewIndexLookups=false},
-     * {@code visit(ASTERNode)} routes through {@code createLookup(node)}.
+     * Sanity check: a regex ({@code =~}) unfielded term already honors the flag.
      */
     @Test
     public void regexTermHonorsFlag() throws Exception {
@@ -119,12 +111,10 @@ public class UnfieldedIndexExpansionVisitorFlagTest {
     }
 
     /**
-     * BUG: unlike the regex case above, a literal equality ({@code ==}) unfielded term never checks the flag at all, so the deprecated old lookup path (and
-     * {@code FieldNameIndexLookup}) is unreachable even when the caller explicitly requests it via {@code useNewIndexLookups=false}. This assertion documents
-     * the expected/correct behavior and currently fails, demonstrating the bug.
+     * A literal equality ({@code ==}) unfielded term must honor the flag too.
      */
     @Test
-    public void literalEqualityTermIgnoresFlag() throws Exception {
+    public void literalEqualityTermHonorsFlag() throws Exception {
         config.setUseNewIndexLookups(false);
 
         ScannerFactory scannerFactory = new ScannerFactory(config);
