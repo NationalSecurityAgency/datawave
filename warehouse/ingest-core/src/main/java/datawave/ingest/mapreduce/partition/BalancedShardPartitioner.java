@@ -101,7 +101,7 @@ public class BalancedShardPartitioner extends Partitioner<BulkIngestKey,Value> i
             // the offsets should help send today's shard data to a different set of reducers than today's error shard data
             if (null == offsetsFactorByTable.get(key.getTableName())) {
                 log.error("We have received a key for a table we are not configured for.  Please verify your sharded table configurations.");
-                throw new RuntimeException();
+                throw new RuntimeException("We have received a key for a table we are not configured for.  Please verify your sharded table configurations.");
             }
 
             int offsetForTable = shardIdFactory.getNumShards(key.getKey().getTimestamp()) * offsetsFactorByTable.get(key.getTableName());
