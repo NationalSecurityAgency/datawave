@@ -23,6 +23,8 @@
         <!-- 2.14.X is the maximum version of jackson without snakeyaml version 2 causing spring-boot 2.7.1 conflict -->
         <version.jackson>2.14.3</version.jackson>
         <version.jakarta>2.3.3</version.jakarta>
+        <!-- dependency declared in datawave-microservice-parent, but the version can be overridden here -->
+        <version.log4j>2.26.1</version.log4j>
         <version.xerces>2.12.2</version.xerces>
     </properties>
     <dependencyManagement>
