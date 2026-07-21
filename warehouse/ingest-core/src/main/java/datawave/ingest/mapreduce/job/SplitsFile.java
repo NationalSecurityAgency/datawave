@@ -417,11 +417,11 @@ public class SplitsFile implements SplitsCache {
         return dateIsBalanced;
     }
 
-    public Map<Text,String> getSplitsAndLocations(Configuration conf, String tableName) throws IOException {
+    public Map<Text,String> getSplitsAndLocations(String tableName) throws IOException {
         return instance.getSplitsAndLocationByTable(tableName);
     }
 
-    public List<Text> getSplits(Configuration conf, String tableName) throws IOException {
+    public List<Text> getSplits(String tableName) throws IOException {
         return instance.getSplits(tableName);
     }
 

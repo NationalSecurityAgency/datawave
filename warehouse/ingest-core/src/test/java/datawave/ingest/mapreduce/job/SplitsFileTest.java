@@ -118,7 +118,7 @@ public class SplitsFileTest {
 
         uut.init(conf);
 
-        Map<Text,String> locations = uut.getSplitsAndLocations(conf, tableName);
+        Map<Text,String> locations = uut.getSplitsAndLocations(tableName);
         // three days of splits, all should be good, none of these should error
         uut.validateShardIdLocations(conf, tableName, 0, locations);
         uut.validateShardIdLocations(conf, tableName, 1, locations);
@@ -133,7 +133,7 @@ public class SplitsFileTest {
 
         uut.init(conf);
 
-        Map<Text,String> locations = uut.getSplitsAndLocations(conf, tableName);
+        Map<Text,String> locations = uut.getSplitsAndLocations(tableName);
         // three days of splits, today should be invalid, which makes the rest bad too
         assertThrows(IllegalStateException.class, () -> uut.validateShardIdLocations(conf, tableName, 0, locations));
     }
@@ -146,7 +146,7 @@ public class SplitsFileTest {
 
         uut.init(conf);
 
-        Map<Text,String> locations = uut.getSplitsAndLocations(conf, tableName);
+        Map<Text,String> locations = uut.getSplitsAndLocations(tableName);
         // three days of splits, today should be invalid, which makes the rest bad too
         assertThrows(IllegalStateException.class, () -> uut.validateShardIdLocations(conf, tableName, 0, locations));
     }
@@ -159,7 +159,7 @@ public class SplitsFileTest {
 
         uut.init(conf);
 
-        Map<Text,String> locations = uut.getSplitsAndLocations(conf, tableName);
+        Map<Text,String> locations = uut.getSplitsAndLocations(tableName);
         assertEquals(splits.size(), locations.size());
         // three days of splits, today should be valid
         // yesterday and all other days invalid
@@ -176,7 +176,7 @@ public class SplitsFileTest {
 
         uut.init(conf);
 
-        Map<Text,String> locations = uut.getSplitsAndLocations(conf, tableName);
+        Map<Text,String> locations = uut.getSplitsAndLocations(tableName);
         // three days of splits, today should be valid
         // yesterday and all other days invalid
         uut.validateShardIdLocations(conf, tableName, 0, locations);
@@ -193,7 +193,7 @@ public class SplitsFileTest {
 
         uut.init(conf);
 
-        Map<Text,String> locations = uut.getSplitsAndLocations(conf, tableName);
+        Map<Text,String> locations = uut.getSplitsAndLocations(tableName);
         // this should cause the exception
         assertThrows(IllegalStateException.class, () -> uut.validateShardIdLocations(conf, tableName, 0, locations));
     }
@@ -207,7 +207,7 @@ public class SplitsFileTest {
 
         uut.init(conf);
 
-        Map<Text,String> locations = uut.getSplitsAndLocations(conf, tableName);
+        Map<Text,String> locations = uut.getSplitsAndLocations(tableName);
         // this should NOT cause an exception
         uut.validateShardIdLocations(conf, tableName, 0, locations);
     }

@@ -29,7 +29,6 @@ import datawave.ingest.mapreduce.job.SplitsCache;
 public class BalancedShardPartitioner extends Partitioner<BulkIngestKey,Value> implements Configurable, DelegatePartitioner {
     private static final Logger log = Logger.getLogger(BalancedShardPartitioner.class);
     private Configuration conf;
-    private Map<String,Map<Text,Integer>> shardPartitionsByTable;
     private Map<Text,Integer> offsetsFactorByTable;
     private SplitsCache splitsCache;
     private String missingShardStrategy;

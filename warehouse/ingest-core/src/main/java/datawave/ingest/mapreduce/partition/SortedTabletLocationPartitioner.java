@@ -38,9 +38,9 @@ public class SortedTabletLocationPartitioner extends MultiTableRangePartitioner 
     }
 
     private void assignPartitions(int numPartitions, String tableName, int cutPointArrayLength) throws IOException {
-        List<Text> splitsByTable = splitsFile.getSplits(getConf(), tableName);
+        List<Text> splitsByTable = splitsFile.getSplits(tableName);
 
-        Map<Text,String> currentTableSplitToLocation = splitsFile.getSplitsAndLocations(getConf(), tableName);
+        Map<Text,String> currentTableSplitToLocation = splitsFile.getSplitsAndLocations(tableName);
         Map<Integer,Integer> tempSplitReducerMap = new HashMap<>();
         Text[] cutPointArray = splitsByTable.toArray(new Text[0]);
 

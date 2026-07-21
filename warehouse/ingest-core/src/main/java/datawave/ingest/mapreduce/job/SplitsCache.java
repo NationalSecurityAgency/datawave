@@ -97,13 +97,11 @@ public interface SplitsCache extends AutoCloseable {
     /**
      * Retrieve the splits from the requested table
      *
-     * @param conf
-     *            - the configuration to reference
      * @param tableName
      *            - name of the table
      * @return the list of splits
      */
-    List<Text> getSplits(Configuration conf, String tableName) throws IOException;
+    List<Text> getSplits(String tableName) throws IOException;
 
     Map<Text,String> getSplitsAndLocationByTable(String table) throws IOException;
 }
