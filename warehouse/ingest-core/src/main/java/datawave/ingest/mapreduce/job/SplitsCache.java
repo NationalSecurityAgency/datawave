@@ -11,10 +11,24 @@ import org.apache.hadoop.mapreduce.Job;
 
 /**
  * The SplitsCache allows us to keep a reference to the splits file for more streamlined access without the need of multiple initiations throughout the
- * codebase.
+ * codebase. Singleton cache to minimize memory footprint across MapReduce tasks.
+ * All instances in this JVM share the same SplitsCache instance.
+ * Thread-safe lazy initialization using double-checked locking.
+ * Implementation instance is volatile and initialized under synchronization.
  *
  */
 public interface SplitsCache extends AutoCloseable {
+    /**
+     * Get or create the singleton SplitsCache instance.
+     *
+     * Implementation can be customized via configuration property:
+     * {@code datawave.ingest.splits.cache.impl=your.custom.SplitsCache}
+     * Defaults to SplitsFile if not specified.
+     *
+     * @param conf the configuration to use for initialization
+     * @return the singleton SplitsCache instance
+     * @throws RuntimeException if implementation class cannot be instantiated
+     */
     static SplitsCache getInstance(final Configuration conf) {
         return SplitsCacheFactory.getSplitsCache(conf);
     }
