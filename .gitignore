@@ -53,4 +53,4 @@ services/sample_configuration/*-dev.yml
 /.jkube-dockerignore
 
 .claude
-
+.sdkmanrc
