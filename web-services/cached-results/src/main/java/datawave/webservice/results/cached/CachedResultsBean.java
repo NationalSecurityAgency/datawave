@@ -239,7 +239,6 @@ public class CachedResultsBean {
     private AccumuloConnectionRequestBean accumuloConnectionRequestBean;
 
     @Inject
-    @SpringBean(name = "queryLimiter")
     private QueryLimiter queryLimiter;
 
     protected static final String COMMA = ",";

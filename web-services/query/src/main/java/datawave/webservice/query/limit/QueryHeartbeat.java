@@ -7,7 +7,8 @@ import java.util.Objects;
 import java.util.StringJoiner;
 
 import org.apache.curator.framework.recipes.nodes.PersistentNode;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Represents a heartbeat for an active query. As long as the connection to Zookeeper is not disrupted, the heartbeat will persist and indicate that a query is
@@ -15,7 +16,7 @@ import org.apache.log4j.Logger;
  */
 public class QueryHeartbeat {
 
-    private static final Logger log = Logger.getLogger(QueryHeartbeat.class);
+    private static final Logger log = LoggerFactory.getLogger(QueryHeartbeat.class);
 
     private final String queryId;
     private final Collection<PersistentNode> nodes;

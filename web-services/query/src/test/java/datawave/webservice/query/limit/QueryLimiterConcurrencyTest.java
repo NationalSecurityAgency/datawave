@@ -33,6 +33,8 @@ import org.junit.jupiter.api.Test;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
+import datawave.zookeeper.ZkClientBuilder;
+
 class QueryLimiterConcurrencyTest {
 
     private static final Logger log = Logger.getLogger(QueryLimiterConcurrencyTest.class);
@@ -583,8 +585,11 @@ class QueryLimiterConcurrencyTest {
 
     private void ensureLimiterExistsFor(String system) {
         if (!serversToLimiters.containsKey(system)) {
+            ZkClientBuilder zkClientBuilder = new ZkClientBuilder();
+            zkClientBuilder.setConnectString(server.getConnectString());
+
             QueryLimiter limiter = new QueryLimiter();
-            limiter.setZookeeperConfig(server.getConnectString());
+            limiter.setZkClientBuilder(zkClientBuilder);
             limiter.setConfiguration(this.limitConfig);
             limiter.setHeartbeatCache(new QueryHeartbeatCache());
             limiter.setup();

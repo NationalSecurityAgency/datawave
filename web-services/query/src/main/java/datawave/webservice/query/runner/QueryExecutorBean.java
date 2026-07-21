@@ -265,7 +265,6 @@ public class QueryExecutorBean implements QueryExecutor {
     private ClosedQueryCache closedQueryCache;
 
     @Inject
-    @SpringBean(name = "queryLimiter")
     private QueryLimiter queryLimiter;
 
     private static final int PAGE_TIMEOUT_MIN = 1;

@@ -18,8 +18,8 @@ Information about active queries is tracked and managed in Zookeeper where the f
 
 ## Configuration
 
-The QueryLimiter bean is typically defined in the file [QueryLimiterFactory.xml](../../../../../../../../deploy/configuration/src/main/resources/datawave/query/QueryLimiterFactory.xml) within the datawave-ws-deploy-configuration module. At a minimum, the following beans must be configured:
-- A single [QueryLimiter](QueryLimiter.java) instance. This acts as the entrypoint to the query limit feature.
+The `QueryLimiter` bean requires the following beans to be configured. See [QueryLimiterFactory.xml](../../../../../../../../deploy/configuration/src/main/resources/datawave/query/QueryLimiterFactory.xml) for an example configuration.
+- A [ZkClientBuilder](../../../zookeeper/ZkClientBuilder.java) instance with the bean id `queryLimiterZkClientBuilder`. This configures the Zookeeper client that will be used for Zookeeper operations.
 - A single [QueryLimitConfiguration](QueryLimitConfiguration.java) instance. This contains the configured limits used by the `QueryLimiter` instance.
 - A single [QueryHeartbeatCache](QueryHeartbeatCache.java) instance. This cache contains and maintains connnections to Zookeeper for active queries.
 

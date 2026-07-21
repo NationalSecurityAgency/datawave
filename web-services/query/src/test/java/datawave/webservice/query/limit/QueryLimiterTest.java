@@ -15,6 +15,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import datawave.zookeeper.ZkClientBuilder;
+
 /**
  * Test cases for testing the functionality of {@link QueryLimiter}.
  */
@@ -30,12 +32,15 @@ class QueryLimiterTest {
     private final Map<String,QueryLimiter> systemToLimiter = new HashMap<>();
     private QueryHeartbeatCache heartbeatCache;
     private QueryLimitConfiguration config;
+    private ZkClientBuilder zkClientBuilder;
     private TestingServer server;
 
     @BeforeEach
     void setUp() throws Exception {
         server = new TestingServer();
         heartbeatCache = new QueryHeartbeatCache();
+        zkClientBuilder = new ZkClientBuilder();
+        zkClientBuilder.setConnectString(server.getConnectString());
     }
 
     @AfterEach
@@ -54,7 +59,7 @@ class QueryLimiterTest {
     @Test
     void testDefaultUserQueryLimitLessThanOne() {
         QueryLimiter limiter = new QueryLimiter();
-        limiter.setZookeeperConfig(server.getConnectString());
+        limiter.setZkClientBuilder(zkClientBuilder);
 
         QueryLimitConfiguration config = new QueryLimitConfiguration();
         config.setDefaultUserQueryLimit(0);
@@ -69,7 +74,7 @@ class QueryLimiterTest {
     @Test
     void testDefaultQueryLimitLessThanOne() {
         QueryLimiter limiter = new QueryLimiter();
-        limiter.setZookeeperConfig(server.getConnectString());
+        limiter.setZkClientBuilder(zkClientBuilder);
 
         QueryLimitConfiguration config = new QueryLimitConfiguration();
         config.setDefaultUserQueryLimit(100);
@@ -466,7 +471,7 @@ class QueryLimiterTest {
             return systemToLimiter.get(system);
         } else {
             QueryLimiter limiter = new QueryLimiter();
-            limiter.setZookeeperConfig(server.getConnectString());
+            limiter.setZkClientBuilder(zkClientBuilder);
             limiter.setConfiguration(config);
             limiter.setHeartbeatCache(heartbeatCache);
             limiter.setup();

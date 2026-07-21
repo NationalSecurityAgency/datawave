@@ -117,6 +117,7 @@
         <version.jjwt>0.11.2</version.jjwt>
         <version.json>20231013</version.json>
         <version.jts>1.19.0</version.jts>
+        <version.junit-pioneer>2.3.0</version.junit-pioneer>
         <version.junit4>4.13.2</version.junit4>
         <version.junit5>5.12.0</version.junit5>
         <version.junit5.platform>1.12.0</version.junit5.platform>
@@ -1473,6 +1474,12 @@
                 <groupId>org.jboss.weld</groupId>
                 <artifactId>weld-core</artifactId>
                 <version>${version.weld-test}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.junit-pioneer</groupId>
+                <artifactId>junit-pioneer</artifactId>
+                <version>${version.junit-pioneer}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>

@@ -13,7 +13,8 @@ import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
@@ -23,7 +24,7 @@ import com.github.benmanes.caffeine.cache.Caffeine;
  */
 public class SystemLimitProvider {
 
-    private static final Logger log = Logger.getLogger(SystemLimitProvider.class);
+    private static final Logger log = LoggerFactory.getLogger(SystemLimitProvider.class);
 
     private final Cache<String,Optional<SystemLimits>> systemLimitCache;
 
@@ -156,7 +157,7 @@ public class SystemLimitProvider {
 
             if (customQueryLimit == null && customGroupLimits == null && (customCountsAgainstUserLimit == null || customCountsAgainstUserLimit)) {
                 if (log.isDebugEnabled()) {
-                    log.debug("Custom limits provided for systems matching '" + systemPattern + "' do not override any defaults, skipping.");
+                    log.debug("Custom limits provided for systems matching '{}' do not override any defaults, skipping.", systemPattern);
                 }
                 continue;
             }

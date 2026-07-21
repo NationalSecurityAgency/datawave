@@ -5,25 +5,58 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
-import org.apache.log4j.Logger;
-import org.apache.zookeeper.server.quorum.QuorumPeerConfig;
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
+import javax.annotation.security.DeclareRoles;
+import javax.annotation.security.RolesAllowed;
+import javax.annotation.security.RunAs;
+import javax.ejb.LocalBean;
+import javax.ejb.Singleton;
+import javax.ejb.Startup;
+import javax.inject.Inject;
+
+import org.apache.curator.framework.CuratorFramework;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import datawave.configuration.spring.SpringBean;
+import datawave.zookeeper.ZkClientBuilder;
 
 /**
  * This class is responsible for determining if any concurrent query limits are going to be exceeded for a user, system, or query logic when a new query is
  * submitted.
  */
+@RunAs("InternalUser")
+@RolesAllowed({"AuthorizedUser", "AuthorizedQueryServer", "InternalUser", "Administrator"})
+@DeclareRoles({"AuthorizedUser", "AuthorizedQueryServer", "InternalUser", "Administrator"})
+@LocalBean
+@Singleton
+@Startup
 public class QueryLimiter {
 
-    private static final Logger log = Logger.getLogger(QueryLimiter.class);
+    private static final Logger log = LoggerFactory.getLogger(QueryLimiter.class);
 
-    // The string to use to connect to zookeeper.
-    private String zookeeperConfig;
+    /**
+     * The default value to use as the system when a null or blank system is provided for a query.
+     */
+    public static final String EMPTY_SYSTEM_FROM = "EMPTY_SYSTEM_FROM";
+
+    private CuratorFramework zkClient;
+
+    @Inject
+    @SpringBean(name = "queryLimiterZkClientBuilder")
+    private ZkClientBuilder zkClientBuilder;
 
     // The configuration to initialize the limit providers with.
+    @Inject
+    @SpringBean(refreshable = true)
     private QueryLimitConfiguration configuration;
 
     // A cache to store heartbeats of active queries within.
+    @Inject
+    @SpringBean
     private QueryHeartbeatCache heartbeatCache;
 
     // Provides configured limits for query logic groups.
@@ -38,46 +71,32 @@ public class QueryLimiter {
     // The tracker responsible for interfacing with Zookeeper.
     private ActiveQueryTracker activeQueryTracker;
 
-    public static final String EMPTY_SYSTEM_FROM = "EMPTY_SYSTEM_FROM";
-
     /**
-     * Return the zookeeper connection string.
+     * Set the Zookeeper client builder for this {@link QueryLimiter}.
      *
-     * @return the zookeeper connection string
+     * @param zkClientBuilder
+     *            the builder
      */
-    public String getZookeeperConfig() {
-        return zookeeperConfig;
+    public void setZkClientBuilder(ZkClientBuilder zkClientBuilder) {
+        this.zkClientBuilder = zkClientBuilder;
     }
 
     /**
-     * Set the zookeeper connection string
+     * Set the configuration for this {@link QueryLimiter}
      *
-     * @param zookeeperConfig
-     *            the zookeeper connection string
-     */
-    public void setZookeeperConfig(String zookeeperConfig) {
-        this.zookeeperConfig = zookeeperConfig;
-    }
-
-    /**
-     * Set the configuration to use to set up this {@link QueryLimiter}
-     *
-     * @param queryLimitConfiguration
+     * @param configuration
      *            the config
      */
-    public void setConfiguration(QueryLimitConfiguration queryLimitConfiguration) {
-        this.configuration = queryLimitConfiguration;
+    public void setConfiguration(QueryLimitConfiguration configuration) {
+        this.configuration = configuration;
     }
 
     /**
-     * Return the configuration used to set up this {@link QueryLimiter}
+     * Set the heartbeat cache for this {@link QueryLimiter}.
      *
-     * @return the config
+     * @param heartbeatCache
+     *            the heartbeat cache
      */
-    public QueryLimitConfiguration getConfiguration() {
-        return configuration;
-    }
-
     public void setHeartbeatCache(QueryHeartbeatCache heartbeatCache) {
         this.heartbeatCache = heartbeatCache;
     }
@@ -86,12 +105,14 @@ public class QueryLimiter {
      * Validate the configuration and extract the query limits to enforce. In practice this should be marked as the init method for the {@link QueryLimiter}
      * instance configured in bean XMLs. For testing purposes, this method should be called after setting the zookeeper config and query limit configs.
      */
+    @PostConstruct
     public void setup() {
         if (log.isDebugEnabled()) {
-            log.debug("Initializing with zookeeperConfig: '" + zookeeperConfig + "' and query limit config: " + configuration);
+            log.debug("Initializing with zookeeper client builder {} and query limit config {} ", this.zkClientBuilder, this.configuration);
         }
 
         if (this.configuration != null) {
+            // Validate the configuration.
             if (this.configuration.getDefaultUserQueryLimit() < 1) {
                 throw new IllegalArgumentException("Default user query limit must be greater than 0");
             }
@@ -100,12 +121,30 @@ public class QueryLimiter {
                 throw new IllegalArgumentException("Internal cache max size must be greater than 0");
             }
 
+            // Create the limit providers.
             this.queryLogicGroupLimitProvider = new QueryLogicGroupLimitProvider(configuration.getInternalCacheMaxSize(),
                             configuration.getQueryLogicGroupConfigs());
             this.userLimitProvider = new UserLimitProvider(configuration.getDefaultUserQueryLimit(), configuration.getInternalCacheMaxSize(),
                             configuration.getUserConfigs(), queryLogicGroupLimitProvider);
             this.systemLimitProvider = new SystemLimitProvider(configuration.getDefaultSystemQueryLimit(), configuration.getInternalCacheMaxSize(),
                             configuration.getSystemConfigs(), queryLogicGroupLimitProvider);
+
+            // If the zookeeper client is null, initialize it and connect to Zookeeper.
+            if (this.zkClient == null) {
+                try {
+                    // Ensure that we create the Zookeeper client with the correct namespace.
+                    this.zkClient = zkClientBuilder.createBuilder().namespace(QueryLimitConstants.ZOOKEEPER_NAMESPACE).build();
+                    // Start the client, and wait for it to connect.
+                    this.zkClient.start();
+                    boolean connected = this.zkClient.blockUntilConnected(3, TimeUnit.MINUTES);
+                    if (!connected) {
+                        log.warn("Zookeeper client did not connect within 3 minute");
+                    }
+                } catch (Exception e) {
+                    log.error("Error when initializing Zookeeper client", e);
+                    throw new RuntimeException("Error when initializing Zookeeper client", e);
+                }
+            }
         } else {
             this.queryLogicGroupLimitProvider = null;
             this.userLimitProvider = null;
@@ -114,22 +153,20 @@ public class QueryLimiter {
     }
 
     /**
-     * Releases internal resources and cleans up connections and scheduled tasks.
+     * Close this {@link QueryLimiter} and the underlying zookeeper client.
      */
+    @PreDestroy
     public void shutdown() {
-        if (this.heartbeatCache != null) {
+        log.debug("Shutting down");
+
+        // Close the zookeeper client.
+        if (this.zkClient != null) {
             try {
-                this.heartbeatCache.shutdown();
+                this.zkClient.close();
             } catch (Exception e) {
-                log.error("Error closing heartbeat cache", e);
+                log.error("Error closing zookeeper client", e);
             }
-        }
-        if (this.activeQueryTracker != null) {
-            try {
-                this.activeQueryTracker.close();
-            } catch (Exception e) {
-                log.error("Error closing active query tracker", e);
-            }
+            this.zkClient = null;
         }
     }
 
@@ -159,7 +196,7 @@ public class QueryLimiter {
         }
 
         if (log.isDebugEnabled()) {
-            log.debug("Checking limits - userDn: " + userDn + ", system: " + system + ", queryLogic: " + queryLogic);
+            log.debug("Checking limits - userDn: {}, system: {}, queryLogic: {}", userDn, system, queryLogic);
         }
 
         // Check if the snapshot reveals that any limits have been met.
@@ -188,7 +225,7 @@ public class QueryLimiter {
      */
     public void countQueryTowardsLimits(String queryId, String userDn, String system, String queryLogic) throws Exception {
         if (log.isDebugEnabled()) {
-            log.debug("Start counting query " + queryId + " towards limits");
+            log.debug("Start counting query {} towards limits", queryId);
         }
 
         userDn = userDn.trim().toLowerCase();
@@ -221,7 +258,7 @@ public class QueryLimiter {
      */
     public void stopCountingQueriesTowardsLimits(Set<String> queryIds) {
         if (log.isDebugEnabled()) {
-            log.debug("Stopping counting queries towards limits: " + queryIds);
+            log.debug("Stopping counting queries towards limits: {}", queryIds);
         }
         heartbeatCache.stopAndRemoveHeartbeats(queryIds);
     }
@@ -234,7 +271,7 @@ public class QueryLimiter {
      */
     public void stopCountingQueryTowardsLimits(String queryId) {
         if (log.isDebugEnabled()) {
-            log.debug("Stop counting query " + queryId + " towards limits");
+            log.debug("Stop counting query {} towards limits", queryId);
         }
         heartbeatCache.stopAndRemoveHeartbeat(queryId);
     }
@@ -244,9 +281,9 @@ public class QueryLimiter {
      *
      * @return the active query tracker
      */
-    private ActiveQueryTracker getActiveQueryTracker() throws QuorumPeerConfig.ConfigException {
+    private ActiveQueryTracker getActiveQueryTracker() {
         if (this.activeQueryTracker == null) {
-            this.activeQueryTracker = new ActiveQueryTracker(zookeeperConfig);
+            this.activeQueryTracker = new ActiveQueryTracker(zkClient);
         }
         return this.activeQueryTracker;
     }
@@ -460,7 +497,7 @@ public class QueryLimiter {
         /**
          * Load the set of distinct query logics from Zookeeper if not yet loaded.
          */
-        private void loadDistinctQueryLogics() throws QuorumPeerConfig.ConfigException {
+        private void loadDistinctQueryLogics() {
             if (distinctQueryLogics == null) {
                 distinctQueryLogics = getActiveQueryTracker().getDistinctQueryLogics();
             }

@@ -7,7 +7,17 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.log4j.Logger;
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
+import javax.annotation.security.DeclareRoles;
+import javax.annotation.security.RolesAllowed;
+import javax.annotation.security.RunAs;
+import javax.ejb.LocalBean;
+import javax.ejb.Singleton;
+import javax.ejb.Startup;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
@@ -15,28 +25,25 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 /**
  * A cache for storing query heartbeats of running queries.
  */
+@RunAs("InternalUser")
+@RolesAllowed({"AuthorizedUser", "AuthorizedQueryServer", "InternalUser", "Administrator"})
+@DeclareRoles({"AuthorizedUser", "AuthorizedQueryServer", "InternalUser", "Administrator"})
+@LocalBean
+@Singleton
+@Startup
 public class QueryHeartbeatCache {
 
-    private static final Logger log = Logger.getLogger(QueryHeartbeatCache.class);
+    private static final Logger log = LoggerFactory.getLogger(QueryHeartbeatCache.class);
 
     private final Cache<String,QueryHeartbeat> cache = Caffeine.newBuilder().removalListener((key, value, cause) -> {
-        if (cause.wasEvicted()) {
-            log.debug("Evicted heartbeat for query " + key);
+        if (cause.wasEvicted() && log.isTraceEnabled()) {
+            log.trace("Evicted heartbeat for query {}", key);
         }
     }).build();
 
     private long cleanupInterval = 10;
     private TimeUnit cleanupUnit = TimeUnit.MINUTES;
     private ScheduledExecutorService scheduler;
-
-    /**
-     * Return the interval for which {@link QueryHeartbeatCache#removeAllStoppedHeartbeats()} will be called.
-     *
-     * @return the interval
-     */
-    public long getCleanupInterval() {
-        return cleanupInterval;
-    }
 
     /**
      * Set the interval for which {@link QueryHeartbeatCache#removeAllStoppedHeartbeats()} should be called.
@@ -46,15 +53,6 @@ public class QueryHeartbeatCache {
      */
     public void setCleanupInterval(long cleanupInterval) {
         this.cleanupInterval = cleanupInterval;
-    }
-
-    /**
-     * Return the time unit of the cleanup interval.
-     *
-     * @return the time unit
-     */
-    public TimeUnit getCleanupUnit() {
-        return cleanupUnit;
     }
 
     /**
@@ -70,15 +68,15 @@ public class QueryHeartbeatCache {
     /**
      * Set up this heartbeat cache.
      */
+    @PostConstruct
     public void setup() {
+        if (log.isDebugEnabled()) {
+            log.debug("Initializing with cleanup schedule that will run every {} {}", cleanupInterval, cleanupUnit);
+        }
         // If the PersistentNodes within a QueryHeartbeat are ever stopped due to a connection failure, and not via to QueryHeartbeat.stop(), the heartbeat will
         // not automatically evict itself from the cache. Use a scheduled task to check for any heartbeats that were stopped and evict them to prevent bloating.
         this.scheduler = Executors.newSingleThreadScheduledExecutor();
         this.scheduler.scheduleAtFixedRate(this::removeAllStoppedHeartbeats, cleanupInterval, cleanupInterval, cleanupUnit);
-
-        if (log.isDebugEnabled()) {
-            log.debug("Initializing with cleanup schedule that will run every " + cleanupInterval + " " + cleanupUnit);
-        }
     }
 
     /**
@@ -124,7 +122,7 @@ public class QueryHeartbeatCache {
      */
     public void stopAndRemoveHeartbeats(Set<String> queryIds) {
         if (log.isTraceEnabled()) {
-            log.trace("Stopping heartbeats for queries " + queryIds);
+            log.trace("Stopping heartbeats for queries {}", queryIds);
         }
 
         if (queryIds != null && !queryIds.isEmpty()) {
@@ -145,7 +143,7 @@ public class QueryHeartbeatCache {
      */
     public void stopAndRemoveHeartbeat(String queryId) {
         if (log.isTraceEnabled()) {
-            log.trace("Removing heartbeat for query " + queryId);
+            log.trace("Removing heartbeat for query {}", queryId);
         }
 
         QueryHeartbeat heartbeat = this.cache.asMap().remove(queryId);
@@ -163,7 +161,7 @@ public class QueryHeartbeatCache {
             try {
                 heartbeat.stopWithoutNotifyingListener();
             } catch (Exception e) {
-                log.error("Error stopping heartbeat for query " + heartbeat.getQueryId(), e);
+                log.error("Error stopping heartbeat for query {}", heartbeat.getQueryId(), e);
             }
         }
     }
@@ -187,8 +185,10 @@ public class QueryHeartbeatCache {
     /**
      * Closes this {@link QueryHeartbeatCache} and shuts down the scheduled cleanup task.
      */
+    @PreDestroy
     public void shutdown() {
         log.debug("Shutting down");
+        // Shut down the scheduler.
         try {
             if (this.scheduler != null) {
                 this.scheduler.shutdown();

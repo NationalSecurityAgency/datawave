@@ -60,7 +60,6 @@ public class QueryExpirationBean {
     private QueryMetricsBean metricsBean;
 
     @Inject
-    @SpringBean(name = "queryLimiter")
     private QueryLimiter queryLimiter;
 
     private boolean clearAll = false;
