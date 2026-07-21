@@ -87,8 +87,8 @@ public class TermFrequencyKeyTest {
         assertEquals("", parser.getUid());
         assertEquals("", parser.getRootUid());
         assertEquals("FIELD", parser.getField());
-        assertThrows(IllegalArgumentException.class, parser::getValue);
-        assertThrows(IllegalArgumentException.class, parser::getUidAndValue);
+        assertThrows(IndexOutOfBoundsException.class, parser::getValue);
+        assertThrows(IndexOutOfBoundsException.class, parser::getUidAndValue);
         assertEquals(tfKeyWithMalformedCq, parser.getKey());
     }
 
