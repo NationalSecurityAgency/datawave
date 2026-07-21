@@ -16,6 +16,7 @@
  */
 package datawave.accumulo.inmemory.impl;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -44,7 +45,7 @@ public class InMemoryTabletLocator extends ClientTabletCache {
 
     @Override
     public <T extends Mutation> void binMutations(ClientContext context, List<T> mutations, Map<String,TabletServerMutations<T>> binnedMutations,
-                    List<T> failures) throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
+                    ArrayList<T> failures) throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
         TabletServerMutations<T> tsm = new TabletServerMutations<>("5");
         for (T m : mutations)
             tsm.addMutation(new KeyExtent(TableId.of(""), new Text(), new Text()), m);
