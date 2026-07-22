@@ -336,7 +336,7 @@ public class DocumentGrouper {
         if (log.isTraceEnabled()) {
             log.trace("Indexing document entries for document {}", documentKey);
         }
-        for (Map.Entry<String,Attribute<?>> entry : document.entrySet()) {
+        for (Map.Entry<String,Attribute<? extends Comparable<?>>> entry : document.entrySet()) {
             Field field = parseField(entry);
             // The current field is a target for grouping.
             if (groupFields.containsKey(field.getBase())) {
@@ -635,7 +635,7 @@ public class DocumentGrouper {
         group.addDocumentExpression(document.getAccessExpression());
     }
 
-    private Set<GroupingAttribute<?>> createGroupingAttributes(String field, Set<Attribute<?>> attributes) {
+    private Set<GroupingAttribute<?>> createGroupingAttributes(String field, Set<Attribute<? extends Comparable<?>>> attributes) {
         Set<GroupingAttribute<?>> groupingAttributes = new HashSet<>();
         // Fetch the set of temporal granularities that field values should be transformed by for the given field.
         NavigableSet<TemporalGranularity> granularities = groupFields.get(field);
@@ -745,7 +745,7 @@ public class DocumentGrouper {
      *            the document entry
      * @return the field entry.
      */
-    private Field parseField(Map.Entry<String,Attribute<?>> entry) {
+    private Field parseField(Map.Entry<String,Attribute<? extends Comparable<?>>> entry) {
         String field = entry.getKey();
         String name = field;
         String groupingContext = null;

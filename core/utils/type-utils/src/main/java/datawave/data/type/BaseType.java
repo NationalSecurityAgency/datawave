@@ -171,8 +171,9 @@ public class BaseType<T extends Comparable<T> & Serializable> implements Seriali
     @Override
     public long sizeInBytes() {
         long size = 0;
-        if (this instanceof OneToManyNormalizerType) {
-            List<String> values = ((OneToManyNormalizerType<?>) this).getNormalizedValues();
+        if (this instanceof OneToManyNormalizerType otmt) {
+            @SuppressWarnings("unchecked")
+            List<String> values = otmt.getNormalizedValues();
             size += values.stream().map(String::length).map(length -> 2 * length + ObjectSizeOf.Sizer.REFERENCE).reduce(Integer::sum).orElse(0);
         }
         size += STATIC_SIZE + (2L * normalizedValue.length()) + ObjectSizeOf.Sizer.getObjectSize(delegate);

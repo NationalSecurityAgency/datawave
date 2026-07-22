@@ -18,7 +18,7 @@ class Field {
     private final String groupingContext;
     private final String instance;
     private final Attribute<?> attribute;
-    private final Set<Attribute<?>> attributes;
+    private final Set<Attribute<? extends Comparable<?>>> attributes;
 
     public Field(String base, String groupingContext, String instance, Attribute<?> attribute) {
         this.base = base;
@@ -26,8 +26,8 @@ class Field {
         this.instance = instance;
         this.attribute = attribute;
 
-        if (attribute instanceof Attributes) {
-            this.attributes = ((Attributes) attribute).getAttributes();
+        if (attribute instanceof Attributes attr) {
+            this.attributes = attr.getAttributes();
         } else {
             this.attributes = Collections.singleton(attribute);
         }
@@ -94,7 +94,7 @@ class Field {
      *
      * @return all attributes, or same attribute as returned by {@link #getAttribute()} if the originating attribute was not multi-value
      */
-    public Set<Attribute<?>> getAttributes() {
+    public Set<Attribute<? extends Comparable<?>>> getAttributes() {
         return attributes;
     }
 

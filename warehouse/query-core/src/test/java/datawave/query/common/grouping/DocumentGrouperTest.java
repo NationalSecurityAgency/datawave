@@ -2005,7 +2005,7 @@ public class DocumentGrouperTest {
 
     private static class DocumentEntry {
         private final String fieldName;
-        private final List<Attribute<?>> attributes = new ArrayList<>();
+        private final List<Attribute<? extends Comparable<?>>> attributes = new ArrayList<>();
 
         public static DocumentEntry of(String fieldName) {
             return new DocumentEntry(fieldName);

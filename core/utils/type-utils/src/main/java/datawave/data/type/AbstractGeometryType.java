@@ -53,8 +53,9 @@ public abstract class AbstractGeometryType<T extends AbstractGeometry & Comparab
     public long sizeInBytes() {
         long size = STATIC_SIZE + (2 * normalizedValue.length());
 
-        if (this instanceof OneToManyNormalizerType) {
-            List<String> values = ((OneToManyNormalizerType<?>) this).getNormalizedValues();
+        if (this instanceof OneToManyNormalizerType otmt) {
+            @SuppressWarnings("unchecked")
+            List<String> values = otmt.getNormalizedValues();
             size += 2 * values.stream().map(String::length).map(x -> x + Sizer.REFERENCE).reduce(Integer::sum).orElse(0);
         }
 

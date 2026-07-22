@@ -155,7 +155,7 @@ public class DocumentIterator extends DocumentIteratorOptions implements SortedK
 
             String field = JexlASTHelper.deconstructIdentifier(eventKeyParser.getField(), includeGroupingContext);
             Entry<Key,String> from = new AbstractMap.SimpleEntry<>(key, field);
-            Iterable<Map.Entry<String,Attribute<?>>> elements = valueToAttributes.apply(from);
+            Iterable<Map.Entry<String,Attribute<? extends Comparable<?>>>> elements = valueToAttributes.apply(from);
             elements.forEach(entry -> d.put(entry.getKey(), entry.getValue()));
         }
 

@@ -307,7 +307,11 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
                         // FAILED is not ok, and should be thrown
                         Throwable t = uncaughtExceptionHandler.getThrowable();
                         if (t != null) {
-                          throw new RuntimeException("Error in hasNext", t);
+                            if (t instanceof RuntimeException) {
+                                throw (RuntimeException) t;
+                            } else {
+                                throw new RuntimeException("Error in hasNext", t);
+                            }
                         }
                         if (state() == State.FAILED) {
                             throw e;
