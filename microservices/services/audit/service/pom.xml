@@ -29,7 +29,7 @@
         <version.datawave.starter>4.0.9</version.datawave.starter>
         <version.googlecode-findbugs>2.0.3</version.googlecode-findbugs>
         <version.guava>31.1-jre</version.guava>
-        <version.hadoop>3.3.4</version.hadoop>
+        <version.hadoop>3.5.0</version.hadoop>
         <version.in-memory-accumulo>4.0.6-SNAPSHOT</version.in-memory-accumulo>
         <!-- version set in datawave-microservice-parent, but can be overridden here -->
         <!-- 2.14.X is the maximum version of jackson without snakeyaml version 2 causing spring-boot 2.7.1 conflict -->
@@ -234,6 +234,12 @@
                 <groupId>org.jboss.spec.javax.servlet</groupId>
                 <artifactId>jboss-servlet-api_4.0_spec</artifactId>
                 <version>${version.jboss-servlet-api}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.hadoop</groupId>
+                <artifactId>hadoop-client-runtime</artifactId>
+                <version>${version.hadoop}</version>
+                <scope>runtime</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>
