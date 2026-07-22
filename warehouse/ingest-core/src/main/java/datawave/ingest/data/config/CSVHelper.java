@@ -188,7 +188,7 @@ public class CSVHelper extends DataTypeHelperImpl {
         // Get the disallowlist of event fields to drop.
         Collection<String> cb = config.getStringCollection(this.getType().typeName() + FIELD_DISALLOWLIST);
         if (cb != null && !cb.isEmpty()) {
-            this.fieldDisallowlist = new HashSet<>(cw);
+            this.fieldDisallowlist = new HashSet<>(cb);
         }
 
         final Collection<String> reqFields = config.getStringCollection(getType().typeName() + REQUIRED_FIELDS);
