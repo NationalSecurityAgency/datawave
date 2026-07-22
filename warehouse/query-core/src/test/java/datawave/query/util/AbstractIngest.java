@@ -41,6 +41,13 @@ import datawave.util.time.DateHelper;
 
 /**
  * Simple ingest utility for writing fields and values to the big three tables
+ * <ul>
+ * <li>{@link datawave.table.constants.TableName#METADATA}</li>
+ * <li>{@link datawave.table.constants.TableName#SHARD_INDEX}</li>
+ * <li>{@link datawave.table.constants.TableName#SHARD}</li>
+ * </ul>
+ * The simplest use of this class relies on default values for the row and datatype. Methods are provided for operators who require unique rows and datatypes,
+ * but this information must be tracked separately.
  */
 public class AbstractIngest {
 
@@ -122,36 +129,168 @@ public class AbstractIngest {
         }
     }
 
+    /**
+     * Write the provided event id, field and value for the default row and datatype
+     *
+     * @param eventId
+     *            the event id
+     * @param field
+     *            the field name
+     * @param value
+     *            the field value
+     */
     public void writeFV(int eventId, String field, String value) {
+        writeFV(ROW, DATATYPE, eventId, field, value);
+    }
+
+    /**
+     * Write the provided datatype, event id, field and value for the default row
+     *
+     * @param datatype
+     *            the datatype
+     * @param eventId
+     *            the event id
+     * @param field
+     *            the field name
+     * @param value
+     *            the field value
+     */
+    public void writeFV(String datatype, int eventId, String field, String value) {
+        writeFV(ROW, datatype, eventId, field, value);
+    }
+
+    /**
+     * Write the provided row, datatype, event id, field and value
+     *
+     * @param row
+     *            the row
+     * @param datatype
+     *            the datatype
+     * @param eventId
+     *            the event id
+     * @param field
+     *            the field name
+     * @param value
+     *            the field value
+     */
+    public void writeFV(String row, String datatype, int eventId, String field, String value) {
         String uid = uid(eventId);
         String normalizedValue = getNormalizedValue(field, value);
 
-        writeShardIndex(uid, field, normalizedValue);
-        writeFieldIndex(uid, field, normalizedValue);
-        writeEvent(uid, field, value);
+        writeShardIndex(row, datatype, uid, field, List.of(normalizedValue));
+        writeFieldIndex(row, datatype, uid, field, List.of(normalizedValue));
+        writeEvent(row, datatype, uid, field, value);
     }
 
+    /**
+     * Write a tokens for a space-delimited phrase for the specified event id, and field using the default row and datatype
+     *
+     * @param eventId
+     *            the event id
+     * @param field
+     *            the field name
+     * @param phrase
+     *            the phrase
+     */
     public void writeTokenized(int eventId, String field, String phrase) {
+        writeTokenized(ROW, DATATYPE, eventId, field, phrase);
+    }
+
+    /**
+     * Write a tokens for a space-delimited phrase for the specified datatype, event id, and field using the default row
+     *
+     * @param datatype
+     *            the datatype
+     * @param eventId
+     *            the event id
+     * @param field
+     *            the field name
+     * @param phrase
+     *            the phrase
+     */
+    public void writeTokenized(String datatype, int eventId, String field, String phrase) {
+        writeTokenized(ROW, datatype, eventId, field, phrase);
+    }
+
+    /**
+     * Write a tokens for a space-delimited phrase for the specified row, datatype, event id, and field
+     *
+     * @param row
+     *            the row
+     * @param datatype
+     *            the datatype
+     * @param eventId
+     *            the event id
+     * @param field
+     *            the field name
+     * @param phrase
+     *            the phrase
+     */
+    public void writeTokenized(String row, String datatype, int eventId, String field, String phrase) {
         String uid = uid(eventId);
         String[] tokens = phrase.split(" ");
         String[] normalizedTokens = Arrays.stream(tokens).map(token -> getNormalizedValue(field, token)).toArray(String[]::new);
         String baseField = JexlASTHelper.deconstructIdentifier(field);
 
-        writeShardIndex(uid, baseField, normalizedTokens);
-        writeFieldIndex(uid, baseField, normalizedTokens);
+        writeShardIndex(row, datatype, uid, baseField, List.of(normalizedTokens));
+        writeFieldIndex(row, datatype, uid, baseField, List.of(normalizedTokens));
         // persist context for the TF column
         writeTermFrequency(uid, field, normalizedTokens);
     }
 
+    /**
+     * Write a field and values for the provided uid, using the default row and datatype
+     *
+     * @param uid
+     *            the event uid
+     * @param field
+     *            the field name
+     * @param values
+     *            the field values
+     */
     private void writeShardIndex(String uid, String field, String... values) {
+        writeShardIndex(ROW, DATATYPE, uid, field, List.of(values));
+    }
+
+    /**
+     * Write a field and values for the provided datatype and uid, using the default row
+     *
+     * @param datatype
+     *            the datatype
+     * @param uid
+     *            the event uid
+     * @param field
+     *            the field name
+     * @param values
+     *            the field values
+     */
+    private void writeShardIndex(String datatype, String uid, String field, List<String> values) {
+        writeShardIndex(ROW, datatype, uid, field, values);
+    }
+
+    /**
+     * Write a field and values for the provided row, datatype and uid
+     *
+     * @param row
+     *            the row
+     * @param datatype
+     *            the datatype
+     * @param uid
+     *            the event uid
+     * @param field
+     *            the field name
+     * @param values
+     *            the field values
+     */
+    private void writeShardIndex(String row, String datatype, String uid, String field, List<String> values) {
         if (fieldColumns.containsEntry(field, "i")) {
             try (BatchWriter bw = client.createBatchWriter(SHARD_INDEX)) {
                 for (String value : values) {
                     Mutation m = new Mutation(value);
                     Text cf = new Text(field);
-                    Text cq = new Text(ROW + "\0" + DATATYPE);
+                    Text cq = new Text(row + "\0" + datatype);
                     ColumnVisibility cv = new ColumnVisibility(auths.iterator().next());
-                    m.put(cf, cq, cv, TIMESTAMP, getValue(uid));
+                    m.put(cf, cq, cv, TIMESTAMP, getIndexUidValue(uid));
                     bw.addMutation(m);
                 }
             } catch (Exception e) {
@@ -160,13 +299,51 @@ public class AbstractIngest {
         }
     }
 
+    /**
+     * Write a field and values for the provided uid using the default row and datatype
+     *
+     * @param uid
+     *            the event uid
+     * @param field
+     *            the field name
+     * @param values
+     *            the field values
+     */
     private void writeFieldIndex(String uid, String field, String... values) {
+        writeFieldIndex(ROW, DATATYPE, uid, field, List.of(values));
+    }
+
+    /**
+     * Write a field and values for the provided datatype and uid using the default row
+     *
+     * @param uid
+     *            the event uid
+     * @param field
+     *            the field name
+     * @param values
+     *            the field values
+     */
+    private void writeFieldIndex(String datatype, String uid, String field, List<String> values) {
+        writeFieldIndex(ROW, datatype, uid, field, values);
+    }
+
+    /**
+     * Write a field and values for the provided row, datatype and uid
+     *
+     * @param uid
+     *            the event uid
+     * @param field
+     *            the field name
+     * @param values
+     *            the field values
+     */
+    private void writeFieldIndex(String row, String datatype, String uid, String field, List<String> values) {
         if (fieldColumns.containsEntry(field, "i")) {
             try (BatchWriter bw = client.createBatchWriter(SHARD)) {
-                Mutation m = new Mutation(ROW);
+                Mutation m = new Mutation(row);
                 Text cf = new Text("fi\0" + field);
                 for (String value : values) {
-                    Text cq = new Text(value + "\0" + DATATYPE + "\0" + uid);
+                    Text cq = new Text(value + "\0" + datatype + "\0" + uid);
                     ColumnVisibility cv = new ColumnVisibility(auths.iterator().next());
                     m.put(cf, cq, cv, TIMESTAMP, EMPTY_VALUE);
                 }
@@ -177,11 +354,55 @@ public class AbstractIngest {
         }
     }
 
+    /**
+     * Write a field and value for a specific uid using the default row and datatype.
+     *
+     * @param uid
+     *            the event uid
+     * @param field
+     *            the field name
+     * @param value
+     *            the field value
+     */
     private void writeEvent(String uid, String field, String value) {
+        writeEvent(ROW, DATATYPE, uid, field, value);
+    }
+
+    /**
+     * Write a field and value for a specific datatype and uid using the default row
+     *
+     * @param datatype
+     *            the datatype
+     * @param uid
+     *            the event uid
+     * @param field
+     *            the field name
+     * @param value
+     *            the field value
+     */
+    private void writeEvent(String datatype, String uid, String field, String value) {
+        writeEvent(ROW, datatype, uid, field, value);
+    }
+
+    /**
+     * Write a field and value for the provided row, datatype and uid
+     *
+     * @param row
+     *            the row
+     * @param datatype
+     *            the datatype
+     * @param uid
+     *            the event uid
+     * @param field
+     *            the field name
+     * @param value
+     *            the field value
+     */
+    private void writeEvent(String row, String datatype, String uid, String field, String value) {
         if (fieldColumns.containsEntry(field, "e")) {
             try (BatchWriter bw = client.createBatchWriter(SHARD)) {
-                Mutation m = new Mutation(ROW);
-                Text cf = new Text(DATATYPE + "\0" + uid);
+                Mutation m = new Mutation(row);
+                Text cf = new Text(datatype + "\0" + uid);
                 Text cq = new Text(field + "\0" + value);
                 ColumnVisibility cv = new ColumnVisibility(auths.iterator().next());
                 m.put(cf, cq, cv, TIMESTAMP, EMPTY_VALUE);
@@ -244,7 +465,16 @@ public class AbstractIngest {
         return normalizer.normalize(value);
     }
 
-    private Value getValue(String uid) {
+    /**
+     * Create a {@link Value} for the global index that contains a single uid
+     * <p>
+     * <b>NOTE:</b> if uid aggregation is desired the operator must configure the correct table aggregator
+     *
+     * @param uid
+     *            the uid
+     * @return a serialized uid
+     */
+    private Value getIndexUidValue(String uid) {
         Uid.List.Builder builder = Uid.List.newBuilder();
         builder.setIGNORE(false);
         builder.setCOUNT(1L);
@@ -259,6 +489,10 @@ public class AbstractIngest {
      *            the table name
      */
     public void printTable(String name) {
+        if (!tops.exists(name)) {
+            throw new RuntimeException("Table " + name + " does not exist");
+        }
+
         try (Scanner scanner = client.createScanner(name, auths)) {
             log.info("=== {} ===", name);
             for (Map.Entry<Key,Value> entry : scanner) {
@@ -280,6 +514,10 @@ public class AbstractIngest {
      *            the filter target
      */
     public void printTable(String name, String target) {
+        if (!tops.exists(name)) {
+            throw new RuntimeException("Table " + name + " does not exist");
+        }
+
         try (Scanner scanner = client.createScanner(name, auths)) {
             log.info("=== {} ===", name);
             log.info("filter: {}", target);
@@ -300,7 +538,39 @@ public class AbstractIngest {
         }
     }
 
+    /**
+     * Get the default date
+     *
+     * @return the date
+     */
     public String getDate() {
         return DATE;
+    }
+
+    /**
+     * Get the default row
+     *
+     * @return the row
+     */
+    public String getRow() {
+        return ROW;
+    }
+
+    /**
+     * Get the default datatype
+     *
+     * @return the datatype
+     */
+    public String getDatatype() {
+        return DATATYPE;
+    }
+
+    /**
+     * Get the default timestamp
+     *
+     * @return
+     */
+    public long getTimestamp() {
+        return TIMESTAMP;
     }
 }
