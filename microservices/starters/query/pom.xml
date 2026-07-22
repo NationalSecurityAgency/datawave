@@ -8,7 +8,6 @@
         <relativePath>../../microservice-service-parent/pom.xml</relativePath>
     </parent>
     <artifactId>spring-boot-starter-datawave-query</artifactId>
-    <version>1.0.13-SNAPSHOT</version>
     <url>https://github.com/NationalSecurityAgency/datawave-spring-boot-starter-query</url>
     <licenses>
         <license>
@@ -26,17 +25,17 @@
         <datawave.webservice.namespace>http://webservice.datawave/v1</datawave.webservice.namespace>
         <version.commons-lang3>3.20.0</version.commons-lang3>
         <version.datawave>8.0.0-SNAPSHOT</version.datawave>
-        <version.datawave.audit-api>4.0.4</version.datawave.audit-api>
-        <version.datawave.authorization-api>4.0.4</version.datawave.authorization-api>
-        <version.datawave.dictionary-api>4.0.8</version.datawave.dictionary-api>
-        <version.datawave.hazelcast-client>4.0.6</version.datawave.hazelcast-client>
-        <version.datawave.hazelcast-common>4.0.6</version.datawave.hazelcast-common>
-        <version.datawave.mapreduce-query-api>1.0.3</version.datawave.mapreduce-query-api>
-        <version.datawave.query-api>1.0.3</version.datawave.query-api>
-        <version.datawave.query-metric-api>4.1.5</version.datawave.query-metric-api>
-        <version.datawave.starter>4.0.9</version.datawave.starter>
-        <version.datawave.starter-metadata>3.0.6</version.datawave.starter-metadata>
-        <version.datawave.starter-query-metric>3.0.7</version.datawave.starter-query-metric>
+        <version.datawave.audit-api>8.0.0-SNAPSHOT</version.datawave.audit-api>
+        <version.datawave.authorization-api>8.0.0-SNAPSHOT</version.datawave.authorization-api>
+        <version.datawave.dictionary-api>8.0.0-SNAPSHOT</version.datawave.dictionary-api>
+        <version.datawave.hazelcast-client>8.0.0-SNAPSHOT</version.datawave.hazelcast-client>
+        <version.datawave.hazelcast-common>8.0.0-SNAPSHOT</version.datawave.hazelcast-common>
+        <version.datawave.mapreduce-query-api>8.0.0-SNAPSHOT</version.datawave.mapreduce-query-api>
+        <version.datawave.query-api>8.0.0-SNAPSHOT</version.datawave.query-api>
+        <version.datawave.query-metric-api>8.0.0-SNAPSHOT</version.datawave.query-metric-api>
+        <version.datawave.starter>8.0.0-SNAPSHOT</version.datawave.starter>
+        <version.datawave.starter-metadata>8.0.0-SNAPSHOT</version.datawave.starter-metadata>
+        <version.datawave.starter-query-metric>8.0.0-SNAPSHOT</version.datawave.starter-query-metric>
         <version.guava>31.1-jre</version.guava>
         <!-- version set in datawave-microservice-parent, but can be overridden here -->
         <!-- 2.14.X is the maximum version of jackson without snakeyaml version 2 causing spring-boot 2.7.1 conflict -->

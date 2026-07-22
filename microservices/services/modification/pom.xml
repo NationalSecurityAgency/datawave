@@ -8,7 +8,6 @@
         <relativePath>../../microservice-parent/pom.xml</relativePath>
     </parent>
     <artifactId>modification-service-parent</artifactId>
-    <version>1.0.1-SNAPSHOT</version>
     <packaging>pom</packaging>
     <url>https://code.nsa.gov/datawave-modification-service</url>
     <modules>

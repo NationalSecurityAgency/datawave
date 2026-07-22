@@ -21,7 +21,6 @@
         <dependency>
             <groupId>org.apache.accumulo</groupId>
             <artifactId>accumulo-core</artifactId>
-            <version>${version.accumulo}</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.apache.hadoop</groupId>

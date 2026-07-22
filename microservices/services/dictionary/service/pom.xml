@@ -8,7 +8,6 @@
         <relativePath>../../../microservice-service-parent/pom.xml</relativePath>
     </parent>
     <artifactId>dictionary-service</artifactId>
-    <version>4.0.15-SNAPSHOT</version>
     <description>DATAWAVE Dictionary Service</description>
     <url>https://code.nsa.gov/datawave-dictionary-service</url>
     <scm>
@@ -28,12 +27,12 @@
         <version.commons-lang3>3.20.0</version.commons-lang3>
         <version.curator>5.2.0</version.curator>
         <version.datawave>8.0.0-SNAPSHOT</version.datawave>
-        <version.datawave.authorization-api>4.0.4</version.datawave.authorization-api>
-        <version.datawave.dictionary-api>4.0.10</version.datawave.dictionary-api>
-        <version.datawave.starter>4.0.11</version.datawave.starter>
-        <version.datawave.starter-metadata>3.0.6</version.datawave.starter-metadata>
+        <version.datawave.authorization-api>8.0.0-SNAPSHOT</version.datawave.authorization-api>
+        <version.datawave.dictionary-api>8.0.0-SNAPSHOT</version.datawave.dictionary-api>
+        <version.datawave.starter>8.0.0-SNAPSHOT</version.datawave.starter>
+        <version.datawave.starter-metadata>8.0.0-SNAPSHOT</version.datawave.starter-metadata>
         <version.guava>31.1-jre</version.guava>
-        <version.in-memory-accumulo>4.0.6-SNAPSHOT</version.in-memory-accumulo>
+        <version.in-memory-accumulo>8.0.0-SNAPSHOT</version.in-memory-accumulo>
         <!-- version set in datawave-microservice-parent, but can be overridden here -->
         <!-- 2.14.X is the maximum version of jackson without snakeyaml version 2 causing spring-boot 2.7.1 conflict -->
         <version.jackson>2.14.3</version.jackson>

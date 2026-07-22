@@ -8,7 +8,6 @@
         <relativePath>../../microservice-parent/pom.xml</relativePath>
     </parent>
     <artifactId>query-executor-service-parent</artifactId>
-    <version>8.0.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <url>https://github.com/NationalSecurityAgency/datawave-query-executor-service</url>
     <modules>

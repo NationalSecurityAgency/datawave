@@ -39,22 +39,14 @@
             <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-core</artifactId>
             <version>${project.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.apache.commons</groupId>
-                    <artifactId>commons-lang3</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
-            <version>${version.commons-lang3}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.accumulo</groupId>
             <artifactId>accumulo-minicluster</artifactId>
-            <version>${version.accumulo}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

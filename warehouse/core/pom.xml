@@ -29,7 +29,6 @@
         <dependency>
             <groupId>com.github.ben-manes.caffeine</groupId>
             <artifactId>caffeine</artifactId>
-            <version>${version.caffeine}</version>
         </dependency>
         <dependency>
             <groupId>com.google.protobuf</groupId>
@@ -46,7 +45,6 @@
         <dependency>
             <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-common</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave</groupId>

@@ -57,7 +57,6 @@
         <dependency>
             <groupId>gov.nsa.datawave.commons</groupId>
             <artifactId>datawave-commons-security</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.dropwizard.metrics</groupId>
@@ -97,7 +96,6 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-            <version>${version.slf4j}</version>
         </dependency>
         <dependency>
             <groupId>org.springframework</groupId>
