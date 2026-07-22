@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 import org.apache.hadoop.conf.Configuration;
 
@@ -188,7 +189,7 @@ public class CSVHelper extends DataTypeHelperImpl {
         // Get the disallowlist of event fields to drop.
         Collection<String> cb = config.getStringCollection(this.getType().typeName() + FIELD_DISALLOWLIST);
         if (cb != null && !cb.isEmpty()) {
-            this.fieldDisallowlist = new HashSet<>(cw);
+            this.fieldDisallowlist = new HashSet<>(cb);
         }
 
         final Collection<String> reqFields = config.getStringCollection(getType().typeName() + REQUIRED_FIELDS);
@@ -313,7 +314,7 @@ public class CSVHelper extends DataTypeHelperImpl {
      *         to the String.split(..) function or similar methods
      */
     public String getEscapeSafeMultiValueSeparatorPattern() {
-        return BACKSLASH_ESCAPE_LOOKBEHIND_PATTERN + getMultiValueSeparator();
+        return BACKSLASH_ESCAPE_LOOKBEHIND_PATTERN + Pattern.quote(getMultiValueSeparator());
     }
 
     public int getMultiFieldSizeThreshold() {
@@ -372,10 +373,7 @@ public class CSVHelper extends DataTypeHelperImpl {
      * @return the cleaned field value
      */
     public String cleanEscapedMultivalueSeparators(String fieldValue) {
-        // remove escaped multvalue separators.
-        if (fieldValue.contains("\\" + getMultiValueSeparator())) {
-            fieldValue = fieldValue.replaceAll("\\\\" + getMultiValueSeparator(), getMultiValueSeparator());
-        }
-        return fieldValue;
+        // Remove escaped multivalue separators.
+        return fieldValue.replace("\\" + getMultiValueSeparator(), getMultiValueSeparator());
     }
 }

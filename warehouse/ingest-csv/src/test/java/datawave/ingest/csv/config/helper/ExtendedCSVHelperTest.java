@@ -34,7 +34,7 @@ public class ExtendedCSVHelperTest {
         assertEquals(",", helper.getSeparator());
 
         assertEquals(";", helper.getMultiValueSeparator());
-        assertEquals("(?<!\\\\);", helper.getEscapeSafeMultiValueSeparatorPattern());
+        assertEquals("(?<!\\\\)\\Q;\\E", helper.getEscapeSafeMultiValueSeparatorPattern());
 
         assertEquals(1, helper.getSecurityMarkingFieldDomainMap().size());
 
