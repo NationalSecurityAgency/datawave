@@ -10,8 +10,8 @@ import static datawave.microservice.query.QueryParameters.QUERY_LOGIC_NAME;
 import static datawave.microservice.query.QueryParameters.QUERY_NAME;
 import static datawave.microservice.query.QueryParameters.QUERY_PERSISTENCE;
 import static datawave.microservice.query.QueryParameters.QUERY_STRING;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
@@ -23,7 +23,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.inject.Inject;
 import javax.ws.rs.core.MultivaluedMap;
 
 import org.apache.accumulo.core.client.AccumuloClient;
@@ -41,23 +40,22 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
-import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.asset.StringAsset;
-import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
-import datawave.configuration.spring.SpringBean;
 import datawave.core.query.configuration.QueryData;
 import datawave.ingest.config.RawRecordContainerImpl;
 import datawave.ingest.data.RawRecordContainer;
@@ -77,12 +75,19 @@ import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.GeoWaveQueryInfoVisitor;
 import datawave.query.tables.ShardQueryLogic;
-import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.testframework.MockStatusReporter;
 import datawave.table.constants.TableName;
-import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 
-@RunWith(Arquillian.class)
+@ExtendWith(SpringExtension.class)
+@ComponentScan(basePackages = "datawave.query")
+// @formatter:off
+@ContextConfiguration(locations = {
+        "classpath:datawave/query/QueryLogicFactory.xml",
+        "classpath:beanRefContext.xml",
+        "classpath:MarkingFunctionsContext.xml",
+        "classpath:MetadataHelperContext.xml",
+        "classpath:CacheContext.xml"})
+// @formatter:on
 public class GeoSortedQueryDataTest {
 
     private static final int NUM_SHARDS = 3;
@@ -141,25 +146,13 @@ public class GeoSortedQueryDataTest {
 
     private static final String QUERY_WKT = "POLYGON((-180 -90, 180 -90, 180 90, -180 90, -180 -90))";
 
-    @Inject
-    @SpringBean(name = "EventQuery")
-    ShardQueryLogic logic;
+    @Autowired
+    @Qualifier("EventQuery")
+    protected ShardQueryLogic logic;
 
     private static InMemoryInstance instance;
 
-    @Deployment
-    public static JavaArchive createDeployment() throws Exception {
-        return ShrinkWrap.create(JavaArchive.class)
-                        .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.query", "datawave.webservice.query.result.event",
-                                        "datawave.core.query.result.event")
-                        .deleteClass(DefaultEdgeEventQueryLogic.class).deleteClass(RemoteEdgeDictionary.class)
-                        .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class)
-                        .addAsManifestResource(new StringAsset(
-                                        "<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>" + "</alternatives>"),
-                                        "beans.xml");
-    }
-
-    @BeforeClass
+    @BeforeAll
     public static void setupClass() throws Exception {
         setupEnvVariables();
         conf.addResource(ClassLoader.getSystemResource("datawave/query/tables/geo-test-config.xml"));
@@ -280,7 +273,7 @@ public class GeoSortedQueryDataTest {
         }
     }
 
-    @Before
+    @BeforeEach
     public void setupTest() {
         // increase the depth threshold
         logic.setMaxDepthThreshold(10);
