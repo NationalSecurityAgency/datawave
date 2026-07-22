@@ -130,6 +130,17 @@ public class CSVHelper extends DataTypeHelperImpl {
         FAIL, DROP, REPLACE, TRUNCATE
     }
 
+    private static final int DEFAULT_FIELD_SIZE_THRESHOLD = Integer.MAX_VALUE;
+    private static final int DEFAULT_MULTI_FIELD_SIZE_THRESHOLD = Integer.MAX_VALUE;
+    private static final ThresholdAction DEFAULT_THRESHOLD_ACTION = ThresholdAction.FAIL;
+    private static final String DEFAULT_THRESHOLD_REPLACEMENT = "(too large)";
+    private static final String DEFAULT_TRUNCATE_FIELD = "TRUNCATED_FIELD";
+    private static final String DEFAULT_DROP_FIELD = "DROPPED_FIELD";
+    private static final ThresholdAction DEFAULT_MULTI_VALUED_THRESHOLD_ACTION = ThresholdAction.FAIL;
+    private static final String DEFAULT_MULTI_VALUED_THRESHOLD_REPLACEMENT = "(too many)";
+    private static final String DEFAULT_MULTI_VALUED_TRUNCATE_FIELD = "TRUNCATED_MULTI_VALUED_FIELD";
+    private static final String DEFAULT_MULTI_VALUED_DROP_FIELD = "DROPPED_MULTI_VALUED_FIELD";
+
     private String[] header = null;
     private String separator = null;
     private boolean skipHeaderRow = false;
@@ -138,16 +149,16 @@ public class CSVHelper extends DataTypeHelperImpl {
     private Map<String,String> multiValuedFieldsDisallowlist = new HashMap<>();
     private boolean hasMultiValuedFieldsDisallowlist = false;
     private String multiValueSeparator = null;
-    private int fieldSizeThreshold = Integer.MAX_VALUE;
-    private int multiFieldSizeThreshold = Integer.MAX_VALUE;
-    private ThresholdAction thresholdAction = ThresholdAction.FAIL;
-    private String thresholdReplacement = "(too large)";
-    private String truncateField = "TRUNCATED_FIELD";
-    private String dropField = "DROPPED_FIELD";
-    private ThresholdAction multiValuedThresholdAction = ThresholdAction.FAIL;
-    private String multiValuedThresholdReplacement = "(too many)";
-    private String multiValuedTruncateField = "TRUNCATED_MULTI_VALUED_FIELD";
-    private String multiValuedDropField = "DROPPED_MULTI_VALUED_FIELD";
+    private int fieldSizeThreshold = DEFAULT_FIELD_SIZE_THRESHOLD;
+    private int multiFieldSizeThreshold = DEFAULT_MULTI_FIELD_SIZE_THRESHOLD;
+    private ThresholdAction thresholdAction = DEFAULT_THRESHOLD_ACTION;
+    private String thresholdReplacement = DEFAULT_THRESHOLD_REPLACEMENT;
+    private String truncateField = DEFAULT_TRUNCATE_FIELD;
+    private String dropField = DEFAULT_DROP_FIELD;
+    private ThresholdAction multiValuedThresholdAction = DEFAULT_MULTI_VALUED_THRESHOLD_ACTION;
+    private String multiValuedThresholdReplacement = DEFAULT_MULTI_VALUED_THRESHOLD_REPLACEMENT;
+    private String multiValuedTruncateField = DEFAULT_MULTI_VALUED_TRUNCATE_FIELD;
+    private String multiValuedDropField = DEFAULT_MULTI_VALUED_DROP_FIELD;
     private Set<String> fieldDisallowlist = null;
     private Set<String> fieldAllowlist = null;
 
@@ -163,6 +174,7 @@ public class CSVHelper extends DataTypeHelperImpl {
 
     @Override
     public void setup(Configuration config) throws IllegalArgumentException {
+        resetSetupState();
         super.setup(config);
 
         boolean headerEnabled = config.getBoolean(this.getType().typeName() + DATA_HEADER_ENABLED, true);
@@ -245,6 +257,31 @@ public class CSVHelper extends DataTypeHelperImpl {
                         this.multiValuedThresholdReplacement);
         this.multiValuedTruncateField = config.get(this.getType().typeName() + MULTI_VALUED_TRUNCATE_FIELD, this.multiValuedTruncateField);
         this.multiValuedDropField = config.get(this.getType().typeName() + MULTI_VALUED_DROP_FIELD, this.multiValuedDropField);
+    }
+
+    private void resetSetupState() {
+        header = null;
+        separator = null;
+        skipHeaderRow = false;
+        processExtraFields = false;
+        multiValuedFields = new HashMap<>();
+        multiValuedFieldsDisallowlist = new HashMap<>();
+        hasMultiValuedFieldsDisallowlist = false;
+        multiValueSeparator = null;
+        fieldSizeThreshold = DEFAULT_FIELD_SIZE_THRESHOLD;
+        multiFieldSizeThreshold = DEFAULT_MULTI_FIELD_SIZE_THRESHOLD;
+        thresholdAction = DEFAULT_THRESHOLD_ACTION;
+        thresholdReplacement = DEFAULT_THRESHOLD_REPLACEMENT;
+        truncateField = DEFAULT_TRUNCATE_FIELD;
+        dropField = DEFAULT_DROP_FIELD;
+        multiValuedThresholdAction = DEFAULT_MULTI_VALUED_THRESHOLD_ACTION;
+        multiValuedThresholdReplacement = DEFAULT_MULTI_VALUED_THRESHOLD_REPLACEMENT;
+        multiValuedTruncateField = DEFAULT_MULTI_VALUED_TRUNCATE_FIELD;
+        multiValuedDropField = DEFAULT_MULTI_VALUED_DROP_FIELD;
+        fieldDisallowlist = null;
+        fieldAllowlist = null;
+        _requiredFields = null;
+        _hasReqFields = false;
     }
 
     /**
