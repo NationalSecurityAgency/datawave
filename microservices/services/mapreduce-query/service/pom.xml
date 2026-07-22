@@ -27,7 +27,7 @@
         <version.datawave.mapreduce-query-core-job>1.0.6</version.datawave.mapreduce-query-core-job>
         <version.datawave.starter>4.0.9</version.datawave.starter>
         <version.datawave.starter-query>1.0.12</version.datawave.starter-query>
-        <version.hadoop>3.3.4</version.hadoop>
+        <version.hadoop>${version.hadoop}</version.hadoop>
         <!-- dependency declared in datawave-microservice-parent, but the version can be overridden here -->
         <version.log4j>2.26.1</version.log4j>
         <version.oozie>4.1.0</version.oozie>
