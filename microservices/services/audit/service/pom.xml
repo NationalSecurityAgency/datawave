@@ -233,6 +233,12 @@
                 <artifactId>jboss-servlet-api_4.0_spec</artifactId>
                 <version>${version.jboss-servlet-api}</version>
             </dependency>
+            <dependency>
+                <groupId>org.apache.hadoop</groupId>
+                <artifactId>hadoop-client-runtime</artifactId>
+                <version>${version.hadoop}</version>
+                <scope>runtime</scope>
+            </dependency>
         </dependencies>
     </dependencyManagement>
     <dependencies>
