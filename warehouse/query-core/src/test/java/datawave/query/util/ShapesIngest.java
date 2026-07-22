@@ -1,9 +1,9 @@
 package datawave.query.util;
 
-import static datawave.util.TableName.METADATA;
-import static datawave.util.TableName.SHARD;
-import static datawave.util.TableName.SHARD_INDEX;
-import static datawave.util.TableName.SHARD_RINDEX;
+import static datawave.table.constants.TableName.METADATA;
+import static datawave.table.constants.TableName.SHARD;
+import static datawave.table.constants.TableName.SHARD_INDEX;
+import static datawave.table.constants.TableName.SHARD_RINDEX;
 
 import java.util.Date;
 import java.util.HashMap;
