@@ -35,7 +35,7 @@
         <version.datawave.starter-metadata>3.0.6</version.datawave.starter-metadata>
         <version.datawave.starter-query-metric>3.0.7</version.datawave.starter-query-metric>
         <version.guava>31.1-jre</version.guava>
-        <version.hadoop>3.3.4</version.hadoop>
+        <version.hadoop>3.5.0</version.hadoop>
         <version.hazelcast-kubernetes>2.2.3</version.hazelcast-kubernetes>
         <version.in-memory-accumulo>4.0.6-SNAPSHOT</version.in-memory-accumulo>
         <!-- version set in datawave-microservice-parent, but can be overridden here -->
@@ -356,6 +356,12 @@
                 <groupId>org.webjars</groupId>
                 <artifactId>webjars-locator-core</artifactId>
                 <version>${version.webjars.locator-core}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.hadoop</groupId>
+                <artifactId>hadoop-client-runtime</artifactId>
+                <version>${version.hadoop}</version>
+                <scope>runtime</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>
