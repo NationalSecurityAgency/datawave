@@ -10,7 +10,6 @@
     <name>${project.artifactId}</name>
     <properties>
         <spotbugs.excludes.file>${project.basedir}/src/main/spotbugs/excludes.xml</spotbugs.excludes.file>
-        <version.kryo>2.20</version.kryo>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -90,30 +89,16 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
-    <repositories>
-        <repository>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-            <id>github-datawave</id>
-            <url>https://maven.pkg.github.com/NationalSecurityAgency/datawave</url>
-        </repository>
-    </repositories>
     <build>
         <pluginManagement>
             <plugins>
                 <plugin>
                     <artifactId>maven-compiler-plugin</artifactId>
                     <configuration>
-                        <encoding>UTF-8</encoding>
                         <showDeprecation>true</showDeprecation>
                         <showWarnings>true</showWarnings>
-                        <source>${maven.compiler.source}</source>
-                        <target>${maven.compiler.target}</target>
                         <compilerArgs>
+                            <!-- parameters option is not in the top-level parent pom -->
                             <arg>-parameters</arg>
                             <arg>-Xlint:all</arg>
                             <arg>-Xlint:-processing</arg>
