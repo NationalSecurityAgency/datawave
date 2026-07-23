@@ -3,11 +3,14 @@ package datawave.core.iterators;
 import static datawave.core.iterators.IvaratorRunnable.Status.CREATED;
 import static datawave.core.iterators.IvaratorRunnable.Status.RUNNING;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -38,6 +41,10 @@ public class IteratorThreadPoolManager {
     private static final long DEFAULT_IVARATOR_RUNNABLE_TIMEOUT_MINUTES = 60;
 
     private Map<String,ThreadPoolExecutor> threadPools = new TreeMap<>();
+    // Tracks every ScheduledExecutorService created by this manager so they can be shut down in shutdown().
+    // Without this list the references to the scheduled executors created in the constructor are discarded and the
+    // non-daemon monitoring threads they spawn leak across query lifecycle cycles.
+    private List<ScheduledExecutorService> scheduledExecutors = new ArrayList<>();
     private Cache<String,IvaratorFuture> ivaratorFutures;
     // Each Ivarator has a scanTimeout. This is a system-wide limit which could be useful in terminating
     // all Ivarators if necessary. It is also used to ensure that abandoned IvaratorFutures are removed.
@@ -62,7 +69,9 @@ public class IteratorThreadPoolManager {
         ivaratorRunnableTimeoutMinutes = getLongPropertyValue(IVARATOR_RUNNABLE_TIMEOUT_MINUTES_PROP, DEFAULT_IVARATOR_RUNNABLE_TIMEOUT_MINUTES, pluginEnv);
         log.info("Using " + ivaratorRunnableTimeoutMinutes + " minutes for " + IVARATOR_RUNNABLE_TIMEOUT_MINUTES_PROP);
         // This thread will check for changes to ivaratorRunnableTimeoutMinutes
-        Executors.newSingleThreadScheduledExecutor().scheduleWithFixedDelay(() -> {
+        ScheduledExecutorService timeoutMonitor = Executors.newSingleThreadScheduledExecutor();
+        scheduledExecutors.add(timeoutMonitor);
+        timeoutMonitor.scheduleWithFixedDelay(() -> {
             try {
                 long value = getLongPropertyValue(IVARATOR_RUNNABLE_TIMEOUT_MINUTES_PROP, DEFAULT_IVARATOR_RUNNABLE_TIMEOUT_MINUTES, pluginEnv);
                 if (ivaratorRunnableTimeoutMinutes != value) {
@@ -115,7 +124,9 @@ public class IteratorThreadPoolManager {
 
         // If Ivarator has been running for a time greater than either its scanTimeout or the ivaratorRunnableTimeoutMinutes,
         // then stop the Ivarator and remove the future from the cache
-        Executors.newSingleThreadScheduledExecutor().scheduleWithFixedDelay(() -> {
+        ScheduledExecutorService ivaratorTimeoutMonitor = Executors.newSingleThreadScheduledExecutor();
+        scheduledExecutors.add(ivaratorTimeoutMonitor);
+        ivaratorTimeoutMonitor.scheduleWithFixedDelay(() -> {
             Map<String,Integer> queryToTaskMap = new TreeMap<>();
             long now = System.currentTimeMillis();
             ivaratorFutures.asMap().forEach((String taskName, IvaratorFuture future) -> {
@@ -158,7 +169,9 @@ public class IteratorThreadPoolManager {
         int maxThreads = getIntPropertyValue(prop, DEFAULT_THREAD_POOL_SIZE, pluginEnv);
         final ThreadPoolExecutor service = createExecutorService(maxThreads, name + " (" + instanceId + ')');
         threadPools.put(name, service);
-        Executors.newScheduledThreadPool(maxThreads).scheduleWithFixedDelay(() -> {
+        ScheduledExecutorService poolMonitor = Executors.newScheduledThreadPool(maxThreads);
+        scheduledExecutors.add(poolMonitor);
+        poolMonitor.scheduleWithFixedDelay(() -> {
             try {
                 // Very important to not use the accumuloConfiguration in this thread and instead use the pluginEnv
                 // The accumuloConfiguration caches table ids which may no longer exist down the road.
@@ -294,5 +307,37 @@ public class IteratorThreadPoolManager {
 
     public static Future<?> executeEvaluation(Runnable task, String taskName, IteratorEnvironment env) {
         return instance(env).execute(EVALUATOR_THREAD_NAME, task, taskName);
+    }
+
+    /**
+     * Shuts down the singleton {@link IteratorThreadPoolManager}, releasing every {@link ThreadPoolExecutor} and {@link ScheduledExecutorService} it has
+     * created. Callers that manage the lifecycle of the table-server side query machinery (for example test harnesses that bring up and tear down a fresh
+     * Accumulo/tablet-server in-process) should invoke this when the manager is no longer needed so the periodic monitoring threads spawned in the constructor
+     * do not leak across lifecycle cycles.
+     * <p>
+     * The {@code env} argument is accepted for API symmetry with the other static entry points on this class ({@link #executeIvarator(IvaratorRunnable, String,
+     * IteratorEnvironment)} etc.) but is not required, because the manager is a JVM-wide singleton.
+     * </p>
+     */
+    public static void shutdown(IteratorEnvironment env) {
+        IteratorThreadPoolManager mgr = instance;
+        if (mgr != null) {
+            mgr.shutdownInstance();
+        }
+    }
+
+    private void shutdownInstance() {
+        for (ThreadPoolExecutor pool : threadPools.values()) {
+            pool.shutdownNow();
+        }
+        threadPools.clear();
+        for (ScheduledExecutorService scheduler : scheduledExecutors) {
+            scheduler.shutdownNow();
+        }
+        scheduledExecutors.clear();
+        if (ivaratorFutures != null) {
+            ivaratorFutures.invalidateAll();
+        }
+        log.info("IteratorThreadPoolManager shutdown complete");
     }
 }
