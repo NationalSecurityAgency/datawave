@@ -17,7 +17,7 @@ All source line numbers below are relative to `origin/integration` at the time o
 |---|----------|------|--------|
 | 1 | **High** | `GroupingTransform` / `UniqueTransform` | Per-page timeout timer is never reset after emitting an intermediate result → a *flood* of intermediate (PARTIAL) pages. This is the "multiple intermediate result pages at the same time" symptom. |
 | 2 | **High** | `UniqueTransform` (mostRecent) | mostRecent-unique **never** emits intermediate results, because `apply()` returns on the `map != null` path before the timeout check → no keep-alive pages for long-running mostRecent unique queries. |
-| 3 | **Medium** | `GroupingIterator` | `hasNext()` is not idempotent and mutates state; calling it twice before `next()` silently discards a batch of grouped results. Also directly contradicts the class Javadoc's "there can be no saved state in this class." |
+| 3 | **Medium (latent)** | `GroupingIterator` | `hasNext()` is not idempotent and mutates state; calling it twice before `next()` silently discards a batch of grouped results. Real double-`hasNext()` sources exist in `RunningQuery` (see Finding 3), but are currently absorbed by idempotent buffers in front of `GroupingIterator`. Also contradicts the class Javadoc's "there can be no saved state in this class." |
 | 4 | **Low / needs confirmation** | `DocumentGrouper` | In `extractGroupsFromDocument()` the "unmapped" and "mapped" field-name variables are computed identically, defeating the stated purpose of the code and potentially breaking `#AVERAGE` re-aggregation under a query model. |
 | 5 | **Doc-only** | multiple | Several Javadoc/behavior mismatches (details below). |
 | 6 | **Medium** | `QueryOptionsFromQueryVisitor` | Multiple instances of the same aggregation function (`#SUM/#MAX/#MIN/#AVERAGE/#COUNT`) in one query silently overwrite each other — only the last survives. (issue #3411 / open PR #3412.) |
@@ -198,6 +198,48 @@ work into `next()`. Also correct or remove the misleading "no saved state" Javad
 `hasNext()` calls only the second group (`beta`) is retrievable; `alpha` is lost.
 `groupingIterator_singleHasNextPerNext_returnsAllGroups` is the control showing correct usage returns
 both groups.
+
+### Where a double `hasNext()` actually comes from
+
+The consumers that drive query results **do** call `hasNext()` more than once per element, by design.
+The following are real double-`hasNext()` sources; each is currently safe only because the iterator it
+drives caches its computed element (is idempotent), which `GroupingIterator` is not.
+
+1. **`RunningQuery.next()` main loop (primary source).** The loop condition is
+   `while (!this.finished && hasNext(pageStartTime))` (`RunningQuery.java:485`), and the body contains
+   six `break` statements that fire *after* `hasNext()` returned true but *before* the matching
+   `getNext()`/`iter.next()` at line 540: page-size reached, logic max-page-size, page-byte-trigger,
+   max-results, max-work, and the partial-results timing short-circuit (plus `canceled`). When a page
+   ends via one of these breaks, `this.iter` has received a `hasNext()` with no corresponding
+   `next()`; the next page's `next()` call re-enters the loop and calls `hasNext()` again. Net: two
+   `hasNext()` calls, one `next()`.
+
+2. **`RunningQuery.getResultsThread()`** uses the same shape: `while (... this.iter.hasNext())`
+   (`RunningQuery.java:252`) re-evaluates `hasNext()` each iteration, and the inner block only calls
+   `this.iter.next()` (line 274) when the hand-off queue is empty and the query is still running —
+   otherwise the loop re-checks `hasNext()` without an intervening `next()`.
+
+3. **`RunningQuery.hasNext(long)`** (`RunningQuery.java:381`, non-results-thread path) calls
+   `this.iter.hasNext()` directly and is itself the loop condition, so the break-before-`getNext()`
+   pattern of source (1) routes through here too.
+
+**Why no data loss occurs today.** In every one of these paths `this.iter` is a
+`DatawaveTransformIterator` (`BaseQueryLogic.getTransformIterator` → `new DatawaveTransformIterator(...)`),
+whose `hasNext()` caches the computed element (`if (next == null) next = getNext(); return next != null;`)
+and is therefore idempotent — the second `hasNext()` is a no-op. `UniqueTransform.UniqueTransformIterator`
+uses the same caching pattern. And on the t-server, `GroupingIterator` is never consumed raw: the
+`QueryIterator` pipeline always wraps it in a Guava `Iterators.filter` (`QueryIterator.java:511`), whose
+`AbstractIterator.hasNext()` also computes-and-buffers exactly one element and is idempotent. So the
+double-`hasNext()` is absorbed before it reaches `GroupingIterator`.
+
+**Consequence for Finding 3.** `GroupingIterator`'s non-idempotent `hasNext()` is therefore a *latent*
+hazard rather than an active data-loss bug in the current wiring: the drivers that double-call
+`hasNext()` are real, but an idempotent buffer always sits between them and `GroupingIterator`. The risk
+is that this shielding is incidental — if `GroupingIterator` is ever moved to a position where it is
+driven directly by a break-before-`next()` loop (e.g. wrapped by the non-buffering `statelessFilter`, or
+consumed directly by a `RunningQuery`-style loop), Finding 3's data loss becomes reachable. Making
+`GroupingIterator.hasNext()` idempotent removes the dependence on that incidental shielding and is still
+the correct fix.
 
 ---
 
