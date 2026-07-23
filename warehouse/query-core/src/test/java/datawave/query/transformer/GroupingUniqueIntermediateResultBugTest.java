@@ -7,11 +7,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.AbstractMap;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.accumulo.core.data.Key;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ParseException;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -19,12 +22,15 @@ import com.google.common.collect.TreeMultimap;
 
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.marking.MarkingFunctions;
+import datawave.query.QueryParameters;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.TemporalGranularity;
 import datawave.query.attributes.TypeAttribute;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.common.grouping.GroupFields;
 import datawave.query.iterator.GroupingIterator;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.visitors.QueryOptionsFromQueryVisitor;
 
 /**
  * Demonstration/regression harness for the bugs documented in {@code grouping-unique-intermediate-results-findings.md}.
@@ -190,5 +196,69 @@ public class GroupingUniqueIntermediateResultBugTest {
             groupsReturned++;
         }
         assertEquals(2, groupsReturned);
+    }
+
+    // =================================================================================================================
+    // Finding 6 (issue #3411 / PR #3412): when more than one instance of the SAME aggregation grouping function appears
+    // in a query string, all but the last are silently dropped. QueryOptionsFromQueryVisitor handles SUM/MAX/MIN/AVERAGE/
+    // COUNT with a plain optionsMap.put(...) (an overwrite) instead of the merge helper (updateFieldsOption /
+    // updateGroupByFieldsOption / updateUniqueFieldsOption) used for GROUPBY, UNIQUE, EXCERPT, RENAME, etc. As a result
+    // the second f:average(...) overwrites the first, so aggregation fields from earlier instances never take effect.
+    //
+    // These tests pin the CURRENT (buggy) "last one wins" behavior. PR #3412 fixes it so the instances are merged; the
+    // "AFTER FIX" expectation is noted inline for each.
+    // =================================================================================================================
+
+    /**
+     * Collect the query-options map produced by {@link QueryOptionsFromQueryVisitor} for the given query string. An anchor predicate ({@code FOO == 'bar'}) is
+     * required because a query composed solely of grouping functions collapses to an empty tree.
+     */
+    private static Map<String,String> collectOptions(String query) throws ParseException {
+        Map<String,String> optionsMap = new HashMap<>();
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
+        QueryOptionsFromQueryVisitor.collect(script, optionsMap);
+        return optionsMap;
+    }
+
+    @Test
+    public void multipleAverageFunctions_dropAllButTheLast_becauseOptionsMapIsOverwritten() throws ParseException {
+        // This mirrors the query from PR #3412: two f:average(...) instances alongside a groupby and a max.
+        Map<String,String> options = collectOptions("UUID =~ '^[CS].*' && f:groupby('GENDER') && f:average(AGE, VALUE) && f:max(AGE) && f:average(VALUE)");
+
+        // The groupby and max functions (single instances) are recorded correctly.
+        assertEquals("GROUP(GENDER[ALL])", options.get(QueryParameters.GROUP_FIELDS));
+        assertEquals("AGE", options.get(QueryParameters.MAX_FIELDS));
+
+        // BUG: the second f:average(VALUE) overwrites the first f:average(AGE, VALUE); the AGE (and the first VALUE)
+        // average is silently dropped, leaving only the last instance's field.
+        assertEquals("VALUE", options.get(QueryParameters.AVERAGE_FIELDS));
+
+        // AFTER FIX (PR #3412): the two average instances are merged, e.g. AVERAGE_FIELDS == "AGE,VALUE", so the AGE
+        // average survives.
+    }
+
+    @Test
+    public void multipleAggregationFunctionsOfSameType_onlyLastInstanceSurvives() throws ParseException {
+        // Every aggregation function type exhibits the same overwrite behavior: the second instance wins.
+        assertEquals("FIELD_B", collectOptions("FOO == 'bar' && f:sum(FIELD_A) && f:sum(FIELD_B)").get(QueryParameters.SUM_FIELDS));
+        assertEquals("FIELD_B", collectOptions("FOO == 'bar' && f:min(FIELD_A) && f:min(FIELD_B)").get(QueryParameters.MIN_FIELDS));
+        assertEquals("FIELD_B", collectOptions("FOO == 'bar' && f:max(FIELD_A) && f:max(FIELD_B)").get(QueryParameters.MAX_FIELDS));
+        assertEquals("FIELD_B", collectOptions("FOO == 'bar' && f:count(FIELD_A) && f:count(FIELD_B)").get(QueryParameters.COUNT_FIELDS));
+        assertEquals("FIELD_B", collectOptions("FOO == 'bar' && f:average(FIELD_A) && f:average(FIELD_B)").get(QueryParameters.AVERAGE_FIELDS));
+
+        // AFTER FIX (PR #3412): each of these would merge to "FIELD_A,FIELD_B".
+    }
+
+    /**
+     * Control: unlike the aggregation functions, multiple {@code f:groupby(...)} (and {@code f:unique(...)}) instances are correctly merged today, because they
+     * route through the merge helpers. This isolates Finding 6 to the aggregation functions specifically.
+     */
+    @Test
+    public void multipleGroupByAndUniqueFunctions_mergeCorrectly_control() throws ParseException {
+        assertEquals("GROUP(FIELD_A[ALL],FIELD_B[ALL])",
+                        collectOptions("FOO == 'bar' && f:groupby('FIELD_A') && f:groupby('FIELD_B')").get(QueryParameters.GROUP_FIELDS));
+
+        assertEquals("FIELD_A[ALL],FIELD_B[ALL]",
+                        collectOptions("FOO == 'bar' && f:unique('FIELD_A') && f:unique('FIELD_B')").get(QueryParameters.UNIQUE_FIELDS));
     }
 }

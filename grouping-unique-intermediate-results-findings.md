@@ -5,7 +5,7 @@ helper code, and the "multiple intermediate result pages returned at the same ti
 
 Branch: `task/grouping-unique-intermediate-bugs` (based on `origin/integration`).
 Executable reproductions: `warehouse/query-core/src/test/java/datawave/query/transformer/GroupingUniqueIntermediateResultBugTest.java`
-(4 tests, all passing against current code — each asserts the *current buggy* behavior and documents the intended post-fix behavior inline).
+(7 tests, all passing against current code — each asserts the *current buggy* behavior and documents the intended post-fix behavior inline).
 
 All source line numbers below are relative to `origin/integration` at the time of writing.
 
@@ -20,6 +20,7 @@ All source line numbers below are relative to `origin/integration` at the time o
 | 3 | **Medium** | `GroupingIterator` | `hasNext()` is not idempotent and mutates state; calling it twice before `next()` silently discards a batch of grouped results. Also directly contradicts the class Javadoc's "there can be no saved state in this class." |
 | 4 | **Low / needs confirmation** | `DocumentGrouper` | In `extractGroupsFromDocument()` the "unmapped" and "mapped" field-name variables are computed identically, defeating the stated purpose of the code and potentially breaking `#AVERAGE` re-aggregation under a query model. |
 | 5 | **Doc-only** | multiple | Several Javadoc/behavior mismatches (details below). |
+| 6 | **Medium** | `QueryOptionsFromQueryVisitor` | Multiple instances of the same aggregation function (`#SUM/#MAX/#MIN/#AVERAGE/#COUNT`) in one query silently overwrite each other — only the last survives. (issue #3411 / open PR #3412.) |
 
 ---
 
@@ -234,6 +235,65 @@ the *unmapped* field.
 
 ---
 
+## Finding 6: duplicate aggregation functions overwrite each other (issue #3411 / PR #3412)
+
+### What the code does
+
+`QueryOptionsFromQueryVisitor.visit(ASTFunctionNode, ...)` translates each grouping function in the
+query into an entry in the options map. The grouping/uniqueness functions route through **merge**
+helpers, so repeating them accumulates fields:
+
+- `GROUPBY` → `updateGroupByFieldsOption(...)`
+- `UNIQUE` / `unique_by_*` → `updateUniqueFieldsOption(...)`
+- `EXCERPT` / `LENIENT` / `STRICT` / `RENAME` / `NO_EXPANSION` → `updateFieldsOption(...)`
+
+But the five aggregation functions overwrite instead (lines ~351-380):
+
+```java
+case QueryFunctions.SUM: {
+    List<String> options = new ArrayList<>();
+    this.visit(node, options);
+    optionsMap.put(QueryParameters.SUM_FIELDS, JOINER.join(options));   // <-- overwrites any prior #SUM
+    return null;
+}
+// ... identical shape for MAX, MIN, AVERAGE, COUNT
+```
+
+Because it is a plain `Map.put`, a second occurrence of the same aggregation function replaces the
+first. For the query from issue #3411:
+
+```
+UUID =~ '^[CS].*' && f:groupby('GENDER') && f:average('AGE', VALUE) && f:max('AGE') && f:average('VALUE')
+```
+
+`AVERAGE_FIELDS` ends up as just `VALUE` — the `AGE` average requested by the first `f:average(...)` is
+silently dropped, so the results are missing an entire requested aggregation with no error.
+
+### Consequence
+
+Users combining multiple instances of the same aggregation function get silently incomplete results.
+This is inconsistent with `#GROUPBY` and `#UNIQUE`, which merge, and violates the least-surprise
+expectation that all requested aggregations are honored.
+
+### Fix
+
+Route the aggregation cases through the same merge helper the other functions use, e.g.
+`updateFieldsOption(optionsMap, QueryParameters.SUM_FIELDS, options)` (this is exactly what the open
+**PR #3412** does for all five functions).
+
+### Reproduction
+
+Added to `GroupingUniqueIntermediateResultBugTest`, driving `QueryOptionsFromQueryVisitor.collect(...)`
+directly (no Accumulo):
+
+- `multipleAverageFunctions_dropAllButTheLast_becauseOptionsMapIsOverwritten` — the issue #3411 query;
+  `AVERAGE_FIELDS == "VALUE"` (last wins) while `GROUP_FIELDS`/`MAX_FIELDS` (single instances) are correct.
+- `multipleAggregationFunctionsOfSameType_onlyLastInstanceSurvives` — same overwrite for SUM/MIN/MAX/COUNT/AVERAGE.
+- `multipleGroupByAndUniqueFunctions_mergeCorrectly_control` — control proving `#GROUPBY`/`#UNIQUE` do merge,
+  isolating the defect to the aggregation functions.
+
+---
+
 ## Finding 5: other documentation / behavior discrepancies
 
 - **`UniqueTransform.getIterator` Javadoc** (line ~114) reads *"Add phrase excerpts to the documents
@@ -259,6 +319,9 @@ the *unmapped* field.
 | `uniqueTransform_emitsIntermediateFlood_onDuplicatesBecauseTimerIsNeverReset` | 1 |
 | `groupingIterator_doubleHasNext_silentlyDiscardsAGroup` | 3 |
 | `groupingIterator_singleHasNextPerNext_returnsAllGroups` | 3 (control) |
+| `multipleAverageFunctions_dropAllButTheLast_becauseOptionsMapIsOverwritten` | 6 |
+| `multipleAggregationFunctionsOfSameType_onlyLastInstanceSurvives` | 6 |
+| `multipleGroupByAndUniqueFunctions_mergeCorrectly_control` | 6 (control) |
 
 Each intermediate-result test asserts the *current* (buggy) behavior and documents the intended
 post-fix assertion inline, so the same file becomes the regression test once the fixes land.
