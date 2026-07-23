@@ -96,7 +96,7 @@ public class TcpClient implements AutoCloseable {
                     backoff = INITIAL_BACKOFF;
                     LOG.info("Connected to Timely at {}:{}", host, port);
                 } catch (IOException e) {
-                    LOG.error("Error connecting to Timely at {}:" + host + ":" + port + ". Error: " + e.getMessage());
+                    LOG.error("Error connecting to Timely at {}:{}. Error: {}", host, port, e.getMessage());
                     backoff = Math.min(backoff * 2, MAX_BACKOFF);
                     sock = null;
                     out = null;
