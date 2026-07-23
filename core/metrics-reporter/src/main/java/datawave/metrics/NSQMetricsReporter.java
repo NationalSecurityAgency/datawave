@@ -65,6 +65,10 @@ public class NSQMetricsReporter extends TimelyMetricsReporter {
 
     @Override
     protected synchronized void flush() {
+        if (baos == null || baos.size() == 0) {
+            return;
+        }
+
         try {
             dos.close();
             HttpPost post = new HttpPost(endpoint);
