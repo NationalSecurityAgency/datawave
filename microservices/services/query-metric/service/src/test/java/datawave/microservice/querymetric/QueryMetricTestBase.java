@@ -197,6 +197,9 @@ public class QueryMetricTestBase {
             log.error(e.getMessage(), e);
         }
         deleteAccumuloEntries(this.accumuloClient, this.tables, this.auths);
+        if (getMetadataEntries().size() > 0) {
+            log.error("Entries in metadata table after deleting everything: {}", getMetadataEntries());
+        }
         assertTrue(getMetadataEntries().size() > 0, "metadata table empty");
         SimpleModule baseQueryMetricDeserializer = new SimpleModule(BaseQueryMetricListResponse.class.getName());
         baseQueryMetricDeserializer.addAbstractTypeMapping(BaseQueryMetricListResponse.class, QueryMetricListResponse.class);
