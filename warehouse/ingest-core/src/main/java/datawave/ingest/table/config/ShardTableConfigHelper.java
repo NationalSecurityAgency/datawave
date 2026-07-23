@@ -29,7 +29,7 @@ import datawave.ingest.table.bloomfilter.ShardIndexKeyFunctor;
 import datawave.ingest.table.bloomfilter.ShardKeyFunctor;
 import datawave.table.constants.ColumnFamilyConstants;
 import datawave.table.constants.LocalityGroupConstants;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 
 public class ShardTableConfigHelper extends AbstractTableConfigHelper {
 

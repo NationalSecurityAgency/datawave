@@ -53,7 +53,7 @@ import datawave.query.iterator.logic.TermFrequencyIndexIterator;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.model.QueryModel;
 import datawave.query.planner.scanhints.IvaratorScanHint;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 
 public class ShardQueryConfigurationTest {
 

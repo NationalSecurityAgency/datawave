@@ -32,7 +32,7 @@ jobs:
           echo "runner=${{vars.RUNNER_TYPE}}" >> $GITHUB_OUTPUT
           if [[ "${{ vars.RUNNER_TYPE }}" == "self-hosted" ]]; then
             echo "runner is self-hosted"
-            echo "cache_settings=-Dmaven.build.cache.remote.save.enabled=true -Dmaven.build.cache.enabled=true -Dmaven.build.cache.remote.enabled=true -Dmaven.build.cache.remote.url=http://localhost:12345" >> $GITHUB_OUTPUT
+            echo "cache_settings=-Dmaven.build.cache.remote.save.enabled=false -Dmaven.build.cache.enabled=false -Dmaven.build.cache.remote.enabled=false -Dmaven.build.cache.remote.url=http://localhost:12345" >> $GITHUB_OUTPUT
           else
             echo "runner is not self-hosted"
             echo cache_settings="" >> $GITHUB_OUTPUT
@@ -57,16 +57,37 @@ jobs:
     - uses: ./.github/actions/free-space
       with:
         tool-cache: false
+    - name: Configure Maven Settings
+      run: |
+        mkdir -p ~/.m2
+        cat > ~/.m2/settings.xml <<'EOF'
+        <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+               xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 https://maven.apache.org/xsd/settings-1.0.0.xsd">
+        <servers>
+         <server>
+           <id>github-datawave</id>
+           <username>${env.GITHUB_USERNAME}</username>
+           <password>${env.GITHUB_PASSWORD}</password>
+         </server>
+        </servers>
+        <mirrors>
+         <mirror>
+           <id>google-maven-central</id>
+           <name>Google Cloud Maven Central Mirror</name>
+           <url>https://maven-central.storage-download.googleapis.com/maven2/</url>
+           <mirrorOf>central</mirrorOf>
+         </mirror>
+        </mirrors>
+        </settings>
+        EOF
     - name: Set up JDK ${{env.JAVA_VERSION}}
       uses: actions/setup-java@v5
       with:
         distribution: ${{env.JAVA_DISTRIBUTION}}
         java-version: ${{env.JAVA_VERSION}}
         cache: 'maven'
-        server-id: github-datawave
-        # username and password are the env variables names that maven will use
-        server-username: GITHUB_USERNAME
-        server-password: GITHUB_PASSWORD
+        overwrite-settings: false
     - name: Build and Run Unit Tests
       run: |
           mvn --show-version --batch-mode --errors --no-transfer-progress "-Dstyle.color=always" -Pexamples,assemble,spotbugs  ${{ needs.configure-runner.outputs.cache_settings }} -Ddeploy -Ddist -T1C clean install -Dsurefire.rerunFailingTestsCount=3 -Dutils -DskipITs -DskipFormat
