@@ -7,6 +7,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,13 +15,15 @@ import org.slf4j.LoggerFactory;
 public class TcpClient implements AutoCloseable {
 
     private static final Logger LOG = LoggerFactory.getLogger(TcpClient.class);
+    private static final long INITIAL_BACKOFF = TimeUnit.SECONDS.toMillis(2);
+    private static final long MAX_BACKOFF = TimeUnit.SECONDS.toMillis(120);
 
     private final String host;
     private final int port;
     private Socket sock = null;
     private PrintWriter out = null;
     private long connectTime = 0L;
-    private long backoff = 2000;
+    private long backoff = INITIAL_BACKOFF;
 
     public TcpClient(String hostname, int port) {
         this.host = hostname;
@@ -90,11 +93,11 @@ public class TcpClient implements AutoCloseable {
                     connectTime = System.currentTimeMillis();
                     sock = new Socket(host, port);
                     out = createWriter(sock.getOutputStream());
-                    backoff = 2000;
+                    backoff = INITIAL_BACKOFF;
                     LOG.info("Connected to Timely at {}:{}", host, port);
                 } catch (IOException e) {
                     LOG.error("Error connecting to Timely at {}:" + host + ":" + port + ". Error: " + e.getMessage());
-                    backoff = backoff * 2;
+                    backoff = Math.min(backoff * 2, MAX_BACKOFF);
                     sock = null;
                     out = null;
                     LOG.warn("Will retry connection in {} ms.", backoff);
