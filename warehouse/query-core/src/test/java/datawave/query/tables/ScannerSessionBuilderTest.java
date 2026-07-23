@@ -143,11 +143,8 @@ public class ScannerSessionBuilderTest implements BaseScannerSessionTest<Scanner
                 .setQuery(new QueryImpl());
         //  @formatter:on
         Exception e = assertThrows(RuntimeException.class, () -> buildAndScan(builder));
-        String expectedMsg = "Error in hasNext";
-        assertEquals(expectedMsg, e.getMessage());
-        Throwable t = e.getCause();
-        String expectedCause = "Table NotFound (Id=NotFound) does not exist (no such table)";
-        assertEquals(expectedCause, t.getMessage());
+        String expected = "org.apache.accumulo.core.client.TableNotFoundException: Table NotFound (Id=NotFound) does not exist (no such table)";
+        assertEquals(expected, e.getMessage());
     }
 
     @Test

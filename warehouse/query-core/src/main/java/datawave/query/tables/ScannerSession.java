@@ -120,7 +120,7 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
 
     protected boolean isFair = true;
 
-    protected QueryUncaughtExceptionHandler uncaughtExceptionHandler = null;
+    protected volatile QueryUncaughtExceptionHandler uncaughtExceptionHandler = null;
 
     /**
      * Constructor
@@ -305,14 +305,6 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
                         // This is thrown if the state is anything other than RUNNING
                         // STOPPING, and TERMINATED are valid as they indicate successful execution
                         // FAILED is not ok, and should be thrown
-                        Throwable t = uncaughtExceptionHandler.getThrowable();
-                        if (t != null) {
-                            if (t instanceof RuntimeException) {
-                                throw (RuntimeException) t;
-                            } else {
-                                throw new RuntimeException("Error in hasNext", t);
-                            }
-                        }
                         if (state() == State.FAILED) {
                             throw e;
                         }
