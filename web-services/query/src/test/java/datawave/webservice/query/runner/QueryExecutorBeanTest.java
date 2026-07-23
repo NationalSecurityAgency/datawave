@@ -18,6 +18,7 @@ import java.net.URISyntaxException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -79,6 +80,8 @@ import datawave.microservice.query.QueryPersistence;
 import datawave.microservice.query.config.QueryExpirationProperties;
 import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.microservice.querymetric.BaseQueryMetric.Prediction;
+import datawave.microservice.querymetric.QueryMetric;
+import datawave.microservice.querymetric.QueryMetricFactory;
 import datawave.microservice.querymetric.QueryMetricFactoryImpl;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
@@ -420,13 +423,27 @@ public class QueryExecutorBeanTest {
         predictions.add(new Prediction("source", 1));
         when(responseObjectFactory.getQueryImpl()).thenReturn(new QueryImpl());
         when(logic.getResultLimit(any())).thenReturn(-1L);
-        // The bean builds its own BaseQueryMetric via metricFactory + populate(q), which includes
-        // environment/time-derived fields. Matching on a hand-built copy with a custom equals() was
-        // order- and timing-sensitive: when another test class initialized shared global state first
-        // (e.g. ExtendedQueryExecutorBeanTest), the metrics no longer compared equal, predict()
-        // returned null, and this test failed intermittently. This test only needs to verify that
-        // predictQuery echoes the predictor's result, so match any metric.
-        when(predictor.predict(any(BaseQueryMetric.class))).thenReturn(predictions);
+
+        // The bean builds its own BaseQueryMetric via metricFactory + populate(q). QueryMetric's no-arg
+        // constructor stamps createDate from new Date() (truncated to the second), and createDate is part of
+        // equals()/hashCode(). Comparing that internally-built metric against an independently hand-built one
+        // via strict eq() is a real race: if the two constructions straddle a second boundary, the truncated
+        // createDate values differ and eq() stops matching, intermittently. Pinning both sides' createDate to
+        // the same value via reflection removes that race so eq() can be used safely.
+        Date createDate = DateUtils.truncate(new Date(), Calendar.SECOND);
+        QueryMetricFactory metricFactory = mock(QueryMetricFactory.class);
+        when(metricFactory.createMetric()).thenAnswer(invocation -> {
+            BaseQueryMetric m = new QueryMetric();
+            ReflectionTestUtils.setField(m, "createDate", createDate);
+            return m;
+        });
+        ReflectionTestUtils.setField(bean, "metricFactory", metricFactory);
+
+        BaseQueryMetric expectedMetric = new QueryMetric();
+        ReflectionTestUtils.setField(expectedMetric, "createDate", createDate);
+        expectedMetric.populate(q);
+        expectedMetric.setQueryType(RunningQuery.class.getSimpleName());
+        when(predictor.predict(eq(expectedMetric))).thenReturn(predictions);
 
         GenericResponse<String> response = bean.predictQuery(queryLogicName, p);
 
