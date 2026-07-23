@@ -1,6 +1,10 @@
 package datawave.util.timely;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.Socket;
 
@@ -85,7 +89,7 @@ public class TcpClient implements AutoCloseable {
                 try {
                     connectTime = System.currentTimeMillis();
                     sock = new Socket(host, port);
-                    out = new PrintWriter(sock.getOutputStream(), false);
+                    out = createWriter(sock.getOutputStream());
                     backoff = 2000;
                     LOG.info("Connected to Timely at {}:{}", host, port);
                 } catch (IOException e) {
@@ -102,6 +106,10 @@ public class TcpClient implements AutoCloseable {
             }
         }
         return 0;
+    }
+
+    static PrintWriter createWriter(OutputStream outputStream) {
+        return new PrintWriter(new OutputStreamWriter(outputStream, UTF_8), false);
     }
 
 }
