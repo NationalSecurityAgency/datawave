@@ -7,7 +7,6 @@ import static datawave.microservice.query.lookup.LookupService.LOOKUP_UUID_PAIRS
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -877,7 +876,7 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
                 List<DefaultField> fields = new ArrayList<>();
                 for (Map.Entry<String,List<String>> entry : fieldValues.entrySet()) {
                     for (String value : entry.getValue()) {
-                        fields.add(new DefaultField(entry.getKey(), visibility, new HashMap<>(), currentTime, value));
+                        fields.add(new DefaultField(entry.getKey(), visibility, currentTime, value));
                     }
                 }
                 event.setFields(fields);
