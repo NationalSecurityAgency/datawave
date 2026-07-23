@@ -214,7 +214,7 @@ public class CSVIngestHelper extends ContentBaseIngestHelper {
     }
 
     protected void applyMultiValuedThresholdAction(Multimap<String,String> fields, String fieldName, String singleFieldName) {
-        switch (helper.getThresholdAction()) {
+        switch (helper.getMultiValuedThresholdAction()) {
             case DROP:
                 if (singleFieldName != null) {
                     fields.removeAll(singleFieldName);
