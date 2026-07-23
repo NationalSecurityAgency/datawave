@@ -160,7 +160,7 @@ public class DocumentRangeScan implements RunnableWithContext {
             scanner.setExecutionHints(Map.of("scan_type", config.getRetrievalScanHintPool()));
         }
 
-        if (config.getSearchConsistencyLevel() != null) {
+        if (config.getRetrievalConsistencyLevel() != null) {
             scanner.setConsistencyLevel(ConsistencyLevel.valueOf(config.getRetrievalConsistencyLevel()));
         }
         return scanner;
