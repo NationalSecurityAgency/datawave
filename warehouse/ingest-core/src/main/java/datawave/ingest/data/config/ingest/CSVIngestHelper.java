@@ -111,7 +111,7 @@ public class CSVIngestHelper extends ContentBaseIngestHelper {
             if (i < helper.getHeader().length) {
                 String fieldName = helper.getHeader()[i];
 
-                if (keepField(fieldName) && dataFields[i] != null) {
+                if (i < dataFields.length && keepField(fieldName) && dataFields[i] != null) {
                     String fieldValue = StringEscapeUtils.unescapeCsv(dataFields[i]);
                     fieldValue = helper.clean(fieldName, fieldValue);
                     if (fieldValue != null) {
