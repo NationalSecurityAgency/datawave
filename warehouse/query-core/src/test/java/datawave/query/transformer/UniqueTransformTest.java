@@ -2,6 +2,7 @@ package datawave.query.transformer;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
@@ -89,6 +90,41 @@ public class UniqueTransformTest {
         UniqueTransform uniqueTransform = getUniqueTransform();
 
         assertNull(uniqueTransform.apply(null));
+    }
+
+    /**
+     * Once the per-page timeout is exceeded, apply() must reset the page timer when it emits an intermediate result, so intermediate results are paced (one per
+     * timeout window) instead of being emitted on every subsequent call.
+     */
+    @Test
+    public void testIntermediateResultsArePaced_afterPageTimerReset() throws IOException {
+        givenValueTransformerForFields(TemporalGranularity.ALL, "ATTR0");
+
+        givenInputDocument().withKeyValue("ATTR0", randomValues.get(0)).isExpectedToBeUnique();
+        for (int i = 1; i <= 4; i++) {
+            givenInputDocument().withKeyValue("ATTR0", randomValues.get(0));
+        }
+
+        // 1s page timeout, and pretend the page started well in the past so the timeout is already exceeded.
+        UniqueTransform uniqueTransform = new UniqueTransform.Builder().withUniqueFields(uniqueFields).withQueryExecutionForPageTimeout(1000L).build();
+        uniqueTransform.setQueryExecutionForPageStartTime(System.currentTimeMillis() - 10_000L);
+
+        // The first document is unique and is returned as a real result (not an intermediate).
+        Map.Entry<Key,Document> firstResult = uniqueTransform.apply(Maps.immutableEntry(inputDocuments.get(0).getMetadata(), inputDocuments.get(0)));
+        assertNotNull(firstResult);
+        assertFalse(firstResult.getValue().isIntermediateResult());
+
+        // Only the first duplicate after the timeout emits an intermediate result; emitting it resets the page timer so the remaining duplicates (well within
+        // the new 1s window) return null instead of flooding.
+        int intermediate = 0;
+        for (int i = 1; i <= 4; i++) {
+            Document document = inputDocuments.get(i);
+            Map.Entry<Key,Document> result = uniqueTransform.apply(Maps.immutableEntry(document.getMetadata(), document));
+            if (result != null && result.getValue().isIntermediateResult()) {
+                intermediate++;
+            }
+        }
+        assertEquals(1, intermediate);
     }
 
     @Test
