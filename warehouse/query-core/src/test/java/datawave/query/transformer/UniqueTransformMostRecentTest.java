@@ -1,19 +1,25 @@
 package datawave.query.transformer;
 
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Collections;
+import java.util.Map;
 import java.util.UUID;
 
+import org.apache.accumulo.core.data.Key;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
+import com.google.common.collect.Maps;
+
 import datawave.microservice.query.QueryImpl;
+import datawave.query.attributes.Document;
 import datawave.query.attributes.TemporalGranularity;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.tables.ShardQueryLogic;
@@ -47,11 +53,16 @@ public class UniqueTransformMostRecentTest extends UniqueTransformTest {
 
     @Override
     protected UniqueTransform getUniqueTransform() {
+        return getUniqueTransform(Long.MAX_VALUE);
+    }
+
+    @Override
+    protected UniqueTransform getUniqueTransform(long queryExecutionForPageTimeout) {
         try {
             // @formatter:off
             return new UniqueTransform.Builder()
                     .withUniqueFields(uniqueFields)
-                    .withQueryExecutionForPageTimeout(Long.MAX_VALUE)
+                    .withQueryExecutionForPageTimeout(queryExecutionForPageTimeout)
                     .withBufferPersistThreshold(logic.getUniqueCacheBufferSize())
                     .withIvaratorCacheDirConfigs(logic.getIvaratorCacheDirConfigs())
                     .withHdfsSiteConfigURLs(logic.getHdfsSiteConfigURLs())
@@ -84,6 +95,32 @@ public class UniqueTransformMostRecentTest extends UniqueTransformTest {
         givenValueTransformerForFields(TemporalGranularity.ALL, "attr0", "Attr1", "ATTR2");
 
         assertUniqueDocuments();
+    }
+
+    /**
+     * On the mostRecent path, apply() must still emit a keep-alive intermediate result once the per-page timeout is exceeded, rather than always returning null
+     * while accumulating into the backing map.
+     */
+    @Test
+    public void testIntermediateResultsAreEmitted_onMostRecentPath_whenPageTimeoutExceeded() {
+        givenInputDocument().withKeyValue("ATTR0", randomValues.get(0));
+        givenInputDocument().withKeyValue("ATTR0", randomValues.get(1));
+        givenInputDocument().withKeyValue("ATTR0", randomValues.get(2));
+
+        givenValueTransformerForFields(TemporalGranularity.ALL, "ATTR0");
+
+        // 1s page timeout, and pretend the page started well in the past so the timeout is already exceeded.
+        UniqueTransform uniqueTransform = getUniqueTransform(1000L);
+        uniqueTransform.setQueryExecutionForPageStartTime(System.currentTimeMillis() - 10_000L);
+
+        int intermediate = 0;
+        for (Document document : inputDocuments) {
+            Map.Entry<Key,Document> result = uniqueTransform.apply(Maps.immutableEntry(document.getMetadata(), document));
+            if (result != null && result.getValue().isIntermediateResult()) {
+                intermediate++;
+            }
+        }
+        assertTrue("expected at least one intermediate result on the mostRecent path", intermediate >= 1);
     }
 
 }

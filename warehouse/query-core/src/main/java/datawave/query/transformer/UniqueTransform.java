@@ -154,7 +154,8 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
                     synchronized (map) {
                         this.map.put(signature, keyDocumentEntry.getValue());
                     }
-                    return null;
+                    // fall through to the timeout/intermediate-result check below so the mostRecent path
+                    // can still emit keep-alive intermediate results
                 } else if (!isDuplicate(keyDocumentEntry.getValue())) {
                     return keyDocumentEntry;
                 }

@@ -574,8 +574,12 @@ public class UniqueTransformTest {
     }
 
     protected UniqueTransform getUniqueTransform() {
+        return getUniqueTransform(Long.MAX_VALUE);
+    }
+
+    protected UniqueTransform getUniqueTransform(long queryExecutionForPageTimeout) {
         try {
-            return new UniqueTransform.Builder().withUniqueFields(uniqueFields).withQueryExecutionForPageTimeout(Long.MAX_VALUE).build();
+            return new UniqueTransform.Builder().withUniqueFields(uniqueFields).withQueryExecutionForPageTimeout(queryExecutionForPageTimeout).build();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
