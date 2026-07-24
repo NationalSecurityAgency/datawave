@@ -537,7 +537,6 @@
                         <environmentVariables>
                             <ACCUMULO_HOME>/dev/null</ACCUMULO_HOME>
                             <ACCUMULO_CONF_DIR>/dev/null</ACCUMULO_CONF_DIR>
-                            <HADOOP_HOME>/dev/null</HADOOP_HOME>
                             <HADOOP_CONF_DIR>/dev/null</HADOOP_CONF_DIR>
                         </environmentVariables>
                         <systemPropertyVariables>
@@ -604,7 +603,6 @@
                     <environmentVariables>
                         <ACCUMULO_HOME>/dev/null</ACCUMULO_HOME>
                         <ACCUMULO_CONF_DIR>/dev/null</ACCUMULO_CONF_DIR>
-                        <HADOOP_HOME>/dev/null</HADOOP_HOME>
                         <HADOOP_CONF_DIR>/dev/null</HADOOP_CONF_DIR>
                     </environmentVariables>
                 </configuration>
