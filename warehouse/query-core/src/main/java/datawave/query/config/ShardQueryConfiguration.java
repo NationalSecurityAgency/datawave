@@ -3002,6 +3002,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getReduceQueryFieldsPerShard() == that.getReduceQueryFieldsPerShard() &&
                 getReduceTypeMetadata() == that.getReduceTypeMetadata() &&
                 getReduceTypeMetadataPerShard() == that.getReduceTypeMetadataPerShard() &&
+                isKryoTypeMetadata() == that.isKryoTypeMetadata() &&
                 isRebuildDatatypeFilter() == that.isRebuildDatatypeFilter() &&
                 isRebuildDatatypeFilterPerShard() == that.isRebuildDatatypeFilterPerShard() &&
                 getCollectTimingDetails() == that.getCollectTimingDetails() &&
@@ -3240,6 +3241,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getReduceQueryFieldsPerShard(),
                 getReduceTypeMetadata(),
                 getReduceTypeMetadataPerShard(),
+                isKryoTypeMetadata(),
                 isRebuildDatatypeFilter(),
                 isRebuildDatatypeFilterPerShard(),
                 getCollectTimingDetails(),
