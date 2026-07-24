@@ -2045,15 +2045,16 @@ public class ShardReindexMapperTest extends EasyMockSupport {
 
             mapper.setup(context);
             mapper.setContextWriter(mockContextWriter);
-            RFile.Reader reader = RFileUtil.getRFileReader(conf, new Path(shardFiles.toString()));
-            reader.seek(new Range(), Collections.emptySet(), false);
-            System.out.println("processing mapper input");
-            while (reader.hasTop()) {
-                Key key = reader.getTopKey();
-                System.out.println(key);
-                Value value = reader.getTopValue();
-                mapper.map(key, value, context);
-                reader.next();
+            try (RFile.Reader reader = RFileUtil.getRFileReader(conf, new Path(shardFiles.toString()))) {
+                reader.seek(new Range(), Collections.emptySet(), false);
+                System.out.println("processing mapper input");
+                while (reader.hasTop()) {
+                    Key key = reader.getTopKey();
+                    System.out.println(key);
+                    Value value = reader.getTopValue();
+                    mapper.map(key, value, context);
+                    reader.next();
+                }
             }
 
             mapper.cleanup(context);
@@ -2072,6 +2073,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
                 ShardReindexVerificationMapper verificationMapper = new ShardReindexVerificationMapper();
                 verificationMapper.setup(context);
                 verificationMapper.map(new Range(), "", verificationContext);
+                verificationMapper.cleanup(context);
             } finally {
                 FileUtils.deleteDirectory(outDir);
             }
