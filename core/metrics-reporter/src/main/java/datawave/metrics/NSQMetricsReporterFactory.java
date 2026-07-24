@@ -11,13 +11,14 @@ public class NSQMetricsReporterFactory implements MetricsReporterFactory {
         return new Builder(registry);
     }
 
-    public static class Builder extends MetricsReporterBuilder {
+    public static class Builder extends MetricsReporterBuilder implements TimeoutConfigurableMetricsReporterBuilder {
         private int timeoutMillis = NSQMetricsReporter.DEFAULT_TIMEOUT_MILLIS;
 
         protected Builder(MetricRegistry registry) {
             super(registry);
         }
 
+        @Override
         public Builder withTimeout(long timeout, TimeUnit unit) {
             long millis = Objects.requireNonNull(unit, "unit").toMillis(timeout);
             if (millis <= 0 || millis > Integer.MAX_VALUE) {
