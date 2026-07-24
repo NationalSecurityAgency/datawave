@@ -2,7 +2,9 @@ package datawave.util.timely;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.util.function.Supplier;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,14 +15,20 @@ public class TcpClient implements AutoCloseable {
 
     private final String host;
     private final int port;
+    private final Supplier<Socket> socketSupplier;
     private Socket sock = null;
     private PrintWriter out = null;
     private long connectTime = 0L;
     private long backoff = 2000;
 
     public TcpClient(String hostname, int port) {
+        this(hostname, port, Socket::new);
+    }
+
+    TcpClient(String hostname, int port, Supplier<Socket> socketSupplier) {
         this.host = hostname;
         this.port = port;
+        this.socketSupplier = socketSupplier;
     }
 
     /**
@@ -63,36 +71,30 @@ public class TcpClient implements AutoCloseable {
      *             if an error occurs
      */
     @Override
-    public void close() throws IOException {
+    public synchronized void close() throws IOException {
         LOG.info("Shutting down connection to Timely at {}:{}", host, port);
-        if (null != sock) {
-            try {
-                if (null != out) {
-                    out.close();
-                }
-                sock.close();
-            } catch (IOException e) {
-                LOG.error("Error closing connection to Timely at " + host + ":" + port + ". Error: " + e.getMessage());
-            } finally {
-                sock = null;
-            }
-        }
+        closeConnection();
     }
 
     private synchronized int connect() {
-        if (null == sock || !sock.isConnected() || out.checkError()) {
+        if (null != sock && (!sock.isConnected() || null == out || out.checkError())) {
+            closeConnection();
+        }
+        if (null == sock) {
             if (System.currentTimeMillis() > (connectTime + backoff)) {
+                Socket newSocket = socketSupplier.get();
                 try {
                     connectTime = System.currentTimeMillis();
-                    sock = new Socket(host, port);
-                    out = new PrintWriter(sock.getOutputStream(), false);
+                    newSocket.connect(new InetSocketAddress(host, port));
+                    PrintWriter newWriter = new PrintWriter(newSocket.getOutputStream(), false);
+                    sock = newSocket;
+                    out = newWriter;
                     backoff = 2000;
                     LOG.info("Connected to Timely at {}:{}", host, port);
                 } catch (IOException e) {
                     LOG.error("Error connecting to Timely at {}:" + host + ":" + port + ". Error: " + e.getMessage());
                     backoff = backoff * 2;
-                    sock = null;
-                    out = null;
+                    closeSocket(newSocket);
                     LOG.warn("Will retry connection in {} ms.", backoff);
                     return -1;
                 }
@@ -102,6 +104,27 @@ public class TcpClient implements AutoCloseable {
             }
         }
         return 0;
+    }
+
+    private void closeConnection() {
+        PrintWriter writer = out;
+        Socket socket = sock;
+        out = null;
+        sock = null;
+        if (null != writer) {
+            writer.close();
+        }
+        closeSocket(socket);
+    }
+
+    private void closeSocket(Socket socket) {
+        if (null != socket) {
+            try {
+                socket.close();
+            } catch (IOException e) {
+                LOG.error("Error closing connection to Timely at {}:{}. Error: {}", host, port, e.getMessage());
+            }
+        }
     }
 
 }

@@ -6,12 +6,14 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.Locale;
 import java.util.Map.Entry;
 import java.util.SortedMap;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
@@ -40,6 +42,7 @@ public class TimelyMetricsReporter extends ScheduledReporter {
     protected final int timelyPort;
     protected final String hostname;
     protected final String rackname;
+    private final Supplier<Socket> socketSupplier;
     protected Socket sock;
     protected PrintWriter out;
     protected long connectTime = 0L;
@@ -47,9 +50,15 @@ public class TimelyMetricsReporter extends ScheduledReporter {
 
     protected TimelyMetricsReporter(String timelyHost, int timelyPort, MetricRegistry registry, String name, MetricFilter filter, TimeUnit rateUnit,
                     TimeUnit durationUnit) {
+        this(timelyHost, timelyPort, registry, name, filter, rateUnit, durationUnit, Socket::new);
+    }
+
+    TimelyMetricsReporter(String timelyHost, int timelyPort, MetricRegistry registry, String name, MetricFilter filter, TimeUnit rateUnit,
+                    TimeUnit durationUnit, Supplier<Socket> socketSupplier) {
         super(registry, name, filter, rateUnit, durationUnit);
         this.timelyHost = timelyHost;
         this.timelyPort = timelyPort;
+        this.socketSupplier = socketSupplier;
 
         String host = "unknown";
         String rack = "unknown";
@@ -206,22 +215,27 @@ public class TimelyMetricsReporter extends ScheduledReporter {
 
     protected synchronized boolean connect() {
         boolean connected = true;
-        if (sock == null || !sock.isConnected() || out.checkError()) {
+        if (sock != null && (!sock.isConnected() || out == null || out.checkError())) {
+            closeConnection();
+        }
+        if (sock == null) {
             connected = false;
             final long waitTime = (connectTime + backoff) - System.currentTimeMillis();
             if (waitTime <= 0) {
+                Socket newSocket = socketSupplier.get();
                 try {
                     connectTime = System.currentTimeMillis();
-                    sock = new Socket(timelyHost, timelyPort);
-                    out = new PrintWriter(new OutputStreamWriter(sock.getOutputStream(), UTF_8), false);
+                    newSocket.connect(new InetSocketAddress(timelyHost, timelyPort));
+                    PrintWriter newWriter = new PrintWriter(new OutputStreamWriter(newSocket.getOutputStream(), UTF_8), false);
+                    sock = newSocket;
+                    out = newWriter;
                     backoff = 2000;
                     logger.info("Connected to Timely at {}:{}", timelyHost, timelyPort);
                     connected = true;
                 } catch (IOException e) {
                     logger.error("Error connecting to Timely at {}:{}. Error: {}", timelyHost, timelyPort, e.getMessage());
                     backoff = Math.min(backoff * 2, MAX_BACKOFF);
-                    sock = null;
-                    out = null;
+                    closeSocket(newSocket);
                 }
             } else {
                 logger.warn("Not writing to Timely, waiting {}ms to reconnect.", waitTime);
@@ -235,15 +249,27 @@ public class TimelyMetricsReporter extends ScheduledReporter {
         try {
             super.stop();
         } finally {
-            if (sock != null) {
-                if (out != null) {
-                    out.close();
-                }
-                try {
-                    sock.close();
-                } catch (IOException e) {
-                    logger.error("Error closing connection to Timely at {}:{}. Error: {}", timelyHost, timelyPort, e.getMessage());
-                }
+            closeConnection();
+        }
+    }
+
+    private synchronized void closeConnection() {
+        PrintWriter writer = out;
+        Socket socket = sock;
+        out = null;
+        sock = null;
+        if (writer != null) {
+            writer.close();
+        }
+        closeSocket(socket);
+    }
+
+    private void closeSocket(Socket socket) {
+        if (socket != null) {
+            try {
+                socket.close();
+            } catch (IOException e) {
+                logger.error("Error closing connection to Timely at {}:{}. Error: {}", timelyHost, timelyPort, e.getMessage());
             }
         }
     }
