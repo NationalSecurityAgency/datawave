@@ -68,8 +68,8 @@ public class UniqueTransformMostRecentTest extends UniqueTransformTest {
     }
 
     /**
-     * The mostRecent path never returns a "real" unique result and currently never emits an intermediate result at all, so the base class's
-     * page-timer-reset assertions do not apply here.
+     * The mostRecent path never returns a "real" unique result and currently never emits an intermediate result at all, so the base class's page-timer-reset
+     * assertions do not apply here.
      */
     @Override
     @Ignore
