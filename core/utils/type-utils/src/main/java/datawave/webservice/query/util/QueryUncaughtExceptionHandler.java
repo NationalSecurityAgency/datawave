@@ -8,7 +8,7 @@ import java.util.List;
 public class QueryUncaughtExceptionHandler implements UncaughtExceptionHandler {
 
     private Thread thread;
-    private Throwable throwable;
+    private volatile Throwable throwable;
     private List<String> messages = Collections.synchronizedList(new ArrayList<>());
 
     @Override

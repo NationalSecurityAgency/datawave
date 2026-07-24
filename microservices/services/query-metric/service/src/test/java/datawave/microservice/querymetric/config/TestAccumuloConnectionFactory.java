@@ -1,5 +1,8 @@
 package datawave.microservice.querymetric.config;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.security.Authorizations;
@@ -58,13 +61,19 @@ class TestAccumuloConnectionFactory extends AccumuloConnectionFactoryImpl {
 
     public class InMemoryAccumuloClientPoolFactory extends AccumuloClientPoolFactory {
 
+        private static final Map<String,InMemoryAccumulo> miniInstances = new HashMap<>();
+
+        private static InMemoryAccumulo getMiniInstance(String instanceName) {
+            return miniInstances.computeIfAbsent(instanceName, k -> new InMemoryAccumulo(instanceName));
+        }
+
         private ConnectionPoolProperties connectionPoolProperties;
 
         public InMemoryAccumuloClientPoolFactory(ConnectionPoolProperties connectionPoolProperties) throws Exception {
             super(connectionPoolProperties.getUsername(), connectionPoolProperties.getPassword(), "mock", "mock");
             this.connectionPoolProperties = connectionPoolProperties;
             try (AccumuloClient accumuloClient = new InMemoryAccumuloClient(connectionPoolProperties.getUsername(),
-                            new InMemoryAccumulo(connectionPoolProperties.getInstance()))) {
+                            getMiniInstance(connectionPoolProperties.getInstance()))) {
                 accumuloClient.securityOperations().changeUserAuthorizations(accumuloClient.whoami(), new Authorizations("PUBLIC", "A", "B", "C"));
             } catch (AccumuloSecurityException e) {
                 log.error(e.getMessage(), e);
@@ -72,8 +81,8 @@ class TestAccumuloConnectionFactory extends AccumuloConnectionFactoryImpl {
         }
 
         public PooledObject<AccumuloClient> makeObject() throws Exception {
-            return new DefaultPooledObject(new InMemoryAccumuloClient(this.connectionPoolProperties.getUsername(),
-                            new InMemoryAccumulo(connectionPoolProperties.getInstance())));
+            return new DefaultPooledObject(
+                            new InMemoryAccumuloClient(this.connectionPoolProperties.getUsername(), getMiniInstance(connectionPoolProperties.getInstance())));
         }
     }
 }
