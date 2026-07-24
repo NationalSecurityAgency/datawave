@@ -38,7 +38,6 @@ import com.hazelcast.map.LocalMapStats;
 import datawave.microservice.querymetric.config.TimelyProperties;
 import datawave.microservice.querymetric.handler.ShardTableQueryMetricHandler;
 import datawave.microservice.querymetric.persistence.AccumuloMapStore;
-import datawave.util.timely.UdpClient;
 
 public class QueryMetricOperationsStats {
 
@@ -60,7 +59,7 @@ public class QueryMetricOperationsStats {
     private Map<TIMERS,Timer> timerMap = new HashMap<>();
     private Map<METERS,Meter> meterMap = new HashMap<>();
     private TimelyTcpClient timelyTcpClient;
-    private UdpClient timelyUdpClient;
+    private TimelyUdpClient timelyUdpClient;
     private boolean timelyClientsShutdown;
 
     protected TimelyProperties timelyProperties;
@@ -108,7 +107,7 @@ public class QueryMetricOperationsStats {
                                     timelyProperties.getConnectTimeoutMillis());
                     this.timelyTcpClient.open();
                 } else {
-                    this.timelyUdpClient = new UdpClient(timelyProperties.getHost(), timelyProperties.getPort());
+                    this.timelyUdpClient = new TimelyUdpClient(timelyProperties.getHost(), timelyProperties.getPort());
                     this.timelyUdpClient.open();
                 }
             } catch (Exception e) {
@@ -224,7 +223,7 @@ public class QueryMetricOperationsStats {
     @PreDestroy
     public void shutdown() {
         TimelyTcpClient tcpClient;
-        UdpClient udpClient;
+        TimelyUdpClient udpClient;
         synchronized (this) {
             if (timelyClientsShutdown) {
                 return;

@@ -29,7 +29,6 @@ import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import org.springframework.test.util.ReflectionTestUtils;
 
 import datawave.microservice.querymetric.config.TimelyProperties;
-import datawave.util.timely.UdpClient;
 
 class QueryMetricOperationsStatsTest {
 
@@ -140,7 +139,7 @@ class QueryMetricOperationsStatsTest {
         TimelyProperties properties = new TimelyProperties();
         properties.setProtocol(TimelyProperties.Protocol.UDP);
         QueryMetricOperationsStats stats = new QueryMetricOperationsStats(properties, null, null, null, null);
-        UdpClient client = mock(UdpClient.class);
+        TimelyUdpClient client = mock(TimelyUdpClient.class);
         doNothing().doThrow(new IOException("send failed")).when(client).write(anyString());
         ReflectionTestUtils.setField(stats, "timelyUdpClient", client);
         properties.setEnabled(true);
@@ -156,7 +155,7 @@ class QueryMetricOperationsStatsTest {
         TimelyProperties properties = new TimelyProperties();
         properties.setProtocol(TimelyProperties.Protocol.UDP);
         QueryMetricOperationsStats stats = serviceStats(properties);
-        UdpClient client = mock(UdpClient.class);
+        TimelyUdpClient client = mock(TimelyUdpClient.class);
         doThrow(new IOException("open failed")).doNothing().when(client).open();
         ReflectionTestUtils.setField(stats, "timelyUdpClient", client);
         properties.setEnabled(true);
@@ -173,7 +172,7 @@ class QueryMetricOperationsStatsTest {
         TimelyProperties properties = new TimelyProperties();
         properties.setProtocol(TimelyProperties.Protocol.UDP);
         QueryMetricOperationsStats stats = new QueryMetricOperationsStats(properties, null, null, null, null);
-        UdpClient client = mock(UdpClient.class);
+        TimelyUdpClient client = mock(TimelyUdpClient.class);
         doThrow(new IOException("open failed")).doNothing().when(client).open();
         ReflectionTestUtils.setField(stats, "timelyUdpClient", client);
         properties.setEnabled(true);
@@ -193,7 +192,7 @@ class QueryMetricOperationsStatsTest {
         TimelyProperties properties = new TimelyProperties();
         properties.setProtocol(TimelyProperties.Protocol.UDP);
         QueryMetricOperationsStats stats = new QueryMetricOperationsStats(properties, null, null, null, null);
-        UdpClient client = mock(UdpClient.class);
+        TimelyUdpClient client = mock(TimelyUdpClient.class);
         ReflectionTestUtils.setField(stats, "timelyUdpClient", client);
         properties.setEnabled(true);
         String oversized = "\u00e9".repeat(32_754);
@@ -212,7 +211,7 @@ class QueryMetricOperationsStatsTest {
     void shutdownClosesEachInitializedTimelyClientOnce() throws IOException {
         QueryMetricOperationsStats stats = new QueryMetricOperationsStats(new TimelyProperties(), null, null, null, null);
         TimelyTcpClient tcpClient = mock(TimelyTcpClient.class);
-        UdpClient udpClient = mock(UdpClient.class);
+        TimelyUdpClient udpClient = mock(TimelyUdpClient.class);
         doThrow(new IOException("close failed")).when(tcpClient).close();
         ReflectionTestUtils.setField(stats, "timelyTcpClient", tcpClient);
         ReflectionTestUtils.setField(stats, "timelyUdpClient", udpClient);
@@ -227,7 +226,7 @@ class QueryMetricOperationsStatsTest {
     @Test
     void shutdownHandlesPartiallyInitializedTimelyClients() throws IOException {
         QueryMetricOperationsStats stats = new QueryMetricOperationsStats(new TimelyProperties(), null, null, null, null);
-        UdpClient udpClient = mock(UdpClient.class);
+        TimelyUdpClient udpClient = mock(TimelyUdpClient.class);
         ReflectionTestUtils.setField(stats, "timelyUdpClient", udpClient);
 
         stats.shutdown();
@@ -241,7 +240,7 @@ class QueryMetricOperationsStatsTest {
         TimelyProperties properties = new TimelyProperties();
         properties.setProtocol(TimelyProperties.Protocol.UDP);
         QueryMetricOperationsStats stats = new QueryMetricOperationsStats(properties, null, null, null, null);
-        UdpClient udpClient = mock(UdpClient.class);
+        TimelyUdpClient udpClient = mock(TimelyUdpClient.class);
         ReflectionTestUtils.setField(stats, "timelyUdpClient", udpClient);
         properties.setEnabled(true);
         stats.queryStatsToWriteToTimely.add("metric");
