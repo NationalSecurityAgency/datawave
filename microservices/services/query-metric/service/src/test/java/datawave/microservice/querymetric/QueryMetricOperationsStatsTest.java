@@ -29,7 +29,6 @@ import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import org.springframework.test.util.ReflectionTestUtils;
 
 import datawave.microservice.querymetric.config.TimelyProperties;
-import datawave.util.timely.TcpClient;
 import datawave.util.timely.UdpClient;
 
 class QueryMetricOperationsStatsTest {
@@ -96,12 +95,12 @@ class QueryMetricOperationsStatsTest {
     }
 
     @Test
-    void tcpMetricsRemainQueuedUntilFlushSucceeds() {
+    void tcpMetricsRemainQueuedUntilFlushSucceeds() throws IOException {
         TimelyProperties properties = new TimelyProperties();
         properties.setProtocol(TimelyProperties.Protocol.TCP);
         QueryMetricOperationsStats stats = new QueryMetricOperationsStats(properties, null, null, null, null);
-        TcpClient client = mock(TcpClient.class);
-        doThrow(new IllegalStateException("flush failed")).doNothing().when(client).flush();
+        TimelyTcpClient client = mock(TimelyTcpClient.class);
+        doThrow(new IOException("flush failed")).doNothing().when(client).flush();
         ReflectionTestUtils.setField(stats, "timelyTcpClient", client);
         properties.setEnabled(true);
         stats.queryStatsToWriteToTimely.add("put first 1 1\n");
@@ -120,7 +119,7 @@ class QueryMetricOperationsStatsTest {
         TimelyProperties properties = new TimelyProperties();
         properties.setProtocol(TimelyProperties.Protocol.TCP);
         QueryMetricOperationsStats stats = new QueryMetricOperationsStats(properties, null, null, null, null);
-        TcpClient client = mock(TcpClient.class);
+        TimelyTcpClient client = mock(TimelyTcpClient.class);
         doThrow(new IOException("write failed")).doNothing().when(client).write("first");
         ReflectionTestUtils.setField(stats, "timelyTcpClient", client);
         properties.setEnabled(true);
@@ -212,7 +211,7 @@ class QueryMetricOperationsStatsTest {
     @Test
     void shutdownClosesEachInitializedTimelyClientOnce() throws IOException {
         QueryMetricOperationsStats stats = new QueryMetricOperationsStats(new TimelyProperties(), null, null, null, null);
-        TcpClient tcpClient = mock(TcpClient.class);
+        TimelyTcpClient tcpClient = mock(TimelyTcpClient.class);
         UdpClient udpClient = mock(UdpClient.class);
         doThrow(new IOException("close failed")).when(tcpClient).close();
         ReflectionTestUtils.setField(stats, "timelyTcpClient", tcpClient);

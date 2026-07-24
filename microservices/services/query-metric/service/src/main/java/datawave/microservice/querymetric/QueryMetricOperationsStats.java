@@ -38,7 +38,6 @@ import com.hazelcast.map.LocalMapStats;
 import datawave.microservice.querymetric.config.TimelyProperties;
 import datawave.microservice.querymetric.handler.ShardTableQueryMetricHandler;
 import datawave.microservice.querymetric.persistence.AccumuloMapStore;
-import datawave.util.timely.TcpClient;
 import datawave.util.timely.UdpClient;
 
 public class QueryMetricOperationsStats {
@@ -60,7 +59,7 @@ public class QueryMetricOperationsStats {
     private static final String Latency_999 = ".Latency_999";
     private Map<TIMERS,Timer> timerMap = new HashMap<>();
     private Map<METERS,Meter> meterMap = new HashMap<>();
-    private TcpClient timelyTcpClient;
+    private TimelyTcpClient timelyTcpClient;
     private UdpClient timelyUdpClient;
     private boolean timelyClientsShutdown;
 
@@ -105,7 +104,7 @@ public class QueryMetricOperationsStats {
         if (this.timelyProperties.isEnabled()) {
             try {
                 if (timelyProperties.getProtocol().equals(TimelyProperties.Protocol.TCP)) {
-                    this.timelyTcpClient = new TcpClient(timelyProperties.getHost(), timelyProperties.getPort());
+                    this.timelyTcpClient = new TimelyTcpClient(timelyProperties.getHost(), timelyProperties.getPort());
                     this.timelyTcpClient.open();
                 } else {
                     this.timelyUdpClient = new UdpClient(timelyProperties.getHost(), timelyProperties.getPort());
@@ -223,7 +222,7 @@ public class QueryMetricOperationsStats {
 
     @PreDestroy
     public void shutdown() {
-        TcpClient tcpClient;
+        TimelyTcpClient tcpClient;
         UdpClient udpClient;
         synchronized (this) {
             if (timelyClientsShutdown) {

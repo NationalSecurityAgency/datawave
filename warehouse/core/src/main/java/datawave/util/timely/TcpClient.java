@@ -72,10 +72,6 @@ public class TcpClient implements AutoCloseable {
             throw new IOException();
         }
         out.write(metric);
-        if (out.checkError()) {
-            closeConnection();
-            throw new IOException("Error writing metric to Timely at " + host + ":" + port);
-        }
     }
 
     public synchronized void flush() {

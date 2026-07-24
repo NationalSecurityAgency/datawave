@@ -81,28 +81,32 @@ public class TcpClientConnectionTest {
     @Test
     public void flushFailureIsReportedAndClosesConnection() throws IOException {
         TrackingSocket socket = new TrackingSocket(false);
-        socket.outputStream = new FailingFlushOutputStream();
+        FailingFlushOutputStream outputStream = new FailingFlushOutputStream();
+        socket.outputStream = outputStream;
         TcpClient client = new TcpClient("localhost", 4242, () -> socket);
         client.open();
         client.write("put metric 1 1\n");
         assertFalse(socket.closed);
+        assertEquals(0, outputStream.flushCount);
 
         UncheckedIOException exception = assertThrows(UncheckedIOException.class, client::flush);
 
         assertTrue(exception.getMessage().contains("localhost:4242"));
+        assertEquals(1, outputStream.flushCount);
         assertTrue(socket.closed);
         assertEquals(1, socket.closeCount);
     }
 
     @Test
-    public void writeFailureIsReportedBeforeReconnect() throws IOException {
+    public void writeFailureIsReportedOnBatchFlushBeforeReconnect() throws IOException {
         TrackingSocket failedSocket = new TrackingSocket(false);
         failedSocket.outputStream = new FailingWriteOutputStream();
         TrackingSocket retrySocket = new TrackingSocket(false);
         TcpClient client = new TcpClient("localhost", 4242, socketSupplier(failedSocket, retrySocket));
         client.open();
 
-        assertThrows(IOException.class, () -> client.write("x".repeat(16_384)));
+        client.write("x".repeat(16_384));
+        assertThrows(UncheckedIOException.class, client::flush);
         assertTrue(failedSocket.closed);
         assertFalse(retrySocket.connected);
 
@@ -193,9 +197,8 @@ public class TcpClientConnectionTest {
 
         @Override
         public void flush() throws IOException {
-            if (++flushCount > 1) {
-                throw new IOException("flush failed");
-            }
+            flushCount++;
+            throw new IOException("flush failed");
         }
     }
 
