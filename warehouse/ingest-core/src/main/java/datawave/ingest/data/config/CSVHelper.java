@@ -125,6 +125,7 @@ public class CSVHelper extends DataTypeHelperImpl {
      * Pattern used to prevent matching escaped multivalue field separators when splitting multivalued fields
      */
     public static final String BACKSLASH_ESCAPE_LOOKBEHIND_PATTERN = "(?<!\\\\)";
+    private static final String ESCAPE_SAFE_BACKSLASH_SEPARATOR_PATTERN = "(?<!\\\\)\\\\(?=(?:\\\\\\\\)*(?!\\\\))";
 
     public enum ThresholdAction {
         FAIL, DROP, REPLACE, TRUNCATE
@@ -351,7 +352,12 @@ public class CSVHelper extends DataTypeHelperImpl {
      *         to the String.split(..) function or similar methods
      */
     public String getEscapeSafeMultiValueSeparatorPattern() {
-        return BACKSLASH_ESCAPE_LOOKBEHIND_PATTERN + Pattern.quote(getMultiValueSeparator());
+        String separator = getMultiValueSeparator();
+        if ("\\".equals(separator)) {
+            // Split odd-length backslash runs; even-length runs are escaped separators.
+            return ESCAPE_SAFE_BACKSLASH_SEPARATOR_PATTERN;
+        }
+        return BACKSLASH_ESCAPE_LOOKBEHIND_PATTERN + Pattern.quote(separator);
     }
 
     public int getMultiFieldSizeThreshold() {

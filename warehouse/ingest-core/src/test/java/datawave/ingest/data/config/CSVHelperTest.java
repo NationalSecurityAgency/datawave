@@ -42,7 +42,7 @@ public class CSVHelperTest {
 
     @Test
     public void testTreatsMultivalueSeparatorAsLiteralText() {
-        // Verify regex characters in multivalue separators are split and cleaned as literal text.
+        // Verify regex characters and backslash runs are split and cleaned as literal text.
         Configuration conf = new Configuration();
         conf.addResource(requireNonNull(getClass().getResourceAsStream("/fake-datatype-config.xml")));
         conf.set("all" + DataTypeHelper.Properties.INGEST_POLICY_ENFORCER_CLASS, IngestPolicyEnforcer.NoOpIngestPolicyEnforcer.class.getName());
@@ -58,6 +58,19 @@ public class CSVHelperTest {
             assertArrayEquals(new String[] {"left", "right\\.middle", "tail"},
                             "left.right\\.middle.tail".split(helper.getEscapeSafeMultiValueSeparatorPattern()));
             assertEquals("right.middle\\+kept", helper.cleanEscapedMultivalueSeparators("right\\.middle\\+kept"));
+
+            conf.set("fake" + CSVHelper.MULTI_VALUED_SEPARATOR, "\\");
+            CSVHelper backslashHelper = new CSVHelper();
+            backslashHelper.setup(conf);
+
+            String backslash = "\\";
+            String pattern = backslashHelper.getEscapeSafeMultiValueSeparatorPattern();
+            for (int count = 1; count <= 4; count++) {
+                String input = "left" + backslash.repeat(count) + "right";
+                String[] expected = count % 2 == 0 ? new String[] {input} : new String[] {"left", backslash.repeat(count - 1) + "right"};
+                assertArrayEquals(expected, input.split(pattern));
+            }
+            assertEquals(backslash, backslashHelper.cleanEscapedMultivalueSeparators(backslash.repeat(2)));
         } finally {
             TypeRegistry.reset();
         }
