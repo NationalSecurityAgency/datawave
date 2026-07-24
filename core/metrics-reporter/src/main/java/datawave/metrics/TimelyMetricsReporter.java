@@ -8,6 +8,7 @@ import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.Locale;
 import java.util.Map.Entry;
 import java.util.SortedMap;
 import java.util.concurrent.TimeUnit;
@@ -162,16 +163,16 @@ public class TimelyMetricsReporter extends ScheduledReporter {
     }
 
     protected void reportMetric(String metricName, String sampleName, double value, String sampleType, String units, long time) {
-        reportMetric(metricName, sampleName, String.format("%f", value), sampleType, units, time);
+        reportMetric(metricName, sampleName, String.format(Locale.ROOT, "%f", value), sampleType, units, time);
     }
 
     protected void reportMetric(String metricName, String sampleName, long value, String sampleType, String units, long time) {
-        reportMetric(metricName, sampleName, String.format("%d", value), sampleType, units, time);
+        reportMetric(metricName, sampleName, String.format(Locale.ROOT, "%d", value), sampleType, units, time);
     }
 
     protected void reportMetric(String metricName, String sampleName, String value, String sampleType, String units, long time) {
         StringBuilder message = new StringBuilder();
-        message.append(String.format("put %s %d %s host=%s rack=%s sample=%s sampleType=%s", metricName, time, value, hostname, rackname, sampleName,
+        message.append(String.format(Locale.ROOT, "put %s %d %s host=%s rack=%s sample=%s sampleType=%s", metricName, time, value, hostname, rackname, sampleName,
                         sampleType));
         if (units != null) {
             message.append(" units=").append(units);

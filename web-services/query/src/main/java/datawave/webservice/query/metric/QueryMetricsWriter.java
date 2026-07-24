@@ -1,10 +1,12 @@
 package datawave.webservice.query.metric;
 
 import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -77,7 +79,7 @@ public class QueryMetricsWriter {
 
     private UdpClient timelyClient = null;
 
-    private DecimalFormat df = new DecimalFormat("0.00");
+    private final DecimalFormat df = new DecimalFormat("0.00", DecimalFormatSymbols.getInstance(Locale.ROOT));
     private List<Future> futures = new ArrayList<>();
     private volatile boolean shutDownQueue = false;
     private volatile boolean shutDownMetricProcessors = false;
@@ -141,6 +143,14 @@ public class QueryMetricsWriter {
         } else {
             return null;
         }
+    }
+
+    String formatCallTimePerRecord(long callTime, long pageSize) {
+        return df.format((double) callTime / pageSize);
+    }
+
+    static String formatTimelyMetric(String metricName, long timestamp, Object value, String tags) {
+        return String.format(Locale.ROOT, "put %s %d %s %s", metricName, timestamp, value, tags);
     }
 
     /**
@@ -572,10 +582,10 @@ public class QueryMetricsWriter {
                                     callTime = pm.getReturnTime();
                                 }
                                 if (pm.getPagesize() > 0) {
-                                    timelyClient.write(String.format("put dw.query.metrics.PAGE_METRIC.calltime %d %d %s", requestTime, callTime, tagSb));
-                                    String callTimePerRecord = df.format((double) callTime / pm.getPagesize());
-                                    timelyClient.write(String.format("put dw.query.metrics.PAGE_METRIC.calltimeperrecord %d %s %s", requestTime,
-                                                    callTimePerRecord, tagSb));
+                                    timelyClient.write(formatTimelyMetric("dw.query.metrics.PAGE_METRIC.calltime", requestTime, callTime, tagSb.toString()));
+                                    String callTimePerRecord = formatCallTimePerRecord(callTime, pm.getPagesize());
+                                    timelyClient.write(formatTimelyMetric("dw.query.metrics.PAGE_METRIC.calltimeperrecord", requestTime, callTimePerRecord,
+                                                    tagSb.toString()));
                                 }
                                 lastPageMetricMap.put(queryId, pm.getPageNumber());
 
@@ -585,10 +595,10 @@ public class QueryMetricsWriter {
 
                     if (lifecycle.equals(Lifecycle.CLOSED) || lifecycle.equals(Lifecycle.CANCELLED)) {
                         // write ELAPSED_TIME
-                        timelyClient.write(String.format("put dw.query.metrics.ELAPSED_TIME %d %d %s", createDate, queryMetric.getElapsedTime(), tagSb));
+                        timelyClient.write(formatTimelyMetric("dw.query.metrics.ELAPSED_TIME", createDate, queryMetric.getElapsedTime(), tagSb.toString()));
 
                         // write NUM_RESULTS
-                        timelyClient.write(String.format("put dw.query.metrics.NUM_RESULTS %d %d %s", createDate, queryMetric.getNumResults(), tagSb));
+                        timelyClient.write(formatTimelyMetric("dw.query.metrics.NUM_RESULTS", createDate, queryMetric.getNumResults(), tagSb.toString()));
 
                         // clean up last page map
                         lastPageMetricMap.remove(queryId);
@@ -600,10 +610,10 @@ public class QueryMetricsWriter {
                         if (createTime == -1) {
                             createTime = queryMetric.getSetupTime();
                         }
-                        timelyClient.write(String.format("put dw.query.metrics.CREATE_TIME %d %d %s", createDate, createTime, tagSb));
+                        timelyClient.write(formatTimelyMetric("dw.query.metrics.CREATE_TIME", createDate, createTime, tagSb.toString()));
 
                         // write a COUNT value of 1 so that we can count total queries
-                        timelyClient.write(String.format("put dw.query.metrics.COUNT %d 1 %s", createDate, tagSb));
+                        timelyClient.write(formatTimelyMetric("dw.query.metrics.COUNT", createDate, 1, tagSb.toString()));
                     }
 
                 } catch (Exception e) {
