@@ -9,6 +9,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.ByteArrayEntity;
@@ -25,20 +26,34 @@ import com.codahale.metrics.MetricRegistry;
  */
 public class NSQMetricsReporter extends TimelyMetricsReporter {
     private static final int MAX_MESSAGE_SIZE = 7 * 1024;
+    static final int DEFAULT_TIMEOUT_MILLIS = (int) TimeUnit.SECONDS.toMillis(10);
 
-    private CloseableHttpClient client = HttpClients.createDefault();
-    private URI endpoint;
+    private final CloseableHttpClient client;
+    private final URI endpoint;
     private DataOutputStream dos;
     private ByteArrayOutputStream baos;
 
     protected NSQMetricsReporter(String timelyHost, int timelyPort, MetricRegistry registry, String name, MetricFilter filter, TimeUnit rateUnit,
                     TimeUnit durationUnit) {
+        this(timelyHost, timelyPort, registry, name, filter, rateUnit, durationUnit, DEFAULT_TIMEOUT_MILLIS);
+    }
+
+    NSQMetricsReporter(String timelyHost, int timelyPort, MetricRegistry registry, String name, MetricFilter filter, TimeUnit rateUnit, TimeUnit durationUnit,
+                    int timeoutMillis) {
         super(timelyHost, timelyPort, registry, name, filter, rateUnit, durationUnit);
         try {
             endpoint = new URIBuilder().setScheme("http").setHost(timelyHost).setPort(timelyPort).setPath("/mpub").addParameter("topic", "metrics").build();
         } catch (URISyntaxException e) {
             throw new RuntimeException("Unable to construct NSQ URI: " + e.getMessage(), e);
         }
+        client = HttpClients.custom().setDefaultRequestConfig(createRequestConfig(timeoutMillis)).build();
+    }
+
+    static RequestConfig createRequestConfig(int timeoutMillis) {
+        if (timeoutMillis <= 0) {
+            throw new IllegalArgumentException("timeoutMillis must be greater than zero");
+        }
+        return RequestConfig.custom().setConnectionRequestTimeout(timeoutMillis).setConnectTimeout(timeoutMillis).setSocketTimeout(timeoutMillis).build();
     }
 
     @Override
