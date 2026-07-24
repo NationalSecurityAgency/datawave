@@ -17,8 +17,6 @@ import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
 
-import org.apache.accumulo.core.data.Key;
-
 import com.google.common.collect.Lists;
 
 import datawave.webservice.HtmlProvider;
