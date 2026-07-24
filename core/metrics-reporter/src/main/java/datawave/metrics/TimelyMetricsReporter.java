@@ -37,11 +37,13 @@ public class TimelyMetricsReporter extends ScheduledReporter {
     protected static final Pattern RACK_PATTERN = Pattern.compile("[a-zA-Z]\\d+n\\d+");
     private static final Pattern TIMELY_WHITESPACE_PATTERN = Pattern.compile("\\s", Pattern.UNICODE_CHARACTER_CLASS);
     protected static final long MAX_BACKOFF = TimeUnit.SECONDS.toMillis(120);
+    static final int DEFAULT_CONNECT_TIMEOUT_MILLIS = (int) TimeUnit.SECONDS.toMillis(10);
     protected Logger logger = LoggerFactory.getLogger(getClass());
     protected final String timelyHost;
     protected final int timelyPort;
     protected final String hostname;
     protected final String rackname;
+    final int connectTimeoutMillis;
     private final Supplier<Socket> socketSupplier;
     protected Socket sock;
     protected PrintWriter out;
@@ -50,14 +52,28 @@ public class TimelyMetricsReporter extends ScheduledReporter {
 
     protected TimelyMetricsReporter(String timelyHost, int timelyPort, MetricRegistry registry, String name, MetricFilter filter, TimeUnit rateUnit,
                     TimeUnit durationUnit) {
-        this(timelyHost, timelyPort, registry, name, filter, rateUnit, durationUnit, Socket::new);
+        this(timelyHost, timelyPort, registry, name, filter, rateUnit, durationUnit, DEFAULT_CONNECT_TIMEOUT_MILLIS);
+    }
+
+    protected TimelyMetricsReporter(String timelyHost, int timelyPort, MetricRegistry registry, String name, MetricFilter filter, TimeUnit rateUnit,
+                    TimeUnit durationUnit, int connectTimeoutMillis) {
+        this(timelyHost, timelyPort, registry, name, filter, rateUnit, durationUnit, connectTimeoutMillis, Socket::new);
     }
 
     TimelyMetricsReporter(String timelyHost, int timelyPort, MetricRegistry registry, String name, MetricFilter filter, TimeUnit rateUnit,
                     TimeUnit durationUnit, Supplier<Socket> socketSupplier) {
+        this(timelyHost, timelyPort, registry, name, filter, rateUnit, durationUnit, DEFAULT_CONNECT_TIMEOUT_MILLIS, socketSupplier);
+    }
+
+    TimelyMetricsReporter(String timelyHost, int timelyPort, MetricRegistry registry, String name, MetricFilter filter, TimeUnit rateUnit,
+                    TimeUnit durationUnit, int connectTimeoutMillis, Supplier<Socket> socketSupplier) {
         super(registry, name, filter, rateUnit, durationUnit);
+        if (connectTimeoutMillis <= 0) {
+            throw new IllegalArgumentException("connectTimeoutMillis must be greater than zero");
+        }
         this.timelyHost = timelyHost;
         this.timelyPort = timelyPort;
+        this.connectTimeoutMillis = connectTimeoutMillis;
         this.socketSupplier = socketSupplier;
 
         String host = "unknown";
@@ -224,8 +240,7 @@ public class TimelyMetricsReporter extends ScheduledReporter {
             if (waitTime <= 0) {
                 Socket newSocket = socketSupplier.get();
                 try {
-                    connectTime = System.currentTimeMillis();
-                    newSocket.connect(new InetSocketAddress(timelyHost, timelyPort));
+                    newSocket.connect(new InetSocketAddress(timelyHost, timelyPort), connectTimeoutMillis);
                     PrintWriter newWriter = new PrintWriter(new OutputStreamWriter(newSocket.getOutputStream(), UTF_8), false);
                     sock = newSocket;
                     out = newWriter;
@@ -233,6 +248,7 @@ public class TimelyMetricsReporter extends ScheduledReporter {
                     logger.info("Connected to Timely at {}:{}", timelyHost, timelyPort);
                     connected = true;
                 } catch (IOException e) {
+                    connectTime = System.currentTimeMillis();
                     logger.error("Error connecting to Timely at {}:{}. Error: {}", timelyHost, timelyPort, e.getMessage());
                     backoff = Math.min(backoff * 2, MAX_BACKOFF);
                     closeSocket(newSocket);

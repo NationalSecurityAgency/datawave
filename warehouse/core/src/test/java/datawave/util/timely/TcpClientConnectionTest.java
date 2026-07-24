@@ -10,9 +10,11 @@ import java.io.OutputStream;
 import java.lang.reflect.Field;
 import java.net.Socket;
 import java.net.SocketAddress;
+import java.net.SocketTimeoutException;
 import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Queue;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.Test;
 
@@ -55,6 +57,25 @@ public class TcpClientConnectionTest {
         assertEquals(1, socket.closeCount);
     }
 
+    @Test
+    public void timeoutClosesSocketAndStartsBackoff() {
+        TrackingSocket socket = new TrackingSocket(false);
+        socket.connectFailure = new SocketTimeoutException("timed out");
+        AtomicInteger socketRequests = new AtomicInteger();
+        TcpClient client = new TcpClient("localhost", 4242, 123, () -> {
+            socketRequests.incrementAndGet();
+            return socket;
+        });
+
+        assertThrows(IOException.class, client::open);
+        assertEquals(123, socket.connectTimeout);
+        assertTrue(socket.closed);
+        assertTrue(getConnectTime(client) >= socket.connectFailureTime);
+
+        assertThrows(IOException.class, client::open);
+        assertEquals(1, socketRequests.get());
+    }
+
     private static java.util.function.Supplier<Socket> socketSupplier(Socket... sockets) {
         Queue<Socket> queue = new ArrayDeque<>(Arrays.asList(sockets));
         return queue::remove;
@@ -69,18 +90,42 @@ public class TcpClientConnectionTest {
         backoff.setLong(client, delay);
     }
 
+    private static long getConnectTime(TcpClient client) {
+        try {
+            Field connectTime = TcpClient.class.getDeclaredField("connectTime");
+            connectTime.setAccessible(true);
+            return connectTime.getLong(client);
+        } catch (ReflectiveOperationException e) {
+            throw new AssertionError(e);
+        }
+    }
+
     private static class TrackingSocket extends Socket {
         private final boolean failOutputStream;
         private boolean connected;
         private boolean closed;
         private int closeCount;
+        private int connectTimeout;
+        private long connectFailureTime;
+        private IOException connectFailure;
 
         private TrackingSocket(boolean failOutputStream) {
             this.failOutputStream = failOutputStream;
         }
 
         @Override
-        public void connect(SocketAddress endpoint) {
+        public void connect(SocketAddress endpoint, int timeout) throws IOException {
+            connectTimeout = timeout;
+            if (connectFailure != null) {
+                try {
+                    Thread.sleep(20);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new IOException("interrupted", e);
+                }
+                connectFailureTime = System.currentTimeMillis();
+                throw connectFailure;
+            }
             connected = true;
         }
 
