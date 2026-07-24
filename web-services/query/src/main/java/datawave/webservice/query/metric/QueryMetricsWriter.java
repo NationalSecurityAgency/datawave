@@ -3,6 +3,7 @@ package datawave.webservice.query.metric;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -14,6 +15,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
@@ -60,6 +62,7 @@ import datawave.webservice.result.VoidResponse;
 @Lock(LockType.READ)
 public class QueryMetricsWriter {
 
+    private static final Pattern TIMELY_WHITESPACE_PATTERN = Pattern.compile("\\s", Pattern.UNICODE_CHARACTER_CLASS);
     private Logger log = Logger.getLogger(QueryMetricsWriter.class);
 
     @Resource(mappedName = "java:jboss/ee/concurrency/factory/default")
@@ -147,7 +150,29 @@ public class QueryMetricsWriter {
     }
 
     static String formatTimelyMetric(String metricName, long timestamp, Object value, String tags) {
-        return String.format(Locale.ROOT, "put %s %d %s %s", metricName, timestamp, value, tags);
+        if (tags != null && (tags.indexOf('\r') >= 0 || tags.indexOf('\n') >= 0)) {
+            throw new IllegalArgumentException("Timely tags must not contain line breaks");
+        }
+        String tagSuffix = StringUtils.isBlank(tags) ? "" : " " + tags;
+        return String.format(Locale.ROOT, "put %s %d %s%s\n", sanitizeTimelyToken(metricName), timestamp, sanitizeTimelyToken(String.valueOf(value)), tagSuffix);
+    }
+
+    static String formatTimelyTags(Set<String> configuredMetricTags, Map<String,String> metricValues) {
+        Map<String,String> tags = new LinkedHashMap<>();
+        for (String fieldName : configuredMetricTags) {
+            String fieldValue = metricValues.get(fieldName);
+            if (!StringUtils.isBlank(fieldValue)) {
+                String normalizedFieldName = sanitizeTimelyToken(fieldName);
+                if (tags.putIfAbsent(normalizedFieldName, sanitizeTimelyToken(fieldValue)) != null) {
+                    throw new IllegalArgumentException("Timely tag names normalize to duplicate key: " + normalizedFieldName);
+                }
+            }
+        }
+        return tags.entrySet().stream().map(entry -> entry.getKey() + "=" + entry.getValue()).collect(Collectors.joining(" "));
+    }
+
+    static String sanitizeTimelyToken(String value) {
+        return TIMELY_WHITESPACE_PATTERN.matcher(String.valueOf(value)).replaceAll("_");
     }
 
     /**
@@ -546,23 +571,7 @@ public class QueryMetricsWriter {
                     Map<String,String> metricValues = queryMetricHandler.getEventFields(queryMetric);
                     long createDate = queryMetric.getCreateDate().getTime();
 
-                    StringBuilder tagSb = new StringBuilder();
-                    Set<String> configuredMetricTags = writerConfig.getTimelyMetricTags();
-                    for (String fieldName : configuredMetricTags) {
-                        String fieldValue = metricValues.get(fieldName);
-                        if (!StringUtils.isBlank(fieldValue)) {
-                            // ensure that there are no spaces in tag values
-                            fieldValue = fieldValue.replaceAll(" ", "_");
-                            tagSb.append(fieldName).append("=").append(fieldValue).append(" ");
-                        }
-                    }
-                    int tagSbLength = tagSb.length();
-                    if (tagSbLength > 0) {
-                        if (tagSb.charAt(tagSbLength - 1) == ' ') {
-                            tagSb.deleteCharAt(tagSbLength - 1);
-                        }
-                    }
-                    tagSb.append("\n");
+                    String tags = formatTimelyTags(writerConfig.getTimelyMetricTags(), metricValues);
 
                     timelyClient.open();
 
@@ -579,10 +588,10 @@ public class QueryMetricsWriter {
                                     callTime = pm.getReturnTime();
                                 }
                                 if (pm.getPagesize() > 0) {
-                                    timelyClient.write(formatTimelyMetric("dw.query.metrics.PAGE_METRIC.calltime", requestTime, callTime, tagSb.toString()));
+                                    timelyClient.write(formatTimelyMetric("dw.query.metrics.PAGE_METRIC.calltime", requestTime, callTime, tags));
                                     String callTimePerRecord = formatCallTimePerRecord(callTime, pm.getPagesize());
                                     timelyClient.write(formatTimelyMetric("dw.query.metrics.PAGE_METRIC.calltimeperrecord", requestTime, callTimePerRecord,
-                                                    tagSb.toString()));
+                                                    tags));
                                 }
                                 lastPageMetricMap.put(queryId, pm.getPageNumber());
 
@@ -592,10 +601,10 @@ public class QueryMetricsWriter {
 
                     if (lifecycle.equals(Lifecycle.CLOSED) || lifecycle.equals(Lifecycle.CANCELLED)) {
                         // write ELAPSED_TIME
-                        timelyClient.write(formatTimelyMetric("dw.query.metrics.ELAPSED_TIME", createDate, queryMetric.getElapsedTime(), tagSb.toString()));
+                        timelyClient.write(formatTimelyMetric("dw.query.metrics.ELAPSED_TIME", createDate, queryMetric.getElapsedTime(), tags));
 
                         // write NUM_RESULTS
-                        timelyClient.write(formatTimelyMetric("dw.query.metrics.NUM_RESULTS", createDate, queryMetric.getNumResults(), tagSb.toString()));
+                        timelyClient.write(formatTimelyMetric("dw.query.metrics.NUM_RESULTS", createDate, queryMetric.getNumResults(), tags));
 
                         // clean up last page map
                         lastPageMetricMap.remove(queryId);
@@ -607,10 +616,10 @@ public class QueryMetricsWriter {
                         if (createTime == -1) {
                             createTime = queryMetric.getSetupTime();
                         }
-                        timelyClient.write(formatTimelyMetric("dw.query.metrics.CREATE_TIME", createDate, createTime, tagSb.toString()));
+                        timelyClient.write(formatTimelyMetric("dw.query.metrics.CREATE_TIME", createDate, createTime, tags));
 
                         // write a COUNT value of 1 so that we can count total queries
-                        timelyClient.write(formatTimelyMetric("dw.query.metrics.COUNT", createDate, 1, tagSb.toString()));
+                        timelyClient.write(formatTimelyMetric("dw.query.metrics.COUNT", createDate, 1, tags));
                     }
 
                 } catch (Exception e) {

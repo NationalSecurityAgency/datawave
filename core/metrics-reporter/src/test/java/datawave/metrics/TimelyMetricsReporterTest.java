@@ -59,6 +59,26 @@ class TimelyMetricsReporterTest {
     }
 
     @Test
+    void reportMetricNormalizesWhitespaceInMetricName() {
+        TestTimelyMetricsReporter reporter = new TestTimelyMetricsReporter();
+
+        reporter.reportMetric("metric name\twith\nwhitespace\u2003", "value", 1L, "COUNTER", null, 123L);
+
+        assertTrue(reporter.metric.startsWith("put metric_name_with_whitespace_ 123 1 "));
+        assertEquals(1, reporter.metric.chars().filter(character -> character == '\n').count());
+    }
+
+    @Test
+    void reportMetricNormalizesWhitespaceInValue() {
+        TestTimelyMetricsReporter reporter = new TestTimelyMetricsReporter();
+
+        reporter.reportMetric("metric", "value", "1\n2", "GAUGE", null, 123L);
+
+        assertTrue(reporter.metric.startsWith("put metric 123 1_2 "));
+        assertEquals(1, reporter.metric.chars().filter(character -> character == '\n').count());
+    }
+
+    @Test
     void reportMetricUsesAsciiIntegerAndTimestampDigits() {
         Locale originalLocale = Locale.getDefault(Locale.Category.FORMAT);
         try {

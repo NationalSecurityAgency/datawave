@@ -15,6 +15,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -39,6 +40,7 @@ import datawave.util.timely.UdpClient;
 
 public class QueryMetricOperationsStats {
 
+    private static final Pattern TIMELY_WHITESPACE_PATTERN = Pattern.compile("\\s", Pattern.UNICODE_CHARACTER_CLASS);
     private Logger log = LoggerFactory.getLogger(getClass());
     private static final String RatePerSec_1_Min_Avg = ".RatePerSec_1_Min_Avg";
     private static final String RatePerSec_5_Min_Avg = ".RatePerSec_5_Min_Avg";
@@ -271,35 +273,32 @@ public class QueryMetricOperationsStats {
             String queryType = queryMetric.getQueryType();
             if (queryType != null && queryType.equalsIgnoreCase("RunningQuery")) {
                 BaseQueryMetric.Lifecycle lifecycle = queryMetric.getLifecycle();
-                String host = queryMetric.getHost();
-                String user = queryMetric.getUser();
-                String logic = queryMetric.getQueryLogic();
+                String host = sanitizeTimelyToken(queryMetric.getHost());
+                String user = sanitizeTimelyToken(queryMetric.getUser());
+                String logic = sanitizeTimelyToken(queryMetric.getQueryLogic());
                 if (lifecycle.equals(BaseQueryMetric.Lifecycle.CLOSED) || lifecycle.equals(BaseQueryMetric.Lifecycle.CANCELLED)) {
                     long createDate = queryMetric.getCreateDate().getTime();
                     // write ELAPSED_TIME
-                    this.queryStatsToWriteToTimely.add("put dw.query.metrics.ELAPSED_TIME " + createDate + " " + queryMetric.getElapsedTime() + " HOST=" + host
-                                    + getCommonTags() + "\n");
-                    this.queryStatsToWriteToTimely.add("put dw.query.metrics.ELAPSED_TIME " + createDate + " " + queryMetric.getElapsedTime() + " USER=" + user
-                                    + getCommonTags() + "\n");
+                    this.queryStatsToWriteToTimely.add("put dw.query.metrics.ELAPSED_TIME " + createDate + " " + queryMetric.getElapsedTime() + " HOST="
+                                    + host + getCommonTags() + "\n");
+                    this.queryStatsToWriteToTimely.add("put dw.query.metrics.ELAPSED_TIME " + createDate + " " + queryMetric.getElapsedTime() + " USER="
+                                    + user + getCommonTags() + "\n");
                     this.queryStatsToWriteToTimely.add("put dw.query.metrics.ELAPSED_TIME " + createDate + " " + queryMetric.getElapsedTime() + " QUERY_LOGIC="
                                     + logic + getCommonTags() + "\n");
 
                     // write NUM_RESULTS
-                    this.queryStatsToWriteToTimely.add("put dw.query.metrics.NUM_RESULTS " + createDate + " " + queryMetric.getNumResults() + " HOST=" + host
-                                    + getCommonTags() + "\n");
-                    this.queryStatsToWriteToTimely.add("put dw.query.metrics.NUM_RESULTS " + createDate + " " + queryMetric.getNumResults() + " USER=" + user
-                                    + getCommonTags() + "\n");
+                    this.queryStatsToWriteToTimely.add("put dw.query.metrics.NUM_RESULTS " + createDate + " " + queryMetric.getNumResults() + " HOST="
+                                    + host + getCommonTags() + "\n");
+                    this.queryStatsToWriteToTimely.add("put dw.query.metrics.NUM_RESULTS " + createDate + " " + queryMetric.getNumResults() + " USER="
+                                    + user + getCommonTags() + "\n");
                     this.queryStatsToWriteToTimely.add("put dw.query.metrics.NUM_RESULTS " + createDate + " " + queryMetric.getNumResults() + " QUERY_LOGIC="
                                     + logic + getCommonTags() + "\n");
                 } else if (lifecycle.equals(BaseQueryMetric.Lifecycle.INITIALIZED)) {
                     // aggregate these metrics for later writing to timely
                     synchronized (this.hostCountMap) {
-                        Long hostCount = this.hostCountMap.get(host);
-                        this.hostCountMap.put(host, hostCount == null ? 1l : hostCount + 1);
-                        Long userCount = this.userCountMap.get(user);
-                        this.userCountMap.put(user, userCount == null ? 1l : userCount + 1);
-                        Long logicCount = this.logicCountMap.get(logic);
-                        this.logicCountMap.put(logic, logicCount == null ? 1l : logicCount + 1);
+                        this.hostCountMap.merge(host, 1L, Long::sum);
+                        this.userCountMap.merge(user, 1L, Long::sum);
+                        this.logicCountMap.merge(logic, 1L, Long::sum);
                     }
                 }
             }
@@ -311,10 +310,22 @@ public class QueryMetricOperationsStats {
         tags.putAll(this.timelyProperties.getTags());
         tags.putAll(this.staticTags);
         if (tags != null && !tags.isEmpty()) {
-            return " " + tags.entrySet().stream().map(e -> e.getKey() + "=" + e.getValue()).collect(Collectors.joining(" "));
+            Map<String,String> normalizedTags = new LinkedHashMap<>();
+            tags.forEach((key, value) -> {
+                String normalizedKey = sanitizeTimelyToken(key);
+                if (normalizedTags.putIfAbsent(normalizedKey, sanitizeTimelyToken(value)) != null) {
+                    throw new IllegalArgumentException("Timely tag names normalize to duplicate key: " + normalizedKey);
+                }
+            });
+            return " " + normalizedTags.entrySet().stream().map(e -> e.getKey() + "=" + e.getValue())
+                            .collect(Collectors.joining(" "));
         } else {
             return "";
         }
+    }
+
+    static String sanitizeTimelyToken(String value) {
+        return TIMELY_WHITESPACE_PATTERN.matcher(String.valueOf(value)).replaceAll("_");
     }
 
     public void logServiceStats() {
@@ -347,8 +358,8 @@ public class QueryMetricOperationsStats {
                 });
                 this.userCountMap.clear();
                 this.logicCountMap.entrySet().forEach(entry -> {
-                    this.queryStatsToWriteToTimely.add(
-                                    "put dw.query.metrics.COUNT " + now + " " + entry.getValue() + " QUERY_LOGIC=" + entry.getKey() + getCommonTags() + "\n");
+                    this.queryStatsToWriteToTimely.add("put dw.query.metrics.COUNT " + now + " " + entry.getValue() + " QUERY_LOGIC="
+                                    + entry.getKey() + getCommonTags() + "\n");
                 });
                 this.logicCountMap.clear();
             }

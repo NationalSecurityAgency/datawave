@@ -33,6 +33,7 @@ import com.codahale.metrics.Timer;
  */
 public class TimelyMetricsReporter extends ScheduledReporter {
     protected static final Pattern RACK_PATTERN = Pattern.compile("[a-zA-Z]\\d+n\\d+");
+    private static final Pattern TIMELY_WHITESPACE_PATTERN = Pattern.compile("\\s", Pattern.UNICODE_CHARACTER_CLASS);
     protected static final long MAX_BACKOFF = TimeUnit.SECONDS.toMillis(120);
     protected Logger logger = LoggerFactory.getLogger(getClass());
     protected final String timelyHost;
@@ -102,7 +103,6 @@ public class TimelyMetricsReporter extends ScheduledReporter {
     }
 
     void reportGauge(String name, Gauge<?> gauge, long time) {
-        name = name.replaceAll(" ", "_");
         Object value = gauge.getValue();
         if (value != null) {
             if (value instanceof Number) {
@@ -128,12 +128,10 @@ public class TimelyMetricsReporter extends ScheduledReporter {
     }
 
     private void reportCounter(String name, Counter value, long time) {
-        name = name.replaceAll(" ", "_");
         reportMetric(name, "value", value.getCount(), "COUNTER", null, time);
     }
 
     private void reportHistogram(String name, Histogram histogram, long time) {
-        name = name.replaceAll(" ", "_");
         Snapshot snapshot = histogram.getSnapshot();
         reportMetric(name, "count", histogram.getCount(), "COUNTER", null, time);
         reportMetric(name, "max", snapshot.getMax(), "GAUGE", null, time);
@@ -149,7 +147,6 @@ public class TimelyMetricsReporter extends ScheduledReporter {
     }
 
     private void reportMeter(String name, Metered meter, long time) {
-        name = name.replaceAll(" ", "_");
         reportMetric(name, "count", meter.getCount(), "COUNTER", null, time);
         reportMetric(name, "m1_rate", convertRate(meter.getOneMinuteRate()), "GAUGE", getRateUnit(), time);
         reportMetric(name, "m5_rate", convertRate(meter.getFiveMinuteRate()), "GAUGE", getRateUnit(), time);
@@ -158,7 +155,6 @@ public class TimelyMetricsReporter extends ScheduledReporter {
     }
 
     private void reportTimer(String name, Timer timer, long time) {
-        name = name.replaceAll(" ", "_");
         Snapshot snapshot = timer.getSnapshot();
         reportMetric(name, "max", convertDuration(snapshot.getMax()), "GAUGE", getDurationUnit(), time);
         reportMetric(name, "mean", convertDuration(snapshot.getMean()), "GAUGE", getDurationUnit(), time);
@@ -184,14 +180,18 @@ public class TimelyMetricsReporter extends ScheduledReporter {
 
     protected void reportMetric(String metricName, String sampleName, String value, String sampleType, String units, long time) {
         StringBuilder message = new StringBuilder();
-        message.append(String.format(Locale.ROOT, "put %s %d %s host=%s rack=%s sample=%s sampleType=%s", metricName, time, value, hostname, rackname, sampleName,
-                        sampleType));
+        message.append(String.format(Locale.ROOT, "put %s %d %s host=%s rack=%s sample=%s sampleType=%s", sanitizeTimelyToken(metricName), time,
+                        sanitizeTimelyToken(value), hostname, rackname, sampleName, sampleType));
         if (units != null) {
             message.append(" units=").append(units);
         }
         message.append("\n");
 
         reportMetric(message.toString());
+    }
+
+    static String sanitizeTimelyToken(String value) {
+        return TIMELY_WHITESPACE_PATTERN.matcher(String.valueOf(value)).replaceAll("_");
     }
 
     protected synchronized void reportMetric(String timelyMetric) {
