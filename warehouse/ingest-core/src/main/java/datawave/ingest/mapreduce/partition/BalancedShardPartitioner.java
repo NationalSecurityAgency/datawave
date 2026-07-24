@@ -35,45 +35,25 @@ public class BalancedShardPartitioner extends Partitioner<BulkIngestKey,Value> i
     int missingShardIdCount = 0;
 
     /**
-     * Strategy for handling shard IDs that don't have an assigned partition.
-     *
-     * This situation occurs when shards were not created for a particular day,
-     * or when not all expected shards were created for the day.
+     * Strategy for handling shard IDs with no assigned partition, e.g. when shards weren't created for a given day.
      */
     public enum MissingShardStrategy {
         /**
-         * Hash-based fallback strategy.
-         *
-         * When a shard ID has no assigned partition, computes the partition using
-         * the shard ID's hashCode. This provides a deterministic mapping but may
-         * result in uneven distribution across reducers since the hash is computed
-         * independently of tablet server assignments.
-         *
-         * Logs warnings (up to 10) when missing shard IDs are encountered.
-         *
-         * Use when: You need a simple fallback and uneven distribution is acceptable.
+         * Falls back to {@code shardId.hashCode()}. Deterministic, but may distribute unevenly since it ignores tablet server assignments. Logs a warning (up
+         * to 10 times) per occurrence.
          */
         HASH,
 
         /**
-         * Collapse/nearest-neighbor strategy.
-         *
-         * When a shard ID has no assigned partition, finds and returns the nearest
-         * existing partition (based on shard ID ordering). This maps missing shards
-         * to the closest existing shard's partition, maintaining shard locality better
-         * than HASH strategy.
-         *
-         * Does not log warnings.
-         *
-         * Use when: You want missing shards to be consistently co-located with nearby
-         * shards for better locality and balanced distribution.
+         * Falls back to the nearest existing partition by shard ID ordering, preserving locality better than {@link #HASH}. Does not log warnings.
          */
         COLLAPSE;
 
         /**
          * Parse strategy from configuration string.
          *
-         * @param stratString the strategy name from configuration (case-insensitive)
+         * @param stratString
+         *            the strategy name from configuration (case-insensitive)
          * @return COLLAPSE if stratString equals "COLLAPSE", otherwise HASH (default)
          */
         public static MissingShardStrategy getStrategy(String stratString) {

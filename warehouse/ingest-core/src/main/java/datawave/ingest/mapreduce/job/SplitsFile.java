@@ -262,20 +262,12 @@ public class SplitsFile implements SplitsCache {
     }
 
     /**
-     * 1. sorts the the tablet assignments by shard id, starting with the most recent going backwards<br>
-     * 2. assigns partitions to each tservers, starting from the beginning, but skipping future dates<br>
-     * 3. assigns partitions to each shardid by looking up its tserver's assignments<br>
-     * 4. returns the {@code shard id -> partition} map
-     * <p>
-     * e.g.,<br>
-     * 1. sorted assignments<br>
-     * 2. tserver map<br>
-     * 3. shard map: {@code future->tserver7 *no change* future->2 shard4->tserver2 tserver2->0 shard4->0
-     * shard3->tserver3 tserver3->1 shard3->1 shard2->tserver2 *no change* shard2->0 shard1->tserver7 tserver7->2 shard1->2}
+     * Assigns each tablet server a partition slot in order of most-recent shard ID first (skipping future-dated shards), then maps every shard ID to its tablet
+     * server's partition.
      *
      * @param shardIdToLocations
      *            the map of shard ids and their location
-     * @return shardId to
+     * @return the shard id to partition assignments
      */
     private TreeMap<Text,Integer> assignPartitionsForEachShard(List<Text> sortedShardIds, Map<Text,String> shardIdToLocations) {
         int totalNumUniqueTServers = calculateNumberOfUniqueTservers(shardIdToLocations);
