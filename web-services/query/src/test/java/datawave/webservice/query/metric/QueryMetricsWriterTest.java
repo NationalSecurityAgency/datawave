@@ -14,7 +14,9 @@ class QueryMetricsWriterTest {
         try {
             Locale.setDefault(Locale.GERMANY);
 
-            assertEquals("1.50", new QueryMetricsWriter().formatCallTimePerRecord(3, 2));
+            QueryMetricsWriter writer = new QueryMetricsWriter();
+            assertEquals("1.5", writer.formatCallTimePerRecord(3, 2));
+            assertEquals("0.004", writer.formatCallTimePerRecord(1, 250));
         } finally {
             Locale.setDefault(originalLocale);
         }

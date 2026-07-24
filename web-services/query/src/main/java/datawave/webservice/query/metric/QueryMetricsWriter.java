@@ -1,7 +1,5 @@
 package datawave.webservice.query.metric;
 
-import java.text.DecimalFormat;
-import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -79,7 +77,6 @@ public class QueryMetricsWriter {
 
     private UdpClient timelyClient = null;
 
-    private final DecimalFormat df = new DecimalFormat("0.00", DecimalFormatSymbols.getInstance(Locale.ROOT));
     private List<Future> futures = new ArrayList<>();
     private volatile boolean shutDownQueue = false;
     private volatile boolean shutDownMetricProcessors = false;
@@ -146,7 +143,7 @@ public class QueryMetricsWriter {
     }
 
     String formatCallTimePerRecord(long callTime, long pageSize) {
-        return df.format((double) callTime / pageSize);
+        return Double.toString((double) callTime / pageSize);
     }
 
     static String formatTimelyMetric(String metricName, long timestamp, Object value, String tags) {

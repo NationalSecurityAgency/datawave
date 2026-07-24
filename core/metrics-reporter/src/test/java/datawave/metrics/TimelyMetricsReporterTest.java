@@ -1,7 +1,9 @@
 package datawave.metrics;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.math.BigDecimal;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
@@ -21,10 +23,39 @@ class TimelyMetricsReporterTest {
 
             reporter.reportMetric("metric", "value", 1.5d, "GAUGE", null, 123L);
 
-            assertTrue(reporter.metric.contains(" 123 1.500000 "));
+            assertTrue(reporter.metric.contains(" 123 1.5 "));
         } finally {
             Locale.setDefault(originalLocale);
         }
+    }
+
+    @Test
+    void reportMetricPreservesDecimalPrecision() {
+        TestTimelyMetricsReporter reporter = new TestTimelyMetricsReporter();
+
+        reporter.reportMetric("metric", "value", 0.0000004d, "GAUGE", null, 123L);
+        assertEquals(0.0000004d, metricValue(reporter.metric));
+
+        reporter.reportMetric("metric", "value", 1.23456789d, "GAUGE", null, 123L);
+        assertEquals(1.23456789d, metricValue(reporter.metric));
+    }
+
+    @Test
+    void reportGaugePreservesNumberPrecision() {
+        TestTimelyMetricsReporter reporter = new TestTimelyMetricsReporter();
+
+        reporter.reportGauge("metric", () -> new BigDecimal("0.0000004"), 123L);
+
+        assertEquals(0.0000004d, metricValue(reporter.metric));
+    }
+
+    @Test
+    void reportGaugeFallsBackToNumberValueWhenTextIsNotNumeric() {
+        TestTimelyMetricsReporter reporter = new TestTimelyMetricsReporter();
+
+        reporter.reportGauge("metric", () -> new NonNumericTextNumber(0.5d), 123L);
+
+        assertEquals(0.5d, metricValue(reporter.metric));
     }
 
     @Test
@@ -39,6 +70,43 @@ class TimelyMetricsReporterTest {
             assertTrue(reporter.metric.contains(" 123 456 "));
         } finally {
             Locale.setDefault(Locale.Category.FORMAT, originalLocale);
+        }
+    }
+
+    private static double metricValue(String metric) {
+        return Double.parseDouble(metric.split(" ")[3]);
+    }
+
+    private static class NonNumericTextNumber extends Number {
+        private final double value;
+
+        private NonNumericTextNumber(double value) {
+            this.value = value;
+        }
+
+        @Override
+        public int intValue() {
+            return (int) value;
+        }
+
+        @Override
+        public long longValue() {
+            return (long) value;
+        }
+
+        @Override
+        public float floatValue() {
+            return (float) value;
+        }
+
+        @Override
+        public double doubleValue() {
+            return value;
+        }
+
+        @Override
+        public String toString() {
+            return "not-a-number";
         }
     }
 

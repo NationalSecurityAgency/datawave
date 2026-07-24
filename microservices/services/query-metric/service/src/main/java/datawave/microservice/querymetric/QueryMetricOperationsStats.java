@@ -6,7 +6,6 @@ import static datawave.microservice.querymetric.config.HazelcastMetricCacheConfi
 
 import java.net.InetAddress;
 import java.text.DecimalFormat;
-import java.text.DecimalFormatSymbols;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -15,7 +14,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -232,10 +230,14 @@ public class QueryMetricOperationsStats {
     }
 
     public Map<String,String> formatStats(Map<String,Double> stats, boolean useSeparators) {
-        DecimalFormatSymbols symbols = DecimalFormatSymbols.getInstance(useSeparators ? Locale.getDefault() : Locale.ROOT);
-        DecimalFormat dFormat = new DecimalFormat(useSeparators ? "#,##0.00" : "#0.00", symbols);
-        DecimalFormat nFormat = new DecimalFormat(useSeparators ? "#,##0" : "#0", symbols);
         Map<String,String> formattedStats = new LinkedHashMap<>();
+        if (!useSeparators) {
+            stats.forEach((name, value) -> formattedStats.put(name, Double.toString(value)));
+            return formattedStats;
+        }
+
+        DecimalFormat dFormat = new DecimalFormat("#,##0.00");
+        DecimalFormat nFormat = new DecimalFormat("#,##0");
         stats.entrySet().forEach(e -> {
             if (e.getKey().contains("Latency")) {
                 formattedStats.put(e.getKey(), nFormat.format(e.getValue()));

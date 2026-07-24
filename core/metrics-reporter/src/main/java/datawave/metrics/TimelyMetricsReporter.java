@@ -101,18 +101,30 @@ public class TimelyMetricsReporter extends ScheduledReporter {
         flush();
     }
 
-    private void reportGauge(String name, Gauge<?> gauge, long time) {
+    void reportGauge(String name, Gauge<?> gauge, long time) {
         name = name.replaceAll(" ", "_");
         Object value = gauge.getValue();
         if (value != null) {
-            if (value instanceof Float || value instanceof Double) {
-                reportMetric(name, "value", ((Number) value).doubleValue(), "GAUGE", null, time);
-            } else if (value instanceof Number) {
-                reportMetric(name, "value", ((Number) value).longValue(), "GAUGE", null, time);
+            if (value instanceof Number) {
+                reportMetric(name, "value", formatNumber((Number) value), "GAUGE", null, time);
             } else {
                 reportMetric(name, "value", String.valueOf(value), "GAUGE", null, time);
             }
         }
+    }
+
+    private static String formatNumber(Number value) {
+        String formattedValue = value.toString();
+        boolean containsWhitespace = formattedValue.codePoints().anyMatch(character -> Character.isWhitespace(character) || Character.isSpaceChar(character));
+        if (!containsWhitespace) {
+            try {
+                Double.parseDouble(formattedValue);
+                return formattedValue;
+            } catch (NumberFormatException e) {
+                // Fall back to Number's numeric contract when toString() is not a Timely value.
+            }
+        }
+        return Double.toString(value.doubleValue());
     }
 
     private void reportCounter(String name, Counter value, long time) {
@@ -163,7 +175,7 @@ public class TimelyMetricsReporter extends ScheduledReporter {
     }
 
     protected void reportMetric(String metricName, String sampleName, double value, String sampleType, String units, long time) {
-        reportMetric(metricName, sampleName, String.format(Locale.ROOT, "%f", value), sampleType, units, time);
+        reportMetric(metricName, sampleName, Double.toString(value), sampleType, units, time);
     }
 
     protected void reportMetric(String metricName, String sampleName, long value, String sampleType, String units, long time) {
