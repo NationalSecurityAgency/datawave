@@ -12,6 +12,7 @@ import static org.mockito.Mockito.verify;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Locale;
@@ -142,6 +143,55 @@ class QueryMetricOperationsStatsTest {
         stats.writeQueryStatsToTimely();
 
         assertEquals(Arrays.asList("second", "third"), stats.queryStatsToWriteToTimely);
+    }
+
+    @Test
+    void udpServiceMetricsRetryFailedOpen() throws IOException {
+        TimelyProperties properties = new TimelyProperties();
+        properties.setProtocol(TimelyProperties.Protocol.UDP);
+        QueryMetricOperationsStats stats = serviceStats(properties);
+        UdpClient client = mock(UdpClient.class);
+        doThrow(new IOException("open failed")).doNothing().when(client).open();
+        ReflectionTestUtils.setField(stats, "timelyUdpClient", client);
+        properties.setEnabled(true);
+
+        stats.writeServiceStatsToTimely();
+        stats.writeServiceStatsToTimely();
+
+        verify(client, times(2)).open();
+        verify(client).write(anyString());
+    }
+
+    @Test
+    void udpQueryMetricsRemainQueuedUntilOpenSucceeds() throws IOException {
+        TimelyProperties properties = new TimelyProperties();
+        properties.setProtocol(TimelyProperties.Protocol.UDP);
+        QueryMetricOperationsStats stats = new QueryMetricOperationsStats(properties, null, null, null, null);
+        UdpClient client = mock(UdpClient.class);
+        doThrow(new IOException("open failed")).doNothing().when(client).open();
+        ReflectionTestUtils.setField(stats, "timelyUdpClient", client);
+        properties.setEnabled(true);
+        stats.queryStatsToWriteToTimely.add("metric");
+
+        stats.writeQueryStatsToTimely();
+        assertEquals(Collections.singletonList("metric"), stats.queryStatsToWriteToTimely);
+
+        stats.writeQueryStatsToTimely();
+        assertTrue(stats.queryStatsToWriteToTimely.isEmpty());
+        verify(client, times(2)).open();
+        verify(client).write("metric");
+    }
+
+    private static QueryMetricOperationsStats serviceStats(TimelyProperties properties) {
+        return new QueryMetricOperationsStats(properties, null, null, null, null) {
+            @Override
+            public Map<String,Double> getServiceStats() {
+                return Collections.singletonMap("count", 1d);
+            }
+
+            @Override
+            protected void addCacheStats(Map<String,Double> serviceStats) {}
+        };
     }
 
     private static QueryMetric newMetric(BaseQueryMetric.Lifecycle lifecycle, String host, String user, String logic) {

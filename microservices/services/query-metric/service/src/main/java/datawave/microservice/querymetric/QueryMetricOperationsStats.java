@@ -151,6 +151,9 @@ public class QueryMetricOperationsStats {
                                 .add("put microservice.querymetric." + entry.getKey() + " " + timestamp + " " + entry.getValue() + getCommonTags() + "\n");
             });
             try {
+                if (this.timelyProperties.getProtocol().equals(TimelyProperties.Protocol.UDP)) {
+                    this.timelyUdpClient.open();
+                }
                 for (String metric : serviceStatsToWriteToTimely) {
                     if (this.timelyProperties.getProtocol().equals(TimelyProperties.Protocol.TCP)) {
                         this.timelyTcpClient.write(metric);
@@ -178,6 +181,9 @@ public class QueryMetricOperationsStats {
                 this.queryStatsToWriteToTimely.clear();
             }
             try {
+                if (this.timelyProperties.getProtocol().equals(TimelyProperties.Protocol.UDP)) {
+                    this.timelyUdpClient.open();
+                }
                 Iterator<String> itr = tempMetricsToWrite.iterator();
                 while (itr.hasNext()) {
                     String metric = itr.next();
