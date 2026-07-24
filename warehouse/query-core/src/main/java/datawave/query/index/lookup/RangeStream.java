@@ -954,7 +954,7 @@ public class RangeStream extends BaseVisitor implements QueryPlanStream {
             try {
                 Authorizations auths = client.securityOperations().getUserAuthorizations(client.whoami());
 
-                // @foramtter:off
+                // @formatter:off
                 ScannerBuilder builder = ScannerBuilder.create(client).setTableName(TableName.METADATA).setAuthorizations(auths);
                 //  @formatter:on
 
