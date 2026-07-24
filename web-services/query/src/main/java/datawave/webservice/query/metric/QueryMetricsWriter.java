@@ -78,7 +78,9 @@ public class QueryMetricsWriter {
     @SpringBean(name = "QueryMetricsWriterConfiguration", refreshable = true)
     private QueryMetricsWriterConfiguration writerConfig;
 
+    private final Object timelyClientLock = new Object();
     private UdpClient timelyClient = null;
+    private boolean timelyClientShutdown = false;
 
     private List<Future> futures = new ArrayList<>();
     private volatile boolean shutDownQueue = false;
@@ -129,6 +131,13 @@ public class QueryMetricsWriter {
                 }
             }
         }
+        UdpClient client;
+        synchronized (timelyClientLock) {
+            timelyClientShutdown = true;
+            client = timelyClient;
+            timelyClient = null;
+        }
+        closeTimelyClient(client);
         log.info(String.format("shut down with %d metric updates in queue", blockingQueue.size()));
     }
 
@@ -137,7 +146,7 @@ public class QueryMetricsWriter {
      *
      * @return udpClient
      */
-    private UdpClient createUdpClient() {
+    UdpClient createUdpClient() {
         if (writerConfig != null && StringUtils.isNotBlank(writerConfig.getTimelyHost())) {
             return new UdpClient(writerConfig.getTimelyHost(), writerConfig.getTimelyPort());
         } else {
@@ -184,9 +193,26 @@ public class QueryMetricsWriter {
      *            the beanManager
      */
     public void onRefresh(@Observes RefreshEvent event, BeanManager beanManager) {
-        // protect timelyClient from being used in sendMetricsToTimely while re-creating the client
-        synchronized (this) {
-            timelyClient = createUdpClient();
+        UdpClient replacement = createUdpClient();
+        UdpClient clientToClose;
+        synchronized (timelyClientLock) {
+            if (timelyClientShutdown) {
+                clientToClose = replacement;
+            } else {
+                clientToClose = timelyClient == replacement ? null : timelyClient;
+                timelyClient = replacement;
+            }
+        }
+        closeTimelyClient(clientToClose);
+    }
+
+    private void closeTimelyClient(UdpClient client) {
+        if (client != null) {
+            try {
+                client.close();
+            } catch (Exception e) {
+                log.error("Unable to close Timely UDP client", e);
+            }
         }
     }
 
@@ -319,7 +345,7 @@ public class QueryMetricsWriter {
         }
     }
 
-    private class MetricProcessor implements Runnable {
+    class MetricProcessor implements Runnable {
         // noinspection unchecked
         private Map<String,Long> lastPageMetricMap = new LRUMap(1000);
         private List<FailureRecord> failedMetrics = new ArrayList<>();
@@ -562,9 +588,12 @@ public class QueryMetricsWriter {
          * @param queryMetric
          *            query metric
          */
-        private synchronized void sendMetricsToTimely(BaseQueryMetric queryMetric) {
-
-            if (timelyClient != null && queryMetric.getQueryType().equalsIgnoreCase("RunningQuery")) {
+        void sendMetricsToTimely(BaseQueryMetric queryMetric) {
+            synchronized (timelyClientLock) {
+                UdpClient client = timelyClient;
+                if (client == null || !queryMetric.getQueryType().equalsIgnoreCase("RunningQuery")) {
+                    return;
+                }
                 try {
                     String queryId = queryMetric.getQueryId();
                     BaseQueryMetric.Lifecycle lifecycle = queryMetric.getLifecycle();
@@ -573,7 +602,7 @@ public class QueryMetricsWriter {
 
                     String tags = formatTimelyTags(writerConfig.getTimelyMetricTags(), metricValues);
 
-                    timelyClient.open();
+                    client.open();
 
                     if (lifecycle.equals(Lifecycle.RESULTS) || lifecycle.equals(Lifecycle.NEXTTIMEOUT) || lifecycle.equals(Lifecycle.MAXRESULTS)) {
                         List<PageMetric> pageTimes = queryMetric.getPageTimes();
@@ -588,10 +617,9 @@ public class QueryMetricsWriter {
                                     callTime = pm.getReturnTime();
                                 }
                                 if (pm.getPagesize() > 0) {
-                                    timelyClient.write(formatTimelyMetric("dw.query.metrics.PAGE_METRIC.calltime", requestTime, callTime, tags));
+                                    client.write(formatTimelyMetric("dw.query.metrics.PAGE_METRIC.calltime", requestTime, callTime, tags));
                                     String callTimePerRecord = formatCallTimePerRecord(callTime, pm.getPagesize());
-                                    timelyClient.write(formatTimelyMetric("dw.query.metrics.PAGE_METRIC.calltimeperrecord", requestTime, callTimePerRecord,
-                                                    tags));
+                                    client.write(formatTimelyMetric("dw.query.metrics.PAGE_METRIC.calltimeperrecord", requestTime, callTimePerRecord, tags));
                                 }
                                 lastPageMetricMap.put(queryId, pm.getPageNumber());
 
@@ -601,10 +629,10 @@ public class QueryMetricsWriter {
 
                     if (lifecycle.equals(Lifecycle.CLOSED) || lifecycle.equals(Lifecycle.CANCELLED)) {
                         // write ELAPSED_TIME
-                        timelyClient.write(formatTimelyMetric("dw.query.metrics.ELAPSED_TIME", createDate, queryMetric.getElapsedTime(), tags));
+                        client.write(formatTimelyMetric("dw.query.metrics.ELAPSED_TIME", createDate, queryMetric.getElapsedTime(), tags));
 
                         // write NUM_RESULTS
-                        timelyClient.write(formatTimelyMetric("dw.query.metrics.NUM_RESULTS", createDate, queryMetric.getNumResults(), tags));
+                        client.write(formatTimelyMetric("dw.query.metrics.NUM_RESULTS", createDate, queryMetric.getNumResults(), tags));
 
                         // clean up last page map
                         lastPageMetricMap.remove(queryId);
@@ -616,10 +644,10 @@ public class QueryMetricsWriter {
                         if (createTime == -1) {
                             createTime = queryMetric.getSetupTime();
                         }
-                        timelyClient.write(formatTimelyMetric("dw.query.metrics.CREATE_TIME", createDate, createTime, tags));
+                        client.write(formatTimelyMetric("dw.query.metrics.CREATE_TIME", createDate, createTime, tags));
 
                         // write a COUNT value of 1 so that we can count total queries
-                        timelyClient.write(formatTimelyMetric("dw.query.metrics.COUNT", createDate, 1, tags));
+                        client.write(formatTimelyMetric("dw.query.metrics.COUNT", createDate, 1, tags));
                     }
 
                 } catch (Exception e) {
