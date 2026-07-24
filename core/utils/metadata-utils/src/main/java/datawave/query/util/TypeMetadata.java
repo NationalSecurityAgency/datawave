@@ -16,9 +16,12 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.KryoSerializable;
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
 import com.google.common.base.Splitter;
 import com.google.common.collect.HashMultimap;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -26,7 +29,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
-public class TypeMetadata implements Serializable {
+public class TypeMetadata implements Serializable, KryoSerializable {
 
     private Set<String> ingestTypes = new TreeSet<>();
 
@@ -375,11 +378,19 @@ public class TypeMetadata implements Serializable {
         String[] entries = parse(data, ';');
 
         if (entries.length > 2) {
+            // invert the index -> name mini-maps once so each field/value entry below is an O(1) lookup
+            // instead of rebuilding and linearly scanning an ImmutableMap per value (see git history for the
+            // prior implementation, which dominated profiler traces on large TypeMetadata instances)
+            Map<Integer,String> ingestTypesByIndex = invert(getIngestTypesMiniMap());
+            Map<Integer,String> dataTypesByIndex = invert(getDataTypesMiniMap());
+
             for (String entry : entries) {
                 if (entry.startsWith(INGESTTYPE_PREFIX)) {
                     setIngestTypesMiniMap(parseTypes(entry));
+                    ingestTypesByIndex = invert(getIngestTypesMiniMap());
                 } else if (entry.startsWith(DATATYPES_PREFIX)) {
                     setDataTypesMiniMap(parseTypes(entry));
+                    dataTypesByIndex = invert(getDataTypesMiniMap());
                 } else {
                     String[] entrySplits = parse(entry, ':');
 
@@ -389,27 +400,10 @@ public class TypeMetadata implements Serializable {
 
                     for (String aValue : values) {
                         if (!aValue.isEmpty()) { // ignore last entry for trailing comma
-                            // @formatter:off
-                        String[] vs = Iterables
-                                .toArray(Splitter.on(':')
-                                        .omitEmptyStrings()
-                                        .trimResults()
-                                        .split(aValue), String.class);
+                            String[] vs = Iterables.toArray(Splitter.on(':').omitEmptyStrings().trimResults().split(aValue), String.class);
 
-                        String ingestType = ImmutableMap.copyOf(getIngestTypesMiniMap())
-                                .entrySet()
-                                .stream()
-                                .filter(e -> e.getValue().equals(Integer.valueOf(vs[0])))
-                                .map(Entry::getKey)
-                                .findFirst().orElse("");
-
-                        String dataType = ImmutableMap.copyOf(getDataTypesMiniMap())
-                                .entrySet()
-                                .stream()
-                                .filter(e -> e.getValue().equals(Integer.valueOf(vs[1])))
-                                .map(Entry::getKey)
-                                .findFirst().orElse("");
-                        // @formatter:on
+                            String ingestType = ingestTypesByIndex.getOrDefault(Integer.valueOf(vs[0]), "");
+                            String dataType = dataTypesByIndex.getOrDefault(Integer.valueOf(vs[1]), "");
 
                             this.addTypeMetadata(entrySplits[0], ingestType, dataType);
                         }
@@ -418,6 +412,14 @@ public class TypeMetadata implements Serializable {
                 }
             }
         }
+    }
+
+    private static Map<Integer,String> invert(Map<String,Integer> nameToIndex) {
+        Map<Integer,String> byIndex = Maps.newHashMapWithExpectedSize(nameToIndex.size());
+        for (Entry<String,Integer> entry : nameToIndex.entrySet()) {
+            byIndex.put(entry.getValue(), entry.getKey());
+        }
+        return byIndex;
     }
 
     @Override
@@ -452,6 +454,62 @@ public class TypeMetadata implements Serializable {
         this.fieldNames = Sets.newTreeSet();
         this.typeMetadata = Maps.newHashMap();
         this.fromString((String) in.readObject());
+    }
+
+    /**
+     * Writes this instance directly from its underlying {@code typeMetadata} map, avoiding the {@link #toString()} round trip (and its mini-map bookkeeping)
+     * that {@link #writeObject(ObjectOutputStream)} relies on.
+     *
+     * @param kryo
+     *            the kryo instance
+     * @param output
+     *            the kryo output
+     */
+    @Override
+    public void write(Kryo kryo, Output output) {
+        output.writeInt(typeMetadata.size(), true);
+        for (Entry<String,Multimap<String,String>> ingestEntry : typeMetadata.entrySet()) {
+            output.writeString(ingestEntry.getKey());
+            Collection<Entry<String,String>> entries = ingestEntry.getValue().entries();
+            output.writeInt(entries.size(), true);
+            for (Entry<String,String> fieldEntry : entries) {
+                output.writeString(fieldEntry.getKey());
+                output.writeString(fieldEntry.getValue());
+            }
+        }
+    }
+
+    /**
+     * Reads this instance directly into its underlying {@code typeMetadata} map, avoiding the {@link #fromString(String)} parse (and its repeated index-to-name
+     * map lookups) that {@link #readObject(ObjectInputStream)} relies on.
+     *
+     * @param kryo
+     *            the kryo instance
+     * @param input
+     *            the kryo input
+     */
+    @Override
+    public void read(Kryo kryo, Input input) {
+        this.ingestTypes = Sets.newTreeSet();
+        this.fieldNames = Sets.newTreeSet();
+        this.typeMetadata = Maps.newHashMap();
+        this.ingestTypesMiniMap = new TreeMap<>();
+        this.dataTypesMiniMap = new TreeMap<>();
+
+        int numIngestTypes = input.readInt(true);
+        for (int i = 0; i < numIngestTypes; i++) {
+            String ingestType = input.readString();
+            int numEntries = input.readInt(true);
+            Multimap<String,String> fieldMap = HashMultimap.create();
+            for (int j = 0; j < numEntries; j++) {
+                String fieldName = input.readString();
+                String dataType = input.readString();
+                fieldMap.put(fieldName, dataType);
+                this.fieldNames.add(fieldName);
+            }
+            this.typeMetadata.put(ingestType, fieldMap);
+            this.ingestTypes.add(ingestType);
+        }
     }
 
     public static final TypeMetadata EMPTY_TYPE_METADATA = new EmptyTypeMetadata();
