@@ -6,10 +6,13 @@ import java.security.NoSuchAlgorithmException;
 
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileChecksum;
+import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import datawave.util.hdfs.HdfsFileUtils;
 
 /**
  * File System Watch
@@ -104,10 +107,11 @@ public abstract class FileSystemWatcher<V> extends Reloadable<V> {
 
         try {
 
-            lastChange = fs.getFileStatus(filePath).getModificationTime();
+            FileStatus status = fs.getFileStatus(filePath);
+            lastChange = status.getModificationTime();
             log.debug("Reload called {}", lastChange);
 
-            FSDataInputStream in = fs.open(filePath);
+            FSDataInputStream in = HdfsFileUtils.openFile(fs, filePath, status);
             V result = loadContents(in);
             in.close();
             return result;

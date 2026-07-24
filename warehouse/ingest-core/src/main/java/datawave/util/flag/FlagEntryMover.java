@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
+import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.slf4j.Logger;
@@ -13,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import com.google.common.cache.Cache;
 
 import datawave.util.flag.InputFile.TrackedDir;
+import datawave.util.hdfs.HdfsFileUtils;
 
 /**
  * Handles stage 1 of the job creation flow. Checks for destination directories, creates as needed, and returns information on whether it was successful.
@@ -67,11 +69,13 @@ public class FlagEntryMover extends SimpleMover {
     private boolean resolveConflict(final Path src, final Path dest) throws IOException {
         // check to see if checksum matches
         boolean resolved = false;
-        long srcLen = this.fs.getFileStatus(src).getLen();
-        long destLen = this.fs.getFileStatus(dest).getLen();
+        FileStatus srcStatus = this.fs.getFileStatus(src);
+        FileStatus dstStatus = this.fs.getFileStatus(dest);
+        long srcLen = srcStatus.getLen();
+        long destLen = dstStatus.getLen();
         if (srcLen == destLen) {
-            String sumSrc = calculateChecksum(src);
-            String sumDest = calculateChecksum(dest);
+            String sumSrc = calculateChecksum(src, srcStatus);
+            String sumDest = calculateChecksum(dest, dstStatus);
             if (!sumSrc.equals(sumDest)) {
                 resolved = true;
             }
@@ -106,8 +110,8 @@ public class FlagEntryMover extends SimpleMover {
      * @throws IOException
      *             for issues with read/write
      */
-    private String calculateChecksum(final Path file) throws IOException {
-        try (final InputStream is = this.fs.open(file)) {
+    private String calculateChecksum(final Path file, final FileStatus status) throws IOException {
+        try (final InputStream is = HdfsFileUtils.openFile(fs, file, status)) {
             byte[] buf = new byte[8096];
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             int len = 0;

@@ -56,6 +56,7 @@ import org.apache.accumulo.core.spi.crypto.CryptoEnvironment;
 import org.apache.accumulo.core.spi.crypto.CryptoService;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
+import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.InputSplit;
@@ -521,13 +522,14 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
 
                 closeable.setInputStream(fs.open(path));
 
-                long length = fs.getFileStatus(path).getLen();
+                FileStatus status = fs.getFileStatus(path);
+                long length = status.getLen();
 
                 //@formatter:off
                 CachableBlockFile.CachableBuilder builder = new CachableBlockFile.CachableBuilder()
                         .input(closeable.getInputStream(), CachableBlockFile.pathToCacheId(path))
                         .cryptoService(CRYPTO_SERVICE)
-                        .fsPath(fs, path)
+                        .fsPath(fs, path, status)
                         .length(length)
                         .conf(conf);
                 //@formatter:on

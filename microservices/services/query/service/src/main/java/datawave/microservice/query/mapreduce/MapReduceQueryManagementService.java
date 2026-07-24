@@ -66,6 +66,7 @@ import datawave.microservice.query.mapreduce.status.MapReduceQueryCache;
 import datawave.microservice.query.mapreduce.status.MapReduceQueryStatus;
 import datawave.microservice.query.storage.QueryStatus;
 import datawave.security.util.ProxiedEntityUtils;
+import datawave.util.hdfs.HdfsFileUtils;
 import datawave.webservice.common.audit.AuditParameters;
 import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
@@ -610,7 +611,7 @@ public class MapReduceQueryManagementService implements MapReduceQueryRequestHan
             // update the file status to reflect a relative file path
             fileStatus.setPath(getRelativeFilePath(filesystem.getFileStatus(resultsPath), fileStatus));
 
-            return new AbstractMap.SimpleEntry<>(fileStatus, getFileInputStream(resultFile));
+            return new AbstractMap.SimpleEntry<>(fileStatus, getFileInputStream(filesystem, resultFile, fileStatus));
         } catch (QueryException e) {
             throw e;
         } catch (Exception e) {
@@ -619,16 +620,12 @@ public class MapReduceQueryManagementService implements MapReduceQueryRequestHan
         }
     }
 
-    private FSDataInputStream getFileInputStream(FileSystem filesystem, Path filePath) throws QueryException {
+    private FSDataInputStream getFileInputStream(FileSystem filesystem, Path filePath, FileStatus status) throws QueryException {
         try {
-            return filesystem.open(filePath);
+            return HdfsFileUtils.openFile(filesystem, filePath, status);
         } catch (IOException e) {
             throw new NotFoundQueryException("Unable to open result file", e, HttpStatus.SC_INTERNAL_SERVER_ERROR + "-1");
         }
-    }
-
-    private FSDataInputStream getFileInputStream(Path filePath) throws QueryException, IOException {
-        return getFileInputStream(FileSystem.get(configuration), filePath);
     }
 
     public Map<FileStatus,FSDataInputStream> getAllFiles(String id, DatawaveUserDetails currentUser) throws QueryException {
@@ -646,7 +643,7 @@ public class MapReduceQueryManagementService implements MapReduceQueryRequestHan
             if (mapReduceQueryStatus.getResultsDirectory() != null && !mapReduceQueryStatus.getResultsDirectory().isEmpty()) {
                 for (LocatedFileStatus fileStatus : listFiles(mapReduceQueryStatus.getResultsDirectory())) {
                     if (fileStatus.isFile()) {
-                        FSDataInputStream inputStream = getFileInputStream(fs, fileStatus.getPath());
+                        FSDataInputStream inputStream = getFileInputStream(fs, fileStatus.getPath(), fileStatus);
 
                         // update the file status to reflect a relative file path
                         fileStatus.setPath(getRelativeFilePath(basePathStatus, fileStatus));
