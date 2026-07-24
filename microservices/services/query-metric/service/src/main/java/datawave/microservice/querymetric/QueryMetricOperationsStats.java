@@ -1,5 +1,6 @@
 package datawave.microservice.querymetric;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.concurrent.TimeUnit.MINUTES;
 
 import static datawave.microservice.querymetric.config.HazelcastMetricCacheConfiguration.INCOMING_METRICS;
@@ -41,6 +42,7 @@ import datawave.util.timely.UdpClient;
 public class QueryMetricOperationsStats {
 
     private static final Pattern TIMELY_WHITESPACE_PATTERN = Pattern.compile("\\s", Pattern.UNICODE_CHARACTER_CLASS);
+    private static final int MAX_UDP_METRIC_SIZE = 65_507;
     private Logger log = LoggerFactory.getLogger(getClass());
     private static final String RatePerSec_1_Min_Avg = ".RatePerSec_1_Min_Avg";
     private static final String RatePerSec_5_Min_Avg = ".RatePerSec_5_Min_Avg";
@@ -157,7 +159,7 @@ public class QueryMetricOperationsStats {
                 for (String metric : serviceStatsToWriteToTimely) {
                     if (this.timelyProperties.getProtocol().equals(TimelyProperties.Protocol.TCP)) {
                         this.timelyTcpClient.write(metric);
-                    } else {
+                    } else if (!isOversizedUdpMetric(metric)) {
                         this.timelyUdpClient.write(metric);
                     }
                 }
@@ -190,6 +192,10 @@ public class QueryMetricOperationsStats {
                     if (this.timelyProperties.getProtocol().equals(TimelyProperties.Protocol.TCP)) {
                         this.timelyTcpClient.write(metric);
                     } else {
+                        if (isOversizedUdpMetric(metric)) {
+                            itr.remove();
+                            continue;
+                        }
                         this.timelyUdpClient.write(metric);
                     }
                     if (this.timelyProperties.getProtocol().equals(TimelyProperties.Protocol.UDP)) {
@@ -210,6 +216,15 @@ public class QueryMetricOperationsStats {
                 }
             }
         }
+    }
+
+    private boolean isOversizedUdpMetric(String metric) {
+        int metricSize = metric.getBytes(UTF_8).length;
+        if (metricSize > MAX_UDP_METRIC_SIZE) {
+            log.error("Skipping Timely UDP metric with {} UTF-8 bytes; maximum is {}", metricSize, MAX_UDP_METRIC_SIZE);
+            return true;
+        }
+        return false;
     }
 
     public Map<String,String> getLocalMapStats(LocalMapStats localMapStats) {

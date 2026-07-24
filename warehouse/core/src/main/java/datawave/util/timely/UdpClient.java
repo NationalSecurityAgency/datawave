@@ -11,6 +11,8 @@ import java.net.UnknownHostException;
 
 public class UdpClient implements AutoCloseable {
 
+    public static final int MAX_DATAGRAM_PAYLOAD_SIZE = 65_507;
+
     private final String hostname;
     private final int port;
     private final HostResolver resolver;
@@ -47,7 +49,11 @@ public class UdpClient implements AutoCloseable {
         if (null == this.sock) {
             throw new IllegalStateException("Must call open first");
         }
-        this.packet.setData(metric.getBytes(UTF_8));
+        byte[] metricBytes = metric.getBytes(UTF_8);
+        if (metricBytes.length > MAX_DATAGRAM_PAYLOAD_SIZE) {
+            throw new DatagramTooLargeException(metricBytes.length);
+        }
+        this.packet.setData(metricBytes);
         this.sock.send(packet);
     }
 
@@ -67,5 +73,13 @@ public class UdpClient implements AutoCloseable {
     @FunctionalInterface
     interface HostResolver {
         InetAddress resolve(String hostname) throws UnknownHostException;
+    }
+
+    public static final class DatagramTooLargeException extends IOException {
+        private static final long serialVersionUID = 1L;
+
+        private DatagramTooLargeException(int payloadSize) {
+            super("Timely UDP metric is " + payloadSize + " bytes; maximum is " + MAX_DATAGRAM_PAYLOAD_SIZE);
+        }
     }
 }

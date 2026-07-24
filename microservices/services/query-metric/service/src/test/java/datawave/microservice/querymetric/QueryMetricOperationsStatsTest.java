@@ -1,5 +1,6 @@
 package datawave.microservice.querymetric;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -7,6 +8,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -180,6 +182,26 @@ class QueryMetricOperationsStatsTest {
         assertTrue(stats.queryStatsToWriteToTimely.isEmpty());
         verify(client, times(2)).open();
         verify(client).write("metric");
+    }
+
+    @Test
+    void oversizedUdpMetricDoesNotBlockValidMetrics() throws IOException {
+        TimelyProperties properties = new TimelyProperties();
+        properties.setProtocol(TimelyProperties.Protocol.UDP);
+        QueryMetricOperationsStats stats = new QueryMetricOperationsStats(properties, null, null, null, null);
+        UdpClient client = mock(UdpClient.class);
+        ReflectionTestUtils.setField(stats, "timelyUdpClient", client);
+        properties.setEnabled(true);
+        String oversized = "\u00e9".repeat(32_754);
+        assertTrue(oversized.length() < 65_507);
+        assertTrue(oversized.getBytes(UTF_8).length > 65_507);
+        stats.queryStatsToWriteToTimely.addAll(Arrays.asList(oversized, "valid"));
+
+        stats.writeQueryStatsToTimely();
+
+        assertTrue(stats.queryStatsToWriteToTimely.isEmpty());
+        verify(client, never()).write(oversized);
+        verify(client).write("valid");
     }
 
     private static QueryMetricOperationsStats serviceStats(TimelyProperties properties) {

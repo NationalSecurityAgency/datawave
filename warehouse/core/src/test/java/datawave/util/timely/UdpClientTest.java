@@ -52,4 +52,18 @@ public class UdpClientTest {
         assertThrows(IllegalArgumentException.class, () -> new UdpClient("timely.test", -1));
         assertThrows(IllegalArgumentException.class, () -> new UdpClient("timely.test", 65536));
     }
+
+    @Test
+    public void rejectsOversizedUtf8Datagram() throws Exception {
+        try (UdpClient client = new UdpClient("localhost", 4242)) {
+            client.open();
+            String metric = "\u00e9".repeat((UdpClient.MAX_DATAGRAM_PAYLOAD_SIZE / 2) + 1);
+            assertTrue(metric.length() < UdpClient.MAX_DATAGRAM_PAYLOAD_SIZE);
+            assertTrue(metric.getBytes(UTF_8).length > UdpClient.MAX_DATAGRAM_PAYLOAD_SIZE);
+
+            UdpClient.DatagramTooLargeException failure = assertThrows(UdpClient.DatagramTooLargeException.class, () -> client.write(metric));
+
+            assertTrue(failure.getMessage().contains(Integer.toString(metric.getBytes(UTF_8).length)));
+        }
+    }
 }
