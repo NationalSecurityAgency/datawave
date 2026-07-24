@@ -19,6 +19,8 @@ import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import javax.annotation.PreDestroy;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -60,6 +62,7 @@ public class QueryMetricOperationsStats {
     private Map<METERS,Meter> meterMap = new HashMap<>();
     private TcpClient timelyTcpClient;
     private UdpClient timelyUdpClient;
+    private boolean timelyClientsShutdown;
 
     protected TimelyProperties timelyProperties;
     protected ShardTableQueryMetricHandler handler;
@@ -140,8 +143,8 @@ public class QueryMetricOperationsStats {
         }
     }
 
-    public void writeServiceStatsToTimely() {
-        if (this.timelyProperties.isEnabled()) {
+    public synchronized void writeServiceStatsToTimely() {
+        if (this.timelyProperties.isEnabled() && !timelyClientsShutdown) {
             List<String> serviceStatsToWriteToTimely = new ArrayList<>();
 
             long timestamp = System.currentTimeMillis();
@@ -173,8 +176,8 @@ public class QueryMetricOperationsStats {
 
     }
 
-    public void writeQueryStatsToTimely() {
-        if (this.timelyProperties.isEnabled()) {
+    public synchronized void writeQueryStatsToTimely() {
+        if (this.timelyProperties.isEnabled() && !timelyClientsShutdown) {
             List<String> tempMetricsToWrite = new ArrayList<>();
             // add metrics to a new list so that issues with Timely don't indirectly
             // prevent the metric service from handling incoming metric updates
@@ -214,6 +217,34 @@ public class QueryMetricOperationsStats {
                 if (this.queryStatsToWriteToTimely.size() > 10000) {
                     this.queryStatsToWriteToTimely.clear();
                 }
+            }
+        }
+    }
+
+    @PreDestroy
+    public void shutdown() {
+        TcpClient tcpClient;
+        UdpClient udpClient;
+        synchronized (this) {
+            if (timelyClientsShutdown) {
+                return;
+            }
+            timelyClientsShutdown = true;
+            tcpClient = timelyTcpClient;
+            timelyTcpClient = null;
+            udpClient = timelyUdpClient;
+            timelyUdpClient = null;
+        }
+        closeTimelyClient("TCP", tcpClient);
+        closeTimelyClient("UDP", udpClient);
+    }
+
+    private void closeTimelyClient(String protocol, AutoCloseable client) {
+        if (client != null) {
+            try {
+                client.close();
+            } catch (Exception e) {
+                log.error("Exception closing Timely {} client: {}", protocol, e.getMessage(), e);
             }
         }
     }

@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -20,7 +21,11 @@ import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 
+import javax.annotation.PreDestroy;
+
 import org.junit.jupiter.api.Test;
+import org.mockito.InOrder;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import datawave.microservice.querymetric.config.TimelyProperties;
@@ -204,6 +209,56 @@ class QueryMetricOperationsStatsTest {
         verify(client).write("valid");
     }
 
+    @Test
+    void shutdownClosesEachInitializedTimelyClientOnce() throws IOException {
+        QueryMetricOperationsStats stats = new QueryMetricOperationsStats(new TimelyProperties(), null, null, null, null);
+        TcpClient tcpClient = mock(TcpClient.class);
+        UdpClient udpClient = mock(UdpClient.class);
+        doThrow(new IOException("close failed")).when(tcpClient).close();
+        ReflectionTestUtils.setField(stats, "timelyTcpClient", tcpClient);
+        ReflectionTestUtils.setField(stats, "timelyUdpClient", udpClient);
+
+        stats.shutdown();
+        stats.shutdown();
+
+        verify(tcpClient).close();
+        verify(udpClient).close();
+    }
+
+    @Test
+    void shutdownHandlesPartiallyInitializedTimelyClients() throws IOException {
+        QueryMetricOperationsStats stats = new QueryMetricOperationsStats(new TimelyProperties(), null, null, null, null);
+        UdpClient udpClient = mock(UdpClient.class);
+        ReflectionTestUtils.setField(stats, "timelyUdpClient", udpClient);
+
+        stats.shutdown();
+        stats.shutdown();
+
+        verify(udpClient).close();
+    }
+
+    @Test
+    void springShutdownWritesFinalBatchBeforeClosingTimelyClient() throws IOException {
+        TimelyProperties properties = new TimelyProperties();
+        properties.setProtocol(TimelyProperties.Protocol.UDP);
+        QueryMetricOperationsStats stats = new QueryMetricOperationsStats(properties, null, null, null, null);
+        UdpClient udpClient = mock(UdpClient.class);
+        ReflectionTestUtils.setField(stats, "timelyUdpClient", udpClient);
+        properties.setEnabled(true);
+        stats.queryStatsToWriteToTimely.add("metric");
+
+        try (AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext()) {
+            context.registerBean(QueryMetricOperationsStats.class, () -> stats);
+            context.registerBean(FinalMetricWriter.class);
+            context.refresh();
+        }
+
+        InOrder order = inOrder(udpClient);
+        order.verify(udpClient).open();
+        order.verify(udpClient).write("metric");
+        order.verify(udpClient).close();
+    }
+
     private static QueryMetricOperationsStats serviceStats(TimelyProperties properties) {
         return new QueryMetricOperationsStats(properties, null, null, null, null) {
             @Override
@@ -224,6 +279,19 @@ class QueryMetricOperationsStatsTest {
         metric.setUser(user);
         metric.setQueryLogic(logic);
         return metric;
+    }
+
+    static class FinalMetricWriter {
+        private final QueryMetricOperationsStats stats;
+
+        FinalMetricWriter(QueryMetricOperationsStats stats) {
+            this.stats = stats;
+        }
+
+        @PreDestroy
+        void shutdown() {
+            stats.writeQueryStatsToTimely();
+        }
     }
 
 }
