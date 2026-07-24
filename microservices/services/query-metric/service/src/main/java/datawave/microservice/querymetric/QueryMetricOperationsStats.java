@@ -158,12 +158,11 @@ public class QueryMetricOperationsStats {
                         this.timelyUdpClient.write(metric);
                     }
                 }
-            } catch (Exception e) {
-                log.error("Exception writing metrics to Timely: " + e.getMessage());
-            } finally {
                 if (this.timelyProperties.getProtocol().equals(TimelyProperties.Protocol.TCP)) {
                     this.timelyTcpClient.flush();
                 }
+            } catch (Exception e) {
+                log.error("Exception writing metrics to Timely: " + e.getMessage());
             }
         }
 
@@ -187,8 +186,14 @@ public class QueryMetricOperationsStats {
                     } else {
                         this.timelyUdpClient.write(metric);
                     }
-                    // remove metric if write is successful
-                    itr.remove();
+                    if (this.timelyProperties.getProtocol().equals(TimelyProperties.Protocol.UDP)) {
+                        // UDP sends each metric immediately, so a successful write can be removed.
+                        itr.remove();
+                    }
+                }
+                if (this.timelyProperties.getProtocol().equals(TimelyProperties.Protocol.TCP)) {
+                    this.timelyTcpClient.flush();
+                    tempMetricsToWrite.clear();
                 }
             } catch (Exception e) {
                 log.error("Exception writing metrics to Timely: " + e.getMessage());
@@ -196,10 +201,6 @@ public class QueryMetricOperationsStats {
                 this.queryStatsToWriteToTimely.addAll(tempMetricsToWrite);
                 if (this.queryStatsToWriteToTimely.size() > 10000) {
                     this.queryStatsToWriteToTimely.clear();
-                }
-            } finally {
-                if (this.timelyProperties.getProtocol().equals(TimelyProperties.Protocol.TCP)) {
-                    this.timelyTcpClient.flush();
                 }
             }
         }

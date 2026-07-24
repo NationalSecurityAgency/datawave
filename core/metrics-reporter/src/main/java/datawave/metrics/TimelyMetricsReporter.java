@@ -224,8 +224,9 @@ public class TimelyMetricsReporter extends ScheduledReporter {
     }
 
     protected synchronized void flush() {
-        if (out != null) {
-            out.flush();
+        if (out != null && out.checkError()) {
+            logger.error("Error flushing metrics to Timely at {}:{}", timelyHost, timelyPort);
+            closeConnection();
         }
     }
 

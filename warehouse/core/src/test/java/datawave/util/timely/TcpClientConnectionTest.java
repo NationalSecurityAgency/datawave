@@ -1,12 +1,14 @@
 package datawave.util.timely;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.UncheckedIOException;
 import java.lang.reflect.Field;
 import java.net.Socket;
 import java.net.SocketAddress;
@@ -76,6 +78,39 @@ public class TcpClientConnectionTest {
         assertEquals(1, socketRequests.get());
     }
 
+    @Test
+    public void flushFailureIsReportedAndClosesConnection() throws IOException {
+        TrackingSocket socket = new TrackingSocket(false);
+        socket.outputStream = new FailingFlushOutputStream();
+        TcpClient client = new TcpClient("localhost", 4242, () -> socket);
+        client.open();
+        client.write("put metric 1 1\n");
+        assertFalse(socket.closed);
+
+        UncheckedIOException exception = assertThrows(UncheckedIOException.class, client::flush);
+
+        assertTrue(exception.getMessage().contains("localhost:4242"));
+        assertTrue(socket.closed);
+        assertEquals(1, socket.closeCount);
+    }
+
+    @Test
+    public void writeFailureIsReportedBeforeReconnect() throws IOException {
+        TrackingSocket failedSocket = new TrackingSocket(false);
+        failedSocket.outputStream = new FailingWriteOutputStream();
+        TrackingSocket retrySocket = new TrackingSocket(false);
+        TcpClient client = new TcpClient("localhost", 4242, socketSupplier(failedSocket, retrySocket));
+        client.open();
+
+        assertThrows(IOException.class, () -> client.write("x".repeat(16_384)));
+        assertTrue(failedSocket.closed);
+        assertFalse(retrySocket.connected);
+
+        client.write("put metric 1 1\n");
+        client.flush();
+        assertTrue(retrySocket.connected);
+    }
+
     private static java.util.function.Supplier<Socket> socketSupplier(Socket... sockets) {
         Queue<Socket> queue = new ArrayDeque<>(Arrays.asList(sockets));
         return queue::remove;
@@ -108,6 +143,7 @@ public class TcpClientConnectionTest {
         private int connectTimeout;
         private long connectFailureTime;
         private IOException connectFailure;
+        private OutputStream outputStream = new ByteArrayOutputStream();
 
         private TrackingSocket(boolean failOutputStream) {
             this.failOutputStream = failOutputStream;
@@ -139,13 +175,34 @@ public class TcpClientConnectionTest {
             if (failOutputStream) {
                 throw new IOException("writer setup failed");
             }
-            return new ByteArrayOutputStream();
+            return outputStream;
         }
 
         @Override
         public synchronized void close() {
             closed = true;
             closeCount++;
+        }
+    }
+
+    private static class FailingFlushOutputStream extends OutputStream {
+        private int flushCount;
+
+        @Override
+        public void write(int value) {}
+
+        @Override
+        public void flush() throws IOException {
+            if (++flushCount > 1) {
+                throw new IOException("flush failed");
+            }
+        }
+    }
+
+    private static class FailingWriteOutputStream extends OutputStream {
+        @Override
+        public void write(int value) throws IOException {
+            throw new IOException("write failed");
         }
     }
 }

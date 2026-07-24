@@ -3,15 +3,26 @@ package datawave.microservice.querymetric;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
+import java.io.IOException;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import datawave.microservice.querymetric.config.TimelyProperties;
+import datawave.util.timely.TcpClient;
+import datawave.util.timely.UdpClient;
 
 class QueryMetricOperationsStatsTest {
 
@@ -74,6 +85,63 @@ class QueryMetricOperationsStatsTest {
         assertEquals(Long.valueOf(2L), stats.hostCountMap.get("host_name"));
         assertEquals(Long.valueOf(2L), stats.userCountMap.get("user_name"));
         assertEquals(Long.valueOf(2L), stats.logicCountMap.get("logic_name"));
+    }
+
+    @Test
+    void tcpMetricsRemainQueuedUntilFlushSucceeds() {
+        TimelyProperties properties = new TimelyProperties();
+        properties.setProtocol(TimelyProperties.Protocol.TCP);
+        QueryMetricOperationsStats stats = new QueryMetricOperationsStats(properties, null, null, null, null);
+        TcpClient client = mock(TcpClient.class);
+        doThrow(new IllegalStateException("flush failed")).doNothing().when(client).flush();
+        ReflectionTestUtils.setField(stats, "timelyTcpClient", client);
+        properties.setEnabled(true);
+        stats.queryStatsToWriteToTimely.add("put first 1 1\n");
+        stats.queryStatsToWriteToTimely.add("put second 1 2\n");
+
+        stats.writeQueryStatsToTimely();
+        assertEquals(2, stats.queryStatsToWriteToTimely.size());
+
+        stats.writeQueryStatsToTimely();
+        assertTrue(stats.queryStatsToWriteToTimely.isEmpty());
+        verify(client, times(2)).flush();
+    }
+
+    @Test
+    void tcpMetricsRemainQueuedAfterWriteFailure() throws IOException {
+        TimelyProperties properties = new TimelyProperties();
+        properties.setProtocol(TimelyProperties.Protocol.TCP);
+        QueryMetricOperationsStats stats = new QueryMetricOperationsStats(properties, null, null, null, null);
+        TcpClient client = mock(TcpClient.class);
+        doThrow(new IOException("write failed")).doNothing().when(client).write("first");
+        ReflectionTestUtils.setField(stats, "timelyTcpClient", client);
+        properties.setEnabled(true);
+        stats.queryStatsToWriteToTimely.addAll(Arrays.asList("first", "second"));
+
+        stats.writeQueryStatsToTimely();
+        assertEquals(Arrays.asList("first", "second"), stats.queryStatsToWriteToTimely);
+
+        stats.writeQueryStatsToTimely();
+        assertTrue(stats.queryStatsToWriteToTimely.isEmpty());
+        verify(client, times(2)).write("first");
+        verify(client).write("second");
+        verify(client).flush();
+    }
+
+    @Test
+    void udpMetricsOnlyRequeueUnsentRemainder() throws IOException {
+        TimelyProperties properties = new TimelyProperties();
+        properties.setProtocol(TimelyProperties.Protocol.UDP);
+        QueryMetricOperationsStats stats = new QueryMetricOperationsStats(properties, null, null, null, null);
+        UdpClient client = mock(UdpClient.class);
+        doNothing().doThrow(new IOException("send failed")).when(client).write(anyString());
+        ReflectionTestUtils.setField(stats, "timelyUdpClient", client);
+        properties.setEnabled(true);
+        stats.queryStatsToWriteToTimely.addAll(Arrays.asList("first", "second", "third"));
+
+        stats.writeQueryStatsToTimely();
+
+        assertEquals(Arrays.asList("second", "third"), stats.queryStatsToWriteToTimely);
     }
 
     private static QueryMetric newMetric(BaseQueryMetric.Lifecycle lifecycle, String host, String user, String logic) {

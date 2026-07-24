@@ -2,6 +2,7 @@ package datawave.util.timely;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.concurrent.TimeUnit;
@@ -71,11 +72,16 @@ public class TcpClient implements AutoCloseable {
             throw new IOException();
         }
         out.write(metric);
+        if (out.checkError()) {
+            closeConnection();
+            throw new IOException("Error writing metric to Timely at " + host + ":" + port);
+        }
     }
 
     public synchronized void flush() {
-        if (null != out) {
-            out.flush();
+        if (null != out && out.checkError()) {
+            closeConnection();
+            throw new UncheckedIOException("Error flushing metrics to Timely at " + host + ":" + port, new IOException("PrintWriter reported an error"));
         }
     }
 
@@ -92,7 +98,7 @@ public class TcpClient implements AutoCloseable {
     }
 
     private synchronized int connect() {
-        if (null != sock && (!sock.isConnected() || null == out || out.checkError())) {
+        if (null != sock && (!sock.isConnected() || null == out)) {
             closeConnection();
         }
         if (null == sock) {

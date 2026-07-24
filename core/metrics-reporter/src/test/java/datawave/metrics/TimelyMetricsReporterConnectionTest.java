@@ -2,6 +2,7 @@ package datawave.metrics;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -93,6 +94,21 @@ class TimelyMetricsReporterConnectionTest {
                         () -> new TimelyMetricsReporterFactory().forRegistry(new MetricRegistry()).withConnectTimeout(0, TimeUnit.MILLISECONDS));
     }
 
+    @Test
+    void flushFailureClosesConnection() {
+        TrackingSocket socket = new TrackingSocket(false);
+        socket.outputStream = new FailingFlushOutputStream();
+        TimelyMetricsReporter reporter = newReporter(() -> socket);
+        assertTrue(reporter.connect());
+        reporter.reportMetric("put metric 1 1\n");
+
+        reporter.flush();
+
+        assertTrue(socket.closed);
+        assertNull(reporter.sock);
+        assertNull(reporter.out);
+    }
+
     private static TimelyMetricsReporter newReporter(Supplier<Socket> socketSupplier) {
         return new TimelyMetricsReporter("localhost", 4242, new MetricRegistry(), "test", MetricFilter.ALL, TimeUnit.SECONDS, TimeUnit.MILLISECONDS,
                         socketSupplier);
@@ -111,6 +127,7 @@ class TimelyMetricsReporterConnectionTest {
         private int connectTimeout;
         private long connectFailureTime;
         private IOException connectFailure;
+        private OutputStream outputStream = new ByteArrayOutputStream();
 
         private TrackingSocket(boolean failOutputStream) {
             this.failOutputStream = failOutputStream;
@@ -142,13 +159,23 @@ class TimelyMetricsReporterConnectionTest {
             if (failOutputStream) {
                 throw new IOException("writer setup failed");
             }
-            return new ByteArrayOutputStream();
+            return outputStream;
         }
 
         @Override
         public synchronized void close() {
             closed = true;
             closeCount++;
+        }
+    }
+
+    private static class FailingFlushOutputStream extends OutputStream {
+        @Override
+        public void write(int value) {}
+
+        @Override
+        public void flush() throws IOException {
+            throw new IOException("flush failed");
         }
     }
 }
