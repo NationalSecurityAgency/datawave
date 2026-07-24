@@ -3,6 +3,7 @@ package datawave.query.util;
 import static datawave.table.constants.TableName.METADATA;
 import static datawave.table.constants.TableName.SHARD;
 import static datawave.table.constants.TableName.SHARD_INDEX;
+import static datawave.table.constants.TableName.SHARD_RINDEX;
 
 import java.util.Arrays;
 import java.util.Date;
@@ -22,6 +23,7 @@ import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.user.SummingCombiner;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
@@ -31,6 +33,7 @@ import org.slf4j.LoggerFactory;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 
+import datawave.data.ColumnFamilyConstants;
 import datawave.data.type.Type;
 import datawave.ingest.protobuf.TermWeight;
 import datawave.ingest.protobuf.Uid;
@@ -48,6 +51,13 @@ import datawave.util.time.DateHelper;
  * </ul>
  * The simplest use of this class relies on default values for the row and datatype. Methods are provided for operators who require unique rows and datatypes,
  * but this information must be tracked separately.
+ * <p>
+ * <b>Multiple datatypes:</b> {@link #registerColumns(String, String, List)} and {@link #writeFV(String, String, int, String, String)} accept an explicit
+ * datatype, so a field's shard/event/index rows can be written per-datatype. However the column gating tracked by {@link #fieldColumns} is keyed by field name
+ * only, not by (field, datatype) - so a field cannot be indexed for one datatype and unindexed for another via {@link #registerColumns}. To express a field
+ * index hole that differs by datatype, index the field the same way for every datatype via {@code registerColumns}, then use
+ * {@link #writeMetadataCounts(String, String, String, long, long)} to write the per-datatype, per-day frequency/index counts that
+ * {@code AllFieldMetadataHelper#getFieldIndexHoles} actually reads.
  */
 public class AbstractIngest {
 
@@ -74,6 +84,7 @@ public class AbstractIngest {
 
         MacTestUtil.createOrRecreate(tops, METADATA);
         MacTestUtil.createOrRecreate(tops, SHARD_INDEX);
+        MacTestUtil.createOrRecreate(tops, SHARD_RINDEX);
         MacTestUtil.createOrRecreate(tops, SHARD);
 
         SecurityOperations sops = client.securityOperations();
@@ -81,7 +92,7 @@ public class AbstractIngest {
     }
 
     /**
-     * Registers a field and it's normalizer. For now fields can have at most one normalizer.
+     * Registers a field and it's normalizer for the default datatype. For now fields can have at most one normalizer.
      *
      * @param field
      *            the field
@@ -89,10 +100,24 @@ public class AbstractIngest {
      *            the normalizer
      */
     public void registerField(String field, Type<?> normalizer) {
+        registerField(field, DATATYPE, normalizer);
+    }
+
+    /**
+     * Registers a field and it's normalizer for the given datatype. For now fields can have at most one normalizer.
+     *
+     * @param field
+     *            the field
+     * @param datatype
+     *            the datatype
+     * @param normalizer
+     *            the normalizer
+     */
+    public void registerField(String field, String datatype, Type<?> normalizer) {
         try (BatchWriter bw = client.createBatchWriter(METADATA)) {
             normalizers.put(field, normalizer);
             Mutation m = new Mutation(field);
-            m.put("t", DATATYPE + "\0" + normalizer.getClass().getName(), EMPTY_VALUE);
+            m.put("t", datatype + "\0" + normalizer.getClass().getName(), EMPTY_VALUE);
             bw.addMutation(m);
         } catch (TableNotFoundException | MutationsRejectedException e) {
             throw new RuntimeException(e);
@@ -123,6 +148,86 @@ public class AbstractIngest {
                         throw new RuntimeException("Unsupported metadata column: " + column);
                 }
             }
+            bw.addMutation(m);
+        } catch (TableNotFoundException | MutationsRejectedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Mark the given columns as write-gated for a field (enabling {@link #writeFV}/{@link #writeTokenized} to write the corresponding shard/index rows) without
+     * writing {@link #registerColumns}'s boolean METADATA declaration row (a {@code cf=<column>, cq=<datatype>} row with no date).
+     * <p>
+     * Use this instead of {@link #registerColumns} for the {@code i}/{@code ri} columns of a field driven by {@link #writeMetadataCounts}: that declaration row
+     * is indistinguishable from a dateless index boundary marker to {@code AllFieldMetadataHelper.FieldIndexHoleFinder}, and since it is written with
+     * Accumulo's current-time default timestamp, it gets misread as an index boundary at "yesterday" (relative to ingest time) - corrupting hole detection for
+     * any query date range that doesn't happen to fall after that point.
+     *
+     * @param field
+     *            the field name
+     * @param columns
+     *            the write-gating columns, e.g. {@code List.of("i", "e")}
+     */
+    public void registerWriteGatingColumns(String field, List<String> columns) {
+        for (String column : columns) {
+            switch (column) {
+                case "i":
+                case "ri":
+                case "e":
+                case "tf":
+                case "content":
+                case "t":
+                    break;
+                default:
+                    throw new RuntimeException("Unsupported metadata column: " + column);
+            }
+        }
+        fieldColumns.putAll(field, columns);
+    }
+
+    /**
+     * Write the frequency and index day-counts for a field, datatype, and date that {@code AllFieldMetadataHelper#getFieldIndexHoles} reads to determine field
+     * index holes, using the default datatype. A day is a field index hole when a frequency count is written but the index count is absent, or the ratio of
+     * index count to frequency count falls below the configured minimum threshold.
+     *
+     * @param field
+     *            the field name
+     * @param date
+     *            the date, in {@code yyyyMMdd} format
+     * @param freqCount
+     *            the frequency count
+     * @param indexCount
+     *            the index count
+     */
+    public void writeMetadataCounts(String field, String date, long freqCount, long indexCount) {
+        writeMetadataCounts(field, DATATYPE, date, freqCount, indexCount);
+    }
+
+    /**
+     * Write the frequency and index day-counts for a field, datatype, and date that {@code AllFieldMetadataHelper#getFieldIndexHoles} reads to determine field
+     * index holes. A day is a field index hole when a frequency count is written but the index count is absent, or the ratio of index count to frequency count
+     * falls below the configured minimum threshold.
+     *
+     * @param field
+     *            the field name
+     * @param datatype
+     *            the datatype
+     * @param date
+     *            the date, in {@code yyyyMMdd} format
+     * @param freqCount
+     *            the frequency count
+     * @param indexCount
+     *            the index count. Note the index/reverse-index count row is always written, even when {@code 0} - the underlying hole finder treats a missing
+     *            index entry as an unconditional hole rather than running it through the threshold comparison, which would otherwise make it impossible to
+     *            express a {@code 0} frequency count with a matching {@code 0} index count (i.e. a day with no data at all) as "not a hole".
+     */
+    public void writeMetadataCounts(String field, String datatype, String date, long freqCount, long indexCount) {
+        try (BatchWriter bw = client.createBatchWriter(METADATA)) {
+            Mutation m = new Mutation(field);
+            Text cq = new Text(datatype + "\0" + date);
+            m.put(ColumnFamilyConstants.COLF_F, cq, new Value(SummingCombiner.VAR_LEN_ENCODER.encode(freqCount)));
+            m.put(ColumnFamilyConstants.COLF_I, cq, new Value(SummingCombiner.VAR_LEN_ENCODER.encode(indexCount)));
+            m.put(ColumnFamilyConstants.COLF_RI, cq, new Value(SummingCombiner.VAR_LEN_ENCODER.encode(indexCount)));
             bw.addMutation(m);
         } catch (TableNotFoundException | MutationsRejectedException e) {
             throw new RuntimeException(e);
@@ -284,13 +389,14 @@ public class AbstractIngest {
      */
     private void writeShardIndex(String row, String datatype, String uid, String field, List<String> values) {
         if (fieldColumns.containsEntry(field, "i")) {
+            long timestamp = timestampForRow(row);
             try (BatchWriter bw = client.createBatchWriter(SHARD_INDEX)) {
                 for (String value : values) {
                     Mutation m = new Mutation(value);
                     Text cf = new Text(field);
                     Text cq = new Text(row + "\0" + datatype);
                     ColumnVisibility cv = new ColumnVisibility(auths.iterator().next());
-                    m.put(cf, cq, cv, TIMESTAMP, getIndexUidValue(uid));
+                    m.put(cf, cq, cv, timestamp, getIndexUidValue(uid));
                     bw.addMutation(m);
                 }
             } catch (Exception e) {
@@ -339,13 +445,14 @@ public class AbstractIngest {
      */
     private void writeFieldIndex(String row, String datatype, String uid, String field, List<String> values) {
         if (fieldColumns.containsEntry(field, "i")) {
+            long timestamp = timestampForRow(row);
             try (BatchWriter bw = client.createBatchWriter(SHARD)) {
                 Mutation m = new Mutation(row);
                 Text cf = new Text("fi\0" + field);
                 for (String value : values) {
                     Text cq = new Text(value + "\0" + datatype + "\0" + uid);
                     ColumnVisibility cv = new ColumnVisibility(auths.iterator().next());
-                    m.put(cf, cq, cv, TIMESTAMP, EMPTY_VALUE);
+                    m.put(cf, cq, cv, timestamp, EMPTY_VALUE);
                 }
                 bw.addMutation(m);
             } catch (Exception e) {
@@ -405,12 +512,25 @@ public class AbstractIngest {
                 Text cf = new Text(datatype + "\0" + uid);
                 Text cq = new Text(field + "\0" + value);
                 ColumnVisibility cv = new ColumnVisibility(auths.iterator().next());
-                m.put(cf, cq, cv, TIMESTAMP, EMPTY_VALUE);
+                m.put(cf, cq, cv, timestampForRow(row), EMPTY_VALUE);
                 bw.addMutation(m);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
         }
+    }
+
+    /**
+     * Derive a timestamp from a row's {@code yyyyMMdd} date prefix (rows are formatted as {@code yyyyMMdd_N}), so that events written for different dates get
+     * timestamps matching their date rather than the fixed default {@link #TIMESTAMP}.
+     *
+     * @param row
+     *            the row, e.g. {@code 20260701_0}
+     * @return the timestamp for the row's date
+     */
+    private long timestampForRow(String row) {
+        String date = row.contains("_") ? row.substring(0, row.indexOf('_')) : row;
+        return DateHelper.parse(date).getTime();
     }
 
     private void writeTermFrequency(String uid, String field, String... values) {
