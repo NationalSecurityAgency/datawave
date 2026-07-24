@@ -120,7 +120,7 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
 
     protected boolean isFair = true;
 
-    protected volatile QueryUncaughtExceptionHandler uncaughtExceptionHandler = null;
+    protected QueryUncaughtExceptionHandler uncaughtExceptionHandler = null;
 
     /**
      * Constructor
