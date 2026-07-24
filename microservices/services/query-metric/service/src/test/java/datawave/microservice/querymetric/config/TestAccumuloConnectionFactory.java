@@ -58,13 +58,17 @@ class TestAccumuloConnectionFactory extends AccumuloConnectionFactoryImpl {
 
     public class InMemoryAccumuloClientPoolFactory extends AccumuloClientPoolFactory {
 
+        private final Logger log = LoggerFactory.getLogger(InMemoryAccumuloClientPoolFactory.class);
+
         private ConnectionPoolProperties connectionPoolProperties;
+        private final InMemoryAccumulo instance;
 
         public InMemoryAccumuloClientPoolFactory(ConnectionPoolProperties connectionPoolProperties) throws Exception {
             super(connectionPoolProperties.getUsername(), connectionPoolProperties.getPassword(), "mock", "mock");
             this.connectionPoolProperties = connectionPoolProperties;
-            try (AccumuloClient accumuloClient = new InMemoryAccumuloClient(connectionPoolProperties.getUsername(),
-                            new InMemoryAccumulo(connectionPoolProperties.getInstance()))) {
+            this.instance = new InMemoryAccumulo(connectionPoolProperties.getInstance());
+            log.info("Creating InMemoryAccumuloInstance ID {}, hash {}", this.instance.getInstanceID(), this.instance.hashCode());
+            try (AccumuloClient accumuloClient = new InMemoryAccumuloClient(connectionPoolProperties.getUsername(), instance)) {
                 accumuloClient.securityOperations().changeUserAuthorizations(accumuloClient.whoami(), new Authorizations("PUBLIC", "A", "B", "C"));
             } catch (AccumuloSecurityException e) {
                 log.error(e.getMessage(), e);
@@ -72,8 +76,7 @@ class TestAccumuloConnectionFactory extends AccumuloConnectionFactoryImpl {
         }
 
         public PooledObject<AccumuloClient> makeObject() throws Exception {
-            return new DefaultPooledObject(new InMemoryAccumuloClient(this.connectionPoolProperties.getUsername(),
-                            new InMemoryAccumulo(connectionPoolProperties.getInstance())));
+            return new DefaultPooledObject<>(new InMemoryAccumuloClient(this.connectionPoolProperties.getUsername(), instance));
         }
     }
 }
