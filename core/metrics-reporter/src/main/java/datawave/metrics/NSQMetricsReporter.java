@@ -1,5 +1,7 @@
 package datawave.metrics;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.URI;
@@ -50,14 +52,15 @@ public class NSQMetricsReporter extends TimelyMetricsReporter {
 
     @Override
     protected synchronized void reportMetric(String timelyMetric) {
+        byte[] metricBytes = timelyMetric.getBytes(UTF_8);
         // Flush the message if adding the new metric will take us over the maximum message size.
-        if (dos.size() + timelyMetric.length() > MAX_MESSAGE_SIZE) {
+        if (dos.size() + metricBytes.length > MAX_MESSAGE_SIZE) {
             flush();
             connect();
         }
 
         try {
-            dos.writeBytes(timelyMetric);
+            dos.write(metricBytes);
         } catch (IOException e) {
             logger.error("Error sending metrics to NSQ: {}", e.getMessage(), e);
         }
