@@ -53,6 +53,11 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
     private String initialPlan;
     private String plannedScript;
 
+    // the planner clones created by the latest call to process(): the one used for initial planning, and one per sub-plan. Each allocates its own thread
+    // pool, so they must be shut down when this planner is closed.
+    private DefaultQueryPlanner initialPlanner;
+    private List<SubPlanCallable> subPlans = Collections.emptyList();
+
     // handles boilerplate operations that surround a visitor's execution (e.g., timers, logging, validating)
     private final TimedVisitorManager visitorManager = new TimedVisitorManager();
 
@@ -136,7 +141,9 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
     }
 
     /**
-     * Calls {@link DefaultQueryPlanner#close(GenericQueryConfiguration, Query)} on the inner query planner instance with the given config and settings.
+     * Calls {@link DefaultQueryPlanner#close(GenericQueryConfiguration, Query)} on the inner query planner instance with the given config and settings, and
+     * releases the resources held by every planner clone created by the latest call to
+     * {@link #process(GenericQueryConfiguration, String, Query, ScannerFactory)}.
      *
      * @param config
      *            the config
@@ -145,7 +152,27 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
      */
     @Override
     public void close(GenericQueryConfiguration config, Query settings) {
+        releaseClonedPlanners();
         this.queryPlanner.close(config, settings);
+    }
+
+    /**
+     * Shut down the thread pool of each planner clone created during {@link #process(GenericQueryConfiguration, String, Query, ScannerFactory)}. The clones
+     * share their query with the inner planner, so only their thread pools are released here; the query-level cleanup is left to the inner planner's
+     * {@link DefaultQueryPlanner#close(GenericQueryConfiguration, Query)}.
+     */
+    private void releaseClonedPlanners() {
+        if (initialPlanner != null) {
+            initialPlanner.shutdownExecutor();
+            initialPlanner = null;
+        }
+        for (SubPlanCallable subPlan : subPlans) {
+            DefaultQueryPlanner subPlanner = subPlan.getSubPlanner();
+            if (subPlanner != null) {
+                subPlanner.shutdownExecutor();
+            }
+        }
+        subPlans = Collections.emptyList();
     }
 
     /**
@@ -286,6 +313,9 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
         this.initialPlan = null;
         this.plannedScript = null;
 
+        // Release any planner clones left over from a previous call before creating a new set.
+        releaseClonedPlanners();
+
         if (log.isDebugEnabled()) {
             log.debug("Federated query: " + query);
         }
@@ -308,7 +338,7 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
         shardQueryConfig.setDeferPushdownPullup(true);
 
         // now let's do the initial planning
-        DefaultQueryPlanner initialPlanner = this.queryPlanner.clone();
+        this.initialPlanner = this.queryPlanner.clone();
         initialPlanner.process(shardQueryConfig, query, settings, scannerFactory);
 
         // Our initial plan and planned script will both be the initial planned script
@@ -331,6 +361,7 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
             SubPlanCallable subPlan = new SubPlanCallable(this.queryPlanner, planningConfig, dateRange, scannerFactory);
             futures.add(subPlan);
         }
+        this.subPlans = futures;
 
         // create a listener for plan updates and update the configuration
         PlanListener listener = plan -> {

@@ -51,8 +51,8 @@ import datawave.util.time.DateHelper;
  * <p>
  * {@link SingleTermTests}, {@link UnionTests}, and {@link IntersectionTests} run the same hole-topology scenarios against a single-term, an OR, and an AND
  * query respectively, since pushdown of unindexed fields produces different plan text - and, for OR queries, different resolvability - depending on query form.
- * The remaining top-level tests cover cross-datatype merging (including {@link #holesAdjacentAcrossDatatypes()}, a pinned bug), datatype filtering, threshold
- * edge cases, and sub-plan failure tolerance once, since those are independent of query form.
+ * The remaining top-level tests cover cross-datatype merging, datatype filtering, threshold edge cases, and sub-plan failure tolerance once, since those are
+ * independent of query form.
  * <p>
  * Full table scan is always disabled. A sub-range that cannot resolve without it drops its events, or fails the whole query if every sub-range fails. Tests
  * note this where it drops a valid hit - including where OR and AND diverge: an OR needs every field indexed to avoid full table scan, but an AND only needs
@@ -915,24 +915,72 @@ class DatePartitionedQueryPlannerIT extends AbstractQueryTest {
     }
 
     /**
-     * BUG: adjacent cross-datatype holes for the same field should merge into one range; {@code collapseDatatypes} only merges *overlapping* ranges, so an
-     * adjacent-but-not-overlapping pair leaves two separate hole ranges with the identical unindexed-field set {@code {FIELD_A}}, and
-     * {@code ensureConsistency}'s {@code matchingFieldSetsFound} check throws instead of merging them. This is independent of query form - it happens inside
-     * {@code getSubQueryDateRanges}, before any query-specific plan is built - so it is pinned once rather than once per query form.
+     * Adjacent cross-datatype holes for the same field merge into a single sub-range. Left unmerged they would produce two back-to-back sub-ranges with the
+     * identical unindexed-field set {@code {FIELD_A}}, which {@code ensureConsistency}'s {@code matchingFieldSetsFound} check rejects as fatal. This is
+     * independent of query form - it happens inside {@code getSubQueryDateRanges}, before any query-specific plan is built - so it is covered once rather than
+     * once per query form. A third, fully indexed day follows so the merged range's boundaries are asserted rather than inferred from a whole-range hole.
      */
     @Test
     void holesAdjacentAcrossDatatypes() throws Exception {
         writeEvent("20260701", DATATYPE_A, 1);
         writeEvent("20260702", DATATYPE_B, 2);
+        writeEvent("20260703", DATATYPE_A, 3);
         writeHole("20260701", DATATYPE_A, FIELD_A);
         writeFullIndex("20260701", DATATYPE_B, FIELD_A);
         writeFullIndex("20260702", DATATYPE_A, FIELD_A);
         writeHole("20260702", DATATYPE_B, FIELD_A);
+        writeFullIndex("20260703", DATATYPE_A, FIELD_A);
 
-        givenDate("20260701", "20260702");
+        givenDate("20260701", "20260703");
         givenQuery(SINGLE_TERM_QUERY);
+        // Jul 1 and Jul 2 merge into one entirely unindexed sub-range, so both their events are valid hits that are missed without full table scan.
+        expectResultCount(1);
 
-        assertThrows(DatawaveFatalQueryException.class, this::planAndExecuteQuery);
+        planAndExecuteQuery();
+
+        // @formatter:off
+        assertPartition(
+                        range(date("20260701"), endOfDay("20260702"), FIELD_A),
+                        range(date("20260703"), date("20260703")));
+        assertPlans(
+                        plan("20260701", "(_Eval_ = true) && (FIELD_A == 'value-a')"),
+                        plan("20260702", "(_Eval_ = true) && (FIELD_A == 'value-a')"),
+                        plan("20260703", "FIELD_A == 'value-a'"));
+        // @formatter:on
+    }
+
+    /**
+     * Holes a full day apart across datatypes are not adjacent, so they stay separate with an indexed sub-range between them.
+     */
+    @Test
+    void holesOneDayApartAcrossDatatypes() throws Exception {
+        writeEvent("20260701", DATATYPE_A, 1);
+        writeEvent("20260702", DATATYPE_A, 2);
+        writeEvent("20260703", DATATYPE_B, 3);
+        writeHole("20260701", DATATYPE_A, FIELD_A);
+        writeFullIndex("20260701", DATATYPE_B, FIELD_A);
+        writeFullIndex("20260702", DATATYPE_A, FIELD_A);
+        writeFullIndex("20260702", DATATYPE_B, FIELD_A);
+        writeFullIndex("20260703", DATATYPE_A, FIELD_A);
+        writeHole("20260703", DATATYPE_B, FIELD_A);
+
+        givenDate("20260701", "20260703");
+        givenQuery(SINGLE_TERM_QUERY);
+        // Jul 1's and Jul 3's events fall in entirely unindexed sub-ranges and are missed without full table scan.
+        expectResultCount(1);
+
+        planAndExecuteQuery();
+
+        // @formatter:off
+        assertPartition(
+                        range(date("20260701"), endOfDay("20260701"), FIELD_A),
+                        range(date("20260702"), endOfDay("20260702")),
+                        range(date("20260703"), date("20260703"), FIELD_A));
+        assertPlans(
+                        plan("20260701", "(_Eval_ = true) && (FIELD_A == 'value-a')"),
+                        plan("20260702", "FIELD_A == 'value-a'"),
+                        plan("20260703", "(_Eval_ = true) && (FIELD_A == 'value-a')"));
+        // @formatter:on
     }
 
     @Test

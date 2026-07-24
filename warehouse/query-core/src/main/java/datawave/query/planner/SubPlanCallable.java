@@ -31,7 +31,8 @@ public class SubPlanCallable implements Callable<CloseableIterable<QueryData>> {
     // handles boilerplate operations that surround a visitor's execution (e.g., timers, logging, validating)
     private final TimedVisitorManager visitorManager = new TimedVisitorManager();
 
-    private ShardQueryConfiguration subPlanConfig;
+    private volatile ShardQueryConfiguration subPlanConfig;
+    private volatile DefaultQueryPlanner subPlanner;
 
     public SubPlanCallable(DefaultQueryPlanner planner, ShardQueryConfiguration planningConfig, Map.Entry<Pair<Date,Date>,Set<String>> dateRange,
                     ScannerFactory scannerFactory) {
@@ -47,14 +48,15 @@ public class SubPlanCallable implements Callable<CloseableIterable<QueryData>> {
             // Get an updated configuration with the new date range and query tree
             this.subPlanConfig = getUpdatedConfig(planningConfig, dateRange.getKey(), dateRange.getValue());
 
-            // Create a copy of the original default query planner, and process the query with the new date range.
-            DefaultQueryPlanner subPlan = basePlanner.clone();
+            // Create a copy of the original default query planner, and process the query with the new date range. It is retained so that the resources it
+            // allocates (notably its thread pool) can be released when the owning planner is closed.
+            this.subPlanner = basePlanner.clone();
 
             // Get the range stream for the new date range and query
-            return subPlan.reprocess(subPlanConfig, subPlanConfig.getQuery(), scannerFactory);
+            return subPlanner.reprocess(subPlanConfig, subPlanConfig.getQuery(), scannerFactory);
         } catch (Exception e) {
-            throw new DatawaveAsyncOperationException(
-                            "Failed to generate partitioned for " + subPlanConfig.getQuery().getId() + " and date range " + dateRange.getKey(), e);
+            // subPlanConfig may still be null if getUpdatedConfig() threw, so take the query id from the config we were handed instead.
+            throw new DatawaveAsyncOperationException("Failed to generate partitioned for " + queryId() + " and date range " + dateRange.getKey(), e);
         }
     }
 
@@ -64,6 +66,25 @@ public class SubPlanCallable implements Callable<CloseableIterable<QueryData>> {
 
     public ShardQueryConfiguration getSubPlanConfig() {
         return subPlanConfig;
+    }
+
+    /**
+     * Return the planner clone used to execute this sub-plan, or null if {@link #call()} has not created one yet.
+     *
+     * @return the sub-plan's query planner
+     */
+    public DefaultQueryPlanner getSubPlanner() {
+        return subPlanner;
+    }
+
+    /**
+     * Return the id of the query being planned, for use in messages. Tolerates a config with no query set.
+     *
+     * @return the query id, or null if unavailable
+     */
+    private Object queryId() {
+        ShardQueryConfiguration config = subPlanConfig != null ? subPlanConfig : planningConfig;
+        return (config != null && config.getQuery() != null) ? config.getQuery().getId() : null;
     }
 
     /**

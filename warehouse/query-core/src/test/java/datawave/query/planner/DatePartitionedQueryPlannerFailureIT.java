@@ -1,6 +1,7 @@
 package datawave.query.planner;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -73,6 +74,7 @@ class DatePartitionedQueryPlannerFailureIT {
         private final List<StubQueryPlanner> clones = new ArrayList<>();
         private final List<StubQueryPlanner> closed = new ArrayList<>();
         private boolean throwOnReprocess;
+        private boolean executorShutdown;
 
         @Override
         public StubQueryPlanner clone() {
@@ -101,27 +103,50 @@ class DatePartitionedQueryPlannerFailureIT {
         public void close(GenericQueryConfiguration genericConfig, Query settings) {
             closed.add(this);
         }
+
+        @Override
+        public void shutdownExecutor() {
+            executorShutdown = true;
+        }
     }
 
+    /**
+     * When {@code SubPlanCallable.getUpdatedConfig()} throws before the sub-plan config is assigned, the failure must still be routed through the normal
+     * per-sub-plan fault tolerance rather than escaping as a raw {@link NullPointerException} from the still-null config. A null {@link Query} on the config
+     * triggers this, since {@code getUpdatedConfig} dereferences {@code originalConfig.getQuery().setId(...)}.
+     */
     @Test
     void subPlanConfigCreationThrows() {
-        // BUG: when SubPlanCallable.getUpdatedConfig() throws before subPlanConfig is assigned, both its own catch block and
-        // DatePartitionedQueryIterable.populateNextIterable()'s finally block dereference the still-null subPlanConfig, so a bare NullPointerException
-        // escapes process() instead of a DatawaveQueryException - bypassing the per-sub-plan fault tolerance entirely. This is reproduced here by giving
-        // the config a null Query, which SubPlanCallable#getUpdatedConfig unconditionally dereferences via originalConfig.getQuery().setId(...).
         StubQueryPlanner inner = new StubQueryPlanner();
         TestableDatePartitionedQueryPlanner planner = new TestableDatePartitionedQueryPlanner(inner);
 
         ShardQueryConfiguration config = newConfig();
         config.setQuery(null);
 
-        assertThrows(NullPointerException.class, () -> planner.process(config, "FOO == 'bar'", new QueryImpl(), null));
+        DatawaveQueryException e = assertThrows(DatawaveQueryException.class, () -> planner.process(config, "FOO == 'bar'", new QueryImpl(), null));
+        assertInstanceOf(NullPointerException.class, e.getCause(), "expected the original failure to be preserved as the cause");
     }
 
+    /**
+     * A sub-plan that fails after its config was built must be reported the same way, with the underlying failure preserved.
+     */
     @Test
-    void closeDoesNotCloseClonedPlanners() throws Exception {
-        // BUG: close() only closes the original inner planner, never the initialPlanner clone or the per-sub-range clones created during process() -
-        // each of which spins up its own thread pool internally. This leaks ~10 threads per sub-range per query.
+    void subPlanExecutionThrows() {
+        StubQueryPlanner inner = new StubQueryPlanner();
+        inner.throwOnReprocess = true;
+        TestableDatePartitionedQueryPlanner planner = new TestableDatePartitionedQueryPlanner(inner);
+
+        ShardQueryConfiguration config = newConfig();
+
+        assertThrows(DatawaveQueryException.class, () -> planner.process(config, "FOO == 'bar'", config.getQuery(), null));
+    }
+
+    /**
+     * close() must release every planner clone created during process() - the initial-planning clone and one per sub-range - each of which allocates its own
+     * thread pool. The clones share the query with the inner planner, so only their thread pools are released; the inner planner gets the full close().
+     */
+    @Test
+    void closeReleasesClonedPlanners() throws Exception {
         StubQueryPlanner inner = new StubQueryPlanner();
         TestableDatePartitionedQueryPlanner planner = new TestableDatePartitionedQueryPlanner(inner);
 
@@ -130,14 +155,32 @@ class DatePartitionedQueryPlannerFailureIT {
         // force the single sub-plan to be created
         iterable.iterator().hasNext();
 
-        assertTrue(inner.clones.size() >= 1, "expected at least one clone to have been created");
+        // one clone for the initial planning pass, one for the single sub-range
+        assertEquals(2, inner.clones.size(), "expected an initial-planning clone and one sub-plan clone");
 
         planner.close(config, config.getQuery());
 
-        // close() does correctly close the original inner planner...
         assertTrue(inner.closed.contains(inner), "expected the original inner planner to have been closed");
-        // ...but leaks every clone created during process() - the actual bug.
-        assertEquals(0, inner.clones.stream().filter(c -> c.closed.contains(c)).count(), "no cloned planner should have been closed, but at least one was");
+        assertEquals(2, inner.clones.stream().filter(c -> c.executorShutdown).count(), "expected every cloned planner's executor to have been shut down");
+        assertEquals(0, inner.clones.stream().filter(c -> c.closed.contains(c)).count(), "cloned planners share the query and must not be fully closed");
+    }
+
+    /**
+     * A second call to process() must release the clones left behind by the first, rather than leaking them.
+     */
+    @Test
+    void reprocessReleasesPreviousClones() throws Exception {
+        StubQueryPlanner inner = new StubQueryPlanner();
+        TestableDatePartitionedQueryPlanner planner = new TestableDatePartitionedQueryPlanner(inner);
+
+        ShardQueryConfiguration config = newConfig();
+        planner.process(config, "FOO == 'bar'", config.getQuery(), null).iterator().hasNext();
+        List<StubQueryPlanner> firstRoundClones = new ArrayList<>(inner.clones);
+
+        planner.process(config, "FOO == 'bar'", config.getQuery(), null).iterator().hasNext();
+
+        assertEquals(firstRoundClones.size(), firstRoundClones.stream().filter(c -> c.executorShutdown).count(),
+                        "expected the previous round's clones to have been released");
     }
 
     @Test

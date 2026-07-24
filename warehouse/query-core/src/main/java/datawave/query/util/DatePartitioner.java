@@ -60,10 +60,7 @@ public final class DatePartitioner {
         // If no field index holes were found, we can return early with the original query date range.
         if (fieldIndexHolesByDatatype.isEmpty()) {
             log.debug("No field index holes found for query fields");
-            SortedMap<Pair<Date,Date>,Set<String>> fullTimeline = new TreeMap<>();
-            Pair<Date,Date> range = Pair.of(beginDate, endDate);
-            fullTimeline.put(range, Collections.emptySet());
-            return fullTimeline;
+            return fullRange(beginDate, endDate);
         } else {
             if (log.isDebugEnabled()) {
                 log.debug("Field index holes found for query fields " + fieldIndexHolesByDatatype.keySet());
@@ -76,10 +73,11 @@ public final class DatePartitioner {
         // Now create a timeline of index segments from begin date to end date
         SortedSet<IndexFieldHoleBoundary> timeline = createTimeline(fieldIndexHoles, beginDate, endDate);
 
-        // if we found no holes that overlapped our date range, then we are done
+        // if we found no holes that overlapped our date range, then we are done. createTimeline always synthesizes boundaries for the query range, so this
+        // is defensive: callers rely on a non-null timeline that covers the whole query date range.
         if (timeline.isEmpty()) {
             log.debug("No field index holes overlapping query range found");
-            return null;
+            return fullRange(beginDate, endDate);
         } else {
             if (log.isDebugEnabled()) {
                 log.debug("Timeline contains " + timeline.size() + " boundaries to be examined");
@@ -137,6 +135,21 @@ public final class DatePartitioner {
         ensureConsistency(reducedTimeline, beginDate, endDate);
 
         return reducedTimeline;
+    }
+
+    /**
+     * Return a timeline consisting of a single sub-range covering the entire query date range, with no unindexed fields.
+     *
+     * @param beginDate
+     *            the query's begin date
+     * @param endDate
+     *            the query's end date
+     * @return a timeline containing the one full-coverage sub-range
+     */
+    private static SortedMap<Pair<Date,Date>,Set<String>> fullRange(Date beginDate, Date endDate) {
+        SortedMap<Pair<Date,Date>,Set<String>> fullTimeline = new TreeMap<>();
+        fullTimeline.put(Pair.of(beginDate, endDate), Collections.emptySet());
+        return fullTimeline;
     }
 
     /**
@@ -222,7 +235,11 @@ public final class DatePartitioner {
             Date lastEnd = null;
             for (IndexFieldHoleBoundary next : boundaries) {
                 if (next.isStart()) {
-                    if (lastEnd != null) {
+                    // Close out the pending range only if this hole starts strictly after the pending one ends, leaving a real gap between them. A hole
+                    // that starts within, or immediately (1ms) after, the pending range is contiguous with it and must be merged in: leaving two
+                    // back-to-back ranges for the same field would produce two sub-ranges with identical unindexed field sets, which ensureConsistency
+                    // rejects as a fatal error.
+                    if (lastEnd != null && next.getBoundary().getTime() > oneMsAfter(lastEnd).getTime()) {
                         collapsedRanges.add(Pair.of(lastStart, lastEnd));
                         lastStart = null;
                         lastEnd = null;
@@ -287,6 +304,10 @@ public final class DatePartitioner {
      */
     private static SortedSet<Pair<Date,Date>> getHolesOverlappingOriginalQueryDateRange(Date beginDate, Date endDate, IndexFieldHole fieldIndexHole) {
         SortedSet<Pair<Date,Date>> holes = fieldIndexHole.getDateRanges();
+        // A hole with no date ranges contributes no boundaries at all.
+        if (holes.isEmpty()) {
+            return Collections.emptySortedSet();
+        }
         // If the earliest date range falls after the original query date range, or the latest date range falls before the original query range, then none
         // of the holes fall within the date range.
         if (isOutsideDateRange(beginDate, endDate, holes.first(), holes.last())) {
