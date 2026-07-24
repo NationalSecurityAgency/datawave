@@ -129,12 +129,10 @@ public class TimelyMetricsReporter extends ScheduledReporter {
 
     void reportGauge(String name, Gauge<?> gauge, long time) {
         Object value = gauge.getValue();
-        if (value != null) {
-            if (value instanceof Number) {
-                reportMetric(name, "value", formatNumber((Number) value), "GAUGE", null, time);
-            } else {
-                reportMetric(name, "value", String.valueOf(value), "GAUGE", null, time);
-            }
+        if (value instanceof Number) {
+            reportMetric(name, "value", formatNumber((Number) value), "GAUGE", null, time);
+        } else if (value != null) {
+            logger.warn("Skipping non-numeric Timely gauge {} with value type {}", name, value.getClass().getName());
         }
     }
 

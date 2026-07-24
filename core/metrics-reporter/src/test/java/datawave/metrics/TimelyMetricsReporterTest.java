@@ -1,13 +1,20 @@
 package datawave.metrics;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.math.BigDecimal;
 import java.util.Locale;
+import java.util.Queue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.Test;
+import org.slf4j.event.Level;
+import org.slf4j.event.SubstituteLoggingEvent;
+import org.slf4j.helpers.SubstituteLogger;
 
 import com.codahale.metrics.MetricFilter;
 import com.codahale.metrics.MetricRegistry;
@@ -59,6 +66,34 @@ class TimelyMetricsReporterTest {
     }
 
     @Test
+    void reportGaugeSkipsNullAndNonNumericValues() {
+        TestTimelyMetricsReporter reporter = new TestTimelyMetricsReporter();
+        Queue<SubstituteLoggingEvent> events = new LinkedBlockingQueue<>();
+        reporter.logger = new SubstituteLogger("test", events, false);
+
+        reporter.reportGauge("null", () -> null, 123L);
+        reporter.reportGauge("text", () -> "UP", 123L);
+        reporter.reportGauge("boolean", () -> true, 123L);
+
+        assertNull(reporter.metric);
+        assertWarning(events.remove(), "text", String.class);
+        assertWarning(events.remove(), "boolean", Boolean.class);
+        assertTrue(events.isEmpty());
+    }
+
+    @Test
+    void reportGaugeContinuesAfterNonNumericValue() {
+        TestTimelyMetricsReporter reporter = new TestTimelyMetricsReporter();
+
+        reporter.reportGauge("invalid", () -> "UP", 123L);
+        reporter.reportGauge("integer", () -> 7, 123L);
+        assertEquals(7d, metricValue(reporter.metric));
+
+        reporter.reportGauge("floating", () -> 1.25d, 123L);
+        assertEquals(1.25d, metricValue(reporter.metric));
+    }
+
+    @Test
     void reportMetricNormalizesWhitespaceInMetricName() {
         TestTimelyMetricsReporter reporter = new TestTimelyMetricsReporter();
 
@@ -95,6 +130,12 @@ class TimelyMetricsReporterTest {
 
     private static double metricValue(String metric) {
         return Double.parseDouble(metric.split(" ")[3]);
+    }
+
+    private static void assertWarning(SubstituteLoggingEvent event, String metricName, Class<?> valueType) {
+        assertEquals(Level.WARN, event.getLevel());
+        assertEquals("Skipping non-numeric Timely gauge {} with value type {}", event.getMessage());
+        assertArrayEquals(new Object[] {metricName, valueType.getName()}, event.getArgumentArray());
     }
 
     private static class NonNumericTextNumber extends Number {
