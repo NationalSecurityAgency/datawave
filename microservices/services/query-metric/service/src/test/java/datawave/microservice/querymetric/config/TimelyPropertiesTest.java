@@ -1,5 +1,6 @@
 package datawave.microservice.querymetric.config;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -41,7 +42,19 @@ class TimelyPropertiesTest {
     @Test
     void validTcpAndUdpEndpointsStart() {
         assertStarts(PREFIX + "enabled=true", PREFIX + "host=localhost", PREFIX + "port=4242", PREFIX + "protocol=TCP");
-        assertStarts(PREFIX + "enabled=true", PREFIX + "host=localhost", PREFIX + "port=4242", PREFIX + "protocol=UDP");
+        assertStarts(PREFIX + "enabled=true", PREFIX + "host=localhost", PREFIX + "port=4242", PREFIX + "protocol=UDP",
+                        PREFIX + "connect-timeout-millis=0");
+    }
+
+    @Test
+    void tcpConnectTimeoutIsBoundAndValidated() {
+        assertEquals(10_000, new TimelyProperties().getConnectTimeoutMillis());
+        assertFails("connect timeout must be greater than zero", PREFIX + "enabled=true", PREFIX + "host=localhost", PREFIX + "protocol=TCP",
+                        PREFIX + "connect-timeout-millis=0");
+        contextRunner.withPropertyValues(PREFIX + "connect-timeout-millis=125").run(context -> {
+            assertNull(context.getStartupFailure());
+            assertEquals(125, context.getBean(TimelyProperties.class).getConnectTimeoutMillis());
+        });
     }
 
     private void assertStarts(String... properties) {

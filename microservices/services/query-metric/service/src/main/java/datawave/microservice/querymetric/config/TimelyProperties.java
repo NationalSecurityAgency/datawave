@@ -17,6 +17,7 @@ public class TimelyProperties {
     private String host = null;
     private Protocol protocol = null;
     private int port = 4242;
+    private int connectTimeoutMillis = 10_000;
     private Map<String,String> tags = new LinkedHashMap<>();
 
     public enum Protocol {
@@ -37,6 +38,14 @@ public class TimelyProperties {
 
     public void setPort(int port) {
         this.port = port;
+    }
+
+    public int getConnectTimeoutMillis() {
+        return connectTimeoutMillis;
+    }
+
+    public void setConnectTimeoutMillis(int connectTimeoutMillis) {
+        this.connectTimeoutMillis = connectTimeoutMillis;
     }
 
     public Protocol getProtocol() {
@@ -76,5 +85,10 @@ public class TimelyProperties {
     @AssertTrue(message = "protocol must be set when Timely is enabled")
     public boolean isProtocolValid() {
         return !enabled || protocol != null;
+    }
+
+    @AssertTrue(message = "connect timeout must be greater than zero when Timely TCP is enabled")
+    public boolean isConnectTimeoutValid() {
+        return !enabled || protocol != Protocol.TCP || connectTimeoutMillis > 0;
     }
 }

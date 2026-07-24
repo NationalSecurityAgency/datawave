@@ -33,6 +33,10 @@ class TimelyTcpClient implements AutoCloseable {
         this(host, port, DEFAULT_CONNECT_TIMEOUT_MILLIS, Socket::new, System::currentTimeMillis);
     }
 
+    TimelyTcpClient(String host, int port, int connectTimeoutMillis) {
+        this(host, port, connectTimeoutMillis, Socket::new, System::currentTimeMillis);
+    }
+
     TimelyTcpClient(String host, int port, int connectTimeoutMillis, Supplier<Socket> socketSupplier, LongSupplier clock) {
         if (host == null || host.trim().isEmpty()) {
             throw new IllegalArgumentException("host must not be blank");

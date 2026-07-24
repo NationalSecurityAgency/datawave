@@ -104,7 +104,8 @@ public class QueryMetricOperationsStats {
         if (this.timelyProperties.isEnabled()) {
             try {
                 if (timelyProperties.getProtocol().equals(TimelyProperties.Protocol.TCP)) {
-                    this.timelyTcpClient = new TimelyTcpClient(timelyProperties.getHost(), timelyProperties.getPort());
+                    this.timelyTcpClient = new TimelyTcpClient(timelyProperties.getHost(), timelyProperties.getPort(),
+                                    timelyProperties.getConnectTimeoutMillis());
                     this.timelyTcpClient.open();
                 } else {
                     this.timelyUdpClient = new UdpClient(timelyProperties.getHost(), timelyProperties.getPort());
