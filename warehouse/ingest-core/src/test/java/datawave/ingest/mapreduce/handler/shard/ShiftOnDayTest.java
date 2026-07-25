@@ -1,11 +1,16 @@
 package datawave.ingest.mapreduce.handler.shard;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.util.Date;
 import java.util.Set;
 
 import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -51,9 +56,9 @@ class ShiftOnDayTest {
         void testAllNullAttributes() {
             ShiftOnDay generator = init();
 
-            Assertions.assertTrue(generator.getDataTypes().isEmpty());
-            Assertions.assertNull(generator.getBegin());
-            Assertions.assertNull(generator.getEnd());
+            assertTrue(generator.getDataTypes().isEmpty());
+            assertNull(generator.getBegin());
+            assertNull(generator.getEnd());
         }
 
         /**
@@ -67,9 +72,9 @@ class ShiftOnDayTest {
 
             ShiftOnDay generator = init();
 
-            Assertions.assertEquals(Set.of("a", "b", "c"), generator.getDataTypes());
-            Assertions.assertEquals(DateHelper.parse("20240115"), generator.getBegin());
-            Assertions.assertEquals(DateHelper.parse("20240120"), generator.getEnd());
+            assertEquals(Set.of("a", "b", "c"), generator.getDataTypes());
+            assertEquals(DateHelper.parse("20240115"), generator.getBegin());
+            assertEquals(DateHelper.parse("20240120"), generator.getEnd());
         }
 
         /**
@@ -80,8 +85,8 @@ class ShiftOnDayTest {
             this.begin = DateHelper.parse("20240115");
             this.end = DateHelper.parse("19990120");
 
-            IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class, this::init);
-            Assertions.assertEquals("End date must be after begin date", exception.getMessage());
+            IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, this::init);
+            assertEquals("End date must be after begin date", exception.getMessage());
         }
     }
 
@@ -133,7 +138,7 @@ class ShiftOnDayTest {
 
         ShiftOnDay generator = new ShiftOnDay(null, null, null);
 
-        Assertions.assertTrue(generator.isApplicable(record));
+        assertTrue(generator.isApplicable(record));
     }
 
     /**
@@ -146,7 +151,7 @@ class ShiftOnDayTest {
 
         ShiftOnDay generator = new ShiftOnDay(Set.of("wiki", "tv", "text"), null, null);
 
-        Assertions.assertFalse(generator.isApplicable(record));
+        assertFalse(generator.isApplicable(record));
     }
 
     /**
@@ -159,7 +164,7 @@ class ShiftOnDayTest {
 
         ShiftOnDay generator = new ShiftOnDay(Set.of("wiki", "tv", CSV), null, null);
 
-        Assertions.assertTrue(generator.isApplicable(record));
+        assertTrue(generator.isApplicable(record));
     }
 
     /**
@@ -172,7 +177,7 @@ class ShiftOnDayTest {
 
         ShiftOnDay generator = new ShiftOnDay(null, DateHelper.parse("20200101"), null);
 
-        Assertions.assertTrue(generator.isApplicable(record));
+        assertTrue(generator.isApplicable(record));
     }
 
     /**
@@ -185,7 +190,7 @@ class ShiftOnDayTest {
 
         ShiftOnDay generator = new ShiftOnDay(null, DateHelper.parse("20200101"), null);
 
-        Assertions.assertFalse(generator.isApplicable(record));
+        assertFalse(generator.isApplicable(record));
     }
 
     /**
@@ -198,7 +203,7 @@ class ShiftOnDayTest {
 
         ShiftOnDay generator = new ShiftOnDay(null, null, DateHelper.parse("20240111"));
 
-        Assertions.assertTrue(generator.isApplicable(record));
+        assertTrue(generator.isApplicable(record));
     }
 
     /**
@@ -211,7 +216,7 @@ class ShiftOnDayTest {
 
         ShiftOnDay generator = new ShiftOnDay(null, null, DateHelper.parse("20200101"));
 
-        Assertions.assertFalse(generator.isApplicable(record));
+        assertFalse(generator.isApplicable(record));
     }
 
     /**
@@ -224,7 +229,7 @@ class ShiftOnDayTest {
 
         ShiftOnDay generator = new ShiftOnDay(null, DateHelper.parse("20200101"), DateHelper.parse("20240101"));
 
-        Assertions.assertTrue(generator.isApplicable(record));
+        assertTrue(generator.isApplicable(record));
     }
 
     /**
@@ -236,7 +241,7 @@ class ShiftOnDayTest {
 
         ShiftOnDay generator = new ShiftOnDay(null, DateHelper.parse("20200101"), DateHelper.parse("20240101"));
 
-        Assertions.assertTrue(generator.isApplicable(record));
+        assertTrue(generator.isApplicable(record));
     }
 
     /**
@@ -248,7 +253,7 @@ class ShiftOnDayTest {
 
         ShiftOnDay generator = new ShiftOnDay(null, DateHelper.parse("20200101"), DateHelper.parse("20240101"));
 
-        Assertions.assertTrue(generator.isApplicable(record));
+        assertTrue(generator.isApplicable(record));
     }
 
     /**
@@ -259,7 +264,7 @@ class ShiftOnDayTest {
         RawRecordContainer record = createRecord("20240101");
         ShiftOnDay shiftOnDay = new ShiftOnDay(null, null, null);
         String shardId = shiftOnDay.getShardId(record, "20240101_2", 10);
-        Assertions.assertEquals("20240101_12", shardId);
+        assertEquals("20240101_12", shardId);
     }
 
     private RawRecordContainer createRecord(String dateStr) {

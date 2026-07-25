@@ -1,12 +1,16 @@
 package datawave.ingest.mapreduce.handler.shard;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
+import java.util.BitSet;
+import java.util.Collection;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.conf.Configuration;
@@ -35,8 +39,8 @@ import datawave.ingest.table.config.ShardTableConfigHelper;
 import datawave.ingest.table.config.TableConfigHelper;
 import datawave.policy.IngestPolicyEnforcer;
 import datawave.query.model.Direction;
+import datawave.table.constants.TableName;
 import datawave.util.CompositeTimestamp;
-import datawave.util.TableName;
 
 public class ShardedDataTypeHandlerTest {
 
@@ -49,6 +53,12 @@ public class ShardedDataTypeHandlerTest {
     private static final String INGEST_HELPER_CLASS = TestIngestHelper.class.getName();
 
     private static final long MS_PER_DAY = TimeUnit.DAYS.toMillis(1);
+
+    // constants to reduce verbosity
+    private final byte[] visibility = "PUBLIC".getBytes();
+    private final byte[] maskedVisibility = "PRIVATE".getBytes();
+    private final byte[] shardId = "20250606_23".getBytes();
+    private final long timestamp = System.currentTimeMillis();
 
     Configuration configuration;
 
@@ -70,6 +80,9 @@ public class ShardedDataTypeHandlerTest {
     }
 
     public static class TestMaskedHelper implements MaskedFieldHelper {
+
+        private final Set<String> maskedFields = Set.of("TEST_COL", "FIELD");
+
         @Override
         public void setup(Configuration config) {
 
@@ -82,12 +95,7 @@ public class ShardedDataTypeHandlerTest {
 
         @Override
         public boolean contains(String key) {
-            if (key.equals("TEST_COL")) {
-                return true;
-            } else {
-                return false;
-            }
-
+            return maskedFields.contains(key);
         }
 
         @Override
@@ -151,7 +159,7 @@ public class ShardedDataTypeHandlerTest {
         Multimap<BulkIngestKey,Value> termIndex = handler.createTermIndexColumn(record, "TEST_COL", "FIELD_VALUE", visibility, null, null, shardId,
                         handler.getShardIndexTableName(), new Value(uid.toByteArray()), Direction.FORWARD);
 
-        assertTrue(termIndex.size() == 1);
+        assertEquals(1, termIndex.size());
     }
 
     @Test
@@ -173,7 +181,7 @@ public class ShardedDataTypeHandlerTest {
         Multimap<BulkIngestKey,Value> termIndex = handler.createTermIndexColumn(record, "TEST_COL", "FIELD_VALUE", visibility, maskVisibility,
                         maskedFieldHelper, shardId, handler.getShardIndexTableName(), new Value(uid.toByteArray()), Direction.REVERSE);
 
-        assertTrue(termIndex.size() == 2);
+        assertEquals(2, termIndex.size());
         boolean foundValue = false;
         for (BulkIngestKey k : termIndex.keySet()) {
             Text row = k.getKey().getRow();
@@ -203,7 +211,7 @@ public class ShardedDataTypeHandlerTest {
         Multimap<BulkIngestKey,Value> termIndex = handler.createTermIndexColumn(record, "TEST_COL", "FIELD_VALUE", visibility, maskVisibility,
                         maskedFieldHelper, shardId, handler.getShardIndexTableName(), new Value(uid.toByteArray()), Direction.FORWARD);
 
-        assertTrue(termIndex.size() == 2);
+        assertEquals(2, termIndex.size());
         boolean foundValue = false;
         for (BulkIngestKey k : termIndex.keySet()) {
             Text row = k.getKey().getRow();
@@ -232,7 +240,7 @@ public class ShardedDataTypeHandlerTest {
         Multimap<BulkIngestKey,Value> termIndex = handler.createTermIndexColumn(record, "TEST_COL", "FIELD_VALUE", visibility, null, null, shardId,
                         handler.getShardIndexTableName(), new Value(uid.toByteArray()), Direction.REVERSE);
 
-        assertTrue(termIndex.size() == 1);
+        assertEquals(1, termIndex.size());
         boolean foundValue = false;
         for (BulkIngestKey k : termIndex.keySet()) {
             Text row = k.getKey().getRow();
@@ -262,10 +270,10 @@ public class ShardedDataTypeHandlerTest {
         Multimap<BulkIngestKey,Value> termIndex = handler.createTermIndexColumn(record, "OTHER_COL", "FIELD_VALUE", visibility, maskVisibility,
                         maskedFieldHelper, shardId, handler.getShardIndexTableName(), new Value(uid.toByteArray()), Direction.REVERSE);
 
-        assertTrue(termIndex.size() == 1);
+        assertEquals(1, termIndex.size());
         for (BulkIngestKey k : termIndex.keySet()) {
             byte[] keyBytes = k.getKey().getColumnVisibility().getBytes();
-            assertTrue(Arrays.equals(keyBytes, maskVisibility));
+            assertArrayEquals(keyBytes, maskVisibility);
         }
     }
 
@@ -323,4 +331,414 @@ public class ShardedDataTypeHandlerTest {
         }
     }
 
+    @Test
+    public void testSimpleForwardIndex() {
+        RawRecordContainer record = createRawRecordContainer();
+        Value value = createValueWithUid();
+        Multimap<BulkIngestKey,Value> values = handler.createTermIndexColumn(record, "FIELD", "value", visibility, null, null, shardId,
+                        handler.getShardIndexTableName(), value, Direction.FORWARD);
+
+        assertEquals(1, values.size());
+        assertBulkIngestKey(values, createExpectedBulkIngestKey(), createValueWithUid());
+        assertTrue(values.isEmpty());
+    }
+
+    @Test
+    public void testSimpleForwardIndexWithBitsetIndex() {
+        RawRecordContainer record = createRawRecordContainer();
+        Value value = createValueWithUid();
+        try {
+            enableBitsetIndex();
+            Multimap<BulkIngestKey,Value> values = handler.createTermIndexColumn(record, "FIELD", "value", visibility, null, null, shardId,
+                            handler.getShardIndexTableName(), value, Direction.FORWARD);
+
+            assertEquals(2, values.size());
+            assertBulkIngestKey(values, createExpectedBulkIngestKey(), createValueWithUid());
+            assertBulkIngestKey(values, createExpectedBulkIngestKeyForBitsetIndex(), createBitsetIndexValue());
+            assertTrue(values.isEmpty());
+        } finally {
+            disableBitsetIndex();
+        }
+    }
+
+    @Test
+    public void testSimpleForwardIndexWithDayIndex() {
+        RawRecordContainer record = createRawRecordContainer();
+        Value value = createValueWithUid();
+        try {
+            enableDayIndex();
+            Multimap<BulkIngestKey,Value> values = handler.createTermIndexColumn(record, "FIELD", "value", visibility, null, null, shardId,
+                            handler.getShardIndexTableName(), value, Direction.FORWARD);
+
+            assertEquals(2, values.size());
+            assertBulkIngestKey(values, createExpectedBulkIngestKey(), createValueWithUid());
+            assertBulkIngestKey(values, createExpectedBulkIngestKeyForDayIndex(), createDayIndexValue());
+            assertTrue(values.isEmpty());
+        } finally {
+            disableDayIndex();
+        }
+    }
+
+    @Test
+    public void testSimpleForwardIndexWithYearIndex() {
+        RawRecordContainer record = createRawRecordContainer();
+        Value value = createValueWithUid();
+        try {
+            enableYearIndex();
+            Multimap<BulkIngestKey,Value> values = handler.createTermIndexColumn(record, "FIELD", "value", visibility, null, null, shardId,
+                            handler.getShardIndexTableName(), value, Direction.FORWARD);
+
+            assertEquals(2, values.size());
+            assertBulkIngestKey(values, createExpectedBulkIngestKey(), createValueWithUid());
+            assertBulkIngestKey(values, createExpectedBulkIngestKeyForYearIndex(), createYearIndexValue());
+            assertTrue(values.isEmpty());
+        } finally {
+            disableYearIndex();
+        }
+    }
+
+    @Test
+    public void testSimpleForwardIndexWithDayAndYearIndex() {
+        // there is no 'overkill', only 'open fire' and 'reload'
+        RawRecordContainer record = createRawRecordContainer();
+        Value value = createValueWithUid();
+        try {
+            enableDayIndex();
+            enableYearIndex();
+            Multimap<BulkIngestKey,Value> values = handler.createTermIndexColumn(record, "FIELD", "value", visibility, null, null, shardId,
+                            handler.getShardIndexTableName(), value, Direction.FORWARD);
+
+            assertEquals(3, values.size());
+            assertBulkIngestKey(values, createExpectedBulkIngestKey(), createValueWithUid());
+            assertBulkIngestKey(values, createExpectedBulkIngestKeyForDayIndex(), createDayIndexValue());
+            assertBulkIngestKey(values, createExpectedBulkIngestKeyForYearIndex(), createYearIndexValue());
+            assertTrue(values.isEmpty());
+        } finally {
+            disableDayIndex();
+            disableYearIndex();
+        }
+    }
+
+    @Test
+    public void testMaskedSimpleForwardIndex() {
+        RawRecordContainer record = createRawRecordContainer();
+        Value value = createValueWithUid();
+        Multimap<BulkIngestKey,Value> values = handler.createTermIndexColumn(record, "FIELD", "value", visibility, maskedVisibility, maskedFieldHelper, shardId,
+                        handler.getShardIndexTableName(), value, Direction.FORWARD);
+
+        assertEquals(2, values.size());
+        assertBulkIngestKey(values, createExpectedBulkIngestKey(), createValueWithUid());
+        assertBulkIngestKey(values, createExpectedBulkIngestKeyMasked(), createValueWithUid());
+        assertTrue(values.isEmpty());
+    }
+
+    @Test
+    public void testMaskedSimpleForwardIndexWithBitsetIndex() {
+        RawRecordContainer record = createRawRecordContainer();
+        Value value = createValueWithUid();
+        try {
+            enableBitsetIndex();
+            Multimap<BulkIngestKey,Value> values = handler.createTermIndexColumn(record, "FIELD", "value", visibility, maskedVisibility, maskedFieldHelper,
+                            shardId, handler.getShardIndexTableName(), value, Direction.FORWARD);
+
+            assertEquals(4, values.size());
+            assertBulkIngestKey(values, createExpectedBulkIngestKey(), createValueWithUid());
+            assertBulkIngestKey(values, createExpectedBulkIngestKeyMasked(), createValueWithUid());
+            assertBulkIngestKey(values, createExpectedBulkIngestKeyForBitsetIndex(), createBitsetIndexValue());
+            assertBulkIngestKey(values, createExpectedBulkIngestKeyForBitsetIndexMasked(), createBitsetIndexValue());
+            assertTrue(values.isEmpty());
+        } finally {
+            disableBitsetIndex();
+        }
+    }
+
+    @Test
+    public void testMaskedSimpleForwardIndexWithDayIndex() {
+        RawRecordContainer record = createRawRecordContainer();
+        Value value = createValueWithUid();
+        try {
+            enableDayIndex();
+            Multimap<BulkIngestKey,Value> values = handler.createTermIndexColumn(record, "FIELD", "value", visibility, maskedVisibility, maskedFieldHelper,
+                            shardId, handler.getShardIndexTableName(), value, Direction.FORWARD);
+
+            assertEquals(4, values.size());
+            assertBulkIngestKey(values, createExpectedBulkIngestKey(), createValueWithUid());
+            assertBulkIngestKey(values, createExpectedBulkIngestKeyMasked(), createValueWithUid());
+            assertBulkIngestKey(values, createExpectedBulkIngestKeyForDayIndex(), createDayIndexValue());
+            assertBulkIngestKey(values, createExpectedBulkIngestKeyForDayIndexMasked(), createDayIndexValue());
+            assertTrue(values.isEmpty());
+        } finally {
+            disableDayIndex();
+        }
+    }
+
+    @Test
+    public void testMaskedSimpleForwardIndexWithYearIndex() {
+        RawRecordContainer record = createRawRecordContainer();
+        Value value = createValueWithUid();
+        try {
+            enableYearIndex();
+            Multimap<BulkIngestKey,Value> values = handler.createTermIndexColumn(record, "FIELD", "value", visibility, maskedVisibility, maskedFieldHelper,
+                            shardId, handler.getShardIndexTableName(), value, Direction.FORWARD);
+
+            assertEquals(4, values.size());
+            assertBulkIngestKey(values, createExpectedBulkIngestKey(), createValueWithUid());
+            assertBulkIngestKey(values, createExpectedBulkIngestKeyMasked(), createValueWithUid());
+            assertBulkIngestKey(values, createExpectedBulkIngestKeyForYearIndex(), createYearIndexValue());
+            assertBulkIngestKey(values, createExpectedBulkIngestKeyForYearIndexMasked(), createYearIndexValue());
+            assertTrue(values.isEmpty());
+        } finally {
+            disableYearIndex();
+        }
+    }
+
+    @Test
+    public void testMaskedSimpleForwardIndexWithDayAndYearIndex() {
+        // there is no 'overkill', only 'open fire' and 'reload'
+        RawRecordContainer record = createRawRecordContainer();
+        Value value = createValueWithUid();
+        try {
+            enableDayIndex();
+            enableYearIndex();
+            Multimap<BulkIngestKey,Value> values = handler.createTermIndexColumn(record, "FIELD", "value", visibility, maskedVisibility, maskedFieldHelper,
+                            shardId, handler.getShardIndexTableName(), value, Direction.FORWARD);
+
+            assertEquals(6, values.size());
+            assertBulkIngestKey(values, createExpectedBulkIngestKey(), createValueWithUid());
+            assertBulkIngestKey(values, createExpectedBulkIngestKeyMasked(), createValueWithUid());
+            assertBulkIngestKey(values, createExpectedBulkIngestKeyForDayIndex(), createDayIndexValue());
+            assertBulkIngestKey(values, createExpectedBulkIngestKeyForDayIndexMasked(), createDayIndexValue());
+            assertBulkIngestKey(values, createExpectedBulkIngestKeyForYearIndex(), createYearIndexValue());
+            assertBulkIngestKey(values, createExpectedBulkIngestKeyForYearIndexMasked(), createYearIndexValue());
+            assertTrue(values.isEmpty());
+        } finally {
+            disableDayIndex();
+            disableYearIndex();
+        }
+    }
+
+    @Test
+    public void testSimpleReverseIndex() {
+        RawRecordContainer record = createRawRecordContainer();
+        Value value = createValueWithUid();
+        Multimap<BulkIngestKey,Value> values = handler.createTermIndexColumn(record, "FIELD", reverse("value"), visibility, null, null, shardId,
+                        handler.getShardReverseIndexTableName(), value, Direction.REVERSE);
+
+        assertEquals(1, values.size());
+        assertBulkIngestKey(values, createExpectedBulkIngestKeyReversed(), createValueWithUid());
+        assertTrue(values.isEmpty());
+    }
+
+    @Test
+    public void testSimpleReverseIndexWithBitsetIndex() {
+
+    }
+
+    @Test
+    public void testSimpleReverseIndexWithDayIndex() {
+
+    }
+
+    @Test
+    public void testSimpleReverseIndexWithYearIndex() {
+
+    }
+
+    @Test
+    public void testSimpleReverseIndexWithDayAndYearIndex() {
+        // there is no 'overkill', only 'open fire' and 'reload'
+    }
+
+    @Test
+    public void testMaskedSimpleReverseIndex() {
+
+    }
+
+    @Test
+    public void testMaskedSimpleReverseIndexWithBitsetIndex() {
+
+    }
+
+    @Test
+    public void testMaskedSimpleReverseIndexWithDayIndex() {
+
+    }
+
+    @Test
+    public void testMaskedSimpleReverseIndexWithYearIndex() {
+
+    }
+
+    @Test
+    public void testMaskedSimpleReverseIndexWithDayAndYearIndex() {
+        // there is no 'overkill', only 'open fire' and 'reload'
+    }
+
+    @Test
+    public void testDisableStandardIndexInFavorOfBitsetIndex() {
+        RawRecordContainer record = createRawRecordContainer();
+        Value value = createValueWithUid();
+        try {
+            disableStandardIndex();
+            enableBitsetIndex();
+
+            Multimap<BulkIngestKey,Value> values = handler.createTermIndexColumn(record, "FIELD", "value", visibility, null, null, shardId,
+                            handler.getShardIndexTableName(), value, Direction.FORWARD);
+
+            assertEquals(1, values.size());
+            assertBulkIngestKey(values, createExpectedBulkIngestKeyForBitsetIndex(), createBitsetIndexValue());
+            assertTrue(values.isEmpty());
+        } finally {
+            enableStandardIndex();
+            disableBitsetIndex();
+        }
+    }
+
+    private RawRecordContainer createRawRecordContainer() {
+        RawRecordContainer record = new RawRecordContainerImpl();
+        record.setDataType(createType());
+        record.setRawFileName("data_0.dat");
+        record.setRawRecordNumber(1);
+        record.setRawData("raw-data".getBytes(StandardCharsets.UTF_8));
+        // time stamp is hard coded so the test framework can reliably remove keys with timestamps
+        record.setTimestamp(getTimestamp());
+        return record;
+    }
+
+    private void enableStandardIndex() {
+        handler.setShardIndexEnabled(true);
+        handler.setShardIndexTableName(new Text(TableName.SHARD_INDEX));
+    }
+
+    private void disableStandardIndex() {
+        handler.setShardIndexEnabled(false);
+        handler.setShardIndexTableName(null);
+    }
+
+    private void enableBitsetIndex() {
+        handler.setBitsetIndexEnabled(true);
+        handler.setShardBitsetIndexTableName(new Text(TableName.TRUNCATED_SHARD_INDEX));
+    }
+
+    private void disableBitsetIndex() {
+        handler.setBitsetIndexEnabled(false);
+        handler.setShardBitsetIndexTableName(null);
+    }
+
+    private void enableDayIndex() {
+        handler.setDayIndexEnabled(true);
+        handler.setShardDayIndexTableName(new Text(TableName.SHARD_DAY_INDEX));
+    }
+
+    private void disableDayIndex() {
+        handler.setDayIndexEnabled(false);
+        handler.setShardDayIndexTableName(null);
+    }
+
+    private void enableYearIndex() {
+        handler.setYearIndexEnabled(true);
+        handler.setShardYearIndexTableName(new Text(TableName.SHARD_YEAR_INDEX));
+    }
+
+    private void disableYearIndex() {
+        handler.setYearIndexEnabled(false);
+        handler.setShardYearIndexTableName(null);
+    }
+
+    private long getTimestamp() {
+        return ShardedDataTypeHandler.getIndexTimestamp(timestamp);
+    }
+
+    private Type createType() {
+        return new Type(DATA_TYPE_NAME, TestIngestHelper.class, null, null, 10, null);
+    }
+
+    private BulkIngestKey createExpectedBulkIngestKey() {
+        Key key = new Key("value", "FIELD", "20250606_23\0wkt", "PUBLIC", getTimestamp());
+        return new BulkIngestKey(new Text("shardIndex"), key);
+    }
+
+    private BulkIngestKey createExpectedBulkIngestKeyMasked() {
+        Key key = new Key("MASKED_VALUE", "FIELD", "20250606_23\0wkt", "PRIVATE", getTimestamp());
+        return new BulkIngestKey(new Text("shardIndex"), key);
+    }
+
+    private BulkIngestKey createExpectedBulkIngestKeyReversed() {
+        Key key = new Key("eulav", "FIELD", "20250606_23\0wkt", "PUBLIC", getTimestamp());
+        return new BulkIngestKey(new Text("shardReverseIndex"), key);
+    }
+
+    private BulkIngestKey createExpectedBulkIngestKeyForBitsetIndex() {
+        Key key = new Key("value", "FIELD", "20250606\0wkt", "PUBLIC", getTimestamp());
+        return new BulkIngestKey(new Text(TableName.TRUNCATED_SHARD_INDEX), key);
+    }
+
+    private BulkIngestKey createExpectedBulkIngestKeyForBitsetIndexMasked() {
+        Key key = new Key("MASKED_VALUE", "FIELD", "20250606\0wkt", "PRIVATE", getTimestamp());
+        return new BulkIngestKey(new Text(TableName.TRUNCATED_SHARD_INDEX), key);
+    }
+
+    private BulkIngestKey createExpectedBulkIngestKeyForDayIndex() {
+        Key key = new Key("20250606\0value", "FIELD", "wkt", "PUBLIC", getTimestamp());
+        return new BulkIngestKey(new Text(TableName.SHARD_DAY_INDEX), key);
+    }
+
+    private BulkIngestKey createExpectedBulkIngestKeyForDayIndexMasked() {
+        Key key = new Key("20250606\0MASKED_VALUE", "FIELD", "wkt", "PRIVATE", getTimestamp());
+        return new BulkIngestKey(new Text(TableName.SHARD_DAY_INDEX), key);
+    }
+
+    private BulkIngestKey createExpectedBulkIngestKeyForYearIndex() {
+        Key key = new Key("2025\0value", "FIELD", "wkt", "PUBLIC", getTimestamp());
+        return new BulkIngestKey(new Text(TableName.SHARD_YEAR_INDEX), key);
+    }
+
+    private BulkIngestKey createExpectedBulkIngestKeyForYearIndexMasked() {
+        Key key = new Key("2025\0MASKED_VALUE", "FIELD", "wkt", "PRIVATE", getTimestamp());
+        return new BulkIngestKey(new Text(TableName.SHARD_YEAR_INDEX), key);
+    }
+
+    private Value createValueWithUid() {
+        return createValueWithUid("d8zay2.-3pnndm.-anolok");
+    }
+
+    private Value createValueWithUid(String uid) {
+        Uid.List list = Uid.List.newBuilder().setIGNORE(false).setCOUNT(1).addUID(uid).build();
+        return new Value(list.toByteArray());
+    }
+
+    private Value createBitsetIndexValue() {
+        return createDayIndexValue();
+    }
+
+    private Value createDayIndexValue() {
+        BitSet bits = new BitSet();
+        bits.set(23);
+        return new Value(bits.toByteArray());
+    }
+
+    private Value createYearIndexValue() {
+        BitSet bits = new BitSet();
+        bits.set(157); // 6 June 2025 is the 157th day of the year
+        return new Value(bits.toByteArray());
+    }
+
+    private final StringBuilder sb = new StringBuilder();
+
+    private String reverse(String value) {
+        sb.setLength(0);
+        sb.append(value);
+        sb.reverse();
+        return sb.toString();
+    }
+
+    private void assertBulkIngestKey(Multimap<BulkIngestKey,Value> multimap, BulkIngestKey expectedKey, Value expectedValue) {
+        assertTrue("did not find expected BulkIngestKey", multimap.containsKey(expectedKey));
+        Collection<Value> values = multimap.get(expectedKey);
+        boolean found = values.remove(expectedValue);
+        assertTrue("did not find expected value", found);
+        if (!values.isEmpty()) {
+            multimap.putAll(expectedKey, values);
+        }
+    }
 }

@@ -23,11 +23,9 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.configuration.spring.SpringBean;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
@@ -46,7 +44,6 @@ import datawave.webservice.result.GenericResponse;
 @RunAs("InternalUser")
 @RolesAllowed({"InternalUser", "AuthorizedUser", "AuthorizedServer", "AuthorizedQueryServer", "SecurityUser"})
 @DeclareRoles({"InternalUser", "AuthorizedUser", "AuthorizedServer", "AuthorizedQueryServer", "SecurityUser"})
-@Exclude(ifProjectStage = DatawaveEmbeddedProjectStageHolder.DatawaveEmbedded.class)
 public class UserOperationsBean implements UserOperations {
     private Logger log = LoggerFactory.getLogger(getClass());
 

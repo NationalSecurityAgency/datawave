@@ -1,62 +1,62 @@
 package datawave.util.keyword;
 
 import java.io.Serializable;
+import java.nio.charset.StandardCharsets;
 import java.util.Collection;
-import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.commons.lang3.StringUtils;
+
+import datawave.marking.MarkingFunctions;
 
 /**
  * Default implementations for pluggable utilities for generating tag clouds, includes mechanisms to partition keywords into separate tag clouds, combine or
  * merge visibility strings, and calculate scores, source collections and frequencies of individual keywords based on observed results
  */
 public class DefaultTagCloudUtils implements TagCloudUtils, Serializable {
-
     private static final long serialVersionUID = 652771994052429009L;
+    private static final String MULTI_VALUE_SEPARATOR = ",";
+    private MarkingFunctions<?> markingFunctions;
 
     @Override
-    public Map<String,String> generateCombinedVisibility(Set<String> visibilities) {
-        final StringBuilder b = new StringBuilder();
-        visibilities.forEach(x -> b.append("(").append(x).append(")&"));
-        if (b.length() > 0) {
-            b.setLength(b.length() - 1);
-            ColumnVisibility cv = new ColumnVisibility(b.toString());
-            ColumnVisibility flat = new ColumnVisibility(cv.flatten());
-            return Map.of("visibility", flat.toString());
-        } else {
-            return Collections.emptyMap();
+    public String generateCombinedVisibility(Set<String> visibilities) {
+        if (visibilities == null || visibilities.isEmpty()) {
+            return null;
+        }
+        try {
+            if (null == markingFunctions) {
+                markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
+            }
+            // Calculate the columnVisibility for this key from the combiner.
+            ColumnVisibility columnVisibility = markingFunctions
+                            .combineVisibilities(visibilities.stream().map(ColumnVisibility::new).collect(Collectors.toList()));
+            return new String(columnVisibility.getExpression(), StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 
     @Override
-    public String computeIndexKey(KeywordResults results, String keyword, boolean partitionOnLanguage) {
-        return (partitionOnLanguage ? results.getLanguage() + "%%" : "") + keyword;
-    }
+    public Map<String,String> generateCombinedMetadata(Map<String,Set<String>> metadata) {
+        Map<String,String> combined = new HashMap<>();
 
-    @Override
-    public String computeVisibilityKey(KeywordResults results, boolean partitionOnLanguage) {
-        return partitionOnLanguage ? results.getLanguage() : "";
-    }
-
-    @Override
-    public String computePartitionKey(Map.Entry<String,TagCloudEntry.Builder> entry, boolean partitionOnLanguage) {
-        final String key = entry.getKey();
-        final int pos = key.indexOf("%%");
-        if (pos > -1) {
-            return key.substring(0, pos);
-        } else {
-            return "";
+        for (Entry<String,Set<String>> entry : metadata.entrySet()) {
+            String joined = StringUtils.join(entry.getValue(), MULTI_VALUE_SEPARATOR);
+            combined.put(entry.getKey(), joined);
         }
+
+        return combined;
     }
 
     @Override
-    public double calculateScore(Collection<TagCloudEntry.ScoreTuple> sourceScores) {
-        // for now, choose the best (smallest) scored version of the tag.
-        return sourceScores.stream().map(TagCloudEntry.ScoreTuple::getScore).min(Double::compareTo).orElse(1.0);
-
+    public double calculateScore(Collection<TagCloudEntry.ScoreTuple> sourceScores, Comparator<Double> comparator, double defaultScore) {
+        return sourceScores.stream().map(TagCloudEntry.ScoreTuple::getScore).sorted(comparator).findFirst().orElse(defaultScore);
     }
 
     @Override

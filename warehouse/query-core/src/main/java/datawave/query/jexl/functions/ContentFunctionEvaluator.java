@@ -14,6 +14,7 @@ import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Lists;
 
 import datawave.ingest.protobuf.TermWeightPosition;
+import datawave.query.jexl.JexlASTHelper;
 import datawave.query.postprocessing.tf.TermOffsetMap;
 
 /**
@@ -32,7 +33,7 @@ public abstract class ContentFunctionEvaluator {
     protected Set<String> eventIds;
 
     public ContentFunctionEvaluator(Set<String> fields, int distance, float maxScore, TermOffsetMap termOffsetMap, String... terms) {
-        this.fields = fields;
+        this.fields = fields != null ? fields : Collections.emptySet(); // null and empty both indicate all fields should be evaluated.
         this.distance = distance;
         this.maxScore = TermWeightPosition.positionScoreToTermWeightScore(maxScore);
         this.termOffsetMap = termOffsetMap;
@@ -139,6 +140,11 @@ public abstract class ContentFunctionEvaluator {
             }
         }
 
+        /*
+         * TODO: consider adding an optimization here to determine if the query is satisfiable based on an analysis of the the fields in the function vs the
+         * terms present in the termOffsetMap
+         */
+
         if (eventIds == null || eventIds.isEmpty()) {
             if (log.isTraceEnabled()) {
                 log.trace("Failing process() because of an empty event id intersection across the terms");
@@ -171,7 +177,8 @@ public abstract class ContentFunctionEvaluator {
                         TermFrequencyList.Zone zone = new TermFrequencyList.Zone(field, true, eventId);
                         Collection<TermWeightPosition> offsets = tfList.fetchOffsets().get(zone);
                         // if no offsets, but we are explicitly looking for this field (i.e. not unfielded), then check for a non-content expansion zone
-                        if (offsets.isEmpty() && (fields != null && fields.contains(field))) {
+                        // fields in the TF column may have a context hash which necessitates isRelevantField() to get a correct match
+                        if (offsets.isEmpty() && isRelevantField(field)) {
                             zone = new TermFrequencyList.Zone(field, false, eventId);
                             offsets = tfList.fetchOffsets().get(zone);
                         }
@@ -190,7 +197,7 @@ public abstract class ContentFunctionEvaluator {
 
                 // Iterate over each collection of offsets (grouped by field) and try to find one that satisfies the phrase/adjacency
                 for (String field : offsetsByField.keySet()) {
-                    if (!fields.isEmpty() && !fields.contains(field)) {
+                    if (!fields.isEmpty() && !isRelevantField(field)) {
                         continue;
                     }
                     List<List<TermWeightPosition>> offsets = offsetsByField.get(field);
@@ -242,6 +249,23 @@ public abstract class ContentFunctionEvaluator {
         }
 
         return Collections.emptySet();
+    }
+
+    /**
+     * Return whether the candidate field should be considered during content-function evaluation. This accepts exact field matches and grouped variants of a
+     * queried base field, e.g. {@code CONTENT} matching {@code CONTENT.1}.
+     *
+     * @param candidateField
+     *            the field found in the term-frequency data
+     * @return true if the field is relevant for evaluation
+     */
+    protected boolean isRelevantField(String candidateField) {
+        for (String field : fields) {
+            if (field.equals(candidateField) || JexlASTHelper.isGroupedFieldMatch(field, candidateField)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override

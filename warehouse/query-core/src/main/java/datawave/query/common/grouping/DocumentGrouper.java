@@ -159,6 +159,7 @@ public class DocumentGrouper {
     private final FieldIndex aggregateFieldsIndex = new FieldIndex(true); // Allow null attributes when indexing fields to aggregate.
     private final Multimap<Pair<String,String>,Grouping> groupingContextAndInstancesSeenForGroups = HashMultimap.create();
     private final int maxGroupSize;
+    private final boolean oneDocPerGroup;
 
     private DocumentGrouper(Map.Entry<Key,Document> documentEntry, GroupFields groupFields, Groups groups) {
         this.documentKey = documentEntry.getKey();
@@ -168,6 +169,7 @@ public class DocumentGrouper {
         this.reverseModelMappings = groupFields.getReverseModelMap();
         this.groups = groups;
         this.maxGroupSize = this.groupFields.keySet().size();
+        this.oneDocPerGroup = groupFields.isOneDocPerGroup();
     }
 
     /**
@@ -204,9 +206,26 @@ public class DocumentGrouper {
                 log.trace("Aggregation skipped, either no fields targeted for aggregation or no entries found for targeted fields");
             }
 
+            // Now ensure the counts for each group are reduced down to 1 as we only want to count this document once
+            // per group if requested
+            if (oneDocPerGroup) {
+                capCurrentGroupCounts(1);
+            }
+
             // Merge the groups and aggregations we found in this particular group-by operation into the groups passed by the user. The separation is required
             // to ensure that any grouping and aggregation done in this session was applied only to the current document.
             this.groups.mergeAll(currentGroups);
+        }
+    }
+
+    /**
+     * Cap the group counts by the specified value. Normally this is only used to cap the group counts to 1 when grouping 1 document
+     *
+     * @param cap
+     */
+    private void capCurrentGroupCounts(int cap) {
+        for (Group group : currentGroups.getGroups()) {
+            group.capGroupCount(cap);
         }
     }
 
@@ -291,7 +310,7 @@ public class DocumentGrouper {
             // Create a new group and merge it into the existing groups.
             Group group = new Group(grouping, count);
             group.setFieldAggregator(fieldAggregator);
-            group.addDocumentVisibility(document.getColumnVisibility());
+            group.addDocumentExpression(document.getAccessExpression());
             groups.mergeOrPutGroup(group);
         }
     }
@@ -611,9 +630,9 @@ public class DocumentGrouper {
         }
         // Add the visibilities of each attribute in the grouping for combination later, and increment the count for how many times this distinct
         // grouping was seen.
-        group.addAttributeVisibilities(grouping);
+        group.addAttributeExpressions(grouping);
         group.incrementCount();
-        group.addDocumentVisibility(document.getColumnVisibility());
+        group.addDocumentExpression(document.getAccessExpression());
     }
 
     private Set<GroupingAttribute<?>> createGroupingAttributes(String field, Set<Attribute<?>> attributes) {

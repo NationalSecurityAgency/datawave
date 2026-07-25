@@ -14,11 +14,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
+ * Deprecated, use {@link datawave.table.hash.AbstractUIDBuilder}
+ * <p>
  * Abstract implementation of the UIDBuilder
  *
  * @param <UID_TYPE>
  *            - type of the AbstractUIDBuilder
  */
+@Deprecated(forRemoval = true, since = "7.40.0")
 public abstract class AbstractUIDBuilder<UID_TYPE extends UID> implements UIDBuilder<UID_TYPE> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractUIDBuilder.class);
@@ -105,7 +108,7 @@ public abstract class AbstractUIDBuilder<UID_TYPE extends UID> implements UIDBui
                 LOGGER.debug("Setting configuration {} to use {} based on UID type {} and machine ID {}", config.hashCode(),
                                 SnowflakeUIDBuilder.class.getSimpleName(), uidType, machineId);
                 config.setInt(CONFIG_MACHINE_ID_KEY, machineId);
-            } else if (LOGGER.isDebugEnabled()) {
+            } else {
                 LOGGER.warn("Unable to set configuration to use {} based on UID type {} with machine ID {}", SnowflakeUIDBuilder.class.getSimpleName(), uidType,
                                 machineId);
                 config.set(CONFIG_UID_TYPE_KEY, HashUID.class.getSimpleName(), this.getClass().getName());

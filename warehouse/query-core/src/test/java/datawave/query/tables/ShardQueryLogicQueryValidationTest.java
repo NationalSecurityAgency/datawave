@@ -1,5 +1,9 @@
 package datawave.query.tables;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -13,27 +17,21 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
 
-import javax.inject.Inject;
-
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
-import org.assertj.core.api.Assertions;
 import org.easymock.EasyMock;
-import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.junit.Arquillian;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.asset.StringAsset;
-import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import datawave.configuration.spring.SpringBean;
 import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
 import datawave.microservice.query.Query;
@@ -61,14 +59,21 @@ import datawave.query.rules.TimeFunctionRule;
 import datawave.query.rules.UnescapedSpecialCharsRule;
 import datawave.query.rules.UnescapedWildcardsInPhrasesRule;
 import datawave.query.rules.UnfieldedTermsRule;
-import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.util.WiseGuysIngest;
-import datawave.util.TableName;
-import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
+import datawave.table.constants.TableName;
 import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.QueryException;
 
-@RunWith(Arquillian.class)
+@ExtendWith(SpringExtension.class)
+@ComponentScan(basePackages = "datawave.query")
+// @formatter:off
+@ContextConfiguration(locations = {
+        "classpath:datawave/query/QueryLogicFactory.xml",
+        "classpath:beanRefContext.xml",
+        "classpath:MarkingFunctionsContext.xml",
+        "classpath:MetadataHelperContext.xml",
+        "classpath:CacheContext.xml"})
+// @formatter:on
 public class ShardQueryLogicQueryValidationTest {
 
     private static final Logger log = Logger.getLogger(ShardQueryLogicQueryValidationTest.class);
@@ -87,34 +92,22 @@ public class ShardQueryLogicQueryValidationTest {
     private Class<? extends Throwable> expectedExceptionType;
     private String expectedExceptionMessage;
 
-    @Inject
-    @SpringBean(name = "EventQuery")
+    @Autowired
+    @Qualifier("EventQuery")
     protected ShardQueryLogic logic;
     protected KryoDocumentDeserializer deserializer;
 
-    @Deployment
-    public static JavaArchive createDeployment() throws Exception {
-        return ShrinkWrap.create(JavaArchive.class)
-                        .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.query", "org.jboss.logging",
-                                        "datawave.webservice.query.result.event")
-                        .deleteClass(DefaultEdgeEventQueryLogic.class).deleteClass(RemoteEdgeDictionary.class)
-                        .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class)
-                        .addAsManifestResource(new StringAsset(
-                                        "<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>" + "</alternatives>"),
-                                        "beans.xml");
-    }
-
-    @BeforeClass
-    public static void beforeClass() throws Exception {
+    @BeforeAll
+    public static void beforeAll() {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
     }
 
-    @AfterClass
-    public static void afterClass() throws Exception {
+    @AfterAll
+    public static void afterAll() {
         TypeRegistry.reset();
     }
 
-    @Before
+    @BeforeEach
     public void setup() throws ParseException {
         this.logic.setFullTableScanEnabled(true);
         this.deserializer = new KryoDocumentDeserializer();
@@ -122,20 +115,8 @@ public class ShardQueryLogicQueryValidationTest {
         this.endDate = dateFormat.parse("20150101");
     }
 
-    @After
-    public void tearDown() throws Exception {
-        this.logic = null;
-        this.query = null;
-        this.queryParameters.clear();
-        this.startDate = null;
-        this.endDate = null;
-        this.expectedRuleResults.clear();
-        this.expectedExceptionType = null;
-        this.expectedExceptionMessage = null;
-    }
-
     private AccumuloClient createClient() throws Exception {
-        AccumuloClient client = new QueryTestTableHelper(ShardQueryLogicTest.ShardRange.class.toString(), log,
+        AccumuloClient client = new QueryTestTableHelper(ShardQueryLogicQueryValidationTest.class.toString(), log,
                         RebuildingScannerTestHelper.TEARDOWN.EVERY_OTHER_SANS_CONSISTENCY, RebuildingScannerTestHelper.INTERRUPT.EVERY_OTHER).client;
         WiseGuysIngest.writeItAll(client, WiseGuysIngest.WhatKindaRange.SHARD);
         PrintUtility.printTable(client, auths, TableName.SHARD);
@@ -180,7 +161,7 @@ public class ShardQueryLogicQueryValidationTest {
         expectedRules.add(new TimeFunctionRule("Validate #TIME_FUNCTION has Date Fields"));
 
         List<QueryRule> actual = logic.getValidationRules();
-        Assertions.assertThat(actual).containsExactlyElementsOf(expectedRules);
+        assertThat(actual).containsExactlyElementsOf(expectedRules);
     }
 
     /**
@@ -190,8 +171,8 @@ public class ShardQueryLogicQueryValidationTest {
     public void testNoRulesConfigured() {
         logic.setValidationRules(null);
 
-        BadRequestQueryException exception = Assert.assertThrows(BadRequestQueryException.class, this::assertResult);
-        Assert.assertEquals("No query validation rules configured for the query logic.", exception.getMessage());
+        BadRequestQueryException exception = assertThrows(BadRequestQueryException.class, this::assertResult);
+        assertEquals("No query validation rules configured for the query logic.", exception.getMessage());
     }
 
     /**
@@ -376,11 +357,11 @@ public class ShardQueryLogicQueryValidationTest {
         Query settings = createSettings();
         QueryValidationResult actualResult = (QueryValidationResult) logic.validateQuery(client, settings, authSet);
 
-        Assertions.assertThat(actualResult.getRuleResults()).isEqualTo(expectedRuleResults);
+        assertThat(actualResult.getRuleResults()).isEqualTo(expectedRuleResults);
         if (expectedExceptionType == null) {
-            Assertions.assertThat(actualResult.getException()).isNull();
+            assertThat(actualResult.getException()).isNull();
         } else {
-            Assertions.assertThat(actualResult.getException()).hasMessage(expectedExceptionMessage).isInstanceOf(expectedExceptionType);
+            assertThat(actualResult.getException()).hasMessage(expectedExceptionMessage).isInstanceOf(expectedExceptionType);
         }
     }
 

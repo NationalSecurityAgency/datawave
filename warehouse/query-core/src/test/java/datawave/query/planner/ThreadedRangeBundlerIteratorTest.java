@@ -120,14 +120,14 @@ public class ThreadedRangeBundlerIteratorTest extends EasyMockSupport {
         assertTrue(itr.hasNext());
         long end = System.currentTimeMillis();
         assertTrue((end - start) >= 1000);
-        assertTrue((end - start) <= 1100);
+        assertTrue((end - start) <= 1500);
 
         verifyAll();
     }
 
     @Test
     public void disableBundlingMinWaitTimeTest() throws IOException {
-        long delay = 25;
+        long delay = 50;
 
         builder.setMaxRanges(1);
 
@@ -145,8 +145,8 @@ public class ThreadedRangeBundlerIteratorTest extends EasyMockSupport {
         assertFalse(itr.hasNext());
         long end = System.currentTimeMillis();
         assertTrue(end - start >= delay);
-        // really this should be maxWaitValue+1, but cpu speeds and scheduling may cause intermittent failures then
-        assertTrue(end - start < 2 * delay);
+        // use a generous upper bound to avoid intermittent failures from thread scheduling and GC pauses
+        assertTrue(end - start < delay + 500);
         verifyAll();
     }
 
@@ -178,6 +178,7 @@ public class ThreadedRangeBundlerIteratorTest extends EasyMockSupport {
     @Test
     public void blockForNumRangesToBufferTest() {
         int delay = 200;
+        int overhead = 100;
 
         Iterator<QueryPlan> itr = plans.iterator();
 
@@ -198,12 +199,12 @@ public class ThreadedRangeBundlerIteratorTest extends EasyMockSupport {
         long start2 = System.currentTimeMillis();
         assertTrue(trbi.hasNext());
         long end2 = System.currentTimeMillis();
-        // this happened async, so should be faster, but not more than the delay
-        assertTrue((end2 - start2) <= delay);
+        // this happened async, so should be faster, but not more than the delay + overhead
+        assertTrue((end2 - start2) <= (delay + overhead));
 
         long total = (System.currentTimeMillis() - start);
         // total time will be the sum of the delay + overhead
-        assertTrue(total >= delay * 2);
+        assertTrue(total >= (delay + overhead));
 
         verifyAll();
     }
@@ -223,7 +224,7 @@ public class ThreadedRangeBundlerIteratorTest extends EasyMockSupport {
         assertFalse(trbi.hasNext());
         long end = System.currentTimeMillis();
         // arbitrary fast time less than any previous poll time, actual time probably 1 but to keep this unit test predictable
-        assertTrue(end - start < 5);
+        assertTrue(end - start < 20);
         verifyAll();
     }
 

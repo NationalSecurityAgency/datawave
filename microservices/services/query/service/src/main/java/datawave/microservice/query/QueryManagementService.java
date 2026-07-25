@@ -33,12 +33,11 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.aop.framework.Advised;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.cloud.bus.BusProperties;
@@ -2175,7 +2174,7 @@ public class QueryManagementService implements QueryRequestHandler {
 
         // if we haven't already, validate the markings
         SecurityMarking requestSecurityMarking = querySecurityMarking.get();
-        if (requestSecurityMarking.toColumnVisibilityString() == null) {
+        if (requestSecurityMarking.toAccessExpressionString() == null) {
             validateSecurityMarkings(parameters);
         }
 
@@ -2360,7 +2359,7 @@ public class QueryManagementService implements QueryRequestHandler {
 
         Query query = responseObjectFactory.getQueryImpl();
         query.initialize(userDn, dnList, queryLogicName, requestQueryParameters, requestQueryParameters.getUnknownParameters(parameters));
-        query.setColumnVisibility(requestSecurityMarking.toColumnVisibilityString());
+        query.setColumnVisibility(requestSecurityMarking.toAccessExpressionString());
         query.setUncaughtExceptionHandler(new QueryUncaughtExceptionHandler());
         Thread.currentThread().setUncaughtExceptionHandler(query.getUncaughtExceptionHandler());
         if (queryId != null) {
@@ -2603,7 +2602,7 @@ public class QueryManagementService implements QueryRequestHandler {
         // These are parameters that aren't passed in by the user, but rather are computed from other sources.
         PrivateAuditConstants.stripPrivateParameters(parameters);
         parameters.add(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
-        parameters.set(PrivateAuditConstants.COLUMN_VISIBILITY, querySecurityMarking.get().toColumnVisibilityString());
+        parameters.set(PrivateAuditConstants.COLUMN_VISIBILITY, querySecurityMarking.get().toAccessExpressionString());
         parameters.add(PrivateAuditConstants.USER_DN, userDn);
     }
 

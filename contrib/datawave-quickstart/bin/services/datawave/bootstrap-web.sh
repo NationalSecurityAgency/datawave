@@ -1,7 +1,7 @@
 
 # Get these vars from the pom so users not building the container image can stay up to date
-DW_WILDFLY_VERSION="${DW_WILDFLY_VERSION:-$(mvn -q -f ${DW_CLOUD_HOME}/docker/pom.xml help:evaluate -DforceStdout -Dexpression=version.quickstart.wildfly | tail -1)}"
-DW_WILDFLY_DIST_SHA512_CHECKSUM="${DW_WILDFLY_DIST_SHA512_CHECKSUM:-$(mvn -q -f ${DW_CLOUD_HOME}/docker/pom.xml help:evaluate -DforceStdout -Dexpression=sha512.checksum.wildfly | tail -1)}"
+DW_WILDFLY_VERSION="${DW_WILDFLY_VERSION:-$(mvn -o -q -f ${DW_CLOUD_HOME}/docker/pom.xml help:evaluate -DforceStdout -Dexpression=version.quickstart.wildfly | tail -1)}"
+DW_WILDFLY_DIST_SHA512_CHECKSUM="${DW_WILDFLY_DIST_SHA512_CHECKSUM:-$(mvn -o -q -f ${DW_CLOUD_HOME}/docker/pom.xml help:evaluate -DforceStdout -Dexpression=sha512.checksum.wildfly | tail -1)}"
 
 DW_WILDFLY_DIST_URI="${DW_WILDFLY_DIST_URI:-https://download.jboss.org/wildfly/${DW_WILDFLY_VERSION}.Final/wildfly-${DW_WILDFLY_VERSION}.Final.tar.gz}"
 DW_WILDFLY_DIST="$( basename "${DW_WILDFLY_DIST_URI}" )"
@@ -139,6 +139,11 @@ function datawaveWebIsDeployed() {
    return 0
 }
 
+function datawaveWebReadyToStart() {
+    ss -ln | grep 8020 && ss -ln | grep 2181 && ss -ln | grep 9997 && return 0
+    return 1
+}
+
 function datawaveWebStart() {
 
     local debug=false
@@ -149,6 +154,24 @@ function datawaveWebStart() {
 
     hadoopIsRunning || hadoopStart || return 1
     accumuloIsRunning || accumuloStart || return 1
+
+    # We need to wait until Hadoop, Zookeeper, and Accumulo are completely ready before starting web
+    local pollInterval=5
+    local maxAttempts=20
+
+    info "Polling for dependent services every ${pollInterval} seconds (${maxAttempts} attempts max)"
+
+    for (( i=1; i<=${maxAttempts}; i++ ))
+    do
+       if datawaveWebReadyToStart ; then
+          echo "    Hadoop, Zookeeper and Accumulo now ready (${i}/${maxAttempts})"
+          break
+       fi
+       echo "    -- Dependent services not ready yet (${i}/${maxAttempts})"
+
+       sleep $pollInterval
+    done
+    datawaveWebReadyToStart || return 1
 
     if datawaveWebIsRunning ; then
        info "Wildfly is already running"

@@ -1,112 +1,238 @@
 package datawave.query.tables.keyword;
 
-import static org.junit.Assert.assertTrue;
+import static datawave.query.tables.keyword.TagCloudTestUtil.CAPONE_SOURCE;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.fail;
 
-import java.text.ParseException;
+import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
-import java.util.TimeZone;
 import java.util.UUID;
-
-import javax.inject.Inject;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.junit.Arquillian;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.asset.StringAsset;
-import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import datawave.configuration.spring.SpringBean;
 import datawave.core.query.configuration.GenericQueryConfiguration;
-import datawave.core.query.logic.QueryLogicTransformer;
-import datawave.helpers.PrintUtility;
-import datawave.ingest.data.TypeRegistry;
 import datawave.microservice.query.QueryImpl;
-import datawave.query.ExcerptTest;
 import datawave.query.QueryTestTableHelper;
-import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
+import datawave.query.tables.ResponseQueryDriver;
+import datawave.query.tables.keyword.transform.TagCloudPartitionTransformer;
 import datawave.query.util.WiseGuysIngest;
-import datawave.util.TableName;
-import datawave.util.keyword.KeywordResults;
-import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
+import datawave.util.keyword.TagCloudInput;
+import datawave.util.keyword.TagCloudPartition;
+import datawave.webservice.result.keyword.DefaultTagCloud;
+import datawave.webservice.result.keyword.DefaultTagCloudEntry;
+import datawave.webservice.result.keyword.DefaultTagCloudResponse;
+import datawave.webservice.result.keyword.TagCloudBase;
 
-@RunWith(Arquillian.class)
+@ExtendWith(SpringExtension.class)
+@ComponentScan(basePackages = "datawave.query")
+// @formatter:off
+@ContextConfiguration(locations = {
+        "classpath:datawave/query/QueryLogicFactory.xml",
+        "classpath:beanRefContext.xml",
+        "classpath:MarkingFunctionsContext.xml",
+        "classpath:MetadataHelperContext.xml",
+        "classpath:CacheContext.xml"})
+// @formatter:on
 public class KeywordQueryLogicFunctionalTest {
-    protected static AccumuloClient connector = null;
 
     private static final Logger log = Logger.getLogger(KeywordQueryLogicFunctionalTest.class);
+
+    protected static AccumuloClient connector;
+
     protected Authorizations auths = new Authorizations("ALL");
     protected Set<Authorizations> authSet = Set.of(auths);
 
-    @Inject
-    @SpringBean(name = "KeywordQuery")
+    @Autowired
+    @Qualifier("KeywordQuery")
     protected KeywordQueryLogic logic;
 
+    private final TagCloudPartitionTransformer tagCloudPartitionTransformer = TagCloudPartitionTransformer.getInstance();
+
     private final Map<String,String> extraParameters = new HashMap<>();
-    private final Set<String> expectedResults = new HashSet<>();
+    private final List<DefaultTagCloud> expectedResults = new ArrayList<>();
 
-    @Deployment
-    public static JavaArchive createDeployment() throws Exception {
+    private ResponseQueryDriver<Entry<Key,Value>> queryDriver;
+    private final TagCloudTestUtil tagCloudTestUtil = new TagCloudTestUtil();
 
-        return ShrinkWrap.create(JavaArchive.class)
-                        .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.query", "org.jboss.logging",
-                                        "datawave.webservice.query.result.event")
-                        .deleteClass(DefaultEdgeEventQueryLogic.class).deleteClass(RemoteEdgeDictionary.class)
-                        .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class)
-                        .addAsManifestResource(new StringAsset(
-                                        "<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>" + "</alternatives>"),
-                                        "beans.xml");
-    }
-
-    @BeforeClass
+    @BeforeAll
     public static void setUp() throws Exception {
-        QueryTestTableHelper qtth = new QueryTestTableHelper(ExcerptTest.DocumentRangeTest.class.toString(), log);
+        QueryTestTableHelper qtth = new QueryTestTableHelper(KeywordQueryLogicFunctionalTest.class.toString(), log);
         connector = qtth.client;
-
-        Logger.getLogger(PrintUtility.class).setLevel(Level.DEBUG);
-
         WiseGuysIngest.writeItAll(connector, WiseGuysIngest.WhatKindaRange.DOCUMENT);
-        Authorizations auths = new Authorizations("ALL");
-        PrintUtility.printTable(connector, auths, TableName.SHARD);
-        PrintUtility.printTable(connector, auths, TableName.SHARD_INDEX);
-        PrintUtility.printTable(connector, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
     }
 
-    @Before
-    public void setup() throws ParseException {
-        TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
-        log.setLevel(Level.TRACE);
+    @BeforeEach
+    public void setup() {
+        queryDriver = new ResponseQueryDriver<>(logic);
     }
 
     @Test
-    public void simpleTest() throws Exception {
-        String queryString = "DOCUMENT:20130101_0/test/-cvy0gj.tlf59s.-duxzua";
+    public void simpleV1Test() throws Exception {
+        String docId = CAPONE_SOURCE;
+        String queryString = "DOCUMENT:" + docId;
 
-        addExpectedResult(
-                        "{\"source\":\"20130101_0/test/-cvy0gj.tlf59s.-duxzua\",\"view\":\"CONTENT\",\"language\":\"\",\"visibility\":\"ALL\",\"keywords\":{\"get much\":0.5903,\"kind\":0.2546,\"kind word\":0.2052,\"kind word alone\":0.4375,\"much farther\":0.5903,\"word\":0.2857,\"word alone\":0.534}}");
+        addExpectedTagCloud(tagCloudTestUtil.getCaponeKeywordCloud(docId, "1"));
+        runTestQuery(queryString);
+    }
+
+    @Test
+    public void simpleV2Test() throws Exception {
+        String docId = CAPONE_SOURCE;
+        String queryString = "DOCUMENT:" + docId;
+
+        extraParameters.put("tag.cloud.version", "2");
+        addExpectedTagCloud(tagCloudTestUtil.getCaponeKeywordCloud(docId, "2"));
+        runTestQuery(queryString);
+    }
+
+    @Test
+    public void simpleWithOnlyExternalHitsV1Test() throws Exception {
+        String queryString = "DOCUMENT:20130101_0/test/-cvy0gj.tlf59s.-duxzuab";
+
+        TagCloudPartition externalPartition = new TagCloudPartition("FOO", "FOO", List
+                        .of(new TagCloudInput("20130101_0/test/-cvy0gj.tlf59s.-duxzuab", "ALL", Map.of("x", .5d, "y", .8d, "z", 1d), Map.of("type", "demo"))));
+        logic.setExternalData(List.of(tagCloudPartitionTransformer.encode(externalPartition)), Set.of(tagCloudPartitionTransformer));
+
+        List<DefaultTagCloudEntry> entries = new ArrayList<>();
+        entries.add(tagCloudTestUtil.createTagCloudEntry("x", .5, 1, List.of("20130101_0/test/-cvy0gj.tlf59s.-duxzuab")));
+        entries.add(tagCloudTestUtil.createTagCloudEntry("y", .8, 1, List.of("20130101_0/test/-cvy0gj.tlf59s.-duxzuab")));
+        entries.add(tagCloudTestUtil.createTagCloudEntry("z", 1, 1, List.of("20130101_0/test/-cvy0gj.tlf59s.-duxzuab")));
+        addExpectedTagCloud(tagCloudTestUtil.getExpectedCloud("1", Map.of("type", "demo"), entries));
 
         runTestQuery(queryString);
     }
 
-    @SuppressWarnings("SameParameterValue")
-    protected void addExpectedResult(String keywords) {
-        if (StringUtils.isNotBlank(keywords)) {
-            expectedResults.add(keywords);
-        }
+    @Test
+    public void simpleWithOnlyExternalHitsV2Test() throws Exception {
+        String queryString = "DOCUMENT:20130101_0/test/-cvy0gj.tlf59s.-duxzuab";
+
+        TagCloudPartition externalPartition = new TagCloudPartition("FOO", "FOO",
+                        List.of(new TagCloudInput(CAPONE_SOURCE, "ALL", Map.of("x", .5d, "y", .8d, "z", 1d), Map.of("type", "demo"))));
+        logic.setExternalData(List.of(tagCloudPartitionTransformer.encode(externalPartition)), Set.of(tagCloudPartitionTransformer));
+
+        List<DefaultTagCloudEntry> entries = new ArrayList<>();
+        entries.add(tagCloudTestUtil.createTagCloudEntry("x", .5, 1, List.of(CAPONE_SOURCE)));
+        entries.add(tagCloudTestUtil.createTagCloudEntry("y", .8, 1, List.of(CAPONE_SOURCE)));
+        entries.add(tagCloudTestUtil.createTagCloudEntry("z", 1, 1, List.of(CAPONE_SOURCE)));
+
+        extraParameters.put("tag.cloud.version", "2");
+        addExpectedTagCloud(tagCloudTestUtil.getExpectedCloud("2", Map.of("type", "demo"), entries));
+
+        runTestQuery(queryString);
+    }
+
+    @Test
+    public void multipleExternalHitsV1Test() throws Exception {
+        String queryString = "DOCUMENT:20130101_0/test/-cvy0gj.tlf59s.-duxzuab";
+
+        TagCloudPartition externalPartition = new TagCloudPartition("FOO", "FOO", TagCloudPartition.ScoreType.HIGHER_IS_BETTER, List.of(
+                        new TagCloudInput(CAPONE_SOURCE, "ALL", Map.of("x", .5d, "y", .8d, "z", 1d), Map.of("type", "demo")),
+                        new TagCloudInput("20130101_0/test/-cvy0gj.tlf59s.-duxzuabc", "ALL", Map.of("x", .3d, "y", .9d, "a", .7d), Map.of("type", "demo"))));
+        logic.setExternalData(List.of(tagCloudPartitionTransformer.encode(externalPartition)), Set.of(tagCloudPartitionTransformer));
+
+        List<DefaultTagCloudEntry> entries = new ArrayList<>();
+        entries.add(tagCloudTestUtil.createTagCloudEntry("x", .5, 2, List.of("20130101_0/test/-cvy0gj.tlf59s.-duxzuabc", CAPONE_SOURCE)));
+        entries.add(tagCloudTestUtil.createTagCloudEntry("y", .9, 2, List.of("20130101_0/test/-cvy0gj.tlf59s.-duxzuabc", CAPONE_SOURCE)));
+        entries.add(tagCloudTestUtil.createTagCloudEntry("z", 1, 1, List.of(CAPONE_SOURCE)));
+        entries.add(tagCloudTestUtil.createTagCloudEntry("a", .7, 1, List.of("20130101_0/test/-cvy0gj.tlf59s.-duxzuabc")));
+
+        addExpectedTagCloud(tagCloudTestUtil.getExpectedCloud("1", Map.of("type", "demo"), entries));
+
+        runTestQuery(queryString);
+    }
+
+    @Test
+    public void multipleExternalHitsV2Test() throws Exception {
+        String queryString = "DOCUMENT:20130101_0/test/-cvy0gj.tlf59s.-duxzuab";
+
+        TagCloudPartition externalPartition = new TagCloudPartition("FOO", "FOO", TagCloudPartition.ScoreType.HIGHER_IS_BETTER, List.of(
+                        new TagCloudInput(CAPONE_SOURCE, "ALL", Map.of("x", .5d, "y", .8d, "z", 1d), Map.of("type", "demo")),
+                        new TagCloudInput("20130101_0/test/-cvy0gj.tlf59s.-duxzuabc", "ALL", Map.of("x", .3d, "y", .9d, "a", .7d), Map.of("type", "demo"))));
+        logic.setExternalData(List.of(tagCloudPartitionTransformer.encode(externalPartition)), Set.of(tagCloudPartitionTransformer));
+
+        List<DefaultTagCloudEntry> entries = new ArrayList<>();
+        entries.add(tagCloudTestUtil.createTagCloudEntry("x", .5, 2, List.of("20130101_0/test/-cvy0gj.tlf59s.-duxzuabc", CAPONE_SOURCE)));
+        entries.add(tagCloudTestUtil.createTagCloudEntry("y", .9, 2, List.of("20130101_0/test/-cvy0gj.tlf59s.-duxzuabc", CAPONE_SOURCE)));
+        entries.add(tagCloudTestUtil.createTagCloudEntry("z", 1, 1, List.of(CAPONE_SOURCE)));
+        entries.add(tagCloudTestUtil.createTagCloudEntry("a", .7, 1, List.of("20130101_0/test/-cvy0gj.tlf59s.-duxzuabc")));
+
+        extraParameters.put("tag.cloud.version", "2");
+        addExpectedTagCloud(tagCloudTestUtil.getExpectedCloud("2", Map.of("type", "demo"), entries));
+
+        runTestQuery(queryString);
+    }
+
+    @Test
+    public void mixedHitV1Test() throws Exception {
+        String docId = "20130101_0/test/-cvy0gj.tlf59s.-duxzua";
+        String queryString = "DOCUMENT:" + docId;
+
+        TagCloudPartition externalPartition = new TagCloudPartition("FOO", "FOO", TagCloudPartition.ScoreType.HIGHER_IS_BETTER, List.of(
+                        new TagCloudInput("20130101_0/test/-cvy0gj.tlf59s.-duxzua", "ALL", Map.of("x", .5d, "y", .8d, "z", 1d), Map.of("type", "demo")),
+                        new TagCloudInput("20130101_0/test/-cvy0gj.tlf59s.-duxzua", "ALL", Map.of("x", .3d, "y", .9d, "a", .7d), Map.of("type", "demo"))));
+        logic.setExternalData(List.of(tagCloudPartitionTransformer.encode(externalPartition)), Set.of(tagCloudPartitionTransformer));
+
+        List<DefaultTagCloudEntry> entries = new ArrayList<>();
+        entries.add(tagCloudTestUtil.createTagCloudEntry("x", .5, 1, List.of("20130101_0/test/-cvy0gj.tlf59s.-duxzua")));
+        entries.add(tagCloudTestUtil.createTagCloudEntry("y", .9, 1, List.of("20130101_0/test/-cvy0gj.tlf59s.-duxzua")));
+        entries.add(tagCloudTestUtil.createTagCloudEntry("z", 1, 1, List.of("20130101_0/test/-cvy0gj.tlf59s.-duxzua")));
+        entries.add(tagCloudTestUtil.createTagCloudEntry("a", .7, 1, List.of("20130101_0/test/-cvy0gj.tlf59s.-duxzua")));
+
+        addExpectedTagCloud(tagCloudTestUtil.getExpectedCloud("1", Map.of("type", "demo"), entries));
+        addExpectedTagCloud(tagCloudTestUtil.getCaponeKeywordCloud(docId, "1"));
+
+        runTestQuery(queryString);
+    }
+
+    @Test
+    public void mixedHitV2Test() throws Exception {
+        String docId = "20130101_0/test/-cvy0gj.tlf59s.-duxzua";
+        String queryString = "DOCUMENT:" + docId;
+
+        TagCloudPartition externalPartition = new TagCloudPartition("FOO", "FOO", TagCloudPartition.ScoreType.HIGHER_IS_BETTER, List.of(
+                        new TagCloudInput("20130101_0/test/-cvy0gj.tlf59s.-duxzua", "ALL", Map.of("x", .5d, "y", .8d, "z", 1d), Map.of("type", "demo")),
+                        new TagCloudInput("20130101_0/test/-cvy0gj.tlf59s.-duxzua", "ALL", Map.of("x", .3d, "y", .9d, "a", .7d), Map.of("type", "demo"))));
+        logic.setExternalData(List.of(tagCloudPartitionTransformer.encode(externalPartition)), Set.of(tagCloudPartitionTransformer));
+
+        List<DefaultTagCloudEntry> entries = new ArrayList<>();
+        entries.add(tagCloudTestUtil.createTagCloudEntry("x", .5, 1, List.of("20130101_0/test/-cvy0gj.tlf59s.-duxzua")));
+        entries.add(tagCloudTestUtil.createTagCloudEntry("y", .9, 1, List.of("20130101_0/test/-cvy0gj.tlf59s.-duxzua")));
+        entries.add(tagCloudTestUtil.createTagCloudEntry("z", 1, 1, List.of("20130101_0/test/-cvy0gj.tlf59s.-duxzua")));
+        entries.add(tagCloudTestUtil.createTagCloudEntry("a", .7, 1, List.of("20130101_0/test/-cvy0gj.tlf59s.-duxzua")));
+
+        extraParameters.put("tag.cloud.version", "2");
+        addExpectedTagCloud(tagCloudTestUtil.getExpectedCloud("2", Map.of("type", "demo"), entries));
+        addExpectedTagCloud(tagCloudTestUtil.getCaponeKeywordCloud(docId, "2"));
+
+        runTestQuery(queryString);
+    }
+
+    @Test
+    public void noHitTest() throws Exception {
+        runTestQuery("");
+    }
+
+    private void addExpectedTagCloud(DefaultTagCloud expected) {
+        expectedResults.add(expected);
     }
 
     protected void runTestQuery(String queryString) throws Exception {
@@ -123,25 +249,43 @@ public class KeywordQueryLogicFunctionalTest {
         GenericQueryConfiguration config = logic.initialize(connector, settings, authSet);
         logic.setupQuery(config);
 
-        QueryLogicTransformer<Map.Entry<Key,Value>,KeywordResults> transformer = logic.getTransformer(config.getQuery());
-        Set<String> unexpectedFields = new HashSet<>();
+        DefaultTagCloudResponse response = (DefaultTagCloudResponse) queryDriver.drive(config);
+        // check the response clouds are expected
+        List<TagCloudBase> found = new ArrayList<>();
 
-        for (Map.Entry<Key,Value> entry : logic) {
-            KeywordResults kr = transformer.transform(entry);
-            String content = kr.toJson();
-            if (!expectedResults.remove(content)) {
-                unexpectedFields.add(content);
+        if (!expectedResults.isEmpty()) {
+            assertEquals(expectedResults.size(), response.getTagClouds().size());
+            for (TagCloudBase tagCloud : response.getTagClouds()) {
+                if (!expectedResults.contains(tagCloud)) {
+                    fail("unexpected tag cloud: " + tagCloud);
+                }
+                found.add(tagCloud);
             }
-
+        } else {
+            assertNull(response.getTagClouds());
         }
 
-        assertTrue("unexpected fields returned: " + unexpectedFields, unexpectedFields.isEmpty());
-        assertTrue(expectedResults + " was not empty", expectedResults.isEmpty());
+        // nothing still expected
+        assertEquals(found.size(), expectedResults.size());
     }
 
-    @AfterClass
-    public static void teardown() {
-        TypeRegistry.reset();
-    }
+    private boolean isExpectedTagCloud(DefaultTagCloud tagCloud) {
+        DefaultTagCloud expected = null;
+        for (DefaultTagCloud expectedCloud : expectedResults) {
+            if (Objects.equals(expectedCloud.getMetadata(), tagCloud.getMetadata())) {
+                List<DefaultTagCloudEntry> expectedTags = expectedCloud.getTags();
+                if (expectedTags.containsAll(tagCloud.getTags()) && tagCloud.getTags().containsAll(expectedTags)) {
+                    expected = expectedCloud;
+                    break;
+                }
+            }
+        }
 
+        if (expected != null) {
+            expectedResults.remove(expected);
+            return true;
+        }
+
+        return false;
+    }
 }

@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.test.annotation.DirtiesContext;
@@ -102,7 +103,8 @@ public class HazelcastCacheInspectorTest {
         assertEquals(Arrays.asList("value1", "value2", "value4", "value5"), users);
     }
 
-    @ComponentScan(basePackages = "datawave.microservice")
+    @EnableCaching
+    @ComponentScan(basePackages = "datawave.microservice.cached")
     public static class InspectorConfiguration {
         @Bean
         public HazelcastInstance hazelcastInstance() {

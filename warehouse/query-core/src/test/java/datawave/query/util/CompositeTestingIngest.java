@@ -11,6 +11,7 @@ import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.user.SummingCombiner;
+import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
 
@@ -26,8 +27,9 @@ import datawave.data.type.Type;
 import datawave.ingest.data.config.ingest.CompositeIngest;
 import datawave.ingest.protobuf.Uid;
 import datawave.query.QueryTestTableHelper;
+import datawave.query.index.day.IndexIngestUtil;
 import datawave.query.parser.JavaRegexAnalyzer;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 
 public class CompositeTestingIngest {
 
@@ -46,7 +48,9 @@ public class CompositeTestingIngest {
     protected static final String shard = date + "_0";
     protected static final ColumnVisibility columnVisibility = new ColumnVisibility("ALL");
     protected static final Value emptyValue = new Value(new byte[0]);
-    protected static final long timeStamp = 1356998400000l;
+    protected static final long timeStamp = 1356998400000L;
+
+    private static final IndexIngestUtil ingestUtil = new IndexIngestUtil();
 
     protected static String normalizeColVal(Map.Entry<String,String> colVal) throws Exception {
         if ("FROM_ADDRESS".equals(colVal.getKey()) || "TO_ADDRESS".equals(colVal.getKey())) {
@@ -366,6 +370,9 @@ public class CompositeTestingIngest {
             }
         }
 
+        // this is hacky and highlights an opportunity to improve the test framework
+        Authorizations auths = new Authorizations("ALL", "E", "I");
+        ingestUtil.write(client, auths);
     }
 
     private static Value getValueForBuilderFor(String... in) {

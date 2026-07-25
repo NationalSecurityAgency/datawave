@@ -4,11 +4,11 @@
     <parent>
         <groupId>gov.nsa.datawave.microservice</groupId>
         <artifactId>datawave-microservice-parent</artifactId>
-        <version>4.0.7</version>
+        <version>4.0.12</version>
         <relativePath>../microservice-parent</relativePath>
     </parent>
     <artifactId>datawave-microservice-service-parent</artifactId>
-    <version>5.0.8-SNAPSHOT</version>
+    <version>5.0.14-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>DataWave Microservices Spring Boot Service Parent</name>
     <scm>
@@ -18,13 +18,50 @@
         <url>https://github.com/NationalSecurityAgency/datawave</url>
     </scm>
     <properties>
-        <resource.delimiter>@</resource.delimiter>
         <!-- delimiter that doesn't clash with Spring ${} placeholders -->
+        <resource.delimiter>@</resource.delimiter>
+        <!-- 2.14.X is the maximum version of jackson without snakeyaml version 2 causing spring-boot 2.7.1 conflict -->
+        <version.jackson>2.14.3</version.jackson>
+        <version.log4j>2.26.1</version.log4j>
+        <version.slf4j>2.0.17</version.slf4j>
+        <version.snakeyaml>1.33</version.snakeyaml>
         <version.spring.boot>2.7.1</version.spring.boot>
         <version.spring.cloud>2021.0.3</version.spring.cloud>
     </properties>
     <dependencyManagement>
         <dependencies>
+            <!-- Don't sort the import scope dependencies. The first declared version of a dependency in dependencyManagement will prevail. -->
+            <?SORTPOM IGNORE?>
+            <!-- override the slf4j declarations in spring-boot-dependencies with our own version -->
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-bom</artifactId>
+                <version>${version.slf4j}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <!-- override the log4j declarations in spring-boot-dependencies with our own version -->
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-bom</artifactId>
+                <version>${version.log4j}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <!-- snakeyaml >= 1.33 needed for jackson-dataformat-yaml 2.14.X -->
+            <dependency>
+                <groupId>org.yaml</groupId>
+                <artifactId>snakeyaml</artifactId>
+                <version>${version.snakeyaml}</version>
+            </dependency>
+            <!-- override the jackson in spring-boot-dependencies with our own version -->
+            <dependency>
+                <groupId>com.fasterxml.jackson</groupId>
+                <artifactId>jackson-bom</artifactId>
+                <version>${version.jackson}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
             <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-dependencies</artifactId>
@@ -39,6 +76,7 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+            <?SORTPOM RESUME?>
             <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-starter</artifactId>
@@ -192,32 +230,6 @@
                                 <fail>true</fail>
                             </configuration>
                         </execution>
-                        <execution>
-                            <id>enforce-banned-dependencies</id>
-                            <goals>
-                                <goal>enforce</goal>
-                            </goals>
-                            <configuration>
-                                <rules>
-                                    <bannedDependencies>
-                                        <excludes>
-                                            <!-- spring boot microservices do not use the following slf4j binders -->
-                                            <exclude>ch.qos.reload4j:reload4j</exclude>
-                                            <exclude>org.slf4j:slf4j-reload4j</exclude>
-                                            <!-- spring boot microservices do not use 1.x versions of log4j -->
-                                            <exclude>log4j:log4j</exclude>
-                                            <!-- spring boot microservices do not use 1.x versions of junit -->
-                                            <exclude>junit:junit</exclude>
-                                        </excludes>
-                                        <includes>
-                                            <!-- some spring boot microservices include test dependencies which use 1.x versions of junit -->
-                                            <include>junit:junit:*:*:test</include>
-                                        </includes>
-                                    </bannedDependencies>
-                                </rules>
-                                <fail>true</fail>
-                            </configuration>
-                        </execution>
                     </executions>
                 </plugin>
                 <plugin>
@@ -278,6 +290,13 @@
                     <groupId>org.springframework.boot</groupId>
                     <artifactId>spring-boot-maven-plugin</artifactId>
                     <version>${version.spring.boot}</version>
+                    <dependencies>
+                        <dependency>
+                            <groupId>org.apache.logging.log4j</groupId>
+                            <artifactId>log4j-slf4j2-impl</artifactId>
+                            <version>${version.log4j}</version>
+                        </dependency>
+                    </dependencies>
                     <executions>
                         <execution>
                             <id>generate-build-info</id>

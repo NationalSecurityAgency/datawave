@@ -3,6 +3,7 @@ echo
 
 # Ensure that permissions are set correctly for the config files
 chmod -R 755 config pki rabbitmq-config
+chmod -R 755 config pki qr-rabbitmq-config
 
 DW_HOSTNAME=$(hostname)
 DW_HOSTNAME=${DW_HOSTNAME%%.*}
@@ -13,7 +14,7 @@ if [[ "${DW_HOST_FQDN}" == "${DW_HOSTNAME}" ]]; then
    DW_HOST_FQDN="unused"
 fi
 
-DW_HOST_IP=$(hostname -i)
+DW_HOST_IP=${DW_HOST_IP:-$(hostname -i)}
 
 if [ "$1" == "hybrid" ] ; then
    COMPOSE_PROFILES=""

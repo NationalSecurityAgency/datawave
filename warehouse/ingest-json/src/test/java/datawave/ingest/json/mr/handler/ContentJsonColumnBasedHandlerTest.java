@@ -36,7 +36,7 @@ import datawave.ingest.mapreduce.handler.edge.ProtobufEdgeDataTypeHandler;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.ingest.mapreduce.handler.tokenize.ContentIndexingColumnBasedHandler;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 
 public class ContentJsonColumnBasedHandlerTest {
 
@@ -47,7 +47,7 @@ public class ContentJsonColumnBasedHandlerTest {
 
     private Configuration conf;
     private static final Path edgeKeyVersionCachePath = Paths.get(System.getProperty("user.dir"), "edge-key-version.txt");
-    private static Logger log = Logger.getLogger(ContentJsonColumnBasedHandlerTest.class);
+    private static final Logger log = Logger.getLogger(ContentJsonColumnBasedHandlerTest.class);
     private static final Enumeration<?> rootAppenders = Logger.getRootLogger().getAllAppenders();
 
     @BeforeClass
@@ -113,6 +113,8 @@ public class ContentJsonColumnBasedHandlerTest {
         conf.set(ShardedDataTypeHandler.SHARD_TNAME, TableName.SHARD);
         conf.set(ShardedDataTypeHandler.SHARD_GIDX_TNAME, TableName.SHARD_INDEX);
         conf.set(ShardedDataTypeHandler.SHARD_GRIDX_TNAME, TableName.SHARD_RINDEX);
+        conf.set(ShardedDataTypeHandler.SHARD_DAY_INDEX_TABLE_NAME, TableName.SHARD_DAY_INDEX);
+        conf.set(ShardedDataTypeHandler.SHARD_YEAR_INDEX_TABLE_NAME, TableName.SHARD_YEAR_INDEX);
     }
 
     @Test

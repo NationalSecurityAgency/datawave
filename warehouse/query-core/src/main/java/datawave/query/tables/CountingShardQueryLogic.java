@@ -32,6 +32,9 @@ import datawave.query.transformer.ShardQueryCountTableTransformer;
 public class CountingShardQueryLogic extends ShardQueryLogic {
     private static final Logger log = Logger.getLogger(CountingShardQueryLogic.class);
 
+    // the time to wait before returning an intermediate result
+    private long pageWaitTimeMillis = 0L;
+
     public CountingShardQueryLogic() {
         super();
     }
@@ -59,7 +62,7 @@ public class CountingShardQueryLogic extends ShardQueryLogic {
 
     @Override
     public TransformIterator getTransformIterator(Query settings) {
-        return new CountAggregatingIterator(this.iterator(), getTransformer(settings), this.markingFunctions);
+        return new CountAggregatingIterator(this.iterator(), getTransformer(settings), this.markingFunctions, getPageWaitTimeMillis());
     }
 
     @Override
@@ -71,7 +74,7 @@ public class CountingShardQueryLogic extends ShardQueryLogic {
     public Scheduler getScheduler(ShardQueryConfiguration config, ScannerFactory scannerFactory) {
         // planner should already have run
         QueryPlanner planner = getQueryPlanner();
-        if (planner instanceof DefaultQueryPlanner && config.getDocumentScannerConfig() != null) {
+        if (planner instanceof DefaultQueryPlanner && config.getDocumentScannerConfig() != null && config.isUseDocumentScheduler()) {
             DefaultQueryPlanner dqp = (DefaultQueryPlanner) planner;
             boolean simple = SimpleQueryVisitor.validate(config.getQueryTree(), dqp.getIndexedFields(), dqp.getIndexOnlyFields());
             if (simple) {
@@ -81,9 +84,26 @@ public class CountingShardQueryLogic extends ShardQueryLogic {
             }
         }
 
-        PushdownScheduler scheduler = new PushdownScheduler(config, scannerFactory, this.metadataHelperFactory);
+        PushdownScheduler scheduler = new PushdownScheduler(config, this.metadataHelperFactory);
         scheduler.addSetting(new IteratorSetting(config.getBaseIteratorPriority() + 50, "counter", ResultCountingIterator.class.getName()));
         return scheduler;
     }
 
+    /**
+     * This query logic always supports intermediate results
+     *
+     * @return true
+     */
+    @Override
+    public boolean isLongRunningQuery() {
+        return true;
+    }
+
+    public long getPageWaitTimeMillis() {
+        return pageWaitTimeMillis;
+    }
+
+    public void setPageWaitTimeMillis(long pageWaitTimeMillis) {
+        this.pageWaitTimeMillis = pageWaitTimeMillis;
+    }
 }

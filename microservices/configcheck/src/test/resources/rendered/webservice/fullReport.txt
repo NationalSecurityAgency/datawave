@@ -36,7 +36,6 @@ doc.beans.BaseEventQuery.metadataTableName: ${metadata.table.name}
 doc.beans.BaseEventQuery.modelTableName: ${metadata.table.name}
 doc.beans.BaseEventQuery.queryThreads: ${shard.query.threads}
 doc.beans.BaseEventQuery.reverseIndexTableName: ${rindex.table.name}
-doc.beans.BaseEventQuery.shardsPerDayThreshold: ${beq.shardsPerDayThreshold}
 doc.beans.BaseEventQuery.tableName: ${shard.table.name}
 doc.beans.BaseEventQuery.useFilters: ${event.query.filters.enabled}
 doc.beans.BaseEventQuery.zookeeperConfig: ${ivarator.zookeeper.hosts}
@@ -97,7 +96,6 @@ doc.beans.HitHighlights.maxValueExpansionThreshold: ${beq.valueExpansionThreshol
 doc.beans.HitHighlights.metadataTableName: ${metadata.table.name}
 doc.beans.HitHighlights.queryThreads: ${index.query.threads}
 doc.beans.HitHighlights.reverseIndexTableName: ${rindex.table.name}
-doc.beans.HitHighlights.shardsPerDayThreshold: ${beq.shardsPerDayThreshold}
 doc.beans.HitHighlights.tableName: ${shard.table.name}
 doc.beans.HitHighlights.zookeeperConfig: ${ivarator.zookeeper.hosts}
 doc.beans.IdTranslatorConfiguration.beginDate: ${lookup.uuid.beginDate}
@@ -139,7 +137,6 @@ doc.beans.BaseEventQuery.disableIndexOnlyDocuments: false
 doc.beans.BaseEventQuery.docAggregationThresholdMs: -1
 doc.beans.BaseEventQuery.enricherClassNames: "datawave.query.enrich.DatawaveTermFrequencyEnricher"
 doc.beans.BaseEventQuery.evaluationOnlyFields: ""
-doc.beans.BaseEventQuery.eventPerDayThreshold: 40000
 doc.beans.BaseEventQuery.finalMaxTermThreshold: 2000
 doc.beans.BaseEventQuery.fullTableScanEnabled: false
 doc.beans.BaseEventQuery.hdfsSiteConfigURLs: "file:///etc/hadoop/conf/core-site.xml,file:///etc/hadoop/conf/hdfs-site.xml"
@@ -154,7 +151,6 @@ doc.beans.BaseEventQuery.ivaratorCacheScanPersistThreshold: 100000
 doc.beans.BaseEventQuery.ivaratorCacheScanTimeoutMinutes: 60
 doc.beans.BaseEventQuery.ivaratorFstHdfsBaseURIs: "hdfs:///IvaratorCache"
 doc.beans.BaseEventQuery.ivaratorMaxOpenFiles: 100
-doc.beans.BaseEventQuery.lazySetMechanismEnabled: false
 doc.beans.BaseEventQuery.logTimingDetails: false
 doc.beans.BaseEventQuery.logicDescription: "Retrieve sharded events/documents, leveraging the global index tables as needed"
 doc.beans.BaseEventQuery.maxDepthThreshold: 2000
@@ -178,7 +174,6 @@ doc.beans.BaseEventQuery.queryThreads: 100
 doc.beans.BaseEventQuery.realmSuffixExclusionPatterns: "<.*>$"
 doc.beans.BaseEventQuery.reverseIndexTableName: "${table.name.shardReverseIndex}"
 doc.beans.BaseEventQuery.sendTimingToStatsd: false
-doc.beans.BaseEventQuery.shardsPerDayThreshold: 20
 doc.beans.BaseEventQuery.statsdHost: "localhost"
 doc.beans.BaseEventQuery.statsdPort: 8125
 doc.beans.BaseEventQuery.tableName: "${table.name.shard}"
@@ -273,7 +268,6 @@ doc.beans.FieldIndexCountQuery.queryThreads: 100
 doc.beans.FieldIndexCountQuery.reverseIndexTableName: "${table.name.shardReverseIndex}"
 doc.beans.FieldIndexCountQuery.tableName: "${table.name.shard}"
 doc.beans.HitHighlights.auditType: "NONE"
-doc.beans.HitHighlights.eventPerDayThreshold: 40000
 doc.beans.HitHighlights.finalMaxTermThreshold: 2000
 doc.beans.HitHighlights.fullTableScanEnabled: false
 doc.beans.HitHighlights.hdfsSiteConfigURLs: "file:///etc/hadoop/conf/core-site.xml,file:///etc/hadoop/conf/hdfs-site.xml"
@@ -303,7 +297,6 @@ doc.beans.HitHighlights.minimumSelectivity: 0.2
 doc.beans.HitHighlights.querySyntaxParsers.JEXL: null
 doc.beans.HitHighlights.queryThreads: 100
 doc.beans.HitHighlights.reverseIndexTableName: "${table.name.shardReverseIndex}"
-doc.beans.HitHighlights.shardsPerDayThreshold: 20
 doc.beans.HitHighlights.tableName: "${table.name.shard}"
 doc.beans.HitHighlights.useEnrichers: false
 doc.beans.HitHighlights.zookeeperConfig: ""
@@ -375,6 +368,7 @@ doc.beans.BaseEventQuery.eventQueryDataDecoratorTransformer: EventQueryDataDecor
 doc.beans.BaseEventQuery.filterOptions: BaseEventQueryFilterOptions
 doc.beans.BaseEventQuery.hierarchyFieldOptions: BaseEventQueryHierarchyFieldOptions
 doc.beans.BaseEventQuery.ivaratorCacheDirConfigs: IvaratorCacheDirConfigs
+doc.beans.BaseEventQuery.localIvaratorCacheDirConfigs: LocalIvaratorCacheDirConfigs
 doc.beans.BaseEventQuery.metadataHelperFactory: metadataHelperFactory
 doc.beans.BaseEventQuery.queryPlanner: DefaultQueryPlanner
 doc.beans.BaseEventQuery.selectorExtractor: DatawaveSelectorExtractor
@@ -439,7 +433,6 @@ query.max.index.scan.ms=31536000000
 query.collapse.uids=false
 query.collapse.uids.threshold=-1
 event.query.filters.enabled=false
-beq.shardsPerDayThreshold=20
 beq.initialMaxTermThreshold=2000
 beq.finalMaxTermThreshold=2000
 beq.maxDepthThreshold=2000
@@ -514,7 +507,6 @@ metadata.table.name=${table.name.metadata}
 index.table.name=${table.name.shardIndex}
 rindex.table.name=${table.name.shardReverseIndex}
 index.query.threads=100
-beq.shardsPerDayThreshold=20
 beq.initialMaxTermThreshold=2000
 beq.finalMaxTermThreshold=2000
 beq.maxDepthThreshold=2000
@@ -574,7 +566,6 @@ rindex:
 beq:
   fullTableScanEnabled: "false"
   baseIteratorPriority: "100"
-  shardsPerDayThreshold: "20"
   initialMaxTermThreshold: "2000"
   finalMaxTermThreshold: "2000"
   maxDepthThreshold: "2000"

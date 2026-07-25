@@ -55,6 +55,32 @@ on:
         required: true
         default: "RC1"
         description: "Modifier to add to version (e. g. 1.0.0-RC1)."
+      bumpDownstream:
+        required: false
+        default: false
+        type: boolean
+        description: "Before releasing, update this project's parent and dependency version properties to pick up earlier releases in the cascade. Used by the cascade workflow."
+  workflow_call:
+    inputs:
+      projectToRelease:
+        required: true
+        type: string
+      finalRelease:
+        required: true
+        type: boolean
+      modifier:
+        required: false
+        type: string
+        default: "RC1"
+      bumpDownstream:
+        required: false
+        type: boolean
+        default: false
+      branch:
+        required: false
+        type: string
+        default: ""
+        description: "Branch to release from. When empty, uses the triggering ref. Set by the cascade workflow for non-final releases."
 env:
   JAVA_VERSION: '11'
   JAVA_DISTRIBUTION: 'zulu' #This is the default on v1 of the action for 1.8
@@ -72,52 +98,159 @@ jobs:
       packages: write
     steps:
     - name: Checkout DataWave
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         fetch-depth: 0
         token: ${{ secrets.GHCR_WRITE_ACCESS_TOKEN }}
-        
-    - name: Set up JDK ${{env.ACCUMULO_JAVA_VERSION}}
-      uses: actions/setup-java@v4
+        ref: ${{ inputs.branch || '' }}
+
+    - name: Fast-forward to branch tip
+      run: git pull --ff-only
+
+    - name: Configure Maven Settings
+      run: |
+        mkdir -p ~/.m2
+        cat > ~/.m2/settings.xml <<'EOF'
+        <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+               xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 https://maven.apache.org/xsd/settings-1.0.0.xsd">
+        <servers>
+         <server>
+           <id>github-datawave</id>
+           <username>${env.GITHUB_USERNAME}</username>
+           <password>${env.GITHUB_PASSWORD}</password>
+         </server>
+        </servers>
+        <mirrors>
+         <mirror>
+           <id>google-maven-central</id>
+           <name>Google Cloud Maven Central Mirror</name>
+           <url>https://maven-central.storage-download.googleapis.com/maven2/</url>
+           <mirrorOf>central</mirrorOf>
+         </mirror>
+        </mirrors>
+        </settings>
+        EOF
+    - name: Set up JDK
+      uses: actions/setup-java@v5
       with:
         distribution: ${{env.JAVA_DISTRIBUTION}}
         java-version: ${{env.JAVA_VERSION}}
         cache: 'maven'
-        server-id: github-datawave
-        # username and password are the env variables names that maven will use
-        server-username: GITHUB_USERNAME
-        server-password: GITHUB_PASSWORD
+        overwrite-settings: false
     - name: Log in to the Container registry
-      uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
+      uses: docker/login-action@v4
       with:
         registry: ${{ env.GITHUB_REGISTRY }}
         username: ${{ secrets.GHCR_WRITE_USER_NAME }}
         password: ${{ secrets.GHCR_WRITE_ACCESS_TOKEN }}
+    # When called from the cascade workflow, earlier projects in the cascade
+    # may have been released already.  Update this project's parent and
+    # inter-microservice dependency version properties so the release picks
+    # up the latest non-SNAPSHOT versions.
+    - name: Update dependencies from earlier cascade releases
+      if: ${{ inputs.bumpDownstream }}
+      run: |
+        set -euo pipefail
+        git config user.email "datawave@github.com"
+        git config user.name "${{ secrets.GHCR_WRITE_USER_NAME }}"
+
+        # Build a version-rules file that filters out old qualified releases.
+        # Final: ignore every version containing a hyphen (qualifiers).
+        # Non-final: ignore qualified versions except the current modifier
+        #            so the cascade picks up its own earlier releases.
+        if [ "${{ inputs.finalRelease }}" = "true" ]; then
+          IGNORE_REGEX=".*-.*"
+        else
+          IGNORE_REGEX=".*-(?!${{ inputs.modifier }}\$).*"
+        fi
+
+        cat > /tmp/cascade-version-rules.xml <<RULES_EOF
+        <ruleset comparisonMethod="maven"
+                 xmlns="http://mojo.codehaus.org/versions-maven-plugin/rule/2.0.0"
+                 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                 xsi:schemaLocation="http://mojo.codehaus.org/versions-maven-plugin/rule/2.0.0 https://www.mojohaus.org/versions-maven-plugin/xsd/rule-2.0.0.xsd">
+          <ignoreVersions>
+            <ignoreVersion type="regex">${IGNORE_REGEX}</ignoreVersion>
+          </ignoreVersions>
+        </ruleset>
+        RULES_EOF
+
+        cd "${{ inputs.projectToRelease }}"
+        mvn --batch-mode --no-transfer-progress \
+            versions:update-parent versions:update-properties \
+            -DallowSnapshots=false \
+            -DallowMajorUpdates=false \
+            -DgenerateBackupPoms=false \
+            -Dincludes="gov.nsa.datawave.microservice:*" \
+            -Dmaven.version.rules="file:///tmp/cascade-version-rules.xml"
+        cd "$GITHUB_WORKSPACE"
+        if git diff --quiet; then
+          echo "No dependency updates needed for ${{ inputs.projectToRelease }}."
+        else
+          git add -A
+          git commit -m "auto-update: update deps for ${{ inputs.projectToRelease }}"
+          git push
+        fi
     - name: Determine release version
       id: version
       run: |
-        cd "${{ github.event.inputs.projectToRelease }}"
+        cd "${{ inputs.projectToRelease }}"
         RAW_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout) || \
                       mvn help:evaluate -Dexpression=project.version -DforceStdout
+        ARTIFACT_ID=$(mvn help:evaluate -Dexpression=project.artifactId -q -DforceStdout) || \
+                      mvn help:evaluate -Dexpression=project.artifactId -DforceStdout
         BASE_VERSION=${RAW_VERSION%-SNAPSHOT}
 
-        if [ "${{ github.event.inputs.finalRelease }}" = "true" ]; then
+        if [ "${{ inputs.finalRelease }}" = "true" ]; then
           FINAL_VERSION="$BASE_VERSION"
           # Bump patch for new dev version
           IFS='.' read -r MAJOR MINOR PATCH <<< "$BASE_VERSION"
           NEXT_DEV_VERSION="$MAJOR.$MINOR.$((PATCH+1))-SNAPSHOT"
         else
-          FINAL_VERSION="${BASE_VERSION}-${{ github.event.inputs.modifier }}"
+          FINAL_VERSION="${BASE_VERSION}-${{ inputs.modifier }}"
           # Leave dev version as-is
           NEXT_DEV_VERSION="$RAW_VERSION"
         fi
 
+        echo "ARTIFACT_ID=$ARTIFACT_ID" >> $GITHUB_OUTPUT
         echo "FINAL_VERSION=$FINAL_VERSION" >> $GITHUB_OUTPUT
         echo "NEXT_DEV_VERSION=$NEXT_DEV_VERSION" >> $GITHUB_OUTPUT
-        echo "VERSION_TAG=${{ github.event.inputs.projectToRelease }}-$FINAL_VERSION" >> $GITHUB_OUTPUT
-    - name: Release with Maven
+        echo "VERSION_TAG=${{ inputs.projectToRelease }}-$FINAL_VERSION" >> $GITHUB_OUTPUT
+    - name: Check if already released
+      id: check
       run: |
-        cd "${{ github.event.inputs.projectToRelease }}"
+        TAG="${{ steps.version.outputs.VERSION_TAG }}"
+        if git ls-remote --tags origin "refs/tags/$TAG" | grep -q .; then
+          echo "::notice::Tag $TAG already exists — skipping release (already published in a prior run)."
+          echo "released=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "released=false" >> "$GITHUB_OUTPUT"
+        fi
+    # If a prior run already released this version, skip the release but
+    # advance the POM to the next development version so the cascade
+    # branch ends up in the correct state for merge-back.
+    - name: Advance to next development version (already released)
+      if: ${{ steps.check.outputs.released == 'true' }}
+      run: |
+        cd "${{ inputs.projectToRelease }}"
+        git config user.email "datawave@github.com"
+        git config user.name "${{ secrets.GHCR_WRITE_USER_NAME }}"
+        mvn --batch-mode versions:set \
+            -DnewVersion="${{ steps.version.outputs.NEXT_DEV_VERSION }}" \
+            -DgenerateBackupPoms=false
+        cd "$GITHUB_WORKSPACE"
+        if git diff --quiet; then
+          echo "POM already at development version."
+        else
+          git add -A
+          git commit -m "[maven-release-plugin] prepare for next development iteration"
+          git push
+        fi
+    - name: Release with Maven
+      if: ${{ steps.check.outputs.released != 'true' }}
+      run: |
+        cd "${{ inputs.projectToRelease }}"
         #Github actions bot user id + user.login. See https://api.github.com/users/github-actions%5Bbot%5D
         git config user.email "datawave@github.com"
         git config user.name "${{ secrets.GHCR_WRITE_USER_NAME }}"
@@ -132,8 +265,6 @@ jobs:
         -DreleaseVersion="${{ steps.version.outputs.FINAL_VERSION }}" \
         -DdevelopmentVersion="${{ steps.version.outputs.NEXT_DEV_VERSION }}" \
         -Dtag="${{ steps.version.outputs.VERSION_TAG }}"
-          
-    
-          
+
 
 

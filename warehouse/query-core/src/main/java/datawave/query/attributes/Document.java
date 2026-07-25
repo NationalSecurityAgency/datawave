@@ -34,6 +34,7 @@ import com.google.common.collect.Iterators;
 import com.google.common.collect.Sets;
 
 import datawave.marking.MarkingFunctions;
+import datawave.marking.Markings;
 import datawave.query.Constants;
 import datawave.query.collections.FunctionalSet;
 import datawave.query.composite.CompositeMetadata;
@@ -43,17 +44,14 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.predicate.ValueToAttributes;
 import datawave.query.util.TypeMetadata;
-import datawave.query.util.cache.ClassCache;
 import datawave.util.time.DateHelper;
 
 public class Document extends AttributeBag<Document> implements Serializable {
-    private static final long serialVersionUID = -377226620954754934L;
+    private static final long serialVersionUID = -7939658996525050446L;
 
     private static final Logger log = Logger.getLogger(Document.class);
 
     public static final String DOCKEY_FIELD_NAME = "RECORD_ID";
-
-    private static final ClassCache classCache = new ClassCache();
 
     //  @formatter:off
     private static final LoadingCache<Text, Long> timestampCache = CacheBuilder.newBuilder()
@@ -83,16 +81,13 @@ public class Document extends AttributeBag<Document> implements Serializable {
 
     private static final long ONE_DAY_MS = 1000L * 60 * 60 * 24;
 
-    public MarkingFunctions getMarkingFunctions() {
-        return MarkingFunctions.Factory.createMarkingFunctions();
-    }
-
-    public Map<String,String> getMarkings() {
+    public Markings<?> getMarkings() {
         try {
-            MarkingFunctions markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
+            markingFunctions = getMarkingFunctions();
             return markingFunctions.translateFromColumnVisibility(getColumnVisibility());
-        } catch (MarkingFunctions.Exception e) {}
-        return Collections.emptyMap();
+        } catch (MarkingFunctions.Exception ignored) {
+            return null;
+        }
     }
 
     public Document() {
@@ -864,7 +859,7 @@ public class Document extends AttributeBag<Document> implements Serializable {
         Class<?> clz;
         try {
             // Get the Class for the name of the class of the concrete Attribute
-            clz = classCache.get(clazzName);
+            clz = classCache.get().get(clazzName);
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
         }

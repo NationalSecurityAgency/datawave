@@ -50,13 +50,16 @@ import datawave.data.ColumnFamilyConstants;
 import datawave.data.type.Type;
 import datawave.ingest.protobuf.Uid;
 import datawave.ingest.protobuf.Uid.List.Builder;
+import datawave.marking.AccessExpressionUtil;
 import datawave.marking.MarkingFunctions;
+import datawave.marking.Markings;
 import datawave.microservice.query.DefaultQueryParameters;
 import datawave.microservice.query.QueryPersistence;
 import datawave.modification.configuration.ModificationServiceConfiguration;
 import datawave.modification.query.ModificationQueryService;
 import datawave.query.data.parsers.DatawaveKey;
 import datawave.query.data.parsers.DatawaveKey.KeyType;
+import datawave.query.data.parsers.TermFrequencyKey;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.MetadataHelperFactory;
 import datawave.security.authorization.ProxiedUserDetails;
@@ -203,7 +206,7 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
     protected String reverseIndexTableName = null;
     protected String metadataTableName = null;
     protected MetadataHelperFactory metadataHelperFactory;
-    protected MarkingFunctions markingFunctions = null;
+    protected MarkingFunctions<?> markingFunctions = null;
 
     // a map of event fields to index only/derived fields to enable appropriate deleting of event fields and all derivatives
     protected Multimap<String,String> indexOnlyMap = null;
@@ -246,11 +249,11 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
         this.metadataTableName = metadataTableName;
     }
 
-    public MarkingFunctions getMarkingFunctions() {
+    public MarkingFunctions<?> getMarkingFunctions() {
         return markingFunctions;
     }
 
-    public void setMarkingFunctions(MarkingFunctions markingFunctions) {
+    public void setMarkingFunctions(MarkingFunctions<?> markingFunctions) {
         this.markingFunctions = markingFunctions;
     }
 
@@ -309,6 +312,24 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
         this.process(client, request, mutableFieldList, userAuths, userDetails, false, true);
     }
 
+    /**
+     * Convert legacy Map&lt;String,String&gt; field markings (from DefaultModificationRequest) to Markings&lt;?&gt;.
+     */
+    private Markings<?> convertFieldMarkings(Map<String,String> rawMarkings) {
+        if (rawMarkings == null || rawMarkings.isEmpty()) {
+            return null;
+        }
+        String vis = rawMarkings.getOrDefault("columnVisibility", "");
+        if (vis.isEmpty()) {
+            return null;
+        }
+        try {
+            return markingFunctions.translateFromColumnVisibility(new ColumnVisibility(vis));
+        } catch (MarkingFunctions.Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public void process(AccumuloClient client, ModificationRequestBase request, Map<String,Set<String>> mutableFieldList, Set<Authorizations> userAuths,
                     ProxiedUserDetails userDetails, boolean purgeIndex, boolean insertHistory) throws Exception {
 
@@ -333,7 +354,7 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
                 String eventUid = e.getEventUid();
 
                 String oldFieldValue = null;
-                Map<String,String> oldFieldMarkings = null;
+                Markings<?> oldFieldMarkings = null;
                 String oldColumnVisibility = null;
                 List<Pair<Key,Value>> currentEntryList = null;
                 int valHistoryCount = 0;
@@ -357,8 +378,7 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
 
                 // Count the history entries if history is going to be inserted.
                 if (insertHistory && (MODE.INSERT.equals(mode) || MODE.UPDATE.equals(mode))) {
-                    List<Pair<Key,Value>> fieldHistoryList = getField(client, userAuths, shardId, datatype, eventUid, "HISTORY_" + fieldName, null,
-                                    new HashMap<>(), null);
+                    List<Pair<Key,Value>> fieldHistoryList = getField(client, userAuths, shardId, datatype, eventUid, "HISTORY_" + fieldName, null, null, null);
 
                     for (Pair<Key,Value> p : fieldHistoryList) {
                         if (p.getLeft().getColumnQualifier().find(mr.getFieldValue()) > -1) {
@@ -370,13 +390,13 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
                 if (MODE.UPDATE.equals(mode) || MODE.DELETE.equals(mode)) {
                     if (MODE.UPDATE.equals(mode)) {
                         oldFieldValue = mr.getOldFieldValue();
-                        oldFieldMarkings = mr.getOldFieldMarkings();
+                        oldFieldMarkings = convertFieldMarkings(mr.getOldFieldMarkings());
                         oldColumnVisibility = mr.getOldColumnVisibility();
                         if (null == oldFieldValue)
                             throw new IllegalArgumentException("fieldValue parameter required for update");
                     } else {
                         oldFieldValue = mr.getFieldValue();
-                        oldFieldMarkings = mr.getFieldMarkings();
+                        oldFieldMarkings = convertFieldMarkings(mr.getFieldMarkings());
                         oldColumnVisibility = mr.getColumnVisibility();
                         if (null == oldFieldValue)
                             throw new IllegalArgumentException("fieldValue parameter required for delete");
@@ -398,7 +418,7 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
 
                 if (MODE.INSERT.equals(mode)) {
                     String fieldValue = mr.getFieldValue();
-                    Map<String,String> fieldMarkings = mr.getFieldMarkings();
+                    Markings<?> fieldMarkings = convertFieldMarkings(mr.getFieldMarkings());
                     String columnVisibility = mr.getColumnVisibility();
                     ColumnVisibility colviz = null;
                     if (null != columnVisibility) {
@@ -413,7 +433,7 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
                     delete(writer, client, userAuths, currentEntryList, isIndexOnly, isIndexed, isReverseIndexed, isContent, dataTypes, user, MODE.UPDATE,
                                     origTimestamp + valHistoryCount, purgeIndex, insertHistory);
                     String fieldValue = mr.getFieldValue();
-                    Map<String,String> fieldMarkings = mr.getFieldMarkings();
+                    Markings<?> fieldMarkings = convertFieldMarkings(mr.getFieldMarkings());
                     String columnVisibility = mr.getColumnVisibility();
                     ColumnVisibility colviz = null;
                     if (null != columnVisibility) {
@@ -635,7 +655,7 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
      * @throws Exception
      *             if there are issues
      */
-    protected void insert(MultiTableBatchWriter writer, String shardId, String datatype, String eventUid, Map<String,String> markings, ColumnVisibility viz,
+    protected void insert(MultiTableBatchWriter writer, String shardId, String datatype, String eventUid, Markings<?> markings, ColumnVisibility viz,
                     String fieldName, String fieldValue, boolean isIndexOnlyField, boolean isIndexed, boolean isReverseIndexed, Set<Type<?>> dataTypes,
                     String user, MODE mode, long ts, boolean insertHistory) throws Exception {
 
@@ -643,7 +663,7 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
             if (null == markings || markings.isEmpty())
                 throw new IllegalArgumentException("No security information specified. Security markings must be supplied");
 
-            viz = markingFunctions.translateToColumnVisibility(markings);
+            viz = markings.toColumnVisibility();
         }
 
         insert(writer, shardId, datatype, eventUid, viz, fieldName, fieldValue, ts, isIndexOnlyField, isIndexed, isReverseIndexed, dataTypes, false,
@@ -738,10 +758,13 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
 
                         DatawaveKey fiKeyParsed = new DatawaveKey(fiKey);
 
-                        // Remove the term frequency entry
-                        e.putDelete(ColumnFamilyConstants.COLF_TF.toString(), fiKeyParsed.getDataType() + NULL_BYTE + fiKeyParsed.getUid() + NULL_BYTE
-                                        + fiKeyParsed.getFieldValue() + NULL_BYTE + fiKeyParsed.getFieldName(), fiKey.getColumnVisibilityParsed(),
-                                        fiKey.getTimestamp());
+                        // Remove all matching term frequency entries, including grouped variants such as QUOTE_TOKEN.<hash>.
+                        try (TermFrequencyIterable tfKeys = getTermFrequencyKeys(client, this.getEventTableName(), userAuths, shardId,
+                                        fiKeyParsed.getDataType(), fiKeyParsed.getUid(), fiKeyParsed.getFieldValue(), fiKeyParsed.getFieldName())) {
+                            for (Key tfKey : tfKeys) {
+                                e.putDelete(tfKey.getColumnFamily(), tfKey.getColumnQualifier(), tfKey.getColumnVisibilityParsed(), tfKey.getTimestamp());
+                            }
+                        }
 
                         // Create a UID object for the Value which will remove this UID
                         Builder uidBuilder = Uid.List.newBuilder();
@@ -812,7 +835,7 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
      *             if there are issues
      */
     protected List<Pair<Key,Value>> getField(AccumuloClient client, Set<Authorizations> userAuths, String shardId, String datatype, String eventUid,
-                    String fieldName, String oldFieldValue, Map<String,String> oldFieldMarkings, ColumnVisibility oldColumnVisibility) throws Exception {
+                    String fieldName, String oldFieldValue, Markings<?> oldFieldMarkings, ColumnVisibility oldColumnVisibility) throws Exception {
 
         Text family = new Text(datatype);
         TextUtil.textAppend(family, eventUid);
@@ -843,19 +866,28 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
                 }
 
                 if (null != oldColumnVisibility) {
-                    // need to compare the flattened values for equivalence. It's possible for the visibility to be in a different order
-                    String oldColViz = new String(oldColumnVisibility.flatten(), "UTF-8");
-                    String thisVis = new String(thisViz.flatten(), "UTF-8");
+                    // need to compare the normalized values for equivalence. It's possible for the visibility to be in a different order
+                    String oldColViz = AccessExpressionUtil.normalize(oldColumnVisibility).getExpression();
+                    String thisVis = AccessExpressionUtil.normalize(thisViz).getExpression();
                     if (!oldColViz.equals(thisVis)) {
-                        log.trace("Skipping key that does not match with column visibility: {}", e.getKey());
+                        if (log.isTraceEnabled()) {
+                            log.trace("Skipping key that does not match with column visibility: {}", e.getKey());
+                        }
                         continue;
                     }
                 } else {
-                    Map<String,String> markings = markingFunctions.translateFromColumnVisibilityForAuths(e.getKey().getColumnVisibilityParsed(), userAuths);
-                    if (null != oldFieldMarkings && !oldFieldMarkings.equals(markings)) {
-                        log.trace("Skipping key that does not match with markings: {}", e.getKey());
-                        continue;
+                    try {
+                        Markings<?> markings = markingFunctions.translateFromColumnVisibilityForAuths(e.getKey().getColumnVisibilityParsed(), userAuths);
+                        if (null != oldFieldMarkings && !oldFieldMarkings.equals(markings)) {
+                            if (log.isTraceEnabled()) {
+                                log.trace("Skipping key that does not match with markings: {}", e.getKey());
+                            }
+                            continue;
+                        }
+                    } catch (MarkingFunctions.Exception ex) {
+                        throw new RuntimeException(ex);
                     }
+
                 }
                 results.add(Pair.of(e.getKey(), e.getValue()));
             }
@@ -1157,6 +1189,50 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
                 scanner.close();
             }
         }
+    }
+
+    protected TermFrequencyIterable getTermFrequencyKeys(AccumuloClient client, String shardTable, Set<Authorizations> userAuths, String shardId,
+                    String datatype, String eventUid, String fieldValue, String fieldName) throws Exception {
+
+        String qualifierPrefix = datatype + NULL_BYTE + eventUid + NULL_BYTE + fieldValue + NULL_BYTE + fieldName;
+        // the endKey will ensure that no other fields get included in this range because all legitimate field name
+        // characters appear after the '.' character in the ASCII table, so this will catch field names like QUOTE
+        // and QUOTE.12345 but not QUOTED or QUOTE_TOKEN.
+        Key startKey = new Key(shardId, ColumnFamilyConstants.COLF_TF.toString(), qualifierPrefix);
+        Key endKey = new Key(shardId, ColumnFamilyConstants.COLF_TF.toString(), qualifierPrefix + "." + MAX_CHAR);
+        Range range = new Range(startKey, true, endKey, true);
+        return new TermFrequencyIterable(client, shardTable, userAuths, range, fieldName);
+    }
+
+    protected static class TermFrequencyIterable implements Iterable<Key>, AutoCloseable {
+        private final Scanner scanner;
+        private final String fieldName;
+
+        public TermFrequencyIterable(AccumuloClient client, String shardTable, Set<Authorizations> userAuths, Range range, String fieldName)
+                        throws TableNotFoundException {
+            this.scanner = ScannerHelper.createScanner(client, shardTable, userAuths);
+            this.scanner.setRange(range);
+            this.fieldName = fieldName;
+        }
+
+        @Override
+        public Iterator<Key> iterator() {
+            final TermFrequencyKey parser = new TermFrequencyKey();
+            return Iterators.transform(Iterators.filter(scanner.iterator(), entry -> {
+                parser.parse(entry.getKey());
+                String candidateField = parser.getField();
+                return fieldName.equals(candidateField) || isGroupedFieldMatch(fieldName, candidateField);
+            }), entry -> entry.getKey());
+        }
+
+        @Override
+        public void close() throws Exception {
+            scanner.close();
+        }
+    }
+
+    private static boolean isGroupedFieldMatch(String queryField, String candidateField) {
+        return candidateField.startsWith(queryField) && candidateField.length() > queryField.length() && candidateField.charAt(queryField.length()) == '.';
     }
 
     private String stripGrouping(String fieldName) {

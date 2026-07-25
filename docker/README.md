@@ -4,6 +4,13 @@ It is recommended to read through these instructions in their entirety before at
 if you just want to get started and use this document as a reference, here's the short version (although we recommend checking 
 out the [prereqs](#prereqs) at a minimum):
 
+## System Environment
+The following versions are known to work.  
+RHEL 9.6+  
+Docker 28.5.1+  
+
+RHEL 8 does not seem to work. It interferes with the docker daemon in a way that prevents a successful build of the quickstart image.
+
 ## TLDR
 
 ```shell
@@ -195,6 +202,8 @@ Note that the quickstart-docker property is set.  This property is a shortcut wh
 For this command, the build profile is set to `compose`.  This profile contains all of the properties needed to make the quickstart work as part
 of the docker compose deployment.  The use of any other build profile with docker compose is unsupported.
 
+You may update the property `jkube.containers.image.tags.1` to be something other than latest, but must use the `VERSION` environment variable with `docker compose` to specity that tag should be used for datawave images. Otherwise, `docker compose` will use the tag `latest`. 
+
 If you ever need to rebuild the Datawave quickstart docker image, but don't want to ingest the sample data you can add `-DskipIngest` to 
 your build command.  This can save you some time, since the docker compose configuration stores ingested data in a persistent volume.
 
@@ -223,6 +232,11 @@ docker exec -ti docker-quickstart-1 bash
 ```
 
 To stop the wildfly deployment, repeat the steps above using the command `datawaveWebStop` instead of `datawaveWebStart  && datawaveWebTest`.
+
+If you performed a build with the `jkube.container-image.tags.1` property set to anything but `latest`, you can specify the the tag to use when running `docker compose`
+```shell
+VERSION=20260326.1 docker compose up
+```
 
 #### Hybrid Datawave Quickstart Setup
 

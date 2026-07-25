@@ -1,6 +1,6 @@
 package datawave.microservice.querymetric.handler;
 
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -29,8 +29,8 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.time.DateUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.DateUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.JobID;
@@ -42,13 +42,12 @@ import org.apache.hadoop.mapreduce.TaskType;
 import org.apache.hadoop.mapreduce.task.MapContextImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Qualifier;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 
-import datawave.core.common.connection.AccumuloClientPool;
+import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.core.query.util.QueryUtil;
 import datawave.data.hash.UID;
 import datawave.data.hash.UIDBuilder;
@@ -64,6 +63,7 @@ import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.protobuf.Uid;
 import datawave.ingest.table.config.TableConfigHelper;
 import datawave.marking.MarkingFunctions;
+import datawave.marking.Markings;
 import datawave.microservice.authorization.user.DatawaveUserDetails;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
@@ -78,7 +78,6 @@ import datawave.microservice.querymetric.config.QueryMetricHandlerProperties;
 import datawave.microservice.querymetric.factory.QueryMetricQueryLogicFactory;
 import datawave.microservice.security.util.DnUtils;
 import datawave.query.QueryParameters;
-import datawave.query.iterator.QueryOptions;
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.util.WSAuthorizationsUtil;
@@ -94,12 +93,11 @@ public abstract class ShardTableQueryMetricHandler<T extends BaseQueryMetric> ex
 
     protected String clientAuthorizations;
 
-    protected AccumuloClientPool accumuloClientPool;
+    protected AccumuloConnectionFactory connectionFactory;
     protected QueryMetricHandlerProperties queryMetricHandlerProperties;
 
     @SuppressWarnings("FieldCanBeLocal")
     protected final String JOB_ID = "job_201109071404_1";
-    protected static final String BLACKLISTED_FIELDS_DEPRECATED = "blacklisted.fields";
 
     protected final Configuration conf = new Configuration();
     protected final StatusReporter reporter = new MockStatusReporter();
@@ -109,22 +107,21 @@ public abstract class ShardTableQueryMetricHandler<T extends BaseQueryMetric> ex
     protected QueryMetricFactory metricFactory;
     protected UIDBuilder<UID> uidBuilder = UID.builder();
     protected QueryMetricCombiner queryMetricCombiner;
-    protected MarkingFunctions markingFunctions;
+    protected MarkingFunctions<?> markingFunctions;
     protected DnUtils dnUtils;
     // this lock is necessary for when there is an error condition and the accumuloRecordWriter needs to be replaced
     protected ReentrantReadWriteLock accumuloRecordWriterLock = new ReentrantReadWriteLock();
 
-    public ShardTableQueryMetricHandler(QueryMetricHandlerProperties queryMetricHandlerProperties,
-                    @Qualifier("warehouse") AccumuloClientPool accumuloClientPool, QueryMetricQueryLogicFactory logicFactory, QueryMetricFactory metricFactory,
-                    MarkingFunctions markingFunctions, QueryMetricCombiner queryMetricCombiner, LuceneToJexlQueryParser luceneToJexlQueryParser,
-                    DnUtils dnUtils) {
+    public ShardTableQueryMetricHandler(QueryMetricHandlerProperties queryMetricHandlerProperties, AccumuloConnectionFactory connectionFactory,
+                    QueryMetricQueryLogicFactory logicFactory, QueryMetricFactory metricFactory, MarkingFunctions<?> markingFunctions,
+                    QueryMetricCombiner queryMetricCombiner, LuceneToJexlQueryParser luceneToJexlQueryParser, DnUtils dnUtils) {
         super(luceneToJexlQueryParser);
         this.queryMetricHandlerProperties = queryMetricHandlerProperties;
         this.logicFactory = logicFactory;
         this.metricFactory = metricFactory;
         this.markingFunctions = markingFunctions;
         this.dnUtils = dnUtils;
-        this.accumuloClientPool = accumuloClientPool;
+        this.connectionFactory = connectionFactory;
         this.queryMetricCombiner = queryMetricCombiner;
 
         queryMetricHandlerProperties.getProperties().entrySet().forEach(e -> conf.set(e.getKey(), e.getValue()));
@@ -132,8 +129,8 @@ public abstract class ShardTableQueryMetricHandler<T extends BaseQueryMetric> ex
         AccumuloClient accumuloClient = null;
         try {
             log.info("creating connector with username:" + queryMetricHandlerProperties.getUsername());
-            Map<String,String> trackingMap = AccumuloClientTracking.getTrackingMap(Thread.currentThread().getStackTrace());
-            accumuloClient = accumuloClientPool.borrowObject(trackingMap);
+            Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
+            accumuloClient = connectionFactory.getClient(null, null, AccumuloConnectionFactory.Priority.ADMIN, trackingMap);
             this.clientAuthorizations = accumuloClient.securityOperations().getUserAuthorizations(accumuloClient.whoami()).toString();
             reload();
 
@@ -146,7 +143,11 @@ public abstract class ShardTableQueryMetricHandler<T extends BaseQueryMetric> ex
             throw new RuntimeException(e.getMessage(), e);
         } finally {
             if (accumuloClient != null) {
-                this.accumuloClientPool.returnObject(accumuloClient);
+                try {
+                    connectionFactory.returnClient(accumuloClient);
+                } catch (Exception e) {
+                    log.error(e.getMessage(), e);
+                }
             }
         }
     }
@@ -222,14 +223,18 @@ public abstract class ShardTableQueryMetricHandler<T extends BaseQueryMetric> ex
                     return getQueryMetricsIngestHelper(false, Collections.emptyList());
                 }
             };
-            Map<String,String> trackingMap = AccumuloClientTracking.getTrackingMap(Thread.currentThread().getStackTrace());
-            accumuloClient = accumuloClientPool.borrowObject(trackingMap);
+            Map<String,String> trackingMap = this.connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
+            accumuloClient = this.connectionFactory.getClient(null, null, AccumuloConnectionFactory.Priority.ADMIN, trackingMap);
             createAndConfigureTablesIfNecessary(handler.getTableNames(conf), accumuloClient, conf);
         } catch (Exception e) {
             log.error("Error verifying table configuration", e);
         } finally {
             if (accumuloClient != null) {
-                this.accumuloClientPool.returnObject(accumuloClient);
+                try {
+                    this.connectionFactory.returnClient(accumuloClient);
+                } catch (Exception e) {
+                    log.error(e.getMessage(), e);
+                }
             }
         }
     }
@@ -361,14 +366,9 @@ public abstract class ShardTableQueryMetricHandler<T extends BaseQueryMetric> ex
         event.setDataType(type);
         event.setTimestamp(updatedQueryMetric.getCreateDate().getTime());
         // get markings from metric, otherwise use the default markings
-        Map<String,String> markings = updatedQueryMetric.getMarkings();
+        Markings<?> markings = updatedQueryMetric.getMarkings();
         if (markings != null && !markings.isEmpty()) {
-            try {
-                event.setVisibility(this.markingFunctions.translateToColumnVisibility(updatedQueryMetric.getMarkings()));
-            } catch (MarkingFunctions.Exception e) {
-                log.error(e.getMessage(), e);
-                event.setVisibility(this.queryMetricHandlerProperties.getDefaultMetricVisibility());
-            }
+            event.setVisibility(markings.toColumnVisibility());
         } else {
             event.setVisibility(this.queryMetricHandlerProperties.getDefaultMetricVisibility());
         }
@@ -376,7 +376,7 @@ public abstract class ShardTableQueryMetricHandler<T extends BaseQueryMetric> ex
         event.setRawRecordNumber(1000L);
         event.addAltId(updatedQueryMetric.getQueryId());
 
-        event.setId(uidBuilder.newId(updatedQueryMetric.getQueryId().getBytes(Charset.forName("UTF-8")), (Date) null));
+        event.setId(uidBuilder.newId(updatedQueryMetric.getQueryId().getBytes(StandardCharsets.UTF_8), (Date) null));
 
         final Multimap<String,NormalizedContentInterface> fields;
 
@@ -499,11 +499,10 @@ public abstract class ShardTableQueryMetricHandler<T extends BaseQueryMetric> ex
         queryImpl.setPagesize(1000);
         queryImpl.setId(UUID.randomUUID());
         Map<String,String> parameters = new LinkedHashMap<>();
-        parameters.put(QueryOptions.INCLUDE_GROUPING_CONTEXT, "true");
-        parameters.put(QueryOptions.DATATYPE_FILTER, "querymetrics");
+        parameters.put(QueryParameters.INCLUDE_GROUPING_CONTEXT, "true");
+        parameters.put(QueryParameters.DATATYPE_FILTER_SET, "querymetrics");
         if (ignoredFields != null && !ignoredFields.isEmpty()) {
-            parameters.put(BLACKLISTED_FIELDS_DEPRECATED, StringUtils.join(ignoredFields, ","));
-            parameters.put(QueryOptions.DISALLOWLISTED_FIELDS, StringUtils.join(ignoredFields, ","));
+            parameters.put(QueryParameters.DISALLOWLISTED_FIELDS, StringUtils.join(ignoredFields, ","));
         }
         queryImpl.setParameters(parameters);
         return getQueryMetrics(queryImpl);
@@ -867,7 +866,7 @@ public abstract class ShardTableQueryMetricHandler<T extends BaseQueryMetric> ex
                         log.error(e.getMessage(), e);
                     }
                 }
-                this.recordWriter = new AccumuloRecordWriter(accumuloClientPool, conf);
+                this.recordWriter = new AccumuloRecordWriter(connectionFactory, conf);
             }
         } catch (Exception e) {
             log.error(e.getMessage(), e);
@@ -914,7 +913,7 @@ public abstract class ShardTableQueryMetricHandler<T extends BaseQueryMetric> ex
             query.setUserDN(datawaveUserShortName);
             query.setId(UUID.randomUUID());
             Map<String,String> parameters = new LinkedHashMap<>();
-            parameters.put(QueryOptions.INCLUDE_GROUPING_CONTEXT, "true");
+            parameters.put(QueryParameters.INCLUDE_GROUPING_CONTEXT, "true");
             parameters.put(QueryParameters.DATATYPE_FILTER_SET, "querymetrics");
             query.setParameters(parameters);
 

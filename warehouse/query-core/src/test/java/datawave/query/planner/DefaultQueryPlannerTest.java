@@ -1,12 +1,15 @@
 package datawave.query.planner;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Set;
 
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -23,6 +26,7 @@ import datawave.query.common.grouping.GroupFields;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.DatawaveQueryException;
+import datawave.query.exceptions.NoResultsException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.util.DateIndexHelper;
@@ -76,8 +80,8 @@ class DefaultQueryPlannerTest {
 
             // no hints or date filter required in this case
             JexlNodeAssert.assertThat(actual).isEqualTo("FOO == 'bar'");
-            Assertions.assertEquals(beginDate, config.getBeginDate());
-            Assertions.assertEquals(endDate, config.getEndDate());
+            assertEquals(beginDate, config.getBeginDate());
+            assertEquals(endDate, config.getEndDate());
         }
 
         /**
@@ -105,9 +109,9 @@ class DefaultQueryPlannerTest {
             JexlNodeAssert.assertThat(actual).isEqualTo(
                             "(FOO == 'bar') && filter:betweenDates(FOO, '" + filterFormat.format(beginDate) + "', '" + filterFormat.format(endDate) + "')");
             // begin date is not pushed farther back
-            Assertions.assertEquals(DateIndexUtil.getBeginDate("20241001"), config.getBeginDate());
+            assertEquals(DateIndexUtil.getBeginDate("20241001"), config.getBeginDate());
             // end date not pushed farther back either
-            Assertions.assertEquals(endDate, config.getEndDate());
+            assertEquals(endDate, config.getEndDate());
         }
 
         /**
@@ -129,8 +133,8 @@ class DefaultQueryPlannerTest {
 
             // no hints or date filter required in this case
             JexlNodeAssert.assertThat(actual).isEqualTo("FOO == 'bar'");
-            Assertions.assertEquals(beginDate, config.getBeginDate());
-            Assertions.assertEquals(endDate, config.getEndDate());
+            assertEquals(beginDate, config.getBeginDate());
+            assertEquals(endDate, config.getEndDate());
         }
 
         /**
@@ -155,8 +159,8 @@ class DefaultQueryPlannerTest {
             JexlNodeAssert.assertThat(actual).hasExactQueryString(
                             "(FOO == 'bar') && filter:betweenDates(FOO, '" + filterFormat.format(beginDate) + "', '" + filterFormat.format(endDate) + "')");
             // only the end date is adjusted
-            Assertions.assertEquals(beginDate, config.getBeginDate());
-            Assertions.assertEquals(DateIndexUtil.getEndDate("20241010"), config.getEndDate());
+            assertEquals(beginDate, config.getBeginDate());
+            assertEquals(DateIndexUtil.getEndDate("20241010"), config.getEndDate());
         }
 
         /**
@@ -178,8 +182,8 @@ class DefaultQueryPlannerTest {
 
             // no hints or date filter required in this case
             JexlNodeAssert.assertThat(actual).isEqualTo("FOO == 'bar'");
-            Assertions.assertEquals(beginDate, config.getBeginDate());
-            Assertions.assertEquals(endDate, config.getEndDate());
+            assertEquals(beginDate, config.getBeginDate());
+            assertEquals(endDate, config.getEndDate());
         }
 
         /**
@@ -205,8 +209,29 @@ class DefaultQueryPlannerTest {
             // hints and date filter used in this case
             JexlNodeAssert.assertThat(actual).hasExactQueryString(
                             "(FOO == 'bar') && filter:betweenDates(FOO, '" + filterFormat.format(beginDate) + "', '" + filterFormat.format(endDate) + "')");
-            Assertions.assertEquals(DateIndexUtil.getBeginDate("20241010"), config.getBeginDate());
-            Assertions.assertEquals(DateIndexUtil.getEndDate("20241010"), config.getEndDate());
+            assertEquals(DateIndexUtil.getBeginDate("20241010"), config.getBeginDate());
+            assertEquals(DateIndexUtil.getEndDate("20241010"), config.getEndDate());
+        }
+
+        /**
+         * Verify that when the date type is in noExpansionIfCurrentDateTypes and the query end date is not today, but the remapped shard end date falls before
+         * the query begin date, a NoResultsException is thrown rather than creating an invalid date range.
+         */
+        @Test
+        void testParamDateTypeMarkedForNoExpansionRemappedEndDateBeforeBeginDate() throws Exception {
+            queryTree = JexlASTHelper.parseJexlQuery("FOO == 'bar'");
+            config.setDefaultDateTypeName("EVENT");
+            config.setNoExpansionIfCurrentDateTypes(Set.of("SPECIAL_EVENT"));
+            // Query begin date is 2024-01-01; end date is not today
+            Date beginDate = DateHelper.parse("20240101");
+            config.setBeginDate(beginDate);
+            config.setEndDate(DateHelper.parse("20240131"));
+            settings.addParameter(QueryParameters.DATE_RANGE_TYPE, "SPECIAL_EVENT");
+            // Date index shard dates are all in December 2023 — entirely before the query begin date
+            dateIndexHelper.addEntry("20231201", "SPECIAL_EVENT", "wiki", "FOO", "20231201_shard");
+            dateIndexHelper.addEntry("20231215", "SPECIAL_EVENT", "wiki", "FOO", "20231215_shard");
+
+            assertThrows(NoResultsException.class, this::addDateFilters);
         }
 
         private ASTJexlScript addDateFilters() throws TableNotFoundException, DatawaveQueryException {
@@ -248,7 +273,7 @@ class DefaultQueryPlannerTest {
             uniqueFields.put("ROLE", TemporalGranularity.TRUNCATE_TEMPORAL_TO_DAY);
             uniqueFields.put("HIRE_DATE", TemporalGranularity.TRUNCATE_TEMPORAL_TO_DAY);
 
-            Assertions.assertThrows(DatawaveFatalQueryException.class, () -> planner.validateUniqueFields(uniqueFields),
+            assertThrows(DatawaveFatalQueryException.class, () -> planner.validateUniqueFields(uniqueFields),
                             "The following unique fields are not date fields and cannot be used with UNIQUE_BY_X: ROLE");
         }
 
@@ -281,8 +306,88 @@ class DefaultQueryPlannerTest {
 
             GroupFields groupFields = GroupFields.from("NAME,ROLE[DAY],HIRE_DATE[DAY]");
 
-            Assertions.assertThrows(DatawaveFatalQueryException.class, () -> planner.validateGroupFields(groupFields),
+            assertThrows(DatawaveFatalQueryException.class, () -> planner.validateGroupFields(groupFields),
                             "The following group-by fields are not date fields and cannot be used with temporal truncation: ROLE");
+        }
+    }
+
+    /**
+     * Contains tests for {@link DefaultQueryPlanner#capDateRange(ShardQueryConfiguration)}
+     */
+    @Nested
+    class CapDateRangeTests {
+
+        private static final long THIRTY_DAYS_MS = 30L * 24 * 60 * 60 * 1000;
+
+        private DefaultQueryPlanner planner;
+        private ShardQueryConfiguration config;
+
+        @BeforeEach
+        void setUp() {
+            planner = new DefaultQueryPlanner();
+            config = new ShardQueryConfiguration();
+        }
+
+        /**
+         * Verify that when both begin and end dates are before the cap and failOutsideValidDateRange is false, a NoResultsException is thrown rather than
+         * setting endDate before beginDate.
+         */
+        @Test
+        void testBothDatesBeforeCapSoftFailThrowsNoResults() {
+            config.setBeginDateCap(THIRTY_DAYS_MS);
+            config.setFailOutsideValidDateRange(false);
+            config.setBeginDate(new Date(System.currentTimeMillis() - 60 * 24 * 60 * 60 * 1000L)); // 60 days ago
+            config.setEndDate(new Date(System.currentTimeMillis() - 45 * 24 * 60 * 60 * 1000L)); // 45 days ago
+
+            assertThrows(NoResultsException.class, () -> planner.capDateRange(config));
+        }
+
+        /**
+         * Verify that when both begin and end dates are before the cap and failOutsideValidDateRange is true, a DatawaveQueryException is thrown.
+         */
+        @Test
+        void testBothDatesBeforeCapHardFailThrowsQueryException() {
+            config.setBeginDateCap(THIRTY_DAYS_MS);
+            config.setFailOutsideValidDateRange(true);
+            config.setBeginDate(new Date(System.currentTimeMillis() - 60 * 24 * 60 * 60 * 1000L));
+            config.setEndDate(new Date(System.currentTimeMillis() - 45 * 24 * 60 * 60 * 1000L));
+
+            assertThrows(DatawaveQueryException.class, () -> planner.capDateRange(config));
+        }
+
+        /**
+         * Verify that when only the begin date is before the cap (end date is within range), beginDate is capped and endDate is unchanged.
+         */
+        @Test
+        void testOnlyBeginDateBeforeCapUpdatesBeginDate() throws DatawaveQueryException {
+            config.setBeginDateCap(THIRTY_DAYS_MS);
+            config.setFailOutsideValidDateRange(false);
+            long minStartTime = System.currentTimeMillis() - THIRTY_DAYS_MS;
+            config.setBeginDate(new Date(minStartTime - 1000)); // just before cap
+            Date endDate = new Date(); // now — well within cap
+            config.setEndDate(endDate);
+
+            planner.capDateRange(config);
+
+            assertTrue(!config.getEndDate().before(config.getBeginDate()), "endDate must not be before beginDate after cap");
+            assertEquals(endDate, config.getEndDate(), "endDate should be unchanged");
+        }
+
+        /**
+         * Verify that when both dates are within the cap, neither date is modified.
+         */
+        @Test
+        void testDatesWithinCapAreUnchanged() throws DatawaveQueryException {
+            config.setBeginDateCap(THIRTY_DAYS_MS);
+            Date beginDate = new Date(System.currentTimeMillis() - 10 * 24 * 60 * 60 * 1000L); // 10 days ago
+            Date endDate = new Date();
+            config.setBeginDate(beginDate);
+            config.setEndDate(endDate);
+
+            planner.capDateRange(config);
+
+            assertEquals(beginDate, config.getBeginDate());
+            assertEquals(endDate, config.getEndDate());
         }
     }
 }

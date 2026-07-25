@@ -28,7 +28,7 @@ import org.junit.Test;
 
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.TableSplitsCache;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 
 public class MultiTableRRRangePartitionerTest {
 
@@ -46,7 +46,7 @@ public class MultiTableRRRangePartitionerTest {
 
     @Before
     public void before() throws IOException {
-        mockJob = new Job();
+        mockJob = Job.getInstance();
         configuration = mockJob.getConfiguration();
         configuration.set("job.output.table.names", TableName.SHARD);
         configuration.setBoolean(TableSplitsCache.REFRESH_SPLITS, false);

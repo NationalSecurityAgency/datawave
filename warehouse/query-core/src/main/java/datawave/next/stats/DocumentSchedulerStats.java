@@ -17,10 +17,10 @@ public class DocumentSchedulerStats implements Serializable {
     private QueryDataConsumerStats consumerStats;
 
     // fine-grain stats for next, seek, etc
-    private final DocumentIteratorStats iteratorStats = new DocumentIteratorStats();
+    private final DocIterStats iteratorStats = new DocIterStats();
 
     // field index timing stats
-    private final DocIdQueryIteratorStats queryStats = new DocIdQueryIteratorStats();
+    private final DocIdQueryIterStats queryStats = new DocIdQueryIterStats();
 
     // field index timing stats, plus others. replaces doc id query iterator stats
     private final DocumentCandidateStats candidateStats = new DocumentCandidateStats();
@@ -48,11 +48,11 @@ public class DocumentSchedulerStats implements Serializable {
         return totalResultsReturned;
     }
 
-    public void merge(DocumentIteratorStats iteratorStats) {
+    public void merge(DocIterStats iteratorStats) {
         this.iteratorStats.merge(iteratorStats);
     }
 
-    public void merge(DocIdQueryIteratorStats queryStats) {
+    public void merge(DocIdQueryIterStats queryStats) {
         this.candidateStats.merge(queryStats);
     }
 

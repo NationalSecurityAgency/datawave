@@ -1,5 +1,6 @@
 package datawave.webservice.query.cache;
 
+import java.time.Clock;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -19,14 +20,12 @@ import javax.inject.Inject;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.apache.log4j.Logger;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 
-import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.core.query.logic.QueryLogic;
 
@@ -36,7 +35,6 @@ import datawave.core.query.logic.QueryLogic;
 @PermitAll
 @ConcurrencyManagement(ConcurrencyManagementType.BEAN)
 @LocalBean
-@Exclude(ifProjectStage = DatawaveEmbeddedProjectStageHolder.DatawaveEmbedded.class)
 public class CreatedQueryLogicCacheBean {
 
     public static class Triple {
@@ -89,6 +87,7 @@ public class CreatedQueryLogicCacheBean {
     @Inject
     private AccumuloConnectionFactory connectionFactory;
     private final ConcurrentHashMap<Pair<String,Long>,Triple> cache = new ConcurrentHashMap<>();
+    private Clock clock = Clock.systemUTC();
 
     /**
      * Add the provided QueryLogic to the QueryLogicCache.
@@ -105,7 +104,7 @@ public class CreatedQueryLogicCacheBean {
      */
     public boolean add(String queryId, String userId, QueryLogic<?> logic, AccumuloClient client) {
         Triple value = new Triple(userId, logic, client);
-        long updateTime = System.currentTimeMillis();
+        long updateTime = clock.millis();
         return cache.putIfAbsent(Pair.of(queryId, updateTime), value) == null;
     }
 
@@ -215,5 +214,15 @@ public class CreatedQueryLogicCacheBean {
         }
 
         return null;
+    }
+
+    /**
+     * Primarily used for testing
+     *
+     * @param clock
+     *            the clock
+     */
+    public void setClock(Clock clock) {
+        this.clock = clock;
     }
 }

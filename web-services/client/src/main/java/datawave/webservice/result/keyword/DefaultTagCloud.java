@@ -4,8 +4,10 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import javax.xml.bind.annotation.XmlAccessOrder;
 import javax.xml.bind.annotation.XmlAccessType;
@@ -16,6 +18,8 @@ import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
+import datawave.marking.AccessExpressionMarkings;
+import datawave.marking.Markings;
 import datawave.webservice.query.result.event.MapSchema;
 import datawave.webservice.xml.util.StringMapAdapter;
 import io.protostuff.Input;
@@ -30,32 +34,27 @@ public class DefaultTagCloud extends TagCloudBase<DefaultTagCloud,DefaultTagClou
     private static final long serialVersionUID = 6614332701390895105L;
 
     @XmlElement(name = "markings")
-    @XmlJavaTypeAdapter(StringMapAdapter.class)
-    private HashMap<String,String> markings = null;
+    private Markings<?> markings;
 
     @XmlElement(name = "language")
     private String language = null;
+
+    @XmlElement(name = "metadata")
+    @XmlJavaTypeAdapter(StringMapAdapter.class)
+    private Map<String,String> metadata = null;
 
     @XmlElementWrapper(name = "tags")
     @XmlElement(name = "tag")
     private List<DefaultTagCloudEntry> tags = null;
 
     @Override
-    public Map<String,String> getMarkings() {
-        if (markings != null) {
-            return markings;
-        } else {
-            return super.getMarkings();
-        }
+    public Markings<?> getMarkings() {
+        return markings;
     }
 
-    public void setMarkings(Map<String,String> markings) {
-        if (null != markings) {
-            this.markings = new HashMap<>(markings);
-        } else {
-            this.markings = null;
-        }
-        super.setMarkings(this.markings);
+    @Override
+    public void setMarkings(Markings<?> markings) {
+        this.markings = markings;
     }
 
     @Override
@@ -66,6 +65,16 @@ public class DefaultTagCloud extends TagCloudBase<DefaultTagCloud,DefaultTagClou
     @Override
     public void setLanguage(String language) {
         this.language = language;
+    }
+
+    @Override
+    public void setMetadata(Map<String,String> metadata) {
+        this.metadata = metadata;
+    }
+
+    @Override
+    public Map<String,String> getMetadata() {
+        return metadata;
     }
 
     public List<DefaultTagCloudEntry> getTags() {
@@ -105,10 +114,14 @@ public class DefaultTagCloud extends TagCloudBase<DefaultTagCloud,DefaultTagClou
 
         public void writeTo(Output output, DefaultTagCloud message) throws IOException {
             if (message.markings != null)
-                output.writeObject(1, message.markings, MapSchema.SCHEMA, false);
+                output.writeObject(1, (AccessExpressionMarkings) message.markings, AccessExpressionMarkings.SCHEMA, false);
 
             if (message.language != null) {
                 output.writeString(2, message.language, false);
+            }
+
+            if (message.metadata != null) {
+                output.writeObject(3, message.metadata, MapSchema.SCHEMA, false);
             }
 
             if (message.tags != null) {
@@ -118,7 +131,7 @@ public class DefaultTagCloud extends TagCloudBase<DefaultTagCloud,DefaultTagClou
                         if (schema == null) {
                             schema = field.cachedSchema();
                         }
-                        output.writeObject(3, field, schema, true);
+                        output.writeObject(4, field, schema, true);
                     }
                 }
             }
@@ -130,13 +143,17 @@ public class DefaultTagCloud extends TagCloudBase<DefaultTagCloud,DefaultTagClou
             while ((number = input.readFieldNumber(this)) != 0) {
                 switch (number) {
                     case 1:
-                        message.markings = new HashMap<String,String>();
-                        input.mergeObject(message.markings, MapSchema.SCHEMA);
+                        message.markings = AccessExpressionMarkings.builder().build();
+                        input.mergeObject((AccessExpressionMarkings) message.markings, AccessExpressionMarkings.SCHEMA);
                         break;
                     case 2:
                         message.language = input.readString();
                         break;
                     case 3:
+                        message.metadata = new HashMap<>();
+                        input.mergeObject(message.metadata, MapSchema.SCHEMA);
+                        break;
+                    case 4:
                         if (message.tags == null)
                             message.tags = new ArrayList<>();
                         if (null == schema) {
@@ -160,6 +177,8 @@ public class DefaultTagCloud extends TagCloudBase<DefaultTagCloud,DefaultTagClou
                 case 2:
                     return "language";
                 case 3:
+                    return "metadata";
+                case 4:
                     return "tags";
                 default:
                     return null;
@@ -175,7 +194,29 @@ public class DefaultTagCloud extends TagCloudBase<DefaultTagCloud,DefaultTagClou
         {
             fieldMap.put("markings", 1);
             fieldMap.put("language", 2);
-            fieldMap.put("tags", 3);
+            fieldMap.put("metadata", 3);
+            fieldMap.put("tags", 4);
         }
     };
+
+    @Override
+    public boolean equals(Object other) {
+        if (this == other) {
+            return true;
+        }
+
+        if (!(other instanceof DefaultTagCloud)) {
+            return false;
+        }
+
+        DefaultTagCloud otherCloud = (DefaultTagCloud) other;
+        return Objects.equals(this.markings, otherCloud.markings) && Objects.equals(this.language, otherCloud.language)
+                        && Objects.equals(this.metadata, otherCloud.metadata) && this.tags.size() == otherCloud.tags.size()
+                        && new HashSet<>(this.tags).containsAll(otherCloud.tags);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(markings, language, metadata, tags);
+    }
 }

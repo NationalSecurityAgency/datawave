@@ -29,6 +29,7 @@ import datawave.core.query.logic.QueryLogic;
 import datawave.core.query.result.event.DefaultResponseObjectFactory;
 import datawave.helpers.PrintUtility;
 import datawave.ingest.mapreduce.handler.ssdeep.SSDeepIndexHandler;
+import datawave.marking.AccessExpressionMarkings;
 import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.QueryImpl;
 import datawave.microservice.querymetric.QueryMetricFactoryImpl;
@@ -87,7 +88,7 @@ public class SSDeepIngestQueryTest extends AbstractFunctionalQuery {
 
     @Before
     public void setupQuery() {
-        MarkingFunctions markingFunctions = new MarkingFunctions.Default();
+        MarkingFunctions<AccessExpressionMarkings> markingFunctions = new MarkingFunctions.Default();
         ResponseObjectFactory responseFactory = new DefaultResponseObjectFactory();
         MetadataHelperFactory metadataHelperFactory = new MetadataHelperFactory();
 
@@ -98,6 +99,7 @@ public class SSDeepIngestQueryTest extends AbstractFunctionalQuery {
         similarityQueryLogic.setBucketEncodingBase(BUCKET_ENCODING_BASE);
         similarityQueryLogic.setBucketEncodingLength(BUCKET_ENCODING_LENGTH);
         similarityQueryLogic.setIndexBuckets(BUCKET_COUNT);
+        similarityQueryLogic.setNumRangesPerScanner(10);
 
         discoveryQueryLogic = new SSDeepDiscoveryQueryLogic();
         discoveryQueryLogic.setTableName("shardIndex");

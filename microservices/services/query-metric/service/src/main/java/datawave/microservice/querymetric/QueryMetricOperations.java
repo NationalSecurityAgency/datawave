@@ -24,15 +24,15 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.annotation.PreDestroy;
 import javax.annotation.security.PermitAll;
-import javax.inject.Named;
 
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.accumulo.core.security.VisibilityEvaluator;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.http.MediaType;
@@ -87,7 +87,7 @@ public class QueryMetricOperations {
     private QueryGeometryHandler geometryHandler;
     private CacheManager cacheManager;
     private Cache incomingQueryMetricsCache;
-    private MarkingFunctions markingFunctions;
+    private MarkingFunctions<?> markingFunctions;
     private QueryMetricResponseFactory queryMetricResponseFactory;
     private MergeLockLifecycleListener mergeLock;
     private Correlator correlator;
@@ -140,8 +140,8 @@ public class QueryMetricOperations {
      *            the dnUtils
      */
     @Autowired
-    public QueryMetricOperations(@Named("queryMetricCacheManager") CacheManager cacheManager, ShardTableQueryMetricHandler handler,
-                    QueryGeometryHandler geometryHandler, MarkingFunctions markingFunctions, QueryMetricResponseFactory queryMetricResponseFactory,
+    public QueryMetricOperations(@Qualifier("queryMetricCacheManager") CacheManager cacheManager, ShardTableQueryMetricHandler handler,
+                    QueryGeometryHandler geometryHandler, MarkingFunctions<?> markingFunctions, QueryMetricResponseFactory queryMetricResponseFactory,
                     MergeLockLifecycleListener mergeLock, Correlator correlator, MetricUpdateEntryProcessorFactory entryProcessorFactory,
                     QueryMetricOperationsStats stats, QueryMetricClient queryMetricClient, DnUtils dnUtils) {
         this.handler = handler;
@@ -478,11 +478,14 @@ public class QueryMetricOperations {
 
     private boolean canViewMetric(DatawaveUserDetails currentUser, BaseQueryMetric metric) throws Exception {
         boolean userCanViewMetric = true;
-        ColumnVisibility columnVisibility = this.markingFunctions.translateToColumnVisibility(metric.getMarkings());
+        ColumnVisibility columnVisibility = null;
+        if (null != metric.getMarkings()) {
+            columnVisibility = metric.getMarkings().toColumnVisibility();
+        }
         for (DatawaveUser user : currentUser.getProxiedUsers()) {
             Authorizations authorizations = new Authorizations(user.getAuths().toArray(new String[0]));
             VisibilityEvaluator visibilityEvaluator = new VisibilityEvaluator(authorizations);
-            if (visibilityEvaluator.evaluate(columnVisibility) == false) {
+            if (!visibilityEvaluator.evaluate(columnVisibility)) {
                 userCanViewMetric = false;
                 break;
             }

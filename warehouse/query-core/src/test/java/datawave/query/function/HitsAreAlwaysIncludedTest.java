@@ -1,18 +1,14 @@
 package datawave.query.function;
 
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.io.IOException;
 import java.net.URL;
+import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -21,177 +17,124 @@ import java.util.TimeZone;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import javax.inject.Inject;
-
 import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
-import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.junit.Arquillian;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.asset.StringAsset;
-import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.io.TempDir;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import com.google.common.collect.Sets;
 
-import datawave.configuration.spring.SpringBean;
-import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.data.type.DateType;
 import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
-import datawave.microservice.query.QueryImpl;
 import datawave.query.QueryParameters;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Content;
 import datawave.query.attributes.Document;
-import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.tables.ShardQueryLogic;
-import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
+import datawave.query.util.AbstractQueryTest;
 import datawave.query.util.LimitFieldsTestingIngest;
-import datawave.util.TableName;
-import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
+import datawave.table.constants.TableName;
 
 /**
  * Tests the {@code limit.fields} feature to ensure that hit terms are always included and that associated fields at the same grouping context are included
  * along with the field that hit on the query
  */
-public abstract class HitsAreAlwaysIncludedTest {
-
-    @Rule
-    public TemporaryFolder tempFolder = new TemporaryFolder();
-
-    @RunWith(Arquillian.class)
-    public static class ShardRange extends HitsAreAlwaysIncludedTest {
-        protected static AccumuloClient client = null;
-
-        @BeforeClass
-        public static void setUp() throws Exception {
-            client = HitsAreAlwaysIncludedTest.initClient(ShardRange.class.toString(), LimitFieldsTestingIngest.WhatKindaRange.SHARD);
-        }
-
-        @Before
-        public void setup() throws ParseException {
-            super.setup();
-            logic.setCollapseUids(true);
-        }
-
-        @Override
-        protected AccumuloClient getClient() {
-            return client;
-        }
-    }
-
-    @RunWith(Arquillian.class)
-    public static class DocumentRange extends HitsAreAlwaysIncludedTest {
-        protected static AccumuloClient client = null;
-
-        @BeforeClass
-        public static void setUp() throws Exception {
-            client = HitsAreAlwaysIncludedTest.initClient(DocumentRange.class.toString(), LimitFieldsTestingIngest.WhatKindaRange.DOCUMENT);
-        }
-
-        @Before
-        public void setup() throws ParseException {
-            super.setup();
-            logic.setCollapseUids(false);
-        }
-
-        @Override
-        protected AccumuloClient getClient() {
-            return client;
-        }
-    }
+@ExtendWith(SpringExtension.class)
+@ComponentScan(basePackages = "datawave.query")
+// @formatter:off
+@ContextConfiguration(locations = {
+        "classpath:datawave/query/QueryLogicFactory.xml",
+        "classpath:beanRefContext.xml",
+        "classpath:MarkingFunctionsContext.xml",
+        "classpath:MetadataHelperContext.xml",
+        "classpath:CacheContext.xml"})
+// @formatter:on
+public class HitsAreAlwaysIncludedTest extends AbstractQueryTest {
 
     private static final Logger log = Logger.getLogger(HitsAreAlwaysIncludedTest.class);
     private static final Authorizations auths = new Authorizations("ALL");
-    private static final Set<Authorizations> authSet = Collections.singleton(auths);
     // Under certain conditions a Date-normalized field value is returned without normalization.
     private static final Set<String> dateFields = Set.of("FOO_1_BAR_1.FOO.0", "FOO_1_BAR_1");
 
-    @Inject
-    @SpringBean(name = "EventQuery")
-    protected ShardQueryLogic logic;
-    protected KryoDocumentDeserializer deserializer;
+    private static AccumuloClient clientForTest;
 
-    private final DateFormat format = new SimpleDateFormat("yyyyMMdd");
-    private final Map<String,String> queryParameters = new HashMap<>();
+    @Autowired
+    @Qualifier("EventQuery")
+    protected ShardQueryLogic logic;
+
+    @TempDir
+    Path tempDir;
+
     private final Set<String> expectedHits = new HashSet<>();
     private final Set<String> expectedEntries = new HashSet<>();
 
-    private String query;
-    private Date startDate;
-    private Date endDate;
-
-    @Deployment
-    public static JavaArchive createDeployment() throws Exception {
-
-        return ShrinkWrap.create(JavaArchive.class)
-                        .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.query", "org.jboss.logging",
-                                        "datawave.webservice.query.result.event", "datawave.core.query.result.event")
-                        .deleteClass(DefaultEdgeEventQueryLogic.class).deleteClass(RemoteEdgeDictionary.class)
-                        .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class)
-                        .addAsManifestResource(new StringAsset(
-                                        "<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>" + "</alternatives>"),
-                                        "beans.xml");
+    @Override
+    public ShardQueryLogic getLogic() {
+        return logic;
     }
 
-    private static AccumuloClient initClient(String instanceName, LimitFieldsTestingIngest.WhatKindaRange range) throws Exception {
-        QueryTestTableHelper qtth = new QueryTestTableHelper(instanceName, log);
-        AccumuloClient client = qtth.client;
-
-        LimitFieldsTestingIngest.writeItAll(client, range);
-        Authorizations auths = new Authorizations("ALL");
-        PrintUtility.printTable(client, auths, TableName.SHARD);
-        PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
-        PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
-
-        return client;
+    @Override
+    public Authorizations getAuths() {
+        return auths;
     }
 
-    @AfterClass
-    public static void teardown() {
+    @Override
+    protected void extraConfigurations() {
+        disableQueryPlanAssertion();
+    }
+
+    @Override
+    protected void extraAssertions() {
+        Document document = results.iterator().next();
+        assertHits(document);
+        assertEntries(document);
+    }
+
+    @BeforeAll
+    public static void beforeAll() throws Exception {
+        TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
+
+        QueryTestTableHelper qtth = new QueryTestTableHelper(HitsAreAlwaysIncludedTest.class.toString(), log);
+        clientForTest = qtth.client;
+
+        // ingest with the document range only; LimitFieldsTestingIngest already uses IndexIngestUtil
+        // internally to derive the other shard index table variants (NO_UID_INDEX, TRUNCATED_INDEX, etc.)
+        // that AbstractQueryTest.planAndExecuteQuery() iterates over.
+        LimitFieldsTestingIngest.writeItAll(clientForTest, LimitFieldsTestingIngest.WhatKindaRange.DOCUMENT);
+        PrintUtility.printTable(clientForTest, auths, TableName.SHARD);
+        PrintUtility.printTable(clientForTest, auths, TableName.SHARD_INDEX);
+        PrintUtility.printTable(clientForTest, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
+    }
+
+    @AfterAll
+    public static void afterAll() {
         TypeRegistry.reset();
     }
 
-    @Before
-    public void setup() throws ParseException {
-        TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
+    @BeforeEach
+    public void setup() {
+        setClientForTest(clientForTest);
         logic.setFullTableScanEnabled(true);
-        deserializer = new KryoDocumentDeserializer();
-        this.startDate = format.parse("20091231");
-        this.endDate = format.parse("20150101");
-    }
+        logic.setCollapseUids(false);
 
-    @After
-    public void tearDown() throws Exception {
-        this.queryParameters.clear();
-        this.query = null;
-        this.startDate = null;
-        this.endDate = null;
-        this.expectedHits.clear();
-        this.expectedEntries.clear();
-    }
-
-    private void givenQuery(String query) {
-        this.query = query;
-    }
-
-    private void givenQueryParameter(String key, String value) {
-        this.queryParameters.put(key, value);
+        givenDate("20091231", "20150101");
+        expectResultCount(1);
+        expectedHits.clear();
+        expectedEntries.clear();
     }
 
     private void expectEntry(String entry) {
@@ -202,48 +145,6 @@ public abstract class HitsAreAlwaysIncludedTest {
         this.expectedHits.add(hit);
     }
 
-    protected abstract AccumuloClient getClient();
-
-    private void runTestQuery() throws Exception {
-        setupQuery();
-        Document document = assertAndGetSingularDocument();
-        assertHits(document);
-        assertEntries(document);
-    }
-
-    private void setupQuery() throws Exception {
-        QueryImpl settings = new QueryImpl();
-        settings.setBeginDate(this.startDate);
-        settings.setEndDate(this.endDate);
-        settings.setPagesize(Integer.MAX_VALUE);
-        settings.setQueryAuthorizations(auths.serialize());
-        settings.setQuery(this.query);
-        settings.setParameters(this.queryParameters);
-        settings.setId(UUID.randomUUID());
-        log.debug("query: " + settings.getQuery());
-        log.debug("logic: " + settings.getQueryLogicName());
-
-        GenericQueryConfiguration config = logic.initialize(getClient(), settings, authSet);
-        logic.setupQuery(config);
-    }
-
-    private Document assertAndGetSingularDocument() {
-        Iterator<Entry<Key,Value>> iterator = logic.iterator();
-        Assert.assertTrue("No documents were returned", iterator.hasNext());
-        Entry<Key,Value> entry = iterator.next();
-        Document document = deserializer.apply(entry).getValue();
-        if (log.isTraceEnabled()) {
-            log.trace(entry.getKey() + " => " + document);
-        }
-        int count = 1;
-        while (iterator.hasNext()) {
-            count++;
-            iterator.next();
-        }
-        Assert.assertEquals("Expected exactly one document", 1, count);
-        return document;
-    }
-
     private void assertHits(Document document) {
         log.debug("Expected hits: " + document);
 
@@ -252,15 +153,15 @@ public abstract class HitsAreAlwaysIncludedTest {
         }
 
         Attribute<?> hitAttribute = document.get(JexlEvaluation.HIT_TERM_FIELD);
-        Assert.assertNotNull("Did not find hit term field " + JexlEvaluation.HIT_TERM_FIELD, hitAttribute);
+        assertNotNull(hitAttribute, "Did not find hit term field " + JexlEvaluation.HIT_TERM_FIELD);
 
         Set<String> hits = getContents(hitAttribute);
 
         Set<String> missingHits = Sets.difference(expectedHits, hits);
-        Assert.assertTrue("Expected hits missing: " + missingHits, missingHits.isEmpty());
+        assertTrue(missingHits.isEmpty(), "Expected hits missing: " + missingHits);
 
         Set<String> unexpectedHits = Sets.difference(hits, expectedHits);
-        Assert.assertTrue("Unexpected hits found: " + unexpectedHits, unexpectedHits.isEmpty());
+        assertTrue(unexpectedHits.isEmpty(), "Unexpected hits found: " + unexpectedHits);
     }
 
     private static Set<String> getContents(Attribute<?> hitAttribute) {
@@ -313,18 +214,18 @@ public abstract class HitsAreAlwaysIncludedTest {
         }
 
         Set<String> missingEntries = Sets.difference(expectedEntries, entries);
-        Assert.assertTrue("Expected entries missing: " + missingEntries, missingEntries.isEmpty());
+        assertTrue(missingEntries.isEmpty(), "Expected entries missing: " + missingEntries);
 
         Set<String> unexpectedEntries = Sets.difference(entries, expectedEntries);
-        Assert.assertTrue("Unexpected entries found: " + unexpectedEntries, unexpectedEntries.isEmpty());
+        assertTrue(unexpectedEntries.isEmpty(), "Unexpected entries found: " + unexpectedEntries);
     }
 
     @Test
     public void testHitForIndexedQueryTerm() throws Exception {
         givenQuery("FOO_3_BAR == 'defg<cat>'");
-        givenQueryParameter(QueryParameters.INCLUDE_GROUPING_CONTEXT, "true");
-        givenQueryParameter(QueryParameters.HIT_LIST, "true");
-        givenQueryParameter(QueryParameters.LIMIT_FIELDS, "FOO_1_BAR=3,FOO_1=2,FOO_3=2,FOO_3_BAR=2,FOO_4=3,FOO_1_BAR_1=4,BAR_1=0,BAR_2=0,BAR_3=0");
+        givenParameter(QueryParameters.INCLUDE_GROUPING_CONTEXT, "true");
+        givenParameter(QueryParameters.HIT_LIST, "true");
+        givenParameter(QueryParameters.LIMIT_FIELDS, "FOO_1_BAR=3,FOO_1=2,FOO_3=2,FOO_3_BAR=2,FOO_4=3,FOO_1_BAR_1=4,BAR_1=0,BAR_2=0,BAR_3=0");
 
         // the hit and associated fields in the same group
         expectEntry("FOO_1_BAR.FOO.3:good<cat>");
@@ -344,7 +245,7 @@ public abstract class HitsAreAlwaysIncludedTest {
 
         expectHit("FOO_3_BAR.FOO.3:defg<cat>");
 
-        runTestQuery();
+        planAndExecuteQuery();
     }
 
     @Test
@@ -370,17 +271,15 @@ public abstract class HitsAreAlwaysIncludedTest {
 
         expectHit("FOO_3_BAR.FOO.3:defg<cat>");
 
-        runTestQuery();
-
-        // runTestQuery(expectedHits, goodResults);
+        planAndExecuteQuery();
     }
 
     @Test
     public void testHitForIndexedQueryOnUnrealmed() throws Exception {
         givenQuery("FOO_3 == 'defg'");
-        givenQueryParameter(QueryParameters.INCLUDE_GROUPING_CONTEXT, "true");
-        givenQueryParameter(QueryParameters.HIT_LIST, "true");
-        givenQueryParameter(QueryParameters.LIMIT_FIELDS, "FOO_1_BAR=3,FOO_1=2,FOO_3=2,FOO_3_BAR=2,FOO_4=3,FOO_1_BAR_1=4,BAR_1=0,BAR_2=0,BAR_3=0");
+        givenParameter(QueryParameters.INCLUDE_GROUPING_CONTEXT, "true");
+        givenParameter(QueryParameters.HIT_LIST, "true");
+        givenParameter(QueryParameters.LIMIT_FIELDS, "FOO_1_BAR=3,FOO_1=2,FOO_3=2,FOO_3_BAR=2,FOO_4=3,FOO_1_BAR_1=4,BAR_1=0,BAR_2=0,BAR_3=0");
 
         // the hit and associated fields in the same group
         expectEntry("FOO_1_BAR.FOO.3:good<cat>");
@@ -400,16 +299,16 @@ public abstract class HitsAreAlwaysIncludedTest {
 
         expectHit("FOO_3.FOO.3.3:defg");
 
-        runTestQuery();
+        planAndExecuteQuery();
     }
 
     @Test
     public void testHitForIndexedQueryAndAnyfieldLimit() throws Exception {
         givenQuery("FOO_3_BAR == 'defg<cat>'");
 
-        givenQueryParameter(QueryParameters.INCLUDE_GROUPING_CONTEXT, "true");
-        givenQueryParameter(QueryParameters.HIT_LIST, "true");
-        givenQueryParameter(QueryParameters.LIMIT_FIELDS, "_ANYFIELD_=2,BAR_1=0,BAR_2=0,BAR_3=0");
+        givenParameter(QueryParameters.INCLUDE_GROUPING_CONTEXT, "true");
+        givenParameter(QueryParameters.HIT_LIST, "true");
+        givenParameter(QueryParameters.LIMIT_FIELDS, "_ANYFIELD_=2,BAR_1=0,BAR_2=0,BAR_3=0");
 
         // the hit and associated fields in the same group
         expectEntry("FOO_1_BAR.FOO.3:good<cat>");
@@ -428,16 +327,16 @@ public abstract class HitsAreAlwaysIncludedTest {
 
         expectHit("FOO_3_BAR.FOO.3:defg<cat>");
 
-        runTestQuery();
+        planAndExecuteQuery();
     }
 
     @Test
     public void testHitForIndexedAndUnindexedQueryAndAnyfieldLimit() throws Exception {
         givenQuery("FOO_3_BAR == 'defg<cat>' and FOO_1 == 'good'");
 
-        givenQueryParameter(QueryParameters.INCLUDE_GROUPING_CONTEXT, "true");
-        givenQueryParameter(QueryParameters.HIT_LIST, "true");
-        givenQueryParameter(QueryParameters.LIMIT_FIELDS, "_ANYFIELD_=2,BAR_1=0,BAR_2=0,BAR_3=0");
+        givenParameter(QueryParameters.INCLUDE_GROUPING_CONTEXT, "true");
+        givenParameter(QueryParameters.HIT_LIST, "true");
+        givenParameter(QueryParameters.LIMIT_FIELDS, "_ANYFIELD_=2,BAR_1=0,BAR_2=0,BAR_3=0");
 
         // the hit and associated fields in the same group
         expectEntry("FOO_1_BAR.FOO.3:good<cat>");
@@ -457,16 +356,16 @@ public abstract class HitsAreAlwaysIncludedTest {
         expectHit("FOO_3_BAR.FOO.3:defg<cat>");
         expectHit("FOO_1.FOO.1.3:good");
 
-        runTestQuery();
+        planAndExecuteQuery();
     }
 
     @Test
     public void testHitWithoutGroupingContext() throws Exception {
         givenQuery("FOO_3_BAR == 'defg<cat>'");
 
-        givenQueryParameter(QueryParameters.INCLUDE_GROUPING_CONTEXT, "false");
-        givenQueryParameter(QueryParameters.HIT_LIST, "true");
-        givenQueryParameter(QueryParameters.LIMIT_FIELDS, "FOO_1_BAR=3,FOO_1=2,FOO_3=2,FOO_3_BAR=2,FOO_4=3,FOO_1_BAR_1=4,BAR_1=0,BAR_2=0,BAR_3=0");
+        givenParameter(QueryParameters.INCLUDE_GROUPING_CONTEXT, "false");
+        givenParameter(QueryParameters.HIT_LIST, "true");
+        givenParameter(QueryParameters.LIMIT_FIELDS, "FOO_1_BAR=3,FOO_1=2,FOO_3=2,FOO_3_BAR=2,FOO_4=3,FOO_1_BAR_1=4,BAR_1=0,BAR_2=0,BAR_3=0");
 
         // there is no grouping context so I can expect only the original term, not the related ones (in the same group)
         // the hit
@@ -486,17 +385,16 @@ public abstract class HitsAreAlwaysIncludedTest {
 
         expectHit("FOO_3_BAR:defg<cat>");
 
-        runTestQuery();
-
+        planAndExecuteQuery();
     }
 
     @Test
     public void testHitWithRange() throws Exception {
         givenQuery("((_Bounded_ = true) && (FOO_1_BAR_1 >= '2021-03-01 00:00:00' && FOO_1_BAR_1 <= '2021-04-01 00:00:00'))");
 
-        givenQueryParameter(QueryParameters.INCLUDE_GROUPING_CONTEXT, "false");
-        givenQueryParameter(QueryParameters.HIT_LIST, "true");
-        givenQueryParameter(QueryParameters.LIMIT_FIELDS, "FOO_1_BAR=3,FOO_1=2,FOO_3=2,FOO_3_BAR=2,FOO_4=3,FOO_1_BAR_1=4,BAR_1=0,BAR_2=0,BAR_3=0");
+        givenParameter(QueryParameters.INCLUDE_GROUPING_CONTEXT, "false");
+        givenParameter(QueryParameters.HIT_LIST, "true");
+        givenParameter(QueryParameters.LIMIT_FIELDS, "FOO_1_BAR=3,FOO_1=2,FOO_3=2,FOO_3_BAR=2,FOO_4=3,FOO_1_BAR_1=4,BAR_1=0,BAR_2=0,BAR_3=0");
 
         // there is no grouping context so I can expect only the original term, not the related ones (in the same group)
         expectHit("FOO_1_BAR_1:Wed Mar 24 16:00:00 GMT 2021");
@@ -516,16 +414,16 @@ public abstract class HitsAreAlwaysIncludedTest {
         expectEntry("FOO_4:purr");
         expectEntry("FOO_4:yes");
 
-        runTestQuery();
+        planAndExecuteQuery();
     }
 
     @Test
     public void testHitWithDate() throws Exception {
         givenQuery("FOO_1_BAR_1 == '2021-03-24T16:00:00.000Z'");
 
-        givenQueryParameter(QueryParameters.INCLUDE_GROUPING_CONTEXT, "false");
-        givenQueryParameter(QueryParameters.HIT_LIST, "true");
-        givenQueryParameter(QueryParameters.LIMIT_FIELDS, "FOO_1_BAR=3,FOO_1=2,FOO_3=2,FOO_3_BAR=2,FOO_4=3,FOO_1_BAR_1=4,BAR_1=0,BAR_2=0,BAR_3=0");
+        givenParameter(QueryParameters.INCLUDE_GROUPING_CONTEXT, "false");
+        givenParameter(QueryParameters.HIT_LIST, "true");
+        givenParameter(QueryParameters.LIMIT_FIELDS, "FOO_1_BAR=3,FOO_1=2,FOO_3=2,FOO_3_BAR=2,FOO_4=3,FOO_1_BAR_1=4,BAR_1=0,BAR_2=0,BAR_3=0");
 
         // there is no grouping context so I can expect only the original term, not the related ones (in the same group)
         expectHit("FOO_1_BAR_1:Wed Mar 24 16:00:00 GMT 2021");
@@ -545,16 +443,16 @@ public abstract class HitsAreAlwaysIncludedTest {
         expectEntry("FOO_4:purr");
         expectEntry("FOO_4:yes");
 
-        runTestQuery();
+        planAndExecuteQuery();
     }
 
     @Test
     public void testHitWithExceededOrThreshold() throws Exception {
         givenQuery("FOO_3_BAR == 'defg<cat>' || FOO_3_BAR == 'abcd<cat>'");
 
-        givenQueryParameter(QueryParameters.INCLUDE_GROUPING_CONTEXT, "false");
-        givenQueryParameter(QueryParameters.HIT_LIST, "true");
-        givenQueryParameter(QueryParameters.LIMIT_FIELDS, "FOO_1_BAR=3,FOO_1=2,FOO_3=2,FOO_3_BAR=1,FOO_4=3,FOO_1_BAR_1=4,BAR_1=0,BAR_2=0,BAR_3=0");
+        givenParameter(QueryParameters.INCLUDE_GROUPING_CONTEXT, "false");
+        givenParameter(QueryParameters.HIT_LIST, "true");
+        givenParameter(QueryParameters.LIMIT_FIELDS, "FOO_1_BAR=3,FOO_1=2,FOO_3=2,FOO_3_BAR=1,FOO_4=3,FOO_1_BAR_1=4,BAR_1=0,BAR_2=0,BAR_3=0");
 
         logic.setMaxOrExpansionThreshold(1);
 
@@ -579,16 +477,16 @@ public abstract class HitsAreAlwaysIncludedTest {
         expectHit("FOO_3_BAR:defg<cat>");
         expectHit("FOO_3_BAR:abcd<cat>");
 
-        runTestQuery();
+        planAndExecuteQuery();
     }
 
     @Test
     public void testHitsOnly() throws Exception {
         givenQuery("FOO_3_BAR == 'defg<cat>' || FOO_3_BAR == 'abcd<cat>'");
 
-        givenQueryParameter(QueryParameters.INCLUDE_GROUPING_CONTEXT, "false");
-        givenQueryParameter(QueryParameters.HIT_LIST, "true");
-        givenQueryParameter(QueryParameters.LIMIT_FIELDS, "FOO_1_BAR=-1,FOO_1=-1,FOO_3=-1,FOO_3_BAR=-1,FOO_4=-1,FOO_1_BAR_1=-1,BAR_1=0,BAR_2=0,BAR_3=0");
+        givenParameter(QueryParameters.INCLUDE_GROUPING_CONTEXT, "false");
+        givenParameter(QueryParameters.HIT_LIST, "true");
+        givenParameter(QueryParameters.LIMIT_FIELDS, "FOO_1_BAR=-1,FOO_1=-1,FOO_3=-1,FOO_3_BAR=-1,FOO_4=-1,FOO_1_BAR_1=-1,BAR_1=0,BAR_2=0,BAR_3=0");
 
         logic.setMaxOrExpansionThreshold(1);
 
@@ -601,17 +499,16 @@ public abstract class HitsAreAlwaysIncludedTest {
         expectHit("FOO_3_BAR:defg<cat>");
         expectHit("FOO_3_BAR:abcd<cat>");
 
-        runTestQuery();
-
+        planAndExecuteQuery();
     }
 
     @Test
     public void testGroupedHitsOnly() throws Exception {
         givenQuery("FOO_3_BAR == 'defg<cat>' || FOO_3_BAR == 'abcd<cat>'");
 
-        givenQueryParameter(QueryParameters.INCLUDE_GROUPING_CONTEXT, "true");
-        givenQueryParameter(QueryParameters.HIT_LIST, "true");
-        givenQueryParameter(QueryParameters.LIMIT_FIELDS, "FOO_1_BAR=-1,FOO_1=-1,FOO_3=-1,FOO_3_BAR=-1,FOO_4=-1,FOO_1_BAR_1=-1,BAR_1=0,BAR_2=0,BAR_3=0");
+        givenParameter(QueryParameters.INCLUDE_GROUPING_CONTEXT, "true");
+        givenParameter(QueryParameters.HIT_LIST, "true");
+        givenParameter(QueryParameters.LIMIT_FIELDS, "FOO_1_BAR=-1,FOO_1=-1,FOO_3=-1,FOO_3_BAR=-1,FOO_4=-1,FOO_1_BAR_1=-1,BAR_1=0,BAR_2=0,BAR_3=0");
 
         logic.setMaxOrExpansionThreshold(1);
 
@@ -635,17 +532,17 @@ public abstract class HitsAreAlwaysIncludedTest {
         expectHit("FOO_3_BAR.FOO.3:defg<cat>");
         expectHit("FOO_3_BAR.FOO.0:abcd<cat>");
 
-        runTestQuery();
+        planAndExecuteQuery();
     }
 
     @Test
     public void testGroupedHitsWithMatchingField() throws Exception {
         givenQuery("FOO_3_BAR == 'abcd<cat>'");
 
-        givenQueryParameter(QueryParameters.INCLUDE_GROUPING_CONTEXT, "true");
-        givenQueryParameter(QueryParameters.HIT_LIST, "true");
-        givenQueryParameter(QueryParameters.LIMIT_FIELDS, "FOO_1_BAR=-1,FOO_1=-1,FOO_3=-1,FOO_3_BAR=-1,FOO_4=-1,FOO_1_BAR_1=-1,BAR_1=0,BAR_2=0,BAR_3=0");
-        givenQueryParameter("matching.field.sets", "FOO_4");
+        givenParameter(QueryParameters.INCLUDE_GROUPING_CONTEXT, "true");
+        givenParameter(QueryParameters.HIT_LIST, "true");
+        givenParameter(QueryParameters.LIMIT_FIELDS, "FOO_1_BAR=-1,FOO_1=-1,FOO_3=-1,FOO_3_BAR=-1,FOO_4=-1,FOO_1_BAR_1=-1,BAR_1=0,BAR_2=0,BAR_3=0");
+        givenParameter("matching.field.sets", "FOO_4");
 
         logic.setMaxOrExpansionThreshold(1);
 
@@ -673,17 +570,17 @@ public abstract class HitsAreAlwaysIncludedTest {
 
         expectHit("FOO_3_BAR.FOO.0:abcd<cat>");
 
-        runTestQuery();
+        planAndExecuteQuery();
     }
 
     @Test
     public void testGroupedHitsWithMatchingFields() throws Exception {
         givenQuery("FOO_3_BAR == 'abcd<cat>'");
 
-        givenQueryParameter(QueryParameters.INCLUDE_GROUPING_CONTEXT, "true");
-        givenQueryParameter(QueryParameters.HIT_LIST, "true");
-        givenQueryParameter(QueryParameters.LIMIT_FIELDS, "FOO_1_BAR=-1,FOO_1=-1,FOO_3=-1,FOO_3_BAR=-1,FOO_4=-1,FOO_1_BAR_1=-1,BAR_1=0,BAR_2=0,BAR_3=0");
-        givenQueryParameter("matching.field.sets", "FOO_4=BAR_1");
+        givenParameter(QueryParameters.INCLUDE_GROUPING_CONTEXT, "true");
+        givenParameter(QueryParameters.HIT_LIST, "true");
+        givenParameter(QueryParameters.LIMIT_FIELDS, "FOO_1_BAR=-1,FOO_1=-1,FOO_3=-1,FOO_3_BAR=-1,FOO_4=-1,FOO_1_BAR_1=-1,BAR_1=0,BAR_2=0,BAR_3=0");
+        givenParameter("matching.field.sets", "FOO_4=BAR_1");
 
         logic.setMaxOrExpansionThreshold(1);
 
@@ -714,17 +611,17 @@ public abstract class HitsAreAlwaysIncludedTest {
 
         expectHit("FOO_3_BAR.FOO.0:abcd<cat>");
 
-        runTestQuery();
+        planAndExecuteQuery();
     }
 
     @Test
     public void testGroupedHitsWithMoreMatchingFields() throws Exception {
         givenQuery("FOO_3_BAR == 'abcd<cat>'");
 
-        givenQueryParameter(QueryParameters.INCLUDE_GROUPING_CONTEXT, "true");
-        givenQueryParameter(QueryParameters.HIT_LIST, "true");
-        givenQueryParameter(QueryParameters.LIMIT_FIELDS, "FOO_1_BAR=-1,FOO_1=-1,FOO_3=-1,FOO_3_BAR=-1,FOO_4=-1,FOO_1_BAR_1=-1,BAR_1=0,BAR_2=0,BAR_3=0");
-        givenQueryParameter("matching.field.sets", "FOO_4=BAR_1=FOO_1");
+        givenParameter(QueryParameters.INCLUDE_GROUPING_CONTEXT, "true");
+        givenParameter(QueryParameters.HIT_LIST, "true");
+        givenParameter(QueryParameters.LIMIT_FIELDS, "FOO_1_BAR=-1,FOO_1=-1,FOO_3=-1,FOO_3_BAR=-1,FOO_4=-1,FOO_1_BAR_1=-1,BAR_1=0,BAR_2=0,BAR_3=0");
+        givenParameter("matching.field.sets", "FOO_4=BAR_1=FOO_1");
 
         logic.setMaxOrExpansionThreshold(1);
 
@@ -758,17 +655,17 @@ public abstract class HitsAreAlwaysIncludedTest {
 
         expectHit("FOO_3_BAR.FOO.0:abcd<cat>");
 
-        runTestQuery();
+        planAndExecuteQuery();
     }
 
     @Test
     public void testGroupedHitsWithMatchingFieldSets() throws Exception {
         givenQuery("FOO_3_BAR == 'abcd<cat>'");
 
-        givenQueryParameter(QueryParameters.INCLUDE_GROUPING_CONTEXT, "true");
-        givenQueryParameter(QueryParameters.HIT_LIST, "true");
-        givenQueryParameter(QueryParameters.LIMIT_FIELDS, "FOO_1_BAR=-1,FOO_1=-1,FOO_3=-1,FOO_3_BAR=-1,FOO_4=-1,FOO_1_BAR_1=-1,BAR_1=0,BAR_2=0,BAR_3=0");
-        givenQueryParameter("matching.field.sets", "FOO_4=BAR_1,FOO_1=BAR_1");
+        givenParameter(QueryParameters.INCLUDE_GROUPING_CONTEXT, "true");
+        givenParameter(QueryParameters.HIT_LIST, "true");
+        givenParameter(QueryParameters.LIMIT_FIELDS, "FOO_1_BAR=-1,FOO_1=-1,FOO_3=-1,FOO_3_BAR=-1,FOO_4=-1,FOO_1_BAR_1=-1,BAR_1=0,BAR_2=0,BAR_3=0");
+        givenParameter("matching.field.sets", "FOO_4=BAR_1,FOO_1=BAR_1");
 
         logic.setMaxOrExpansionThreshold(1);
 
@@ -802,16 +699,17 @@ public abstract class HitsAreAlwaysIncludedTest {
 
         expectHit("FOO_3_BAR.FOO.0:abcd<cat>");
 
-        runTestQuery();
+        planAndExecuteQuery();
     }
 
     protected void ivaratorConfig() throws IOException {
         final URL hdfsConfig = this.getClass().getResource("/testhadoop.config");
-        Assert.assertNotNull("Failed to fetch testhadoop.config URL", hdfsConfig);
+        assertNotNull(hdfsConfig, "Failed to fetch testhadoop.config URL");
         this.logic.setHdfsSiteConfigURLs(hdfsConfig.toExternalForm());
 
         final List<String> dirs = new ArrayList<>();
-        Path ivCache = Paths.get(tempFolder.newFolder().toURI());
+        Path ivCache = tempDir.resolve("ivarator-" + UUID.randomUUID());
+        Files.createDirectories(ivCache);
         dirs.add(ivCache.toUri().toString());
         String uriList = String.join(",", dirs);
         log.debug("hdfs dirs(" + uriList + ")");

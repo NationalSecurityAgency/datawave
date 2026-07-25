@@ -7,8 +7,8 @@ services:
     profiles:
       - quickstart
     # To run the wildfly webservice, change `--accumulo` to `--web`
-    command: ["datawave-bootstrap.sh", "--accumulo"]
-    image: nationalsecurityagency/datawave/quickstart-compose
+    command: ["datawave-bootstrap.sh", "--web"]
+    image: nationalsecurityagency/datawave/quickstart-compose:${VERSION:-latest}
     environment:
       - DW_CONTAINER_HOST=quickstart
       - DW_DATAWAVE_WEB_JAVA_OPTS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:8787 -Duser.timezone=GMT -Dfile.encoding=UTF-8 -Djava.net.preferIPv4Stack=true
@@ -27,8 +27,12 @@ services:
       - "9864:9864"
       # jobhistory web ui
       - "8021:8021"
+      # zookeeper
+      - "2181:2181"
       # accumulo monitor
       - "9995:9995"
+      # accumulo tserver
+      - "9997:9997"
       # web server
       - "9443:8443"
       # web server debug port
@@ -44,13 +48,17 @@ services:
     networks:
       - demo
     healthcheck:
-      test: ["CMD-SHELL", "! accumuloStatus | grep DW-WARN > /dev/null"]
+      test: ["CMD-SHELL", "ss -ln | grep 2181 && ss -ln | grep 9997"]
+      interval: 10s
+      timeout: 2s
+      start_period: 120s
+      retries: 30
 
   consul:
     image: docker.io/hashicorp/consul:1.15.4
     hostname: localhost
     environment:
-      - 'CONSUL_LOCAL_CONFIG={"log_level": "trace", "datacenter": "demo_dc", "disable_update_check": true, "enable_agent_tls_for_checks": true, "addresses": {"https": "0.0.0.0"}, "ports": {"https": 8501, "grpc_tls": 8503}, "tls": {"defaults": {"key_file": "/etc/pki/testServer.key", "cert_file": "/etc/pki/testServer.crt", "ca_file": "/etc/pki/testCA.pem", "verify_outgoing": true}, "internal_rpc": {"verify_server_hostname": false}}}'
+      - 'CONSUL_LOCAL_CONFIG={"log_level": "ERROR", "datacenter": "demo_dc", "disable_update_check": true, "enable_agent_tls_for_checks": true, "addresses": {"https": "0.0.0.0"}, "ports": {"https": 8501, "grpc_tls": 8503}, "tls": {"defaults": {"key_file": "/etc/pki/testServer.key", "cert_file": "/etc/pki/testServer.crt", "ca_file": "/etc/pki/testCA.pem", "verify_outgoing": true}, "internal_rpc": {"verify_server_hostname": false}}}'
       - CONSUL_BIND_INTERFACE=eth0
     # defined as host:container
     ports:
@@ -73,7 +81,26 @@ services:
       - TCP_PORTS=15672, 5672
       - RABBITMQ_ERLANG_COOKIE="mycookie"
     ports:
+      - "5672:5672"
       - "15672:15672"
+    networks:
+      - demo
+    depends_on:
+      consul:
+        condition: service_started
+
+  qr-rabbitmq:
+    image: docker.io/rabbitmq:3.12.4
+    volumes:
+      - ${RABBITMQ_CONFIG_DIR:-./rabbitmq-config}:/etc/rabbitmq
+      - ./logs:/logs
+    environment:
+      - TCP_PORTS=25672, 15672, 5672
+      - RABBITMQ_ERLANG_COOKIE="mycookie"
+    ports:
+      - "5673:5672"
+      - "15673:15672"
+      - "25673:25672"
     networks:
       - demo
     depends_on:
@@ -123,7 +150,7 @@ services:
 
   configuration:
     entrypoint: [ "java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5009","-jar","app.jar" ]
-    image: nationalsecurityagency/datawave/config-service
+    image: nationalsecurityagency/datawave/config-service:${VERSION:-latest}
     command:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,native,open_actuator
@@ -153,7 +180,7 @@ services:
         condition: service_started
 
   cache:
-    image: nationalsecurityagency/datawave/hazelcast-service
+    image: nationalsecurityagency/datawave/hazelcast-service:${VERSION:-latest}
     scale: 1
     command:
       - --spring.profiles.active=consul,compose,remoteauth
@@ -179,12 +206,46 @@ services:
       configuration:
         condition: service_healthy
 
+  annotation:
+    entrypoint: [ "java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5959","-jar","app.jar" ]
+    profiles:
+      - annotation
+    image: nationalsecurityagency/datawave/annotation-service:1.0.0-SNAPSHOT
+    scale: 1
+    command:
+      - --spring.profiles.active=consul,compose,remoteauth,log-disabled
+      - --spring.output.ansi.enabled=NEVER
+      - --spring.cloud.consul.host=consul
+      - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${random.value}
+    environment:
+      - ZOOKEEPER_HOST=${DW_ZOOKEEPER_HOST}
+      - "BACKEND=${BACKEND:-rabbitmq}"
+    ports:
+      - "5959:5959"
+      - "8748:8748"
+      - "8080"
+      - "9543:8443"
+    volumes:
+      - ${PKI_DIR:-./pki}:/etc/pki:ro
+      - ./logs:/logs
+    networks:
+      - demo
+    healthcheck:
+      test: curl -f http://localhost:8080/annotation/mgmt/health
+      interval: 10s
+      timeout: 1s
+      start_period: 45s
+      retries: 3
+    depends_on:
+      configuration:
+        condition: service_healthy
+
   query-cache:
     profiles:
       - querycache
       # To enable an additional Hazelcast cluster, enable the "querycache" profile
       # Set an environment variable: QUERY_CACHE=query-cache. This will force the query and executor service to use a separate "query-cache" Hazelcast cluster.
-    image: nationalsecurityagency/datawave/hazelcast-service
+    image: nationalsecurityagency/datawave/hazelcast-service:${VERSION:-latest}
     scale: 1
     command:
       - --spring.application.name=query-cache
@@ -258,7 +319,7 @@ services:
 
   authorization:
     entrypoint: [ "java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5008","-jar","app.jar" ]
-    image: nationalsecurityagency/datawave/authorization-service
+    image: nationalsecurityagency/datawave/authorization-service:${VERSION:-latest}
     command:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,mock,compose,federation
@@ -287,7 +348,7 @@ services:
     profiles:
       - accumulo
       - full
-    image: nationalsecurityagency/datawave/accumulo-service
+    image: nationalsecurityagency/datawave/accumulo-service:${VERSION:-latest}
     command:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,compose,remoteauth
@@ -320,7 +381,7 @@ services:
         condition: service_healthy
 
   audit:
-    image: nationalsecurityagency/datawave/audit-service
+    image: nationalsecurityagency/datawave/audit-service:${VERSION:-latest}
     command:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,compose,remoteauth
@@ -379,12 +440,14 @@ services:
       - demo
     healthcheck:
       test: curl -f http://localhost:8080/querymetric/mgmt/health
-      interval: 10s
+      interval: 5s
       timeout: 1s
-      start_period: 120s
-      retries: 6
+      start_period: 40s
+      retries: 10
     depends_on:
       authorization:
+        condition: service_healthy
+      quickstart:
         condition: service_healthy
 
   dictionary:

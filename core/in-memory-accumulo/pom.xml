@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>gov.nsa.datawave</groupId>
     <artifactId>datawave-in-memory-accumulo</artifactId>
-    <version>4.0.5-SNAPSHOT</version>
+    <version>4.0.6-SNAPSHOT</version>
     <packaging>jar</packaging>
     <name>Datawave InMemory Accumulo</name>
     <url>https://code.nsa.gov/datawave-in-memory-accumulo</url>
@@ -31,18 +31,19 @@
         <maven.compiler.target>11</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <version.accumulo>2.1.4-5792fed3-bulkv2</version.accumulo>
+        <version.accumulo>2.1.4</version.accumulo>
         <version.hadoop>3.3.4</version.hadoop>
         <version.junit5>5.12.0</version.junit5>
-        <version.log4j.bom>2.17.2</version.log4j.bom>
-        <version.mockito>2.28.2</version.mockito>
+        <version.log4j>2.26.1</version.log4j>
+        <version.mockito>4.11.0</version.mockito>
     </properties>
     <dependencyManagement>
         <dependencies>
+            <?SORTPOM IGNORE?>
             <dependency>
                 <groupId>org.apache.logging.log4j</groupId>
                 <artifactId>log4j-bom</artifactId>
-                <version>${version.log4j.bom}</version>
+                <version>${version.log4j}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -53,6 +54,7 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+            <?SORTPOM RESUME?>
             <dependency>
                 <groupId>commons-collections</groupId>
                 <artifactId>commons-collections</artifactId>
@@ -134,6 +136,30 @@
         <pluginManagement>
             <plugins>
                 <plugin>
+                    <groupId>com.diffplug.spotless</groupId>
+                    <artifactId>spotless-maven-plugin</artifactId>
+                    <version>2.43.0</version>
+                    <configuration>
+                        <java>
+                            <removeUnusedImports />
+                            <importOrder>
+                                <order>\#java,\#javax,\#,java,javax,org,com,</order>
+                            </importOrder>
+                            <excludes>
+                                <exclude>**/thrift/*.java</exclude>
+                            </excludes>
+                        </java>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>apply</goal>
+                            </goals>
+                            <phase>process-sources</phase>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
                     <groupId>com.github.ekryd.sortpom</groupId>
                     <artifactId>sortpom-maven-plugin</artifactId>
                     <version>4.0.0</version>
@@ -151,27 +177,6 @@
                     <executions>
                         <execution>
                             <id>sort-pom</id>
-                            <goals>
-                                <goal>sort</goal>
-                            </goals>
-                            <phase>process-sources</phase>
-                        </execution>
-                    </executions>
-                </plugin>
-                <plugin>
-                    <groupId>net.revelc.code</groupId>
-                    <artifactId>impsort-maven-plugin</artifactId>
-                    <version>1.9.0</version>
-                    <configuration>
-                        <groups>java.,javax.,org.,com.</groups>
-                        <staticGroups>java,*</staticGroups>
-                        <excludes>
-                            <exclude>**/thrift/*.java</exclude>
-                        </excludes>
-                    </configuration>
-                    <executions>
-                        <execution>
-                            <id>sort-imports</id>
                             <goals>
                                 <goal>sort</goal>
                             </goals>
@@ -236,6 +241,8 @@
                                             <exclude>log4j:log4j</exclude>
                                             <exclude>org.slf4j:slf4j-log4j12</exclude>
                                             <exclude>ch.qos.logback:logback-classic</exclude>
+                                            <!-- exclude all versions of log4j before version.log4j -->
+                                            <exclude>org.apache.logging.log4j:*:(,${version.log4j})</exclude>
                                         </excludes>
                                     </bannedDependencies>
                                 </rules>
@@ -309,12 +316,12 @@
             <build>
                 <plugins>
                     <plugin>
-                        <groupId>com.github.ekryd.sortpom</groupId>
-                        <artifactId>sortpom-maven-plugin</artifactId>
+                        <groupId>com.diffplug.spotless</groupId>
+                        <artifactId>spotless-maven-plugin</artifactId>
                     </plugin>
                     <plugin>
-                        <groupId>net.revelc.code</groupId>
-                        <artifactId>impsort-maven-plugin</artifactId>
+                        <groupId>com.github.ekryd.sortpom</groupId>
+                        <artifactId>sortpom-maven-plugin</artifactId>
                     </plugin>
                     <plugin>
                         <groupId>net.revelc.code.formatter</groupId>

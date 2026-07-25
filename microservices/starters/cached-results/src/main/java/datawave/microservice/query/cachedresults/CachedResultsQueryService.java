@@ -8,6 +8,7 @@ import static datawave.microservice.query.cachedresults.status.CachedResultsQuer
 import static datawave.microservice.query.cachedresults.status.CachedResultsQueryStatus.CACHED_RESULTS_STATE.LOADED;
 import static datawave.microservice.query.cachedresults.status.CachedResultsQueryStatus.CACHED_RESULTS_STATE.LOADING;
 import static datawave.microservice.query.cachedresults.status.CachedResultsQueryStatus.CACHED_RESULTS_STATE.NONE;
+import static datawave.util.StringUtils.EMPTY_STRING;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -21,7 +22,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -30,8 +30,9 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import org.apache.accumulo.access.AccessExpression;
 import org.apache.commons.collections4.Transformer;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,7 +59,6 @@ import datawave.microservice.config.RequestScopeBeanSupplier;
 import datawave.microservice.query.cachedresults.config.CachedResultsQueryProperties;
 import datawave.microservice.query.cachedresults.status.CachedResultsQueryStatus;
 import datawave.microservice.query.cachedresults.status.cache.CachedResultsQueryCache;
-import datawave.microservice.query.cachedresults.status.cache.util.CacheUpdater;
 import datawave.microservice.query.storage.QueryStatus;
 import datawave.microservice.query.storage.QueryStorageCache;
 import datawave.security.authorization.ProxiedUserDetails;
@@ -429,7 +429,16 @@ public class CachedResultsQueryService {
                         ps.setString(5, cacheableQueryRow.getEventId());
                         ps.setString(6, cacheableQueryRow.getRow());
                         ps.setString(7, cacheableQueryRow.getColFam());
-                        ps.setString(8, MarkingFunctions.Encoding.toString(new TreeMap<>(cacheableQueryRow.getMarkings())));
+
+                        String visibility = EMPTY_STRING;
+                        if (cacheableQueryRow.getMarkings() != null) {
+                            AccessExpression ae = cacheableQueryRow.getMarkings().toAccessExpression();
+                            if (ae != null) {
+                                visibility = ae.getExpression();
+                            }
+                        }
+
+                        ps.setString(8, visibility);
 
                         // keep track of the populated columns
                         Set<Integer> populatedColumns = new HashSet<>();
@@ -770,7 +779,7 @@ public class CachedResultsQueryService {
 
         // if we haven't already, validate the markings
         SecurityMarking securityMarking = scopedSecurityMarking.get();
-        if (securityMarking.toColumnVisibilityString() == null) {
+        if (securityMarking.toAccessExpressionString() == null) {
             validateSecurityMarkings(parameters);
         }
 
@@ -818,7 +827,7 @@ public class CachedResultsQueryService {
         // These are parameters that aren't passed in by the user, but rather are computed from other sources.
         PrivateAuditConstants.stripPrivateParameters(parameters);
         parameters.add(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
-        parameters.set(PrivateAuditConstants.COLUMN_VISIBILITY, scopedSecurityMarking.get().toColumnVisibilityString());
+        parameters.set(PrivateAuditConstants.COLUMN_VISIBILITY, scopedSecurityMarking.get().toAccessExpressionString());
         parameters.add(PrivateAuditConstants.USER_DN, userDn);
     }
 
