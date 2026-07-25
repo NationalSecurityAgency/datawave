@@ -341,6 +341,8 @@ public class CSVReaderBase extends LongLineEventRecordReader implements EventRec
 
     @Override
     public float getProgress() {
+        if (totalSize <= 0)
+            return 0f;
         return Math.min(1f, (float) processedSize / (float) totalSize);
     }
 

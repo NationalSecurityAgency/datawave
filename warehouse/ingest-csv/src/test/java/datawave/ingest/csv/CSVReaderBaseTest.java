@@ -83,6 +83,15 @@ public class CSVReaderBaseTest {
         assertEquals(file.lastModified(), event.getTimestamp());
     }
 
+    @Test
+    public void testProgressIsZeroWhenTotalSizeIsZero() {
+        CSVReaderBase reader = new CSVReaderBase();
+        reader.setProcessedSize(1);
+        reader.setTotalSize(0);
+
+        assertEquals(0f, reader.getProgress(), 0f);
+    }
+
     private File writeFile(String data) throws Exception {
         File file = temporaryFolder.newFile("input.csv");
         Files.write(file.toPath(), data.getBytes(StandardCharsets.UTF_8));
