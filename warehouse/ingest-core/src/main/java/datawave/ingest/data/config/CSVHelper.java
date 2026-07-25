@@ -3,6 +3,7 @@ package datawave.ingest.data.config;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -245,19 +246,30 @@ public class CSVHelper extends DataTypeHelperImpl {
 
         this.multiValueSeparator = config.get(this.getType().typeName() + MULTI_VALUED_SEPARATOR, ";");
 
-        this.fieldSizeThreshold = config.getInt(this.getType().typeName() + FIELD_SIZE_THRESHOLD, this.fieldSizeThreshold);
-        this.thresholdAction = ThresholdAction.valueOf(config.get(this.getType().typeName() + THRESHOLD_ACTION, this.thresholdAction.name()).toUpperCase());
+        this.fieldSizeThreshold = getNonNegativeInt(config, this.getType().typeName() + FIELD_SIZE_THRESHOLD, this.fieldSizeThreshold);
+        this.thresholdAction = getThresholdAction(config, this.getType().typeName() + THRESHOLD_ACTION, this.thresholdAction);
         this.thresholdReplacement = config.get(this.getType().typeName() + THRESHOLD_FIELD_REPLACEMENT, this.thresholdReplacement);
         this.truncateField = config.get(this.getType().typeName() + TRUNCATE_FIELD, this.truncateField);
         this.dropField = config.get(this.getType().typeName() + DROP_FIELD, this.dropField);
 
-        this.multiFieldSizeThreshold = config.getInt(this.getType().typeName() + MULTI_VALUED_THRESHOLD, this.multiFieldSizeThreshold);
-        this.multiValuedThresholdAction = ThresholdAction
-                        .valueOf(config.get(this.getType().typeName() + MULTI_VALUED_THRESHOLD_ACTION, this.multiValuedThresholdAction.name()).toUpperCase());
+        this.multiFieldSizeThreshold = getNonNegativeInt(config, this.getType().typeName() + MULTI_VALUED_THRESHOLD, this.multiFieldSizeThreshold);
+        this.multiValuedThresholdAction = getThresholdAction(config, this.getType().typeName() + MULTI_VALUED_THRESHOLD_ACTION, this.multiValuedThresholdAction);
         this.multiValuedThresholdReplacement = config.get(this.getType().typeName() + MULTI_VALUED_THRESHOLD_FIELD_REPLACEMENT,
                         this.multiValuedThresholdReplacement);
         this.multiValuedTruncateField = config.get(this.getType().typeName() + MULTI_VALUED_TRUNCATE_FIELD, this.multiValuedTruncateField);
         this.multiValuedDropField = config.get(this.getType().typeName() + MULTI_VALUED_DROP_FIELD, this.multiValuedDropField);
+    }
+
+    private static int getNonNegativeInt(Configuration config, String key, int defaultValue) {
+        int value = config.getInt(key, defaultValue);
+        if (value < 0) {
+            throw new IllegalArgumentException(key + " must be non-negative: " + value);
+        }
+        return value;
+    }
+
+    private static ThresholdAction getThresholdAction(Configuration config, String key, ThresholdAction defaultValue) {
+        return ThresholdAction.valueOf(config.get(key, defaultValue.name()).toUpperCase(Locale.ROOT));
     }
 
     private void resetSetupState() {

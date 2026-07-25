@@ -6,7 +6,10 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -124,5 +127,73 @@ public class CSVHelperTest {
         } finally {
             TypeRegistry.reset();
         }
+    }
+
+    @Test
+    public void testRejectsNegativeThresholds() {
+        // Verify CSVHelper rejects invalid negative thresholds while still allowing zero.
+        Configuration zero = newCsvConfiguration();
+        zero.setInt("fake" + CSVHelper.FIELD_SIZE_THRESHOLD, 0);
+        zero.setInt("fake" + CSVHelper.MULTI_VALUED_THRESHOLD, 0);
+
+        try {
+            TypeRegistry.reset();
+            TypeRegistry.getInstance(zero);
+            CSVHelper helper = new CSVHelper();
+            helper.setup(zero);
+            assertEquals(0, helper.getFieldSizeThreshold());
+            assertEquals(0, helper.getMultiFieldSizeThreshold());
+        } finally {
+            TypeRegistry.reset();
+        }
+
+        assertNegativeThresholdRejected(CSVHelper.FIELD_SIZE_THRESHOLD);
+        assertNegativeThresholdRejected(CSVHelper.MULTI_VALUED_THRESHOLD);
+    }
+
+    @Test
+    public void testParsesThresholdActionsWithRootLocale() {
+        // Verify lowercase threshold actions parse the same way under a non-English JVM locale.
+        Configuration conf = newCsvConfiguration();
+        conf.set("fake" + CSVHelper.THRESHOLD_ACTION, "fail");
+        conf.set("fake" + CSVHelper.MULTI_VALUED_THRESHOLD_ACTION, "truncate");
+
+        Locale originalLocale = Locale.getDefault();
+        try {
+            Locale.setDefault(new Locale("tr", "TR"));
+            TypeRegistry.reset();
+            TypeRegistry.getInstance(conf);
+            CSVHelper helper = new CSVHelper();
+            helper.setup(conf);
+
+            assertEquals(CSVHelper.ThresholdAction.FAIL, helper.getThresholdAction());
+            assertEquals(CSVHelper.ThresholdAction.TRUNCATE, helper.getMultiValuedThresholdAction());
+        } finally {
+            Locale.setDefault(originalLocale);
+            TypeRegistry.reset();
+        }
+    }
+
+    private void assertNegativeThresholdRejected(String property) {
+        Configuration conf = newCsvConfiguration();
+        conf.setInt("fake" + property, -1);
+
+        try {
+            TypeRegistry.reset();
+            TypeRegistry.getInstance(conf);
+            IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> new CSVHelper().setup(conf));
+            assertTrue(e.getMessage().contains("fake" + property));
+            assertTrue(e.getMessage().contains("-1"));
+        } finally {
+            TypeRegistry.reset();
+        }
+    }
+
+    private Configuration newCsvConfiguration() {
+        Configuration conf = new Configuration();
+        conf.addResource(requireNonNull(getClass().getResourceAsStream("/fake-datatype-config.xml")));
+        conf.set("all" + DataTypeHelper.Properties.INGEST_POLICY_ENFORCER_CLASS, IngestPolicyEnforcer.NoOpIngestPolicyEnforcer.class.getName());
+        conf.setStrings("fake" + CSVHelper.DATA_HEADER, "FIELD");
+        return conf;
     }
 }
