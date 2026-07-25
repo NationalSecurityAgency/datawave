@@ -50,6 +50,7 @@ public class CSVReaderBase extends LongLineEventRecordReader implements EventRec
      * The size of the InputSplit * 4.
      */
     private long totalSize;
+    private boolean firstSplit = true;
 
     /**
      * Primary DataTypeHelper for CSV records.
@@ -76,7 +77,7 @@ public class CSVReaderBase extends LongLineEventRecordReader implements EventRec
      */
     @Override
     public boolean nextKeyValue() throws IOException {
-        if (counter == 0 && csvHelper.skipHeaderRow())
+        if (counter == 0 && csvHelper.skipHeaderRow() && firstSplit)
             super.nextKeyValue();
         counter++;
 
@@ -91,9 +92,14 @@ public class CSVReaderBase extends LongLineEventRecordReader implements EventRec
     @Override
     public void initialize(final InputSplit genericSplit, final TaskAttemptContext context) throws IOException {
         super.initialize(genericSplit, context);
+        initializeFirstSplit(genericSplit);
         setInputDate(System.currentTimeMillis());
         initializeRawFileName(genericSplit);
         initializeTotalSize(genericSplit);
+    }
+
+    private void initializeFirstSplit(final InputSplit genericSplit) {
+        firstSplit = !(genericSplit instanceof FileSplit) || ((FileSplit) genericSplit).getStart() == 0;
     }
 
     public void initializeRawFileName(final InputSplit genericSplit) {
