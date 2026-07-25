@@ -20,6 +20,7 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import datawave.ingest.csv.mr.input.CSVReaderBase;
+import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.data.config.CSVHelper;
 import datawave.ingest.data.config.DataTypeHelper;
@@ -66,6 +67,20 @@ public class CSVReaderBaseTest {
         assertTrue(reader.nextKeyValue());
         assertEquals("second", reader.getCurrentValue().toString());
         assertFalse(reader.nextKeyValue());
+    }
+
+    @Test
+    public void testDefaultTimestampUsesRawFileModificationTime() throws Exception {
+        String data = "value\n";
+        File file = writeFile(data);
+        long fileModificationTime = 1_700_000_000_000L;
+        assertTrue(file.setLastModified(fileModificationTime));
+
+        CSVReaderBase reader = initializeReader(file, 0, data.length());
+        assertTrue(reader.nextKeyValue());
+        RawRecordContainer event = reader.getEvent();
+
+        assertEquals(file.lastModified(), event.getTimestamp());
     }
 
     private File writeFile(String data) throws Exception {

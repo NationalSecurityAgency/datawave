@@ -93,7 +93,7 @@ public class CSVReaderBase extends LongLineEventRecordReader implements EventRec
     public void initialize(final InputSplit genericSplit, final TaskAttemptContext context) throws IOException {
         super.initialize(genericSplit, context);
         initializeFirstSplit(genericSplit);
-        setInputDate(System.currentTimeMillis());
+        setInputDate(getRawInputFileTimestamp() > 0 ? getRawInputFileTimestamp() : System.currentTimeMillis());
         initializeRawFileName(genericSplit);
         initializeTotalSize(genericSplit);
     }
