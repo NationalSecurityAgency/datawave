@@ -244,7 +244,7 @@ public class CSVHelper extends DataTypeHelperImpl {
             }
         }
 
-        this.multiValueSeparator = config.get(this.getType().typeName() + MULTI_VALUED_SEPARATOR, ";");
+        this.multiValueSeparator = getNonEmptyString(config, this.getType().typeName() + MULTI_VALUED_SEPARATOR, ";");
 
         this.fieldSizeThreshold = getNonNegativeInt(config, this.getType().typeName() + FIELD_SIZE_THRESHOLD, this.fieldSizeThreshold);
         this.thresholdAction = getThresholdAction(config, this.getType().typeName() + THRESHOLD_ACTION, this.thresholdAction);
@@ -264,6 +264,14 @@ public class CSVHelper extends DataTypeHelperImpl {
         int value = config.getInt(key, defaultValue);
         if (value < 0) {
             throw new IllegalArgumentException(key + " must be non-negative: " + value);
+        }
+        return value;
+    }
+
+    private static String getNonEmptyString(Configuration config, String key, String defaultValue) {
+        String value = config.get(key, defaultValue);
+        if (value.isEmpty()) {
+            throw new IllegalArgumentException(key + " must be non-empty");
         }
         return value;
     }

@@ -174,6 +174,32 @@ public class CSVHelperTest {
         }
     }
 
+    @Test
+    public void testRejectsEmptyMultivalueSeparator() {
+        // Verify an explicit empty separator is rejected while an absent setting keeps the default separator.
+        Configuration defaultSeparator = newCsvConfiguration();
+        try {
+            TypeRegistry.reset();
+            TypeRegistry.getInstance(defaultSeparator);
+            CSVHelper helper = new CSVHelper();
+            helper.setup(defaultSeparator);
+            assertEquals(";", helper.getMultiValueSeparator());
+        } finally {
+            TypeRegistry.reset();
+        }
+
+        Configuration emptySeparator = newCsvConfiguration();
+        emptySeparator.set("fake" + CSVHelper.MULTI_VALUED_SEPARATOR, "");
+        try {
+            TypeRegistry.reset();
+            TypeRegistry.getInstance(emptySeparator);
+            IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> new CSVHelper().setup(emptySeparator));
+            assertTrue(e.getMessage().contains("fake" + CSVHelper.MULTI_VALUED_SEPARATOR));
+        } finally {
+            TypeRegistry.reset();
+        }
+    }
+
     private void assertNegativeThresholdRejected(String property) {
         Configuration conf = newCsvConfiguration();
         conf.setInt("fake" + property, -1);
