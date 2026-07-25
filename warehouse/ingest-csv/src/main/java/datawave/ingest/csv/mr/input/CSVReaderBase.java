@@ -1,6 +1,8 @@
 package datawave.ingest.csv.mr.input;
 
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
@@ -53,6 +55,7 @@ public class CSVReaderBase extends LongLineEventRecordReader implements EventRec
      * Primary DataTypeHelper for CSV records.
      */
     private CSVHelper csvHelper;
+    private Set<String> processedFieldNames;
 
     /**
      * Splits raw input records Strings according to the configured separator.
@@ -156,6 +159,7 @@ public class CSVReaderBase extends LongLineEventRecordReader implements EventRec
 
         final String[] rawEventFields = _tokenizer.getTokenArray();
         final String[] header = csvHelper.getHeader();
+        processedFieldNames = csvHelper.hasRequiredFields() ? new HashSet<>() : null;
 
         // If the event date field name is not specified in the configuration, then set the event date to the file modification time.
         if (StringUtils.isEmpty(eventDateFieldName))
@@ -182,6 +186,8 @@ public class CSVReaderBase extends LongLineEventRecordReader implements EventRec
                 i++;
             }
         }
+
+        checkMissingRequiredFields();
 
         // decorate with additional data (used by overriding classes)
         decorateEvent();
@@ -217,11 +223,26 @@ public class CSVReaderBase extends LongLineEventRecordReader implements EventRec
 
     @Override
     protected void checkField(final String name, final String value) {
+        if (processedFieldNames != null) {
+            processedFieldNames.add(name);
+        }
+
         super.checkField(name, value);
 
         if (csvHelper.isFieldRequired(name) && StringUtils.isEmpty(value)) {
             event.addError(RawDataErrorNames.MISSING_DATA_ERROR);
             log.error("Missing required field: {}", name);
+        }
+    }
+
+    private void checkMissingRequiredFields() {
+        if (processedFieldNames != null) {
+            for (String requiredField : csvHelper.getRequiredFields()) {
+                if (!processedFieldNames.contains(requiredField)) {
+                    event.addError(RawDataErrorNames.MISSING_DATA_ERROR);
+                    log.error("Missing required field: {}", requiredField);
+                }
+            }
         }
     }
 
