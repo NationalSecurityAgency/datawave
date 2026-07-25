@@ -19,7 +19,6 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.accumulo.core.iteratorsImpl.system.IterationInterruptedException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableComparator;
@@ -33,6 +32,7 @@ import datawave.data.type.util.NumericalEncoder;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Document;
 import datawave.query.iterator.SourcedOptions;
+import datawave.query.util.IterationInterruptedCheck;
 
 /**
  * This filter validates events in the shard table based on their association with one or more configured data types and number-normalized "version" fields
@@ -693,8 +693,11 @@ public abstract class AbstractVersionFilter<A> {
                     isValid = validate(range);
                 }
             }
-        } catch (final IterationInterruptedException e) {
-            // Re-throw iteration interrupted as-is since this is an expected event from
+        } catch (final RuntimeException e) {
+            if (!IterationInterruptedCheck.isIterationInterruptedException(e)) {
+                throw e;
+            }
+            // Re-throw IterationInterruptedException as-is since this is an expected event from
             // a client going away. Re-throwing as-is will let the
             // tserver catch and ignore it as intended.
             throw e;

@@ -30,7 +30,6 @@ import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.YieldCallback;
 import org.apache.accumulo.core.iterators.YieldingKeyValueIterator;
-import org.apache.accumulo.core.iteratorsImpl.system.IterationInterruptedException;
 import org.apache.accumulo.tserver.tablet.TabletClosedException;
 import org.apache.commons.collections4.iterators.EmptyIterator;
 import org.apache.commons.jexl3.JexlArithmetic;
@@ -119,6 +118,7 @@ import datawave.query.transformer.SummaryTransform;
 import datawave.query.transformer.UniqueTransform;
 import datawave.query.util.EmptyContext;
 import datawave.query.util.EntryToTuple;
+import datawave.query.util.IterationInterruptedCheck;
 import datawave.query.util.TraceIterators;
 import datawave.query.util.Tuple2;
 import datawave.query.util.Tuple3;
@@ -579,16 +579,16 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     private void handleException(Exception e) throws IOException {
         Throwable reason = e;
 
-        // We need to pass IOException, IteratorInterruptedException, and TabletClosedExceptions up to the Tablet as they are
+        // We need to pass IOException, IterationInterruptedException, and TabletClosedExceptions up to the Tablet as they are
         // handled specially to ensure that the client will retry the scan elsewhere
         IOException ioe = null;
-        IterationInterruptedException iie = null;
+        RuntimeException iie = null;
         TabletClosedException tce = null;
         if (reason instanceof IOException) {
             ioe = (IOException) reason;
         }
-        if (reason instanceof IterationInterruptedException) {
-            iie = (IterationInterruptedException) reason;
+        if (IterationInterruptedCheck.isIterationInterruptedException(reason)) {
+            iie = (RuntimeException) reason;
         }
         if (reason instanceof TabletClosedException) {
             tce = (TabletClosedException) reason;
@@ -600,8 +600,8 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             if (reason instanceof IOException) {
                 ioe = (IOException) reason;
             }
-            if (reason instanceof IterationInterruptedException) {
-                iie = (IterationInterruptedException) reason;
+            if (IterationInterruptedCheck.isIterationInterruptedException(reason)) {
+                iie = (RuntimeException) reason;
             }
             if (reason instanceof TabletClosedException) {
                 tce = (TabletClosedException) reason;
