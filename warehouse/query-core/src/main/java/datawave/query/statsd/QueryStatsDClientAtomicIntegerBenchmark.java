@@ -12,9 +12,9 @@ import java.util.concurrent.TimeUnit;
 @Warmup(iterations = 3, time = 2, timeUnit = TimeUnit.SECONDS)
 @Measurement(iterations = 5, time = 3, timeUnit = TimeUnit.SECONDS)
 @State(Scope.Benchmark)
-public class QueryStatsDClientLongAdderBenchmark {
+public class QueryStatsDClientAtomicIntegerBenchmark {
 
-    private QueryStatsDClientLongAdder qc;
+    private QueryStatsDClientAtomicInteger qc;
 
     @Param({"0", "100", "5000"})
     public int maxCacheSize;
@@ -25,11 +25,11 @@ public class QueryStatsDClientLongAdderBenchmark {
 
     @Setup(Level.Trial)
     public void setUp() {
-        qc = new QueryStatsDClientLongAdder("id123", "localhost", 3000, maxCacheSize);
+        qc = new QueryStatsDClientAtomicInteger("id123", "localhost", 3000, maxCacheSize);
     }
 
     @Benchmark
-    public long benchNext() {
+    public int benchNext() {
         return qc.next();
     }
 
@@ -39,7 +39,7 @@ public class QueryStatsDClientLongAdderBenchmark {
     }
 
     @Benchmark
-    public long benchGetSize() {
+    public int benchGetSize() {
         return qc.getSize();
     }
 
@@ -54,11 +54,10 @@ public class QueryStatsDClientLongAdderBenchmark {
             builder.threads(Integer.parseInt(t));
         }
 
-        builder.include(QueryStatsDClientLongAdderBenchmark.class.getSimpleName())
+        builder.include(QueryStatsDClientAtomicIntegerBenchmark.class.getSimpleName())
                 .forks(2)
                 .build();
 
         new Runner(builder.build()).run();
     }
 }
-

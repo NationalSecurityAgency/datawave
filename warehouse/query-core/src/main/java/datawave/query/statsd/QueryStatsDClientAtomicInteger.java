@@ -6,7 +6,6 @@ import java.text.NumberFormat;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.LongAdder;
 
 import org.apache.log4j.Logger;
 
@@ -21,8 +20,8 @@ import com.timgroup.statsd.StatsDClientException;
 /**
  * A client that can be used to record live query metrics. This client will cache results and will periodically send them with a specified max cache size.
  */
-public class QueryStatsDClientLongAdder extends ConvenienceMethodProvidingStatsDClient {
-    private static final Logger log = Logger.getLogger(QueryStatsDClientLongAdder.class);
+public class QueryStatsDClientAtomicInteger extends ConvenienceMethodProvidingStatsDClient {
+    private static final Logger log = Logger.getLogger(QueryStatsDClientAtomicInteger.class);
 
     // the statsd configuration
     private final String queryId;
@@ -31,10 +30,10 @@ public class QueryStatsDClientLongAdder extends ConvenienceMethodProvidingStatsD
     private final int maxCacheSize;
 
     // thread safe caches
-    private final LongAdder nextCalls = new LongAdder();
-    private final LongAdder seekCalls = new LongAdder();
-    private final LongAdder yieldCalls = new LongAdder();
-    private final LongAdder sources = new LongAdder();
+    private final AtomicInteger nextCalls = new AtomicInteger(0);
+    private final AtomicInteger seekCalls = new AtomicInteger(0);
+    private final AtomicInteger yieldCalls = new AtomicInteger(0);
+    private final AtomicInteger sources = new AtomicInteger(0);
     private final Multimap<String,Long> timings;
     private final String prefix;
 
@@ -47,7 +46,7 @@ public class QueryStatsDClientLongAdder extends ConvenienceMethodProvidingStatsD
     // this monitor controls when the client is being used
     private static final Object clientMonitor = new Object();
 
-    public QueryStatsDClientLongAdder(String queryId, String host, int port, int maxCacheSize) {
+    public QueryStatsDClientAtomicInteger(String queryId, String host, int port, int maxCacheSize) {
         this.queryId = queryId;
         this.host = host;
         this.port = port;
@@ -91,22 +90,22 @@ public class QueryStatsDClientLongAdder extends ConvenienceMethodProvidingStatsD
         }
         boolean flushed = false;
         synchronized (clientMonitor) {
-            long value = nextCalls.sumThenReset();
+            long value = nextCalls.getAndSet(0);
             if (value > 0) {
                 count("next_calls", value);
                 flushed = true;
             }
-            value = seekCalls.sumThenReset();
+            value = seekCalls.getAndSet(0);
             if (value > 0) {
                 count("seek_calls", value);
                 flushed = true;
             }
-            value = yieldCalls.sumThenReset();
+            value = yieldCalls.getAndSet(0);
             if (value > 0) {
                 count("yield_calls", value);
                 flushed = true;
             }
-            value = sources.sumThenReset();
+            value = sources.getAndSet(0);
             if (value > 0) {
                 count("sources", value);
                 flushed = true;
@@ -139,42 +138,38 @@ public class QueryStatsDClientLongAdder extends ConvenienceMethodProvidingStatsD
         return flushStats();
     }
 
-    public long next() {
-        nextCalls.increment();
-        long val = nextCalls.sum();
+    public int next() {
+        int val = nextCalls.incrementAndGet();
         flushAsNeeded();
         return val;
     }
 
-    public long seek() {
-        seekCalls.increment();
-        long val = seekCalls.sum();
+    public int seek() {
+        int val = seekCalls.incrementAndGet();
         flushAsNeeded();
         return val;
     }
 
-    public long yield() {
-        yieldCalls.increment();
-        long val = yieldCalls.sum();
+    public int yield() {
+        int val = yieldCalls.incrementAndGet();
         flushAsNeeded();
         return val;
     }
 
-    public long addSource() {
-        sources.increment();
-        long val = sources.sum();
+    public int addSource() {
+        int val = sources.incrementAndGet();
         flushAsNeeded();
         return val;
     }
 
-    public Multimap<String, Long> timing(String call, long time) {
+    public Multimap<String,Long> timing(String call, long time) {
         timings.put(call, time);
         flushAsNeeded();
         return timings;
     }
 
-    public long getSize() {
-        return nextCalls.sum() + seekCalls.sum() + yieldCalls.sum() + sources.sum() + timings.size();
+    public int getSize() {
+        return nextCalls.get() + seekCalls.get() + yieldCalls.get() + sources.get() + timings.size();
     }
 
     /**
