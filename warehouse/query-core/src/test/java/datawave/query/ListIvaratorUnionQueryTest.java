@@ -21,8 +21,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.ComponentScan;
@@ -33,7 +31,9 @@ import com.google.common.base.Preconditions;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
-import datawave.data.type.LcNoDiacriticsType;
+import datawave.data.type.IpAddressType;
+import datawave.data.type.LcType;
+import datawave.query.index.day.IndexIngestUtil;
 import datawave.query.iterator.QueryIterator;
 import datawave.query.iterator.QueryOptions;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
@@ -42,22 +42,26 @@ import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.async.event.VisitorFunction;
 import datawave.query.util.AbstractIngest;
 import datawave.query.util.AbstractQueryTest;
-import datawave.table.constants.TableName;
+import datawave.query.util.TestIndexTableNames;
 
 /**
- * Asserts that a union of equality terms returns the same documents whether the union is executed as a union of field index iterators or is pushed down into a
- * list ivarator.
+ * Pins a defect in the large fielded list pushdown for top level document queries.
  * <p>
- * The pushdown is performed by the {@link VisitorFunction}, not by the {@link DefaultQueryPlanner}, so the plan asserted by {@link #expectPlan(String)} is the
- * union in both cases. The distinguishing assertion is made against the query that exits the visitor function -- see
- * {@link #assertPlanExitingVisitorFunction()}.
- * <p>
- * The two tests differ only in {@code maxOrExpansionThreshold}:
+ * The query is an anchor union intersected with a union of addresses, {@code (A || B) && (IP1 || IP2 || ...)}, run against a top level document logic where the
+ * addresses live on child documents. Both tests query identical data and differ only in {@code maxOrExpansionThreshold}:
  * <ul>
- * <li>{@link #testUnionIsNotPushedDownWhenThresholdIsHigh()} keeps the threshold above the number of terms in the union, so the union survives intact</li>
- * <li>{@link #testUnionIsPushedDownIntoListIvarator()} drops the threshold below the number of terms, so the union becomes a list ivarator</li>
+ * <li>{@link #testUnionIsNotPushedDownWhenThresholdIsHigh()} keeps the threshold above the size of the address union, so the union survives as a union of field
+ * index iterators and every matching document is returned</li>
+ * <li>{@link #testUnionIsPushedDownIntoListIvarator()} drops the threshold below the size of the address union, so the {@link VisitorFunction} replaces it with
+ * a list ivarator - and <b>no documents are returned at all</b></li>
  * </ul>
- * Both tests expect the same documents. A difference between them is a defect in the pushdown, not in the query.
+ * <b>The defect:</b> {@code TLDIndexBuildingVisitor} overrides {@code visit(ASTEQNode)} so that an equality term builds a {@code TLDIndexIteratorBuilder},
+ * which rolls a hit on a child document's field index entry up to its top level document uid. It does not override {@code ivarateList}, so the pushed down
+ * union builds a plain {@code IndexListIteratorBuilder} instead. That ivarator emits the child uid unchanged, which never intersects the top level uids
+ * produced by the anchor union, and the intersection empties out.
+ * <p>
+ * The expectations below record the <b>current, incorrect</b> behavior so that a fix is forced to update them. {@link #testUnionIsPushedDownIntoListIvarator()}
+ * should return the same documents as {@link #testUnionIsNotPushedDownWhenThresholdIsHigh()}.
  */
 @ExtendWith(SpringExtension.class)
 @ComponentScan(basePackages = "datawave.query")
@@ -71,9 +75,7 @@ import datawave.table.constants.TableName;
 // @formatter:on
 public class ListIvaratorUnionQueryTest extends AbstractQueryTest {
 
-    private static final Logger log = LoggerFactory.getLogger(ListIvaratorUnionQueryTest.class);
-
-    /** The label of the query property marker that denotes a list ivarator */
+    /** the label of the query property marker that denotes a list ivarator */
     private static final String LIST_MARKER = "_List_";
 
     @TempDir
@@ -84,17 +86,23 @@ public class ListIvaratorUnionQueryTest extends AbstractQueryTest {
     private static AccumuloClient client;
     private static AbstractIngest ingest;
 
-    /** The values written to FIELD_A, one per document */
-    private static final List<String> VALUES = List.of("alpha", "bravo", "charlie", "delta", "echo", "foxtrot");
+    /** number of top level documents written */
+    private static final int DOCS = 6;
+    /** number of child documents, each holding one address, written per top level document */
+    private static final int ADDRESSES_PER_DOC = 2;
+    /** documents 0..MATCHING-1 carry an anchor value, the rest are excluded by the anchor union */
+    private static final int MATCHING = 4;
 
-    /** The uuid of the document that holds the value at the same offset in {@link #VALUES} */
-    private static final List<String> UUIDS = List.of("uuid-1", "uuid-2", "uuid-3", "uuid-4", "uuid-5", "uuid-6");
+    /** every address written, and therefore every address queried */
+    private static final List<String> ADDRESSES = new ArrayList<>();
+    /** the uuid of each top level document, in write order */
+    private static final List<String> UUIDS = new ArrayList<>();
 
-    /** Set when a test expects the visitor function to push the union down into a list ivarator */
+    /** set when a test expects the visitor function to push the address union down into a list ivarator */
     private boolean expectListIvarator = false;
 
     @Autowired
-    @Qualifier("EventQuery")
+    @Qualifier("TLDEventQuery")
     protected ShardQueryLogic logic;
 
     @Override
@@ -118,13 +126,13 @@ public class ListIvaratorUnionQueryTest extends AbstractQueryTest {
     }
 
     /**
-     * {@link AbstractIngest} only populates the standard shard index, so the alternate index tables are not exercised here.
+     * The addresses resolve to whole shards rather than to individual documents, so the 'no uid' index is the relevant index format here.
      *
-     * @return the shard index table name
+     * @return the 'no uid' index table name
      */
     @Override
     protected List<String> getIndexTableNames() {
-        return List.of(TableName.SHARD_INDEX);
+        return List.of(TestIndexTableNames.NO_UID_INDEX);
     }
 
     @BeforeAll
@@ -134,16 +142,35 @@ public class ListIvaratorUnionQueryTest extends AbstractQueryTest {
 
         ingest = new AbstractIngest(client, auths);
 
-        ingest.registerField("UUID", new LcNoDiacriticsType());
+        ingest.registerField("UUID", new LcType());
         ingest.registerColumns("UUID", List.of("i", "e"));
 
-        ingest.registerField("FIELD_A", new LcNoDiacriticsType());
-        ingest.registerColumns("FIELD_A", List.of("i", "e"));
+        ingest.registerField("ANCHOR", new LcType());
+        ingest.registerColumns("ANCHOR", List.of("i", "e"));
 
-        for (int i = 0; i < VALUES.size(); i++) {
-            ingest.writeFV(i + 1, "UUID", UUIDS.get(i));
-            ingest.writeFV(i + 1, "FIELD_A", VALUES.get(i));
+        ingest.registerField("IP", new IpAddressType());
+        ingest.registerColumns("IP", List.of("i", "e"));
+
+        for (int i = 0; i < DOCS; i++) {
+            String uuid = String.format("uuid-%02d", i);
+            UUIDS.add(uuid);
+
+            // the top level document carries the uuid and the anchor
+            ingest.writeFV(i + 1, "UUID", uuid);
+            ingest.writeFV(i + 1, "ANCHOR", (i >= MATCHING) ? "other" : (i % 2 == 0 ? "left" : "right"));
+
+            // the addresses are repeated values, so they live on child documents whose uid is the top
+            // level uid suffixed with '.N'. their field index entries are written against that child uid.
+            String topLevelUid = ingest.uid(i + 1);
+            for (int j = 0; j < ADDRESSES_PER_DOC; j++) {
+                String address = "200." + i + ".0." + (j + 1);
+                ADDRESSES.add(address);
+                ingest.writeFVForUid(ingest.getRow(), ingest.getDatatype(), topLevelUid + "." + (j + 1), "IP", address);
+            }
         }
+
+        // derive the alternate index tables, including the 'no uid' index used by this test
+        new IndexIngestUtil().write(client, auths);
     }
 
     @BeforeEach
@@ -164,75 +191,96 @@ public class ListIvaratorUnionQueryTest extends AbstractQueryTest {
         logic.setIndexedMaxTermThreshold(1_000);
         logic.setFinalMaxTermThreshold(1_000);
 
-        // keep the fst threshold out of the way so the pushdown always produces an inline list of values
+        // keep the fst threshold out of the way so a pushdown always produces an inline list of values
         logic.setMaxOrExpansionFstThreshold(1_000);
 
         expectListIvarator = false;
 
         givenDate(ingest.getDate());
+        // a top level document holds several addresses, so only one of them is returned
+        givenParameter(QueryParameters.LIMIT_FIELDS, "IP=1");
     }
 
     /**
-     * A pushdown threshold larger than the union prevents the union from being pushed down. The query executes as a union of field index iterators.
+     * A pushdown threshold larger than the address union prevents the union from being pushed down. Every matching top level document is returned.
      *
      * @throws Exception
      *             if something goes wrong
      */
     @Test
     public void testUnionIsNotPushedDownWhenThresholdIsHigh() throws Exception {
-        logic.setMaxOrExpansionThreshold(VALUES.size() + 1);
+        logic.setMaxOrExpansionThreshold(ADDRESSES.size() + 1);
 
-        givenQuery(union());
-        expectPlan(union());
-        expectResultCount(VALUES.size());
-        expectUUIDs(Set.copyOf(UUIDS));
+        givenQuery(query());
+        expectPlan(plannedQuery());
+        expectResultCount(MATCHING);
+        expectUUIDs(Set.copyOf(UUIDS.subList(0, MATCHING)));
 
         expectListIvarator = false;
         planAndExecuteQuery();
     }
 
     /**
-     * A pushdown threshold smaller than the union causes the visitor function to replace the union with a list ivarator. The same documents must be returned.
+     * A pushdown threshold smaller than the address union causes the visitor function to replace it with a list ivarator, and the query then returns nothing.
+     * <p>
+     * The correct expectations are the ones asserted by {@link #testUnionIsNotPushedDownWhenThresholdIsHigh()}: {@code MATCHING} documents carrying the same
+     * uuids and hit terms. See the class javadoc for the defect this pins.
      *
      * @throws Exception
      *             if something goes wrong
      */
     @Test
     public void testUnionIsPushedDownIntoListIvarator() throws Exception {
-        logic.setMaxOrExpansionThreshold(2);
+        // large enough to leave the two term anchor union alone, small enough to push the address union down
+        logic.setMaxOrExpansionThreshold(3);
 
-        givenQuery(union());
-        // the planner does not perform the pushdown, so the planned query is still the union
-        expectPlan(union());
-        expectResultCount(VALUES.size());
-        expectUUIDs(Set.copyOf(UUIDS));
+        givenQuery(query());
+        // the pushdown happens in the visitor function, so the planned query is still the union
+        expectPlan(plannedQuery());
+        // BUG: every document is dropped. this should be MATCHING, with the uuids and hit terms asserted above
+        expectResultCount(0);
 
         expectListIvarator = true;
         planAndExecuteQuery();
     }
 
     /**
-     * Build the union of equality terms, one term per value in {@link #VALUES}.
+     * Build the query, an anchor union intersected with a union of every address written.
      *
-     * @return the union
+     * @return the query
      */
-    private static String union() {
+    private static String query() {
         //  @formatter:off
-        return VALUES.stream()
-                        .map(value -> "FIELD_A == '" + value + "'")
+        String addressUnion = ADDRESSES.stream()
+                        .map(address -> "IP == '" + address + "'")
                         .collect(Collectors.joining(" || "));
         //  @formatter:on
+        return "(ANCHOR == 'left' || ANCHOR == 'right') && (" + addressUnion + ")";
+    }
+
+    /**
+     * Build the expected query plan. The planner normalizes each address to its zero padded form.
+     *
+     * @return the expected plan
+     */
+    private static String plannedQuery() {
+        IpAddressType type = new IpAddressType();
+        //  @formatter:off
+        String addressUnion = ADDRESSES.stream()
+                        .map(address -> "IP == '" + type.normalize(address) + "'")
+                        .collect(Collectors.joining(" || "));
+        //  @formatter:on
+        return "(ANCHOR == 'left' || ANCHOR == 'right') && (" + addressUnion + ")";
     }
 
     /**
      * Assert whether the query that exits the {@link VisitorFunction} contains a list ivarator.
      * <p>
-     * The large fielded list pushdown runs per-scan-range inside the visitor function rather than in the planner, so it is invisible to
-     * {@link #expectPlan(String)}. Running the visitor function over the planned query reproduces exactly the query that is shipped to the tablet server.
+     * The large fielded list pushdown runs per scan range inside the visitor function rather than in the planner, so it is invisible to
+     * {@link #expectPlan(String)}. Running the visitor function over the planned query reproduces the query that is shipped to the tablet server.
      */
     private void assertPlanExitingVisitorFunction() {
         String plan = planExitingVisitorFunction();
-        log.info("plan exiting the visitor function: {}", plan);
 
         if (expectListIvarator) {
             assertTrue(plan.contains(LIST_MARKER), "expected a list ivarator in the plan exiting the visitor function but got: " + plan);
