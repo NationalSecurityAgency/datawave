@@ -310,6 +310,11 @@ public class TypeMetadata implements Serializable, KryoSerializable {
         return typeMap;
     }
 
+    /**
+     * Renders this instance in the form described by {@link #fromString(String)}, populating the ingest type and normalizer type mini-maps as a side effect.
+     *
+     * @return a serialized TypeMetadata
+     */
     public String toString() {
         StringBuilder sb = new StringBuilder();
 
@@ -374,17 +379,30 @@ public class TypeMetadata implements Serializable, KryoSerializable {
         return sb.toString();
     }
 
+    /**
+     * Populates this instance from the semicolon delimited form produced by {@link #toString()}: a {@code dts} mini-map assigning an index to each ingest type,
+     * a {@code types} mini-map assigning an index to each normalizer type held against a field, then one entry per field name whose bracketed list holds
+     * {@code ingestTypeIndex:normalizerTypeIndex} pairs.
+     *
+     * <pre>
+     * dts:[0:ingestA,1:ingestB];types:[0:LcNoDiacriticsType,1:NumberType];FIELD1:[0:0,1:0];FIELD2:[0:0,0:1,1:1]
+     * </pre>
+     *
+     * The example above gives FIELD1 an LcNoDiacriticsType in both ingest types, and FIELD2 both types in ingestA and a NumberType in ingestB. Parsing is
+     * lenient: input with fewer than three entries is discarded, empty values are skipped (a field absent from a trailing ingest type emits a trailing comma),
+     * and an index with no mini-map entry yields an empty type name.
+     *
+     * @param data
+     *            a serialized TypeMetadata
+     */
     private void fromString(String data) {
         String[] entries = parse(data, ';');
 
         if (entries.length > 2) {
-            // invert each index -> name mini-map once, as its prefix entry is parsed, so every field/value
-            // entry below is an O(1) lookup instead of rebuilding and linearly scanning an ImmutableMap per
-            // value (see git history for the prior implementation, which dominated profiler traces on large
-            // TypeMetadata instances). These start empty rather than inverting the current mini-maps: those
-            // are unpopulated for a freshly parsed instance, and are still null when called from readObject,
-            // which does not run a constructor. A value entry preceding its prefix entry resolves to "" here
-            // just as it did before.
+            // invert each index -> name mini-map once, as its prefix entry is parsed, so that every field entry below
+            // is an O(1) lookup instead of a linear scan per value. These start empty rather than inverting the
+            // current mini-maps: those are unpopulated for a freshly parsed instance, and are still null when called
+            // from readObject, which does not run a constructor.
             Map<Integer,String> ingestTypesByIndex = Collections.emptyMap();
             Map<Integer,String> dataTypesByIndex = Collections.emptyMap();
 
@@ -396,6 +414,8 @@ public class TypeMetadata implements Serializable, KryoSerializable {
                     setDataTypesMiniMap(parseTypes(entry));
                     dataTypesByIndex = invert(getDataTypesMiniMap());
                 } else {
+                    // a field entry, FIELD_NAME:[ingestTypeIndex:normalizerTypeIndex,...], splitting into the field
+                    // name and the bracketed list of index pairs
                     String[] entrySplits = parse(entry, ':');
 
                     // get rid of the leading and trailing brackets:
@@ -404,6 +424,9 @@ public class TypeMetadata implements Serializable, KryoSerializable {
 
                     for (String aValue : values) {
                         if (!aValue.isEmpty()) { // ignore last entry for trailing comma
+                            // an index pair, vs[0] into the ingest type mini-map and vs[1] into the normalizer type
+                            // mini-map. An index the corresponding mini-map does not hold, including any index seen
+                            // before its mini-map entry was parsed, resolves to "".
                             String[] vs = Iterables.toArray(Splitter.on(':').omitEmptyStrings().trimResults().split(aValue), String.class);
 
                             String ingestType = ingestTypesByIndex.getOrDefault(Integer.valueOf(vs[0]), "");
