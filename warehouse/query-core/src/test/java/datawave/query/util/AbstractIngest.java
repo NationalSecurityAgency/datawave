@@ -279,7 +279,28 @@ public class AbstractIngest {
      *            the field value
      */
     public void writeFV(String row, String datatype, int eventId, String field, String value) {
-        String uid = uid(eventId);
+        writeFVForUid(row, datatype, uid(eventId), field, value);
+    }
+
+    /**
+     * Write the provided row, datatype, uid, field and value.
+     * <p>
+     * Unlike {@link #writeFV(String, String, int, String, String)} the uid is supplied directly rather than derived from an event id. This is what allows a
+     * test to express a top level document structure, where a child's uid is its parent's uid suffixed with {@code .N}. Operators writing a child must track
+     * the parent's uid themselves, via {@link #uid(int)}.
+     *
+     * @param row
+     *            the row
+     * @param datatype
+     *            the datatype
+     * @param uid
+     *            the event uid
+     * @param field
+     *            the field name
+     * @param value
+     *            the field value
+     */
+    public void writeFVForUid(String row, String datatype, String uid, String field, String value) {
         String normalizedValue = getNormalizedValue(field, value);
 
         writeShardIndex(row, datatype, uid, field, List.of(normalizedValue));
