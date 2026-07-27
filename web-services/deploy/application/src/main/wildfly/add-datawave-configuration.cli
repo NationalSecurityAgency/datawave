@@ -173,12 +173,12 @@ module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.ap
 /subsystem=elytron/trust-manager=serverTrustManager:add( \
   key-store=serverTrustStore)
 
-# Create the server SSL context. The protocols "TLSv1.1" and "TLSv1.2" will be supported, a client certificate will be required on an SSL handshake, and the
+# Create the server SSL context. The protocols "TLSv1.1", "TLSv1.2", and "TLSv1.3" will be supported, a client certificate will be required on an SSL handshake, and the
 # security-domain 'datawaveElytron' will be used for authentication during the SSL session establishment.
 /subsystem=elytron/server-ssl-context=serverSSLContext:add( \
   key-manager=serverKeyManager, \
   trust-manager=serverTrustManager, \
-  protocols=["TLSv1.1","TLSv1.2"], \
+  protocols=["TLSv1.1","TLSv1.2","TLSv1.3"], \
   want-client-auth=true)
 
 #
