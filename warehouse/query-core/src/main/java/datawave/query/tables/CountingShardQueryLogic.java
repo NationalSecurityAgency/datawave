@@ -35,6 +35,9 @@ public class CountingShardQueryLogic extends ShardQueryLogic {
     // the time to wait before returning an intermediate result
     private long pageWaitTimeMillis = 0L;
 
+    // retained so the aggregation thread can be released when this logic is closed
+    private CountAggregatingIterator countAggregatingIterator;
+
     public CountingShardQueryLogic() {
         super();
     }
@@ -62,7 +65,20 @@ public class CountingShardQueryLogic extends ShardQueryLogic {
 
     @Override
     public TransformIterator getTransformIterator(Query settings) {
-        return new CountAggregatingIterator(this.iterator(), getTransformer(settings), this.markingFunctions, getPageWaitTimeMillis());
+        countAggregatingIterator = new CountAggregatingIterator(this.iterator(), getTransformer(settings), this.markingFunctions, getPageWaitTimeMillis());
+        return countAggregatingIterator;
+    }
+
+    /**
+     * Closes the aggregating iterator in addition to the usual query resources. Aggregation runs on its own thread, which is not released until the iterator is
+     * closed.
+     */
+    @Override
+    public void close() {
+        if (countAggregatingIterator != null) {
+            countAggregatingIterator.close();
+        }
+        super.close();
     }
 
     @Override

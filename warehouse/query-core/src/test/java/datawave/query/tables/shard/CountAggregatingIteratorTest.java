@@ -1,7 +1,6 @@
 package datawave.query.tables.shard;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayOutputStream;
@@ -11,10 +10,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -33,8 +30,8 @@ import datawave.marking.MarkingFunctions;
  */
 public class CountAggregatingIteratorTest {
 
-    /** the prefix used by threads created via {@link java.util.concurrent.Executors#newSingleThreadExecutor()} */
-    private static final String POOL_THREAD_PREFIX = "pool-";
+    /** the name given to the thread that performs the aggregation */
+    private static final String AGGREGATION_THREAD_NAME = "count aggregation";
 
     /** long enough for a thread that is going to exit to have exited */
     private static final long THREAD_EXIT_WAIT_MILLIS = 5_000L;
@@ -54,40 +51,32 @@ public class CountAggregatingIteratorTest {
     }
 
     /**
-     * The aggregation executor is never shut down, so its worker thread outlives the fully consumed iterator.
-     * <p>
-     * This test pins the leak. Each count query strands one thread for the life of the JVM.
+     * A fully consumed iterator has no more aggregation to do, so the aggregation thread must exit on its own.
      */
     @Test
-    public void testAggregationThreadOutlivesFullyConsumedIterator() {
-        Set<Thread> before = poolThreads();
-
+    public void testAggregationThreadExitsWithFullyConsumedIterator() {
         CountAggregatingIterator iterator = new CountAggregatingIterator(entries(3L, 5L), transformer, markingFunctions, THREAD_EXIT_WAIT_MILLIS);
         assertEquals(8L, drainToCount(iterator));
 
-        assertFalse(awaitNewThreadsExit(before), "expected the aggregation thread to leak, but it exited");
+        assertTrue(awaitAggregationThreadsExit(), "aggregation thread outlived the fully consumed iterator");
     }
 
     /**
-     * A query that is closed before aggregation finishes leaves the aggregation thread parked in {@link Iterator#hasNext()} forever. Nothing interrupts it and
-     * nothing shuts the executor down.
-     * <p>
-     * This test pins that leak.
+     * A query closed while aggregation is still blocked on the source must release the aggregation thread.
      */
     @Test
-    public void testAggregationThreadOutlivesAbandonedIterator() throws Exception {
-        Set<Thread> before = poolThreads();
-
+    public void testCloseReleasesThreadBlockedOnSource() throws Exception {
         CountDownLatch blocked = new CountDownLatch(1);
         CountAggregatingIterator iterator = new CountAggregatingIterator(blockingEntries(blocked), transformer, markingFunctions, 10L);
 
         // the aggregation thread is now parked in hasNext(), so the first page is an intermediate result
         assertTrue(blocked.await(THREAD_EXIT_WAIT_MILLIS, TimeUnit.MILLISECONDS), "aggregation thread never reached the source iterator");
         assertTrue(iterator.hasNext());
-        iterator.next();
+        assertTrue(countAggregationThreads() >= 1, "expected an aggregation thread to be running");
 
-        // the query is torn down here, but there is no way to tell the iterator about it
-        assertFalse(awaitNewThreadsExit(before), "expected the aggregation thread to leak, but it exited");
+        iterator.close();
+
+        assertTrue(awaitAggregationThreadsExit(), "aggregation thread outlived the closed iterator");
     }
 
     /**
@@ -122,12 +111,12 @@ public class CountAggregatingIteratorTest {
     }
 
     /**
-     * Build an iterator that never produces an entry and never returns from {@link Iterator#hasNext()}, standing in for a scan that is still running when the
-     * query is closed.
+     * Build an iterator that never produces an entry and only returns from {@link Iterator#hasNext()} when interrupted, standing in for a scan that is still
+     * running when the query is closed.
      *
      * @param blocked
      *            counted down once the caller is about to block
-     * @return an iterator that blocks forever
+     * @return an iterator that blocks until interrupted
      */
     private Iterator<Entry<Key,Value>> blockingEntries(CountDownLatch blocked) {
         return new Iterator<>() {
@@ -160,31 +149,27 @@ public class CountAggregatingIteratorTest {
     }
 
     /**
-     * The live executor threads, used to detect threads created by the iterator under test.
-     *
-     * @return the set of live pool threads
+     * @return the number of live aggregation threads
      */
-    private Set<Thread> poolThreads() {
+    private long countAggregationThreads() {
         // @formatter:off
         return Thread.getAllStackTraces().keySet()
                         .stream()
                         .filter(Thread::isAlive)
-                        .filter(t -> t.getName().startsWith(POOL_THREAD_PREFIX))
-                        .collect(Collectors.toSet());
+                        .filter(t -> AGGREGATION_THREAD_NAME.equals(t.getName()))
+                        .count();
         // @formatter:on
     }
 
     /**
-     * Wait for every pool thread created since the snapshot to exit.
+     * Wait for every aggregation thread to exit.
      *
-     * @param before
-     *            the pool threads that existed before the iterator was created
-     * @return true if all threads created since the snapshot have exited
+     * @return true if no aggregation thread is left running
      */
-    private boolean awaitNewThreadsExit(Set<Thread> before) {
+    private boolean awaitAggregationThreadsExit() {
         long deadline = clock.millis() + THREAD_EXIT_WAIT_MILLIS;
         while (clock.millis() < deadline) {
-            if (poolThreads().stream().noneMatch(t -> !before.contains(t))) {
+            if (countAggregationThreads() == 0) {
                 return true;
             }
             try {
@@ -194,6 +179,6 @@ public class CountAggregatingIteratorTest {
                 return false;
             }
         }
-        return poolThreads().stream().noneMatch(t -> !before.contains(t));
+        return countAggregationThreads() == 0;
     }
 }
