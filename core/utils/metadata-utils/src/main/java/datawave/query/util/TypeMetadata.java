@@ -378,11 +378,15 @@ public class TypeMetadata implements Serializable, KryoSerializable {
         String[] entries = parse(data, ';');
 
         if (entries.length > 2) {
-            // invert the index -> name mini-maps once so each field/value entry below is an O(1) lookup
-            // instead of rebuilding and linearly scanning an ImmutableMap per value (see git history for the
-            // prior implementation, which dominated profiler traces on large TypeMetadata instances)
-            Map<Integer,String> ingestTypesByIndex = invert(getIngestTypesMiniMap());
-            Map<Integer,String> dataTypesByIndex = invert(getDataTypesMiniMap());
+            // invert each index -> name mini-map once, as its prefix entry is parsed, so every field/value
+            // entry below is an O(1) lookup instead of rebuilding and linearly scanning an ImmutableMap per
+            // value (see git history for the prior implementation, which dominated profiler traces on large
+            // TypeMetadata instances). These start empty rather than inverting the current mini-maps: those
+            // are unpopulated for a freshly parsed instance, and are still null when called from readObject,
+            // which does not run a constructor. A value entry preceding its prefix entry resolves to "" here
+            // just as it did before.
+            Map<Integer,String> ingestTypesByIndex = Collections.emptyMap();
+            Map<Integer,String> dataTypesByIndex = Collections.emptyMap();
 
             for (String entry : entries) {
                 if (entry.startsWith(INGESTTYPE_PREFIX)) {
@@ -453,6 +457,9 @@ public class TypeMetadata implements Serializable, KryoSerializable {
         this.ingestTypes = Sets.newTreeSet();
         this.fieldNames = Sets.newTreeSet();
         this.typeMetadata = Maps.newHashMap();
+        // deserialization does not run a constructor, so the mini-maps must be initialized here too
+        this.ingestTypesMiniMap = new TreeMap<>();
+        this.dataTypesMiniMap = new TreeMap<>();
         this.fromString((String) in.readObject());
     }
 
