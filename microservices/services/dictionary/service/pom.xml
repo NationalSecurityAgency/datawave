@@ -46,7 +46,7 @@
         <version.webjars.datatables>1.11.4</version.webjars.datatables>
         <version.webjars.jquery>3.6.0</version.webjars.jquery>
         <version.webjars.locator>0.50</version.webjars.locator>
-        <version.zookeeper>3.9.2</version.zookeeper>
+        <version.zookeeper>3.9.5</version.zookeeper>
     </properties>
     <dependencyManagement>
         <dependencies>

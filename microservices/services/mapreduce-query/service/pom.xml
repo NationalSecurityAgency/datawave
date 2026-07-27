@@ -31,7 +31,7 @@
         <version.oozie>4.1.0</version.oozie>
         <!-- dependency declared in datawave-microservice-parent, but the version can be overridden here -->
         <version.slf4j>2.0.17</version.slf4j>
-        <version.zookeeper>3.9.2</version.zookeeper>
+        <version.zookeeper>3.9.5</version.zookeeper>
     </properties>
     <dependencyManagement>
         <dependencies>

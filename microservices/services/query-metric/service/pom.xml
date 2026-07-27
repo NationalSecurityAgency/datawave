@@ -46,7 +46,7 @@
         <version.webjars.jquery>3.7.1</version.webjars.jquery>
         <version.webjars.leaflet>1.8.0</version.webjars.leaflet>
         <version.webjars.locator-core>0.59</version.webjars.locator-core>
-        <version.zookeeper>3.9.2</version.zookeeper>
+        <version.zookeeper>3.9.5</version.zookeeper>
     </properties>
     <dependencyManagement>
         <dependencies>
