@@ -1,7 +1,7 @@
 # https://github.com/NationalSecurityAgency/datawave-stack-docker-images
-FROM ghcr.io/nationalsecurityagency/datawave-stack-hadoop:${version.hadoop} AS hadoop
-FROM bitnamilegacy/zookeeper:${version.zookeeper} AS zookeeper
-FROM ghcr.io/nationalsecurityagency/datawave-stack-accumulo:${version.accumulo}
+FROM ghcr.io/nationalsecurityagency/datawave/datawave-stack-hadoop:${version.hadoop} AS hadoop
+FROM zookeeper:${version.zookeeper} AS zookeeper
+FROM ghcr.io/nationalsecurityagency/datawave/datawave-stack-accumulo:${version.accumulo}
 
 USER root
 
@@ -10,7 +10,7 @@ USER root
 COPY --from=hadoop  /usr/local/hadoop/  /usr/local/hadoop/
 RUN adduser datawave -g hadoop \
     --home /opt/datawave-ingest && echo -n "cd" >> /opt/datawave-ingest/.bashrc
-COPY --from=zookeeper  /opt/bitnami/zookeeper/  /usr/lib/zookeeper/
+COPY --from=zookeeper  /apache-zookeeper-${version.zookeeper}-bin/  /usr/lib/zookeeper/
 
 RUN yum -y install epel-release && \
  yum install -y pdsh && \
