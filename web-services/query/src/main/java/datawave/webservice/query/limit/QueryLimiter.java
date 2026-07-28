@@ -274,7 +274,10 @@ public class QueryLimiter {
      * instance configured in bean configuration files.
      */
     public void setup() {
-        log.info("Setting up query limiter.");
+        if (log.isDebugEnabled()) {
+            log.debug("Setting up query limiter.");
+        }
+
         limiterLock.writeLock().lock();
         try {
             if (log.isDebugEnabled()) {
@@ -287,7 +290,9 @@ public class QueryLimiter {
                 clear();
             }
 
-            log.info("Setup complete.");
+            if (log.isDebugEnabled()) {
+                log.debug("Setup complete.");
+            }
         } finally {
             limiterLock.writeLock().unlock();
         }
@@ -329,8 +334,8 @@ public class QueryLimiter {
                 this.client = CuratorFrameworkFactory.builder()
                                 .namespace(ZOOKEEPER_NAMESPACE)
                                 .connectString(getQuorumPeerConfig(zookeeperConfig))
-                                .sessionTimeoutMs(60000)
-                                .connectionTimeoutMs(60000)
+                                .sessionTimeoutMs(60_000)
+                                .connectionTimeoutMs(60_000)
                                 .retryPolicy(new RetryNTimes(10, 1000))
                                 .build();
                 // @formatter:on
@@ -374,31 +379,31 @@ public class QueryLimiter {
                     Awaitility.await().alias("Query logic cache initialization")
                             .atMost(queryLogicCacheTimeoutMs, TimeUnit.MILLISECONDS)
                             .until(() -> this.queryLogicCache.isHealthy());
-                    // @formatter:off
-                } catch (ConditionTimeoutException e){
+                    // @formatter:on
+                } catch (ConditionTimeoutException e) {
                     log.warn("Query logic cache failed to initialize within timeout of " + queryLogicCacheTimeoutMs + "ms");
                 }
 
             }
 
             // Create the query counts cache if it doesn't exist and wait for it to reach a healthy state.
-            if(this.queryCountsCache == null) {
+            if (this.queryCountsCache == null) {
                 this.queryCountsCache = new QueryCountsCache(client, systemLimitProvider);
             } else {
                 // If the query counts cache already exists, we need to update the system limit provider. This will trigger a rebuild of the internal map of
                 // user query counts that may be impacted by changes to systems that count against user limits.
-                if(log.isDebugEnabled()) {
+                if (log.isDebugEnabled()) {
                     log.debug("Query counts cache already exists. Updating system limits and rebuilding cache.");
                 }
                 this.queryCountsCache.setSystemLimitProvider(systemLimitProvider);
             }
 
-            try{
-                if(log.isDebugEnabled()) {
+            try {
+                if (log.isDebugEnabled()) {
                     log.debug("Waiting for query counts cache to reach healthy state with a timeout of " + queryCountsCacheTimeoutMs + "ms");
                 }
 
-                // @formatter:on
+                // @formatter:off
                 Awaitility.await().alias("Query counts cache initialization").atMost(queryCountsCacheTimeoutMs, TimeUnit.MILLISECONDS)
                                 .until(() -> this.queryCountsCache.isHealthy());
                 // @formatter:on
@@ -450,6 +455,8 @@ public class QueryLimiter {
                     this.queryCountsCache.close();
                 } catch (Exception e) {
                     log.warn("Error closing query counts cache", e);
+                } finally {
+                    this.queryCountsCache = null;
                 }
             }
 
@@ -467,7 +474,9 @@ public class QueryLimiter {
      * Deactivate this {@link QueryLimiter} and close all connections and resources.
      */
     public void shutdown() {
-        log.info("Shutting down.");
+        if (log.isDebugEnabled()) {
+            log.debug("Shutting down.");
+        }
 
         // Exclusive lock. Blocks all calls that track queries/check for limits until the limiter is updated.
         limiterLock.writeLock().lock();
@@ -486,7 +495,7 @@ public class QueryLimiter {
                 }
             }
         } finally {
-            limiterLock.writeLock().lock();
+            limiterLock.writeLock().unlock();
         }
     }
 
@@ -505,47 +514,39 @@ public class QueryLimiter {
      *             if an exception occurs
      */
     public QueryLimiterResponse checkForLimits(String userDn, String system, String queryLogic) throws Exception {
-        long start = System.nanoTime();
+        Preconditions.checkArgument(userDn != null && !userDn.isBlank(), "userDn must not be blank");
+        Preconditions.checkArgument(queryLogic != null && !queryLogic.isBlank(), "query logic must not be blank");
+
+        // Use a read lock that allows for concurrent query tracking, but blocks if the query limiter configuration is being updated, and potentially the
+        // caches are being rebuilt.
+        limiterLock.readLock().lock();
         try {
-            Preconditions.checkArgument(userDn != null && !userDn.isBlank(), "userDn must not be blank");
-            Preconditions.checkArgument(queryLogic != null && !queryLogic.isBlank(), "query logic must not be blank");
+            if (isEnforcingLimits()) {
+                userDn = normalizeUserDn(userDn);
+                queryLogic = normalizeQueryLogic(queryLogic);
+                system = normalizeSystem(system);
 
-            // Use a read lock that allows for concurrent query tracking, but blocks if the query limiter configuration is being updated, and potentially the
-            // caches are being rebuilt.
-            limiterLock.readLock().lock();
-            try {
-                if (isEnforcingLimits()) {
-                    userDn = normalizeUserDn(userDn);
-                    queryLogic = normalizeQueryLogic(queryLogic);
-                    system = normalizeSystem(system);
+                if (log.isDebugEnabled()) {
+                    log.debug("Checking limits - userDn: " + userDn + ", system: " + system + ", queryLogic: " + queryLogic);
+                }
 
-                    if (log.isDebugEnabled()) {
-                        log.debug("Checking limits - userDn: " + userDn + ", system: " + system + ", queryLogic: " + queryLogic);
-                    }
-
-                    // Check if the snapshot reveals that any limits have been met.
-                    LimitChecker checker = new LimitChecker(userDn, system, queryLogic);
-                    checker.checkLimits();
-                    if (checker.metLimit) {
-                        return QueryLimiterResponse.metLimit(checker.message);
-                    } else {
-                        return QueryLimiterResponse.hasNotMetLimit();
-                    }
+                // Check if the snapshot reveals that any limits have been met.
+                LimitChecker checker = new LimitChecker(userDn, system, queryLogic);
+                checker.checkLimits();
+                if (checker.metLimit) {
+                    return QueryLimiterResponse.metLimit(checker.message);
                 } else {
-                    if (log.isDebugEnabled()) {
-                        log.debug("Query limits are not enforced.");
-                    }
                     return QueryLimiterResponse.hasNotMetLimit();
                 }
-            } finally {
-                limiterLock.readLock().unlock();
+            } else {
+                if (log.isDebugEnabled()) {
+                    log.debug("Query limits are not enforced.");
+                }
+                return QueryLimiterResponse.hasNotMetLimit();
             }
         } finally {
-            long end = System.nanoTime();
-            long total = end - start;
-            log.debug("checkForLimits(): " + total);
+            limiterLock.readLock().unlock();
         }
-
     }
 
     /**
@@ -757,7 +758,7 @@ public class QueryLimiter {
                                             Map.Entry::getValue,
                                             (oldValue, newValue) -> oldValue,
                                             LinkedHashMap::new));
-            // @formatter:off
+            // @formatter:on
 
             // If we have any query logic group limits to check, do so.
             if (!groupLimits.isEmpty()) {
@@ -765,7 +766,7 @@ public class QueryLimiter {
                 // or less than the total user queries. This set will be in order of lowest limit to highest.
                 SortedSet<QueryLogicGroupLimitChecker> limitCheckers = getQueryLogicLimitCheckers(groupLimits);
 
-                //  Identify all query logics that fall within the target groups.
+                // Identify all query logics that fall within the target groups.
                 Set<String> queryLogics = new HashSet<>();
                 limitCheckers.forEach(limitChecker -> queryLogics.addAll(queryLogicGroupLimitProvider.getQueryLogicsForGroup(limitChecker.group)));
 
@@ -800,7 +801,7 @@ public class QueryLimiter {
                 SystemLimits systemLimits = optional.get();
                 queryLimit = systemLimits.getQueryLimit();
                 // Fetch any custom query logic group limits defined for the system for the query's logic.
-                if(systemLimits.overridesAnyGroupLimits()) {
+                if (systemLimits.overridesAnyGroupLimits()) {
                     Map<String,Integer> bestGroupLimits = systemLimits.getBestGroupLimits(this.queryLogic);
                     if (!bestGroupLimits.isEmpty()) {
                         groupLimits = bestGroupLimits;
@@ -814,13 +815,13 @@ public class QueryLimiter {
             if (queryLimit != QueryLimiterUtils.NO_LIMIT) {
                 int totalSystemQueries = queryCountsCache.getTotalSystemQueries(this.system);
                 // We've met the total system query limit. Update the status and return early.
-                if(totalSystemQueries >= queryLimit) {
+                if (totalSystemQueries >= queryLimit) {
                     this.metLimit = true;
                     this.message = "System '" + this.system + "' has reached limit of " + queryLimit + " running queries";
                     return;
                 } else {
                     // We're only interested in query logic group limits where the limit is less than or equal to the total system queries.
-                    if(groupLimits != null) {
+                    if (groupLimits != null) {
                         // @formatter:off
                         groupLimits = groupLimits.entrySet().stream()
                                         .filter(e -> e.getValue() <= queryLimit)
@@ -829,7 +830,7 @@ public class QueryLimiter {
                                                         Map.Entry::getValue,
                                                         (oldValue, newValue) -> oldValue,
                                                         LinkedHashMap::new));
-                        // @formatter:off
+                        // @formatter:on
                     }
                 }
             }
@@ -862,7 +863,9 @@ public class QueryLimiter {
 
         /**
          * Return a set of {@link QueryLogicGroupLimitChecker} for the given groups to group limits map, in order of lowest limit to highest.
-         * @param groupsToLimits the groups to group limits map
+         *
+         * @param groupsToLimits
+         *            the groups to group limits map
          * @return a sorted set of limit checkers
          */
         private SortedSet<QueryLogicGroupLimitChecker> getQueryLogicLimitCheckers(Map<String,Integer> groupsToLimits) {
@@ -914,9 +917,11 @@ public class QueryLimiter {
         @Override
         public int compareTo(QueryLogicGroupLimitChecker other) {
             int result = Objects.compare(this.limit, other.limit, Comparator.naturalOrder());
-            if (result != 0) {
+
+            if (result == 0) {
                 result = Objects.compare(this.group, other.group, Comparator.naturalOrder());
             }
+
             return result;
         }
     }

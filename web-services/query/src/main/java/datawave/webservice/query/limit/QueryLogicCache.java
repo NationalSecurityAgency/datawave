@@ -151,8 +151,11 @@ public class QueryLogicCache {
                     if (log.isTraceEnabled()) {
                         log.trace("Connection state: {}, marking cache unhealthy", newState);
                     }
-                    markUnhealthy();
+                    healthy.set(false);
                     break;
+                default:
+                    log.warn("Unexpected Zookeeper connection state {}", newState);
+                    throw new IllegalStateException("Unxpected Zookeeper connection state: " + newState);
             }
         };
     }
@@ -164,13 +167,6 @@ public class QueryLogicCache {
      */
     public boolean isHealthy() {
         return healthy.get();
-    }
-
-    /**
-     * Mark this {@link QueryLogicCache} as in an unhealthy state.
-     */
-    public void markUnhealthy() {
-        this.healthy.set(false);
     }
 
     /**
