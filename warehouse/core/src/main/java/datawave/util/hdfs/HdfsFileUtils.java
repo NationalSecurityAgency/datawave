@@ -37,14 +37,6 @@ public class HdfsFileUtils {
     Objects.requireNonNull(status);
     
     final CompletableFuture<FSDataInputStream> future = fs.openFile(path).withFileStatus(status).build();
-    while (!future.isDone()) {
-      try {
-        Thread.sleep(10);
-      } catch (InterruptedException e) {
-        Thread.currentThread().interrupt();
-        throw new IOException("Interrupted while opening file: " + path, e);
-      }
-    }
     try {
       return future.get();
     } catch (InterruptedException e) {

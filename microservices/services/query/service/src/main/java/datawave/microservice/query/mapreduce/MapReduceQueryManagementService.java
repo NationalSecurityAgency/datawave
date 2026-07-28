@@ -608,10 +608,12 @@ public class MapReduceQueryManagementService implements MapReduceQueryRequestHan
                 throw new BadRequestQueryException("Requested path is not a file: " + fileName, HttpStatus.SC_BAD_REQUEST + "-1");
             }
 
+            FSDataInputStream is = getFileInputStream(filesystem, resultFile, fileStatus);
+
             // update the file status to reflect a relative file path
             fileStatus.setPath(getRelativeFilePath(filesystem.getFileStatus(resultsPath), fileStatus));
 
-            return new AbstractMap.SimpleEntry<>(fileStatus, getFileInputStream(filesystem, resultFile, fileStatus));
+            return new AbstractMap.SimpleEntry<>(fileStatus, is);
         } catch (QueryException e) {
             throw e;
         } catch (Exception e) {

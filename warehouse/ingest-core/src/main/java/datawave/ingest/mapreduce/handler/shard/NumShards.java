@@ -2,6 +2,7 @@ package datawave.ingest.mapreduce.handler.shard;
 
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
@@ -171,7 +172,12 @@ public class NumShards {
     public String readMultipleNumShardsConfig() {
         try {
           FileSystem fs = this.numShardsCachePath.getFileSystem(this.conf);
-          FileStatus fileStatus = fs.getFileStatus(this.numShardsCachePath);
+          FileStatus fileStatus = null;
+          try {
+            fileStatus = fs.getFileStatus(this.numShardsCachePath);
+          } catch (FileNotFoundException fnfe) {
+            throw new RuntimeException("Multiple Numshards cache is invalid. See documentation for using generateMultipleNumShardsCache.sh", fnfe);
+          }          
           if (isCacheValid(fileStatus)) {
             if (log.isInfoEnabled()) {
               log.info("Loading the numshards cache (@ {})...", this.numShardsCachePath.toUri().toString());
