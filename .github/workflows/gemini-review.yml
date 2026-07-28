@@ -48,7 +48,7 @@ jobs:
 
       - name: 'Configure Gemini CLI settings'
         env:
-      SETTINGS: |-
+          SETTINGS: |-
             {
               "model": {
                 "maxSessionTurns": 100
