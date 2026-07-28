@@ -48,10 +48,10 @@ jobs:
 
       - name: 'Configure Gemini CLI settings'
         env:
-          SETTINGS: |-
+      SETTINGS: |-
             {
               "model": {
-                "maxSessionTurns": 50
+                "maxSessionTurns": 100
               },
               "telemetry": {
                 "enabled": true,
@@ -69,11 +69,6 @@ jobs:
                     "GITHUB_PERSONAL_ACCESS_TOKEN",
                     "ghcr.io/github/github-mcp-server:v0.27.0"
                   ],
-                  "includeTools": [
-                    "add_comment_to_pending_review",
-                    "pull_request_read",
-                    "pull_request_review_write"
-                  ],
                   "env": {
                     "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN}"
                   }
@@ -83,6 +78,8 @@ jobs:
                 "core": [
                   "run_shell_command(cat)",
                   "run_shell_command(echo)",
+                  "run_shell_command(gh)",
+                  "run_shell_command(git)",
                   "run_shell_command(grep)",
                   "run_shell_command(head)",
                   "run_shell_command(tail)"
