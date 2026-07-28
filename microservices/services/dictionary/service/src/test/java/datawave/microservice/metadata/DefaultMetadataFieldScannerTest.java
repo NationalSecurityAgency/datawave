@@ -30,11 +30,11 @@ import org.junit.jupiter.api.Test;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
-import datawave.table.constants.MetadataColumnFamilyConstants;
 import datawave.marking.AccessExpressionMarkings;
 import datawave.marking.MarkingFunctions;
 import datawave.microservice.Connection;
 import datawave.microservice.dictionary.config.ResponseObjectFactory;
+import datawave.table.constants.MetadataColumnFamilyConstants;
 import datawave.webservice.dictionary.data.DefaultDataDictionary;
 import datawave.webservice.dictionary.data.DefaultDescription;
 import datawave.webservice.dictionary.data.DefaultDictionaryField;
@@ -234,7 +234,8 @@ public class DefaultMetadataFieldScannerTest {
         barField.put(new Text(MetadataColumnFamilyConstants.COLF_RI), new Text("csv"), TIMESTAMP, new Value());
         barField.put(new Text(MetadataColumnFamilyConstants.COLF_TF), new Text("csv"), TIMESTAMP, new Value());
         barField.put(new Text(MetadataColumnFamilyConstants.COLF_T), new Text("csv\0datawave.data.type.LcNoDiacriticsType"), TIMESTAMP, new Value());
-        barField.put(new Text(MetadataColumnFamilyConstants.COLF_DESC), new Text("csv"), new ColumnVisibility("PRIVATE"), TIMESTAMP, new Value("Barfield Description"));
+        barField.put(new Text(MetadataColumnFamilyConstants.COLF_DESC), new Text("csv"), new ColumnVisibility("PRIVATE"), TIMESTAMP,
+                        new Value("Barfield Description"));
         expectedTimestamps.put("BAR_FIELD", formatTimestamp(TIMESTAMP));
 
         Mutation contributorId = new Mutation(new Text("CONTRIBUTOR_ID"));

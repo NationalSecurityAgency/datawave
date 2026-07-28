@@ -22,11 +22,11 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Maps;
 
-import datawave.table.constants.MetadataColumnFamilyConstants;
 import datawave.marking.MarkingFunctions;
 import datawave.microservice.Connection;
 import datawave.microservice.dictionary.config.ResponseObjectFactory;
 import datawave.security.util.ScannerHelper;
+import datawave.table.constants.MetadataColumnFamilyConstants;
 import datawave.webservice.dictionary.data.DefaultDataDictionary;
 import datawave.webservice.dictionary.data.DefaultDescription;
 import datawave.webservice.dictionary.data.DefaultDictionaryField;

@@ -37,9 +37,9 @@ import com.google.common.collect.SetMultimap;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
-import datawave.table.constants.MetadataColumnFamilyConstants;
 import datawave.metadata.protobuf.EdgeMetadata.MetadataValue;
 import datawave.security.authorization.JWTTokenHandler;
+import datawave.table.constants.MetadataColumnFamilyConstants;
 import datawave.webservice.dictionary.edge.DefaultEdgeDictionary;
 import datawave.webservice.dictionary.edge.DefaultMetadata;
 import datawave.webservice.dictionary.edge.EventField;
