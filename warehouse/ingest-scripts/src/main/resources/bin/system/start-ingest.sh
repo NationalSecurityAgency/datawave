@@ -21,6 +21,11 @@ if [[ "$@" =~ ".*-cron.*" || "$@" =~ "-cron" ]]; then
    FORCE="";
 fi
 
+if [ -z "${NUM_SHARDS}" ] ; then
+      error "Will not start ingest unless NUM_SHARDS is defined. Exiting..."
+      exit 1
+fi
+
 # now apply the appropriate system configuration
 if [[ "$INGEST_HOST" == "localhost" || "$INGEST_HOST" == `hostname` || "$INGEST_HOST" == `hostname -s` ]]; then
 

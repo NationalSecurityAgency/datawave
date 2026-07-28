@@ -139,6 +139,8 @@ public class ActiveQueryTracker implements AutoCloseable {
                 }
 
                 // Create ephemeral nodes for the query ID. These nodes will not persist beyond the lifetime of the client created here.
+                // NOTE: If the application-level ActiveQueryTracker or its zookeeper client is closed, all ephemeral nodes created via the ActiveQueryTracker
+                // will be deleted.
                 List<PersistentNode> nodes = new ArrayList<>();
                 nodes.add(new PersistentNode(client, CreateMode.EPHEMERAL, false, systemQueryIdPath, EMPTY_DATA, false));
                 if (systemCountsAgainstUserLimit) {
@@ -462,7 +464,11 @@ public class ActiveQueryTracker implements AutoCloseable {
     private String getSystemQueryIdPath(String system, String queryLogic, String queryId) {
         return getSystemQueryLogicPath(system, queryLogic) + "/" + queryId;
     }
-
+    
+    /**
+     * Close the underlying client used by this {@link ActiveQueryTracker}. NOTE: all ephemeral nodes for {@link QueryHeartbeat} instances created by this
+     * {@link ActiveQueryTracker} will be deleted.
+     */
     @Override
     public void close() throws Exception {
         if (clientDispatcher != null) {

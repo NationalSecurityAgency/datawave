@@ -1,30 +1,21 @@
 package datawave.query.jexl.functions;
 
-import static datawave.microservice.query.QueryParameters.QUERY_AUTHORIZATIONS;
-import static datawave.microservice.query.QueryParameters.QUERY_BEGIN;
-import static datawave.microservice.query.QueryParameters.QUERY_END;
-import static datawave.microservice.query.QueryParameters.QUERY_EXPIRATION;
-import static datawave.microservice.query.QueryParameters.QUERY_LOGIC_NAME;
-import static datawave.microservice.query.QueryParameters.QUERY_NAME;
-import static datawave.microservice.query.QueryParameters.QUERY_PERSISTENCE;
-import static datawave.microservice.query.QueryParameters.QUERY_STRING;
-import static datawave.query.QueryParameters.DATE_RANGE_TYPE;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
+import java.nio.file.Path;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import javax.inject.Inject;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriter;
@@ -41,26 +32,21 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.StatusReporter;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
-import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.junit.Arquillian;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.asset.StringAsset;
-import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-import org.junit.runner.RunWith;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.io.TempDir;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
-import datawave.configuration.spring.SpringBean;
 import datawave.ingest.config.RawRecordContainerImpl;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.Type;
@@ -80,36 +66,38 @@ import datawave.ingest.protobuf.TermWeightPosition;
 import datawave.ingest.protobuf.Uid;
 import datawave.ingest.table.config.ShardTableConfigHelper;
 import datawave.ingest.table.config.TableConfigHelper;
-import datawave.microservice.query.DefaultQueryParameters;
-import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
-import datawave.microservice.query.QueryParameters;
 import datawave.policy.IngestPolicyEnforcer;
-import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.index.day.IndexIngestUtil;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.model.Direction;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.tables.ShardQueryLogic;
-import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.testframework.MockStatusReporter;
+import datawave.query.util.AbstractQueryTest;
 import datawave.table.constants.ColumnFamilyConstants;
-import datawave.util.TableName;
-import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
+import datawave.table.constants.TableName;
 import datawave.webservice.query.result.event.DefaultEvent;
 import datawave.webservice.query.result.event.DefaultField;
 
-@RunWith(Arquillian.class)
-public class ContentFunctionQueryTest {
-
-    @ClassRule
-    public static TemporaryFolder temporaryFolder = new TemporaryFolder();
+@ExtendWith(SpringExtension.class)
+@ComponentScan(basePackages = "datawave.query")
+// @formatter:off
+@ContextConfiguration(locations = {
+        "classpath:datawave/query/QueryLogicFactory.xml",
+        "classpath:beanRefContext.xml",
+        "classpath:MarkingFunctionsContext.xml",
+        "classpath:MetadataHelperContext.xml",
+        "classpath:CacheContext.xml"})
+// @formatter:on
+public class ContentFunctionQueryTest extends AbstractQueryTest {
 
     private static final int NUM_SHARDS = 241;
     private static final String DATA_TYPE_NAME = "test";
     private static final String INGEST_HELPER_CLASS = TestIngestHelper.class.getName();
 
     private static final String AUTHS = "ALL";
+    private static final Authorizations auths = new Authorizations(AUTHS);
 
     private static final String formatPattern = "yyyyMMdd HHmmss.SSS";
     private static final SimpleDateFormat formatter = new SimpleDateFormat(formatPattern);
@@ -117,36 +105,74 @@ public class ContentFunctionQueryTest {
     private static final String BEGIN_DATE = "20000101 000000.000";
     private static final String END_DATE = "20020101 000000.000";
 
-    private static final String USER = "testcorp";
-    private static final String USER_DN = "cn=test.testcorp.com, ou=datawave, ou=development, o=testcorp, c=us";
-
     private static final Configuration conf = new Configuration();
     private static final String TEST_DATA = "datawave/query/jexl/functions/ContentFunctionQueryExample.csv";
 
-    @Inject
-    @SpringBean(name = "EventQuery")
-    ShardQueryLogic logic;
-
-    private static InMemoryInstance instance;
-
-    private static List<IvaratorCacheDirConfig> ivaratorCacheDirConfigs;
-
     private static final IndexIngestUtil ingestUtil = new IndexIngestUtil();
 
-    @Deployment
-    public static JavaArchive createDeployment() throws Exception {
-        return ShrinkWrap.create(JavaArchive.class)
-                        .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.query", "datawave.webservice.query.result.event",
-                                        "datawave.core.query.result.event")
-                        .deleteClass(DefaultEdgeEventQueryLogic.class).deleteClass(RemoteEdgeDictionary.class)
-                        .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class)
-                        .addAsManifestResource(new StringAsset(
-                                        "<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>" + "</alternatives>"),
-                                        "beans.xml");
+    @Autowired
+    @Qualifier("EventQuery")
+    protected ShardQueryLogic logic;
+
+    private static AccumuloClient clientForTest;
+    private static List<IvaratorCacheDirConfig> ivaratorCacheDirConfigs;
+
+    private ShardQueryLogic currentLogic;
+    private List<DefaultEvent> events = new ArrayList<>();
+    private int expectedEventCount = -1;
+    private List<String> expectedValues = new ArrayList<>();
+
+    @Override
+    public ShardQueryLogic getLogic() {
+        return currentLogic;
     }
 
-    @BeforeClass
-    public static void setupClass() throws Exception {
+    @Override
+    public Authorizations getAuths() {
+        return auths;
+    }
+
+    @Override
+    protected void extraConfigurations() {
+        disableQueryPlanAssertion();
+    }
+
+    @Override
+    protected QueryImpl getSettings() throws Exception {
+        QueryImpl settings = new QueryImpl();
+        settings.setBeginDate(formatter.parse(BEGIN_DATE));
+        settings.setEndDate(formatter.parse(END_DATE));
+        settings.setPagesize(Integer.MAX_VALUE);
+        settings.setQueryAuthorizations(getAuths().serialize());
+        settings.setQuery(getQuery());
+        settings.setParameters(getParameters());
+        settings.setId(java.util.UUID.randomUUID());
+        return settings;
+    }
+
+    @Override
+    protected void executeQuery(ShardQueryLogic logic) throws Exception {
+        try {
+            Iterator<?> iter = logic.getTransformIterator(logic.getConfig().getQuery());
+            events = new ArrayList<>();
+            while (iter.hasNext()) {
+                events.add((DefaultEvent) iter.next());
+            }
+        } finally {
+            logic.close();
+        }
+    }
+
+    @Override
+    protected void extraAssertions() {
+        assertEquals(expectedEventCount, events.size());
+        if (!expectedValues.isEmpty()) {
+            evaluateEvents(events, expectedValues);
+        }
+    }
+
+    @BeforeAll
+    public static void setupClass(@TempDir Path tempDir) throws Exception {
         System.setProperty("subject.dn.pattern", "(?:^|,)\\s*OU\\s*=\\s*My Department\\s*(?:,|$)");
 
         byte[] data = IOUtils.toByteArray(ClassLoader.getSystemResource(TEST_DATA).openStream());
@@ -186,14 +212,15 @@ public class ContentFunctionQueryTest {
         keyValues.putAll(dataTypeHandler.getMetadata().getBulkMetadata());
 
         // write these values to their respective tables
-        instance = new InMemoryInstance();
+        InMemoryInstance instance = new InMemoryInstance();
 
         AccumuloClient client = new InMemoryAccumuloClient("root", instance);
         client.securityOperations().changeUserAuthorizations("root", new Authorizations(AUTHS));
 
         writeKeyValues(client, keyValues);
+        clientForTest = client;
 
-        ivaratorCacheDirConfigs = Collections.singletonList(new IvaratorCacheDirConfig(temporaryFolder.newFolder().toURI().toString()));
+        ivaratorCacheDirConfigs = Collections.singletonList(new IvaratorCacheDirConfig(tempDir.toUri().toString()));
     }
 
     public static void setupConfiguration(Configuration conf) {
@@ -201,7 +228,6 @@ public class ContentFunctionQueryTest {
         conf.set(DATA_TYPE_NAME + DataTypeHelper.Properties.INGEST_POLICY_ENFORCER_CLASS, IngestPolicyEnforcer.NoOpIngestPolicyEnforcer.class.getName());
         conf.set(DataTypeHelper.Properties.DATA_NAME, DATA_TYPE_NAME);
         conf.set(DATA_TYPE_NAME + ".data.category.index", "ID, BODY");
-        // conf.set(DATA_TYPE_NAME + ".model.table.name", METADATA_TABLE_NAME);
         conf.set(TypeRegistry.INGEST_DATA_TYPES, DATA_TYPE_NAME);
         conf.set(DATA_TYPE_NAME + TypeRegistry.INGEST_HELPER, INGEST_HELPER_CLASS);
         conf.set(DateIndexDataTypeHandler.DATEINDEX_TNAME, TableName.DATE_INDEX);
@@ -239,149 +265,28 @@ public class ContentFunctionQueryTest {
             writer.close();
         }
 
-        Authorizations auths = new Authorizations("ALL");
-        ingestUtil.write(client, auths);
+        // write with the document range only; IndexIngestUtil derives the other shard index table variants
+        // that AbstractQueryTest iterates over.
+        ingestUtil.write(client, new Authorizations(AUTHS));
     }
 
-    @Test
-    public void withinTest() throws Exception {
-        String query = "ID == 'TEST_ID' && content:within(1,termOffsetMap,'dog','cat')";
+    private void setupLogic(boolean useIvarator) {
+        setClientForTest(clientForTest);
 
-        final List<String> expected = Arrays.asList("dog", "cat");
-        final List<DefaultEvent> events = getQueryResults(query, true, null);
-        Assert.assertEquals(1, events.size());
-        evaluateEvents(events, expected);
-    }
-
-    @Test
-    public void withinTestWithAlternateDate() throws Exception {
-        String query = "ID == 'TEST_ID' && content:within(1,termOffsetMap,'dog','cat')";
-
-        MultiValueMap<String,String> optionalParams = new LinkedMultiValueMap<>();
-        optionalParams.set(DATE_RANGE_TYPE, "BOGUSDATETYPE");
-
-        final List<DefaultEvent> events = getQueryResults(query, true, optionalParams);
-        Assert.assertEquals(0, events.size());
-    }
-
-    @Test
-    public void withinSkipTest() throws Exception {
-        String query = "ID == 'TEST_ID' && content:within(1,termOffsetMap,'dog','boy')";
-
-        final List<DefaultEvent> events = getQueryResults(query, true, null);
-        Assert.assertEquals(1, events.size());
-        final List<String> expected = Arrays.asList("dog", "boy");
-        evaluateEvents(events, expected);
-    }
-
-    @Test
-    public void phraseTest() throws Exception {
-        String query = "ID == 'TEST_ID' && content:phrase(termOffsetMap,'boy','car')";
-
-        final List<DefaultEvent> events = getQueryResults(query, true, null);
-        Assert.assertEquals(1, events.size());
-        final List<String> expected = Arrays.asList("boy", "car");
-        evaluateEvents(events, expected);
-    }
-
-    @Test
-    public void phraseWithSkipTest() throws Exception {
-        String query = "ID == 'TEST_ID' && content:phrase(termOffsetMap,'dog','gap')";
-
-        final List<DefaultEvent> events = getQueryResults(query, true, null);
-        Assert.assertEquals(1, events.size());
-        final List<String> expected = Arrays.asList("dog", "gap");
-        evaluateEvents(events, expected);
-    }
-
-    @Test
-    public void phraseScoreTest() throws Exception {
-        String query = "ID == 'TEST_ID' && content:scoredPhrase(-1.5, termOffsetMap,'boy','car')";
-
-        final List<DefaultEvent> events = getQueryResults(query, true, null);
-        Assert.assertEquals(1, events.size());
-        final List<String> expected = Arrays.asList("boy", "car");
-        evaluateEvents(events, expected);
-    }
-
-    @Test
-    public void phraseScoreFilterTest() throws Exception {
-        String query = "ID == 'TEST_ID' && content:scoredPhrase(-1.4, termOffsetMap,'boy','car')";
-
-        final List<DefaultEvent> events = getQueryResults(query, true, null);
-        Assert.assertEquals(0, events.size());
-        Assert.assertEquals("Expected no results", 0, events.size());
-    }
-
-    private static void evaluateEvents(List<DefaultEvent> events, List<String> expected) {
-
-        Assert.assertTrue("Expected 1 or more results", events.size() >= 1);
-
-        for (DefaultEvent event : events) {
-
-            List<String> fields = event.getFields().stream().filter((DefaultField field) -> expected.contains(field.getValueString()))
-                            .map(DefaultField::getValueString).distinct().collect(Collectors.toList());
-
-            Assert.assertTrue("Missing values {" + expected + "} != {" + fields + "}", fields.containsAll(expected));
-        }
-    }
-
-    private List<DefaultEvent> getQueryResults(String queryString, boolean useIvarator, MultiValueMap<String,String> optionalParams) throws Exception {
-        ShardQueryLogic logic = getShardQueryLogic(useIvarator);
-
-        Iterator iter = getResultsIterator(queryString, logic, optionalParams);
-        List<DefaultEvent> events = new ArrayList<>();
-        while (iter.hasNext())
-            events.add((DefaultEvent) iter.next());
-        return events;
-    }
-
-    private Iterator getResultsIterator(String queryString, ShardQueryLogic logic, MultiValueMap<String,String> optionalParams) throws Exception {
-        MultiValueMap<String,String> params = new LinkedMultiValueMap<>();
-        params.set(QUERY_STRING, queryString);
-        params.set(QUERY_NAME, "contentQuery");
-        params.set(QUERY_LOGIC_NAME, "EventQueryLogic");
-        params.set(QUERY_PERSISTENCE, "PERSISTENT");
-        params.set(QUERY_AUTHORIZATIONS, AUTHS);
-        params.set(QUERY_EXPIRATION, "20200101 000000.000");
-        params.set(QUERY_BEGIN, BEGIN_DATE);
-        params.set(QUERY_END, END_DATE);
-
-        QueryParameters queryParams = new DefaultQueryParameters();
-        queryParams.validate(params);
-
-        Set<Authorizations> auths = new HashSet<>();
-        auths.add(new Authorizations(AUTHS));
-
-        Query query = new QueryImpl();
-        query.initialize(USER, Arrays.asList(USER_DN), null, queryParams, optionalParams);
-
-        ShardQueryConfiguration config = ShardQueryConfiguration.create(logic, query);
-
-        logic.initialize(config, new InMemoryAccumuloClient("root", instance), query, auths);
-
-        logic.setupQuery(config);
-
-        return logic.getTransformIterator(query);
-    }
-
-    private ShardQueryLogic getShardQueryLogic(boolean useIvarator) {
-        ShardQueryLogic logic = new ShardQueryLogic(this.logic);
+        currentLogic = new ShardQueryLogic(this.logic);
 
         // increase the depth threshold
-        logic.setMaxDepthThreshold(20);
+        currentLogic.setMaxDepthThreshold(20);
 
         // set the pushdown threshold really high to avoid collapsing uids into shards (overrides setCollapseUids if #terms is greater than this threshold)
-        ((DefaultQueryPlanner) (logic.getQueryPlanner())).setPushdownThreshold(1000000);
+        ((DefaultQueryPlanner) (currentLogic.getQueryPlanner())).setPushdownThreshold(1000000);
 
         URL hdfsSiteConfig = this.getClass().getResource("/testhadoop.config");
-        logic.setHdfsSiteConfigURLs(hdfsSiteConfig.toExternalForm());
-        logic.setIvaratorCacheDirConfigs(ivaratorCacheDirConfigs);
+        currentLogic.setHdfsSiteConfigURLs(hdfsSiteConfig.toExternalForm());
+        currentLogic.setIvaratorCacheDirConfigs(ivaratorCacheDirConfigs);
 
         if (useIvarator)
-            setupIvarator(logic);
-
-        return logic;
+            setupIvarator(currentLogic);
     }
 
     private void setupIvarator(ShardQueryLogic logic) {
@@ -391,6 +296,75 @@ public class ContentFunctionQueryTest {
         logic.setMaxOrExpansionThreshold(1);
         logic.setMaxOrExpansionFstThreshold(1);
         logic.setIvaratorCacheScanPersistThreshold(1);
+    }
+
+    private void runQuery(String query, boolean useIvarator, int expectedCount, List<String> expected) throws Exception {
+        setupLogic(useIvarator);
+        this.expectedEventCount = expectedCount;
+        this.expectedValues = expected;
+        givenQuery(query);
+        planAndExecuteQuery();
+    }
+
+    @Test
+    public void withinTest() throws Exception {
+        String query = "ID == 'TEST_ID' && content:within(1,termOffsetMap,'dog','cat')";
+        runQuery(query, true, 1, Arrays.asList("dog", "cat"));
+    }
+
+    @Test
+    public void withinTestWithAlternateDate() throws Exception {
+        String query = "ID == 'TEST_ID' && content:within(1,termOffsetMap,'dog','cat')";
+
+        setupLogic(true);
+        this.expectedEventCount = 0;
+        this.expectedValues = Collections.emptyList();
+        givenQuery(query);
+        givenParameter(datawave.query.QueryParameters.DATE_RANGE_TYPE, "BOGUSDATETYPE");
+        planAndExecuteQuery();
+    }
+
+    @Test
+    public void withinSkipTest() throws Exception {
+        String query = "ID == 'TEST_ID' && content:within(1,termOffsetMap,'dog','boy')";
+        runQuery(query, true, 1, Arrays.asList("dog", "boy"));
+    }
+
+    @Test
+    public void phraseTest() throws Exception {
+        String query = "ID == 'TEST_ID' && content:phrase(termOffsetMap,'boy','car')";
+        runQuery(query, true, 1, Arrays.asList("boy", "car"));
+    }
+
+    @Test
+    public void phraseWithSkipTest() throws Exception {
+        String query = "ID == 'TEST_ID' && content:phrase(termOffsetMap,'dog','gap')";
+        runQuery(query, true, 1, Arrays.asList("dog", "gap"));
+    }
+
+    @Test
+    public void phraseScoreTest() throws Exception {
+        String query = "ID == 'TEST_ID' && content:scoredPhrase(-1.5, termOffsetMap,'boy','car')";
+        runQuery(query, true, 1, Arrays.asList("boy", "car"));
+    }
+
+    @Test
+    public void phraseScoreFilterTest() throws Exception {
+        String query = "ID == 'TEST_ID' && content:scoredPhrase(-1.4, termOffsetMap,'boy','car')";
+        runQuery(query, true, 0, Collections.emptyList());
+    }
+
+    private static void evaluateEvents(List<DefaultEvent> events, List<String> expected) {
+
+        assertTrue(events.size() >= 1, "Expected 1 or more results");
+
+        for (DefaultEvent event : events) {
+
+            List<String> fields = event.getFields().stream().filter((DefaultField field) -> expected.contains(field.getValueString()))
+                            .map(DefaultField::getValueString).distinct().collect(Collectors.toList());
+
+            assertTrue(fields.containsAll(expected), "Missing values {" + expected + "} != {" + fields + "}");
+        }
     }
 
     public static class TestIngestHelper extends ContentBaseIngestHelper implements TermFrequencyIngestHelperInterface {

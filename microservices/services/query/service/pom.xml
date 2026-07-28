@@ -24,14 +24,14 @@
         <version.commons-compress>1.26.0</version.commons-compress>
         <version.commons-io>2.18.0</version.commons-io>
         <version.commons-lang3>3.20.0</version.commons-lang3>
-        <version.datawave>7.37.3</version.datawave>
+        <version.datawave>7.41.1</version.datawave>
         <version.datawave.audit-api>4.0.4</version.datawave.audit-api>
         <version.datawave.authorization-api>4.0.4</version.datawave.authorization-api>
         <version.datawave.hazelcast-common>4.0.6</version.datawave.hazelcast-common>
         <version.datawave.query-api>1.0.3</version.datawave.query-api>
         <version.datawave.query-metric-api>4.1.5</version.datawave.query-metric-api>
         <version.datawave.starter>4.0.9</version.datawave.starter>
-        <version.datawave.starter-audit>4.0.7</version.datawave.starter-audit>
+        <version.datawave.starter-audit>4.0.9</version.datawave.starter-audit>
         <version.datawave.starter-cached-results>1.0.14</version.datawave.starter-cached-results>
         <version.datawave.starter-query>1.0.12</version.datawave.starter-query>
         <version.datawave.starter-query-metric>3.0.7</version.datawave.starter-query-metric>
@@ -44,7 +44,7 @@
         <version.jaxb-api>2.3.1</version.jaxb-api>
         <version.jboss-servlet-api>2.0.0.Final</version.jboss-servlet-api>
         <!-- dependency declared in datawave-microservice-parent, but the version can be overridden here -->
-        <version.log4j>2.25.3</version.log4j>
+        <version.log4j>2.26.1</version.log4j>
         <!-- dependency declared in datawave-microservice-parent, but the version can be overridden here -->
         <version.slf4j>2.0.17</version.slf4j>
         <version.springframework>5.3.39</version.springframework>

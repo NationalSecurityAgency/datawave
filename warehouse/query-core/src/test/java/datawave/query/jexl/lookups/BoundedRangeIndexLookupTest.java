@@ -46,7 +46,7 @@ import datawave.query.iterator.SortedListKeyValueIterator;
 import datawave.query.jexl.LiteralRange;
 import datawave.query.scanner.LocalBatchScanner;
 import datawave.query.tables.ScannerFactory;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 import datawave.util.time.DateHelper;
 
 public class BoundedRangeIndexLookupTest extends EasyMockSupport {

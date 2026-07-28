@@ -6,18 +6,15 @@ import static datawave.query.transformer.annotation.AnnotationHitsTransformer.KE
 import static datawave.query.transformer.annotation.AnnotationHitsTransformer.MIN_SCORE_PARAMETER;
 import static datawave.query.transformer.annotation.AnnotationHitsTransformer.TIMEUNIT_PARAMETER;
 import static datawave.query.util.WiseGuysIngest.caponeUID;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -27,10 +24,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.TreeMap;
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
-
-import javax.inject.Inject;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
@@ -46,17 +40,16 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.log4j.Logger;
-import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.junit.Arquillian;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.asset.StringAsset;
-import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -74,23 +67,17 @@ import datawave.annotation.protobuf.v1.BoundaryType;
 import datawave.annotation.protobuf.v1.Segment;
 import datawave.annotation.protobuf.v1.SegmentBoundary;
 import datawave.annotation.protobuf.v1.SegmentValue;
-import datawave.configuration.spring.SpringBean;
-import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.iterator.DatawaveTransformIterator;
 import datawave.data.normalizer.LcNoDiacriticsNormalizer;
 import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
-import datawave.microservice.query.Query;
-import datawave.microservice.query.QueryImpl;
 import datawave.query.QueryParameters;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.RebuildingScannerTestHelper;
 import datawave.query.config.annotation.AllHitsQueryConfig;
 import datawave.query.config.annotation.AnnotationConfig;
-import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.planner.TimedVisitorManager;
-import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.transformer.DocumentTransformer;
 import datawave.query.transformer.annotation.AllHitsException;
 import datawave.query.transformer.annotation.AllHitsFactory;
@@ -100,15 +87,25 @@ import datawave.query.transformer.annotation.BoundaryComparator;
 import datawave.query.transformer.annotation.SegmentValueByScoreComparator;
 import datawave.query.transformer.annotation.TermExtractor;
 import datawave.query.transformer.annotation.model.AllHits;
+import datawave.query.util.AbstractQueryTest;
 import datawave.query.util.WiseGuysIngest;
-import datawave.util.TableName;
-import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
+import datawave.table.constants.TableName;
 import datawave.webservice.query.result.event.DefaultField;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.DefaultEventQueryResponse;
 
-public abstract class ShardQueryLogicTest {
+@ExtendWith(SpringExtension.class)
+@ComponentScan(basePackages = "datawave.query")
+// @formatter:off
+@ContextConfiguration(locations = {
+        "classpath:datawave/query/QueryLogicFactory.xml",
+        "classpath:beanRefContext.xml",
+        "classpath:MarkingFunctionsContext.xml",
+        "classpath:MetadataHelperContext.xml",
+        "classpath:CacheContext.xml"})
+// @formatter:on
+public class ShardQueryLogicTest extends AbstractQueryTest {
 
     private static final Logger log = Logger.getLogger(ShardQueryLogicTest.class);
 
@@ -164,203 +161,161 @@ public abstract class ShardQueryLogicTest {
             .build();
     // @formatter:on
 
-    @Inject
-    @SpringBean(name = "EventQuery")
+    @Autowired
+    @Qualifier("EventQuery")
     protected ShardQueryLogic logic;
-    protected KryoDocumentDeserializer deserializer;
 
-    private final DateFormat dateFormat = new SimpleDateFormat("yyyyMMdd");
-    private final Map<String,String> queryParameters = new HashMap<>();
+    private static AccumuloClient sharedClient;
 
-    private String query;
-    private Date startDate;
-    private Date endDate;
+    private AccumuloClient client;
 
-    private List<Annotation> annotations = new ArrayList<>();
-    private List<AnnotationSource> annotationSources = new ArrayList<>();
-    private Map<String,Map<String,String>> expectedFields = new HashMap<>();
-    private Map<String,List<String>> expectNoField = new HashMap<>();
+    private final List<Annotation> annotations = new ArrayList<>();
+    private final List<AnnotationSource> annotationSources = new ArrayList<>();
+    private final Map<String,Map<String,String>> expectedFields = new HashMap<>();
+    private final Map<String,List<String>> expectNoField = new HashMap<>();
+    private final Map<String,List<Entry<Key,Value>>> extraData = new HashMap<>();
 
-    private Map<String,List<Entry<Key,Value>>> extraData = new HashMap<>();
+    private Set<Set<String>> expectedGroups = new HashSet<>();
+    private List<EventBase> events = new ArrayList<>();
 
-    protected abstract String getRange();
+    @Override
+    public ShardQueryLogic getLogic() {
+        return logic;
+    }
 
-    @RunWith(Arquillian.class)
-    public static class ShardRange extends ShardQueryLogicTest {
+    @Override
+    public Authorizations getAuths() {
+        return auths;
+    }
 
-        @Override
-        protected String getRange() {
-            return WiseGuysIngest.WhatKindaRange.SHARD.name();
-        }
+    @Override
+    protected void extraConfigurations() {
+        disableQueryPlanAssertion();
+        setupAnnotationsTables(client);
+        addExtraEventData(client);
+    }
 
-        @Before
-        public void setup() {
-            super.setup();
-            logic.setCollapseUids(true);
+    @Override
+    protected void executeQuery(ShardQueryLogic logic) throws Exception {
+        try {
+            DocumentTransformer transformer = (DocumentTransformer) (logic.getTransformer(logic.getConfig().getQuery()));
+            TransformIterator iter = new DatawaveTransformIterator(logic.iterator(), transformer);
+            List<Object> eventList = new ArrayList<>();
+            while (iter.hasNext()) {
+                Object o = iter.next();
+                if (o != null) {
+                    eventList.add(o);
+                }
+            }
+
+            BaseQueryResponse response = transformer.createResponse(eventList);
+            assertTrue(response instanceof DefaultEventQueryResponse);
+            this.events = ((DefaultEventQueryResponse) response).getEvents();
+        } finally {
+            logic.close();
         }
     }
 
-    @RunWith(Arquillian.class)
-    public static class DocumentRange extends ShardQueryLogicTest {
-
-        @Override
-        protected String getRange() {
-            return WiseGuysIngest.WhatKindaRange.DOCUMENT.name();
+    @SuppressWarnings("unchecked")
+    @Override
+    protected void extraAssertions() {
+        if (expectedGroups.isEmpty()) {
+            assertTrue(events == null || events.isEmpty());
+            return;
         }
 
-        @Before
-        public void setup() {
-            super.setup();
-            logic.setCollapseUids(false);
+        // planAndExecuteQuery() invokes extraAssertions() once per index table variant, so match against a
+        // deep local copy rather than destructively consuming the shared expectedGroups sets.
+        Set<Set<String>> remaining = new HashSet<>();
+        for (Set<String> group : expectedGroups) {
+            remaining.add(new HashSet<>(group));
+        }
+
+        for (Iterator<Set<String>> it = remaining.iterator(); it.hasNext();) {
+            Set<String> expectedSet = it.next();
+            boolean found = false;
+
+            for (EventBase event : events) {
+                if (expectedSet.contains("UID:" + event.getMetadata().getInternalId())) {
+                    expectedSet.remove("UID:" + event.getMetadata().getInternalId());
+                    ((List<DefaultField>) event.getFields()).forEach((f) -> expectedSet.remove(f.getName() + ":" + f.getValueString()));
+                    if (expectedSet.isEmpty()) {
+                        found = true;
+                        it.remove();
+                    }
+
+                    // check for any expected fields
+                    Map<String,String> expectedFieldsForDoc = expectedFields.computeIfAbsent(event.getMetadata().getInternalId(), x -> new HashMap<>());
+                    List<String> expectedNoFieldsForDoc = expectNoField.computeIfAbsent(event.getMetadata().getInternalId(), x -> new ArrayList<>());
+
+                    int foundCount = 0;
+                    for (DefaultField field : (List<DefaultField>) event.getFields()) {
+                        for (Entry<String,String> fieldValue : expectedFieldsForDoc.entrySet()) {
+                            if (field.getName().equals(fieldValue.getKey())) {
+                                assertEquals(fieldValue.getValue(), field.getValueString());
+                                foundCount++;
+                            }
+                        }
+                        for (String noField : expectedNoFieldsForDoc) {
+                            if (field.getName().equals(noField)) {
+                                fail("Encountered field which should not have been present in doc: " + event.getMetadata().getInternalId() + " field: "
+                                                + noField);
+                            }
+                        }
+                    }
+
+                    assertEquals(expectedFieldsForDoc.size(), foundCount);
+                    break;
+                }
+            }
+            assertTrue(found, "field not found " + expectedSet);
         }
     }
 
-    @Deployment
-    public static JavaArchive createDeployment() throws Exception {
-        return ShrinkWrap.create(JavaArchive.class)
-                        .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.query", "org.jboss.logging",
-                                        "datawave.webservice.query.result.event")
-                        .deleteClass(DefaultEdgeEventQueryLogic.class).deleteClass(RemoteEdgeDictionary.class)
-                        .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class)
-                        .addAsManifestResource(new StringAsset(
-                                        "<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>" + "</alternatives>"),
-                                        "beans.xml");
-    }
-
-    @BeforeClass
-    public static void beforeClass() throws Exception {
+    @BeforeAll
+    public static void beforeAll() throws Exception {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
+
+        sharedClient = new QueryTestTableHelper(ShardQueryLogicTest.class.toString(), log, RebuildingScannerTestHelper.TEARDOWN.EVERY_OTHER_SANS_CONSISTENCY,
+                        RebuildingScannerTestHelper.INTERRUPT.EVERY_OTHER).client;
+        WiseGuysIngest.writeItAll(sharedClient, WiseGuysIngest.WhatKindaRange.DOCUMENT);
+        PrintUtility.printTable(sharedClient, auths, TableName.SHARD);
+        PrintUtility.printTable(sharedClient, auths, TableName.SHARD_INDEX);
+        PrintUtility.printTable(sharedClient, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
     }
 
-    @AfterClass
-    public static void afterClass() throws Exception {
+    @AfterAll
+    public static void afterAll() {
         TypeRegistry.reset();
     }
 
-    @Before
+    @BeforeEach
     public void setup() {
+        this.client = sharedClient;
+        setClientForTest(this.client);
         this.logic.setFullTableScanEnabled(true);
-        this.deserializer = new KryoDocumentDeserializer();
-        this.expectedFields = new HashMap<>();
-        this.expectNoField = new HashMap<>();
-        this.annotations = new ArrayList<>();
-        this.annotationSources = new ArrayList<>();
-        this.extraData = new HashMap<>();
+        this.logic.setAllHitsQueryConfig(new AllHitsQueryConfig());
+
+        this.annotations.clear();
+        this.annotationSources.clear();
+        this.expectedFields.clear();
+        this.expectNoField.clear();
+        this.extraData.clear();
+        this.expectedGroups = new HashSet<>();
+        this.events = new ArrayList<>();
     }
 
-    @After
-    public void tearDown() throws Exception {
-        this.logic = null;
-        this.query = null;
-        this.queryParameters.clear();
-        this.startDate = null;
-        this.endDate = null;
-    }
-
-    private AccumuloClient createClient() throws Exception {
-        AccumuloClient client = new QueryTestTableHelper(ShardRange.class.toString(), log, RebuildingScannerTestHelper.TEARDOWN.EVERY_OTHER_SANS_CONSISTENCY,
-                        RebuildingScannerTestHelper.INTERRUPT.EVERY_OTHER).client;
-        WiseGuysIngest.writeItAll(client, WiseGuysIngest.WhatKindaRange.valueOf(getRange()));
-        PrintUtility.printTable(client, auths, TableName.SHARD);
-        PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
-        PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
-        return client;
-    }
-
-    private Query createSettings() {
-        QueryImpl settings = new QueryImpl();
-        settings.setBeginDate(this.startDate);
-        settings.setEndDate(this.endDate);
-        settings.setPagesize(Integer.MAX_VALUE);
-        settings.setQueryAuthorizations(auths.serialize());
-        settings.setQuery(this.query);
-        settings.setParameters(this.queryParameters);
-        settings.setId(UUID.randomUUID());
-        return settings;
-    }
-
-    protected void runTestQuery(Set<Set<String>> expected) throws Exception {
-        log.debug("runTestQuery");
-
-        Query settings = createSettings();
-        log.debug("query: " + settings.getQuery());
-        log.debug("logic: " + settings.getQueryLogicName());
-
-        AccumuloClient client = createClient();
-        setupAnnotationsTables(client);
-        addExtraEventData(client);
-        GenericQueryConfiguration config = logic.initialize(client, settings, authSet);
-        logic.setupQuery(config);
-
-        DocumentTransformer transformer = (DocumentTransformer) (logic.getTransformer(settings));
-        TransformIterator iter = new DatawaveTransformIterator(logic.iterator(), transformer);
-        List<Object> eventList = new ArrayList<>();
-        while (iter.hasNext()) {
-            eventList.add(iter.next());
-        }
-
-        BaseQueryResponse response = transformer.createResponse(eventList);
-
-        // un-comment to look at the json output
-        // ObjectMapper mapper = new ObjectMapper();
-        // mapper.enable(MapperFeature.USE_WRAPPER_NAME_AS_PROPERTY_NAME);
-        // mapper.writeValue(new File("/tmp/grouped2.json"), response);
-
-        assertTrue(response instanceof DefaultEventQueryResponse);
-        DefaultEventQueryResponse eventQueryResponse = (DefaultEventQueryResponse) response;
-
-        if (expected.isEmpty()) {
-            assertTrue(eventQueryResponse.getEvents() == null || eventQueryResponse.getEvents().isEmpty());
-        } else {
-            for (Iterator<Set<String>> it = expected.iterator(); it.hasNext();) {
-                Set<String> expectedSet = it.next();
-                boolean found = false;
-
-                for (EventBase event : eventQueryResponse.getEvents()) {
-                    if (expectedSet.contains("UID:" + event.getMetadata().getInternalId())) {
-                        expectedSet.remove("UID:" + event.getMetadata().getInternalId());
-                        ((List<DefaultField>) event.getFields()).forEach((f) -> expectedSet.remove(f.getName() + ":" + f.getValueString()));
-                        if (expectedSet.isEmpty()) {
-                            found = true;
-                            it.remove();
-                        }
-
-                        // check for any expected fields
-                        Map<String,String> expectedFieldsForDoc = expectedFields.computeIfAbsent(event.getMetadata().getInternalId(), x -> new HashMap<>());
-                        List<String> expectedNoFieldsForDoc = expectNoField.computeIfAbsent(event.getMetadata().getInternalId(), x -> new ArrayList<>());
-
-                        int foundCount = 0;
-                        for (DefaultField field : (List<DefaultField>) event.getFields()) {
-                            for (Entry<String,String> fieldValue : expectedFieldsForDoc.entrySet()) {
-                                if (field.getName().equals(fieldValue.getKey())) {
-                                    assertEquals(fieldValue.getValue(), field.getValueString());
-                                    foundCount++;
-                                }
-                            }
-                            for (String noField : expectedNoFieldsForDoc) {
-                                if (field.getName().equals(noField)) {
-                                    fail("Encountered field which should not have been present in doc: " + event.getMetadata().getInternalId() + " field: "
-                                                    + noField);
-                                }
-                            }
-                        }
-
-                        assertEquals(expectedFieldsForDoc.size(), foundCount);
-                        break;
-                    }
-                }
-                assertTrue("field not found " + expectedSet, found);
-            }
-        }
+    private void runTestQuery(Set<Set<String>> expected) throws Exception {
+        this.expectedGroups = expected;
+        givenDate("20091231", "20150101");
+        planAndExecuteQuery();
     }
 
     @Test
     public void testFieldMappingTransformViaProfile() throws Exception {
         givenQuery("UUID =~ '^[CS].*'");
-        givenQueryParameter(QueryParameters.INCLUDE_GROUPING_CONTEXT, "false");
-        givenQueryParameter(QueryParameters.QUERY_PROFILE, "copyFieldEventQuery");
-        givenStartDate("20091231");
-        givenEndDate("20150101");
+        givenParameter(QueryParameters.INCLUDE_GROUPING_CONTEXT, "false");
+        givenParameter(QueryParameters.QUERY_PROFILE, "copyFieldEventQuery");
 
         Set<Set<String>> expected = new HashSet<>();
         expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.sopranoUID, "MAGIC_COPY:18"));
@@ -372,9 +327,7 @@ public abstract class ShardQueryLogicTest {
     @Test
     public void testRegex() throws Exception {
         givenQuery("UUID=='CAPONE' AND QUOTE=~'.*kind'");
-        givenQueryParameter(QueryParameters.INCLUDE_GROUPING_CONTEXT, "true");
-        givenStartDate("20091231");
-        givenEndDate("20150101");
+        givenParameter(QueryParameters.INCLUDE_GROUPING_CONTEXT, "true");
 
         Set<Set<String>> expected = new HashSet<>();
         // todo: make this work someday
@@ -386,9 +339,7 @@ public abstract class ShardQueryLogicTest {
     @Test
     public void testFwdRegex() throws Exception {
         givenQuery("UUID=='CAPONE' AND QUOTE=~'kin.*'");
-        givenQueryParameter(QueryParameters.INCLUDE_GROUPING_CONTEXT, "true");
-        givenStartDate("20091231");
-        givenEndDate("20150101");
+        givenParameter(QueryParameters.INCLUDE_GROUPING_CONTEXT, "true");
 
         Set<Set<String>> expected = new HashSet<>();
         // todo: make this work someday
@@ -400,9 +351,7 @@ public abstract class ShardQueryLogicTest {
     @Test
     public void testEvalRegex() throws Exception {
         givenQuery("UUID=='CAPONE' AND ((_Eval_ = true) && QUOTE=~'.*alone')");
-        givenQueryParameter(QueryParameters.INCLUDE_GROUPING_CONTEXT, "true");
-        givenStartDate("20091231");
-        givenEndDate("20150101");
+        givenParameter(QueryParameters.INCLUDE_GROUPING_CONTEXT, "true");
 
         Set<Set<String>> expected = new HashSet<>();
         expected.add(Sets.newHashSet("UID:" + caponeUID));
@@ -413,9 +362,7 @@ public abstract class ShardQueryLogicTest {
     @Test
     public void testNegativeEvalRegex() throws Exception {
         givenQuery("UUID=='CAPONE' AND ((_Eval_ = true) && QUOTE!~'.*alone')");
-        givenQueryParameter(QueryParameters.INCLUDE_GROUPING_CONTEXT, "true");
-        givenStartDate("20091231");
-        givenEndDate("20150101");
+        givenParameter(QueryParameters.INCLUDE_GROUPING_CONTEXT, "true");
 
         Set<Set<String>> expected = new HashSet<>();
         runTestQuery(expected);
@@ -424,9 +371,7 @@ public abstract class ShardQueryLogicTest {
     @Test
     public void testNegativeEvalRegexV2() throws Exception {
         givenQuery("UUID=='CAPONE' AND ((_Eval_ = true) && !(QUOTE=~'.*alone'))");
-        givenQueryParameter(QueryParameters.INCLUDE_GROUPING_CONTEXT, "true");
-        givenStartDate("20091231");
-        givenEndDate("20150101");
+        givenParameter(QueryParameters.INCLUDE_GROUPING_CONTEXT, "true");
 
         Set<Set<String>> expected = new HashSet<>();
         runTestQuery(expected);
@@ -435,9 +380,7 @@ public abstract class ShardQueryLogicTest {
     @Test
     public void testDoubeWildcard() throws Exception {
         givenQuery("UUID=='CAPONE' AND QUOTE=~'.*ind.*'");
-        givenQueryParameter(QueryParameters.INCLUDE_GROUPING_CONTEXT, "true");
-        givenStartDate("20091231");
-        givenEndDate("20150101");
+        givenParameter(QueryParameters.INCLUDE_GROUPING_CONTEXT, "true");
 
         Set<Set<String>> expected = new HashSet<>();
         expected.add(Sets.newHashSet("UID:" + caponeUID));
@@ -448,9 +391,7 @@ public abstract class ShardQueryLogicTest {
     @Test
     public void testNegativeRegex() throws Exception {
         givenQuery("UUID=='CAPONE' AND QUOTE!~'.*ind'");
-        givenQueryParameter(QueryParameters.INCLUDE_GROUPING_CONTEXT, "true");
-        givenStartDate("20091231");
-        givenEndDate("20150101");
+        givenParameter(QueryParameters.INCLUDE_GROUPING_CONTEXT, "true");
 
         Set<Set<String>> expected = new HashSet<>();
         expected.add(Sets.newHashSet("UID:" + caponeUID));
@@ -461,9 +402,7 @@ public abstract class ShardQueryLogicTest {
     @Test
     public void testNegativeRegexV2() throws Exception {
         givenQuery("UUID=='CAPONE' AND !(QUOTE=~'.*ind')");
-        givenQueryParameter(QueryParameters.INCLUDE_GROUPING_CONTEXT, "true");
-        givenStartDate("20091231");
-        givenEndDate("20150101");
+        givenParameter(QueryParameters.INCLUDE_GROUPING_CONTEXT, "true");
 
         Set<Set<String>> expected = new HashSet<>();
         expected.add(Sets.newHashSet("UID:" + caponeUID));
@@ -474,9 +413,7 @@ public abstract class ShardQueryLogicTest {
     @Test
     public void testFilterRegex() throws Exception {
         givenQuery("UUID=='CAPONE' AND filter:includeRegex(QUOTE,'.*kind word alone.*')");
-        givenQueryParameter(QueryParameters.INCLUDE_GROUPING_CONTEXT, "true");
-        givenStartDate("20091231");
-        givenEndDate("20150101");
+        givenParameter(QueryParameters.INCLUDE_GROUPING_CONTEXT, "true");
 
         Set<Set<String>> expected = new HashSet<>();
         expected.add(Sets.newHashSet("UID:" + caponeUID));
@@ -487,11 +424,8 @@ public abstract class ShardQueryLogicTest {
     @Test
     public void testNegativeFilterRegex() throws Exception {
         givenQuery("UUID=='CAPONE' AND !filter:includeRegex(QUOTE,'.*kind word alone.*')");
-        givenQueryParameter(QueryParameters.INCLUDE_GROUPING_CONTEXT, "true");
-        givenStartDate("20091231");
-        givenEndDate("20150101");
+        givenParameter(QueryParameters.INCLUDE_GROUPING_CONTEXT, "true");
 
-        String queryString = "UUID=='CAPONE' AND !filter:includeRegex(QUOTE,'.*kind word alone.*')";
         Set<Set<String>> expected = new HashSet<>();
 
         runTestQuery(expected);
@@ -500,9 +434,7 @@ public abstract class ShardQueryLogicTest {
     @Test
     public void testNegativeFilterRegexV2() throws Exception {
         givenQuery("UUID=='CAPONE' AND !(filter:includeRegex(QUOTE,'.*kind word alone.*'))");
-        givenQueryParameter(QueryParameters.INCLUDE_GROUPING_CONTEXT, "true");
-        givenStartDate("20091231");
-        givenEndDate("20150101");
+        givenParameter(QueryParameters.INCLUDE_GROUPING_CONTEXT, "true");
         Set<Set<String>> expected = new HashSet<>();
 
         runTestQuery(expected);
@@ -511,9 +443,7 @@ public abstract class ShardQueryLogicTest {
     @Test
     public void testExcludeDataTypesBangDataType() throws Exception {
         givenQuery("UUID=='TATTAGLIA'");
-        givenQueryParameter(QueryParameters.DATATYPE_FILTER_SET, "!test2");
-        givenStartDate("20091231");
-        givenEndDate("20150101");
+        givenParameter(QueryParameters.DATATYPE_FILTER_SET, "!test2");
 
         Set<Set<String>> expected = new HashSet<>();
         // No results expected
@@ -523,9 +453,7 @@ public abstract class ShardQueryLogicTest {
     @Test
     public void testExcludeDataTypesNegateDataType() throws Exception {
         givenQuery("UUID=='TATTAGLIA'");
-        givenQueryParameter(QueryParameters.DATATYPE_FILTER_SET, "test2,!test2");
-        givenStartDate("20091231");
-        givenEndDate("20150101");
+        givenParameter(QueryParameters.DATATYPE_FILTER_SET, "test2,!test2");
 
         Set<Set<String>> expected = new HashSet<>();
         // Expect one result, since the negated data type results in empty set, which is treated by Datawave as all data types
@@ -537,9 +465,7 @@ public abstract class ShardQueryLogicTest {
     @Test
     public void testExcludeDataTypesIncludeOneTypeExcludeOneType() throws Exception {
         givenQuery("UUID=='TATTAGLIA' || UUID=='CAPONE'");
-        givenQueryParameter(QueryParameters.DATATYPE_FILTER_SET, "test2,!test");
-        givenStartDate("20091231");
-        givenEndDate("20150101");
+        givenParameter(QueryParameters.DATATYPE_FILTER_SET, "test2,!test");
         Set<Set<String>> expected = new HashSet<>();
         expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.tattagliaUID));
 
@@ -551,8 +477,6 @@ public abstract class ShardQueryLogicTest {
         withAnnotationHits();
 
         givenQuery("UUID=='CAPONE'");
-        givenStartDate("20091231");
-        givenEndDate("20150101");
 
         expectNoField(caponeUID, "ALL_HITS_RESULTS");
 
@@ -568,8 +492,6 @@ public abstract class ShardQueryLogicTest {
         givenAnnotation(buildAnnotation(S1));
 
         givenQuery("UUID=='CAPONE'");
-        givenStartDate("20091231");
-        givenEndDate("20150101");
 
         AnnotationHitsTransformer.SegmentHit hit = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), S1.getBoundary(), 0);
         hit.setContextEnd(S1.getBoundary());
@@ -588,49 +510,11 @@ public abstract class ShardQueryLogicTest {
     public void annotationHitsNotEnabledByQueryParamTest() throws Exception {
         withAnnotationHits();
         // disable the transformer via query param
-        givenQueryParameter(ENABLED_PARAMETER, "");
+        givenParameter(ENABLED_PARAMETER, "");
 
         givenAnnotation(buildAnnotation(S1));
 
         givenQuery("UUID=='CAPONE'");
-        givenStartDate("20091231");
-        givenEndDate("20150101");
-
-        expectNoField(caponeUID, "ALL_HITS_RESULTS");
-
-        Set<Set<String>> expected = new HashSet<>();
-        expected.add(Sets.newHashSet("UID:" + caponeUID));
-        runTestQuery(expected);
-    }
-
-    @Test(expected = IllegalStateException.class)
-    public void annotationHitsNullTermExtractorTest() throws Exception {
-        withAnnotationHits();
-        logic.getAllHitsQueryConfig().setQueryTermExtractor(null);
-
-        givenAnnotation(buildAnnotation(S1));
-
-        givenQuery("UUID=='CAPONE'");
-        givenStartDate("20091231");
-        givenEndDate("20150101");
-
-        expectNoField(caponeUID, "ALL_HITS_RESULTS");
-
-        Set<Set<String>> expected = new HashSet<>();
-        expected.add(Sets.newHashSet("UID:" + caponeUID));
-        runTestQuery(expected);
-    }
-
-    @Test(expected = IllegalStateException.class)
-    public void annotationHitsNullNormalizerTest() throws Exception {
-        withAnnotationHits();
-        logic.getAllHitsQueryConfig().setTermNormalizer(null);
-
-        givenAnnotation(buildAnnotation(S1));
-
-        givenQuery("UUID=='CAPONE'");
-        givenStartDate("20091231");
-        givenEndDate("20150101");
 
         expectNoField(caponeUID, "ALL_HITS_RESULTS");
 
@@ -640,14 +524,48 @@ public abstract class ShardQueryLogicTest {
     }
 
     @Test
+    public void annotationHitsNullTermExtractorTest() throws Exception {
+        withAnnotationHits();
+        logic.getAllHitsQueryConfig().setQueryTermExtractor(null);
+
+        givenAnnotation(buildAnnotation(S1));
+
+        givenQuery("UUID=='CAPONE'");
+
+        expectNoField(caponeUID, "ALL_HITS_RESULTS");
+
+        Set<Set<String>> expected = new HashSet<>();
+        expected.add(Sets.newHashSet("UID:" + caponeUID));
+        this.expectedGroups = expected;
+        givenDate("20091231", "20150101");
+        assertThrows(IllegalStateException.class, this::planAndExecuteQuery);
+    }
+
+    @Test
+    public void annotationHitsNullNormalizerTest() throws Exception {
+        withAnnotationHits();
+        logic.getAllHitsQueryConfig().setTermNormalizer(null);
+
+        givenAnnotation(buildAnnotation(S1));
+
+        givenQuery("UUID=='CAPONE'");
+
+        expectNoField(caponeUID, "ALL_HITS_RESULTS");
+
+        Set<Set<String>> expected = new HashSet<>();
+        expected.add(Sets.newHashSet("UID:" + caponeUID));
+        this.expectedGroups = expected;
+        givenDate("20091231", "20150101");
+        assertThrows(IllegalStateException.class, this::planAndExecuteQuery);
+    }
+
+    @Test
     public void annotationHitsSingleHit1ContextWindowTest() throws Exception {
         withAnnotationHits();
 
         givenAnnotation(buildAnnotation(S1, S2, S6));
 
         givenQuery("UUID=='CAPONE'");
-        givenStartDate("20091231");
-        givenEndDate("20150101");
 
         AnnotationHitsTransformer.SegmentHit hit = new AnnotationHitsTransformer.SegmentHit(S6.getBoundary(), S1.getBoundary(), 0);
         hit.setContextEnd(S2.getBoundary());
@@ -668,8 +586,6 @@ public abstract class ShardQueryLogicTest {
         givenAnnotation(buildAnnotation(S1, S2, S3, S6, S7));
 
         givenQuery("UUID=='CAPONE'");
-        givenStartDate("20091231");
-        givenEndDate("20150101");
 
         AnnotationHitsTransformer.SegmentHit hit = new AnnotationHitsTransformer.SegmentHit(S6.getBoundary(), S1.getBoundary(), 0);
         hit.setContextEnd(S3.getBoundary());
@@ -691,8 +607,6 @@ public abstract class ShardQueryLogicTest {
         givenAnnotation(buildAnnotation(S1, S2, S3, S4, S6, S7, S8));
 
         givenQuery("UUID=='CAPONE'");
-        givenStartDate("20091231");
-        givenEndDate("20150101");
 
         AnnotationHitsTransformer.SegmentHit hit = new AnnotationHitsTransformer.SegmentHit(S6.getBoundary(), S1.getBoundary(), 0);
         hit.setContextEnd(S4.getBoundary());
@@ -714,8 +628,6 @@ public abstract class ShardQueryLogicTest {
         givenAnnotation(buildAnnotation(S5, S2, S3, S4, S1));
 
         givenQuery("UUID=='CAPONE'");
-        givenStartDate("20091231");
-        givenEndDate("20150101");
 
         AnnotationHitsTransformer.SegmentHit hit = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), S1.getBoundary(), 0);
         hit.setContextEnd(S4.getBoundary());
@@ -737,8 +649,6 @@ public abstract class ShardQueryLogicTest {
         givenAnnotation(buildAnnotation(S2, S3, S4, S1, S5, S8, S6, S7, S9));
 
         givenQuery("UUID=='CAPONE'");
-        givenStartDate("20091231");
-        givenEndDate("20150101");
 
         AnnotationHitsTransformer.SegmentHit hit = new AnnotationHitsTransformer.SegmentHit(S7.getBoundary(), S1.getBoundary(), 0);
         hit.setContextEnd(S4.getBoundary());
@@ -760,8 +670,6 @@ public abstract class ShardQueryLogicTest {
         givenAnnotation(buildAnnotation(S2, S3, S4, S1, S5, S8, S6, S7, S9));
 
         givenQuery("UUID=='CAPONE' || UUID=='CARL'");
-        givenStartDate("20091231");
-        givenEndDate("20150101");
 
         AnnotationHitsTransformer.SegmentHit hit1 = new AnnotationHitsTransformer.SegmentHit(S7.getBoundary(), S1.getBoundary(), 0);
         hit1.setContextEnd(S4.getBoundary());
@@ -784,8 +692,6 @@ public abstract class ShardQueryLogicTest {
         givenAnnotation(buildAnnotation(S2, S3, S4, S1, S5, S8, S6, S7, S9));
 
         givenQuery("UUID=='CAPONE' || UUID=='w1' || UUID=='d1'");
-        givenStartDate("20091231");
-        givenEndDate("20150101");
 
         AnnotationHitsTransformer.SegmentHit hit1 = new AnnotationHitsTransformer.SegmentHit(S7.getBoundary(), S1.getBoundary(), 0);
         hit1.setContextEnd(S4.getBoundary());
@@ -807,12 +713,10 @@ public abstract class ShardQueryLogicTest {
     @Test
     public void annotationHitsFromSimpleKeywordParamTest() throws Exception {
         withAnnotationHits();
-        givenQueryParameter(KEYWORDS_PARAMETER, "w1;d1");
+        givenParameter(KEYWORDS_PARAMETER, "w1;d1");
         givenAnnotation(buildAnnotation(S2, S3, S4, S1, S5, S8, S6, S7, S9));
 
         givenQuery("UUID=='CAPONE'");
-        givenStartDate("20091231");
-        givenEndDate("20150101");
 
         AnnotationHitsTransformer.SegmentHit hit2 = new AnnotationHitsTransformer.SegmentHit(S6.getBoundary(), S6.getBoundary(), 0);
         hit2.setContextEnd(S9.getBoundary());
@@ -832,12 +736,10 @@ public abstract class ShardQueryLogicTest {
     @Test
     public void annotationHitsFromJsonKeywordParamTest() throws Exception {
         withAnnotationHits();
-        givenQueryParameter(KEYWORDS_PARAMETER, "[\"w1\", \"d1\"]");
+        givenParameter(KEYWORDS_PARAMETER, "[\"w1\", \"d1\"]");
         givenAnnotation(buildAnnotation(S2, S3, S4, S1, S5, S8, S6, S7, S9));
 
         givenQuery("UUID=='CAPONE'");
-        givenStartDate("20091231");
-        givenEndDate("20150101");
 
         AnnotationHitsTransformer.SegmentHit hit2 = new AnnotationHitsTransformer.SegmentHit(S6.getBoundary(), S6.getBoundary(), 0);
         hit2.setContextEnd(S9.getBoundary());
@@ -858,12 +760,10 @@ public abstract class ShardQueryLogicTest {
     public void annotationHitsFromEncodedJsonKeywordParamTest() throws Exception {
         withAnnotationHits();
 
-        givenQueryParameter(KEYWORDS_PARAMETER, URLEncoder.encode("[\"w1\", \"d1\"]", StandardCharsets.UTF_8));
+        givenParameter(KEYWORDS_PARAMETER, URLEncoder.encode("[\"w1\", \"d1\"]", StandardCharsets.UTF_8));
         givenAnnotation(buildAnnotation(S2, S3, S4, S1, S5, S8, S6, S7, S9));
 
         givenQuery("UUID=='CAPONE'");
-        givenStartDate("20091231");
-        givenEndDate("20150101");
 
         AnnotationHitsTransformer.SegmentHit hit2 = new AnnotationHitsTransformer.SegmentHit(S6.getBoundary(), S6.getBoundary(), 0);
         hit2.setContextEnd(S9.getBoundary());
@@ -886,9 +786,7 @@ public abstract class ShardQueryLogicTest {
         givenAnnotation(buildAnnotation(S2, S3, S4, S1, S5, S8, S6, S7, S9));
 
         givenQuery("UUID=='CAPONE' || UUID=='w1' || UUID=='d1'");
-        givenStartDate("20091231");
-        givenEndDate("20150101");
-        givenQueryParameter(MIN_SCORE_PARAMETER, ".6");
+        givenParameter(MIN_SCORE_PARAMETER, ".6");
 
         // eliminates hit 1 because it is lower than .6
         // .9 > .6
@@ -914,9 +812,7 @@ public abstract class ShardQueryLogicTest {
         givenAnnotation(buildAnnotation(S2, S3, S4, S1, S5, S8, S6, S7, S9));
 
         givenQuery("UUID=='CAPONE' || UUID=='w1' || UUID=='d1'");
-        givenStartDate("20091231");
-        givenEndDate("20150101");
-        givenQueryParameter(MIN_SCORE_PARAMETER, ".61");
+        givenParameter(MIN_SCORE_PARAMETER, ".61");
 
         // eliminates hit 1 because it is lower than .6
         // eliminates hit 3 because it is lower than .61
@@ -940,9 +836,7 @@ public abstract class ShardQueryLogicTest {
         givenAnnotation(buildAnnotation(S1, S2, S3, S4, S5, S6, S7, S8, S9));
 
         givenQuery("UUID=='CAPONE'");
-        givenStartDate("20091231");
-        givenEndDate("20150101");
-        givenQueryParameter(CONTEXT_SIZE_PARAMETER, "1");
+        givenParameter(CONTEXT_SIZE_PARAMETER, "1");
 
         AnnotationHitsTransformer.SegmentHit hit = new AnnotationHitsTransformer.SegmentHit(S9.getBoundary(), S1.getBoundary(), 0);
         hit.setContextEnd(S2.getBoundary());
@@ -964,9 +858,7 @@ public abstract class ShardQueryLogicTest {
         givenAnnotation(buildAnnotation(S1, S2, S3, S4, S5, S6, S7, S8, S9));
 
         givenQuery("UUID=='CAPONE'");
-        givenStartDate("20091231");
-        givenEndDate("20150101");
-        givenQueryParameter(CONTEXT_SIZE_PARAMETER, "-1");
+        givenParameter(CONTEXT_SIZE_PARAMETER, "-1");
 
         AnnotationHitsTransformer.SegmentHit hit = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), S1.getBoundary(), 0);
         hit.setContextEnd(S1.getBoundary());
@@ -988,9 +880,7 @@ public abstract class ShardQueryLogicTest {
         givenAnnotation(buildAnnotation(S1, S2, S3, S4, S5, S6, S7, S8, S9));
 
         givenQuery("UUID=='CAPONE'");
-        givenStartDate("20091231");
-        givenEndDate("20150101");
-        givenQueryParameter(CONTEXT_SIZE_PARAMETER, "4");
+        givenParameter(CONTEXT_SIZE_PARAMETER, "4");
 
         AnnotationHitsTransformer.SegmentHit hit = new AnnotationHitsTransformer.SegmentHit(S7.getBoundary(), S1.getBoundary(), 0);
         hit.setContextEnd(S4.getBoundary());
@@ -1013,8 +903,6 @@ public abstract class ShardQueryLogicTest {
         givenAnnotation(buildAnnotation(S1, S2, S3, S4, S5, S6, S7, S8, S9));
 
         givenQuery("UUID=='CAPONE'");
-        givenStartDate("20091231");
-        givenEndDate("20150101");
 
         expectField(caponeUID, "ALL_HITS_RESULTS",
                         "[{\"annotationId\":\"71D4C8BE\",\"maxTermHitConfidence\":0.0,\"keywordResultList\":[],\"error\":\"test failure\"}]");
@@ -1030,8 +918,6 @@ public abstract class ShardQueryLogicTest {
         givenAnnotation(buildAnnotation("ANNO2", "capone", "abc", S1));
 
         givenQuery("UUID=='CAPONE'");
-        givenStartDate("20091231");
-        givenEndDate("20150101");
 
         expectNoField(caponeUID, "ALL_HITS_RESULTS");
 
@@ -1047,8 +933,6 @@ public abstract class ShardQueryLogicTest {
         givenAnnotation(buildAnnotation("ANNO1", "capone2", "abcd", S1, S2));
 
         givenQuery("UUID=='CAPONE'");
-        givenStartDate("20091231");
-        givenEndDate("20150101");
 
         AnnotationHitsTransformer.SegmentHit hit1 = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), S1.getBoundary(), 0);
         hit1.setContextEnd(S1.getBoundary());
@@ -1076,8 +960,6 @@ public abstract class ShardQueryLogicTest {
 
         // capo.* is expanded in query planning to capone
         givenQuery("UUID =~ 'CAPO.*'");
-        givenStartDate("20091231");
-        givenEndDate("20150101");
 
         AnnotationHitsTransformer.SegmentHit hit1 = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), S1.getBoundary(), 0);
         hit1.setContextEnd(S1.getBoundary());
@@ -1104,8 +986,6 @@ public abstract class ShardQueryLogicTest {
         givenAnnotation(buildAnnotation("ANNO1", "capone", "abc", S1, wildcard));
 
         givenQuery("UUID =~ 'CAP.*'");
-        givenStartDate("20091231");
-        givenEndDate("20150101");
 
         AnnotationHitsTransformer.SegmentHit hit1 = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), S1.getBoundary(), 0);
         hit1.setContextEnd(wildcard.getBoundary());
@@ -1130,11 +1010,9 @@ public abstract class ShardQueryLogicTest {
 
         givenAnnotation(buildAnnotation("ANNO1", "capone", "abc", S1));
 
-        givenQueryParameter(TIMEUNIT_PARAMETER, TimeUnit.SECONDS.toString());
+        givenParameter(TIMEUNIT_PARAMETER, TimeUnit.SECONDS.toString());
 
         givenQuery("UUID=='CAPONE'");
-        givenStartDate("20091231");
-        givenEndDate("20150101");
 
         AnnotationHitsTransformer.SegmentHit hit1 = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), S1.getBoundary(), 0);
         hit1.setContextEnd(S1.getBoundary());
@@ -1158,11 +1036,9 @@ public abstract class ShardQueryLogicTest {
 
         givenAnnotation(buildAnnotation("ANNO1", "capone", "abc", S1));
 
-        givenQueryParameter(TIMEUNIT_PARAMETER, TimeUnit.MICROSECONDS.toString());
+        givenParameter(TIMEUNIT_PARAMETER, TimeUnit.MICROSECONDS.toString());
 
         givenQuery("UUID=='CAPONE'");
-        givenStartDate("20091231");
-        givenEndDate("20150101");
 
         AnnotationHitsTransformer.SegmentHit hit1 = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), S1.getBoundary(), 0);
         hit1.setContextEnd(S1.getBoundary());
@@ -1188,11 +1064,9 @@ public abstract class ShardQueryLogicTest {
 
         givenAnnotation(buildAnnotation("ANNO1", "capone", "abc", S1));
 
-        givenQueryParameter(TIMEUNIT_PARAMETER, TimeUnit.MICROSECONDS.toString());
-        givenQueryParameter(QueryParameters.QUERY_SYNTAX, "LUCENE");
+        givenParameter(TIMEUNIT_PARAMETER, TimeUnit.MICROSECONDS.toString());
+        givenParameter(QueryParameters.QUERY_SYNTAX, "LUCENE");
         givenQuery("CAPONE");
-        givenStartDate("20091231");
-        givenEndDate("20150101");
 
         AnnotationHitsTransformer.SegmentHit hit1 = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), S1.getBoundary(), 0);
         hit1.setContextEnd(S1.getBoundary());
@@ -1218,11 +1092,9 @@ public abstract class ShardQueryLogicTest {
 
         givenAnnotation(buildAnnotation("ANNO1", "capone", "abc", S1));
 
-        givenQueryParameter(TIMEUNIT_PARAMETER, TimeUnit.MICROSECONDS.toString());
-        givenQueryParameter(QueryParameters.QUERY_SYNTAX, "LUCENE");
+        givenParameter(TIMEUNIT_PARAMETER, TimeUnit.MICROSECONDS.toString());
+        givenParameter(QueryParameters.QUERY_SYNTAX, "LUCENE");
         givenQuery("UUID:CAPONE");
-        givenStartDate("20091231");
-        givenEndDate("20150101");
 
         AnnotationHitsTransformer.SegmentHit hit1 = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), S1.getBoundary(), 0);
         hit1.setContextEnd(S1.getBoundary());
@@ -1271,8 +1143,6 @@ public abstract class ShardQueryLogicTest {
                         1356998400000L), new Value());
 
         givenQuery("UUID=='CAPONE'");
-        givenStartDate("20091231");
-        givenEndDate("20150101");
 
         AnnotationHitsTransformer.SegmentHit hit = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), S1.getBoundary(), 0);
         hit.setContextEnd(S4.getBoundary());
@@ -1360,7 +1230,7 @@ public abstract class ShardQueryLogicTest {
         logic.getAllHitsQueryConfig().getAnnotationConfig().setAnnotationSourceTableName("annotationSource");
         logic.getAllHitsQueryConfig().getAnnotationConfig().setTimestampTransformer(new DefaultTimestampTransformer());
         logic.getAllHitsQueryConfig().getAnnotationConfig().setVisibilityTransformer(new DefaultVisibilityTransformer());
-        givenQueryParameter(ENABLED_PARAMETER, "true");
+        givenParameter(ENABLED_PARAMETER, "true");
     }
 
     private AllHits getExpectedAnnotationHits(String annotationId, List<AnnotationHitsTransformer.SegmentHit> sortedHits,
@@ -1427,21 +1297,5 @@ public abstract class ShardQueryLogicTest {
     private void expectField(String id, String field, String value) {
         Map<String,String> fieldMap = expectedFields.computeIfAbsent(id, x -> new HashMap<>());
         fieldMap.put(field, value);
-    }
-
-    private void givenQuery(String query) {
-        this.query = query;
-    }
-
-    private void givenQueryParameter(String parameter, String value) {
-        this.queryParameters.put(parameter, value);
-    }
-
-    private void givenStartDate(String date) throws ParseException {
-        this.startDate = dateFormat.parse(date);
-    }
-
-    private void givenEndDate(String date) throws ParseException {
-        this.endDate = dateFormat.parse(date);
     }
 }

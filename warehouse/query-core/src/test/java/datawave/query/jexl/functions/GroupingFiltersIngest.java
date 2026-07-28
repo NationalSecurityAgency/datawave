@@ -21,7 +21,7 @@ import datawave.data.type.Type;
 import datawave.ingest.protobuf.Uid;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.index.day.IndexIngestUtil;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 
 public class GroupingFiltersIngest {
 
@@ -43,7 +43,7 @@ public class GroupingFiltersIngest {
     public static final String sopranoUID = UID.builder().newId("Soprano".getBytes(), (Date) null).toString();
     public static final String caponeUID = UID.builder().newId("Capone".getBytes(), (Date) null).toString();
 
-    private static final Authorizations auths = new Authorizations("ALL");
+    private static final Authorizations auths = new Authorizations("ALL", "E", "I");
 
     private static final IndexIngestUtil ingestUtil = new IndexIngestUtil();
 

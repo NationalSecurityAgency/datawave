@@ -13,6 +13,8 @@
     <bean id="AnnotationConfig" scope="prototype" class="datawave.query.config.annotation.AnnotationConfig">
         <property name="annotationTableName" value="annotation"/>
         <property name="annotationSourceTableName" value="annotationSource"/>
+        <property name="truthmarkTableName" value="truthmark"/>
+        <property name="truthmarkSourceTableName" value="truthmarkSource"/>
         <property name="visibilityTransformer">
             <bean class="datawave.annotation.data.transform.DefaultVisibilityTransformer"/>
         </property>

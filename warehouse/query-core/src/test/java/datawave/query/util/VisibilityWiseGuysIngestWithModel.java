@@ -25,8 +25,8 @@ import datawave.data.type.Type;
 import datawave.ingest.protobuf.Uid;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.index.day.IndexIngestUtil;
+import datawave.table.constants.TableName;
 import datawave.test.MacTestUtil;
-import datawave.util.TableName;
 
 public class VisibilityWiseGuysIngestWithModel {
 
