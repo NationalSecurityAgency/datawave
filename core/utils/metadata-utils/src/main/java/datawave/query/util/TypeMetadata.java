@@ -3,6 +3,7 @@ package datawave.query.util;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -487,8 +488,13 @@ public class TypeMetadata implements Serializable, KryoSerializable {
     }
 
     /**
-     * Writes this instance directly from its underlying {@code typeMetadata} map, avoiding the {@link #toString()} round trip (and its mini-map bookkeeping)
-     * that {@link #writeObject(ObjectOutputStream)} relies on.
+     * Writes this instance in the binary equivalent of the form described by {@link #fromString(String)}: an ingest type mini-map, a normalizer type mini-map,
+     * then one entry per field name holding its {@code ingestTypeIndex:normalizerTypeIndex} pairs as variable length ints. Each name is written exactly once,
+     * which matters because a normalizer type name is otherwise repeated for every field it is held against. The mini-maps are populated as a side effect, as
+     * they are by {@link #toString()}.
+     * <p>
+     * Unlike {@link #writeObject(ObjectOutputStream)} this bypasses {@link #toString()}, building the mini-maps against the underlying {@code typeMetadata} map
+     * rather than through a {@link StringBuilder}.
      *
      * @param kryo
      *            the kryo instance
@@ -497,21 +503,57 @@ public class TypeMetadata implements Serializable, KryoSerializable {
      */
     @Override
     public void write(Kryo kryo, Output output) {
-        output.writeInt(typeMetadata.size(), true);
+        // the ingest types actually referenced below, sorted so the assigned indices are stable across instances
+        Set<String> ingestTypes = new TreeSet<>(typeMetadata.keySet());
+        Map<String,Integer> ingestTypeIndices = new TreeMap<>();
+        output.writeInt(ingestTypes.size(), true);
+        for (String ingestType : ingestTypes) {
+            output.writeString(ingestType);
+            ingestTypeIndices.put(ingestType, ingestTypeIndices.size());
+        }
+        setIngestTypesMiniMap(ingestTypeIndices);
+
+        Set<String> dataTypes = new TreeSet<>();
+        for (Multimap<String,String> fieldMap : typeMetadata.values()) {
+            dataTypes.addAll(fieldMap.values());
+        }
+        Map<String,Integer> dataTypeIndices = new TreeMap<>();
+        output.writeInt(dataTypes.size(), true);
+        for (String dataType : dataTypes) {
+            output.writeString(dataType);
+            dataTypeIndices.put(dataType, dataTypeIndices.size());
+        }
+        setDataTypesMiniMap(dataTypeIndices);
+
+        // invert the ingest type major typeMetadata into the field major order written below, in a single pass over
+        // its entries rather than a lookup per field per ingest type. Field names come from typeMetadata rather than
+        // the fieldNames member because filter() populates the former without the latter.
+        Map<String,List<Integer>> pairsByField = new TreeMap<>();
         for (Entry<String,Multimap<String,String>> ingestEntry : typeMetadata.entrySet()) {
-            output.writeString(ingestEntry.getKey());
-            Collection<Entry<String,String>> entries = ingestEntry.getValue().entries();
-            output.writeInt(entries.size(), true);
-            for (Entry<String,String> fieldEntry : entries) {
-                output.writeString(fieldEntry.getKey());
-                output.writeString(fieldEntry.getValue());
+            Integer ingestTypeIndex = ingestTypeIndices.get(ingestEntry.getKey());
+            for (Entry<String,Collection<String>> fieldEntry : ingestEntry.getValue().asMap().entrySet()) {
+                List<Integer> pairs = pairsByField.computeIfAbsent(fieldEntry.getKey(), field -> new ArrayList<>());
+                for (String dataType : fieldEntry.getValue()) {
+                    pairs.add(ingestTypeIndex);
+                    pairs.add(dataTypeIndices.get(dataType));
+                }
+            }
+        }
+
+        output.writeInt(pairsByField.size(), true);
+        for (Entry<String,List<Integer>> fieldEntry : pairsByField.entrySet()) {
+            output.writeString(fieldEntry.getKey());
+            List<Integer> pairs = fieldEntry.getValue();
+            output.writeInt(pairs.size() / 2, true);
+            for (Integer index : pairs) {
+                output.writeInt(index, true);
             }
         }
     }
 
     /**
-     * Reads this instance directly into its underlying {@code typeMetadata} map, avoiding the {@link #fromString(String)} parse (and its repeated index-to-name
-     * map lookups) that {@link #readObject(ObjectInputStream)} relies on.
+     * Reads this instance from the form written by {@link #write(Kryo, Output)}, resolving each index pair against the two mini-maps held as arrays, so that
+     * every field entry is an O(1) lookup rather than the repeated map lookups {@link #fromString(String)} performs.
      *
      * @param kryo
      *            the kryo instance
@@ -526,19 +568,28 @@ public class TypeMetadata implements Serializable, KryoSerializable {
         this.ingestTypesMiniMap = new TreeMap<>();
         this.dataTypesMiniMap = new TreeMap<>();
 
-        int numIngestTypes = input.readInt(true);
-        for (int i = 0; i < numIngestTypes; i++) {
-            String ingestType = input.readString();
-            int numEntries = input.readInt(true);
-            Multimap<String,String> fieldMap = HashMultimap.create();
-            for (int j = 0; j < numEntries; j++) {
-                String fieldName = input.readString();
-                String dataType = input.readString();
-                fieldMap.put(fieldName, dataType);
-                this.fieldNames.add(fieldName);
+        String[] ingestTypesByIndex = new String[input.readInt(true)];
+        for (int i = 0; i < ingestTypesByIndex.length; i++) {
+            ingestTypesByIndex[i] = input.readString();
+            this.ingestTypesMiniMap.put(ingestTypesByIndex[i], i);
+        }
+
+        String[] dataTypesByIndex = new String[input.readInt(true)];
+        for (int i = 0; i < dataTypesByIndex.length; i++) {
+            dataTypesByIndex[i] = input.readString();
+            this.dataTypesMiniMap.put(dataTypesByIndex[i], i);
+        }
+
+        int numFields = input.readInt(true);
+        for (int i = 0; i < numFields; i++) {
+            String fieldName = input.readString();
+            int pairs = input.readInt(true);
+            for (int j = 0; j < pairs; j++) {
+                String ingestType = ingestTypesByIndex[input.readInt(true)];
+                String dataType = dataTypesByIndex[input.readInt(true)];
+                this.addTypeMetadata(fieldName, ingestType, dataType);
             }
-            this.typeMetadata.put(ingestType, fieldMap);
-            this.ingestTypes.add(ingestType);
+            this.fieldNames.add(fieldName);
         }
     }
 

@@ -3,6 +3,7 @@ package datawave.query.util;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -23,7 +24,7 @@ import com.esotericsoftware.kryo.io.Output;
  * {@code new TypeMetadata(String)} text format, versus native Kryo serialization via {@link TypeMetadata#write(Kryo, Output)} /
  * {@link TypeMetadata#read(Kryo, Input)}. Runs across a matrix of small/medium/large datatype counts and field counts, since the two serialization approaches
  * scale differently with each dimension. This isn't a strict pass/fail gate on timing (wall-clock timing is noisy in CI); it verifies both round trips produce
- * an equivalent instance and prints the relative throughput of each combination.
+ * an equivalent instance, and prints the relative throughput and payload size of each combination.
  * <p>
  * The matrix combinations are shuffled before running so that no single ordering (e.g. always smallest-first) biases JIT warmup across combinations, but
  * results are collected and printed in sorted order afterward so the report is easy to read.
@@ -32,7 +33,10 @@ public class TypeMetadataSerializationPerformanceTest {
 
     private static final int[] DATATYPE_COUNTS = {1, 5, 20};
     private static final int[] FIELD_COUNTS = {25, 250, 2_500};
-    private static final String[] NORMALIZERS = {"LcNoDiacriticsType", "NumberType", "DateType", "GeometryType"};
+    // fully qualified, as they are in a TypeMetadata built from the metadata table, since their length is what the
+    // mini-map convention saves on and a short name would understate it
+    private static final String[] NORMALIZERS = {"datawave.data.type.LcNoDiacriticsType", "datawave.data.type.NumberType", "datawave.data.type.DateType",
+            "datawave.data.type.GeometryType"};
 
     // total field entries processed per timed round trip, held roughly constant across the matrix so the smallest
     // combination doesn't run for a trivial fraction of a millisecond and the largest doesn't dominate the build
@@ -49,17 +53,25 @@ public class TypeMetadataSerializationPerformanceTest {
         private final int iterations;
         private final double stringMsPerOp;
         private final double kryoMsPerOp;
+        private final int stringBytes;
+        private final int kryoBytes;
 
-        private Result(int datatypeCount, int fieldCount, int iterations, double stringMsPerOp, double kryoMsPerOp) {
+        private Result(int datatypeCount, int fieldCount, int iterations, double stringMsPerOp, double kryoMsPerOp, int stringBytes, int kryoBytes) {
             this.datatypeCount = datatypeCount;
             this.fieldCount = fieldCount;
             this.iterations = iterations;
             this.stringMsPerOp = stringMsPerOp;
             this.kryoMsPerOp = kryoMsPerOp;
+            this.stringBytes = stringBytes;
+            this.kryoBytes = kryoBytes;
         }
 
         private double speedup() {
             return stringMsPerOp / kryoMsPerOp;
+        }
+
+        private double relativeSize() {
+            return (double) kryoBytes / stringBytes;
         }
     }
 
@@ -83,8 +95,11 @@ public class TypeMetadataSerializationPerformanceTest {
 
         System.out.println("TypeMetadata serialization round-trip: toString()/fromString() vs Kryo");
         for (Result result : sorted) {
-            System.out.printf("%2d datatypes x %5d fields (%d iterations): toString/fromString=%.4f ms/op, Kryo=%.4f ms/op, speedup=%.2fx%n",
-                            result.datatypeCount, result.fieldCount, result.iterations, result.stringMsPerOp, result.kryoMsPerOp, result.speedup());
+            System.out.printf(
+                            "%2d datatypes x %5d fields (%d iterations): toString/fromString=%.4f ms/op, Kryo=%.4f ms/op, speedup=%.2fx, "
+                                            + "toString=%d bytes, Kryo=%d bytes, relative size=%.2fx%n",
+                            result.datatypeCount, result.fieldCount, result.iterations, result.stringMsPerOp, result.kryoMsPerOp, result.speedup(),
+                            result.stringBytes, result.kryoBytes, result.relativeSize());
         }
     }
 
@@ -161,6 +176,9 @@ public class TypeMetadataSerializationPerformanceTest {
         double stringMsPerOp = (stringElapsedNanos / 1_000_000.0) / iterations;
         double kryoMsPerOp = (kryoElapsedNanos / 1_000_000.0) / iterations;
 
-        RESULTS.add(new Result(datatypeCount, fieldCount, iterations, stringMsPerOp, kryoMsPerOp));
+        int stringBytes = original.toString().getBytes(StandardCharsets.UTF_8).length;
+        int kryoBytes = toKryoBytes(kryo, original).length;
+
+        RESULTS.add(new Result(datatypeCount, fieldCount, iterations, stringMsPerOp, kryoMsPerOp, stringBytes, kryoBytes));
     }
 }
