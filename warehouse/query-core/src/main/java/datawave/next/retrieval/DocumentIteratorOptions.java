@@ -78,7 +78,7 @@ public class DocumentIteratorOptions implements OptionDescriber {
     protected String query;
     protected boolean compressedOptions = false;
     // not thread-safe; consistent with the rest of this class's per-instance state
-    private final TypeMetadataSerializer typeMetadataSerializer = new TypeMetadataSerializer();
+    private final transient TypeMetadataSerializer typeMetadataSerializer = new TypeMetadataSerializer();
     protected TypeMetadata typeMetadata;
     protected CompositeMetadata compositeMetadata;
     protected LongRange timeFilter;

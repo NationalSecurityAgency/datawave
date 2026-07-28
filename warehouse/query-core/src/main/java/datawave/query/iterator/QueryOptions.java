@@ -305,7 +305,7 @@ public class QueryOptions implements OptionDescriber {
     protected TypeMetadata typeMetadata = new TypeMetadata();
     // reused across calls to validateTypeMetadata; not thread-safe, so deliberately not copied by deepCopy() -
     // each QueryOptions (and each deep copy of it) gets its own instance via this field initializer
-    private final TypeMetadataSerializer typeMetadataSerializer = new TypeMetadataSerializer();
+    private final transient TypeMetadataSerializer typeMetadataSerializer = new TypeMetadataSerializer();
     protected Set<String> typeMetadataAuthsKey = Sets.newHashSet();
     protected CompositeMetadata compositeMetadata = null;
     protected int compositeSeekThreshold = 10;

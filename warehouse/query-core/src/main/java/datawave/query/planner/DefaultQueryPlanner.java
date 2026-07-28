@@ -318,7 +318,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     protected CompositeMetadata compositeMetadata;
     protected TypeMetadata typeMetadata;
     // reused across calls to configureTypeMappings; not thread-safe, so each DefaultQueryPlanner (and clone) gets its own instance
-    private final TypeMetadataSerializer typeMetadataSerializer = new TypeMetadataSerializer();
+    private final transient TypeMetadataSerializer typeMetadataSerializer = new TypeMetadataSerializer();
     protected String contentExpansionFields;
     protected String serializedIvaratorDirs;
     protected Set<String> indexedFields;

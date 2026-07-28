@@ -93,7 +93,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
 
     private TypeMetadata cachedTypeMetadata = null;
     // not thread-safe; consistent with cachedTypeMetadata above, this assumes a VisitorFunction instance is confined to a single thread
-    private final TypeMetadataSerializer typeMetadataSerializer = new TypeMetadataSerializer();
+    private final transient TypeMetadataSerializer typeMetadataSerializer = new TypeMetadataSerializer();
 
     private static final Logger log = Logger.getLogger(VisitorFunction.class);
 
