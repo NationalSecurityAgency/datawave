@@ -72,8 +72,22 @@ public class UniqueTransformMostRecentTest extends UniqueTransformTest {
      * assertions do not apply here.
      */
     @Override
+    @Test
     @Ignore
-    public void testIntermediateResultsArePaced_afterPageTimerReset() {}
+    public void testIntermediateResultsArePaced_afterPageTimerReset() {
+        // addressed in pull #3740
+    }
+
+    /**
+     * The mostRecent path never returns a "real" unique result and currently never emits an intermediate result at all, so the base class's page-timer-reset
+     * assertions do not apply here.
+     */
+    @Override
+    @Test
+    @Ignore
+    public void testRealAndIntermediateResultsResumeAfterPageTimerReset() {
+        // addressed in pull #3740
+    }
 
     /**
      * Verify that field matching is case-insensitive. Query: #UNIQUE(attr0, Attr1, ATTR2)
