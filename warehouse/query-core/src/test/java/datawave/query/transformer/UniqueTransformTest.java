@@ -513,6 +513,28 @@ public class UniqueTransformTest {
         }
     }
 
+    /**
+     * The tserver-side iterator path must not emit intermediate results, even once the page timeout has elapsed. Nothing on the tserver sets a page start time,
+     * and {@link Document#isIntermediateResult()} is not carried across serialization, so an intermediate result emitted there would reach the web server as an
+     * ordinary empty document and be mistaken for a real one.
+     */
+    @Test
+    public void testIntermediateResultsAreNotEmittedOnTheIteratorPath() {
+        givenInputDocument(1).withKeyValue("ATTR0", randomValues.get(0));
+        givenInputDocument(2).withKeyValue("ATTR0", randomValues.get(1));
+        givenInputDocument(3).withKeyValue("ATTR0", randomValues.get(0));
+
+        givenValueTransformerForFields(TemporalGranularity.ALL, "ATTR0");
+
+        // the tserver never sets a page start time, so any elapsed time exceeds this timeout
+        List<Document> documents = getUniqueDocuments(inputDocuments, getUniqueTransform(1L));
+
+        for (Document document : documents) {
+            assertFalse("The iterator path must not emit intermediate results", document.isIntermediateResult());
+        }
+        assertEquals("Unexpected number of unique documents", 2, documents.size());
+    }
+
     protected void assertUniqueDocuments() {
         List<Document> actual = getUniqueDocumentsWithUpdateConfigCalls(inputDocuments);
         Collections.sort(expectedUniqueDocuments);
@@ -529,12 +551,19 @@ public class UniqueTransformTest {
     }
 
     protected List<Document> getUniqueDocuments(List<Document> documents) {
+        return getUniqueDocuments(documents, getUniqueTransform());
+    }
+
+    protected List<Document> getUniqueDocuments(List<Document> documents, UniqueTransform uniqueTransform) {
         Transformer<Document,Map.Entry<Key,Document>> docToEntry = document -> Maps.immutableEntry(document.getMetadata(), document);
         TransformIterator<Document,Map.Entry<Key,Document>> inputIterator = new TransformIterator<>(documents.iterator(), docToEntry);
-        UniqueTransform uniqueTransform = getUniqueTransform();
         Iterator<Map.Entry<Key,Document>> resultIterator = uniqueTransform.getIterator(inputIterator, null);
-        return StreamSupport.stream(Spliterators.spliteratorUnknownSize(resultIterator, Spliterator.ORDERED), false).filter(Objects::nonNull)
-                        .map(Map.Entry::getValue).collect(Collectors.toList());
+        // @formatter:off
+        return StreamSupport.stream(Spliterators.spliteratorUnknownSize(resultIterator, Spliterator.ORDERED), false)
+                .filter(Objects::nonNull)
+                .map(Map.Entry::getValue)
+                .collect(Collectors.toList());
+        // @formatter:on
     }
 
     protected List<Document> getUniqueDocumentsWithUpdateConfigCalls(List<Document> documents) {

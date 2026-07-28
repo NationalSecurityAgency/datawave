@@ -6,6 +6,7 @@ import static org.junit.Assert.assertTrue;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.time.Clock;
 import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
@@ -28,6 +29,8 @@ import datawave.query.util.sortedset.FileSortedSet;
 public class UniqueTransformMostRecentTest extends UniqueTransformTest {
 
     protected ShardQueryLogic logic = new ShardQueryLogic();
+
+    private final Clock clock = Clock.systemUTC();
 
     @ClassRule
     public static TemporaryFolder temporaryFolder = new TemporaryFolder();
@@ -111,7 +114,7 @@ public class UniqueTransformMostRecentTest extends UniqueTransformTest {
 
         // 1s page timeout, and pretend the page started well in the past so the timeout is already exceeded.
         UniqueTransform uniqueTransform = getUniqueTransform(1000L);
-        uniqueTransform.setQueryExecutionForPageStartTime(System.currentTimeMillis() - 10_000L);
+        uniqueTransform.setQueryExecutionForPageStartTime(clock.millis() - 10_000L);
 
         int intermediate = 0;
         for (Document document : inputDocuments) {
