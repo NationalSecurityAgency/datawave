@@ -59,7 +59,7 @@ import datawave.query.util.TestIndexTableNames;
 import datawave.query.util.VisibilityWiseGuysIngest;
 import datawave.query.util.VisibilityWiseGuysIngestWithModel;
 import datawave.query.util.VisibilityWiseGuysNoGroupingIngestWithModel;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
 import datawave.webservice.result.DefaultEventQueryResponse;

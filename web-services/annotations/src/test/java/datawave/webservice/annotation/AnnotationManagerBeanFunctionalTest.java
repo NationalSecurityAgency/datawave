@@ -65,7 +65,6 @@ import datawave.core.query.logic.QueryLogicFactory;
 import datawave.core.query.result.event.DefaultResponseObjectFactory;
 import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
-import datawave.query.ExcerptTest;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.util.WiseGuysIngest;
@@ -73,7 +72,7 @@ import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.authorization.UserOperations;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.query.runner.AccumuloConnectionRequestBean;
 import datawave.webservice.query.runner.QueryExecutorBean;
@@ -152,7 +151,7 @@ public class AnnotationManagerBeanFunctionalTest {
     @BeforeClass
     public static void setupTestData() throws Exception {
 
-        QueryTestTableHelper queryTestTableHelper = new QueryTestTableHelper(ExcerptTest.DocumentRangeTest.class.toString(), log);
+        QueryTestTableHelper queryTestTableHelper = new QueryTestTableHelper(AnnotationManagerBeanFunctionalTest.class.toString(), log);
         client = queryTestTableHelper.client;
 
         String annotationTableName = "annotation";

@@ -2,7 +2,7 @@ package datawave.metrics.config;
 
 import java.util.concurrent.TimeUnit;
 
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 
 public class MetricsConfig {
     public static final String MTX = "metrics.";

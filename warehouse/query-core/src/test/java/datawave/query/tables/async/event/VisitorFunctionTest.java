@@ -41,7 +41,7 @@ import datawave.query.tables.async.ScannerChunk;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.MockMetadataHelper;
 import datawave.query.util.TypeMetadata;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 
 public class VisitorFunctionTest extends EasyMockSupport {
     private VisitorFunction function;

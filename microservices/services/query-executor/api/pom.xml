@@ -22,16 +22,14 @@
         <version.datawave>7.37.3</version.datawave>
         <version.datawave.starter-query>1.0.12</version.datawave.starter-query>
         <version.jakarta>2.3.3</version.jakarta>
+        <!-- dependency declared in datawave-microservice-parent, but the version can be overridden here -->
+        <version.log4j>2.26.1</version.log4j>
+        <!-- this version should be compatible with the version that spring boot is using -->
+        <version.springframework>5.3.39</version.springframework>
+        <version.validation-api>2.0.2</version.validation-api>
     </properties>
     <dependencyManagement>
         <dependencies>
-            <dependency>
-                <groupId>gov.nsa.datawave.microservice</groupId>
-                <artifactId>spring-boot-starter-datawave-query</artifactId>
-                <version>${version.datawave.starter-query}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.core</groupId>
                 <artifactId>base-rest-responses</artifactId>
@@ -43,6 +41,11 @@
                 <version>${version.datawave}</version>
             </dependency>
             <dependency>
+                <groupId>jakarta.validation</groupId>
+                <artifactId>jakarta.validation-api</artifactId>
+                <version>${version.validation-api}</version>
+            </dependency>
+            <dependency>
                 <groupId>jakarta.xml.bind</groupId>
                 <artifactId>jakarta.xml.bind-api</artifactId>
                 <version>${version.jakarta}</version>
@@ -51,6 +54,11 @@
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-lang3</artifactId>
                 <version>${version.commons-lang3}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework</groupId>
+                <artifactId>spring-context</artifactId>
+                <version>${version.springframework}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
