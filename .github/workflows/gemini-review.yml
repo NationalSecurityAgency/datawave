@@ -103,7 +103,7 @@ jobs:
 
       - name: 'Install Extensions'
         run: |
-          echo "Y" | gemini extensions install "https://github.com/gemini-cli-extensions/code-review"
+          gemini extensions install "https://github.com/gemini-cli-extensions/code-review" --consent --skip-settings
 
       - name: 'Authenticate to Google Cloud'
         if: |-
