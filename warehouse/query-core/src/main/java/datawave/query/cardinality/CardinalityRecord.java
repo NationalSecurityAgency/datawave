@@ -248,7 +248,6 @@ public class CardinalityRecord implements Serializable {
                         log.error(e.getMessage(), e);
                     } finally {
                         IOUtils.closeQuietly(oos);
-                        file.notifyAll();
                     }
                 }
             });
