@@ -42,8 +42,16 @@ public class CountingShardQueryLogic extends ShardQueryLogic {
         super();
     }
 
+    /**
+     * Copy constructor. The aggregating iterator is deliberately not copied, so that a copy does not close the thread belonging to the logic it was copied
+     * from.
+     *
+     * @param other
+     *            the logic to copy
+     */
     public CountingShardQueryLogic(CountingShardQueryLogic other) {
         super(other);
+        this.setPageWaitTimeMillis(other.getPageWaitTimeMillis());
     }
 
     @Override
