@@ -1,4 +1,4 @@
-package datawave.webservice.zookeeper;
+package datawave.zookeeper;
 
 /**
  * An interface for defining a validator that can be provided to a {@link ZkObjectPublisher} for pre-validating any updated objects before publishing them to

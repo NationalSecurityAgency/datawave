@@ -3,7 +3,6 @@ package datawave.webservice.query.limit;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
@@ -27,7 +26,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import datawave.webservice.zookeeper.ZkObjectPublisher;
+import datawave.zookeeper.ZkObjectPublisher;
 
 /**
  * Test cases for testing the functionality of {@link QueryLimiter}.
@@ -103,28 +102,8 @@ class QueryLimiterTest {
         config.setDefaultUserQueryLimit(0);
         limiter.setConfiguration(config);
 
-        assertThatThrownBy(limiter::setup).isInstanceOf(IllegalArgumentException.class).hasMessage("Default user query limit must be greater than 0");
-    }
-
-    /**
-     * Verify that {@link QueryLimiter#setup()} will load a configuration from zookeeper if one was not supplied via injection.
-     */
-    @Test
-    void testInitialConfigurationSuppliedByZookeeper() throws Exception {
-        ZkObjectPublisher publisher = new ZkObjectPublisher(PUBLISHER_NAMESPACE, server.getConnectString(), null, QueryLimitConfiguration.class,
-                        List.of(new QueryLimitConfigurationValidator()));
-
-        QueryLimiter limiter = new QueryLimiter();
-        limiter.setZookeeperConfig(server.getConnectString());
-        limiter.setConfigPublisher(publisher);
-        limiter.setHeartbeatCache(heartbeatCache);
-
-        try (CuratorFramework client = createReloaderClient()) {
-            client.create().forPath("/path", validJsonFile.getBytes());
-        }
-
-        limiter.setup();
-        assertNotNull(limiter.getConfiguration());
+        assertThatThrownBy(limiter::setup).isInstanceOf(QueryLimitException.class).hasMessage("Activation failed.")
+                        .hasRootCauseInstanceOf(IllegalArgumentException.class).hasRootCauseMessage("Default user query limit must be greater than 0");
     }
 
     /**

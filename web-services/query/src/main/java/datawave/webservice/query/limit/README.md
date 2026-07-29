@@ -49,7 +49,7 @@ When using regex patterns in the configurations above, there is the possibility 
 
 ## Dynamic Configuration Updates
 
-The configuration for the `QueryLimiter` may be updated dynamically through Zookeeper. When the `QueryLimiter` is configured with a [ZkObjectPublisher](../../zookeeper/ZkObjectPublisher.java), it will subscribe to updates publisher. When the publisher receives a triggering event, it will attempt to load a new `QueryLimitConfiguration` from the configured file. See the [ZkObjectPublisher README](../../zookeeper/README.md) for more details. 
+The `QueryLimitConfiguration` for the `QueryLimiter` may be updated dynamically through Zookeeper. When the `QueryLimiter` is configured with a [ZkObjectPublisher](../../../zookeeper/ZkObjectPublisher.java), it will subscribe to updates from that publisher. When the publisher receives a triggering event, it will attempt to load a new `QueryLimitConfiguration` from the configured file. See the [ZkObjectPublisher README](../../../zookeeper/README.md) for more details. 
 
 ## Implementation
 

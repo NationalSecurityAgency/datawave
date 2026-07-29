@@ -1,4 +1,4 @@
-package datawave.webservice.zookeeper;
+package datawave.zookeeper;
 
 import java.net.URI;
 import java.nio.file.Files;

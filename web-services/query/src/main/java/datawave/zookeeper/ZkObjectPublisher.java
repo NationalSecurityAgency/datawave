@@ -1,4 +1,4 @@
-package datawave.webservice.zookeeper;
+package datawave.zookeeper;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -212,9 +212,9 @@ public class ZkObjectPublisher {
     // @formatter:on
 
     /**
-     * The client dispatcher.
+     * The client.
      */
-    private LockedZkClientDispatcher clientDispatcher;
+    private CuratorFramework client;
 
     public ZkObjectPublisher(String namespace, String zookeeperConfig, String hdfsConfigUrls, Class<?> objectClass, List<ObjectValidator> objectValidators)
                     throws Exception {
@@ -265,22 +265,21 @@ public class ZkObjectPublisher {
         attemptTimeNode = baseAttemptNode + NODE_TIME;
 
         // @formatter:off
-        CuratorFrameworkFactory.Builder clientFactory = CuratorFrameworkFactory.builder()
+        client = CuratorFrameworkFactory.builder()
                 .namespace(this.namespace)
                 .connectString(zkConnectString)
-                .sessionTimeoutMs(60000)
-                .connectionTimeoutMs(60000)
-                .retryPolicy(new RetryNTimes(10, 1000));
+                .sessionTimeoutMs(60_000)
+                .connectionTimeoutMs(60_000)
+                .retryPolicy(new RetryNTimes(10, 1000))
+                .build();
         // @formatter:on
 
-        // Create a client dispatcher that will not periodically clean up its internal zookeeper client.
-        clientDispatcher = new LockedZkClientDispatcher(clientFactory);
+        client.start();
+        client.blockUntilConnected(3, TimeUnit.MINUTES);
 
         // Use the underlying zookeeper client of the dispatcher to create the zookeeper cache listeners.
-        try (LockedZkClientDispatcher.LockedClient lockedClient = clientDispatcher.getLockedClient()) {
-            this.pathCache = createCache(NODE_PATH, lockedClient.getClient(), () -> createPathCacheListener(pathCacheInitialized));
-            this.triggerCache = createCache(NODE_TRIGGER, lockedClient.getClient(), () -> createTriggerCacheListener(triggerCacheInitialized));
-        }
+        this.pathCache = createCache(NODE_PATH, client, () -> createPathCacheListener(pathCacheInitialized));
+        this.triggerCache = createCache(NODE_TRIGGER, client, () -> createTriggerCacheListener(triggerCacheInitialized));
     }
 
     /**
@@ -469,16 +468,13 @@ public class ZkObjectPublisher {
      */
     private void updateAttemptNodes(ZkObjectPublishCause cause, ZkObjectPublishStatus status, List<ZkObjectPublishError> errors, Instant time)
                     throws Exception {
-        try (LockedZkClientDispatcher.LockedClient lockedClient = clientDispatcher.getLockedClient()) {
-            CuratorFramework client = lockedClient.getClient();
-            // Ensure the base /reload node is created.
-            client.createContainers(baseAttemptNode);
+        // Ensure the base /reload node is created.
+        client.createContainers(baseAttemptNode);
 
-            setData(client, attemptCauseNode, cause.toString().getBytes());
-            setData(client, attemptStatusNode, status.toString().getBytes());
-            updateErrorsNode(client, errors);
-            setData(client, attemptTimeNode, time.toString().getBytes());
-        }
+        setData(client, attemptCauseNode, cause.toString().getBytes());
+        setData(client, attemptStatusNode, status.toString().getBytes());
+        updateErrorsNode(client, errors);
+        setData(client, attemptTimeNode, time.toString().getBytes());
     }
 
     /**
@@ -547,9 +543,7 @@ public class ZkObjectPublisher {
         }
 
         Instant attemptTime = Instant.now();
-        try (LockedZkClientDispatcher.LockedClient lockedClient = clientDispatcher.getLockedClient()) {
-            CuratorFramework client = lockedClient.getClient();
-
+        try {
             // Verify that the path node exists.
             Stat stat = client.checkExists().forPath(NODE_PATH);
             if (stat == null) {
@@ -778,13 +772,13 @@ public class ZkObjectPublisher {
             }
         }
 
-        if (clientDispatcher != null) {
+        if (client != null) {
             try {
-                clientDispatcher.close();
+                client.close();
             } catch (Exception e) {
-                log.warn(addLogPrefix("Failed to close client dispatcher"), e);
+                log.warn(addLogPrefix("Failed to close Zookeeper client"), e);
             } finally {
-                clientDispatcher = null;
+                client = null;
             }
         }
     }

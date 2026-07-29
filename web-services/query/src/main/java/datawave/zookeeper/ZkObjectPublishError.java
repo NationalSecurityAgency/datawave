@@ -1,4 +1,4 @@
-package datawave.webservice.zookeeper;
+package datawave.zookeeper;
 
 /**
  * Represents an error that occurred when attempting to load a new updated object via a {@link ZkObjectPublisher}.

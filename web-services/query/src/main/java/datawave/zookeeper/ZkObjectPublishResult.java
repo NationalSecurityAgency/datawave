@@ -1,4 +1,4 @@
-package datawave.webservice.zookeeper;
+package datawave.zookeeper;
 
 import java.time.Instant;
 import java.util.List;

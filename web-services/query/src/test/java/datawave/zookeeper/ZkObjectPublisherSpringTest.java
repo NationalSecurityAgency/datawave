@@ -1,4 +1,4 @@
-package datawave.webservice.zookeeper;
+package datawave.zookeeper;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 

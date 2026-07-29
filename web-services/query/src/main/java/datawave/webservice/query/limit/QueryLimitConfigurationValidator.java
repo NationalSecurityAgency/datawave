@@ -2,7 +2,7 @@ package datawave.webservice.query.limit;
 
 import com.google.common.base.Preconditions;
 
-import datawave.webservice.zookeeper.ObjectValidator;
+import datawave.zookeeper.ObjectValidator;
 
 public class QueryLimitConfigurationValidator implements ObjectValidator {
 

@@ -8,7 +8,7 @@
     <!-- This file provides bean definitions for testing the creation of a ZkObjectPublisher. -->
     <bean id="queryConfigValidator" class="datawave.webservice.query.limit.QueryLimitConfigurationValidator" />
 
-    <bean id="queryLimitConfigPublisher" class="datawave.webservice.zookeeper.ZkObjectPublisher">
+    <bean id="queryLimitConfigPublisher" class="datawave.zookeeper.ZkObjectPublisher">
         <constructor-arg name="zookeeperConfig" value="localhost:2181"/>
         <constructor-arg name="hdfsConfigUrls" value=""/>
         <constructor-arg name="namespace" value="QueryLimitConfig"/>
