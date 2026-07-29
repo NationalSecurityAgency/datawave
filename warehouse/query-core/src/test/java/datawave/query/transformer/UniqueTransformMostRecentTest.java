@@ -1,5 +1,6 @@
 package datawave.query.transformer;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -7,7 +8,9 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.time.Clock;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -102,13 +105,14 @@ public class UniqueTransformMostRecentTest extends UniqueTransformTest {
 
     /**
      * On the mostRecent path, apply() must still emit a keep-alive intermediate result once the per-page timeout is exceeded, rather than always returning null
-     * while accumulating into the backing map.
+     * while accumulating into the backing map. The intermediate result must be an empty document keyed at the document it stands in for, and the documents
+     * accumulated alongside it must still be returned in full by {@link UniqueTransform#flush()}.
      */
     @Test
     public void testIntermediateResultsAreEmitted_onMostRecentPath_whenPageTimeoutExceeded() {
-        givenInputDocument().withKeyValue("ATTR0", randomValues.get(0));
-        givenInputDocument().withKeyValue("ATTR0", randomValues.get(1));
-        givenInputDocument().withKeyValue("ATTR0", randomValues.get(2));
+        givenInputDocument().withKeyValue("ATTR0", randomValues.get(0)).isExpectedToBeUnique();
+        givenInputDocument().withKeyValue("ATTR0", randomValues.get(1)).isExpectedToBeUnique();
+        givenInputDocument().withKeyValue("ATTR0", randomValues.get(2)).isExpectedToBeUnique();
 
         givenValueTransformerForFields(TemporalGranularity.ALL, "ATTR0");
 
@@ -116,14 +120,28 @@ public class UniqueTransformMostRecentTest extends UniqueTransformTest {
         UniqueTransform uniqueTransform = getUniqueTransform(1000L);
         uniqueTransform.setQueryExecutionForPageStartTime(clock.millis() - 10_000L);
 
-        int intermediate = 0;
+        // every document accumulated into the backing map must come back as an intermediate result while the timeout is exceeded
         for (Document document : inputDocuments) {
-            Map.Entry<Key,Document> result = uniqueTransform.apply(Maps.immutableEntry(document.getMetadata(), document));
-            if (result != null && result.getValue().isIntermediateResult()) {
-                intermediate++;
-            }
+            Key expectedKey = document.getMetadata();
+            Map.Entry<Key,Document> result = uniqueTransform.apply(Maps.immutableEntry(expectedKey, document));
+
+            assertNotNull("Expected an intermediate result once the page timeout was exceeded", result);
+            assertTrue("Expected the result to be flagged as an intermediate result", result.getValue().isIntermediateResult());
+            assertEquals("An intermediate result must be an empty document", 0, result.getValue().size());
+            assertTrue("An intermediate result must carry no attributes", result.getValue().getDictionary().isEmpty());
+            assertEquals("An intermediate result must be keyed at the document it stands in for", expectedKey, result.getKey());
         }
-        assertTrue("expected at least one intermediate result on the mostRecent path", intermediate >= 1);
+
+        // emitting the intermediate results must not cost the documents accumulated into the backing map
+        List<Document> flushed = new ArrayList<>();
+        Map.Entry<Key,Document> next;
+        while ((next = uniqueTransform.flush()) != null) {
+            flushed.add(next.getValue());
+        }
+
+        Collections.sort(expectedUniqueDocuments);
+        Collections.sort(flushed);
+        assertEquals("Most recent unique documents do not match expected", getIds(expectedUniqueDocuments), getIds(flushed));
     }
 
 }
