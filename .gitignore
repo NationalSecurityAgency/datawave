@@ -54,3 +54,9 @@ services/sample_configuration/*-dev.yml
 
 .claude
 .sdkmanrc
+
+# gemini-cli settings
+.gemini/
+
+# GitHub App credentials
+gha-creds-*.json
