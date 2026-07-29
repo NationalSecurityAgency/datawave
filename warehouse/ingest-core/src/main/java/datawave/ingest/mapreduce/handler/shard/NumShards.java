@@ -2,6 +2,7 @@ package datawave.ingest.mapreduce.handler.shard;
 
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
@@ -31,6 +32,7 @@ import org.slf4j.LoggerFactory;
 
 import datawave.ingest.data.config.ConfigurationHelper;
 import datawave.ingest.data.config.ingest.AccumuloHelper;
+import datawave.util.hdfs.HdfsFileUtils;
 import datawave.util.time.DateHelper;
 
 public class NumShards {
@@ -168,29 +170,33 @@ public class NumShards {
      * @return a formatted string of the date based shards
      */
     public String readMultipleNumShardsConfig() {
-        if (isCacheValid()) {
+        try {
+          FileSystem fs = this.numShardsCachePath.getFileSystem(this.conf);
+          FileStatus fileStatus = null;
+          try {
+            fileStatus = fs.getFileStatus(this.numShardsCachePath);
+          } catch (FileNotFoundException fnfe) {
+            throw new RuntimeException("Multiple Numshards cache is invalid. See documentation for using generateMultipleNumShardsCache.sh", fnfe);
+          }          
+          if (isCacheValid(fileStatus)) {
             if (log.isInfoEnabled()) {
-                log.info("Loading the numshards cache (@ {})...", this.numShardsCachePath.toUri().toString());
+              log.info("Loading the numshards cache (@ {})...", this.numShardsCachePath.toUri().toString());
             }
             try (BufferedReader in = new BufferedReader(
-                            new InputStreamReader(this.numShardsCachePath.getFileSystem(this.conf).open(this.numShardsCachePath)))) {
-                return in.lines().collect(Collectors.joining(","));
+                new InputStreamReader(HdfsFileUtils.openFile(fs, this.numShardsCachePath, fileStatus)))) {
+              return in.lines().collect(Collectors.joining(","));
             } catch (IOException ioe) {
-                throw new RuntimeException("Could not read numshards cache file. See documentation for using generateMultipleNumShardsCache.sh");
+              throw new RuntimeException("Could not read numshards cache file. See documentation for using generateMultipleNumShardsCache.sh");
             }
-        } else {
+          } else {
             throw new RuntimeException("Multiple Numshards cache is invalid. See documentation for using generateMultipleNumShardsCache.sh");
+          }
+        } catch (IOException ioe) {
+          throw new RuntimeException("Could not get the FileStatus of the multiple numShards file");
         }
     }
 
-    public boolean isCacheValid() {
-        FileStatus fileStatus = null;
-        try {
-            fileStatus = this.numShardsCachePath.getFileSystem(this.conf).getFileStatus(this.numShardsCachePath);
-        } catch (IOException ioe) {
-            log.warn("Could not get the FileStatus of the multiple numShards file");
-        }
-
+    public boolean isCacheValid(FileStatus fileStatus) {
         return null != fileStatus && fileStatus.getModificationTime() >= System.currentTimeMillis()
                         - (conf.getLong(MULTIPLE_NUMSHARDS_CACHE_TIMEOUT, DEFAULT_CACHE_TIMEOUT));
     }

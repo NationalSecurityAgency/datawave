@@ -696,9 +696,9 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
                     try {
                         CryptoService cs = CryptoFactoryLoader.getServiceForClient(CryptoEnvironment.Scope.TABLE,
                                         context.getConfiguration().getPropsWithPrefix(TABLE_CRYPTO_PREFIX.name()));
-                        FileSKVIterator openReader = fops.newReaderBuilder().forFile(path.toString(), fs, conf, cs)
-                                        .withTableConfiguration(tableConfigs.get(table)).build();
                         FileStatus fileStatus = fs.getFileStatus(path);
+                        FileSKVIterator openReader = fops.newReaderBuilder().forFile(path.toString(), fs, conf, cs, fileStatus)
+                                        .withTableConfiguration(tableConfigs.get(table)).build();
                         long fileSize = fileStatus.getLen();
                         openReader.close();
                         log.info("Successfully wrote " + path + ". Total size: " + fileSize + " B. Total time: " + (System.currentTimeMillis() - startWriteTime)

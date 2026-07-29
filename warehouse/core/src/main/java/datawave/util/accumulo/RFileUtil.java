@@ -24,8 +24,11 @@ import org.apache.accumulo.core.iteratorsImpl.system.MultiIterator;
 import org.apache.accumulo.core.spi.crypto.CryptoEnvironment;
 import org.apache.accumulo.core.spi.crypto.CryptoService;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+
+import datawave.util.hdfs.HdfsFileUtils;
 
 /**
  * Collection of utilities to locate, read, and split rfiles
@@ -71,7 +74,8 @@ public class RFileUtil {
                 if (!fs.exists(p)) {
                     throw new IOException("file not found " + p);
                 }
-                sources[i] = new RFileSource(fs.open(p), fs.getFileStatus(p).getLen());
+                FileStatus status = fs.getFileStatus(p);
+                sources[i] = new RFileSource(HdfsFileUtils.openFile(fs, p, status), status.getLen());
             }
         } catch (IOException e) {
             throw new RuntimeException("could not open source rfiles: " + paths, e);
