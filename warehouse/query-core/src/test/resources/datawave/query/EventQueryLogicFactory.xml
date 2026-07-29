@@ -137,6 +137,8 @@
         <!--   reduce type metadata     -->
         <property name="reduceTypeMetadata" value="false" />
         <property name="reduceTypeMetadataPerShard" value="false" />
+        <!--   should TypeMetadata be serialized to iterator options via Kryo instead of its native toString() format    -->
+        <property name="kryoTypeMetadata" value="false" />
         <!--   query sorting options     -->
         <property name="sortQueryPreIndexWithImpliedCounts" value="true" />
         <property name="sortQueryPreIndexWithFieldCounts" value="true" />
