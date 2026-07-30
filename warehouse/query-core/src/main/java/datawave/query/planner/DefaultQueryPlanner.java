@@ -2551,6 +2551,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
         if (config.isSeekingEventAggregation()) {
             addOption(cfg, QueryOptions.SEEKING_EVENT_AGGREGATION, String.valueOf(config.isSeekingEventAggregation()), false);
+            addOption(cfg, QueryOptions.DOC_AGGREGATION_MAX_ENTRIES, String.valueOf(config.getDocAggregationMaxEntries()), false);
         }
     }
 
