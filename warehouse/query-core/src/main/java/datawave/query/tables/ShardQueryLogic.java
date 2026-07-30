@@ -2913,6 +2913,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         getConfig().setReduceTypeMetadataPerShard(reduceTypeMetadataPerShard);
     }
 
+    public boolean isKryoTypeMetadata() {
+        return getConfig().isKryoTypeMetadata();
+    }
+
+    public void setKryoTypeMetadata(boolean kryoTypeMetadata) {
+        getConfig().setKryoTypeMetadata(kryoTypeMetadata);
+    }
+
     public long getMaxIndexScanTimeMillis() {
         return getConfig().getMaxIndexScanTimeMillis();
     }
