@@ -74,6 +74,8 @@ When a query is marked as active via `QueryLimiter.countQueryTowardsLimits()`, i
 
 `ActiveQueryTracker.trackQuery()` will return a [QueryHeartbeat](QueryHeartbeat.java) instance that contain a `PersistentNode` wrapper around the ephemeral node listed above. The `QueryHeartbeat` will maintain the connection to Zookeeper and attempt to keep the ephemeral node present in Zookeeper until `QueryHeartbeat.stop()` is called. If `QueryHeartbeat.stop()` is called, or the webserver crashes, all ephemeral nodes will automatically be deleted by Zookeeper.
 
+NOTE: Only one `QueryHeartbeat` can be active per query ID for the Zookeeper server. This is enforced by acquiring an InterProcessMutex lock at the path `/locks/<queryId>` under the namespace `ActiveQueries` when tracking a new query. 
+
 NOTE: When a null or blank system is provided to the `QueryLimiter`, the default system `EMPTY_SYSTEM_FROM` will be used instead.
 
 ## Caching Layer

@@ -1,6 +1,9 @@
 package datawave.webservice.query.limit;
 
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
+
+import com.google.common.base.Preconditions;
 
 /**
  * Utility functions and constants for the query limiter feature.
@@ -74,6 +77,35 @@ public final class QueryLimiterUtils {
      */
     public static String normalizeQueryLogic(String queryLogic) {
         return queryLogic != null ? queryLogic.trim() : null;
+    }
+
+    /**
+     * Wait for the given condition to be true, with the specified timeout in milliseconds and polling interval in millseconds.
+     *
+     * @param timeoutMs
+     *            the timeout (0 or greater)
+     * @param pollIntervalMs
+     *            the poll interval (0 or greater)
+     * @param condition
+     *            the condition
+     * @return true if the condition evaluated to true within the timeout, or false otherwise
+     * @throws InterruptedException
+     *             if the thread is interrupted while waiting
+     */
+    public static boolean await(long timeoutMs, int pollIntervalMs, Supplier<Boolean> condition) throws InterruptedException {
+        Preconditions.checkArgument(timeoutMs > 0, "timeoutMs must be 0 or greater");
+        Preconditions.checkArgument(pollIntervalMs > 0, "pollIntervalMs must be 0 or greater");
+
+        long deadline = System.currentTimeMillis() + timeoutMs;
+        while (!condition.get()) {
+            if (System.currentTimeMillis() >= deadline) {
+                System.out.println("Timed out waiting for condition");
+                return false;
+            }
+            System.out.println("Sleeping for " + pollIntervalMs + " ms");
+            Thread.sleep(Math.min(pollIntervalMs, deadline - System.currentTimeMillis()));
+        }
+        return true;
     }
 
     /**

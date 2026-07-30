@@ -25,8 +25,6 @@ import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.retry.RetryNTimes;
 import org.apache.log4j.Logger;
-import org.awaitility.Awaitility;
-import org.awaitility.core.ConditionTimeoutException;
 
 import com.google.common.base.Preconditions;
 
@@ -61,7 +59,7 @@ public class QueryLimiter {
     /**
      * The timeout in milliseconds for {@link #client} to successfully connect to Zookeeper when {@link #activate()} is called. Defaults to 3 minutes.
      */
-    private long zookeeperClientTimeoutMs = TimeUnit.MINUTES.toMillis(3);
+    private int zookeeperClientTimeoutMs = Math.toIntExact(TimeUnit.MINUTES.toMillis(3));
 
     /**
      * The timeout in milliseconds for {@link #queryLogicCache} to reach an initial healthy state when {@link #activate()} is called. Defaults to 3 minutes.
@@ -187,7 +185,7 @@ public class QueryLimiter {
      * @param zookeeperClientTimeoutMs
      *            the timeout
      */
-    public void setZookeeperClientTimeoutMs(long zookeeperClientTimeoutMs) {
+    public void setZookeeperClientTimeoutMs(int zookeeperClientTimeoutMs) {
         limiterLock.writeLock().lock();
         try {
             this.zookeeperClientTimeoutMs = zookeeperClientTimeoutMs;
@@ -274,9 +272,7 @@ public class QueryLimiter {
      * instance configured in bean configuration files.
      */
     public void setup() {
-        if (log.isDebugEnabled()) {
-            log.debug("Setting up query limiter.");
-        }
+        log.info("Setting up query limiter.");
 
         limiterLock.writeLock().lock();
         try {
@@ -290,9 +286,7 @@ public class QueryLimiter {
                 clear();
             }
 
-            if (log.isDebugEnabled()) {
-                log.debug("Setup complete.");
-            }
+            log.info("Setup complete. Query limits enforced: " + isEnforcingLimits());
         } finally {
             limiterLock.writeLock().unlock();
         }
@@ -343,19 +337,13 @@ public class QueryLimiter {
                 // Start the client and wait for it connect to Zookeeper.
                 this.client.start();
 
-                // @formatter:off
-                try{
-                    if (log.isDebugEnabled()) {
-                        log.debug("Waiting for zookeeper client to connect with a timeout of " + zookeeperClientTimeoutMs + "ms");
-                    }
-
-                    Awaitility.await().alias("Zookeeper client connection")
-                            .atMost(zookeeperClientTimeoutMs, TimeUnit.MILLISECONDS)
-                            .untilAsserted(() -> this.client.blockUntilConnected());
-                } catch (ConditionTimeoutException e){
+                if (log.isDebugEnabled()) {
+                    log.debug("Waiting for zookeeper client to connect with a timeout of " + zookeeperClientTimeoutMs + "ms");
+                }
+                boolean connected = this.client.blockUntilConnected(zookeeperClientTimeoutMs, TimeUnit.MILLISECONDS);
+                if (!connected) {
                     log.warn("Zookeeper client failed to connect within timeout of " + zookeeperClientTimeoutMs + "ms");
                 }
-                // @formatter:on
 
                 // Let the heartbeat cache listen for connection state changes.
                 this.heartbeatCache.listenForConnectionStateChanges(this.client);
@@ -370,20 +358,14 @@ public class QueryLimiter {
             if (this.queryLogicCache == null) {
                 // Create the query logic cache and wait for it to reach a healthy state.
                 this.queryLogicCache = new QueryLogicCache(client);
-                try {
-                    if (log.isDebugEnabled()) {
-                        log.debug("Waiting for query logic cache to reach healthy state with a timeout of " + queryLogicCacheTimeoutMs + "ms");
-                    }
 
-                    // @formatter:off
-                    Awaitility.await().alias("Query logic cache initialization")
-                            .atMost(queryLogicCacheTimeoutMs, TimeUnit.MILLISECONDS)
-                            .until(() -> this.queryLogicCache.isHealthy());
-                    // @formatter:on
-                } catch (ConditionTimeoutException e) {
-                    log.warn("Query logic cache failed to initialize within timeout of " + queryLogicCacheTimeoutMs + "ms");
+                if (log.isDebugEnabled()) {
+                    log.debug("Waiting for query logic cache to reach healthy state with a timeout of " + queryLogicCacheTimeoutMs + "ms");
                 }
-
+                boolean healthy = QueryLimiterUtils.await(queryLogicCacheTimeoutMs, 100, () -> this.queryLogicCache.isHealthy());
+                if (!healthy) {
+                    log.warn("Query logic cache failed to reach healthy state within timeout of " + queryLogicCacheTimeoutMs + "ms");
+                }
             }
 
             // Create the query counts cache if it doesn't exist and wait for it to reach a healthy state.
@@ -398,17 +380,13 @@ public class QueryLimiter {
                 this.queryCountsCache.setSystemLimitProvider(systemLimitProvider);
             }
 
-            try {
-                if (log.isDebugEnabled()) {
-                    log.debug("Waiting for query counts cache to reach healthy state with a timeout of " + queryCountsCacheTimeoutMs + "ms");
-                }
-
-                // @formatter:off
-                Awaitility.await().alias("Query counts cache initialization").atMost(queryCountsCacheTimeoutMs, TimeUnit.MILLISECONDS)
-                                .until(() -> this.queryCountsCache.isHealthy());
-                // @formatter:on
-            } catch (ConditionTimeoutException e) {
-                log.warn("Query counts cache failed to initialize within timeout of " + queryCountsCacheTimeoutMs + "ms");
+            // Wait for the query counts cache to reach a healthy state.
+            if (log.isDebugEnabled()) {
+                log.debug("Waiting for query counts cache to reach healthy state with a timeout of " + queryCountsCacheTimeoutMs + "ms");
+            }
+            boolean healthy = QueryLimiterUtils.await(queryCountsCacheTimeoutMs, 100, () -> this.queryCountsCache.isHealthy());
+            if (!healthy) {
+                log.warn("Query counts cache failed to reach healthy state within timeout of " + queryCountsCacheTimeoutMs + "ms");
             }
 
             // Update the query logic limit provider with the existing set of distinct query logics, and register a listener so that it will be notified of any
@@ -474,9 +452,7 @@ public class QueryLimiter {
      * Deactivate this {@link QueryLimiter} and close all connections and resources.
      */
     public void shutdown() {
-        if (log.isDebugEnabled()) {
-            log.debug("Shutting down.");
-        }
+        log.info("Shutting down.");
 
         // Exclusive lock. Blocks all calls that track queries/check for limits until the limiter is updated.
         limiterLock.writeLock().lock();
@@ -573,7 +549,9 @@ public class QueryLimiter {
         // caches are being rebuilt.
         limiterLock.readLock().lock();
         try {
-            if (isEnforcingLimits()) {
+            // If the query counts cache is not null the query limiter has been initialized with a valid configuration at least once, and we can write new
+            // nodes to Zookeeper.
+            if (queryCountsCache != null) {
                 if (log.isDebugEnabled()) {
                     log.debug("Start counting query " + queryId + " towards limits");
                 }
@@ -596,7 +574,7 @@ public class QueryLimiter {
     }
 
     /**
-     * Return whether this {@link QueryLimiter} is currently enforcing limits, i.e. it has been initialized and the caches are trustworthy.
+     * Return whether this {@link QueryLimiter} is currently enforcing limits, i.e., it has been initialized and the caches are trustworthy.
      *
      * @return true if this {@link QueryLimiter} is enforcing limits, or false otherwise
      */

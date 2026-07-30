@@ -13,6 +13,7 @@ import org.apache.curator.framework.recipes.nodes.PersistentNode;
 import org.apache.curator.retry.RetryOneTime;
 import org.apache.curator.test.TestingServer;
 import org.apache.zookeeper.CreateMode;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -158,6 +159,8 @@ class QueryHeartbeatCacheTest {
         // Verify that we still see them in the cache.
         assertThat(cache.get(heartbeat1.getQueryId())).isNotNull();
         assertThat(cache.get(heartbeat2.getQueryId())).isNotNull();
+
+        Awaitility.await().atMost(5, TimeUnit.SECONDS).until(() -> heartbeat1.isStopped() && heartbeat2.isStopped());
 
         cache.removeAllStoppedHeartbeats();
 

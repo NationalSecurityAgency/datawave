@@ -118,7 +118,6 @@ public class QueryHeartbeatCache {
         } finally {
             lock.readLock().unlock();
         }
-
     }
 
     /**

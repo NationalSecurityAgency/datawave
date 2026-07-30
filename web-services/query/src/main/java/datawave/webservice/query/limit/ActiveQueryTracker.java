@@ -6,9 +6,7 @@ import static datawave.webservice.query.limit.QueryLimiterUtils.QUERY_LOGICS_ROO
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutput;
 import java.io.DataOutputStream;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.nodes.PersistentNode;
@@ -18,6 +16,8 @@ import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.data.Stat;
 
+import datawave.zookeeper.ZkLock;
+
 /**
  * This class provides methods for leveraging Zookeeper to track queries and their active status.
  */
@@ -26,17 +26,18 @@ public class ActiveQueryTracker {
     private static final Logger log = Logger.getLogger(ActiveQueryTracker.class);
 
     /**
-     * A map of query IDs to locks.
-     */
-    private final ConcurrentHashMap<String,ReentrantLock> clientLockMap = new ConcurrentHashMap<>();
-
-    /**
      * The Zookeeper client.
      */
     private final CuratorFramework client;
 
+    /**
+     * The distributed lock.
+     */
+    private final ZkLock zkLock;
+
     public ActiveQueryTracker(CuratorFramework client) {
         this.client = client;
+        this.zkLock = new ZkLock(client, "/locks", 30, TimeUnit.SECONDS);
     }
 
     /**
@@ -56,38 +57,32 @@ public class ActiveQueryTracker {
      * @param queryLogic
      *            the query logic of the query
      * @return a new query heartbeat that can close the ephemeral nodes associated with the query
+     * @throws QueryAlreadyTrackedException
+     *             if the given query ID is already being tracked as an active query
      */
     public QueryHeartbeat trackQuery(String queryId, String userDn, String system, String queryLogic) {
         if (log.isTraceEnabled()) {
             log.trace("Tracking query: queryId=" + queryId + ", user='" + userDn + "', system='" + system + "', queryLogic='" + queryLogic + "'");
         }
 
-        // Obtain a lock based on the query ID to ensure we don't allow the Zookeeper client to perform any node creations in a concurrent call with the same
-        // query ID.
-        ReentrantLock lock = clientLockMap.computeIfAbsent(queryId, k -> new ReentrantLock());
-        lock.lock();
-
         try {
-            // Verify that the query is not already being tracked.
-            verifyQueryIsNotTracked(queryId);
-
-            // Track the query logic as a distinct query logic if not already tracked.
-            trackDistinctQueryLogic(queryLogic);
-
-            // Create and return the query heartbeat.
-            return createHeartbeat(queryId, userDn, system, queryLogic);
-        } catch (QueryAlreadyTrackedException e) {
+            return zkLock.callWithLock(queryId, () -> trackQueryWithLock(queryId, userDn, system, queryLogic));
+        } catch (QueryLimiterException e) {
             throw e;
         } catch (Exception e) {
-            log.error("Failed to track query " + queryId, e);
-            throw new QueryLimiterException("Failed to track query " + queryId, e);
-        } finally {
-            lock.unlock();
-            // Remove the lock map entry if no other threads are waiting for the specific query ID to prevent infinite map growth.
-            if (!lock.hasQueuedThreads()) {
-                clientLockMap.remove(queryId, lock);
-            }
+            throw new QueryLimiterException("Error tracking query " + queryId, e);
         }
+    }
+
+    private QueryHeartbeat trackQueryWithLock(String queryId, String userDn, String system, String queryLogic) throws Exception {
+        // Verify that the query is not already being tracked.
+        verifyQueryIsNotTracked(queryId);
+
+        // Track the query logic as a distinct query logic if not already tracked.
+        trackDistinctQueryLogic(queryLogic);
+
+        // Create and return the query heartbeat.
+        return createHeartbeat(queryId, userDn, system, queryLogic);
     }
 
     /**

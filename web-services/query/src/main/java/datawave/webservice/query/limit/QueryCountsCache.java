@@ -5,33 +5,24 @@ import static datawave.webservice.query.limit.QueryLimiterUtils.QUERIES_ROOT_PAT
 import java.io.ByteArrayInputStream;
 import java.io.DataInput;
 import java.io.DataInputStream;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.apache.commons.lang3.tuple.Triple;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.cache.ChildData;
 import org.apache.curator.framework.recipes.cache.CuratorCache;
-import org.apache.curator.framework.recipes.cache.CuratorCacheListener;
-import org.apache.curator.framework.state.ConnectionStateListener;
 import org.apache.hadoop.io.WritableUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import com.google.common.base.Preconditions;
+
+import datawave.zookeeper.LocalZkCache;
 
 /**
  * This class maintains a local mirror of active query counts for users and systems based off active queries stored in Zookeeper.
  */
-public class QueryCountsCache {
-
-    private static final Logger log = LoggerFactory.getLogger(QueryCountsCache.class);
-
-    /**
-     * The Zookeeper cache.
-     */
-    private final CuratorCache cache;
+public class QueryCountsCache extends LocalZkCache {
 
     /**
      * The local cache of total active queries per user that reflects the activity within Zookeeper.
@@ -54,186 +45,39 @@ public class QueryCountsCache {
     private final ConcurrentHashMap<String,AtomicInteger> systemQueryLogicCounts = new ConcurrentHashMap<>();
 
     /**
-     * A lock that controls access when either modifying the count maps or rebuilding them in their entirety.
-     */
-    private final ReadWriteLock lock = new ReentrantReadWriteLock();
-
-    /**
-     * Whether this cache is considered healthy.
-     */
-    private final AtomicBoolean healthy = new AtomicBoolean(false);
-
-    /**
      * The system limit provider. This is used to determine whether systems count towards user limits when incrementing counts.
      */
     private SystemLimitProvider systemLimitProvider;
 
     public QueryCountsCache(CuratorFramework client, SystemLimitProvider systemLimitProvider) {
+        super(client, false);
         this.systemLimitProvider = systemLimitProvider;
-        this.cache = CuratorCache.build(client, QUERIES_ROOT_PATH);
-        this.cache.listenable().addListener(getCacheListener());
         this.cache.start();
-        client.getConnectionStateListenable().addListener(getStateListener());
     }
 
-    private CuratorCacheListener getCacheListener() {
-        // @formatter:off
-        return CuratorCacheListener.builder()
-                        .forInitialized(() -> {
-                            rebuild();
-                            log.info("Cache Initialized");
-                        })
-                        .forCreates((child) -> {
-                            // Use a read lock that allows concurrent create/delete events, but blocks if rebuild() is holding the write lock.
-                            lock.readLock().lock();
-                            try{
-                                if(!child.getPath().equals(QUERIES_ROOT_PATH)) {
-                                    incrementCounts(child.getData());
-                                }
-                            } finally{
-                                lock.readLock().unlock();
-                            }
-                        })
-                        .forDeletes((child) -> {
-                            // Use a read lock that allows concurrent create/delete events, but blocks if rebuild() is holding the write lock.
-                            lock.readLock().lock();
-                            try{
-                                if(!child.getPath().equals(QUERIES_ROOT_PATH)) {
-                                    decrementCounts(child.getData());
-                                }
-                            } finally{
-                                lock.readLock().unlock();
-                            }
-                        })
-                        .build();
-        // @formatter:on
+    @Override
+    protected CuratorCache createCuratorCache(CuratorFramework client) {
+        return CuratorCache.build(client, QUERIES_ROOT_PATH);
     }
 
-    /**
-     * Return a {@link ConnectionStateListener} that will mark this {@link QueryLogicCache} as unhealthy when the backing Zookeeper client connection is
-     * suspended, lost, or read-only, and will rebuild the cache when the client reconnects to Zookeeper.
-     *
-     * @return the new state listener
-     */
-    private ConnectionStateListener getStateListener() {
-        return (client, newState) -> {
-            switch (newState) {
-                case CONNECTED:
-                    if (log.isTraceEnabled()) {
-                        log.trace("Connection state: {}", newState);
-                    }
-                    break;
-                case RECONNECTED:
-                    if (log.isTraceEnabled()) {
-                        log.trace("Connection state: {}, rebuilding cache", newState);
-                    }
-                    rebuild();
-                    break;
-                case SUSPENDED:
-                case LOST:
-                case READ_ONLY:
-                    if (log.isTraceEnabled()) {
-                        log.trace("Connection state: {}, marking cache unhealthy", newState);
-                    }
-                    healthy.set(false);
-                    break;
-                default:
-                    log.warn("Unexpected Zookeeper connection state {}", newState);
-                    throw new IllegalStateException("Unexpected Zookeeper state: " + newState);
-            }
-        };
-    }
-
-    /**
-     * Increment counts based on the user, system, and query logic extracted from the given node data.
-     *
-     * @param data
-     *            the node data
-     */
-    private void incrementCounts(byte[] data) {
-        try {
-            // Parse the query information from the node data.
-            Triple<String,String,String> query = parseData(data);
-            String userDn = query.getLeft();
-            String system = query.getMiddle();
-            String queryLogic = query.getRight();
-
-            if (log.isTraceEnabled()) {
-                log.trace("Incrementing counts for user: {}, system: {}, queryLogic: {}", userDn, system, queryLogic);
-            }
-
-            // Increment the counts for the system maps, adding mappings if required.
-            systemQueryCounts.computeIfAbsent(system, k -> new AtomicInteger()).getAndIncrement();
-            String systemKey = getOwnerQueryLogicKey(system, queryLogic);
-            systemQueryLogicCounts.computeIfAbsent(systemKey, k -> new AtomicInteger()).getAndIncrement();
-
-            // If the system counts against user limits, increment the counts for the user maps, adding mappings if required.
-            if (systemLimitProvider.countsAgainstUserLimit(system)) {
-                userQueryCounts.computeIfAbsent(userDn, k -> new AtomicInteger()).getAndIncrement();
-                String userKey = getOwnerQueryLogicKey(userDn, queryLogic);
-                userQueryLogicCounts.computeIfAbsent(userKey, k -> new AtomicInteger()).getAndIncrement();
-            }
-        } catch (Exception e) {
-            log.error("Failed to increment counts", e);
-            throw new QueryLimiterException("Failed to increment counts", e);
+    @Override
+    protected void handleCreate(ChildData childData) {
+        if (isNotCacheRoot(childData)) {
+            modifyCount(childData, 1);
         }
     }
 
-    /**
-     * Decrement counts based on the user, system, and query logic extracted from the given node data.
-     *
-     * @param data
-     *            the node data
-     */
-    private void decrementCounts(byte[] data) {
-        try {
-            // Parse the query information from the data.
-            Triple<String,String,String> query = parseData(data);
-            String userDn = query.getLeft();
-            String system = query.getMiddle();
-            String queryLogic = query.getRight();
-
-            if (log.isTraceEnabled()) {
-                log.trace("Decrementing counts for user: {}, system: {}, queryLogic: {}", userDn, system, queryLogic);
-            }
-
-            // Decrement the counts for the system maps, removing mappings if the final count is 0.
-            systemQueryCounts.computeIfPresent(system, (k, v) -> v.decrementAndGet() == 0 ? null : v);
-            String systemKey = getOwnerQueryLogicKey(system, queryLogic);
-            systemQueryLogicCounts.computeIfPresent(systemKey, (k, v) -> v.decrementAndGet() == 0 ? null : v);
-
-            // If the system counts against user limits, decrement the counts for the user maps, removing mappings if the final count is 0.
-            if (systemLimitProvider.countsAgainstUserLimit(system)) {
-                userQueryCounts.computeIfPresent(userDn, (k, v) -> v.decrementAndGet() == 0 ? null : v);
-                String userKey = getOwnerQueryLogicKey(userDn, queryLogic);
-                userQueryLogicCounts.computeIfPresent(userKey, (k, v) -> v.decrementAndGet() == 0 ? null : v);
-            }
-        } catch (Exception e) {
-            log.error("Failed to decremment counts", e);
-            throw new QueryLimiterException("Failed to decrement counts", e);
+    @Override
+    protected void handleDelete(ChildData childData) {
+        if (isNotCacheRoot(childData)) {
+            modifyCount(childData, -1);
         }
     }
 
-    /**
-     * Return whether this {@link QueryCountsCache} is considered in a healthy state.
-     *
-     * @return this {@link QueryCountsCache} is considered healthy
-     */
-    public boolean isHealthy() {
-        return healthy.get();
-    }
-
-    /**
-     * Rebuild the internal cache of query counts. The method {@link #isHealthy()} will return false until the rebuild completes.
-     */
-    public void rebuild() {
-        log.debug("Rebuilding cache");
-        // Exclusive lock. Blocks all forCreates/forDeletes events until the rebuild is complete.
+    @Override
+    protected void rebuildLocalCaches() {
         lock.writeLock().lock();
         try {
-            // Mark the cache as unhealthy.
-            healthy.set(false);
-
             // Clear the count maps.
             userQueryCounts.clear();
             userQueryLogicCounts.clear();
@@ -241,17 +85,75 @@ public class QueryCountsCache {
             systemQueryLogicCounts.clear();
 
             // Recount the active queries.
-            // @formatter:off
-            cache.stream().filter((node) -> !node.getPath().equals(QUERIES_ROOT_PATH))
-                            .map(ChildData::getData)
-                            .forEach(this::incrementCounts);
-            // @formatter:on
-
-            log.debug("Cache rebuild complete");
-            healthy.set(true);
+            cache.stream().filter((node) -> !node.getPath().equals(QUERIES_ROOT_PATH)).forEach((child) -> modifyCount(child, 1));
         } finally {
             lock.writeLock().unlock();
         }
+
+    }
+
+    /**
+     * Modify the counts for the user, system, and query logic extracted from the given node by the given delta.
+     *
+     * @param node
+     *            the node
+     * @param delta
+     *            the delta
+     */
+    private void modifyCount(ChildData node, int delta) {
+        String userDn;
+        String system;
+        String queryLogic;
+        try {
+            // Parse the query information from the data.
+            Triple<String,String,String> query = parseData(node.getData());
+            userDn = query.getLeft();
+            system = query.getMiddle();
+            queryLogic = query.getRight();
+        } catch (Exception e) {
+            log.error("Failed to parse data for node {}", node.getPath(), e);
+            return;
+        }
+
+        if (log.isTraceEnabled()) {
+            log.trace("Incrementing counts for user: {}, system: {}, queryLogic: {} by {}", userDn, system, queryLogic, delta);
+        }
+
+        try {
+            modifyCount(systemQueryCounts, system, delta);
+            modifyCount(systemQueryLogicCounts, getOwnerQueryLogicKey(system, queryLogic), delta);
+
+            if (systemLimitProvider.countsAgainstUserLimit(system)) {
+                modifyCount(userQueryCounts, userDn, delta);
+                modifyCount(userQueryLogicCounts, getOwnerQueryLogicKey(userDn, queryLogic), delta);
+            }
+        } catch (Exception e) {
+            log.error("Failed to increment counts for user: {}, system: {}, queryLogic: {} by {} for node {}", userDn, system, queryLogic, delta,
+                            node.getPath(), e);
+        }
+    }
+
+    /**
+     * Compute the value for the mapping with the given key in the given map after applying the given delta.
+     *
+     * @param map
+     *            the map
+     * @param key
+     *            the mapping key
+     * @param delta
+     *            the value delta
+     */
+    private void modifyCount(Map<String,AtomicInteger> map, String key, int delta) {
+        map.compute(key, (k, existingValue) -> {
+            // If there is no existing mapping, return a new mapping only if the value will be greater than 0.
+            if (existingValue == null) {
+                return delta > 0 ? new AtomicInteger(delta) : null;
+            } else {
+                // If there is an existing mapping, modify the value by the delta. If the updated value is 0 or greater, delete the mapping. Otherwise, return
+                // the updated value.
+                return existingValue.addAndGet(delta) <= 0 ? null : existingValue;
+            }
+        });
     }
 
     /**
@@ -261,6 +163,7 @@ public class QueryCountsCache {
      *            the system limit provider
      */
     public void setSystemLimitProvider(SystemLimitProvider systemLimitProvider) {
+        Preconditions.checkNotNull(systemLimitProvider, "system limit provider cannot be null");
         lock.writeLock().lock();
         try {
             this.systemLimitProvider = systemLimitProvider;
@@ -329,7 +232,11 @@ public class QueryCountsCache {
      */
     private int getCount(String key, ConcurrentHashMap<String,AtomicInteger> map) {
         AtomicInteger count = map.get(key);
-        return count == null ? 0 : count.get();
+        return count != null ? count.get() : 0;
+    }
+
+    private static boolean isNotCacheRoot(ChildData childData) {
+        return !childData.getPath().equals(QUERIES_ROOT_PATH);
     }
 
     /**
@@ -365,19 +272,17 @@ public class QueryCountsCache {
     }
 
     /**
-     * Closes the underlying Zookeeper cache and clears the count maps.
+     * Closes this {@link QueryCountsCache} and clears the local caches.
+     *
+     * @see LocalZkCache#close()
      */
     public void close() {
         lock.writeLock().lock();
         try {
-            this.healthy.set(false);
+            // Close the backing Zookeeper cache.
+            super.close();
 
-            try {
-                this.cache.close();
-            } catch (Exception e) {
-                log.error("Error closing curator cache", e);
-            }
-
+            // Clear the local caches.
             this.userQueryCounts.clear();
             this.userQueryLogicCounts.clear();
             this.systemQueryCounts.clear();

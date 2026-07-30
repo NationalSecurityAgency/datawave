@@ -11,6 +11,7 @@ import org.apache.curator.framework.recipes.nodes.PersistentNode;
 import org.apache.curator.retry.RetryOneTime;
 import org.apache.curator.test.TestingServer;
 import org.apache.zookeeper.CreateMode;
+import org.awaitility.Awaitility;
 import org.easymock.EasyMock;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -127,7 +128,8 @@ class QueryHeartbeatTest {
     @Test
     void testIsStopped() throws InterruptedException, IOException {
         QueryHeartbeat heartbeat = createHeartbeat();
-        assertThat(heartbeat.isStopped()).isFalse();
+
+        Awaitility.await("Awaiting node creation").atMost(5, TimeUnit.SECONDS).until(() -> !heartbeat.isStopped());
 
         heartbeat.stop();
 

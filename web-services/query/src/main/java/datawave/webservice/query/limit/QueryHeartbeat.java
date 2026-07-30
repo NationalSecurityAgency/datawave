@@ -3,7 +3,6 @@ package datawave.webservice.query.limit;
 import java.io.IOException;
 import java.util.Objects;
 import java.util.StringJoiner;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.curator.framework.recipes.nodes.PersistentNode;
 import org.apache.log4j.Logger;
@@ -18,7 +17,6 @@ public class QueryHeartbeat {
 
     private final String queryId;
     private final PersistentNode node;
-    private final AtomicBoolean stopped = new AtomicBoolean(false);
 
     private QueryHeartbeatCache.HeartbeatStoppedListener listener;
 
@@ -64,12 +62,10 @@ public class QueryHeartbeat {
      * Stop and delete the heartbeat without notifying the internal listener. This is used by {@link QueryHeartbeatCache} to avoid necessary looping calls.
      */
     public void stopWithoutNotifyingListener() {
-        if (!this.stopped.getAndSet(true)) {
-            try {
-                this.node.close();
-            } catch (Exception e) {
-                log.error("Error closing ephemeral node", e);
-            }
+        try {
+            this.node.close();
+        } catch (Exception e) {
+            log.error("Error closing ephemeral node", e);
         }
     }
 
@@ -79,7 +75,7 @@ public class QueryHeartbeat {
      * @return true if the heartbeat is stopped, or false otherwise
      */
     public boolean isStopped() {
-        return this.stopped.get();
+        return this.node.getActualPath() == null;
     }
 
     /**

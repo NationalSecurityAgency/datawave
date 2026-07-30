@@ -51,6 +51,63 @@ class QueryLimiterTest {
     }
 
     /**
+     * Verify that if the QueryLimiter is temporarily deactivated via calling {@link QueryLimiter#setup()} after being updated with a non-valid
+     * {@link QueryLimitConfiguration}, and then reactivated with a new valid configuration, limits are correctly enforced again, and active query nodes are not
+     * arbitrarily deleted.
+     */
+    @Test
+    void testReactivationAfterClearingConfiguration() throws Exception {
+        QueryLimitConfiguration config = new QueryLimitConfiguration();
+        config.setDefaultSystemQueryLimit(100);
+        config.setDefaultUserQueryLimit(5);
+
+        QueryHeartbeatCache heartbeatCache = new QueryHeartbeatCache();
+
+        // Set up the query limiter.
+        QueryLimiter limiter = new QueryLimiter();
+        limiter.setConfiguration(config);
+        limiter.setZookeeperConfig(server.getConnectString());
+        limiter.setHeartbeatCache(heartbeatCache);
+        limiter.setup();
+
+        assertThat(limiter.isEnforcingLimits()).isTrue();
+
+        // Track five queries.
+        limiter.countQueryTowardsLimits(UUID.randomUUID().toString(), userA, system1, tldQueryLogic);
+        limiter.countQueryTowardsLimits(UUID.randomUUID().toString(), userA, system1, tldQueryLogic);
+        limiter.countQueryTowardsLimits(UUID.randomUUID().toString(), userA, system1, tldQueryLogic);
+        limiter.countQueryTowardsLimits(UUID.randomUUID().toString(), userA, system1, tldQueryLogic);
+        limiter.countQueryTowardsLimits(UUID.randomUUID().toString(), userA, system1, tldQueryLogic);
+
+        // Wait a short period to ensure the paths are created and caches are updated.
+        Awaitility.await().pollDelay(500, TimeUnit.MILLISECONDS).until(() -> true);
+
+        // Verify that after we've created five queries for the same user (across different servers and query logics), we have met a limit.
+        assertLimitMet(limiter, userA, system1, tldQueryLogic, "User 'cn=testusera, c=us' has reached limit of 5 running queries");
+
+        // Set the configuration for the query limiter to null and call setup again. This should result in query limits no longer being enforced, but not in
+        // the deletion of any actively tracked queries.
+        limiter.setConfiguration(null);
+        limiter.setup();
+        assertThat(limiter.isEnforcingLimits()).isFalse();
+
+        // Verify that limits are not considered met after enforcement is turned off.
+        assertLimitNotMet(limiter, userA, system1, tldQueryLogic);
+
+        // Verify that the five queries remain actively tracked.
+        assertThat(heartbeatCache.getQueryIds()).hasSize(5);
+
+        // Set a valid configuration and call setup again to reactivate the limiter.
+        limiter.setConfiguration(config);
+        limiter.setup();
+
+        assertThat(limiter.isEnforcingLimits()).isTrue();
+
+        // Verify limits are considered met again.
+        assertLimitMet(limiter, userA, system1, tldQueryLogic, "User 'cn=testusera, c=us' has reached limit of 5 running queries");
+    }
+
+    /**
      * Verify {@link QueryLimiter#setup()} throws an exception if given a default user query limit less than 1.
      */
     @Test
@@ -614,14 +671,20 @@ class QueryLimiterTest {
     }
 
     private void assertLimitNotMet(String userDn, String system, String queryLogic) throws Exception {
-        QueryLimiter limiter = getLimiter(system);
+        assertLimitNotMet(getLimiter(system), userDn, system, queryLogic);
+    }
+
+    private void assertLimitNotMet(QueryLimiter limiter, String userDn, String system, String queryLogic) throws Exception {
         QueryLimiterResponse response = limiter.checkForLimits(userDn, system, queryLogic);
         assertThat(response.getMessage()).isNull();
         assertThat(response.metLimit()).isFalse();
     }
 
     private void assertLimitMet(String userDn, String system, String queryLogic, String message) throws Exception {
-        QueryLimiter limiter = getLimiter(system);
+        assertLimitMet(getLimiter(system), userDn, system, queryLogic, message);
+    }
+
+    private void assertLimitMet(QueryLimiter limiter, String userDn, String system, String queryLogic, String message) throws Exception {
         QueryLimiterResponse response = limiter.checkForLimits(userDn, system, queryLogic);
         assertThat(response.getMessage()).isEqualTo(message);
         assertThat(response.metLimit()).isTrue();

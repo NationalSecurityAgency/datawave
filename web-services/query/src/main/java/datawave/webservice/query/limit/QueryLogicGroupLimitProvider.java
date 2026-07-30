@@ -9,8 +9,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.regex.Pattern;
@@ -19,7 +17,6 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
-
 
 /**
  * This class is responsible for identifying and providing limits that should be enforced for query logic groups.
@@ -33,7 +30,7 @@ public class QueryLogicGroupLimitProvider {
     private GroupLimitCache groupLimitCache;
 
     private final ReadWriteLock groupCacheLock = new ReentrantReadWriteLock();
-    private final Map<String,Set<String>> groupsToQueryLogics = new ConcurrentHashMap<>();
+    private final Map<String,Set<String>> groupsToQueryLogics = new HashMap<>();
 
     public QueryLogicGroupLimitProvider(long maxCacheSize, Collection<QueryLogicGroupLimitConfiguration> configs) {
         this.maxCacheSize = maxCacheSize;
@@ -166,14 +163,19 @@ public class QueryLogicGroupLimitProvider {
 
     public Map<String,Matcher> getGroupMatchers(Set<String> groups) {
         Map<String,Matcher> map = new HashMap<>();
-        groups.forEach(group -> map.put(group, groupsToLimits.get(group).getMatcher()));
+        for (String group : groups) {
+            QueryLogicGroupLimit queryLogicGroupLimit = groupsToLimits.get(group);
+            if (queryLogicGroupLimit != null) {
+                map.put(group, queryLogicGroupLimit.getMatcher());
+            }
+        }
         return map;
     }
 
     public Collection<String> getQueryLogicsForGroup(String group) {
         this.groupCacheLock.readLock().lock();
         try {
-            return Set.copyOf(groupsToQueryLogics.get(group));
+            return Set.copyOf(groupsToQueryLogics.getOrDefault(group, Set.of()));
         } finally {
             this.groupCacheLock.readLock().unlock();
         }
@@ -186,7 +188,7 @@ public class QueryLogicGroupLimitProvider {
             for (Map.Entry<String,QueryLogicGroupLimit> entry : this.groupsToLimits.entrySet()) {
                 String group = entry.getKey();
                 QueryLogicGroupLimit limit = entry.getValue();
-                Set<String> matching = new CopyOnWriteArraySet<>(limit.getMatcher().getMatches(queryLogics));
+                Set<String> matching = new HashSet<>(limit.getMatcher().getMatches(queryLogics));
                 this.groupsToQueryLogics.put(group, matching);
             }
         } catch (Exception e) {
@@ -208,7 +210,7 @@ public class QueryLogicGroupLimitProvider {
                         String group = entry.getKey();
                         QueryLogicGroupLimit limit = entry.getValue();
                         if (limit.getMatcher().matches(queryLogic)) {
-                            Set<String> queryLogics = groupsToQueryLogics.computeIfAbsent(group, k -> new CopyOnWriteArraySet<>());
+                            Set<String> queryLogics = groupsToQueryLogics.computeIfAbsent(group, k -> new HashSet<>());
                             queryLogics.add(queryLogic);
                         }
                     }

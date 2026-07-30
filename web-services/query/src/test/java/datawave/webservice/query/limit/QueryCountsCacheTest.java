@@ -109,7 +109,7 @@ class QueryCountsCacheTest {
      * {@link QueryCountsCache#getTotalUserQueries(String, String)}.
      */
     @Test
-    void testGetTotalUserQueriesWithQueryLogic() throws InterruptedException, IOException {
+    void testGetTotalUserQueriesWithQueryLogic() throws Exception {
         try (CuratorFramework client = getClient()) {
             QueryCountsCache cache = new QueryCountsCache(client, getLimitProvider());
             Awaitility.await("Healthy cache").atMost(Duration.ofSeconds(5)).until(cache::isHealthy);
@@ -178,7 +178,7 @@ class QueryCountsCacheTest {
      * {@link QueryCountsCache#getTotalSystemQueries(String)}.
      */
     @Test
-    void testGetTotalSystemQueries() throws InterruptedException, IOException {
+    void testGetTotalSystemQueries() throws Exception {
         try (CuratorFramework client = getClient()) {
             QueryCountsCache cache = new QueryCountsCache(client, getLimitProvider());
             Awaitility.await("Healthy cache").atMost(Duration.ofSeconds(5)).until(cache::isHealthy);
@@ -233,7 +233,7 @@ class QueryCountsCacheTest {
      * {@link QueryCountsCache#getTotalSystemQueries(String, String)}.
      */
     @Test
-    void testGetTotalSystemQueriesWithQueryLogic() throws InterruptedException, IOException {
+    void testGetTotalSystemQueriesWithQueryLogic() throws Exception {
         try (CuratorFramework client = getClient()) {
             QueryCountsCache cache = new QueryCountsCache(client, getLimitProvider());
             Awaitility.await("Healthy cache").atMost(Duration.ofSeconds(5)).until(cache::isHealthy);
