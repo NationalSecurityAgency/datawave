@@ -10,7 +10,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.Scanner;
-import org.apache.accumulo.core.client.ScannerBase.ConsistencyLevel;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -25,6 +24,7 @@ import datawave.core.query.configuration.QueryData;
 import datawave.next.DocIdQueryIterator;
 import datawave.next.async.RunnableWithContext;
 import datawave.query.iterator.QueryOptions;
+import datawave.scan.ScannerBuilder;
 
 /**
  * A runnable that handles async scanning of a tablet to find document candidates.
@@ -106,18 +106,20 @@ public class DocumentIdProducer implements RunnableWithContext {
             throw new RuntimeException("Scan range differed from input range");
         }
 
-        Scanner scanner = config.getClient().createScanner(context.getTableName(), config.getAuthorizations());
+        Preconditions.checkArgument(context.getTableName().equals(config.getRetrievalScanHintTable()), "Table name did not match execution hint");
+
+        //  @formatter:off
+        ScannerBuilder builder = ScannerBuilder.create(config.getClient())
+                .setTableName(context.getTableName())
+                .setAuthorizations(config.getAuthorizations())
+                .setConsistencyLevel(config.getSearchConsistencyLevel())
+                .setScanType(config.getSearchScanHintPool())
+                .setScanPriority(1);
+        //  @formatter:on
+
+        Scanner scanner = builder.build();
         scanner.setRange(range);
         scanner.addScanIterator(createIteratorSetting());
-
-        if (config.getSearchScanHintTable() != null && config.getSearchScanHintPool() != null) {
-            Preconditions.checkArgument(context.getTableName().equals(config.getRetrievalScanHintTable()), "Table name did not match execution hint");
-            scanner.setExecutionHints(Map.of("scan_type", config.getSearchScanHintPool()));
-        }
-
-        if (config.getSearchConsistencyLevel() != null) {
-            scanner.setConsistencyLevel(ConsistencyLevel.valueOf(config.getSearchConsistencyLevel()));
-        }
         return scanner;
     }
 
