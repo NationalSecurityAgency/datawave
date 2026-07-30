@@ -159,7 +159,7 @@
             published to subscribers.
     -->
     <bean id="queryLimitConfigValidator" class="datawave.webservice.query.limit.QueryLimitConfigurationValidator" />
-    <bean id="queryLimitConfigPublisher" class="datawave.webservice.zookeeper.ZkObjectPublisher">
+    <bean id="queryLimitConfigPublisher" class="datawave.zookeeper.ZkObjectPublisher">
         <constructor-arg name="zookeeperConfig" value="${zookeeper.hosts}"/>
         <constructor-arg name="hdfsConfigUrls" value="${hdfs.site.config.urls}"/>
         <constructor-arg name="namespace" value="QueryLimitConfig"/>
