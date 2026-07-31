@@ -54,7 +54,8 @@ public interface SplitsCache extends AutoCloseable {
      *
      * @param table
      *            - table where we wish to retrieve the count
-     * @return the count of splits for the specified table
+     * @return the count of splits for the specified table, or {@code -1} if no splits are recorded for the table (e.g. an unrecognized or unconfigured table
+     *         name) — distinct from {@code 0}, which means the table is recognized but genuinely has no splits
      */
     int getSplitsCount(String table);
 
@@ -76,7 +77,8 @@ public interface SplitsCache extends AutoCloseable {
      *            - table where we wish to look up the shard
      * @param shardId
      *            - shard ID to look up
-     * @return index of the key in the table mappings
+     * @return the assigned partition, or {@code -1} if shardId has no assigned partition (a miss) — callers should fall back to another strategy rather than
+     *         treat {@code -1} as a real partition
      */
     int getExactPartition(String table, Text shardId);
 
@@ -87,6 +89,8 @@ public interface SplitsCache extends AutoCloseable {
      *            - table where we wish to look up the key
      * @param key
      *            - key to look up
+     * @return the exact or nearest assigned partition; if the table has no assignments at all, falls back to a hash-based partition of key instead of an exact
+     *         or nearest match
      */
     int getNearestPartition(String table, Text key);
 
