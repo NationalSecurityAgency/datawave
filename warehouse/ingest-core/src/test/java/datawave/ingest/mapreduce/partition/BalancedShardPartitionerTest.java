@@ -30,6 +30,7 @@ import datawave.ingest.mapreduce.handler.shard.ShardIdFactory;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.SplitsCacheFactory;
+import datawave.ingest.mapreduce.job.SplitsConstants;
 import datawave.ingest.mapreduce.job.TableSplitsCache;
 import datawave.table.constants.TableName;
 import datawave.util.time.DateHelper;
@@ -93,7 +94,7 @@ public class BalancedShardPartitionerTest {
         new TestShardGenerator(conf, twoTablesDir.toFile(), NUM_DAYS, SHARDS_PER_DAY, TOTAL_TSERVERS, TableName.SHARD, TableName.ERROR_SHARD);
         conf.set(ShardedDataTypeHandler.SHARDED_TNAMES, "errorShard,shard");
         conf.set("datawave.ingest.splits.cache.dir", twoTablesDir.toString());
-        conf.set("datawave.ingest.splits.cache.file", "all-splits.txt");
+        conf.set(SplitsConstants.SPLITS_CACHE_FILE, "all-splits.txt");
 
         TableSplitsCache.clear();
         SplitsCacheFactory.clearInstance();
@@ -240,7 +241,7 @@ public class BalancedShardPartitionerTest {
         new TestShardGenerator(conf, simulatedDiffDir.toFile(), locations, tableName);
         conf.set(ShardedDataTypeHandler.SHARDED_TNAMES, tableName);
         conf.set("datawave.ingest.splits.cache.dir", simulatedDiffDir.toString());
-        conf.set("datawave.ingest.splits.cache.file", "all-splits.txt");
+        conf.set(SplitsConstants.SPLITS_CACHE_FILE, "all-splits.txt");
         conf.set(BalancedShardPartitioner.MISSING_SHARD_STRATEGY_PROP, missingShardStrategy);
 
         // Clear stale cache and force a reload

@@ -6,12 +6,12 @@ import static datawave.ingest.mapreduce.job.SplitsConstants.SPLITS_CACHE_FILE;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.NavigableMap;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
@@ -45,7 +45,7 @@ public class SplitsFile implements SplitsCache {
     private final long now;
     private final String today;
 
-    private ConcurrentHashMap<String,Map<Text,Integer>> shardPartitionsByTable;
+    private ConcurrentHashMap<String,NavigableMap<Text,Integer>> shardPartitionsByTable;
     private TableSplitsCache instance;
     private Configuration conf;
 
@@ -149,12 +149,7 @@ public class SplitsFile implements SplitsCache {
 
     @Override
     public int getExactPartition(String tableName, Text shardId) {
-        Map<Text,Integer> assignments;
-        try {
-            assignments = lazilyCreateAssignments(tableName);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+        NavigableMap<Text,Integer> assignments = lazilyCreateAssignments(tableName);
         Integer partitionId = assignments.get(shardId);
         if (partitionId != null) {
             return partitionId;
@@ -164,26 +159,20 @@ public class SplitsFile implements SplitsCache {
 
     @Override
     public int getNearestPartition(String tableName, Text shardId) {
-        Map<Text,Integer> assignments = null;
-        try {
-            assignments = lazilyCreateAssignments(tableName);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+        NavigableMap<Text,Integer> assignments = lazilyCreateAssignments(tableName);
         Integer partitionId = assignments.get(shardId);
         if (partitionId != null) {
             return partitionId;
         }
-
-        List<Text> keys = new ArrayList<>(assignments.keySet());
-        int closestAssignment = Collections.binarySearch(keys, shardId);
-        if (closestAssignment >= 0) {
-            log.warn("Something is screwy, found {} on the second try", shardId);
-            return assignments.get(shardId);
+        if (assignments.isEmpty()) {
+            // no assignments to collapse against, fall back to a hash-based partition
+            return (shardId.hashCode() & Integer.MAX_VALUE);
         }
-        // insertion point in the index of the key greater
-        Text shardString = keys.get(Math.abs(closestAssignment + 1));
-        return assignments.get(shardString);
+
+        // nearest key greater than shardId; if shardId sorts after every key (e.g. today's shard hasn't been
+        // created yet), fall back to the most recent existing key
+        Map.Entry<Text,Integer> nearest = assignments.ceilingEntry(shardId);
+        return nearest != null ? nearest.getValue() : assignments.lastEntry().getValue();
     }
 
     public void validate(Configuration conf) throws IOException {
@@ -223,21 +212,21 @@ public class SplitsFile implements SplitsCache {
     }
 
     /**
-     * For a given tablename, provides the mapping from {@code shard id -> partition}
+     * For a given tablename, provides the mapping from {@code shard id -> partition}. Uses {@code computeIfAbsent} so concurrent first-callers for the same
+     * table don't each redundantly build the full assignment map.
      *
      * @param tableName
      *            the name of the table
      * @return a list of the shard mappings
-     * @throws IOException
-     *             if there is an issue with read or write
      */
-    private Map<Text,Integer> lazilyCreateAssignments(String tableName) throws IOException {
-        Map<Text,Integer> assignments = this.shardPartitionsByTable.get(tableName);
-        if (null == assignments) {
-            assignments = getPartitionsByShardId(tableName);
-            this.shardPartitionsByTable.put(tableName, assignments);
-        }
-        return assignments;
+    private NavigableMap<Text,Integer> lazilyCreateAssignments(String tableName) {
+        return this.shardPartitionsByTable.computeIfAbsent(tableName, t -> {
+            try {
+                return getPartitionsByShardId(t);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        });
     }
 
     /**

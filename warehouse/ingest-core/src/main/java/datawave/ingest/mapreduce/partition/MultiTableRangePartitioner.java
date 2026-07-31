@@ -1,6 +1,7 @@
 package datawave.ingest.mapreduce.partition;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.text.DecimalFormat;
 import java.util.Arrays;
 
@@ -80,13 +81,19 @@ public class MultiTableRangePartitioner extends Partitioner<BulkIngestKey,Value>
         String tableName = key.getTableName().toString();
         key.getKey().getRow(holder);
 
-        int splitSize = splitsCache.getSplitsCount(tableName);
-
-        int index = splitsCache.getExactIndex(tableName, holder);
+        int splitSize;
+        int exactIndex;
+        try {
+            splitSize = splitsCache.getSplitsCount(tableName);
+            exactIndex = splitsCache.getExactIndex(tableName, holder);
+        } catch (UncheckedIOException e) {
+            log.error("Failed to read splits in MultiTableRangePartitioner for " + tableName, e);
+            return (tableName.hashCode() & Integer.MAX_VALUE) % numPartitions;
+        }
 
         // Note that cut-point length may be used by derived classes
         // even though its not used below
-        index = calculateIndex(index, numPartitions, tableName, splitSize);
+        int index = calculateIndex(exactIndex, numPartitions, tableName, splitSize);
 
         index = partitionLimiter.limit(numPartitions, index);
 

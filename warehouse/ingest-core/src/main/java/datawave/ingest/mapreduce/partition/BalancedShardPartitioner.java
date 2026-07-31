@@ -31,7 +31,7 @@ public class BalancedShardPartitioner extends Partitioner<BulkIngestKey,Value> i
     private Configuration conf;
     private Map<Text,Integer> offsetsFactorByTable;
     private SplitsCache splitsCache;
-    private String missingShardStrategy;
+    private MissingShardStrategy missingShardStrategy;
     int missingShardIdCount = 0;
 
     /**
@@ -53,19 +53,23 @@ public class BalancedShardPartitioner extends Partitioner<BulkIngestKey,Value> i
          * Parse strategy from configuration string.
          *
          * @param stratString
-         *            the strategy name from configuration (case-insensitive)
-         * @return COLLAPSE if stratString equals "COLLAPSE", otherwise HASH (default)
+         *            the strategy name from configuration (case-insensitive), or {@code null} to use the default
+         * @return the matching strategy, or HASH if stratString is {@code null}
+         * @throws RuntimeException
+         *             if stratString is non-null and does not match a known strategy
          */
         public static MissingShardStrategy getStrategy(String stratString) {
-            if (COLLAPSE.name().equals(stratString)) {
+            if (stratString == null) {
+                return HASH;
+            } else if (HASH.name().equalsIgnoreCase(stratString)) {
+                return HASH;
+            } else if (COLLAPSE.name().equalsIgnoreCase(stratString)) {
                 return COLLAPSE;
             } else {
-                return HASH;
+                throw new RuntimeException("Unsupported missing shard strategy " + MISSING_SHARD_STRATEGY_PROP + "=" + stratString);
             }
         }
     }
-
-    private MissingShardStrategy strategy;
 
     public static final String MISSING_SHARD_STRATEGY_PROP = "datawave.ingest.mapreduce.partition.BalancedShardPartitioner.missing.shard.strategy";
 
@@ -73,7 +77,8 @@ public class BalancedShardPartitioner extends Partitioner<BulkIngestKey,Value> i
 
     @Override
     public int getPartition(BulkIngestKey key, Value value, int numReduceTasks) {
-        // No synchronization needed: SplitsCache handles thread-safe access to splits data with double-checked locking
+        // No synchronization needed: SplitsFile's per-table assignment cache uses ConcurrentHashMap.computeIfAbsent, which is safe under concurrent
+        // first-callers for the same table
         try {
             // partition will be balanced for a given day, more so for recent days
             int partition = getAssignedPartition(key.getTableName().toString(), key.getKey().getRow());
@@ -96,7 +101,7 @@ public class BalancedShardPartitioner extends Partitioner<BulkIngestKey,Value> i
         // if the partitionId is not there, either shards were not created for the day
         // or not all shards were created for the day
 
-        if (missingShardStrategy.equals(MissingShardStrategy.HASH.name())) {
+        if (missingShardStrategy == MissingShardStrategy.HASH) {
             int partition = splitsCache.getExactPartition(tableName, shardId);
             if (partition >= 0) {
                 return partition;
@@ -142,8 +147,7 @@ public class BalancedShardPartitioner extends Partitioner<BulkIngestKey,Value> i
     public void setConf(Configuration conf) {
         this.conf = conf;
         shardIdFactory = new ShardIdFactory(conf);
-        missingShardStrategy = conf.get(MISSING_SHARD_STRATEGY_PROP, "HASH");
-        MissingShardStrategy shardStrat = MissingShardStrategy.getStrategy(conf.get(MISSING_SHARD_STRATEGY_PROP));
+        missingShardStrategy = MissingShardStrategy.getStrategy(conf.get(MISSING_SHARD_STRATEGY_PROP));
         splitsCache = SplitsCache.getInstance(conf);
 
         defineOffsetsForTables(conf);

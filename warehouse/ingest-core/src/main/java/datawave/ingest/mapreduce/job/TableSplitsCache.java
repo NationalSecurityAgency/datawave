@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import org.apache.accumulo.core.client.AccumuloClient;
@@ -68,7 +69,7 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
     private static final String EQUALS = "=";
     private static final String COMMA = ",";
     private static final String COLON = ":";
-    private static TableSplitsCache cache;
+    private static final ConcurrentHashMap<Path,TableSplitsCache> CACHES_BY_PATH = new ConcurrentHashMap<>();
     private volatile boolean cacheFileRead = false;
     private Object semaphore = new Object();
 
@@ -106,16 +107,23 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
 
     }
 
+    /**
+     * Get or create the TableSplitsCache for the splits path resolved from conf. Configurations resolving to the same path share one instance; configurations
+     * resolving to different paths each get their own, correctly initialized instance.
+     *
+     * @param conf
+     *            the configuration to resolve the splits path from and, on first request for that path, initialize the new instance with
+     * @return the TableSplitsCache instance for the resolved splits path
+     */
     public static TableSplitsCache getCurrentCache(Configuration conf) {
-        if (null == cache) {
-            cache = new TableSplitsCache(conf);
-        }
-
-        return cache;
+        return CACHES_BY_PATH.computeIfAbsent(getSplitsPath(conf), path -> new TableSplitsCache(conf));
     }
 
+    /**
+     * Clears all cached instances so the next access reinitializes them. Used by tests to avoid cross-test pollution.
+     */
     public static void clear() {
-        cache = null;
+        CACHES_BY_PATH.clear();
     }
 
     /**
