@@ -183,8 +183,9 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
             }
 
             if (emitIntermediateResults) {
-                long elapsedExecutionTimeForCurrentPage = System.currentTimeMillis() - this.queryExecutionForPageStartTime;
+                long elapsedExecutionTimeForCurrentPage = clock.millis() - this.queryExecutionForPageStartTime;
                 if (elapsedExecutionTimeForCurrentPage > this.queryExecutionForPageTimeout) {
+                    this.queryExecutionForPageStartTime = clock.millis();
                     Document intermediateResult = new Document();
                     intermediateResult.setIntermediateResult(true);
                     return Maps.immutableEntry(keyDocumentEntry.getKey(), intermediateResult);

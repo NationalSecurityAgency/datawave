@@ -86,6 +86,7 @@ import datawave.query.model.Frequency;
 import datawave.query.model.IndexFieldHole;
 import datawave.query.model.ModelKeyParser;
 import datawave.query.model.QueryModel;
+import datawave.scan.ScannerBuilder;
 import datawave.security.util.AuthorizationsMinimizer;
 import datawave.security.util.ScannerHelper;
 import datawave.util.StringUtils;
@@ -2274,7 +2275,7 @@ public class MetadataHelper {
             log.trace("--- basicIterator --- {}", tableName);
         }
 
-        try (Scanner scanner = client.createScanner(tableName, auths.iterator().next())) {
+        try (Scanner scanner = ScannerBuilder.create(client).setTableName(tableName).setAuthorizations(auths.iterator().next()).build()) {
             Range range = new Range();
             scanner.setRange(range);
             for (Entry<Key,Value> entry : scanner) {
