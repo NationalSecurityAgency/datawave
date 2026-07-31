@@ -35,8 +35,9 @@ public class CountingShardQueryLogic extends ShardQueryLogic {
     // the time to wait before returning an intermediate result
     private long pageWaitTimeMillis = 0L;
 
-    // retained so the aggregation thread can be released when this logic is closed
-    private CountAggregatingIterator countAggregatingIterator;
+    // retained so the aggregation thread can be released when this logic is closed. Volatile because the thread that starts the query is not necessarily the
+    // thread that tears it down, and a reset publishes this reference after the query is already visible to the thread that expires it.
+    private volatile CountAggregatingIterator countAggregatingIterator;
 
     public CountingShardQueryLogic() {
         super();
