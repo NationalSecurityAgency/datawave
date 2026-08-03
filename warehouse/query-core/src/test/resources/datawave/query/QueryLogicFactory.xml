@@ -397,6 +397,8 @@
         <property name="reduceQueryFieldsPerShard" value="false" />
         <property name="reduceTypeMetadata" value="false" />
         <property name="reduceTypeMetadataPerShard" value="false" />
+        <!--   should TypeMetadata be serialized to iterator options via Kryo instead of its native toString() format    -->
+        <property name="kryoTypeMetadata" value="false" />
         <!--    should the query prune fields by ingest type    -->
         <property name="pruneQueryByIngestTypes" value="false" />
         <!--   should the range stream also generate field and term counts    -->
