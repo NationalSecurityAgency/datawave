@@ -31,6 +31,7 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.dataImpl.KeyExtent;
 import org.apache.accumulo.core.metadata.MetadataServicer;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.lang.Validate;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
@@ -166,6 +167,7 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
     }
 
     public static Path getSplitsPath(Configuration conf) {
+        Validate.notNull(conf, "Configuration object passed in null");
         return new Path(conf.get(SPLITS_CACHE_DIR, DEFAULT_SPLITS_CACHE_DIR), conf.get(SPLITS_CACHE_FILE, DEFAULT_SPLITS_CACHE_FILE));
     }
 

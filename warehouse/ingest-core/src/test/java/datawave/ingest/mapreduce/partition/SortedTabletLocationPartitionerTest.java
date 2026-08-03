@@ -75,7 +75,7 @@ public class SortedTabletLocationPartitionerTest {
         int numPartitions = 581;
 
         SortedTabletLocationPartitioner partitioner = new SortedTabletLocationPartitioner();
-        partitioner.setConf(new Configuration());
+        partitioner.setConf(configuration);
 
         // first split is a, last is z
         for (int i = 0; i < 26; i++) {
@@ -96,7 +96,7 @@ public class SortedTabletLocationPartitionerTest {
         int numPartitions = 8;
 
         SortedTabletLocationPartitioner partitioner = new SortedTabletLocationPartitioner();
-        partitioner.setConf(new Configuration());
+        partitioner.setConf(configuration);
 
         Map<Integer,Integer> numberTimesPartitionSeen = new TreeMap<>();
 
@@ -121,7 +121,7 @@ public class SortedTabletLocationPartitionerTest {
         int numPartitions = 4;
 
         SortedTabletLocationPartitioner partitioner = new SortedTabletLocationPartitioner();
-        partitioner.setConf(new Configuration());
+        partitioner.setConf(configuration);
 
         Map<Integer,Integer> numberTimesPartitionSeen = new TreeMap<>();
 
@@ -154,7 +154,7 @@ public class SortedTabletLocationPartitionerTest {
         int numPartitions = 10;
 
         SortedTabletLocationPartitioner partitioner = new SortedTabletLocationPartitioner();
-        partitioner.setConf(new Configuration());
+        partitioner.setConf(configuration);
 
         Map<Integer,Integer> numberTimesPartitionSeen = new TreeMap<>();
 

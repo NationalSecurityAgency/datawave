@@ -91,6 +91,11 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
     protected static final String MAX_RFILE_UNDEDUPPED_ENTRIES = PREFIX + ".maxRFileUndeduppedEntries";
     protected static final String GENERATE_MAP_FILE_ROW_KEYS = PREFIX + ".generateMapFileRowKeys";
     protected static final String GENERATE_MAP_FILE_PER_SHARD_LOCATION = PREFIX + ".generateMapFilePerShardLocation";
+    // Allows tests to override the fallback shard location for a specific row key via a property named
+    // SHARD_FALLBACK_NAME_PREFIX + <rowKey>. Resolved once per job (see getShardFallbackNamesByRowKey) rather
+    // than via a per-record Configuration.get, since Configuration.get performs variable substitution and is
+    // not a cheap lookup, and a key built from the row would essentially never match a configured property anyway.
+    protected static final String SHARD_FALLBACK_NAME_PREFIX = "shard.fallback.name.";
 
     protected static final String BASE = "bulk.output.partition.count.";
     public static final String CONFIGURE_LOCALITY_GROUPS = PREFIX + ".tables";
@@ -117,6 +122,7 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
     protected int maxRFileEntries = 0;
     protected boolean generateMapFileRowKeys = false;
     protected boolean generateMapFilePerShardLocation = false;
+    protected Map<String,String> shardFallbackNamesByRowKey = Collections.emptyMap();
     private long startWriteTime = 0L;
 
     protected Map<String,Map<Text,String>> columnFamilyToLocalityGroup;
@@ -131,6 +137,17 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
 
     public static void setGenerateMapFilePerShardLocation(Configuration conf, boolean generateMapFilePerShardLocation) {
         conf.setBoolean(GENERATE_MAP_FILE_PER_SHARD_LOCATION, generateMapFilePerShardLocation);
+    }
+
+    protected static Map<String,String> getShardFallbackNamesByRowKey(Configuration conf) {
+        Map<String,String> fallbackNamesByRowKey = new HashMap<>();
+        for (Map.Entry<String,String> entry : conf) {
+            if (entry.getKey().startsWith(SHARD_FALLBACK_NAME_PREFIX)) {
+                String rowKey = entry.getKey().substring(SHARD_FALLBACK_NAME_PREFIX.length());
+                fallbackNamesByRowKey.put(rowKey, conf.get(entry.getKey()));
+            }
+        }
+        return fallbackNamesByRowKey;
     }
 
     public static void setCompressionType(Configuration conf, String compressionType) {
@@ -576,6 +593,9 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
 
         generateMapFileRowKeys = conf.getBoolean(GENERATE_MAP_FILE_ROW_KEYS, generateMapFileRowKeys);
         generateMapFilePerShardLocation = conf.getBoolean(GENERATE_MAP_FILE_PER_SHARD_LOCATION, generateMapFilePerShardLocation);
+        if (generateMapFilePerShardLocation) {
+            shardFallbackNamesByRowKey = getShardFallbackNamesByRowKey(conf);
+        }
 
         // Only do this once.
         if (null == writers) {
@@ -725,8 +745,8 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
                     if (generateMapFilePerShardLocation) {
                         // Look up the shard location (tablet server serving shard ID rowKey)
                         // If we don't have a location, then just use the rowKey itself.
-                        String fallback = conf.get("shard.fallback.name." + rowKey.toString(), "extra");
-                        shardLocation = splitsCache.getExactLocation(tableName, rowKey, () -> fallback);
+                        shardLocation = splitsCache.getExactLocation(tableName, rowKey,
+                                        () -> shardFallbackNamesByRowKey.getOrDefault(rowKey.toString(), "extra"));
                         shardLocation = shardLocation.replace(":", "_");
                     }
                     // Combine table name with shard location so that we end up
