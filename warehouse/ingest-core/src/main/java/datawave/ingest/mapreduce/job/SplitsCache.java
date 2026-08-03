@@ -41,8 +41,11 @@ public interface SplitsCache extends AutoCloseable {
      *
      * @param job
      *            - the job to setup
+     * @param conf
+     *            - the job's own configuration; must not be the configuration captured at {@link #init(Configuration)} time, since a job created via
+     *            {@code Job.getInstance(conf)} snapshots conf and later mutations to that conf object are not visible via {@code job.getConfiguration()}
      */
-    void setupJob(final Job job) throws IOException;
+    void setupJob(final Job job, final Configuration conf) throws IOException;
 
     /**
      * Check whether the cache contains any splits.

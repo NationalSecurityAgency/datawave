@@ -107,7 +107,7 @@ public class SplitsFileTest {
 
         uut.init(conf);
 
-        assertThrows(IOException.class, () -> uut.setupJob(Job.getInstance(conf)));
+        assertThrows(IOException.class, () -> uut.setupJob(Job.getInstance(conf), conf));
     }
 
     @Test

@@ -103,7 +103,7 @@ public class RepartitionerJob implements Tool {
         Configuration config = j.getConfiguration();
 
         // setup and cache table from config
-        SplitsCache.getInstance(config).setupJob(j);
+        SplitsCache.getInstance(config).setupJob(j, config);
         Set<String> tableNames = IngestJob.setupAndCacheTables(config, false);
         config.setInt("splits.num.reduce", jobConfig.reducers);
 

@@ -47,7 +47,6 @@ public class SplitsFile implements SplitsCache {
 
     private ConcurrentHashMap<String,NavigableMap<Text,Integer>> shardPartitionsByTable;
     private TableSplitsCache instance;
-    private Configuration conf;
 
     public SplitsFile() {
         this.shardPartitionsByTable = new ConcurrentHashMap<>();
@@ -57,12 +56,11 @@ public class SplitsFile implements SplitsCache {
 
     @Override
     public void init(Configuration conf) {
-        this.conf = conf;
         this.instance = TableSplitsCache.getCurrentCache(conf);
     }
 
     @Override
-    public void setupJob(Job job) throws IOException {
+    public void setupJob(Job job, Configuration conf) throws IOException {
 
         Path baseSplitsPath = TableSplitsCache.getSplitsPath(conf);
         FileSystem sourceFs = baseSplitsPath.getFileSystem(conf);

@@ -230,7 +230,7 @@ public class ShardReindexJob implements Tool {
         // all changes to configuration must be before this line
         Job j = Job.getInstance(getConf());
         Configuration config = j.getConfiguration();
-        SplitsCache.getInstance(config).setupJob(j);
+        SplitsCache.getInstance(config).setupJob(j, config);
 
         // check if using some form of accumulo in input
         if (jobConfig.inputFiles == null) {
