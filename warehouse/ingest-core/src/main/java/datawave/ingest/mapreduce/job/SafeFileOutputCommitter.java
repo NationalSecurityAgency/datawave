@@ -90,7 +90,7 @@ public class SafeFileOutputCommitter extends FileOutputCommitter {
                 }
             } catch (FileNotFoundException e) {
                 // Protect against a FNFE on any intermediate dirs
-                isTempDirEmpty = fs.exists(pendingJobAttemptsPath);
+                isTempDirEmpty = !fs.exists(pendingJobAttemptsPath);
             }
 
             if (!isTempDirEmpty) {
