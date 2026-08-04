@@ -104,6 +104,11 @@
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.core</groupId>
+                <artifactId>datawave-core-tables</artifactId>
+                <version>${version.datawave}</version>
+            </dependency>
+            <dependency>
+                <groupId>gov.nsa.datawave.core</groupId>
                 <artifactId>metadata-utils</artifactId>
                 <version>${version.datawave}</version>
             </dependency>
@@ -235,6 +240,10 @@
         <dependency>
             <groupId>gov.nsa.datawave.core</groupId>
             <artifactId>common-utils</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.core</groupId>
+            <artifactId>datawave-core-tables</artifactId>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.core</groupId>

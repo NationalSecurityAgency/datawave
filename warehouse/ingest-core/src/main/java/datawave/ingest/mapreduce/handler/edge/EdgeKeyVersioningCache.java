@@ -18,6 +18,7 @@ import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.client.MutationsRejectedException;
+import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.admin.TableOperations;
@@ -37,6 +38,7 @@ import datawave.data.normalizer.DateNormalizer;
 import datawave.data.type.util.NumericalEncoder;
 import datawave.ingest.data.config.ConfigurationHelper;
 import datawave.ingest.data.config.ingest.AccumuloHelper;
+import datawave.scan.ScannerBuilder;
 
 /*
  The edge table may contain different versions of the edge key structure. In order to be able to generate the new keys
@@ -109,7 +111,7 @@ public class EdgeKeyVersioningCache {
         try (AccumuloClient client = cbHelper.newClient()) {
             ensureTableExists(client);
 
-            try (org.apache.accumulo.core.client.Scanner scanner = client.createScanner(metadataTableName, new Authorizations())) {
+            try (Scanner scanner = ScannerBuilder.create(client).setTableName(metadataTableName).setAuthorizations(new Authorizations()).build()) {
                 scanner.setRange(new Range(EDGE_KEY_VERSION_ROW));
 
                 // Read the edge key version dates from the datawave metadata table
