@@ -21,6 +21,7 @@ import javax.security.auth.callback.CallbackHandler;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.wildfly.security.auth.callback.AnonymousAuthorizationCallback;
 import org.wildfly.security.auth.callback.AuthenticationCompleteCallback;
 import org.wildfly.security.auth.callback.CachedIdentityAuthorizeCallback;
 import org.wildfly.security.auth.callback.EvidenceVerifyCallback;
@@ -174,8 +175,9 @@ public class DatawaveHttpAuthenticationMechanism implements HttpServerAuthentica
 
         // If we failed to obtain any evidence, fail the request.
         if (evidence == null) {
-            log.trace("Failed to obtain any evidence for authentication");
-            return false;
+            log.trace("Failed to obtain any evidence for authentication, proceeding with anonymous login");
+            AnonymousAuthorizationCallback authorizeCallback = new AnonymousAuthorizationCallback("anonymous");
+            return attemptAuthorization(request, authorizeCallback, authorizeCallback::isAuthorized, null);
         }
 
         if (log.isTraceEnabled()) {
