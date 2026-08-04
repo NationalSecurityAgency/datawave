@@ -224,6 +224,9 @@ module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.ap
     role-decoder=datawaveRoleDecoder, \
     evidence-decoder=datawaveEvidenceDecoder, \
     permission-mapper=default-permission-mapper)
+    
+# Grant anonymous principals login-permission, they just won't have any roles to call protected API methods (or auths)
+/subsystem=elytron/simple-permission-mapper=default-permission-mapper:list-add(name=permission-mappings[0].permission-sets, value={permission-set=login-permission}, index=0)
 
 #
 # Configure the HTTP/HTTPS listener for undertow
