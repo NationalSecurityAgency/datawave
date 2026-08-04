@@ -17,10 +17,10 @@ import org.apache.hadoop.io.Text;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
-import datawave.data.ColumnFamilyConstants;
 import datawave.data.hash.UID;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.ingest.protobuf.Uid;
+import datawave.table.constants.MetadataColumnFamilyConstants;
 import datawave.table.constants.TableName;
 import datawave.util.time.DateHelper;
 
@@ -207,17 +207,17 @@ public class ColorsIngest {
         // metadata table
         try (BatchWriter bw = client.createBatchWriter(TableName.METADATA)) {
             Mutation m = new Mutation("COLOR");
-            m.put(ColumnFamilyConstants.COLF_E, new Text(datatype), EMPTY_VALUE);
+            m.put(MetadataColumnFamilyConstants.COLF_E, new Text(datatype), EMPTY_VALUE);
             // skipping F column for now
-            m.put(ColumnFamilyConstants.COLF_I, new Text(datatype), EMPTY_VALUE);
-            m.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\0" + normalizerForField("COLOR")), EMPTY_VALUE);
+            m.put(MetadataColumnFamilyConstants.COLF_I, new Text(datatype), EMPTY_VALUE);
+            m.put(MetadataColumnFamilyConstants.COLF_T, new Text(datatype + "\0" + normalizerForField("COLOR")), EMPTY_VALUE);
             bw.addMutation(m);
 
             m = new Mutation("ID");
-            m.put(ColumnFamilyConstants.COLF_E, new Text(datatype), EMPTY_VALUE);
+            m.put(MetadataColumnFamilyConstants.COLF_E, new Text(datatype), EMPTY_VALUE);
             // skipping F column for now
             // skip I column
-            m.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\0" + normalizerForField("ID")), EMPTY_VALUE);
+            m.put(MetadataColumnFamilyConstants.COLF_T, new Text(datatype + "\0" + normalizerForField("ID")), EMPTY_VALUE);
             bw.addMutation(m);
         }
 

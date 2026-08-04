@@ -13,7 +13,6 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
 
-import datawave.data.ColumnFamilyConstants;
 import datawave.data.hash.UID;
 import datawave.data.type.DateType;
 import datawave.data.type.LcNoDiacriticsType;
@@ -21,6 +20,7 @@ import datawave.data.type.Type;
 import datawave.ingest.protobuf.Uid;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.index.day.IndexIngestUtil;
+import datawave.table.constants.MetadataColumnFamilyConstants;
 import datawave.table.constants.TableName;
 
 /**
@@ -213,40 +213,40 @@ public class LimitFieldsTestingIngest {
             bw = client.createBatchWriter(QueryTestTableHelper.MODEL_TABLE_NAME, bwConfig);
 
             mutation = new Mutation("FOO_3");
-            mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
-            mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
-            mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype), emptyValue);
-            mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
+            mutation.put(MetadataColumnFamilyConstants.COLF_I, new Text(datatype), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), emptyValue);
             bw.addMutation(mutation);
 
             mutation = new Mutation("FOO_4");
-            mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
-            mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
+            mutation.put(MetadataColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
             bw.addMutation(mutation);
 
             mutation = new Mutation("FOO_1");
-            mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
-            mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
+            mutation.put(MetadataColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
             bw.addMutation(mutation);
 
             mutation = new Mutation("FOO_3_BAR");
-            mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
-            mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
-            mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype), emptyValue);
-            mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
+            mutation.put(MetadataColumnFamilyConstants.COLF_I, new Text(datatype), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), emptyValue);
             bw.addMutation(mutation);
 
             mutation = new Mutation("FOO_1_BAR");
-            mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
-            mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
-            mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype), emptyValue);
-            mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
+            mutation.put(MetadataColumnFamilyConstants.COLF_I, new Text(datatype), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), emptyValue);
             bw.addMutation(mutation);
 
             mutation = new Mutation("FOO_1_BAR_1");
-            mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
-            mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
-            mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + dateType.getClass().getName()), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
+            mutation.put(MetadataColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + dateType.getClass().getName()), emptyValue);
             bw.addMutation(mutation);
 
         } finally {
