@@ -173,7 +173,7 @@ public class DatawaveHttpAuthenticationMechanism implements HttpServerAuthentica
             throw new HttpAuthenticationException("Error occurred when obtaining evidence for authentication", e);
         }
 
-        // If we failed to obtain any evidence, fail the request.
+        // If we failed to obtain any evidence, proceed with anonymous login
         if (evidence == null) {
             log.trace("Failed to obtain any evidence for authentication, proceeding with anonymous login");
             AnonymousAuthorizationCallback authorizeCallback = new AnonymousAuthorizationCallback("anonymous");
