@@ -32,9 +32,9 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
-import datawave.data.ColumnFamilyConstants;
 import datawave.security.util.AuthorizationsMinimizer;
 import datawave.security.util.ScannerHelper;
+import datawave.table.constants.MetadataColumnFamilyConstants;
 
 @EnableCaching
 @Component("typeMetadataHelper")
@@ -44,7 +44,7 @@ public class TypeMetadataHelper {
 
     public static final String NULL_BYTE = "\0";
 
-    protected final List<Text> metadataTypeColfs = Collections.singletonList(ColumnFamilyConstants.COLF_T);
+    protected final List<Text> metadataTypeColfs = Collections.singletonList(MetadataColumnFamilyConstants.COLF_T);
 
     protected final AccumuloClient accumuloClient;
     protected final String metadataTableName;
