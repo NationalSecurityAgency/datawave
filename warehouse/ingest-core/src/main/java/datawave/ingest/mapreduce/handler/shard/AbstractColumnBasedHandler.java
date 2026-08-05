@@ -1,5 +1,6 @@
 package datawave.ingest.mapreduce.handler.shard;
 
+import java.util.Collection;
 import java.util.Map.Entry;
 
 import org.apache.hadoop.mapreduce.StatusReporter;
@@ -48,41 +49,52 @@ public class AbstractColumnBasedHandler<KEYIN> extends ShardedDataTypeHandler<KE
         index = HashMultimap.create();
         reverse = HashMultimap.create();
 
+        String cachedName = null;
+        boolean indexed = false;
+        boolean reverseIndexed = false;
+        boolean excluded = false;
+        Collection<String> aliases = null;
+
         for (Entry<String,NormalizedContentInterface> e : eventFields.entries()) {
+            NormalizedContentInterface value = e.getValue();
+            String fieldName = value.getIndexedFieldName();
+
+            if (!fieldName.equals(cachedName)) {
+                cachedName = fieldName;
+                excluded = helper.isShardExcluded(fieldName);
+                indexed = !excluded && createGlobalIndexTerms && helper.isIndexedField(fieldName);
+                aliases = (indexed && helper.isAliasedIndexField(fieldName)) ? helper.getAliasesForIndexedField(fieldName) : null;
+                reverseIndexed = !excluded && createGlobalReverseIndexTerms && helper.isReverseIndexedField(fieldName);
+            }
 
             // Prune the fields to remove any fields which should not be included in
             // the shard table or shard Index tables
-            if (helper.isShardExcluded(e.getValue().getIndexedFieldName())) {
+            if (excluded) {
                 continue;
             }
 
             // Put the event field name and original value into the fields
-            fields.put(e.getValue().getIndexedFieldName(), e.getValue());
+            fields.put(fieldName, value);
 
             // Put the normalized field name and normalized value into the index
-            if (createGlobalIndexTerms) {
-                if (helper.isIndexedField(e.getValue().getIndexedFieldName())) {
-                    index.put(e.getValue().getIndexedFieldName(), e.getValue());
-
-                    if (helper.isAliasedIndexField(e.getValue().getIndexedFieldName())) {
-                        for (String alias : helper.getAliasesForIndexedField(e.getValue().getIndexedFieldName())) {
-                            NormalizedContentInterface value = (NormalizedContentInterface) e.getValue().clone();
-                            value.setFieldName(alias);
-                            fields.put(alias, value);
-                            index.put(alias, value);
-                        }
+            if (indexed) {
+                index.put(fieldName, value);
+                if (aliases != null) {
+                    for (String alias : aliases) {
+                        NormalizedContentInterface aliasValue = (NormalizedContentInterface) value.clone();
+                        aliasValue.setFieldName(alias);
+                        fields.put(alias, aliasValue);
+                        index.put(alias, aliasValue);
                     }
                 }
             }
 
             // Put the normalized field name and normalized value into the reverse
-            if (createGlobalReverseIndexTerms) {
-                if (e.getValue().getIndexedFieldValue() != null && helper.isReverseIndexedField(e.getValue().getIndexedFieldName())) {
-                    NormalizedContentInterface rField = (NormalizedContentInterface) (e.getValue().clone());
-                    rField.setEventFieldValue(new StringBuilder(rField.getEventFieldValue()).reverse().toString());
-                    rField.setIndexedFieldValue(new StringBuilder(rField.getIndexedFieldValue()).reverse().toString());
-                    reverse.put(e.getValue().getIndexedFieldName(), rField);
-                }
+            if (reverseIndexed && value.getIndexedFieldValue() != null) {
+                NormalizedContentInterface rField = (NormalizedContentInterface) value.clone();
+                rField.setEventFieldValue(new StringBuilder(rField.getEventFieldValue()).reverse().toString());
+                rField.setIndexedFieldValue(new StringBuilder(rField.getIndexedFieldValue()).reverse().toString());
+                reverse.put(fieldName, rField);
             }
         }
 

@@ -256,37 +256,59 @@ public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractC
         Analyzer analyzer = tokenHelper.getAnalyzer();
 
         try {
+            // termPosition tracking — non-excluded fields only
             String lastFieldName = "";
+
+            // hoist key — every field
+            String cachedName = null;
+            boolean indexed = false;
+            boolean reverseIndexed = false;
+            boolean excluded = false;
+            boolean contentIndexed = false;
+            boolean reverseContentIndexed = false;
+            boolean listIndexed = false;
+            boolean reverseListIndexed = false;
 
             for (Entry<String,NormalizedContentInterface> e : eventFields.entries()) {
                 NormalizedContentInterface nci = e.getValue();
+                String indexedFieldName = nci.getIndexedFieldName();
+                boolean cachedNameRefresh = false;
+
+                if (!indexedFieldName.equals(cachedName)) {
+                    cachedName = indexedFieldName;
+                    cachedNameRefresh = true;
+                    indexed = createGlobalIndexTerms && helper.isIndexedField(indexedFieldName);
+                    reverseIndexed = createGlobalReverseIndexTerms && helper.isReverseIndexedField(indexedFieldName);
+                    excluded = helper.isShardExcluded(indexedFieldName);
+                }
 
                 // Put the normalized field name and normalized value into the index
-                if (createGlobalIndexTerms) {
-                    if (helper.isIndexedField(nci.getIndexedFieldName())) {
-                        index.put(nci.getIndexedFieldName(), nci);
-                    }
+                if (indexed) {
+                    index.put(indexedFieldName, nci);
                 }
 
                 // Put the normalized field name and normalized value into the reverse
-                if (createGlobalReverseIndexTerms) {
-                    if (helper.isReverseIndexedField(nci.getIndexedFieldName())) {
-                        NormalizedContentInterface rField = (NormalizedContentInterface) (nci.clone());
-                        rField.setEventFieldValue(new StringBuilder(rField.getEventFieldValue()).reverse().toString());
-                        rField.setIndexedFieldValue(new StringBuilder(rField.getIndexedFieldValue()).reverse().toString());
-                        reverse.put(nci.getIndexedFieldName(), rField);
-                    }
+                if (reverseIndexed) {
+                    NormalizedContentInterface rField = (NormalizedContentInterface) (nci.clone());
+                    rField.setEventFieldValue(new StringBuilder(rField.getEventFieldValue()).reverse().toString());
+                    rField.setIndexedFieldValue(new StringBuilder(rField.getIndexedFieldValue()).reverse().toString());
+                    reverse.put(indexedFieldName, rField);
                 }
 
                 // Skip any fields that should not be included in the shard table.
-                if (helper.isShardExcluded(nci.getIndexedFieldName())) {
+                if (excluded) {
                     continue;
                 }
 
-                // Put the event field name and original value into the fields
-                fields.put(nci.getIndexedFieldName(), nci);
+                if (cachedNameRefresh) {
+                    contentIndexed = createGlobalIndexTerms && contentHelper.isContentIndexField(indexedFieldName);
+                    reverseContentIndexed = createGlobalReverseIndexTerms && contentHelper.isReverseContentIndexField(indexedFieldName);
+                    listIndexed = createGlobalIndexTerms && contentHelper.isIndexListField(indexedFieldName);
+                    reverseListIndexed = createGlobalReverseIndexTerms && contentHelper.isReverseIndexListField(indexedFieldName);
+                }
 
-                String indexedFieldName = nci.getIndexedFieldName();
+                // Put the event field name and original value into the fields
+                fields.put(indexedFieldName, nci);
 
                 // reset term position to zero if the indexed field name has changed, otherwise
                 // bump the offset based on the inter-field position increment.
@@ -297,12 +319,9 @@ public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractC
                     termPosition += tokenHelper.getInterFieldPositionIncrement();
                 }
 
-                boolean indexField = createGlobalIndexTerms && contentHelper.isContentIndexField(indexedFieldName);
-                boolean reverseIndexField = createGlobalReverseIndexTerms && contentHelper.isReverseContentIndexField(indexedFieldName);
-
-                if (indexField || reverseIndexField) {
+                if (contentIndexed || reverseContentIndexed) {
                     try {
-                        tokenizeField(analyzer, nci, indexField, reverseIndexField, reporter);
+                        tokenizeField(analyzer, nci, contentIndexed, reverseContentIndexed, reporter);
                     } catch (InterruptedException ex) {
                         Thread.currentThread().interrupt();
                         throw new RuntimeException(ex);
@@ -311,11 +330,8 @@ public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractC
                     }
                 }
 
-                boolean indexListField = createGlobalIndexTerms && contentHelper.isIndexListField(indexedFieldName);
-                boolean reverseIndexListField = createGlobalReverseIndexTerms && contentHelper.isReverseIndexListField(indexedFieldName);
-
-                if (indexListField || reverseIndexListField) {
-                    indexListEntries(nci, indexListField, reverseIndexListField, reporter);
+                if (listIndexed || reverseListIndexed) {
+                    indexListEntries(nci, listIndexed, reverseListIndexed, reporter);
                 }
             }
         } finally {

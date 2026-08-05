@@ -38,18 +38,13 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
 
     private final String configSource;
     private final Map<String,FieldInfo> knownFields = new HashMap<>();
+
     /**
      * Memoizes the fully resolved FieldInfo per field name, including pattern matches and no-match results. Not thread-safe: instances are confined to a single
      * thread.
      */
     private final Map<String,FieldInfo> resolvedFields = new HashMap<>();
-    /**
-     * Single-entry "last field looked up" cache in front of {@link #resolvedFields}. Ingest call sites query the same field name several times in a row
-     * (once per {@code is*Field} accessor), so checking these two fields first skips the hash probe on repeat lookups. Relies on the same thread confinement
-     * as {@link #resolvedFields}.
-     */
-    private String previousFieldName;
-    private FieldInfo previousFieldInfo;
+
     private TreeMap<Matcher,String> patterns = new TreeMap<>(new BaseIngestHelper.MatcherComparator());
 
     private static final String UNEXPECTED_ATTRIBUTE = "Unexpected attribute encountered in: ";
@@ -191,13 +186,7 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
     }
 
     private FieldInfo getFieldInfo(String fieldName) {
-        if (fieldName.equals(previousFieldName)) {
-            return previousFieldInfo;
-        }
-        FieldInfo info = resolvedFields.computeIfAbsent(fieldName, this::resolveFieldInfo);
-        previousFieldName = fieldName;
-        previousFieldInfo = info;
-        return info;
+        return resolvedFields.computeIfAbsent(fieldName, this::resolveFieldInfo);
     }
 
     private FieldInfo resolveFieldInfo(String fieldName) {
