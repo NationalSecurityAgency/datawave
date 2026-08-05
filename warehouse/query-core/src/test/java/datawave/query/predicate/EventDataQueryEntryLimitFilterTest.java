@@ -85,6 +85,9 @@ public class EventDataQueryEntryLimitFilterTest {
         assertNotNull(marker);
         assertEquals(rejected.getKey().getRow(), marker.getRow());
         assertEquals(rejected.getKey().getColumnFamily(), marker.getColumnFamily());
+        // the marker must inherit the rejected key's visibility and timestamp or downstream visibility/time filtering drops it
+        assertEquals(rejected.getKey().getColumnVisibility(), marker.getColumnVisibility());
+        assertEquals(rejected.getKey().getTimestamp(), marker.getTimestamp());
         assertTrue(marker.getColumnQualifier().toString().startsWith(EventDataQueryEntryLimitFilter.INCOMPLETE_DOCUMENT_FIELD + '\u0000'));
 
         // only one marker per document

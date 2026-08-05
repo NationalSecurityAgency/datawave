@@ -147,7 +147,9 @@ public class EventDataQueryEntryLimitFilter implements EventDataQueryFilter {
         if (limitReached()) {
             if (!markerEmitted) {
                 markerEmitted = true;
-                return new Key(toLimit.getRow(), toLimit.getColumnFamily(), new Text(MARKER_PREFIX + "true"));
+                // carry the rejected key's visibility and timestamp so the marker survives downstream visibility and time filtering
+                return new Key(toLimit.getRow(), toLimit.getColumnFamily(), new Text(MARKER_PREFIX + "true"), toLimit.getColumnVisibility(),
+                                toLimit.getTimestamp());
             }
             return null;
         }
