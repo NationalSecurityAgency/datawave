@@ -41,6 +41,7 @@ import datawave.query.tables.async.ScannerChunk;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.MockMetadataHelper;
 import datawave.query.util.TypeMetadata;
+import datawave.query.util.TypeMetadataSerializer;
 import datawave.table.constants.TableName;
 
 public class VisitorFunctionTest extends EasyMockSupport {
@@ -503,6 +504,30 @@ public class VisitorFunctionTest extends EasyMockSupport {
 
         TypeMetadata metadata = new TypeMetadata(option);
         Assert.assertEquals(Set.of("FIELD_A", "FIELD_C"), metadata.keySet());
+    }
+
+    /**
+     * Verify that {@link VisitorFunction#reduceIngestTypes(ASTJexlScript, IteratorSetting)} correctly decodes a Kryo-encoded TYPE_METADATA option (marked by
+     * TYPE_METADATA_KRYO) instead of assuming the native toString() format.
+     */
+    @Test
+    public void testReduceIngestTypesHonorsKryoTypeMetadata() throws Exception {
+        ShardQueryConfiguration config = new ShardQueryConfiguration();
+        config.setRebuildDatatypeFilterPerShard(true);
+        MockMetadataHelper helper = new MockMetadataHelper();
+        VisitorFunction function = new VisitorFunction(config, helper);
+
+        TypeMetadata typeMetadata = new TypeMetadata();
+        typeMetadata.put("FIELD_A", "type-a", LcNoDiacriticsType.class.getSimpleName());
+
+        ASTJexlScript script = JexlASTHelper.parseAndFlattenJexlQuery("FIELD_A == 'a'");
+        IteratorSetting settings = new IteratorSetting(10, "itr", QueryIterator.class);
+        settings.addOption(QueryOptions.TYPE_METADATA, new TypeMetadataSerializer().serialize(typeMetadata));
+        settings.addOption(QueryOptions.TYPE_METADATA_KRYO, "true");
+
+        function.reduceIngestTypes(script, settings);
+
+        Assert.assertEquals("type-a", settings.getOptions().get(QueryOptions.DATATYPE_FILTER));
     }
 
     private void loadSettings(IteratorSetting settings) {
