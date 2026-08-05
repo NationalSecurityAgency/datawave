@@ -2,7 +2,6 @@ package datawave.core.iterators;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -11,10 +10,8 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
-import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.OptionDescriber;
@@ -56,9 +53,6 @@ public class UnfieldedRegexExpansionIterator extends SeekingFilter implements Op
 
     private Text columnQualifierDate;
     private Text columnQualifierDateAndDatatype;
-
-    // used to track the unique field value pairs
-    private final Set<String> foundPairs = new HashSet<>();
 
     private final ShardIndexKey parser = new ShardIndexKey();
 
@@ -112,17 +106,6 @@ public class UnfieldedRegexExpansionIterator extends SeekingFilter implements Op
     }
 
     @Override
-    public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
-        if (!range.isStartKeyInclusive()) {
-            // need to make the start key inclusive because filters operate slightly differently
-            Range seekRange = new Range(range.getStartKey(), true, range.getEndKey(), range.isEndKeyInclusive());
-            super.seek(seekRange, columnFamilies, inclusive);
-        } else {
-            super.seek(range, columnFamilies, inclusive);
-        }
-    }
-
-    @Override
     public FilterResult filter(Key k, Value v) {
         if (log.isDebugEnabled()) {
             log.debug("tk: {}", k.toStringNoTime());
@@ -151,14 +134,6 @@ public class UnfieldedRegexExpansionIterator extends SeekingFilter implements Op
             previousMatch = parser.getValue();
         }
 
-        String candidate = parser.getValue() + parser.getField();
-        if (foundPairs.contains(candidate)) {
-            // advance to next field
-            foundPairs.clear();
-            log.debug("Found duplicate field, advance to next field");
-            return new FilterResult(false, AdvanceResult.NEXT_CF);
-        }
-
         String date = parser.getShard();
         if (date.compareTo(startDate) < 0) {
             // advance to start date
@@ -177,7 +152,6 @@ public class UnfieldedRegexExpansionIterator extends SeekingFilter implements Op
         }
 
         log.debug("key accepted, advancing to next column family");
-        foundPairs.add(candidate);
         return new FilterResult(true, AdvanceResult.NEXT_CF);
     }
 
