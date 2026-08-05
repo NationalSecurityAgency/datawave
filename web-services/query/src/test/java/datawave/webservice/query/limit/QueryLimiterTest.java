@@ -16,6 +16,8 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+import datawave.zookeeper.ZkClientBuilder;
+import datawave.zookeeper.ZkPojoPublisherImpl;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.retry.RetryNTimes;
@@ -29,11 +31,11 @@ import org.junit.jupiter.api.Test;
 import datawave.zookeeper.ZkObjectPublisher;
 
 /**
- * Test cases for testing the functionality of {@link QueryLimiter}.
+ * Test cases for testing the functionality of {@link QueryLimitServiceImpl}.
  */
 class QueryLimiterTest {
 
-    private static final String PUBLISHER_NAMESPACE = "QueryLimitConfig";
+    private static final String PUBLISHER_NAMESPACE = "pojoPublisher/queryLimitConfig";
 
     private static final String userA = "cn=testuserA, c=us";
     private static final String userB = "cn=testuserB, c=us";
@@ -44,7 +46,7 @@ class QueryLimiterTest {
 
     private static String validJsonFile;
 
-    private final Map<String,QueryLimiter> systemToLimiter = new HashMap<>();
+    private final Map<String,QueryLimitServiceImpl> systemToLimiter = new HashMap<>();
     private QueryHeartbeatCache heartbeatCache;
     private QueryLimitConfiguration config;
     private TestingServer server;
@@ -90,12 +92,12 @@ class QueryLimiterTest {
     }
 
     /**
-     * Verify {@link QueryLimiter#setup()} throws an exception if the query validation fails when a configuration is initially supplied via injection.
+     * Verify {@link QueryLimitServiceImpl#setup()} throws an exception if the query validation fails when a configuration is initially supplied via injection.
      */
     @Test
     void testConfigurationFailsValidation() {
-        QueryLimiter limiter = new QueryLimiter();
-        limiter.setZookeeperConfig(server.getConnectString());
+        QueryLimitServiceImpl limiter = new QueryLimitServiceImpl();
+        limiter.setZkClientBuilder(new ZkClientBuilder().withConnectString(server.getConnectString()));
         limiter.setHeartbeatCache(heartbeatCache);
 
         QueryLimitConfiguration config = new QueryLimitConfiguration();
@@ -481,14 +483,14 @@ class QueryLimiterTest {
         assertLimitMet(userA, system1, tldQueryLogic, "User 'cn=testusera, c=us' has reached limit of 10 running queries");
 
         // Stop one of the queries. Doesn't matter which, they're all for userA.
-        getLimiter(system1).stopCountingQueryTowardsLimits(queryIds.get(0));
+        getLimiter(system1).markInactive(queryIds.get(0));
 
         // Verify that after stopping one of the queries, we no longer meet a limit.
         assertLimitNotMet(userA, system1, tldQueryLogic);
     }
 
     /**
-     * Verify that when a valid configuration is reloaded by the internal {@link ZkObjectPublisher}, the {@link QueryLimiter} is updated.
+     * Verify that when a valid configuration is reloaded by the internal {@link ZkPojoPublisherImpl}, the {@link QueryLimitServiceImpl} is updated.
      */
     @Test
     void testConfigurationReload() throws Exception {
@@ -497,7 +499,7 @@ class QueryLimiterTest {
         config.setDefaultUserQueryLimit(5);
         givenConfig(config);
 
-        QueryLimiter limiter = getLimiter(system1);
+        QueryLimitServiceImpl limiter = getLimiter(system1);
 
         // Sleep one second to allow for reloader set up.
         Thread.sleep(TimeUnit.SECONDS.toMillis(1));
@@ -521,15 +523,15 @@ class QueryLimiterTest {
         assertEquals(1000, updatedConfig.getDefaultSystemQueryLimit());
     }
 
-    private QueryLimiter getLimiter(String system) throws Exception {
+    private QueryLimitServiceImpl getLimiter(String system) throws Exception {
         if (systemToLimiter.containsKey(system)) {
             return systemToLimiter.get(system);
         } else {
-            ZkObjectPublisher publisher = new ZkObjectPublisher(PUBLISHER_NAMESPACE, server.getConnectString(), null, QueryLimitConfiguration.class,
-                            List.of(new QueryLimitConfigurationValidator()));
+            ZkClientBuilder zkClientBuilder = new ZkClientBuilder().withConnectString(server.getConnectString()).withNamespace(PUBLISHER_NAMESPACE);
+            ZkPojoPublisherImpl publisher = new ZkPojoPublisherImpl(zkClientBuilder, null, QueryLimitConfiguration.class);
 
-            QueryLimiter limiter = new QueryLimiter();
-            limiter.setZookeeperConfig(server.getConnectString());
+            QueryLimitServiceImpl limiter = new QueryLimitServiceImpl();
+            limiter.setZkClientBuilder(new ZkClientBuilder().withConnectString(server.getConnectString()));
             limiter.setConfiguration(config);
             limiter.setHeartbeatCache(heartbeatCache);
             limiter.setConfigPublisher(publisher);
@@ -541,24 +543,24 @@ class QueryLimiterTest {
 
     private List<String> startQueries(int numQueries, String userDn, String system, String queryLogic) throws Exception {
         List<String> queryIds = new ArrayList<>(numQueries);
-        QueryLimiter limiter = getLimiter(system);
+        QueryLimitServiceImpl limiter = getLimiter(system);
         for (int i = 0; i < numQueries; i++) {
             String queryId = UUID.randomUUID().toString();
-            limiter.countQueryTowardsLimits(queryId, userDn, system, queryLogic);
+            limiter.markActive(queryId, userDn, system, queryLogic);
             queryIds.add(queryId);
         }
         return queryIds;
     }
 
     private void assertLimitNotMet(String userDn, String system, String queryLogic) throws Exception {
-        QueryLimiter limiter = getLimiter(system);
+        QueryLimitServiceImpl limiter = getLimiter(system);
         QueryLimiterResponse response = limiter.checkForLimits(userDn, system, queryLogic);
         assertThat(response.getMessage()).isNull();
         assertThat(response.metLimit()).isFalse();
     }
 
     private void assertLimitMet(String userDn, String system, String queryLogic, String message) throws Exception {
-        QueryLimiter limiter = getLimiter(system);
+        QueryLimitServiceImpl limiter = getLimiter(system);
         QueryLimiterResponse response = limiter.checkForLimits(userDn, system, queryLogic);
         assertThat(response.getMessage()).isEqualTo(message);
         assertThat(response.metLimit()).isTrue();

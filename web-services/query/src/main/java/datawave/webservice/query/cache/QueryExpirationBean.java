@@ -26,7 +26,7 @@ import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.microservice.querymetric.QueryMetric;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
-import datawave.webservice.query.limit.QueryLimiter;
+import datawave.webservice.query.limit.QueryLimitServiceImpl;
 import datawave.webservice.query.metric.QueryMetricsBean;
 import datawave.webservice.query.runner.RunningQuery;
 import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
@@ -61,7 +61,7 @@ public class QueryExpirationBean {
 
     @Inject
     @SpringBean(name = "queryLimiter")
-    private QueryLimiter queryLimiter;
+    private QueryLimitServiceImpl queryLimiter;
 
     private boolean clearAll = false;
 
@@ -160,7 +160,7 @@ public class QueryExpirationBean {
                 // Stop counting the query towards query limits.
                 String queryId = settings.getId().toString();
                 try {
-                    queryLimiter.stopCountingQueryTowardsLimits(queryId);
+                    queryLimiter.markInactive(queryId);
                 } catch (Exception e) {
                     log.error("Error stopping heartbeat and removing from cache: " + queryId, e);
                 }
@@ -230,7 +230,7 @@ public class QueryExpirationBean {
     }
 
     /**
-     * Ensure that the query heartbeat cache within the {@link QueryLimiter} does not consider to be active any queries that are either non-existent or no
+     * Ensure that the query heartbeat cache within the {@link QueryLimitServiceImpl} does not consider to be active any queries that are either non-existent or no
      * longer running according to the {@link QueryCache}. This will help safeguard against any synchronization issues.
      */
     private void synchronizeActiveQueries() {
@@ -252,7 +252,7 @@ public class QueryExpirationBean {
 
         // Invalidate the outdated query IDs in the query limiter.
         if (!outdatedQueries.isEmpty()) {
-            queryLimiter.stopCountingQueriesTowardsLimits(outdatedQueries);
+            queryLimiter.markInactive(outdatedQueries);
         }
     }
 }

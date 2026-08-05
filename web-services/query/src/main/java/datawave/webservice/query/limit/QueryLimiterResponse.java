@@ -4,7 +4,7 @@ import java.util.Objects;
 import java.util.StringJoiner;
 
 /**
- * Response originating from {@link QueryLimiter}.
+ * Response originating from {@link QueryLimitServiceImpl}.
  */
 public class QueryLimiterResponse {
 

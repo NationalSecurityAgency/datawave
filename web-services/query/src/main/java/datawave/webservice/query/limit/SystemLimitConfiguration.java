@@ -11,20 +11,28 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 public class SystemLimitConfiguration {
 
-    // The system name regex pattern.
+    /**
+     * The system name regex pattern.
+     */
     @JsonProperty
     private String systemPattern;
 
-    // Whether queries submitted on matching systems should count against a user's query limit.
+    /**
+     * Whether queries submitted on matching systems should count against user query limits.
+     */
     @JsonProperty
     private Boolean countsAgainstUserLimit;
 
-    // The maximum number of queries that can run concurrently on matching systems.
+    /**
+     * The maximum number of queries that can run concurrently on matching systems. Any negative value implies no limit.
+     */
     @JsonProperty
     private Integer queryLimit;
 
-    // Map of query logic group names to the maximum number of queries that can run concurrently on the system when originating from query logics that fall
-    // within the query logic group. The names may be regex patterns.
+    /**
+     * Map of query logic group names to the maximum number of queries that can run concurrently on the system when originating from query logics that fall
+     * within the query logic group. The names may be regex patterns.
+     */
     @JsonProperty
     private Map<String,Integer> queryLogicGroupLimits;
 
@@ -71,24 +79,11 @@ public class SystemLimitConfiguration {
         this.queryLogicGroupLimits = queryLogicGroupLimits == null ? Map.of() : queryLogicGroupLimits;
     }
 
-    /**
-     * Return whether this {@link SystemLimitConfiguration} is considered equal to the given object. This {@code equals(Object)} implementation allows this
-     * instance to be equal to an object that is a subclass of {@link SystemLimitConfiguration}, such as {@link ImmutableSystemLimitConfiguration}.
-     *
-     * @param o
-     *            the object to compare
-     * @return true if the object is equal to this {@link SystemLimitConfiguration}, or false otherwise
-     */
     @Override
     public boolean equals(Object o) {
-        if (o == this) {
-            return true;
-        }
-        // Allow this instance to be considered equal to subclasses.
-        if (!(o instanceof SystemLimitConfiguration)) {
+        if (o == null || getClass() != o.getClass()) {
             return false;
         }
-
         SystemLimitConfiguration that = (SystemLimitConfiguration) o;
         return Objects.equals(systemPattern, that.systemPattern) && Objects.equals(countsAgainstUserLimit, that.countsAgainstUserLimit)
                         && Objects.equals(queryLimit, that.queryLimit) && Objects.equals(queryLogicGroupLimits, that.queryLogicGroupLimits);
@@ -101,20 +96,8 @@ public class SystemLimitConfiguration {
 
     @Override
     public String toString() {
-        return toString(SystemLimitConfiguration.class);
-    }
-
-    /**
-     * Return a String representation of this {@link SystemLimitConfiguration} referencing the given class as the instance of this
-     * {@link SystemLimitConfiguration}.
-     *
-     * @param clazz
-     *            the class
-     * @return the string representation
-     */
-    protected String toString(Class<? extends SystemLimitConfiguration> clazz) {
-        return new StringJoiner(", ", clazz.getSimpleName() + "[", "]").add("systemPattern='" + systemPattern + "'")
-                        .add("countsAgainstsUserLimit=" + countsAgainstUserLimit).add("queryLimit=" + queryLimit)
+        return new StringJoiner(", ", SystemLimitConfiguration.class.getSimpleName() + "[", "]").add("systemPattern='" + systemPattern + "'")
+                        .add("countsAgainstUserLimit=" + countsAgainstUserLimit).add("queryLimit=" + queryLimit)
                         .add("queryLogicGroupLimits=" + queryLogicGroupLimits).toString();
     }
 }

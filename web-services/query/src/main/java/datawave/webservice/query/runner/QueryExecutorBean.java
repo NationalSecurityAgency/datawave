@@ -150,7 +150,7 @@ import datawave.webservice.query.exception.PreConditionFailedQueryException;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.exception.UnauthorizedQueryException;
 import datawave.webservice.query.factory.Persister;
-import datawave.webservice.query.limit.QueryLimiter;
+import datawave.webservice.query.limit.QueryLimitServiceImpl;
 import datawave.webservice.query.limit.QueryLimiterResponse;
 import datawave.webservice.query.metric.QueryMetricsBean;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
@@ -266,7 +266,7 @@ public class QueryExecutorBean implements QueryExecutor {
 
     @Inject
     @SpringBean(name = "queryLimiter")
-    private QueryLimiter queryLimiter;
+    private QueryLimitServiceImpl queryLimiter;
 
     private static final int PAGE_TIMEOUT_MIN = 1;
     private static final int PAGE_TIMEOUT_MAX = 60;
@@ -4018,7 +4018,7 @@ public class QueryExecutorBean implements QueryExecutor {
      */
     private void markQueryAsActive(String queryId, String userDn, String system, String queryLogicName) throws Exception {
         try {
-            queryLimiter.countQueryTowardsLimits(queryId, userDn, system, queryLogicName);
+            queryLimiter.markActive(queryId, userDn, system, queryLogicName);
         } catch (Exception e) {
             log.error("Failed to mark query " + queryId + " as active", e);
             throw e;
@@ -4032,7 +4032,7 @@ public class QueryExecutorBean implements QueryExecutor {
      */
     private void markQueryAsInactive(String queryId) {
         try {
-            queryLimiter.stopCountingQueryTowardsLimits(queryId);
+            queryLimiter.markInactive(queryId);
         } catch (Exception e) {
             log.error("Error occurred when marking query " + queryId + " as inactive");
         }

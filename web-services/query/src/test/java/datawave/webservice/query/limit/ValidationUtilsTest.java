@@ -12,12 +12,12 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 /**
- * Tests for {@link QueryLimitConfigurationValidationUtils}.
+ * Tests for {@link ValidationUtils}.
  */
-class QueryLimitConfigurationValidationUtilsTest {
+class ValidationUtilsTest {
 
     /**
-     * Tests for {@link QueryLimitConfigurationValidationUtils#validate(QueryLimitConfiguration)}.
+     * Tests for {@link ValidationUtils#validateQueryLimitConfig(QueryLimitConfiguration)}.
      */
     @Nested
     class QueryLimitConfigurationValidationTests {
@@ -30,7 +30,7 @@ class QueryLimitConfigurationValidationUtilsTest {
             QueryLimitConfiguration config = new QueryLimitConfiguration();
             config.setDefaultUserQueryLimit(0);
 
-            assertThatThrownBy(() -> QueryLimitConfigurationValidationUtils.validate(config)).isInstanceOf(IllegalArgumentException.class)
+            assertThatThrownBy(() -> ValidationUtils.validateQueryLimitConfig(config)).isInstanceOf(IllegalArgumentException.class)
                             .hasMessage("Default user query limit must be greater than 0");
         }
 
@@ -44,13 +44,13 @@ class QueryLimitConfigurationValidationUtilsTest {
             config.setDefaultSystemQueryLimit(5000);
             config.setInternalCacheMaxSize(0);
 
-            assertThatThrownBy(() -> QueryLimitConfigurationValidationUtils.validate(config)).isInstanceOf(IllegalArgumentException.class)
+            assertThatThrownBy(() -> ValidationUtils.validateQueryLimitConfig(config)).isInstanceOf(IllegalArgumentException.class)
                             .hasMessage("Internal cache max size must be greater than 0");
         }
     }
 
     /**
-     * Tests for {@link QueryLimitConfigurationValidationUtils#validateQueryLogicGroupConfigs(Collection)}.
+     * Tests for {@link ValidationUtils#validateQueryLogicGroupConfigs(Collection)}.
      */
     @Nested
     class QueryLogicGroupLimitConfigurationValidationTests {
@@ -68,7 +68,7 @@ class QueryLimitConfigurationValidationUtilsTest {
         void testConfigWithBlankGroupName() {
             givenConfig(" ", "TLDQueryLogic", 50);
 
-            assertThatThrownBy(() -> QueryLimitConfigurationValidationUtils.validateQueryLogicGroupConfigs(configs))
+            assertThatThrownBy(() -> ValidationUtils.validateQueryLogicGroupConfigs(configs))
                             .isInstanceOf(IllegalArgumentException.class).hasMessage("Query logic group limit configuration given with blank group name");
         }
 
@@ -80,7 +80,7 @@ class QueryLimitConfigurationValidationUtilsTest {
             givenConfig("TLD", "TLDQueryLogic", 50);
             givenConfig("TLD", "TLD*", 25);
 
-            assertThatThrownBy(() -> QueryLimitConfigurationValidationUtils.validateQueryLogicGroupConfigs(configs))
+            assertThatThrownBy(() -> ValidationUtils.validateQueryLogicGroupConfigs(configs))
                             .isInstanceOf(IllegalArgumentException.class).hasMessage("Multiple query logic group configurations given with group name 'TLD'");
         }
 
@@ -91,7 +91,7 @@ class QueryLimitConfigurationValidationUtilsTest {
         void testConfigWithNegativeLimit() {
             givenConfig("TLD", "TLDQueryLogic", -1);
 
-            assertThatThrownBy(() -> QueryLimitConfigurationValidationUtils.validateQueryLogicGroupConfigs(configs))
+            assertThatThrownBy(() -> ValidationUtils.validateQueryLogicGroupConfigs(configs))
                             .isInstanceOf(IllegalArgumentException.class).hasMessage("Negative limit given for query logic group 'TLD'");
         }
 
@@ -102,7 +102,7 @@ class QueryLimitConfigurationValidationUtilsTest {
         void testConfigWithBlankQueryLogicPattern() {
             givenConfig("TLD", " ", 50);
 
-            assertThatThrownBy(() -> QueryLimitConfigurationValidationUtils.validateQueryLogicGroupConfigs(configs))
+            assertThatThrownBy(() -> ValidationUtils.validateQueryLogicGroupConfigs(configs))
                             .isInstanceOf(IllegalArgumentException.class).hasMessage("Blank query logic pattern given for query logic group 'TLD'");
         }
 
@@ -113,7 +113,7 @@ class QueryLimitConfigurationValidationUtilsTest {
         void testConfigWithUncompilableQueryLogicPattern() {
             givenConfig("TLD", "TLD[", 50);
 
-            assertThatThrownBy(() -> QueryLimitConfigurationValidationUtils.validateQueryLogicGroupConfigs(configs))
+            assertThatThrownBy(() -> ValidationUtils.validateQueryLogicGroupConfigs(configs))
                             .isInstanceOf(IllegalArgumentException.class).hasMessage("Invalid regex in query logic pattern 'TLD[' for query logic group 'TLD'");
         }
 
@@ -124,7 +124,7 @@ class QueryLimitConfigurationValidationUtilsTest {
     }
 
     /**
-     * Tests for {@link QueryLimitConfigurationValidationUtils#validateUserLimitConfigs(Collection)}.
+     * Tests for {@link ValidationUtils#validateUserLimitConfigs(Collection)}.
      */
     @Nested
     class UserLimitConfigurationValidationTests {
@@ -142,7 +142,7 @@ class QueryLimitConfigurationValidationUtilsTest {
         void testConfigWithBlankDn() {
             givenUserConfig("  ", null);
 
-            assertThatThrownBy(() -> QueryLimitConfigurationValidationUtils.validateUserLimitConfigs(configs)).isInstanceOf(IllegalArgumentException.class)
+            assertThatThrownBy(() -> ValidationUtils.validateUserLimitConfigs(configs)).isInstanceOf(IllegalArgumentException.class)
                             .hasMessage("User query limit configuration given with blank user DN");
         }
 
@@ -154,7 +154,7 @@ class QueryLimitConfigurationValidationUtilsTest {
             givenUserConfig("cn=test user, c=us", 100);
             givenUserConfig("cn=test user, c=us", 200);
 
-            assertThatThrownBy(() -> QueryLimitConfigurationValidationUtils.validateUserLimitConfigs(configs)).isInstanceOf(IllegalArgumentException.class)
+            assertThatThrownBy(() -> ValidationUtils.validateUserLimitConfigs(configs)).isInstanceOf(IllegalArgumentException.class)
                             .hasMessage("Multiple query limit configurations specified for user 'cn=test user, c=us'");
         }
 
@@ -165,7 +165,7 @@ class QueryLimitConfigurationValidationUtilsTest {
         void testConfigWithNegativeLimit() {
             givenUserConfig("cn=test user, c=us", -1);
 
-            assertThatThrownBy(() -> QueryLimitConfigurationValidationUtils.validateUserLimitConfigs(configs)).isInstanceOf(IllegalArgumentException.class)
+            assertThatThrownBy(() -> ValidationUtils.validateUserLimitConfigs(configs)).isInstanceOf(IllegalArgumentException.class)
                             .hasMessage("Negative user query limit given for user 'cn=test user, c=us'");
         }
 
@@ -175,7 +175,7 @@ class QueryLimitConfigurationValidationUtilsTest {
     }
 
     /**
-     * Tests for {@link QueryLimitConfigurationValidationUtils#validateSystemLimitConfigs(Collection, long)}.
+     * Tests for {@link ValidationUtils#validateSystemLimitConfigs(Collection, long)}.
      */
     @Nested
     class SystemLimitConfigurationValidationTests {
@@ -194,7 +194,7 @@ class QueryLimitConfigurationValidationUtilsTest {
         void testConfigWithBlankSystemPattern() {
             givenSystemConfig(" ", 10, true, null);
 
-            assertThatThrownBy(() -> QueryLimitConfigurationValidationUtils.validateSystemLimitConfigs(configs, 200))
+            assertThatThrownBy(() -> ValidationUtils.validateSystemLimitConfigs(configs, 200))
                             .isInstanceOf(IllegalArgumentException.class).hasMessage("System query limit configuration specified with blank system pattern");
         }
 
@@ -205,7 +205,7 @@ class QueryLimitConfigurationValidationUtilsTest {
         void testConfigWithUncompilableSystemPattern() {
             givenSystemConfig("SYS[", 10, true, null);
 
-            assertThatThrownBy(() -> QueryLimitConfigurationValidationUtils.validateSystemLimitConfigs(configs, 200))
+            assertThatThrownBy(() -> ValidationUtils.validateSystemLimitConfigs(configs, 200))
                             .isInstanceOf(IllegalArgumentException.class).hasMessage("Invalid regex in system pattern 'SYS['");
         }
 
@@ -217,7 +217,7 @@ class QueryLimitConfigurationValidationUtilsTest {
             givenSystemConfig("SYSTEM_01*", 10, true, null);
             givenSystemConfig("SYSTEM_01*", 10, true, null);
 
-            assertThatThrownBy(() -> QueryLimitConfigurationValidationUtils.validateSystemLimitConfigs(configs, 200))
+            assertThatThrownBy(() -> ValidationUtils.validateSystemLimitConfigs(configs, 200))
                             .isInstanceOf(IllegalArgumentException.class)
                             .hasMessage("Multiple query limit configurations specified with system pattern 'SYSTEM_01*'");
         }
@@ -230,7 +230,7 @@ class QueryLimitConfigurationValidationUtilsTest {
             givenSystemConfig("SYSTEM_01", 10, true, null); // Literals only.
             givenSystemConfig("SYSTEM\\_01", 10, true, null); // Literals and escaped literals.
 
-            assertThatThrownBy(() -> QueryLimitConfigurationValidationUtils.validateSystemLimitConfigs(configs, 200))
+            assertThatThrownBy(() -> ValidationUtils.validateSystemLimitConfigs(configs, 200))
                             .isInstanceOf(IllegalArgumentException.class)
                             .hasMessage("System pattern 'SYSTEM\\_01' will resolve to an exact match that is equivalent to system pattern 'SYSTEM_01' from "
                                             + "another system configuration.");
@@ -243,7 +243,7 @@ class QueryLimitConfigurationValidationUtilsTest {
         void testImpliedWildcardSystemPatternThatDoesNotApplyToUserLimit() {
             givenSystemConfig("*", 10, false, null);
 
-            assertThatThrownBy(() -> QueryLimitConfigurationValidationUtils.validateSystemLimitConfigs(configs, 200))
+            assertThatThrownBy(() -> ValidationUtils.validateSystemLimitConfigs(configs, 200))
                             .isInstanceOf(IllegalArgumentException.class)
                             .hasMessage("System pattern '*' is wildcard-only and may not be used to override whether queries count against user limits to false");
         }
@@ -255,7 +255,7 @@ class QueryLimitConfigurationValidationUtilsTest {
         void testExplicitWildcardSystemPatternThatDoesNotApplyToUserLimit() {
             givenSystemConfig(".*", 10, false, null);
 
-            assertThatThrownBy(() -> QueryLimitConfigurationValidationUtils.validateSystemLimitConfigs(configs, 200))
+            assertThatThrownBy(() -> ValidationUtils.validateSystemLimitConfigs(configs, 200))
                             .isInstanceOf(IllegalArgumentException.class)
                             .hasMessage("System pattern '.*' is wildcard-only and may not be used to override whether queries count against user limits to false");
         }

@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
@@ -13,6 +14,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.StringJoiner;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -22,20 +24,16 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.framework.recipes.cache.CuratorCache;
 import org.apache.curator.framework.recipes.cache.CuratorCacheListener;
-import org.apache.curator.retry.RetryNTimes;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
-import org.apache.log4j.Logger;
 import org.apache.zookeeper.data.Stat;
-import org.awaitility.Awaitility;
-import org.awaitility.core.ConditionTimeoutException;
 
 import com.ctc.wstx.stax.WstxInputFactory;
 import com.ctc.wstx.stax.WstxOutputFactory;
@@ -49,6 +47,8 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.google.common.base.Preconditions;
 
 import datawave.util.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A publisher that can be triggered to deserialize and publish updates of a configured class to subscribers. The publisher leverages Zookeeper and is triggered
@@ -65,12 +65,12 @@ import datawave.util.StringUtils;
  * <li>A local file: {@code file://path/to/file} or {@code /path/to/file}.</li>
  * </ul>
  * If an instance of the class is successfully deserialized from the file, it will be validated against any configured object validators. Afterward it will be
- * provided to all subscribers that have subscribed to the publisher via {@link ZkObjectPublisher#subscribeToUpdates(Consumer)}. The status of any triggered
+ * provided to all subscribers that have subscribed to the publisher via {@link ZkPojoPublisherImpl#subscribeToUpdates(Consumer)}. The status of any triggered
  * attempt will be recorded under the node {@code /<namespace>/attempts/<serverIpAddress>}. Upon a success, the children nodes will follow the structure:
  *
  * <pre>
- * /status # The data will be {@link ZkObjectPublishStatus#SUCCESS}
- * /cause  # The data will be one of {@link ZkObjectPublishCause}
+ * /status # The data will be {@link PublishStatus#SUCCESS}
+ * /cause  # The data will be one of {@link PublishCause}
  * /time   # The data will be an ISO-8601 string representing the time of the publish attempt
  * </pre>
  *
@@ -78,8 +78,8 @@ import datawave.util.StringUtils;
  * the structure:
  *
  * <pre>
- * /status                     # The data will be {@link ZkObjectPublishStatus#RELOAD_ERROR} or {@link ZkObjectPublishStatus#SUBSCRIBER_ERROR}
- * /cause                      # The data will be one of {@link ZkObjectPublishCause}
+ * /status                     # The data will be {@link PublishStatus#LOAD_ERROR} or {@link PublishStatus#SUBSCRIBER_ERROR}
+ * /cause                      # The data will be one of {@link PublishCause}
  * /time                       # The data will be an ISO-8601 string representing the time of the publish attempt
  * /errors                     # A node containing error_N nodes where N is a number ranging from 0 to one less than the total errors
  * /errors/error_N/message     # A short description of the error
@@ -88,13 +88,13 @@ import datawave.util.StringUtils;
  *
  * The nodes under {@code /<namespace>/attempts/<serverIpAddress>} will always reflect the latest reload attempt.
  * <p>
- * <strong>NOTE:</strong> It is crucial that separate {@link ZkObjectPublisher} instances on the same server are created with unique namespaces in order to
+ * <strong>NOTE:</strong> It is crucial that separate {@link ZkPojoPublisherImpl} instances on the same server are created with unique namespaces in order to
  * prevent the same {@code /<namespace>/attempts/<serverIpAddress>} node and its children from being modified by multiple publishers.
  */
-public class ZkObjectPublisher {
-
-    private static final Logger log = Logger.getLogger(ZkObjectPublisher.class);
-
+public class ZkPojoPublisherImpl<T> implements ZkPojoPublisher<T> {
+    
+    private static final Logger log = LoggerFactory.getLogger(ZkPojoPublisherImpl.class);
+    
     public static final String NODE_PATH = "/path";
     public static final String NODE_TRIGGER = "/trigger";
     public static final String NODE_ATTEMPTS = "/attempts";
@@ -105,140 +105,133 @@ public class ZkObjectPublisher {
     public static final String NODE_MESSAGE = "/message";
     public static final String NODE_STACKTRACE = "/stacktrace";
     public static final String NODE_TIME = "/time";
-
+    
     /**
      * Mapper for JSON files.
      */
     private static final JsonMapper jsonMapper = new JsonMapper();
-
+    
     /**
      * Mapper for XML files.
      */
     // Ensure the mapper is created with factories that support the StAX2 API.
     private static final XmlMapper xmlMapper = new XmlMapper(new WstxInputFactory(), new WstxOutputFactory());
-
+    
     /**
      * Mapper for YAML files.
      */
     private static final YAMLMapper yamlMapper = new YAMLMapper();
-
+    
     /**
      * Map of format names to the mappers.
      */
     // @formatter:off
     private static final Map<String,ObjectMapper> formatToMapper = Map.of(
-            jsonMapper.getFactory().getFormatName(), jsonMapper,
-            xmlMapper.getFactory().getFormatName(), xmlMapper,
-            yamlMapper.getFactory().getFormatName(), yamlMapper
+                    jsonMapper.getFactory().getFormatName(), jsonMapper,
+                    xmlMapper.getFactory().getFormatName(), xmlMapper,
+                    yamlMapper.getFactory().getFormatName(), yamlMapper
     );
     // @formatter:on
-
+    
     /**
      * Helper class to detect the format of a file.
      */
     private static final DataFormatDetector formatDetector = new DataFormatDetector(jsonMapper.getFactory(), xmlMapper.getFactory(), yamlMapper.getFactory());
-
+    
     /**
      * The finalized path for the node {@code <namespace>/attempts/<serverIpAddress>}.
      */
     private final String baseAttemptNode;
-
+    
     /**
      * The finalized path for the node {@code <namespace>/attempts/<serverIpAddress>/cause}.
      */
     private final String attemptCauseNode;
-
+    
     /**
      * The finalized path for the node {@code <namespace>/attempts/<serverIpAddress>/status}.
      */
     private final String attemptStatusNode;
-
+    
     /**
      * The finalized path for the node {@code <namespace>/attempts/<serverIpAddress>/errors}.
      */
     private final String attemptErrorsNode;
-
+    
     /**
      * The finalized path for the node {@code <namespace>/attempts/<serverIpAddress>/time}.
      */
     private final String attemptTimeNode;
-
-    private final String namespace;
+    
+    /**
+     * The hadoop configuration for reading files from HDFS.
+     */
     private final Configuration hadoopConfig;
-    private final Class<?> objectClass;
-    private final List<ObjectValidator> objectValidators;
-
+    
+    /**
+     * The POJO type.
+     */
+    private final Class<T> pojoClass;
+    
     /**
      * The list of subscribers that should be supplied with new objects after successful reloads.
      */
-    private List<Consumer<Object>> subscribers = new CopyOnWriteArrayList<>();
-
+    private final List<Consumer<Object>> subscribers = new CopyOnWriteArrayList<>();
+    
     /**
      * A {@link CuratorCache} that will listen for creates and modifications of the node {@code <namespace>/path}.
      */
     private CuratorCache pathCache;
-
+    
     /**
      * A {@link CuratorCache} that will listen for creates, modifications, and deletions of the node {@code <namespace>/trigger}
      */
     private CuratorCache triggerCache;
-
+    
     /**
      * A boolean that will be set to true when {@link #pathCache} is initialized.
      */
     private final AtomicBoolean pathCacheInitialized = new AtomicBoolean(false);
-
+    
     /**
      * A boolean that will be set to true when {@link #triggerCache} is initialized.
      */
     private final AtomicBoolean triggerCacheInitialized = new AtomicBoolean(false);
-
+    
     /**
-     * The lock that must be obtained by any task calling {@link #triggerReload(ZkObjectPublishCause)} in order to perform a reload.
+     * The lock that must be obtained by any task calling {@link #triggerReload(PublishCause)} in order to perform a reload.
      */
     private final Lock reloadLock = new ReentrantLock();
-
+    
     /**
      * An executor that runs 1 task, and keeps at most 1 in the queue. If a 3rd task arrives, the one in the queue is discarded for the new one. If a bunch of
      * reloads occur, we are only interested in supplying listeners with the latest reload attempt.
      */
     // @formatter:off
-    private ThreadPoolExecutor executor = new ThreadPoolExecutor(
-            1, // Use a core pool size of 1.
-            1, // The maximum pool size is 1.
-            0L, TimeUnit.MILLISECONDS, // Keep alive time of 1 ms for idle threads.
-            new ArrayBlockingQueue<>(1), // Only allow 1 task to be queued at a time.
-            new ThreadPoolExecutor.DiscardOldestPolicy()); // If a new task is submitted, discard any task present in the queue.
+    private final ThreadPoolExecutor executor = new ThreadPoolExecutor(
+                    1, // Use a core pool size of 1.
+                    1, // The maximum pool size is 1.
+                    0L, TimeUnit.MILLISECONDS, // Keep alive time of 1 ms for idle threads.
+                    new ArrayBlockingQueue<>(1), // Only allow 1 task to be queued at a time.
+                    new ThreadPoolExecutor.DiscardOldestPolicy()); // If a new task is submitted, discard any task present in the queue.
     // @formatter:on
-
+    
     /**
      * The client.
      */
-    private CuratorFramework client;
-
-    public ZkObjectPublisher(String namespace, String zookeeperConfig, String hdfsConfigUrls, Class<?> objectClass, List<ObjectValidator> objectValidators)
+    private final CuratorFramework client;
+    
+    public ZkPojoPublisherImpl(ZkClientBuilder zkClientBuilder, String hdfsConfigUrls, Class<T> pojoClass)
                     throws Exception {
-        Preconditions.checkArgument((namespace != null && !namespace.isBlank()), "namespace must not be null or blank");
-        Preconditions.checkArgument((zookeeperConfig != null && !zookeeperConfig.isBlank()), "zookeeperConfig must not be null or blank");
-        Preconditions.checkNotNull(objectClass, "objectClass must not be null");
-
+        Preconditions.checkNotNull(zkClientBuilder, "zkClientBuilder must not be null");
+        Preconditions.checkNotNull(pojoClass, "pojoClass must not be null");
+        
         if (log.isDebugEnabled()) {
-            log.debug(addLogPrefix("Initializing with namespace=" + namespace + ", zookeeperConfig=" + zookeeperConfig + ", hdfsConfigUrls=" + hdfsConfigUrls
-                            + ", " + "objectClass=" + objectClass.getName() + ", pojoValidators=" + objectValidators));
+            log.debug("Initializing with zkClientBuilder={}, hdfsConfigUrls={}, pojoClass={}", zkClientBuilder, hdfsConfigUrls, pojoClass);
         }
-
-        this.namespace = namespace.trim();
-        this.objectClass = objectClass;
-        this.objectValidators = objectValidators == null ? List.of() : List.copyOf(objectValidators);
-
-        String zkConnectString;
-        try {
-            // If the zookeeper config points to a file, extract the hosts from it.
-            zkConnectString = ZkUtils.getQuorumPeerConfig(zookeeperConfig);
-        } catch (Exception e) {
-            throw new RuntimeException(addLogPrefix("Failed to extract zookeeper connect string from config " + zookeeperConfig), e);
-        }
-
+        
+        this.pojoClass = pojoClass;
+        
         try {
             // Load any provided hadoop configurations.
             this.hadoopConfig = new Configuration();
@@ -248,40 +241,38 @@ public class ZkObjectPublisher {
                 }
             }
         } catch (Exception e) {
-            throw new RuntimeException(addLogPrefix("Failed to load hadoop configuration from URLs " + hdfsConfigUrls), e);
+            throw new RuntimeException("Failed to load hadoop configuration from URLs " + hdfsConfigUrls, e);
         }
-
+        
         // Construct the finalized attempt node paths to be relative to the server IP address.
         String serverIpAddress;
         try {
             serverIpAddress = InetAddress.getLocalHost().getHostAddress();
         } catch (Exception e) {
-            throw new RuntimeException(addLogPrefix("Failed to get local host address"), e);
+            throw new RuntimeException("Failed to get local host address", e);
         }
+        
         baseAttemptNode = NODE_ATTEMPTS + "/" + serverIpAddress;
         attemptCauseNode = baseAttemptNode + NODE_CAUSE;
         attemptStatusNode = baseAttemptNode + NODE_STATUS;
         attemptErrorsNode = baseAttemptNode + NODE_ERRORS;
         attemptTimeNode = baseAttemptNode + NODE_TIME;
-
-        // @formatter:off
-        client = CuratorFrameworkFactory.builder()
-                .namespace(this.namespace)
-                .connectString(zkConnectString)
-                .sessionTimeoutMs(60_000)
-                .connectionTimeoutMs(60_000)
-                .retryPolicy(new RetryNTimes(10, 1000))
-                .build();
-        // @formatter:on
-
-        client.start();
-        client.blockUntilConnected(3, TimeUnit.MINUTES);
-
-        // Use the underlying zookeeper client of the dispatcher to create the zookeeper cache listeners.
-        this.pathCache = createCache(NODE_PATH, client, () -> createPathCacheListener(pathCacheInitialized));
-        this.triggerCache = createCache(NODE_TRIGGER, client, () -> createTriggerCacheListener(triggerCacheInitialized));
+        
+        // Create the Zookeeper client and wait for it to connect to Zookeeper.
+        this.client = zkClientBuilder.buildAndStart(3, TimeUnit.MINUTES);
+        
+        try {
+            // Create the caches.
+            this.pathCache = createCache(NODE_PATH, client, () -> createPathCacheListener(pathCacheInitialized));
+            this.triggerCache = createCache(NODE_TRIGGER, client, () -> createTriggerCacheListener(triggerCacheInitialized));
+        } catch (Exception e) {
+            log.error("Failed to initialize caches", e);
+            // If an error occurs, ensure we close the client and caches to release it.
+            close();
+            throw e;
+        }
     }
-
+    
     /**
      * Create and return a new {@link CuratorCache} that will watch for events concerning the given node, and supply them to the listener returned by the
      * listener supplier.
@@ -302,11 +293,11 @@ public class ZkObjectPublisher {
             cache.start();
             return cache;
         } catch (Exception e) {
-            log.error(addLogPrefix("Failed to create curator cache for path node " + node), e);
-            throw new RuntimeException(addLogPrefix("Failed to create curator cache for path " + node), e);
+            log.error("Failed to create curator cache for path node {}", node, e);
+            throw new RuntimeException("Failed to create curator cache for path " + node, e);
         }
     }
-
+    
     /**
      * Create and return a {@link CuratorCacheListener} that will listen for creations and modifications of the node {@code <namespace>/path}, and trigger a
      * configuration reload if the updated {@code <namespace>/path} node has non-empty data. The listener will also set the given boolean to true when its
@@ -319,26 +310,26 @@ public class ZkObjectPublisher {
     private CuratorCacheListener createPathCacheListener(AtomicBoolean initFlag) {
         // @formatter:off
         return CuratorCacheListener.builder()
-                .afterInitialized() // Ignore any events that occurred before the cache was initialized.
-                .forInitialized(() -> initFlag.set(true)) // Indicate when the cache is initialized.
-                .forCreates((node) -> {
-                    byte[] data = node.getData();
-                    // Only trigger a reload attempt if the data is not empty.
-                    if (data != null && data.length > 0) {
-                        executor.submit(()-> triggerReload(ZkObjectPublishCause.PATH_NODE_CREATED));
-                    }
-                })
-                .forChanges((oldNode, newNode) -> {
-                    byte[] newData = newNode.getData();
-                    // Only trigger a reload attempt if the data is not empty.
-                    if(newData != null && newData.length > 0) {
-                        executor.submit(()-> triggerReload(ZkObjectPublishCause.PATH_NODE_MODIFIED));
-                    }
-
-                }).build();
+                        .afterInitialized() // Ignore any events that occurred before the cache was initialized.
+                        .forInitialized(() -> initFlag.set(true)) // Indicate when the cache is initialized.
+                        .forCreates((node) -> {
+                            byte[] data = node.getData();
+                            // Only trigger a reload attempt if the data is not empty.
+                            if (data != null && data.length > 0) {
+                                executor.submit(()-> triggerReload(PublishCause.PATH_NODE_CREATED));
+                            }
+                        })
+                        .forChanges((oldNode, newNode) -> {
+                            byte[] newData = newNode.getData();
+                            // Only trigger a reload attempt if the data is not empty.
+                            if(newData != null && newData.length > 0) {
+                                executor.submit(()-> triggerReload(PublishCause.PATH_NODE_MODIFIED));
+                            }
+                            
+                        }).build();
         // @formatter:on
     }
-
+    
     /**
      * Create and return a {@link CuratorCacheListener} that will listen for creations, modifications, and deletions of the node {@code /trigger}, and trigger a
      * configuration reload. The listener will also set the given boolean to true when its wrapping {@link CuratorCache} is initialized.
@@ -349,29 +340,15 @@ public class ZkObjectPublisher {
     private CuratorCacheListener createTriggerCacheListener(AtomicBoolean initFlag) {
         // @formatter:off
         return CuratorCacheListener.builder()
-                .afterInitialized() // Ignore any events that occurred before the cache was initialized.
-                .forInitialized(() -> initFlag.set(true)) // Indicate when the cache is initialized.
-                .forCreates((node) -> executor.submit(()-> triggerReload(ZkObjectPublishCause.TRIGGER_NODE_CREATED)))
-                .forChanges((oldNode, newNode) -> executor.submit(() -> triggerReload(ZkObjectPublishCause.TRIGGER_NODE_MODIFIED)))
-                .forDeletes((node) -> executor.submit(() -> triggerReload(ZkObjectPublishCause.TRIGGER_NODE_DELETED)))
-                .build();
+                        .afterInitialized() // Ignore any events that occurred before the cache was initialized.
+                        .forInitialized(() -> initFlag.set(true)) // Indicate when the cache is initialized.
+                        .forCreates((node) -> executor.submit(()-> triggerReload(PublishCause.TRIGGER_NODE_CREATED)))
+                        .forChanges((oldNode, newNode) -> executor.submit(() -> triggerReload(PublishCause.TRIGGER_NODE_MODIFIED)))
+                        .forDeletes((node) -> executor.submit(() -> triggerReload(PublishCause.TRIGGER_NODE_DELETED)))
+                        .build();
         // @formatter:on
     }
-
-    /**
-     * Wait until the underlying node caches are initialized for at most the given timeout.
-     *
-     * @param timeout
-     *            the timeout
-     * @param unit
-     *            the time unit
-     * @throws ConditionTimeoutException
-     *             if the caches are not initialized before the timeout
-     */
-    public void awaitCacheInitialization(long timeout, TimeUnit unit) throws ConditionTimeoutException {
-        Awaitility.await().atMost(timeout, unit).until(this::areCachesInitialized);
-    }
-
+    
     /**
      * Return whether the underlying node caches are initialized and ready to listen for events.
      *
@@ -380,27 +357,27 @@ public class ZkObjectPublisher {
     public boolean areCachesInitialized() {
         return pathCacheInitialized.get() && triggerCacheInitialized.get();
     }
-
+    
     /**
-     * Trigger a POJO reload. If a POJO is reloaded, it will be provided to any listeners configured for this {@link ZkObjectPublisher}.
+     * Trigger a POJO reload. If a POJO is reloaded, it will be provided to any listeners configured for this {@link ZkPojoPublisherImpl}.
      *
      * @param cause
      *            the triggering cause
      */
-    private void triggerReload(ZkObjectPublishCause cause) {
+    private void triggerReload(PublishCause cause) {
         if (log.isDebugEnabled()) {
-            log.debug(addLogPrefix("Reload triggered by " + cause));
+            log.debug("Reload triggered by {}", cause);
         }
-
+        
         // Obtain the reload lock.
         reloadLock.lock();
         try {
             Instant attemptTime = Instant.now();
             // Attempt to load a new POJO instance.
-            ZkObjectPublishResult result = getObjectFromZk();
-
+            PublishResult result = getPojoFromZk();
+            
             // If we successfully loaded a valid subscriber, pass it to any subscribers registered with this updater.
-            if (result.getStatus() == ZkObjectPublishStatus.SUCCESS) {
+            if (result.getStatus() == PublishStatus.SUCCESS) {
                 if (!subscribers.isEmpty()) {
                     List<Exception> subscriberExceptions = new ArrayList<>();
                     for (Consumer<Object> subscriber : subscribers) {
@@ -408,42 +385,40 @@ public class ZkObjectPublisher {
                             subscriber.accept(result.getUpdatedObject());
                         } catch (Exception e) {
                             // If an exception is thrown by a subscriber, log it and record it in the status.
-                            log.warn(addLogPrefix("Exception thrown by subscriber " + subscriber), e);
+                            log.warn("Exception thrown by subscriber {}", subscriber, e);
                             subscriberExceptions.add(e);
                         }
                     }
-                    if (log.isDebugEnabled()) {
-                        log.debug(addLogPrefix("Supplied object update to all subscribers"));
-                    }
+                    log.debug("Supplied object update to all subscribers");
                     if (!subscriberExceptions.isEmpty()) {
-                        result = ZkObjectPublishResult.subscriberErrors(result.getTime(), result.getUpdatedObject(), subscriberExceptions);
+                        result = PublishResult.subscriberErrors(result.getTime(), result.getUpdatedObject(), subscriberExceptions);
                     }
                 } else {
-                    log.debug(addLogPrefix("No subscribers registered to be supplied updates"));
+                    log.debug("No subscribers registered to be supplied updates");
                 }
             }
-
+            
             if (log.isDebugEnabled()) {
-                log.debug(addLogPrefix("Update of " + objectClass.getName() + " completed with attemptTime:=" + attemptTime + ", trigger=" + cause + ", "
-                                + "status=" + result.getStatus() + ", errors=" + result.getErrors()));
+                log.debug("Update of {} completed with attemptTime={}, trigger={}, status={}, errors={}", pojoClass.getName(), attemptTime, cause,
+                                result.getStatus(), result.getErrors());
             }
-
+            
             // Update the attempt nodes for the latest attempt.
             updateAttemptNodes(cause, result.getStatus(), result.getErrors(), attemptTime);
         } catch (Exception e) {
-            log.error(addLogPrefix("Failed to reload object"), e);
-            throw new RuntimeException("Failed to reload object", e);
+            log.error("Failed to load instance of {}", pojoClass.getName(), e);
+            throw new RuntimeException("Failed to load instance of " + pojoClass.getName(), e);
         } finally {
             reloadLock.unlock();
         }
     }
-
+    
     /**
-     * Make the following changes underneath the namespace configured for this {@link ZkObjectPublisher}. All nodes listed here will be created if they do not
+     * Make the following changes underneath the namespace configured for this {@link ZkPojoPublisherImpl}. All nodes listed here will be created if they do not
      * exist:
      * <ul>
-     * <li>Set the data for the node {@code /attempts/<serverIpAddress>/status} to the bytes of the string form of the given {@link ZkObjectPublishStatus}.</li>
-     * <li>Set the data for the node {@code /attempts/<serverIpAddress>/cause} to the bytes of the string form of the given {@link ZkObjectPublishCause}.</li>
+     * <li>Set the data for the node {@code /attempts/<serverIpAddress>/status} to the bytes of the string form of the given {@link PublishStatus}.</li>
+     * <li>Set the data for the node {@code /attempts/<serverIpAddress>/cause} to the bytes of the string form of the given {@link PublishCause}.</li>
      * <li>Set the data for the node {@code /attempts/<serverIpAddress>/time} to the bytes of the string form of the given {@link Instant}.</li>
      * <li>Depending on the list of error messages provided, make the following changes to {@code /attempts/<serverIpAddress>/errors}:
      * <ul>
@@ -466,17 +441,17 @@ public class ZkObjectPublisher {
      * @throws Exception
      *             if an error occurs on Zookeeper
      */
-    private void updateAttemptNodes(ZkObjectPublishCause cause, ZkObjectPublishStatus status, List<ZkObjectPublishError> errors, Instant time)
+    private void updateAttemptNodes(PublishCause cause, PublishStatus status, List<PublishError> errors, Instant time)
                     throws Exception {
         // Ensure the base /reload node is created.
         client.createContainers(baseAttemptNode);
-
-        setData(client, attemptCauseNode, cause.toString().getBytes());
-        setData(client, attemptStatusNode, status.toString().getBytes());
+        
+        setData(client, attemptCauseNode, cause.toString().getBytes(StandardCharsets.UTF_8));
+        setData(client, attemptStatusNode, status.toString().getBytes(StandardCharsets.UTF_8));
         updateErrorsNode(client, errors);
-        setData(client, attemptTimeNode, time.toString().getBytes());
+        setData(client, attemptTimeNode, time.toString().getBytes(StandardCharsets.UTF_8));
     }
-
+    
     /**
      * Update the node {@code /attempts/<serverIpAddress>/errors} to reflect the contents of the given error list.
      *
@@ -487,7 +462,7 @@ public class ZkObjectPublisher {
      * @throws Exception
      *             if an error occurs in Zookeeper
      */
-    private void updateErrorsNode(CuratorFramework client, List<ZkObjectPublishError> errors) throws Exception {
+    private void updateErrorsNode(CuratorFramework client, List<PublishError> errors) throws Exception {
         Stat stat = client.checkExists().forPath(attemptErrorsNode);
         if (stat != null) {
             client.delete().deletingChildrenIfNeeded().forPath(attemptErrorsNode);
@@ -495,22 +470,22 @@ public class ZkObjectPublisher {
         if (!errors.isEmpty()) {
             client.create().forPath(attemptErrorsNode);
             for (int i = 0; i < errors.size(); i++) {
-                ZkObjectPublishError error = errors.get(i);
-
+                PublishError error = errors.get(i);
+                
                 String errorNode = attemptErrorsNode + NODE_ERROR_BASE + i;
                 client.create().forPath(errorNode);
-
+                
                 String messageNode = errorNode + NODE_MESSAGE;
-                setData(client, messageNode, error.getMessage().getBytes());
-
+                setData(client, messageNode, error.getMessage().getBytes(StandardCharsets.UTF_8));
+                
                 if (error.hasException()) {
                     String stacktraceNode = errorNode + NODE_STACKTRACE;
-                    setData(client, stacktraceNode, ExceptionUtils.getStackTrace(error.getException()).getBytes());
+                    setData(client, stacktraceNode, ExceptionUtils.getStackTrace(error.getException()).getBytes(StandardCharsets.UTF_8));
                 }
             }
         }
     }
-
+    
     /**
      * Set the data for the given node.
      *
@@ -529,64 +504,64 @@ public class ZkObjectPublisher {
             client.setData().forPath(node, data);
         }
     }
-
+    
     /**
      * Attempt to load a new POJO from the path specified in the data of the node {@value NODE_PATH} under the zookeeper namespace configured for this
-     * {@link ZkObjectPublisher}. The path may point to an http, hdfs, or local file. Note that an invocation of this method will not result in the object being
+     * {@link ZkPojoPublisherImpl}. The path may point to an http, hdfs, or local file. Note that an invocation of this method will not result in the object being
      * supplied to any subscribers, nor will the attempt result be recorded to Zookeeper.
      *
      * @return the result
      */
-    public ZkObjectPublishResult getObjectFromZk() {
+    public PublishResult getPojoFromZk() {
         if (log.isDebugEnabled()) {
-            log.debug(addLogPrefix("Attempting to load new instance of " + objectClass.getName() + " from filepath in " + NODE_PATH));
+            log.debug("Attempting to load new instance of {} from filepath in {}", pojoClass.getName(), NODE_PATH);
         }
-
+        
         Instant attemptTime = Instant.now();
         try {
             // Verify that the path node exists.
             Stat stat = client.checkExists().forPath(NODE_PATH);
             if (stat == null) {
                 if (log.isDebugEnabled()) {
-                    log.debug(addLogPrefix("Node " + NODE_PATH + " does not exist, skipping reload"));
+                    log.debug("Node {} does not exist, skipping reload", NODE_PATH);
                 }
-                return ZkObjectPublishResult.error(attemptTime, "Node does not exist: " + namespace + NODE_PATH);
+                return PublishResult.error(attemptTime, "Node does not exist: " + NODE_PATH);
             }
-
+            
             // Fetch the path from the path node.
             byte[] pathBytes = client.getData().forPath(NODE_PATH);
-
+            
             // Verify we have a non-blank path.
             if (pathBytes == null) {
                 if (log.isDebugEnabled()) {
-                    log.debug(addLogPrefix("Node " + NODE_PATH + " does not have any data, skipping reload"));
+                    log.debug("Node {} does not have any data, skipping reload", NODE_PATH);
                 }
-                return ZkObjectPublishResult.error(attemptTime, "File path not set in data for node " + namespace + NODE_PATH);
+                return PublishResult.error(attemptTime, "File path not set in data for node " + NODE_PATH);
             }
-
-            String path = new String(pathBytes);
+            
+            String path = new String(pathBytes, StandardCharsets.UTF_8);
             if (path.isBlank()) {
                 if (log.isDebugEnabled()) {
-                    log.debug(addLogPrefix("Node " + NODE_PATH + " does not have a non-blank filepath, skipping reload"));
+                    log.debug("Node {}} does not have a non-blank filepath, skipping reload", NODE_PATH);
                 }
-                return ZkObjectPublishResult.error(attemptTime, "Blank filepath set in data for node " + namespace + NODE_PATH);
+                return PublishResult.error(attemptTime, "Blank filepath set in data for node " + NODE_PATH);
             }
-
+            
             // Trim the path of any leading/trailing whitespace.
             path = path.trim();
-
+            
             // Read the contents of the file.
             byte[] contents;
             try {
                 contents = getFileContents(path);
             } catch (NoSuchFileException e) {
-                log.error(addLogPrefix("Failed to read contents from file " + path), e);
-                return ZkObjectPublishResult.error(attemptTime, "File not found: " + path, e);
+                log.error("Failed to read contents from file {}", path, e);
+                return PublishResult.error(attemptTime, "File not found: " + path, e);
             } catch (Exception e) {
-                log.error(addLogPrefix("Failed to read contents from file " + path), e);
-                return ZkObjectPublishResult.error(attemptTime, "Failed to read contents from file " + path + ": " + e.getMessage(), e);
+                log.error("Failed to read contents from file {}", path, e);
+                return PublishResult.error(attemptTime, "Failed to read contents from file " + path + ": " + e.getMessage(), e);
             }
-
+            
             // Determine the format (XML, JSON, YAML) and use the corresponding mapper to deserialize the contents.
             Object pojo;
             DataFormatMatcher format = formatDetector.findFormat(contents);
@@ -594,38 +569,26 @@ public class ZkObjectPublisher {
                 JsonFactory factory = format.getMatch();
                 try {
                     // Deserialize the POJO using the associated mapper for the format.
-                    pojo = formatToMapper.get(factory.getFormatName()).readValue(contents, objectClass);
+                    pojo = formatToMapper.get(factory.getFormatName()).readValue(contents, pojoClass);
                 } catch (Exception e) {
-                    log.error(addLogPrefix("Failed to deserialize file " + path + " to a " + objectClass.getName()), e);
-                    return ZkObjectPublishResult.error(attemptTime, "Failed to deserialize file to a " + objectClass.getName(), e);
+                    log.error("Failed to deserialize file {} to a {}", path, pojoClass.getName(), e);
+                    return PublishResult.error(attemptTime, "Failed to deserialize file to a " + pojoClass.getName(), e);
                 }
             } else {
                 // If we do not have a match for a supported mapper, return an error.
                 if (log.isDebugEnabled()) {
-                    log.debug(addLogPrefix("File " + path + " could not be detected as XML, JSON, or YAML, skipping reload"));
+                    log.debug("File {} could not be detected as XML, JSON, or YAML, skipping reload", path);
                 }
-                return ZkObjectPublishResult.error(attemptTime, "File " + path + " must be XML, JSON, or YAML");
+                return PublishResult.error(attemptTime, "File " + path + " must be XML, JSON, or YAML");
             }
-
-            // If we successfully deserialize the POJO, validate it against all configured validators.
-            for (ObjectValidator validator : objectValidators) {
-                try {
-                    validator.validate(pojo);
-                } catch (Exception e) {
-                    if (log.isDebugEnabled()) {
-                        log.debug(addLogPrefix("Reloaded " + objectClass.getName() + " failed validation, skipping reload"), e);
-                    }
-                    return ZkObjectPublishResult.error(attemptTime, "Reloaded " + objectClass.getName() + " failed validation: " + e.getMessage(), e);
-                }
-            }
-
-            return ZkObjectPublishResult.success(attemptTime, pojo);
+            
+            return PublishResult.success(attemptTime, pojo);
         } catch (Exception e) {
-            log.error(addLogPrefix("Failed to reload new instance of " + objectClass.getName() + " from Zookeeper"), e);
-            throw new RuntimeException("Failed to load new instance of " + objectClass.getName() + " from Zookeeper", e);
+            log.error("Failed to reload new instance of {} from Zookeeper", pojoClass.getName(), e);
+            throw new RuntimeException("Failed to load new instance of " + pojoClass.getName() + " from Zookeeper", e);
         }
     }
-
+    
     /**
      * Return an {@link InputStream} for the file on the given path. The path will be examined and handled based on the following schemes:
      * <ul>
@@ -657,7 +620,7 @@ public class ZkObjectPublisher {
             return getContentFromLocalFs(uri.getPath());
         }
     }
-
+    
     /**
      * Return the contents of the file on the given URL.
      *
@@ -669,14 +632,14 @@ public class ZkObjectPublisher {
      */
     private byte[] getContentFromURL(String path) throws IOException {
         if (log.isDebugEnabled()) {
-            log.debug(addLogPrefix("Attempting to read file from URL: " + path));
+            log.debug("Attempting to read file from URL: {}", path);
         }
         URL url = new URL(path);
         try (InputStream is = url.openStream()) {
             return IOUtils.toByteArray(is);
         }
     }
-
+    
     /**
      * Return the contents of the file on HDFS.
      *
@@ -688,14 +651,14 @@ public class ZkObjectPublisher {
      */
     private byte[] getContentFromHdfs(String path) throws IOException {
         if (log.isDebugEnabled()) {
-            log.debug(addLogPrefix("Attempting to read file from HDFS: " + path));
+            log.debug("Attempting to read file from HDFS: {}", path);
         }
         FileSystem fileSystem = FileSystem.get(hadoopConfig);
         try (InputStream is = fileSystem.open(new org.apache.hadoop.fs.Path(path))) {
             return IOUtils.toByteArray(is);
         }
     }
-
+    
     /**
      * Return the contents of the file on the local filesystem.
      *
@@ -707,13 +670,13 @@ public class ZkObjectPublisher {
      */
     private byte[] getContentFromLocalFs(String path) throws IOException {
         if (log.isDebugEnabled()) {
-            log.debug(addLogPrefix("Attempting to read file from local filesystem: " + path));
+            log.debug("Attempting to read file from local filesystem: {}", path);
         }
         try (InputStream is = Files.newInputStream(Path.of(path), StandardOpenOption.READ)) {
             return IOUtils.toByteArray(is);
         }
     }
-
+    
     /**
      * Add a {@link Consumer} that, when a new POJO is loaded a path specified in Zookeeper, will be provided that configuration.
      *
@@ -723,14 +686,13 @@ public class ZkObjectPublisher {
     public void subscribeToUpdates(Consumer<Object> subscriber) {
         this.subscribers.add(subscriber);
     }
-
+    
     /**
-     * Clean up resources used by this {@link ZkObjectPublisher}. Performs the following tasks:
+     * Clean up resources used by this {@link ZkPojoPublisherImpl}. Performs the following tasks:
      * <ul>
      * <li>Close the curator caches for the nodes {@value #NODE_PATH} and @value #NODE_TRIGGER}.</li>
      * <li>Shut down the executor service that executes reload tasks.</li>
-     * <li>Clear the subscribers list.</li>
-     * <li>Close the locked client dispatcher.</li>
+     * <li>Clear the subscriber list.</li>
      * </ul>
      */
     public void close() {
@@ -738,7 +700,7 @@ public class ZkObjectPublisher {
             try {
                 pathCache.close();
             } catch (Exception e) {
-                log.warn(addLogPrefix("Failed to close path cache"), e);
+                log.warn("Failed to close path cache", e);
             } finally {
                 pathCache = null;
             }
@@ -747,43 +709,181 @@ public class ZkObjectPublisher {
             try {
                 triggerCache.close();
             } catch (Exception e) {
-                log.warn(addLogPrefix("Failed to close trigger cache"), e);
+                log.warn("Failed to close trigger cache", e);
             } finally {
                 triggerCache = null;
             }
         }
-        if (executor != null) {
-            try {
-                executor.shutdown();
-            } catch (Exception e) {
-                log.warn(addLogPrefix("Failed to close executor"), e);
-            } finally {
-                executor = null;
+        try {
+            executor.shutdown();
+            boolean terminated = executor.awaitTermination(1, TimeUnit.MINUTES);
+            if (!terminated) {
+                log.warn("Closed executor, but not all threads completed within 1 minute");
             }
+        } catch (Exception e) {
+            log.warn("Failed to close executor", e);
         }
-
-        if (subscribers != null) {
-            try {
-                subscribers.clear();
-            } catch (Exception e) {
-                log.warn(addLogPrefix("Failed to clear subscribers"), e);
-            } finally {
-                subscribers = null;
-            }
+        
+        try {
+            subscribers.clear();
+        } catch (Exception e) {
+            log.warn("Failed to clear subscribers", e);
         }
-
+        
         if (client != null) {
             try {
                 client.close();
             } catch (Exception e) {
-                log.warn(addLogPrefix("Failed to close Zookeeper client"), e);
-            } finally {
-                client = null;
+                log.warn("Failed to close Zookeeper client", e);
             }
         }
     }
-
-    private String addLogPrefix(String message) {
-        return namespace + ": " + message;
+    
+    public enum PublishCause {
+        /**
+         * Indicates the triggering event was the creation of the node {@value ZkPojoPublisherImpl#NODE_PATH} with non-empty data.
+         */
+        PATH_NODE_CREATED,
+        /**
+         * Indicates the triggering event was the modification of the node {@value ZkPojoPublisherImpl#NODE_PATH} with non-empty data.
+         */
+        PATH_NODE_MODIFIED,
+        /**
+         * Indicates the triggering event was the creation of the node {@value ZkPojoPublisherImpl#NODE_TRIGGER}.
+         */
+        TRIGGER_NODE_CREATED,
+        /**
+         * Indicates the triggering event was the modification of the node {@value ZkPojoPublisherImpl#NODE_TRIGGER}.
+         */
+        TRIGGER_NODE_MODIFIED,
+        /**
+         * Indicates the triggering event was the deletion of the node {@value ZkPojoPublisherImpl#NODE_TRIGGER}.
+         */
+        TRIGGER_NODE_DELETED
     }
+    
+    
+    public enum PublishStatus {
+        /**
+         * Indicates an object update was successfully loaded from Zookeeper and, if triggered by a trigger event, successfully published to all subscribers.
+         */
+        SUCCESS,
+        
+        /**
+         * Indicates an error occurred when trying to load an object update from Zookeeper.
+         */
+        LOAD_ERROR,
+        
+        /**
+         * Indicates an object update was successfully loaded from Zookeeper, but one or more subscribers threw an error when provided the updated object.
+         */
+        SUBSCRIBER_ERROR
+    }
+    
+    /**
+     * Represents an error that occurred when attempting to load a new updated object via a {@link ZkPojoPublisherImpl}.
+     */
+    public static class PublishError {
+        
+        /**
+         * A short description of the error.
+         */
+        private final String message;
+        
+        /**
+         * The associated exception for the error, if any.
+         */
+        private final Exception exception;
+        
+        public PublishError(String message, Exception exception) {
+            this.message = message;
+            this.exception = exception;
+        }
+        
+        public String getMessage() {
+            return message;
+        }
+        
+        public Exception getException() {
+            return exception;
+        }
+        
+        public boolean hasException() {
+            return exception != null;
+        }
+    }
+    
+    /**
+     * Represents a result from {@link ZkPojoPublisherImpl#getPojoFromZk()}.
+     */
+    public static class PublishResult {
+        
+        /**
+         * The updated object. This will be null if no object update could be successfully loaded.
+         */
+        private final Object updatedObject;
+        
+        /**
+         * The status of loading the object.
+         */
+        private final PublishStatus status;
+        
+        /**
+         * A list of any errors that occurred while trying to load the results.
+         */
+        private final List<PublishError> errors;
+        
+        /**
+         * The time that loading the object was attempted.
+         */
+        private final Instant time;
+        
+        public static PublishResult success(Instant time, Object pojo) {
+            return new PublishResult(pojo, PublishStatus.SUCCESS, null, time);
+        }
+        
+        public static PublishResult error(Instant time, String message) {
+            return new PublishResult(null, PublishStatus.LOAD_ERROR, List.of(new PublishError(message, null)), time);
+        }
+        
+        public static PublishResult error(Instant time, String message, Exception exception) {
+            return new PublishResult(null, PublishStatus.LOAD_ERROR, List.of(new PublishError(message, exception)), time);
+        }
+        
+        public static PublishResult subscriberErrors(Instant time, Object pojo, List<Exception> exceptions) {
+            List<PublishError> errors = exceptions.stream().map((e) -> new PublishError("Exception thrown by listener: " + e.getMessage(), e))
+                            .collect(Collectors.toList());
+            return new PublishResult(pojo, PublishStatus.SUBSCRIBER_ERROR, errors, time);
+        }
+        
+        public PublishResult(Object updatedObject, PublishStatus status, List<PublishError> errors, Instant time) {
+            this.updatedObject = updatedObject;
+            this.status = status;
+            this.errors = errors != null ? List.copyOf(errors) : List.of();
+            this.time = time;
+        }
+        
+        public Object getUpdatedObject() {
+            return updatedObject;
+        }
+        
+        public PublishStatus getStatus() {
+            return status;
+        }
+        
+        public List<PublishError> getErrors() {
+            return errors;
+        }
+        
+        public Instant getTime() {
+            return time;
+        }
+        
+        @Override
+        public String toString() {
+            return new StringJoiner(", ", PublishResult.class.getSimpleName() + "[", "]").add("updatedObject=" + updatedObject).add("status=" + status)
+                            .add("errors=" + errors).add("time=" + time).toString();
+        }
+    }
+    
 }

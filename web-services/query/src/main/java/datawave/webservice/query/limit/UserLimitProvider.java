@@ -13,9 +13,12 @@ import org.apache.log4j.Logger;
 public class UserLimitProvider {
 
     private static final Logger log = Logger.getLogger(UserLimitProvider.class);
-
+    
+    /**
+     * The default user query limit.
+     */
     private final int defaultUserQueryLimit;
-
+    
     private final long maxCacheSize;
 
     private Map<String,UserLimits> customLimits = new HashMap<>();
@@ -81,12 +84,5 @@ public class UserLimitProvider {
 
     public UserLimits getCustomLimits(String userDn) {
         return customLimits.get(userDn);
-    }
-
-    /**
-     * Clean up this {@link UserLimitProvider} and release its underlying resources.
-     */
-    public void cleanUp() {
-        customLimits = null;
     }
 }

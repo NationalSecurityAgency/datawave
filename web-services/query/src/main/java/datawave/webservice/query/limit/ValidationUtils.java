@@ -11,7 +11,7 @@ import java.util.regex.PatternSyntaxException;
 
 import org.apache.commons.lang3.StringUtils;
 
-public final class QueryLimitConfigurationValidationUtils {
+public final class ValidationUtils {
 
     /**
      * Validate the given configuration
@@ -19,7 +19,7 @@ public final class QueryLimitConfigurationValidationUtils {
      * @param config
      *            the configuration to validate
      */
-    public static void validate(QueryLimitConfiguration config) {
+    public static void validateQueryLimitConfig(QueryLimitConfiguration config) {
         if (config != null) {
             if (config.getDefaultUserQueryLimit() < 1) {
                 throw new IllegalArgumentException("Default user query limit must be greater than 0");
@@ -27,6 +27,8 @@ public final class QueryLimitConfigurationValidationUtils {
             if (config.getInternalCacheMaxSize() < 1) {
                 throw new IllegalArgumentException("Internal cache max size must be greater than 0");
             }
+            
+            // No need to validate the default system query limit. Any negative value implies no limit for systems.
 
             List<QueryLogicGroupLimitConfiguration> queryLogicGroupConfigs = config.getQueryLogicGroupConfigs();
             if (queryLogicGroupConfigs != null && !queryLogicGroupConfigs.isEmpty()) {
@@ -224,7 +226,7 @@ public final class QueryLimitConfigurationValidationUtils {
         }
     }
 
-    private QueryLimitConfigurationValidationUtils() {
+    private ValidationUtils() {
         throw new UnsupportedOperationException();
     }
 }

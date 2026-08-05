@@ -22,6 +22,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import datawave.zookeeper.ZkClientBuilder;
 import org.apache.curator.test.TestingServer;
 import org.apache.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
@@ -34,7 +35,7 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 /**
- * Contains tests that effectively stress test the {@link QueryLimiter} when multiple threads are recording new active queries.
+ * Contains tests that effectively stress test the {@link QueryLimitServiceImpl} when multiple threads are recording new active queries.
  */
 class QueryLimiterConcurrencyTest {
 
@@ -69,7 +70,7 @@ class QueryLimiterConcurrencyTest {
     private final List<QueryCreationTask> tasks = new ArrayList<>();
 
     private QueryLimitConfiguration limitConfig;
-    private static final Map<String,QueryLimiter> serversToLimiters = new HashMap<>();
+    private static final Map<String,QueryLimitServiceImpl> serversToLimiters = new HashMap<>();
     private List<QueryCreationAttempt> attempts;
     private TestingServer server;
 
@@ -86,7 +87,7 @@ class QueryLimiterConcurrencyTest {
 
     @AfterEach
     void tearDown() throws IOException {
-        serversToLimiters.values().forEach(QueryLimiter::shutdown);
+        serversToLimiters.values().forEach(QueryLimitServiceImpl::shutdown);
         serversToLimiters.clear();
 
         if (server != null) {
@@ -458,7 +459,7 @@ class QueryLimiterConcurrencyTest {
                 }
 
                 try {
-                    QueryLimiter queryLimiter = serversToLimiters.get(request.system);
+                    QueryLimitServiceImpl queryLimiter = serversToLimiters.get(request.system);
 
                     // Check if a limit has been met.
                     QueryLimiterResponse limiterResponse = queryLimiter.checkForLimits(request.userDn, request.system, request.queryLogic);
@@ -470,7 +471,7 @@ class QueryLimiterConcurrencyTest {
                     } else {
                         // Otherwise 'create' a query and store the heartbeat to keep it alive until stopped.
                         String queryId = UUID.randomUUID().toString();
-                        queryLimiter.countQueryTowardsLimits(queryId, request.userDn, request.system, request.queryLogic);
+                        queryLimiter.markActive(queryId, request.userDn, request.system, request.queryLogic);
                         log.trace("Created query " + queryId);
                         attempts.add(QueryCreationAttempt.succeeded(request, queryId));
                     }
@@ -586,8 +587,8 @@ class QueryLimiterConcurrencyTest {
 
     private void ensureLimiterExistsFor(String system) {
         if (!serversToLimiters.containsKey(system)) {
-            QueryLimiter limiter = new QueryLimiter();
-            limiter.setZookeeperConfig(server.getConnectString());
+            QueryLimitServiceImpl limiter = new QueryLimitServiceImpl();
+            limiter.setZkClientBuilder(new ZkClientBuilder().withConnectString(server.getConnectString()));
             limiter.setConfiguration(this.limitConfig);
             limiter.setHeartbeatCache(new QueryHeartbeatCache());
             limiter.setup();

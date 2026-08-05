@@ -23,7 +23,7 @@ public class SystemLimitProvider {
 
     private final long maxCacheSize;
 
-    private Cache<String,Optional<SystemLimits>> systemLimitCache;
+    private final Cache<String,Optional<SystemLimits>> systemLimitCache;
 
     private SortedSet<SortableSystemLimit> sortedSystemLimits;
 
@@ -147,22 +147,6 @@ public class SystemLimitProvider {
     public boolean countsAgainstUserLimit(String system) {
         Optional<SystemLimits> customLimit = getCustomLimits(system);
         return customLimit.map(SystemLimits::countsAgainstUserLimit).orElse(true);
-    }
-
-    /**
-     * Clean up this {@link SystemLimitProvider} and release its underlying resources.
-     */
-    public void cleanUp() {
-        if (systemLimitCache != null) {
-            try {
-                systemLimitCache.invalidateAll();
-            } catch (Exception e) {
-                log.error("Failed to clear systemLimitCache", e);
-            } finally {
-                systemLimitCache = null;
-            }
-        }
-        sortedSystemLimits = null;
     }
 
     /**

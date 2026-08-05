@@ -11,15 +11,21 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 public class UserLimitConfiguration {
 
-    // The user DN.
+    /**
+     * The user DN.
+     */
     @JsonProperty
     private String userDn;
-
-    // The user's concurrent query limit. This applies to the total number of queries the user may run across all systems.
+    
+    /**
+     * The user's concurrent query limit. This applies to the total number of queries the user may run across all systems.
+     */
     @JsonProperty
     private Integer queryLimit;
 
-    // Map of query logic group names to the user's concurrent query limit for the group. The names may be regex patterns.
+    /**
+     * Map of query logic group names to the user's concurrent query limit for the group. The names may be regex patterns.
+     */
     @JsonProperty
     private Map<String,Integer> queryLogicGroupLimits;
 
@@ -57,21 +63,9 @@ public class UserLimitConfiguration {
         this.queryLogicGroupLimits = queryLogicGroupLimits == null ? Map.of() : queryLogicGroupLimits;
     }
 
-    /**
-     * Return whether this {@link UserLimitConfiguration} is considered equal to the given object. This {@code equals(Object)} implementation allows this
-     * instance to be equal to an object that is a subclass of {@link UserLimitConfiguration}, such as {@link ImmutableUserLimitConfiguration}.
-     *
-     * @param o
-     *            the object to compare
-     * @return true if the object is equal to this {@link UserLimitConfiguration}, or false otherwise
-     */
     @Override
     public boolean equals(Object o) {
-        if (o == this) {
-            return true;
-        }
-        // Allow this instance to be considered equal to subclasses.
-        if (!(o instanceof UserLimitConfiguration)) {
+        if (o == null || getClass() != o.getClass()) {
             return false;
         }
         UserLimitConfiguration that = (UserLimitConfiguration) o;
@@ -86,18 +80,7 @@ public class UserLimitConfiguration {
 
     @Override
     public String toString() {
-        return toString(UserLimitConfiguration.class);
-    }
-
-    /**
-     * Return a String representation of this {@link UserLimitConfiguration} referencing the given class as the instance of this {@link UserLimitConfiguration}.
-     *
-     * @param clazz
-     *            the class
-     * @return the string representation
-     */
-    protected String toString(Class<? extends UserLimitConfiguration> clazz) {
-        return new StringJoiner(", ", clazz.getSimpleName() + "[", "]").add("userDn='" + userDn + "'").add("queryLimit=" + queryLimit)
+        return new StringJoiner(", ", UserLimitConfiguration.class.getSimpleName() + "[", "]").add("userDn='" + userDn + "'").add("queryLimit=" + queryLimit)
                         .add("queryLogicGroupLimits=" + queryLogicGroupLimits).toString();
     }
 }

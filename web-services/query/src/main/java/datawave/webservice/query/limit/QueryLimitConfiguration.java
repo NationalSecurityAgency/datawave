@@ -18,7 +18,7 @@ public class QueryLimitConfiguration {
     private int defaultUserQueryLimit;
 
     /**
-     * The default maximum number of active concurrent queries that may be running on a system.
+     * The default maximum number of active concurrent queries that may be running on a system. Any negative value implies no limit.
      */
     @JsonProperty
     private int defaultSystemQueryLimit;
@@ -96,24 +96,11 @@ public class QueryLimitConfiguration {
         this.queryLogicGroupConfigs = queryLogicGroupConfigs;
     }
 
-    /**
-     * Return whether this {@link QueryLimitConfiguration} is considered equal to the given object. This {@code equals(Object)} implementation allows this
-     * instance to be equal to an object that is a subclass of {@link QueryLimitConfiguration}, such as {@link ImmutableQueryLimitConfiguration}.
-     *
-     * @param o
-     *            the object to compare
-     * @return true if the object is equal to this {@link QueryLimitConfiguration}, or false otherwise
-     */
     @Override
     public boolean equals(Object o) {
-        if (o == this) {
-            return true;
-        }
-        // Allow this instance to be considered equal to subclasses.
-        if (!(o instanceof QueryLimitConfiguration)) {
+        if (o == null || getClass() != o.getClass()) {
             return false;
         }
-
         QueryLimitConfiguration that = (QueryLimitConfiguration) o;
         return defaultUserQueryLimit == that.defaultUserQueryLimit && defaultSystemQueryLimit == that.defaultSystemQueryLimit
                         && internalCacheMaxSize == that.internalCacheMaxSize && Objects.equals(userConfigs, that.userConfigs)
@@ -127,19 +114,7 @@ public class QueryLimitConfiguration {
 
     @Override
     public String toString() {
-        return toString(QueryLimitConfiguration.class);
-    }
-
-    /**
-     * Return a String representation of this {@link QueryLimitConfiguration} referencing the given class as the instance of this
-     * {@link QueryLimitConfiguration}.
-     *
-     * @param clazz
-     *            the class
-     * @return the string representation
-     */
-    protected String toString(Class<? extends QueryLimitConfiguration> clazz) {
-        return new StringJoiner(", ", clazz.getSimpleName() + "[", "]").add("defaultUserQueryLimit=" + defaultUserQueryLimit)
+        return new StringJoiner(", ", QueryLimitConfiguration.class.getSimpleName() + "[", "]").add("defaultUserQueryLimit=" + defaultUserQueryLimit)
                         .add("defaultSystemQueryLimit=" + defaultSystemQueryLimit).add("internalCacheMaxSize=" + internalCacheMaxSize)
                         .add("userConfigs=" + userConfigs).add("systemConfigs=" + systemConfigs).add("queryLogicGroupConfigs=" + queryLogicGroupConfigs)
                         .toString();
