@@ -41,6 +41,7 @@ public abstract class IvaratorBuilder extends IndexIteratorBuilder {
     protected int compositeSeekThreshold;
     protected GenericObjectPool<SortedKeyValueIterator<Key,Value>> ivaratorSourcePool;
     protected int termNumber;
+    protected boolean limitLookup;
 
     protected void validateIvaratorControlDir(IvaratorCacheDir ivaratorCacheDir) {
         String ivaratorCacheDirURI = ivaratorCacheDir.getPathURI();
@@ -185,5 +186,13 @@ public abstract class IvaratorBuilder extends IndexIteratorBuilder {
 
     public void setIvaratorSourcePool(GenericObjectPool<SortedKeyValueIterator<Key,Value>> ivaratorSourcePool) {
         this.ivaratorSourcePool = ivaratorSourcePool;
+    }
+
+    public void setLimitLookup(boolean limitLookup) {
+        this.limitLookup = limitLookup;
+    }
+
+    public boolean isLimitLookup() {
+        return limitLookup;
     }
 }

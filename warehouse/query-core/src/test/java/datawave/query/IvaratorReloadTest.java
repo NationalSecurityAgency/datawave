@@ -101,7 +101,6 @@ public class IvaratorReloadTest {
                 .withTimeFilter(null)
                 .withDatatypeFilter(null)
                 .negated(false)
-                .withScanThreshold(1)
                 .withScanTimeout(3600000)
                 .withHdfsBackedSetBufferSize(10000)
                 .withMaxRangeSplit(1)

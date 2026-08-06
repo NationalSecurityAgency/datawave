@@ -157,10 +157,32 @@ public class DatawaveFieldIndexIteratorJexlTest {
         String taskName = iteratorJexl.getTaskName(range);
 
         assertTrue(taskName.contains(iteratorJexl.toStringNoQueryId()));
-        assertTrue(taskName.contains("scan1"));
-        assertTrue(taskName.contains("QID_1"));
-        assertTrue(taskName.contains(new Path(cacheDirs.get(0).getPathURI().toString()).toString()));
-        assertTrue(taskName.contains("12345"));
+        assertTrue(taskName.contains("scanId:scan1"));
+        assertTrue(taskName.contains("queryId:QID_1"));
+        assertTrue(taskName.contains("directory:" + new Path(cacheDirs.get(0).getPathURI())));
+        assertTrue(taskName.contains("termNumber:12345"));
+        assertTrue(taskName.contains(range.toString()));
+    }
+
+    @Test
+    public void taskName_inMemory_test() {
+        DatawaveFieldIndexFilterIteratorJexl iteratorJexl = DatawaveFieldIndexFilterIteratorJexl.builder().upperInclusive(false).lowerInclusive(true)
+                        .withMaxRangeSplit(1).withFieldName("FIELD").withFieldValue("a").withUpperBound("z").withScanId("scan1").withQueryId("QID_1")
+                        .withTermNumber(12345).withIvaratorCacheDirs(cacheDirs).withLimitLookup(true).build();
+
+        String shard = "20250101_01";
+        String dt = "dt";
+        String uid = "2fe9872hg.1908h21f.10398hff1";
+        Key start = new Key(shard, dt + '\u0000' + uid + '\u0000');
+        Key end = new Key(shard, dt + '\u0000' + uid + new String(Character.toChars(Character.MAX_CODE_POINT)));
+        Range range = new Range(start, false, end, false);
+        String taskName = iteratorJexl.getTaskName(range);
+
+        assertTrue(taskName.contains(iteratorJexl.toStringNoQueryId()));
+        assertTrue(taskName.contains("scanId:scan1"));
+        assertTrue(taskName.contains("queryId:QID_1"));
+        assertTrue(taskName.contains("directory:InMemory"));
+        assertTrue(taskName.contains("termNumber:12345"));
         assertTrue(taskName.contains(range.toString()));
     }
 }

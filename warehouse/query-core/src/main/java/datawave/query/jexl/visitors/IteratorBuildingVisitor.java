@@ -1500,6 +1500,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         builder.setMaxIvaratorResults(maxIvaratorResults);
         builder.setIvaratorNumRetries(ivaratorNumRetries);
         builder.setIvaratorPersistOptions(ivaratorPersistOptions);
+        builder.setLimitLookup(limitLookup);
         builder.setCollectTimingDetails(collectTimingDetails);
         builder.setQuerySpanCollector(querySpanCollector);
         builder.setSortedUIDs(sortedUIDs);
