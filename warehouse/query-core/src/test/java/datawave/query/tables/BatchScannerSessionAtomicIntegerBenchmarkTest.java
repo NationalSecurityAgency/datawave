@@ -2,24 +2,33 @@ package datawave.query.tables;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
-import datawave.core.query.configuration.QueryData;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
-import datawave.query.tables.async.Scan;
-import datawave.query.tables.async.ScannerChunk;
-import org.apache.accumulo.core.client.*;
+import org.apache.accumulo.core.client.AccumuloClient;
+import org.apache.accumulo.core.client.AccumuloException;
+import org.apache.accumulo.core.client.AccumuloSecurityException;
+import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.admin.TableOperations;
-import org.apache.accumulo.core.data.*;
-import org.apache.accumulo.core.iterators.user.VersioningIterator;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
+import datawave.query.tables.async.Scan;
+import org.apache.accumulo.core.client.BatchWriter;
+import org.apache.accumulo.core.data.Mutation;
+import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.openjdk.jmh.annotations.*;
+import org.openjdk.jmh.runner.Runner;
+import org.openjdk.jmh.runner.RunnerException;
+import org.openjdk.jmh.runner.options.OptionsBuilder;
 
-import java.util.Collections;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
+
+@ExtendWith(MockitoExtension.class)
 @BenchmarkMode(Mode.Throughput)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
 @Warmup(iterations = 3, time = 2, timeUnit = TimeUnit.SECONDS)
@@ -28,7 +37,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * Benchmarks the onSuccess() method from BatchScannerSession after writing data and building the scanner
  */
-public class BatchScannerSessionAtomicIntegerBenchmark {
+public class BatchScannerSessionAtomicIntegerBenchmarkTest {
     BatchScannerSession scanner;
     private static final InMemoryInstance instance = new InMemoryInstance(BatchScannerSessionBuilder.class.getName());
     private static AccumuloClient client;
@@ -40,6 +49,10 @@ public class BatchScannerSessionAtomicIntegerBenchmark {
     private static final Value EMPTY_VALUE = new Value();
 
     private final Query query = new QueryImpl();
+
+    // Reporting label placeholder to allow threads to display in benchmark summary chart
+    @Param({"1"})
+    public int threads;
 
     @Setup(Level.Trial)
     public void setUp() throws AccumuloSecurityException, AccumuloException, TableNotFoundException, TableExistsException {
@@ -63,12 +76,9 @@ public class BatchScannerSessionAtomicIntegerBenchmark {
     }
 
     @Benchmark
-    public AtomicInteger benchOnSuccess(){
-        // intended usage:
-            // scanner.onSuccess(scan);
-            // where scan is a Scan object, but I can only make a ScannerChunk currently.
-        ScannerChunk chunk = createScannerChunk();
-
+    public void benchOnSuccess(){
+        Scan mockScan = Mockito.mock(Scan.class);
+        scanner.onSuccess(mockScan);
     }
 
     /**
@@ -86,34 +96,22 @@ public class BatchScannerSessionAtomicIntegerBenchmark {
         //  @formatter:on
     }
 
-    /**
-     * Run the scanner
-     *
-     * @param builder
-     *            the builder
-     */
-    private void buildAndScan(BatchScannerSessionBuilder builder) {
-        BatchScannerSession scan = builder.build();
-        scan.setChunkIter(List.of(createScannerChunkList()).iterator());
-    }
+    public static void main(String[] args) throws RunnerException {
+        String[] threadList = new String[]{"1", "4", "14"};
 
-    private List<ScannerChunk> createScannerChunkList() {
-        Key start = new Key(key.getRow());
-        Key stop = start.followingKey(PartialKey.ROW);
-        Range range = new Range(start, true, stop, false);
+        OptionsBuilder builder = new OptionsBuilder();
 
-        IteratorSetting settings = new IteratorSetting(1, "VersioningIterator", VersioningIterator.class);
-        QueryData queryData = new QueryData("tableName", "FOO == 'bar'", List.of(range), Collections.emptySet(), List.of(settings));
+        // Add values to threads param
+        for (String t : threadList) {
+            builder.param("threads", t);
+            builder.threads(Integer.parseInt(t));
+        }
 
-        ScannerChunk chunk = new ScannerChunk(new SessionOptions(), List.of(range), queryData);
-        return List.of(chunk);
-    }
-    private ScannerChunk createScannerChunk(){
-        Key start = new Key(key.getRow());
-        Key stop = start.followingKey(PartialKey.ROW);
-        Range range = new Range(start, true, stop, false);
-        QueryData queryData = new QueryData("tableName", "FOO == 'bar'", List.of(range), Collections.emptySet(), List.of(settings));
-        return new ScannerChunk(new SessionOptions(), List.of(range), queryData);
+        builder.include(BatchScannerSessionAtomicIntegerBenchmarkTest.class.getSimpleName())
+                .forks(2)
+                .build();
+
+        new Runner(builder.build()).run();
     }
 
 }
