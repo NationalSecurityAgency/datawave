@@ -1,18 +1,22 @@
 package datawave.query.planner;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Map;
 import java.util.Set;
 
+import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 import datawave.data.type.DateType;
 import datawave.data.type.LcNoDiacriticsListType;
@@ -27,12 +31,14 @@ import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.DatawaveQueryException;
 import datawave.query.exceptions.NoResultsException;
+import datawave.query.iterator.QueryOptions;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.MockDateIndexHelper;
 import datawave.query.util.TypeMetadata;
+import datawave.query.util.TypeMetadataSerializer;
 import datawave.test.JexlNodeAssert;
 import datawave.util.time.DateHelper;
 
@@ -388,6 +394,85 @@ class DefaultQueryPlannerTest {
 
             assertEquals(beginDate, config.getBeginDate());
             assertEquals(endDate, config.getEndDate());
+        }
+    }
+
+    /**
+     * Contains tests for {@link DefaultQueryPlanner#configureTypeMappings(ShardQueryConfiguration, IteratorSetting, MetadataHelper, boolean, boolean)}
+     */
+    @Nested
+    class ConfigureTypeMappingsTests {
+
+        private DefaultQueryPlanner planner;
+        private ShardQueryConfiguration config;
+        private MetadataHelper metadataHelper;
+        private TypeMetadata typeMetadata;
+
+        @BeforeEach
+        void setUp() {
+            planner = new DefaultQueryPlanner();
+            config = new ShardQueryConfiguration();
+            metadataHelper = Mockito.mock(MetadataHelper.class);
+            Mockito.when(metadataHelper.getUsersMetadataAuthorizationSubset()).thenReturn("");
+
+            typeMetadata = new TypeMetadata();
+            typeMetadata.put("FIELD1", "ingestA", "LcNoDiacriticsType");
+            typeMetadata.put("FIELD2", "ingestA", "NumberType");
+            planner.setTypeMetadata(typeMetadata);
+        }
+
+        /**
+         * Verify that when {@code kryoTypeMetadata} is disabled (the default), TYPE_METADATA is serialized via {@link TypeMetadata#toString()} and the
+         * TYPE_METADATA_KRYO marker option is false.
+         */
+        @Test
+        void testKryoTypeMetadataDisabledUsesNativeStringFormat() throws Exception {
+            IteratorSetting cfg = new IteratorSetting(100, "test", "test");
+
+            planner.configureTypeMappings(config, cfg, metadataHelper, false);
+
+            Map<String,String> options = cfg.getOptions();
+            assertFalse(Boolean.parseBoolean(options.get(QueryOptions.TYPE_METADATA_KRYO)));
+            assertEquals(typeMetadata.toString(), options.get(QueryOptions.TYPE_METADATA));
+        }
+
+        /**
+         * Verify that when {@code kryoTypeMetadata} is enabled, TYPE_METADATA is serialized via {@link TypeMetadataSerializer} and the TYPE_METADATA_KRYO
+         * marker option is true, and that the result decodes back to the original TypeMetadata.
+         */
+        @Test
+        void testKryoTypeMetadataEnabledUsesKryoFormat() throws Exception {
+            config.setKryoTypeMetadata(true);
+            IteratorSetting cfg = new IteratorSetting(100, "test", "test");
+
+            planner.configureTypeMappings(config, cfg, metadataHelper, false);
+
+            Map<String,String> options = cfg.getOptions();
+            assertTrue(Boolean.parseBoolean(options.get(QueryOptions.TYPE_METADATA_KRYO)));
+            assertEquals(typeMetadata, new TypeMetadataSerializer().deserialize(options.get(QueryOptions.TYPE_METADATA)));
+        }
+
+        /**
+         * Verify that {@code kryoTypeMetadata} is ignored (falls back to the native string format) when per-shard type metadata reduction is enabled, since
+         * VisitorFunction re-serializes TypeMetadata via toString() after reducing it per shard and does not understand the Kryo format.
+         */
+        @Test
+        void testKryoTypeMetadataIgnoredWhenReducingPerShard() throws Exception {
+            config.setKryoTypeMetadata(true);
+            // canReduceTypeMetadata requires a non-empty project/disallowlist field set, otherwise configureTypeMappings
+            // forces reduceTypeMetadataPerShard back to false before it ever reaches the serialization branch below
+            config.setProjectFields(Set.of("FIELD1"));
+            config.setQueryTree(JexlASTHelper.parseJexlQuery("FIELD1 == 'bar'"));
+            config.setReduceTypeMetadataPerShard(true);
+            IteratorSetting cfg = new IteratorSetting(100, "test", "test");
+
+            planner.configureTypeMappings(config, cfg, metadataHelper, false);
+
+            // the planner still performs a first-pass reduction to FIELD1 regardless of the kryo flag; only the
+            // serialization format (native toString(), not Kryo) is under test here
+            Map<String,String> options = cfg.getOptions();
+            assertFalse(Boolean.parseBoolean(options.get(QueryOptions.TYPE_METADATA_KRYO)));
+            assertEquals(typeMetadata.reduce(Set.of("FIELD1")).toString(), options.get(QueryOptions.TYPE_METADATA));
         }
     }
 }

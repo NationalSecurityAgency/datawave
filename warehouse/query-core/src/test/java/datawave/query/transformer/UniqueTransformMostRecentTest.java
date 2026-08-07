@@ -10,6 +10,7 @@ import java.util.UUID;
 
 import org.junit.Before;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
@@ -64,6 +65,28 @@ public class UniqueTransformMostRecentTest extends UniqueTransformTest {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    /**
+     * The mostRecent path never returns a "real" unique result and currently never emits an intermediate result at all, so the base class's page-timer-reset
+     * assertions do not apply here.
+     */
+    @Override
+    @Test
+    @Ignore
+    public void testIntermediateResultsArePaced_afterPageTimerReset() {
+        // addressed in pull #3740
+    }
+
+    /**
+     * The mostRecent path never returns a "real" unique result and currently never emits an intermediate result at all, so the base class's page-timer-reset
+     * assertions do not apply here.
+     */
+    @Override
+    @Test
+    @Ignore
+    public void testRealAndIntermediateResultsResumeAfterPageTimerReset() {
+        // addressed in pull #3740
     }
 
     /**

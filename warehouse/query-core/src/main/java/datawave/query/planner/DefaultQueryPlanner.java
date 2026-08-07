@@ -196,6 +196,7 @@ import datawave.query.util.QueryStopwatch;
 import datawave.query.util.ShardQueryUtils;
 import datawave.query.util.Tuple2;
 import datawave.query.util.TypeMetadata;
+import datawave.query.util.TypeMetadataSerializer;
 import datawave.util.time.TraceStopwatch;
 import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
@@ -316,6 +317,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
     protected CompositeMetadata compositeMetadata;
     protected TypeMetadata typeMetadata;
+    // reused across calls to configureTypeMappings; not thread-safe, so each DefaultQueryPlanner (and clone) gets its own instance
+    private final transient TypeMetadataSerializer typeMetadataSerializer = new TypeMetadataSerializer();
     protected String contentExpansionFields;
     protected String serializedIvaratorDirs;
     protected Set<String> indexedFields;
@@ -2681,12 +2684,19 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                     typeMetadata = typeMetadata.reduce(fieldsToRetain);
                 }
 
-                // only compress if enabled AND not reducing per shard
-                // type metadata will be serialized in the VisitorFunction
-                String serializedTypeMetadata = typeMetadata.toString();
-                if (compressMappings && !config.getReduceTypeMetadataPerShard()) {
-                    serializedTypeMetadata = QueryOptions.compressOption(serializedTypeMetadata, QueryOptions.UTF8);
+                // only compress/Kryo-encode if enabled AND not reducing per shard, since in that case
+                // type metadata is re-serialized via toString() in the VisitorFunction instead
+                boolean kryoTypeMetadata = config.isKryoTypeMetadata() && !config.getReduceTypeMetadataPerShard();
+                String serializedTypeMetadata;
+                if (kryoTypeMetadata) {
+                    serializedTypeMetadata = typeMetadataSerializer.serialize(typeMetadata);
+                } else {
+                    serializedTypeMetadata = typeMetadata.toString();
+                    if (compressMappings && !config.getReduceTypeMetadataPerShard()) {
+                        serializedTypeMetadata = QueryOptions.compressOption(serializedTypeMetadata, QueryOptions.UTF8);
+                    }
                 }
+                addOption(cfg, QueryOptions.TYPE_METADATA_KRYO, Boolean.toString(kryoTypeMetadata), false);
 
                 addOption(cfg, QueryOptions.TYPE_METADATA, serializedTypeMetadata, false);
             }
