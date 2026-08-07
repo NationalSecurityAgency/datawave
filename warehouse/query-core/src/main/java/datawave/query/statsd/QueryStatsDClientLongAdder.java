@@ -5,7 +5,6 @@ import java.nio.charset.StandardCharsets;
 import java.text.NumberFormat;
 import java.util.Locale;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.LongAdder;
 
 import org.apache.log4j.Logger;
@@ -167,7 +166,7 @@ public class QueryStatsDClientLongAdder extends ConvenienceMethodProvidingStatsD
         return val;
     }
 
-    public Multimap<String, Long> timing(String call, long time) {
+    public Multimap<String,Long> timing(String call, long time) {
         timings.put(call, time);
         flushAsNeeded();
         return timings;

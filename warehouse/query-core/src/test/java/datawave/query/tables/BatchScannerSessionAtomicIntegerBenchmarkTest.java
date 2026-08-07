@@ -1,32 +1,42 @@
 package datawave.query.tables;
 
-import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
-import datawave.microservice.query.Query;
-import datawave.microservice.query.QueryImpl;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
-import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.TableExistsException;
+import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
-import datawave.query.tables.async.Scan;
-import org.apache.accumulo.core.client.BatchWriter;
-import org.apache.accumulo.core.data.Mutation;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.openjdk.jmh.annotations.*;
+import org.openjdk.jmh.annotations.Benchmark;
+import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.Level;
+import org.openjdk.jmh.annotations.Measurement;
+import org.openjdk.jmh.annotations.Mode;
+import org.openjdk.jmh.annotations.OutputTimeUnit;
+import org.openjdk.jmh.annotations.Param;
+import org.openjdk.jmh.annotations.Scope;
+import org.openjdk.jmh.annotations.Setup;
+import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
+import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.microservice.query.Query;
+import datawave.microservice.query.QueryImpl;
+import datawave.query.tables.async.Scan;
 
 @ExtendWith(MockitoExtension.class)
 @BenchmarkMode(Mode.Throughput)
@@ -76,7 +86,7 @@ public class BatchScannerSessionAtomicIntegerBenchmarkTest {
     }
 
     @Benchmark
-    public void benchOnSuccess(){
+    public void benchOnSuccess() {
         Scan mockScan = Mockito.mock(Scan.class);
         scanner.onSuccess(mockScan);
     }
@@ -97,7 +107,7 @@ public class BatchScannerSessionAtomicIntegerBenchmarkTest {
     }
 
     public static void main(String[] args) throws RunnerException {
-        String[] threadList = new String[]{"1", "4", "14"};
+        String[] threadList = new String[] {"1", "4", "14"};
 
         OptionsBuilder builder = new OptionsBuilder();
 
@@ -107,9 +117,7 @@ public class BatchScannerSessionAtomicIntegerBenchmarkTest {
             builder.threads(Integer.parseInt(t));
         }
 
-        builder.include(BatchScannerSessionAtomicIntegerBenchmarkTest.class.getSimpleName())
-                .forks(2)
-                .build();
+        builder.include(BatchScannerSessionAtomicIntegerBenchmarkTest.class.getSimpleName()).forks(2).build();
 
         new Runner(builder.build()).run();
     }

@@ -1,11 +1,21 @@
 package datawave.query.statsd;
 
-import org.openjdk.jmh.annotations.*;
+import java.util.concurrent.TimeUnit;
+
+import org.openjdk.jmh.annotations.Benchmark;
+import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.Level;
+import org.openjdk.jmh.annotations.Measurement;
+import org.openjdk.jmh.annotations.Mode;
+import org.openjdk.jmh.annotations.OutputTimeUnit;
+import org.openjdk.jmh.annotations.Param;
+import org.openjdk.jmh.annotations.Scope;
+import org.openjdk.jmh.annotations.Setup;
+import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
-
-import java.util.concurrent.TimeUnit;
 
 @BenchmarkMode(Mode.Throughput)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
@@ -44,7 +54,7 @@ public class QueryStatsDClientAtomicIntegerBenchmark {
     }
 
     public static void main(String[] args) throws RunnerException {
-        String[] threadList = new String[]{"1", "4", "14"};
+        String[] threadList = new String[] {"1", "4", "14"};
 
         OptionsBuilder builder = new OptionsBuilder();
 
@@ -54,9 +64,7 @@ public class QueryStatsDClientAtomicIntegerBenchmark {
             builder.threads(Integer.parseInt(t));
         }
 
-        builder.include(QueryStatsDClientAtomicIntegerBenchmark.class.getSimpleName())
-                .forks(2)
-                .build();
+        builder.include(QueryStatsDClientAtomicIntegerBenchmark.class.getSimpleName()).forks(2).build();
 
         new Runner(builder.build()).run();
     }
