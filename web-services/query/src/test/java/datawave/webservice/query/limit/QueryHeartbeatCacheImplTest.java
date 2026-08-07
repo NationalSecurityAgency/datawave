@@ -19,15 +19,15 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-class QueryHeartbeatCacheTest {
+class QueryHeartbeatCacheImplTest {
 
     private TestingServer server;
-    private QueryHeartbeatCache cache;
+    private QueryHeartbeatCacheImpl cache;
 
     @BeforeEach
     void setUp() throws Exception {
         server = new TestingServer();
-        cache = new QueryHeartbeatCache();
+        cache = new QueryHeartbeatCacheImpl();
         cache.setup();
     }
 
@@ -52,7 +52,7 @@ class QueryHeartbeatCacheTest {
     }
 
     /**
-     * Verify that {@link QueryHeartbeatCache#getQueryIds()} returns the keyset of the underlying cache.
+     * Verify that {@link QueryHeartbeatCacheImpl#getQueryIds()} returns the keyset of the underlying cache.
      */
     @Test
     void testGetQueryIds() throws InterruptedException {
@@ -68,7 +68,7 @@ class QueryHeartbeatCacheTest {
     }
 
     /**
-     * Verify that {@link QueryHeartbeatCache#stopAndRemoveHeartbeats(Set)} removes the heartbeats, and does not throw an error if a mapping is not found.
+     * Verify that {@link QueryHeartbeatCacheImpl#stopAndRemoveHeartbeats(Set)} removes the heartbeats, and does not throw an error if a mapping is not found.
      */
     @Test
     void testStopAndRemoveMultipleHeartbeats() throws InterruptedException {
@@ -85,7 +85,7 @@ class QueryHeartbeatCacheTest {
         cache.put(heartbeat5);
 
         Set<String> queryIds = Set.of("queryId1", "queryId2", "nonExistentQueryId");
-        cache.stopAndRemoveHeartbeats(queryIds);
+        cache.stopAndRemove(queryIds);
 
         assertThat(cache.getQueryIds()).containsExactlyInAnyOrder("queryId3", "queryId4", "queryId5");
     }
@@ -114,7 +114,7 @@ class QueryHeartbeatCacheTest {
         QueryHeartbeat heartbeat = createHeartbeat("queryId");
         cache.put(heartbeat);
 
-        cache.stopAndRemoveHeartbeat("queryId");
+        cache.stopAndRemove("queryId");
 
         assertThat(cache.get("queryId")).isNull();
         assertNodesStopped(heartbeat);
@@ -125,11 +125,11 @@ class QueryHeartbeatCacheTest {
      */
     @Test
     void testStopAndRemoveHeartbeatWithoutMatch() {
-        assertThatNoException().isThrownBy(() -> cache.stopAndRemoveHeartbeat("queryId"));
+        assertThatNoException().isThrownBy(() -> cache.stopAndRemove("queryId"));
     }
 
     /**
-     * Verify that {@link QueryHeartbeatCache#removeAllStoppedHeartbeats()} will remove any stopped heartbeats present in the cache.
+     * Verify that {@link QueryHeartbeatCacheImpl#removeAllStoppedHeartbeats()} will remove any stopped heartbeats present in the cache.
      */
     @Test
     void testRemoveAllStoppedHeartbeats() throws InterruptedException, IOException {
@@ -145,10 +145,10 @@ class QueryHeartbeatCacheTest {
         cache.put(heartbeat3);
         cache.put(heartbeat4);
 
-        // Nullify the listeners for the first two heartbeats and stop them. They will not evict themselves from the cache.
-        heartbeat1.setListener(null);
+        // Clear the listeners for the first two heartbeats and stop them. They will not evict themselves from the cache.
+        heartbeat1.clearListeners();
         heartbeat1.stop();
-        heartbeat2.setListener(null);
+        heartbeat2.clearListeners();
         heartbeat2.stop();
 
         // Verify that we still see them in the cache.
@@ -170,7 +170,7 @@ class QueryHeartbeatCacheTest {
     @Test
     void testTimedCleanupOfStoppedHeartbeats() throws IOException, InterruptedException {
         // Create a cache with a cleanup interval of 1.5 seconds.
-        QueryHeartbeatCache cache = new QueryHeartbeatCache();
+        QueryHeartbeatCacheImpl cache = new QueryHeartbeatCacheImpl();
         cache.setCleanupInterval(1500);
         cache.setCleanupUnit(TimeUnit.MILLISECONDS);
         cache.setup();
@@ -187,10 +187,10 @@ class QueryHeartbeatCacheTest {
         cache.put(heartbeat3);
         cache.put(heartbeat4);
 
-        // Nullify the listeners for the first two heartbeats and stop them. They will not evict themselves from the cache.
-        heartbeat1.setListener(null);
+        // Clear the listeners for the first two heartbeats and stop them. They will not evict themselves from the cache.
+        heartbeat1.clearListeners();
         heartbeat1.stop();
-        heartbeat2.setListener(null);
+        heartbeat2.clearListeners();
         heartbeat2.stop();
 
         // Sleep 2 seconds.
@@ -206,7 +206,7 @@ class QueryHeartbeatCacheTest {
     }
 
     /**
-     * Verify that {@link QueryHeartbeatCache#shutdown()} clears the cache.
+     * Verify that {@link QueryHeartbeatCacheImpl#shutdown()} clears the cache.
      */
     @Test
     void testShutdown() throws InterruptedException {

@@ -159,7 +159,7 @@ public class QueryExpirationBean {
                 // Stop counting the query towards query limits.
                 String queryId = settings.getId().toString();
                 try {
-                    queryLimiter.stopCountingQueryTowardsLimits(queryId);
+                    queryLimiter.markInactive(queryId);
                 } catch (Exception e) {
                     log.error("Error stopping heartbeat and removing from cache: " + queryId, e);
                 }
@@ -251,7 +251,7 @@ public class QueryExpirationBean {
 
         // Invalidate the outdated query IDs in the query limiter.
         if (!outdatedQueries.isEmpty()) {
-            queryLimiter.stopCountingQueriesTowardsLimits(outdatedQueries);
+            queryLimiter.markInactive(outdatedQueries);
         }
     }
 }

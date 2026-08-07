@@ -35,9 +35,9 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 import datawave.zookeeper.ZkClientBuilder;
 
-class QueryLimiterConcurrencyTest {
+class QueryLimiterImplConcurrencyTest {
 
-    private static final Logger log = Logger.getLogger(QueryLimiterConcurrencyTest.class);
+    private static final Logger log = Logger.getLogger(QueryLimiterImplConcurrencyTest.class);
 
     private static final Random random = new Random();
 
@@ -68,7 +68,7 @@ class QueryLimiterConcurrencyTest {
     private final List<QueryCreationTask> tasks = new ArrayList<>();
 
     private QueryLimitConfiguration limitConfig;
-    private static final Map<String,QueryLimiter> serversToLimiters = new HashMap<>();
+    private static final Map<String,QueryLimiterImpl> serversToLimiters = new HashMap<>();
     private List<QueryCreationAttempt> attempts;
     private TestingServer server;
 
@@ -85,7 +85,7 @@ class QueryLimiterConcurrencyTest {
 
     @AfterEach
     void tearDown() throws IOException {
-        serversToLimiters.values().forEach(QueryLimiter::shutdown);
+        serversToLimiters.values().forEach(QueryLimiterImpl::shutdown);
         serversToLimiters.clear();
 
         if (server != null) {
@@ -457,10 +457,10 @@ class QueryLimiterConcurrencyTest {
                 }
 
                 try {
-                    QueryLimiter queryLimiter = serversToLimiters.get(request.system);
+                    QueryLimiterImpl queryLimiter = serversToLimiters.get(request.system);
 
                     // Check if a limit has been met.
-                    QueryLimiterResponse limiterResponse = queryLimiter.checkForLimits(request.userDn, request.system, request.queryLogic);
+                    QueryLimiterResponse limiterResponse = queryLimiter.checkLimits(request.userDn, request.system, request.queryLogic);
 
                     // If a limit has been met, record it.
                     if (limiterResponse.metLimit()) {
@@ -469,7 +469,7 @@ class QueryLimiterConcurrencyTest {
                     } else {
                         // Otherwise 'create' a query and store the heartbeat to keep it alive until stopped.
                         String queryId = UUID.randomUUID().toString();
-                        queryLimiter.countQueryTowardsLimits(queryId, request.userDn, request.system, request.queryLogic);
+                        queryLimiter.markActive(queryId, request.userDn, request.system, request.queryLogic);
                         log.trace("Created query " + queryId);
                         attempts.add(QueryCreationAttempt.succeeded(request, queryId));
                     }
@@ -588,10 +588,10 @@ class QueryLimiterConcurrencyTest {
             ZkClientBuilder zkClientBuilder = new ZkClientBuilder();
             zkClientBuilder.setConnectString(server.getConnectString());
 
-            QueryLimiter limiter = new QueryLimiter();
+            QueryLimiterImpl limiter = new QueryLimiterImpl();
             limiter.setZkClientBuilder(zkClientBuilder);
             limiter.setConfiguration(this.limitConfig);
-            limiter.setHeartbeatCache(new QueryHeartbeatCache());
+            limiter.setHeartbeatCache(new QueryHeartbeatCacheImpl());
             limiter.setup();
             serversToLimiters.put(system, limiter);
         }

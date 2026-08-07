@@ -14,4 +14,11 @@ public interface RetryPolicyBuilder {
      * @return the new policy
      */
     RetryPolicy build();
+
+    /**
+     * Return a duplicate of this {@link RetryPolicy}.
+     *
+     * @return the duplicate
+     */
+    RetryPolicyBuilder duplicate();
 }

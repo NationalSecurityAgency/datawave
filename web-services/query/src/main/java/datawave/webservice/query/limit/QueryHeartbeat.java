@@ -1,10 +1,13 @@
 package datawave.webservice.query.limit;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 import java.util.StringJoiner;
+import java.util.function.Consumer;
 
 import org.apache.curator.framework.recipes.nodes.PersistentNode;
 import org.slf4j.Logger;
@@ -20,8 +23,8 @@ public class QueryHeartbeat {
 
     private final String queryId;
     private final Collection<PersistentNode> nodes;
+    private final List<Consumer<String>> listeners = new ArrayList<>();
     private boolean stopped = false;
-    private QueryHeartbeatCache.HeartbeatStoppedListener listener;
 
     public QueryHeartbeat(String queryId, Collection<PersistentNode> nodes) {
         Objects.requireNonNull(queryId, "Parameter queryId must not be null");
@@ -56,13 +59,11 @@ public class QueryHeartbeat {
      */
     public void stop() throws IOException {
         stopWithoutNotifyingListener();
-        if (listener != null) {
-            listener.heartbeatStopped(queryId);
-        }
+        listeners.forEach((listener) -> listener.accept(queryId));
     }
 
     /**
-     * Stop and delete the heartbeat without notifying the internal listener. This is used by {@link QueryHeartbeatCache} to avoid necessary looping calls.
+     * Stop and delete the heartbeat without notifying the internal listener. This is used by {@link QueryHeartbeatCacheImpl} to avoid necessary looping calls.
      */
     public void stopWithoutNotifyingListener() {
         if (!stopped) {
@@ -96,13 +97,30 @@ public class QueryHeartbeat {
     }
 
     /**
-     * Set a listener for this {@link QueryHeartbeat} to notify when {@link QueryHeartbeat#stop()} has been called.
+     * Add a listener for this {@link QueryHeartbeat} to notify when {@link QueryHeartbeat#stop()} has been called. The listener will be provided the query ID.
      *
      * @param listener
      *            the listener
      */
-    public void setListener(QueryHeartbeatCache.HeartbeatStoppedListener listener) {
-        this.listener = listener;
+    public void addListener(Consumer<String> listener) {
+        this.listeners.add(listener);
+    }
+
+    /**
+     * Remove the given listener by identity from this {@link QueryHeartbeat}.
+     *
+     * @param listener
+     *            the listener to remove
+     */
+    public void removeListener(Consumer<String> listener) {
+        this.listeners.removeIf(element -> element == listener);
+    }
+
+    /**
+     * Clear the listeners for this {@link QueryHeartbeat}.
+     */
+    public void clearListeners() {
+        listeners.clear();
     }
 
     @Override
@@ -110,17 +128,17 @@ public class QueryHeartbeat {
         if (o == null || getClass() != o.getClass())
             return false;
         QueryHeartbeat heartbeat = (QueryHeartbeat) o;
-        return Objects.equals(queryId, heartbeat.queryId) && Objects.equals(nodes, heartbeat.nodes) && Objects.equals(listener, heartbeat.listener);
+        return Objects.equals(queryId, heartbeat.queryId) && Objects.equals(nodes, heartbeat.nodes) && Objects.equals(listeners, heartbeat.listeners);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(queryId, nodes, listener);
+        return Objects.hash(queryId, nodes, listeners);
     }
 
     @Override
     public String toString() {
         return new StringJoiner(", ", QueryHeartbeat.class.getSimpleName() + "[", "]").add("queryId=" + queryId).add("nodes=" + nodes)
-                        .add("listener=" + listener).toString();
+                        .add("listener=" + listeners).toString();
     }
 }

@@ -1,13 +1,12 @@
 package datawave.zookeeper;
 
-import static datawave.zookeeper.ZkUtils.getQuorumPeerConfig;
-
 import java.util.Objects;
 import java.util.StringJoiner;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
+import org.apache.zookeeper.server.quorum.QuorumPeerConfig;
 
 /**
  * A configurable Zookeeper client builder.
@@ -40,6 +39,25 @@ public class ZkClientBuilder {
     private RetryPolicyBuilder retryPolicyBuilder = new RetryNTimesBuilder();
 
     /**
+     * Default constructor.
+     */
+    public ZkClientBuilder() {}
+
+    /**
+     * Copy constructor.
+     *
+     * @param other
+     *            the instance to copy
+     */
+    public ZkClientBuilder(ZkClientBuilder other) {
+        this.connectString = other.connectString;
+        this.namespace = other.namespace;
+        this.sessionTimeoutMs = other.sessionTimeoutMs;
+        this.connectionTimeoutMs = other.connectionTimeoutMs;
+        this.retryPolicyBuilder = other.retryPolicyBuilder != null ? other.retryPolicyBuilder.duplicate() : null;
+    }
+
+    /**
      * Return the string for connecting to Zookeeper. This may either be a list of servers or a path to a zookeeper config file.
      *
      * @return the connection string
@@ -53,6 +71,11 @@ public class ZkClientBuilder {
      */
     public void setConnectString(String connectString) {
         this.connectString = connectString;
+    }
+
+    public ZkClientBuilder withConnectString(String connectString) {
+        setConnectString(connectString);
+        return this;
     }
 
     /**
@@ -74,6 +97,11 @@ public class ZkClientBuilder {
         this.namespace = namespace;
     }
 
+    public ZkClientBuilder withNamespace(String namespace) {
+        setNamespace(namespace);
+        return this;
+    }
+
     /**
      * Return the session timeout in milliseconds for the Zookeeper client.
      *
@@ -91,6 +119,11 @@ public class ZkClientBuilder {
      */
     public void setSessionTimeoutMs(int sessionTimeoutMs) {
         this.sessionTimeoutMs = sessionTimeoutMs;
+    }
+
+    public ZkClientBuilder withSessionTimeoutMs(int sessionTimeoutMs) {
+        setSessionTimeoutMs(sessionTimeoutMs);
+        return this;
     }
 
     /**
@@ -112,6 +145,11 @@ public class ZkClientBuilder {
         this.connectionTimeoutMs = connectionTimeoutMs;
     }
 
+    public ZkClientBuilder withConnectionTimeoutMs(int connectionTimeoutMs) {
+        setConnectionTimeoutMs(connectionTimeoutMs);
+        return this;
+    }
+
     /**
      * Return the retry policy builder
      *
@@ -131,17 +169,20 @@ public class ZkClientBuilder {
         this.retryPolicyBuilder = retryPolicyBuilder;
     }
 
+    public ZkClientBuilder withRetryPolicyBuilder(RetryPolicyBuilder retryPolicyBuilder) {
+        setRetryPolicyBuilder(retryPolicyBuilder);
+        return this;
+    }
+
     /**
      * Return a new {@link CuratorFrameworkFactory.Builder} that reflects the configuration of this {@link ZkClientBuilder}.
      *
      * @return the new builder
-     * @throws Exception
-     *             if an error occurs while creating the builder
      */
-    public CuratorFrameworkFactory.Builder createBuilder() throws Exception {
+    public CuratorFrameworkFactory.Builder createBuilder() throws QuorumPeerConfig.ConfigException {
         // @formatter:off
         return CuratorFrameworkFactory.builder()
-                .connectString(getQuorumPeerConfig(connectString))
+                .connectString(ZkUtils.getQuorumPeerConfig(connectString))
                 .namespace(namespace)
                 .sessionTimeoutMs(sessionTimeoutMs)
                 .connectionTimeoutMs(connectionTimeoutMs)
@@ -183,6 +224,10 @@ public class ZkClientBuilder {
             client.blockUntilConnected(maxWaitTime, timeUnit);
         }
         return client;
+    }
+
+    public ZkClientBuilder duplicate() {
+        return new ZkClientBuilder(this);
     }
 
     @Override

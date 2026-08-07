@@ -22,6 +22,22 @@ public class RetryNTimesBuilder implements RetryPolicyBuilder {
     private int sleepBetweenRetriesMs = 1000;
 
     /**
+     * Default constructor.
+     */
+    public RetryNTimesBuilder() {}
+
+    /**
+     * Copy constructor.
+     *
+     * @param other
+     *            the instance to copy
+     */
+    public RetryNTimesBuilder(RetryNTimesBuilder other) {
+        this.n = other.n;
+        this.sleepBetweenRetriesMs = other.sleepBetweenRetriesMs;
+    }
+
+    /**
      * Get the number of times the Zookeeper client should attempt to establish a connection to Zookeeper.
      *
      * @return the retry times
@@ -38,6 +54,11 @@ public class RetryNTimesBuilder implements RetryPolicyBuilder {
      */
     public void setN(int n) {
         this.n = n;
+    }
+
+    public RetryNTimesBuilder withN(int n) {
+        setN(n);
+        return this;
     }
 
     /**
@@ -59,9 +80,19 @@ public class RetryNTimesBuilder implements RetryPolicyBuilder {
         this.sleepBetweenRetriesMs = sleepBetweenRetriesMs;
     }
 
+    public RetryNTimesBuilder withSleepBetweenRetriesMs(int sleepBetweenRetriesMs) {
+        setSleepBetweenRetriesMs(sleepBetweenRetriesMs);
+        return this;
+    }
+
     @Override
     public RetryPolicy build() {
         return new RetryNTimes(n, sleepBetweenRetriesMs);
+    }
+
+    @Override
+    public RetryPolicyBuilder duplicate() {
+        return new RetryNTimesBuilder(this);
     }
 
     public boolean equals(Object object) {

@@ -130,7 +130,7 @@
     </bean>
     -->
     <!-- Configuration for the QueryLimitConfiguration. -->
-    <bean id="queryLimitConfig" class="datawave.webservice.query.limit.QueryLimitConfiguration">
+    <bean id="queryLimitConfig" class="datawave.webservice.query.limit.QueryLimitConfiguration" primary="true">
         <property name="defaultSystemQueryLimit" value="5000"/>
         <property name="defaultUserQueryLimit" value="100"/>
     </bean>
@@ -140,18 +140,8 @@
             stopped due to an error and not via the QueryHeartbeat.stop() method.
         - cleanupUnit: The cleanup time unit. This must resolve to a value of java.util.concurrent.TimeUnit.
     -->
-    <bean id="queryHeartbeatCache" class="datawave.webservice.query.limit.QueryHeartbeatCache">
-        <property name="cleanupInterval" value="10"/>
+    <bean id="queryHeartbeatCache" class="datawave.webservice.query.limit.QueryHeartbeatCacheImpl" primary="true">
+        <property name="cleanupInterval" value="13"/>
         <property name="cleanupUnit" value="MINUTES"/>
     </bean>
-
-    <!-- Configuration for the ZkClientBuilder that will be used by QueryLimiter. NOTE: the bean id must be
-    'queryLimiterZkClientBuilder'.
-        - connectString: Used to connect to Zookeeper. Can be a list of servers, or a path to a Zookeeper config file.
-    -->
-    <bean id="queryLimiterZkClientBuilder" class="datawave.zookeeper.ZkClientBuilder">
-        <property name="connectString" value="${zookeeper.hosts}"/>
-    </bean>
-
-    <!-- It is not required to define a bean instance for the class datawave.query.limit.QueryLimiter. -->
 </beans>

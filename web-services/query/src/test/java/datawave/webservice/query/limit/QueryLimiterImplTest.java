@@ -18,9 +18,9 @@ import org.junit.jupiter.api.Test;
 import datawave.zookeeper.ZkClientBuilder;
 
 /**
- * Test cases for testing the functionality of {@link QueryLimiter}.
+ * Test cases for testing the functionality of {@link QueryLimiterImpl}.
  */
-class QueryLimiterTest {
+class QueryLimiterImplTest {
 
     private static final String userA = "cn=testuserA, c=us";
     private static final String userB = "cn=testuserB, c=us";
@@ -29,8 +29,8 @@ class QueryLimiterTest {
     private static final String tldQueryLogic = "TLDQueryLogic";
     private static final String eventQueryLogic = "EventQueryLogic";
 
-    private final Map<String,QueryLimiter> systemToLimiter = new HashMap<>();
-    private QueryHeartbeatCache heartbeatCache;
+    private final Map<String,QueryLimiterImpl> systemToLimiter = new HashMap<>();
+    private QueryHeartbeatCacheImpl heartbeatCache;
     private QueryLimitConfiguration config;
     private ZkClientBuilder zkClientBuilder;
     private TestingServer server;
@@ -38,7 +38,7 @@ class QueryLimiterTest {
     @BeforeEach
     void setUp() throws Exception {
         server = new TestingServer();
-        heartbeatCache = new QueryHeartbeatCache();
+        heartbeatCache = new QueryHeartbeatCacheImpl();
         zkClientBuilder = new ZkClientBuilder();
         zkClientBuilder.setConnectString(server.getConnectString());
     }
@@ -54,11 +54,11 @@ class QueryLimiterTest {
     }
 
     /**
-     * Verify {@link QueryLimiter#setup()} throws an exception if given a default user query limit less than 1.
+     * Verify {@link QueryLimiterImpl#setup()} throws an exception if given a default user query limit less than 1.
      */
     @Test
     void testDefaultUserQueryLimitLessThanOne() {
-        QueryLimiter limiter = new QueryLimiter();
+        QueryLimiterImpl limiter = new QueryLimiterImpl();
         limiter.setZkClientBuilder(zkClientBuilder);
 
         QueryLimitConfiguration config = new QueryLimitConfiguration();
@@ -69,11 +69,11 @@ class QueryLimiterTest {
     }
 
     /**
-     * Verify {@link QueryLimiter#setup()} throws an exception if given a default internal max cache size less than 1.
+     * Verify {@link QueryLimiterImpl#setup()} throws an exception if given a default internal max cache size less than 1.
      */
     @Test
     void testDefaultQueryLimitLessThanOne() {
-        QueryLimiter limiter = new QueryLimiter();
+        QueryLimiterImpl limiter = new QueryLimiterImpl();
         limiter.setZkClientBuilder(zkClientBuilder);
 
         QueryLimitConfiguration config = new QueryLimitConfiguration();
@@ -460,17 +460,17 @@ class QueryLimiterTest {
         assertLimitMet(userA, system1, tldQueryLogic, "User 'cn=testusera, c=us' has reached limit of 10 running queries");
 
         // Stop one of the queries. Doesn't matter which, they're all for userA.
-        getLimiter(system1).stopCountingQueryTowardsLimits(queryIds.get(0));
+        getLimiter(system1).markInactive(queryIds.get(0));
 
         // Verify that after stopping one of the queries, we no longer meet a limit.
         assertLimitNotMet(userA, system1, tldQueryLogic);
     }
 
-    private QueryLimiter getLimiter(String system) {
+    private QueryLimiterImpl getLimiter(String system) {
         if (systemToLimiter.containsKey(system)) {
             return systemToLimiter.get(system);
         } else {
-            QueryLimiter limiter = new QueryLimiter();
+            QueryLimiterImpl limiter = new QueryLimiterImpl();
             limiter.setZkClientBuilder(zkClientBuilder);
             limiter.setConfiguration(config);
             limiter.setHeartbeatCache(heartbeatCache);
@@ -482,25 +482,25 @@ class QueryLimiterTest {
 
     private List<String> startQueries(int numQueries, String userDn, String system, String queryLogic) throws Exception {
         List<String> queryIds = new ArrayList<>(numQueries);
-        QueryLimiter limiter = getLimiter(system);
+        QueryLimiterImpl limiter = getLimiter(system);
         for (int i = 0; i < numQueries; i++) {
             String queryId = UUID.randomUUID().toString();
-            limiter.countQueryTowardsLimits(queryId, userDn, system, queryLogic);
+            limiter.markActive(queryId, userDn, system, queryLogic);
             queryIds.add(queryId);
         }
         return queryIds;
     }
 
     private void assertLimitNotMet(String userDn, String system, String queryLogic) throws Exception {
-        QueryLimiter limiter = getLimiter(system);
-        QueryLimiterResponse response = limiter.checkForLimits(userDn, system, queryLogic);
+        QueryLimiterImpl limiter = getLimiter(system);
+        QueryLimiterResponse response = limiter.checkLimits(userDn, system, queryLogic);
         assertThat(response.getMessage()).isNull();
         assertThat(response.metLimit()).isFalse();
     }
 
     private void assertLimitMet(String userDn, String system, String queryLogic, String message) throws Exception {
-        QueryLimiter limiter = getLimiter(system);
-        QueryLimiterResponse response = limiter.checkForLimits(userDn, system, queryLogic);
+        QueryLimiterImpl limiter = getLimiter(system);
+        QueryLimiterResponse response = limiter.checkLimits(userDn, system, queryLogic);
         assertThat(response.getMessage()).isEqualTo(message);
         assertThat(response.metLimit()).isTrue();
     }

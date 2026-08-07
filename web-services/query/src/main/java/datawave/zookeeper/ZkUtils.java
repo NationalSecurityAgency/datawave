@@ -8,10 +8,34 @@ import java.nio.file.Paths;
 import org.apache.zookeeper.server.quorum.QuorumPeer;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
+
 /**
  * Utility class for Zookeeper operations.
  */
 public final class ZkUtils {
+
+    private static final Cache<String,String> cache = Caffeine.newBuilder().maximumSize(16).build();
+
+    /**
+     * Return a formatted Zookeeper connect string that can be used to connect to a running Zookeeper server. The config string can be a list of servers or a
+     * path to a Zookeeper config file. If a valid connect string is cached for the given config, the cached connect string will be returned.
+     *
+     * @param config
+     *            the configuration file/string
+     * @return the configuration
+     * @throws QuorumPeerConfig.ConfigException
+     *             if the argument is a file that cannot be parsed as a zookeeper config file
+     */
+    public static String getQuorumPeerConfig(String config) throws QuorumPeerConfig.ConfigException {
+        String connectString = cache.getIfPresent(config);
+        if (connectString == null) {
+            connectString = extractQuorumPeerConfig(config);
+            cache.put(config, connectString);
+        }
+        return connectString;
+    }
 
     /**
      * Return a formatted Zookeeper connect string that can be used to connect to a running Zookeeper server. The config string can be a list of servers or a
@@ -23,7 +47,7 @@ public final class ZkUtils {
      * @throws QuorumPeerConfig.ConfigException
      *             if the argument is a file that cannot be parsed as a zookeeper config file
      */
-    public static String getQuorumPeerConfig(String config) throws QuorumPeerConfig.ConfigException {
+    private static String extractQuorumPeerConfig(String config) throws QuorumPeerConfig.ConfigException {
         URI zookeeperConfigFile;
         try {
             URI uri = new URI(config);
@@ -31,6 +55,7 @@ public final class ZkUtils {
             // to determine if the config points to a file.
             Path path = uri.getScheme() != null ? Paths.get(uri) : Paths.get(config);
             if (!Files.isRegularFile(path)) {
+                cache.put(config, config);
                 return config;
             }
             zookeeperConfigFile = uri;

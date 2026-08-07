@@ -3990,7 +3990,7 @@ public class QueryExecutorBean implements QueryExecutor {
     private void checkForQueryLimits(BaseResponse response, String userDn, String systemFrom, String queryLogicName) throws QueryException {
         try {
             // Check if submitting a new query would exceed any configured concurrent query limits.
-            QueryLimiterResponse limiterResponse = queryLimiter.checkForLimits(userDn, systemFrom, queryLogicName);
+            QueryLimiterResponse limiterResponse = queryLimiter.checkLimits(userDn, systemFrom, queryLogicName);
             if (limiterResponse.metLimit()) {
                 BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.CONCURRENT_QUERY_LIMIT_EXCEEDED, limiterResponse.getMessage());
                 response.addException(qe);
@@ -4017,7 +4017,7 @@ public class QueryExecutorBean implements QueryExecutor {
      */
     private void markQueryAsActive(String queryId, String userDn, String system, String queryLogicName) throws Exception {
         try {
-            queryLimiter.countQueryTowardsLimits(queryId, userDn, system, queryLogicName);
+            queryLimiter.markActive(queryId, userDn, system, queryLogicName);
         } catch (Exception e) {
             log.error("Failed to mark query " + queryId + " as active", e);
             throw e;
@@ -4031,7 +4031,7 @@ public class QueryExecutorBean implements QueryExecutor {
      */
     private void markQueryAsInactive(String queryId) {
         try {
-            queryLimiter.stopCountingQueryTowardsLimits(queryId);
+            queryLimiter.markInactive(queryId);
         } catch (Exception e) {
             log.error("Error occurred when marking query " + queryId + " as inactive");
         }
