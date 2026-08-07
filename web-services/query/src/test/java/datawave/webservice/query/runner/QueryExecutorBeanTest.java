@@ -104,7 +104,7 @@ import datawave.webservice.query.configuration.LookupUUIDConfiguration;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.factory.Persister;
-import datawave.webservice.query.limit.QueryLimitServiceImpl;
+import datawave.webservice.query.limit.QueryLimiter;
 import datawave.webservice.query.limit.QueryLimiterResponse;
 import datawave.webservice.query.logic.QueryLogicFactoryImpl;
 import datawave.webservice.query.metric.QueryMetricsBean;
@@ -151,7 +151,7 @@ public class QueryExecutorBeanTest {
     private Dispatcher dispatcher;
     private MockHttpRequest request;
     private MockHttpResponse response;
-    private QueryLimitServiceImpl queryLimiter;
+    private QueryLimiter queryLimiter;
 
     @BeforeEach
     public void setup() throws Exception {
@@ -182,7 +182,7 @@ public class QueryExecutorBeanTest {
         queryExpirationConf.setCallTimeout(60);
         connectionRequestBean = mock(AccumuloConnectionRequestBean.class);
         responseObjectFactory = mock(ResponseObjectFactory.class);
-        queryLimiter = mock(QueryLimitServiceImpl.class);
+        queryLimiter = mock(QueryLimiter.class);
         ReflectionTestUtils.setField(auditor, "auditService", auditService);
         ReflectionTestUtils.setField(auditor, "auditParameterBuilder", new DefaultAuditParameterBuilder());
         ReflectionTestUtils.setField(connectionRequestBean, "ctx", ctx);

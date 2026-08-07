@@ -128,7 +128,7 @@ import datawave.webservice.query.exception.QueryCanceledQueryException;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.exception.UnauthorizedQueryException;
 import datawave.webservice.query.factory.Persister;
-import datawave.webservice.query.limit.QueryLimitServiceImpl;
+import datawave.webservice.query.limit.QueryLimiter;
 import datawave.webservice.query.limit.QueryLimiterResponse;
 import datawave.webservice.query.metric.QueryMetricsBean;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
@@ -240,7 +240,7 @@ public class CachedResultsBean {
 
     @Inject
     @SpringBean(name = "queryLimiter")
-    private QueryLimitServiceImpl queryLimiter;
+    private QueryLimiter queryLimiter;
 
     protected static final String COMMA = ",";
     protected static final String TABLE = "$table";
@@ -522,7 +522,7 @@ public class CachedResultsBean {
                     query.setMetric(queryMetric);
                     query.setQueryMetrics(metrics);
                     query.setClient(client);
-                    queryLimiter.markActive(q.getId().toString(), userDn, q.getSystemFrom(), logic.getLogicName());
+                    queryLimiter.countQueryTowardsLimits(q.getId().toString(), userDn, q.getSystemFrom(), logic.getLogicName());
                 } finally {
                     qlCache.poll(q.getId().toString());
                 }
@@ -762,7 +762,7 @@ public class CachedResultsBean {
                     response.addException(new QueryException(DatawaveErrorCode.QUERY_CLOSE_ERROR, e).getBottomQueryException());
                 }
                 try {
-                    queryLimiter.markInactive(query.getSettings().getId().toString());
+                    queryLimiter.stopCountingQueryTowardsLimits(query.getSettings().getId().toString());
                 } catch (Exception e) {
                     log.error("Failed to stop counting query " + query.getSettings().getId().toString() + " towards limits", e);
                 }

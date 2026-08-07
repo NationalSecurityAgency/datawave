@@ -1,6 +1,5 @@
 package datawave.webservice.query.limit;
 
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -12,7 +11,9 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
 
+import datawave.configuration.spring.SpringBean;
 import datawave.zookeeper.ZkClientBuilder;
+import datawave.zookeeper.ZkPojoPublisher;
 import org.apache.curator.framework.CuratorFramework;
 
 import com.google.common.base.Preconditions;
@@ -20,29 +21,27 @@ import com.google.common.base.Preconditions;
 import datawave.zookeeper.ZkPojoPublisherImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.annotation.Lazy;
-import org.springframework.context.annotation.Primary;
+import org.springframework.beans.factory.annotation.Qualifier;
 
 import javax.annotation.security.DeclareRoles;
 import javax.annotation.security.RolesAllowed;
 import javax.annotation.security.RunAs;
 import javax.ejb.Singleton;
 import javax.ejb.Startup;
+import javax.inject.Inject;
 
 /**
  * This class is responsible for determining if any concurrent query limits are going to be exceeded for a user, system, or query logic when a new query is
- * submitted. It is expected that only a singleton instance of {@link QueryLimitServiceImpl} will be created via CDI.
+ * submitted. It is expected that only a singleton instance of {@link QueryLimiter} will be created via CDI.
  */
+@RunAs("InternalUser")
 @RolesAllowed({"AuthorizedUser", "AuthorizedQueryServer", "InternalUser", "Administrator"})
 @DeclareRoles({"AuthorizedUser", "AuthorizedQueryServer", "InternalUser", "Administrator"})
-@RunAs("InternalUser")
 @Singleton
-@Primary
 @Startup
-@Lazy(false)
-public class QueryLimitServiceImpl implements QueryLimitService {
+public class QueryLimiter {
 
-    private static final Logger log = LoggerFactory.getLogger(QueryLimitServiceImpl.class);
+    private static final Logger log = LoggerFactory.getLogger(QueryLimiter.class);
     
     /**
      * The Zookeeper namespace that active query nodes will be stored under.
@@ -55,34 +54,50 @@ public class QueryLimitServiceImpl implements QueryLimitService {
     public static final String EMPTY_SYSTEM_FROM = "EMPTY_SYSTEM_FROM";
 
     /**
-     * A lock that guards read/write access to properties of this {@link QueryLimitServiceImpl}.
+     * A lock that guards read/write access to properties of this {@link QueryLimiter}.
      */
     private final ReadWriteLock limiterLock = new ReentrantReadWriteLock();
     
     /**
-     * Whether this {@link QueryLimitServiceImpl} is listening for {@link QueryLimitConfiguration} updates from {@link #configPublisher}.
-     */
-    private boolean listeningForConfigUpdates = false;
-    
-    /**
-     * Whether this {@link QueryLimitServiceImpl} is considered activated.
+     * Whether this {@link QueryLimiter} is considered activated.
      */
     private final AtomicBoolean activated = new AtomicBoolean(false);
 
     /**
      * The Zookeeper client builder.
      */
+    @Inject
+    @SpringBean(name = "defaultZkClientBuilder")
+    @SuppressWarnings("CdiInjectionPointsInspection")
     private ZkClientBuilder zkClientBuilder;
     
     /**
      * The configuration to initialize the limit providers with.
      */
+    @Inject
+    @SpringBean
+    @SuppressWarnings("CdiInjectionPointsInspection")
     private QueryLimitConfiguration configuration;
     
     /**
      * A cache to store heartbeats of active queries within.
      */
+    @Inject
+    @SpringBean
+    @SuppressWarnings("CdiInjectionPointsInspection")
     private QueryHeartbeatCache heartbeatCache;
+    
+    /**
+     * The publisher that the query limiter will listen to for updates to the configuration.
+     */
+    @Inject
+    @Qualifier("queryLimitConfigPublisher")
+    private ZkPojoPublisher<QueryLimitConfiguration> configPublisher;
+    
+    /**
+     * The listener for configuration updates. If this is not null, we are listening for updates.
+     */
+    private Consumer<QueryLimitConfiguration> configUpdateListener;
     
     /**
      * Provides configured limits for query logic groups.
@@ -103,25 +118,11 @@ public class QueryLimitServiceImpl implements QueryLimitService {
      * The tracker responsible for creating nodes in Zookeeper that track active queries.
      */
     private ActiveQueryTracker activeQueryTracker;
-    
-    /**
-     * The publisher that the query limiter will listen to for updates to the configuration.
-     */
-    private ZkPojoPublisherImpl configPublisher;
 
     /**
      * The Zookeeper client.
      */
     private CuratorFramework client;
-
-    /**
-     * Return the zookeeper connection string.
-     *
-     * @return the zookeeper connection string
-     */
-    public ZkClientBuilder getZkClientBuilder() {
-        return zkClientBuilder;
-    }
 
     /**
      * Set the zookeeper connection string
@@ -134,17 +135,17 @@ public class QueryLimitServiceImpl implements QueryLimitService {
     }
     
     /**
-     * Set the config publisher that will notify this {@link QueryLimitServiceImpl} of configuration updates.
+     * Set the config publisher that will notify this {@link QueryLimiter} of configuration updates.
      *
      * @param configPublisher
      *            the configuration publisher
      */
-    public void setConfigPublisher(ZkPojoPublisherImpl configPublisher) {
+    public void setConfigPublisher(ZkPojoPublisher<QueryLimitConfiguration> configPublisher) {
         this.configPublisher = configPublisher;
     }
 
     /**
-     * Set the configuration for the {@link QueryLimitServiceImpl}.
+     * Set the configuration for the {@link QueryLimiter}.
      *
      * @param queryLimitConfiguration
      *            the config
@@ -165,7 +166,7 @@ public class QueryLimitServiceImpl implements QueryLimitService {
     }
 
     /**
-     * Return the configuration currently configured for this {@link QueryLimitServiceImpl}.
+     * Return the configuration currently configured for this {@link QueryLimiter}.
      *
      * @return the config
      */
@@ -189,7 +190,7 @@ public class QueryLimitServiceImpl implements QueryLimitService {
     }
 
     /**
-     * Validate the configuration and extract the query limits to enforce. In practice this should be marked as the init method for the {@link QueryLimitServiceImpl}
+     * Validate the configuration and extract the query limits to enforce. In practice this should be marked as the init method for the {@link QueryLimiter}
      * instance configured in bean XMLs. For testing purposes, this method should be called after setting the zookeeper config and query limit configs.
      */
     public void setup() {
@@ -218,7 +219,7 @@ public class QueryLimitServiceImpl implements QueryLimitService {
     }
 
     /**
-     * Activate this {@link QueryLimitServiceImpl}. The limiter will be deactivated if already active, and then internal caches, and limit providers will be
+     * Activate this {@link QueryLimiter}. The limiter will be deactivated if already active, and then internal caches, and limit providers will be
      * reinitialized based on the current configuration. NOTE: the Zookeeper client {@link #client} will be created only if it does not exist. Otherwise, the
      * pre-existing instance will be used.
      */
@@ -252,9 +253,9 @@ public class QueryLimitServiceImpl implements QueryLimitService {
 
             // Listen for configuration updates. We only need to do this once. Any exception thrown by the subscribing consumer will be captured by the POJO
             // publisher and written to Zookeeper as part of the attempt status.
-            if (!this.listeningForConfigUpdates && this.configPublisher != null) {
-                this.configPublisher.subscribeToUpdates(createConfigUpdateConsumer());
-                listeningForConfigUpdates = true;
+            if (this.configUpdateListener == null && this.configPublisher != null) {
+                this.configUpdateListener = createConfigUpdateConsumer();
+                this.configPublisher.addListener(this.configUpdateListener);
             }
 
             this.activated.set(true);
@@ -268,7 +269,7 @@ public class QueryLimitServiceImpl implements QueryLimitService {
     }
     
     /**
-     * Return a new {@link Consumer<Object>} that can be registered with a {@link ZkPojoPublisherImpl} to update this {@link QueryLimitServiceImpl} when a new
+     * Return a new {@link Consumer<Object>} that can be registered with a {@link ZkPojoPublisherImpl} to update this {@link QueryLimiter} when a new
      * {@link QueryLimitConfiguration} is published. The update steps will be as follows:
      * <ol>
      * <li>Verify the object provided by the publisher is a {@link QueryLimitConfiguration}.</li>
@@ -278,16 +279,8 @@ public class QueryLimitServiceImpl implements QueryLimitService {
      * </ol>
      * @return the consumer
      */
-    private Consumer<Object> createConfigUpdateConsumer() {
-        return object -> {
-            // Ensure we were given a QueryLimitConfiguration.
-            QueryLimitConfiguration newConfig = null;
-            try {
-                newConfig = (QueryLimitConfiguration) object;
-            } catch (Exception e) {
-                log.error("Pojo publisher did not provide instance of {}", QueryLimitConfiguration.class, e);
-            }
-            
+    private Consumer<QueryLimitConfiguration> createConfigUpdateConsumer() {
+        return newConfig -> {
             if(log.isDebugEnabled()) {
                 log.debug("Received config update from publisher: {}", newConfig);
             }
@@ -337,7 +330,7 @@ public class QueryLimitServiceImpl implements QueryLimitService {
     }
 
     /**
-     * Deactivate this {@link QueryLimitServiceImpl}. Internal caches and limit providers will be closed and cleared. NOTE: The Zookeeper client {@link #client} and the
+     * Deactivate this {@link QueryLimiter}. Internal caches and limit providers will be closed and cleared. NOTE: The Zookeeper client {@link #client} and the
      * heartbeat cache {@link #heartbeatCache} are specifically NOT closed here. The Zookeeper client and heartbeat cache must be preserved and reused through
      * calls to this method and {@link #activate()} to preserve the existence of any ephemeral nodes maintained in the heartbeat cache. They should only be
      * cleaned up when {@link #shutdown()} is called.
@@ -368,16 +361,6 @@ public class QueryLimitServiceImpl implements QueryLimitService {
         try {
             clear();
             
-            if (this.configPublisher != null) {
-                try {
-                    this.configPublisher.close();
-                } catch (Exception e) {
-                    log.warn("Error closing config publisher", e);
-                } finally {
-                    this.configPublisher = null;
-                }
-            }
-            
             if (this.client != null) {
                 try {
                     this.client.close();
@@ -407,7 +390,6 @@ public class QueryLimitServiceImpl implements QueryLimitService {
      * @throws Exception
      *             if an exception occurs
      */
-    @Override
     public QueryLimiterResponse checkForLimits(String userDn, String system, String queryLogic) throws Exception {
         // Use a read lock that allows for concurrent limit checking, but blocks if the query limiter configuration is being updated.
         limiterLock.readLock().lock();
@@ -461,8 +443,7 @@ public class QueryLimitServiceImpl implements QueryLimitService {
      * @throws Exception
      *             if an error occurs
      */
-    @Override
-    public void markActive(String queryId, String userDn, String system, String queryLogic) throws Exception {
+    public void countQueryTowardsLimits(String queryId, String userDn, String system, String queryLogic) throws Exception {
         // Use a read lock that allows for concurrent query tracking, but blocks if the query limiter configuration is being updated.
         limiterLock.readLock().lock();
         try {
@@ -493,21 +474,19 @@ public class QueryLimitServiceImpl implements QueryLimitService {
     }
 
     /**
-     * Return whether this {@link QueryLimitServiceImpl} is currently enforcing limits.
+     * Return whether this {@link QueryLimiter} is currently enforcing limits.
      *
-     * @return true if this {@link QueryLimitServiceImpl} is enforcing limits, or false otherwise
+     * @return true if this {@link QueryLimiter} is enforcing limits, or false otherwise
      */
-    @Override
     public boolean isEnforcingLimits() {
         return activated.get();
     }
 
     /**
-     * Fetch the set of query IDs for queries considered to be actively running by the this {@link QueryLimitServiceImpl}.
+     * Fetch the set of query IDs for queries considered to be actively running by the this {@link QueryLimiter}.
      *
      * @return the set of IDs for active queries
      */
-    @Override
     public Set<String> getActiveQueries() {
         limiterLock.readLock().lock();
         try {
@@ -523,8 +502,7 @@ public class QueryLimitServiceImpl implements QueryLimitService {
      * @param queryIds
      *            the query IDs
      */
-    @Override
-    public void markInactive(Collection<String> queryIds) {
+    public void stopCountingQueriesTowardsLimits(Set<String> queryIds) {
         if (log.isDebugEnabled()) {
             log.debug("Stopping counting queries towards limits: {}", queryIds);
         }
@@ -545,8 +523,7 @@ public class QueryLimitServiceImpl implements QueryLimitService {
      * @param queryId
      *            the query ID
      */
-    @Override
-    public void markInactive(String queryId) {
+    public void stopCountingQueryTowardsLimits(String queryId) {
         if (log.isDebugEnabled()) {
             log.debug("Stop counting query {} towards limits", queryId);
         }

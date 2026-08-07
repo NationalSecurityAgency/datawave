@@ -14,6 +14,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.StringJoiner;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -26,6 +27,9 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.curator.framework.CuratorFramework;
@@ -50,8 +54,12 @@ import datawave.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
+import javax.ejb.Singleton;
+
 /**
- * A publisher that can be triggered to deserialize and publish updates of a configured class to subscribers. The publisher leverages Zookeeper and is triggered
+ * A publisher that can be triggered to deserialize and publish updates of a configured class to listeners. The publisher leverages Zookeeper and is triggered
  * by changes to Zookeeper nodes. The publisher will be triggered to reload an instance of the configured object when:
  * <ul>
  * <li>The node {@code /<namespace>/path} is created or modified with non-empty data.</li>
@@ -65,32 +73,15 @@ import org.slf4j.LoggerFactory;
  * <li>A local file: {@code file://path/to/file} or {@code /path/to/file}.</li>
  * </ul>
  * If an instance of the class is successfully deserialized from the file, it will be validated against any configured object validators. Afterward it will be
- * provided to all subscribers that have subscribed to the publisher via {@link ZkPojoPublisherImpl#subscribeToUpdates(Consumer)}. The status of any triggered
- * attempt will be recorded under the node {@code /<namespace>/attempts/<serverIpAddress>}. Upon a success, the children nodes will follow the structure:
+ * provided to all listeners that have subscribed to the publisher via {@link ZkPojoPublisherImpl#addListener(Consumer)}. The status of any triggered
+ * attempt will be recorded under the node {@code /<namespace>/attempts/<serverIpAddress>/latest}. The data of the node will contain a {@link PublishAttempt}
+ * as JSON. The data will always reflect the latest reload attempt.
  *
- * <pre>
- * /status # The data will be {@link PublishStatus#SUCCESS}
- * /cause  # The data will be one of {@link PublishCause}
- * /time   # The data will be an ISO-8601 string representing the time of the publish attempt
- * </pre>
- *
- * If an error occurs, either when loading an instance of the class from the file, or when providing the new instance to subscribers, the children will follow
- * the structure:
- *
- * <pre>
- * /status                     # The data will be {@link PublishStatus#LOAD_ERROR} or {@link PublishStatus#SUBSCRIBER_ERROR}
- * /cause                      # The data will be one of {@link PublishCause}
- * /time                       # The data will be an ISO-8601 string representing the time of the publish attempt
- * /errors                     # A node containing error_N nodes where N is a number ranging from 0 to one less than the total errors
- * /errors/error_N/message     # A short description of the error
- * /errors/error_N/stacktrace  # The stack trace of the error's exception, if any. If no exception was caught, this node will not exist.
- * </pre>
- *
- * The nodes under {@code /<namespace>/attempts/<serverIpAddress>} will always reflect the latest reload attempt.
  * <p>
  * <strong>NOTE:</strong> It is crucial that separate {@link ZkPojoPublisherImpl} instances on the same server are created with unique namespaces in order to
  * prevent the same {@code /<namespace>/attempts/<serverIpAddress>} node and its children from being modified by multiple publishers.
  */
+@Singleton
 public class ZkPojoPublisherImpl<T> implements ZkPojoPublisher<T> {
     
     private static final Logger log = LoggerFactory.getLogger(ZkPojoPublisherImpl.class);
@@ -98,18 +89,12 @@ public class ZkPojoPublisherImpl<T> implements ZkPojoPublisher<T> {
     public static final String NODE_PATH = "/path";
     public static final String NODE_TRIGGER = "/trigger";
     public static final String NODE_ATTEMPTS = "/attempts";
-    public static final String NODE_CAUSE = "/cause";
-    public static final String NODE_STATUS = "/status";
-    public static final String NODE_ERRORS = "/errors";
-    public static final String NODE_ERROR_BASE = "/error_";
-    public static final String NODE_MESSAGE = "/message";
-    public static final String NODE_STACKTRACE = "/stacktrace";
-    public static final String NODE_TIME = "/time";
+    public static final String NODE_LATEST = "/latest";
     
     /**
      * Mapper for JSON files.
      */
-    private static final JsonMapper jsonMapper = new JsonMapper();
+    private static final JsonMapper jsonMapper = JsonMapper.builder().addModule(new JavaTimeModule()).build();
     
     /**
      * Mapper for XML files.
@@ -139,29 +124,14 @@ public class ZkPojoPublisherImpl<T> implements ZkPojoPublisher<T> {
     private static final DataFormatDetector formatDetector = new DataFormatDetector(jsonMapper.getFactory(), xmlMapper.getFactory(), yamlMapper.getFactory());
     
     /**
-     * The finalized path for the node {@code <namespace>/attempts/<serverIpAddress>}.
+     * The POJO type.
      */
-    private final String baseAttemptNode;
+    private final Class<T> pojoClass;
     
     /**
-     * The finalized path for the node {@code <namespace>/attempts/<serverIpAddress>/cause}.
+     * The finalized path for the node {@code <namespace>/attempts/<serverIpAddress>/latest}
      */
-    private final String attemptCauseNode;
-    
-    /**
-     * The finalized path for the node {@code <namespace>/attempts/<serverIpAddress>/status}.
-     */
-    private final String attemptStatusNode;
-    
-    /**
-     * The finalized path for the node {@code <namespace>/attempts/<serverIpAddress>/errors}.
-     */
-    private final String attemptErrorsNode;
-    
-    /**
-     * The finalized path for the node {@code <namespace>/attempts/<serverIpAddress>/time}.
-     */
-    private final String attemptTimeNode;
+    private final String latestAttemptNode;
     
     /**
      * The hadoop configuration for reading files from HDFS.
@@ -169,24 +139,24 @@ public class ZkPojoPublisherImpl<T> implements ZkPojoPublisher<T> {
     private final Configuration hadoopConfig;
     
     /**
-     * The POJO type.
+     * The listeners that should be supplied with new objects after successful reloads.
      */
-    private final Class<T> pojoClass;
+    private final List<Consumer<T>> listeners = new CopyOnWriteArrayList<>();
     
     /**
-     * The list of subscribers that should be supplied with new objects after successful reloads.
+     * The client.
      */
-    private final List<Consumer<Object>> subscribers = new CopyOnWriteArrayList<>();
+    private final CuratorFramework zkClient;
     
     /**
      * A {@link CuratorCache} that will listen for creates and modifications of the node {@code <namespace>/path}.
      */
-    private CuratorCache pathCache;
+    private final CuratorCache pathCache;
     
     /**
      * A {@link CuratorCache} that will listen for creates, modifications, and deletions of the node {@code <namespace>/trigger}
      */
-    private CuratorCache triggerCache;
+    private final CuratorCache triggerCache;
     
     /**
      * A boolean that will be set to true when {@link #pathCache} is initialized.
@@ -199,35 +169,45 @@ public class ZkPojoPublisherImpl<T> implements ZkPojoPublisher<T> {
     private final AtomicBoolean triggerCacheInitialized = new AtomicBoolean(false);
     
     /**
-     * The lock that must be obtained by any task calling {@link #triggerReload(PublishCause)} in order to perform a reload.
+     * The lock that must be obtained by {@link #setup()} or {@link #close()}, or by any task calling {@link #triggerReload(Cause)} in order to perform a
+     * reload.
      */
-    private final Lock reloadLock = new ReentrantLock();
+    private final Lock publisherLock = new ReentrantLock();
+    
+    /**
+     * Whether this {@link ZkPojoPublisherImpl} has been initialized via {@link #setup()}. This will be set to false by {@link #close()}.
+     */
+    private final AtomicBoolean ready = new AtomicBoolean(false);
     
     /**
      * An executor that runs 1 task, and keeps at most 1 in the queue. If a 3rd task arrives, the one in the queue is discarded for the new one. If a bunch of
      * reloads occur, we are only interested in supplying listeners with the latest reload attempt.
      */
-    // @formatter:off
-    private final ThreadPoolExecutor executor = new ThreadPoolExecutor(
-                    1, // Use a core pool size of 1.
-                    1, // The maximum pool size is 1.
-                    0L, TimeUnit.MILLISECONDS, // Keep alive time of 1 ms for idle threads.
-                    new ArrayBlockingQueue<>(1), // Only allow 1 task to be queued at a time.
-                    new ThreadPoolExecutor.DiscardOldestPolicy()); // If a new task is submitted, discard any task present in the queue.
-    // @formatter:on
+    private ThreadPoolExecutor executor;
     
-    /**
-     * The client.
-     */
-    private final CuratorFramework client;
-    
-    public ZkPojoPublisherImpl(ZkClientBuilder zkClientBuilder, String hdfsConfigUrls, Class<T> pojoClass)
-                    throws Exception {
+    public ZkPojoPublisherImpl(ZkClientBuilder zkClientBuilder, String hdfsConfigUrls, Class<T> pojoClass) {
         Preconditions.checkNotNull(zkClientBuilder, "zkClientBuilder must not be null");
         Preconditions.checkNotNull(pojoClass, "pojoClass must not be null");
         
-        if (log.isDebugEnabled()) {
-            log.debug("Initializing with zkClientBuilder={}, hdfsConfigUrls={}, pojoClass={}", zkClientBuilder, hdfsConfigUrls, pojoClass);
+        try {
+            // Create, but do not start the Zookeeper client.
+            this.zkClient = zkClientBuilder.build();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to create Zookeeper client", e);
+        }
+        
+        // Create, but do not start, the path cache.
+        try {
+            this.pathCache = createCache(NODE_PATH, zkClient, () -> createPathCacheListener(pathCacheInitialized));
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to create path cache listener", e);
+        }
+        
+        // Create, but do not start, the trigger cache.
+        try {
+            this.triggerCache = createCache(NODE_TRIGGER, zkClient, () -> createTriggerCacheListener(triggerCacheInitialized));
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to create trigger cache listener", e);
         }
         
         this.pojoClass = pojoClass;
@@ -252,24 +232,50 @@ public class ZkPojoPublisherImpl<T> implements ZkPojoPublisher<T> {
             throw new RuntimeException("Failed to get local host address", e);
         }
         
-        baseAttemptNode = NODE_ATTEMPTS + "/" + serverIpAddress;
-        attemptCauseNode = baseAttemptNode + NODE_CAUSE;
-        attemptStatusNode = baseAttemptNode + NODE_STATUS;
-        attemptErrorsNode = baseAttemptNode + NODE_ERRORS;
-        attemptTimeNode = baseAttemptNode + NODE_TIME;
-        
-        // Create the Zookeeper client and wait for it to connect to Zookeeper.
-        this.client = zkClientBuilder.buildAndStart(3, TimeUnit.MINUTES);
-        
+        // Configure the base paths for the status nodes. These will not change.
+        latestAttemptNode = NODE_ATTEMPTS + "/" + serverIpAddress + NODE_LATEST;
+    }
+    
+    /**
+     * Initialize this {@link ZkPojoPublisherImpl}, starting up the Zookeeper client and caches as needed.
+     * @throws Exception if an error occurs
+     */
+    @PostConstruct
+    public void setup() throws Exception {
+        log.debug("Setting up publisher");
+        publisherLock.lock();
         try {
-            // Create the caches.
-            this.pathCache = createCache(NODE_PATH, client, () -> createPathCacheListener(pathCacheInitialized));
-            this.triggerCache = createCache(NODE_TRIGGER, client, () -> createTriggerCacheListener(triggerCacheInitialized));
+            // Avoid potentially starting the client and caches multiple times if they are already started.
+            if(!ready.get()) {
+                // Create an executor that runs 1 task, and keeps at most 1 in the queue. If a 3rd task arrives, the one in the queue is discarded for the new one.
+                // If a bunch of reloads occur, we are only interested in supplying listeners with the latest reload attempt.
+                // @formatter:off
+                this.executor = new ThreadPoolExecutor(
+                                1, // Use a core pool size of 1.
+                                1, // The maximum pool size is 1.
+                                0L, TimeUnit.MILLISECONDS, // Keep alive time of 1 ms for idle threads.
+                                new ArrayBlockingQueue<>(1), // Only allow 1 task to be queued at a time.
+                                new ThreadPoolExecutor.DiscardOldestPolicy()); // If a new task is submitted, discard any task present in the queue.
+                // @formatter:on
+                
+            
+                // Start the Zookeeper client and wait for it to connect to Zookeeper.
+                this.zkClient.start();
+                boolean connected = this.zkClient.blockUntilConnected(3, TimeUnit.MINUTES);
+                if (!connected) {
+                    throw new IllegalStateException("Failed to connect to Zookeeper client within 3 min");
+                }
+                
+                // Start the path and trigger caches.
+                this.pathCache.start();
+                this.triggerCache.start();
+                this.ready.set(true);
+            }
         } catch (Exception e) {
-            log.error("Failed to initialize caches", e);
-            // If an error occurs, ensure we close the client and caches to release it.
+            log.error("Failed to set up Zookeeper publisher", e);
             close();
-            throw e;
+        } finally {
+            publisherLock.unlock();
         }
     }
     
@@ -289,8 +295,6 @@ public class ZkPojoPublisherImpl<T> implements ZkPojoPublisher<T> {
             // Add the desired listeners to the cache.
             CuratorCacheListener cacheListener = listenerSupplier.get();
             cache.listenable().addListener(cacheListener);
-            // Start the cache.
-            cache.start();
             return cache;
         } catch (Exception e) {
             log.error("Failed to create curator cache for path node {}", node, e);
@@ -316,14 +320,14 @@ public class ZkPojoPublisherImpl<T> implements ZkPojoPublisher<T> {
                             byte[] data = node.getData();
                             // Only trigger a reload attempt if the data is not empty.
                             if (data != null && data.length > 0) {
-                                executor.submit(()-> triggerReload(PublishCause.PATH_NODE_CREATED));
+                                executor.submit(()-> triggerReload(Cause.PATH_NODE_CREATED));
                             }
                         })
                         .forChanges((oldNode, newNode) -> {
                             byte[] newData = newNode.getData();
                             // Only trigger a reload attempt if the data is not empty.
                             if(newData != null && newData.length > 0) {
-                                executor.submit(()-> triggerReload(PublishCause.PATH_NODE_MODIFIED));
+                                executor.submit(()-> triggerReload(Cause.PATH_NODE_MODIFIED));
                             }
                             
                         }).build();
@@ -342,9 +346,9 @@ public class ZkPojoPublisherImpl<T> implements ZkPojoPublisher<T> {
         return CuratorCacheListener.builder()
                         .afterInitialized() // Ignore any events that occurred before the cache was initialized.
                         .forInitialized(() -> initFlag.set(true)) // Indicate when the cache is initialized.
-                        .forCreates((node) -> executor.submit(()-> triggerReload(PublishCause.TRIGGER_NODE_CREATED)))
-                        .forChanges((oldNode, newNode) -> executor.submit(() -> triggerReload(PublishCause.TRIGGER_NODE_MODIFIED)))
-                        .forDeletes((node) -> executor.submit(() -> triggerReload(PublishCause.TRIGGER_NODE_DELETED)))
+                        .forCreates((node) -> executor.submit(()-> triggerReload(Cause.TRIGGER_NODE_CREATED)))
+                        .forChanges((oldNode, newNode) -> executor.submit(() -> triggerReload(Cause.TRIGGER_NODE_MODIFIED)))
+                        .forDeletes((node) -> executor.submit(() -> triggerReload(Cause.TRIGGER_NODE_DELETED)))
                         .build();
         // @formatter:on
     }
@@ -364,37 +368,37 @@ public class ZkPojoPublisherImpl<T> implements ZkPojoPublisher<T> {
      * @param cause
      *            the triggering cause
      */
-    private void triggerReload(PublishCause cause) {
+    private void triggerReload(Cause cause) {
         if (log.isDebugEnabled()) {
             log.debug("Reload triggered by {}", cause);
         }
         
         // Obtain the reload lock.
-        reloadLock.lock();
+        publisherLock.lock();
         try {
             Instant attemptTime = Instant.now();
             // Attempt to load a new POJO instance.
-            PublishResult result = getPojoFromZk();
+            PojoResult<T> result = getPojoFromZk();
             
-            // If we successfully loaded a valid subscriber, pass it to any subscribers registered with this updater.
-            if (result.getStatus() == PublishStatus.SUCCESS) {
-                if (!subscribers.isEmpty()) {
-                    List<Exception> subscriberExceptions = new ArrayList<>();
-                    for (Consumer<Object> subscriber : subscribers) {
+            // If we successfully loaded a valid listener, pass it to any listeners registered with this updater.
+            if (result.getStatus() == Status.SUCCESS) {
+                if (!listeners.isEmpty()) {
+                    List<Exception> listenerExceptions = new ArrayList<>();
+                    for (Consumer<T> listener : listeners) {
                         try {
-                            subscriber.accept(result.getUpdatedObject());
+                            listener.accept(result.getPojo());
                         } catch (Exception e) {
-                            // If an exception is thrown by a subscriber, log it and record it in the status.
-                            log.warn("Exception thrown by subscriber {}", subscriber, e);
-                            subscriberExceptions.add(e);
+                            // If an exception is thrown by a listener, log it and record it in the status.
+                            log.warn("Exception thrown by listener {}", listener, e);
+                            listenerExceptions.add(e);
                         }
                     }
-                    log.debug("Supplied object update to all subscribers");
-                    if (!subscriberExceptions.isEmpty()) {
-                        result = PublishResult.subscriberErrors(result.getTime(), result.getUpdatedObject(), subscriberExceptions);
+                    log.debug("Supplied object update to all listeners");
+                    if (!listenerExceptions.isEmpty()) {
+                        result = PojoResult.listenerErrors(result.getTime(), result.getPojo(), listenerExceptions);
                     }
                 } else {
-                    log.debug("No subscribers registered to be supplied updates");
+                    log.debug("No listeners registered to be supplied updates");
                 }
             }
             
@@ -404,115 +408,45 @@ public class ZkPojoPublisherImpl<T> implements ZkPojoPublisher<T> {
             }
             
             // Update the attempt nodes for the latest attempt.
-            updateAttemptNodes(cause, result.getStatus(), result.getErrors(), attemptTime);
+            updateAttemptNode(attemptTime, cause, result.getStatus(), result.getErrors());
         } catch (Exception e) {
             log.error("Failed to load instance of {}", pojoClass.getName(), e);
             throw new RuntimeException("Failed to load instance of " + pojoClass.getName(), e);
         } finally {
-            reloadLock.unlock();
+            publisherLock.unlock();
         }
     }
     
     /**
-     * Make the following changes underneath the namespace configured for this {@link ZkPojoPublisherImpl}. All nodes listed here will be created if they do not
-     * exist:
-     * <ul>
-     * <li>Set the data for the node {@code /attempts/<serverIpAddress>/status} to the bytes of the string form of the given {@link PublishStatus}.</li>
-     * <li>Set the data for the node {@code /attempts/<serverIpAddress>/cause} to the bytes of the string form of the given {@link PublishCause}.</li>
-     * <li>Set the data for the node {@code /attempts/<serverIpAddress>/time} to the bytes of the string form of the given {@link Instant}.</li>
-     * <li>Depending on the list of error messages provided, make the following changes to {@code /attempts/<serverIpAddress>/errors}:
-     * <ul>
-     * <li>If the error messages list is empty, delete the node {@code /attempts/<serverIdAddress>/errors} and its children.</li>
-     * <li>If the error messages list is not empty, set the children of the node {@code /attempts/<serverIpAddress>/errors} such that there is one child for
-     * each error message, with the path {@code error_X} where X equals the index of the error message in the list, and data is set to the bytes of the error
-     * message.</li>
-     * </ul>
-     * </li>
-     * </ul>
-     *
-     * @param cause
-     *            the triggering event for the reload
-     * @param status
-     *            the status
-     * @param errors
-     *            the errors
-     * @param time
-     *            the time of the attempt
-     * @throws Exception
-     *             if an error occurs on Zookeeper
+     * Update the data of the latest attempt node, creating it if needed.
+     * @param time the time of the attempt
+     * @param cause the cause of the attempt
+     * @param status the status of the attempt
+     * @param errors the errors of the attempt
      */
-    private void updateAttemptNodes(PublishCause cause, PublishStatus status, List<PublishError> errors, Instant time)
-                    throws Exception {
-        // Ensure the base /reload node is created.
-        client.createContainers(baseAttemptNode);
-        
-        setData(client, attemptCauseNode, cause.toString().getBytes(StandardCharsets.UTF_8));
-        setData(client, attemptStatusNode, status.toString().getBytes(StandardCharsets.UTF_8));
-        updateErrorsNode(client, errors);
-        setData(client, attemptTimeNode, time.toString().getBytes(StandardCharsets.UTF_8));
-    }
-    
-    /**
-     * Update the node {@code /attempts/<serverIpAddress>/errors} to reflect the contents of the given error list.
-     *
-     * @param client
-     *            the client
-     * @param errors
-     *            the errors
-     * @throws Exception
-     *             if an error occurs in Zookeeper
-     */
-    private void updateErrorsNode(CuratorFramework client, List<PublishError> errors) throws Exception {
-        Stat stat = client.checkExists().forPath(attemptErrorsNode);
-        if (stat != null) {
-            client.delete().deletingChildrenIfNeeded().forPath(attemptErrorsNode);
-        }
-        if (!errors.isEmpty()) {
-            client.create().forPath(attemptErrorsNode);
-            for (int i = 0; i < errors.size(); i++) {
-                PublishError error = errors.get(i);
-                
-                String errorNode = attemptErrorsNode + NODE_ERROR_BASE + i;
-                client.create().forPath(errorNode);
-                
-                String messageNode = errorNode + NODE_MESSAGE;
-                setData(client, messageNode, error.getMessage().getBytes(StandardCharsets.UTF_8));
-                
-                if (error.hasException()) {
-                    String stacktraceNode = errorNode + NODE_STACKTRACE;
-                    setData(client, stacktraceNode, ExceptionUtils.getStackTrace(error.getException()).getBytes(StandardCharsets.UTF_8));
-                }
+    private void updateAttemptNode(Instant time, Cause cause, Status status, List<Error> errors) {
+        PublishAttempt attempt = new PublishAttempt(time, cause, status, errors);
+        try {
+            byte[] data = jsonMapper.writeValueAsBytes(attempt);
+            Stat stat = zkClient.checkExists().forPath(latestAttemptNode);
+            if(stat != null) {
+                zkClient.setData().forPath(latestAttemptNode, data);
+            } else {
+                zkClient.create().creatingParentsIfNeeded().forPath(latestAttemptNode, data);
             }
-        }
-    }
-    
-    /**
-     * Set the data for the given node.
-     *
-     * @param node
-     *            the path to the node.
-     * @param data
-     *            the data to set
-     * @throws Exception
-     *             if an error occurs on Zookeeper
-     */
-    private void setData(CuratorFramework client, String node, byte[] data) throws Exception {
-        Stat stat = client.checkExists().forPath(node);
-        if (stat == null) {
-            client.create().forPath(node, data);
-        } else {
-            client.setData().forPath(node, data);
+        } catch (Exception e) {
+            log.error("Failed to record attempt {} to Zookeeper", attempt, e);
         }
     }
     
     /**
      * Attempt to load a new POJO from the path specified in the data of the node {@value NODE_PATH} under the zookeeper namespace configured for this
      * {@link ZkPojoPublisherImpl}. The path may point to an http, hdfs, or local file. Note that an invocation of this method will not result in the object being
-     * supplied to any subscribers, nor will the attempt result be recorded to Zookeeper.
+     * supplied to any listeners, nor will the attempt result be recorded to Zookeeper.
      *
      * @return the result
      */
-    public PublishResult getPojoFromZk() {
+    private PojoResult<T> getPojoFromZk() {
         if (log.isDebugEnabled()) {
             log.debug("Attempting to load new instance of {} from filepath in {}", pojoClass.getName(), NODE_PATH);
         }
@@ -520,23 +454,23 @@ public class ZkPojoPublisherImpl<T> implements ZkPojoPublisher<T> {
         Instant attemptTime = Instant.now();
         try {
             // Verify that the path node exists.
-            Stat stat = client.checkExists().forPath(NODE_PATH);
+            Stat stat = zkClient.checkExists().forPath(NODE_PATH);
             if (stat == null) {
                 if (log.isDebugEnabled()) {
                     log.debug("Node {} does not exist, skipping reload", NODE_PATH);
                 }
-                return PublishResult.error(attemptTime, "Node does not exist: " + NODE_PATH);
+                return PojoResult.error(attemptTime, "Node does not exist: " + NODE_PATH);
             }
             
             // Fetch the path from the path node.
-            byte[] pathBytes = client.getData().forPath(NODE_PATH);
+            byte[] pathBytes = zkClient.getData().forPath(NODE_PATH);
             
             // Verify we have a non-blank path.
             if (pathBytes == null) {
                 if (log.isDebugEnabled()) {
                     log.debug("Node {} does not have any data, skipping reload", NODE_PATH);
                 }
-                return PublishResult.error(attemptTime, "File path not set in data for node " + NODE_PATH);
+                return PojoResult.error(attemptTime, "File path not set in data for node " + NODE_PATH);
             }
             
             String path = new String(pathBytes, StandardCharsets.UTF_8);
@@ -544,7 +478,7 @@ public class ZkPojoPublisherImpl<T> implements ZkPojoPublisher<T> {
                 if (log.isDebugEnabled()) {
                     log.debug("Node {}} does not have a non-blank filepath, skipping reload", NODE_PATH);
                 }
-                return PublishResult.error(attemptTime, "Blank filepath set in data for node " + NODE_PATH);
+                return PojoResult.error(attemptTime, "Blank filepath set in data for node " + NODE_PATH);
             }
             
             // Trim the path of any leading/trailing whitespace.
@@ -556,14 +490,14 @@ public class ZkPojoPublisherImpl<T> implements ZkPojoPublisher<T> {
                 contents = getFileContents(path);
             } catch (NoSuchFileException e) {
                 log.error("Failed to read contents from file {}", path, e);
-                return PublishResult.error(attemptTime, "File not found: " + path, e);
+                return PojoResult.error(attemptTime, "File not found: " + path, e);
             } catch (Exception e) {
                 log.error("Failed to read contents from file {}", path, e);
-                return PublishResult.error(attemptTime, "Failed to read contents from file " + path + ": " + e.getMessage(), e);
+                return PojoResult.error(attemptTime, "Failed to read contents from file " + path + ": " + e.getMessage(), e);
             }
             
             // Determine the format (XML, JSON, YAML) and use the corresponding mapper to deserialize the contents.
-            Object pojo;
+            T pojo;
             DataFormatMatcher format = formatDetector.findFormat(contents);
             if (format.hasMatch()) {
                 JsonFactory factory = format.getMatch();
@@ -572,17 +506,17 @@ public class ZkPojoPublisherImpl<T> implements ZkPojoPublisher<T> {
                     pojo = formatToMapper.get(factory.getFormatName()).readValue(contents, pojoClass);
                 } catch (Exception e) {
                     log.error("Failed to deserialize file {} to a {}", path, pojoClass.getName(), e);
-                    return PublishResult.error(attemptTime, "Failed to deserialize file to a " + pojoClass.getName(), e);
+                    return PojoResult.error(attemptTime, "Failed to deserialize file to a " + pojoClass.getName(), e);
                 }
             } else {
                 // If we do not have a match for a supported mapper, return an error.
                 if (log.isDebugEnabled()) {
                     log.debug("File {} could not be detected as XML, JSON, or YAML, skipping reload", path);
                 }
-                return PublishResult.error(attemptTime, "File " + path + " must be XML, JSON, or YAML");
+                return PojoResult.error(attemptTime, "File " + path + " must be XML, JSON, or YAML");
             }
             
-            return PublishResult.success(attemptTime, pojo);
+            return PojoResult.success(attemptTime, pojo);
         } catch (Exception e) {
             log.error("Failed to reload new instance of {} from Zookeeper", pojoClass.getName(), e);
             throw new RuntimeException("Failed to load new instance of " + pojoClass.getName() + " from Zookeeper", e);
@@ -680,66 +614,83 @@ public class ZkPojoPublisherImpl<T> implements ZkPojoPublisher<T> {
     /**
      * Add a {@link Consumer} that, when a new POJO is loaded a path specified in Zookeeper, will be provided that configuration.
      *
-     * @param subscriber
-     *            the subscriber
+     * @param listener
+     *            the listener to add
      */
-    public void subscribeToUpdates(Consumer<Object> subscriber) {
-        this.subscribers.add(subscriber);
+    @Override
+    public void addListener(Consumer<T> listener) {
+        this.listeners.add(listener);
+    }
+    
+    /**
+     * Remove the given listener by identity.
+     *
+     * @param listener
+     *            the listener to remove
+     */
+    @Override
+    public void removeListener(Consumer<T> listener) {
+        this.listeners.removeIf((element) -> element == listener);
     }
     
     /**
      * Clean up resources used by this {@link ZkPojoPublisherImpl}. Performs the following tasks:
      * <ul>
      * <li>Close the curator caches for the nodes {@value #NODE_PATH} and @value #NODE_TRIGGER}.</li>
+     * <li>Closes the Zookeeper client.</li>
      * <li>Shut down the executor service that executes reload tasks.</li>
-     * <li>Clear the subscriber list.</li>
+     * <li>Clear the listener list.</li>
      * </ul>
      */
+    @PreDestroy
     public void close() {
-        if (pathCache != null) {
+        log.debug("Closing publisher");
+        publisherLock.lock();
+        try {
+            this.ready.set(false);
             try {
+                pathCacheInitialized.set(false);
                 pathCache.close();
             } catch (Exception e) {
                 log.warn("Failed to close path cache", e);
-            } finally {
-                pathCache = null;
             }
-        }
-        if (triggerCache != null) {
+            
             try {
+                triggerCacheInitialized.set(false);
                 triggerCache.close();
             } catch (Exception e) {
                 log.warn("Failed to close trigger cache", e);
-            } finally {
-                triggerCache = null;
             }
-        }
-        try {
-            executor.shutdown();
-            boolean terminated = executor.awaitTermination(1, TimeUnit.MINUTES);
-            if (!terminated) {
-                log.warn("Closed executor, but not all threads completed within 1 minute");
-            }
-        } catch (Exception e) {
-            log.warn("Failed to close executor", e);
-        }
-        
-        try {
-            subscribers.clear();
-        } catch (Exception e) {
-            log.warn("Failed to clear subscribers", e);
-        }
-        
-        if (client != null) {
+            
             try {
-                client.close();
+                zkClient.close();
             } catch (Exception e) {
                 log.warn("Failed to close Zookeeper client", e);
             }
+            
+            try {
+                executor.shutdown();
+                boolean terminated = executor.awaitTermination(1, TimeUnit.MINUTES);
+                if (!terminated) {
+                    log.warn("Closed executor, but not all threads completed within 1 minute");
+                }
+            } catch (Exception e) {
+                log.warn("Failed to close executor", e);
+            } finally {
+                executor = null;
+            }
+            
+            try {
+                listeners.clear();
+            } catch (Exception e) {
+                log.warn("Failed to clear listeners", e);
+            }
+        } finally {
+            publisherLock.unlock();
         }
     }
     
-    public enum PublishCause {
+    public enum Cause {
         /**
          * Indicates the triggering event was the creation of the node {@value ZkPojoPublisherImpl#NODE_PATH} with non-empty data.
          */
@@ -763,9 +714,9 @@ public class ZkPojoPublisherImpl<T> implements ZkPojoPublisher<T> {
     }
     
     
-    public enum PublishStatus {
+    public enum Status {
         /**
-         * Indicates an object update was successfully loaded from Zookeeper and, if triggered by a trigger event, successfully published to all subscribers.
+         * Indicates an object update was successfully loaded from Zookeeper and, if triggered by a trigger event, successfully published to all listeners.
          */
         SUCCESS,
         
@@ -775,103 +726,121 @@ public class ZkPojoPublisherImpl<T> implements ZkPojoPublisher<T> {
         LOAD_ERROR,
         
         /**
-         * Indicates an object update was successfully loaded from Zookeeper, but one or more subscribers threw an error when provided the updated object.
+         * Indicates an object update was successfully loaded from Zookeeper, but one or more listeners threw an error when provided the updated object.
          */
-        SUBSCRIBER_ERROR
+        LISTENER_ERROR
     }
     
     /**
-     * Represents an error that occurred when attempting to load a new updated object via a {@link ZkPojoPublisherImpl}.
+     * Represents an error, possible originating from an exception.
      */
-    public static class PublishError {
+    public static class Error {
         
-        /**
-         * A short description of the error.
-         */
         private final String message;
+        private final String stacktrace;
         
-        /**
-         * The associated exception for the error, if any.
-         */
-        private final Exception exception;
+        public static Error of(String message) {
+            return new Error(message, null);
+        }
         
-        public PublishError(String message, Exception exception) {
+        public static Error of(String message, Exception exception) {
+            return new Error(message, ExceptionUtils.getStackTrace(exception));
+        }
+        
+        @JsonCreator
+        public Error(@JsonProperty("message") String message, @JsonProperty("stacktrace") String stacktrace) {
             this.message = message;
-            this.exception = exception;
+            this.stacktrace = stacktrace;
         }
         
         public String getMessage() {
             return message;
         }
         
-        public Exception getException() {
-            return exception;
+        public String getStacktrace() {
+            return stacktrace;
         }
         
-        public boolean hasException() {
-            return exception != null;
+        @Override
+        public boolean equals(Object o) {
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            Error error = (Error) o;
+            return Objects.equals(message, error.message) && Objects.equals(stacktrace, error.stacktrace);
+        }
+        
+        @Override
+        public int hashCode() {
+            return Objects.hash(message, stacktrace);
+        }
+        
+        @Override
+        public String toString() {
+            return new StringJoiner(", ", Error.class.getSimpleName() + "[", "]").add("message='" + message + "'").add("stacktrace='" + stacktrace + "'")
+                            .toString();
         }
     }
     
     /**
      * Represents a result from {@link ZkPojoPublisherImpl#getPojoFromZk()}.
      */
-    public static class PublishResult {
+    public static class PojoResult<T> {
         
         /**
-         * The updated object. This will be null if no object update could be successfully loaded.
+         * The updated POJO. This will be null if no object update could be successfully loaded.
          */
-        private final Object updatedObject;
+        private final T pojo;
         
         /**
          * The status of loading the object.
          */
-        private final PublishStatus status;
+        private final Status status;
         
         /**
-         * A list of any errors that occurred while trying to load the results.
+         * A list of any errors that occurred while trying to load the POJO.
          */
-        private final List<PublishError> errors;
+        private final List<Error> errors;
         
         /**
          * The time that loading the object was attempted.
          */
         private final Instant time;
         
-        public static PublishResult success(Instant time, Object pojo) {
-            return new PublishResult(pojo, PublishStatus.SUCCESS, null, time);
+        public static <T> PojoResult<T> success(Instant time, T pojo) {
+            return new PojoResult<>(pojo, Status.SUCCESS, null, time);
         }
         
-        public static PublishResult error(Instant time, String message) {
-            return new PublishResult(null, PublishStatus.LOAD_ERROR, List.of(new PublishError(message, null)), time);
+        public static <T> PojoResult<T> error(Instant time, String message) {
+            return new PojoResult<>(null, Status.LOAD_ERROR, List.of(Error.of(message)), time);
         }
         
-        public static PublishResult error(Instant time, String message, Exception exception) {
-            return new PublishResult(null, PublishStatus.LOAD_ERROR, List.of(new PublishError(message, exception)), time);
+        public static <T> PojoResult<T> error(Instant time, String message, Exception exception) {
+            return new PojoResult<>(null, Status.LOAD_ERROR, List.of(Error.of(message, exception)), time);
         }
         
-        public static PublishResult subscriberErrors(Instant time, Object pojo, List<Exception> exceptions) {
-            List<PublishError> errors = exceptions.stream().map((e) -> new PublishError("Exception thrown by listener: " + e.getMessage(), e))
+        public static <T> PojoResult<T> listenerErrors(Instant time, T pojo, List<Exception> exceptions) {
+            List<Error> errors = exceptions.stream().map((e) -> Error.of("Exception thrown by listener: " + e.getMessage(), e))
                             .collect(Collectors.toList());
-            return new PublishResult(pojo, PublishStatus.SUBSCRIBER_ERROR, errors, time);
+            return new PojoResult<>(pojo, Status.LISTENER_ERROR, errors, time);
         }
         
-        public PublishResult(Object updatedObject, PublishStatus status, List<PublishError> errors, Instant time) {
-            this.updatedObject = updatedObject;
+        public PojoResult(T pojo, Status status, List<Error> errors, Instant time) {
+            this.pojo = pojo;
             this.status = status;
             this.errors = errors != null ? List.copyOf(errors) : List.of();
             this.time = time;
         }
         
-        public Object getUpdatedObject() {
-            return updatedObject;
+        public T getPojo() {
+            return pojo;
         }
         
-        public PublishStatus getStatus() {
+        public Status getStatus() {
             return status;
         }
         
-        public List<PublishError> getErrors() {
+        public List<Error> getErrors() {
             return errors;
         }
         
@@ -881,9 +850,66 @@ public class ZkPojoPublisherImpl<T> implements ZkPojoPublisher<T> {
         
         @Override
         public String toString() {
-            return new StringJoiner(", ", PublishResult.class.getSimpleName() + "[", "]").add("updatedObject=" + updatedObject).add("status=" + status)
+            return new StringJoiner(", ", PojoResult.class.getSimpleName() + "[", "]").add("pojo=" + pojo).add("status=" + status)
                             .add("errors=" + errors).add("time=" + time).toString();
         }
     }
+    
+    /**
+     * Represents a triggered publishing attempt.
+     */
+    public static class PublishAttempt {
+        
+        private final Instant time;
+        private final Cause cause;
+        private final Status status;
+        private final List<Error> errors;
+        
+        @JsonCreator
+        public PublishAttempt(@JsonProperty("time") Instant time, @JsonProperty("cause") Cause cause, @JsonProperty("status") Status status,
+                        @JsonProperty("errors") List<Error> errors) {
+            this.time = time;
+            this.cause = cause;
+            this.status = status;
+            this.errors = errors == null ? List.of() : List.copyOf(errors);
+        }
+        
+        public Instant getTime() {
+            return time;
+        }
+        
+        public Cause getCause() {
+            return cause;
+        }
+        
+        public Status getStatus() {
+            return status;
+        }
+        
+        public List<Error> getErrors() {
+            return errors;
+        }
+        
+        @Override
+        public boolean equals(Object o) {
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            PublishAttempt that = (PublishAttempt) o;
+            return cause == that.cause && status == that.status && Objects.equals(time, that.time) && Objects.equals(errors, that.errors);
+        }
+        
+        @Override
+        public int hashCode() {
+            return Objects.hash(cause, status, time, errors);
+        }
+        
+        @Override
+        public String toString() {
+            return new StringJoiner(", ", PublishAttempt.class.getSimpleName() + "[", "]").add("time=" + time).add("cause=" + cause).add("status=" + status)
+                            .add("errors=" + errors).toString();
+        }
+    }
+    
     
 }

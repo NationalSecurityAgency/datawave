@@ -1,12 +1,13 @@
 package datawave.zookeeper;
 
-import static datawave.zookeeper.ZkPojoPublisherImpl.PublishCause.PATH_NODE_CREATED;
-import static datawave.zookeeper.ZkPojoPublisherImpl.PublishCause.PATH_NODE_MODIFIED;
-import static datawave.zookeeper.ZkPojoPublisherImpl.PublishCause.TRIGGER_NODE_CREATED;
-import static datawave.zookeeper.ZkPojoPublisherImpl.PublishCause.TRIGGER_NODE_DELETED;
-import static datawave.zookeeper.ZkPojoPublisherImpl.PublishCause.TRIGGER_NODE_MODIFIED;
-import static datawave.zookeeper.ZkPojoPublisherImpl.PublishStatus.*;
-import static datawave.zookeeper.ZkPojoPublisherImpl.PublishStatus.LOAD_ERROR;
+import static datawave.zookeeper.ZkPojoPublisherImpl.Cause.PATH_NODE_CREATED;
+import static datawave.zookeeper.ZkPojoPublisherImpl.Cause.PATH_NODE_MODIFIED;
+import static datawave.zookeeper.ZkPojoPublisherImpl.Cause.TRIGGER_NODE_CREATED;
+import static datawave.zookeeper.ZkPojoPublisherImpl.Cause.TRIGGER_NODE_DELETED;
+import static datawave.zookeeper.ZkPojoPublisherImpl.Cause.TRIGGER_NODE_MODIFIED;
+import static datawave.zookeeper.ZkPojoPublisherImpl.Status.*;
+import static datawave.zookeeper.ZkPojoPublisherImpl.Status.LOAD_ERROR;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -19,12 +20,15 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import com.fasterxml.jackson.databind.json.JsonMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import datawave.ingest.util.ThreadUtil;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
@@ -40,41 +44,38 @@ import org.junit.jupiter.api.Test;
 import datawave.webservice.query.limit.QueryLimitConfiguration;
 
 public class ZkPojoPublisherImplTest {
-
-    private static final String NAMESPACE = "QueryLimitConfig";
-
+    
+    private static final String NAMESPACE = "pojoPublishers/QueryLimitConfig";
+    
+    private static final JsonMapper jsonMapper = JsonMapper.builder().addModule(new JavaTimeModule()).build();
+    
     private static String validJsonFile;
     private static String validXmlFile;
     private static String validYamlFile;
-    private static String invalidConfigFile;
     private static String nonConfigFile;
     private static String unsupportedFormatFile;
-
-    private ZkPojoPublisherImpl publisher;
+    
+    private ZkPojoPublisherImpl<QueryLimitConfiguration> publisher;
     private final List<QueryLimitConfiguration> configs = new ArrayList<>();
     private TestingServer server;
     private CuratorFramework client;
-
-    private static String causeNode;
-    private static String statusNode;
-    private static String errorsNode;
-    private static String timeNode;
-
+    
+    private static String latestAttemptNode;
+    
     private Instant testStartTime;
-
+    private ZkPojoPublisherImpl.Status expectedStatus;
+    private ZkPojoPublisherImpl.Cause expectedCause;
+    private final List<ErrorAssertion> errorAssertions = new ArrayList<>();
+    
     @BeforeAll
     static void beforeAll() throws Exception {
         String serverIpAddress = InetAddress.getLocalHost().getHostAddress();
-        causeNode = "/attempts/" + serverIpAddress + "/cause";
-        statusNode = "/attempts/" + serverIpAddress + "/status";
-        errorsNode = "/attempts/" + serverIpAddress + "/errors";
-        timeNode = "/attempts/" + serverIpAddress + "/time";
+        latestAttemptNode = "/attempts/" + serverIpAddress + "/latest";
 
         ClassLoader classLoader = ZkPojoPublisherImplTest.class.getClassLoader();
         validJsonFile = getAbsolutePath(classLoader, "queryLimits/valid_config.json");
         validXmlFile = getAbsolutePath(classLoader, "queryLimits/valid_config.xml");
         validYamlFile = getAbsolutePath(classLoader, "queryLimits/valid_config.yaml");
-        invalidConfigFile = getAbsolutePath(classLoader, "queryLimits/invalid_config.yaml");
         nonConfigFile = getAbsolutePath(classLoader, "queryLimits/non_config.yaml");
         unsupportedFormatFile = getAbsolutePath(classLoader, "queryLimits/unsupported_format.toml");
     }
@@ -119,6 +120,9 @@ public class ZkPojoPublisherImplTest {
 
     @AfterEach
     void tearDown() throws IOException {
+        expectedStatus = null;
+        expectedCause = null;
+        errorAssertions.clear();
         if (publisher != null) {
             publisher.close();
         }
@@ -135,14 +139,14 @@ public class ZkPojoPublisherImplTest {
      */
     @Test
     void testInvalidConstructorArgs() {
-        assertThatThrownBy(() -> new ZkPojoPublisherImpl(null, null, null)).isInstanceOf(IllegalArgumentException.class)
+        assertThatThrownBy(() -> new ZkPojoPublisherImpl<>(null, null, null)).isInstanceOf(NullPointerException.class)
                         .hasMessage("zkClientBuilder must not be null");
-        assertThatThrownBy(() -> new ZkPojoPublisherImpl(new ZkClientBuilder(), null, null))
-                        .isInstanceOf(NullPointerException.class).hasMessage("objectClass must not be null");
+        assertThatThrownBy(() -> new ZkPojoPublisherImpl<>(new ZkClientBuilder(), null, null))
+                        .isInstanceOf(NullPointerException.class).hasMessage("pojoClass must not be null");
     }
 
     /**
-     * Verify that the {@link ZkPojoPublisherImpl} can read a {@link QueryLimitConfiguration} from a JSON file on the local file system.
+     * Verify that the {@link ZkPojoPublisherImpl} can read a POJO from a JSON file on the local file system.
      */
     @Test
     void testReloadValidJsonFromLocalFilesystem() throws Exception {
@@ -164,17 +168,16 @@ public class ZkPojoPublisherImplTest {
 
         // Wait for the attempt time node to be created. This is the last attempt node that is created/updated after a reload and is our indicator that we can
         // verify the attempt nodes.
-        waitForAttemptTimeNodeToBeCreated();
+        waitForLatestAttemptNodeToBeCreated();
 
-        // Verify the attempt nodes were updated correctly.
-        assertCause(TRIGGER_NODE_MODIFIED);
-        assertStatus(SUCCESS);
-        assertErrorsNodeDoesNotExist();
-        assertTimeNodeHasRecentTime();
+        // Verify the latest attempt node was updated correctly.
+        expectCause(TRIGGER_NODE_MODIFIED);
+        expectStatus(SUCCESS);
+        assertLatestAttempt();
     }
 
     /**
-     * Verify that the {@link ZkPojoPublisherImpl} can read a {@link QueryLimitConfiguration} from an XML file on the local file system.
+     * Verify that the {@link ZkPojoPublisherImpl} can read a POJO from an XML file on the local file system.
      */
     @Test
     void testReloadValidXmlFromLocalFilesystem() throws Exception {
@@ -196,17 +199,17 @@ public class ZkPojoPublisherImplTest {
 
         // Wait for the attempt time node to be created. This is the last attempt node that is created/updated after a reload and is our indicator that we can
         // verify the attempt nodes.
-        waitForAttemptTimeNodeToBeCreated();
-
-        // Verify the attempt nodes were updated correctly.
-        assertCause(TRIGGER_NODE_MODIFIED);
-        assertStatus(SUCCESS);
-        assertErrorsNodeDoesNotExist();
-        assertTimeNodeHasRecentTime();
+        waitForLatestAttemptNodeToBeCreated();
+        
+        // Verify the latest attempt node was updated correctly.
+        expectCause(TRIGGER_NODE_MODIFIED);
+        expectStatus(SUCCESS);
+        
+        assertLatestAttempt();
     }
 
     /**
-     * Verify that the {@link ZkPojoPublisherImpl} can read a {@link QueryLimitConfiguration} from a YAML file on the local file system.
+     * Verify that the {@link ZkPojoPublisherImpl} can read a POJO from a YAML file on the local file system.
      */
     @Test
     void testReloadValidYamlFromLocalFilesystem() throws Exception {
@@ -228,13 +231,13 @@ public class ZkPojoPublisherImplTest {
 
         // Wait for the attempt time node to be created. This is the last attempt node that is created/updated after a reload and is our indicator that we can
         // verify the attempt nodes.
-        waitForAttemptTimeNodeToBeCreated();
-
-        // Verify the attempt nodes were updated correctly.
-        assertCause(TRIGGER_NODE_MODIFIED);
-        assertStatus(SUCCESS);
-        assertErrorsNodeDoesNotExist();
-        assertTimeNodeHasRecentTime();
+        waitForLatestAttemptNodeToBeCreated();
+        
+        // Verify the latest attempt node was updated correctly.
+        expectCause(TRIGGER_NODE_MODIFIED);
+        expectStatus(SUCCESS);
+        
+        assertLatestAttempt();
     }
 
     /**
@@ -260,13 +263,13 @@ public class ZkPojoPublisherImplTest {
 
         // Wait for the attempt time node to be created. This is the last attempt node that is created/updated after a reload and is our indicator that we can
         // verify the attempt nodes.
-        waitForAttemptTimeNodeToBeCreated();
-
-        // Verify the attempt nodes were updated correctly.
-        assertCause(TRIGGER_NODE_MODIFIED);
-        assertStatus(SUCCESS);
-        assertErrorsNodeDoesNotExist();
-        assertTimeNodeHasRecentTime();
+        waitForLatestAttemptNodeToBeCreated();
+        
+        // Verify the latest attempt node was updated correctly.
+        expectCause(TRIGGER_NODE_MODIFIED);
+        expectStatus(SUCCESS);
+        
+        assertLatestAttempt();
     }
 
     /**
@@ -291,13 +294,13 @@ public class ZkPojoPublisherImplTest {
 
         // Wait for the attempt time node to be created. This is the last attempt node that is created/updated after a reload and is our indicator that we can
         // verify the attempt nodes.
-        waitForAttemptTimeNodeToBeCreated();
-
-        // Verify the attempt nodes were updated correctly.
-        assertCause(TRIGGER_NODE_CREATED);
-        assertStatus(SUCCESS);
-        assertErrorsNodeDoesNotExist();
-        assertTimeNodeHasRecentTime();
+        waitForLatestAttemptNodeToBeCreated();
+        
+        // Verify the latest attempt node was updated correctly.
+        expectCause(TRIGGER_NODE_CREATED);
+        expectStatus(SUCCESS);
+        
+        assertLatestAttempt();
     }
 
     /**
@@ -323,13 +326,13 @@ public class ZkPojoPublisherImplTest {
 
         // Wait for the attempt time node to be created. This is the last attempt node that is created/updated after a reload and is our indicator that we can
         // verify the attempt nodes.
-        waitForAttemptTimeNodeToBeCreated();
-
-        // Verify the attempt nodes were updated correctly.
-        assertCause(TRIGGER_NODE_DELETED);
-        assertStatus(SUCCESS);
-        assertErrorsNodeDoesNotExist();
-        assertTimeNodeHasRecentTime();
+        waitForLatestAttemptNodeToBeCreated();
+        
+        // Verify the latest attempt node was updated correctly.
+        expectCause(TRIGGER_NODE_DELETED);
+        expectStatus(SUCCESS);
+        
+        assertLatestAttempt();
     }
 
     /**
@@ -345,12 +348,9 @@ public class ZkPojoPublisherImplTest {
 
         // Verify a configuration is never supplied to the listener.
         assertThrows(Exception.class, () -> Awaitility.await().atMost(1, TimeUnit.SECONDS).until(() -> !configs.isEmpty()));
-
-        // Verify the status nodes are never created.
-        assertNull(client.checkExists().forPath(causeNode));
-        assertNull(client.checkExists().forPath(statusNode));
-        assertNull(client.checkExists().forPath(errorsNode));
-        assertNull(client.checkExists().forPath(timeNode));
+        
+        // Verify the latest attempt node is never created.
+        assertNodeDoesNotExist(latestAttemptNode);
     }
 
     /**
@@ -369,12 +369,9 @@ public class ZkPojoPublisherImplTest {
 
         // Verify a configuration is never supplied to the listener.
         assertThrows(Exception.class, () -> Awaitility.await().atMost(1, TimeUnit.SECONDS).until(() -> !configs.isEmpty()));
-
-        // Verify the status nodes are never created.
-        assertNull(client.checkExists().forPath(causeNode));
-        assertNull(client.checkExists().forPath(statusNode));
-        assertNull(client.checkExists().forPath(errorsNode));
-        assertNull(client.checkExists().forPath(timeNode));
+        
+        // Verify the latest attempt node is never created.
+        assertNodeDoesNotExist(latestAttemptNode);
     }
 
     /**
@@ -396,13 +393,13 @@ public class ZkPojoPublisherImplTest {
 
         // Wait for the attempt time node to be created. This is the last attempt node that is created/updated after a reload and is our indicator that we can
         // verify the attempt nodes.
-        waitForAttemptTimeNodeToBeCreated();
+        waitForLatestAttemptNodeToBeCreated();
 
-        // Verify the attempt nodes were updated correctly.
-        assertCause(PATH_NODE_CREATED);
-        assertStatus(SUCCESS);
-        assertErrorsNodeDoesNotExist();
-        assertTimeNodeHasRecentTime();
+        // Verify the latest attempt node was updated correctly.
+        expectCause(PATH_NODE_CREATED);
+        expectStatus(SUCCESS);
+        
+        assertLatestAttempt();
     }
 
     /**
@@ -427,13 +424,13 @@ public class ZkPojoPublisherImplTest {
 
         // Wait for the attempt time node to be created. This is the last attempt node that is created/updated after a reload and is our indicator that we can
         // verify the attempt nodes.
-        waitForAttemptTimeNodeToBeCreated();
-
-        // Verify the attempt nodes were updated correctly.
-        assertCause(PATH_NODE_MODIFIED);
-        assertStatus(SUCCESS);
-        assertErrorsNodeDoesNotExist();
-        assertTimeNodeHasRecentTime();
+        waitForLatestAttemptNodeToBeCreated();
+        
+        // Verify the latest attempt node was updated correctly.
+        expectCause(PATH_NODE_MODIFIED);
+        expectStatus(SUCCESS);
+        
+        assertLatestAttempt();
     }
 
     /**
@@ -454,18 +451,17 @@ public class ZkPojoPublisherImplTest {
 
         // Wait for the attempt time node to be created. This is the last attempt node that is created/updated after a reload and is our indicator that we can
         // verify the attempt nodes.
-        waitForAttemptTimeNodeToBeCreated();
+        waitForLatestAttemptNodeToBeCreated();
 
         // Verify that a configuration was not supplied to the listener.
         assertTrue(configs.isEmpty());
 
-        // Verify the attempt nodes were updated correctly.
-        assertCause(TRIGGER_NODE_MODIFIED);
-        assertStatus(LOAD_ERROR);
-        assertTotalErrors(1);
-        assertErrorMessage(0, "Node does not exist: QueryLimitConfig/path");
-        assertErrorDoesNotHaveStackTrace(0);
-        assertTimeNodeHasRecentTime();
+        // Verify the latest attempt node was updated correctly.
+        expectCause(TRIGGER_NODE_MODIFIED);
+        expectStatus(LOAD_ERROR);
+        expectError("Node does not exist: /path");
+        
+        assertLatestAttempt();
     }
 
     /**
@@ -488,18 +484,17 @@ public class ZkPojoPublisherImplTest {
 
         // Wait for the attempt time node to be created. This is the last attempt node that is created/updated after a reload and is our indicator that we can
         // verify the attempt nodes.
-        waitForAttemptTimeNodeToBeCreated();
+        waitForLatestAttemptNodeToBeCreated();
 
         // Verify that a configuration was not supplied to the listener.
         assertTrue(configs.isEmpty());
-
-        // Verify the attempt nodes were updated correctly.
-        assertCause(TRIGGER_NODE_MODIFIED);
-        assertStatus(LOAD_ERROR);
-        assertTotalErrors(1);
-        assertErrorMessage(0, "Blank filepath set in data for node QueryLimitConfig/path");
-        assertErrorDoesNotHaveStackTrace(0);
-        assertTimeNodeHasRecentTime();
+        
+        // Verify the latest attempt node was updated correctly.
+        expectCause(TRIGGER_NODE_MODIFIED);
+        expectStatus(LOAD_ERROR);
+        expectError("Blank filepath set in data for node /path");
+        
+        assertLatestAttempt();
     }
 
     /**
@@ -522,18 +517,17 @@ public class ZkPojoPublisherImplTest {
 
         // Wait for the attempt time node to be created. This is the last attempt node that is created/updated after a reload and is our indicator that we can
         // verify the attempt nodes.
-        waitForAttemptTimeNodeToBeCreated();
+        waitForLatestAttemptNodeToBeCreated();
 
         // Verify that a configuration was not supplied to the listener.
         assertTrue(configs.isEmpty());
-
-        // Verify the attempt nodes were updated correctly.
-        assertCause(TRIGGER_NODE_MODIFIED);
-        assertStatus(LOAD_ERROR);
-        assertTotalErrors(1);
-        assertErrorMessage(0, "Blank filepath set in data for node QueryLimitConfig/path");
-        assertErrorDoesNotHaveStackTrace(0);
-        assertTimeNodeHasRecentTime();
+        
+        // Verify the latest attempt node was updated correctly.
+        expectCause(TRIGGER_NODE_MODIFIED);
+        expectStatus(LOAD_ERROR);
+        expectError("Blank filepath set in data for node /path");
+        
+        assertLatestAttempt();
     }
 
     /**
@@ -556,18 +550,17 @@ public class ZkPojoPublisherImplTest {
 
         // Wait for the attempt time node to be created. This is the last attempt node that is created/updated after a reload and is our indicator that we can
         // verify the attempt nodes.
-        waitForAttemptTimeNodeToBeCreated();
+        waitForLatestAttemptNodeToBeCreated();
 
         // Verify that a configuration was not supplied to the listener.
         assertTrue(configs.isEmpty());
-
-        // Verify the attempt nodes were updated correctly.
-        assertCause(TRIGGER_NODE_MODIFIED);
-        assertStatus(LOAD_ERROR);
-        assertTotalErrors(1);
-        assertErrorMessage(0, "Failed to read contents from file ftp://i/do/not/exist: Unsupported URI scheme: ftp");
-        assertErrorStackTraceBeginsWith(0, "java.io.IOException: Unsupported URI scheme: ftp");
-        assertTimeNodeHasRecentTime();
+        
+        // Verify the latest attempt node was updated correctly.
+        expectCause(TRIGGER_NODE_MODIFIED);
+        expectStatus(LOAD_ERROR);
+        expectError("Failed to read contents from file ftp://i/do/not/exist: Unsupported URI scheme: ftp", "java.io.IOException: Unsupported URI scheme: ftp");
+        
+        assertLatestAttempt();
     }
 
     /**
@@ -590,18 +583,15 @@ public class ZkPojoPublisherImplTest {
 
         // Wait for the attempt time node to be created. This is the last attempt node that is created/updated after a reload and is our indicator that we can
         // verify the attempt nodes.
-        waitForAttemptTimeNodeToBeCreated();
+        waitForLatestAttemptNodeToBeCreated();
 
         // Verify that a configuration was not supplied to the listener.
         assertTrue(configs.isEmpty());
-
-        // Verify the attempt nodes were updated correctly.
-        assertCause(TRIGGER_NODE_MODIFIED);
-        assertStatus(LOAD_ERROR);
-        assertTotalErrors(1);
-        assertErrorMessage(0, "File not found: i/do/not/exist");
-        assertErrorStackTraceBeginsWith(0, "java.nio.file.NoSuchFileException: i/do/not/exist");
-        assertTimeNodeHasRecentTime();
+        
+        // Verify the latest attempt node was updated correctly.
+        expectCause(TRIGGER_NODE_DELETED);
+        expectStatus(LOAD_ERROR);
+        expectError("File not found: i/do/not/exist", "java.nio.file.NoSuchFileException: i/do/not/exist");
     }
 
     /**
@@ -624,25 +614,22 @@ public class ZkPojoPublisherImplTest {
 
         // Wait for the attempt time node to be created. This is the last attempt node that is created/updated after a reload and is our indicator that we can
         // verify the attempt nodes.
-        waitForAttemptTimeNodeToBeCreated();
+        waitForLatestAttemptNodeToBeCreated();
 
         // Verify that a configuration was not supplied to the listener.
         assertTrue(configs.isEmpty());
-
-        // Verify the attempt nodes were updated correctly.
-        assertCause(TRIGGER_NODE_MODIFIED);
-        assertStatus(LOAD_ERROR);
-        assertTotalErrors(1);
-        assertErrorMessage(0, "File " + unsupportedFormatFile + " must be XML, JSON, or YAML");
-        assertErrorDoesNotHaveStackTrace(0);
-        assertTimeNodeHasRecentTime();
+        
+        // Verify the latest attempt node was updated correctly.
+        expectCause(TRIGGER_NODE_DELETED);
+        expectStatus(LOAD_ERROR);
+        expectError("File " + unsupportedFormatFile + " must be XML, JSON, or YAML");
     }
 
     /**
-     * Verify we do not load a configuration when the node {@code /path} points to a file that cannot be deserialized as a {@link QueryLimitConfiguration}.
+     * Verify we do not load a POJO when the node {@code /path} points to a file that cannot be deserialized as the POJO type.
      */
     @Test
-    void testNonQueryLimitConfigurationFile() throws Exception {
+    void testNonPojoFile() throws Exception {
         // Set up the /path node beforehand.
         createOrUpdateNode("/path", nonConfigFile);
         createOrUpdateNode("/trigger", "changeme");
@@ -658,61 +645,23 @@ public class ZkPojoPublisherImplTest {
 
         // Wait for the attempt time node to be created. This is the last attempt node that is created/updated after a reload and is our indicator that we can
         // verify the attempt nodes.
-        waitForAttemptTimeNodeToBeCreated();
+        waitForLatestAttemptNodeToBeCreated();
 
         // Verify that a configuration was not supplied to the listener.
         assertTrue(configs.isEmpty());
 
-        // Verify the attempt nodes were updated correctly.
-        assertCause(TRIGGER_NODE_MODIFIED);
-        assertStatus(LOAD_ERROR);
-        assertTotalErrors(1);
-        assertErrorMessage(0, "Failed to deserialize file to a datawave.webservice.query.limit.QueryLimitConfiguration");
-        assertErrorStackTraceBeginsWith(0, "com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException: Unrecognized field \"property1\"");
-        assertTimeNodeHasRecentTime();
+        // Verify the latest attempt node was updated correctly.
+        expectCause(TRIGGER_NODE_DELETED);
+        expectStatus(LOAD_ERROR);
+        expectError("Failed to deserialize file to a datawave.webservice.query.limit.QueryLimitConfiguration",
+                        "com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException: Unrecognized field \"property1\"");
     }
 
     /**
-     * Verify we do not load a configuration when the node {@code /path} points to a file that deserializes to a {@link QueryLimitConfiguration} that fails
-     * validation.
+     * Verify that if exceptions are thrown by listeners after supplying them with a new POJO, the errors are captured and recorded.
      */
     @Test
-    void testInvalidQueryLimitConfigurationFile() throws Exception {
-        // Set up the /path node beforehand.
-        createOrUpdateNode("/path", invalidConfigFile);
-        createOrUpdateNode("/trigger", "changeme");
-
-        // Create the publisher and start listening for trigger events.
-        createPublisher();
-
-        // Trigger a reload.
-        createOrUpdateNode("/trigger", "");
-
-        // Verify a configuration is never supplied to the listener.
-        waitToCheckConfigurationIsNotSupplied();
-
-        // Wait for the attempt time node to be created. This is the last attempt node that is created/updated after a reload and is our indicator that we can
-        // verify the attempt nodes.
-        waitForAttemptTimeNodeToBeCreated();
-
-        // Verify that a configuration was not supplied to the listener.
-        assertTrue(configs.isEmpty());
-
-        // Verify the attempt nodes were updated correctly.
-        assertCause(TRIGGER_NODE_MODIFIED);
-        assertStatus(LOAD_ERROR);
-        assertTotalErrors(1);
-        assertErrorMessage(0,
-                        "Reloaded datawave.webservice.query.limit.QueryLimitConfiguration failed validation: Default user query limit must be greater than 0");
-        assertErrorStackTraceBeginsWith(0, "java.lang.IllegalArgumentException: Default user query limit must be greater than 0");
-        assertTimeNodeHasRecentTime();
-    }
-
-    /**
-     * Verify that if exceptions are thrown by subscribers after supplying them with a new configuration, the errors are captured and recorded.
-     */
-    @Test
-    void testExceptionsThrownBySubscribers() throws Exception {
+    void testExceptionsThrownByListeners() throws Exception {
         // Set up the /path node beforehand.
         createOrUpdateNode("/path", validJsonFile);
         createOrUpdateNode("/trigger", "changeme");
@@ -721,13 +670,13 @@ public class ZkPojoPublisherImplTest {
         createPublisher();
 
         // Add listeners to the publisher that will throw a variety of exceptions.
-        publisher.subscribeToUpdates(configuration -> {
+        publisher.addListener(configuration -> {
             throw new NullPointerException("Something bad happened!");
         });
-        publisher.subscribeToUpdates(configuration -> {
+        publisher.addListener(configuration -> {
             throw new IllegalArgumentException("I don't like this configuration.");
         });
-        publisher.subscribeToUpdates(configuration -> {
+        publisher.addListener(configuration -> {
             throw new UnsupportedOperationException("Why do I even exist?");
         });
 
@@ -742,19 +691,14 @@ public class ZkPojoPublisherImplTest {
 
         // Wait for the attempt time node to be created. This is the last attempt node that is created/updated after a reload and is our indicator that we can
         // verify the attempt nodes.
-        waitForAttemptTimeNodeToBeCreated();
-
-        // Verify the attempt nodes were updated correctly.
-        assertCause(TRIGGER_NODE_MODIFIED);
-        assertStatus(SUBSCRIBER_ERROR);
-        assertTotalErrors(3);
-        assertErrorMessage(0, "Exception thrown by listener: Something bad happened!");
-        assertErrorStackTraceBeginsWith(0, "java.lang.NullPointerException: Something bad happened!");
-        assertErrorMessage(1, "Exception thrown by listener: I don't like this configuration.");
-        assertErrorStackTraceBeginsWith(1, "java.lang.IllegalArgumentException: I don't like this configuration.");
-        assertErrorMessage(2, "Exception thrown by listener: Why do I even exist?");
-        assertErrorStackTraceBeginsWith(2, "java.lang.UnsupportedOperationException: Why do I even exist?");
-        assertTimeNodeHasRecentTime();
+        waitForLatestAttemptNodeToBeCreated();
+        
+        // Verify the latest attempt node was updated correctly.
+        expectCause(TRIGGER_NODE_DELETED);
+        expectStatus(LOAD_ERROR);
+        expectError("Exception thrown by listener: Something bad happened!", "java.lang.NullPointerException: Something bad happened!");
+        expectError("Exception thrown by listener: I don't like this configuration.", "java.lang.IllegalArgumentException: I don't like this configuration.");
+        expectError("Exception thrown by listener: Why do I even exist?", "java.lang.UnsupportedOperationException: Why do I even exist?");
     }
 
     /**
@@ -777,86 +721,100 @@ public class ZkPojoPublisherImplTest {
     }
 
     /**
-     * Wait with a timeout until we know the node {@code attempts/<serverIpAddress>/time} exists.
+     * Wait with a timeout until we know the node {@code attempts/<serverIpAddress>/latest} exists.
      */
-    private void waitForAttemptTimeNodeToBeCreated() {
+    private void waitForLatestAttemptNodeToBeCreated() {
         try {
-            Awaitility.await().atMost(4, TimeUnit.SECONDS).until(() -> client.checkExists().forPath(timeNode) != null);
+            Awaitility.await().atMost(4, TimeUnit.SECONDS).until(() -> client.checkExists().forPath(latestAttemptNode) != null);
         } catch (Exception e) {
-            fail("Timeout exceeded while waiting for node " + timeNode + " to be created: " + e.getMessage());
+            fail("Timeout exceeded while waiting for node " + latestAttemptNode + " to be created: " + e.getMessage());
         }
     }
-
-    private void assertCause(ZkPojoPublisherImpl.PublishCause trigger) throws Exception {
-        assertData(causeNode, trigger.toString());
+    
+    private void expectStatus(ZkPojoPublisherImpl.Status status) {
+        this.expectedStatus = status;
     }
-
-    private void assertStatus(ZkPojoPublisherImpl.PublishStatus status) throws Exception {
-        assertData(statusNode, status.toString());
+    
+    private void expectCause(ZkPojoPublisherImpl.Cause cause) {
+        this.expectedCause = cause;
     }
-
-    private void assertErrorsNodeDoesNotExist() throws Exception {
-        Stat stat = client.checkExists().forPath(errorsNode);
-        assertNull(stat, "Expected node " + errorsNode + " to not exist");
+    
+    private void expectError(String message) {
+        this.errorAssertions.add(new ErrorAssertion(message));
     }
-
-    private void assertTotalErrors(int expected) throws Exception {
-        Stat stat = client.checkExists().forPath(errorsNode);
-        assertEquals(expected, stat.getNumChildren(), "Expected node " + errorsNode + " to have " + expected + " children");
+    
+    private void expectError(String message, String stacktraceStart) {
+        this.errorAssertions.add(new ErrorAssertion(message, stacktraceStart));
     }
-
-    private void assertErrorMessage(int errorIndex, String message) throws Exception {
-        assertData(errorsNode + "/error_" + errorIndex + "/message", message);
+    
+    private void assertLatestAttempt() throws Exception {
+        ZkPojoPublisherImpl.PublishAttempt actual = getAttempt();
+        assertEquals(expectedCause, actual.getCause());
+        assertEquals(expectedStatus, actual.getStatus());
+        assertTrue(actual.getTime().isAfter(testStartTime));
+        
+        List<ZkPojoPublisherImpl.Error> actualErrors = actual.getErrors();
+        assertThat(actualErrors).hasSize(errorAssertions.size());
+        for(int i = 0; i < errorAssertions.size(); i++) {
+            errorAssertions.get(i).assertMatches(actualErrors.get(i));
+        }
     }
-
-    private void assertErrorStackTraceBeginsWith(int errorIndex, String prefix) throws Exception {
-        String path = errorsNode + "/error_" + errorIndex + "/stacktrace";
-        Stat stat = client.checkExists().forPath(path);
-        assertNotNull(stat, "Expected node " + path + " to exist");
-        String data = new String(client.getData().forPath(path));
-        assertTrue(data.startsWith(prefix));
+    
+    private ZkPojoPublisherImpl.PublishAttempt getAttempt() throws Exception {
+        Stat stat = client.checkExists().forPath(latestAttemptNode);
+        if(stat == null) {
+            fail("Expected node " + latestAttemptNode + " to exist");
+        }
+        byte[] data = client.getData().forPath(latestAttemptNode);
+        return jsonMapper.readValue(data, ZkPojoPublisherImpl.PublishAttempt.class);
     }
-
-    private void assertErrorDoesNotHaveStackTrace(int errorIndex) throws Exception {
-        String path = errorsNode + "/error_" + errorIndex + "/stacktrace";
-        Stat stat = client.checkExists().forPath(path);
-        assertNull(stat, "Expected node " + path + " to not exist");
+    
+    private void assertNodeDoesNotExist(String path) throws Exception {
+        assertNull(client.checkExists().forPath(path));
     }
-
-    private void assertTimeNodeHasRecentTime() throws Exception {
-        Stat stat = client.checkExists().forPath(timeNode);
-        assertNotNull(stat, "Expected node " + timeNode + " to exist");
-        String actualData = new String(client.getData().forPath(timeNode));
-        Instant timeNodeInstant = Instant.parse(actualData);
-        assertTrue(timeNodeInstant.isAfter(testStartTime));
-    }
-
-    private void assertData(String path, String expectedData) throws Exception {
-        Stat stat = client.checkExists().forPath(path);
-        assertNotNull(stat, "Expected node " + path + " to exist");
-        String actualData = new String(client.getData().forPath(path));
-        assertEquals(expectedData, actualData, "Expected data for node " + path + " to be '" + expectedData + "'");
-    }
-
+    
     private void createPublisher() throws Exception {
         ZkClientBuilder clientBuilder = new ZkClientBuilder().withNamespace(NAMESPACE).withConnectString(server.getConnectString());
-        
-        publisher = new ZkPojoPublisherImpl(clientBuilder, null, QueryLimitConfiguration.class);
+        publisher = new ZkPojoPublisherImpl<>(clientBuilder, null, QueryLimitConfiguration.class);
+        publisher.setup();
         try {
             ThreadUtil.blockUntil(TimeUnit.SECONDS.toMillis(5), 100, () -> publisher.areCachesInitialized());
         } catch (Exception e) {
             throw new RuntimeException("Publisher caches failed to initialize before timeout", e);
         }
-        publisher.subscribeToUpdates((pojo) -> configs.add((QueryLimitConfiguration) pojo));
+        publisher.addListener(configs::add);
     }
 
     private void createOrUpdateNode(String node, String dataStr) throws Exception {
         Stat stat = client.checkExists().forPath(node);
-        byte[] data = dataStr == null ? new byte[0] : dataStr.getBytes();
+        byte[] data = dataStr == null ? new byte[0] : dataStr.getBytes(StandardCharsets.UTF_8);
         if (stat == null) {
             client.create().forPath(node, data);
         } else {
             client.setData().forPath(node, data);
+        }
+    }
+    
+    private static class ErrorAssertion {
+        private final String message;
+        private final String stackTrackStart;
+    
+        private ErrorAssertion(String message) {
+            this(message, null);
+        }
+        
+        private ErrorAssertion(String message, String stackTrackStart) {
+            this.message = message;
+            this.stackTrackStart = stackTrackStart;
+        }
+        
+        private void assertMatches(ZkPojoPublisherImpl.Error error) {
+            assertEquals(message, error.getMessage());
+            if(stackTrackStart != null) {
+                assertTrue(error.getStacktrace().startsWith(stackTrackStart));
+            } else {
+                assertNull(error.getStacktrace());
+            }
         }
     }
 }

@@ -1,7 +1,7 @@
 package datawave.webservice.query.limit;
 
 /**
- * Represents an exception that occurred when interacting with the {@link QueryLimitServiceImpl}.
+ * Represents an exception that occurred when interacting with the {@link QueryLimiter}.
  */
 public class QueryLimitException extends RuntimeException {
 

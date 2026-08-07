@@ -110,7 +110,7 @@ import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.factory.Persister;
-import datawave.webservice.query.limit.QueryLimitServiceImpl;
+import datawave.webservice.query.limit.QueryLimiter;
 import datawave.webservice.query.limit.QueryLimiterResponse;
 import datawave.webservice.query.logic.QueryLogicFactoryImpl;
 import datawave.webservice.query.metric.QueryMetricsBean;
@@ -233,7 +233,7 @@ public class ExtendedQueryExecutorBeanTest {
 
     QueryExpirationProperties queryExpirationConf;
 
-    @Mock QueryLimitServiceImpl queryLimiter;
+    @Mock QueryLimiter queryLimiter;
 
     @BeforeAll
     public static void setup() throws Exception {}
@@ -713,7 +713,7 @@ public class ExtendedQueryExecutorBeanTest {
 
         // Set expectations of the query limiter.
         when(this.queryLimiter.checkForLimits(userDN.toLowerCase(), systemFrom, queryLogicName)).thenReturn(QueryLimiterResponse.hasNotMetLimit());
-        this.queryLimiter.markActive(queryId.toString(), userDN.toLowerCase(), systemFrom, queryLogicName);
+        this.queryLimiter.countQueryTowardsLimits(queryId.toString(), userDN.toLowerCase(), systemFrom, queryLogicName);
 
         // Set expectations of the create logic
         queryLogic1.validate(queryParameters);
@@ -870,7 +870,7 @@ public class ExtendedQueryExecutorBeanTest {
 
         // Set expectations of the query limiter.
         when(this.queryLimiter.checkForLimits(userDN.toLowerCase(), systemFrom, queryLogicName)).thenReturn(QueryLimiterResponse.hasNotMetLimit());
-        this.queryLimiter.markActive(queryId.toString(), userDN.toLowerCase(), systemFrom, queryLogicName);
+        this.queryLimiter.countQueryTowardsLimits(queryId.toString(), userDN.toLowerCase(), systemFrom, queryLogicName);
 
         // Set expectations of the create logic
         queryLogic1.validate(queryParametersWithOverride);
@@ -1027,8 +1027,8 @@ public class ExtendedQueryExecutorBeanTest {
 
         // Set expectations of the query limiter.
         when(this.queryLimiter.checkForLimits(userDN.toLowerCase(), systemFrom, queryLogicName)).thenReturn(QueryLimiterResponse.hasNotMetLimit());
-        this.queryLimiter.markActive(queryId.toString(), userDN.toLowerCase(), systemFrom, queryLogicName);
-        this.queryLimiter.markInactive(queryId.toString());
+        this.queryLimiter.countQueryTowardsLimits(queryId.toString(), userDN.toLowerCase(), systemFrom, queryLogicName);
+        this.queryLimiter.stopCountingQueryTowardsLimits(queryId.toString());
 
         // Set expectations of the create logic
         queryLogic1.validate(queryParameters);
@@ -1211,7 +1211,7 @@ public class ExtendedQueryExecutorBeanTest {
 
         // Set expectations of the query limiter.
         when(this.queryLimiter.checkForLimits(userDN.toLowerCase(), systemFrom, queryLogicName)).thenReturn(QueryLimiterResponse.hasNotMetLimit());
-        this.queryLimiter.markActive(queryId.toString(), userDN.toLowerCase(), systemFrom, queryLogicName);
+        this.queryLimiter.countQueryTowardsLimits(queryId.toString(), userDN.toLowerCase(), systemFrom, queryLogicName);
 
         // Set expectations of the create logic
         queryLogic1.validate(queryParameters);
@@ -1721,8 +1721,8 @@ public class ExtendedQueryExecutorBeanTest {
 
         // Set expectations of the query limiter.
         when(this.queryLimiter.checkForLimits(userDN.toLowerCase(), systemFrom, queryLogicName)).thenReturn(QueryLimiterResponse.hasNotMetLimit());
-        this.queryLimiter.markActive(queryId.toString(), userDN.toLowerCase(), systemFrom, queryLogicName);
-        this.queryLimiter.markInactive(queryId.toString());
+        this.queryLimiter.countQueryTowardsLimits(queryId.toString(), userDN.toLowerCase(), systemFrom, queryLogicName);
+        this.queryLimiter.stopCountingQueryTowardsLimits(queryId.toString());
 
         // Set expectations of the create logic
         queryLogic1.validate(queryParameters);
@@ -1904,9 +1904,9 @@ public class ExtendedQueryExecutorBeanTest {
         // Set expectations of the query limiter.
         when(this.queryLimiter.checkForLimits(userDN.toLowerCase(), systemFrom, queryLogicName)).thenReturn(QueryLimiterResponse.hasNotMetLimit());
 
-        this.queryLimiter.markActive(queryId.toString(), userDN.toLowerCase(), systemFrom, queryLogicName);
+        this.queryLimiter.countQueryTowardsLimits(queryId.toString(), userDN.toLowerCase(), systemFrom, queryLogicName);
 
-        this.queryLimiter.markInactive(queryId.toString());
+        this.queryLimiter.stopCountingQueryTowardsLimits(queryId.toString());
 
         // Set expectations
         when(context.getCallerPrincipal()).thenReturn(principal);
@@ -2036,9 +2036,9 @@ public class ExtendedQueryExecutorBeanTest {
         // Set expectations of the query limiter.
         when(this.queryLimiter.checkForLimits(userDN.toLowerCase(), systemFrom, queryLogicName)).thenReturn(QueryLimiterResponse.hasNotMetLimit());
 
-        this.queryLimiter.markActive(queryId.toString(), userDN.toLowerCase(), systemFrom, queryLogicName);
+        this.queryLimiter.countQueryTowardsLimits(queryId.toString(), userDN.toLowerCase(), systemFrom, queryLogicName);
 
-        this.queryLimiter.markInactive(queryId.toString());
+        this.queryLimiter.stopCountingQueryTowardsLimits(queryId.toString());
 
         // Set expectations of the create logic
         queryLogic1.validate(queryParameters);
@@ -3524,7 +3524,7 @@ public class ExtendedQueryExecutorBeanTest {
         // Set expectations of the query limiter.
         when(this.queryLimiter.checkForLimits(userDN, null, queryLogicName)).thenReturn(QueryLimiterResponse.hasNotMetLimit());
 
-        this.queryLimiter.markActive(queryName, userDN, null, queryLogicName);
+        this.queryLimiter.countQueryTowardsLimits(queryName, userDN, null, queryLogicName);
 
         // Set expectations
         when(this.context.getUserTransaction()).thenReturn(this.transaction);
@@ -3669,7 +3669,7 @@ public class ExtendedQueryExecutorBeanTest {
         // Set expectations of the query limiter.
         when(this.queryLimiter.checkForLimits(userSid, null, queryLogicName)).thenReturn(QueryLimiterResponse.hasNotMetLimit());
 
-        queryLimiter.markInactive(queryName);
+        queryLimiter.stopCountingQueryTowardsLimits(queryName);
 
         // Run the test
         QueryExecutorBean subject = new QueryExecutorBean();

@@ -13,8 +13,6 @@ import org.apache.zookeeper.server.quorum.QuorumPeerConfig;
  */
 public final class ZkUtils {
 
-    public static final byte[] EMPTY_DATA = new byte[0];
-
     /**
      * Return a formatted Zookeeper connect string that can be used to connect to a running Zookeeper server.
      *
