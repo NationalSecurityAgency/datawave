@@ -49,6 +49,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junitpioneer.jupiter.SetSystemProperty;
+import org.wildfly.security.auth.callback.AnonymousAuthorizationCallback;
 import org.wildfly.security.auth.callback.AuthenticationCompleteCallback;
 import org.wildfly.security.auth.callback.CachedIdentityAuthorizeCallback;
 import org.wildfly.security.auth.callback.EvidenceVerifyCallback;
@@ -121,20 +122,25 @@ class DatawaveHttpAuthenticationMechanismTest {
         /**
          * Verify that given a request with no information that can be turned into evidence for authorization, it fails authentication.
          */
-        @DisplayName("A request should fail when evidence cannot be extracted from it")
+        @DisplayName("A request should succeed as anonymous when evidence cannot be extracted from it")
         @Test
         void givenNoEvidence() throws HttpAuthenticationException {
+            callbackHandler.actLikeEvidenceIsVerified();
+            callbackHandler.actLikeFirstAuthorizationAttemptSucceeds();
+
             // Trigger the request.
             evaluateRequest();
 
             // Verify the request failed.
-            requestWrapper.assertRequestFailed();
+            requestWrapper.assertRequestSucceeded();
 
-            // Verify only a single callback occurred, an authentication complete with a failed status.
+            // Verify two callbacks occurred, one for anonuymous caller, and one for authentication complete with a failed status.
             List<Callback> callbacks = callbackHandler.getCapturedCallbacks();
-            assertThat(callbacks).hasSize(1);
-            assertThat(callbacks.get(0)).isInstanceOf(AuthenticationCompleteCallback.class);
-            assertTrue(((AuthenticationCompleteCallback) callbacks.get(0)).failed());
+            assertThat(callbacks).hasSize(2);
+            assertThat(callbacks.get(0)).isInstanceOf(AnonymousAuthorizationCallback.class);
+            assertTrue(((AnonymousAuthorizationCallback) callbacks.get(0)).isAuthorized());
+            assertThat(callbacks.get(1)).isInstanceOf(AuthenticationCompleteCallback.class);
+            assertTrue(((AuthenticationCompleteCallback) callbacks.get(1)).succeeded());
         }
 
         /**
@@ -269,7 +275,7 @@ class DatawaveHttpAuthenticationMechanismTest {
          */
         @DisplayName("A request should fail when a trusted issuer is given without a trusted subject")
         @Test
-        void givenTrustedIssuerWithoutSubject() {
+        void givenTrustedIssuerWithoutSubject() throws HttpAuthenticationException {
             // Configure the trusted headers. Add a trusted entity to the proxy chain to test its removal.
             requestWrapper.setHeader(SecurityConstants.DEFAULT_TRUSTED_ISSUER_DN_HEADER, "cn=testIssuer");
             requestWrapper.setHeader(SecurityConstants.PROXIED_ENTITIES_HEADER, "cn=server1<cn=server2><cn=trustedServer>");
@@ -277,10 +283,10 @@ class DatawaveHttpAuthenticationMechanismTest {
 
             // @formatter:off
             assertThatThrownBy(DatawaveHttpAuthenticationMechanismTest.this::evaluateRequest)
-                            .isInstanceOf(HttpAuthenticationException.class)
-                            .hasMessage("Error occurred when obtaining evidence for authentication")
-                            .hasRootCauseInstanceOf(MissingHeaderException.class)
-                            .hasRootCauseMessage("Missing trusted subject DN (null) or issuer DN (cn=testIssuer) for trusted header authentication");
+                    .isInstanceOf(HttpAuthenticationException.class)
+                    .hasMessage("Error occurred when obtaining evidence for authentication")
+                    .hasRootCauseInstanceOf(MissingHeaderException.class)
+                    .hasRootCauseMessage("Missing trusted subject DN (null) or issuer DN (cn=testIssuer) for trusted header authentication");
             // @formatter:off
         }
 
@@ -639,6 +645,8 @@ class DatawaveHttpAuthenticationMechanismTest {
                 handleCachedIdentityAuthorizeCallback((CachedIdentityAuthorizeCallback) callback);
             } else if (callback instanceof PrincipalAuthorizeCallback) {
                 handlePrincipalAuthorizeCallback((PrincipalAuthorizeCallback) callback);
+            } else if (callback instanceof AnonymousAuthorizationCallback ){
+                handleAnonymousAuthorizationCallback((AnonymousAuthorizationCallback) callback);
             } else if (!(callback instanceof AuthenticationCompleteCallback)) {
                 throw new IllegalStateException("Unknown callback type: " + callback.getClass().getName());
             }
@@ -664,6 +672,11 @@ class DatawaveHttpAuthenticationMechanismTest {
         }
 
         private void handlePrincipalAuthorizeCallback(PrincipalAuthorizeCallback callback) {
+            callback.setAuthorized(actLikeCallerIsAuthorized[authorizationCallbackAttempts]);
+            authorizationCallbackAttempts++;
+        }
+
+        private void handleAnonymousAuthorizationCallback(AnonymousAuthorizationCallback callback) {
             callback.setAuthorized(actLikeCallerIsAuthorized[authorizationCallbackAttempts]);
             authorizationCallbackAttempts++;
         }
