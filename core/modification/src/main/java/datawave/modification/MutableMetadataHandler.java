@@ -46,7 +46,6 @@ import com.google.common.collect.Multimap;
 
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.core.iterators.FieldIndexDocumentFilter;
-import datawave.data.ColumnFamilyConstants;
 import datawave.data.type.Type;
 import datawave.ingest.protobuf.Uid;
 import datawave.ingest.protobuf.Uid.List.Builder;
@@ -64,6 +63,7 @@ import datawave.query.util.MetadataHelper;
 import datawave.query.util.MetadataHelperFactory;
 import datawave.security.authorization.ProxiedUserDetails;
 import datawave.security.util.ScannerHelper;
+import datawave.table.constants.MetadataColumnFamilyConstants;
 import datawave.util.TextUtil;
 import datawave.util.time.DateHelper;
 import datawave.webservice.modification.DefaultModificationRequest;
@@ -493,8 +493,8 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
         // increment the term frequency
         Mutation m = new Mutation(fieldName);
         if (!isIndexOnlyField) {
-            m.put(ColumnFamilyConstants.COLF_E, new Text(datatype), NULL_VALUE);
-            m.put(ColumnFamilyConstants.COLF_F, new Text(datatype + NULL_BYTE + DateHelper.format(timestamp)),
+            m.put(MetadataColumnFamilyConstants.COLF_E, new Text(datatype), NULL_VALUE);
+            m.put(MetadataColumnFamilyConstants.COLF_F, new Text(datatype + NULL_BYTE + DateHelper.format(timestamp)),
                             new Value(SummingCombiner.VAR_LEN_ENCODER.encode(1L)));
         }
 
@@ -532,7 +532,7 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
                 Mutation i = new Mutation(indexedValue);
                 i.put(fieldName, shardId + NULL_BYTE + datatype, viz, tsToDay, val);
                 writer.getBatchWriter(this.getIndexTableName()).addMutation(i);
-                m.put(ColumnFamilyConstants.COLF_I, new Text(datatype + NULL_BYTE + n.getClass().getName()), NULL_VALUE);
+                m.put(MetadataColumnFamilyConstants.COLF_I, new Text(datatype + NULL_BYTE + n.getClass().getName()), NULL_VALUE);
 
                 if (isReverseIndexed) {
                     String reverseIndexedValue = StringUtils.reverse(indexedValue);
@@ -540,7 +540,7 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
                     Mutation rm = new Mutation(reverseIndexedValue);
                     rm.put(fieldName, shardId + NULL_BYTE + datatype, viz, tsToDay, val);
                     writer.getBatchWriter(this.getReverseIndexTableName()).addMutation(rm);
-                    m.put(ColumnFamilyConstants.COLF_RI, new Text(datatype + NULL_BYTE + n.getClass().getName()), NULL_VALUE);
+                    m.put(MetadataColumnFamilyConstants.COLF_RI, new Text(datatype + NULL_BYTE + n.getClass().getName()), NULL_VALUE);
                 }
                 // Insert the field index entry
                 e.put(new Text(FIELD_INDEX_PREFIX + fieldName), new Text(indexedValue + NULL_BYTE + datatype + NULL_BYTE + eventUid), viz, timestamp,
@@ -727,7 +727,7 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
                 Mutation m = new Mutation(key.getFieldName());
 
                 // Decrement the frequency (metadata table)
-                m.put(ColumnFamilyConstants.COLF_F, new Text(key.getDataType() + NULL_BYTE + DateHelper.format(currentEntryTimestamp)),
+                m.put(MetadataColumnFamilyConstants.COLF_F, new Text(key.getDataType() + NULL_BYTE + DateHelper.format(currentEntryTimestamp)),
                                 new Value(SummingCombiner.VAR_LEN_ENCODER.encode(-1L)));
                 // Remove the event field.
                 Mutation e = new Mutation(currentEntry.getLeft().getRow());
@@ -1198,8 +1198,8 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
         // the endKey will ensure that no other fields get included in this range because all legitimate field name
         // characters appear after the '.' character in the ASCII table, so this will catch field names like QUOTE
         // and QUOTE.12345 but not QUOTED or QUOTE_TOKEN.
-        Key startKey = new Key(shardId, ColumnFamilyConstants.COLF_TF.toString(), qualifierPrefix);
-        Key endKey = new Key(shardId, ColumnFamilyConstants.COLF_TF.toString(), qualifierPrefix + "." + MAX_CHAR);
+        Key startKey = new Key(shardId, MetadataColumnFamilyConstants.COLF_TF.toString(), qualifierPrefix);
+        Key endKey = new Key(shardId, MetadataColumnFamilyConstants.COLF_TF.toString(), qualifierPrefix + "." + MAX_CHAR);
         Range range = new Range(startKey, true, endKey, true);
         return new TermFrequencyIterable(client, shardTable, userAuths, range, fieldName);
     }
