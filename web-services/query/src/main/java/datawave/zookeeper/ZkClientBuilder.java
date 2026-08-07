@@ -9,7 +9,7 @@ import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig;
 
 /**
- * A configurable Zookeeper client builder.
+ * A configurable Zookeeper client builder that can provide instances {@link CuratorFrameworkFactory} and {@link CuratorFramework}.
  */
 public class ZkClientBuilder {
 
@@ -226,6 +226,10 @@ public class ZkClientBuilder {
         return client;
     }
 
+    /**
+     * Return a duplicate of this {@link ZkClientBuilder}.
+     * @return the duplicate
+     */
     public ZkClientBuilder duplicate() {
         return new ZkClientBuilder(this);
     }

@@ -152,7 +152,7 @@ public class QueryLimiterImpl implements QueryLimiter {
             if (this.zkClient == null) {
                 try {
                     // Ensure that we create the Zookeeper client with the correct namespace.
-                    this.zkClient = zkClientBuilder.createBuilder().namespace(QueryLimitConstants.ZOOKEEPER_NAMESPACE).build();
+                    this.zkClient = zkClientBuilder.duplicate().withNamespace(QueryLimitConstants.ZOOKEEPER_NAMESPACE).build();
                     // Start the client, and wait for it to connect.
                     this.zkClient.start();
                     boolean connected = this.zkClient.blockUntilConnected(3, TimeUnit.MINUTES);
