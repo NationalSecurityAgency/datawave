@@ -16,11 +16,12 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.accumulo.core.iteratorsImpl.system.SortedMapIterator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
+
+import datawave.accumulo.inmemory.util.SortedMapIterator;
 
 /**
  * Demonstrates how to use {@link org.springframework.test.util.ReflectionTestUtils} to inject a {@link java.time.Clock} into the {@link ClockIterator} using

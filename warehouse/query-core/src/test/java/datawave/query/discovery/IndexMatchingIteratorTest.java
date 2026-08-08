@@ -11,7 +11,6 @@ import java.util.Set;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iteratorsImpl.system.SortedMapIterator;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.javatuples.Pair;
@@ -23,6 +22,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Sets;
 
+import datawave.accumulo.inmemory.util.SortedMapIterator;
 import datawave.query.Constants;
 
 public class IndexMatchingIteratorTest {
