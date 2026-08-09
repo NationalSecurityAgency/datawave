@@ -1,0 +1,21 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans-4.0.xsd">
+
+
+
+    <!-- This is the default ZkClientBuilder instance to be injected where required. -->
+    <!-- ZkClientBuilder is mutable, so a new instance should be created for each injection. -->
+    <bean id="defaultZkClientBuilder" primary="true" scope="prototype" class="datawave.zookeeper.ZkClientBuilder">
+        <property name="connectString" value="${zookeeper.hosts}"/>
+        <property name="sessionTimeoutMs" value="50000"/>
+        <property name="connectionTimeoutMs" value="50000" />
+        <property name="retryPolicyBuilder">
+            <bean class="datawave.zookeeper.RetryNTimesBuilder" >
+                <property name="n" value="10"/>
+                <property name="sleepBetweenRetriesMs" value="1000"/>
+            </bean>
+        </property>
+    </bean>
+</beans>

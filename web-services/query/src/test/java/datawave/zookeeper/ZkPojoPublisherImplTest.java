@@ -10,7 +10,6 @@ import static datawave.zookeeper.ZkPojoPublisherImpl.Status.LOAD_ERROR;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -124,7 +123,7 @@ public class ZkPojoPublisherImplTest {
         expectedCause = null;
         errorAssertions.clear();
         if (publisher != null) {
-            publisher.close();
+            publisher.shutdown();
         }
         if (client != null) {
             client.close();
@@ -777,11 +776,6 @@ public class ZkPojoPublisherImplTest {
         ZkClientBuilder clientBuilder = new ZkClientBuilder().withNamespace(NAMESPACE).withConnectString(server.getConnectString());
         publisher = new ZkPojoPublisherImpl<>(clientBuilder, null, QueryLimitConfiguration.class);
         publisher.setup();
-        try {
-            ThreadUtil.blockUntil(TimeUnit.SECONDS.toMillis(5), 100, () -> publisher.areCachesInitialized());
-        } catch (Exception e) {
-            throw new RuntimeException("Publisher caches failed to initialize before timeout", e);
-        }
         publisher.addListener(configs::add);
     }
 

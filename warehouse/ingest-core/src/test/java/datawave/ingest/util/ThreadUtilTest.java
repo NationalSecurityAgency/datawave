@@ -68,6 +68,5 @@ class ThreadUtilTest {
             // Assert that the thread was blocked for at least 1000 ms, and no more than 3000 ms.
             assertThat(System.currentTimeMillis() - startTime).isBetween(1000L, 3000L);
         }
-        
     }
 }

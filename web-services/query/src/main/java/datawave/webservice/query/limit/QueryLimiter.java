@@ -21,8 +21,9 @@ import com.google.common.base.Preconditions;
 import datawave.zookeeper.ZkPojoPublisherImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Qualifier;
 
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 import javax.annotation.security.DeclareRoles;
 import javax.annotation.security.RolesAllowed;
 import javax.annotation.security.RunAs;
@@ -91,7 +92,8 @@ public class QueryLimiter {
      * The publisher that the query limiter will listen to for updates to the configuration.
      */
     @Inject
-    @Qualifier("queryLimitConfigPublisher")
+    @SpringBean(name = "queryLimitConfigPublisher")
+    @SuppressWarnings("CdiInjectionPointsInspection")
     private ZkPojoPublisher<QueryLimitConfiguration> configPublisher;
     
     /**
@@ -193,6 +195,7 @@ public class QueryLimiter {
      * Validate the configuration and extract the query limits to enforce. In practice this should be marked as the init method for the {@link QueryLimiter}
      * instance configured in bean XMLs. For testing purposes, this method should be called after setting the zookeeper config and query limit configs.
      */
+    @PostConstruct
     public void setup() {
         if (log.isDebugEnabled()) {
             log.debug("Setting up query limiter.");
@@ -285,14 +288,6 @@ public class QueryLimiter {
                 log.debug("Received config update from publisher: {}", newConfig);
             }
             
-            // Validate the new configuration.
-            try {
-                ValidationUtils.validateQueryLimitConfig(newConfig);
-            } catch (Exception e) {
-                log.error("New configuration failed validation. Configuration will not be updated.", e);
-                return;
-            }
-            
             // Keep a backup copy of the old configuration.
             QueryLimitConfiguration oldConfig = this.configuration;
             
@@ -312,19 +307,19 @@ public class QueryLimiter {
                     if(log.isDebugEnabled()) {
                         log.debug("Old configuration restored. Query limits enforced: {}", isEnforcingLimits());
                     }
-                    throw new ConfigurationUpdateFailedException("Failed to apply new configuration. Old configuration restored.", newConfigException);
-                } catch (ConfigurationUpdateFailedException e) {
-                    // If a ConfigurationUpdateFailedException was thrown, we know the old configuration was successfully restored. Just throw this exception.
-                    throw e;
                 } catch (Exception e) {
                     log.error("Failed to restore old configuration. Disabling query limiter.", e);
                     // An exception was thrown when trying to restore the old configuration. Ensure activated is false to suspend query limit enforcement.
                     this.activated.set(false);
                     // Throw an exception that includes the exception thrown when trying to update the limiter with the new configuration.
-                    ConfigurationUpdateFailedException exception = new ConfigurationUpdateFailedException(
+                    ConfigurationUpdateException exception = new ConfigurationUpdateException(
                                     "Failed to restore old configuration after failing to apply new configuration. Query limiter is disabled.", e);
                     exception.addSuppressed(newConfigException);
+                    throw exception;
                 }
+                // If no exception was thrown when reverting back to the old configuration, throw a separate exception that will be captured by the POJO
+                // publisher and recorded to Zookeeper as part of the POJO update attempt record.
+                throw new ConfigurationUpdateException("Failed to apply new configuration. Old configuration restored.", newConfigException);
             }
         };
     }
@@ -355,12 +350,20 @@ public class QueryLimiter {
     /**
      * Releases internal resources and cleans up connections and scheduled tasks.
      */
+    @PreDestroy
     public void shutdown() {
         limiterLock.writeLock().lock();
         log.debug("Shutting down query limiter.");
         try {
             clear();
             
+            // Stop listening for updates for the configuration.
+            if(this.configUpdateListener != null && this.configPublisher != null) {
+                this.configPublisher.removeListener(this.configUpdateListener);
+                this.configUpdateListener = null;
+            }
+            
+            // Close the Zookeeper client.
             if (this.client != null) {
                 try {
                     this.client.close();
@@ -370,8 +373,6 @@ public class QueryLimiter {
                     this.client = null;
                 }
             }
-            
-            this.activeQueryTracker = null;
         } finally {
             limiterLock.writeLock().unlock();
         }
