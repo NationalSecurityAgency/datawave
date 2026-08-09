@@ -42,18 +42,23 @@ public interface QueryLimiter {
 
     /**
      * Mark the given query as inactive, and stop counting it towards query limits.
-     * @param queryId the query ID
+     *
+     * @param queryId
+     *            the query ID
      */
     void markInactive(String queryId);
 
     /**
      * Mark each of the given queries as inactive, and stop counting them towards query limits.
-     * @param queryIds the query IDs
+     *
+     * @param queryIds
+     *            the query IDs
      */
     void markInactive(Collection<String> queryIds);
 
     /**
      * Get the set of IDs for queries considered active and counted towards query limits.
+     *
      * @return the query IDs
      */
     Set<String> getActiveQueries();

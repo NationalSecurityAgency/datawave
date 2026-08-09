@@ -228,6 +228,7 @@ public class ZkClientBuilder {
 
     /**
      * Return a duplicate of this {@link ZkClientBuilder}.
+     *
      * @return the duplicate
      */
     public ZkClientBuilder duplicate() {
