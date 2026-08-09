@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.Serializable;
 
+import datawave.table.constants.MetadataColumnFamilyConstants;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
@@ -80,7 +81,7 @@ public class MetadataCardinalityCounts implements Serializable {
     }
 
     public Key getKey(ColumnVisibility vis, long timeStamp) {
-        return new Key(field, ColumnFamilyConstants.COLF_COUNT.toString(), value, vis, timeStamp);
+        return new Key(field, MetadataColumnFamilyConstants.COLF_COUNT_STR, value, vis, timeStamp);
     }
 
     public Value getValue() {
