@@ -28,7 +28,7 @@ embed-server --server-config=standalone-full.xml
 /subsystem=elytron/trust-manager=serverTrustManager:remove
 /subsystem=elytron/trust-manager=serverTrustManager:add(key-store=serverTrustStore)
 /subsystem=elytron/server-ssl-context=serverSSLContext:remove
-/subsystem=elytron/server-ssl-context=serverSSLContext:add(key-manager=serverKeyManager,trust-manager=serverTrustManager,protocols=["TLSv1.1","TLSv1.2","TLSv1.3"])
+/subsystem=elytron/server-ssl-context=serverSSLContext:add(key-manager=serverKeyManager,trust-manager=serverTrustManager,protocols=["TLSv1.1","TLSv1.2","TLSv1.3"],want-client-auth=true)
 
 # Run the batch commands (MUST BE LAST)
 run-batch
