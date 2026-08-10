@@ -305,7 +305,7 @@ public class DatawaveSecurityRealm implements SecurityRealm {
     @Override
     public SupportLevel getEvidenceVerifySupport(Class<? extends Evidence> evidenceType, String algorithmName) {
         Preconditions.checkNotNull(evidenceType, "Parameter evidenceType may not be null");
-        return evidenceType.isAssignableFrom(DatawaveEvidence.class) ? SupportLevel.POSSIBLY_SUPPORTED : SupportLevel.UNSUPPORTED;
+        return DatawaveEvidence.class.isAssignableFrom(evidenceType) ? SupportLevel.POSSIBLY_SUPPORTED : SupportLevel.UNSUPPORTED;
     }
 
     /**
@@ -539,7 +539,7 @@ public class DatawaveSecurityRealm implements SecurityRealm {
         public SupportLevel getEvidenceVerifySupport(Class<? extends Evidence> evidenceType, String algorithmName) {
             Preconditions.checkNotNull(evidenceType, "Parameter evidenceType may not be null");
 
-            if (evidenceType.isAssignableFrom(DatawaveEvidence.class)) {
+            if (DatawaveEvidence.class.isAssignableFrom(evidenceType)) {
                 return SupportLevel.POSSIBLY_SUPPORTED;
             } else {
                 return SupportLevel.UNSUPPORTED;
