@@ -144,7 +144,7 @@ public class DatawaveEvidenceDecoder implements EvidenceDecoder {
             }
         } else {
             if (log.isWarnEnabled()) {
-                log.warn("Unable to decoded evidence {} which is not a {}", evidence, DatawaveEvidence.class.getName());
+                log.warn("Unable to decode evidence {} which is not a {}", evidence, DatawaveEvidence.class.getName());
             }
         }
 
