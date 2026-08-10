@@ -3,11 +3,11 @@ package datawave.ingest.mapreduce.handler.edge.define;
 import java.io.IOException;
 import java.util.Calendar;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.edge.util.EdgeKey;
 import datawave.edge.util.EdgeValue.EdgeValueBuilder;
@@ -19,7 +19,7 @@ import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.ingest.IngestHelperInterface;
 import datawave.ingest.mapreduce.handler.edge.define.VertexValue.ValueType;
 import datawave.marking.MarkingFunctions;
-import datawave.marking.MarkingFunctions.Exception;
+import datawave.marking.Markings;
 import datawave.util.time.DateHelper;
 
 /**
@@ -28,48 +28,48 @@ import datawave.util.time.DateHelper;
  */
 public class EdgeDataBundle {
 
-    private static final Logger log = Logger.getLogger(EdgeDataBundle.class);
+    private static final Logger log = LoggerFactory.getLogger(EdgeDataBundle.class);
 
     // Input/Setup variables
     // final so you're not tempted to change them
     private final RawRecordContainer event;
+    private final MarkingFunctions<?> markingFunctions;
     private VertexValue source;
     private VertexValue sink;
-    private EdgeDefinition edgeDefinition = null;
+    private EdgeDefinition edgeDefinition;
     private EdgeDirection edgeDirection = EdgeDirection.UNIDIRECTIONAL;
 
-    private String sourceMaskedValue = null;
-    private boolean hasMaskedSource = false;
-    private String sinkMaskedValue = null;
-    private boolean hasMaskedSink = false;
+    private String sourceMaskedValue;
+    private boolean hasMaskedSource;
+    private String sinkMaskedValue;
+    private boolean hasMaskedSink;
 
     // Variables for output
-    private boolean requiresMasking = false;
-    private boolean isDeleting = false;
+    private boolean requiresMasking;
+    private boolean isDeleting;
     private String edgeType;
     private String enrichedIndex;
     private String enrichedValue;
     private String edgeAttribute3;
     private String edgeAttribute2;
 
-    private long eventDate = 0;
+    private long eventDate;
     private IngestHelperInterface helper;
-    private Map<String,String> markings = null;
-    private ColumnVisibility maskedVisibility = null;
-    private boolean forceMaskedVisibility = false; // if this is a masked event, but the
+    private Markings<?> markings;
+    private ColumnVisibility maskedVisibility;
+    private boolean forceMaskedVisibility; // if this is a masked event, but the
     // the fields defined aren't masked, use the unmasked visibility
 
     // Duration value if defined
-    private DurationValue durationValue = null;
+    private DurationValue durationValue;
 
     private String loadDate;
-    private MarkingFunctions mf = null;
     private String uuid;
     private long activityDate;
     private boolean validActivityDate;
 
     public EdgeDataBundle(RawRecordContainer event, String typeName, String id, IngestHelperInterface helper) {
-        this.mf = MarkingFunctions.Factory.createMarkingFunctions();
+        this.markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
         this.event = event;
         this.eventDate = event.getDate();
         this.edgeType = typeName;
@@ -79,7 +79,7 @@ public class EdgeDataBundle {
 
     public EdgeDataBundle(EdgeDefinition edgeDef, NormalizedContentInterface ifaceSource, NormalizedContentInterface ifaceSink, RawRecordContainer event,
                     IngestHelperInterface helper) {
-        this(event, edgeDef.getEdgeType().toString(), null, helper);
+        this(event, edgeDef.getEdgeType(), null, helper);
 
         this.setSource(new VertexValue(edgeDef.isUseRealm(), edgeDef.getSourceIndexedFieldRealm(), edgeDef.getSourceEventFieldRealm(),
                         edgeDef.getSourceRelationship(), edgeDef.getSourceCollection(), ifaceSource));
@@ -91,10 +91,14 @@ public class EdgeDataBundle {
         if (event.getAltIds() != null && !event.getAltIds().isEmpty()) {
             this.uuid = event.getAltIds().iterator().next();
         }
-        // even though event, etc references are saved above, passing in the event
+        // even though event, etc. references are saved above, passing in the event
         // prevents future bug
         this.initFieldMasking(helper, event);
-        this.initMarkings(getSource().getMarkings(), getSink().getMarkings());
+        try {
+            this.markings = markingFunctions.combine(getSource().getMarkings(), getSink().getMarkings());
+        } catch (MarkingFunctions.Exception e) {
+            throw new RuntimeException("Could not combine markings", e);
+        }
     }
 
     private int getHour(long time) {
@@ -139,23 +143,6 @@ public class EdgeDataBundle {
         this.maskedVisibility = maskedVisibility;
     }
 
-    @SuppressWarnings("unchecked")
-    private void initMarkings(Map<String,String> m1, Map<String,String> m2) {
-        if (m1 != null) {
-            if (m2 != null) {
-                try {
-                    this.markings = mf.combine(m1, m2);
-                } catch (Exception e) {
-                    throw new RuntimeException("Unable to combine markings", e);
-                }
-            } else {
-                this.markings = m1;
-            }
-        } else if (m2 != null) {
-            this.markings = m2;
-        }
-    }
-
     public int getDuration() {
         return null == this.getDurationValue() ? -1 : this.getDurationValue().getDuration();
     }
@@ -191,24 +178,19 @@ public class EdgeDataBundle {
         }
 
         if (date_type == EdgeKey.DATE_TYPE.EVENT_ONLY) {
-            if (validActivityDate) {
-                builder.setBadActivityDate(false);
-            } else {
-                builder.setBadActivityDate(true);
-            }
-
+            builder.setBadActivityDate(!validActivityDate);
         }
         // Set counts
         if (!this.isDeleting()) {
-            builder.setCount(1l);
+            builder.setCount(1L);
         } else {
-            builder.setCount(-1l);
+            builder.setCount(-1L);
         }
         // Set Hour Bitmask
         if (hour != -1) {
             builder.setHour(hour);
         }
-        if (forwardEdge == true) {
+        if (forwardEdge) {
             builder.setSourceValue(source.getValue(ValueType.EVENT));
             builder.setSinkValue(sink.getValue(ValueType.EVENT));
         } else {
@@ -235,16 +217,11 @@ public class EdgeDataBundle {
         }
 
         if (date_type == EdgeKey.DATE_TYPE.EVENT_ONLY) {
-            if (validActivityDate) {
-                builder.setBadActivityDate(false);
-            } else {
-                builder.setBadActivityDate(true);
-            }
-
+            builder.setBadActivityDate(!validActivityDate);
         }
         List<Long> hours = EdgeValueHelper.getLongListForHour(hour, this.isDeleting());
         builder.setHours(hours);
-        if (forwardEdge == true) {
+        if (forwardEdge) {
             builder.setSourceValue(source.getValue(ValueType.EVENT));
         } else {
             builder.setSourceValue(sink.getValue(ValueType.EVENT));
@@ -275,7 +252,7 @@ public class EdgeDataBundle {
         EdgeValueBuilder builder = datawave.edge.util.EdgeValue.newBuilder();
         List<Long> duration = EdgeValueHelper.getLongListForDuration(this.getDuration(), this.isDeleting());
         builder.setDuration(duration);
-        if (forwardEdge == true) {
+        if (forwardEdge) {
             builder.setSourceValue(source.getValue(ValueType.EVENT));
         } else {
             builder.setSourceValue(sink.getValue(ValueType.EVENT));
@@ -384,11 +361,11 @@ public class EdgeDataBundle {
         this.sink = sink;
     }
 
-    public Map<String,String> getMarkings() {
+    public Markings<?> getMarkings() {
         return this.markings;
     }
 
-    public void setMarkings(Map<String,String> markings) {
+    public void setMarkings(Markings<?> markings) {
         this.markings = markings;
     }
 
@@ -533,7 +510,7 @@ public class EdgeDataBundle {
 
             return (new Value(hll.getBytes()));
         } catch (IOException e) {
-            log.warn("Failed to add " + realmedIdentifier + " to HyperLogLog", e);
+            log.warn("Failed to add {} to HyperLogLog", realmedIdentifier, e);
 
             return (null);
         }

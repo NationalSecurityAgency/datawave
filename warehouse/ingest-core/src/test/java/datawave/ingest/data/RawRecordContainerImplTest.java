@@ -61,7 +61,7 @@ public class RawRecordContainerImplTest {
     private ValidatingRawRecordContainerImpl create() {
         ValidatingRawRecordContainerImpl event = new ValidatingRawRecordContainerImpl();
         event.setConf(conf);
-        event.setDate(now.getTime());
+        event.setTimestamp(now.getTime());
         event.setDataType(dataType);
         event.setRawFileName(rawFileName);
         event.setRawRecordNumber(rawRecordNumber);
@@ -201,7 +201,7 @@ public class RawRecordContainerImplTest {
     public void testMissingRecordNumber() {
         ValidatingRawRecordContainerImpl event = new ValidatingRawRecordContainerImpl();
         event.setConf(conf);
-        event.setDate(now.getTime());
+        event.setTimestamp(now.getTime());
         event.setDataType(dataType);
         event.setRawFileName(rawFileName);
         event.getIds().add(uuid);
@@ -326,7 +326,7 @@ public class RawRecordContainerImplTest {
 
         event = new ValidatingRawRecordContainerImpl();
         event.setConf(conf);
-        event.setDate(now.getTime());
+        event.setTimestamp(now.getTime());
         event.setDataType(dataType);
         event.setRawFileName(rawFileName);
         event.setRawRecordNumber(rawRecordNumber);
@@ -377,15 +377,16 @@ public class RawRecordContainerImplTest {
             if (getAltIds() == null || getAltIds().isEmpty()) {
                 addError(RawDataErrorNames.UUID_MISSING);
             }
-            if (Long.MIN_VALUE == getDate()) {
+            if (!isTimestampSet()) {
                 addError(RawDataErrorNames.EVENT_DATE_MISSING);
-            }
-            if (0 == getRawRecordNumber()) {
-                addError(RawDataErrorNames.INVALID_RECORD_NUMBER);
+            } else {
+                if (0L == getRawFileTimestamp()) {
+                    setRawFileTimestamp(getDate());
+                }
             }
 
-            if (0L == getRawFileTimestamp()) {
-                setRawFileTimestamp(getDate());
+            if (0 == getRawRecordNumber()) {
+                addError(RawDataErrorNames.INVALID_RECORD_NUMBER);
             }
 
             try {
@@ -397,7 +398,7 @@ public class RawRecordContainerImplTest {
             if (getVisibility() == null && getSecurityMarkings() == null) {
                 if (markingsHelper != null) {
                     setSecurityMarkings(markingsHelper.getDefaultMarkings());
-                } else {}
+                }
             }
 
             if (getSecurityMarkings() == null) {

@@ -1,5 +1,6 @@
 package datawave.query.jexl.functions;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -72,10 +73,10 @@ public class JexlFunctionNamespaceRegistry {
             log.debug(JEXL_FUNCTION_NAMESPACE_PROPERTY + "=" + className);
             if (className != null) {
                 try {
-                    JexlFunctionNamespaceRegistry base = (JexlFunctionNamespaceRegistry) Class.forName(className).newInstance();
+                    JexlFunctionNamespaceRegistry base = (JexlFunctionNamespaceRegistry) Class.forName(className).getDeclaredConstructor().newInstance();
                     return base.getRegisteredFunctions();
 
-                } catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
+                } catch (InstantiationException | IllegalAccessException | ClassNotFoundException | NoSuchMethodException | InvocationTargetException e) {
                     log.warn("unable to create " + className + " with property " + JEXL_FUNCTION_NAMESPACE_PROPERTY, e);
                     throw new RuntimeException("Could not create Jexl Function Registry object");
                 }

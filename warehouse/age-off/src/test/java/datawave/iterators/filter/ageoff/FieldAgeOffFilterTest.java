@@ -14,6 +14,7 @@ import org.junit.Test;
 
 import datawave.iterators.filter.AgeOffConfigParams;
 import datawave.iterators.filter.AgeOffTtlUnits;
+import datawave.util.CompositeTimestamp;
 
 public class FieldAgeOffFilterTest {
     private static final String VISIBILITY_PATTERN = "MY_VIS";
@@ -84,6 +85,7 @@ public class FieldAgeOffFilterTest {
         Key key = new Key("1234", "field_z\\x00my-uuid", "field_z\u0000value", VISIBILITY_PATTERN, tenSecondsAgo);
         Assert.assertFalse(ageOffFilter.accept(filterOptions.getAgeOffPeriod(System.currentTimeMillis()), key, new Value()));
         Assert.assertTrue(ageOffFilter.isFilterRuleApplied());
+
         key = new Key("1234", "field_y", "field_y\u0000value", VISIBILITY_PATTERN, tenSecondsAgo);
         Assert.assertFalse(ageOffFilter.accept(filterOptions.getAgeOffPeriod(System.currentTimeMillis()), key, new Value()));
         Assert.assertTrue(ageOffFilter.isFilterRuleApplied());
@@ -234,6 +236,39 @@ public class FieldAgeOffFilterTest {
         AgeOffPeriod futureAgeOff = new AgeOffPeriod(System.currentTimeMillis());
         Assert.assertTrue(ageOffFilter.accept(futureAgeOff, key, new Value()));
         Assert.assertFalse(ageOffFilter.isFilterRuleApplied());
+    }
+
+    @Test
+    public void testCompositeTimestamp() {
+        EditableAccumuloConfiguration conf = new EditableAccumuloConfiguration(DefaultConfiguration.getInstance());
+        conf.put("table.custom.isindextable", "true");
+        iterEnv.setConf(conf);
+
+        long tenSecondsAgo = System.currentTimeMillis() - (10L * ONE_SEC);
+        long tomorrow = System.currentTimeMillis() + CompositeTimestamp.MILLIS_PER_DAY;
+
+        long compositeTS = CompositeTimestamp.getCompositeTimeStamp(tenSecondsAgo, tomorrow);
+
+        FieldAgeOffFilter ageOffFilter = new FieldAgeOffFilter();
+        FilterOptions filterOptions = createFilterOptionsWithPattern();
+        // set the default to 5 seconds
+        filterOptions.setTTL(5L);
+        filterOptions.setTTLUnits(AgeOffTtlUnits.SECONDS);
+        // set up ttls for field_y and field_z only, deliberately exclude the ttl for field_y
+        filterOptions.setOption("fields", "field_y");
+        filterOptions.setOption("field_y.ttl", "2"); // 2 seconds
+        ageOffFilter.init(filterOptions, iterEnv);
+
+        // age off date allows this to accept
+        Key key = new Key("1234", "field_y", "field_y\u0000value", VISIBILITY_PATTERN, compositeTS);
+        Assert.assertTrue(ageOffFilter.accept(filterOptions.getAgeOffPeriod(System.currentTimeMillis()), key, new Value()));
+        Assert.assertTrue(ageOffFilter.isFilterRuleApplied());
+
+        // vanilla date does not
+        key = new Key("1234", "field_y", "field_y\u0000value", VISIBILITY_PATTERN, tenSecondsAgo);
+        Assert.assertFalse(ageOffFilter.accept(filterOptions.getAgeOffPeriod(System.currentTimeMillis()), key, new Value()));
+        Assert.assertTrue(ageOffFilter.isFilterRuleApplied());
+
     }
 
     @Test

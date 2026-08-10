@@ -1,6 +1,6 @@
 package datawave.query.tables;
 
-import static datawave.util.TableName.SHARD_INDEX;
+import static datawave.table.constants.TableName.SHARD_INDEX;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -59,6 +59,7 @@ import datawave.query.index.lookup.ScannerStream;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.util.QueryScannerHelper;
 import datawave.query.util.Tuple2;
+import datawave.query.util.ValueSerializerType;
 import datawave.util.time.DateHelper;
 
 /**
@@ -67,8 +68,6 @@ import datawave.util.time.DateHelper;
 public class RangeStreamScannerTest {
 
     private static AccumuloClient client;
-
-    private static ScannerFactory scannerFactory;
 
     private static ShardQueryConfiguration config;
 
@@ -169,7 +168,6 @@ public class RangeStreamScannerTest {
         config.setIndexedFields(dataTypes);
 
         config.setClient(client);
-        scannerFactory = new ScannerFactory(config);
     }
 
     // Helper method largely copied from RangeStream class.
@@ -181,7 +179,7 @@ public class RangeStreamScannerTest {
 
     /**
      * Replicates the section of the {@link datawave.query.index.lookup.RangeStream#visit(ASTEQNode, Object)} method that builds a rangeStreamScanner.
-     *
+     * <p>
      * This version creates a simple iterator that will not alter the index records coming back in any way.
      *
      * @param fieldName
@@ -190,7 +188,7 @@ public class RangeStreamScannerTest {
      *            - field value, like "bar" in "FOO == 'bar'"
      * @return a configured RangeStreamScanner
      */
-    private RangeStreamScanner buildRangeStreamScanner(String fieldName, String fieldValue) throws Exception {
+    private RangeStreamScanner buildRangeStreamScanner(String fieldName, String fieldValue) {
 
         String queryString = fieldName + "=='" + fieldValue + "'";
         Range range = rangeForTerm(fieldValue, fieldName, config);
@@ -203,7 +201,14 @@ public class RangeStreamScannerTest {
 
         int priority = 50; // Iterator priority
 
-        RangeStreamScanner scanSession = scannerFactory.newRangeScanner(config.getIndexTableName(), config.getAuthorizations(), config.getQuery());
+        //  @formatter:off
+        RangeStreamScanner scanSession = RangeStreamScannerBuilder.create(client)
+                .setTableName(config.getIndexTableName())
+                .setAuthorizations(config.getAuthorizations())
+                .setQuery(config.getQuery())
+                .setConfig(config)
+                .build();
+        //  @formatter:on
 
         scanSession.setMaxResults(config.getMaxIndexBatchSize());
         scanSession.setExecutor(streamExecutor);
@@ -221,6 +226,9 @@ public class RangeStreamScannerTest {
         final IteratorSetting uidSetting = new IteratorSetting(priority++, CreateUidsIterator.class);
         uidSetting.addOption(CreateUidsIterator.COLLAPSE_UIDS, Boolean.valueOf(false).toString());
 
+        // Use Kryo serialization
+        uidSetting.addOption(CreateUidsIterator.VALUE_ENCODING, ValueSerializerType.KRYO.toString());
+
         options.addScanIterator(uidSetting);
         options.addScanIterator(QueryScannerHelper.getQueryInfoIterator(config.getQuery(), false, queryString));
 
@@ -233,7 +241,7 @@ public class RangeStreamScannerTest {
      * Make sure a simple scan returns correctly. FOO == 'bar' hits day 20190314 with 1 shard, each shard has 2 document ids.
      */
     @Test
-    public void testTheSimplestOfScans() throws Exception {
+    public void testTheSimplestOfScans() {
 
         // Components that define the query: "FOO == 'bar'"
         String fieldName = "FOO";
@@ -266,7 +274,7 @@ public class RangeStreamScannerTest {
      * FOO == 'baz' hits day 20190317 with 15 shards, each shard has 2 document ids.
      */
     @Test
-    public void testExceedShardDayThreshold() throws Exception {
+    public void testExceedShardDayThreshold() {
 
         // Components that define the query: "FOO == 'baz'"
         String fieldName = "FOO";
@@ -300,7 +308,7 @@ public class RangeStreamScannerTest {
      * FOO == 'boo' hits day 20190319 with 8 shards, each shard has 15 document ids.
      */
     @Test
-    public void testExceedMaxMedianDocumentsPerShard() throws Exception {
+    public void testExceedMaxMedianDocumentsPerShard() {
 
         // Components that define the query: "FOO == 'boo'"
         String fieldName = "FOO";
@@ -330,45 +338,18 @@ public class RangeStreamScannerTest {
     }
 
     /**
-     * FOO == 'boohoo' hits day 20190319 with 15 shards, each shard has 25 document ids.
-     */
-    @Test
-    public void testExceedShardsPerDayThresholdAndDocumentsPerShardThreshold() throws Exception {
-
-        // Components that define the query: "FOO == 'boohoo'"
-        String fieldName = "FOO";
-        String fieldValue = "boohoo";
-        ASTEQNode eqNode = (ASTEQNode) JexlNodeFactory.buildEQNode(fieldName, fieldValue);
-
-        // Construct a ScannerStream from RangeStreamScanner, iterator, entry parser.
-        RangeStreamScanner rangeStreamScanner = buildRangeStreamScanner(fieldName, fieldValue);
-        EntryParser entryParser = new EntryParser(eqNode, fieldName, fieldValue, config.getIndexedFields());
-        ScannerStream scannerStream = ScannerStream.initialized(rangeStreamScanner, entryParser, eqNode);
-
-        // Assert the iterator correctly iterates over the iterables without irritating the unit test.
-        assertTrue(scannerStream.hasNext());
-        int shardCount = 0;
-        int documentCount = 0;
-        while (scannerStream.hasNext()) {
-            Tuple2<String,IndexInfo> entry = scannerStream.next();
-            assertTrue("Expected shard to start with '20190323' but was: " + entry.first(), entry.first().startsWith("20190323"));
-            shardCount++;
-            documentCount += entry.second().count();
-        }
-        // A single range with a count of -1 means the shard ranges were collapsed into a day range.
-        assertEquals(15, shardCount);
-        assertEquals(375, documentCount);
-        assertFalse(scannerStream.hasNext());
-    }
-
-    /**
      * Tests that the RangeStreamScanner correctly extracts the date from an accumulo key.
      */
     @Test
-    public void testGetDay() throws Exception {
-        // Build RangeStreamScanner
-        ScannerFactory scanners = new ScannerFactory(config);
-        RangeStreamScanner rangeStreamScanner = scanners.newRangeScanner(config.getIndexTableName(), config.getAuthorizations(), config.getQuery());
+    public void testGetDay() {
+        //  @formatter:off
+        RangeStreamScanner rangeStreamScanner = RangeStreamScannerBuilder.create(client)
+                .setTableName(config.getIndexTableName())
+                .setAuthorizations(config.getAuthorizations())
+                .setQuery(config.getQuery())
+                .setConfig(config)
+                .build();
+        //  @formatter:on
 
         Key key = new Key("row".getBytes(), "cf".getBytes(), "20190314".getBytes());
         String expectedDay = "20190314";
@@ -379,7 +360,7 @@ public class RangeStreamScannerTest {
     }
 
     @Test
-    public void testAdvanceQueueToShard() throws Exception {
+    public void testAdvanceQueueToShard() {
 
         TreeMap<Key,Value> sortedDatas = new TreeMap<>();
         for (int ii = 0; ii < 20; ii++) {
@@ -436,7 +417,7 @@ public class RangeStreamScannerTest {
     }
 
     @Test
-    public void testCurrentEntryMatchesShard_exactMatch() throws Exception {
+    public void testCurrentEntryMatchesShard_exactMatch() {
         RangeStreamScanner scanner = buildRangeStreamScanner("FOO", "bar");
 
         // Top value is a day
@@ -451,7 +432,7 @@ public class RangeStreamScannerTest {
     }
 
     @Test
-    public void testCurrentEntryMatchesShard_topShardBeyondSeekShard() throws Exception {
+    public void testCurrentEntryMatchesShard_topShardBeyondSeekShard() {
         RangeStreamScanner scanner = buildRangeStreamScanner("FOO", "bar");
 
         Result topDay = buildEntry("20190314", "FOO", "bar");
@@ -464,7 +445,7 @@ public class RangeStreamScannerTest {
     }
 
     @Test
-    public void testCurrentEntryMatchesShard_topShardMatchesDay() throws Exception {
+    public void testCurrentEntryMatchesShard_topShardMatchesDay() {
         RangeStreamScanner scanner = buildRangeStreamScanner("FOO", "bar");
 
         Result topShard = buildEntry("20190314_0", "FOO", "bar");
@@ -473,7 +454,7 @@ public class RangeStreamScannerTest {
     }
 
     @Test
-    public void testCurrentEntryMatchesShard_topDayMatchesShard() throws Exception {
+    public void testCurrentEntryMatchesShard_topDayMatchesShard() {
         RangeStreamScanner scanner = buildRangeStreamScanner("FOO", "bar");
 
         Result topDay = buildEntry("20190314", "FOO", "bar");
@@ -482,7 +463,7 @@ public class RangeStreamScannerTest {
     }
 
     @Test
-    public void testCurrentEntryMatchesShard_noMatch() throws Exception {
+    public void testCurrentEntryMatchesShard_noMatch() {
         RangeStreamScanner scanner = buildRangeStreamScanner("FOO", "bar");
 
         Result topDay = buildEntry("20190314", "FOO", "bar");

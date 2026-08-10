@@ -296,16 +296,6 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
         return node;
     }
 
-    // only descend into delayed predicates or bounded ranges
-    @Override
-    public Object visit(ASTReferenceExpression node, Object data) {
-        if (QueryPropertyMarker.findInstance(node).isAnyTypeExcept(DELAYED, BOUNDED_RANGE)) {
-            return copy(node);
-        }
-
-        return super.visit(node, data);
-    }
-
     /**
      * Attempts to create composites using both the leaf nodes and the anded nodes from our ancestors. Each of the composites created must contain at least one
      * of the leaf nodes in order to be valid. The used leaf nodes are passed back via the usedLeafNodes param. The used anded nodes are passed back via the

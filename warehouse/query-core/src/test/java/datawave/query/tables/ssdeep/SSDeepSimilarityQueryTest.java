@@ -7,7 +7,10 @@ import static datawave.query.tables.ssdeep.util.SSDeepTestUtil.EXPECTED_2_2_OVER
 import static datawave.query.tables.ssdeep.util.SSDeepTestUtil.EXPECTED_2_3_OVERLAPS;
 import static datawave.query.tables.ssdeep.util.SSDeepTestUtil.EXPECTED_2_4_OVERLAPS;
 import static datawave.query.tables.ssdeep.util.SSDeepTestUtil.TEST_SSDEEPS;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -38,6 +41,7 @@ import datawave.ingest.mapreduce.handler.ssdeep.SSDeepIndexHandler;
 import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.QueryImpl;
 import datawave.microservice.querymetric.QueryMetricFactoryImpl;
+import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.tables.ssdeep.util.SSDeepTestUtil;
 import datawave.query.testframework.AbstractDataTypeConfig;
 import datawave.security.authorization.DatawavePrincipal;
@@ -90,6 +94,7 @@ public class SSDeepSimilarityQueryTest {
         logic.setBucketEncodingBase(BUCKET_ENCODING_BASE);
         logic.setBucketEncodingLength(BUCKET_ENCODING_LENGTH);
         logic.setIndexBuckets(BUCKET_COUNT);
+        logic.setNumRangesPerScanner(10);
 
         SubjectIssuerDNPair dn = SubjectIssuerDNPair.of("userDn", "issuerDn");
         DatawaveUser user = new DatawaveUser(dn, DatawaveUser.UserType.USER, Sets.newHashSet(auths.toString().split(",")), null, null, -1L);
@@ -106,6 +111,38 @@ public class SSDeepSimilarityQueryTest {
         runSingleQuery(true);
     }
 
+    @Test(expected = DatawaveFatalQueryException.class)
+    public void testMaxResultsLimit() throws Exception {
+        logic.setMaxResults(2);
+        runSingleQuery(false);
+    }
+
+    @Test(expected = DatawaveFatalQueryException.class)
+    public void testMaxHashLimit() throws Exception {
+        logic.setMaxHashes(1);
+        String query = "CHECKSUM_SSDEEP:" + TEST_SSDEEPS[2] + " OR CHECKSUM_SSDEEP:" + TEST_SSDEEPS[3];
+        runSSDeepQuery(query, 0);
+    }
+
+    @Test
+    public void testMaxHashesPerNGram() throws Exception {
+        // block all hashes
+        logic.setMaxHashesPerNGram(0);
+        // this normally would have results [see below]
+        String query = "CHECKSUM_SSDEEP:" + TEST_SSDEEPS[2];
+        // no ngrams in similarity means no results
+        EventQueryResponseBase response = runSSDeepQuery(query, 0);
+        assertNull(response.getEvents());
+
+        // verify with the value reset its fine
+        logic.setMaxHashesPerNGram(10);
+        // provate this now has results
+        query = "CHECKSUM_SSDEEP:" + TEST_SSDEEPS[2];
+        // no ngrams in similarity means no results
+        response = runSSDeepQuery(query, 0);
+        assertNotNull(response.getEvents());
+    }
+
     private static void logSSDeepTestData() throws TableNotFoundException {
         Scanner scanner = accumuloClient.createScanner(SSDeepIndexHandler.DEFAULT_SSDEEP_INDEX_TABLE_NAME, auths);
         Iterator<Map.Entry<Key,Value>> iterator = scanner.iterator();
@@ -115,6 +152,23 @@ public class SSDeepSimilarityQueryTest {
             log.debug(entry);
         }
         scanner.close();
+    }
+
+    @Test
+    public void testVariousNumRangesPerScanner() throws Exception {
+        String query = "CHECKSUM_SSDEEP:" + TEST_SSDEEPS[0] + " OR CHECKSUM_SSDEEP:" + TEST_SSDEEPS[1] + " OR CHECKSUM_SSDEEP:" + TEST_SSDEEPS[2]
+                        + " OR CHECKSUM_SSDEEP:" + TEST_SSDEEPS[3] + " OR CHECKSUM_SSDEEP:" + TEST_SSDEEPS[4] + " OR CHECKSUM_SSDEEP:" + TEST_SSDEEPS[5];
+
+        final int expectedEventCount = 9;
+
+        for (int numRangesPerScanner : Arrays.asList(1, 10, 100, 1000, 10000, 100000)) {
+            logic.setNumRangesPerScanner(numRangesPerScanner);
+            EventQueryResponseBase response = runSSDeepQuery(query, 0);
+            List<EventBase> events = response.getEvents();
+            int eventCount = events.size();
+
+            Assert.assertEquals(expectedEventCount, eventCount);
+        }
     }
 
     @SuppressWarnings("rawtypes")

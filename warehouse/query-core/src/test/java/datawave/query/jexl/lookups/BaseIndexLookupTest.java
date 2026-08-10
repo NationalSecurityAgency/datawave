@@ -1,0 +1,289 @@
+package datawave.query.jexl.lookups;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+import org.apache.accumulo.core.client.AccumuloClient;
+import org.apache.accumulo.core.client.MutationsRejectedException;
+import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.accumulo.core.client.admin.TableOperations;
+import org.apache.accumulo.core.data.Mutation;
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.minicluster.MiniAccumuloCluster;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ParseException;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.google.common.base.Preconditions;
+
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
+import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.util.MockMetadataHelper;
+import datawave.table.constants.TableName;
+import datawave.test.MacTestUtil;
+import datawave.util.time.DateHelper;
+
+/**
+ * Collection of helpful methods for testing {@link IndexLookup}s.
+ * <p>
+ * Note: these tests use an {@link InMemoryInstance} and in some cases it is better to test with {@link MiniAccumuloCluster}
+ */
+public abstract class BaseIndexLookupTest {
+
+    private static final Logger log = LoggerFactory.getLogger(BaseIndexLookupTest.class);
+
+    private static final String DEFAULT_DATE = "20250606";
+    private static final String DEFAULT_DATATYPE = "datatype";
+    private static final Value EMPTY_VALUE = new Value();
+    protected ExecutorService executor;
+
+    protected static AccumuloClient client;
+    protected static TableOperations tops;
+
+    protected final Set<String> indexedFields = Set.of("_ANYFIELD_", "FIELD_A", "FIELD_B", "FIELD_C");
+
+    protected final ShardQueryConfiguration config = new ShardQueryConfiguration();
+    protected final MockMetadataHelper metadataHelper = new MockMetadataHelper();
+
+    protected String query = null;
+    private IndexLookupMap result;
+
+    private final StringBuilder sb = new StringBuilder();
+
+    protected ScanMonitor monitor;
+    private ExecutorService monitorExecutor;
+
+    @BeforeAll
+    public static void setup() throws Exception {
+        InMemoryInstance instance = new InMemoryInstance();
+        client = new InMemoryAccumuloClient("root", instance);
+        tops = client.tableOperations();
+    }
+
+    @BeforeEach
+    public void beforeEach() throws Exception {
+        if (tops.exists(TableName.SHARD_INDEX)) {
+            tops.delete(TableName.SHARD_INDEX);
+        }
+        tops.create(TableName.SHARD_INDEX);
+
+        if (tops.exists(TableName.SHARD_RINDEX)) {
+            tops.delete(TableName.SHARD_RINDEX);
+        }
+        tops.create(TableName.SHARD_RINDEX);
+
+        config.setClient(client);
+        config.setBeginDate(DateHelper.parse("20250606"));
+        config.setEndDate(DateHelper.parse("20250606"));
+
+        metadataHelper.setIndexedFields(indexedFields);
+        metadataHelper.setReverseIndexFields(indexedFields);
+
+        query = null;
+        result = null;
+        executor = Executors.newFixedThreadPool(5);
+
+        monitor = ScanMonitor.of("query-id", null);
+        monitorExecutor = Executors.newSingleThreadExecutor();
+        monitorExecutor.submit(monitor);
+    }
+
+    @AfterEach
+    public void afterEach() {
+        executor.shutdownNow();
+        monitorExecutor.shutdownNow();
+    }
+
+    protected void addDelayIterator(int delay) {
+        Map<String,String> properties = new HashMap<>();
+        properties.put("table.iterator.scan.delay", "1,datawave.test.iter.DelayIterator");
+        properties.put("table.iterator.scan.delay.opt.delay", String.valueOf(delay));
+        MacTestUtil.addPropertiesAndWait(tops, TableName.SHARD_INDEX, properties);
+    }
+
+    protected void removeDelayIterator() {
+        Set<String> properties = new HashSet<>();
+        properties.add("table.iterator.scan.delay");
+        properties.add("table.iterator.scan.delay.opt.delay");
+        MacTestUtil.removePropertiesAndWait(tops, TableName.SHARD_INDEX, properties);
+    }
+
+    protected void addRuntimeExceptionIterator(String clazz, String msg, String when) {
+        Map<String,String> properties = new HashMap<>();
+        properties.put("table.iterator.scan.rex", "2,datawave.test.iter.RuntimeExceptionIterator");
+        properties.put("table.iterator.scan.rex.opt.exception.class", String.valueOf(clazz));
+        properties.put("table.iterator.scan.rex.opt.exception.message", String.valueOf(msg));
+        switch (when) {
+            case "seek":
+                properties.put("table.iterator.scan.rex.opt.fireOnSeek", "true");
+                break;
+            case "next":
+                properties.put("table.iterator.scan.rex.opt.fireOnNext", "true");
+                break;
+            case "random":
+                properties.put("table.iterator.scan.rex.opt.fireRandomly", "true");
+                break;
+            default:
+                throw new IllegalStateException("unknown state: " + when);
+        }
+        MacTestUtil.addPropertiesAndWait(tops, TableName.SHARD_INDEX, properties);
+    }
+
+    protected void removeRuntimeExceptionIterator() {
+        Set<String> properties = new HashSet<>();
+        properties.add("table.iterator.scan.rex");
+        properties.add("table.iterator.scan.rex.opt.exception.class");
+        properties.add("table.iterator.scan.rex.opt.exception.message");
+        properties.add("table.iterator.scan.rex.opt.fireOnSeek");
+        properties.add("table.iterator.scan.rex.opt.fireOnNext");
+        properties.add("table.iterator.scan.rex.opt.fireRandomly");
+        MacTestUtil.removePropertiesAndWait(tops, TableName.SHARD_INDEX, properties);
+    }
+
+    protected void addIOExceptionIterator(String clazz, String msg, String when) {
+        Map<String,String> properties = new HashMap<>();
+        properties.put("table.iterator.scan.ioex", "3,datawave.test.iter.IOExceptionIterator");
+        properties.put("table.iterator.scan.ioex.opt.exception.class", String.valueOf(clazz));
+        properties.put("table.iterator.scan.ioex.opt.exception.message", String.valueOf(msg));
+        switch (when) {
+            case "seek":
+                properties.put("table.iterator.scan.ioex.opt.fireOnSeek", "true");
+                break;
+            case "next":
+                properties.put("table.iterator.scan.ioex.opt.fireOnNext", "true");
+                break;
+            case "random":
+                properties.put("table.iterator.scan.ioex.opt.fireRandomly", "true");
+                break;
+            default:
+                throw new IllegalStateException("unknown state: " + when);
+        }
+        MacTestUtil.addPropertiesAndWait(tops, TableName.SHARD_INDEX, properties);
+    }
+
+    protected void removeIOExceptionIterator() {
+        Set<String> properties = new HashSet<>();
+        properties.add("table.iterator.scan.ioex");
+        properties.add("table.iterator.scan.ioex.opt.exception.class");
+        properties.add("table.iterator.scan.ioex.opt.exception.message");
+        properties.add("table.iterator.scan.ioex.opt.fireOnSeek");
+        properties.add("table.iterator.scan.ioex.opt.fireOnNext");
+        properties.add("table.iterator.scan.ioex.opt.fireRandomly");
+        MacTestUtil.removePropertiesAndWait(tops, TableName.SHARD_INDEX, properties);
+    }
+
+    public void write(String value, String field) {
+        write(value, field, DEFAULT_DATE, DEFAULT_DATATYPE, EMPTY_VALUE);
+    }
+
+    public void write(String value, String field, Value v) {
+        write(value, field, DEFAULT_DATE, DEFAULT_DATATYPE, v);
+    }
+
+    public void write(String value, String field, String date, String datatype) {
+        write(value, field, date, datatype, EMPTY_VALUE);
+    }
+
+    public void write(String value, String field, String date, String datatype, Value v) {
+        try (var writer = client.createBatchWriter(TableName.SHARD_INDEX)) {
+            Mutation m = new Mutation(value);
+            m.put(field, date + "\0" + datatype, v);
+            writer.addMutation(m);
+        } catch (TableNotFoundException | MutationsRejectedException e) {
+            log.error(e.getMessage(), e);
+        }
+    }
+
+    public void writeReverse(String value, String field) {
+        writeReverse(value, field, DEFAULT_DATE, DEFAULT_DATATYPE, EMPTY_VALUE);
+    }
+
+    public void writeReverse(String value, String field, Value v) {
+        writeReverse(value, field, DEFAULT_DATE, DEFAULT_DATATYPE, v);
+    }
+
+    public void writeReverse(String value, String field, String date, String datatype) {
+        writeReverse(value, field, date, datatype, EMPTY_VALUE);
+    }
+
+    public void writeReverse(String value, String field, String date, String datatype, Value v) {
+        try (var writer = client.createBatchWriter(TableName.SHARD_RINDEX)) {
+            Mutation m = new Mutation(reverse(value));
+            m.put(field, date + "\0" + datatype, v);
+            writer.addMutation(m);
+        } catch (TableNotFoundException | MutationsRejectedException e) {
+            log.error(e.getMessage(), e);
+        }
+    }
+
+    private String reverse(String value) {
+        sb.setLength(0);
+        sb.append(value);
+        return sb.reverse().toString();
+    }
+
+    public void withQuery(String query) {
+        this.query = query;
+    }
+
+    /**
+     * Extending classes must implement this method with all setup logic. Once the {@link AsyncIndexLookup} is configured, the method should call
+     * {@link #executeLookup(AsyncIndexLookup)}.
+     */
+    protected abstract void executeLookup() throws Exception;
+
+    protected void executeLookup(AsyncIndexLookup lookup) {
+        lookup.submit();
+        this.result = lookup.lookup();
+    }
+
+    protected JexlNode parse(String query) {
+        try {
+            return JexlASTHelper.parseAndFlattenJexlQuery(query).jjtGetChild(0);
+        } catch (ParseException e) {
+            fail("Failed to parse query: " + query);
+        }
+        return null;
+    }
+
+    protected void assertNoResults() {
+        Preconditions.checkNotNull(result, "result cannot be null");
+        assertTrue(result.isEmpty());
+    }
+
+    protected void assertResultFields(Set<String> expected) {
+        Preconditions.checkNotNull(result, "result cannot be null");
+        assertEquals(new HashSet<>(expected), new HashSet<>(result.keySet()));
+    }
+
+    protected void assertResultValues(String field, Set<String> values) {
+        Preconditions.checkNotNull(result, "result cannot be null");
+        assertTrue(result.containsKey(field), "result did not contain field: " + field);
+        Set<String> resultValues = new HashSet<>(result.get(field));
+        assertEquals(new HashSet<>(values), resultValues);
+    }
+
+    protected void assertExceptionSeen() {
+        Preconditions.checkNotNull(result, "result cannot be null");
+        assertTrue(result.isExceptionSeen());
+    }
+
+    protected void assertTimeoutExceeded() {
+        Preconditions.checkNotNull(result, "result cannot be null");
+        assertTrue(result.isTimeoutExceeded());
+    }
+}

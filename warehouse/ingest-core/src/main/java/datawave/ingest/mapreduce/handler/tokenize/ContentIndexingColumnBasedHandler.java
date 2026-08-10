@@ -38,7 +38,6 @@ import datawave.ingest.data.tokenize.TokenizationHelper;
 import datawave.ingest.data.tokenize.TokenizationHelper.HeartBeatThread;
 import datawave.ingest.data.tokenize.TokenizationHelper.TokenizerTimeoutException;
 import datawave.ingest.data.tokenize.TruncateAttribute;
-import datawave.ingest.mapreduce.handler.ExtendedDataTypeHandler;
 import datawave.ingest.mapreduce.handler.shard.AbstractColumnBasedHandler;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.ingest.mapreduce.handler.shard.content.BoundedOffsetQueue;
@@ -52,6 +51,7 @@ import datawave.ingest.util.BloomFilterUtil;
 import datawave.ingest.util.BloomFilterWrapper;
 import datawave.ingest.util.Identity;
 import datawave.ingest.util.TimeoutStrategy;
+import datawave.table.constants.ColumnFamilyConstants;
 import datawave.util.TextUtil;
 
 /**
@@ -195,7 +195,7 @@ public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractC
                 log.fatal("IOException", ex);
             } catch (InterruptedException ex) {
                 log.warn("Interrupted!", ex);
-                Thread.interrupted();
+                Thread.currentThread().interrupt();
             }
 
             tokenOffsetCache.clear();
@@ -238,7 +238,7 @@ public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractC
 
         Text colq = new Text(fieldName);
         TextUtil.textAppend(colq, fieldValue, helper.getReplaceMalformedUTF8());
-        Key k = createKey(shardId, colf, colq, fieldVisibility, event.getDate(), helper.getDeleteMode());
+        Key k = createKey(shardId, colf, colq, fieldVisibility, event.getTimestamp(), helper.getDeleteMode());
         BulkIngestKey bKey = new BulkIngestKey(new Text(this.getShardTableName()), k);
         values.put(bKey, NULL_VALUE);
     }
@@ -294,7 +294,7 @@ public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractC
                     termPosition = 0;
                     lastFieldName = indexedFieldName;
                 } else {
-                    termPosition = tokenHelper.getInterFieldPositionIncrement();
+                    termPosition += tokenHelper.getInterFieldPositionIncrement();
                 }
 
                 boolean indexField = createGlobalIndexTerms && contentHelper.isContentIndexField(indexedFieldName);
@@ -303,6 +303,9 @@ public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractC
                 if (indexField || reverseIndexField) {
                     try {
                         tokenizeField(analyzer, nci, indexField, reverseIndexField, reporter);
+                    } catch (InterruptedException ex) {
+                        Thread.currentThread().interrupt();
+                        throw new RuntimeException(ex);
                     } catch (Exception ex) {
                         throw new RuntimeException(ex);
                     }
@@ -356,6 +359,10 @@ public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractC
         String indexedFieldName = nci.getIndexedFieldName();
         String modifiedFieldName = indexedFieldName + tokenFieldNameSuffix;
         String content = nci.getIndexedFieldValue();
+
+        if (tokenHelper.isContentContextEnabled()) {
+            modifiedFieldName = modifiedFieldName + "." + tokenHelper.getContentContextHash(content);
+        }
 
         TokenStream tokenizer = a.tokenStream(indexedFieldName, new StringReader(content));
         tokenizer.reset();
@@ -596,9 +603,9 @@ public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractC
         colq.append(this.eventDataTypeName).append('\u0000').append(this.eventUid).append('\u0000').append(nfv.getIndexedFieldValue()).append('\u0000')
                         .append(nfv.getIndexedFieldName());
 
-        BulkIngestKey bKey = new BulkIngestKey(new Text(this.getShardTableName()),
-                        new Key(shardId, ExtendedDataTypeHandler.TERM_FREQUENCY_COLUMN_FAMILY.getBytes(), colq.toString().getBytes(), visibility,
-                                        event.getDate(), helper.getDeleteMode()));
+        BulkIngestKey bKey = new BulkIngestKey(new Text(this.getShardTableName()), new Key(shardId, ColumnFamilyConstants.TERM_FREQUENCY_TEXT.getBytes(),
+                        colq.toString().getBytes(), visibility, event.getTimestamp(), helper.getDeleteMode()));
+
         values.put(bKey, value);
     }
 
@@ -688,7 +695,7 @@ public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractC
         String indexedFieldName = nci.getIndexedFieldName();
         String content = nci.getIndexedFieldValue();
 
-        String[] tokens = StringUtils.split(content, listDelimiter);
+        String[] tokens = content.split(listDelimiter);
         int position = 0;
         for (String token : tokens) {
             String trimmedToken = StringUtils.trim(token);

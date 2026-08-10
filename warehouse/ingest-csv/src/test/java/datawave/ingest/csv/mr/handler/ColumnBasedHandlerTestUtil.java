@@ -34,7 +34,8 @@ import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.writer.AbstractContextWriter;
 import datawave.ingest.test.StandaloneStatusReporter;
 import datawave.ingest.test.StandaloneTaskAttemptContext;
-import datawave.util.TableName;
+import datawave.table.constants.ColumnFamilyConstants;
+import datawave.table.constants.TableName;
 
 /**
  * Utility Class for common static methods used in ColumnBasedHandler tests
@@ -44,13 +45,15 @@ public class ColumnBasedHandlerTestUtil {
     public static final Text shardTableName = new Text(TableName.SHARD);
     public static final Text shardIndexTableName = new Text(TableName.SHARD_INDEX);
     public static final Text shardReverseIndexTableName = new Text(TableName.SHARD_RINDEX);
+    public static final Text shardDayIndexTableName = new Text(TableName.SHARD_DAY_INDEX);
+    public static final Text shardYearIndexTableName = new Text(TableName.SHARD_YEAR_INDEX);
     public static final Text edgeTableName = new Text(TableName.EDGE);
     public static final String NB = "\u0000";
 
-    private static Logger log = Logger.getLogger(ColumnBasedHandlerTestUtil.class);
+    private static final Logger log = Logger.getLogger(ColumnBasedHandlerTestUtil.class);
 
     public static boolean isDocumentKey(Key k) {
-        return isShardKey(k) && k.getColumnFamily().toString().equals(ExtendedDataTypeHandler.FULL_CONTENT_COLUMN_FAMILY);
+        return isShardKey(k) && k.getColumnFamily().toString().equals(ColumnFamilyConstants.FULL_CONTENT);
     }
 
     public static boolean isShardKey(Key k) {
@@ -78,6 +81,8 @@ public class ColumnBasedHandlerTestUtil {
         Set<Key> shardKeys = new HashSet<>();
         Set<Key> shardIndexKeys = new HashSet<>();
         Set<Key> shardReverseIndexKeys = new HashSet<>();
+        Set<Key> shardDayIndexKeys = new HashSet<>();
+        Set<Key> shardYearIndexKeys = new HashSet<>();
         Map<Text,Integer> countMap = Maps.newHashMap();
         for (BulkIngestKey k : results.keySet()) {
             Text tableName = k.getTableName();
@@ -102,6 +107,10 @@ public class ColumnBasedHandlerTestUtil {
                 shardIndexKeys.add(bik.getKey());
             } else if (bik.getTableName().equals(shardReverseIndexTableName)) {
                 shardReverseIndexKeys.add(bik.getKey());
+            } else if (bik.getTableName().equals(shardDayIndexTableName)) {
+                shardDayIndexKeys.add(bik.getKey());
+            } else if (bik.getTableName().equals(shardYearIndexTableName)) {
+                shardYearIndexKeys.add(bik.getKey());
             } else {
                 Assert.fail("unknown table: " + bik.getTableName() + " key: " + bik.getKey());
             }
@@ -111,7 +120,7 @@ public class ColumnBasedHandlerTestUtil {
         Set<Key> keys = new HashSet<>();
         Set<String> errors = new TreeSet<>();
 
-        /**
+        /*
          * The following only prints out the missing/extra keys, no test is actually performed until the end. This is done so all errors are known before
          * failing.
          */
@@ -198,6 +207,8 @@ public class ColumnBasedHandlerTestUtil {
         Set<Key> shardKeys = new HashSet<>();
         Set<Key> shardIndexKeys = new HashSet<>();
         Set<Key> shardReverseIndexKeys = new HashSet<>();
+        Set<Key> shardDayIndexKeys = new HashSet<>();
+        Set<Key> shardYearIndexKeys = new HashSet<>();
         Set<Key> edgeKeys = new HashSet<>();
         Map<Text,Integer> countMap = Maps.newHashMap();
 
@@ -224,10 +235,13 @@ public class ColumnBasedHandlerTestUtil {
                 shardIndexKeys.add(bik.getKey());
             } else if (bik.getTableName().equals(shardReverseIndexTableName)) {
                 shardReverseIndexKeys.add(bik.getKey());
+            } else if (bik.getTableName().equals(shardDayIndexTableName)) {
+                shardDayIndexKeys.add(bik.getKey());
+            } else if (bik.getTableName().equals(shardYearIndexTableName)) {
+                shardYearIndexKeys.add(bik.getKey());
             } else {
                 Assert.fail("unknown table: " + bik.getTableName() + " key: " + bik.getKey());
             }
-
         }
 
         // Process edges

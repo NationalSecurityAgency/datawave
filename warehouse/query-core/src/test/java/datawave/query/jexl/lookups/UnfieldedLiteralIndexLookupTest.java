@@ -1,0 +1,195 @@
+package datawave.query.jexl.lookups;
+
+import static datawave.core.iterators.TimeoutExceptionIterator.EXCEPTEDVALUE;
+import static org.apache.accumulo.core.client.ScannerBase.ConsistencyLevel;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.fail;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+
+import org.apache.accumulo.core.client.ScannerBase;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.google.common.base.Preconditions;
+
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.tables.ScannerFactory;
+
+/**
+ * Tests for the {@link UnfieldedLiteralIndexLookup}
+ */
+public class UnfieldedLiteralIndexLookupTest extends BaseIndexLookupTest {
+
+    private static final Logger log = LoggerFactory.getLogger(UnfieldedLiteralIndexLookupTest.class);
+
+    private AsyncIndexLookup lookup;
+
+    @Test
+    public void testValueDoesNotExpand() {
+        // no data
+        withQuery("_ANYFIELD_ == 'bar'");
+        executeLookup();
+        assertNoResults();
+    }
+
+    @Test
+    public void testValueExpandsIntoSingleField() {
+        write("bar", "FIELD_A");
+        withQuery("_ANYFIELD_ == 'bar'");
+        executeLookup();
+        assertResultFields(Set.of("FIELD_A"));
+        assertResultValues("FIELD_A", Set.of("bar"));
+    }
+
+    @Test
+    public void testValueExpandsIntoMultipleFields() {
+        write("bar", "FIELD_A");
+        write("bar", "FIELD_B");
+        withQuery("_ANYFIELD_ == 'bar'");
+        executeLookup();
+        assertResultFields(Set.of("FIELD_A", "FIELD_B"));
+        assertResultValues("FIELD_A", Set.of("bar"));
+        assertResultValues("FIELD_B", Set.of("bar"));
+    }
+
+    @Test
+    public void testValueExpandsIntoMultipleFieldsSkippingPreviouslyIndexedFields() {
+        write("bar", "FIELD_A");
+        write("bar", "FIELD_B");
+        write("bar", "FIELD_C");
+        write("bar", "FIELD_X");
+        withQuery("_ANYFIELD_ == 'bar'");
+        executeLookup();
+        assertResultFields(Set.of("FIELD_A", "FIELD_B", "FIELD_C"));
+        assertResultValues("FIELD_A", Set.of("bar"));
+        assertResultValues("FIELD_B", Set.of("bar"));
+        assertResultValues("FIELD_C", Set.of("bar"));
+    }
+
+    @Test
+    public void testExpansionHitsTimeoutThreshold() {
+        write("bar", "FIELD_A");
+        write("bar", "FIELD_B", EXCEPTEDVALUE);
+        write("bar", "FIELD_C");
+        withQuery("_ANYFIELD_ == 'bar'");
+        executeLookup();
+        assertResultFields(Set.of("FIELD_A", "FIELD_B", "FIELD_C"));
+        assertResultValues("FIELD_A", Set.of("bar"));
+        // field expansion iterator does not (currently) honor timeout exceptions
+    }
+
+    @Test
+    public void testExpansionHitsValueThreshold_singleValueMultiField() {
+        int valueExpansionThreshold = config.getMaxValueExpansionThreshold();
+        try {
+            write("bar", "FIELD_A");
+            write("bar", "FIELD_B");
+            write("bar", "FIELD_C");
+            withQuery("_ANYFIELD_ == 'bar'");
+            config.setMaxValueExpansionThreshold(1);
+            executeLookup();
+            assertResultFields(Set.of("FIELD_A", "FIELD_B", "FIELD_C"));
+            assertResultValues("FIELD_A", Set.of("bar"));
+            assertResultValues("FIELD_B", Set.of("bar"));
+            assertResultValues("FIELD_C", Set.of("bar"));
+        } finally {
+            config.setMaxValueExpansionThreshold(valueExpansionThreshold);
+        }
+    }
+
+    @Test
+    public void testExecutionHints_expansionPoolSelectedOverIndexTable() {
+        write("bar", "FIELD_A");
+        withQuery("_ANYFIELD_ == 'bar'");
+
+        Map<String,String> expansionHints = new HashMap<>();
+        expansionHints.put("scan_type", "expansion-pool-a");
+        expansionHints.put("priority", "2");
+
+        Map<String,String> indexHints = new HashMap<>();
+        indexHints.put("scan_type", "index-a");
+        indexHints.put("priority", "1");
+
+        Map<String,Map<String,String>> tableHints = new HashMap<>();
+        tableHints.put("expansion", expansionHints);
+        tableHints.put("shardIndex", indexHints);
+        config.setTableHints(tableHints);
+
+        executeLookup();
+        assertResultFields(Set.of("FIELD_A"));
+        assertResultValues("FIELD_A", Set.of("bar"));
+
+        assertNotNull(lookup.builder);
+        assertEquals(expansionHints, lookup.builder.getExecutionHints());
+    }
+
+    @Test
+    public void testExecutionHints_indexTableNameSelectedWhenNoExpansionPoolExists() {
+        write("bar", "FIELD_A");
+        withQuery("_ANYFIELD_ == 'bar'");
+
+        Map<String,String> indexHints = new HashMap<>();
+        indexHints.put("scan_type", "index-a");
+        indexHints.put("priority", "1");
+
+        Map<String,Map<String,String>> tableHints = new HashMap<>();
+        tableHints.put("shardIndex", indexHints);
+        config.setTableHints(tableHints);
+
+        executeLookup();
+        assertResultFields(Set.of("FIELD_A"));
+        assertResultValues("FIELD_A", Set.of("bar"));
+
+        assertNotNull(lookup.builder);
+        assertEquals(indexHints, lookup.builder.getExecutionHints());
+    }
+
+    @Test
+    public void testConsistencyLevel() {
+        write("bar", "FIELD_A");
+        withQuery("_ANYFIELD_ == 'bar'");
+
+        Map<String,ScannerBase.ConsistencyLevel> consistencyLevels = new HashMap<>();
+        consistencyLevels.put("shardIndex", ConsistencyLevel.EVENTUAL);
+        config.setTableConsistencyLevels(consistencyLevels);
+
+        executeLookup();
+        assertResultFields(Set.of("FIELD_A"));
+        assertResultValues("FIELD_A", Set.of("bar"));
+
+        assertNotNull(lookup.builder);
+        assertEquals(ConsistencyLevel.EVENTUAL, lookup.builder.getConsistencyLevel());
+    }
+
+    @Override
+    protected void executeLookup() {
+        try {
+            Preconditions.checkNotNull(query, "query cannot be null");
+            JexlNode node = parse(query);
+            String field = JexlASTHelper.getIdentifier(node);
+            assertEquals("_ANYFIELD_", field);
+
+            Object literal = JexlASTHelper.getLiteralValueSafely(node);
+            String value = String.valueOf(literal);
+
+            lookup = createLookup(value);
+            executeLookup(lookup);
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+            fail("Lookup failed: " + e.getMessage());
+        }
+    }
+
+    private AsyncIndexLookup createLookup(String value) {
+        ScannerFactory scannerFactory = new ScannerFactory(client);
+        AsyncIndexLookup lookup = new UnfieldedLiteralIndexLookup(config, scannerFactory, value, indexedFields, executor);
+        lookup.setScanMonitor(monitor);
+        return lookup;
+    }
+}

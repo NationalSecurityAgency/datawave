@@ -9,26 +9,26 @@
          name representation as needed for the deployment environment's default query syntax.
     -->
     <Mappings>
-        <Mapping fieldName="SOURCE" modelFieldName="VERTEXA" direction="REVERSE" indexOnly="false" columnVisibility="PUBLIC"/>
+        <Mapping fieldName="SOURCE" modelFieldName="VERTEXA" direction="REVERSE" columnVisibility="PUBLIC"/>
         <Mapping fieldName="SOURCE" modelFieldName="VERTEXA" direction="FORWARD" indexOnly="false" columnVisibility="PUBLIC"/>
         
-        <Mapping fieldName="SINK" modelFieldName="VERTEXB" direction="REVERSE" indexOnly="false" columnVisibility="PUBLIC"/>
-        <Mapping fieldName="SINK" modelFieldName="VERTEXB" direction="FORWARD" indexOnly="false" columnVisibility="PUBLIC"/>
+        <Mapping fieldName="SINK" modelFieldName="VERTEXB" direction="REVERSE" columnVisibility="PUBLIC"/>
+        <Mapping fieldName="SINK" modelFieldName="VERTEXB" direction="FORWARD" columnVisibility="PUBLIC"/>
         
-        <Mapping fieldName="RELATION" modelFieldName="RELATION" direction="REVERSE" indexOnly="false" columnVisibility="PUBLIC"/>
-        <Mapping fieldName="RELATION" modelFieldName="RELATION" direction="FORWARD" indexOnly="false" columnVisibility="PUBLIC"/>
+        <Mapping fieldName="RELATION" modelFieldName="RELATION" direction="REVERSE" columnVisibility="PUBLIC"/>
+        <Mapping fieldName="RELATION" modelFieldName="RELATION" direction="FORWARD" columnVisibility="PUBLIC"/>
         
-        <Mapping fieldName="TYPE" modelFieldName="TYPE" direction="REVERSE" indexOnly="false" columnVisibility="PUBLIC"/>
-        <Mapping fieldName="TYPE" modelFieldName="TYPE" direction="FORWARD" indexOnly="false" columnVisibility="PUBLIC"/>
+        <Mapping fieldName="TYPE" modelFieldName="TYPE" direction="REVERSE" columnVisibility="PUBLIC"/>
+        <Mapping fieldName="TYPE" modelFieldName="TYPE" direction="FORWARD" columnVisibility="PUBLIC"/>
         
-        <Mapping fieldName="ATTRIBUTE1" modelFieldName="ATTR1" direction="REVERSE" indexOnly="false" columnVisibility="PUBLIC"/>
-        <Mapping fieldName="ATTRIBUTE1" modelFieldName="ATTR1" direction="FORWARD" indexOnly="false" columnVisibility="PUBLIC"/>
+        <Mapping fieldName="ATTRIBUTE1" modelFieldName="ATTR1" direction="REVERSE" columnVisibility="PUBLIC"/>
+        <Mapping fieldName="ATTRIBUTE1" modelFieldName="ATTR1" direction="FORWARD" columnVisibility="PUBLIC"/>
         
-        <Mapping fieldName="ATTRIBUTE2" modelFieldName="ATTR2" direction="REVERSE" indexOnly="false" columnVisibility="PUBLIC"/>
-        <Mapping fieldName="ATTRIBUTE2" modelFieldName="ATTR2" direction="FORWARD" indexOnly="false" columnVisibility="PUBLIC"/>
+        <Mapping fieldName="ATTRIBUTE2" modelFieldName="ATTR2" direction="REVERSE" columnVisibility="PUBLIC"/>
+        <Mapping fieldName="ATTRIBUTE2" modelFieldName="ATTR2" direction="FORWARD" columnVisibility="PUBLIC"/>
                 
-        <Mapping fieldName="ATTRIBUTE3" modelFieldName="ATTR3" direction="REVERSE" indexOnly="false" columnVisibility="PUBLIC"/>
-        <Mapping fieldName="ATTRIBUTE3" modelFieldName="ATTR3" direction="FORWARD" indexOnly="false" columnVisibility="PUBLIC"/>
+        <Mapping fieldName="ATTRIBUTE3" modelFieldName="ATTR3" direction="REVERSE" columnVisibility="PUBLIC"/>
+        <Mapping fieldName="ATTRIBUTE3" modelFieldName="ATTR3" direction="FORWARD" columnVisibility="PUBLIC"/>
             
     </Mappings>
 </Model>

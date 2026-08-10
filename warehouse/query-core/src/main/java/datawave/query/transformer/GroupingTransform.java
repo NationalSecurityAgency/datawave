@@ -1,11 +1,9 @@
 package datawave.query.transformer;
 
+import static datawave.query.iterator.waitwindow.WaitWindowObserver.WAIT_WINDOW_OVERRUN;
 import static org.slf4j.LoggerFactory.getLogger;
 
-import java.util.ArrayList;
 import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
 
 import javax.annotation.Nullable;
@@ -23,7 +21,6 @@ import datawave.query.common.grouping.GroupFields;
 import datawave.query.common.grouping.GroupingUtils;
 import datawave.query.common.grouping.Groups;
 import datawave.query.iterator.profile.FinalDocumentTrackingIterator;
-import datawave.query.model.QueryModel;
 
 /**
  * GroupingTransform mimics GROUP BY with a COUNT in SQL. For the given fields, this transform will group into unique combinations of values and assign a count
@@ -48,9 +45,14 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
     private final LinkedList<Document> documents = new LinkedList<>();
 
     /**
-     * list of keys that have been read, in order to keep track of where we left off when a new iterator is created
+     * The last key seen, used to build documents
      */
-    private final List<Key> keys = new ArrayList<>();
+    private Key mostRecentKey = null;
+
+    /**
+     * Track the number of documents seen by this transform
+     */
+    private long documentCount = 0L;
 
     /**
      * Length of time in milliseconds that a client will wait while results are collected. If a full page is not collected before the timeout, a blank page will
@@ -68,7 +70,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
      * @param markingFunctions
      *            the marking functions
      */
-    public GroupingTransform(GroupFields groupFields, MarkingFunctions markingFunctions, long queryExecutionForPageTimeout) {
+    public GroupingTransform(GroupFields groupFields, MarkingFunctions<?> markingFunctions, long queryExecutionForPageTimeout) {
         super.initialize(settings, markingFunctions);
         this.queryExecutionForPageTimeout = queryExecutionForPageTimeout;
         this.groups = new Groups();
@@ -88,18 +90,33 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
 
             // If this is a final document, bail without adding to the keys, countingMap or fieldVisibilities.
             if (FinalDocumentTrackingIterator.isFinalDocumentKey(keyDocumentEntry.getKey())) {
+                log.debug("GroupingTransform saw {} documents producing {} groups", documentCount, groups.getGroups().size());
                 return keyDocumentEntry;
             }
 
-            keys.add(keyDocumentEntry.getKey());
+            Document document = keyDocumentEntry.getValue();
+            if (document != null && document.containsKey(WAIT_WINDOW_OVERRUN)) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Got a WAIT_WINDOW_OVERRUN key in group transform: " + keyDocumentEntry.getKey());
+                }
+                return keyDocumentEntry;
+            }
+
+            if (keyDocumentEntry.getValue().isIntermediateResult()) {
+                return keyDocumentEntry;
+            }
+
+            documentCount++;
+            mostRecentKey = keyDocumentEntry.getKey();
             log.trace("{} get list key counts for: {}", "web-server", keyDocumentEntry);
             DocumentGrouper.group(keyDocumentEntry, groupFields, groups);
         }
 
-        long elapsedExecutionTimeForCurrentPage = System.currentTimeMillis() - this.queryExecutionForPageStartTime;
+        long elapsedExecutionTimeForCurrentPage = clock.millis() - this.queryExecutionForPageStartTime;
         if (elapsedExecutionTimeForCurrentPage > this.queryExecutionForPageTimeout) {
             log.debug("Generating intermediate result because over {}ms has been reached since {}", this.queryExecutionForPageTimeout,
                             this.queryExecutionForPageStartTime);
+            this.queryExecutionForPageStartTime = clock.millis();
             Document intermediateResult = new Document();
             intermediateResult.setIntermediateResult(true);
             return Maps.immutableEntry(new Key(), intermediateResult);
@@ -119,7 +136,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
         Document document = null;
         if (!groups.isEmpty()) {
             for (Group group : groups.getGroups()) {
-                documents.add(GroupingUtils.createDocument(group, keys, markingFunctions, GroupingUtils.AverageAggregatorWriteFormat.AVERAGE));
+                documents.add(GroupingUtils.createDocument(group, mostRecentKey, markingFunctions, GroupingUtils.AverageAggregatorWriteFormat.AVERAGE));
             }
         }
 

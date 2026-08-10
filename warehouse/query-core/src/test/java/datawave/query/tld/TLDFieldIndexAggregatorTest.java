@@ -9,7 +9,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
@@ -18,20 +17,16 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iteratorsImpl.system.SortedMapIterator;
-import org.easymock.Capture;
-import org.easymock.EasyMock;
-import org.easymock.IAnswer;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 import com.google.common.collect.Maps;
 
-import datawave.data.type.NoOpType;
 import datawave.query.Constants;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.AttributeFactory;
 import datawave.query.attributes.Document;
-import datawave.query.jexl.functions.IdentityAggregator;
 import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.util.TypeMetadata;
 
@@ -45,7 +40,7 @@ public class TLDFieldIndexAggregatorTest {
 
     @Test
     public void apply_testAggregateFilter() throws IOException {
-        EventDataQueryFilter mockFilter = EasyMock.createMock(EventDataQueryFilter.class);
+        EventDataQueryFilter mockFilter = Mockito.mock(EventDataQueryFilter.class);
 
         TypeMetadata typeMetadata = new TypeMetadata();
         AttributeFactory factory = new AttributeFactory(typeMetadata);
@@ -75,9 +70,7 @@ public class TLDFieldIndexAggregatorTest {
         treeMap.put(fi6, new Value());
         treeMap.put(fi7, new Value());
 
-        EasyMock.expect(mockFilter.keep(EasyMock.isA(Key.class))).andReturn(true);
-
-        EasyMock.replay(mockFilter);
+        Mockito.doReturn(true).when(mockFilter).keep(Mockito.isA(Key.class));
 
         SortedKeyValueIterator<Key,Value> itr = new SortedMapIterator(treeMap);
         itr.seek(new Range(), null, true);
@@ -85,7 +78,7 @@ public class TLDFieldIndexAggregatorTest {
         Document doc = new Document();
         aggregator.apply(itr, doc, factory);
 
-        EasyMock.verify(mockFilter);
+        Mockito.verify(mockFilter);
 
         // list of FIELD1 values to expect
         List<String> expectedFieldValues = new ArrayList<>();

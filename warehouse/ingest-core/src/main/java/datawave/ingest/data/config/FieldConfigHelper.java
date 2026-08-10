@@ -5,6 +5,8 @@ import java.util.Map;
 import datawave.ingest.data.config.ingest.VirtualIngest;
 
 public interface FieldConfigHelper {
+    String describeSource();
+
     boolean isStoredField(String fieldName);
 
     boolean isIndexedField(String fieldName);

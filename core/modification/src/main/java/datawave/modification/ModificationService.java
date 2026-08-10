@@ -13,7 +13,8 @@ import java.util.stream.Collectors;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.modification.cache.ModificationCache;
@@ -32,7 +33,7 @@ import datawave.webservice.results.modification.ModificationConfigurationRespons
 
 public class ModificationService {
 
-    private static final Logger log = Logger.getLogger(ModificationService.class);
+    private static final Logger log = LoggerFactory.getLogger(ModificationService.class);
 
     private final AccumuloConnectionFactory connectionFactory;
 
@@ -118,13 +119,13 @@ public class ModificationService {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
             client = connectionFactory.getClient(userDn, proxyServers, modificationConfiguration.getPoolName(), priority, trackingMap);
             service.setQueryServiceFactory(queryServiceFactory);
-            log.info("Processing modification request from user=" + userDetails.getShortName() + ": \n" + request);
+            log.info("Processing modification request from user={}: \n{}", userDetails.getShortName(), request);
             service.process(client, request, cache.getCachedMutableFieldList(), cbAuths, userDetails);
         } catch (DatawaveModificationException e) {
             throw e;
         } catch (Exception e) {
             QueryException qe = new QueryException(DatawaveErrorCode.MODIFICATION_ERROR, e);
-            log.error(qe);
+            log.error("QueryException:", qe);
             throw new DatawaveModificationException(qe);
         } finally {
             if (null != client) {

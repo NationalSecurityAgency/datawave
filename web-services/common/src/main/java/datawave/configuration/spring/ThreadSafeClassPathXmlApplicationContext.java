@@ -5,6 +5,7 @@ import java.lang.annotation.Annotation;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.locks.ReadWriteLock;
+import java.util.function.Supplier;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
@@ -31,8 +32,9 @@ import org.springframework.core.io.Resource;
  */
 @SuppressWarnings("unused")
 public class ThreadSafeClassPathXmlApplicationContext implements ConfigurableApplicationContext {
-    private ConfigurableApplicationContext configurableApplicationContext;
-    private ReadWriteLock lock;
+
+    private final ConfigurableApplicationContext configurableApplicationContext;
+    private final ReadWriteLock lock;
 
     public ThreadSafeClassPathXmlApplicationContext(ConfigurableApplicationContext configurableApplicationContext, ReadWriteLock lock) {
         this.configurableApplicationContext = configurableApplicationContext;
@@ -41,552 +43,332 @@ public class ThreadSafeClassPathXmlApplicationContext implements ConfigurableApp
 
     @Override
     public void setId(String id) {
-        lock.writeLock().lock();
-        try {
-            configurableApplicationContext.setId(id);
-        } finally {
-            lock.writeLock().unlock();
-        }
+        lockAndWrite(() -> configurableApplicationContext.setId(id));
     }
 
     @Override
     public ConfigurableListableBeanFactory getBeanFactory() {
-        lock.readLock().lock();
-        try {
-            return configurableApplicationContext.getBeanFactory();
-        } finally {
-            lock.readLock().unlock();
-        }
+        return lockAndRead(configurableApplicationContext::getBeanFactory);
     }
 
     @Override
     public String getId() {
-        lock.readLock().lock();
-        try {
-            return configurableApplicationContext.getId();
-        } finally {
-            lock.readLock().unlock();
-        }
+        return lockAndRead(configurableApplicationContext::getId);
     }
 
     @Override
     public String getApplicationName() {
-        lock.readLock().lock();
-        try {
-            return configurableApplicationContext.getApplicationName();
-        } finally {
-            lock.readLock().unlock();
-        }
+        return lockAndRead(configurableApplicationContext::getApplicationName);
     }
 
     @Override
     public String getDisplayName() {
-        lock.readLock().lock();
-        try {
-            return configurableApplicationContext.getDisplayName();
-        } finally {
-            lock.readLock().unlock();
-        }
+        return lockAndRead(configurableApplicationContext::getDisplayName);
     }
 
     @Override
     public ApplicationContext getParent() {
-        lock.readLock().lock();
-        try {
-            return configurableApplicationContext.getParent();
-        } finally {
-            lock.readLock().unlock();
-        }
+        return lockAndRead(configurableApplicationContext::getParent);
     }
 
     @Override
     public ConfigurableEnvironment getEnvironment() {
-        lock.readLock().lock();
-        try {
-            return configurableApplicationContext.getEnvironment();
-        } finally {
-            lock.readLock().unlock();
-        }
+        return lockAndRead(configurableApplicationContext::getEnvironment);
     }
 
     @Override
     public void setEnvironment(ConfigurableEnvironment environment) {
-        lock.writeLock().lock();
-        try {
-            configurableApplicationContext.setEnvironment(environment);
-        } finally {
-            lock.writeLock().unlock();
-        }
+        lockAndWrite(() -> configurableApplicationContext.setEnvironment(environment));
     }
 
     @Override
     public AutowireCapableBeanFactory getAutowireCapableBeanFactory() throws IllegalStateException {
-        lock.readLock().lock();
-        try {
-            return configurableApplicationContext.getAutowireCapableBeanFactory();
-        } finally {
-            lock.readLock().unlock();
-        }
+        return lockAndRead(configurableApplicationContext::getAutowireCapableBeanFactory);
     }
 
     @Override
     public long getStartupDate() {
-        lock.readLock().lock();
-        try {
-            return configurableApplicationContext.getStartupDate();
-        } finally {
-            lock.readLock().unlock();
-        }
+        return lockAndRead(configurableApplicationContext::getStartupDate);
     }
 
     @Override
     public void publishEvent(ApplicationEvent event) {
-        lock.writeLock().lock();
-        try {
-            configurableApplicationContext.publishEvent(event);
-        } finally {
-            lock.writeLock().unlock();
-        }
+        lockAndWrite(() -> configurableApplicationContext.publishEvent(event));
     }
 
     @Override
     public void publishEvent(Object o) {
-        this.configurableApplicationContext.publishEvent(o);
+        lockAndWrite(() -> configurableApplicationContext.publishEvent(o));
     }
 
     @Override
     public void setParent(ApplicationContext parent) {
-        lock.writeLock().lock();
-        try {
-            configurableApplicationContext.setParent(parent);
-        } finally {
-            lock.writeLock().unlock();
-        }
+        lockAndWrite(() -> configurableApplicationContext.setParent(parent));
     }
 
     @Override
     public void addBeanFactoryPostProcessor(BeanFactoryPostProcessor beanFactoryPostProcessor) {
-        lock.writeLock().lock();
-        try {
-            configurableApplicationContext.addBeanFactoryPostProcessor(beanFactoryPostProcessor);
-        } finally {
-            lock.writeLock().unlock();
-        }
+        lockAndWrite(() -> configurableApplicationContext.addBeanFactoryPostProcessor(beanFactoryPostProcessor));
     }
 
     @Override
     public void addApplicationListener(ApplicationListener<?> listener) {
-        lock.writeLock().lock();
-        try {
-            configurableApplicationContext.addApplicationListener(listener);
-        } finally {
-            lock.writeLock().unlock();
-        }
+        lockAndWrite(() -> configurableApplicationContext.addApplicationListener(listener));
     }
 
     @Override
     public void addProtocolResolver(ProtocolResolver protocolResolver) {
-        this.configurableApplicationContext.addProtocolResolver(protocolResolver);
+        lockAndWrite(() -> configurableApplicationContext.addProtocolResolver(protocolResolver));
     }
 
     @Override
     public void refresh() throws BeansException, IllegalStateException {
-        lock.writeLock().lock();
-        try {
-            configurableApplicationContext.refresh();
-        } finally {
-            lock.writeLock().unlock();
-        }
+        lockAndWrite(configurableApplicationContext::refresh);
     }
 
     @Override
     public void registerShutdownHook() {
-        lock.writeLock().lock();
-        try {
-            configurableApplicationContext.registerShutdownHook();
-        } finally {
-            lock.writeLock().unlock();
-        }
+        lockAndWrite(configurableApplicationContext::registerShutdownHook);
     }
 
     @Override
     public void close() {
-        lock.writeLock().lock();
-        try {
-            configurableApplicationContext.close();
-        } finally {
-            lock.writeLock().unlock();
-        }
+        lockAndWrite(configurableApplicationContext::close);
     }
 
     @Override
     public boolean isActive() {
-        lock.readLock().lock();
-        try {
-            return configurableApplicationContext.isActive();
-        } finally {
-            lock.readLock().unlock();
-        }
+        return lockAndRead(configurableApplicationContext::isActive);
     }
 
     @Override
     public Object getBean(String name) throws BeansException {
-        lock.readLock().lock();
-        try {
-            return configurableApplicationContext.getBean(name);
-        } finally {
-            lock.readLock().unlock();
-        }
+        return lockAndRead(() -> configurableApplicationContext.getBean(name));
     }
 
     @Override
     public <T> T getBean(String name, Class<T> requiredType) throws BeansException {
-        lock.readLock().lock();
-        try {
-            return configurableApplicationContext.getBean(name, requiredType);
-        } finally {
-            lock.readLock().unlock();
-        }
+        return lockAndRead(() -> configurableApplicationContext.getBean(name, requiredType));
     }
 
     @Override
     public <T> T getBean(Class<T> requiredType) throws BeansException {
-        lock.readLock().lock();
-        try {
-            return configurableApplicationContext.getBean(requiredType);
-        } finally {
-            lock.readLock().unlock();
-        }
+        return lockAndRead(() -> configurableApplicationContext.getBean(requiredType));
     }
 
     @Override
     public Object getBean(String name, Object... args) throws BeansException {
-        lock.readLock().lock();
-        try {
-            return configurableApplicationContext.getBean(name, args);
-        } finally {
-            lock.readLock().unlock();
-        }
+        return lockAndRead(() -> configurableApplicationContext.getBean(name, args));
     }
 
     @Override
     public <T> T getBean(Class<T> requiredType, Object... args) throws BeansException {
-        lock.readLock().lock();
-        try {
-            return configurableApplicationContext.getBean(requiredType, args);
-        } finally {
-            lock.readLock().unlock();
-        }
+        return lockAndRead(() -> configurableApplicationContext.getBean(requiredType, args));
     }
 
     @Override
-    public <T> ObjectProvider<T> getBeanProvider(Class<T> aClass) {
-        return configurableApplicationContext.getBeanProvider(aClass);
+    public <T> ObjectProvider<T> getBeanProvider(Class<T> requiredType) {
+        return lockAndRead(() -> configurableApplicationContext.getBeanProvider(requiredType));
     }
 
     @Override
     public <T> ObjectProvider<T> getBeanProvider(ResolvableType resolvableType) {
-        return configurableApplicationContext.getBeanProvider(resolvableType);
+        return lockAndRead(() -> configurableApplicationContext.getBeanProvider(resolvableType));
     }
 
     @Override
     public boolean containsBean(String name) {
-        lock.readLock().lock();
-        try {
-            return configurableApplicationContext.containsBean(name);
-        } finally {
-            lock.readLock().unlock();
-        }
+        return lockAndRead(() -> configurableApplicationContext.containsBean(name));
     }
 
     @Override
     public boolean isSingleton(String name) throws NoSuchBeanDefinitionException {
-        lock.readLock().lock();
-        try {
-            return configurableApplicationContext.isSingleton(name);
-        } finally {
-            lock.readLock().unlock();
-        }
+        return lockAndRead(() -> configurableApplicationContext.isSingleton(name));
     }
 
     @Override
     public boolean isPrototype(String name) throws NoSuchBeanDefinitionException {
-        lock.readLock().lock();
-        try {
-            return configurableApplicationContext.isPrototype(name);
-        } finally {
-            lock.readLock().unlock();
-        }
+        return lockAndRead(() -> configurableApplicationContext.isPrototype(name));
     }
 
     @Override
-    public boolean isTypeMatch(String s, ResolvableType resolvableType) throws NoSuchBeanDefinitionException {
-        return this.configurableApplicationContext.isTypeMatch(s, resolvableType);
+    public boolean isTypeMatch(String name, ResolvableType resolvableType) throws NoSuchBeanDefinitionException {
+        return lockAndRead(() -> configurableApplicationContext.isTypeMatch(name, resolvableType));
     }
 
     @Override
     public boolean isTypeMatch(String name, Class<?> targetType) throws NoSuchBeanDefinitionException {
-        lock.readLock().lock();
-        try {
-            return configurableApplicationContext.isTypeMatch(name, targetType);
-        } finally {
-            lock.readLock().unlock();
-        }
+        return lockAndRead(() -> configurableApplicationContext.isTypeMatch(name, targetType));
     }
 
     @Override
     public Class<?> getType(String name) throws NoSuchBeanDefinitionException {
-        lock.readLock().lock();
-        try {
-            return configurableApplicationContext.getType(name);
-        } finally {
-            lock.readLock().unlock();
-        }
+        return lockAndRead(() -> configurableApplicationContext.getType(name));
     }
 
     @Override
     public Class<?> getType(String name, boolean allowFactoryBeanInit) throws NoSuchBeanDefinitionException {
-        lock.readLock().lock();
-        try {
-            return configurableApplicationContext.getType(name, allowFactoryBeanInit);
-        } finally {
-            lock.readLock().unlock();
-        }
+        return lockAndRead(() -> configurableApplicationContext.getType(name, allowFactoryBeanInit));
     }
 
     @Override
     public String[] getAliases(String name) {
-        lock.readLock().lock();
-        try {
-            return configurableApplicationContext.getAliases(name);
-        } finally {
-            lock.readLock().unlock();
-        }
+        return lockAndRead(() -> configurableApplicationContext.getAliases(name));
     }
 
     @Override
     public boolean containsBeanDefinition(String beanName) {
-        lock.readLock().lock();
-        try {
-            return configurableApplicationContext.containsBeanDefinition(beanName);
-        } finally {
-            lock.readLock().unlock();
-        }
+        return lockAndRead(() -> configurableApplicationContext.containsBeanDefinition(beanName));
     }
 
     @Override
     public int getBeanDefinitionCount() {
-        lock.readLock().lock();
-        try {
-            return configurableApplicationContext.getBeanDefinitionCount();
-        } finally {
-            lock.readLock().unlock();
-        }
+        return lockAndRead(configurableApplicationContext::getBeanDefinitionCount);
     }
 
     @Override
     public String[] getBeanDefinitionNames() {
-        lock.readLock().lock();
-        try {
-            return configurableApplicationContext.getBeanDefinitionNames();
-        } finally {
-            lock.readLock().unlock();
-        }
+        return lockAndRead(configurableApplicationContext::getBeanDefinitionNames);
     }
 
     @Override
     public String[] getBeanNamesForType(ResolvableType resolvableType) {
-        return this.configurableApplicationContext.getBeanNamesForType(resolvableType);
+        return lockAndRead(() -> configurableApplicationContext.getBeanNamesForType(resolvableType));
     }
 
     @Override
     public String[] getBeanNamesForType(Class<?> type) {
-        lock.readLock().lock();
-        try {
-            return configurableApplicationContext.getBeanNamesForType(type);
-        } finally {
-            lock.readLock().unlock();
-        }
+        return lockAndRead(() -> configurableApplicationContext.getBeanNamesForType(type));
     }
 
     @Override
     public String[] getBeanNamesForType(Class<?> type, boolean includeNonSingletons, boolean allowEagerInit) {
-        lock.readLock().lock();
-        try {
-            return configurableApplicationContext.getBeanNamesForType(type, includeNonSingletons, allowEagerInit);
-        } finally {
-            lock.readLock().unlock();
-        }
+        return lockAndRead(() -> configurableApplicationContext.getBeanNamesForType(type, includeNonSingletons, allowEagerInit));
     }
 
     @Override
     public String[] getBeanNamesForType(ResolvableType type, boolean includeNonSingletons, boolean allowEagerInit) {
-        lock.readLock().lock();
-        try {
-            return configurableApplicationContext.getBeanNamesForType(type, includeNonSingletons, allowEagerInit);
-        } finally {
-            lock.readLock().unlock();
-        }
+        return lockAndRead(() -> configurableApplicationContext.getBeanNamesForType(type, includeNonSingletons, allowEagerInit));
     }
 
     @Override
     public <T> Map<String,T> getBeansOfType(Class<T> type) throws BeansException {
-        lock.readLock().lock();
-        try {
-            return configurableApplicationContext.getBeansOfType(type);
-        } finally {
-            lock.readLock().unlock();
-        }
-
+        return lockAndRead(() -> configurableApplicationContext.getBeansOfType(type));
     }
 
     @Override
     public <T> Map<String,T> getBeansOfType(Class<T> type, boolean includeNonSingletons, boolean allowEagerInit) throws BeansException {
-        lock.readLock().lock();
-        try {
-            return configurableApplicationContext.getBeansOfType(type, includeNonSingletons, allowEagerInit);
-        } finally {
-            lock.readLock().unlock();
-        }
+        return lockAndRead(() -> configurableApplicationContext.getBeansOfType(type, includeNonSingletons, allowEagerInit));
     }
 
     @Override
     public String[] getBeanNamesForAnnotation(Class<? extends Annotation> annotationType) {
-        lock.readLock().lock();
-        try {
-            return configurableApplicationContext.getBeanNamesForAnnotation(annotationType);
-        } finally {
-            lock.readLock().unlock();
-        }
+        return lockAndRead(() -> configurableApplicationContext.getBeanNamesForAnnotation(annotationType));
     }
 
     @Override
     public Map<String,Object> getBeansWithAnnotation(Class<? extends Annotation> annotationType) throws BeansException {
-        lock.readLock().lock();
-        try {
-            return configurableApplicationContext.getBeansWithAnnotation(annotationType);
-        } finally {
-            lock.readLock().unlock();
-        }
+        return lockAndRead(() -> configurableApplicationContext.getBeansWithAnnotation(annotationType));
     }
 
     @Override
     public <A extends Annotation> A findAnnotationOnBean(String beanName, Class<A> annotationType) throws NoSuchBeanDefinitionException {
-        lock.readLock().lock();
-        try {
-            return configurableApplicationContext.findAnnotationOnBean(beanName, annotationType);
-        } finally {
-            lock.readLock().unlock();
-        }
+        return lockAndRead(() -> configurableApplicationContext.findAnnotationOnBean(beanName, annotationType));
     }
 
     @Override
     public BeanFactory getParentBeanFactory() {
-        lock.readLock().lock();
-        try {
-            return configurableApplicationContext.getParentBeanFactory();
-        } finally {
-            lock.readLock().unlock();
-        }
+        return lockAndRead(configurableApplicationContext::getParentBeanFactory);
     }
 
     @Override
     public boolean containsLocalBean(String name) {
-        lock.readLock().lock();
-        try {
-            return configurableApplicationContext.containsLocalBean(name);
-        } finally {
-            lock.readLock().unlock();
-        }
+        return lockAndRead(() -> configurableApplicationContext.containsLocalBean(name));
     }
 
     @Override
     public String getMessage(String code, Object[] args, String defaultMessage, Locale locale) {
-        lock.readLock().lock();
-        try {
-            return configurableApplicationContext.getMessage(code, args, defaultMessage, locale);
-        } finally {
-            lock.readLock().unlock();
-        }
+        return lockAndRead(() -> configurableApplicationContext.getMessage(code, args, defaultMessage, locale));
     }
 
     @Override
     public String getMessage(String code, Object[] args, Locale locale) throws NoSuchMessageException {
-        lock.readLock().lock();
-        try {
-            return configurableApplicationContext.getMessage(code, args, locale);
-        } finally {
-            lock.readLock().unlock();
-        }
+        return lockAndRead(() -> configurableApplicationContext.getMessage(code, args, locale));
     }
 
     @Override
     public String getMessage(MessageSourceResolvable resolvable, Locale locale) throws NoSuchMessageException {
-        lock.readLock().lock();
-        try {
-            return configurableApplicationContext.getMessage(resolvable, locale);
-        } finally {
-            lock.readLock().unlock();
-        }
+        return lockAndRead(() -> configurableApplicationContext.getMessage(resolvable, locale));
     }
 
     @Override
-    public Resource[] getResources(String locationPattern) throws IOException {
-        lock.readLock().lock();
-        try {
-            return configurableApplicationContext.getResources(locationPattern);
-        } finally {
-            lock.readLock().unlock();
-        }
+    public Resource[] getResources(String locationPattern) {
+        return lockAndRead(() -> {
+            try {
+                return configurableApplicationContext.getResources(locationPattern);
+            } catch (IOException e) {
+                // Ensure IOException is not suppressed.
+                throw new RuntimeException(e);
+            }
+        });
     }
 
     @Override
     public void start() {
-        lock.readLock().lock();
-        try {
-            configurableApplicationContext.start();
-        } finally {
-            lock.readLock().unlock();
-        }
+        lockAndWrite(configurableApplicationContext::start);
     }
 
     @Override
     public void stop() {
+        lockAndWrite(configurableApplicationContext::stop);
+    }
+
+    @Override
+    public boolean isRunning() {
+        return lockAndRead(configurableApplicationContext::isRunning);
+    }
+
+    @Override
+    public ClassLoader getClassLoader() {
+        return lockAndRead(configurableApplicationContext::getClassLoader);
+    }
+
+    @Override
+    public Resource getResource(String location) {
+        return lockAndRead(() -> configurableApplicationContext.getResource(location));
+    }
+
+    /**
+     * Execute and return the result of the given delegate method after obtaining a lock for the read lock. The read lock will always be unlocked afterward.
+     *
+     * @param delegateMethod
+     *            the delegate method to run to return the targeted resource
+     * @return the delegate method's result
+     * @param <T>
+     *            the return type
+     */
+    private <T> T lockAndRead(Supplier<T> delegateMethod) {
         lock.readLock().lock();
         try {
-            configurableApplicationContext.stop();
+            return delegateMethod.get();
         } finally {
             lock.readLock().unlock();
         }
     }
 
-    @Override
-    public boolean isRunning() {
+    /**
+     * Execute the given delegate method after obtaining a lock for the write lock. The write lock will always be unlocked afterward.
+     *
+     * @param delegateMethod
+     *            the delegate method to execute
+     */
+    private void lockAndWrite(Runnable delegateMethod) {
         lock.writeLock().lock();
         try {
-            return configurableApplicationContext.isRunning();
+            delegateMethod.run();
         } finally {
             lock.writeLock().unlock();
         }
     }
 
-    @Override
-    public ClassLoader getClassLoader() {
-        lock.writeLock().lock();
-        try {
-            return configurableApplicationContext.getClassLoader();
-        } finally {
-            lock.writeLock().unlock();
-        }
-    }
-
-    @Override
-    public Resource getResource(String location) {
-        lock.writeLock().lock();
-        try {
-            return configurableApplicationContext.getResource(location);
-        } finally {
-            lock.writeLock().unlock();
-        }
-    }
 }

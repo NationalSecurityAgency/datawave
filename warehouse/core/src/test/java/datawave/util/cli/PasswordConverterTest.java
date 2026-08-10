@@ -1,9 +1,6 @@
 package datawave.util.cli;
 
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.nullValue;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -33,7 +30,7 @@ public class PasswordConverterTest {
         String name = System.getenv().keySet().iterator().next();
         argv[1] = "env:" + name;
         new JCommander(password).parse(argv);
-        assertThat(password.password, is(equalTo(System.getenv(name))));
+        assertEquals(password.password, System.getenv(name));
     }
 
     @Test
@@ -41,7 +38,7 @@ public class PasswordConverterTest {
         // prefix with no var defined should return null
         argv[1] = "env:";
         new JCommander(password).parse(argv);
-        assertThat(password.password, is(nullValue()));
+        assertEquals(password.password, null);
     }
 
     @Test
@@ -49,12 +46,12 @@ public class PasswordConverterTest {
         // prefix with env var not defined should return null
         String name = "HighlyUnlikelyThisWillBeDefined";
         // make sure it is not defined
-        assertThat("Expected " + name + " to not be defined but it was!", System.getenv(name), is(nullValue()));
+        assertEquals("Expected " + name + " to not be defined but it was!", null, System.getenv(name));
 
         argv[1] = "env:" + name;
 
         new JCommander(password).parse(argv);
-        assertThat(password.password, is(nullValue()));
+        assertEquals(password.password, null);
     }
 
     @Test
@@ -62,7 +59,7 @@ public class PasswordConverterTest {
         String expected = "behavior";
         argv[1] = expected;
         new JCommander(password).parse(argv);
-        assertThat(password.password, is(equalTo(expected)));
+        assertEquals(password.password, expected);
     }
 
 }

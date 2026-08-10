@@ -189,7 +189,7 @@ public abstract class DatawaveArithmetic extends JexlArithmetic {
         if (isFloatingPointNumber(left) || isFloatingPointNumber(right)) {
             double l = toDouble(left);
             double r = toDouble(right);
-            return new Double(l - r);
+            return Double.valueOf(l - r);
         }
 
         // if either are bigdecimal use that type
@@ -313,13 +313,25 @@ public abstract class DatawaveArithmetic extends JexlArithmetic {
         return false;
     }
 
+    /**
+     * Tests whether the string form of the given object is accepted by the FST.
+     * <p>
+     * Deliberately unsynchronized. A fully built {@link FST} is immutable and {@link FST#getBytesReader()} allocates a fresh reader on every call, so
+     * concurrent lookups against a shared FST are safe. Guarding this with a shared monitor serializes every scan thread in the JVM.
+     *
+     * @param object
+     *            the value to look up
+     * @param fst
+     *            a fully built FST
+     * @return true if the value is accepted by the FST
+     * @throws IOException
+     *             if the FST cannot be read
+     */
     public static boolean matchesFst(Object object, FST fst) throws IOException {
         final IntsRefBuilder irBuilder = new IntsRefBuilder();
         Util.toUTF16(object.toString(), irBuilder);
         final IntsRef ints = irBuilder.get();
-        synchronized (fst) {
-            return Util.get(fst, ints) != null;
-        }
+        return Util.get(fst, ints) != null;
     }
 
     /**

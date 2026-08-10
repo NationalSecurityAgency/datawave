@@ -13,7 +13,8 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.StatusReporter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.Multimap;
@@ -29,6 +30,7 @@ import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.writer.ContextWriter;
 import datawave.ingest.metadata.RawRecordMetadata;
 import datawave.marking.MarkingFunctions;
+import datawave.marking.Markings;
 import datawave.util.StringUtils;
 import datawave.util.TextUtil;
 
@@ -42,7 +44,7 @@ import datawave.util.TextUtil;
  */
 public class AtomDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> {
 
-    private static final Logger log = Logger.getLogger(AtomDataTypeHandler.class);
+    private static final Logger log = LoggerFactory.getLogger(AtomDataTypeHandler.class);
 
     public static final String ATOM_TYPE = "atom";
     public static final String ATOM_TABLE_NAME = ATOM_TYPE + ".table.name";
@@ -62,7 +64,7 @@ public class AtomDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataT
     protected String[] fieldOverrides = null;
     protected HashMap<String,Set<String>> subCategories;
     protected String[] sCategories = null;
-    protected MarkingFunctions markingFunctions;
+    protected MarkingFunctions<?> markingFunctions;
 
     protected Configuration conf;
 
@@ -180,20 +182,20 @@ public class AtomDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataT
             if ("".equals(this.fieldOverrides[i])) {
                 for (NormalizedContentInterface nci : fields.get(atomFieldName)) {
                     String columnQualifier = getColumnQualifier(event, nci);
-                    Key k = createKey(keyFieldName, nci.getEventFieldValue(), columnQualifier, id, event.getVisibility(), event.getDate());
+                    Key k = createKey(keyFieldName, nci.getEventFieldValue(), columnQualifier, id, event.getVisibility(), event.getTimestamp());
                     BulkIngestKey bk = new BulkIngestKey(tname, k);
                     contextWriter.write(bk, NULL_VALUE, context);
                     count++;
-                    Key categoryKey = new Key(keyFieldName, "", "", event.getVisibility(), event.getDate());
+                    Key categoryKey = new Key(keyFieldName, "", "", event.getVisibility(), event.getTimestamp());
                     categories.add(categoryKey);
                     if (subCategories.containsKey(atomFieldName)) {
                         if (subCategories.get(atomFieldName).contains(nci.getEventFieldValue())) {
                             Key k2 = createKey(keyFieldName + "/" + nci.getEventFieldValue(), nci.getEventFieldValue(), columnQualifier, id,
-                                            event.getVisibility(), event.getDate());
+                                            event.getVisibility(), event.getTimestamp());
                             BulkIngestKey bk2 = new BulkIngestKey(tname, k2);
                             contextWriter.write(bk2, NULL_VALUE, context);
                             count++;
-                            Key categoryKey2 = new Key(keyFieldName + "/" + nci.getEventFieldValue(), "", "", event.getVisibility(), event.getDate());
+                            Key categoryKey2 = new Key(keyFieldName + "/" + nci.getEventFieldValue(), "", "", event.getVisibility(), event.getTimestamp());
                             categories.add(categoryKey2);
                         }
                     }
@@ -202,21 +204,21 @@ public class AtomDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataT
 
                 String columnQualifier = getColumnQualifier(event, null);
                 // use the override
-                Key k = createKey(keyFieldName, this.fieldOverrides[i], columnQualifier, id, event.getVisibility(), event.getDate());
+                Key k = createKey(keyFieldName, this.fieldOverrides[i], columnQualifier, id, event.getVisibility(), event.getTimestamp());
                 BulkIngestKey bk = new BulkIngestKey(tname, k);
                 contextWriter.write(bk, NULL_VALUE, context);
                 count++;
-                Key categoryKey = new Key(keyFieldName, "", "", event.getVisibility(), event.getDate());
+                Key categoryKey = new Key(keyFieldName, "", "", event.getVisibility(), event.getTimestamp());
                 categories.add(categoryKey);
 
                 if (subCategories.containsKey(atomFieldName)) {
                     if (subCategories.get(atomFieldName).contains(this.fieldOverrides[i])) {
                         Key k2 = createKey(keyFieldName + "/" + this.fieldOverrides[i], this.fieldOverrides[i], columnQualifier, id, event.getVisibility(),
-                                        event.getDate());
+                                        event.getTimestamp());
                         BulkIngestKey bk2 = new BulkIngestKey(tname, k2);
                         contextWriter.write(bk2, NULL_VALUE, context);
                         count++;
-                        Key categoryKey2 = new Key(keyFieldName + "/" + this.fieldOverrides[i], "", "", event.getVisibility(), event.getDate());
+                        Key categoryKey2 = new Key(keyFieldName + "/" + this.fieldOverrides[i], "", "", event.getVisibility(), event.getTimestamp());
                         categories.add(categoryKey2);
                     }
                 }
@@ -253,16 +255,11 @@ public class AtomDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataT
      *            the value
      * @return the visibility
      */
-
     protected String getColumnQualifier(RawRecordContainer event, NormalizedContentInterface value) {
         ColumnVisibility visibility = event.getVisibility();
-        if (value.getMarkings() != null && !value.getMarkings().isEmpty()) {
-            try {
-                visibility = markingFunctions.translateToColumnVisibility(value.getMarkings());
-            } catch (MarkingFunctions.Exception e) {
-                throw new RuntimeException("Cannot convert record-level markings into a column visibility", e);
-
-            }
+        Markings<?> markings = value.getMarkings();
+        if (markings != null && !markings.isEmpty()) {
+            visibility = markings.toColumnVisibility();
         }
         return flatten(visibility);
     }

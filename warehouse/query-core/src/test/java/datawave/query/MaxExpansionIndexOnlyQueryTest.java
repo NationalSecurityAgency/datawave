@@ -16,9 +16,12 @@ import org.junit.Test;
 
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.FullTableScansDisallowedException;
+import datawave.query.planner.DatePartitionedQueryPlanner;
+import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.testframework.AbstractFunctionalQuery;
 import datawave.query.testframework.AccumuloSetup;
 import datawave.query.testframework.CitiesDataType;
+import datawave.query.testframework.CityDataManager;
 import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.FileType;
@@ -29,7 +32,7 @@ public class MaxExpansionIndexOnlyQueryTest extends AbstractFunctionalQuery {
     @ClassRule
     public static AccumuloSetup accumuloSetup = new AccumuloSetup();
 
-    private static final Logger log = Logger.getLogger(MaxExpansionRegexQueryTest.class);
+    private static final Logger log = Logger.getLogger(MaxExpansionIndexOnlyQueryTest.class);
 
     @BeforeClass
     public static void filterSetup() throws Exception {
@@ -38,6 +41,7 @@ public class MaxExpansionIndexOnlyQueryTest extends AbstractFunctionalQuery {
         max.addIndexOnlyField(CitiesDataType.CityField.CITY.name());
         max.addIndexOnlyField(CitiesDataType.CityField.STATE.name());
 
+        CityDataManager.newInstance();
         dataTypes.add(new CitiesDataType(CitiesDataType.CityEntry.maxExp, max));
 
         accumuloSetup.setData(FileType.CSV, dataTypes);
@@ -52,8 +56,11 @@ public class MaxExpansionIndexOnlyQueryTest extends AbstractFunctionalQuery {
     // test cases
 
     @Test
-    public void testMaxValueRegexIndexOnly() throws Exception {
-        log.info("------  testMaxValueRegexIndexOnly  ------");
+    public void testMaxValueRegexIndexOnly_defaultQueryPlanner() throws Exception {
+        log.info("------  testMaxValueRegexIndexOnly : " + DefaultQueryPlanner.class.getSimpleName() + " ------");
+
+        this.logic.setQueryPlanner(new DefaultQueryPlanner());
+
         // set regex to match multiple fields
         String city = EQ_OP + "'a-1'";
         String code = RE_OP + "'b.*'";
@@ -78,8 +85,78 @@ public class MaxExpansionIndexOnlyQueryTest extends AbstractFunctionalQuery {
     }
 
     @Test
-    public void testMaxValueAnyField() throws Exception {
-        log.info("------  testMaxValueAnyField  ------");
+    public void testMaxValueRegexIndexOnly_federatedQueryPlanner() throws Exception {
+        log.info("------  testMaxValueRegexIndexOnly : " + DatePartitionedQueryPlanner.class.getSimpleName() + " ------");
+
+        this.logic.setQueryPlanner(new DatePartitionedQueryPlanner());
+
+        // set regex to match multiple fields
+        String city = EQ_OP + "'a-1'";
+        String code = RE_OP + "'b.*'";
+
+        String query = CitiesDataType.CityField.CITY.name() + city + AND_OP + CitiesDataType.CityField.STATE.name() + code;
+
+        this.logic.setMaxValueExpansionThreshold(20);
+        runTest(query, query);
+        parsePlan(VALUE_THRESHOLD_JEXL_NODE, 0);
+
+        this.logic.setMaxValueExpansionThreshold(2);
+        try {
+            runTest(query, query);
+            Assert.fail("exception expected");
+        } catch (DatawaveFatalQueryException e) {
+            // expected
+        }
+
+        ivaratorConfig();
+        runTest(query, query);
+        parsePlan(VALUE_THRESHOLD_JEXL_NODE, 1);
+    }
+
+    @Test
+    public void testMaxValueAnyField_defaultQueryPlanner() throws Exception {
+        log.info("------  testMaxValueAnyField : " + DefaultQueryPlanner.class.getSimpleName() + " ------");
+
+        this.logic.setQueryPlanner(new DefaultQueryPlanner());
+
+        String regexT = RE_OP + "'b-.*'";
+        String regexA = RE_OP + "'a-.*'";
+        String query = Constants.ANY_FIELD + regexT + AND_OP + Constants.ANY_FIELD + regexA;
+        String anyT = this.dataManager.convertAnyField(regexT);
+        String anyA = this.dataManager.convertAnyField(regexA);
+        String expect = anyT + AND_OP + anyA;
+
+        this.logic.setMaxValueExpansionThreshold(10);
+        runTest(query, expect);
+        parsePlan(VALUE_THRESHOLD_JEXL_NODE, 0);
+
+        this.logic.setMaxValueExpansionThreshold(2);
+        try {
+            runTest(query, expect);
+            Assert.fail("exception expected");
+        } catch (RuntimeException re) {
+            // expected
+        }
+
+        ivaratorConfig();
+        runTest(query, expect);
+        parsePlan(VALUE_THRESHOLD_JEXL_NODE, 1);
+
+        // hit exists in shard 20151010_0
+        // range is 20150404_0 to 20150404 + MAX_VALUE
+        this.logic.setMaxValueExpansionThreshold(1);
+        this.logic.setUseDocumentScheduler(false);
+        ivaratorConfig();
+        runTest(query, expect);
+        parsePlan(VALUE_THRESHOLD_JEXL_NODE, 2);
+    }
+
+    @Test
+    public void testMaxValueAnyField_federatedQueryPlanner() throws Exception {
+        log.info("------  testMaxValueAnyField : " + DatePartitionedQueryPlanner.class.getSimpleName() + " ------");
+
+        this.logic.setQueryPlanner(new DatePartitionedQueryPlanner());
+
         String regexT = RE_OP + "'b-.*'";
         String regexA = RE_OP + "'a-.*'";
         String query = Constants.ANY_FIELD + regexT + AND_OP + Constants.ANY_FIELD + regexA;
@@ -110,8 +187,39 @@ public class MaxExpansionIndexOnlyQueryTest extends AbstractFunctionalQuery {
     }
 
     @Test
-    public void testMaxValueNegAnyField() throws Exception {
-        log.info("------  testMaxValueNegAnyField  ------");
+    public void testMaxValueNegAnyField_defaultQueryPlanner() throws Exception {
+        log.info("------  testMaxValueNegAnyField : " + DefaultQueryPlanner.class.getSimpleName() + "  ------");
+
+        this.logic.setQueryPlanner(new DefaultQueryPlanner());
+
+        String regexPhrase = RE_OP + "'a.*'";
+        String country = "'b-StaTe'";
+        String query = Constants.ANY_FIELD + EQ_OP + country + AND_OP + NOT_OP + "(" + Constants.ANY_FIELD + regexPhrase + ")";
+        String expect = CitiesDataType.CityField.STATE.name() + EQ_OP + "'bi-s'";
+
+        this.logic.setMaxValueExpansionThreshold(10);
+        runTest(query, expect);
+        parsePlan(VALUE_THRESHOLD_JEXL_NODE, 0);
+
+        this.logic.setMaxValueExpansionThreshold(1);
+        try {
+            runTest(query, expect);
+            Assert.fail("exception expected");
+        } catch (FullTableScansDisallowedException e) {
+            // expected
+        }
+
+        ivaratorConfig();
+        runTest(query, expect);
+        parsePlan(VALUE_THRESHOLD_JEXL_NODE, 1);
+    }
+
+    @Test
+    public void testMaxValueNegAnyField_federatedQueryPlanner() throws Exception {
+        log.info("------  testMaxValueNegAnyField : " + DatePartitionedQueryPlanner.class.getSimpleName() + "  ------");
+
+        this.logic.setQueryPlanner(new DatePartitionedQueryPlanner());
+
         String regexPhrase = RE_OP + "'a.*'";
         String country = "'b-StaTe'";
         String query = Constants.ANY_FIELD + EQ_OP + country + AND_OP + NOT_OP + "(" + Constants.ANY_FIELD + regexPhrase + ")";

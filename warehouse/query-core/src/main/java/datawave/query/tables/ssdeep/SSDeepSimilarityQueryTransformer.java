@@ -9,14 +9,7 @@ import datawave.core.query.exception.EmptyObjectException;
 import datawave.core.query.logic.BaseQueryLogicTransformer;
 import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.Query;
-import datawave.microservice.query.QueryImpl;
 import datawave.query.config.SSDeepSimilarityQueryConfiguration;
-import datawave.query.util.ssdeep.NGramScoreTuple;
-import datawave.util.ssdeep.ChunkSizeEncoding;
-import datawave.util.ssdeep.IntegerEncoding;
-import datawave.util.ssdeep.NGramTuple;
-import datawave.util.ssdeep.SSDeepHash;
-import datawave.util.ssdeep.SSDeepHashScorer;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
@@ -32,7 +25,7 @@ public class SSDeepSimilarityQueryTransformer extends BaseQueryLogicTransformer<
 
     protected final ResponseObjectFactory responseObjectFactory;
 
-    public SSDeepSimilarityQueryTransformer(Query query, SSDeepSimilarityQueryConfiguration config, MarkingFunctions markingFunctions,
+    public SSDeepSimilarityQueryTransformer(Query query, SSDeepSimilarityQueryConfiguration config, MarkingFunctions<?> markingFunctions,
                     ResponseObjectFactory responseObjectFactory) {
         super(markingFunctions);
         this.auths = new Authorizations(query.getQueryAuthorizations().split(","));

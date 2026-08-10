@@ -36,10 +36,8 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections4.map.LRUMap;
-import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.deltaspike.core.api.config.ConfigProperty;
-import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.JobID;
@@ -58,7 +56,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 
-import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.configuration.spring.SpringBean;
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.core.common.connection.AccumuloConnectionFactory.Priority;
@@ -78,7 +75,7 @@ import datawave.ingest.mapreduce.handler.shard.AbstractColumnBasedHandler;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.writer.LiveContextWriter;
 import datawave.ingest.table.config.TableConfigHelper;
-import datawave.marking.MarkingFunctions;
+import datawave.marking.Markings;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
 import datawave.microservice.query.QueryImpl.Parameter;
@@ -106,7 +103,6 @@ import datawave.webservice.result.BaseResponse;
 import datawave.webservice.result.EventQueryResponseBase;
 
 @ApplicationScoped
-@Exclude(ifProjectStage = DatawaveEmbeddedProjectStageHolder.DatawaveEmbedded.class)
 @SuppressWarnings("unused")
 public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMetric> {
     private static final Logger log = ThreadConfigurableLogger.getLogger(ShardTableQueryMetricHandler.class);
@@ -137,7 +133,6 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
 
     private Collection<String> connectorAuthorizationCollection = null;
     private String connectorAuthorizations = null;
-    private MarkingFunctions markingFunctions = null;
 
     @SuppressWarnings("FieldCanBeLocal")
     private final String JOB_ID = "job_201109071404_1";
@@ -165,7 +160,6 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
         String accumuloPassword = conf.get("AccumuloRecordWriter.password");
         byte[] encodedAccumuloPassword = Base64.encodeBase64(accumuloPassword.getBytes());
         conf.set("AccumuloRecordWriter.password", new String(encodedAccumuloPassword));
-        markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
     }
 
     @PostConstruct
@@ -175,7 +169,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
         try {
             client = connectionFactory.getClient(null, null, Priority.ADMIN, new HashMap<>());
             connectorAuthorizations = client.securityOperations().getUserAuthorizations(client.whoami()).toString();
-            connectorAuthorizationCollection = Lists.newArrayList(StringUtils.split(connectorAuthorizations, ","));
+            connectorAuthorizationCollection = Lists.newArrayList(connectorAuthorizations.split(","));
             reload();
 
             if (tablesChecked.compareAndSet(false, true))
@@ -283,14 +277,14 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
         RawRecordContainerImpl event = new RawRecordContainerImpl();
         event.setConf(this.conf);
         event.setDataType(type);
-        event.setDate(storedQueryMetric.getCreateDate().getTime());
+        event.setTimestamp(storedQueryMetric.getCreateDate().getTime());
         // get security markings from metric, otherwise default to PUBLIC
-        Map<String,String> markings = updatedQueryMetric.getMarkings();
-        if (markingFunctions == null || markings == null || markings.isEmpty()) {
+        Markings<?> markings = updatedQueryMetric.getMarkings();
+        if (markings == null || markings.isEmpty()) {
             event.setVisibility(new ColumnVisibility(DEFAULT_SECURITY_MARKING));
         } else {
             try {
-                event.setVisibility(this.markingFunctions.translateToColumnVisibility(markings));
+                event.setVisibility(markings.toColumnVisibility());
             } catch (Exception e) {
                 log.error(e.getMessage(), e);
                 event.setVisibility(new ColumnVisibility(DEFAULT_SECURITY_MARKING));
@@ -595,8 +589,6 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
                         m.setPlan(fieldValue);
                     } else if (fieldName.equals("QUERY_LOGIC")) {
                         m.setQueryLogic(fieldValue);
-                    } else if (fieldName.equals("QUERY_ID")) {
-                        m.setQueryId(fieldValue);
                     } else if (fieldName.equals("BEGIN_DATE")) {
                         try {
                             Date d = sdf_date_time1.parse(fieldValue);
@@ -614,7 +606,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
                     } else if (fieldName.equals("HOST")) {
                         m.setHost(fieldValue);
                     } else if (fieldName.equals("PROXY_SERVERS")) {
-                        m.setProxyServers(Arrays.asList(StringUtils.split(fieldValue, ",")));
+                        m.setProxyServers(Arrays.asList(fieldValue.split(",")));
                     } else if (fieldName.equals("AUTHORIZATIONS")) {
                         m.setQueryAuthorizations(fieldValue);
                     } else if (fieldName.equals("QUERY_TYPE")) {
@@ -630,7 +622,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
                     } else if (fieldName.equals("CREATE_CALL_TIME")) {
                         m.setCreateCallTime(Long.parseLong(fieldValue));
                     } else if (fieldName.startsWith("PAGE_METRICS")) {
-                        int index = fieldName.indexOf(".");
+                        int index = fieldName.indexOf('.');
                         if (-1 == index) {
                             log.error("Could not parse field name to extract repetition count: " + fieldName);
                         } else {
@@ -697,8 +689,6 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
                         m.addVersion(BaseQueryMetric.DATAWAVE, fieldValue);
                     } else if (fieldName.startsWith("VERSION.")) {
                         m.addVersion(fieldName.substring(8), fieldValue);
-                    } else if (fieldName.equals("YIELD_COUNT")) {
-                        m.setYieldCount(Long.parseLong(fieldValue));
                     } else if (fieldName.equals("LOGIN_TIME")) {
                         m.setLoginTime(Long.parseLong(fieldValue));
                     } else {
@@ -816,6 +806,9 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
                 try {
                     this.recordWriter.close(null);
                 } catch (Exception e) {
+                    if (e instanceof InterruptedException) {
+                        Thread.currentThread().interrupt();
+                    }
                     log.error(e.getMessage(), e);
                 }
             }

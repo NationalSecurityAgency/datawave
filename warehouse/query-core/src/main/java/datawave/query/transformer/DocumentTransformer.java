@@ -2,7 +2,6 @@ package datawave.query.transformer;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Map;
 import java.util.Map.Entry;
 
 import org.apache.accumulo.core.data.Key;
@@ -18,9 +17,9 @@ import datawave.core.query.logic.Flushable;
 import datawave.core.query.logic.WritesQueryMetrics;
 import datawave.core.query.logic.WritesResultCardinalities;
 import datawave.marking.MarkingFunctions;
+import datawave.marking.Markings;
 import datawave.microservice.query.Query;
 import datawave.query.attributes.Document;
-import datawave.util.StringUtils;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
 import datawave.webservice.query.result.event.Metadata;
@@ -36,7 +35,7 @@ import datawave.webservice.query.result.event.ResponseObjectFactory;
 public class DocumentTransformer extends DocumentTransformerSupport<Entry<Key,Value>,EventBase>
                 implements WritesQueryMetrics, WritesResultCardinalities, Flushable<EventBase> {
 
-    private static final Logger log = Logger.getLogger(DocumentTransformerSupport.class);
+    private static final Logger log = Logger.getLogger(DocumentTransformer.class);
 
     /**
      * By default, assume each cell still has the visibility attached to it
@@ -50,17 +49,17 @@ public class DocumentTransformer extends DocumentTransformerSupport<Entry<Key,Va
      * @param markingFunctions
      *            the marking functions
      */
-    public DocumentTransformer(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, MarkingFunctions markingFunctions,
+    public DocumentTransformer(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, MarkingFunctions<?> markingFunctions,
                     ResponseObjectFactory responseObjectFactory) {
         super(logic, settings, markingFunctions, responseObjectFactory);
     }
 
-    public DocumentTransformer(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, MarkingFunctions markingFunctions,
+    public DocumentTransformer(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, MarkingFunctions<?> markingFunctions,
                     ResponseObjectFactory responseObjectFactory, Boolean reducedResponse) {
         super(logic, settings, markingFunctions, responseObjectFactory, reducedResponse);
     }
 
-    public DocumentTransformer(String tableName, Query settings, MarkingFunctions markingFunctions, ResponseObjectFactory responseObjectFactory,
+    public DocumentTransformer(String tableName, Query settings, MarkingFunctions<?> markingFunctions, ResponseObjectFactory responseObjectFactory,
                     Boolean reducedResponse) {
         super(tableName, settings, markingFunctions, responseObjectFactory, reducedResponse);
     }
@@ -132,7 +131,7 @@ public class DocumentTransformer extends DocumentTransformerSupport<Entry<Key,Va
 
         String colf = documentKey.getColumnFamily().toString();
 
-        int index = colf.indexOf("\0");
+        int index = colf.indexOf('\0');
         Preconditions.checkArgument(-1 != index);
 
         String dataType = colf.substring(0, index);
@@ -163,13 +162,13 @@ public class DocumentTransformer extends DocumentTransformerSupport<Entry<Key,Va
         return output;
     }
 
-    protected EventBase buildResponse(Document document, Key documentKey, ColumnVisibility eventCV, String colf, String row, MarkingFunctions mf)
-                    throws MarkingFunctions.Exception {
+    protected EventBase buildResponse(Document document, Key documentKey, ColumnVisibility eventCV, String colf, String row,
+                    MarkingFunctions<?> markingFunctions) throws MarkingFunctions.Exception {
 
-        Map<String,String> markings = mf.translateFromColumnVisibility(eventCV);
+        Markings<?> markings = markingFunctions.translateFromColumnVisibility(eventCV);
 
         EventBase event = null;
-        final Collection<FieldBase<?>> documentFields = buildDocumentFields(documentKey, null, document, eventCV, mf);
+        final Collection<FieldBase<?>> documentFields = buildDocumentFields(documentKey, null, document, eventCV, markingFunctions);
         // if documentFields is empty, then the response contained only timing metadata
         if (!documentFields.isEmpty()) {
             event = this.responseObjectFactory.getEvent();
@@ -177,7 +176,7 @@ public class DocumentTransformer extends DocumentTransformerSupport<Entry<Key,Va
             event.setFields(new ArrayList<>(documentFields));
 
             Metadata metadata = new Metadata();
-            String[] colfParts = StringUtils.split(colf, '\0');
+            String[] colfParts = colf.split("\0");
             if (colfParts.length >= 1) {
                 metadata.setDataType(colfParts[0]);
             }

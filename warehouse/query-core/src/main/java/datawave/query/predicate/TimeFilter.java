@@ -9,6 +9,8 @@ import org.apache.log4j.Logger;
 
 import com.google.common.base.Predicate;
 
+import datawave.util.CompositeTimestamp;
+
 /**
  * Excludes documents which do not fall within the given time range
  */
@@ -36,7 +38,7 @@ public class TimeFilter {
         public boolean apply(Key input) {
             final long timestamp = input.getTimestamp();
 
-            return acceptedRange.containsLong(timestamp);
+            return acceptedRange.containsLong(CompositeTimestamp.getEventDate(timestamp));
         }
     }
 

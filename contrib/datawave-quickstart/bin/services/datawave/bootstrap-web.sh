@@ -1,10 +1,10 @@
 
-# You may override DW_WILDFLY_DIST_URI in your env ahead of time, and set as file:///path/to/file.tar.gz for local tarball, if needed
-# DW_WILDFLY_DIST_URI should, if possible, be using https. There are potential security risks by using http.
-DW_WILDFLY_DIST_URI="${DW_WILDFLY_DIST_URI:-https://download.jboss.org/wildfly/17.0.1.Final/wildfly-17.0.1.Final.tar.gz}"
-# The sha512 checksum for the tarball. Value should be the hash value only and does not include the file name. Cannot be left blank.
-DW_WILDFLY_DIST_SHA512_CHECKSUM="${DW_WILDFLY_DIST_SHA512_CHECKSUM:-fcbdff4bc275f478c3bf5f665a83e62468a920e58fcddeaa2710272dd0f1ce3154cdc371d5011763a6be24ae1a5e0bca0218cceea63543edb4b5cf22de60b485}"
-DW_WILDFLY_DIST="$( downloadTarball "${DW_WILDFLY_DIST_URI}" "${DW_DATAWAVE_SERVICE_DIR}" && echo "${tarball}" )"
+# Get these vars from the pom so users not building the container image can stay up to date
+DW_WILDFLY_VERSION="${DW_WILDFLY_VERSION:-$(mvn -o -q -f ${DW_CLOUD_HOME}/docker/pom.xml help:evaluate -DforceStdout -Dexpression=version.quickstart.wildfly | tail -1)}"
+DW_WILDFLY_DIST_SHA512_CHECKSUM="${DW_WILDFLY_DIST_SHA512_CHECKSUM:-$(mvn -o -q -f ${DW_CLOUD_HOME}/docker/pom.xml help:evaluate -DforceStdout -Dexpression=sha512.checksum.wildfly | tail -1)}"
+
+DW_WILDFLY_DIST_URI="${DW_WILDFLY_DIST_URI:-https://download.jboss.org/wildfly/${DW_WILDFLY_VERSION}.Final/wildfly-${DW_WILDFLY_VERSION}.Final.tar.gz}"
+DW_WILDFLY_DIST="$( basename "${DW_WILDFLY_DIST_URI}" )"
 DW_WILDFLY_BASEDIR="wildfly-install"
 DW_WILDFLY_SYMLINK="wildfly"
 
@@ -22,11 +22,20 @@ DW_DATAWAVE_WEB_CMD_FIND_ALL_PIDS="pgrep -d ' ' -f 'jboss.home.dir=${DW_CLOUD_HO
 DW_DATAWAVE_WEB_SYMLINK="datawave-webservice"
 DW_DATAWAVE_WEB_BASEDIR="datawave-webservice-install"
 
-getDataWaveTarball "${DW_DATAWAVE_WEB_TARBALL}"
-DW_DATAWAVE_WEB_DIST="${tarball}"
-
 # uncomment to enable environment passwords in the quickstart
 # export DW_ACCUMULO_PASSWORD="secret"
+
+function bootstrapWildfly() {
+    if [ ! -f "${DW_DATAWAVE_SERVICE_DIR}/${DW_WILDFLY_DIST}" ]; then
+        info "Wildfly distribution not detected. Attempting to bootstrap a dedicated install..."
+        downloadTarball "${DW_WILDFLY_DIST_URI}" "${DW_DATAWAVE_SERVICE_DIR}" || \
+          downloadMavenTarball "datawave-parent" "gov.nsa.datawave.quickstart" "wildfly" "${DW_WILDFLY_VERSION}" "${DW_DATAWAVE_SERVICE_DIR}" || \
+          ( fatal "failed to obtain Wildfly distribution" && return 1 )
+        DW_WILDFLY_DIST="${tarball}"
+    else
+      info "Wildfly distribution detected. Using local file ${DW_WILDFLY_DIST}"
+    fi
+}
 
 function datawaveWebIsRunning() {
     DW_DATAWAVE_WEB_PID_LIST="$(eval "${DW_DATAWAVE_WEB_CMD_FIND_ALL_PIDS}")"
@@ -54,17 +63,22 @@ function datawaveWebStatus() {
 }
 
 function datawaveWebIsInstalled() {
-    [ -L "${DW_CLOUD_HOME}/${DW_DATAWAVE_WEB_SYMLINK}" ] && return 0
-    [ -d "${DW_DATAWAVE_SERVICE_DIR}/${DW_DATAWAVE_WEB_BASEDIR}" ] && return 0
+    [ -L "${DW_CLOUD_HOME}/${DW_DATAWAVE_WEB_SYMLINK}" ] && \
+    [ -d "${DW_DATAWAVE_SERVICE_DIR}/${DW_DATAWAVE_WEB_BASEDIR}" ] && \
+    wildflyIsInstalled && return 0
 
-    [ -L "${DW_CLOUD_HOME}/${DW_WILDFLY_SYMLINK}" ] && return 0
+    return 1
+}
+
+function wildflyIsInstalled() {
+    [ -L "${DW_CLOUD_HOME}/${DW_WILDFLY_SYMLINK}" ] && \
     [ -d "${DW_DATAWAVE_SERVICE_DIR}/${DW_WILDFLY_BASEDIR}" ] && return 0
 
     return 1
 }
 
 function datawaveWebTest() {
-    "${DW_DATAWAVE_SERVICE_DIR}"/test-web/run.sh $@
+    "${DW_DATAWAVE_SERVICE_DIR}"/test-web/run.sh "$@"
 }
 
 function datawaveWebUninstall() {
@@ -100,6 +114,15 @@ function datawaveWebUninstall() {
 
 function datawaveWebInstall() {
    "${DW_DATAWAVE_SERVICE_DIR}"/install-web.sh
+      return_code=$?
+      # Check the return value
+      if [ $return_code -eq 0 ]; then
+          echo "datawave install-web.sh executed successfully."
+          return 0
+      else
+          echo "datawave install-web.sh failed with exit status: $return_code"
+          return $return_code
+      fi
 }
 
 function datawaveWebIsDeployed() {
@@ -116,6 +139,11 @@ function datawaveWebIsDeployed() {
    return 0
 }
 
+function datawaveWebReadyToStart() {
+    ss -ln | grep 8020 && ss -ln | grep 2181 && ss -ln | grep 9997 && return 0
+    return 1
+}
+
 function datawaveWebStart() {
 
     local debug=false
@@ -124,18 +152,36 @@ function datawaveWebStart() {
     [[ "${1}" == "--debug" || "${1}" == "-d" ]] && debug=true
     [[ -n "${1}" && "${debug}" == false ]] && error "Unrecognized option: ${1}" && return
 
-    ! hadoopIsRunning && hadoopStart
-    ! accumuloIsRunning && accumuloStart
+    hadoopIsRunning || hadoopStart || return 1
+    accumuloIsRunning || accumuloStart || return 1
+
+    # We need to wait until Hadoop, Zookeeper, and Accumulo are completely ready before starting web
+    local pollInterval=5
+    local maxAttempts=20
+
+    info "Polling for dependent services every ${pollInterval} seconds (${maxAttempts} attempts max)"
+
+    for (( i=1; i<=${maxAttempts}; i++ ))
+    do
+       if datawaveWebReadyToStart ; then
+          echo "    Hadoop, Zookeeper and Accumulo now ready (${i}/${maxAttempts})"
+          break
+       fi
+       echo "    -- Dependent services not ready yet (${i}/${maxAttempts})"
+
+       sleep $pollInterval
+    done
+    datawaveWebReadyToStart || return 1
 
     if datawaveWebIsRunning ; then
        info "Wildfly is already running"
     else
        if [ "${debug}" == true ] ; then
            info "Starting Wildfly in debug mode"
-           eval "${DW_DATAWAVE_WEB_CMD_START_DEBUG}" > /dev/null 2>&1
+           eval "${DW_DATAWAVE_WEB_CMD_START_DEBUG}" > /dev/null 2>&1 || return 1
        else
            info "Starting Wildfly"
-           eval "${DW_DATAWAVE_WEB_CMD_START}" > /dev/null 2>&1
+           eval "${DW_DATAWAVE_WEB_CMD_START}" > /dev/null 2>&1 || return 1
        fi
     fi
 
@@ -176,8 +222,8 @@ function datawaveWebDisplayBinaryInfo() {
   else
      echo " Local: Not loaded"
   fi
-  echo "Source: ${DW_WILDFLY_DIST_URI}"
-  local tarballName="$(basename "$DW_WILDFLY_DIST_URI")"
+  echo "Source: ${DW_WILDFLY_DIST}"
+  local tarballName="$(basename "$DW_WILDFLY_DIST")"
   if [[ -f "${DW_DATAWAVE_SERVICE_DIR}/${tarballName}" ]]; then
      echo " Local: ${DW_DATAWAVE_SERVICE_DIR}/${tarballName}"
   else

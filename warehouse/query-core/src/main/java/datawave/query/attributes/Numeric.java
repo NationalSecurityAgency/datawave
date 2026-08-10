@@ -22,7 +22,7 @@ import datawave.query.collections.FunctionalSet;
 import datawave.query.jexl.DatawaveJexlContext;
 
 public class Numeric extends Attribute<Numeric> implements Serializable {
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 5823344312405439698L;
 
     private static final NumberNormalizer normalizer = new NumberNormalizer();
 
@@ -49,9 +49,12 @@ public class Numeric extends Attribute<Numeric> implements Serializable {
 
     @Override
     public long sizeInBytes() {
-        return 20 + sizeInBytes(normalizedValue) + super.sizeInBytes(8);
-        // 20 is for a basic int Number
-        // 8 for string references
+        if (sizeInBytes == Long.MIN_VALUE) {
+            // 20 is for a basic int Number
+            // 8 for string references
+            sizeInBytes = 20 + sizeInBytes(normalizedValue) + super.sizeInBytes(8);
+        }
+        return sizeInBytes;
     }
 
     /**
@@ -69,10 +72,23 @@ public class Numeric extends Attribute<Numeric> implements Serializable {
     }
 
     private Number parseToNumber(String value) {
-        Number number = null;
+        // some documents will contain numeric data that is already encoded
+        // in those cases it is faster to check for encoding up front instead
+        // of finding out the hard way via exception.
+        try {
+            if (NumericalEncoder.isPossiblyEncoded(value)) {
+                BigDecimal bigDecimal = NumericalEncoder.decode(value);
+                return bigDecimal.doubleValue();
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        Number number;
         try {
             number = NumberUtils.createNumber(value);
         } catch (Exception ex) {
+            // alternatively, throw a shallow exception to avoid expensive calls to 'fill in stacktrace'
             BigDecimal bigDecimal = NumericalEncoder.decode(value);
             number = bigDecimal.doubleValue();
         }
@@ -110,12 +126,7 @@ public class Numeric extends Attribute<Numeric> implements Serializable {
 
     @Override
     public void write(DataOutput out) throws IOException {
-        write(out, false);
-    }
-
-    @Override
-    public void write(DataOutput out, boolean reducedResponse) throws IOException {
-        writeMetadata(out, reducedResponse);
+        writeMetadata(out);
         WritableUtils.writeString(out, normalizedValue);
         WritableUtils.writeVInt(out, toKeep ? 1 : 0);
     }
@@ -145,10 +156,15 @@ public class Numeric extends Attribute<Numeric> implements Serializable {
 
     @Override
     public int hashCode() {
-        HashCodeBuilder hcb = new HashCodeBuilder(113, 127);
-        hcb.append(super.hashCode()).append(value);
-
-        return hcb.toHashCode();
+        if (hashcode == Integer.MIN_VALUE) {
+            //  @formatter:off
+            hashcode = new HashCodeBuilder(113, 127)
+                    .append(super.hashCode())
+                    .append(value)
+                    .toHashCode();
+            //  @formatter:on
+        }
+        return hashcode;
     }
 
     @Override
@@ -173,12 +189,8 @@ public class Numeric extends Attribute<Numeric> implements Serializable {
 
     @Override
     public void write(Kryo kryo, Output output) {
-        write(kryo, output, false);
-    }
-
-    @Override
-    public void write(Kryo kryo, Output output, Boolean reducedResponse) {
-        writeMetadata(kryo, output, reducedResponse);
+        writeMetadata(kryo, output);
+        output.writeString(this.value.toString());
         output.writeString(this.normalizedValue);
         output.writeBoolean(this.toKeep);
     }
@@ -187,8 +199,9 @@ public class Numeric extends Attribute<Numeric> implements Serializable {
     public void read(Kryo kryo, Input input) {
         readMetadata(kryo, input);
         String stringValue = input.readString();
-        setValue(stringValue);
-        setNormalizedValue(stringValue);
+        String normalizedValue = input.readString();
+        this.value = NumberUtils.createNumber(stringValue);
+        this.normalizedValue = normalizedValue;
         this.toKeep = input.readBoolean();
         validate();
     }

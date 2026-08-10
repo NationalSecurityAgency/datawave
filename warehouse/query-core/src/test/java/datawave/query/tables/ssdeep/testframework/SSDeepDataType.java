@@ -21,10 +21,8 @@ import datawave.ingest.data.config.ingest.BaseIngestHelper;
 import datawave.ingest.input.reader.EventRecordReader;
 import datawave.ingest.mapreduce.handler.shard.AbstractColumnBasedHandler;
 import datawave.ingest.mapreduce.handler.ssdeep.SSDeepIndexHandler;
-import datawave.marking.MarkingFunctions;
 import datawave.query.testframework.AbstractDataTypeConfig;
 import datawave.query.testframework.FieldConfig;
-import datawave.query.testframework.RawDataManager;
 import datawave.query.testframework.RawMetaData;
 
 /**
@@ -173,14 +171,6 @@ public class SSDeepDataType extends AbstractDataTypeConfig {
         }
     }
 
-    // ==================================
-    // data manager info
-    private static final RawDataManager ssdeepManager = new SSDeepDataManager();
-
-    public static RawDataManager getManager() {
-        return ssdeepManager;
-    }
-
     /**
      * Creates a ssdeep datatype entry with all the key/value configuration settings.
      *
@@ -212,7 +202,7 @@ public class SSDeepDataType extends AbstractDataTypeConfig {
      *             invalid test data file
      */
     public SSDeepDataType(final String ssdeep, final String ingestFile, final FieldConfig config) throws IOException, URISyntaxException {
-        super(ssdeep, ingestFile, config, ssdeepManager);
+        super(ssdeep, ingestFile, config, SSDeepDataManager.getInstance());
         // NOTE: see super for default settings
 
         // set datatype settings
@@ -256,7 +246,7 @@ public class SSDeepDataType extends AbstractDataTypeConfig {
 
     @Override
     public String getSecurityMarkingFieldDomains() {
-        return MarkingFunctions.Default.COLUMN_VISIBILITY;
+        return "columnVisibility";
     }
 
     @Override

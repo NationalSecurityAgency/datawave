@@ -4,24 +4,24 @@ import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.BOUNDED_R
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DROPPED;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EVALUATION_ONLY;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_OR;
-import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_TERM;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_VALUE;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.INDEX_HOLE;
 
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl3.parser.ASTAndNode;
 import org.apache.commons.jexl3.parser.JexlNode;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.IllegalRangeArgumentException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.LiteralRange;
+import datawave.query.jexl.lookups.AsyncIndexLookup;
+import datawave.query.jexl.lookups.BoundedRangeIndexLookup;
 import datawave.query.jexl.lookups.IndexLookup;
 import datawave.query.jexl.lookups.IndexLookupMap;
-import datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.util.MetadataHelper;
@@ -30,7 +30,7 @@ import datawave.query.util.MetadataHelper;
  * Visits a Jexl tree, looks for bounded ranges, and replaces them with concrete values from the index
  */
 public class BoundedRangeIndexExpansionVisitor extends BaseIndexExpansionVisitor {
-    private static final Logger log = ThreadConfigurableLogger.getLogger(BoundedRangeIndexExpansionVisitor.class);
+    private static final Logger log = LoggerFactory.getLogger(BoundedRangeIndexExpansionVisitor.class);
 
     private final JexlASTHelper.RangeFinder rangeFinder;
 
@@ -40,6 +40,7 @@ public class BoundedRangeIndexExpansionVisitor extends BaseIndexExpansionVisitor
         super(config, scannerFactory, helper, "BoundedRangeIndexExpansion");
 
         rangeFinder = JexlASTHelper.findRange().indexedOnly(this.config.getDatatypeFilter(), this.helper).notDelayed();
+        this.stage = "range";
     }
 
     /**
@@ -75,13 +76,22 @@ public class BoundedRangeIndexExpansionVisitor extends BaseIndexExpansionVisitor
         QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(node);
 
         // don't traverse delayed nodes
-        if (instance.isAnyTypeOf(INDEX_HOLE, EVALUATION_ONLY, DROPPED, EXCEEDED_VALUE, EXCEEDED_TERM, EXCEEDED_OR)) {
+        if (instance.isAnyTypeOf(INDEX_HOLE, EVALUATION_ONLY, DROPPED, EXCEEDED_VALUE, EXCEEDED_OR)) {
             return RebuildingVisitor.copy(node);
         }
         // handle bounded range
         else if (instance.isType(BOUNDED_RANGE)) {
             LiteralRange<?> range = rangeFinder.getRange(node);
             if (range != null) {
+
+                if (range.areBoundsEquivalent()) {
+                    log.warn("lower and upper bound are equivalent: {}", range);
+                }
+
+                if (range.isLowerBoundGreaterThanUpperBound()) {
+                    log.error("lower bound is greater than the upper bound: {}", range);
+                }
+
                 try {
                     return buildIndexLookup(node, true, false, () -> createLookup(range));
                 } catch (IllegalRangeArgumentException e) {
@@ -96,13 +106,19 @@ public class BoundedRangeIndexExpansionVisitor extends BaseIndexExpansionVisitor
     }
 
     protected IndexLookup createLookup(LiteralRange<?> range) {
-        return ShardIndexQueryTableStaticMethods.expandRange(config, scannerFactory, range, executor);
+        AsyncIndexLookup lookup = new BoundedRangeIndexLookup(config, scannerFactory, range, executor);
+        lookup.setScanMonitor(monitor);
+        return lookup;
     }
 
     @Override
     protected void rebuildFutureJexlNode(FutureJexlNode futureJexlNode) {
         JexlNode currentNode = futureJexlNode.getOrigNode();
         IndexLookupMap fieldsToTerms = futureJexlNode.getLookup().lookup();
+
+        if (log.isDebugEnabled()) {
+            logResult(currentNode, fieldsToTerms);
+        }
 
         futureJexlNode.setRebuiltNode(JexlNodeFactory.createNodeTreeFromFieldsToValues(JexlNodeFactory.ContainerType.OR_NODE, false, currentNode, fieldsToTerms,
                         expandFields, expandValues, futureJexlNode.isKeepOriginalNode()));

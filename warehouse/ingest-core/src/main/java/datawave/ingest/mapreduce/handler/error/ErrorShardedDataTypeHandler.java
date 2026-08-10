@@ -1,5 +1,7 @@
 package datawave.ingest.mapreduce.handler.error;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
@@ -7,6 +9,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
+import org.apache.accumulo.access.AccessExpression;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configurable;
@@ -16,7 +19,8 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.StatusReporter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -40,7 +44,7 @@ import datawave.ingest.mapreduce.handler.shard.AbstractColumnBasedHandler;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.writer.ContextWriter;
-import datawave.marking.MarkingFunctions;
+import datawave.table.constants.ColumnFamilyConstants;
 
 /**
  * Handler that take events with processing errors or fatal errors and dumps them into a processing error table. This table will be used for subsequent
@@ -102,7 +106,7 @@ import datawave.marking.MarkingFunctions;
  */
 public class ErrorShardedDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends AbstractColumnBasedHandler<KEYIN>
                 implements ExtendedDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> {
-    private static final Logger log = Logger.getLogger(ErrorShardedDataTypeHandler.class);
+    private static final Logger log = LoggerFactory.getLogger(ErrorShardedDataTypeHandler.class);
 
     public static final String ERROR_PROP_PREFIX = "error.";
 
@@ -154,10 +158,11 @@ public class ErrorShardedDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends Abstract
         tableName = conf.get(ERROR_PROP_PREFIX + SHARD_DINDX_NAME);
         setShardDictionaryIndexTableName(tableName == null ? null : new Text(tableName));
 
-        try {
-            defaultVisibility = flatten(markingFunctions.translateToColumnVisibility(markingsHelper.getDefaultMarkings()));
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Failed to parse security marking configuration", e);
+        if (markingsHelper != null && markingsHelper.getDefaultMarkings() != null) {
+            AccessExpression ae = markingsHelper.getDefaultMarkings().toAccessExpression();
+            if (ae != null) {
+                defaultVisibility = ae.getExpression().getBytes(UTF_8);
+            }
         }
 
         log.info("ShardedErrorDataTypeHandler configured.");
@@ -226,8 +231,8 @@ public class ErrorShardedDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends Abstract
         // make a copy of the event to avoid side effects
         record = record.copy();
 
-        // set the event date to now to enable keeping track of when this error occurred (determines date for shard)
-        record.setDate(System.currentTimeMillis());
+        // set the event date to now enable keeping track of when this error occurred (determines date for shard)
+        record.setTimestamp(System.currentTimeMillis());
 
         // TODO: May want to check validity of record's security markings here and set defaults if necessary
 
@@ -310,8 +315,8 @@ public class ErrorShardedDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends Abstract
 
         // ShardId 'd' DataType\0UID\0Name for document content event using Event.Writable
         String colq = record.getDataType().outputName() + '\0' + record.getId() + '\0' + EVENT_CONTENT_FIELD;
-        Key k = createKey(getShardId(record), new Text(ExtendedDataTypeHandler.FULL_CONTENT_COLUMN_FAMILY), new Text(colq), getVisibility(record, null),
-                        record.getDate(), this.helper.getDeleteMode());
+        Key k = createKey(getShardId(record), new Text(ColumnFamilyConstants.FULL_CONTENT), new Text(colq), getVisibility(record, null), record.getTimestamp(),
+                        this.helper.getDeleteMode());
         BulkIngestKey ebKey = new BulkIngestKey(getShardTableName(), k);
         contextWriter.write(ebKey, value, context);
 
@@ -345,12 +350,7 @@ public class ErrorShardedDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends Abstract
     public byte[] getVisibility(RawRecordContainer event, NormalizedContentInterface value) {
         byte[] visibility;
         if (value != null && value.getMarkings() != null && !value.getMarkings().isEmpty()) {
-            try {
-                visibility = flatten(markingFunctions.translateToColumnVisibility(value.getMarkings()));
-            } catch (MarkingFunctions.Exception e) {
-                log.error("Failed to create visibility from markings, using default", e);
-                visibility = defaultVisibility;
-            }
+            visibility = flatten(value.getMarkings().toColumnVisibility());
         } else if (event.getVisibility() != null) {
             visibility = flatten(event.getVisibility());
         } else {

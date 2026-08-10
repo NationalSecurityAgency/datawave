@@ -22,7 +22,6 @@ import datawave.ingest.csv.config.helper.ExtendedCSVHelper;
 import datawave.ingest.data.config.CSVHelper;
 import datawave.ingest.data.config.ingest.BaseIngestHelper;
 import datawave.ingest.input.reader.EventRecordReader;
-import datawave.marking.MarkingFunctions;
 
 /**
  * Contains all of the relevant data needed to configure any of the cities data types.
@@ -185,14 +184,6 @@ public class CitiesDataType extends AbstractDataTypeConfig {
         }
     }
 
-    // ==================================
-    // data manager info
-    private static final RawDataManager cityManager = new CityDataManager();
-
-    public static RawDataManager getManager() {
-        return cityManager;
-    }
-
     /**
      * Creates a cities datatype entry with all of the key/value configuration settings.
      *
@@ -224,7 +215,7 @@ public class CitiesDataType extends AbstractDataTypeConfig {
      *             invalid test data file
      */
     public CitiesDataType(final String city, final String ingestFile, final FieldConfig config) throws IOException, URISyntaxException {
-        super(city, ingestFile, config, cityManager);
+        super(city, ingestFile, config, CityDataManager.getInstance());
 
         // NOTE: see super for default settings
         // set datatype settings
@@ -264,7 +255,7 @@ public class CitiesDataType extends AbstractDataTypeConfig {
 
     @Override
     public String getSecurityMarkingFieldDomains() {
-        return MarkingFunctions.Default.COLUMN_VISIBILITY;
+        return "columnVisibility";
     }
 
     @Override

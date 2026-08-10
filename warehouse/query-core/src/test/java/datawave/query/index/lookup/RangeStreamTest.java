@@ -842,7 +842,7 @@ public class RangeStreamTest {
 
         RangeStream rangeStream = getRangeStream(helper);
         rangeStream.streamPlans(script);
-        assertEquals(IndexStream.StreamContext.UNINDEXED, rangeStream.context());
+        assertEquals(IndexStream.StreamContext.ABSENT, rangeStream.context());
         assertEquals(Collections.emptyIterator(), rangeStream.iterator());
     }
 
@@ -1533,7 +1533,6 @@ public class RangeStreamTest {
     }
 
     private RangeStream getRangeStream(MetadataHelper helper) {
-        ScannerFactory scannerFactory = new ScannerFactory(config);
-        return new RangeStream(config, scannerFactory, helper);
+        return new RangeStream(config, helper);
     }
 }

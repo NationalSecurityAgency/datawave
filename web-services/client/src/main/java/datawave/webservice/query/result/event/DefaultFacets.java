@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Map;
 
 import javax.xml.bind.annotation.XmlAccessOrder;
 import javax.xml.bind.annotation.XmlAccessType;
@@ -12,6 +11,7 @@ import javax.xml.bind.annotation.XmlAccessorOrder;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlTransient;
 
+import datawave.marking.Markings;
 import datawave.webservice.query.data.ObjectSizeOf;
 import io.protostuff.Input;
 import io.protostuff.Message;
@@ -22,13 +22,15 @@ import io.protostuff.Schema;
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public class DefaultFacets extends FacetsBase implements Serializable, Message<DefaultFacets>, ObjectSizeOf {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -836236435709294127L;
 
-    public void setMarkings(Map<String,String> markings) {
+    @Override
+    public void setMarkings(Markings<?> markings) {
         this.markings = markings;
     }
 
-    public Map<String,String> getMarkings() {
+    @Override
+    public Markings<?> getMarkings() {
         return this.markings;
     }
 

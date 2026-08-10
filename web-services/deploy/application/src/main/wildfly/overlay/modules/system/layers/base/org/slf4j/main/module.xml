@@ -1,0 +1,9 @@
+<module name="org.slf4j" xmlns="urn:jboss:module:1.6">
+    <resources>
+        <resource-root path="slf4j-api-${version.slf4j}.jar"/>
+    </resources>
+
+    <dependencies>
+        <module name="org.slf4j.impl" services="import"/>
+    </dependencies>
+</module>

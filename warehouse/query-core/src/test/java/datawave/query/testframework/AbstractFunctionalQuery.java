@@ -15,6 +15,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -29,8 +30,11 @@ import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.client.MultiTableBatchWriter;
 import org.apache.accumulo.core.client.Scanner;
+import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.accumulo.core.client.admin.NewTableConfiguration;
 import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.KeyValue;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
@@ -69,7 +73,7 @@ import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.TreeEqualityVisitor;
-import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
+import datawave.query.planner.DatePartitionedQueryPlanner;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.tables.CountingShardQueryLogic;
 import datawave.query.tables.ShardQueryLogic;
@@ -174,7 +178,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         logic.setDateIndexHelperFactory(new DateIndexHelperFactory());
         logic.setMarkingFunctions(new Default());
         logic.setMetadataHelperFactory(new MetadataHelperFactory());
-        logic.setQueryPlanner(new DefaultQueryPlanner());
+        logic.setQueryPlanner(new DatePartitionedQueryPlanner());
         logic.setResponseObjectFactory(new DefaultResponseObjectFactory());
 
         logic.setCollectTimingDetails(true);
@@ -274,6 +278,9 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         try {
             this.logic = (ShardQueryLogic) (logicFactory.getQueryLogic("EventQuery", principal));
             this.countLogic = (CountingShardQueryLogic) (logicFactory.getQueryLogic("CountQuery", principal));
+            // this test is fundamentally broken because it does not handle intermediate results, which are now
+            // supported by the CountQuery
+            this.countLogic.setPageWaitTimeMillis(3600000);
         } catch (CloneNotSupportedException | QueryException e) {
             throw new RuntimeException("Unable to create query logics", e);
         }
@@ -292,6 +299,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         Logger.getLogger("datawave.query").setLevel(Level.DEBUG);
         Logger.getLogger("datawave.query.planner").setLevel(Level.DEBUG);
         Logger.getLogger("datawave.query.planner.DefaultQueryPlanner").setLevel(Level.DEBUG);
+        Logger.getLogger("datawave.query.planner.FederatedQueryPlanner").setLevel(Level.DEBUG);
     }
 
     // ============================================
@@ -353,6 +361,21 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
     protected Collection<String> getExpectedKeyResponse(final String query) {
         Date[] startEndDate = this.dataManager.getShardStartEndDate();
         return getExpectedKeyResponse(query, startEndDate[0], startEndDate[1]);
+    }
+
+    protected List<Map<String,String>> getExpectedEvents(final String query, final Collection<String> fields) {
+        List<Map<String,String>> events = new ArrayList<>();
+        Date[] startEndDate = this.dataManager.getShardStartEndDate();
+        QueryJexl jexl = new QueryJexl(query, this.dataManager, startEndDate[0], startEndDate[1]);
+        final Set<Map<String,String>> allData = jexl.evaluate();
+        for (Map<String,String> data : allData) {
+            Map<String,String> requestedData = new LinkedHashMap<>();
+            for (String field : fields) {
+                requestedData.put(field, data.get(field.toLowerCase()));
+            }
+            events.add(requestedData);
+        }
+        return events;
     }
 
     /**
@@ -545,7 +568,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
 
         RunningQuery runner = new RunningQuery(client, AccumuloConnectionFactory.Priority.NORMAL, this.countLogic, q, "", principal,
                         new QueryMetricFactoryImpl());
-        TransformIterator it = runner.getTransformIterator();
+        TransformIterator<?,?> it = runner.getTransformIterator();
         ShardQueryCountTableTransformer ctt = (ShardQueryCountTableTransformer) it.getTransformer();
         EventQueryResponseBase resp = (EventQueryResponseBase) ctt.createResponse(runner.next());
 
@@ -556,7 +579,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         EventBase<?,?> event = events.get(0);
         List<?> fields = event.getFields();
         Assert.assertEquals(1, fields.size());
-        FieldBase<?> count = (FieldBase) fields.get(0);
+        FieldBase<?> count = (FieldBase<?>) fields.get(0);
         String val = count.getValueString();
         if (log.isDebugEnabled()) {
             log.debug("expected count(" + expect.size() + ") actual count(" + val + ")");
@@ -605,6 +628,10 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
      *             error condition from query initialization
      */
     protected String getPlan(final String queryStr, boolean expandFields, boolean expandValues) throws Exception {
+        return getPlan(client, queryStr, expandFields, expandValues);
+    }
+
+    protected String getPlan(AccumuloClient client, final String queryStr, boolean expandFields, boolean expandValues) throws Exception {
         Date[] startEndDate = this.dataManager.getShardStartEndDate();
         if (log.isDebugEnabled()) {
             log.debug("  query[" + queryStr + "]  start(" + YMD_DateFormat.format(startEndDate[0]) + ")  end(" + YMD_DateFormat.format(startEndDate[1]) + ")");
@@ -693,50 +720,51 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
             return;
         }
 
-        ASTJexlScript expectedTree = JexlASTHelper.parseJexlQuery(expected);
-        expectedTree = TreeFlatteningRebuildingVisitor.flattenAll(expectedTree);
-        ASTJexlScript queryTree = JexlASTHelper.parseJexlQuery(query);
-        queryTree = TreeFlatteningRebuildingVisitor.flattenAll(queryTree);
+        ASTJexlScript expectedTree = JexlASTHelper.parseAndFlattenJexlQuery(expected);
+        ASTJexlScript queryTree = JexlASTHelper.parseAndFlattenJexlQuery(query);
         TreeEqualityVisitor.Comparison comparison = TreeEqualityVisitor.checkEquality(expectedTree, queryTree);
         if (!comparison.isEqual()) {
             throw new ComparisonFailure(comparison.getReason(), expected, query);
         }
     }
 
-    protected Multimap<String,Key> removeMetadataEntries(Set<String> fields, Text cf)
-                    throws AccumuloSecurityException, AccumuloException, TableNotFoundException {
-        Multimap<String,Key> metadataEntries = HashMultimap.create();
+    protected Multimap<String,KeyValue> removeMetadataEntries(Set<String> fields, Text cf)
+                    throws AccumuloSecurityException, AccumuloException, TableNotFoundException, IOException, TableExistsException {
+        Multimap<String,KeyValue> metadataEntries = HashMultimap.create();
+        Map<String,String> config = client.tableOperations().getConfiguration(QueryTestTableHelper.METADATA_TABLE_NAME);
+        client.tableOperations().create(QueryTestTableHelper.METADATA_TABLE_NAME + "_new", new NewTableConfiguration().setProperties(config));
         MultiTableBatchWriter multiTableWriter = client.createMultiTableBatchWriter(new BatchWriterConfig());
-        BatchWriter writer = multiTableWriter.getBatchWriter(QueryTestTableHelper.METADATA_TABLE_NAME);
-        for (String field : fields) {
-            Mutation mutation = new Mutation(new Text(field));
+        try (BatchWriter writer = multiTableWriter.getBatchWriter(QueryTestTableHelper.METADATA_TABLE_NAME + "_new")) {
             Scanner scanner = client.createScanner(QueryTestTableHelper.METADATA_TABLE_NAME, new Authorizations());
-            scanner.fetchColumnFamily(cf);
-            scanner.setRange(new Range(new Text(field)));
-            boolean foundEntries = false;
+            scanner.setRange(new Range());
             for (Map.Entry<Key,Value> entry : scanner) {
-                foundEntries = true;
-                metadataEntries.put(field, entry.getKey());
-                mutation.putDelete(entry.getKey().getColumnFamily(), entry.getKey().getColumnQualifier(), entry.getKey().getColumnVisibilityParsed());
+                Key key = entry.getKey();
+                String field = key.getRow().toString();
+                Value value = entry.getValue();
+                if (fields.contains(field) && key.getColumnFamily().equals(cf)) {
+                    metadataEntries.put(field, new KeyValue(key, value));
+                } else {
+                    Mutation mutation = new Mutation(new Text(field));
+                    mutation.put(key.getColumnFamily(), key.getColumnQualifier(), key.getColumnVisibilityParsed(), key.getTimestamp() + 1000, value);
+                    writer.addMutation(mutation);
+                }
             }
-            scanner.close();
-            if (foundEntries) {
-                writer.addMutation(mutation);
-            }
+            writer.flush();
         }
-        writer.close();
-        client.tableOperations().compact(QueryTestTableHelper.METADATA_TABLE_NAME, new Text("\0"), new Text("~"), true, true);
+        client.tableOperations().delete(QueryTestTableHelper.METADATA_TABLE_NAME);
+        client.tableOperations().rename(QueryTestTableHelper.METADATA_TABLE_NAME + "_new", QueryTestTableHelper.METADATA_TABLE_NAME);
         return metadataEntries;
     }
 
-    protected void addMetadataEntries(Multimap<String,Key> metadataEntries) throws AccumuloSecurityException, AccumuloException, TableNotFoundException {
+    protected void addMetadataEntries(Multimap<String,KeyValue> metadataEntries) throws AccumuloSecurityException, AccumuloException, TableNotFoundException {
         MultiTableBatchWriter multiTableWriter = client.createMultiTableBatchWriter(new BatchWriterConfig());
         BatchWriter writer = multiTableWriter.getBatchWriter(QueryTestTableHelper.METADATA_TABLE_NAME);
         for (String field : metadataEntries.keySet()) {
             Mutation mutation = new Mutation(new Text(field));
-            for (Key key : metadataEntries.get(field)) {
-                metadataEntries.put(field, key);
-                mutation.put(key.getColumnFamily(), key.getColumnQualifier(), key.getColumnVisibilityParsed(), new Value());
+            for (KeyValue kv : metadataEntries.get(field)) {
+                Key key = kv.getKey();
+                Value val = kv.getValue();
+                mutation.put(key.getColumnFamily(), key.getColumnQualifier(), key.getColumnVisibilityParsed(), key.getTimestamp() + 2000, val);
             }
             writer.addMutation(mutation);
         }

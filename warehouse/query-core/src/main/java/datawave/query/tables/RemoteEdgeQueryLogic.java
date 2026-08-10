@@ -58,7 +58,7 @@ public class RemoteEdgeQueryLogic extends BaseRemoteQueryLogic<EdgeBase> impleme
     }
 
     @Override
-    public QueryLogicTransformer<EdgeBase,EdgeBase> createTransformer(Query settings, MarkingFunctions markingFunctions,
+    public QueryLogicTransformer<EdgeBase,EdgeBase> createTransformer(Query settings, MarkingFunctions<?> markingFunctions,
                     ResponseObjectFactory responseObjectFactory) {
         return new EdgeBaseTransformer(settings, markingFunctions, responseObjectFactory, edgeFields);
     }
@@ -91,7 +91,7 @@ public class RemoteEdgeQueryLogic extends BaseRemoteQueryLogic<EdgeBase> impleme
         public boolean hasNext() {
             if (data.isEmpty() && !complete) {
                 try {
-                    EdgeQueryResponseBase response = (EdgeQueryResponseBase) remoteQueryService.next(getRemoteId(), getCurrentUser());
+                    EdgeQueryResponseBase response = (EdgeQueryResponseBase) uncheckedRemoteNext();
                     if (response != null) {
                         if (response.getTotalResults() == 0) {
                             if (!response.isPartialResults()) {
@@ -106,9 +106,9 @@ public class RemoteEdgeQueryLogic extends BaseRemoteQueryLogic<EdgeBase> impleme
                         // in this case we must have gotten a 204, so we are done
                         complete = true;
                     }
-                } catch (Exception e) {
+                } catch (RuntimeException e) {
                     complete = true;
-                    throw new RuntimeException(e.getMessage(), e);
+                    throw e;
                 }
             }
             return !data.isEmpty();
@@ -134,7 +134,7 @@ public class RemoteEdgeQueryLogic extends BaseRemoteQueryLogic<EdgeBase> impleme
 
     private class EdgeBaseTransformer extends EdgeQueryTransformerSupport<EdgeBase,EdgeBase> {
 
-        public EdgeBaseTransformer(Query settings, MarkingFunctions markingFunctions, ResponseObjectFactory responseObjectFactory, EdgeModelFields fields) {
+        public EdgeBaseTransformer(Query settings, MarkingFunctions<?> markingFunctions, ResponseObjectFactory responseObjectFactory, EdgeModelFields fields) {
             super(settings, markingFunctions, responseObjectFactory, fields);
         }
 

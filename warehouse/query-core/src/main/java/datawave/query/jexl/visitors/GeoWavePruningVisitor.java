@@ -52,9 +52,15 @@ public class GeoWavePruningVisitor extends RebuildingVisitor {
         return pruneTree(node, null, null);
     }
 
+    @SuppressWarnings("unchecked")
     public static <T extends JexlNode> T pruneTree(JexlNode node, Multimap<String,String> prunedTerms, MetadataHelper metadataHelper) {
         GeoWavePruningVisitor pruningVisitor = new GeoWavePruningVisitor(prunedTerms, metadataHelper);
-        return (T) node.jjtAccept(pruningVisitor, null);
+        T result = (T) node.jjtAccept(pruningVisitor, null);
+
+        RemoveExtraReferenceExpressionsVisitor.remove(result);
+        MergeAdjacentJunctionsVisitor.merge(result);
+
+        return result;
     }
 
     @Override

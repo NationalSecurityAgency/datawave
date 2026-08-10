@@ -31,9 +31,9 @@ import datawave.query.testframework.AccumuloSetup;
 import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.FileType;
 import datawave.query.testframework.FlattenData;
+import datawave.query.testframework.FlattenDataManager;
 import datawave.query.testframework.FlattenDataType;
 import datawave.query.testframework.FlattenDataType.FlattenBaseFields;
-import datawave.query.testframework.RawDataManager;
 import datawave.query.testframework.RawMetaData;
 
 /**
@@ -48,13 +48,12 @@ public class NormalFlattenQueryTest extends AbstractFunctionalQuery {
 
     protected static final FlattenMode flatMode = FlattenMode.NORMAL;
     protected static final FlattenDataType flatten;
-    protected static final RawDataManager manager;
 
     static {
         FieldConfig indexes = new NormalIndexing();
         FlattenData data = new FlattenData(NormalField.STARTDATE.name(), NormalField.EVENTID.name(), flatMode, NormalField.headers,
                         NormalField.metadataMapping);
-        manager = FlattenDataType.getManager(data);
+        FlattenDataManager.newInstance(data);
         try {
             flatten = new FlattenDataType(FlattenDataType.FlattenEntry.cityFlatten, indexes, data);
         } catch (IOException | URISyntaxException e) {
@@ -69,7 +68,7 @@ public class NormalFlattenQueryTest extends AbstractFunctionalQuery {
     }
 
     public NormalFlattenQueryTest() {
-        super(manager);
+        super(FlattenDataType.getManager());
     }
 
     @Test

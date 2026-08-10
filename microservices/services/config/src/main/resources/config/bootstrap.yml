@@ -1,0 +1,123 @@
+server:
+  port: 8888
+  servlet.context-path: '/${spring.application.name}'
+
+management:
+  endpoints:
+    web:
+      base-path: "/mgmt"
+
+logging:
+  level:
+    org.springframework.cloud: 'TRACE'
+
+spring:
+  application:
+    name: configserver
+  cloud:
+    consul:
+      enabled: false
+    config:
+      # Disable discovery by default. We'll turn it back on in the consul profile if that profile is enabled.
+      discovery:
+        enabled: false
+      server:
+        health:
+          enabled: false
+        git:
+          uri: '${CONFIG_GIT_URL}'
+          # Longer timeout since connections might be a bit slow during docker VM startup
+          timeout: 10
+  rabbitmq:
+    host: '${MESSAGING_SERVER_HOSTNAME:messaging}'
+
+# Define encryption information so that we can encrypt/decrypt passwords.
+# KEYSTORE_LOCATION should be defined in the environment (or on the command-line with --encrypt.key-store.location=location)
+#                   as the path to the keystore to use for encryptine/decrypting keys
+# KEYSTORE_PASSWORD should be defined in the environment (or on the command-line with --encrypt.key-store.password=password)
+#                   as the password used to access keystore (note that this defaults to an insecure password)
+# KEY_ALIAS should be defined in the environment (or on the command-line with --encrypt.key-store.alias=alias),
+#           if not certificate, as the alias within the keystore of the key to use for encryption. Use keytool -l to list the aliases of the keys in a keystore.
+encrypt:
+  failOnError: true
+  key-store:
+    location: '${KEYSTORE_LOCATION}'
+    password: '${KEYSTORE_PASSWORD}'
+    alias: '${KEY_ALIAS}'
+
+---
+
+spring:
+  config.activate.on-profile: 'dev'
+  cloud:
+    config:
+      server:
+        git:
+          # Override this on the command-line by passing --spring.cloud.config.server.git.uri=file:///path/to/config/repo
+          # If you change it to an SSH git URL, then you may need to add --spring.cloud.config.server.git.password=<your_private_key_password> if your private key is encrypted
+          uri: 'file:///tmp/microservice-config'
+  rabbitmq:
+    host: '${MESSAGING_SERVER_HOSTNAME:localhost}'
+
+encrypt:
+  failOnError: true
+  key-store:
+    location: 'classpath:/testServer.p12'
+    password: 'ChangeIt'
+    alias: '${KEY_ALIAS:certificate}'
+
+---
+
+spring:
+  config.activate.on-profile: 'consul'
+  cloud:
+    consul:
+      enabled: true
+      # Allow the default Consul host to be overridden via an environment variable
+      host: ${CONSUL_HOST:localhost}
+      discovery:
+        healthCheckPath: ${server.servlet.context-path}${management.endpoints.web.base-path}/health
+        healthCheckInterval: 15s
+        # We need the configPath tag and metadata entry in Consul to match our context
+        # path so that when clients auto-discover the config server, they will know
+        # how to build a full path to the config service.
+        # Note that the context-path contains a leading '/', which will be rejected by
+        # consul, so we will use the application name as the configPath, which matches
+        # the context-path without the leading '/'
+        tags:
+          configPath=${spring.application.name}
+        metadata:
+          configPath: ${spring.application.name}
+      # Allow a long time for the Consul agent to become available.
+      retry:
+        max-attempts: 120
+  rabbitmq:
+    discovery:
+      enabled: true
+      failFast: true
+
+---
+
+# For the "No Messaging" profile, we need to disable the AMQP bus, our custom RabbitMQ discovery, and the RabbitMQ health indicator.
+spring:
+  config.activate.on-profile: 'nomessaging'
+  cloud:
+    bus:
+      enabled: false
+  rabbitmq:
+    discovery:
+      enabled: false
+
+management:
+  health:
+    rabbit:
+      enabled: false
+
+---
+
+spring.config.activate.on-profile: 'open_actuator'
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"

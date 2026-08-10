@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -19,6 +20,7 @@ import com.google.common.base.Preconditions;
 import datawave.core.query.exception.EmptyObjectException;
 import datawave.core.query.logic.BaseQueryLogic;
 import datawave.data.type.StringType;
+import datawave.marking.AccessExpressionUtil;
 import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.Query;
 import datawave.query.attributes.Attribute;
@@ -36,20 +38,22 @@ public class FacetedTransformer extends DocumentTransformerSupport<Entry<Key,Val
 
     private static final Logger log = Logger.getLogger(FacetedTransformer.class);
 
+    private MarkingFunctions<?> markingFunctions;
+
     /*
      * By default, assume each cell still has the visibility attached to it
      */
-    public FacetedTransformer(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, MarkingFunctions markingFunctions,
+    public FacetedTransformer(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, MarkingFunctions<?> markingFunctions,
                     ResponseObjectFactory responseObjectFactory) {
         super(logic, settings, markingFunctions, responseObjectFactory);
     }
 
-    public FacetedTransformer(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, MarkingFunctions markingFunctions,
+    public FacetedTransformer(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, MarkingFunctions<?> markingFunctions,
                     ResponseObjectFactory responseObjectFactory, Boolean reducedResponse) {
         super(logic, settings, markingFunctions, responseObjectFactory, reducedResponse);
     }
 
-    public FacetedTransformer(String tableName, Query settings, MarkingFunctions markingFunctions, ResponseObjectFactory responseObjectFactory,
+    public FacetedTransformer(String tableName, Query settings, MarkingFunctions<?> markingFunctions, ResponseObjectFactory responseObjectFactory,
                     Boolean reducedResponse) {
         super(tableName, settings, markingFunctions, responseObjectFactory, reducedResponse);
     }
@@ -70,7 +74,7 @@ public class FacetedTransformer extends DocumentTransformerSupport<Entry<Key,Val
      * @return list of facets
      */
     protected Collection<FieldCardinalityBase> buildFacets(Key documentKey, String fieldName, Document document, ColumnVisibility topLevelColumnVisibility,
-                    MarkingFunctions markingFunctions) {
+                    MarkingFunctions<?> markingFunctions) {
 
         Set<FieldCardinalityBase> myFields = new HashSet<>();
 
@@ -104,7 +108,7 @@ public class FacetedTransformer extends DocumentTransformerSupport<Entry<Key,Val
      * @return list of facets
      */
     protected Collection<FieldCardinalityBase> buildFacets(Key documentKey, String fieldName, Attribute<?> attr, ColumnVisibility topLevelColumnVisibility,
-                    MarkingFunctions markingFunctions) {
+                    MarkingFunctions<?> markingFunctions) {
 
         Set<FieldCardinalityBase> myFields = new HashSet<>();
 
@@ -126,9 +130,8 @@ public class FacetedTransformer extends DocumentTransformerSupport<Entry<Key,Val
 
                     FieldCardinalityBase fc = this.responseObjectFactory.getFieldCardinality();
                     fc.setField(v.getFieldName());
-                    fc.setMarkings(markingFunctions.translateFromColumnVisibilityForAuths(attr.getColumnVisibility(), auths)); // reduces colvis based on
-                                                                                                                               // visibility
-                    fc.setColumnVisibility(new String(markingFunctions.translateToColumnVisibility(fc.getMarkings()).flatten()));
+                    fc.setMarkings(markingFunctions.translateFromColumnVisibilityForAuths(attr.getColumnVisibility(), auths));
+                    fc.setColumnVisibility(AccessExpressionUtil.normalize(fc.getMarkings().toAccessExpression()).getExpression());
                     fc.setLower(v.getFloorValue());
                     fc.setUpper(v.getCeilingValue());
                     fc.setCardinality(v.getEstimate().cardinality());
@@ -145,14 +148,14 @@ public class FacetedTransformer extends DocumentTransformerSupport<Entry<Key,Val
         return myFields;
     }
 
-    protected FacetsBase buildResponse(Document document, Key documentKey, ColumnVisibility eventCV, String colf, String row, MarkingFunctions mf)
-                    throws MarkingFunctions.Exception {
+    protected FacetsBase buildResponse(Document document, Key documentKey, ColumnVisibility eventCV, String colf, String row,
+                    MarkingFunctions<?> markingFunctions) throws MarkingFunctions.Exception {
 
         FacetsBase facetedResponse = responseObjectFactory.getFacets();
 
-        final Collection<FieldCardinalityBase> documentFields = buildFacets(documentKey, null, document, eventCV, mf);
+        final Collection<FieldCardinalityBase> documentFields = buildFacets(documentKey, null, document, eventCV, markingFunctions);
 
-        facetedResponse.setMarkings(mf.translateFromColumnVisibility(eventCV));
+        facetedResponse.setMarkings(markingFunctions.translateFromColumnVisibility(eventCV));
         facetedResponse.setFields(new ArrayList<>(documentFields));
 
         // assign an estimate of the event size based on the document size
@@ -166,7 +169,7 @@ public class FacetedTransformer extends DocumentTransformerSupport<Entry<Key,Val
     @Override
     public BaseQueryResponse createResponse(List<Object> resultList) {
         FacetQueryResponseBase response = responseObjectFactory.getFacetQueryResponse();
-        Set<ColumnVisibility> combinedColumnVisibility = new HashSet<>();
+        Collection<String> visibilities = new HashSet<>();
 
         for (Object result : resultList) {
             FacetsBase facet = (FacetsBase) result;
@@ -177,15 +180,25 @@ public class FacetedTransformer extends DocumentTransformerSupport<Entry<Key,Val
 
             for (FieldCardinalityBase fcb : facet.getFields()) {
                 if (StringUtils.isNotBlank(fcb.getColumnVisibility())) {
-                    combinedColumnVisibility.add(new ColumnVisibility(fcb.getColumnVisibility()));
+                    visibilities.add(fcb.getColumnVisibility());
                 }
             }
         }
 
+        ColumnVisibility cv;
         try {
-            ColumnVisibility columnVisibility = this.markingFunctions.combine(combinedColumnVisibility);
-            response.setMarkings(this.markingFunctions.translateFromColumnVisibility(columnVisibility));
+            if (null == markingFunctions) {
+                markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
+            }
+            // Calculate the columnVisibility for this key from the combiner.
+            cv = markingFunctions.combineVisibilities(visibilities.stream().map(ColumnVisibility::new).collect(Collectors.toList()));
+        } catch (Exception e) {
+            log.error("Could not create combined columnVisibility for the count", e);
+            return null;
+        }
 
+        try {
+            response.setMarkings(markingFunctions.translateFromColumnVisibility(cv));
         } catch (MarkingFunctions.Exception e) {
             log.warn(e);
             // original ignored these exceptions
@@ -228,7 +241,7 @@ public class FacetedTransformer extends DocumentTransformerSupport<Entry<Key,Val
 
         String colf = documentKey.getColumnFamily().toString();
 
-        int index = colf.indexOf("\0");
+        int index = colf.indexOf('\0');
         Preconditions.checkArgument(-1 != index);
 
         String dataType = colf.substring(0, index);

@@ -6,7 +6,6 @@ import java.util.TreeSet;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.commons.lang3.StringUtils;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 
@@ -16,7 +15,8 @@ import datawave.query.table.parser.EventKeyValueFactory.EventKeyValue;
 
 public class TermFrequencyKeyValueFactory {
 
-    public static TermFrequencyKeyValue parse(Key key, Value value, Authorizations auths, MarkingFunctions markingFunctions) throws MarkingFunctions.Exception {
+    public static TermFrequencyKeyValue parse(Key key, Value value, Authorizations auths, MarkingFunctions<?> markingFunctions)
+                    throws MarkingFunctions.Exception {
         if (null == key) {
             throw new IllegalArgumentException("Cannot pass null key to TermFrequencyKeyValueFactory");
         }
@@ -24,7 +24,7 @@ public class TermFrequencyKeyValueFactory {
         TermFrequencyKeyValue t = new TermFrequencyKeyValue();
         t.setShardId(key.getRow().toString());
 
-        String[] field = StringUtils.split(key.getColumnQualifier().toString(), "\0");
+        String[] field = key.getColumnQualifier().toString().split("\0");
         if (field.length > 0) {
             t.setDatatype(field[0]);
         }
@@ -55,7 +55,7 @@ public class TermFrequencyKeyValueFactory {
         return t;
     }
 
-    protected static void parseColumnVisibility(TermFrequencyKeyValue tfkv, Key key, Authorizations auths, MarkingFunctions markingFunctions)
+    protected static void parseColumnVisibility(TermFrequencyKeyValue tfkv, Key key, Authorizations auths, MarkingFunctions<?> markingFunctions)
                     throws MarkingFunctions.Exception {
         tfkv.setMarkings(markingFunctions.translateFromColumnVisibilityForAuths(key.getColumnVisibilityParsed(), auths));
     }

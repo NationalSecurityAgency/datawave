@@ -62,12 +62,7 @@ public class Cardinality extends Attribute<Cardinality> {
 
     @Override
     public void write(DataOutput out) throws IOException {
-        write(out, false);
-    }
-
-    @Override
-    public void write(DataOutput out, boolean reducedResponse) throws IOException {
-        writeMetadata(out, reducedResponse);
+        writeMetadata(out);
         WritableUtils.writeString(out, content.fieldName);
         WritableUtils.writeString(out, content.lower);
         WritableUtils.writeString(out, content.upper);
@@ -120,12 +115,12 @@ public class Cardinality extends Attribute<Cardinality> {
                 return -1;
             }
         } else if (this.isMetadataSet()) {
-            byte[] cvBytes = this.getColumnVisibility().getExpression();
+            byte[] cvBytes = this.getColumnVisibilityBytes();
             if (null == cvBytes) {
                 cvBytes = Constants.EMPTY_BYTES;
             }
 
-            byte[] otherCVBytes = other.getColumnVisibility().getExpression();
+            byte[] otherCVBytes = other.getColumnVisibilityBytes();
             if (null == otherCVBytes) {
                 otherCVBytes = Constants.EMPTY_BYTES;
             }
@@ -133,7 +128,7 @@ public class Cardinality extends Attribute<Cardinality> {
             int result = WritableComparator.compareBytes(cvBytes, 0, cvBytes.length, otherCVBytes, 0, otherCVBytes.length);
 
             if (result == 0) {
-                result = new Long(this.getTimestamp()).compareTo(other.getTimestamp());
+                result = Long.compare(this.getTimestamp(), other.getTimestamp());
             }
 
             return result;
@@ -151,12 +146,7 @@ public class Cardinality extends Attribute<Cardinality> {
 
     @Override
     public void write(Kryo kryo, Output output) {
-        write(kryo, output, false);
-    }
-
-    @Override
-    public void write(Kryo kryo, Output output, Boolean reducedResponse) {
-        super.writeMetadata(kryo, output, reducedResponse);
+        super.writeMetadata(kryo, output);
         output.writeString(this.content.fieldName);
         output.writeString(this.content.lower);
         output.writeString(this.content.upper);

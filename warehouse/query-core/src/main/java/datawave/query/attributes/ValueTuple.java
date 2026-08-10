@@ -2,6 +2,7 @@ package datawave.query.attributes;
 
 import java.util.Collection;
 
+import org.apache.accumulo.core.data.Key;
 import org.apache.commons.lang.builder.CompareToBuilder;
 
 import com.google.common.base.Objects;
@@ -49,6 +50,27 @@ public class ValueTuple extends Tuple3<String,Object,Object> implements Comparab
 
     public Attribute<?> getSource() {
         return source;
+    }
+
+    public Key getSourceMetadata() {
+        if (source != null) {
+            return source.getMetadata();
+        }
+        return null;
+    }
+
+    public static Attribute<?> getSource(Object value) {
+        if (value instanceof ValueTuple) {
+            return ((ValueTuple) value).getSource();
+        }
+        return null;
+    }
+
+    public static Key getSourceMetadata(Object value) {
+        if (value instanceof ValueTuple) {
+            return ((ValueTuple) value).getSourceMetadata();
+        }
+        return null;
     }
 
     public static Object getValue(Object value) {

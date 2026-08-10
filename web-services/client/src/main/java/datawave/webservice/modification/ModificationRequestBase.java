@@ -25,7 +25,7 @@ public class ModificationRequestBase implements Serializable {
 
     private static String COLUMN_VISIBILITY = "columnVisibility";
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 4312291034126058550L;
 
     @XmlEnum(String.class)
     public enum MODE {
@@ -72,7 +72,7 @@ public class ModificationRequestBase implements Serializable {
 
         @Override
         public Map<String,String> unmarshal(DefaultFieldMarking value) throws Exception {
-            HashMap<String,String> fieldMarkings = new HashMap<String,String>();
+            HashMap<String,String> fieldMarkings = new HashMap<>();
             fieldMarkings.put(COLUMN_VISIBILITY, value.fieldColumnVisibility);
             return fieldMarkings;
         }

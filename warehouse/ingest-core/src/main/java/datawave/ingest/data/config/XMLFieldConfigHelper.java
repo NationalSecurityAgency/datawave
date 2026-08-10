@@ -14,8 +14,8 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
-import org.apache.log4j.Logger;
-import org.apache.xerces.jaxp.SAXParserFactoryImpl;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
@@ -29,25 +29,38 @@ import datawave.ingest.data.config.ingest.VirtualIngest;
 /** Helper class to read XML based Field Configurations */
 public final class XMLFieldConfigHelper implements FieldConfigHelper {
 
-    private static final Logger log = Logger.getLogger(XMLFieldConfigHelper.class);
+    private static final Logger log = LoggerFactory.getLogger(XMLFieldConfigHelper.class);
 
-    /** be explicit and use Apache Xerces-J here instead of relying on java to plug in the proper parser */
-    private static final SAXParserFactory parserFactory = SAXParserFactoryImpl.newInstance();
+    /**
+     * be explicit and use Apache Xerces-J here instead of relying on java to plug in the proper parser
+     */
+    private static final SAXParserFactory parserFactory = SAXParserFactory.newInstance();
 
-    private boolean noMatchStored = true;
-    private boolean noMatchIndexed = false;
-    private boolean noMatchReverseIndexed = false;
-    private boolean noMatchTokenized = false;
-    private boolean noMatchReverseTokenized = false;
+    private final FieldInfo noMatchFieldInfo = new FieldInfo(true, false, false, false, false);
     private String noMatchFieldType = null;
 
+    private final String configSource;
     private final Map<String,FieldInfo> knownFields = new HashMap<>();
     private final Map<String,String[]> combinedFields = new HashMap<>();
     private VirtualIngest.GroupingPolicy defaultGroupingPolicy = VirtualIngest.VirtualFieldNormalizer.DEFAULT_GROUPING_POLICY;
     private final Map<String,VirtualIngest.GroupingPolicy> groupingPolicy = new HashMap<>();
     private boolean defaultAllowMissing = false;
     private final Map<String,Boolean> allowMissing = new HashMap<>();
+    /**
+     * Memoizes the fully resolved FieldInfo per field name, including pattern matches and no-match results. Not thread-safe: instances are confined to a single
+     * thread.
+     */
+    private final Map<String,FieldInfo> resolvedFields = new HashMap<>();
+    /**
+     * Single-entry "last field looked up" cache in front of {@link #resolvedFields}. Ingest call sites query the same field name several times in a row (once
+     * per {@code is*Field} accessor), so checking these two fields first skips the hash probe on repeat lookups. Relies on the same thread confinement as
+     * {@link #resolvedFields}.
+     */
+    private String previousFieldName;
+    private FieldInfo previousFieldInfo;
     private TreeMap<Matcher,String> patterns = new TreeMap<>(new BaseIngestHelper.MatcherComparator());
+
+    private static final String UNEXPECTED_ATTRIBUTE = "Unexpected attribute encountered in: ";
 
     public static class FieldInfo {
         boolean stored;
@@ -56,6 +69,16 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
         boolean tokenized;
         boolean reverseTokenized;
         boolean combined;
+
+        FieldInfo() {}
+
+        FieldInfo(boolean stored, boolean indexed, boolean reverseIndexed, boolean tokenized, boolean reverseTokenized) {
+            this.stored = stored;
+            this.indexed = indexed;
+            this.reverseIndexed = reverseIndexed;
+            this.tokenized = tokenized;
+            this.reverseTokenized = reverseTokenized;
+        }
     }
 
     /**
@@ -65,9 +88,9 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
      *            the field configuration file name
      * @param baseIngestHelper
      *            the ingest helper
+     * @return null if no a null value was specified for fieldConfigFile - or a populated FieldConfigHelper.
      * @throws IllegalArgumentException
      *             if the file can't be found or an exception occurs when reading the file.
-     * @return null if no a null value was specified for fieldConfigFile - or a populated FieldConfigHelper.
      */
     public static XMLFieldConfigHelper load(String fieldConfigFile, BaseIngestHelper baseIngestHelper) {
         if (fieldConfigFile == null) {
@@ -76,8 +99,8 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
 
         try (InputStream in = getAsStream(fieldConfigFile)) {
             if (in != null) {
-                log.info("Loading field configuration from configuration file: " + fieldConfigFile);
-                return new XMLFieldConfigHelper(in, baseIngestHelper);
+                log.info("Loading field configuration from configuration file: {}", fieldConfigFile);
+                return new XMLFieldConfigHelper(in, baseIngestHelper, fieldConfigFile);
             } else {
                 throw new IllegalArgumentException("Field config file '" + fieldConfigFile + "' not found!");
             }
@@ -99,7 +122,7 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
             try {
                 return uri.toURL().openStream();
             } catch (IOException e) {
-                log.error("Could not open config location: " + fieldConfigPath, e);
+                log.error("Could not open config location: {}", fieldConfigPath, e);
                 return null;
             }
         }
@@ -107,17 +130,23 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
 
     public String toString() {
         return "[FieldConfigHelper: " + knownFields.size() + " known fields, " + patterns.size() + " of those are patterns, " + "nomatch, indexed:"
-                        + noMatchIndexed + " reverseIndexed:" + noMatchReverseIndexed + " tokenized:" + noMatchTokenized + " reverseTokenized:"
-                        + noMatchReverseTokenized + "]";
+                        + isNoMatchIndexed() + " reverseIndexed:" + isNoMatchReverseIndexed() + " tokenized:" + isNoMatchTokenized() + " reverseTokenized:"
+                        + isNoMatchReverseTokenized() + "]";
 
     }
 
     public XMLFieldConfigHelper(InputStream in, BaseIngestHelper helper) throws ParserConfigurationException, SAXException, IOException {
+        this(in, helper, null);
+    }
+
+    public XMLFieldConfigHelper(InputStream in, BaseIngestHelper helper, String source) throws ParserConfigurationException, SAXException, IOException {
+        this.configSource = source;
+
         final FieldConfigHandler handler = new FieldConfigHandler(this, helper);
         SAXParser parser = parserFactory.newSAXParser();
         parser.parse(in, handler);
 
-        log.info("Loaded FieldConfigHelper: " + this);
+        log.info("Loaded FieldConfigHelper: {}", this);
     }
 
     public boolean addKnownField(String fieldName, FieldInfo info) {
@@ -149,6 +178,11 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
         allowMissing.put(name, isAllowed);
     }
 
+    @Override
+    public String describeSource() {
+        return configSource;
+    }
+
     public boolean addKnownFieldPattern(String fieldName, FieldInfo info, Matcher pattern) {
         patterns.put(pattern, fieldName);
         return addKnownField(fieldName, info);
@@ -160,77 +194,57 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
 
     @Override
     public boolean isStoredField(String fieldName) {
-        if (knownFields.containsKey(fieldName)) {
-            return this.knownFields.get(fieldName).stored;
-        }
-
-        String pattern = findMatchingPattern(fieldName);
-        if (pattern != null) {
-            return this.knownFields.get(pattern).stored;
-        }
-
-        return isNoMatchStored();
+        return getFieldInfo(fieldName).stored;
     }
 
     @Override
     public boolean isIndexedField(String fieldName) {
-        if (knownFields.containsKey(fieldName)) {
-            return this.knownFields.get(fieldName).indexed;
-        }
-
-        String pattern = findMatchingPattern(fieldName);
-        if (pattern != null) {
-            return this.knownFields.get(pattern).indexed;
-        }
-
-        return isNoMatchIndexed();
+        return getFieldInfo(fieldName).indexed;
     }
 
     @Override
     public boolean isIndexOnlyField(String fieldName) {
-        return isIndexedField(fieldName) && !isStoredField(fieldName);
+        FieldInfo info = getFieldInfo(fieldName);
+        return info.indexed && !info.stored;
     }
 
     @Override
     public boolean isReverseIndexedField(String fieldName) {
-        if (knownFields.containsKey(fieldName)) {
-            return this.knownFields.get(fieldName).reverseIndexed;
-        }
-
-        String pattern = findMatchingPattern(fieldName);
-        if (pattern != null) {
-            return this.knownFields.get(pattern).reverseIndexed;
-        }
-
-        return isNoMatchReverseIndexed();
+        return getFieldInfo(fieldName).reverseIndexed;
     }
 
     @Override
     public boolean isTokenizedField(String fieldName) {
-        if (knownFields.containsKey(fieldName)) {
-            return this.knownFields.get(fieldName).tokenized;
-        }
-
-        String pattern = findMatchingPattern(fieldName);
-        if (pattern != null) {
-            return this.knownFields.get(pattern).tokenized;
-        }
-
-        return isNoMatchTokenized();
+        return getFieldInfo(fieldName).tokenized;
     }
 
     @Override
     public boolean isReverseTokenizedField(String fieldName) {
-        if (knownFields.containsKey(fieldName)) {
-            return this.knownFields.get(fieldName).reverseTokenized;
-        }
+        return getFieldInfo(fieldName).reverseTokenized;
+    }
 
-        String pattern = findMatchingPattern(fieldName);
-        if (pattern != null) {
-            return this.knownFields.get(pattern).reverseTokenized;
+    private FieldInfo getFieldInfo(String fieldName) {
+        if (fieldName.equals(previousFieldName)) {
+            return previousFieldInfo;
         }
+        FieldInfo info = resolvedFields.computeIfAbsent(fieldName, this::resolveFieldInfo);
+        previousFieldName = fieldName;
+        previousFieldInfo = info;
+        return info;
+    }
 
-        return isNoMatchReverseTokenized();
+    private FieldInfo resolveFieldInfo(String fieldName) {
+        FieldInfo info = knownFields.get(fieldName);
+        if (info != null) {
+            return info;
+        }
+        if (!patterns.isEmpty()) {
+            String pattern = findMatchingPattern(fieldName);
+            if (pattern != null) {
+                return knownFields.get(pattern);
+            }
+        }
+        return noMatchFieldInfo;
     }
 
     @Override
@@ -254,43 +268,47 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
     }
 
     public boolean isNoMatchStored() {
-        return noMatchStored;
+        return noMatchFieldInfo.stored;
     }
 
     public void setNoMatchStored(boolean noMatchStored) {
-        this.noMatchStored = noMatchStored;
+        this.noMatchFieldInfo.stored = noMatchStored;
     }
 
     public boolean isNoMatchIndexed() {
-        return noMatchIndexed;
+        return noMatchFieldInfo.indexed;
     }
 
     public void setNoMatchIndexed(boolean noMatchIndexed) {
-        this.noMatchIndexed = noMatchIndexed;
+        this.noMatchFieldInfo.indexed = noMatchIndexed;
     }
 
     public boolean isNoMatchReverseIndexed() {
-        return noMatchReverseIndexed;
+        return noMatchFieldInfo.reverseIndexed;
     }
 
     public void setNoMatchReverseIndexed(boolean noMatchReverseIndexed) {
-        this.noMatchReverseIndexed = noMatchReverseIndexed;
+        this.noMatchFieldInfo.reverseIndexed = noMatchReverseIndexed;
     }
 
     public boolean isNoMatchTokenized() {
-        return noMatchTokenized;
+        return noMatchFieldInfo.tokenized;
     }
 
     public void setNoMatchTokenized(boolean noMatchTokenized) {
-        this.noMatchTokenized = noMatchTokenized;
+        this.noMatchFieldInfo.tokenized = noMatchTokenized;
     }
 
     public boolean isNoMatchReverseTokenized() {
-        return noMatchReverseTokenized;
+        return noMatchFieldInfo.reverseTokenized;
     }
 
     public void setNoMatchReverseTokenized(boolean noMatchReverseTokenized) {
-        this.noMatchReverseTokenized = noMatchReverseTokenized;
+        this.noMatchFieldInfo.reverseTokenized = noMatchReverseTokenized;
+    }
+
+    Map<String,FieldInfo> getResolvedFields() {
+        return this.resolvedFields;
     }
 
     /**
@@ -397,7 +415,7 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
                 } else if (ALLOW_MISSING.equals(qn)) {
                     this.fieldHelper.setDefaultAllowMissing(Boolean.parseBoolean(lv));
                 } else {
-                    throw new IllegalArgumentException("Unexpected attribute encounteded in: " + uri + " in 'default' tag: '" + qn + "'");
+                    throw new IllegalArgumentException(UNEXPECTED_ATTRIBUTE + uri + " in 'default' tag: '" + qn + "'");
                 }
             }
 
@@ -439,7 +457,7 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
                     }
                     seenAttr.remove(INDEX_TYPE);
                 } else {
-                    throw new IllegalArgumentException("Unexpected attribute encounteded in: " + uri + " in 'nomatch' tag: '" + qn + "'");
+                    throw new IllegalArgumentException(UNEXPECTED_ATTRIBUTE + uri + " in 'nomatch' tag: '" + qn + "'");
                 }
             }
 
@@ -495,7 +513,7 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
                 } else if (ALLOW_MISSING.equals(qn)) {
                     this.fieldHelper.addAllowMissing(name, Boolean.parseBoolean(lv));
                 } else {
-                    throw new IllegalArgumentException("Unexpected attribute encounteded in: " + uri + " in 'field' tag: '" + qn + "'");
+                    throw new IllegalArgumentException(UNEXPECTED_ATTRIBUTE + uri + " in 'field' tag: '" + qn + "'");
                 }
             }
 
@@ -509,7 +527,7 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
                 if (this.ingestHelper != null) {
                     this.ingestHelper.updateDatawaveTypes(name, fieldType);
                 } else if (fieldType.equals(this.defaultFieldType)) {
-                    log.warn("No BaseIngestHelper set, ignoring type information for " + name + " in configuration file");
+                    log.warn("No BaseIngestHelper set, ignoring type information for {} in configuration file", name);
                 }
             }
         }
@@ -550,7 +568,7 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
                 } else if (INDEX_TYPE.equals(qn)) {
                     fieldType = lv;
                 } else {
-                    throw new IllegalArgumentException("Unexpected attribute encounteded in: " + uri + " in 'field' tag: '" + qn + "'");
+                    throw new IllegalArgumentException(UNEXPECTED_ATTRIBUTE + uri + " in 'field' tag: '" + qn + "'");
                 }
             }
 
@@ -565,7 +583,7 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
                 if (this.ingestHelper != null) {
                     this.ingestHelper.updateDatawaveTypes(pattern, fieldType);
                 } else if (!fieldType.equals(this.defaultFieldType)) {
-                    log.warn("No BaseIngestHelper set, ignoring type information for " + pattern + " in configuration file");
+                    log.warn("No BaseIngestHelper set, ignoring type information for {} in configuration file", pattern);
                 }
             }
         }

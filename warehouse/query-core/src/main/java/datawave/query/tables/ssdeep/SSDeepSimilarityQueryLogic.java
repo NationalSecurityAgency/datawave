@@ -3,17 +3,14 @@ package datawave.query.tables.ssdeep;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Multimap;
 
@@ -23,9 +20,9 @@ import datawave.core.query.logic.BaseQueryLogic;
 import datawave.core.query.logic.QueryLogicTransformer;
 import datawave.microservice.query.Query;
 import datawave.query.config.SSDeepSimilarityQueryConfiguration;
+import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.tables.ScannerFactory;
-import datawave.util.ssdeep.ChunkSizeEncoding;
-import datawave.util.ssdeep.IntegerEncoding;
+import datawave.query.tables.chained.iterators.LazyLoadingRangesIterator;
 import datawave.util.ssdeep.NGramGenerator;
 import datawave.util.ssdeep.NGramTuple;
 import datawave.util.ssdeep.SSDeepHash;
@@ -33,11 +30,13 @@ import datawave.webservice.query.exception.QueryException;
 
 public class SSDeepSimilarityQueryLogic extends BaseQueryLogic<ScoredSSDeepPair> {
 
-    private static final Logger log = Logger.getLogger(SSDeepSimilarityQueryLogic.class);
+    private static final Logger log = LoggerFactory.getLogger(SSDeepSimilarityQueryLogic.class);
 
     private SSDeepSimilarityQueryConfiguration config;
 
-    ScannerFactory scannerFactory;
+    private ScannerFactory scannerFactory;
+
+    private LazyLoadingRangesIterator lazyLoadingRangesIterator;
 
     public SSDeepSimilarityQueryLogic() {
         super();
@@ -59,12 +58,13 @@ public class SSDeepSimilarityQueryLogic extends BaseQueryLogic<ScoredSSDeepPair>
 
     @Override
     public GenericQueryConfiguration initialize(AccumuloClient accumuloClient, Query settings, Set<Authorizations> auths) throws Exception {
-        final SSDeepSimilarityQueryConfiguration config = getConfig();
+        final SSDeepSimilarityQueryConfiguration config = new SSDeepSimilarityQueryConfiguration(getConfig());
+        config.setState(new SSDeepSimilarityQueryState());
         config.setQuery(settings);
         config.setClient(accumuloClient);
         config.setAuthorizations(auths);
         this.scannerFactory = new ScannerFactory(config);
-        setupRanges(settings, config);
+        setupQueryMap(settings, config);
         return config;
     }
 
@@ -74,42 +74,34 @@ public class SSDeepSimilarityQueryLogic extends BaseQueryLogic<ScoredSSDeepPair>
             throw new QueryException("Did not receive a SSDeepSimilarityQueryConfiguration instance!!");
         }
 
-        this.config = (SSDeepSimilarityQueryConfiguration) genericConfig;
+        final SSDeepSimilarityQueryConfiguration config = (SSDeepSimilarityQueryConfiguration) genericConfig;
 
         try {
-            final BatchScanner scanner = this.scannerFactory.newScanner(config.getTableName(), config.getAuthorizations(), config.getQueryThreads(),
-                            config.getQuery());
+            lazyLoadingRangesIterator = new LazyLoadingRangesIterator(config, scannerFactory, this.getMaxResults());
 
-            scanner.setRanges(config.getRanges());
-
-            // must be called after setRanges so that we get the query map from the config.
-            final SSDeepScoringFunction scoringFunction = new SSDeepScoringFunction(config);
-
-            this.iterator = scanner.stream().flatMap(scoringFunction).distinct().iterator();
-            this.scanner = scanner;
-
+            this.iterator = lazyLoadingRangesIterator;
         } catch (TableNotFoundException e) {
             throw new RuntimeException("Table not found: " + this.getTableName(), e);
         }
     }
 
     /**
-     * Process the query to create the ngrams for the ranges to scan in accumulo. Store these in the configs along with a map that can be used to identify which
-     * SSDeepHash each query ngram originated from.
+     * Process the query to create the map of ngrams that will be used by {@link datawave.query.tables.chained.iterators.LazyLoadingRangesIterator} to generate
+     * the ranges to scan in accumulo. Store this ngrams map in the config. The map can be used to identify which SSDeepHash each query ngram originated from.
      *
      * @param settings
      *            the query we will be running.
      * @param config
-     *            write ranges and query map to this object.
+     *            write query map to this object.
      */
-    public void setupRanges(Query settings, SSDeepSimilarityQueryConfiguration config) {
+    public void setupQueryMap(Query settings, SSDeepSimilarityQueryConfiguration config) {
         final String query = settings.getQuery().trim();
         Set<SSDeepHash> queries = Arrays.stream(query.split(" OR ")).map(k -> {
-            final int pos = k.indexOf(":");
+            final int pos = k.indexOf(':');
             return pos > 0 ? k.substring(pos + 1) : k;
         }).map(SSDeepHash::parse).collect(Collectors.toSet());
 
-        log.info("Pre-processing " + queries.size() + " SSDeepHash queries");
+        log.info("Pre-processing {} SSDeepHash queries", queries.size());
         final int maxRepeatedCharacters = config.getMaxRepeatedCharacters();
         final NGramGenerator nGramEngine = new NGramGenerator(config.getNGramSize(), maxRepeatedCharacters, config.getMinHashSize());
         if (maxRepeatedCharacters > 0) {
@@ -117,13 +109,12 @@ public class SSDeepSimilarityQueryLogic extends BaseQueryLogic<ScoredSSDeepPair>
             queries = queries.stream().map(h -> h.normalize(maxRepeatedCharacters)).collect(Collectors.toSet());
         }
 
+        if (config.getMaxHashes() != -1 && config.getMaxHashes() < queries.size()) {
+            log.error("Query exceeds max hash limit of {} count: {}", config.getMaxHashes(), queries.size());
+            throw new DatawaveFatalQueryException("Query exceeds max hash limit of " + config.getMaxHashes() + " count: " + queries.size());
+        }
+
         final Multimap<NGramTuple,SSDeepHash> queryMap = nGramEngine.preprocessQueries(queries);
-        final Set<Range> ranges = new TreeSet<>();
-
-        final IntegerEncoding bucketEncoder = new IntegerEncoding(config.getBucketEncodingBase(), config.getBucketEncodingLength());
-        final ChunkSizeEncoding chunkSizeEncoder = new ChunkSizeEncoding();
-
-        final int indexBuckets = config.getIndexBuckets();
 
         if (queryMap.isEmpty()) {
             String message = "Unable to generate SSDeepHash ngrams for query: " + settings.getQuery() + ", possibly due to invalid SSDeep hash(es)?";
@@ -131,22 +122,9 @@ public class SSDeepSimilarityQueryLogic extends BaseQueryLogic<ScoredSSDeepPair>
             throw new SSDeepRuntimeQueryException(message);
         }
 
-        // TODO: stream?
-        for (NGramTuple ct : queryMap.keys()) {
-            final String sizeAndChunk = chunkSizeEncoder.encode(ct.getChunkSize()) + ct.getChunk();
-            for (int i = 0; i < indexBuckets; i++) {
-                final String bucketedSizeAndChunk = bucketEncoder.encode(i) + sizeAndChunk;
-                ranges.add(Range.exact(new Text(bucketedSizeAndChunk)));
-            }
-        }
-
-        log.info("Generated " + queryMap.size() + " SSDeepHash ngrams of size " + nGramEngine.getNgramSize() + " and " + ranges.size() + " ranges. ");
-        if (log.isDebugEnabled()) {
-            log.debug("Query map is: " + queryMap);
-            log.debug("Ranges are: " + ranges);
-        }
-        config.setRanges(ranges);
-        config.setQueryMap(queryMap);
+        log.debug("Generated {} SSDeepHash ngrams of size {}.", queryMap.size(), nGramEngine.getNgramSize());
+        log.trace("Query map is: {}", queryMap);
+        config.getState().setQueryMap(queryMap);
     }
 
     @Override
@@ -168,8 +146,10 @@ public class SSDeepSimilarityQueryLogic extends BaseQueryLogic<ScoredSSDeepPair>
                 ++nClosed;
             }
             if (log.isDebugEnabled())
-                log.debug("Cleaned up " + nClosed + " batch scanners associated with this query logic.");
+                log.debug("Cleaned up {} batch scanners associated with this query logic.", nClosed);
         }
+        lazyLoadingRangesIterator = null;
+        config = null;
     }
 
     @Override
@@ -207,6 +187,10 @@ public class SSDeepSimilarityQueryLogic extends BaseQueryLogic<ScoredSSDeepPair>
         getConfig().setQueryThreads(queryThreads);
     }
 
+    public void setNumRangesPerScanner(int numRangesPerScanner) {
+        getConfig().setNumRangesPerScanner(numRangesPerScanner);
+    }
+
     public void setMaxRepeatedCharacters(int maxRepeatedCharacters) {
         getConfig().setMaxRepeatedCharacters(maxRepeatedCharacters);
     }
@@ -217,5 +201,29 @@ public class SSDeepSimilarityQueryLogic extends BaseQueryLogic<ScoredSSDeepPair>
 
     public void setBucketEncodingLength(int bucketEncodingLength) {
         getConfig().setBucketEncodingLength(bucketEncodingLength);
+    }
+
+    public void setMaxHashes(int maxHashes) {
+        getConfig().setMaxHashes(maxHashes);
+    }
+
+    public int getMaxHashes() {
+        return getConfig().getMaxHashes();
+    }
+
+    public void setMaxHashesPerNGram(int maxHashesPerNGram) {
+        getConfig().setMaxHashesPerNGram(maxHashesPerNGram);
+    }
+
+    public int getMaxHashesPerNGram() {
+        return getConfig().getMaxHashesPerNGram();
+    }
+
+    public void setDedupeSimilarityHashes(boolean dedupeSimilarityHashes) {
+        getConfig().setDedupeSimilarityHashes(dedupeSimilarityHashes);
+    }
+
+    public boolean isDedupeSimilarityHashes() {
+        return getConfig().isDedupeSimilarityHashes();
     }
 }

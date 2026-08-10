@@ -15,6 +15,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl3.parser.ASTAndNode;
@@ -37,6 +38,7 @@ import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import com.google.common.collect.PeekingIterator;
 import com.google.common.collect.Sets;
+import com.google.common.collect.Streams;
 
 import datawave.query.attributes.AttributeFactory;
 import datawave.query.config.ShardQueryConfiguration;
@@ -104,19 +106,18 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
 
             // get the cartesian product of all the fields and terms
             MutableBoolean oredFields = new MutableBoolean();
-            Set<String>[] fieldsAndTerms = fieldsAndTerms(termFrequencyFields, indexedFields, contentFields, oredFields, true);
-            if (!fieldsAndTerms[0].isEmpty()) {
+            FieldTerms fieldsAndTerms = fieldsAndTerms(termFrequencyFields, indexedFields, contentFields, oredFields, true);
+            Set<String> fields = fieldsAndTerms.getFields();
+            if (!fields.isEmpty()) {
                 final JexlNode eq = new ASTEQNode(ParserTreeConstants.JJTEQNODE);
-
-                for (String field : fieldsAndTerms[0]) {
-                    nodes.add(JexlNodeFactory.createNodeTreeFromFieldValues(ContainerType.AND_NODE, eq, null, field, fieldsAndTerms[1]));
-                }
+                Set<String> terms = fieldsAndTerms.getTerms();
+                fields.forEach(field -> nodes.add(JexlNodeFactory.createNodeTreeFromFieldValues(ContainerType.AND_NODE, eq, null, field, terms)));
             }
 
-            if (fieldsAndTerms[0].size() == 0) {
+            if (fields.isEmpty()) {
                 log.warn("No fields found for content function, will not expand index query");
                 return new ASTTrueNode(ParserTreeConstants.JJTTRUENODE);
-            } else if (fieldsAndTerms[0].size() == 1) {
+            } else if (fields.size() == 1) {
                 // A single field needs no wrapper node.
                 return nodes.iterator().next();
             } else if (oredFields.booleanValue()) {
@@ -194,7 +195,7 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
         public Set<String> fields(MetadataHelper helper, Set<String> datatypeFilter) {
             try {
                 return fieldsAndTerms(helper.getTermFrequencyFields(datatypeFilter), helper.getIndexedFields(datatypeFilter),
-                                helper.getContentFields(datatypeFilter), null)[0];
+                                helper.getContentFields(datatypeFilter), null).getFields();
             } catch (TableNotFoundException e) {
                 QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_FETCH_ERROR, e);
                 throw new DatawaveFatalQueryException(qe);
@@ -206,15 +207,15 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
         public Set<Set<String>> fieldSets(MetadataHelper helper, Set<String> datatypeFilter) {
             try {
                 MutableBoolean oredFields = new MutableBoolean();
-                Set<String>[] fieldsAndTerms = fieldsAndTerms(helper.getTermFrequencyFields(datatypeFilter), helper.getIndexedFields(datatypeFilter),
+                FieldTerms fieldsAndTerms = fieldsAndTerms(helper.getTermFrequencyFields(datatypeFilter), helper.getIndexedFields(datatypeFilter),
                                 helper.getContentFields(datatypeFilter), oredFields);
                 Set<Set<String>> fieldSets = new HashSet<>();
                 if (oredFields.booleanValue()) {
-                    for (String field : fieldsAndTerms[0]) {
+                    for (String field : fieldsAndTerms.getFields()) {
                         fieldSets.add(Collections.singleton(field));
                     }
                 } else {
-                    fieldSets.add(fieldsAndTerms[0]);
+                    fieldSets.add(fieldsAndTerms.getFields());
                 }
                 return fieldSets;
             } catch (TableNotFoundException e) {
@@ -224,174 +225,200 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
 
         }
 
-        public Set<String>[] fieldsAndTerms(Set<String> termFrequencyFields, Set<String> indexedFields, Set<String> contentFields, MutableBoolean oredFields) {
+        public FieldTerms fieldsAndTerms(Set<String> termFrequencyFields, Set<String> indexedFields, Set<String> contentFields, MutableBoolean oredFields) {
             return fieldsAndTerms(termFrequencyFields, indexedFields, contentFields, oredFields, false);
         }
 
         @SuppressWarnings("unchecked")
-        public Set<String>[] fieldsAndTerms(Set<String> termFrequencyFields, Set<String> indexedFields, Set<String> contentFields, MutableBoolean oredFields,
+        public FieldTerms fieldsAndTerms(Set<String> termFrequencyFields, Set<String> indexedFields, Set<String> contentFields, MutableBoolean oredFields,
                         boolean validateFields) {
+            if (this.args.isEmpty()) {
+                NotFoundQueryException qe = new NotFoundQueryException(DatawaveErrorCode.JEXL_NODES_MISSING,
+                                MessageFormat.format("Class: {0}, Namespace: {1}, Function: {2}", this.getClass().getSimpleName(), this.namespace, this.name));
+                throw new IllegalArgumentException(qe);
+            }
 
-            final String funcName = name;
-
-            PeekingIterator<JexlNode> args = Iterators.peekingIterator(this.args.iterator());
-
-            Set<String> termFreqFields = Sets.newHashSet(termFrequencyFields);
-            Set<String> fields = Sets.newHashSetWithExpectedSize(termFreqFields.size());
-            Set<String> terms = Sets.newHashSetWithExpectedSize(this.args.size() - 1);
-            Iterator<String> itr = termFreqFields.iterator();
             // Can any one of the fields satisfy the query? Always true unless the zone is specified in an AND clause.
             if (oredFields != null) {
                 oredFields.setValue(true);
             }
-            while (itr.hasNext()) {
-                String field = itr.next();
-                if (indexedFields.contains(field) && (contentFields.isEmpty() || contentFields.contains(field))) {
-                    fields.add(field);
+
+            PeekingIterator<JexlNode> argsIterator = Iterators.peekingIterator(this.args.iterator());
+            FieldTerms fieldTerms = new FieldTerms();
+            JexlNode termOffsetMap;
+
+            switch (this.name) {
+                case CONTENT_ADJACENT_FUNCTION_NAME:
+                    termOffsetMap = examineContentAdjacentFunction(argsIterator, fieldTerms, oredFields);
+                    break;
+                case CONTENT_PHRASE_FUNCTION_NAME:
+                    termOffsetMap = examineContentPhraseFunction(argsIterator, fieldTerms, oredFields);
+                    break;
+                case CONTENT_SCORED_PHRASE_FUNCTION_NAME:
+                    termOffsetMap = examineContentScoredPhraseFunction(argsIterator, fieldTerms, oredFields);
+                    break;
+                case CONTENT_WITHIN_FUNCTION_NAME:
+                    termOffsetMap = examineContentWithinFunction(argsIterator, fieldTerms, oredFields);
+                    break;
+                default:
+                    BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.FUNCTION_ARGUMENTS_MISSING);
+                    throw new IllegalArgumentException(qe);
+            }
+
+            // Verify that a term offset map with terms were specified.
+            validateTermsOffsetMapAndTermsPresent(termOffsetMap, argsIterator);
+
+            // If the fields were not established above, ensure that the fields at least contain any term frequency fields that are indexed and, if any content
+            // fields were specified, present within there as well.
+            if (fieldTerms.fields == null) {
+                Set<String> fields = termFrequencyFields.stream()
+                                .filter(f -> indexedFields.contains(f) && (contentFields.isEmpty() || contentFields.contains(f))).collect(Collectors.toSet());
+                fieldTerms.fields = fields;
+            }
+
+            // Moving this validation later in the call stack, since it requires other processing (i.e. apply query model)
+            if (validateFields) {
+                for (String field : fieldTerms.fields) {
+                    // Deconstruct & upcase the fieldname for testing in case we have not normalized the field names yet. Return the unnormalized fieldname.
+                    if (!termFrequencyFields.contains(JexlASTHelper.deconstructIdentifier(field.toUpperCase()))) {
+                        PreConditionFailedQueryException qe = new PreConditionFailedQueryException(DatawaveErrorCode.FIELD_PHRASE_QUERY_NOT_INDEXED,
+                                        MessageFormat.format("Field: {0}", field));
+                        throw new IllegalArgumentException(qe);
+                    }
                 }
             }
 
-            if (args.hasNext()) {
-                JexlNode termOffsetMap = null;
+            // Now take the remaining string literals in the arguments as terms.
+            Set<String> terms = Sets.newHashSetWithExpectedSize(this.args.size() - 1);
+            // @formatter:off
+            Streams.stream(argsIterator)
+                            .filter(ASTStringLiteral.class::isInstance)
+                            .map(JexlNodes::getIdentifierOrLiteralAsString)
+                            .forEach(terms::add);
+            // @formatter:on
+            fieldTerms.terms = terms;
 
-                if (CONTENT_ADJACENT_FUNCTION_NAME.equals(funcName)) {
-                    JexlNode firstArg = args.next();
+            return fieldTerms;
+        }
 
-                    // we override the zones if the first argument is a string
-                    if (firstArg instanceof ASTStringLiteral) {
-                        fields = Collections.singleton(JexlNodes.getIdentifierOrLiteralAsString(firstArg));
-                        termOffsetMap = args.next();
-                    } else {
-                        JexlNode nextArg = args.peek();
-
-                        // The zones may (more likely) be specified as an idenfifier
-                        if (!JexlASTHelper.getIdentifiers(firstArg).isEmpty() && !JexlASTHelper.getIdentifiers(nextArg).isEmpty()) {
-                            if (oredFields != null && firstArg instanceof ASTAndNode) {
-                                oredFields.setValue(false);
-                            }
-
-                            fields = JexlASTHelper.getIdentifierNames(firstArg);
-                            termOffsetMap = args.next();
-                        } else {
-                            termOffsetMap = firstArg;
-                        }
+        // Finds and sets the fields for a content:adjacent functions, and returns the anticpatated terms offset map node.
+        private JexlNode examineContentAdjacentFunction(PeekingIterator<JexlNode> argsIterator, FieldTerms fieldTerms, MutableBoolean oredFields) {
+            JexlNode firstArg = argsIterator.next();
+            if (firstArg instanceof ASTStringLiteral) {
+                fieldTerms.fields = Collections.singleton(JexlNodes.getIdentifierOrLiteralAsString(firstArg));
+                return argsIterator.next();
+            } else {
+                JexlNode nextArg = argsIterator.peek();
+                // The zones may (more likely) be specified as an idenfifier
+                if (!JexlASTHelper.getIdentifiers(firstArg).isEmpty() && !JexlASTHelper.getIdentifiers(nextArg).isEmpty()) {
+                    if (oredFields != null && firstArg instanceof ASTAndNode) {
+                        oredFields.setValue(false);
                     }
-                } else if (CONTENT_PHRASE_FUNCTION_NAME.equals(funcName)) {
-                    JexlNode firstArg = args.next();
+                    fieldTerms.fields = JexlASTHelper.getIdentifierNames(firstArg);
+                    return argsIterator.next();
+                } else {
+                    return firstArg;
+                }
+            }
+        }
 
-                    // we override the zones if the first argument is a string
-                    if (firstArg instanceof ASTStringLiteral) {
-                        fields = Collections.singleton(((ASTStringLiteral) firstArg).getLiteral());
-
-                        termOffsetMap = args.next();
-                    } else {
-                        JexlNode nextArg = args.peek();
-
-                        // The zones may (more likely) be specified as an identifier
-                        if (!JexlASTHelper.getIdentifiers(firstArg).isEmpty() && !JexlASTHelper.getIdentifiers(nextArg).isEmpty()) {
-                            if (oredFields != null && firstArg instanceof ASTAndNode) {
-                                oredFields.setValue(false);
-                            }
-
-                            fields = JexlASTHelper.getIdentifierNames(firstArg);
-                            termOffsetMap = args.next();
-                        } else {
-                            termOffsetMap = firstArg;
-                        }
+        // Finds and sets the fields for a content:phrase functions, and returns the anticpatated terms offset map node.
+        private JexlNode examineContentPhraseFunction(PeekingIterator<JexlNode> argsIterator, FieldTerms fieldTerms, MutableBoolean oredFields) {
+            JexlNode firstArg = argsIterator.next();
+            // we override the zones if the first argument is a string
+            if (firstArg instanceof ASTStringLiteral) {
+                fieldTerms.fields = Collections.singleton(((ASTStringLiteral) firstArg).getLiteral());
+                return argsIterator.next();
+            } else {
+                JexlNode nextArg = argsIterator.peek();
+                // The zones may (more likely) be specified as an identifier
+                if (!JexlASTHelper.getIdentifiers(firstArg).isEmpty() && !JexlASTHelper.getIdentifiers(nextArg).isEmpty()) {
+                    if (oredFields != null && firstArg instanceof ASTAndNode) {
+                        oredFields.setValue(false);
                     }
-                } else if (CONTENT_SCORED_PHRASE_FUNCTION_NAME.equals(funcName)) {
-                    JexlNode arg = args.next();
+                    fieldTerms.fields = JexlASTHelper.getIdentifierNames(firstArg);
+                    return argsIterator.next();
+                } else {
+                    return firstArg;
+                }
+            }
+        }
 
-                    if (arg instanceof ASTNumberLiteral || arg instanceof ASTUnaryMinusNode) {
-                        // if the first argument is a number, then no field exists
-                        // for example, content:scoredPhrase(-1.5, termOffsetMap, 'value')
-                        termOffsetMap = args.next();
-                    } else {
-                        if (arg instanceof ASTIdentifier) {
-                            // single field case
-                            // for example, content:scoredPhrase(FIELD, -1.5, termOffsetMap, 'value')
-                            fields = Collections.singleton(String.valueOf(JexlASTHelper.getIdentifier(arg)));
-                        } else {
-                            // multi field case
-                            // for example, content:scoredPhrase((FIELD_A || FIELD_B), -1.5, termOffsetMap, 'value')
-                            Set<String> identifiers = JexlASTHelper.getIdentifierNames(arg);
-                            if (!identifiers.isEmpty()) {
-                                fields = identifiers;
-
-                                if (oredFields != null && arg instanceof ASTAndNode) {
-                                    oredFields.setValue(false);
-                                }
-                            }
-                        }
-
-                        // skip score because it is not needed when gathering just the fields and values from a function
-                        args.next();
-
-                        termOffsetMap = args.next();
-                    }
-                } else if (CONTENT_WITHIN_FUNCTION_NAME.equals(funcName)) {
-                    JexlNode arg = args.next();
-
-                    // we override the zones if the first argument is a string or identifier
-                    if (arg instanceof ASTStringLiteral) {
-                        fields = Collections.singleton(JexlNodes.getIdentifierOrLiteralAsString(arg));
-                        arg = args.next();
-                    } else if (!JexlASTHelper.getIdentifiers(arg).isEmpty()) {
-                        if (oredFields != null && arg instanceof ASTAndNode) {
+        // Finds and sets the fields for a content:scoredPhrase functions, and returns the anticpatated terms offset map node.
+        private JexlNode examineContentScoredPhraseFunction(PeekingIterator<JexlNode> argsIterator, FieldTerms fieldTerms, MutableBoolean oredFields) {
+            JexlNode firstArg = argsIterator.next();
+            if (firstArg instanceof ASTNumberLiteral || firstArg instanceof ASTUnaryMinusNode) {
+                // if the first argument is a number, then no field exists
+                // for example, content:scoredPhrase(-1.5, termOffsetMap, 'value')
+                return argsIterator.next();
+            } else {
+                if (firstArg instanceof ASTIdentifier) {
+                    // single field case
+                    // for example, content:scoredPhrase(FIELD, -1.5, termOffsetMap, 'value')
+                    fieldTerms.fields = Collections.singleton(String.valueOf(JexlASTHelper.getIdentifier(firstArg)));
+                } else {
+                    // multi field case
+                    // for example, content:scoredPhrase((FIELD_A || FIELD_B), -1.5, termOffsetMap, 'value')
+                    Set<String> identifiers = JexlASTHelper.getIdentifierNames(firstArg);
+                    if (!identifiers.isEmpty()) {
+                        fieldTerms.fields = identifiers;
+                        if (oredFields != null && firstArg instanceof ASTAndNode) {
                             oredFields.setValue(false);
                         }
-
-                        fields = JexlASTHelper.getIdentifierNames(arg);
-                        arg = args.next();
-                    }
-
-                    // we can trash the distance
-                    if (!(arg instanceof ASTNumberLiteral || arg instanceof ASTUnaryMinusNode)) {
-                        BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.NUMERIC_DISTANCE_ARGUMENT_MISSING);
-                        throw new IllegalArgumentException(qe);
-                    }
-
-                    termOffsetMap = args.next();
-                } else {
-                    BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.FUNCTION_ARGUMENTS_MISSING);
-                    throw new IllegalArgumentException(qe);
-                }
-
-                if (null == termOffsetMap || !(termOffsetMap instanceof ASTIdentifier)) {
-                    BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.TERMOFFSETMAP_AND_TERMS_MISSING);
-                    throw new IllegalArgumentException(qe);
-                }
-
-                if (!args.hasNext()) {
-                    BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.TERMS_MISSING);
-                    throw new IllegalArgumentException(qe);
-                }
-
-                // moving this validation later in the call stack, since it requires other processing (i.e. apply query model)
-                if (validateFields) {
-                    for (String field : fields) {
-                        // deconstruct & upcase the fieldname for testing in case we have not normalized the field names yet. Return the unnormalized fieldname.
-                        if (!termFreqFields.contains(JexlASTHelper.deconstructIdentifier(field.toUpperCase()))) {
-                            PreConditionFailedQueryException qe = new PreConditionFailedQueryException(DatawaveErrorCode.FIELD_PHRASE_QUERY_NOT_INDEXED,
-                                            MessageFormat.format("Field: {0}", field));
-                            throw new IllegalArgumentException(qe);
-                        }
                     }
                 }
 
-                // now take the remaining string literals as terms
-                Iterator<String> termsItr = Iterators.transform(Iterators.filter(args, new StringLiteralsOnly()), new GetImage());
-                while (termsItr.hasNext()) {
-                    terms.add(termsItr.next());
+                // skip score because it is not needed when gathering just the fields and values from a function
+                argsIterator.next();
+                return argsIterator.next();
+            }
+        }
+
+        // Finds and sets the fields for a content:within functions, and returns the anticpatated terms offset map node.
+        private JexlNode examineContentWithinFunction(PeekingIterator<JexlNode> argsIterator, FieldTerms fieldTerms, MutableBoolean oredFields) {
+            JexlNode arg = argsIterator.next();
+            // we override the zones if the first argument is a string or identifier
+            if (arg instanceof ASTStringLiteral) {
+                fieldTerms.fields = Collections.singleton(JexlNodes.getIdentifierOrLiteralAsString(arg));
+                arg = argsIterator.next();
+            } else if (!JexlASTHelper.getIdentifiers(arg).isEmpty()) {
+                if (oredFields != null && arg instanceof ASTAndNode) {
+                    oredFields.setValue(false);
                 }
 
-            } else {
-                NotFoundQueryException qe = new NotFoundQueryException(DatawaveErrorCode.JEXL_NODES_MISSING,
-                                MessageFormat.format("Class: {0}, Namespace: {1}, Function: {2}", this.getClass().getSimpleName(), namespace, funcName));
+                fieldTerms.fields = JexlASTHelper.getIdentifierNames(arg);
+                arg = argsIterator.next();
+            }
+
+            // we can trash the distance
+            if (!(arg instanceof ASTNumberLiteral || arg instanceof ASTUnaryMinusNode)) {
+                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.NUMERIC_DISTANCE_ARGUMENT_MISSING);
                 throw new IllegalArgumentException(qe);
             }
 
-            return new Set[] {fields, terms};
+            return argsIterator.next();
+        }
+
+        /**
+         * Throws a {@link BadRequestQueryException} if termsOffsetMap is not an instance of {@link ASTIdentifier} or if there are no more nodes in the
+         * iterator.
+         *
+         * @param termOffsetMap
+         *            the terms offset map node
+         * @param argsIterator
+         *            the iterator of arguments
+         */
+        private void validateTermsOffsetMapAndTermsPresent(JexlNode termOffsetMap, PeekingIterator<JexlNode> argsIterator) {
+            if (!(termOffsetMap instanceof ASTIdentifier)) {
+                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.TERMOFFSETMAP_AND_TERMS_MISSING);
+                throw new IllegalArgumentException(qe);
+            }
+
+            if (!argsIterator.hasNext()) {
+                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.TERMS_MISSING);
+                throw new IllegalArgumentException(qe);
+            }
+
         }
 
         /**
@@ -552,7 +579,9 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
                     }
                     break;
                 default:
-                    throw new IllegalArgumentException("Found unexpected content function with name: " + visitor.name());
+                    BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.FUNCTION_NOT_FOUND,
+                                    MessageFormat.format("Found unexpected content function with name: {0}", visitor.name()));
+                    throw new IllegalArgumentException(qe);
             }
 
             List<JexlNode> updated = new LinkedList<>();
@@ -616,6 +645,29 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
         }
     }
 
+    public static class FieldTerms {
+
+        private Set<String> fields;
+        private Set<String> terms;
+
+        public FieldTerms() {
+            fields = null;
+            terms = null;
+        }
+
+        public Set<String> getFields() {
+            return fields;
+        }
+
+        public int totalFields() {
+            return fields.size();
+        }
+
+        public Set<String> getTerms() {
+            return terms;
+        }
+    }
+
     @Override
     public ContentJexlArgumentDescriptor getArgumentDescriptor(ASTFunctionNode node) {
         FunctionJexlNodeVisitor fvis = new FunctionJexlNodeVisitor();
@@ -636,5 +688,4 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
 
         return new ContentJexlArgumentDescriptor(node, fvis.namespace(), fvis.name(), fvis.args());
     }
-
 }

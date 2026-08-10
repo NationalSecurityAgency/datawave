@@ -60,12 +60,12 @@ runQuery() {
 
         echo "$(date): Requesting page $i for $QUERY_ID"
         echo "$(date): Requesting page $i for $QUERY_ID" >> querySummary.txt
-        curl -s -D headers_$i.txt -q -k -E ${TMP_PEM} \
+        curl -s -D headers_$i.txt -b headers_0.txt -q -k -E ${TMP_PEM} \
             -H "Accept: application/xml" \
             -H "Pool: $POOL" \
             ${DATAWAVE_ENDPOINT}/$QUERY_ID/next -o nextResponse_$i.xml -w '%{http_code}\n' >> querySummary.txt
 
-        CONTINUE=`grep 'HTTP/2 200' headers_$i.txt`
+        CONTINUE=`grep 'HTTP/.* 200' headers_$i.txt`
 
         if [ -z "$CONTINUE" ]; then
             i=-1
@@ -89,7 +89,7 @@ runQuery() {
     echo "$(date): Closing $QUERY_ID"
     echo "$(date): Closing $QUERY_ID" >> querySummary.txt
     # close the query
-    curl -s -q -k -X POST -E ${TMP_PEM} \
+    curl -s -D close_headers.txt -q -k -X POST -E ${TMP_PEM} \
         -H "Accept: application/xml" \
         -H "Pool: $POOL" \
         ${DATAWAVE_ENDPOINT}/$QUERY_ID/close -o closeResponse.xml -w '%{http_code}\n' >> querySummary.txt

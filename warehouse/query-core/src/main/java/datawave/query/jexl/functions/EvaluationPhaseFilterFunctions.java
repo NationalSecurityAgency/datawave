@@ -3,11 +3,9 @@ package datawave.query.jexl.functions;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
@@ -32,6 +30,8 @@ import datawave.query.attributes.ValueTuple;
 import datawave.query.collections.FunctionalSet;
 import datawave.query.jexl.JexlPatternCache;
 import datawave.util.OperationEvaluator;
+import datawave.webservice.query.exception.BadRequestQueryException;
+import datawave.webservice.query.exception.DatawaveErrorCode;
 
 /**
  * NOTE: The {@link JexlFunctionArgumentDescriptorFactory} is implemented by {@link EvaluationPhaseFilterFunctionsDescriptor}. This is kept as a separate class
@@ -379,7 +379,8 @@ public class EvaluationPhaseFilterFunctions {
                 }
             }
         }
-        return Collections.EMPTY_LIST.stream();
+
+        return Stream.empty();
     }
 
     /**
@@ -1331,6 +1332,7 @@ public class EvaluationPhaseFilterFunctions {
                     "yyyy-MM-dd HH:mm:ssz",
                     "yyyy-MM-dd HH:mm:ss",
                     "yyyyMMdd HHmmss",
+                    "yyyy:MM:dd HH:mm:ss",
                     "yyyy-MM-dd'T'HH'|'mm",
                     "yyyy-MM-dd'T'HH':'mm':'ss'.'SSS'Z'",
                     "yyyy-MM-dd'T'HH':'mm':'ss'Z'",
@@ -1347,16 +1349,27 @@ public class EvaluationPhaseFilterFunctions {
                     "yyyyMMdd"};
     // @formatter:on
 
-    static final List<DateFormat> dateFormatList = new ArrayList<>();
-    static final List<Integer> dateGranularityList = new ArrayList<>();
+    /**
+     * The {@link DateFormat} instances for {@link #DATE_FORMAT_STRINGS}, one set per thread. {@link SimpleDateFormat} is not thread-safe, so confining the
+     * formatters to the calling thread is what allows date filters to be evaluated concurrently without a lock. The list is in {@link #DATE_FORMAT_STRINGS}
+     * order, and is therefore index-correlated with {@link #DATE_GRANULARITIES}.
+     */
+    // @formatter:off
+    static final ThreadLocal<List<DateFormat>> DATE_FORMATS = ThreadLocal.withInitial(
+                    () -> Arrays.stream(DATE_FORMAT_STRINGS)
+                                    .map(EvaluationPhaseFilterFunctions::newSimpleDateFormat)
+                                    .collect(Collectors.toList()));
+    // @formatter:on
 
-    static {
-        for (String fs : DATE_FORMAT_STRINGS) {
-            DateFormat format = newSimpleDateFormat(fs);
-            dateFormatList.add(format);
-            dateGranularityList.add(getGranularity(fs));
-        }
-    }
+    /**
+     * The granularity of each format in {@link #DATE_FORMAT_STRINGS}, as a {@link Calendar} constant. Immutable, and therefore safely shared across threads.
+     * The list is in {@link #DATE_FORMAT_STRINGS} order, and is therefore index-correlated with {@link #DATE_FORMATS}.
+     */
+    // @formatter:off
+    static final List<Integer> DATE_GRANULARITIES = Arrays.stream(DATE_FORMAT_STRINGS)
+                    .map(EvaluationPhaseFilterFunctions::getGranularity)
+                    .collect(Collectors.toUnmodifiableList());
+    // @formatter:on
 
     /**
      * Create a new simple date format, with a GMT time zone
@@ -1538,20 +1551,19 @@ public class EvaluationPhaseFilterFunctions {
     }
 
     /**
-     * Get the time using the supplied format
+     * Get the time using the supplied format. No synchronization is performed: {@link DateFormat} implementations are generally not thread-safe, and only the
+     * caller knows whether the format it supplied is confined to a single thread.
      *
      * @param value
      *            The value to be parsed
      * @param format
-     *            The format to parse with
+     *            The format to parse with, which must not be in concurrent use by another thread
      * @return the time as ms since epoch
      * @throws ParseException
      *             if the value failed to be parsed using the supplied format
      */
     public static long getTime(Object value, DateFormat format) throws ParseException {
-        synchronized (format) {
-            return format.parse(ValueTuple.getStringValue(value)).getTime();
-        }
+        return format.parse(ValueTuple.getStringValue(value)).getTime();
     }
 
     /**
@@ -1599,19 +1611,22 @@ public class EvaluationPhaseFilterFunctions {
      */
     public static long getTime(Object value, boolean nextTime) throws ParseException {
         // determine if a number first
-        for (int i = 0; i < dateFormatList.size(); i++) {
-            DateFormat format = dateFormatList.get(i);
+        List<DateFormat> formats = DATE_FORMATS.get();
+        for (int i = 0; i < formats.size(); i++) {
+            DateFormat format = formats.get(i);
             try {
                 long time = getTime(value, format);
                 if (nextTime) {
-                    time = getNextTime(time, dateGranularityList.get(i));
+                    time = getNextTime(time, DATE_GRANULARITIES.get(i));
                 }
                 return time;
             } catch (ParseException e) {
                 // try the next one
             }
         }
-        throw new ParseException("Unable to parse value using known date formats: " + value, 0);
+        BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.UNPARSEABLE_JEXL_QUERY,
+                        "Unable to parse value using known date formats: " + value + " [Error offset: 0]");
+        throw new IllegalArgumentException(qe);
     }
 
     /**

@@ -13,7 +13,11 @@ import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.logic.QueryLogicTransformer;
 import datawave.core.query.logic.ResultPostprocessor;
 import datawave.microservice.query.Query;
+import datawave.next.CountScheduler;
+import datawave.next.SimpleQueryVisitor;
 import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.planner.DefaultQueryPlanner;
+import datawave.query.planner.QueryPlanner;
 import datawave.query.scheduler.PushdownScheduler;
 import datawave.query.scheduler.Scheduler;
 import datawave.query.tables.shard.CountAggregatingIterator;
@@ -22,12 +26,14 @@ import datawave.query.transformer.ShardQueryCountTableTransformer;
 
 /**
  * A simple extension of the basic ShardQueryTable which applies a counting iterator on top of the "normal" iterator stack.
- *
- *
- *
+ * <p>
+ * TODO: optimize this so a specialized query iterator returns single counts that are then aggregated
  */
 public class CountingShardQueryLogic extends ShardQueryLogic {
     private static final Logger log = Logger.getLogger(CountingShardQueryLogic.class);
+
+    // the time to wait before returning an intermediate result
+    private long pageWaitTimeMillis = 0L;
 
     public CountingShardQueryLogic() {
         super();
@@ -56,7 +62,7 @@ public class CountingShardQueryLogic extends ShardQueryLogic {
 
     @Override
     public TransformIterator getTransformIterator(Query settings) {
-        return new CountAggregatingIterator(this.iterator(), getTransformer(settings), this.markingFunctions);
+        return new CountAggregatingIterator(this.iterator(), getTransformer(settings), this.markingFunctions, getPageWaitTimeMillis());
     }
 
     @Override
@@ -66,9 +72,38 @@ public class CountingShardQueryLogic extends ShardQueryLogic {
 
     @Override
     public Scheduler getScheduler(ShardQueryConfiguration config, ScannerFactory scannerFactory) {
-        PushdownScheduler scheduler = new PushdownScheduler(config, scannerFactory, this.metadataHelperFactory);
+        // planner should already have run
+        QueryPlanner planner = getQueryPlanner();
+        if (planner instanceof DefaultQueryPlanner && config.getDocumentScannerConfig() != null && config.isUseDocumentScheduler()) {
+            DefaultQueryPlanner dqp = (DefaultQueryPlanner) planner;
+            boolean simple = SimpleQueryVisitor.validate(config.getQueryTree(), dqp.getIndexedFields(), dqp.getIndexOnlyFields());
+            if (simple) {
+                CountScheduler countScheduler = new CountScheduler(config);
+                countScheduler.setVisitorFunction(getVisitorFunction(dqp.getMetadataHelper()));
+                return countScheduler;
+            }
+        }
+
+        PushdownScheduler scheduler = new PushdownScheduler(config, this.metadataHelperFactory);
         scheduler.addSetting(new IteratorSetting(config.getBaseIteratorPriority() + 50, "counter", ResultCountingIterator.class.getName()));
         return scheduler;
     }
 
+    /**
+     * This query logic always supports intermediate results
+     *
+     * @return true
+     */
+    @Override
+    public boolean isLongRunningQuery() {
+        return true;
+    }
+
+    public long getPageWaitTimeMillis() {
+        return pageWaitTimeMillis;
+    }
+
+    public void setPageWaitTimeMillis(long pageWaitTimeMillis) {
+        this.pageWaitTimeMillis = pageWaitTimeMillis;
+    }
 }

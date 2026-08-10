@@ -1,8 +1,11 @@
 package datawave.query.iterator;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Iterator;
 
+import org.apache.accumulo.core.data.ByteSequence;
+import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 
 import datawave.query.attributes.Document;
@@ -32,6 +35,20 @@ public interface NestedIterator<T> extends Iterator<T> {
      *             if the iterator is already at or beyond minimum
      */
     T move(T minimum);
+
+    /**
+     * Hook to allow issuing a seek to the underlying source iterator(s)
+     *
+     * @param range
+     *            the seek range
+     * @param columnFamilies
+     *            the column families
+     * @param inclusive
+     *            true if range is inclusive
+     * @throws IOException
+     *             for issues with reads
+     */
+    void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException;
 
     /**
      * Returns a reference to all of the leaf nodes at or below <code>this</code>. This is useful when we need to call <code>seek</code> on leaf nodes that are

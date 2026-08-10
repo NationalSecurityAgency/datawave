@@ -17,7 +17,7 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.annotations.VisibleForTesting;
 
-import datawave.ingest.util.cache.watch.AgeOffRuleLoader;
+import datawave.ingest.util.cache.watch.RuleConfig;
 
 /**
  * Formats a rule
@@ -45,23 +45,26 @@ public class AgeOffRuleFormatter {
     @VisibleForTesting
     void format(Writer writer) throws IOException {
 
-        AgeOffRuleLoader.RuleConfig ruleConfig = createRuleConfig(this.configuration);
+        RuleConfig ruleConfig = createRuleConfig(this.configuration);
 
         writer.write(transformToXmlString(ruleConfig));
     }
 
-    private AgeOffRuleLoader.RuleConfig createRuleConfig(AgeOffRuleConfiguration configuration) throws IOException {
-        AgeOffRuleLoader.RuleConfig ruleConfig = new AgeOffRuleLoader.RuleConfig(this.configuration.getFilterClass().getName(), index++);
-        ruleConfig.label(configuration.getRuleLabel());
-        ruleConfig.setIsMerge(this.configuration.shouldMerge());
-        ruleConfig.ttlValue(this.configuration.getTtlDuration());
-        ruleConfig.ttlUnits(this.configuration.getTtlUnits());
-        ruleConfig.matchPattern(buildMatchPattern());
-        ruleConfig.customElements(this.configuration.getCustomElements());
-        return ruleConfig;
+    private static RuleConfig createRuleConfig(AgeOffRuleConfiguration configuration) throws IOException {
+        // @formatter:off
+        RuleConfig.Builder builder = new RuleConfig.Builder(configuration.getFilterClass().getName(), index++)
+                .setLabel(configuration.getRuleLabel())
+                .setMerge(configuration.shouldMerge())
+                .setTtlValue(configuration.getTtlDuration())
+                .setTtlUnits(configuration.getTtlUnits())
+                .setMatchPattern(buildMatchPattern(configuration, configuration.getIndentation()))
+                .setCustomElements(configuration.getCustomElements());
+        // @formatter:on
+
+        return builder.build();
     }
 
-    private String transformToXmlString(AgeOffRuleLoader.RuleConfig ruleConfig) throws IOException {
+    private String transformToXmlString(RuleConfig ruleConfig) throws IOException {
         try {
             Transformer trans = initializeXmlTransformer();
 
@@ -93,7 +96,7 @@ public class AgeOffRuleFormatter {
         return Integer.toString(length);
     }
 
-    private String buildMatchPattern() throws IOException {
+    private static String buildMatchPattern(AgeOffRuleConfiguration configuration, String indent) throws IOException {
         if (configuration.getPatternConfiguration() == null) {
             return "";
         }
@@ -104,14 +107,14 @@ public class AgeOffRuleFormatter {
         AgeOffCsvToMatchPatternFormatter patternFormatter = new AgeOffCsvToMatchPatternFormatter(configuration.getPatternConfiguration());
 
         // add two indentations: one for items under the rule element and another for items under the matchPattern element
-        String extraIndentation = this.indent + this.indent;
+        String extraIndentation = indent + indent;
         patternFormatter.write(new IndentingDelegatingWriter(extraIndentation, writer));
 
         String result = writer.toString();
 
         // final indentation to precede the closing of matchPattern
         if (result.endsWith("\n")) {
-            return result + this.indent;
+            return result + indent;
         }
         return result;
     }

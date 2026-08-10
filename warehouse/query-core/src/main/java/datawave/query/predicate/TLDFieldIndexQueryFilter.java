@@ -11,7 +11,6 @@ import org.apache.accumulo.core.data.Range;
 import com.google.common.collect.Sets;
 
 import datawave.core.iterators.key.util.FiKeyUtil;
-import datawave.query.attributes.Document;
 
 /**
  * An {@link EventDataQueryFilter} that applies TLD logic to Field Index keys
@@ -21,6 +20,7 @@ import datawave.query.attributes.Document;
 public class TLDFieldIndexQueryFilter implements EventDataQueryFilter {
 
     private final Set<String> indexOnlyFields;
+    private final RootPointerPredicate isRootPointer = new RootPointerPredicate();
 
     /**
      * Default constructor
@@ -40,30 +40,30 @@ public class TLDFieldIndexQueryFilter implements EventDataQueryFilter {
      */
     @Override
     public void startNewDocument(Key documentKey) {
-        // no-op
+        isRootPointer.startNewDocument(documentKey);
     }
 
     /**
      * Always returns true.
      *
-     * @param var1
+     * @param entry
      *            an entry of type Key-Value
      * @return true, always
      */
     @Override
-    public boolean apply(@Nullable Map.Entry<Key,String> var1) {
+    public boolean apply(@Nullable Map.Entry<Key,String> entry) {
         return true;
     }
 
     /**
      * Always returns true
      *
-     * @param var1
+     * @param entry
      *            an entry of type Key-Value
      * @return true, always
      */
     @Override
-    public boolean peek(@Nullable Map.Entry<Key,String> var1) {
+    public boolean peek(@Nullable Map.Entry<Key,String> entry) {
         return true;
     }
 
@@ -76,7 +76,7 @@ public class TLDFieldIndexQueryFilter implements EventDataQueryFilter {
      */
     @Override
     public boolean keep(Key k) {
-        boolean root = TLDEventDataFilter.isRootPointer(k);
+        boolean root = isRootPointer.test(k);
         if (root) {
             return indexOnlyFields.contains(FiKeyUtil.getFieldString(k));
         }

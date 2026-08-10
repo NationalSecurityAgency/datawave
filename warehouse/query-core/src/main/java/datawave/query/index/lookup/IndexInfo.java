@@ -2,7 +2,6 @@ package datawave.query.index.lookup;
 
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DELAYED;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_OR;
-import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_TERM;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_VALUE;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.INDEX_HOLE;
 
@@ -24,6 +23,10 @@ import org.apache.hadoop.io.VLongWritable;
 import org.apache.hadoop.io.Writable;
 import org.apache.log4j.Logger;
 
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.KryoSerializable;
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
 import com.google.common.base.Objects;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableSortedSet;
@@ -45,7 +48,7 @@ import datawave.query.util.count.CountMap;
  * <p>
  * The IndexInfo object supports union and intersection operations with other IndexInfo objects.
  */
-public class IndexInfo implements Writable, UidIntersector {
+public class IndexInfo implements Writable, KryoSerializable, UidIntersector {
 
     private static final Logger log = Logger.getLogger(IndexInfo.class);
 
@@ -95,6 +98,21 @@ public class IndexInfo implements Writable, UidIntersector {
     }
 
     @Override
+    public void write(Kryo kryo, Output output) {
+        boolean infinite = isInfinite();
+        output.writeBoolean(infinite);
+        if (!infinite) {
+            output.writeLong(count, true);
+        }
+        output.writeInt(uids.size(), true);
+        for (IndexMatch uid : uids) {
+            uid.write(kryo, output);
+        }
+        fieldCounts.write(kryo, output);
+        termCounts.write(kryo, output);
+    }
+
+    @Override
     public void write(DataOutput out) throws IOException {
         new VLongWritable(count).write(out);
         new VIntWritable(uids.size()).write(out);
@@ -125,6 +143,29 @@ public class IndexInfo implements Writable, UidIntersector {
 
     public JexlNode getNode() {
         return myNode;
+    }
+
+    @Override
+    public void read(Kryo kryo, Input input) {
+        final boolean infinite = input.readBoolean();
+        this.count = infinite ? -1 : input.readLong(true);
+        final int nUids = input.readInt(true);
+
+        IndexMatch[] uidsLocal = new IndexMatch[nUids];
+
+        for (int i = 0; i < nUids; i++) {
+            IndexMatch index = new IndexMatch();
+            index.read(kryo, input);
+            uidsLocal[i] = index;
+        }
+
+        this.uids = ImmutableSortedSet.copyOf(uidsLocal);
+
+        this.fieldCounts = new CountMap();
+        this.termCounts = new CountMap();
+
+        this.fieldCounts.read(kryo, input);
+        this.termCounts.read(kryo, input);
     }
 
     @Override
@@ -187,7 +228,7 @@ public class IndexInfo implements Writable, UidIntersector {
             JexlNode topLevelOr = getOrNode(sourceNode);
 
             if (null == topLevelOr) {
-                nodeSet.add(sourceNode);
+                nodeSet.add(first.myNode);
             } else {
                 for (int i = 0; i < topLevelOr.jjtGetNumChildren(); i++) {
                     nodeSet.add(topLevelOr.jjtGetChild(i));
@@ -239,7 +280,7 @@ public class IndexInfo implements Writable, UidIntersector {
 
     public static JexlNode getSourceNode(JexlNode delayedNode) {
         QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(delayedNode);
-        if (instance.isAnyTypeOf(DELAYED, EXCEEDED_OR, EXCEEDED_VALUE, EXCEEDED_TERM, INDEX_HOLE)) {
+        if (instance.isAnyTypeOf(DELAYED, EXCEEDED_OR, EXCEEDED_VALUE, INDEX_HOLE)) {
             return instance.getSource();
         } else {
             return delayedNode;
@@ -328,11 +369,17 @@ public class IndexInfo implements Writable, UidIntersector {
             merged.count = merged.uids.size();
         }
 
-        merged.setFieldCounts(this.getFieldCounts());
-        merged.mergeFieldCounts(o.getFieldCounts());
+        if (this == o) {
+            // handle idiosyncrasy of the peeking iterator where the first term is merged with itself
+            merged.setFieldCounts(o.getFieldCounts());
+            merged.setTermCounts(o.getTermCounts());
+        } else {
+            merged.setFieldCounts(getFieldCounts());
+            merged.setTermCounts(getTermCounts());
 
-        merged.setTermCounts(this.getTermCounts());
-        merged.mergeTermCounts(o.getTermCounts());
+            merged.mergeFieldCounts(o.getFieldCounts());
+            merged.mergeTermCounts(o.getTermCounts());
+        }
 
         /*
          * If there are multiple levels within a union we could have an ASTOrNode. We cannot prune OrNodes as we would with an intersection, so propagate the

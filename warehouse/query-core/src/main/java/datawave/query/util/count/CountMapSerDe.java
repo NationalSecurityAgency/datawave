@@ -2,6 +2,7 @@ package datawave.query.util.count;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
@@ -21,30 +22,27 @@ public class CountMapSerDe {
     }
 
     public String serializeToString(CountMap map) {
-        return new String(serialize(map), StandardCharsets.ISO_8859_1);
+        return new String(Base64.getEncoder().encode(serialize(map)), StandardCharsets.ISO_8859_1);
     }
 
     public byte[] serialize(CountMap map) {
         baos.reset();
         Output output = new Output(baos);
-        kryo.writeObject(output, map);
+        map.write(kryo, output);
         output.close();
         return baos.toByteArray();
     }
 
     public CountMap deserializeFromString(String data) {
-        return deserialize(data.getBytes(StandardCharsets.ISO_8859_1));
+        return deserialize(Base64.getDecoder().decode(data));
     }
 
     public CountMap deserialize(byte[] data) {
-        Input input = new Input(data);
-        CountMap map = kryo.readObject(input, CountMap.class);
-        input.close();
-
-        if (map == null) {
-            throw new RuntimeException("Deserialized null CountMap");
+        CountMap map;
+        try (Input input = new Input(data)) {
+            map = new CountMap();
+            map.read(kryo, input);
         }
-
         return map;
     }
 }

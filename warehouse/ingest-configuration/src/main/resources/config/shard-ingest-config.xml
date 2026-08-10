@@ -70,6 +70,45 @@
 	<value>datawave.ingest.table.config.ShardTableConfigHelper</value>
 </property>
 
+    <property>
+        <name>shard.global.shard.day.index.table.name</name>
+        <value>${table.name.shardDayIndex}</value>
+    </property>
+
+    <property>
+        <name>shard.global.shard.day.index.table.loader.priority</name>
+        <value>30</value>
+    </property>
+
+    <property>
+        <name>${table.name.shardDayIndex}.table.config.class</name>
+        <value>datawave.ingest.table.config.ShardTableConfigHelper</value>
+    </property>
+
+    <property>
+        <name>shard.global.shard.year.index.table.name</name>
+        <value>${table.name.shardYearIndex}</value>
+    </property>
+
+    <property>
+        <name>shard.global.shard.year.index.table.loader.priority</name>
+        <value>30</value>
+    </property>
+
+    <property>
+        <name>${table.name.shardYearIndex}.table.config.class</name>
+        <value>datawave.ingest.table.config.ShardTableConfigHelper</value>
+    </property>
+
+<property>
+	<name>${table.name.shardIndex}.disable.versioning.iterator</name>
+	<value>true</value>
+</property>
+<property>
+	<name>${table.name.shardReverseIndex}.disable.versioning.iterator</name>
+	<value>true</value>
+</property>
+
 <property>
 	<name>markings.setup.iterator.enabled</name>
 	<value>false</value>

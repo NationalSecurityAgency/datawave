@@ -40,8 +40,10 @@ import datawave.query.function.JexlEvaluation;
 import datawave.query.function.RangeProvider;
 import datawave.query.iterator.NestedQueryIterator;
 import datawave.query.iterator.QueryIterator;
+import datawave.query.iterator.QueryOptions;
 import datawave.query.iterator.SourcedOptions;
 import datawave.query.iterator.logic.IndexIterator;
+import datawave.query.iterator.waitwindow.WaitWindowObserver;
 import datawave.query.jexl.DatawaveJexlContext;
 import datawave.query.jexl.HitListArithmetic;
 import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor.ExpressionFilter;
@@ -106,7 +108,9 @@ public class AncestorQueryIterator extends QueryIterator {
         // when we are town down and rebuilt, ensure the range is okay even for the middle of a tree shifting to the next
         // child and making the range inclusive if it's exclusive to avoid hitting the defeat inside QueryIterator for a
         // document specific range but not being inclusive start
-        if (!range.isStartKeyInclusive()) {
+        // Skip this logic if this is part of a yield where we are trying to restart at the beginning of a particular
+        // event key or shard range.
+        if (!range.isStartKeyInclusive() && !WaitWindowObserver.hasBeginMarker(range.getStartKey())) {
             Key oldStartKey = range.getStartKey();
             Key startKey = new Key(oldStartKey.getRow().toString(), oldStartKey.getColumnFamily() + Constants.NULL_BYTE_STRING,
                             oldStartKey.getColumnQualifier().toString());
@@ -127,15 +131,40 @@ public class AncestorQueryIterator extends QueryIterator {
 
     @Override
     public EventDataQueryFilter getEvaluationFilter() {
-        if (evaluationFilter == null && script != null) {
+        if (evaluationFilter == null && getScript() != null) {
 
             AttributeFactory attributeFactory = new AttributeFactory(typeMetadata);
-            Map<String,ExpressionFilter> expressionFilters = getExpressionFilters(script, attributeFactory);
+            Map<String,ExpressionFilter> expressionFilters = getExpressionFilters(getScript(), attributeFactory);
 
             evaluationFilter = new AncestorEventDataFilter(expressionFilters);
         }
         // return a new filter each time as this is not thread safe (maintains state)
         return evaluationFilter != null ? evaluationFilter.clone() : null;
+    }
+
+    /**
+     * In the Ancestor case replace the {@link QueryOptions#eventFilter} with an evaluation filter
+     *
+     * @return an evaluation filter
+     */
+    public EventDataQueryFilter getEventFilter() {
+        return getEvaluationFilter();
+    }
+
+    @Override
+    public EventDataQueryFilter getFiEvaluationFilter() {
+        if (fiEvaluationFilter == null) {
+            fiEvaluationFilter = getEvaluationFilter();
+        }
+        return fiEvaluationFilter.clone();
+    }
+
+    @Override
+    public EventDataQueryFilter getEventEvaluationFilter() {
+        if (eventEvaluationFilter == null) {
+            eventEvaluationFilter = getEvaluationFilter();
+        }
+        return eventEvaluationFilter.clone();
     }
 
     @Override
@@ -239,7 +268,8 @@ public class AncestorQueryIterator extends QueryIterator {
 
     @Override
     protected IteratorBuildingVisitor createIteratorBuildingVisitor(final Range documentRange, boolean isQueryFullySatisfied, boolean sortedUIDs)
-                    throws MalformedURLException, ConfigException, InstantiationException, IllegalAccessException {
+                    throws MalformedURLException, ConfigException, InstantiationException, IllegalAccessException, NoSuchMethodException,
+                    InvocationTargetException {
         IteratorBuildingVisitor v = createIteratorBuildingVisitor(AncestorIndexBuildingVisitor.class, documentRange, isQueryFullySatisfied, sortedUIDs)
                         .setIteratorBuilder(AncestorIndexIteratorBuilder.class);
         return ((AncestorIndexBuildingVisitor) v).setEquality(getEquality());

@@ -131,21 +131,8 @@ function setQueryIdFromResponse() {
 }
 
 function prettyPrintJson() {
-    local PY=$( which python )
-    if [ -n "${PY}" ] ; then
-        echo "${1}" | ${PY} -c 'from __future__ import print_function;import sys,json;data=json.loads(sys.stdin.read()); print(json.dumps(data, indent=2, sort_keys=True))'
-        local exitStatus=$?
-        echo
-        if [ "${exitStatus}" != "0" ] ; then
-           printRawResponse "${1}"
-           warn "Python encountered error. Printed response without formatting"
-           echo
-        fi
-    else
-        printRawResponse "${1}"
-        warn "Couldn't find python in your environment. Json response was printed without formatting"
-        echo
-    fi
+    PY_CMD='from __future__ import print_function; import sys,json; data=json.loads(sys.stdin.read()); print(json.dumps(data, indent=2, sort_keys=True))'
+    echo "${1}" | ( python3 -c "${PY_CMD}" 2>/dev/null || python2 -c "${PY_CMD}" 2>/dev/null ) || ( warn "Python encountered error. Printed response without formatting" && printRawResponse "${1}" )
 }
 
 function printRawResponse() {
@@ -211,6 +198,9 @@ function configureQuery() {
             ;;
          --use-execute | -E)
             DW_QUERY_CREATE_MODE="execute"
+            ;;
+         --validateQuery | -VQ)
+            DW_QUERY_CREATE_MODE="validate"
             ;;
          --next | -n)
             # Get the next page and bail out
@@ -301,6 +291,9 @@ function queryHelp() {
     echo
     echo " $( printGreen "-C" ) | $( printGreen "--create-only" )"
     echo "  Uses the 'Query/{logic}/create' endpoint, rather than the default, 'Query/{logic}/createAndNext' which creates query and gets first page w/ one request"
+    echo
+    echo " $( printGreen "-VQ" ) | $( printGreen "--validate-query" )"
+    echo "  Uses the 'Query/{logic}/validate' endpoint, rather than the default, 'Query/{logic}/createAndNext' which validates the query and gets validation result"
     echo
     echo " $( printGreen "-n" ) | $( printGreen "--next" ) <query-id> "
     echo "  Gets the next page of results for the specified query id. Response code 204 indicates end of result set"
@@ -484,8 +477,8 @@ function configureUserIdentity() {
 
 function reloadDataWaveTableCache() {
 
-    # For convenience, this allows you to force a refresh of certain metadata caches in Wildfly, such as those used to cache 
-    # DataWave's data element dictionary. Otherwise, you might be forced to bounce Wildfly or wait for the caches to reload 
+    # For convenience, this allows you to force a refresh of certain metadata caches in Wildfly, such as those used to cache
+    # DataWave's data element dictionary. Otherwise, you might be forced to bounce Wildfly or wait for the caches to reload
     # automatically at the configured refresh interval.
 
     # This is particularly useful when you want to issue queries for newly ingested data, and to search on new, never-before-seen

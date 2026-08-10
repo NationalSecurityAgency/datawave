@@ -1,11 +1,11 @@
 package datawave.webservice.result;
 
 import java.util.List;
-import java.util.Map;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 
+import datawave.marking.Markings;
 import datawave.webservice.query.result.event.FacetsBase;
 import datawave.webservice.query.result.event.HasMarkings;
 
@@ -14,8 +14,9 @@ import datawave.webservice.query.result.event.HasMarkings;
  */
 @XmlAccessorType(XmlAccessType.NONE)
 public abstract class FacetQueryResponseBase extends BaseQueryResponse implements HasMarkings {
+    private static final long serialVersionUID = -3483112784845232037L;
 
-    protected transient Map<String,String> markings;
+    protected transient Markings<?> markings;
 
     public abstract Long getTotalEvents();
 
@@ -26,6 +27,4 @@ public abstract class FacetQueryResponseBase extends BaseQueryResponse implement
     public abstract void setFacets(List<? extends FacetsBase> facets);
 
     public abstract void addFacet(FacetsBase facetInterface);
-
-    public abstract void setMarkings(Map<String,String> markings);
 }

@@ -8,7 +8,6 @@ import static org.junit.Assert.fail;
 
 import java.util.Collections;
 
-import org.apache.commons.jexl3.JexlFeatures;
 import org.apache.commons.jexl3.parser.ASTEQNode;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ASTOrNode;

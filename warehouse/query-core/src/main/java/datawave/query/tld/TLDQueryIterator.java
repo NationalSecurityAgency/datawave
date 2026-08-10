@@ -3,12 +3,14 @@ package datawave.query.tld;
 import static datawave.query.jexl.visitors.EventDataQueryExpressionVisitor.getExpressionFilters;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
@@ -31,20 +33,22 @@ import datawave.query.function.TLDEquality;
 import datawave.query.function.TLDRangeProvider;
 import datawave.query.iterator.NestedIterator;
 import datawave.query.iterator.QueryIterator;
+import datawave.query.iterator.QueryOptions;
 import datawave.query.iterator.SourcedOptions;
 import datawave.query.iterator.logic.IndexIterator;
+import datawave.query.iterator.waitwindow.WaitWindowObserver;
 import datawave.query.jexl.functions.FieldIndexAggregator;
 import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor.ExpressionFilter;
 import datawave.query.jexl.visitors.IteratorBuildingVisitor;
 import datawave.query.postprocessing.tf.TFFactory;
 import datawave.query.postprocessing.tf.TermFrequencyConfig;
-import datawave.query.predicate.ChainableEventDataQueryFilter;
 import datawave.query.predicate.ConfiguredPredicate;
 import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.predicate.TLDEventDataFilter;
 import datawave.query.predicate.TLDFieldIndexQueryFilter;
 import datawave.query.util.Tuple2;
 import datawave.query.util.Tuple3;
+import datawave.table.util.TLD;
 import datawave.util.StringUtils;
 
 /**
@@ -52,9 +56,6 @@ import datawave.util.StringUtils;
  */
 public class TLDQueryIterator extends QueryIterator {
     private static final Logger log = Logger.getLogger(TLDQueryIterator.class);
-
-    protected int maxFieldHitsBeforeSeek = -1;
-    protected int maxKeysBeforeSeek = -1;
 
     public TLDQueryIterator() {}
 
@@ -101,9 +102,24 @@ public class TLDQueryIterator extends QueryIterator {
     @Override
     public FieldIndexAggregator getFiAggregator() {
         if (fiAggregator == null) {
-            fiAggregator = new TLDFieldIndexAggregator(getNonEventFields(), getFIEvaluationFilter(), getFiNextSeek());
+            fiAggregator = new TLDFieldIndexAggregator(getNonEventFields(), getFiEvaluationFilter(), getFiNextSeek());
         }
         return fiAggregator;
+    }
+
+    @Override
+    public EventDataQueryFilter getEvaluationFilter() {
+        if (this.evaluationFilter == null && getScript() != null) {
+
+            AttributeFactory attributeFactory = new AttributeFactory(typeMetadata);
+            Map<String,ExpressionFilter> expressionFilters = getExpressionFilters(getScript(), attributeFactory);
+
+            // setup an evaluation filter to avoid loading every single child key into the event
+            this.evaluationFilter = new TLDEventDataFilter(getScript(), getAllFields(), expressionFilters, useAllowListedFields ? allowListedFields : null,
+                            useDisallowListedFields ? disallowListedFields : null, getEventFieldSeek(), getEventNextSeek(),
+                            limitFieldsPreQueryEvaluation ? limitFieldsMap : Collections.emptyMap(), limitFieldsField, getNonEventFields());
+        }
+        return this.evaluationFilter != null ? evaluationFilter.clone() : null;
     }
 
     /**
@@ -111,28 +127,50 @@ public class TLDQueryIterator extends QueryIterator {
      *
      * @return an {@link EventDataQueryFilter}
      */
-    protected EventDataQueryFilter getFIEvaluationFilter() {
-        ChainableEventDataQueryFilter filterChain = new ChainableEventDataQueryFilter();
-        // primary filter on the current filter
-        filterChain.addFilter(getEvaluationFilter());
-        // prevent anything that is not an index only field from being kept at the tld level, otherwise allow all
-        filterChain.addFilter(new TLDFieldIndexQueryFilter(getIndexOnlyFields()));
-        return filterChain;
+    @Override
+    public EventDataQueryFilter getFiEvaluationFilter() {
+        if (fiEvaluationFilter == null && getScript() != null) {
+            if (QueryIterator.isDocumentSpecificRange(range)) {
+                // this is to deal with a TF optimization where the TF is scanned instead of the FI in the
+                // document specific case.
+                fiEvaluationFilter = getEventEvaluationFilter();
+            } else {
+                fiEvaluationFilter = new TLDFieldIndexQueryFilter(getIndexOnlyFields());
+            }
+
+            return fiEvaluationFilter.clone();
+        }
+        return fiEvaluationFilter != null ? fiEvaluationFilter.clone() : null;
     }
 
     @Override
-    public EventDataQueryFilter getEvaluationFilter() {
-        if (this.evaluationFilter == null && script != null) {
+    public EventDataQueryFilter getEventEvaluationFilter() {
+        if (this.eventEvaluationFilter == null && getScript() != null) {
 
             AttributeFactory attributeFactory = new AttributeFactory(typeMetadata);
-            Map<String,ExpressionFilter> expressionFilters = getExpressionFilters(script, attributeFactory);
+            Map<String,ExpressionFilter> expressionFilters = getExpressionFilters(getScript(), attributeFactory);
 
             // setup an evaluation filter to avoid loading every single child key into the event
-            this.evaluationFilter = new TLDEventDataFilter(script, getAllFields(), expressionFilters, useAllowListedFields ? allowListedFields : null,
-                            useDisallowListedFields ? disallowListedFields : null, getEventFieldSeek(), getEventNextSeek(),
-                            limitFieldsPreQueryEvaluation ? limitFieldsMap : Collections.emptyMap(), limitFieldsField, getNonEventFields());
+            this.eventEvaluationFilter = new TLDEventDataFilter(getScript(), getEventFields(), expressionFilters,
+                            useAllowListedFields ? allowListedFields : null, useDisallowListedFields ? disallowListedFields : null, getEventFieldSeek(),
+                            getEventNextSeek(), limitFieldsPreQueryEvaluation ? limitFieldsMap : Collections.emptyMap(), limitFieldsField, getNonEventFields());
         }
-        return this.evaluationFilter != null ? evaluationFilter.clone() : null;
+        return this.eventEvaluationFilter != null ? eventEvaluationFilter.clone() : null;
+    }
+
+    public Set<String> getEventFields() {
+        Set<String> fields = getAllFields();
+        fields.removeAll(getIndexOnlyFields());
+        return fields;
+    }
+
+    /**
+     * In the TLD case replace the {@link QueryOptions#eventFilter} with an evaluation filter
+     *
+     * @return an evaluation filter
+     */
+    public EventDataQueryFilter getEventFilter() {
+        return getEvaluationFilter();
     }
 
     @Override
@@ -157,7 +195,7 @@ public class TLDQueryIterator extends QueryIterator {
                     final Class<?> fClass = Class.forName(fClassName);
                     if (Predicate.class.isAssignableFrom(fClass)) {
                         // Create and configure the predicate
-                        final Predicate p = (Predicate) fClass.newInstance();
+                        final Predicate p = (Predicate) fClass.getDeclaredConstructor().newInstance();
                         if (p instanceof ConfiguredPredicate) {
                             ((ConfiguredPredicate) p).configure(options);
                         }
@@ -178,7 +216,7 @@ public class TLDQueryIterator extends QueryIterator {
                         return fieldIndexKeyDataTypeFilter;
                     }
                 }
-            } catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
+            } catch (ClassNotFoundException | IllegalAccessException | InstantiationException | InvocationTargetException | NoSuchMethodException e) {
                 log.error("Could not instantiate postprocessing chain!", e);
             }
         }
@@ -201,7 +239,9 @@ public class TLDQueryIterator extends QueryIterator {
     @Override
     public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
         // when we are torn down and rebuilt, ensure the range is for the next top level document
-        if (!range.isStartKeyInclusive()) {
+        // Skip this logic if this is part of a yield where we are trying to restart at the beginning of a particular
+        // event key or shard range.
+        if (!range.isStartKeyInclusive() && !WaitWindowObserver.hasBeginMarker(range.getStartKey())) {
             Key startKey = TLD.getNextParentKey(range.getStartKey());
             if (!startKey.equals(range.getStartKey())) {
                 Key endKey = range.getEndKey();
@@ -215,7 +255,8 @@ public class TLDQueryIterator extends QueryIterator {
 
     @Override
     protected IteratorBuildingVisitor createIteratorBuildingVisitor(final Range documentRange, boolean isQueryFullySatisfied, boolean sortedUIDs)
-                    throws MalformedURLException, ConfigException, InstantiationException, IllegalAccessException {
+                    throws MalformedURLException, ConfigException, InstantiationException, IllegalAccessException, NoSuchMethodException,
+                    InvocationTargetException {
         return createIteratorBuildingVisitor(TLDIndexBuildingVisitor.class, documentRange, isQueryFullySatisfied, sortedUIDs)
                         .setIteratorBuilder(TLDIndexIteratorBuilder.class);
     }

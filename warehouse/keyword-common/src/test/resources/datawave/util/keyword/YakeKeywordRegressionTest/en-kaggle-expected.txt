@@ -1,0 +1,4 @@
+acquiring kaggle=0.4602
+cloud next=0.3884
+cloud next conference=0.5552
+san francisco=0.3884

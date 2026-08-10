@@ -19,7 +19,7 @@ import datawave.query.jexl.DatawaveJexlContext;
 import datawave.util.StringUtils;
 
 public class DocumentKey extends Attribute<DocumentKey> implements Serializable {
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 5322007904914187326L;
 
     private static final LcNoDiacriticsNormalizer normalizer = new LcNoDiacriticsNormalizer();
 
@@ -85,12 +85,7 @@ public class DocumentKey extends Attribute<DocumentKey> implements Serializable 
 
     @Override
     public void write(DataOutput out) throws IOException {
-        write(out, false);
-    }
-
-    @Override
-    public void write(DataOutput out, boolean reducedResponse) throws IOException {
-        writeMetadata(out, reducedResponse);
+        writeMetadata(out);
         WritableUtils.writeString(out, getShardId());
         WritableUtils.writeString(out, getDataType());
         WritableUtils.writeString(out, getUid());
@@ -133,12 +128,7 @@ public class DocumentKey extends Attribute<DocumentKey> implements Serializable 
 
     @Override
     public void write(Kryo kryo, Output output) {
-        write(kryo, output, false);
-    }
-
-    @Override
-    public void write(Kryo kryo, Output output, Boolean reducedResponse) {
-        super.writeMetadata(kryo, output, reducedResponse);
+        super.writeMetadata(kryo, output);
         output.writeString(this.getShardId());
         output.writeString(this.getDataType());
         output.writeString(this.getUid());

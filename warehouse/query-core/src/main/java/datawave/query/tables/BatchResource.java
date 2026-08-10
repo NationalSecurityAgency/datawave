@@ -68,7 +68,6 @@ public class BatchResource extends RunningResource {
         if (baseScanner != null) {
             ((BatchScanner) baseScanner).setRanges(currentRange);
         }
-
     }
 
     /*

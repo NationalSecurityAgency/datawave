@@ -23,3 +23,11 @@ provide the exact same capabilities described below, but hosted on a CentOS 7 ba
 ### Get Started
 
 DataWave Quickstart installation instructions are [here](https://code.nsa.gov/datawave/docs/quickstart)
+
+--- 
+### A note on building:
+
+In order to deploy a new dependency, you can use a command similar to the following, using
+Acccumulo-2.1.3 as an example. The command must be run from the same directory as the tar file.
+
+`mvn deploy:deploy-file -DrepositoryId=github-datawave -Durl=https://maven.pkg.github.com/NationalSecurityAgency/datawave -DgroupId=gov.nsa.datawave.quickstart -DartifactId=accumulo -Dversion=2.1.3 -Dfile=accumulo-2.1.3-bin.tar.gz -Dpackaging=tar.gz`

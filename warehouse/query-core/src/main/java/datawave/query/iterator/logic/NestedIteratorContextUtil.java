@@ -3,6 +3,7 @@ package datawave.query.iterator.logic;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 
 import com.google.common.collect.TreeMultimap;
 
@@ -50,7 +51,7 @@ public class NestedIteratorContextUtil {
             }
         }
         // take all previously seen keys that are less than context and move them again
-        Set<T> keysToMove = headMap.keySet().headSet(context);
+        Set<T> keysToMove = new TreeSet<>(headMap.keySet().headSet(context));
 
         // find and remove these sources, note that they have now been removed from the headMap nothing should return early until they are re-added
         for (T key : keysToMove) {

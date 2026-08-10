@@ -29,6 +29,7 @@ import datawave.core.query.logic.BaseQueryLogic;
 import datawave.core.query.logic.WritesQueryMetrics;
 import datawave.core.query.logic.WritesResultCardinalities;
 import datawave.marking.MarkingFunctions;
+import datawave.marking.Markings;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl.Parameter;
 import datawave.microservice.querymetric.BaseQueryMetric;
@@ -45,8 +46,9 @@ import datawave.query.function.LogTiming;
 import datawave.query.function.deserializer.DocumentDeserializer;
 import datawave.query.iterator.QueryOptions;
 import datawave.query.iterator.profile.QuerySpan;
+import datawave.query.iterator.waitwindow.WaitWindowObserver;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.util.StringUtils;
+import datawave.util.CompositeTimestamp;
 import datawave.util.time.DateHelper;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
@@ -67,7 +69,6 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
     protected Boolean reducedResponse;
 
     private static final Logger log = Logger.getLogger(DocumentTransformerSupport.class);
-    private static final Map<String,String> EMPTY_MARKINGS = new HashMap<>();
 
     private long sourceCount = 0;
     private long nextCount = 0;
@@ -109,19 +110,19 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
      * @param responseObjectFactory
      *            the response object factory
      */
-    public DocumentTransformerSupport(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, MarkingFunctions markingFunctions,
+    public DocumentTransformerSupport(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, MarkingFunctions<?> markingFunctions,
                     ResponseObjectFactory responseObjectFactory) {
         this(logic, settings, markingFunctions, responseObjectFactory, false);
     }
 
-    public DocumentTransformerSupport(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, MarkingFunctions markingFunctions,
+    public DocumentTransformerSupport(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, MarkingFunctions<?> markingFunctions,
                     ResponseObjectFactory responseObjectFactory, Boolean reducedResponse) {
 
         this(null != logic ? logic.getTableName() : null, settings, markingFunctions, responseObjectFactory, reducedResponse);
         this.logic = logic;
     }
 
-    public DocumentTransformerSupport(String tableName, Query settings, MarkingFunctions markingFunctions, ResponseObjectFactory responseObjectFactory,
+    public DocumentTransformerSupport(String tableName, Query settings, MarkingFunctions<?> markingFunctions, ResponseObjectFactory responseObjectFactory,
                     Boolean reducedResponse) {
         super(tableName, settings, markingFunctions, responseObjectFactory);
 
@@ -158,7 +159,7 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
         Key key = origKey;
         if (key != null) {
             String colFam = key.getColumnFamily().toString();
-            String[] colFamParts = StringUtils.split(colFam, '\0');
+            String[] colFamParts = colFam.split("\0");
             if (colFamParts.length == 3) {
                 // skip part 0 and return a key with parts 1 & 2 as the colFam
                 key = new Key(key.getRow(), new Text(colFamParts[1] + '\0' + colFamParts[2]), key.getColumnQualifier(), key.getColumnVisibility(),
@@ -184,7 +185,7 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
      * @return a collection of the document fields
      */
     protected Collection<FieldBase<?>> buildDocumentFields(Key documentKey, String documentName, Document document, ColumnVisibility topLevelColumnVisibility,
-                    MarkingFunctions markingFunctions) {
+                    MarkingFunctions<?> markingFunctions) {
 
         // Whether the fields were added to projectFields or removed from disallowlistedFields, they user does not want them returned
         // If neither a projection nor a disallowlist was used then the suppressFields set should remain empty
@@ -258,8 +259,10 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
                     log.info(sb.toString());
                 }
             }
-            if (dictionary.size() == 1) {
-                // this document contained only timing metadata
+            boolean metadata = dictionary.containsKey(LogTiming.TIMING_METADATA);
+            boolean waitWindowOverrun = dictionary.containsKey(WaitWindowObserver.WAIT_WINDOW_OVERRUN);
+            if ((dictionary.size() == 1 && metadata) || waitWindowOverrun) {
+                // this document contained only timing metadata or contains the WAIT_WINDOW_OVERRUN marker
                 throw new EmptyObjectException();
             }
         }
@@ -386,7 +389,7 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
                 log.trace("Document.getTimestamp() returned Log.MAX_VALUE - " + documentKey + " - computed dataDate from row: " + dataDate);
             }
         } else {
-            dataDate = new Date(timestamp);
+            dataDate = new Date(CompositeTimestamp.getEventDate(timestamp));
         }
 
         resultCardinalityDocumentDate.addEntry(valueMap, eventId, dataType, dataDate);
@@ -446,7 +449,7 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
      * @return a collection of fields
      */
     protected Collection<FieldBase<?>> buildDocumentFields(Key documentKey, String fieldName, Attribute<?> attr, ColumnVisibility topLevelColumnVisibility,
-                    MarkingFunctions markingFunctions) {
+                    MarkingFunctions<?> markingFunctions) {
 
         Set<FieldBase<?>> myFields = new HashSet<>();
 
@@ -460,16 +463,15 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
             // Use the markings on the Field if we're returning the markings to the client
             if (!this.reducedResponse) {
                 try {
-                    Map<String,String> markings = markingFunctions.translateFromColumnVisibility(attr.getColumnVisibility());
+                    Markings<?> markings = markingFunctions.translateFromColumnVisibility(attr.getColumnVisibility());
                     FieldBase<?> field = this.makeField(fieldName, markings, attr.getColumnVisibility(), attr.getTimestamp(), attr.getData());
-                    MarkingFunctions.Util.populate(field, markings);
                     myFields.add(field);
                 } catch (Exception ex) {
                     log.error("unable to process markings:" + ex);
                 }
             } else {
                 // noinspection RedundantCast
-                FieldBase<?> f = createField(fieldName, (Long) null, attr, EMPTY_MARKINGS, (String) null);
+                FieldBase<?> f = createField(fieldName, (Long) null, attr, null, (String) null);
                 myFields.add(f);
             }
         }
@@ -492,8 +494,7 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
      *            mapping of markings
      * @return a field
      */
-    protected FieldBase<?> createField(final String fieldName, final long ts, final Attribute<?> attribute, Map<String,String> markings,
-                    String columnVisibility) {
+    protected FieldBase<?> createField(final String fieldName, final long ts, final Attribute<?> attribute, Markings<?> markings, String columnVisibility) {
         if (markings == null || markings.isEmpty()) {
             log.warn("Null or empty markings for " + fieldName + ":" + attribute);
         }
@@ -501,16 +502,14 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
         return createField(fieldName, (Long) ts, attribute, markings, columnVisibility);
     }
 
-    protected FieldBase<?> createField(final String fieldName, final Long ts, final Attribute<?> attribute, Map<String,String> markings,
-                    String columnVisibility) {
+    protected FieldBase<?> createField(final String fieldName, final Long ts, final Attribute<?> attribute, Markings<?> markings, String columnVisibility) {
         if (this.transformValuePrefixFields.contains(fieldName)) {
             return convertHitTermField(fieldName, ts, attribute, markings, columnVisibility);
         }
         return this.makeField(fieldName, markings, columnVisibility, ts, attribute.getData());
     }
 
-    private FieldBase<?> convertHitTermField(final String fieldName, final Long ts, Attribute<?> attribute, Map<String,String> markings,
-                    String columnVisibility) {
+    private FieldBase<?> convertHitTermField(final String fieldName, final Long ts, Attribute<?> attribute, Markings<?> markings, String columnVisibility) {
         return this.makeField(fieldName, markings, columnVisibility, ts, convertMappedAttribute(attribute).getData());
     }
 

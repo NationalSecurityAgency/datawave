@@ -1,147 +1,96 @@
 package datawave.query;
 
-import java.io.File;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Arrays;
-import java.util.Collections;
+import java.nio.file.Path;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
 import java.util.TimeZone;
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
-import org.apache.accumulo.core.client.Scanner;
-import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
-import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.ImmutableListMultimap;
-import com.google.common.collect.Multimap;
-
-import datawave.core.query.configuration.GenericQueryConfiguration;
-import datawave.data.ColumnFamilyConstants;
 import datawave.data.hash.UID;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.Type;
-import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.protobuf.Uid;
 import datawave.marking.MarkingFunctions;
-import datawave.microservice.query.QueryImpl;
-import datawave.query.attributes.Attribute;
-import datawave.query.attributes.Attributes;
-import datawave.query.attributes.Document;
-import datawave.query.attributes.PreNormalizedAttribute;
-import datawave.query.attributes.TypeAttribute;
-import datawave.query.function.JexlEvaluation;
-import datawave.query.function.deserializer.KryoDocumentDeserializer;
+import datawave.query.index.day.IndexIngestUtil;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.tables.ShardQueryLogic;
+import datawave.query.util.AbstractQueryTest;
 import datawave.query.util.DateIndexHelperFactory;
 import datawave.query.util.MetadataHelperFactory;
-import datawave.security.util.ScannerHelper;
-import datawave.util.TableName;
+import datawave.table.constants.MetadataColumnFamilyConstants;
+import datawave.table.constants.TableName;
 
 /**
  *
  * This test confirms that hit terms are found in the correct documents, and only in the correct documents. The test data has fields that will hit in different
  * grouping context levels, and assures that the hits contain the fields with the correct grouping context. It also confirms that an 'or' query that hits
  * different fields in the returned documents will have the correct hit terms.
- *
- * The same tests are made against document ranges and shard ranges
- *
+ * <p>
  * If this test fails, then hit terms are broken... maybe... probably...
- *
  */
-public class IfThisTestFailsThenHitTermsAreBroken {
-
-    @ClassRule
-    // Temporary folders are not successfully deleted in this test with @Rule for some reason, but they are with @ClassRule.
-    public static TemporaryFolder temporaryFolder = new TemporaryFolder();
-
-    enum WhatKindaRange {
-        SHARD, DOCUMENT
-    }
+public class IfThisTestFailsThenHitTermsAreBroken extends AbstractQueryTest {
 
     private static final Logger log = Logger.getLogger(IfThisTestFailsThenHitTermsAreBroken.class);
+    private static final Authorizations auths = new Authorizations("A");
 
-    protected static AccumuloClient client = null;
+    private static AccumuloClient clientForTest;
 
-    protected Authorizations auths = new Authorizations("A");
+    protected ShardQueryLogic logic;
 
-    protected Set<Authorizations> authSet = Collections.singleton(auths);
-
-    protected ShardQueryLogic logic = null;
-
-    protected KryoDocumentDeserializer deserializer;
-
-    private final DateFormat format = new SimpleDateFormat("yyyyMMdd");
-
-    @SuppressWarnings("unchecked")
-    Multimap<String,String>[] expectedHitTerms = new Multimap[] {
-
-            new ImmutableListMultimap.Builder<String,String>().put("First", "UUID.0:First").put("Second", "UUID.0:Second").build(),
-
-            new ImmutableListMultimap.Builder<String,String>().put("First", "FOO.0:FOO").put("First", "UUID.0:First").put("Second", "BAR.0:BAR")
-                            .put("Second", "UUID.0:Second").build(),
-
-            new ImmutableListMultimap.Builder<String,String>().put("First", "NAME.0:NAME0").put("First", "UUID.0:First").put("Second", "NAME.1:NAME0")
-                            .put("Second", "UUID.0:Second").build(),
-
-            new ImmutableListMultimap.Builder<String,String>().put("First", "UUID.0:First").put("First", "NAME.2:Haiqu").put("First", "FOO.0:FOO").build(),
-
-            new ImmutableListMultimap.Builder<String,String>().put("Second", "UUID.0:Second").put("Second", "NAME.2:Haiqu").put("Second", "BAR.0:BAR").build(),
-
-            new ImmutableListMultimap.Builder<String,String>().put("Second", "UUID.0:Second").put("Second", "NAME.2:Haiqu").put("Second", "BAR.0:BAR").build(),
-
-            new ImmutableListMultimap.Builder<String,String>().put("Second", "UUID.0:Second").put("Second", "NAME.2:Haiqu").put("Second", "BAR.0:BAR").build(),
-
-            new ImmutableListMultimap.Builder<String,String>().put("Second", "UUID.0:Second").put("Second", "BAR.0:BAR").build(),
-
-            new ImmutableListMultimap.Builder<String,String>().put("Second", "NAME.2:Haiqu").put("Second", "BAR.0:BAR").build(),
-
-            new ImmutableListMultimap.Builder<String,String>().put("First", "UUID.0:First").build(),};
-
-    @AfterClass
-    public static void teardown() {
-        TypeRegistry.reset();
+    @Override
+    public ShardQueryLogic getLogic() {
+        return logic;
     }
 
-    @After
-    public void after() {
-        TypeRegistry.reset();
-        System.clearProperty("type.metadata.dir");
+    @Override
+    public Authorizations getAuths() {
+        return auths;
     }
 
-    @Before
-    public void setup() throws Exception {
+    @Override
+    protected void extraConfigurations() {
+        disableQueryPlanAssertion();
+    }
+
+    @Override
+    protected void extraAssertions() {
+        // no-op; hit term validation is handled by AbstractQueryTest via expectHitTermsRequiredAllOf/AnyOf
+    }
+
+    @BeforeAll
+    public static void beforeAll() throws Exception {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
-        File tempDir = temporaryFolder.newFolder();
-        System.setProperty("type.metadata.dir", tempDir.getAbsolutePath());
+
+        QueryTestTableHelper qtth = new QueryTestTableHelper(IfThisTestFailsThenHitTermsAreBroken.class.toString(), log);
+        clientForTest = qtth.client;
+        MoreTestData.writeItAll(clientForTest);
+    }
+
+    @AfterAll
+    public static void afterAll() {
+        TypeRegistry.reset();
+    }
+
+    @BeforeEach
+    public void setup(@TempDir Path tempDir) throws Exception {
+        System.setProperty("type.metadata.dir", tempDir.toAbsolutePath().toString());
         System.setProperty("dw.metadatahelper.all.auths", "A,B,C,D,T,U,V,W,X,Y,Z");
-        log.info("using tempFolder " + tempDir);
 
         logic = new ShardQueryLogic();
         logic.setMetadataTableName(QueryTestTableHelper.MODEL_TABLE_NAME);
@@ -157,271 +106,155 @@ public class IfThisTestFailsThenHitTermsAreBroken {
         logic.setMetadataHelperFactory(new MetadataHelperFactory());
         logic.setDateIndexHelperFactory(new DateIndexHelperFactory());
         logic.setMaxEvaluationPipelines(1);
-        deserializer = new KryoDocumentDeserializer();
+
+        setClientForTest(clientForTest);
+        givenDate("20091231", "20150101");
+        givenParameter("hit.list", "true");
     }
 
-    public void debugQuery(String tableName) throws Exception {
-        Scanner s = ScannerHelper.createScanner(client, tableName, authSet);
-        Range r = new Range();
-        s.setRange(r);
-        for (Entry<Key,Value> entry : s) {
-            if (log.isDebugEnabled()) {
-                log.debug(entry.getKey() + " " + entry.getValue());
-            }
-        }
-    }
-
-    protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms,
-                    Multimap<String,String> expectedHitTerms) throws Exception {
-        log.debug("runTestQuery");
-        log.trace("Creating QueryImpl");
-        QueryImpl settings = new QueryImpl();
-        settings.setBeginDate(startDate);
-        settings.setEndDate(endDate);
-        settings.setPagesize(Integer.MAX_VALUE);
-        settings.setQueryAuthorizations(auths.serialize());
-        settings.setQuery(querystr);
-        settings.setParameters(extraParms);
-        settings.setId(UUID.randomUUID());
-        settings.setParameters(extraParms);
-
-        log.debug("query: " + settings.getQuery());
-        log.debug("logic: " + settings.getQueryLogicName());
-
-        GenericQueryConfiguration config = logic.initialize(client, settings, authSet);
-        logic.setupQuery(config);
-
-        HashSet<String> expectedSet = new HashSet<>(expected);
-        HashSet<String> resultSet;
-        resultSet = new HashSet<>();
-        Set<Document> docs = new HashSet<>();
-        for (Entry<Key,Value> entry : logic) {
-
-            Document d = deserializer.apply(entry).getValue();
-
-            log.debug(entry.getKey() + " => " + d);
-
-            Attribute<?> attr = d.get("UUID.0");
-
-            Assert.assertNotNull("Result Document did not contain a 'UUID'", attr);
-            Assert.assertTrue("Expected result to be an instance of DatwawaveTypeAttribute, was: " + attr.getClass().getName(),
-                            attr instanceof TypeAttribute || attr instanceof PreNormalizedAttribute);
-
-            TypeAttribute<?> uuidAttr = (TypeAttribute<?>) attr;
-
-            String uuid = uuidAttr.getType().getDelegate().toString();
-            Assert.assertTrue("Received unexpected UUID: " + uuid, expected.contains(uuid));
-
-            Attribute<?> hitTermAttribute = d.get(JexlEvaluation.HIT_TERM_FIELD);
-            if (hitTermAttribute instanceof Attributes) {
-
-                Attributes hitTerms = (Attributes) hitTermAttribute;
-                for (Attribute<?> hitTerm : hitTerms.getAttributes()) {
-                    log.debug("hitTerm:" + hitTerm);
-                    String hitString = hitTerm.getData().toString();
-                    log.debug("as string:" + hitString);
-                    log.debug("expectedHitTerms:" + expectedHitTerms);
-                    Assert.assertNotEquals(hitTerm.getTimestamp(), Long.MAX_VALUE);
-                    // make sure this hitString is in the map, and remove it
-                    boolean result = expectedHitTerms.get(uuid).remove(hitString);
-                    if (result == false) {
-                        log.debug("failed to find hitString:" + hitString + " for uuid:" + uuid + " in expectedHitTerms:" + expectedHitTerms + " from hitTerms:"
-                                        + hitTerms);
-                        Assert.fail("failed to find hitString:" + hitString + " for uuid:" + uuid + " in expectedHitTerms:" + expectedHitTerms
-                                        + " from hitTerms:" + hitTerms);
-                    } else {
-                        log.debug("removed hitString:" + hitString + " for uuid:" + uuid + " in expectedHitTerms:" + expectedHitTerms + " from hitTerms:"
-                                        + hitTerms);
-                    }
-                }
-            } else if (hitTermAttribute instanceof Attribute) {
-                log.debug("hitTerm:" + (Attribute<?>) hitTermAttribute);
-                String hitString = ((Attribute<?>) hitTermAttribute).getData().toString();
-                log.debug("as string:" + hitString);
-                log.debug("expectedHitTerms:" + expectedHitTerms);
-                boolean result = expectedHitTerms.get(uuid).remove(hitString);
-                if (result == false) {
-                    log.debug("failed to find hitString:" + hitString + " for uuid:" + uuid + " in expectedHitTerms:" + expectedHitTerms);
-                    Assert.fail("failed to find hitString:" + hitString + " for uuid:" + uuid + " in expectedHitTerms:" + expectedHitTerms);
-                } else {
-                    log.debug("removed hitString:" + hitString + " for uuid:" + uuid + " in expectedHitTerms:" + expectedHitTerms + " from hitTerm:"
-                                    + (Attribute<?>) hitTermAttribute);
-                }
-            }
-
-            resultSet.add(uuid);
-            docs.add(d);
-        }
-
-        if (expected.size() > resultSet.size()) {
-            expectedSet.addAll(expected);
-            expectedSet.removeAll(resultSet);
-
-            for (String s : expectedSet) {
-                log.warn("Missing: " + s);
-            }
-        }
-
-        if (!expected.containsAll(resultSet)) {
-            log.error("Expected results " + expected + " differ form actual results " + resultSet);
-        }
-        Assert.assertTrue("Expected results " + expected + " differ form actual results " + resultSet, expected.containsAll(resultSet));
-        Assert.assertEquals("Unexpected number of records", expected.size(), resultSet.size());
-
-        // the map is empty if there were no unexpected hit terms in it
-        log.debug("expectedHitTerms:" + expectedHitTerms);
-        Assert.assertTrue(expectedHitTerms.isEmpty());
-
+    @AfterEach
+    public void tearDown() {
+        System.clearProperty("type.metadata.dir");
     }
 
     @Test
-    public void testWithShardRange() throws Exception {
+    public void testUnion() throws Exception {
+        // sanity check that expects two documents
+        givenQuery("UUID == 'First' || UUID == 'Second'");
+        expectHitTermsRequiredAnyOf("UUID.0:First", "UUID.0:Second");
+        expectResultCount(2);
+        planAndExecuteQuery();
 
-        QueryTestTableHelper qtth = new QueryTestTableHelper(IfThisTestFailsThenHitTermsAreBroken.class.toString(), log);
-        client = qtth.client;
-
-        MoreTestData.writeItAll(client, WhatKindaRange.SHARD);
-        if (log.isDebugEnabled()) {
-            log.debug("testWithShardRange");
-            PrintUtility.printTable(client, auths, TableName.SHARD);
-            PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
-            PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
-        }
-        doIt();
-        doItWithProjection();
+        givenParameter("return.fields", "*");
+        planAndExecuteQuery();
     }
 
     @Test
-    public void testWithDocumentRange() throws Exception {
+    public void testDoubleNestedUnion() throws Exception {
+        // look for FOO or BAR, expecting the hit_terms to be in the right places
+        givenQuery("( UUID == 'First' || UUID == 'Second' ) && ( FOO == 'FOO' || BAR == 'BAR' )");
+        expectHitTermsRequiredAnyOf("UUID.0:First", "UUID.0:Second");
+        expectHitTermsRequiredAnyOf("FOO.0:FOO", "BAR.0:BAR");
+        expectResultCount(2);
+        planAndExecuteQuery();
 
-        QueryTestTableHelper qtth = new QueryTestTableHelper(IfThisTestFailsThenHitTermsAreBroken.class.toString(), log);
-        client = qtth.client;
-
-        MoreTestData.writeItAll(client, WhatKindaRange.DOCUMENT);
-        if (log.isDebugEnabled()) {
-            log.debug("testWithDocumentRange");
-            PrintUtility.printTable(client, auths, TableName.SHARD);
-            PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
-            PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
-        }
-        doIt();
-        doItWithProjection();
+        givenParameter("return.fields", "*");
+        planAndExecuteQuery();
     }
 
-    private void doIt() throws Exception {
+    @Test
+    public void testNestedUnionWithAnchorOfDifferentGroupingContext() throws Exception {
+        // should find NAME0 in different grouping contexts, but the hit terms should be correct
+        givenQuery("( UUID == 'First' || UUID == 'Second' ) &&  NAME == 'NAME0'");
+        expectHitTermsRequiredAnyOf("UUID.0:First", "UUID.0:Second");
+        expectHitTermsRequiredAnyOf("NAME.0:NAME0", "NAME.1:NAME0");
+        expectResultCount(2);
+        planAndExecuteQuery();
 
-        Map<String,String> extraParameters = new HashMap<>();
-        extraParameters.put("hit.list", "true");
-        // @formatter:off
-        String[] queryStrings = {
-                // sanity check. I got the 2 documents
-                "UUID == 'First' || UUID == 'Second'",
-                // look for FOO or BAR, expecting the hit_terms to be in the right places
-                "( UUID == 'First' || UUID == 'Second' ) && ( FOO == 'FOO' || BAR == 'BAR' )",
-                // should find NAME0 in different grouping contexts, but the hit terms should be correct
-                "( UUID == 'First' || UUID == 'Second' ) &&  NAME == 'NAME0'",
-                // this may get initial hits in Second, but will return only First. Makes sure that hits from Second are not included in First
-                "( UUID == 'First' || UUID == 'Second' ) &&  NAME == 'Haiqu' && FOO == 'FOO'",
-                // this may get initial hits in First, but will return only Second. Makes sure that hits from First are not included in Second
-                "( UUID == 'First' || UUID == 'Second' ) &&  NAME == 'Haiqu' && BAR == 'BAR'",
-                // try to pull in hits from Third, should still hit only Second
-                "( UUID == 'First' || UUID == 'Second' || UUID == 'Third') &&  NAME == 'Haiqu' && BAR == 'BAR'",
-
-                "( UUID == 'First' || UUID == 'Second' || UUID == 'Third') &&  filter:includeRegex(NAME,'Haiqu') && filter:includeRegex(BAR,'BAR')",
-
-                "UUID == 'Second' && BAR == 'BAR'",
-
-                "NAME == 'Haiqu' && BAR == 'BAR' && filter:occurrence(NAME, '==', 3)",
-
-                "UUID == 'First' && filter:isNotNull(NAME)"
-        };
-        @SuppressWarnings("unchecked")
-        List<String>[] expectedLists = new List[] {
-                // just the expected uuids. I should always get both documents, the real test is in the hit terms
-                Arrays.asList("First", "Second"),
-                Arrays.asList("First", "Second"),
-                Arrays.asList("First", "Second"),
-                Arrays.asList("First"),
-                Arrays.asList("Second"),
-                Arrays.asList("Second"),
-                Arrays.asList("Second"),
-                Arrays.asList("Second"),
-                Arrays.asList("Second"),
-                Arrays.asList("First")
-        };
-        // @formatter:on
-        for (int i = 0; i < queryStrings.length; i++) {
-            runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters,
-                            ArrayListMultimap.create(expectedHitTerms[i]));
-        }
+        givenParameter("return.fields", "*");
+        planAndExecuteQuery();
     }
 
-    private void doItWithProjection() throws Exception {
+    @Test
+    public void testNestedUnionFirstDocumentReturned() throws Exception {
+        // this may get initial hits in Second, but will return only First. Makes sure that hits from Second are not included in First
+        givenQuery("( UUID == 'First' || UUID == 'Second' ) &&  NAME == 'Haiqu' && FOO == 'FOO'");
+        expectHitTermsRequiredAllOf("UUID.0:First", "NAME.2:Haiqu", "FOO.0:FOO");
+        expectResultCount(1);
+        planAndExecuteQuery();
 
-        Map<String,String> extraParameters = new HashMap<>();
-        extraParameters.put("hit.list", "true");
-        extraParameters.put("return.fields", "*");
-        // @formatter:off
-        String[] queryStrings = {
-                // sanity check. I got the 2 documents
-                "UUID == 'First' || UUID == 'Second'",
-                // look for FOO or BAR, expecting the hit_terms to be in the right places
-                "( UUID == 'First' || UUID == 'Second' ) && ( FOO == 'FOO' || BAR == 'BAR' )",
-                // should find NAME0 in different grouping contexts, but the hit terms should be correct
-                "( UUID == 'First' || UUID == 'Second' ) &&  NAME == 'NAME0'",
-                // this may get initial hits in Second, but will return only First. Makes sure that hits from Second are not included in First
-                "( UUID == 'First' || UUID == 'Second' ) &&  NAME == 'Haiqu' && FOO == 'FOO'",
-                // this may get initial hits in First, but will return only Second. Makes sure that hits from First are not included in Second
-                "( UUID == 'First' || UUID == 'Second' ) &&  NAME == 'Haiqu' && BAR == 'BAR'",
-                // try to pull in hits from Third, should still hit only Second
-                "( UUID == 'First' || UUID == 'Second' || UUID == 'Third') &&  NAME == 'Haiqu' && BAR == 'BAR'",
+        givenParameter("return.fields", "*");
+        planAndExecuteQuery();
+    }
 
-                "( UUID == 'First' || UUID == 'Second' || UUID == 'Third') &&  filter:includeRegex(NAME,'Haiqu') && filter:includeRegex(BAR,'BAR')",
+    @Test
+    public void testNestedUnionSecondDocumentReturned() throws Exception {
+        // this may get initial hits in First, but will return only Second. Makes sure that hits from First are not included in Second
+        givenQuery("( UUID == 'First' || UUID == 'Second' ) &&  NAME == 'Haiqu' && BAR == 'BAR'");
+        expectHitTermsRequiredAllOf("UUID.0:Second", "NAME.2:Haiqu", "BAR.0:BAR");
+        expectResultCount(1);
+        planAndExecuteQuery();
 
-                "UUID == 'Second' && BAR == 'BAR'",
+        givenParameter("return.fields", "*");
+        planAndExecuteQuery();
+    }
 
-                "NAME == 'Haiqu' && BAR == 'BAR' && filter:occurrence(NAME, '==', 3)",
+    @Test
+    public void testLargeNestedUnionStillOnlySecondDocumentReturned() throws Exception {
+        // try to pull in hits from Third, should still hit only Second
+        givenQuery("( UUID == 'First' || UUID == 'Second' || UUID == 'Third') &&  NAME == 'Haiqu' && BAR == 'BAR'");
+        expectHitTermsRequiredAllOf("UUID.0:Second", "NAME.2:Haiqu", "BAR.0:BAR");
+        expectResultCount(1);
+        planAndExecuteQuery();
 
-                "UUID == 'First' && filter:isNotNull(NAME)"
-        };
-        @SuppressWarnings("unchecked")
-        List<String>[] expectedLists = new List[] {
-                // just the expected uuids. I should always get both documents, the real test is in the hit terms
-                Arrays.asList("First", "Second"),
-                Arrays.asList("First", "Second"),
-                Arrays.asList("First", "Second"),
-                Arrays.asList("First"),
-                Arrays.asList("Second"),
-                Arrays.asList("Second"),
-                Arrays.asList("Second"),
-                Arrays.asList("Second"),
-                Arrays.asList("Second"),
-                Arrays.asList("First")
-        };
-        // @formatter:on
-        for (int i = 0; i < queryStrings.length; i++) {
-            runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters,
-                            ArrayListMultimap.create(expectedHitTerms[i]));
-        }
+        givenParameter("return.fields", "*");
+        planAndExecuteQuery();
+    }
+
+    @Test
+    public void testNestedUnionWithFilterAnchorTerms() throws Exception {
+        givenQuery("( UUID == 'First' || UUID == 'Second' || UUID == 'Third') &&  filter:includeRegex(NAME,'Haiqu') && filter:includeRegex(BAR,'BAR')");
+        expectHitTermsRequiredAllOf("UUID.0:Second", "NAME.2:Haiqu", "BAR.0:BAR");
+        expectResultCount(1);
+        planAndExecuteQuery();
+
+        givenParameter("return.fields", "*");
+        planAndExecuteQuery();
+    }
+
+    @Test
+    public void testSecondAndBarBar() throws Exception {
+        givenQuery("UUID == 'Second' && BAR == 'BAR'");
+        expectHitTermsRequiredAllOf("UUID.0:Second", "BAR.0:BAR");
+        expectResultCount(1);
+        planAndExecuteQuery();
+
+        givenParameter("return.fields", "*");
+        planAndExecuteQuery();
+    }
+
+    @Test
+    public void testFilterOccurrenceFunction() throws Exception {
+        givenQuery("NAME == 'Haiqu' && BAR == 'BAR' && filter:occurrence(NAME, '==', 3)");
+        expectHitTermsRequiredAllOf("BAR.0:BAR", "NAME.2:Haiqu");
+        expectResultCount(1);
+        planAndExecuteQuery();
+
+        givenParameter("return.fields", "*");
+        planAndExecuteQuery();
+    }
+
+    @Test
+    public void testFilterIsNotNull() throws Exception {
+        givenQuery("UUID == 'First' && filter:isNotNull(NAME)");
+        expectHitTermsRequiredAnyOf("UUID.0:First");
+        expectResultCount(1);
+        planAndExecuteQuery();
+
+        givenParameter("return.fields", "*");
+        planAndExecuteQuery();
     }
 
     private static class MoreTestData {
 
         private static final Type<?> lcNoDiacriticsType = new LcNoDiacriticsType();
+        private static final IndexIngestUtil ingestUtil = new IndexIngestUtil();
 
         protected static final String datatype = "test";
         protected static final String date = "20130101";
         protected static final String shard = date + "_0";
         protected static final ColumnVisibility columnVisibility = new ColumnVisibility("A");
         protected static final Value emptyValue = new Value(new byte[0]);
-        protected static final long timeStamp = 1356998400000l;
+        protected static final long timeStamp = 1356998400000L;
 
         /**
+         * Writes test data using the document range only; {@link IndexIngestUtil} derives the other shard index table variants (NO_UID_INDEX, TRUNCATED_INDEX,
+         * etc.) that {@link AbstractQueryTest} iterates over.
          */
-        public static void writeItAll(AccumuloClient client, WhatKindaRange range) throws Exception {
+        public static void writeItAll(AccumuloClient client) throws Exception {
             BatchWriter bw = null;
             BatchWriterConfig bwConfig = new BatchWriterConfig().setMaxMemory(1000L).setMaxLatency(1, TimeUnit.SECONDS).setMaxWriteThreads(1);
-            Mutation mutation = null;
+            Mutation mutation;
 
             String firstUID = UID.builder().newId("First".getBytes(), (Date) null).toString();
             String secondUID = UID.builder().newId("Second".getBytes(), (Date) null).toString();
@@ -466,20 +299,17 @@ public class IfThisTestFailsThenHitTermsAreBroken {
                 // write shard index table:
                 bw = client.createBatchWriter(TableName.SHARD_INDEX, bwConfig);
                 mutation = new Mutation(lcNoDiacriticsType.normalize("First"));
-                mutation.put("UUID".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp,
-                                range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(firstUID));
+                mutation.put("UUID".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, getValueForBuilderFor(firstUID));
                 bw.addMutation(mutation);
 
                 bw = client.createBatchWriter(TableName.SHARD_INDEX, bwConfig);
                 mutation = new Mutation(lcNoDiacriticsType.normalize("Second"));
-                mutation.put("UUID".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp,
-                                range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(secondUID));
+                mutation.put("UUID".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, getValueForBuilderFor(secondUID));
                 bw.addMutation(mutation);
 
                 bw = client.createBatchWriter(TableName.SHARD_INDEX, bwConfig);
                 mutation = new Mutation(lcNoDiacriticsType.normalize("Third"));
-                mutation.put("UUID".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp,
-                                range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(thirdUID));
+                mutation.put("UUID".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, getValueForBuilderFor(thirdUID));
                 bw.addMutation(mutation);
 
             } finally {
@@ -493,20 +323,17 @@ public class IfThisTestFailsThenHitTermsAreBroken {
                 // write the reverse index table:
                 bw = client.createBatchWriter(TableName.SHARD_RINDEX, bwConfig);
                 mutation = new Mutation(new StringBuilder(lcNoDiacriticsType.normalize("First")).reverse());
-                mutation.put("UUID".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp,
-                                range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(firstUID));
+                mutation.put("UUID".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, getValueForBuilderFor(firstUID));
                 bw.addMutation(mutation);
 
                 bw = client.createBatchWriter(TableName.SHARD_RINDEX, bwConfig);
                 mutation = new Mutation(new StringBuilder(lcNoDiacriticsType.normalize("Second")).reverse());
-                mutation.put("UUID".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp,
-                                range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(secondUID));
+                mutation.put("UUID".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, getValueForBuilderFor(secondUID));
                 bw.addMutation(mutation);
 
                 bw = client.createBatchWriter(TableName.SHARD_RINDEX, bwConfig);
                 mutation = new Mutation(new StringBuilder(lcNoDiacriticsType.normalize("Third")).reverse());
-                mutation.put("UUID".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp,
-                                range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(thirdUID));
+                mutation.put("UUID".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp, getValueForBuilderFor(thirdUID));
                 bw.addMutation(mutation);
 
             } finally {
@@ -542,46 +369,49 @@ public class IfThisTestFailsThenHitTermsAreBroken {
                 bw = client.createBatchWriter(QueryTestTableHelper.MODEL_TABLE_NAME, bwConfig);
 
                 mutation = new Mutation("NAME");
-                mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), columnVisibility, timeStamp, emptyValue);
-                mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), columnVisibility, timeStamp, emptyValue);
-                mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), columnVisibility, timeStamp,
-                                emptyValue);
+                mutation.put(MetadataColumnFamilyConstants.COLF_E, new Text(datatype), columnVisibility, timeStamp, emptyValue);
+                mutation.put(MetadataColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), columnVisibility, timeStamp, emptyValue);
+                mutation.put(MetadataColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), columnVisibility,
+                                timeStamp, emptyValue);
                 bw.addMutation(mutation);
 
                 mutation = new Mutation("FOO");
-                mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), columnVisibility, timeStamp, emptyValue);
-                mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), columnVisibility, timeStamp, emptyValue);
-                mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), columnVisibility, timeStamp,
-                                emptyValue);
+                mutation.put(MetadataColumnFamilyConstants.COLF_E, new Text(datatype), columnVisibility, timeStamp, emptyValue);
+                mutation.put(MetadataColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), columnVisibility, timeStamp, emptyValue);
+                mutation.put(MetadataColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), columnVisibility,
+                                timeStamp, emptyValue);
                 bw.addMutation(mutation);
 
                 mutation = new Mutation("BAR");
-                mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), columnVisibility, timeStamp, emptyValue);
-                mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), columnVisibility, timeStamp, emptyValue);
-                mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), columnVisibility, timeStamp,
-                                emptyValue);
+                mutation.put(MetadataColumnFamilyConstants.COLF_E, new Text(datatype), columnVisibility, timeStamp, emptyValue);
+                mutation.put(MetadataColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), columnVisibility, timeStamp, emptyValue);
+                mutation.put(MetadataColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), columnVisibility,
+                                timeStamp, emptyValue);
                 bw.addMutation(mutation);
 
                 mutation = new Mutation("BAZ");
-                mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), columnVisibility, timeStamp, emptyValue);
-                mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), columnVisibility, timeStamp, emptyValue);
-                mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), columnVisibility, timeStamp,
-                                emptyValue);
+                mutation.put(MetadataColumnFamilyConstants.COLF_E, new Text(datatype), columnVisibility, timeStamp, emptyValue);
+                mutation.put(MetadataColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), columnVisibility, timeStamp, emptyValue);
+                mutation.put(MetadataColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), columnVisibility,
+                                timeStamp, emptyValue);
                 bw.addMutation(mutation);
 
                 mutation = new Mutation("UUID");
-                mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), columnVisibility, timeStamp, emptyValue);
-                mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), columnVisibility, timeStamp, emptyValue);
-                mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype), columnVisibility, timeStamp, emptyValue);
-                mutation.put(ColumnFamilyConstants.COLF_RI, new Text(datatype), columnVisibility, timeStamp, emptyValue);
-                mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), columnVisibility, timeStamp,
-                                emptyValue);
+                mutation.put(MetadataColumnFamilyConstants.COLF_E, new Text(datatype), columnVisibility, timeStamp, emptyValue);
+                mutation.put(MetadataColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), columnVisibility, timeStamp, emptyValue);
+                mutation.put(MetadataColumnFamilyConstants.COLF_I, new Text(datatype), columnVisibility, timeStamp, emptyValue);
+                mutation.put(MetadataColumnFamilyConstants.COLF_RI, new Text(datatype), columnVisibility, timeStamp, emptyValue);
+                mutation.put(MetadataColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), columnVisibility,
+                                timeStamp, emptyValue);
                 bw.addMutation(mutation);
             } finally {
                 if (null != bw) {
                     bw.close();
                 }
             }
+
+            Authorizations auths = new Authorizations("A");
+            ingestUtil.write(client, auths);
         }
     }
 
@@ -592,13 +422,6 @@ public class IfThisTestFailsThenHitTermsAreBroken {
         }
         builder.setCOUNT(in.length);
         builder.setIGNORE(false);
-        return new Value(builder.build().toByteArray());
-    }
-
-    private static Value getValueForNuthinAndYourHitsForFree() {
-        Uid.List.Builder builder = Uid.List.newBuilder();
-        builder.setCOUNT(50); // better not be zero!!!!
-        builder.setIGNORE(true); // better be true!!!
         return new Value(builder.build().toByteArray());
     }
 }

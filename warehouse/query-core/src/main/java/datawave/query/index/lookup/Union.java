@@ -21,11 +21,10 @@ import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.language.parser.jexl.JexlNodeSet;
 import datawave.query.util.Tuple2;
 import datawave.query.util.Tuples;
-import datawave.util.StringUtils;
 
 /**
  * Creates a union of global index range streams.
- *
+ * <p>
  * This implementation of an IndexStream supports seeking to a specific shard. Such calls originate in the {@link Intersection}.
  */
 public class Union extends BaseIndexStream {
@@ -63,7 +62,6 @@ public class Union extends BaseIndexStream {
                 switch (stream.context()) {
                     case PRESENT:
                     case VARIABLE:
-                    case EXCEEDED_VALUE_THRESHOLD:
                         // index streams with data are always added
                         this.children.add(stream);
                         this.childNodes.add(stream.currentNode());
@@ -78,13 +76,7 @@ public class Union extends BaseIndexStream {
                 case ABSENT:
                     // these index streams are dropped from the union
                     continue;
-                case UNINDEXED:
-                    // a non-indexed field present in a top level union results in a non-executable query
-                    delayedFromUnindexed = true;
-                case IGNORED:
-                case DELAYED_FIELD:
-                case UNKNOWN_FIELD:
-                case EXCEEDED_TERM_THRESHOLD:
+                case DELAYED:
                     // these nodes need to be persisted via the set of delayedNodes
                     delayedNodes.add(JexlNodes.wrap(stream.currentNode()));
                     continue;
@@ -127,14 +119,9 @@ public class Union extends BaseIndexStream {
             this.context = StreamContext.PRESENT;
             this.contextDebug = "children are all present";
         } else {
-            // only delayed nodes, figure out which context to surface
-            if (delayedFromUnindexed) {
-                this.context = StreamContext.UNINDEXED;
-                this.contextDebug = "children contains at least one unindexed field";
-            } else {
-                this.context = StreamContext.DELAYED_FIELD;
-                this.contextDebug = "children are all delayed";
-            }
+            // only delayed nodes
+            this.context = StreamContext.DELAYED;
+            this.contextDebug = "children are all delayed";
         }
 
         // advance the queue if we have active index streams
@@ -350,7 +337,7 @@ public class Union extends BaseIndexStream {
         builder.append(context).append(": Union (").append(contextDebug).append(')');
         for (String childrenContext : childrenContextDebug) {
             String prefix = "\n - ";
-            String[] lines = StringUtils.split(childrenContext, '\n');
+            String[] lines = childrenContext.split("\n");
             for (String line : lines) {
                 builder.append(prefix).append(line);
                 prefix = "\n   ";

@@ -1,37 +1,36 @@
 package datawave.ingest.mapreduce.job;
 
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.net.URI;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
-import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+
+import com.google.common.collect.Lists;
 
 import datawave.ingest.mapreduce.handler.shard.ShardIdFactory;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 import datawave.util.time.DateHelper;
 
 public class SplitsFileTest {
@@ -40,17 +39,17 @@ public class SplitsFileTest {
     private static final int SHARDS_PER_DAY = 10;
     private static Configuration conf;
 
-    @Rule
-    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @TempDir
+    public static java.nio.file.Path folder;
 
-    @BeforeClass
-    public static void defineShardLocationsFile() throws IOException {
+    @BeforeAll
+    public static void defineShardLocationsFile() {
         conf = new Configuration();
         conf.setInt(ShardIdFactory.NUM_SHARDS, SHARDS_PER_DAY);
         conf.set(ShardedDataTypeHandler.SHARDED_TNAMES, TableName.SHARD);
     }
 
-    @Before
+    @BeforeEach
     public void clearCache() {
         TableSplitsCache.getCurrentCache(conf).clear();
     }
@@ -64,42 +63,37 @@ public class SplitsFileTest {
         long actualCount = splits.size();
         Map<String,Path> SplitsFiles = new HashMap<>();
         // SplitsFile.addToConf(conf, SplitsFiles);
-        Assert.assertEquals("IngestJob#writeSplitsFile failed to create the expected number of rows", expectedNumRows, actualCount);
-
-        // return file;
+        assertEquals(expectedNumRows, actualCount, "IngestJob#writeSplitsFile failed to create the expected number of rows");
     }
 
     private void writeBaseSplitsFile(Map<Text,String> locations, Configuration conf, String tableName) throws IOException {
-        File tmpBaseSplitDir = temporaryFolder.newFolder();
+        File tmpBaseSplitDir = folder.toFile();
         String splitsFile = TableSplitsCache.DEFAULT_SPLITS_CACHE_FILE;
 
         Path splitsPath = new Path(tmpBaseSplitDir.getAbsolutePath() + "/" + splitsFile);
         FileSystem fs = new Path(tmpBaseSplitDir.getAbsolutePath()).getFileSystem(conf);
-        // constructor that takes a created list of locations
-        try (PrintStream out = new PrintStream(new BufferedOutputStream(fs.create(splitsPath)))) {
-
-            for (Map.Entry<Text,String> e : locations.entrySet()) {
-                out.println(tableName + '\t' + new String(Base64.encodeBase64(e.getKey().toString().getBytes())) + '\t' + e.getValue());
-            }
-        }
-        Assert.assertTrue(fs.exists(splitsPath));
-
         conf.set(TableSplitsCache.SPLITS_CACHE_DIR, tmpBaseSplitDir.getAbsolutePath());
 
+        // constructor that takes a created list of locations
+        try (PrintStream out = new PrintStream(new BufferedOutputStream(fs.create(splitsPath)))) {
+            TableSplitsCache.getCurrentCache(conf).writeHeaderLine(out, Collections.singleton(tableName));
+            TableSplitsCache.getCurrentCache(conf).writeLocations(out, tableName, Lists.newArrayList(locations.keySet()), locations);
+        }
+        assertTrue(fs.exists(splitsPath));
     }
 
     private FileSystem setWorkingDirectory(Configuration conf) throws IOException {
         FileSystem fs = FileSystem.getLocal(conf);
-        File tempWorkDir = temporaryFolder.newFolder();
+        File tempWorkDir = folder.toFile();
         fs.setWorkingDirectory(new Path(tempWorkDir.toString()));
         conf.set(SplitsFile.SPLIT_WORK_DIR, tempWorkDir.toString());
         return fs;
     }
 
-    @Test(expected = IOException.class)
+    @Test
     public void testGetAllSplitsFilesWithoutPath() throws Exception {
         Configuration conf = new Configuration();
-        File tempWorkDir = temporaryFolder.newFolder();
+        File tempWorkDir = folder.toFile();
         conf.set(FileSystem.FS_DEFAULT_NAME_KEY, tempWorkDir.toURI().toString());
         FileSystem fs = FileSystem.get(tempWorkDir.toURI(), conf);
         fs.setWorkingDirectory(new Path(tempWorkDir.toString()));
@@ -108,9 +102,7 @@ public class SplitsFileTest {
 
         conf.set(ShardedDataTypeHandler.SHARDED_TNAMES, "shard_ingest_unit_test_table_1,shard_ingest_unit_test_table_2,shard_ingest_unit_test_table_3");
 
-        String[] tableNames = new String[] {TABLE_NAME};
-        SplitsFile.setupFile(Job.getInstance(conf), conf);
-        SplitsFile.getSplitsAndLocations(conf, TABLE_NAME);
+        assertThrows(IOException.class, () -> SplitsFile.setupFile(Job.getInstance(conf), conf));
     }
 
     @Test
@@ -125,43 +117,41 @@ public class SplitsFileTest {
         SplitsFile.validateShardIdLocations(conf, tableName, 2, locations);
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void testMissingAllOfTodaysSplits() throws Exception {
         String tableName = "missingTodaysSplits";
         SortedMap<Text,String> splits = simulateMissingSplitsForDay(0, tableName);
         createSplitsFile(splits, conf, splits.size(), tableName);
         Map<Text,String> locations = SplitsFile.getSplitsAndLocations(conf, tableName);
         // three days of splits, today should be invalid, which makes the rest bad too
-        SplitsFile.validateShardIdLocations(conf, tableName, 0, locations);
-        // shouldn't make it here
-        fail();
+        assertThrows(IllegalStateException.class, () -> SplitsFile.validateShardIdLocations(conf, tableName, 0, locations));
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void testUnbalancedTodaysSplits() throws Exception {
         String tableName = "unbalancedTodaysSplits";
         SortedMap<Text,String> splits = simulateUnbalancedSplitsForDay(0, tableName);
         createSplitsFile(splits, conf, splits.size(), tableName);
         Map<Text,String> locations = SplitsFile.getSplitsAndLocations(conf, tableName);
         // three days of splits, today should be invalid, which makes the rest bad too
-        SplitsFile.validateShardIdLocations(conf, tableName, 0, locations);
+        assertThrows(IllegalStateException.class, () -> SplitsFile.validateShardIdLocations(conf, tableName, 0, locations));
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void testMissingAllOfYesterdaysSplits() throws Exception {
         String tableName = "missingYesterdaysSplits";
         SortedMap<Text,String> splits = simulateMissingSplitsForDay(1, tableName);
         createSplitsFile(splits, conf, splits.size(), tableName);
         Map<Text,String> locations = SplitsFile.getSplitsAndLocations(conf, tableName);
-        assertThat(splits.size(), is(equalTo(locations.size())));
+        assertEquals(locations.size(), splits.size());
         // three days of splits, today should be valid
         // yesterday and all other days invalid
         SplitsFile.validateShardIdLocations(conf, tableName, 0, locations);
         // this should cause the exception
-        SplitsFile.validateShardIdLocations(conf, tableName, 1, locations);
+        assertThrows(IllegalStateException.class, () -> SplitsFile.validateShardIdLocations(conf, tableName, 1, locations));
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void testUnbalancedYesterdaysSplits() throws Exception {
         String tableName = "unbalancedYesterdaysSplits";
         SortedMap<Text,String> splits = simulateUnbalancedSplitsForDay(1, tableName);
@@ -171,10 +161,10 @@ public class SplitsFileTest {
         // yesterday and all other days invalid
         SplitsFile.validateShardIdLocations(conf, tableName, 0, locations);
         // this should cause the exception
-        SplitsFile.validateShardIdLocations(conf, tableName, 1, locations);
+        assertThrows(IllegalStateException.class, () -> SplitsFile.validateShardIdLocations(conf, tableName, 1, locations));
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void testUnbalancedMaxMoreThanConfigured() throws Exception {
         String tableName = "unbalancedMoreSplitsThenMaxPer";
         SortedMap<Text,String> splits = simulateMultipleShardsPerTServer(tableName, 3);
@@ -183,7 +173,7 @@ public class SplitsFileTest {
         createSplitsFile(splits, conf, splits.size(), tableName);
         Map<Text,String> locations = SplitsFile.getSplitsAndLocations(conf, tableName);
         // this should cause the exception
-        SplitsFile.validateShardIdLocations(conf, tableName, 0, locations);
+        assertThrows(IllegalStateException.class, () -> SplitsFile.validateShardIdLocations(conf, tableName, 0, locations));
     }
 
     @Test
@@ -198,7 +188,7 @@ public class SplitsFileTest {
         SplitsFile.validateShardIdLocations(conf, tableName, 0, locations);
     }
 
-    private SortedMap<Text,String> simulateUnbalancedSplitsForDay(int daysAgo, String tableName) throws IOException {
+    private SortedMap<Text,String> simulateUnbalancedSplitsForDay(int daysAgo, String tableName) {
         // start with a well distributed set of shards per day for 3 days
         SortedMap<Text,String> locations = createDistributedLocations(tableName);
         // for shards from "daysAgo", peg them to first shard
@@ -211,7 +201,7 @@ public class SplitsFileTest {
         return locations;
     }
 
-    private SortedMap<Text,String> simulateMultipleShardsPerTServer(String tableName, int shardsPerTServer) throws IOException {
+    private SortedMap<Text,String> simulateMultipleShardsPerTServer(String tableName, int shardsPerTServer) {
         SortedMap<Text,String> locations = new TreeMap<>();
         long now = System.currentTimeMillis();
         int tserverId = 1;
@@ -233,7 +223,7 @@ public class SplitsFileTest {
         return locations;
     }
 
-    private SortedMap<Text,String> simulateMissingSplitsForDay(int daysAgo, String tableName) throws IOException {
+    private SortedMap<Text,String> simulateMissingSplitsForDay(int daysAgo, String tableName) {
         // start with a well distributed set of shards per day for 3 days
         SortedMap<Text,String> locations = createDistributedLocations(tableName);
         // for shards from "daysAgo", remove them

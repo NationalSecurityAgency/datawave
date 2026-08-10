@@ -19,7 +19,7 @@ import datawave.query.collections.FunctionalSet;
 import datawave.query.jexl.DatawaveJexlContext;
 
 public class Longitude extends Attribute<Longitude> implements Serializable {
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -5925043913098866868L;
 
     private static final GeoLonNormalizer normalizer = new GeoLonNormalizer();
 
@@ -61,12 +61,7 @@ public class Longitude extends Attribute<Longitude> implements Serializable {
 
     @Override
     public void write(DataOutput out) throws IOException {
-        write(out, false);
-    }
-
-    @Override
-    public void write(DataOutput out, boolean reducedResponse) throws IOException {
-        writeMetadata(out, reducedResponse);
+        writeMetadata(out);
         WritableUtils.writeString(out, this.longitude);
         WritableUtils.writeVInt(out, toKeep ? 1 : 0);
     }
@@ -134,12 +129,7 @@ public class Longitude extends Attribute<Longitude> implements Serializable {
 
     @Override
     public void write(Kryo kryo, Output output) {
-        write(kryo, output, false);
-    }
-
-    @Override
-    public void write(Kryo kryo, Output output, Boolean reducedResponse) {
-        writeMetadata(kryo, output, reducedResponse);
+        writeMetadata(kryo, output);
         output.writeString(this.longitude);
         output.writeBoolean(this.toKeep);
     }

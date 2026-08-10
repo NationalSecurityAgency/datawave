@@ -1,0 +1,241 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+	<title>DataWave Web Service Query Documentation - Version ###version###</title>
+    <link rel='stylesheet' type='text/css' href='css/screen.css' media='screen' />
+</head>
+<body>
+	<h2>Query Overview</h2>
+	<p class="left">The web service allows users to query the warehouse in several different ways. The <a href="swagger-ui.html">Query</a>
+	api presents a single set of methods for starting, using, and closing a query. The web service hosts different types of 
+	<a th:href="@{/v1/listQueryLogic}">query logic</a> each with their own response type. Each query has the same lifecycle:
+	<ol class="left">
+		<li>User defines the query be calling either the Query/create or Query/define method. This returns a query id.</li>
+		<li>User iterates over the results by repetitive calls to Query/{queryId}/next. Each call to next will return a page of results. The page size was 
+		set in step 1, or can be changed with a call to the update operation. The type of response is dependent on the query logic, and is listed on the 
+		query logic page.</li>
+		<li>When the user receives a HTTP 204 response code (No Content), then there are no more results. The user should release the resources associated
+		with their query by calling Query/{queryId}/close</li>
+	</ol>
+	<h3>JEXL Query Syntax</h3>
+	<p class="left">Query logic classes will use different types of syntax for the query string. Most of the queries that retrieve raw events will accept JEXL (default)
+	or our modified LUCENE syntax. We support a subset of the language elements in the Apache Commons JEXL syntax and we have implemented some of our own
+	custom functions. We support the following JEXL operators:
+	<ul class="left">
+		<li>==</li>
+		<li>!=</li>
+		<li>&lt;</li>
+		<li>&le;</li>
+		<li>&gt;</li>
+		<li>&ge;</li>
+		<li>=~ (regex)</li>
+		<li>!~ (negative regex)</li>
+	</ul>
+	<p class="left">We have created the following functions, see the examples section below to see their usage:
+	<ul class="left">
+		<li>Content functions: phrase(), adjacent(), and within()</li>
+		<li>Geo Functions: within_bounding_box() and within_circle()</li>
+		<li>GeoWave Functions: intersects_bounding_box(), intersects_radius_km(), contains(), covers(), coveredBy(), crosses(), intersects(), overlaps(), and within()
+		<li>Utility Functions: between() and length()</li>
+	</ul>
+	<p class="left">Since JEXL is an expression language and not a text query language, we also added support for unfielded queries. For most of the query
+	logic types that query raw events, we have provided the capability to search on any <i>indexed</i> field. To achieve this, the user should
+	submit their query with the field name: <b>_ANYFIELD_</b>. See the examples below for its usage.
+	<h3>LUCENE Query Syntax</h3>
+	<p class="left">We have modified the LUCENE syntax such that the NOT operator is not unary, AND&apos;s are not fuzzy, and the implicit operator is the AND not the OR.
+	Our LUCENE syntax has the following form:
+	<pre class="left">
+		ModClause ::= DisjQuery [NOT DisjQuery]*
+		DisjQuery ::= ConjQuery [ OR ConjQuery ]*
+		ConjQuery ::= Query [ AND Query ]*
+		Query ::= Clause [ Clause ]*
+		Clause ::= Term | [ ModClause ]
+		Term ::=
+			field:selector |
+			field:selec* |
+			field:selec*or |
+			field:*lector |
+			field:selec?or |
+			selector | (can use wildcards)
+			field:[begin TO end] |
+			field:{begin TO end} |
+			"quick brown dog" |
+			"quick brown dog"~20 |
+			#FUNCTION(ARG1, ARG2)
+	</pre>
+	<p class="left">Note that to search for punctuation characters within a term, you need to escape it with a backslash.
+	<p class="left">We have also modified the LUCENE syntax to provide support for the JEXL syntax that LUCENE does not support. The table below maps the
+	JEXL operators to the supported LUCENE syntax:
+	<br />
+	<table>
+		<tr><th>JEXL Operator</th><th>LUCENE Operator</th></tr>
+		<tr class="highlight"><td>filter:includeRegex(regex)</td><td>#INCLUDE(regex)</td></tr>
+		<tr><td>filter:includeRegex(field, regex)</td><td>#INCLUDE(field, regex)</td></tr>
+		<tr class="highlight"><td>filter:includeRegex(field1, regex1) &lt;op&gt; filter:includeRegex(field2, regex2) ...</td><td>#INCLUDE(op, field1, regex1, field2, regex2 ...) where op is 'or' or 'and'</td></tr>
+		<tr><td>filter:excludeRegex(regex)</td><td>#EXCLUDE(regex)</td></tr>
+		<tr class="highlight"><td>filter:excludeRegex(field, regex)</td><td>#EXCLUDE(field, regex)</td></tr>
+		<tr><td>filter:excludeRegex(field1, regex1) &lt;op&gt; filter:excludeRegex(field2, regex2) ...</td><td>#EXCLUDE(op, field1, regex1, field2, regex2 ...) where op is 'or' or 'and'</td></tr>
+		<tr class="highlight"><td>filter:isNull(field)</td><td>#ISNULL(field)</td></tr>
+		<tr><td>not(filter:isNull(field))</td><td>#ISNOTNULL(field)</td></tr>
+		<tr class="highlight"><td>filter:occurrence(field,operator,count))</td><td>#OCCURRENCE(field,operator,count)</td></tr>
+		<tr><td>filter:timeFunction(field1,field2,operator,equivalence,goal)</td><td>#TIME_FUNCTION(field1,field2,operator,equivalence,goal)</td></tr>
+		<tr class="highlight"><td>filter:text(field)</td><td>#TEXT(field)</td></tr>
+		<tr><td>filter:text(field, value)</td><td>#TEXT(field, value)</td></tr>
+		<tr class="highlight"><td>filter:text(field1, value1) &lt;op&gt; filter:text(field2, value2) ...</td><td>#TEXT(op, field1, value1, field2, value2 ...) where op is 'or' or 'and'</td></tr>
+		<tr><td>filter:compare(field1, op, mode, field2)</td><td>#COMPARE(field1, op, mode, field2) where op is '>', '>=', '<', '<=', '==', '=', or '!=' and mode is 'ALL' or 'ANY'</td></tr>
+	</table>
+    <p class="left">Notes:
+    <ol class="left">
+        <li>None of these filter functions can be applied against index-only fields except for filter:text (#TEXT).</li>
+	<li>No indicies will be used for the INCLUDE and EXCLUDE functions, however they will be used for the TEXT function.  All of these will be matched against the original unnormalized value.
+        <li>The occurrence function is used to count the number of instances of a field in the event.  Valid operators are '==' (or '='),'>','>=','<','<=', and '!='. </li>
+    </ol>
+	<p class="left">Some geo functions are supplied as well that may prove useful although the within_bounding_box function may be done with a simple range comparison (i.e. LAT_LON_USER &lt;= &lt;lat1&gt;_&lt;lon1&gt; and LAT_LON_USER &gt;= &lt;lat2&gt;_&lt;lon2&gt;.</p>
+	<table>
+		<tr><th>JEXL Operator</th><th>LUCENE Operator</th></tr>
+		<tr class="highlight"><td>geo:within_bounding_box(latLonField, lowerLeft, upperRight)</td><td>#GEO(bounding_box, latLonField, 'lowerLeft', 'upperRight')</td></tr>
+		<tr><td>geo:within_bounding_box(lonField, latField, minLon, minLat, maxLon, maxLat)</td><td>#GEO(bounding_box, lonField, latField, minLon, minLat, maxLon, maxLat)</td></tr>
+		<tr class="highlight"><td>geo:within_circle(latLonField, center, radius)</td><td>#GEO(circle, latLonField, center, radius)</td></tr>
+	</table>
+	<p class="left">Notes:
+	<ol class="left">
+		<li>All lat and lon values are in decimal.</li>
+                <li>The lowerLeft, upperRight, and center are of the form &lt;lat&gt;_&lt;lon&gt; and must be surrounded by single quotes.</li>
+                <li>The radius is in decimal degrees as well.</li>
+	</ol>
+    <p class="left">New GeoWave geo functions are available as follows:</p>
+    <table>
+        <tr><th>JEXL Operator</th><th>LUCENE Operator</th></tr>
+        
+        <tr class="highlight">
+        <td>geowave:intersects_bounding_box(geometryField, westLon, eastLon, southLat, northLat)</td><td>#INTERSECTS_BOUNDING_BOX(geometryField, westLon, eastLon, southLat, northLat)</td></tr>
+        <tr>
+        <td>geowave:intersects_radius_km(geometryField, centerLon, centerLat, radiusKm)</td><td>#INTERSECTS_RADIUS_KM(geometryField, centerLon, centerLat, radiusKm)</td></tr>
+		
+        <tr class="highlight">
+        <td>geowave:contains(geometryField, Well-Known Text)</td><td>#CONTAINS(geometryField, centerLon, centerLat, radiusDegrees)</td></tr>
+		<tr>
+        <td>geowave:covers(geometryField, Well-Known Text)</td><td>#COVERS(geometryField, Well-Known Text)</td></tr>
+		
+        <tr class="highlight">
+        <td>geowave:coveredBy(geometryField, Well-Known Text)</td><td>#COVERED_BY(geometryField, Well-Known Text)</td></tr>
+        <tr>
+        <td>geowave:crosses(geometryField, Well-Known Text)</td><td>#CROSSES(geometryField, Well-Known Text)</td></tr>
+		
+        <tr class="highlight">
+        <td>geowave:intersects(geometryField, Well-Known Text)</td><td>#INTERSECTS(geometryField, Well-Known Text)</td></tr>
+        <tr>
+        <td>geowave:overlaps(geometryField, Well-Known Text)</td><td>#OVERLAPS(geometryField, Well-Known Text)</td></tr>
+		
+        <tr class="highlight">
+        <td>geowave:within(geometryField, Well-Known Text)</td><td>#WITHIN(geometryField, Well-Known Text)</td></tr>
+    </table>
+ 	<p class="left">Notes:
+	<ol class="left">
+			<li>All lat and lon values are in decimal degrees.</li>
+            <li>The lowerLeft, upperRight, and center are of the form &lt;lat&gt;_&lt;lon&gt; and must be surrounded by single quotes.</li>
+            <li>Geometry is represented according to the Open Geospatial Consortium standard for Well-Known Text. It is in decimal degrees longitude for x, amd latitude for y.  For example, a point at New York can be represented as  &apos;POINT (-74.01 40.71) &apos; and a box at New York can be repesented as  &apos;POLYGON(( -74.1 40.75, -74.1 40.69, -73.9 40.69, -73.9 40.75, -74.1 40.75))&apos;</li>
+	</ol>
+
+	<p class="left">An #EVALUATION_ONLY function has recently been introduced which is intended to be used to defer execution of part of a query to the evaluation phase.  This could be used to defer a range to the evaluation phase, or possibly to defer GeoWave function evaluation to the evaluation phase, avoiding the need to generate geo indices when additional indexed fields are present (i.e. indexed fields other than the geo field).  For example:</p>
+	<table>
+		<tr><th>JEXL Example</th></tr>
+
+		<tr class="highlight">
+			<td>INDEXED_FIELD == &apos;some value&apos; &amp;&amp; (<b>(ASTEvaluationOnly = true)</b> &amp;&amp; geowave:intersects(geometryField, Well-Known Text))</td></tr>
+
+		<tr><th>LUCENE Example</th></tr>
+
+		<tr class="highlight">
+			<td>INDEXED_FIELD: &apos;some value&apos; AND <b>#EVALUATION_ONLY</b>(&apos;#INTERSECTS(geometryField, Well-Known Text)&apos;)</td></tr>
+	</table>
+
+
+	<p class="left">There are some additional functions that are supplied to handle dates more smoothly.  It is intended that the need for these functions
+    may go away in future versions (<b>bolded</b> parameters are literal, other parameters are substituted with appropriate values):
+	<table>
+		<tr><th>JEXL Operator</th><th>LUCENE Operator</th></tr>
+		<tr class="highlight"><td>filter:betweenDates(field, start date, end date)</td><td>#DATE(field, start date, end date) or #DATE(field, <b>between</b>, start date, end date)</td></tr>
+		<tr><td>filter:betweenDates(field, start date, end date, start/end date format)</td><td>#DATE(field, start date, end date, start/end date format) or #DATE(field, <b>between</b>, start date, end date, start/end date format)</td></tr>
+		<tr class="highlight"><td>filter:betweenDates(field, field date format, start date, end date, start/end date format)</td><td>#DATE(field, field date format, start date, end date, start/end date format) or #DATE(field, <b>between</b>, field date format, start date, end date, start/end date format)</td></tr>
+		<tr><td>filter:afterDate(field, date)</td><td>#DATE(field, <b>after</b>, date)</td></tr>
+		<tr class="highlight"><td>filter:afterDate(field, date, date format)</td><td>#DATE(field, <b>after</b>, date, date format)</td></tr>
+		<tr><td>filter:afterDate(field, field date format, date, date format)</td><td>#DATE(field, <b>after</b>, field date format, date, date format)</td></tr>
+		<tr class="highlight"><td>filter:beforeDate(field, date)</td><td>#DATE(field, <b>before</b>, date)</td></tr>
+		<tr><td>filter:beforeDate(field, date, date format)</td><td>#DATE(field, <b>before</b>, date, date format)</td></tr>
+		<tr class="highlight"><td>filter:beforeDate(field, field date format, date, date format)</td><td>#DATE(field, <b>before</b>, field date format, date, date format)</td></tr>
+		<tr><td>filter:betweenLoadDates(<b>LOAD_DATE</b>, start date, end date)</td><td>#LOADED(start date, end date) or #LOADED(<b>between</b>, start date, end date)</td></tr>
+		<tr class="highlight"><td>filter:betweenLoadDates(<b>LOAD_DATE</b>, start date, end date, start/end date format)</td><td>#LOADED(start date, end date, start/end date format) or #LOADED(<b>between</b>, start date, end date, start/end date format)</td></tr>
+		<tr><td>filter:afterLoadDate(<b>LOAD_DATE</b>, date)</td><td>#LOADED(<b>after</b>, date)</td></tr>
+		<tr class="highlight"><td>filter:afterLoadDate(<b>LOAD_DATE</b>, date, date format)</td><td>#LOADED(<b>after</b>, date, date format)</td></tr>
+		<tr><td>filter:beforeLoadDate(<b>LOAD_DATE</b>, date)</td><td>#LOADED(<b>before</b>, date)</td></tr>
+		<tr class="highlight"><td>filter:beforeLoadDate(<b>LOAD_DATE</b>, date, date format)</td><td>#LOADED(<b>before</b>, date, date format)</td></tr>
+                <tr><td>filter:timeFunction(<b>DOWNTIME</b>, <b>UPTIME</b>, '-', '>', 2522880000000L)</td><td>#TIME_FUNCTION(<b>DOWNTIME</b>, <b>UPTIME</b>, '-', '>', '2522880000000L')</td></tr>
+	</table>
+	<p class="left">Notes:
+	<ol class="left">
+        <li>None of these filter functions can be applied against index-only fields.</li>
+		<li>Between functions are inclusive, and the other functions are exclusive of the entered dates.</li>
+		<li>Date formats must be entered in the Java SimpleDateFormat object format.</li>
+		<li>If the entered date format is not specified, then the following list of date formats will be tried:</li>
+		<ul>
+		<li>yyyyMMdd:HH:mm:ss:SSSZ</li>
+		<li>yyyyMMdd:HH:mm:ss:SSS</li>
+		<li>EEE MMM dd HH:mm:ss zzz yyyy</li>
+		<li>d MMM yyyy HH:mm:ss 'GMT'</li>
+		<li>yyyy-MM-dd HH:mm:ss.SSS Z</li>
+		<li>yyyy-MM-dd HH:mm:ss.SSS</li>
+		<li>yyyy-MM-dd HH:mm:ss.S Z</li>
+		<li>yyyy-MM-dd HH:mm:ss.S</li>
+		<li>yyyy-MM-dd HH:mm:ss Z</li>
+		<li>yyyy-MM-dd HH:mm:ssz</li>
+		<li>yyyy-MM-dd HH:mm:ss</li>
+		<li>yyyyMMdd HHmmss</li>
+		<li>yyyy-MM-dd'T'HH'|'mm</li>
+		<li>yyyy-MM-dd'T'HH':'mm':'ss'.'SSS'Z'</li>
+		<li>yyyy-MM-dd'T'HH':'mm':'ss'Z'</li>
+		<li>MM'/'dd'/'yyyy HH':'mm':'ss</li>
+		<li>E MMM d HH:mm:ss z yyyy</li>
+		<li>E MMM d HH:mm:ss Z yyyy</li>
+		<li>yyyyMMdd_HHmmss</li>
+		<li>yyyy-MM-dd</li>
+		<li>MM/dd/yyyy</li>
+		<li>yyyy-MMMM</li>
+		<li>yyyy-MMM</li>
+		<li>yyyyMMddHHmmss</li>
+		<li>yyyyMMddHHmm</li>
+		<li>yyyyMMddHH</li>
+		<li>yyyyMMdd</li>
+		</ul>
+		<li>A special date format of 'e' can be supplied to mean milliseconds since epoch.</li>
+	</ol>
+	<h3>Unique Functions</h3>
+	<p class="left">In queries, unique functions are available to find unique results for fields that are
+		specified, to the granularity of DAY, HOUR, or MINUTE. The field passed to the function needs to be a
+		dateTime field if using a time granularity, otherwise the original field will be returned as a unique result. Multiple granularity levels can
+		be provided to the same field in multiple ways, and granularities will be merged across multiple functions if necessary.
+		Potential function options that the user may use are listed below.</p>
+	<ul>
+		<li>#unique(field): Find unique results for every value of <b>field</b>. No restriction on the type of <b>field</b>.</li>
+		<li>#unique(datetimeField[DAY]): Find every unique result of <b>datetimeField</b> to the day.</li>
+		<li>#unique_by_day(datetimeField): Same as above, just a different means of formatting.</li>
+		<li>#unique(datetimeField[HOUR]): Find every unique result of <b>datetimeField</b> to the hour.</li>
+		<li>#unique_by_hour(datetimeField): Same result as above.</li>
+		<li>#unique(datetimeField[MINUTE]): Find every unique result of <b>datetimeField</b> to the minute.</li>
+		<li>#unique_by_minute(datetimeField): Same result as above.</li>
+		<li>#unique(field,datetimeField1[DAY],datetimeField2[HOUR],datetimeField3[MINUTE]): Find every unique result for <b>field</b>, <b>field1</b> to the day, <b>field2</b> to the hour, <b>field3</b> to the minute.</li>
+		<li>#unique(field,datetimeField[DAY,HOUR]): Consecutive granularities for the same field are supported. Find each unique result for field, and <b>datetimeField</b> to the day, as well as to the hour.</li>
+		<li>#unique(field1,field2[DAY]) AND #unique_by_minute(field1,field2,field3) AND #unique_by_minute(field4): Find unique results for <b>field1</b> with no restrictions as well as with minute restrictions, <b>field2</b> to the day and the minute, <b>field3</b> by the minute, and <b>field4</b> by the minute.</li>
+	</ul>
+	<p class="left">As referenced above, multiple granularity levels can be specified for the same field in different ways. The following queries are equivalent, and will find
+		each unique result for field, to the hour and to the minute specified: </p>
+	<ul>
+		<li>#unique(field[HOUR,MINUTE])</li>
+		<li>#unique(field[HOUR],field[MINUTE])</li>
+		<li>#unique(field[HOUR]) AND #unique(field[MINUTE])</li>
+		<li>#unique(field[HOUR]) AND #unique_by_minute(field)</li>
+		<li>#unique_by_hour(field) AND #unique_by_minute(field)</li>
+	</ul>
+	<br />
+</body>

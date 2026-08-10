@@ -6,7 +6,7 @@ import javax.ws.rs.core.Response;
 @ApplicationException(rollback = true)
 public class NoResultsException extends DatawaveWebApplicationException {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 6365984985156675925L;
 
     private String id;
     private long startTime;

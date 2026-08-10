@@ -1,7 +1,8 @@
 package datawave.ingest.mapreduce;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.metric.IngestInput;
@@ -9,11 +10,11 @@ import datawave.ingest.time.Now;
 
 public class DataTypeDiscardIntervalPredicate implements RawRecordPredicate {
 
-    private static final Logger log = Logger.getLogger(DataTypeDiscardIntervalPredicate.class);
+    private static final Logger log = LoggerFactory.getLogger(DataTypeDiscardIntervalPredicate.class);
 
     /**
-     * number which will be used to evaluate whether or not an Event should be processed. If the Event.getEventDate() is greater than (now - interval) then it
-     * will be processed.
+     * number which will be used to evaluate whether an Event should be processed. If the Event.getEventDate() is greater than (now - interval) then it will be
+     * processed.
      */
     public static final String DISCARD_INTERVAL = "event.discard.interval";
 
@@ -25,7 +26,7 @@ public class DataTypeDiscardIntervalPredicate implements RawRecordPredicate {
     public void setConfiguration(String type, Configuration conf) {
         long defaultInterval = conf.getLong(DISCARD_INTERVAL, 0l);
         this.discardInterval = conf.getLong(type + "." + DISCARD_INTERVAL, defaultInterval);
-        log.info("Setting up type: " + type + " with interval " + this.discardInterval);
+        log.info("Setting up type: {} with interval {}", type, this.discardInterval);
     }
 
     @Override
@@ -33,7 +34,7 @@ public class DataTypeDiscardIntervalPredicate implements RawRecordPredicate {
         // Determine whether the event date is greater than the interval. Excluding fatal error events.
         if (discardInterval != 0L && (record.getDate() < (now.get() - discardInterval))) {
             if (log.isInfoEnabled())
-                log.info("Event with time " + record.getDate() + " older than specified interval of " + (now.get() - discardInterval) + ", skipping...");
+                log.info("Event with time {} older than specified interval of {}, skipping...", record.getDate(), (now.get() - discardInterval));
             return false;
         }
         return true;

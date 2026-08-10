@@ -1,6 +1,6 @@
 package org.apache.lucene.queryparser.flexible.core.nodes;
 
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -71,7 +71,7 @@ public class FunctionQueryNode extends QueryNodeImpl {
     public FunctionQueryNode(CharSequence text, int begin, int end) throws ParseException {
         String s = text.toString();
         int openParen = s.indexOf("(");
-        int closeParen = s.lastIndexOf(")");
+        int closeParen = s.lastIndexOf(')');
         this.function = s.substring(1, openParen);
 
         Character endQuote = null;

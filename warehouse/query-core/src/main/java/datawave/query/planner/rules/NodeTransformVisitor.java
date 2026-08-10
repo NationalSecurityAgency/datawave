@@ -15,7 +15,6 @@ import org.apache.commons.jexl3.parser.ASTNENode;
 import org.apache.commons.jexl3.parser.ASTNRNode;
 import org.apache.commons.jexl3.parser.ASTNotNode;
 import org.apache.commons.jexl3.parser.ASTOrNode;
-import org.apache.commons.jexl3.parser.ASTReference;
 import org.apache.commons.jexl3.parser.ASTReferenceExpression;
 import org.apache.commons.jexl3.parser.JexlNode;
 
@@ -114,7 +113,7 @@ public class NodeTransformVisitor extends RebuildingVisitor {
         return applyTransforms(super.visit(node, data));
     }
 
-    private Object applyTransforms(Object node) {
+    protected Object applyTransforms(Object node) {
         for (NodeTransformRule rule : rules) {
             node = rule.apply((JexlNode) node, config, helper);
         }

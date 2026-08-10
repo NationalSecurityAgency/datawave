@@ -1,8 +1,6 @@
 package datawave.ingest.mapreduce.handler.ssdeep;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -10,7 +8,6 @@ import java.util.Set;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
@@ -72,7 +69,7 @@ public class SSDeepIndexHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataTy
 
     protected Text ssdeepIndexTableName;
 
-    protected MarkingFunctions markingFunctions;
+    protected MarkingFunctions<?> markingFunctions;
 
     protected TaskAttemptContext taskAttemptContext;
 
@@ -135,10 +132,6 @@ public class SSDeepIndexHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataTy
     @Override
     public RawRecordMetadata getMetadata() {
         return null;
-    }
-
-    protected byte[] flatten(ColumnVisibility vis) {
-        return markingFunctions == null ? vis.flatten() : markingFunctions.flatten(vis);
     }
 
     @Override

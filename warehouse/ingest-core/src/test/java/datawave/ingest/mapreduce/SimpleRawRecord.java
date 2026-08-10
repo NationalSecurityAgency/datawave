@@ -9,8 +9,8 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.TreeMap;
 
+import org.apache.accumulo.access.AccessExpression;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Writable;
 
@@ -20,6 +20,9 @@ import datawave.data.hash.UIDBuilder;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.Type;
 import datawave.ingest.data.TypeRegistry;
+import datawave.marking.AccessExpressionMarkings;
+import datawave.marking.Markings;
+import datawave.util.CompositeTimestamp;
 
 /**
  * A POJO implementation of the {@link datawave.ingest.data.RawRecordContainer}.
@@ -28,10 +31,10 @@ public class SimpleRawRecord implements RawRecordContainer, Writable {
 
     private UIDBuilder<UID> uidBuilder = HashUID.builder();
 
-    private Map<String,String> securityMarkings = new TreeMap<>();
+    private Markings<?> securityMarkings = null;
     private UID id = uidBuilder.newId();
     private Type dataType;
-    private long date = Long.MIN_VALUE;
+    private long timestamp = CompositeTimestamp.INVALID_TIMESTAMP;
     private Collection<String> errors = new ArrayList<>();
     private Collection<String> altIds = Collections.emptyList();
     private String rawFileName = "";
@@ -44,23 +47,13 @@ public class SimpleRawRecord implements RawRecordContainer, Writable {
     private boolean fatalError = false;
 
     @Override
-    public Map<String,String> getSecurityMarkings() {
+    public Markings<?> getSecurityMarkings() {
         return securityMarkings;
     }
 
     @Override
-    public void setSecurityMarkings(Map<String,String> securityMarkings) {
+    public void setSecurityMarkings(Markings<?> securityMarkings) {
         this.securityMarkings = securityMarkings;
-    }
-
-    @Override
-    public void addSecurityMarking(String domain, String marking) {
-        securityMarkings.put(domain, marking);
-    }
-
-    @Override
-    public boolean hasSecurityMarking(String domain, String marking) {
-        return marking.equals(securityMarkings.get(domain));
     }
 
     @Override
@@ -89,13 +82,13 @@ public class SimpleRawRecord implements RawRecordContainer, Writable {
     }
 
     @Override
-    public long getDate() {
-        return date;
+    public long getTimestamp() {
+        return timestamp;
     }
 
     @Override
-    public void setDate(long date) {
-        this.date = date;
+    public void setTimestamp(long timestamp) {
+        this.timestamp = timestamp;
     }
 
     @Override
@@ -243,11 +236,18 @@ public class SimpleRawRecord implements RawRecordContainer, Writable {
 
     @Override
     public void write(DataOutput dataOutput) throws IOException {
-        TestWritableUtil.writeMap(securityMarkings, dataOutput);
+        String expr = "";
+        if (securityMarkings != null) {
+            AccessExpression ae = securityMarkings.toAccessExpression();
+            if (ae != null) {
+                expr = ae.getExpression();
+            }
+        }
+        dataOutput.writeUTF(expr);
 
         id.write(dataOutput);
         dataOutput.writeUTF(dataType.typeName());
-        dataOutput.writeLong(date);
+        dataOutput.writeLong(timestamp);
 
         TestWritableUtil.writeCollection(errors, dataOutput);
         TestWritableUtil.writeCollection(altIds, dataOutput);
@@ -268,13 +268,18 @@ public class SimpleRawRecord implements RawRecordContainer, Writable {
 
     @Override
     public void readFields(DataInput dataInput) throws IOException {
-        securityMarkings = TestWritableUtil.readMap(dataInput);
+        String expr = dataInput.readUTF();
+        if (!expr.isEmpty()) {
+            securityMarkings = AccessExpressionMarkings.builder().columnVisibility(expr).build();
+        } else {
+            securityMarkings = null;
+        }
 
         id = uidBuilder.newId();
         id.readFields(dataInput);
 
         dataType = TypeRegistry.getType(dataInput.readUTF());
-        date = dataInput.readLong();
+        timestamp = dataInput.readLong();
 
         errors = TestWritableUtil.readCollection(dataInput);
         altIds = TestWritableUtil.readCollection(dataInput);

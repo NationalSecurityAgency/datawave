@@ -28,6 +28,7 @@ import datawave.ingest.data.config.GroupedNormalizedContentInterface;
 import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.NormalizedFieldAndValue;
 import datawave.marking.MarkingFunctions;
+import datawave.marking.Markings;
 
 public interface VirtualIngest {
 
@@ -122,15 +123,15 @@ public interface VirtualIngest {
         public static final String VIRTUAL_FIELD_IGNORE_NORMALIZATION_ON_FIELD = ".data.combine.ignore.normalization.on.fields";
 
         protected Map<String,String[]> virtualFieldDefinitions = new HashMap<>();
-        protected Map<String,Pattern> compiledFieldPatterns = null;
+        protected transient Map<String,Pattern> compiledFieldPatterns = null;
         protected String defaultSeparator = null;
         protected String defaultStartSeparator = null;
         protected String defaultEndSeparator = null;
-        protected Map<String,GroupingPolicy> grouping = new HashMap<>();
-        protected Map<String,Boolean> allowMissing = new HashMap<>();
+        protected transient Map<String,GroupingPolicy> grouping = new HashMap<>();
+        protected transient Map<String,Boolean> allowMissing = new HashMap<>();
         private Set<String> ignoreNormalizationForFields = new HashSet<>();
 
-        private MarkingFunctions markingFunctions;
+        private transient MarkingFunctions<?> markingFunctions;
 
         public void setup(Type type, String instance, Configuration config) {
 
@@ -356,30 +357,6 @@ public interface VirtualIngest {
         }
 
         /**
-         * A helper routine to merge markings maps when merging fields of a NormalizedContentInterface
-         *
-         * @param markings1
-         *            a map of markings
-         * @param markings2
-         *            a different map of markings
-         * @return the merged markings
-         */
-        protected Map<String,String> mergeMarkings(Map<String,String> markings1, Map<String,String> markings2) {
-            if (markings2 != null) {
-                if (markings1 == null) {
-                    markings1 = markings2;
-                } else {
-                    try {
-                        markings1 = markingFunctions.combine(markings1, markings2);
-                    } catch (MarkingFunctions.Exception e) {
-                        throw new RuntimeException("Unable to combine markings.", e);
-                    }
-                }
-            }
-            return markings1;
-        }
-
-        /**
          * Create the normalized form of a map of fields, and add the virtual fields as configured above.
          *
          * @param fields
@@ -567,7 +544,7 @@ public interface VirtualIngest {
         public void addVirtualFields(List<NormalizedContentInterface> virtualFields, Multimap<String,NormalizedContentInterface> eventFields,
                         Map<String,Multimap<VirtualFieldGrouping,NormalizedContentInterface>> groupings, String virtualFieldName, String replacement,
                         VirtualFieldGrouping grouping, GroupingPolicy groupingPolicy, boolean allowMissing, String[] fields, int pos, String startSeparator,
-                        String endSeparator, StringBuilder originalValue, StringBuilder normalizedValue, Map<String,String> markings) {
+                        String endSeparator, StringBuilder originalValue, StringBuilder normalizedValue, Markings<?> markings) {
             String separator = "";
             // append any constants that have been specified
             while (pos < fields.length && isConstant(fields[pos])) {
@@ -622,10 +599,14 @@ public interface VirtualIngest {
                                 normalizedValue.append(endSeparator);
 
                                 // recurse for the next virtual field definition segment
-                                addVirtualFields(virtualFields, eventFields, groupings, virtualFieldName.replace("*", replacement), replacement,
-                                                (grouping == null ? newGrouping : grouping), groupingPolicy, allowMissing, fields, pos + 1,
-                                                this.defaultStartSeparator, this.defaultEndSeparator, originalValue, normalizedValue,
-                                                mergeMarkings(markings, value.getMarkings()));
+                                try {
+                                    addVirtualFields(virtualFields, eventFields, groupings, virtualFieldName.replace("*", replacement), replacement,
+                                                    (grouping == null ? newGrouping : grouping), groupingPolicy, allowMissing, fields, pos + 1,
+                                                    this.defaultStartSeparator, this.defaultEndSeparator, originalValue, normalizedValue,
+                                                    markingFunctions.combine(markings, value.getMarkings()));
+                                } catch (MarkingFunctions.Exception e) {
+                                    throw new RuntimeException("Could not combine markings", e);
+                                }
 
                                 // reset the values to the original length
                                 originalValue.setLength(oLen);
@@ -661,9 +642,13 @@ public interface VirtualIngest {
                         normalizedValue.append(endSeparator);
 
                         // recurse on the next virtual field segment
-                        addVirtualFields(virtualFields, eventFields, groupings, virtualFieldName, replacement, (grouping == null ? newGrouping : grouping),
-                                        groupingPolicy, allowMissing, fields, pos + 1, this.defaultStartSeparator, this.defaultEndSeparator, originalValue,
-                                        normalizedValue, mergeMarkings(markings, value.getMarkings()));
+                        try {
+                            addVirtualFields(virtualFields, eventFields, groupings, virtualFieldName, replacement, (grouping == null ? newGrouping : grouping),
+                                            groupingPolicy, allowMissing, fields, pos + 1, this.defaultStartSeparator, this.defaultEndSeparator, originalValue,
+                                            normalizedValue, markingFunctions.combine(markings, value.getMarkings()));
+                        } catch (MarkingFunctions.Exception e) {
+                            throw new RuntimeException("Could not combine markings", e);
+                        }
 
                         // reset the values to the original length
                         originalValue.setLength(oLen);

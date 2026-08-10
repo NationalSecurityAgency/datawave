@@ -1,18 +1,19 @@
 #!/bin/bash
 
-if [[ `uname` == "Darwin" ]]; then
-	THIS_SCRIPT=`python -c 'import os,sys;print os.path.realpath(sys.argv[1])' $0`
+if [[ $(uname) == "Darwin" ]]; then
+  THIS_SCRIPT=$(python -c 'import os,sys;print os.path.realpath(sys.argv[1])' $0)
 else
-	THIS_SCRIPT=`readlink -f $0`
+  THIS_SCRIPT=$(readlink -f "$0")
 fi
+
 THIS_DIR="${THIS_SCRIPT%/*}"
-cd $THIS_DIR
+cd $THIS_DIR || exit
 
 FORCE=true
 . ../ingest/ingest-env.sh
 
 
-host=`hostname -s`
+host=$(hostname -s)
 ps -efww | egrep "bash .*bulk-ingest-server.sh" | grep -v grep | sed "s/[[:graph:]]* *\([[:digit:]]*\).*/$host: \1: Bulk Ingest Server/"
 ps -efww | egrep "bash .*live-ingest-server.sh" | grep -v grep | sed "s/[[:graph:]]* *\([[:digit:]]*\).*/$host: \1: Live Ingest Server/"
 ps -efww | egrep "bash .*execute-ingest.sh.*" | grep -v grep | sed "s/[[:graph:]]* *\([[:digit:]]*\).*ingest.sh .*\/flags\/\([[:graph:]]*\).*/$host: \1: Ingest Job: \2/"

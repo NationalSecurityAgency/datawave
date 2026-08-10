@@ -1,11 +1,17 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
+source ${SCRIPT_DIR}/common/common.sh
 
 WEBSERVICE="${WEBSERVICE:-false}"
 MAX_ATTEMPTS=30
 QUERY_TIMEOUT=2m
+# Amount of time to wait after a failed test attempt
 TIMEOUT=10
+# Amount of time to wait for services to be ready
+SERVICES_INTERVAL=4
+TEST_COUNTER=0
 
 # First argument is the script to run
 # Second argument is the expected number of events
@@ -13,57 +19,113 @@ TIMEOUT=10
 runTest () {
     ATTEMPTS=3
     ATTEMPT=1
+    TEST_COUNTER=$((TEST_COUNTER + 1))
+    test_start_time=$(date +%s%N)
 
     while [ $ATTEMPT -le $ATTEMPTS ]; do
+        echo
         echo -n "Running test (Attempt ${ATTEMPT}/${ATTEMPTS}): $1 - "
+        echo
 
+        attempt_start_time=$(date +%s%N)
         QUERY_RESPONSE="$(timeout ${QUERY_TIMEOUT} ${SCRIPT_DIR}/$1)"
+        attempt_end_time=$(date +%s%N)
         EXIT_CODE=$?
 
         if [[ "$QUERY_RESPONSE" == *"Returned $2 events"* ]] ; then
             if [ ! -z "$3" ] ; then
                 if [[ "$QUERY_RESPONSE" == *"Returned $3 pages"* ]] ; then
-                    echo "SUCCESS: Returned $2 events and $3 pages"
+                    TEST_STATUS="${LABEL_PASS} -> Returned $2 events and $3 pages" && TESTS_PASSED="${TESTS_PASSED} $1"
+                    printTestStatus "$attempt_start_time" "$attempt_end_time" "$TEST_STATUS"
+                    printLine
                     return 0
                 elif [[ "$QUERY_RESPONSE" == *"Returned $3 files"* ]] ; then
-                    echo "SUCCESS: Returned $2 events and $3 files"
+                    TEST_STATUS="${LABEL_PASS} -> Returned $2 events and $3 files" && TESTS_PASSED="${TESTS_PASSED} $1"
+                    printTestStatus "$attempt_start_time" "$attempt_end_time" "$TEST_STATUS"
+                    printLine
                     return 0
                 else
-                    echo "FAILED: Unexpected number of pages/files returned"
-                    echo
-                    echo "TEST RESPONSE"
+                    TEST_STATUS="${LABEL_FAIL} -> Unexpected number of pages/files returned: Expected $2 events and $3 files."
+                    echo "Query Response:"
                     echo "$QUERY_RESPONSE"
-
-                    sleep ${TIMEOUT}
+                    echo "----------------"
 
                     if [ $ATTEMPT == $ATTEMPTS ] ; then
-                        exit 1
+                        TEST_STATUS="${LABEL_FAIL} -> Failed to succeed after ${ATTEMPT} attempts"
+                        TEST_FAILURES="${TEST_FAILURES},${1}: ${TEST_STATUS}"
+                        printTestStatus "$test_start_time" "$(date +%s%N)" "$TEST_STATUS"
+                        printLine
+                        return 1
+                    else
+                        sleep ${TIMEOUT}
                     fi
                 fi
             else
-                echo "SUCCESS: Returned $2 events"
+                TEST_STATUS="${LABEL_PASS} -> Returned $2 events" && TESTS_PASSED="${TESTS_PASSED} $1"
+                printTestStatus "$attempt_start_time" "$attempt_end_time" "$TEST_STATUS"
+                printLine
                 return 0
             fi
         else
             if [ $EXIT_CODE == 124 ] ; then
-                echo "FAILURE: Query timed out after ${QUERY_TIMEOUT}"
+                TEST_STATUS="${LABEL_FAIL} -> Query timed out after ${QUERY_TIMEOUT}"
+                printTestStatus "$attempt_start_time" "$attempt_end_time" "$TEST_STATUS"
             else
-                echo "FAILURE: Unexpected number of events returned"
-                echo
-                echo "TEST RESPONSE"
+                TEST_STATUS="${LABEL_FAIL} -> Unexpected number of events returned: Expected $2 events."
+                printTestStatus "$attempt_start_time" "$attempt_end_time" "$TEST_STATUS"
+                echo "Query Response:"
                 echo "$QUERY_RESPONSE"
+                echo "----------------"
             fi
-
-            sleep ${TIMEOUT}
 
             if [ $ATTEMPT == $ATTEMPTS ] ; then
-                exit 1
+                TEST_STATUS="${LABEL_FAIL} -> Failed to succeed after ${ATTEMPT} attempts"
+                TEST_FAILURES="${TEST_FAILURES},${1}: ${TEST_STATUS}"
+                printTestStatus "$test_start_time" "$(date +%s%N)" "$TEST_STATUS"
+                printLine
+                return 1
+            else
+                sleep ${TIMEOUT}
             fi
-        fi
-
-        ((ATTEMPT++))
+      fi
+      ((ATTEMPT++))
     done
 }
+
+printTestSummary() {
+    echo " Overall Summary"
+    printLine
+    echo
+    echo " Test Count: ${TEST_COUNTER}"
+    echo
+    if [ -z "${TESTS_PASSED}" ] ; then
+        echo " Tests Passed: 0"
+    else
+        local passed=(${TESTS_PASSED})
+        echo "$( printGreen " Tests Passed: ${#passed[@]}" )"
+        for p in "${passed[@]}" ; do
+            echo "   ${p}"
+        done
+    fi
+    echo
+    if [ -z "${TEST_FAILURES}" ] ; then
+        echo " Failed Tests: 0"
+    else
+        (
+        IFS=","
+        local failed=(${TEST_FAILURES})
+        echo "$( printRed " Tests Failed: $(( ${#failed[@]} - 1 ))" )"
+        for f in "${failed[@]}" ; do
+            echo "  ${f}"
+        done
+        )
+    fi
+    echo
+    printLine
+}
+
+setPrintColors
+setTestLabels
 
 if [ "$WEBSERVICE" = true ]; then
     echo "Waiting for webservice to be ready..."
@@ -92,22 +154,21 @@ while [ $attempt -lt $MAX_ATTEMPTS ]; do
         fi
     fi
 
-    sleep ${TIMEOUT}
+    sleep ${SERVICES_INTERVAL}
 
     ((attempt++))
 done
 
 if [ $attempt == $MAX_ATTEMPTS ]; then
     if [ "$WEBSERVICE" = true ]; then
-        echo "FAILURE! Webservice never became ready"
+        echo "$( printRed "FAILURE" ) - Webservice never became ready"
     else
-        echo "FAILURE! Query and/or Executor Services never became ready"
+        echo "$( printRed "FAILURE" ) - Query and/or Executor Services never became ready"
     fi
     exit 1
 fi
 
 echo "Running tests..."
-
 echo
 
 runTest batchLookup.sh 2
@@ -129,7 +190,12 @@ runTest query.sh 12 2
 #runTest mapReduceQuery.sh 12 2
 #runTest oozieQuery.sh 0 0
 
-$SCRIPT_DIR/cleanup.sh
+# Gives option to skip the cleanup stage
+if [ "${1}" == "-noCleanup" ] ; then
+    printTestSummary
+    exit 0
+fi
 
-echo
-echo "All tests SUCCEEDED!"
+printTestSummary
+# The cleanup script will only delete the logs for tests that passed. Failed test logs will remain.
+"$SCRIPT_DIR"/cleanup.sh "${TESTS_PASSED}"

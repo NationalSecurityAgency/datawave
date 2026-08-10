@@ -15,7 +15,6 @@ import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.Scanner;
-import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -28,6 +27,8 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
+
+import datawave.scan.ScannerBuilder;
 
 /**
  * Created on 8/10/16. This class will scan an accumulo table for all or a specified number of columns. The number of results for rows old than A,B,C,D... days
@@ -44,7 +45,7 @@ public class AccumuloIndexAgeDisplay implements AutoCloseable {
 
     private Integer buckets[] = {180, 90, 60, 30, 14, 7, 2};
 
-    private ArrayList<String>[] dataBuckets;
+    private ArrayList<ArrayList<String>> dataBuckets;
 
     public AccumuloIndexAgeDisplay(AccumuloClient accumuloClient, String tableName, String columns, Integer[] buckets) {
         this.tableName = tableName;
@@ -163,16 +164,17 @@ public class AccumuloIndexAgeDisplay implements AutoCloseable {
      * Pull data from accumulo, create a collection of delete cmds for th accumulo script for {@code indexes > 1 day}
      */
     public void extractDataFromAccumulo() {
-        dataBuckets = new ArrayList[buckets.length];
-        for (int ii = 0; ii < dataBuckets.length; ii++) {
-            dataBuckets[ii] = new ArrayList<>();
+        dataBuckets = new ArrayList<>();
+
+        for (int ii = 0; ii < buckets.length; ii++) {
+            dataBuckets.add(new ArrayList<>());
         }
 
         Scanner scanner = null;
 
         try {
             Authorizations userAuthorizations = accumuloClient.securityOperations().getUserAuthorizations(accumuloClient.whoami());
-            scanner = accumuloClient.createScanner(tableName, userAuthorizations);
+            scanner = ScannerBuilder.create(accumuloClient).setTableName(tableName).setAuthorizations(userAuthorizations).build();
             scanner = addColumnsToScanner(scanner);
             Range range = new Range();
             scanner.setRange(range);
@@ -187,7 +189,7 @@ public class AccumuloIndexAgeDisplay implements AutoCloseable {
                     // separate the data according to the bucket they will be dropped into
                     for (int age : buckets) {
                         if (rowAge <= (currentTime - (age * MILLIS_IN_DAY))) { // don't delete indexes < 1 day old
-                            dataBuckets[bucketIndex].add((deleteCommand.toString()).replace("\0", "\\x00"));
+                            dataBuckets.get(bucketIndex).add((deleteCommand.toString()).replace("\0", "\\x00"));
                             break;
                         }
                         bucketIndex++;
@@ -199,8 +201,6 @@ public class AccumuloIndexAgeDisplay implements AutoCloseable {
             log.error("Authorization error.");
         } catch (AccumuloSecurityException ase) {
             log.error("Accumulo security error.");
-        } catch (TableNotFoundException tnfe) {
-            log.error("Unable to find " + tableName + " in our accumulo instance.");
         } finally {
             if (scanner != null) {
                 scanner.close();
@@ -236,7 +236,7 @@ public class AccumuloIndexAgeDisplay implements AutoCloseable {
 
         StringBuilder sb = new StringBuilder();
         for (int ii = buckets.length - 1; ii >= 0; --ii) {
-            sb.append(String.format("\nIndexes older than %1$-3d %2$-6s %3$10d", buckets[ii], "days:", dataBuckets[ii].size()));
+            sb.append(String.format("\nIndexes older than %1$-3d %2$-6s %3$10d", buckets[ii], "days:", dataBuckets.get(ii).size()));
         }
         sb.append("\n");
 
@@ -263,7 +263,7 @@ public class AccumuloIndexAgeDisplay implements AutoCloseable {
 
                 for (int ii = 0; ii < buckets.length; ii++) {
                     pw.println("# Indexes older than " + buckets[ii] + " days:");
-                    ArrayList<String> al = dataBuckets[ii];
+                    ArrayList<String> al = dataBuckets.get(ii);
                     for (String row : al) {
                         pw.println(row);
                     }

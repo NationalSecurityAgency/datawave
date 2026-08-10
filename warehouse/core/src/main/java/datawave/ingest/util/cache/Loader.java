@@ -8,7 +8,8 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.concurrent.Executors;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.cache.CacheLoader;
 import com.google.common.util.concurrent.Futures;
@@ -43,7 +44,7 @@ public abstract class Loader<K,V> extends CacheLoader<K,V> implements Runnable {
 
     protected boolean lazy = true;
 
-    private static final Logger log = Logger.getLogger(Loader.class);
+    private static final Logger log = LoggerFactory.getLogger(Loader.class);
 
     protected Loader() {
         this(true);
@@ -61,20 +62,18 @@ public abstract class Loader<K,V> extends CacheLoader<K,V> implements Runnable {
     @Override
     public ListenableFuture<V> reload(final K key, final V oldValue) {
 
-        if (log.isTraceEnabled())
-            log.trace("Reload the cache");
+        log.trace("Reload the cache");
 
         ListenableFutureTask<V> task = null;
         if (!lazy) {
-            if (log.isTraceEnabled())
-                log.trace("Reloading synchronously");
+            log.trace("Reloading synchronously");
             try {
                 build(null);
 
                 return Futures.immediateFuture(load(key));
 
             } catch (Exception e) {
-                log.error(e);
+                log.error("", e);
             }
         } else {
 
@@ -97,8 +96,7 @@ public abstract class Loader<K,V> extends CacheLoader<K,V> implements Runnable {
                 entryCache.clear();
             }
         } else {
-            if (log.isTraceEnabled())
-                log.trace("Cache already contains " + child);
+            log.trace("Cache already contains {}", child);
         }
         return this;
     }
@@ -133,8 +131,7 @@ public abstract class Loader<K,V> extends CacheLoader<K,V> implements Runnable {
     public V load(K key) throws Exception {
 
         if (entryCache.isEmpty()) {
-            if (log.isTraceEnabled())
-                log.trace("Building initial cache");
+            log.trace("Building initial cache");
 
             buildChildren(key);
 
@@ -142,8 +139,7 @@ public abstract class Loader<K,V> extends CacheLoader<K,V> implements Runnable {
         }
 
         synchronized (entryCache) {
-            if (log.isTraceEnabled())
-                log.trace("Getting key " + key);
+            log.trace("Getting key {}", key);
             return entryCache.get(key);
         }
 
@@ -157,11 +153,10 @@ public abstract class Loader<K,V> extends CacheLoader<K,V> implements Runnable {
     @Override
     public void run() {
         try {
-            if (log.isDebugEnabled())
-                log.debug("Loading cache asynchronously");
+            log.debug("Loading cache asynchronously");
             build(null);
         } catch (Throwable e) {
-            log.error(e);
+            log.error("", e);
         }
 
     }

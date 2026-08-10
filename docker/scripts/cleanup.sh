@@ -1,26 +1,6 @@
-#!/bin/sh
-rm -r -f query_*
-rm -r -f errorQuery_*
-rm -r -f edge_*
-rm -r -f plan_*
-rm -r -f prediction_*
-rm -r -f lookup_*
-rm -r -f batchLookup_*
-rm -r -f lookupContent_*
-rm -r -f batchLookupContent_*
-rm -r -f streamingQuery_*
-rm -r -f discovery_*
-rm -r -f errorDiscovery_*
-rm -r -f count_*
-rm -r -f errorCount_*
-rm -r -f fieldIndexCount_*
-rm -r -f errorFieldIndexCount_*
-rm -r -f poundit_*
-rm -r -f executor_*
-rm -r -f termFrequency_*
-rm -r -f edgeEvent_*
-rm -r -f hitHighlights_*
-rm -r -f metrics_*
-rm -r -f modification_*
-rm -r -f mapReduceQuery_*
-rm -r -f oozieQuery_*
+#!/bin/bash
+
+PASSED_TESTS=(${1})
+for p in "${PASSED_TESTS[@]}" ; do
+    rm -rf "${p%.sh}"_*
+done

@@ -3,8 +3,11 @@ package datawave.data.hash;
 import java.util.Date;
 
 /**
+ * Deprecated, use {@link datawave.table.hash.HashUIDBuilder}
+ * <p>
  * Builds traditional hash-based UIDs
  */
+@Deprecated(forRemoval = true, since = "7.40.0")
 public class HashUIDBuilder extends AbstractUIDBuilder<HashUID> {
 
     private static final byte[] EMPTY_BYTES = {};
@@ -62,7 +65,7 @@ public class HashUIDBuilder extends AbstractUIDBuilder<HashUID> {
         if (null != template) {
             // Get the existing and new extras, if any
             final String extra1 = template.getExtra();
-            final String extra2 = HashUID.mergeExtras(extras);
+            final String extra2 = UID.mergeExtras(extras);
 
             // Create a new UID based on existing and new extras
             if ((null != extra1) && (null != extra2)) {

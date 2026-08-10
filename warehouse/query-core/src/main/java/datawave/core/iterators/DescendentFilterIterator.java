@@ -21,7 +21,6 @@ import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
 import datawave.data.hash.UIDConstants;
-import datawave.util.StringUtils;
 
 /**
  * <p>
@@ -53,7 +52,7 @@ public class DescendentFilterIterator extends SkippingIterator implements Option
 
     private Range prevRange = new Range();
     @SuppressWarnings("unchecked")
-    private Collection<ByteSequence> columnFamilies = (Set<ByteSequence>) Collections.EMPTY_SET;
+    private Collection<ByteSequence> columnFamilies = Collections.emptySet();
     private boolean colfInclusive = false;
 
     private final Text prevRow = new Text();
@@ -102,8 +101,8 @@ public class DescendentFilterIterator extends SkippingIterator implements Option
         this.parentUids = parentUids;
         // now parse the parentUids into the map
         this.parentUidMap.clear();
-        for (String shardTypeUid : StringUtils.split(parentUids, ' ')) {
-            String[] parts = StringUtils.split(shardTypeUid, '/');
+        for (String shardTypeUid : parentUids.split(" ")) {
+            String[] parts = shardTypeUid.split("/");
             Map<String,Set<String>> dataTypes = this.parentUidMap.get(parts[0]);
             if (dataTypes == null) {
                 dataTypes = new HashMap<>();

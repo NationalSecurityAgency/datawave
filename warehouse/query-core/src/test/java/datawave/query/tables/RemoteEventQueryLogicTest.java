@@ -6,7 +6,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -48,13 +47,13 @@ public class RemoteEventQueryLogicTest {
 
         DefaultEventQueryResponse response1 = new DefaultEventQueryResponse();
         DefaultEvent event1 = new DefaultEvent();
-        event1.setFields(Collections.singletonList(new DefaultField("FOO1", "FOO|BAR", new HashMap(), -1L, "FOOBAR1")));
+        event1.setFields(Collections.singletonList(new DefaultField("FOO1", "FOO|BAR", -1L, "FOOBAR1")));
         response1.setEvents(Collections.singletonList(event1));
         response1.setReturnedEvents(1L);
 
         DefaultEventQueryResponse response2 = new DefaultEventQueryResponse();
         DefaultEvent event2 = new DefaultEvent();
-        event1.setFields(Collections.singletonList(new DefaultField("FOO2", "FOO|BAR", new HashMap(), -1L, "FOOBAR2")));
+        event1.setFields(Collections.singletonList(new DefaultField("FOO2", "FOO|BAR", -1L, "FOOBAR2")));
         response2.setEvents(Collections.singletonList(event1));
         response2.setReturnedEvents(1L);
 
@@ -119,6 +118,11 @@ public class RemoteEventQueryLogicTest {
         @Override
         public GenericResponse<String> createQuery(String queryLogicName, Map<String,List<String>> queryParameters, ProxiedUserDetails callerObject) {
             return createResponse;
+        }
+
+        @Override
+        public void setNextQueryResponseClass(Class<? extends BaseQueryResponse> nextQueryResponseClass) {
+            // noop
         }
 
         @Override

@@ -1,6 +1,7 @@
 package datawave.query.iterator.facets;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.util.Collection;
 import java.util.Iterator;
@@ -17,7 +18,6 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.log4j.Logger;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
 
@@ -40,13 +40,10 @@ import datawave.query.iterator.AccumuloTreeIterable;
 import datawave.query.iterator.FieldIndexOnlyQueryIterator;
 import datawave.query.iterator.aggregation.DocumentData;
 import datawave.query.iterator.builder.CardinalityIteratorBuilder;
-import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.CardinalityAggregator;
 import datawave.query.jexl.functions.FieldIndexAggregator;
 import datawave.query.jexl.visitors.IteratorBuildingVisitor;
 import datawave.query.predicate.EventDataQueryFieldFilter;
-import datawave.query.predicate.KeyProjection;
-import datawave.query.predicate.Projection;
 import datawave.query.tables.facets.FacetedConfiguration;
 import datawave.query.tables.facets.FacetedSearchType;
 import datawave.query.util.TypeMetadata;
@@ -112,18 +109,9 @@ public class DynamicFacetIterator extends FieldIndexOnlyQueryIterator {
         switch (type) {
             case SHARD_COUNT:
             case DAY_COUNT:
-
-                try {
-
-                    // Parse & flatten the query tree.
-                    script = JexlASTHelper.parseAndFlattenJexlQuery(this.getQuery());
-
-                    myEvaluationFunction = new JexlEvaluation(this.getQuery(), arithmetic);
-
-                } catch (ParseException e) {
-                    throw new RuntimeException("Could not parse the JEXL query: '" + this.getQuery() + "'", e);
-                }
-
+                // Parse & flatten the query tree.
+                getScript();
+                myEvaluationFunction = new JexlEvaluation(this.getQuery(), arithmetic);
                 break;
             default:
                 break;
@@ -146,16 +134,23 @@ public class DynamicFacetIterator extends FieldIndexOnlyQueryIterator {
 
     @Override
     protected IteratorBuildingVisitor createIteratorBuildingVisitor(final Range documentRange, boolean isQueryFullySatisfied, boolean sortedUIDs)
-                    throws MalformedURLException, ConfigException, IllegalAccessException, InstantiationException {
-
-        return super.createIteratorBuildingVisitor(documentRange, isQueryFullySatisfied, sortedUIDs).setIteratorBuilder(CardinalityIteratorBuilder.class)
-                        .setFieldsToAggregate(configuration.getFacetedFields());
+                    throws MalformedURLException, ConfigException, IllegalAccessException, InstantiationException, NoSuchMethodException,
+                    InvocationTargetException {
+        //  @formatter:off
+        return super.createIteratorBuildingVisitor(documentRange, isQueryFullySatisfied, sortedUIDs)
+                .setIteratorBuilder(CardinalityIteratorBuilder.class)
+                .setFieldsToAggregate(configuration.getFacetedFields())
+                //  note: setting query fully satisfied to false kicks the document building decision
+                //  to the set of fields to aggregate, which is the set of facet fields configured
+                //  for this query. The FacetLogic should not rely on arbitrary decisions from
+                //  the SatisfactionVisitor.
+                .setIsQueryFullySatisfied(false);
+        //  @formatter:on
     }
 
-    @SuppressWarnings({"unchecked", "rawtypes"})
     @Override
     public Iterator<Entry<Key,Document>> getDocumentIterator(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive)
-                    throws IOException, ConfigException, InstantiationException, IllegalAccessException {
+                    throws IOException, ConfigException, InstantiationException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
         // Otherwise, we have to use the field index
         // Seek() the boolean logic stuff
         createAndSeekIndexIterator(range, columnFamilies, inclusive);
@@ -168,7 +163,7 @@ public class DynamicFacetIterator extends FieldIndexOnlyQueryIterator {
         Iterator<Entry<Key,Document>> documents = null;
 
         if (!configuration.getFacetedFields().isEmpty()) {
-            projection = new EventDataQueryFieldFilter(configuration.getFacetedFields(), Projection.ProjectionType.INCLUDES);
+            projection = new EventDataQueryFieldFilter().withFields(configuration.getFacetedFields());
         }
 
         if (!configuration.hasFieldLimits() || projection != null) {
@@ -236,7 +231,7 @@ public class DynamicFacetIterator extends FieldIndexOnlyQueryIterator {
         Iterator<Entry<Key,Document>> fieldIndexDocuments = null;
         try {
             fieldIndexDocuments = getDocumentIterator(range, columnFamilies, inclusive);
-        } catch (ConfigException | IllegalAccessException | InstantiationException e) {
+        } catch (ConfigException | IllegalAccessException | InstantiationException | NoSuchMethodException | InvocationTargetException e) {
             throw new IOException("Unable to create document iterator", e);
         }
 

@@ -63,7 +63,7 @@ public class FieldToFieldComparisonVisitorTest {
         assertResult("(UUID !~ 'C.*?' || UUID !~ 'S.*?')", "(UUID !~ 'C.*?' || UUID !~ 'S.*?')");
     }
 
-    @Test(expected = ParseException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testChainedEQThrowsException() throws ParseException {
         JexlASTHelper.parseJexlQuery("FIELD_A == FIELD_B == FIELD_C");
     }

@@ -40,7 +40,6 @@ import datawave.ingest.data.config.DataTypeHelper;
 import datawave.ingest.input.reader.AggregatingRecordReader;
 import datawave.ingest.input.reader.EventInitializer;
 import datawave.ingest.input.reader.KeyReader;
-import datawave.ingest.input.reader.LineReader;
 import datawave.ingest.input.reader.ReaderInitializer;
 import datawave.ingest.input.reader.ValueReader;
 import datawave.ingest.input.reader.event.EventFixer;
@@ -338,7 +337,7 @@ public class WikipediaRecordReader extends AggregatingRecordReader {
 
             try {
                 Date eventDate = DateHelper.parse(date);
-                event.setDate(eventDate.getTime());
+                event.setTimestamp(eventDate.getTime());
             } catch (DateTimeParseException e) {
                 throw new IllegalArgumentException("Could not parse date from filename " + date);
             }

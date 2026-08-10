@@ -104,6 +104,7 @@ public class Type implements Comparable<Type> {
      *            - configuration to set
      * @return helper interface
      */
+    @Deprecated
     public IngestHelperInterface newIngestHelper(Configuration conf) {
         IngestHelperInterface helper = newIngestHelper();
         if (helper != null) {
@@ -118,6 +119,7 @@ public class Type implements Comparable<Type> {
      * @deprecated
      * @return helper interface
      */
+    @Deprecated
     public IngestHelperInterface newIngestHelper() {
         IngestHelperInterface helper = null;
         if (helperClass != null) {
@@ -134,8 +136,8 @@ public class Type implements Comparable<Type> {
         RecordReader<?,?> reader = null;
         if (readerClass != null) {
             try {
-                reader = readerClass.newInstance();
-            } catch (InstantiationException | IllegalAccessException e) {
+                reader = readerClass.getDeclaredConstructor().newInstance();
+            } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
                 // ignore for now
             }
         }

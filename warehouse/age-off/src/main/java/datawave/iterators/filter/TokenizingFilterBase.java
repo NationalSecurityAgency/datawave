@@ -10,6 +10,7 @@ import datawave.iterators.filter.TokenTtlTrie.Builder.MERGE_MODE;
 import datawave.iterators.filter.ageoff.AgeOffPeriod;
 import datawave.iterators.filter.ageoff.AppliedRule;
 import datawave.iterators.filter.ageoff.FilterOptions;
+import datawave.util.CompositeTimestamp;
 
 /**
  * TokenizingAgeoffFilter cuts a field into tokens (splitting at a specified set of delimiters), and makes ageoff decisions based on whether or not any of the
@@ -119,7 +120,7 @@ public abstract class TokenizingFilterBase extends AppliedRule {
             cutoffTimestamp -= calculatedTTL;
         }
         ruleApplied = true;
-        return k.getTimestamp() > cutoffTimestamp;
+        return CompositeTimestamp.getAgeOffDate(k.getTimestamp()) > cutoffTimestamp;
     }
 
     @Override

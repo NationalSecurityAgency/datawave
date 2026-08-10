@@ -5,6 +5,7 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.apache.accumulo.access.AccessExpression;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.conf.Configuration;
@@ -29,6 +30,7 @@ import datawave.ingest.mapreduce.handler.error.ErrorShardedDataTypeHandler;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.writer.ContextWriter;
 import datawave.marking.MarkingFunctions;
+import datawave.marking.Markings;
 
 /**
  * This class differs from the parent in that when it sees a field name of ERROR it creates a category name using the field name and value.
@@ -48,13 +50,10 @@ public class AtomErrorDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends AtomDataTyp
     public static final String ERROR_FIELD = "ERROR";
     public static final String STACK_TRACE_FIELD = "STACKTRACE";
     public static final String EVENT_CONTENT_FIELD = "EVENT";
-    public static final String COLUMN_VISIBILITY = "columnVisibility";
-
     private MarkingsHelper mHelper = null;
-    private ColumnVisibility defaultVisibility = null;
+    private AccessExpression defaultVisibility = null;
     private Configuration conf = null;
     private ErrorShardedIngestHelper errorHelper = null;
-    private MarkingFunctions markingFunctions;
 
     @Override
     public void setup(TaskAttemptContext context) {
@@ -77,11 +76,7 @@ public class AtomErrorDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends AtomDataTyp
         }
 
         mHelper = IngestConfigurationFactory.getIngestConfiguration().getMarkingsHelper(conf, record.getDataType());
-        try {
-            defaultVisibility = markingFunctions.translateToColumnVisibility(mHelper.getDefaultMarkings());
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Failed to parse security marking configuration", e);
-        }
+        defaultVisibility = mHelper.getDefaultMarkings().toAccessExpression();
 
         // write out the event into a value before we muck with it
         DataOutputBuffer buffer = new DataOutputBuffer();
@@ -91,8 +86,8 @@ public class AtomErrorDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends AtomDataTyp
         // make a copy of the event to avoid side effects
         record = record.copy();
 
-        // set the event date to now to enable keeping track of when this error occurred (determines date for shard)
-        record.setDate(System.currentTimeMillis());
+        // set the event timestamp to now to enable keeping track of when this error occurred (determines date for shard)
+        record.setTimestamp(System.currentTimeMillis());
 
         // set the default markings if needed
         if (record.hasError(RawDataErrorNames.MISSING_DATA_ERROR)) {
@@ -161,11 +156,11 @@ public class AtomErrorDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends AtomDataTyp
         for (NormalizedContentInterface nci : allFields.get(ERROR_FIELD)) {
             String columnQualifier = getVisibilityColumnString(record, nci);
             Key k = createKey(nci.getEventFieldValue(), record.getId().toString(), columnQualifier, record.getAltIds().iterator().next(),
-                            record.getVisibility(), record.getDate());
+                            record.getVisibility(), record.getTimestamp());
             BulkIngestKey bk = new BulkIngestKey(tname, k);
             contextWriter.write(bk, NULL_VALUE, context);
             count++;
-            Key categoryKey = new Key(nci.getEventFieldValue(), "", "", record.getVisibility(), record.getDate());
+            Key categoryKey = new Key(nci.getEventFieldValue(), "", "", record.getVisibility(), record.getTimestamp());
             categories.add(categoryKey);
         }
 
@@ -180,22 +175,17 @@ public class AtomErrorDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends AtomDataTyp
     }
 
     protected String getVisibilityColumnString(RawRecordContainer event, NormalizedContentInterface value) {
-
-        ColumnVisibility visibility = getVisibilityColumnVisibility(event, value);
-        return visibility.toString();
-
-    }
-
-    protected ColumnVisibility getVisibilityColumnVisibility(RawRecordContainer event, NormalizedContentInterface value) {
-        ColumnVisibility visibility = event.getVisibility();
-        if (value.getMarkings() != null && !value.getMarkings().isEmpty()) {
-            try {
-                visibility = markingFunctions.translateToColumnVisibility(value.getMarkings());
-            } catch (MarkingFunctions.Exception e) {
-                throw new RuntimeException("Cannot convert record-level markings into a column visibility", e);
-
-            }
+        Markings<?> markings = value.getMarkings();
+        // value marking is 1st choice
+        if (markings != null && !markings.isEmpty()) {
+            return markings.toAccessExpression().getExpression();
         }
-        return visibility == null ? defaultVisibility : visibility;
+        ColumnVisibility visibility = event.getVisibility();
+        if (visibility != null) {
+            // event marking is 2nd choice
+            return new String(visibility.getExpression());
+        }
+        // default marking is the last resort
+        return defaultVisibility != null ? defaultVisibility.getExpression() : "";
     }
 }

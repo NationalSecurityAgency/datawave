@@ -1,5 +1,7 @@
 package datawave.ingest.mapreduce.handler.edge;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import static datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler.METADATA_TABLE_LOADER_PRIORITY;
 import static datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler.METADATA_TABLE_NAME;
 
@@ -20,6 +22,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.accumulo.access.AccessExpression;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
@@ -73,7 +76,10 @@ import datawave.ingest.mapreduce.job.writer.ContextWriter;
 import datawave.ingest.metadata.RawRecordMetadata;
 import datawave.ingest.table.config.LoadDateTableConfigHelper;
 import datawave.ingest.time.Now;
+import datawave.marking.AccessExpressionUtil;
 import datawave.marking.MarkingFunctions;
+import datawave.marking.Markings;
+import datawave.metadata.protobuf.EdgeMetadata;
 import datawave.metadata.protobuf.EdgeMetadata.MetadataValue;
 import datawave.metadata.protobuf.EdgeMetadata.MetadataValue.Metadata;
 import datawave.util.StringUtils;
@@ -140,7 +146,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
     protected String edgeTableName = null;
     protected String metadataTableName = null;
     protected boolean enableMetadata = false;
-    protected MarkingFunctions markingFunctions;
+    protected MarkingFunctions<?> markingFunctions;
 
     protected Map<String,EdgeDefinitionConfigurationHelper> edges = null;
 
@@ -351,7 +357,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
 
         log.info("Found edge definitions for " + edges.keySet().size() + " data types.");
 
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append("Data Types With Defined Edges: ");
         for (String t : edges.keySet()) {
             sb.append(t).append(" ");
@@ -617,7 +623,15 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
                         excludedGroups = arithmetic.getExcludedGroups();
 
                         for (Entry excluded : excludedGroups.entrySet()) {
-                            matchingGroups.remove(excluded.getKey(), excluded.getValue());
+                            for (Object value : (HashSet) excluded.getValue()) {
+                                if (matchingGroups.containsKey(excluded.getKey())) {
+                                    matchingGroups.get(excluded.getKey()).remove(value);
+                                    if (matchingGroups.get(excluded.getKey()).isEmpty()) {
+                                        matchingGroups.remove(excluded.getKey());
+                                    }
+                                }
+                            }
+
                         }
 
                         if (log.isTraceEnabled()) {
@@ -928,37 +942,18 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         // add to the eventMetadataRegistry map
         Key baseKey = createMetadataEdgeKey(edgeValue, edgeValue.getSource(), edgeValue.getSource().getIndexedFieldValue(), edgeValue.getSink(),
                         edgeValue.getSink().getIndexedFieldValue(), this.getVisibility(edgeValue));
+
         Key fwdMetaKey = EdgeKey.getMetadataKey(baseKey);
-        Key revMetaKey = EdgeKey.getMetadataKey(EdgeKey.swapSourceSink(EdgeKey.decode(baseKey)).encode());
+        addMetadata(eventMetadataRegistry, enrichmentFieldName, edgeValue, jexlPrecondition, fwdMetaKey);
 
-        Set<Metadata> fwdMetaSet = eventMetadataRegistry.get(fwdMetaKey);
-        if (null == fwdMetaSet) {
-            fwdMetaSet = new HashSet<>();
-            eventMetadataRegistry.put(fwdMetaKey, fwdMetaSet);
+        if (isNullOrBidirectional(edgeValue.getEdgeDirection())) {
+            Key revMetaKey = EdgeKey.getMetadataKey(EdgeKey.swapSourceSink(EdgeKey.decode(baseKey)).encode());
+            addMetadata(eventMetadataRegistry, enrichmentFieldName, edgeValue, jexlPrecondition, revMetaKey);
         }
-        Set<Metadata> revMetaSet = eventMetadataRegistry.get(revMetaKey);
-        if (null == revMetaSet) {
-            revMetaSet = new HashSet<>();
-            eventMetadataRegistry.put(revMetaKey, revMetaSet);
-        }
+    }
 
-        // Build the Protobuf for the value
-        Metadata.Builder forwardBuilder = Metadata.newBuilder().setSource(edgeValue.getSource().getFieldName()).setSink(edgeValue.getSink().getFieldName())
-                        .setDate(DateHelper.format(new Date(edgeValue.getEventDate())));
-        Metadata.Builder reverseBuilder = Metadata.newBuilder().setDate(DateHelper.format(new Date(edgeValue.getEventDate())))
-                        .setSource(edgeValue.getSink().getFieldName()).setSink(edgeValue.getSource().getFieldName());
-        if (enrichmentFieldName != null) {
-            forwardBuilder.setEnrichment(enrichmentFieldName).setEnrichmentIndex(edgeValue.getEnrichedIndex());
-            reverseBuilder.setEnrichment(enrichmentFieldName).setEnrichmentIndex(edgeValue.getEnrichedIndex());
-        }
-
-        if (jexlPrecondition != null) {
-            forwardBuilder.setJexlPrecondition(jexlPrecondition);
-            reverseBuilder.setJexlPrecondition(jexlPrecondition);
-        }
-
-        fwdMetaSet.add(forwardBuilder.build());
-        revMetaSet.add(reverseBuilder.build());
+    private boolean isNullOrBidirectional(EdgeDirection direction) {
+        return direction == null || direction.equals(EdgeDirection.BIDIRECTIONAL);
     }
 
     protected String getEnrichmentFieldName(EdgeDefinition edgeDef) {
@@ -1159,7 +1154,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
 
     protected Key createEdgeKey(EdgeDataBundle edgeValue, VertexValue source, String sourceValue, VertexValue sink, String sinkValue, Text visibility,
                     EdgeKey.DATE_TYPE date_type) {
-        return createEdgeKey(edgeValue, source, sourceValue, sink, sinkValue, visibility, edgeValue.getEventDate(), date_type);
+        return createEdgeKey(edgeValue, source, sourceValue, sink, sinkValue, visibility, edgeValue.getEvent().getTimestamp(), date_type);
     }
 
     private Key createEdgeKey(EdgeDataBundle edgeValue, VertexValue source, String sourceValue, VertexValue sink, String sinkValue, Text visibility,
@@ -1176,6 +1171,26 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         return builder.build().encode();
     }
 
+    private Set<EdgeMetadata.MetadataValue.Metadata> addMetadata(Map<Key,Set<EdgeMetadata.MetadataValue.Metadata>> metadataRegistry, String enrichmentFieldName,
+                    EdgeDataBundle edgeDataBundle, String jexlPrecondition, Key key) {
+        Set<Metadata> metadata = metadataRegistry.computeIfAbsent(key, k -> new HashSet<>());
+
+        // Build the Protobuf for the value
+        Metadata.Builder builder = Metadata.newBuilder().setSource(edgeDataBundle.getSource().getFieldName()).setSink(edgeDataBundle.getSink().getFieldName())
+                        .setDate(DateHelper.format(new Date(edgeDataBundle.getEventDate())));
+
+        if (enrichmentFieldName != null) {
+            builder.setEnrichment(enrichmentFieldName).setEnrichmentIndex(edgeDataBundle.getEnrichedIndex());
+        }
+        if (jexlPrecondition != null) {
+            builder.setJexlPrecondition(jexlPrecondition);
+        }
+
+        metadata.add(builder.build());
+
+        return metadata;
+    }
+
     protected Key createStatsKey(STATS_TYPE statsType, EdgeDataBundle edgeValue, VertexValue vertex, String value, Text visibility,
                     EdgeKey.DATE_TYPE date_type) {
         String typeName = edgeValue.getDataTypeName();
@@ -1183,7 +1198,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         builder.setSourceData(value).setStatsType(statsType).setType(edgeValue.getEdgeType()).setYyyymmdd(edgeValue.getYyyyMMdd(date_type))
                         .setSourceRelationship(vertex.getRelationshipType()).setSourceAttribute1(vertex.getCollectionType())
                         .setAttribute3(edgeValue.getEdgeAttribute3()).setAttribute2(edgeValue.getEdgeAttribute2()).setColvis(visibility)
-                        .setTimestamp(edgeValue.getEventDate()).setDateType(date_type);
+                        .setTimestamp(edgeValue.getEvent().getTimestamp()).setDateType(date_type);
         builder.setDeleted(edgeValue.isDeleting());
         Key key = builder.build().encode();
         boolean isNewKey = false;
@@ -1317,15 +1332,13 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
      *            the event container
      * @return the visibility as Text object
      */
-    protected Text getVisibility(Map<String,String> markings, RawRecordContainer event) {
-        try {
-            if (null == markings || markings.isEmpty()) {
-                return new Text(flatten(event.getVisibility()));
-            } else {
-                return new Text(flatten(markingFunctions.translateToColumnVisibility(markings)));
-            }
-        } catch (datawave.marking.MarkingFunctions.Exception e) {
-            throw new RuntimeException("Cannot convert markings into column visibility", e);
+    @SuppressWarnings("unchecked")
+    protected Text getVisibility(Markings<?> markings, RawRecordContainer event) {
+        if (null == markings || markings.isEmpty()) {
+            return new Text(flatten(event.getVisibility()));
+        } else {
+            AccessExpression ae = AccessExpressionUtil.normalize(markings.toAccessExpression());
+            return new Text(ae.getExpression().getBytes(UTF_8));
         }
     }
 
@@ -1353,7 +1366,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
      * @return the flattened visibility
      */
     protected byte[] flatten(ColumnVisibility vis) {
-        return markingFunctions.flatten(vis);
+        return markingFunctions == null ? vis.flatten() : markingFunctions.flatten(vis);
     }
 
     @Override

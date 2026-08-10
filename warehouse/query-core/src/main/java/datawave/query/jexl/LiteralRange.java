@@ -4,16 +4,20 @@ import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.lang.builder.CompareToBuilder;
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.google.common.base.Preconditions;
 
 /**
  * The values of T should already be normalized
- *
- *
  *
  * @param <T>
  *            type of the range
  */
 public class LiteralRange<T extends Comparable<T>> implements Comparable<LiteralRange<T>> {
+
+    private static final Logger log = LoggerFactory.getLogger(LiteralRange.class);
 
     public enum NodeOperand {
         OR, AND
@@ -196,6 +200,28 @@ public class LiteralRange<T extends Comparable<T>> implements Comparable<Literal
 
     public boolean isBounded() {
         return this.lower != null && this.upper != null && this.fieldName != null;
+    }
+
+    /**
+     * Convenience method that returns true if the lower and upper bound are equivalent
+     *
+     * @return true if the upper and lower bound are equivalent
+     */
+    public boolean areBoundsEquivalent() {
+        Preconditions.checkNotNull(lower);
+        Preconditions.checkNotNull(upper);
+        return lower.compareTo(upper) == 0;
+    }
+
+    /**
+     * Convenience method that returns true if the lower bound is greater than the upper bound
+     *
+     * @return true if the lower bound is greater than the upper bound
+     */
+    public boolean isLowerBoundGreaterThanUpperBound() {
+        Preconditions.checkNotNull(lower);
+        Preconditions.checkNotNull(upper);
+        return lower.compareTo(upper) > 0;
     }
 
     @Override

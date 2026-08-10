@@ -7,6 +7,7 @@ import java.util.Map;
  * Holds timing information for query iterator next, source, seek, and yield counts.
  */
 public class TimingMetadata extends Metadata {
+    private static final long serialVersionUID = 359279777575969654L;
 
     private static final String NEXT_COUNT = "NEXT_COUNT";
     private static final String SOURCE_COUNT = "SOURCE_COUNT";

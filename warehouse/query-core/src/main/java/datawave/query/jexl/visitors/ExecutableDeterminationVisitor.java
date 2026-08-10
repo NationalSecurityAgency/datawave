@@ -5,7 +5,6 @@ import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DELAYED;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DROPPED;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EVALUATION_ONLY;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_OR;
-import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_TERM;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_VALUE;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.INDEX_HOLE;
 
@@ -967,16 +966,8 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
     public Object visit(ASTAndNode node, Object data) {
         STATE state;
         QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(node);
-        // until we implement an ivarator that can handle an ExceededTermThreshold node, and ensure that the JexlContext gets
-        // _ANYFIELD_ values, then we cannot execute these nodes
-        if (instance.isType(EXCEEDED_TERM)) {
-            state = STATE.NON_EXECUTABLE;
-            if (output != null) {
-                output.writeLine(data, node, "( Exceeded Term Threshold )", state, true);
-            }
-        }
         // if an ivarator then return true, else check out children
-        else if (instance.isAnyTypeOf(EXCEEDED_VALUE, EXCEEDED_OR)) {
+        if (instance.isAnyTypeOf(EXCEEDED_VALUE, EXCEEDED_OR)) {
             state = STATE.EXECUTABLE;
             if (output != null) {
                 output.writeLine(data, node, "( Exceeded Or / Value Threshold )", state, true);
@@ -999,9 +990,18 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
                 output.writeLine(data, node, "( delayed/eval only predicate )", state, true);
             }
         }
-        // if we got to a bounded range, then this was expanded and is not executable against the index
+        // if we got to a bounded range, then it was not expanded via the index but is still executable via
+        // the ShardSpecificIndexIterator
         else if (instance.isType(BOUNDED_RANGE)) {
-            state = STATE.NON_EXECUTABLE;
+            if (isUnindexed(node)) {
+                state = STATE.NON_EXECUTABLE;
+            } else if (isUnOrNoFielded(node)) {
+                // bounded range should not be NO_FIELD or ANY_FIELD
+                state = STATE.ERROR;
+            } else {
+                state = STATE.EXECUTABLE;
+            }
+
             if (output != null) {
                 output.writeLine(data, node, "( bounded range )", state, true);
             }

@@ -1,16 +1,14 @@
 package datawave.query.jexl.visitors;
 
-import static org.easymock.EasyMock.expect;
-import static org.easymock.EasyMock.replay;
 import static org.junit.Assert.assertTrue;
 
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.log4j.Logger;
-import org.easymock.EasyMock;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -31,9 +29,9 @@ public class FixUnindexedNumericTermsTest {
     @Before
     public void setUp() throws Exception {
         datatypes = HashMultimap.create();
-        config = EasyMock.mock(ShardQueryConfiguration.class);
-        expect(config.getQueryFieldsDatatypes()).andReturn(datatypes).anyTimes();
-        replay(config);
+
+        config = Mockito.mock(ShardQueryConfiguration.class);
+        Mockito.doReturn(datatypes).when(config).getQueryFieldsDatatypes();
     }
 
     @Test

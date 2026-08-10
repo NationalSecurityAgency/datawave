@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.UUID;
 import java.util.concurrent.Future;
 
@@ -44,6 +43,7 @@ import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
 import javax.ejb.TransactionManagement;
 import javax.ejb.TransactionManagementType;
+import javax.enterprise.concurrent.ManagedExecutorService;
 import javax.inject.Inject;
 import javax.interceptor.Interceptors;
 import javax.sql.DataSource;
@@ -62,6 +62,7 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
+import org.apache.accumulo.access.AccessExpression;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.commons.collections4.Transformer;
 import org.apache.commons.dbutils.DbUtils;
@@ -93,7 +94,6 @@ import datawave.core.query.logic.QueryLogicFactory;
 import datawave.core.query.predict.QueryPredictor;
 import datawave.interceptor.RequiredInterceptor;
 import datawave.interceptor.ResponseInterceptor;
-import datawave.marking.MarkingFunctions;
 import datawave.marking.SecurityMarking;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryParameters;
@@ -107,6 +107,7 @@ import datawave.security.user.UserOperationsBean;
 import datawave.webservice.common.audit.AuditBean;
 import datawave.webservice.common.audit.AuditParameters;
 import datawave.webservice.common.audit.Auditor.AuditType;
+import datawave.webservice.common.exception.BadRequestException;
 import datawave.webservice.common.exception.DatawaveWebApplicationException;
 import datawave.webservice.common.exception.NoResultsException;
 import datawave.webservice.common.exception.NotFoundException;
@@ -127,6 +128,8 @@ import datawave.webservice.query.exception.QueryCanceledQueryException;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.exception.UnauthorizedQueryException;
 import datawave.webservice.query.factory.Persister;
+import datawave.webservice.query.limit.QueryLimiter;
+import datawave.webservice.query.limit.QueryLimiterResponse;
 import datawave.webservice.query.metric.QueryMetricsBean;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.query.runner.AccumuloConnectionRequestBean;
@@ -191,6 +194,9 @@ public class CachedResultsBean {
     @Resource(lookup = "java:jboss/datasources/CachedResultsDS")
     protected DataSource ds;
 
+    @Resource
+    private ManagedExecutorService executor;
+
     @Inject
     private QueryCache runningQueryCache;
 
@@ -231,6 +237,10 @@ public class CachedResultsBean {
 
     @Inject
     private AccumuloConnectionRequestBean accumuloConnectionRequestBean;
+
+    @Inject
+    @SpringBean(name = "queryLimiter")
+    private QueryLimiter queryLimiter;
 
     protected static final String COMMA = ",";
     protected static final String TABLE = "$table";
@@ -293,7 +303,16 @@ public class CachedResultsBean {
         ps.setString(5, cqo.getEventId());
         ps.setString(6, cqo.getRow());
         ps.setString(7, cqo.getColFam());
-        ps.setString(8, MarkingFunctions.Encoding.toString(new TreeMap<>(cqo.getMarkings())));
+
+        String visibility = "";
+        if (cqo.getMarkings() != null) {
+            AccessExpression ae = cqo.getMarkings().toAccessExpression();
+            if (ae != null) {
+                visibility = ae.getExpression();
+            }
+        }
+
+        ps.setString(8, visibility);
         for (Entry<String,String> e : cqo.getColumnValues().entrySet()) {
 
             String columnName = e.getKey();
@@ -333,6 +352,7 @@ public class CachedResultsBean {
 
     }
 
+    @SuppressWarnings("unchecked")
     protected GenericResponse<String> load(@Required("queryId") String queryId, String alias, String nameBase) {
 
         GenericResponse<String> response = new GenericResponse<>();
@@ -370,11 +390,29 @@ public class CachedResultsBean {
             // This RunningQuery may be in use. Make a copy using the defined Query.
 
             RunningQuery rq = null;
-            QueryLogic<?> logic = null;
+            QueryLogic logic = null;
             Query q = null;
             BaseQueryMetric queryMetric = null;
             try {
                 rq = getQueryById(queryId);
+
+                try {
+                    // Check if submitting a new query would exceed any configured concurrent query limits.
+                    Query settings = rq.getSettings();
+                    QueryLimiterResponse limiterResponse = queryLimiter.checkForLimits(settings.getUserDN(), settings.getSystemFrom(),
+                                    settings.getQueryLogicName());
+                    if (limiterResponse.metLimit()) {
+                        BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.CONCURRENT_QUERY_LIMIT_EXCEEDED,
+                                        limiterResponse.getMessage());
+                        response.addException(qe);
+                        throw new BadRequestException(qe, response);
+                    }
+                } catch (Exception e) {
+                    log.error("Error checking concurrent query limits", e);
+                    QueryException qe = new QueryException(DatawaveErrorCode.CONCURRENT_QUERY_LIMIT_ERROR, e);
+                    response.addException(qe);
+                    throw qe;
+                }
 
                 // prevent duplicate calls to load with the same queryId
                 if (CachedResultsBean.loadingQueries.contains(queryId)) {
@@ -437,7 +475,7 @@ public class CachedResultsBean {
             }
 
             CacheableLogic cacheableLogic;
-            Transformer t = logic.getTransformer(q);
+            Transformer<?,?> t = logic.getTransformer(q);
 
             // Audit the query. This may be duplicative if the caller called
             // QueryExecutorBean.create() or QueryExecutorBean.reset() first.
@@ -446,7 +484,7 @@ public class CachedResultsBean {
                 try {
                     MultiValueMap<String,String> queryMap = new LinkedMultiValueMap<>(q.toMap());
                     marking.validate(queryMap);
-                    queryMap.set(PrivateAuditConstants.COLUMN_VISIBILITY, marking.toColumnVisibilityString());
+                    queryMap.set(PrivateAuditConstants.COLUMN_VISIBILITY, marking.toAccessExpressionString());
                     queryMap.set(PrivateAuditConstants.AUDIT_TYPE, auditType.name());
                     queryMap.set(PrivateAuditConstants.USER_DN, q.getUserDN());
                     queryMap.set(PrivateAuditConstants.LOGIC_CLASS, logic.getLogicName());
@@ -478,11 +516,13 @@ public class CachedResultsBean {
                 try {
                     query = new RunningQuery(null, null, logic.getConnectionPriority(), logic, q, q.getQueryAuthorizations(), p,
                                     new RunningQueryTimingImpl(queryExpirationConf, q.getPageTimeout()), predictor, userOperationsBean, metricFactory);
+                    query.setExecutor(executor);
                     query.setActiveCall(true);
                     // queryMetric was duplicated from the original earlier
                     query.setMetric(queryMetric);
                     query.setQueryMetrics(metrics);
                     query.setClient(client);
+                    queryLimiter.countQueryTowardsLimits(q.getId().toString(), userDn, q.getSystemFrom(), logic.getLogicName());
                 } finally {
                     qlCache.poll(q.getId().toString());
                 }
@@ -629,6 +669,9 @@ public class CachedResultsBean {
             response.addException(e.getBottomQueryException());
             throw new NoResultsException(e, response.getResult());
         } catch (QueryCanceledQueryException | InterruptedException e) {
+            if (e instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
             log.info("Query " + queryId + " canceled on request");
             if (crq != null) {
                 crq.getMetric().setLifecycle(QueryMetric.Lifecycle.CANCELLED);
@@ -718,6 +761,11 @@ public class CachedResultsBean {
                 } catch (Exception e) {
                     response.addException(new QueryException(DatawaveErrorCode.QUERY_CLOSE_ERROR, e).getBottomQueryException());
                 }
+                try {
+                    queryLimiter.stopCountingQueryTowardsLimits(query.getSettings().getId().toString());
+                } catch (Exception e) {
+                    log.error("Failed to stop counting query " + query.getSettings().getId().toString() + " towards limits", e);
+                }
             } else if (client != null) {
                 try {
                     connectionFactory.returnClient(client);
@@ -725,6 +773,7 @@ public class CachedResultsBean {
                     log.error(new QueryException(DatawaveErrorCode.CONNECTOR_RETURN_ERROR, e));
                 }
             }
+
         }
     }
 
@@ -1270,7 +1319,7 @@ public class CachedResultsBean {
                 MultiValueMap<String,String> params = new LinkedMultiValueMap<>(query.toMap());
                 marking.validate(params);
                 PrivateAuditConstants.stripPrivateParameters(queryParameters);
-                params.set(PrivateAuditConstants.COLUMN_VISIBILITY, marking.toColumnVisibilityString());
+                params.set(PrivateAuditConstants.COLUMN_VISIBILITY, marking.toAccessExpressionString());
                 params.set(PrivateAuditConstants.AUDIT_TYPE, auditType.name());
                 params.set(PrivateAuditConstants.USER_DN, query.getUserDN());
                 params.set(PrivateAuditConstants.LOGIC_CLASS, crq.getQueryLogic().getLogicName());
@@ -2142,6 +2191,7 @@ public class CachedResultsBean {
                 AccumuloConnectionFactory.Priority priority = logic.getConnectionPriority();
                 query = new RunningQuery(metrics, null, priority, logic, q, q.getQueryAuthorizations(), p,
                                 new RunningQueryTimingImpl(queryExpirationConf, q.getPageTimeout()), predictor, userOperationsBean, metricFactory);
+                query.setExecutor(executor);
                 query.setActiveCall(true);
                 // Put in the cache by id and name, we will have two copies that reference the same object
                 runningQueryCache.put(q.getId().toString(), query);
@@ -2359,6 +2409,7 @@ public class CachedResultsBean {
                                     outReadThread.join();
                                     errReadThread.join();
                                 } catch (InterruptedException e) {
+                                    Thread.currentThread().interrupt();
                                     log.error("Thread interrupted waiting for import to finish, killing import process");
                                     process.destroy();
                                 } finally {
@@ -2475,11 +2526,11 @@ public class CachedResultsBean {
         return viewCreated;
     }
 
-    public QueryPredictor getPredictor() {
+    public QueryPredictor<?> getPredictor() {
         return predictor;
     }
 
-    public void setPredictor(QueryPredictor predictor) {
+    public void setPredictor(QueryPredictor<?> predictor) {
         this.predictor = predictor;
     }
 

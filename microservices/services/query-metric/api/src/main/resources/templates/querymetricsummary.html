@@ -1,0 +1,48 @@
+<html xmlns:th="http:/>/www.thymeleaf.org">
+<!--/*
+    The HTML page for QueryMetricSummaryResponse
+*/-->
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <title>DATAWAVE - Query Metrics Summary</title>
+    <link rel="stylesheet" type="text/css" media="screen" th:href="${basePath + '/css/screen.css'}">
+</head>
+<body>
+    <div th:utext="${header}"></div>
+    <h1>Query Metrics Summary</h1>
+    <table>
+        <tr>
+            <th>Interval</th>
+            <th>Queries Submitted</th>
+            <th>Pages Returned</th>
+            <th>Total Results</th>
+            <th>Min Page Size</th>
+            <th>Max Page Size</th>
+            <th>Avg Page Size</th>
+            <th>Total Page Response Time (ms)</th>
+            <th>Min Page Response Time (ms)</th>
+            <th>Max Page Response Time (ms)</th>
+            <th>Avg Page Response Time (ms)</th>
+            <th>Avg Results Per Second</th>
+            <th>Avg Pages Per Second</th>
+        </tr>
+        <tr th:each="summaryData,iter : ${summaryTableContent}" th:class="(${iter.index} % 2 != 0) ? 'highlight' : ''">
+            <td th:text="${summaryData.interval}"></td> <!--/* Interval */-->
+            <td th:text="${summaryData.queryCount}"></td> <!--/* Queries Submitted */-->
+            <td th:text="${summaryData.totalPages}"></td> <!--/* Pages Returned */-->
+            <td th:text="${summaryData.totalPageResultSize}"></td> <!--/* Total Results */-->
+            <td th:text="${summaryData.minPageResultSize}"></td> <!--/* Min Page Size */-->
+            <td th:text="${summaryData.maxPageResultSize}"></td> <!--/* Max Page Size */-->
+            <td th:text="${summaryData.avgPageResultSize}"></td> <!--/* Avg Page Size */-->
+            <td th:text="${summaryData.totalPageResponseTime}"></td> <!--/* Total Page Response Time */-->
+            <td th:text="${summaryData.minPageResponseTime}"></td> <!--/* Min Page Response Time */-->
+            <td th:text="${summaryData.maxPageResponseTime}"></td> <!--/* Max Page Response Time */-->
+            <td th:text="${summaryData.avgPageResponseTime}"></td> <!--/* Avg Page Response Time */-->
+            <td th:text="${summaryData.avgResultsPerSecond}"></td> <!--/* Avg Results Per Second */-->
+            <td th:text="${summaryData.avgPagesPerSecond}"></td> <!--/* Avg Pages Per Second */-->
+        </tr>
+    </table>
+    <br/>
+    <div th:utext="${footer}"></div>
+</body>
+</html>

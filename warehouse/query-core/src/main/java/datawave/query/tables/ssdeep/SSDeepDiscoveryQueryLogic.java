@@ -209,7 +209,7 @@ public class SSDeepDiscoveryQueryLogic extends BaseQueryLogic<DiscoveredSSDeep> 
         discoveryDelegate.setResponseObjectFactory(responseObjectFactory);
     }
 
-    public void setMarkingFunctions(MarkingFunctions markingFunctions) {
+    public void setMarkingFunctions(MarkingFunctions<?> markingFunctions) {
         discoveryDelegate.setMarkingFunctions(markingFunctions);
     }
 
@@ -226,6 +226,12 @@ public class SSDeepDiscoveryQueryLogic extends BaseQueryLogic<DiscoveredSSDeep> 
     @Override
     public Object clone() throws CloneNotSupportedException {
         return new SSDeepDiscoveryQueryLogic(this);
+    }
+
+    @Override
+    public void close() {
+        super.close();
+        discoveryDelegate.close();
     }
 
     @Override

@@ -4,8 +4,11 @@ import datawave.query.language.functions.QueryFunction;
 import datawave.query.search.WildcardFieldedFilter;
 
 public class Include extends AbstractEvaluationPhaseFunction {
+
+    public static final String FUNCTION_NAME = "include";
+
     public Include() {
-        super("include");
+        super(FUNCTION_NAME);
     }
 
     @Override

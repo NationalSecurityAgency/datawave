@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter>
+
+    <Match>
+        <And>
+            <Class name="datawave.microservice.querymetric.QueryMetricOperations" />
+            <Bug pattern="IMSE_DONT_CATCH_IMSE" />
+        </And>
+    </Match>
+
+</FindBugsFilter>

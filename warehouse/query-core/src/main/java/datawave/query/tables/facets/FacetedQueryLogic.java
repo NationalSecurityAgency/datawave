@@ -123,7 +123,6 @@ public class FacetedQueryLogic extends IndexQueryLogic {
         }
 
         return super.initialize(client, settings, auths);
-
     }
 
     @Override

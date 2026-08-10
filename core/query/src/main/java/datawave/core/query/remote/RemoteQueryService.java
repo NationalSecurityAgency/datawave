@@ -25,8 +25,18 @@ public interface RemoteQueryService {
      * @param callerObject
      *            the caller
      * @return the generic response
+     * @throws QueryException
+     *             on error when creating query
      */
     GenericResponse<String> createQuery(String queryLogicName, Map<String,List<String>> queryParameters, ProxiedUserDetails callerObject) throws QueryException;
+
+    /**
+     * Set the class for the next response. The default is to use the event query response but to make this useful for other query services we need to be able
+     * to override.
+     *
+     * @param nextQueryResponseClass
+     */
+    void setNextQueryResponseClass(Class<? extends BaseQueryResponse> nextQueryResponseClass);
 
     /**
      * Call next on a remote query service
@@ -36,6 +46,8 @@ public interface RemoteQueryService {
      * @param callerObject
      *            the caller
      * @return the base query response
+     * @throws QueryException
+     *             on error with query
      */
     BaseQueryResponse next(String id, ProxiedUserDetails callerObject) throws QueryException;
 
@@ -47,6 +59,8 @@ public interface RemoteQueryService {
      * @param callerObject
      *            the caller
      * @return the void response
+     * @throws QueryException
+     *             on error closing query
      */
     VoidResponse close(String id, ProxiedUserDetails callerObject) throws QueryException;
 
@@ -60,6 +74,8 @@ public interface RemoteQueryService {
      * @param callerObject
      *            the caller
      * @return the generic response
+     * @throws QueryException
+     *             on error planning query
      */
     GenericResponse<String> planQuery(String queryLogicName, Map<String,List<String>> queryParameters, ProxiedUserDetails callerObject) throws QueryException;
 
@@ -71,6 +87,8 @@ public interface RemoteQueryService {
      * @param callerObject
      *            the caller
      * @return a generic response
+     * @throws QueryException
+     *             on error planning query
      */
     GenericResponse<String> planQuery(String id, ProxiedUserDetails callerObject) throws QueryException;
 

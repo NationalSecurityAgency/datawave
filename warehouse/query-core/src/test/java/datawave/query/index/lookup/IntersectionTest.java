@@ -214,7 +214,7 @@ public class IntersectionTest {
     @Test
     public void testIntersection_EmptyExceededValueThreshold() throws ParseException {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("THIS_FIELD == 20");
-        ScannerStream scannerStream = ScannerStream.exceededValueThreshold(Collections.emptyIterator(), script);
+        ScannerStream scannerStream = ScannerStream.noData(script);
         List<? extends IndexStream> iterable = Collections.singletonList(scannerStream);
 
         Intersection intersection = new Intersection(iterable, null);
@@ -316,17 +316,17 @@ public class IntersectionTest {
     }
 
     @Test
-    public void testIntersection_uidAndUnindexedAndDelayed() throws ParseException {
+    public void testIntersection_uidAndDelayed() throws ParseException {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("A == '1' && B == '2' && C == '3'");
 
         // A - uids
         ScannerStream s1 = buildScannerStream("20090101_1", "A", "1", Arrays.asList("a.b.c", "a.b.z"));
 
-        // B - unindexed
-        ScannerStream s2 = ScannerStream.unindexed(JexlNodeFactory.buildEQNode("B", "2"));
+        // B - delayed
+        ScannerStream s2 = ScannerStream.delayed(JexlNodeFactory.buildEQNode("B", "2"));
 
         // C - delayed
-        ScannerStream s3 = ScannerStream.delayedExpression(JexlNodeFactory.buildEQNode("C", "3"));
+        ScannerStream s3 = ScannerStream.delayed(JexlNodeFactory.buildEQNode("C", "3"));
 
         List<? extends IndexStream> toMerge = Arrays.asList(s1, s2, s3);
 
@@ -364,18 +364,18 @@ public class IntersectionTest {
     }
 
     @Test
-    public void testIntersection_uidAndUnindexedAndDelayedAndInfinite() throws ParseException {
+    public void testIntersection_uidAndDelayedAndInfinite() throws ParseException {
         // (A && B && C && D)
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("A == '1' && B == '2' && C == '3' && D == '4'");
 
         // A - uids
         ScannerStream s1 = buildScannerStream("20090101_1", "A", "1", Arrays.asList("a.b.c", "a.b.z"));
 
-        // B - unindexed
-        ScannerStream s2 = ScannerStream.unindexed(JexlNodeFactory.buildEQNode("B", "2"));
+        // B - delayed
+        ScannerStream s2 = ScannerStream.delayed(JexlNodeFactory.buildEQNode("B", "2"));
 
         // C - delayed
-        ScannerStream s3 = ScannerStream.delayedExpression(JexlNodeFactory.buildEQNode("C", "3"));
+        ScannerStream s3 = ScannerStream.delayed(JexlNodeFactory.buildEQNode("C", "3"));
 
         // D - infinite
         ScannerStream s4 = buildScannerStream("20090101_1", "D", "4", null);

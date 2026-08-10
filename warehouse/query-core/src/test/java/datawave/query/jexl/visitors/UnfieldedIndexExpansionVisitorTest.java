@@ -40,7 +40,7 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.model.QueryModel;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.util.MockMetadataHelper;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 import datawave.util.time.DateHelper;
 
 public class UnfieldedIndexExpansionVisitorTest {
@@ -292,15 +292,14 @@ public class UnfieldedIndexExpansionVisitorTest {
         test(query, expected, config, helper);
     }
 
-    // regex term fails to expand fields, marked with an exceeded term threshold marker
+    // regex term fails to expand fields, exception thrown
     @Test(expected = DatawaveFatalQueryException.class)
-    public void testExceededTermThreshold() throws Exception {
+    public void testMaxUnfieldedExpansionThreshold() throws Exception {
         ShardQueryConfiguration config = createConfig();
         config.setMaxUnfieldedExpansionThreshold(2);
 
         String query = "_ANYFIELD_ =~ 'dog.*'";
-        String expected = "((_Term_ = true) && (_ANYFIELD_ =~ 'dog.*'))";
-        test(query, expected, config);
+        test(query, null, config);
     }
 
     // regex term expands into fields, but values expansion fails by exceeding a threshold.
@@ -455,7 +454,7 @@ public class UnfieldedIndexExpansionVisitorTest {
 
         // assume that all reverse fields are indexed, for the purposes of this test
         @Override
-        public Set<String> getReverseIndexedFields(Set<String> ingestTypeFilter) throws TableNotFoundException {
+        public Set<String> getReverseIndexedFields(Set<String> ingestTypeFilter) {
             return reverseFields;
         }
     }

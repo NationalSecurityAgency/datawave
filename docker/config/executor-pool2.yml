@@ -6,15 +6,3 @@ datawave:
   swagger:
     title: "Query Executor Service (Pool 2)"
     description: "REST API provided by the Query Executor Service"
-  connection:
-    factory:
-      pools:
-        'pool2':
-          zookeepers: '${accumulo.zookeepers}'
-          instance: '${accumulo.instanceName}'
-          username: '${accumulo.username}'
-          password: '${accumulo.password}'
-          lowPriorityPoolSize: 40
-          normalPriorityPoolSize: 40
-          highPriorityPoolSize: 40
-          adminPriorityPoolSize: 40

@@ -19,7 +19,7 @@ import datawave.webservice.result.BaseResponse;
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public class AccumuloTableCacheStatus extends BaseResponse implements HtmlProvider {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -4434127659799676913L;
     private static final String TITLE = "Accumulo Table Cache Status", EMPTY = "";
 
     @XmlElementWrapper(name = "TableCaches")

@@ -26,23 +26,23 @@ import org.springframework.boot.ApplicationArguments;
  */
 public class CommandRunner {
     private static Logger log = LoggerFactory.getLogger(ConfigCheckApplication.class);
-    
+
     public static final String RENDER = "render";
     public static final String ANALYZE = "analyze";
     public static final String COMPARE = "compare";
-    
+
     public static final String HELP = "help";
     public static final String CONFIGDIR = "configdir";
     public static final String PROPERTIES = "properties";
     public static final String YAML = "yaml";
     public static final String FULL_REPORT = "fullreport";
-    
+
     private ApplicationArguments args;
-    
+
     public CommandRunner(ApplicationArguments args) {
         this.args = args;
     }
-    
+
     public Output run() {
         Output output = new Output();
         boolean help = args.containsOption(HELP) || args.getNonOptionArgs().size() == 1;
@@ -124,7 +124,7 @@ public class CommandRunner {
                     break;
             }
         }
-        
+
         if (output.getMessage() == null) {
             output.setMessage("configcheck can be used to render, analyze and compare files which are configured with \n"
                             + "  property placeholders, such as QueryLogicFactory.xml.  \n\n" + "Available Commands:\n" + "  " + RENDER
@@ -135,16 +135,16 @@ public class CommandRunner {
                             + "  Compares two analyses, and produces a git-merge-like diff showing value differences \n"
                             + "             between the two files.\n\n");
         }
-        
+
         return output;
     }
-    
+
     private void runRenderCommand(ApplicationArguments args, Output output) {
         if (args.getNonOptionArgs().size() != 2) {
             output.setErrorMessage("Invalid arguments for render command.  See 'configcheck render --help'");
             return;
         }
-        
+
         // load the content
         String file = getFile(args);
         String content = loadContent(file);
@@ -152,23 +152,23 @@ public class CommandRunner {
             output.setErrorMessage("No content loaded for '" + file + "'");
             return;
         }
-        
+
         // load the properties (properties, or yaml)
         Properties properties = getProperties(args);
         if (properties == null) {
             output.setErrorMessage("No properties/yaml loaded");
             return;
         }
-        
+
         output.setMessage(handleOutput(renderContent(content, properties)));
     }
-    
+
     private void runAnalyzeCommand(ApplicationArguments args, Output output) {
         if (args.getNonOptionArgs().size() != 2) {
             output.setErrorMessage("Invalid arguments for analyze command.  See 'configcheck analyze --help'");
             return;
         }
-        
+
         // load the xml
         String file = getFile(args);
         String xmlContent = loadContent(file);
@@ -176,14 +176,14 @@ public class CommandRunner {
             output.setErrorMessage("No content loaded for '" + file + "'");
             return;
         }
-        
+
         // load the properties (properties, or yaml)
         Properties properties = getProperties(args);
         if (properties == null) {
             output.setErrorMessage("No properties/yaml loaded");
             return;
         }
-        
+
         XmlPropertyAnalyzer analyzer = new XmlPropertyAnalyzer(xmlContent, properties);
         String report;
         if (args.containsOption(FULL_REPORT)) {
@@ -191,16 +191,16 @@ public class CommandRunner {
         } else {
             report = analyzer.getSimpleReport();
         }
-        
+
         output.setMessage(handleOutput(report));
     }
-    
+
     private void runCompareCommand(ApplicationArguments args, Output output) {
         if (args.getNonOptionArgs().size() != 3) {
             output.setErrorMessage("Invalid arguments for compare command.  See 'configcheck compare --help'");
             return;
         }
-        
+
         String[] files = getFiles(args);
         if (files != null) {
             // load the content
@@ -209,20 +209,20 @@ public class CommandRunner {
                 output.setErrorMessage("No content loaded for '" + files[0] + "'");
                 return;
             }
-            
+
             String second = loadContent(files[1]);
             if (second == null || second.isEmpty()) {
                 output.setErrorMessage("No content loaded for '" + files[1] + "'");
                 return;
             }
-            
+
             AnalysisComparator comparator = new AnalysisComparator(new Analysis(files[0], first), new Analysis(files[1], second));
             output.setMessage(comparator.compareAnalyses());
         } else {
             output.setErrorMessage("No files to compare");
         }
     }
-    
+
     private String getConfigdir(ApplicationArguments args) {
         String configdir = null;
         if (args.getOptionNames().contains(CONFIGDIR)) {
@@ -230,10 +230,10 @@ public class CommandRunner {
         }
         return configdir;
     }
-    
+
     private Properties getProperties(ApplicationArguments args) {
         String configdir = getConfigdir(args);
-        
+
         // load the properties (or yaml)
         Properties mergedProperties = null;
         if (args.getOptionNames().contains(PROPERTIES)) {
@@ -243,10 +243,10 @@ public class CommandRunner {
         } else {
             log.info("No properties or yaml to render");
         }
-        
+
         return mergedProperties;
     }
-    
+
     private String handleOutput(String output) {
         String outputPath = getOutputPath(args);
         if (outputPath != null) {
@@ -255,7 +255,7 @@ public class CommandRunner {
         }
         return output;
     }
-    
+
     private void writeOutput(Path outputPath, String output) {
         if (output != null) {
             if (outputPath != null) {

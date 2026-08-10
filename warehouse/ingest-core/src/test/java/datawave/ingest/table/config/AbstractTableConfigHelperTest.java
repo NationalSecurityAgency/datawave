@@ -23,7 +23,6 @@ import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.powermock.api.easymock.PowerMock;
 
 import datawave.ingest.table.aggregator.CombinerConfiguration;
 
@@ -56,9 +55,11 @@ public class AbstractTableConfigHelperTest {
 
         public AbstractTableConfigHelperTest parent;
 
+        private Configuration config;
+
         protected Logger createMockLogger() {
 
-            Logger log = PowerMock.createMock(Logger.class);
+            Logger log = EasyMock.createMock(Logger.class);
 
             if (null == debugMessages) {
 
@@ -90,7 +91,7 @@ public class AbstractTableConfigHelperTest {
                 return null;
             }).anyTimes();
 
-            PowerMock.replay(log);
+            EasyMock.replay(log);
 
             return log;
         }
@@ -510,7 +511,7 @@ public class AbstractTableConfigHelperTest {
             }
         }
 
-        TableOperations mock = PowerMock.createMock(TableOperations.class);
+        TableOperations mock = EasyMock.createMock(TableOperations.class);
 
         mock.getProperties(EasyMock.anyObject(String.class));
         EasyMock.expectLastCall().andAnswer(() -> {
@@ -608,7 +609,7 @@ public class AbstractTableConfigHelperTest {
         }).anyTimes();
 
         // prepare it for use...
-        PowerMock.replay(mock);
+        EasyMock.replay(mock);
 
         return mock;
     }

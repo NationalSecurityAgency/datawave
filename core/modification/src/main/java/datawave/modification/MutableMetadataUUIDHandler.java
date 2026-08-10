@@ -13,7 +13,8 @@ import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.query.util.MetadataHelper;
 import datawave.security.authorization.ProxiedUserDetails;
@@ -180,7 +181,7 @@ import datawave.webservice.query.result.event.FieldBase;
 public class MutableMetadataUUIDHandler extends MutableMetadataHandler {
 
     private static final String DESCRIPTION = "Service that processes modification requests of event " + "fields for event(s) identified by an ID.";
-    private Logger log = Logger.getLogger(this.getClass());
+    private Logger log = LoggerFactory.getLogger(this.getClass());
 
     private String fieldName = "";
     private String fieldValue = "";
@@ -268,7 +269,7 @@ public class MutableMetadataUUIDHandler extends MutableMetadataHandler {
                                 // if they are doing a replace, we need all the current values, store them
                                 if (operation.getOperationMode().equals(OPERATIONMODE.REPLACE)) {
                                     if (log != null)
-                                        log.trace("Adding " + f.getValueString() + ",delete to replaceMap");
+                                        log.trace("Adding {},delete to replaceMap", f.getValueString());
                                     replaceMap.put(f.getValueString(), OPERATIONMODE.DELETE);
                                 }
 
@@ -285,7 +286,7 @@ public class MutableMetadataUUIDHandler extends MutableMetadataHandler {
                             // only if the input didn't supply a security marking AND it is an exempt field
                             else if (f.getName().equalsIgnoreCase(event.getIdType()) && fieldCount < 1 && columnVisibility == null && securityMarkingExempt) {
                                 if (log != null)
-                                    log.trace("Using visibility of " + f.getName() + " and setting to " + f.getColumnVisibility());
+                                    log.trace("Using visibility of {} and setting to {}", f.getName(), f.getColumnVisibility());
                                 fieldColumnVisibility = f.getColumnVisibility();
                             }
                         }
@@ -297,7 +298,7 @@ public class MutableMetadataUUIDHandler extends MutableMetadataHandler {
                                             .add(createModificationRequest(idEvent, operation, columnVisibility, oldColumnVisibility, securityMarkingExempt));
                         } else if (OPERATIONMODE.REPLACE.equals(mode)) {
                             if (log != null)
-                                log.trace("Adding " + operation.getFieldValue() + ",insert to replaceMap");
+                                log.trace("Adding {},insert to replaceMap", operation.getFieldValue());
                             replaceMap.put(operation.getFieldValue(), OPERATIONMODE.INSERT);
 
                             // create a modification request of delete for each current value and an insert for the new value
@@ -312,7 +313,7 @@ public class MutableMetadataUUIDHandler extends MutableMetadataHandler {
                         }
 
                         if (log != null)
-                            log.trace("modificationRequests= " + modificationRequests);
+                            log.trace("modificationRequests= {}", modificationRequests);
                         for (DefaultModificationRequest modReq : modificationRequests) {
                             try {
                                 if (fieldCount > 1 && (oldFieldValue == null && modReq.getMode() != MODE.INSERT) && !mode.equals(OPERATIONMODE.REPLACE)) {
@@ -324,9 +325,9 @@ public class MutableMetadataUUIDHandler extends MutableMetadataHandler {
                                     throw new IllegalStateException("Must provide columnVisibility");
                                 } else // submit DefaultModificationRequest
                                 {
-                                    log.info("eventUser = " + eventUser + ", event.getUser() = " + event.getUser());
+                                    log.info("eventUser = {}, event.getUser() = {}", eventUser, event.getUser());
                                     if (log != null)
-                                        log.trace("Submitting request to MutableMetadataHandler from MutableMetadataUUIDHandler: " + modReq);
+                                        log.trace("Submitting request to MutableMetadataHandler from MutableMetadataUUIDHandler: {}", modReq);
 
                                     super.process(client, modReq, mutableFieldList, userAuths, userDetails);
                                 }
@@ -376,7 +377,7 @@ public class MutableMetadataUUIDHandler extends MutableMetadataHandler {
         ei.setEventUid(idEvent.getMetadata().getInternalId());
         List<EventIdentifier> thisEvent = Collections.singletonList(ei);
         if (log != null)
-            log.trace("operation=" + operation);
+            log.trace("operation={}", operation);
 
         // set values for modification request
         DefaultModificationRequest modReq = new DefaultModificationRequest();
@@ -418,7 +419,7 @@ public class MutableMetadataUUIDHandler extends MutableMetadataHandler {
         }
 
         if (log != null)
-            log.trace("Returning modReq=" + modReq);
+            log.trace("Returning modReq={}", modReq);
         return modReq;
     }
 

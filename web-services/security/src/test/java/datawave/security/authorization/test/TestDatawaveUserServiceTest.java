@@ -236,7 +236,7 @@ public class TestDatawaveUserServiceTest {
 
         public MockAccumuloConnectionFactory() {
             try {
-                inMemoryInstance.getConnector("root", "").securityOperations().changeUserAuthorizations("root", new Authorizations("PUB", "PVT"));
+                new InMemoryAccumuloClient("root", inMemoryInstance).securityOperations().changeUserAuthorizations("root", new Authorizations("PUB", "PVT"));
             } catch (AccumuloException | AccumuloSecurityException e) {
                 throw new RuntimeException(e);
             }

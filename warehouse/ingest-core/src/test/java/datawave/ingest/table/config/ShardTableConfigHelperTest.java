@@ -10,6 +10,7 @@ import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.admin.TableOperations;
+import org.apache.accumulo.core.iterators.IteratorUtil.IteratorScope;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Level;
@@ -19,7 +20,6 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.powermock.api.easymock.PowerMock;
 
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.ingest.table.aggregator.GlobalIndexUidAggregator;
@@ -47,7 +47,7 @@ public class ShardTableConfigHelperTest {
         tableProperties = new HashMap<>();
         localityGroups = new HashMap<>();
 
-        TableOperations mock = PowerMock.createMock(TableOperations.class);
+        TableOperations mock = EasyMock.createMock(TableOperations.class);
 
         mock.getProperties(EasyMock.anyObject(String.class));
         EasyMock.expectLastCall().andAnswer(() -> {
@@ -120,7 +120,7 @@ public class ShardTableConfigHelperTest {
         }).anyTimes();
 
         // prepare it for use...
-        PowerMock.replay(mock);
+        EasyMock.replay(mock);
 
         return mock;
     }
@@ -132,7 +132,7 @@ public class ShardTableConfigHelperTest {
             configuration = new HashMap<>();
         }
 
-        Configuration mock = PowerMock.createMock(Configuration.class);
+        Configuration mock = EasyMock.createMock(Configuration.class);
 
         mock.get(EasyMock.anyObject(String.class), EasyMock.anyObject(String.class));
         EasyMock.expectLastCall().andAnswer(() -> {
@@ -166,14 +166,14 @@ public class ShardTableConfigHelperTest {
             return results;
         }).anyTimes();
 
-        PowerMock.replay(mock);
+        EasyMock.replay(mock);
 
         return mock;
     }
 
     protected Logger createMockLogger() {
 
-        Logger log = PowerMock.createMock(Logger.class);
+        Logger log = EasyMock.createMock(Logger.class);
 
         if (null == debugMessages) {
 
@@ -205,7 +205,7 @@ public class ShardTableConfigHelperTest {
             return null;
         }).anyTimes();
 
-        PowerMock.replay(log);
+        EasyMock.replay(log);
 
         return log;
     }
@@ -587,5 +587,36 @@ public class ShardTableConfigHelperTest {
         Assert.assertEquals(expectedAggregatorClass.getName(), tableProperties.get("table.iterator.majc.UIDAggregator.opt.*"));
         Assert.assertEquals(expectedAggregatorClass.getName(), tableProperties.get("table.iterator.minc.UIDAggregator.opt.*"));
         Assert.assertEquals(expectedAggregatorClass.getName(), tableProperties.get("table.iterator.scan.UIDAggregator.opt.*"));
+    }
+
+    @Test
+    public void testBitSetCombiner() throws Exception {
+        assertBitSetCombinerExists(ShardedDataTypeHandler.SHARD_DAY_INDEX_TABLE_NAME);
+        assertBitSetCombinerExists(ShardedDataTypeHandler.SHARD_YEAR_INDEX_TABLE_NAME);
+    }
+
+    private void assertBitSetCombinerExists(String tableProperty) throws Exception {
+        Configuration config = createMockConfiguration();
+        Logger log = createMockLogger();
+        TableOperations tops = mockUpTableOperations();
+
+        ShardTableConfigHelper uut = new ShardTableConfigHelper();
+
+        this.configuration.put(tableProperty, ShardTableConfigHelperTest.TABLE_NAME);
+
+        this.tableProperties.clear();
+        this.localityGroups.clear();
+
+        uut.setup(ShardTableConfigHelperTest.TABLE_NAME, config, log);
+        uut.configure(tops);
+
+        String expectedIter = "19,datawave.ingest.table.aggregator.BitSetCombiner";
+        String expectedOpts = "datawave.ingest.table.aggregator.BitSetCombiner";
+        for (IteratorScope scope : IteratorScope.values()) {
+            String iterKey = "table.iterator." + scope.name() + ".bits";
+            String optsKey = "table.iterator." + scope.name() + ".bits.opt.*";
+            Assert.assertEquals(expectedIter, tableProperties.get(iterKey));
+            Assert.assertEquals(expectedOpts, tableProperties.get(optsKey));
+        }
     }
 }

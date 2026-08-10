@@ -8,6 +8,7 @@ import static datawave.query.testframework.RawDataManager.OR_OP;
 import static datawave.query.testframework.RawDataManager.RE_OP;
 import static datawave.query.testframework.RawDataManager.RN_OP;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.File;
@@ -27,6 +28,7 @@ import datawave.query.exceptions.FullTableScansDisallowedException;
 import datawave.query.testframework.AbstractFunctionalQuery;
 import datawave.query.testframework.AccumuloSetup;
 import datawave.query.testframework.CitiesDataType;
+import datawave.query.testframework.CityDataManager;
 import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.FileType;
@@ -49,6 +51,7 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
         Collection<DataTypeHadoopConfig> dataTypes = new ArrayList<>();
         FieldConfig max = new MaxExpandCityFields();
 
+        CityDataManager.newInstance();
         dataTypes.add(new CitiesDataType(CitiesDataType.CityEntry.maxExp, max));
 
         accumuloSetup.setData(FileType.CSV, dataTypes);
@@ -346,8 +349,8 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
         this.logic.setMaxIvaratorResults(1);
         // verify we still get our expected results
         runTest(query, expect);
-        // and verify that the ivarators indeed did not complete (i.e. failed)
-        assertEquals(0, countComplete(dirs));
+        // and verify that the ivarators indeed persisted
+        assertTrue("Expected at least one ivarator to complete and persist", countComplete(dirs) >= 1);
     }
 
     private int countComplete(List<String> dirs) throws Exception {

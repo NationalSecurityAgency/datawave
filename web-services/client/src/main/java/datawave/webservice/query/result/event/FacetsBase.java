@@ -1,7 +1,6 @@
 package datawave.webservice.query.result.event;
 
 import java.util.List;
-import java.util.Map;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
@@ -10,7 +9,9 @@ import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlSeeAlso;
 import javax.xml.bind.annotation.XmlTransient;
 
-import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.accumulo.access.AccessExpression;
+
+import datawave.marking.Markings;
 
 /**
  *
@@ -19,15 +20,16 @@ import org.apache.accumulo.core.security.ColumnVisibility;
 @XmlSeeAlso(DefaultFacets.class)
 public abstract class FacetsBase implements HasMarkings {
 
-    protected Map<String,String> markings;
+    protected Markings<?> markings;
 
     @XmlElementWrapper(name = "Fields")
     @XmlElement(name = "Field")
     protected List<FieldCardinalityBase> fields = null;
 
     @XmlTransient
-    protected ColumnVisibility columnVisibility;
+    protected AccessExpression accessExpression;
 
+    @SuppressWarnings("unchecked")
     public void setFields(List<? extends FieldCardinalityBase> fields) {
         this.fields = (List<FieldCardinalityBase>) fields;
     }
@@ -36,12 +38,12 @@ public abstract class FacetsBase implements HasMarkings {
         return fields;
     }
 
-    public ColumnVisibility getColumnVisibility() {
-        return columnVisibility;
+    public AccessExpression getAccessExpression() {
+        return accessExpression;
     }
 
-    public void setColumnVisibility(ColumnVisibility columnVisibility) {
-        this.columnVisibility = columnVisibility;
+    public void setAccessExpression(AccessExpression accessExpression) {
+        this.accessExpression = accessExpression;
     }
 
     public abstract void setSizeInBytes(long sizeInBytes);

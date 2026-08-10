@@ -5,7 +5,6 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import javax.xml.bind.annotation.XmlAccessOrder;
 import javax.xml.bind.annotation.XmlAccessType;
@@ -14,12 +13,12 @@ import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlTransient;
-import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
 import org.apache.commons.lang.builder.EqualsBuilder;
 
+import datawave.marking.AccessExpressionMarkings;
+import datawave.marking.Markings;
 import datawave.webservice.query.data.ObjectSizeOf;
-import datawave.webservice.xml.util.StringMapAdapter;
 import io.protostuff.Input;
 import io.protostuff.Message;
 import io.protostuff.Output;
@@ -29,18 +28,17 @@ import io.protostuff.Schema;
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public class DefaultEvent extends EventBase<DefaultEvent,DefaultField> implements Serializable, Message<DefaultEvent>, ObjectSizeOf {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 2390592143914560317L;
 
-    @XmlElement(name = "Markings")
-    @XmlJavaTypeAdapter(StringMapAdapter.class)
-    private HashMap<String,String> markings = null;
+    @XmlElement(name = "Markings", type = AccessExpressionMarkings.class)
+    private Markings<?> markings;
 
     @XmlElement(name = "Metadata")
-    private Metadata metadata = null;
+    private Metadata metadata;
 
     @XmlElementWrapper(name = "Fields")
     @XmlElement(name = "Field")
-    private List<DefaultField> fields = null;
+    private List<DefaultField> fields;
 
     public List<DefaultField> getFields() {
         return fields;
@@ -56,21 +54,13 @@ public class DefaultEvent extends EventBase<DefaultEvent,DefaultField> implement
     }
 
     @Override
-    public Map<String,String> getMarkings() {
-        if (markings != null) {
-            return markings;
-        } else {
-            return super.getMarkings();
-        }
+    public Markings<?> getMarkings() {
+        return this.markings;
     }
 
-    public void setMarkings(Map<String,String> markings) {
-        if (null != markings) {
-            this.markings = new HashMap<>(markings);
-        } else {
-            this.markings = null;
-        }
-        super.setMarkings(this.markings);
+    @Override
+    public void setMarkings(Markings<?> markings) {
+        this.markings = markings;
     }
 
     public Metadata getMetadata() {
@@ -134,7 +124,7 @@ public class DefaultEvent extends EventBase<DefaultEvent,DefaultField> implement
 
         public void writeTo(Output output, DefaultEvent message) throws IOException {
             if (message.markings != null)
-                output.writeObject(1, message.markings, MapSchema.SCHEMA, false);
+                output.writeObject(1, (AccessExpressionMarkings) message.markings, AccessExpressionMarkings.SCHEMA, false);
 
             if (message.metadata != null) {
                 output.writeObject(2, message.metadata, Metadata.getSchema(), false);
@@ -159,8 +149,8 @@ public class DefaultEvent extends EventBase<DefaultEvent,DefaultField> implement
             while ((number = input.readFieldNumber(this)) != 0) {
                 switch (number) {
                     case 1:
-                        message.markings = new HashMap<String,String>();
-                        input.mergeObject(message.markings, MapSchema.SCHEMA);
+                        message.markings = AccessExpressionMarkings.builder().build();
+                        input.mergeObject((AccessExpressionMarkings) message.markings, AccessExpressionMarkings.SCHEMA);
                         break;
                     case 2:
                         message.metadata = input.mergeObject(null, Metadata.getSchema());
@@ -197,7 +187,7 @@ public class DefaultEvent extends EventBase<DefaultEvent,DefaultField> implement
 
         public int getFieldNumber(String name) {
             final Integer number = fieldMap.get(name);
-            return number == null ? 0 : number.intValue();
+            return number == null ? 0 : number;
         }
 
         final HashMap<String,Integer> fieldMap = new HashMap<String,Integer>();

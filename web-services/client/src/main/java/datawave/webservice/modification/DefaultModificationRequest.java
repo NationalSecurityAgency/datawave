@@ -31,7 +31,7 @@ import com.google.common.collect.Maps;
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public class DefaultModificationRequest extends ModificationRequestBase implements Serializable {
 
-    private static final long serialVersionUID = 2L;
+    private static final long serialVersionUID = 7141501104717795992L;
 
     @XmlElementWrapper(name = "Events", required = true)
     @XmlElement(name = "Event", required = true)
@@ -84,7 +84,7 @@ public class DefaultModificationRequest extends ModificationRequestBase implemen
     }
 
     public void setFieldMarkings(Map<String,String> fieldMarkings) {
-        this.fieldMarkings = (fieldMarkings == null ? new HashMap<String,String>() : new HashMap<String,String>(fieldMarkings));
+        this.fieldMarkings = (fieldMarkings == null ? new HashMap<>() : new HashMap<>(fieldMarkings));
     }
 
     public Map<String,String> getOldFieldMarkings() {
@@ -94,7 +94,7 @@ public class DefaultModificationRequest extends ModificationRequestBase implemen
     }
 
     public void setOldFieldMarkings(Map<String,String> oldFieldMarkings) {
-        this.oldFieldMarkings = (oldFieldMarkings == null ? new HashMap<String,String>() : new HashMap<String,String>(oldFieldMarkings));
+        this.oldFieldMarkings = (oldFieldMarkings == null ? new HashMap<>() : new HashMap<>(oldFieldMarkings));
     }
 
     public String getOldFieldValue() {

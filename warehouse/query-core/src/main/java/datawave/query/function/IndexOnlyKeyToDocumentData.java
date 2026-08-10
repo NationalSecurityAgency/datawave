@@ -38,9 +38,9 @@ import datawave.webservice.query.exception.QueryException;
  * Fetches index-only tf key/values and outputs them as "standard" field key/value pairs
  */
 public class IndexOnlyKeyToDocumentData extends KeyToDocumentData implements Iterator<Entry<DocumentData,Document>> {
-    private static final Collection<ByteSequence> COLUMN_FAMILIES = Lists.<ByteSequence> newArrayList(new ArrayByteSequence("d"));
+    private static final Collection<ByteSequence> COLUMN_FAMILIES = Lists.newArrayList(new ArrayByteSequence("d"));
 
-    private static Logger LOG = Logger.getLogger(IndexOnlyKeyToDocumentData.class);
+    private static final Logger LOG = Logger.getLogger(IndexOnlyKeyToDocumentData.class);
 
     private static final Entry<Key,Value> INVALID_COLUMNQUALIFIER_FORMAT_KEY = Maps.immutableEntry(new Key("INVALID_COLUMNQUALIFIER_FORMAT_KEY"), EMPTY_VALUE);
 
@@ -159,7 +159,7 @@ public class IndexOnlyKeyToDocumentData extends KeyToDocumentData implements Ite
             // get the document key
             Key docKey = getDocKey(from.getKey());
 
-            // Ensure that we have a non-empty colqual
+            // Ensure that we have a non-empty column qualifier
             final Key stopKey = new Key(from.getKey().getRow().toString(), from.getKey().getColumnFamily().toString(),
                             from.getKey().getColumnQualifier().toString() + '\u0000' + '\uffff');
 

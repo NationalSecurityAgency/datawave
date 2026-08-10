@@ -12,14 +12,15 @@ import java.util.TreeSet;
 
 import org.apache.log4j.Logger;
 import org.apache.lucene.queryparser.flexible.core.QueryNodeException;
+import org.apache.lucene.queryparser.flexible.core.QueryNodeParseException;
 import org.apache.lucene.queryparser.flexible.core.builders.QueryBuilder;
 import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
 import org.apache.lucene.queryparser.flexible.core.processors.QueryNodeProcessor;
 
+import datawave.query.Constants;
 import datawave.query.language.builder.lucene.AccumuloQueryTreeBuilder;
 import datawave.query.language.functions.lucene.LuceneQueryFunction;
 import datawave.query.language.parser.ParseException;
-import datawave.query.language.parser.QueryParser;
 import datawave.query.language.processor.lucene.CustomQueryNodeProcessorPipeline;
 import datawave.query.language.tree.FunctionNode;
 import datawave.query.language.tree.HardAndNode;
@@ -30,22 +31,17 @@ import datawave.query.search.FieldedTerm;
 import datawave.query.search.RangeFieldedTerm;
 import datawave.query.search.Term;
 
-public class LuceneQueryParser implements QueryParser {
+public class LuceneQueryParser implements LuceneSyntaxQueryParser {
     private static Logger log = Logger.getLogger(LuceneQueryParser.class.getName());
     private Map<String,String> filters = new HashMap<>();
     private List<LuceneQueryFunction> allowedFunctions = null;
 
     @Override
     public datawave.query.language.tree.QueryNode parse(String query) throws ParseException {
-        query = query.replaceAll("\\u0093", "\""); // replace open smart quote 147
-        query = query.replaceAll("\\u0094", "\""); // replace close smart quote 148
-
         datawave.query.language.tree.QueryNode parsedQuery = null;
 
         try {
-            Locale.setDefault(Locale.US);
-            AccumuloSyntaxParser syntaxParser = new AccumuloSyntaxParser();
-            syntaxParser.enable_tracing();
+            QueryNode queryTree = parseToLuceneQueryNode(query);
 
             org.apache.lucene.queryparser.flexible.core.config.QueryConfigHandler queryConfigHandler = new QueryConfigHandler();
             QueryNodeProcessor processor = new CustomQueryNodeProcessorPipeline(queryConfigHandler);
@@ -56,7 +52,6 @@ public class LuceneQueryParser implements QueryParser {
                 builder = new AccumuloQueryTreeBuilder(allowedFunctions);
             }
 
-            QueryNode queryTree = syntaxParser.parse(query, "");
             queryTree = processor.process(queryTree);
             parsedQuery = (datawave.query.language.tree.QueryNode) builder.build(queryTree);
 
@@ -76,6 +71,17 @@ public class LuceneQueryParser implements QueryParser {
         }
 
         return parsedQuery;
+    }
+
+    @Override
+    public QueryNode parseToLuceneQueryNode(String query) throws QueryNodeParseException {
+        query = query.replaceAll(Constants.UTF_16_SMART_QUOTE_LEFT, Constants.QUOTE); // replace open smart quote 147
+        query = query.replaceAll(Constants.UTF_16_SMART_QUOTE_RIGHT, Constants.QUOTE); // replace close smart quote 148
+
+        Locale.setDefault(Locale.US);
+        AccumuloSyntaxParser parser = new AccumuloSyntaxParser();
+        parser.enable_tracing();
+        return parser.parse(query, "");
     }
 
     public Map<String,String> getFilters() {

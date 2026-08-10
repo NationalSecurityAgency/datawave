@@ -12,7 +12,6 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.commons.collections.keyvalue.UnmodifiableMapEntry;
 import org.junit.Test;
 
-import datawave.marking.MarkingFunctions;
 import datawave.query.Constants;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Document;
@@ -21,7 +20,7 @@ import datawave.query.attributes.Numeric;
 public class FieldRenameTransformTest {
 
     @Test
-    public void renameIdentityMapTest() throws MarkingFunctions.Exception {
+    public void renameIdentityMapTest() {
         Key key = new Key("shard", "dataType" + Constants.NULL + "uid");
 
         Set<String> fieldMap = new HashSet<>();
@@ -44,7 +43,7 @@ public class FieldRenameTransformTest {
     }
 
     @Test
-    public void renameFieldMapTest() throws MarkingFunctions.Exception {
+    public void renameFieldMapTest() {
         Key key = new Key("shard", "dataType" + Constants.NULL + "uid");
 
         Set<String> fieldMap = new HashSet<>();
@@ -70,7 +69,7 @@ public class FieldRenameTransformTest {
     }
 
     @Test
-    public void renameFieldMapPreexistingTest() throws MarkingFunctions.Exception {
+    public void renameFieldMapPreexistingTest() {
         Key key = new Key("shard", "dataType" + Constants.NULL + "uid");
 
         Set<String> fieldMap = new HashSet<>();
@@ -96,7 +95,7 @@ public class FieldRenameTransformTest {
     }
 
     @Test
-    public void renameWithGroupingContextAndMultipleMappings() throws MarkingFunctions.Exception {
+    public void renameWithGroupingContextAndMultipleMappings() {
         Key key = new Key("shard", "dataType" + Constants.NULL + "uid");
 
         Set<String> fieldMap = new HashSet<>();
@@ -106,9 +105,9 @@ public class FieldRenameTransformTest {
         fieldMap.add("field1=field6");
 
         Document d = new Document();
-        d.put("field1.field.11", new Numeric("1", key, true), true, false);
-        d.put("field2.field.12", new Numeric("2", key, true), true, false);
-        d.put("field3.field.13", new Numeric("3", key, true), true, false);
+        d.put("field1.field.11", new Numeric("1", key, true), true);
+        d.put("field2.field.12", new Numeric("2", key, true), true);
+        d.put("field3.field.13", new Numeric("3", key, true), true);
 
         DocumentTransform transformer = new FieldRenameTransform(fieldMap, true, false);
 

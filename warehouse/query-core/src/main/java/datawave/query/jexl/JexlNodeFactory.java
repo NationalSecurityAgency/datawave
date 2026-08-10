@@ -1,7 +1,6 @@
 package datawave.query.jexl;
 
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_VALUE;
-import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.LENIENT;
 import static datawave.query.jexl.visitors.RebuildingVisitor.copy;
 
 import java.math.BigDecimal;
@@ -105,7 +104,7 @@ public class JexlNodeFactory {
         }
 
         // no expansions needed if the field name threshold is exceeded
-        if (fieldsToValues.isKeyThresholdExceeded()) {
+        if (fieldsToValues.isKeyThresholdExceeded() || fieldsToValues.isUnfieldedTimeoutSeen()) {
             throw new DatawaveFatalQueryException("Failed to expand unfielded term");
         }
 

@@ -34,7 +34,6 @@ import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.TableDeletedException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.TableOfflineException;
-import org.apache.accumulo.core.client.ZooKeeperInstance;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.clientImpl.ClientConfConverter;
 import org.apache.accumulo.core.clientImpl.ClientContext;
@@ -53,12 +52,12 @@ import org.apache.accumulo.core.manager.state.tables.TableState;
 import org.apache.accumulo.core.metadata.MetadataTable;
 import org.apache.accumulo.core.metadata.schema.MetadataSchema;
 import org.apache.accumulo.core.security.Authorizations;
+import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.accumulo.core.security.TablePermission;
-import org.apache.accumulo.core.singletons.SingletonReservation;
-import org.apache.accumulo.core.util.Pair;
-import org.apache.accumulo.core.util.format.DefaultFormatter;
+import org.apache.accumulo.core.singletons.SingletonManager;
 import org.apache.accumulo.core.util.threads.Threads;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
@@ -73,8 +72,8 @@ import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.JobContext;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
@@ -89,11 +88,12 @@ import datawave.mr.bulk.split.DefaultSplitStrategy;
 import datawave.mr.bulk.split.LocationStrategy;
 import datawave.mr.bulk.split.RangeSplit;
 import datawave.mr.bulk.split.SplitStrategy;
+import datawave.scan.ScannerBuilder;
 import datawave.util.TextUtil;
 
 public class BulkInputFormat extends InputFormat<Key,Value> {
 
-    protected static final Logger log = Logger.getLogger(BulkInputFormat.class);
+    protected static final Logger log = LoggerFactory.getLogger(BulkInputFormat.class);
 
     protected static final String PREFIX = BulkInputFormat.class.getSimpleName();
     protected static final String INPUT_INFO_HAS_BEEN_SET = PREFIX + ".configured";
@@ -110,6 +110,8 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
     protected static final String RACKSTRATEGY = PREFIX + ".rack.strategy.class";
     protected static final String RANGESPLITSTRATEGY = PREFIX + ".split.strategy.class";
     protected static final String MOCK = ".useInMemoryInstance";
+
+    protected static final String UTF8 = "UTF-8";
 
     protected static final String RANGES = PREFIX + ".ranges";
     protected static final String AUTO_ADJUST_RANGES = PREFIX + ".ranges.autoAdjust";
@@ -243,7 +245,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
     }
 
     /**
-     * Configure a {@link ZooKeeperInstance} for this configuration object.
+     * Configure the zookeeper servers for this configuration object.
      *
      * @param conf
      *            the Hadoop configuration object
@@ -399,29 +401,15 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
         ArgumentChecker.notNull(columnFamilyColumnQualifierPairs);
         ArrayList<String> columnStrings = new ArrayList<>(columnFamilyColumnQualifierPairs.size());
         for (Pair<Text,Text> column : columnFamilyColumnQualifierPairs) {
-            if (column.getFirst() == null)
+            if (column.getLeft() == null)
                 throw new IllegalArgumentException("Column family can not be null");
 
-            String col = new String(Base64.encodeBase64(TextUtil.getBytes(column.getFirst())));
-            if (column.getSecond() != null)
-                col += ":" + new String(Base64.encodeBase64(TextUtil.getBytes(column.getSecond())));
+            String col = new String(Base64.encodeBase64(TextUtil.getBytes(column.getLeft())));
+            if (column.getRight() != null)
+                col += ":" + new String(Base64.encodeBase64(TextUtil.getBytes(column.getRight())));
             columnStrings.add(col);
         }
         conf.setStrings(COLUMNS, columnStrings.toArray(new String[columnStrings.size()]));
-    }
-
-    /**
-     * Sets the log level for this configuration object.
-     *
-     * @param conf
-     *            the Hadoop configuration object
-     * @param level
-     *            the logging level
-     */
-    public static void setLogLevel(Configuration conf, Level level) {
-        ArgumentChecker.notNull(level);
-        log.setLevel(level);
-        conf.setInt(LOGLEVEL, level.toInt());
     }
 
     /**
@@ -527,7 +515,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
      *             if there is any problem communicating with Accumulo
      */
     protected static AccumuloClient getClient(Configuration conf) throws AccumuloException, AccumuloSecurityException, IOException {
-        log.debug("Creating connector with user: " + getUsername(conf));
+        log.debug("Creating connector with user: {}", getUsername(conf));
         if (conf.getBoolean(MOCK, false)) {
             InMemoryAccumuloClient client = new InMemoryAccumuloClient(getUsername(conf), new InMemoryInstance(conf.get(INSTANCE_NAME)));
             client.securityOperations().changeLocalUserPassword(client.whoami(), new PasswordToken(getPassword(conf)));
@@ -580,10 +568,10 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
     protected static Set<Pair<Text,Text>> getFetchedColumns(Configuration conf) {
         Set<Pair<Text,Text>> columns = new HashSet<>();
         for (String col : conf.getStringCollection(COLUMNS)) {
-            int idx = col.indexOf(":");
+            int idx = col.indexOf(':');
             Text cf = new Text(idx < 0 ? Base64.decodeBase64(col.getBytes()) : Base64.decodeBase64(col.substring(0, idx).getBytes()));
             Text cq = idx < 0 ? null : new Text(Base64.decodeBase64(col.substring(idx + 1).getBytes()));
-            columns.add(new Pair<>(cf, cq));
+            columns.add(Pair.of(cf, cq));
         }
         return columns;
     }
@@ -598,18 +586,6 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
      */
     protected static boolean getAutoAdjustRanges(Configuration conf) {
         return conf.getBoolean(AUTO_ADJUST_RANGES, true);
-    }
-
-    /**
-     * Gets the log level from this configuration.
-     *
-     * @param conf
-     *            the Hadoop configuration object
-     * @return the log level
-     * @see #setLogLevel(Configuration, Level)
-     */
-    protected static Level getLogLevel(Configuration conf) {
-        return Level.toLevel(conf.getInt(LOGLEVEL, Level.INFO.toInt()));
     }
 
     // InputFormat doesn't have the equivalent of OutputFormat's
@@ -879,15 +855,14 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
                 scanner.close();
             }
             split = (RangeSplit) inSplit;
-            if (log.isDebugEnabled())
-                log.debug("Initializing input split: " + split.getRanges());
+            log.debug("Initializing input split: {}", split.getRanges());
             Configuration conf = attempt.getConfiguration();
             Authorizations authorizations = getAuthorizations(conf);
 
             try {
                 client = getClient(conf);
-                log.debug("Creating scanner for table: " + getTablename(conf));
-                log.debug("Authorizations are: " + authorizations);
+                log.debug("Creating scanner for table: {}", getTablename(conf));
+                log.debug("Authorizations are: {}", authorizations);
 
                 scanner = client.createBatchScanner(getTablename(conf), authorizations, 2);
 
@@ -902,12 +877,12 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
 
             // setup a scanner within the bounds of this split
             for (Pair<Text,Text> c : getFetchedColumns(conf)) {
-                if (c.getSecond() != null) {
-                    log.debug("Fetching column " + c.getFirst() + ":" + c.getSecond());
-                    scanner.fetchColumn(c.getFirst(), c.getSecond());
+                if (c.getRight() != null) {
+                    log.debug("Fetching column {}:{}", c.getLeft(), c.getRight());
+                    scanner.fetchColumn(c.getLeft(), c.getRight());
                 } else {
-                    log.debug("Fetching column family " + c.getFirst());
-                    scanner.fetchColumnFamily(c.getFirst());
+                    log.debug("Fetching column family {}", c.getLeft());
+                    scanner.fetchColumnFamily(c.getLeft());
                 }
             }
 
@@ -971,7 +946,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
                     startRow = new Text();
 
                 Range metadataRange = new Range(new KeyExtent(TableId.of(tableId), startRow, null).toMetaRow(), true, null, false);
-                Scanner scanner = client.createScanner(MetadataTable.NAME, Authorizations.EMPTY);
+                Scanner scanner = ScannerBuilder.create(client).setTableName(MetadataTable.NAME).setAuthorizations(Authorizations.EMPTY).build();
                 MetadataSchema.TabletsSection.TabletColumnFamily.PREV_ROW_COLUMN.fetch(scanner);
                 scanner.fetchColumnFamily(MetadataSchema.TabletsSection.LastLocationColumnFamily.NAME);
                 scanner.fetchColumnFamily(MetadataSchema.TabletsSection.CurrentLocationColumnFamily.NAME);
@@ -1051,7 +1026,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
                             .asSubclass(SplitStrategy.class);
             return clazz.getDeclaredConstructor().newInstance();
         } catch (ClassNotFoundException | IllegalAccessException | InstantiationException | NoSuchMethodException | InvocationTargetException e) {
-            log.error(e);
+            log.error(e.getClass().getName(), e);
         }
         return new DefaultSplitStrategy();
     }
@@ -1060,9 +1035,9 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
         try {
             Class<? extends LocationStrategy> clazz = Class.forName(conf.get(RACKSTRATEGY, DefaultLocationStrategy.class.getCanonicalName()))
                             .asSubclass(LocationStrategy.class);
-            return clazz.newInstance();
-        } catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
-            log.error(e);
+            return clazz.getDeclaredConstructor().newInstance();
+        } catch (ClassNotFoundException | IllegalAccessException | InstantiationException | NoSuchMethodException | InvocationTargetException e) {
+            log.error(e.getClass().getName(), e);
         }
         return new DefaultLocationStrategy();
     }
@@ -1085,7 +1060,8 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
         Properties props = Accumulo.newClientProperties().to(conf.get(INSTANCE_NAME), conf.get(ZOOKEEPERS))
                         .as(getUsername(conf), new PasswordToken(getPassword(conf))).build();
         ClientInfo info = ClientInfo.from(props);
-        ClientContext context = new ClientContext(SingletonReservation.noop(), info, ClientConfConverter.toAccumuloConf(info.getProperties()), Threads.UEH);
+        ClientContext context = new ClientContext(SingletonManager.getClientReservation(), info, ClientConfConverter.toAccumuloConf(info.getProperties()),
+                        Threads.UEH);
         return TabletLocator.getLocator(context, context.getTableId(tableName));
     }
 
@@ -1093,7 +1069,6 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
      * Read the metadata table to get tablets and match up ranges to them.
      */
     public List<InputSplit> getSplits(JobContext job) throws IOException {
-        log.setLevel(getLogLevel(job.getConfiguration()));
         validateOptions(job.getConfiguration());
 
         AccumuloHelper cbHelper = new AccumuloHelper();
@@ -1126,8 +1101,8 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
                     // its possible that the cache could contain complete, but old information about a tables tablets... so clear it
                     tl.invalidateCache();
                     ClientInfo info = ClientInfo.from(cbHelper.newClientProperties());
-                    ClientContext context = new ClientContext(SingletonReservation.noop(), info, ClientConfConverter.toAccumuloConf(info.getProperties()),
-                                    Threads.UEH);
+                    ClientContext context = new ClientContext(SingletonManager.getClientReservation(), info,
+                                    ClientConfConverter.toAccumuloConf(info.getProperties()), Threads.UEH);
                     while (!tl.binRanges(context, ranges, binnedRanges).isEmpty()) {
                         if (!(client instanceof InMemoryAccumuloClient)) {
                             if (tableId == null)
@@ -1162,8 +1137,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
             String ip = tserverBin.getKey().split(":", 2)[0];
             String location = hostNameCache.get(ip);
 
-            if (log.isDebugEnabled())
-                log.debug("ip is " + ip + "  " + location);
+            log.debug("ip is {} {}", ip, location);
 
             if (location == null) {
                 InetAddress inetAddress = InetAddress.getByName(ip);
@@ -1176,16 +1150,15 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
             RangeSplit rangeSplit = new RangeSplit(strategy, tableName, new String[] {location});
 
             for (Entry<KeyExtent,List<Range>> extentRanges : tserverBin.getValue().entrySet()) {
-                if (log.isDebugEnabled())
-                    log.debug("Assigning " + extentRanges.getValue() + " to " + location);
+                log.debug("Assigning {} to {}", extentRanges.getValue(), location);
                 map.get(rangeSplit).addAll(extentRanges.getValue());
             }
 
         }
 
-        log.info("There are approximately " + map.keySet().size() + " keys ");
+        log.info("There are approximately {} keys ", map.keySet().size());
 
-        log.info("There are approximately " + map.size() + " values ");
+        log.info("There are approximately {} values ", map.size());
 
         for (RangeSplit split : map.keySet()) {
             // Iterable<List<Range>> rangeIter = splitter.partition(map.get(split));
@@ -1198,7 +1171,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
 
         }
 
-        log.info("Returning splits " + splits.size());
+        log.info("Returning splits {}", splits.size());
         return splits;
     }
 
@@ -1289,8 +1262,8 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
             StringTokenizer tokenizer = new StringTokenizer(iteratorOption, FIELD_SEP);
             this.iteratorName = tokenizer.nextToken();
             try {
-                this.key = URLDecoder.decode(tokenizer.nextToken(), "UTF-8");
-                this.value = URLDecoder.decode(tokenizer.nextToken(), "UTF-8");
+                this.key = URLDecoder.decode(tokenizer.nextToken(), UTF8);
+                this.value = URLDecoder.decode(tokenizer.nextToken(), UTF8);
             } catch (UnsupportedEncodingException e) {
                 throw new RuntimeException(e);
             }
@@ -1311,7 +1284,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
         @Override
         public String toString() {
             try {
-                return iteratorName + FIELD_SEP + URLEncoder.encode(key, "UTF-8") + FIELD_SEP + URLEncoder.encode(value, "UTF-8");
+                return iteratorName + FIELD_SEP + URLEncoder.encode(key, "UTF8") + FIELD_SEP + URLEncoder.encode(value, "UTF8");
             } catch (UnsupportedEncodingException e) {
                 throw new RuntimeException(e);
             }
@@ -1323,6 +1296,22 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
     public RecordReader<Key,Value> createRecordReader(InputSplit split, TaskAttemptContext context) {
 
         return new RecordReaderBase<Key,Value>() {
+
+            // helper function for formatting. Rewritten from DefaultFormatter.appendBytes()
+            private StringBuilder appendBytes(StringBuilder sb, byte[] ba, int offset, int len) {
+                for (int i = 0; i < len; i++) {
+                    int c = 0xff & ba[offset + i];
+                    if (c == '\\') {
+                        sb.append("\\\\");
+                    } else if (c >= 32 && c <= 126) {
+                        sb.append((char) c);
+                    } else {
+                        sb.append("\\x").append(String.format("%02X", c));
+                    }
+                }
+                return sb;
+            }
+
             @Override
             public boolean nextKeyValue() throws IOException, InterruptedException {
                 if (scannerIterator.hasNext()) {
@@ -1330,8 +1319,35 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
                     Entry<Key,Value> entry = scannerIterator.next();
                     currentK = currentKey = entry.getKey();
                     currentV = currentValue = entry.getValue();
-                    if (log.isTraceEnabled())
-                        log.trace("Processing key/value pair: " + DefaultFormatter.formatEntry(entry, true));
+                    if (log.isTraceEnabled()) {
+
+                        // rewritten from DefaultFormatter.formatEntry()
+                        StringBuilder sb = new StringBuilder();
+                        Text buffer = new Text();
+
+                        // append row0
+                        appendBytes(sb, currentK.getRow(buffer).getBytes(), 0, currentK.getRow(buffer).getLength()).append(" ");
+
+                        // append column family
+                        appendBytes(sb, currentK.getColumnFamily(buffer).getBytes(), 0, currentK.getColumnFamily(buffer).getLength()).append(":");
+
+                        // append column qualifier
+                        appendBytes(sb, currentK.getColumnQualifier(buffer).getBytes(), 0, currentK.getColumnQualifier(buffer).getLength()).append(" ");
+
+                        // append visibility expression
+                        sb.append(new ColumnVisibility(currentK.getColumnVisibility(buffer)));
+
+                        sb.append(" ").append(entry.getKey().getTimestamp());
+
+                        // append value
+                        if (currentV != null && currentV.getSize() > 0) {
+                            sb.append("\t");
+                            appendBytes(sb, currentV.get(), 0, currentV.getSize());
+                        }
+
+                        log.trace("Processing key/value pair: {}", sb);
+                    }
+
                     return true;
                 } else if (numKeysRead < 0) {
                     numKeysRead = 0;
@@ -1340,5 +1356,4 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
             }
         };
     }
-
 }

@@ -10,7 +10,7 @@ import javax.xml.bind.annotation.XmlElement;
 
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
-public abstract class ModificationEventBase<T extends ModificationOperation> {
+public abstract class ModificationEventBase<T extends ModificationOperation<T>> {
 
     @XmlElement(name = "id", required = true)
     protected String id = null;

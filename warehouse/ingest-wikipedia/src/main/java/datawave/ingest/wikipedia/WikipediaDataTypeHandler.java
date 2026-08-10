@@ -295,6 +295,10 @@ public class WikipediaDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends ExtendedCon
                 getMetadata().addEvent(this.ingestHelper, event, normMap);
             }
 
+        } catch (InterruptedException e) {
+            log.error("Error processing Wikipedia document", e);
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Error processing Wikipedia document", e);
         } catch (Exception e) {
             // If error, return empty results map.
             log.error("Error processing Wikipedia document", e);
@@ -352,7 +356,7 @@ public class WikipediaDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends ExtendedCon
 
         Text colq = new Text(fieldName);
         TextUtil.textAppend(colq, fieldValue, this.ingestHelper.getReplaceMalformedUTF8());
-        Key k = createKey(shardId, colf, colq, visibility, event.getDate(), this.ingestHelper.getDeleteMode());
+        Key k = createKey(shardId, colf, colq, visibility, event.getTimestamp(), this.ingestHelper.getDeleteMode());
         BulkIngestKey bKey = new BulkIngestKey(new Text(this.getShardTableName()), k);
         contextWriter.write(bKey, DataTypeHandler.NULL_VALUE, context);
     }
@@ -472,7 +476,7 @@ public class WikipediaDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends ExtendedCon
 
             // Now add the offset to the token offset queue, and if we overflow then output the overflow
             if (tokenOffsetCache != null) {
-                OffsetList overflow = tokenOffsetCache.addOffset(indexedTermAndZone, position);
+                OffsetList<Integer> overflow = tokenOffsetCache.addOffset(indexedTermAndZone, position);
                 if (overflow != null) {
                     // no need to normalize as that was already done upon insertion into the token offset cache
                     NormalizedFieldAndValue overflowNfv = new NormalizedFieldAndValue(overflow.termAndZone.zone, overflow.termAndZone.term);

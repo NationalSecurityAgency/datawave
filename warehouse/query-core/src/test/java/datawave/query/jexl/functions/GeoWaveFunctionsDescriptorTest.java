@@ -1,6 +1,13 @@
 package datawave.query.jexl.functions;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -11,11 +18,9 @@ import org.apache.commons.jexl3.parser.ASTFunctionNode;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.ParseException;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.locationtech.jts.geom.Envelope;
-import org.powermock.reflect.Whitebox;
 
 import datawave.data.normalizer.AbstractGeometryNormalizer;
 import datawave.query.config.ShardQueryConfiguration;
@@ -29,11 +34,16 @@ public class GeoWaveFunctionsDescriptorTest {
 
     private static List<String> expandedWkt;
 
-    @BeforeClass
+    @BeforeAll
     public static void readExpandedWkt() {
         ClassLoader classLoader = GeoWaveFunctionsDescriptor.class.getClassLoader();
-        expandedWkt = new BufferedReader(new InputStreamReader(classLoader.getResourceAsStream("datawave/query/jexl/functions/expandedWkt.txt"))).lines()
-                        .collect(Collectors.toList());
+
+        try (InputStream is = classLoader.getResourceAsStream("datawave/query/jexl/functions/expandedWkt.txt")) {
+            assertNotNull(is);
+            expandedWkt = new BufferedReader(new InputStreamReader(is)).lines().collect(Collectors.toList());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Test
@@ -47,27 +57,27 @@ public class GeoWaveFunctionsDescriptorTest {
 
         // DEFAULT, maxEnvelopes = 4
         String defaultExpandedQuery = convertFunctionToIndexQuery(query, config, helper);
-        Assert.assertEquals(expandedWkt.get(0), defaultExpandedQuery);
+        assertEquals(expandedWkt.get(0), defaultExpandedQuery);
 
         // maxEnvelopes = 1
         config.setGeoWaveMaxEnvelopes(1);
         String oneEnvelopeExpandedQuery = convertFunctionToIndexQuery(query, config, helper);
-        Assert.assertEquals(expandedWkt.get(1), oneEnvelopeExpandedQuery);
+        assertEquals(expandedWkt.get(1), oneEnvelopeExpandedQuery);
 
         // maxEnvelopes = 2
         config.setGeoWaveMaxEnvelopes(2);
         String twoEnvelopesExpandedQuery = convertFunctionToIndexQuery(query, config, helper);
-        Assert.assertEquals(expandedWkt.get(2), twoEnvelopesExpandedQuery);
+        assertEquals(expandedWkt.get(2), twoEnvelopesExpandedQuery);
 
-        // Test the the default number of envelopes produces a different expanded query than the single envelope expansion
-        Assert.assertNotEquals(defaultExpandedQuery, oneEnvelopeExpandedQuery);
+        // Test the default number of envelopes produces a different expanded query than the single envelope expansion
+        assertNotEquals(defaultExpandedQuery, oneEnvelopeExpandedQuery);
 
         // Test that the default number of envelopes produces the same expanded query as the two envelope expansion
-        Assert.assertEquals(defaultExpandedQuery, twoEnvelopesExpandedQuery);
+        assertEquals(defaultExpandedQuery, twoEnvelopesExpandedQuery);
     }
 
     @Test
-    public void testMultipolygonIntersection() throws Exception {
+    public void testMultipolygonIntersection() {
         // @formatter:off
         String wkt = "MULTIPOLYGON(" +
                 "((160 60, 180 60, 180 70, 160 70, 160 60)), " +      // GROUP 1
@@ -79,10 +89,8 @@ public class GeoWaveFunctionsDescriptorTest {
                 "((-5 -5, 5 -5, 5 5, -5 5, -5 -5)))";                 // GROUP 3
         // @formatter:on
 
-        List<Envelope> envelopes = (List<Envelope>) Whitebox.invokeMethod(GeoWaveFunctionsDescriptor.class, "getSeparateEnvelopes",
-                        AbstractGeometryNormalizer.parseGeometry(wkt), 4);
-
-        Assert.assertEquals(3, envelopes.size());
+        List<Envelope> envelopes = GeoWaveFunctionsDescriptor.getSeparateEnvelopes(AbstractGeometryNormalizer.parseGeometry(wkt), 4);
+        assertEquals(3, envelopes.size());
 
         List<Envelope> expectedEnvelopes = new ArrayList<>();
         expectedEnvelopes.add(new Envelope(100, 180, 20, 70));
@@ -98,7 +106,7 @@ public class GeoWaveFunctionsDescriptorTest {
                     expectedIter.remove();
                 }
             }
-            Assert.assertTrue(foundMatch);
+            assertTrue(foundMatch);
         }
     }
 
@@ -108,7 +116,10 @@ public class GeoWaveFunctionsDescriptorTest {
         JexlArgumentDescriptor desc = new GeoWaveFunctionsDescriptor().getArgumentDescriptor(func);
 
         JexlNode indexQuery = desc.getIndexQuery(config, metadataHelper, null, null);
-        return JexlStringBuildingVisitor.buildQuery(indexQuery);
+        String result = JexlStringBuildingVisitor.buildQuery(indexQuery);
+        // a union is wrapped with reference expressions when building the query. Because the index query is merged
+        // into a union the reference expressions need to be removed to ensure a flattened tree
+        return result.substring(1, result.length() - 1);
     }
 
     /**

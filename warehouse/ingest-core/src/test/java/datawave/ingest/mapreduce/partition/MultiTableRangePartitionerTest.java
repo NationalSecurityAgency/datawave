@@ -20,7 +20,7 @@ import org.junit.Test;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.TableConfigurationUtil;
 import datawave.ingest.mapreduce.job.TableSplitsCache;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 
 public class MultiTableRangePartitionerTest {
     private static final String TABLE_NAME = "abc";
@@ -29,7 +29,7 @@ public class MultiTableRangePartitionerTest {
 
     @Before
     public void before() throws IOException {
-        mockJob = new Job();
+        mockJob = Job.getInstance();
         configuration = mockJob.getConfiguration();
         configuration.setBoolean(TableSplitsCache.REFRESH_SPLITS, false);
         TableSplitsCache.getCurrentCache(configuration).clear();

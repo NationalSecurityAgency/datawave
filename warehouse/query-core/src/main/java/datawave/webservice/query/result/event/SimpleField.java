@@ -17,9 +17,9 @@ import javax.xml.bind.annotation.XmlTransient;
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 
-import com.google.common.collect.Maps;
-
 import datawave.data.type.Type;
+import datawave.marking.AccessExpressionMarkings;
+import datawave.marking.Markings;
 import datawave.webservice.query.util.TypedValue;
 import io.protostuff.Input;
 import io.protostuff.Message;
@@ -33,12 +33,12 @@ import io.protostuff.Schema;
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public class SimpleField extends FieldBase<SimpleField> implements Serializable, Message<SimpleField> {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -7551833653666011136L;
 
     @XmlAttribute(name = "columnVisibility")
     private String columnVisibility;
     @XmlElementWrapper(name = "Markings")
-    private Map<String,String> markings;
+    private Markings<?> markings;
     @XmlAttribute(name = "timestamp")
     private Long timestamp;
     @XmlAttribute(name = "name")
@@ -48,7 +48,7 @@ public class SimpleField extends FieldBase<SimpleField> implements Serializable,
 
     public SimpleField() {}
 
-    public SimpleField(String name, Map<String,String> markings, String columnVisibility, Long timestamp, Object value) {
+    public SimpleField(String name, Markings<?> markings, String columnVisibility, Long timestamp, Object value) {
         super();
         this.name = name;
         this.markings = markings;
@@ -134,17 +134,13 @@ public class SimpleField extends FieldBase<SimpleField> implements Serializable,
         this.name = name;
     }
 
-    private void assureMarkings() {
-        if (this.markings == null)
-            this.markings = Maps.newHashMap();
+    @Override
+    public Markings<?> getMarkings() {
+        return this.markings;
     }
 
-    public Map<String,String> getMarkings() {
-        this.assureMarkings();
-        return markings;
-    }
-
-    public void setMarkings(Map<String,String> markings) {
+    @Override
+    public void setMarkings(Markings<?> markings) {
         this.markings = markings;
     }
 
@@ -198,7 +194,7 @@ public class SimpleField extends FieldBase<SimpleField> implements Serializable,
             if (message.value != null)
                 output.writeObject(4, message.value, message.value.cachedSchema(), false);
             if (message.markings != null) {
-                output.writeObject(5, message.markings, MAP_SCHEMA, false);
+                output.writeObject(5, (AccessExpressionMarkings) message.markings, AccessExpressionMarkings.SCHEMA, false);
             }
         }
 
@@ -220,10 +216,9 @@ public class SimpleField extends FieldBase<SimpleField> implements Serializable,
                         message.value = input.mergeObject(null, TypedValue.getSchema());
                         break;
                     case 5:
-                        if (message.markings == null)
-                            message.markings = Maps.newHashMap();
-                        Map<String,String> markings = input.mergeObject(null, MAP_SCHEMA);
-                        message.markings.putAll(markings);
+                        message.markings = AccessExpressionMarkings.builder().build();
+                        input.mergeObject((AccessExpressionMarkings) message.markings, AccessExpressionMarkings.SCHEMA);
+                        break;
                     default:
                         input.handleUnknownField(number, this);
                         break;

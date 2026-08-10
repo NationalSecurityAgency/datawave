@@ -9,6 +9,9 @@ import org.apache.commons.jexl3.parser.ASTUnaryMinusNode;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
 
+import datawave.webservice.query.exception.DatawaveErrorCode;
+import datawave.webservice.query.exception.QueryException;
+
 public class FixNegativeNumbersVisitor extends RebuildingVisitor {
 
     public static ASTJexlScript fix(JexlNode root) {
@@ -23,7 +26,9 @@ public class FixNegativeNumbersVisitor extends RebuildingVisitor {
             ASTNumberLiteral newNode = JexlNodes.makeNumberLiteral();
             Number value = negate(node.getLiteral());
             if (value == null) {
-                throw new IllegalArgumentException("Could not ascertain type of ASTNumberLiteral: " + node);
+                QueryException qe = new QueryException(DatawaveErrorCode.ASTNUMBERLITERAL_TYPE_ASCERTAIN_ERROR,
+                                "Could not ascertain type of ASTNumberLiteral: " + node);
+                throw new IllegalArgumentException(qe);
             }
             JexlNodes.setLiteral(newNode, value);
             newNode.jjtSetParent(node.jjtGetParent());

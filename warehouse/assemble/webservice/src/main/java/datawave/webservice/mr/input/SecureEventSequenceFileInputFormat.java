@@ -17,6 +17,7 @@ public class SecureEventSequenceFileInputFormat<K> extends EventSequenceFileInpu
         try {
             reader.initialize(split, context);
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             throw new IOException("Error initializing SecureEventSequenceFileRecordReader", e);
         }
         return reader;

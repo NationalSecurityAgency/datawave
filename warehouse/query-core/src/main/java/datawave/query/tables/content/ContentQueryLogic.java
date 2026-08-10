@@ -29,7 +29,6 @@ import datawave.core.query.logic.CheckpointableQueryLogic;
 import datawave.core.query.logic.QueryCheckpoint;
 import datawave.core.query.logic.QueryKey;
 import datawave.core.query.logic.QueryLogicTransformer;
-import datawave.ingest.mapreduce.handler.ExtendedDataTypeHandler;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl.Parameter;
 import datawave.query.Constants;
@@ -37,6 +36,7 @@ import datawave.query.QueryParameters;
 import datawave.query.config.ContentQueryConfiguration;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.transformer.ContentQueryTransformer;
+import datawave.table.constants.ColumnFamilyConstants;
 import datawave.webservice.query.exception.QueryException;
 
 /**
@@ -63,6 +63,7 @@ public class ContentQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
     private int queryThreads = 100;
     ScannerFactory scannerFactory;
     String viewName = null;
+    private boolean decodeView = false;
 
     private ContentQueryConfiguration config;
 
@@ -121,6 +122,11 @@ public class ContentQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
             end = ALL;
         } else {
             end = PARENT_ONLY;
+        }
+
+        p = settings.findParameter(QueryParameters.DECODE_VIEW);
+        if ((null != p) && (null != p.getParameterValue())) {
+            this.decodeView = Boolean.parseBoolean(p.getParameterValue());
         }
 
         // Configure ranges
@@ -203,7 +209,7 @@ public class ContentQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
 
                 // Remove the identifier if present - we won't use it here, but will extract them from the query
                 // later in the ContentQueryTransformer
-                int idSeparation = valueIdentifier.indexOf("!");
+                int idSeparation = valueIdentifier.indexOf('!');
                 final String value = idSeparation > 0 ? valueIdentifier.substring(0, idSeparation) : valueIdentifier;
 
                 // Validate the value
@@ -222,7 +228,7 @@ public class ContentQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
                     log.debug("Received pieces: " + shardId + ", " + datatype + ", " + uid);
 
                     // Create and add a Range
-                    final String cf = ExtendedDataTypeHandler.FULL_CONTENT_COLUMN_FAMILY;
+                    final String cf = ColumnFamilyConstants.FULL_CONTENT;
                     final String cq = datatype + Constants.NULL_BYTE_STRING + uid;
                     final Key startKey = new Key(shardId, cf, cq + Constants.NULL_BYTE_STRING);
                     final Key endKey = new Key(shardId, cf, cq + endKeyTerminator);
@@ -249,7 +255,7 @@ public class ContentQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
 
     @Override
     public QueryLogicTransformer getTransformer(Query settings) {
-        return new ContentQueryTransformer(settings, this.markingFunctions, this.responseObjectFactory);
+        return new ContentQueryTransformer(settings, this.markingFunctions, this.responseObjectFactory, this.decodeView);
     }
 
     @Override

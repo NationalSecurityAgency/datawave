@@ -1,8 +1,0 @@
-# In order to ensure the query microservices are consistent with the wildfly webservice, we need
-# to ensure that changes made to QueryExecutorBean match QueryManagementService, and changes made
-# to LookupUUIDUtil match LookupService in the Query Service.
-QueryExecutorBean.java @jwomeara @ivakegg
-LookupUUIDUtil.java @jwomeara @ivakegg
-RunningQuery.java @jwomeara @ivakegg
-/core/ @jwomeara @ivakegg
-/warehouse/query-core/ @jwomeara @ivakegg

@@ -6,10 +6,13 @@ import static datawave.query.iterator.QueryOptions.EVENT_NEXT_SEEK;
 import static datawave.query.iterator.QueryOptions.FI_FIELD_SEEK;
 import static datawave.query.iterator.QueryOptions.FI_NEXT_SEEK;
 import static datawave.query.iterator.QueryOptions.QUERY;
+import static datawave.query.iterator.QueryOptions.SEEKING_EVENT_AGGREGATION;
 import static datawave.query.iterator.QueryOptions.TERM_FREQUENCY_AGGREGATION_THRESHOLD_MS;
 import static datawave.query.iterator.QueryOptions.TF_FIELD_SEEK;
 import static datawave.query.iterator.QueryOptions.TF_NEXT_SEEK;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -34,6 +37,8 @@ import datawave.query.function.Equality;
 import datawave.query.function.PrefixEquality;
 import datawave.query.iterator.filter.EntryKeyIdentity;
 import datawave.query.iterator.filter.FieldIndexKeyDataTypeFilter;
+import datawave.query.util.TypeMetadata;
+import datawave.query.util.TypeMetadataSerializer;
 
 public class QueryOptionsTest {
 
@@ -127,6 +132,7 @@ public class QueryOptionsTest {
         optionsMap.put(EVENT_NEXT_SEEK, "13");
         optionsMap.put(TF_FIELD_SEEK, "14");
         optionsMap.put(TF_NEXT_SEEK, "15");
+        optionsMap.put(SEEKING_EVENT_AGGREGATION, "true");
 
         QueryOptions options = new QueryOptions();
 
@@ -137,6 +143,7 @@ public class QueryOptionsTest {
         assertEquals(-1, options.getEventNextSeek());
         assertEquals(-1, options.getTfFieldSeek());
         assertEquals(-1, options.getTfNextSeek());
+        assertFalse(options.isSeekingEventAggregation());
 
         options.validateOptions(optionsMap);
 
@@ -147,6 +154,7 @@ public class QueryOptionsTest {
         assertEquals(13, options.getEventNextSeek());
         assertEquals(14, options.getTfFieldSeek());
         assertEquals(15, options.getTfNextSeek());
+        assertTrue(options.isSeekingEventAggregation());
     }
 
     @Test
@@ -177,7 +185,7 @@ public class QueryOptionsTest {
     }
 
     @Test
-    public void testSimple() throws IOException {
+    public void testSimple() {
         Map<String,Set<String>> expected = new HashMap<>();
 
         expected.put("FIELD1", new HashSet<>(Arrays.asList("norm1", "norm2")));
@@ -229,6 +237,39 @@ public class QueryOptionsTest {
         QueryOptions qopts = new QueryOptions();
         qopts.validateOptions(opts);
         Assert.assertTrue(qopts.getFieldIndexKeyDataTypeFilter() instanceof FieldIndexKeyDataTypeFilter);
+    }
+
+    @Test
+    public void testTypeMetadataFromNativeStringFormat() {
+        TypeMetadata expected = new TypeMetadata();
+        expected.put("FIELD1", "ingestA", "LcNoDiacriticsType");
+        expected.put("FIELD2", "ingestA", "NumberType");
+
+        Map<String,String> optionsMap = new HashMap<>();
+        optionsMap.put(QUERY, "set to avoid early return");
+        optionsMap.put(QueryOptions.TYPE_METADATA, expected.toString());
+
+        QueryOptions options = new QueryOptions();
+        options.validateOptions(optionsMap);
+
+        assertEquals(expected, options.getTypeMetadata());
+    }
+
+    @Test
+    public void testTypeMetadataFromKryoFormat() {
+        TypeMetadata expected = new TypeMetadata();
+        expected.put("FIELD1", "ingestA", "LcNoDiacriticsType");
+        expected.put("FIELD2", "ingestA", "NumberType");
+
+        Map<String,String> optionsMap = new HashMap<>();
+        optionsMap.put(QUERY, "set to avoid early return");
+        optionsMap.put(QueryOptions.TYPE_METADATA, new TypeMetadataSerializer().serialize(expected));
+        optionsMap.put(QueryOptions.TYPE_METADATA_KRYO, "true");
+
+        QueryOptions options = new QueryOptions();
+        options.validateOptions(optionsMap);
+
+        assertEquals(expected, options.getTypeMetadata());
     }
 
     @Test

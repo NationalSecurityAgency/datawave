@@ -5,7 +5,6 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
@@ -13,39 +12,28 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.accumulo.core.iteratorsImpl.system.InterruptibleIterator;
-import org.apache.accumulo.core.iteratorsImpl.system.IterationInterruptedException;
 
 import com.google.common.collect.TreeMultimap;
 
 /**
  *
  */
-public class SortedMultiMapIterator implements InterruptibleIterator {
+public class SortedMultiMapIterator implements SortedKeyValueIterator<Key,Value> {
     private Iterator<Entry<Key,Value>> iter;
     private Entry<Key,Value> entry;
 
     private TreeMultimap<Key,Value> map;
     private Range range;
 
-    private AtomicBoolean interruptFlag;
-    private int interruptCheckCount = 0;
-
     public SortedMultiMapIterator deepCopy(IteratorEnvironment env) {
-        return new SortedMultiMapIterator(map, interruptFlag);
+        return new SortedMultiMapIterator(map);
     }
 
-    private SortedMultiMapIterator(TreeMultimap<Key,Value> map, AtomicBoolean interruptFlag) {
+    public SortedMultiMapIterator(TreeMultimap<Key,Value> map) {
         this.map = map;
         iter = null;
         this.range = new Range();
         entry = null;
-
-        this.interruptFlag = interruptFlag;
-    }
-
-    public SortedMultiMapIterator(TreeMultimap<Key,Value> map) {
-        this(map, null);
     }
 
     @Override
@@ -69,9 +57,6 @@ public class SortedMultiMapIterator implements InterruptibleIterator {
         if (entry == null)
             throw new IllegalStateException();
 
-        if (interruptFlag != null && interruptCheckCount++ % 100 == 0 && interruptFlag.get())
-            throw new IterationInterruptedException();
-
         if (iter.hasNext()) {
             entry = iter.next();
             if (range.afterEndKey(entry.getKey())) {
@@ -84,9 +69,6 @@ public class SortedMultiMapIterator implements InterruptibleIterator {
 
     @Override
     public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
-
-        if (interruptFlag != null && interruptFlag.get())
-            throw new IterationInterruptedException();
 
         this.range = range;
 
@@ -114,10 +96,5 @@ public class SortedMultiMapIterator implements InterruptibleIterator {
 
     public void init(SortedKeyValueIterator<Key,Value> source, Map<String,String> options, IteratorEnvironment env) throws IOException {
         throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void setInterruptFlag(AtomicBoolean flag) {
-        this.interruptFlag = flag;
     }
 }

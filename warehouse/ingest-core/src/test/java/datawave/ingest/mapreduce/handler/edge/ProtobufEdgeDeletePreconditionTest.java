@@ -62,13 +62,13 @@ public class ProtobufEdgeDeletePreconditionTest {
     private RawRecordContainer getEvent(Configuration conf) {
 
         RawRecordContainerImpl myEvent = new RawRecordContainerImpl();
-        myEvent.addSecurityMarking("columnVisibility", "PRIVATE");
+        myEvent.setVisibility("PRIVATE");
         myEvent.setDataType(type);
         myEvent.setId(UID.builder().newId());
         myEvent.setConf(conf);
 
         Instant i = Instant.from(DateTimeFormatter.ISO_INSTANT.parse("2022-10-26T01:31:53Z"));
-        myEvent.setDate(i.toEpochMilli());
+        myEvent.setTimestamp(i.toEpochMilli());
 
         return myEvent;
     }

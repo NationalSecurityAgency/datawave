@@ -10,11 +10,12 @@ import java.util.Map;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.commons.lang.mutable.MutableInt;
 import org.apache.commons.pool2.impl.GenericObjectPool;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class AccumuloClientPool extends GenericObjectPool<AccumuloClient> {
 
-    private static final Logger log = Logger.getLogger(AccumuloClientPool.class);
+    private static final Logger log = LoggerFactory.getLogger(AccumuloClientPool.class);
     private final Map<Long,Map<String,String>> threadToTrackingMapMap = Collections.synchronizedMap(new HashMap<>());
     private final Map<AccumuloClient,Map<String,String>> connectorToTrackingMapMap = Collections.synchronizedMap(new HashMap<>());
     private AccumuloClientPoolFactory factory;
@@ -39,9 +40,9 @@ public class AccumuloClientPool extends GenericObjectPool<AccumuloClient> {
             trackingMap.put(AccumuloConnectionFactory.THREAD_NAME, Thread.currentThread().getName());
             threadToTrackingMapMap.put(threadId, trackingMap);
             o = super.borrowObject();
-            log.debug(System.currentTimeMillis() + " thread: " + threadId + " borrowed connector: " + o);
+            log.debug("{} thread: {} borrowed connector: {}", System.currentTimeMillis(), threadId, o);
             if (log.isTraceEnabled()) {
-                log.trace(System.currentTimeMillis() + " " + Arrays.toString(Thread.currentThread().getStackTrace()));
+                log.trace("{} {}", System.currentTimeMillis(), Arrays.toString(Thread.currentThread().getStackTrace()));
             }
             // hopefully insignificant gap in synchronization where an object could be returned (and numActive incremented) without the
             // connection being moved from the threadToTrackingMapMap to the connectorToTrackingMapMap
@@ -68,9 +69,9 @@ public class AccumuloClientPool extends GenericObjectPool<AccumuloClient> {
             synchronized (connectorToTrackingMapMap) {
                 connectorToTrackingMapMap.remove(client);
                 long threadId = Thread.currentThread().getId();
-                log.debug(System.currentTimeMillis() + " thread: " + threadId + " returned client: " + client);
+                log.debug("{} thread: {} returned client: {}", System.currentTimeMillis(), threadId, client);
                 if (log.isTraceEnabled()) {
-                    log.trace(System.currentTimeMillis() + " " + Arrays.toString(Thread.currentThread().getStackTrace()));
+                    log.trace("{} {}", System.currentTimeMillis(), Arrays.toString(Thread.currentThread().getStackTrace()));
                 }
             }
 

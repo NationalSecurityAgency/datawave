@@ -7,12 +7,17 @@ import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.retry.RetryNTimes;
-import org.apache.log4j.Logger;
 import org.apache.zookeeper.data.Stat;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+/**
+ * Deprecated, use {@link datawave.table.hash.ZkSnowflakeCache}
+ */
+@Deprecated(forRemoval = true, since = "7.40.0")
 public class ZkSnowflakeCache {
 
-    private static final Logger LOGGER = Logger.getLogger(ZkSnowflakeCache.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ZkSnowflakeCache.class);
 
     private static CuratorFramework curator;
     private static boolean isInitialized = false;

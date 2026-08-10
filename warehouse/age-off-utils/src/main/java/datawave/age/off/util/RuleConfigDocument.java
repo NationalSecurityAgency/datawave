@@ -7,12 +7,13 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.ProcessingInstruction;
 
-import datawave.ingest.util.cache.watch.AgeOffRuleLoader;
+import datawave.ingest.util.cache.watch.RuleConfig;
 
 /**
  * Creats a transformable node from an AgeOffRuleLoader.RuleConfig
  */
 public class RuleConfigDocument extends DocumentImpl {
+    private static final long serialVersionUID = 8726547864456487943L;
     private static final String FILTER_CLASS_ELEMENT_NAME = "filterClass";
     private static final String MATCH_PATTERN_ELEMENT_NAME = "matchPattern";
     private static final String TTL_ELEMENT_NAME = "ttl";
@@ -24,9 +25,9 @@ public class RuleConfigDocument extends DocumentImpl {
     private static final char[] COMMENT_ESCAPE_CHARACTERS = new char[] {'<', '>'};
 
     private final Element rule;
-    private final AgeOffRuleLoader.RuleConfig ruleConfig;
+    private final RuleConfig ruleConfig;
 
-    public RuleConfigDocument(AgeOffRuleLoader.RuleConfig ruleConfig) {
+    public RuleConfigDocument(RuleConfig ruleConfig) {
         super();
 
         this.ruleConfig = ruleConfig;
@@ -40,11 +41,11 @@ public class RuleConfigDocument extends DocumentImpl {
     private Element createRuleElement() {
         Element rule = this.createElement(RULE_ELEMENT_NAME);
 
-        if (null != this.ruleConfig.label) {
-            rule.setAttribute(LABEL_ATTRIBUTE_NAME, this.ruleConfig.label);
+        if (null != this.ruleConfig.getLabel()) {
+            rule.setAttribute(LABEL_ATTRIBUTE_NAME, this.ruleConfig.getLabel());
         }
 
-        if (this.ruleConfig.isMerge) {
+        if (this.ruleConfig.isMerge()) {
             rule.setAttribute(MODE_ATTRIBUTE_NAME, MERGE_ATTRIBUTE_VALUE);
         }
         return rule;
@@ -59,13 +60,13 @@ public class RuleConfigDocument extends DocumentImpl {
 
     private void appendFilterClassElement() {
         Element filterClassElement = super.createElement(FILTER_CLASS_ELEMENT_NAME);
-        filterClassElement.setTextContent(this.ruleConfig.filterClassName);
+        filterClassElement.setTextContent(this.ruleConfig.getFilterClassName());
         rule.appendChild(filterClassElement);
     }
 
     private void appendCustomElements() {
-        if (null != this.ruleConfig.customElements) {
-            for (Element customElement : this.ruleConfig.customElements) {
+        if (null != this.ruleConfig.getCustomElements()) {
+            for (Element customElement : this.ruleConfig.getCustomElements()) {
                 Node importedNode = super.importNode(customElement, true);
                 rule.appendChild(importedNode);
             }
@@ -73,11 +74,11 @@ public class RuleConfigDocument extends DocumentImpl {
     }
 
     private void appendMatchPatternElement() {
-        if (null != this.ruleConfig.matchPattern && !this.ruleConfig.matchPattern.isBlank()) {
+        if (null != this.ruleConfig.getMatchPattern() && !this.ruleConfig.getMatchPattern().isBlank()) {
             disableCommentEscaping(rule);
 
             Element matchPatternElement = super.createElement(MATCH_PATTERN_ELEMENT_NAME);
-            matchPatternElement.setTextContent("\n" + this.ruleConfig.matchPattern);
+            matchPatternElement.setTextContent("\n" + this.ruleConfig.getMatchPattern());
             rule.appendChild(matchPatternElement);
 
             enableCommentEscaping(rule);
@@ -85,10 +86,10 @@ public class RuleConfigDocument extends DocumentImpl {
     }
 
     private void appendTtlElement() {
-        if (null != this.ruleConfig.ttlValue) {
+        if (null != this.ruleConfig.getTtlValue()) {
             Element ttlElement = super.createElement(TTL_ELEMENT_NAME);
-            ttlElement.setAttribute(TTL_UNITS_ATTRIBUTE_NAME, this.ruleConfig.ttlUnits);
-            ttlElement.setTextContent(this.ruleConfig.ttlValue);
+            ttlElement.setAttribute(TTL_UNITS_ATTRIBUTE_NAME, this.ruleConfig.getTtlUnits());
+            ttlElement.setTextContent(this.ruleConfig.getTtlValue());
             rule.appendChild(ttlElement);
         }
     }

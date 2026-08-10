@@ -5,7 +5,6 @@ import java.util.BitSet;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
@@ -30,7 +29,7 @@ import datawave.ingest.mapreduce.handler.shard.ShardIdFactory;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.table.config.DateIndexTableConfigHelper;
 import datawave.policy.IngestPolicyEnforcer;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 
 public class DateIndexDataTypeHandlerTest {
 
@@ -193,7 +192,7 @@ public class DateIndexDataTypeHandlerTest {
         event.setDataType(TypeRegistry.getType("testdatatype"));
         event.setSecurityMarkings(null);
         event.setVisibility(new ColumnVisibility("A&B"));
-        event.setDate(getTime(data));
+        event.setTimestamp(getTime(data));
         event.setRawFileName("DateIndexDataTypeHandlerTest.data");
         event.setRawRecordNumber(1l);
         event.setRawData(data.getBytes());
@@ -203,7 +202,7 @@ public class DateIndexDataTypeHandlerTest {
     }
 
     private static String getIndexedValue(String dataStr, int index) {
-        String[] data = StringUtils.split(dataStr, ',');
+        String[] data = dataStr.split(",");
         return (data.length > index ? data[index] : null);
     }
 

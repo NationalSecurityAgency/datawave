@@ -79,6 +79,7 @@ import org.apache.log4j.ConsoleAppender;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
+import org.springframework.util.StopWatch;
 
 import datawave.ingest.config.TableConfigCache;
 import datawave.ingest.data.Type;
@@ -249,7 +250,11 @@ public class IngestJob implements Tool {
 
     @Override
     public int run(String[] args) throws Exception {
-        long setupStart = System.currentTimeMillis();
+
+        long start = System.currentTimeMillis();
+
+        StopWatch sw = new StopWatch("Ingest Job");
+        sw.start("local init");
 
         Logger.getLogger(TypeRegistry.class).setLevel(Level.ALL);
 
@@ -365,8 +370,9 @@ public class IngestJob implements Tool {
         URL.setURLStreamHandlerFactory(new FsUrlStreamHandlerFactory(conf));
 
         startDaemonProcesses(conf);
-        long start = System.currentTimeMillis();
-        log.info("JOB SETUP TIME: " + (start - setupStart));
+        sw.stop();
+        log.info(formatTaskInfo(sw.getLastTaskInfo()));
+        sw.start("AM Init");
 
         job.submit();
         JobID jobID = job.getJobID();
@@ -416,15 +422,22 @@ public class IngestJob implements Tool {
                 try {
                     Thread.sleep(3000);
                 } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
                     // do nothing
                 }
             }
         }
-        long setupStop = System.currentTimeMillis();
-        log.info("JOB SETUP TIME: " + (setupStop - setupStart) + "ms");
+        sw.stop();
+        log.info(formatTaskInfo(sw.getLastTaskInfo()));
 
+        sw.start("MR Job");
         job.waitForCompletion(true);
+        sw.stop();
+
         long stop = System.currentTimeMillis();
+
+        log.info(formatTaskInfo(sw.getLastTaskInfo()));
+        log.info(sw.prettyPrint());
 
         // output the counters to the log
         Counters counters = job.getCounters();
@@ -531,6 +544,10 @@ public class IngestJob implements Tool {
         }
 
         return 0;
+    }
+
+    private String formatTaskInfo(StopWatch.TaskInfo taskInfo) {
+        return "Timing - " + taskInfo.getTaskName() + ": " + taskInfo.getTimeSeconds() + " s";
     }
 
     private void setupHandlers(Configuration conf) {
@@ -711,7 +728,7 @@ public class IngestJob implements Tool {
             } else if (args[i].equals("-compressionType")) {
                 compressionType = args[++i];
             } else if (args[i].equals("-compressionTableDisallowList")) {
-                String[] tables = StringUtils.split(args[++i], ',');
+                String[] tables = args[++i].split(",");
                 compressionTableDisallowList.addAll(Arrays.asList(tables));
             } else if (args[i].equals("-maxRFileUndeduppedEntries")) {
                 maxRFileEntries = Integer.parseInt(args[++i]);
@@ -737,10 +754,10 @@ public class IngestJob implements Tool {
                     for (String jobObserverClass : classes) {
                         log.info("Adding job observer: " + jobObserverClass);
                         Class clazz = Class.forName(jobObserverClass);
-                        Observer o = (Observer) clazz.newInstance();
+                        Observer o = (Observer) clazz.getDeclaredConstructor().newInstance();
                         jobObservers.add(o);
                     }
-                } catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
+                } catch (ClassNotFoundException | IllegalAccessException | InstantiationException | NoSuchMethodException | InvocationTargetException e) {
                     log.error("cannot instantiate job observer class '" + jobObserverClasses + "'", e);
                     System.exit(-2);
                 } catch (ClassCastException e) {
@@ -1141,7 +1158,7 @@ public class IngestJob implements Tool {
      *             if there is an issue with read or write
      */
     protected Path[] getFilesToProcess(FileSystem fs, boolean inputFileLists, String inputFileListMarker, String inputPaths) throws IOException {
-        String[] paths = StringUtils.trimAndRemoveEmptyStrings(StringUtils.split(inputPaths, ','));
+        String[] paths = StringUtils.trimAndRemoveEmptyStrings(inputPaths.split(","));
         List<Path> inputPathList = new ArrayList<>(inputFileLists ? paths.length * 100 : paths.length);
         for (String inputPath : paths) {
             // if we are to treat the input paths as file lists, then expand here
@@ -1374,7 +1391,7 @@ public class IngestJob implements Tool {
         if (daemonClassNames == null) {
             return;
         }
-        for (String className : StringUtils.split(daemonClassNames, ',')) {
+        for (String className : daemonClassNames.split(",")) {
             try {
                 @SuppressWarnings("unchecked")
                 Class<? extends Runnable> daemonClass = (Class<? extends Runnable>) Class.forName(className.trim());

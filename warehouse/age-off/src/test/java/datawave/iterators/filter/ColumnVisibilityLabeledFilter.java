@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory;
 import datawave.iterators.filter.ageoff.AgeOffPeriod;
 import datawave.iterators.filter.ageoff.AppliedRule;
 import datawave.iterators.filter.ageoff.FilterOptions;
-import datawave.util.StringUtils;
+import datawave.util.CompositeTimestamp;
 
 /**
  * Test class used for the purpose of providing an alternative matchPattern format from TokenSpecParser with some overlap.
@@ -46,7 +46,7 @@ public class ColumnVisibilityLabeledFilter extends AppliedRule {
         }
 
         if (options.getOption(AgeOffConfigParams.MATCHPATTERN) != null) {
-            String[] lines = StringUtils.split(options.getOption(AgeOffConfigParams.MATCHPATTERN), '\n');
+            String[] lines = options.getOption(AgeOffConfigParams.MATCHPATTERN).split("\n");
             patternToTtl = new HashMap<>(lines.length);
             for (String line : lines) {
                 populateMapWithTimeToLiveValue(patternToTtl, line);
@@ -108,7 +108,7 @@ public class ColumnVisibilityLabeledFilter extends AppliedRule {
                     cutOff -= timeToLive;
                 }
                 this.filterRuleApplied = true;
-                return k.getTimestamp() > cutOff;
+                return CompositeTimestamp.getAgeOffDate(k.getTimestamp()) > cutOff;
             }
         }
         return true;

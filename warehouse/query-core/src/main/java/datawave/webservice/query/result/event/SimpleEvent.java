@@ -5,7 +5,6 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import javax.xml.bind.annotation.XmlAccessOrder;
 import javax.xml.bind.annotation.XmlAccessType;
@@ -15,8 +14,8 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlTransient;
 
-import com.google.common.collect.Maps;
-
+import datawave.marking.AccessExpressionMarkings;
+import datawave.marking.Markings;
 import datawave.webservice.query.data.ObjectSizeOf;
 import io.protostuff.Input;
 import io.protostuff.Message;
@@ -27,10 +26,10 @@ import io.protostuff.Schema;
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public class SimpleEvent extends EventBase<SimpleEvent,SimpleField> implements Serializable, Message<SimpleEvent>, ObjectSizeOf {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -1963967131747306439L;
 
     @XmlElementWrapper(name = "Markings")
-    private Map<String,String> markings;
+    private Markings<?> markings;
 
     @XmlElement(name = "Metadata")
     private Metadata metadata = null;
@@ -103,7 +102,7 @@ public class SimpleEvent extends EventBase<SimpleEvent,SimpleField> implements S
                 }
             }
             if (message.markings != null) {
-                output.writeObject(3, message.markings, MapSchema.SCHEMA, false);
+                output.writeObject(3, (AccessExpressionMarkings) message.markings, AccessExpressionMarkings.SCHEMA, false);
             }
         }
 
@@ -121,9 +120,9 @@ public class SimpleEvent extends EventBase<SimpleEvent,SimpleField> implements S
                         message.fields.add(f);
                         break;
                     case 3:
-                        if (message.markings == null)
-                            message.markings = Maps.newHashMap();
-                        input.mergeObject(message.markings, MapSchema.SCHEMA);
+                        message.markings = AccessExpressionMarkings.builder().build();
+                        input.mergeObject((AccessExpressionMarkings) message.markings, AccessExpressionMarkings.SCHEMA);
+                        break;
                     default:
                         input.handleUnknownField(number, this);
                         break;
@@ -139,8 +138,6 @@ public class SimpleEvent extends EventBase<SimpleEvent,SimpleField> implements S
                     return "fields";
                 case 3:
                     return "markings";
-                case 4:
-                    return "payload";
                 default:
                     return null;
             }

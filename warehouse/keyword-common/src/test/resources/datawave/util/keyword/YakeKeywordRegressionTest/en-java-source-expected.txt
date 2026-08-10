@@ -1,0 +1,10 @@
+import static=0.0092
+public class=0.1583
+public class yakekeywordregressiontest=0.1151
+public static=0.063
+public string=0.0246
+public void=0.1583
+string expectedraw=0.0979
+string input=0.0979
+string languagecode=0.0979
+string output=0.0678

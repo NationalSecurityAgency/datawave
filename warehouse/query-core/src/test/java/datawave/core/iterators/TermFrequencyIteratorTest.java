@@ -21,7 +21,6 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.io.Text;
 import org.junit.jupiter.api.Test;
 
@@ -507,18 +506,49 @@ class TermFrequencyIteratorTest {
 
         // Full CQ
         String cq = "datatype\0uid\0fieldValue\0fieldName";
-        assertEquals("fieldValue", iter.getValueFromParts(StringUtils.split(cq, '\0')));
+        assertEquals("fieldValue", iter.getValueFromParts(cq.split("\0")));
 
         // CQ less field name
         cq = "datatype\0uid\0fieldValue";
-        assertEquals("fieldValue", iter.getValueFromParts(StringUtils.split(cq, '\0')));
+        assertEquals("fieldValue", iter.getValueFromParts(cq.split("\0")));
 
         // CQ just datatype and uid
         cq = "datatype\0uid";
-        assertNull(iter.getValueFromParts(StringUtils.split(cq, '\0')));
+        assertNull(iter.getValueFromParts(cq.split("\0")));
 
         // CQ where value has multiple null bytes
         cq = "datatype\0uid\0fi\0eld\0Va\0lue\0fieldName";
-        assertEquals("fi\0eld\0Va\0lue", iter.getValueFromParts(StringUtils.split(cq, '\0')));
+        assertEquals("fi\0eld\0Va\0lue", iter.getValueFromParts(cq.split("\0")));
+    }
+
+    @Test
+    void testGroupedFieldMatchesBaseFieldQuery() throws IOException {
+        List<Map.Entry<Key,Value>> sourceData = new ArrayList<>();
+        sourceData.add(new SimpleEntry<>(getTfKey("row", "type1", "123.345.456", "CONTENT.1", "cat"), new Value()));
+        sourceData.add(new SimpleEntry<>(getTfKey("row", "type1", "123.345.456", "CONTENT.2", "cat"), new Value()));
+        sourceData.add(new SimpleEntry<>(getTfKey("row", "type1", "123.345.456", "CONTENT", "cat"), new Value()));
+        sourceData.add(new SimpleEntry<>(getTfKey("row", "type1", "123.345.456", "OTHER", "cat"), new Value()));
+
+        SortedKeyValueIterator<Key,Value> source = new SortedListKeyValueIterator(sourceData);
+        Multimap<String,String> fieldValues = buildFieldValues("CONTENT", "cat");
+
+        Set<Key> keys = new TreeSet<>();
+        keys.add(new Key(new Text("row"), new Text("type1\u0000123.345.456")));
+
+        TermFrequencyIterator iter = new TermFrequencyIterator(fieldValues, keys);
+        iter.init(source, null, null);
+
+        Key start = new Key("row", "tf", "type1\u0000123.345.456");
+        Key end = new Key("row", "tf", "type1\u0000123.345.456\uffff");
+        iter.seek(new Range(start, false, end, true), null, true);
+
+        Set<String> matchedFields = new HashSet<>();
+        while (iter.hasTop()) {
+            matchedFields.add(iter.getTopKey().getColumnQualifier().toString());
+            iter.next();
+        }
+
+        assertEquals(Set.of("type1\u0000123.345.456\u0000cat\u0000CONTENT", "type1\u0000123.345.456\u0000cat\u0000CONTENT.1",
+                        "type1\u0000123.345.456\u0000cat\u0000CONTENT.2"), matchedFields);
     }
 }

@@ -216,6 +216,7 @@ public class FunctionNormalizationRebuildingVisitor extends RebuildingVisitor {
                 normalizers.add(NO_OP);
             } else {
                 for (String field : argGroup.getKey()) {
+                    field = JexlASTHelper.deconstructIdentifier(field);
                     normalizers.addAll(allNormalizers.get(field));
                 }
             }

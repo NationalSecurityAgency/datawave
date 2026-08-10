@@ -17,15 +17,11 @@ import org.apache.log4j.Logger;
 import datawave.query.attributes.Document;
 import datawave.query.iterator.DocumentIterator;
 import datawave.query.iterator.NestedIterator;
-import datawave.query.iterator.SeekableIterator;
 
 /**
  * Wraps an Accumulo iterator with a NestedIterator interface. This bridges the gap between an IndexIterator and a NestedIterator.
- *
- *
- *
  */
-public class IndexIteratorBridge implements SeekableIterator, NestedIterator<Key>, Comparable<IndexIteratorBridge> {
+public class IndexIteratorBridge implements NestedIterator<Key>, Comparable<IndexIteratorBridge> {
     private static final Logger log = Logger.getLogger(IndexIteratorBridge.class);
 
     /*

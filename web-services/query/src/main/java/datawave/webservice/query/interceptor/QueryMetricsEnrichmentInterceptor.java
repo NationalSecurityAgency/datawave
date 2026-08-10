@@ -12,13 +12,11 @@ import javax.ws.rs.container.ContainerResponseContext;
 import javax.ws.rs.ext.Provider;
 import javax.ws.rs.ext.WriterInterceptorContext;
 
-import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.apache.log4j.Logger;
 import org.jboss.resteasy.core.interception.ContainerResponseContextImpl;
 import org.jboss.resteasy.core.interception.PreMatchContainerRequestContext;
 import org.jboss.resteasy.util.FindAnnotation;
 
-import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.core.query.logic.BaseQueryLogic;
 import datawave.core.query.logic.QueryLogic;
 import datawave.microservice.querymetric.BaseQueryMetric;
@@ -36,7 +34,6 @@ import datawave.webservice.result.GenericResponse;
 @Provider
 @Priority(Priorities.USER)
 @EnrichQueryMetrics(methodType = MethodType.NONE)
-@Exclude(ifProjectStage = DatawaveEmbeddedProjectStageHolder.DatawaveEmbedded.class)
 public class QueryMetricsEnrichmentInterceptor extends BaseMethodStatsInterceptor {
     protected static class QueryCall {
         MethodType methodType;

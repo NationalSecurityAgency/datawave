@@ -3,6 +3,7 @@ package datawave.query.tables;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
@@ -127,7 +128,6 @@ public class RunningResource extends AccumuloResource {
         if (baseScanner != null) {
             ((Scanner) baseScanner).setRange(currentRange.iterator().next());
         }
-
     }
 
     /**
@@ -141,12 +141,12 @@ public class RunningResource extends AccumuloResource {
     public AccumuloResource setOptions(SessionOptions options) {
         // set the families
         for (Column family : options.getFetchedColumns()) {
-            if (family.columnQualifier != null)
-                baseScanner.fetchColumn(new Text(family.columnFamily), new Text(family.columnQualifier));
+            if (family.getColumnQualifier() != null)
+                baseScanner.fetchColumn(new Text(family.getColumnFamily()), new Text(family.getColumnQualifier()));
             else {
                 if (log.isTraceEnabled())
-                    log.trace("Setting column family " + new Text(family.columnFamily));
-                baseScanner.fetchColumnFamily(new Text(family.columnFamily));
+                    log.trace("Setting column family " + new Text(family.getColumnFamily()));
+                baseScanner.fetchColumnFamily(new Text(family.getColumnFamily()));
             }
         }
         for (IteratorSetting setting : options.getIterators()) {
@@ -154,6 +154,14 @@ public class RunningResource extends AccumuloResource {
                 log.trace("Adding setting, " + setting);
             baseScanner.addScanIterator(setting);
         }
+
+        if (baseScanner instanceof SessionOptions) {
+            SessionOptionsDelegate delegate = new SessionOptionsDelegate(options);
+
+            baseScanner.setConsistencyLevel(delegate.getConsistencyLevel());
+            baseScanner.setExecutionHints(delegate.getExecutionHints());
+        }
+
         return this;
     }
 
@@ -229,4 +237,18 @@ public class RunningResource extends AccumuloResource {
 
     }
 
+    /**
+     * Accumulo's {@link ScannerBase} provides the ability to {@link ScannerBase#setExecutionHints(Map)} but no way to get the execution hints. Remedy that with
+     * a little delegating.
+     */
+    public static class SessionOptionsDelegate extends SessionOptions {
+
+        public SessionOptionsDelegate(SessionOptions options) {
+            super(options);
+        }
+
+        public Map<String,String> getExecutionHints() {
+            return this.executionHints;
+        }
+    }
 }

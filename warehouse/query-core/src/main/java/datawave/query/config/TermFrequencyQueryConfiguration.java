@@ -12,7 +12,7 @@ import datawave.microservice.query.Query;
 
 public class TermFrequencyQueryConfiguration extends GenericQueryConfiguration implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -8057446751976710918L;
 
     private transient Range range = null;
 

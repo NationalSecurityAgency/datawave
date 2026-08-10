@@ -165,12 +165,6 @@ public class OrderByCostVisitorTest {
 
         // list
 
-        // term
-        query = "A == '1' && B == '2' && ((_Term_ = true) && (_ANYFIELD_ =~ 'ba.*'))";
-        testDefaultOrdering(query, query);
-        testFieldOrdering(query, "B == '2' && A == '1' && ((_Term_ = true) && (_ANYFIELD_ =~ 'ba.*'))");
-        testTermOrdering(query, "B == '2' && A == '1' && ((_Term_ = true) && (_ANYFIELD_ =~ 'ba.*'))");
-
         // bounded
         query = "A == '1' && B == '2' && ((_Bounded_ = true) && (A > '1' && A < '3'))";
         testDefaultOrdering(query, query);
@@ -331,5 +325,20 @@ public class OrderByCostVisitorTest {
         counts.put("E == '5'", 5L);
         counts.put("F == '6'", 5L); // same counts for E and F
         return counts;
+    }
+
+    @Test
+    public void testCase() throws Exception {
+        Map<String,Long> counts = new HashMap<>();
+        counts.put("FIELD_A", 23L);
+        counts.put("FIELD_B", 34L);
+        counts.put("FIELD_C", 45L);
+
+        ASTJexlScript script = JexlASTHelper.parseAndFlattenJexlQuery("FIELD_C == 'v' || FIELD_B == 'v' || FIELD_A == 'v'");
+
+        OrderByCostVisitor.orderByFieldCount(script, counts);
+
+        String ordered = JexlStringBuildingVisitor.buildQuery(script);
+        assertEquals("FIELD_A == 'v' || FIELD_B == 'v' || FIELD_C == 'v'", ordered);
     }
 }

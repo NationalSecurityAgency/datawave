@@ -10,6 +10,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.commons.io.FileExistsException;
+import org.apache.hadoop.fs.ContentSummary;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -80,14 +81,28 @@ public class SafeFileOutputCommitter extends FileOutputCommitter {
         if (checkForEmptyDir && super.getOutputPath() != null) {
             Path pendingJobAttemptsPath = getPendingJobAttemptsPath();
             FileSystem fs = pendingJobAttemptsPath.getFileSystem(context.getConfiguration());
-            // now verify we do not have any files left in the temporary directory structure
-            List<Path> fileList = new ArrayList<>();
-            boolean containsPendingFiles = containsFiles(fs, pendingJobAttemptsPath, fileList, lenientMode);
+            boolean isTempDirEmpty = false;
 
-            if (containsPendingFiles && lenientMode) {
-                verifyRemainingTemporaryFilesByName(fs, fileList);
-            } else if (containsPendingFiles) {
-                throw new FileExistsException("Found files still left in the temporary job attempts path: " + fileList);
+            try {
+                ContentSummary summary = fs.getContentSummary(pendingJobAttemptsPath);
+                if (summary.getFileCount() == 0) {
+                    isTempDirEmpty = true;
+                }
+            } catch (FileNotFoundException e) {
+                // Protect against a FNFE on any intermediate dirs
+                isTempDirEmpty = !fs.exists(pendingJobAttemptsPath);
+            }
+
+            if (!isTempDirEmpty) {
+                // now verify we do not have any files left in the temporary directory structure
+                List<Path> fileList = new ArrayList<>();
+                boolean containsPendingFiles = containsFiles(fs, pendingJobAttemptsPath, fileList, lenientMode);
+
+                if (containsPendingFiles && lenientMode) {
+                    verifyRemainingTemporaryFilesByName(fs, fileList);
+                } else if (containsPendingFiles) {
+                    throw new FileExistsException("Found files still left in the temporary job attempts path: " + fileList);
+                }
             }
         }
         super.cleanupJob(context);
@@ -187,13 +202,23 @@ public class SafeFileOutputCommitter extends FileOutputCommitter {
             }
 
             @Override
-            public boolean hasNext() throws FileNotFoundException, IOException {
+            public boolean hasNext() throws IOException {
                 initialize();
                 while (curFile == null && !files.isEmpty()) {
                     FileStatus file = files.removeLast();
                     if (!file.isFile()) {
-                        FileStatus[] status = fs.listStatus(file.getPath());
-                        Collections.addAll(files, status);
+                        try {
+                            FileStatus[] status = fs.listStatus(file.getPath());
+                            Collections.addAll(files, status);
+                        } catch (IOException e) {
+                            if (e instanceof FileNotFoundException) {
+                                LOG.debug("File was not found for listStatus call. This typically happens when "
+                                                + "a speculative execution file output was observed above, but has been cleaned"
+                                                + " up before reaching this line. File: {}", file.getPath());
+                            } else {
+                                throw new RuntimeException(e);
+                            }
+                        }
                     } else if (!ignoreEmptyFiles || file.getLen() > 0) {
                         // if ignoreEmptyFiles is true then include all files regardless of size
                         // always include a path if it's a file that's not empty

@@ -8,20 +8,20 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.accumulo.core.client.Accumulo;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
-import org.apache.accumulo.core.client.ClientConfiguration;
 import org.apache.accumulo.core.client.IteratorSetting;
-import org.apache.accumulo.core.client.mapreduce.AccumuloInputFormat;
-import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.user.RegExFilter;
 import org.apache.accumulo.core.security.Authorizations;
+import org.apache.accumulo.hadoop.mapreduce.AccumuloInputFormat;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.io.Text;
@@ -287,17 +287,26 @@ public class QueryMetricsSummaryLoader extends Configured implements Tool {
         job.setMapOutputValueClass(Value.class);
         job.setInputFormatClass(AccumuloInputFormat.class);
 
-        AccumuloInputFormat.setConnectorInfo(job, userName, new PasswordToken(password));
-        AccumuloInputFormat.setZooKeeperInstance(job, ClientConfiguration.loadDefault().withInstance(instance).withZkHosts(zookeepers));
-        AccumuloInputFormat.setRanges(job, dayRanges);
-        AccumuloInputFormat.setAutoAdjustRanges(job, false);
-        AccumuloInputFormat.setInputTableName(job, inputTable);
-        AccumuloInputFormat.setScanAuthorizations(job, auths);
+        // @formatter:off
+        Properties clientProperties = Accumulo.newClientProperties()
+                        .to(instance, zookeepers)
+                        .as(userName, password)
+                        .build();
+        // @formatter:on
 
         IteratorSetting regex = new IteratorSetting(50, RegExFilter.class);
         regex.addOption(RegExFilter.COLF_REGEX, QUERY_METRICS_REGEX);
-        AccumuloInputFormat.addIterator(job, regex);
 
+        // @formatter:off
+        AccumuloInputFormat.configure()
+                        .clientProperties(clientProperties)
+                        .table(inputTable)
+                        .auths(auths)
+                        .ranges(dayRanges)
+                        .autoAdjustRanges(false)
+                        .addIterator(regex)
+                        .store(job);
+        // @formatter:on
         // Ensure all data for a day goes to the same reducer so that we aggregate it correctly before sending to Accumulo
         RowPartitioner.configureJob(job);
 

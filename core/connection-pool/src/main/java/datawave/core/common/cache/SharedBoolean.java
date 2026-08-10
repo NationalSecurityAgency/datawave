@@ -17,7 +17,8 @@ import org.apache.curator.framework.recipes.shared.SharedValue;
 import org.apache.curator.framework.recipes.shared.SharedValueListener;
 import org.apache.curator.framework.recipes.shared.SharedValueReader;
 import org.apache.curator.framework.state.ConnectionState;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.MoreExecutors;
@@ -28,7 +29,7 @@ import com.google.common.util.concurrent.MoreExecutors;
  */
 public class SharedBoolean implements Closeable, SharedBooleanReader, Listenable<SharedBooleanListener> {
 
-    private static Logger log = Logger.getLogger(SharedBoolean.class);
+    private static Logger log = LoggerFactory.getLogger(SharedBoolean.class);
 
     private final Map<SharedBooleanListener,SharedValueListener> listeners = Maps.newConcurrentMap();
     private final SharedValue sharedValue;
@@ -39,19 +40,19 @@ public class SharedBoolean implements Closeable, SharedBooleanReader, Listenable
 
     public boolean getBoolean() {
         if (log.isDebugEnabled()) {
-            log.debug("in getBoolean, sharedValue has " + Arrays.toString(sharedValue.getValue()));
+            log.debug("in getBoolean, sharedValue has {}", Arrays.toString(sharedValue.getValue()));
         }
         return fromBytes(this.sharedValue.getValue());
     }
 
     public void setBoolean(boolean newBoolean) throws Exception {
         this.sharedValue.setValue(toBytes(newBoolean));
-        log.debug("someone setBoolean to " + newBoolean);
+        log.debug("someone setBoolean to {}", newBoolean);
     }
 
     public boolean trySetBoolean(boolean newBoolean) throws Exception {
         if (log.isDebugEnabled()) {
-            log.debug("tryToSetBoolean(" + newBoolean + ")");
+            log.debug("tryToSetBoolean( {} )", newBoolean);
         }
         return this.sharedValue.trySetValue(toBytes(newBoolean));
     }
@@ -64,7 +65,7 @@ public class SharedBoolean implements Closeable, SharedBooleanReader, Listenable
         SharedValueListener valueListener = new SharedValueListener() {
             public void valueHasChanged(SharedValueReader sharedValue, byte[] newValue) throws Exception {
                 if (log.isDebugEnabled()) {
-                    log.debug("valueHasChanged in " + Arrays.toString(sharedValue.getValue()) + " to " + Arrays.toString(newValue));
+                    log.debug("valueHasChanged in {} to {}", Arrays.toString(sharedValue.getValue()), Arrays.toString(newValue));
                 }
 
                 listener.booleanHasChanged(SharedBoolean.this, SharedBoolean.fromBytes(newValue));
@@ -96,8 +97,8 @@ public class SharedBoolean implements Closeable, SharedBooleanReader, Listenable
 
     private static boolean fromBytes(byte[] bytes) {
         if (log.isDebugEnabled()) {
-            log.debug("fromBytes(" + Arrays.toString(bytes) + ") and bytes.length > 0 && bytes[0] == (byte) 1 returning:"
-                            + (bytes.length > 0 && bytes[0] == (byte) 1));
+            log.debug("fromBytes( {} ) and bytes.length > 0 && bytes[0] == (byte) 1 returning: {}", Arrays.toString(bytes),
+                            (bytes.length > 0 && bytes[0] == (byte) 1));
         }
         return bytes.length > 0 && bytes[0] == (byte) 1;
     }

@@ -10,11 +10,12 @@ import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
 
-import datawave.query.planner.DefaultQueryPlanner;
+import datawave.query.planner.DatePartitionedQueryPlanner;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.testframework.AbstractFunctionalQuery;
 import datawave.query.testframework.AccumuloSetup;
 import datawave.query.testframework.CitiesDataType;
+import datawave.query.testframework.CityDataManager;
 import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.FileType;
@@ -48,6 +49,7 @@ public class DelayedIndexOnlyQueryTest extends AbstractFunctionalQuery {
         compositeFields.add(CitiesDataType.CityField.NUM.name());
         generic.addCompositeField(compositeFields);
 
+        CityDataManager.newInstance();
         dataTypes.add(new CitiesDataType(CitiesDataType.CityEntry.generic, generic));
 
         accumuloSetup.setData(FileType.CSV, dataTypes);
@@ -66,7 +68,7 @@ public class DelayedIndexOnlyQueryTest extends AbstractFunctionalQuery {
     @Override
     protected ShardQueryLogic createShardQueryLogic() {
         ShardQueryLogic logic = super.createShardQueryLogic();
-        ((DefaultQueryPlanner) logic.getQueryPlanner()).setExecutableExpansion(false);
+        ((DatePartitionedQueryPlanner) logic.getQueryPlanner()).getQueryPlanner().setExecutableExpansion(false);
         return logic;
     }
 
@@ -192,7 +194,7 @@ public class DelayedIndexOnlyQueryTest extends AbstractFunctionalQuery {
     public void testCompositeRangeIndexOnlyEventOnlyDelayed() throws Exception {
         log.info("------  testCompositeRangeIndexOnlyEventOnlyDelayed  ------");
 
-        String query = "STATE == 'ohio' && ((NUM > '0' && NUM < '200' && CITY == 'paris') || STATE == 'ohio' || COUNTRY == 'Italy')";
+        String query = "STATE == 'ohio' && ((((_Bounded_ = true) && (NUM > '0' && NUM < '200')) && CITY == 'paris') || STATE == 'ohio' || COUNTRY == 'Italy')";
         String expectedQuery = "STATE == 'ohio' && ((NUM > '0' && NUM < 200 && CITY == 'paris') || STATE == 'ohio' || COUNTRY == 'Italy')";
         runTest(query, expectedQuery);
     }

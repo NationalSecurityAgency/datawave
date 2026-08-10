@@ -56,7 +56,7 @@ public class RemoteEventQueryLogic extends BaseRemoteQueryLogic<EventBase> {
     }
 
     @Override
-    public QueryLogicTransformer<EventBase,EventBase> createTransformer(Query settings, MarkingFunctions markingFunctions,
+    public QueryLogicTransformer<EventBase,EventBase> createTransformer(Query settings, MarkingFunctions<?> markingFunctions,
                     ResponseObjectFactory responseObjectFactory) {
         return new EventBaseTransformer(settings, markingFunctions, responseObjectFactory);
     }
@@ -89,7 +89,7 @@ public class RemoteEventQueryLogic extends BaseRemoteQueryLogic<EventBase> {
         public boolean hasNext() {
             if (data.isEmpty() && !complete) {
                 try {
-                    EventQueryResponseBase response = (EventQueryResponseBase) remoteQueryService.next(getRemoteId(), currentUser);
+                    EventQueryResponseBase response = (EventQueryResponseBase) uncheckedRemoteNext();
                     if (response != null) {
                         if (response.getReturnedEvents() == 0) {
                             if (response.isPartialResults()) {
@@ -108,9 +108,9 @@ public class RemoteEventQueryLogic extends BaseRemoteQueryLogic<EventBase> {
                         // in this case we must have gotten a 204, so we are done
                         complete = true;
                     }
-                } catch (Exception e) {
+                } catch (RuntimeException e) {
                     complete = true;
-                    throw new RuntimeException(e.getMessage(), e);
+                    throw e;
                 }
             }
             return !data.isEmpty();
@@ -124,11 +124,11 @@ public class RemoteEventQueryLogic extends BaseRemoteQueryLogic<EventBase> {
 
     private class EventBaseTransformer extends EventQueryTransformerSupport<EventBase,EventBase> {
 
-        public EventBaseTransformer(Query settings, MarkingFunctions markingFunctions, ResponseObjectFactory responseObjectFactory) {
+        public EventBaseTransformer(Query settings, MarkingFunctions<?> markingFunctions, ResponseObjectFactory responseObjectFactory) {
             super("notable", settings, markingFunctions, responseObjectFactory);
         }
 
-        public EventBaseTransformer(BaseQueryLogic<Map.Entry<Key,Value>> logic, Query settings, MarkingFunctions markingFunctions,
+        public EventBaseTransformer(BaseQueryLogic<Map.Entry<Key,Value>> logic, Query settings, MarkingFunctions<?> markingFunctions,
                         ResponseObjectFactory responseObjectFactory) {
             super(logic, settings, markingFunctions, responseObjectFactory);
         }

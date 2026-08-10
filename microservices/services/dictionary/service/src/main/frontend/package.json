@@ -1,0 +1,46 @@
+{
+  "name": "frontend-datadictionary",
+  "version": "3.0.1-SNAPSHOT",
+  "description": "Frontend for Data Dictionary",
+  "productName": "DATAWAVE - Data Dictionary",
+  "author": "Dylan S.",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "lint": "eslint \"./**/*.{js,ts,mjs,cjs,vue}\" --fix",
+    "format": "prettier --write \"**/*.{js,ts,vue,css,html,md,json}\" --ignore-path .gitignore",
+    "dev": "quasar dev",
+    "build": "quasar build"
+  },
+  "dependencies": {
+    "@quasar/extras": "^1.16.4",
+    "@vueuse/core": "^11.0.3",
+    "axios": "^1.1.2",
+    "bootstrap-icons": "^1.11.3",
+    "quasar": "^2.8.0",
+    "vue": "^3.0.0",
+    "vue-router": "^4.0.0"
+  },
+  "devDependencies": {
+    "@quasar/app-vite": "^2.1.0",
+    "@types/node": "^22.13.0",
+    "@typescript-eslint/eslint-plugin": "^8.29.0",
+    "@typescript-eslint/parser": "^8.29.0",
+    "autoprefixer": "^10.4.20",
+    "eslint": "^9.24.0",
+    "eslint-config-prettier": "^10.1.1",
+    "eslint-plugin-vue": "^10.0.0",
+    "prettier": "^3.5.3",
+    "typescript": "^5.8.2",
+    "typescript-eslint": "^8.60.0",
+    "vite-plugin-checker": "^0.9.1",
+    "vue-tsc": "^2.2.8"
+  },
+  "overrides": {
+    "glob": "^11.0.0 || ^13.0.0"
+  },
+  "engines": {
+    "node": "^22 || ^20",
+    "npm": ">= 9"
+  }
+}

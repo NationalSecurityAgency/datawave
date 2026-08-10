@@ -1,6 +1,7 @@
 package datawave.query.iterator;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -16,7 +17,6 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
@@ -40,13 +40,11 @@ import datawave.query.iterator.filter.StringToText;
 import datawave.query.iterator.profile.EvaluationTrackingFunction;
 import datawave.query.iterator.profile.QuerySpan;
 import datawave.query.iterator.profile.SourceTrackingIterator;
-import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.FieldIndexAggregator;
 import datawave.query.jexl.functions.IdentityAggregator;
 import datawave.query.jexl.visitors.IteratorBuildingVisitor;
 import datawave.query.jexl.visitors.SatisfactionVisitor;
 import datawave.query.predicate.TimeFilter;
-import datawave.util.StringUtils;
 
 /**
  *
@@ -142,7 +140,7 @@ public class FieldIndexOnlyQueryIterator extends QueryIterator {
         if (options.containsKey(DATATYPE_FILTER)) {
             String filterCsv = options.get(DATATYPE_FILTER);
             if (filterCsv != null && !filterCsv.isEmpty()) {
-                HashSet<String> set = Sets.newHashSet(StringUtils.split(filterCsv, ','));
+                HashSet<String> set = Sets.newHashSet(filterCsv.split(","));
                 Iterable<Text> tformed = Iterables.transform(set, new StringToText());
                 if (options.containsKey(FI_NEXT_SEEK)) {
                     this.fieldIndexKeyDataTypeFilter = new FieldIndexKeyDataTypeFilter(tformed, getFiNextSeek());
@@ -212,13 +210,6 @@ public class FieldIndexOnlyQueryIterator extends QueryIterator {
             throw new IllegalArgumentException("Could not initialize QueryIterator with " + options);
         }
 
-        // Parse & flatten the query
-        try {
-            script = JexlASTHelper.parseAndFlattenJexlQuery(this.getQuery());
-        } catch (ParseException e) {
-            throw new IOException("Could not parse the JEXL query: '" + this.getQuery() + "'", e);
-        }
-
         this.documentOptions = options;
         this.myEnvironment = env;
 
@@ -234,7 +225,7 @@ public class FieldIndexOnlyQueryIterator extends QueryIterator {
     }
 
     protected void createAndSeekIndexIterator(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive)
-                    throws IOException, ConfigException, IllegalAccessException, InstantiationException {
+                    throws IOException, ConfigException, IllegalAccessException, InstantiationException, NoSuchMethodException, InvocationTargetException {
         boolean isQueryFullySatisfiedInitialState = true;
         String hitListOptionString = documentOptions.get("hit.list");
 
@@ -266,7 +257,7 @@ public class FieldIndexOnlyQueryIterator extends QueryIterator {
 
             satisfactionVisitor.setUnindexedFields(unindexedTypes);
             // visit() and get the root which is the root of a tree of Boolean Logic Iterator<Key>'s
-            this.script.jjtAccept(satisfactionVisitor, null);
+            this.getScript().jjtAccept(satisfactionVisitor, null);
 
             isQueryFullySatisfiedInitialState = satisfactionVisitor.isQueryFullySatisfied();
 
@@ -277,7 +268,7 @@ public class FieldIndexOnlyQueryIterator extends QueryIterator {
         visitor.setUnindexedFields(unindexedTypes);
 
         // visit() and get the root which is the root of a tree of Boolean Logic Iterator<Key>'s
-        script.jjtAccept(visitor, null);
+        getScript().jjtAccept(visitor, null);
         NestedIterator<Key> root = visitor.root();
 
         if (null == root) {
@@ -292,7 +283,7 @@ public class FieldIndexOnlyQueryIterator extends QueryIterator {
     }
 
     public Iterator<Entry<Key,Document>> getDocumentIterator(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive)
-                    throws IOException, ConfigException, InstantiationException, IllegalAccessException {
+                    throws IOException, ConfigException, InstantiationException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
         createAndSeekIndexIterator(range, columnFamilies, inclusive);
 
         // Take the document Keys and transform it into Entry<Key,Document>, removing Attributes for this Document
@@ -317,6 +308,10 @@ public class FieldIndexOnlyQueryIterator extends QueryIterator {
         } catch (IllegalAccessException e) {
             throw new IOException("Unable to create document iterator", e);
         } catch (InstantiationException e) {
+            throw new IOException("Unable to create document iterator", e);
+        } catch (NoSuchMethodException e) {
+            throw new IOException("Unable to create document iterator", e);
+        } catch (InvocationTargetException e) {
             throw new IOException("Unable to create document iterator", e);
         }
 

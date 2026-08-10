@@ -1,30 +1,28 @@
 package datawave.query;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonValue;
-import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
 import datawave.core.common.connection.AccumuloConnectionFactory;
@@ -36,8 +34,6 @@ import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.QueryImpl;
 import datawave.microservice.query.config.QueryExpirationProperties;
 import datawave.microservice.querymetric.QueryMetricFactoryImpl;
-import datawave.query.attributes.UniqueFields;
-import datawave.query.attributes.UniqueGranularity;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.util.DateIndexHelperFactory;
@@ -46,7 +42,7 @@ import datawave.query.util.VisibilityWiseGuysIngest;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.SubjectIssuerDNPair;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 import datawave.webservice.query.cache.RunningQueryTimingImpl;
 import datawave.webservice.query.runner.RunningQuery;
 
@@ -66,8 +62,9 @@ public class LongRunningQueryTest {
     private static final Logger log = Logger.getLogger(LongRunningQueryTest.class);
     private static AccumuloClient client = null;
     private ShardQueryLogic logic;
+    private ExecutorService executor;
 
-    @Before
+    @BeforeEach
     public void setup() throws Exception {
         DatawaveUser user = new DatawaveUser(userDN, DatawaveUser.UserType.USER, Sets.newHashSet(auths.toString().split(",")), null, null, -1L);
         datawavePrincipal = new DatawavePrincipal((Collections.singleton(user)));
@@ -79,7 +76,7 @@ public class LongRunningQueryTest {
         client = testTableHelper.client;
 
         // Load data for the test
-        VisibilityWiseGuysIngest.writeItAll(client, VisibilityWiseGuysIngest.WhatKindaRange.DOCUMENT);
+        VisibilityWiseGuysIngest.writeItAll(client);
         PrintUtility.printTable(client, auths, TableName.SHARD);
         PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
         PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
@@ -96,11 +93,21 @@ public class LongRunningQueryTest {
         logic.setCacheModel(false);
         logic.setMaxPipelineCachedResults(0);
         logic.setIvaratorCacheBufferSize(0);
+
+        executor = Executors.newSingleThreadExecutor();
+    }
+
+    @AfterEach
+    public void after() {
+        if (executor != null) {
+            executor.shutdown();
+            executor = null;
+        }
     }
 
     /**
      * A groupBy query is one type of query that is allowed to be "long running", so that type of query is used in this test.
-     *
+     * <p>
      * A long running query will return a ResultsPage with zero results if it has not completed within the query execution page timeout. This test expects at
      * least 2 pages (the exact number will depend on cpu speed). All but the lsat page should have 0 results and be marked as PARTIAL. The last page should
      * have 8 results and have a status of COMPLETE.
@@ -139,6 +146,7 @@ public class LongRunningQueryTest {
         RunningQueryTimingImpl timing = new RunningQueryTimingImpl(conf, 1);
         RunningQuery runningQuery = new RunningQuery(null, client, AccumuloConnectionFactory.Priority.NORMAL, logic, query, "", datawavePrincipal, timing, null,
                         new QueryMetricFactoryImpl());
+        runningQuery.setExecutor(executor);
         List<ResultsPage> pages = new ArrayList<>();
 
         ResultsPage page = runningQuery.next();
@@ -196,11 +204,11 @@ public class LongRunningQueryTest {
         ShardQueryConfiguration config = (ShardQueryConfiguration) logic.initialize(client, query, Collections.singleton(auths));
         logic.setupQuery(config);
 
-        QueryExpirationProperties conf = new QueryExpirationProperties();
-        conf.setMaxLongRunningTimeoutRetries(1000);
-        RunningQueryTimingImpl timing = new RunningQueryTimingImpl(conf, 1);
+        // Set a very low pageShortCircuitTimeoutMs to force timeouts and partial results with zero results
+        RunningQueryTimingImpl timing = new RunningQueryTimingImpl(60000, 30000, 10, 1000);
         RunningQuery runningQuery = new RunningQuery(null, client, AccumuloConnectionFactory.Priority.NORMAL, logic, query, "", datawavePrincipal, timing, null,
                         new QueryMetricFactoryImpl());
+        runningQuery.setExecutor(executor);
         List<ResultsPage> pages = new ArrayList<>();
         ResultsPage page = runningQuery.next();
         Thread.sleep(15);
@@ -218,7 +226,7 @@ public class LongRunningQueryTest {
                 foundIntermediate = true;
             }
         }
-        assertTrue("Did not find intermediate results", foundIntermediate);
+        assertTrue(foundIntermediate, "Did not find intermediate results");
     }
 
     /***
@@ -255,6 +263,7 @@ public class LongRunningQueryTest {
 
         RunningQuery runningQuery = new RunningQuery(null, client, AccumuloConnectionFactory.Priority.NORMAL, logic, query, "", datawavePrincipal, null, null,
                         new QueryMetricFactoryImpl());
+        runningQuery.setExecutor(executor);
         List<ResultsPage> pages = new ArrayList<>();
 
         ResultsPage page = runningQuery.next();
@@ -313,6 +322,7 @@ public class LongRunningQueryTest {
 
         RunningQuery runningQuery = new RunningQuery(null, client, AccumuloConnectionFactory.Priority.NORMAL, logic, query, "", datawavePrincipal, null, null,
                         new QueryMetricFactoryImpl());
+        runningQuery.setExecutor(executor);
         List<ResultsPage> pages = new ArrayList<>();
 
         ResultsPage page = runningQuery.next();

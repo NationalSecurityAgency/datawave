@@ -34,7 +34,6 @@ public class LookupUUIDTune implements Profile {
     protected int eventFieldSeek = -1;
     protected int eventNextSeek = -1;
     protected String queryIteratorClass = TLDQueryIterator.class.getCanonicalName();
-    protected int maxShardsPerDayThreshold = -1;
     protected int pageByteTrigger = -1;
     protected int maxPageSize = -1;
     protected Map<String,List<String>> primaryToSecondaryFieldMap = Collections.emptyMap();
@@ -46,6 +45,7 @@ public class LookupUUIDTune implements Profile {
     protected boolean reduceQuery = false;
     private boolean enforceUniqueTermsWithinExpressions = false;
     private boolean reduceQueryFields = false;
+    private boolean seekingEventAggregation;
     protected List<NodeTransformRule> transforms = null;
     protected Map<String,QueryParser> querySyntaxParsers = null;
 
@@ -64,6 +64,7 @@ public class LookupUUIDTune implements Profile {
             rsq.setFiNextSeek(getFiNextSeek());
             rsq.setEventFieldSeek(getEventFieldSeek());
             rsq.setEventNextSeek(getEventNextSeek());
+            rsq.setSeekingEventAggregation(isSeekingEventAggregation());
 
             if (querySyntaxParsers != null) {
                 rsq.setQuerySyntaxParsers(querySyntaxParsers);
@@ -128,14 +129,12 @@ public class LookupUUIDTune implements Profile {
             rsqc.setSerializeQueryIterator(true);
             rsqc.setMaxEvaluationPipelines(1);
             rsqc.setMaxPipelineCachedResults(1);
-            if (maxShardsPerDayThreshold != -1) {
-                rsqc.setShardsPerDayThreshold(maxShardsPerDayThreshold);
-            }
 
             rsqc.setFiFieldSeek(getFiFieldSeek());
             rsqc.setFiNextSeek(getFiNextSeek());
             rsqc.setEventFieldSeek(getEventFieldSeek());
             rsqc.setEventNextSeek(getEventNextSeek());
+            rsqc.setSeekingEventAggregation(isSeekingEventAggregation());
 
             // we need this since we've finished the deep copy already
             rsqc.setSpeculativeScanning(speculativeScanning);
@@ -241,16 +240,6 @@ public class LookupUUIDTune implements Profile {
         return queryIteratorClass;
     }
 
-    @Deprecated(since = "7.1.0", forRemoval = true)
-    public int getMaxShardsPerDayThreshold() {
-        return maxShardsPerDayThreshold;
-    }
-
-    @Deprecated(since = "7.1.0", forRemoval = true)
-    public void setMaxShardsPerDayThreshold(int maxShardsPerDayThreshold) {
-        this.maxShardsPerDayThreshold = maxShardsPerDayThreshold;
-    }
-
     public int getPageByteTrigger() {
         return pageByteTrigger;
     }
@@ -353,5 +342,13 @@ public class LookupUUIDTune implements Profile {
 
     public void setQuerySyntaxParsers(Map<String,QueryParser> querySyntaxParsers) {
         this.querySyntaxParsers = querySyntaxParsers;
+    }
+
+    public boolean isSeekingEventAggregation() {
+        return seekingEventAggregation;
+    }
+
+    public void setSeekingEventAggregation(boolean seekingEventAggregation) {
+        this.seekingEventAggregation = seekingEventAggregation;
     }
 }

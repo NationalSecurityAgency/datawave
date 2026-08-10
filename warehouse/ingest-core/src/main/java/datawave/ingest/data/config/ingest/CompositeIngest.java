@@ -16,7 +16,8 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Objects;
 import com.google.common.collect.HashMultimap;
@@ -29,6 +30,7 @@ import datawave.ingest.data.config.GroupedNormalizedContentInterface;
 import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.NormalizedFieldAndValue;
 import datawave.marking.MarkingFunctions;
+import datawave.marking.Markings;
 
 /**
  * Similar to VirtualIngest virtual fields, but composite fields are not written in the event section of the shard table (only in the field index section)
@@ -78,7 +80,7 @@ public interface CompositeIngest {
     class CompositeFieldNormalizer {
 
         private static final long serialVersionUID = -3892470989028896718L;
-        private static final Logger log = Logger.getLogger(CompositeFieldNormalizer.class);
+        private static final Logger log = LoggerFactory.getLogger(CompositeFieldNormalizer.class);
 
         private static final String DEFAULT_SEPARATOR = new String(Character.toChars(Character.MAX_CODE_POINT));
 
@@ -130,7 +132,7 @@ public interface CompositeIngest {
         protected Map<String,Boolean> allowMissing = new HashMap<>();
         private Set<String> ignoreNormalizationForFields = new HashSet<>();
 
-        protected MarkingFunctions markingFunctions;
+        protected MarkingFunctions<?> markingFunctions;
 
         public void setup(Type type, Configuration config) {
 
@@ -149,7 +151,7 @@ public interface CompositeIngest {
 
                     // if any members are indexOnly fields, skip this one
                     if (!Sets.intersection(Sets.newHashSet(componentFields), indexOnly).isEmpty()) {
-                        log.warn("rejecting " + compositeField + " which includes index only field in " + indexOnly);
+                        log.warn("rejecting {} which includes index only field in {}", compositeField, indexOnly);
                         continue;
                     }
 
@@ -187,7 +189,7 @@ public interface CompositeIngest {
             Set<String> emptySet = Collections.emptySet();
             ignoreNormalizationForFields = (null != ignoreNormalization) ? cleanSet(ignoreNormalization) : emptySet;
 
-            log.debug("setup with composites " + this.compositeToFieldMap);
+            log.debug("setup with composites {}", this.compositeToFieldMap);
         }
 
         /**
@@ -284,30 +286,6 @@ public interface CompositeIngest {
             return new String[] {str2, str1};
         }
 
-        /**
-         * A helper routine to merge markings maps when merging fields of a NormalizedContentInterface
-         *
-         * @param markings1
-         *            a map of markings
-         * @param markings2
-         *            a different map of markings
-         * @return the merged markings
-         */
-        protected Map<String,String> mergeMarkings(Map<String,String> markings1, Map<String,String> markings2) {
-            if (markings2 != null) {
-                if (markings1 == null) {
-                    markings1 = markings2;
-                } else {
-                    try {
-                        markings1 = markingFunctions.combine(markings1, markings2);
-                    } catch (MarkingFunctions.Exception e) {
-                        throw new RuntimeException("Unable to combine markings.", e);
-                    }
-                }
-            }
-            return markings1;
-        }
-
         public Multimap<String,NormalizedContentInterface> normalize(Multimap<String,String> fields) {
             Multimap<String,NormalizedContentInterface> eventFields = HashMultimap.create();
             for (Entry<String,String> field : fields.entries()) {
@@ -355,7 +333,7 @@ public interface CompositeIngest {
         // Create the composite field from the event Fields members
         public void addCompositeFields(List<NormalizedContentInterface> compositeFields, Multimap<String,NormalizedContentInterface> eventFields,
                         String compositeFieldName, String replacement, String[] grouping, GroupingPolicy groupingPolicy, boolean allowMissing, String[] fields,
-                        int pos, StringBuilder originalValue, StringBuilder normalizedValue, Map<String,String> markings, boolean isOverloadedField) {
+                        int pos, StringBuilder originalValue, StringBuilder normalizedValue, Markings<?> markings, boolean isOverloadedField) {
             String separator = (pos > 0) ? compositeSeparator.get(compositeFieldName) : "";
             // append any constants that have been specified
             while (pos < fields.length && isConstant(fields[pos])) {
@@ -404,9 +382,14 @@ public interface CompositeIngest {
                                 normalizedValue.append(separator);
                                 normalizedValue.append(value.getIndexedFieldValue());
                                 if (pos + 1 < fields.length) {
-                                    addCompositeFields(compositeFields, eventFields, compositeFieldName.replace("*", replacement), replacement,
-                                                    (grouping == null ? newGrouping : grouping), groupingPolicy, allowMissing, fields, pos + 1, originalValue,
-                                                    normalizedValue, mergeMarkings(markings, value.getMarkings()), isOverloadedField);
+                                    try {
+                                        addCompositeFields(compositeFields, eventFields, compositeFieldName.replace("*", replacement), replacement,
+                                                        (grouping == null ? newGrouping : grouping), groupingPolicy, allowMissing, fields, pos + 1,
+                                                        originalValue, normalizedValue, markingFunctions.combine(markings, value.getMarkings()),
+                                                        isOverloadedField);
+                                    } catch (MarkingFunctions.Exception e) {
+                                        throw new RuntimeException("Could not combine markings", e);
+                                    }
                                 }
                                 originalValue.setLength(oLen);
                                 normalizedValue.setLength(nLen);
@@ -426,7 +409,7 @@ public interface CompositeIngest {
                                 continue;
                             }
                         }
-                        if (!isOverloadedField || (isOverloadedField && pos == 0)) {
+                        if (!isOverloadedField || pos == 0) {
                             originalValue.append(separator);
                             originalValue.append(value.getEventFieldValue());
                         }
@@ -436,9 +419,13 @@ public interface CompositeIngest {
                         } else {
                             normalizedValue.append(value.getIndexedFieldValue());
                         }
-                        addCompositeFields(compositeFields, eventFields, compositeFieldName, replacement, (grouping == null ? newGrouping : grouping),
-                                        groupingPolicy, allowMissing, fields, pos + 1, originalValue, normalizedValue,
-                                        mergeMarkings(markings, value.getMarkings()), isOverloadedField);
+                        try {
+                            addCompositeFields(compositeFields, eventFields, compositeFieldName, replacement, (grouping == null ? newGrouping : grouping),
+                                            groupingPolicy, allowMissing, fields, pos + 1, originalValue, normalizedValue,
+                                            markingFunctions.combine(markings, value.getMarkings()), isOverloadedField);
+                        } catch (MarkingFunctions.Exception e) {
+                            throw new RuntimeException("Could not combine markings", e);
+                        }
                         originalValue.setLength(oLen);
                         normalizedValue.setLength(nLen);
                     }

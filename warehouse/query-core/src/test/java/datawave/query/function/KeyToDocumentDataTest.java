@@ -23,8 +23,6 @@ import datawave.query.data.parsers.EventKey;
 import datawave.query.iterator.aggregation.DocumentData;
 import datawave.query.predicate.EventDataQueryFieldFilter;
 import datawave.query.predicate.EventDataQueryFilter;
-import datawave.query.predicate.KeyProjection;
-import datawave.query.predicate.Projection;
 
 public class KeyToDocumentDataTest {
 
@@ -49,15 +47,13 @@ public class KeyToDocumentDataTest {
 
     @Test
     public void testEventData_defaultEquality_withFilter() {
-        KeyProjection projection = new KeyProjection(Set.of("FIELD_A", "FIELD_B"), Projection.ProjectionType.INCLUDES);
-        EventDataQueryFilter filter = new EventDataQueryFieldFilter(projection);
+        EventDataQueryFilter filter = new EventDataQueryFieldFilter().withFields(Set.of("FIELD_A", "FIELD_B"));
         KeyToDocumentData data = new KeyToDocumentData(getSource(), equality, filter, false, false).withRangeProvider(rangeProvider);
         drive(data, getEntry(), 2);
         assertFields(Set.of("FIELD_A", "FIELD_B"));
 
         // exclusive filter should result with nothing
-        projection = new KeyProjection(Set.of("FIELD_Z"), Projection.ProjectionType.INCLUDES);
-        filter = new EventDataQueryFieldFilter(projection);
+        filter = new EventDataQueryFieldFilter().withFields(Set.of("FIELD_Z"));
         data = new KeyToDocumentData(getSource(), equality, filter, false, false).withRangeProvider(rangeProvider);
         drive(data, getEntry(), 0);
         assertFields(Set.of());
@@ -72,8 +68,7 @@ public class KeyToDocumentDataTest {
 
     @Test
     public void testEventData_TLDEquality_withFilter() {
-        KeyProjection projection = new KeyProjection(Set.of("FIELD_A", "FIELD_B"), Projection.ProjectionType.INCLUDES);
-        EventDataQueryFilter filter = new EventDataQueryFieldFilter(projection);
+        EventDataQueryFilter filter = new EventDataQueryFieldFilter().withFields(Set.of("FIELD_A", "FIELD_B"));
         KeyToDocumentData data = new KeyToDocumentData(getSource(), tldEquality, filter, false, false).withRangeProvider(rangeProvider);
         drive(data, getEntry(), 2);
         assertFields(Set.of("FIELD_A", "FIELD_B"));
@@ -89,8 +84,7 @@ public class KeyToDocumentDataTest {
 
     @Test
     public void testTLDData_defaultEquality_withFilter() {
-        KeyProjection projection = new KeyProjection(Set.of("FIELD_A", "FIELD_B"), Projection.ProjectionType.INCLUDES);
-        EventDataQueryFilter filter = new EventDataQueryFieldFilter(projection);
+        EventDataQueryFilter filter = new EventDataQueryFieldFilter().withFields(Set.of("FIELD_A", "FIELD_B"));
         KeyToDocumentData data = new KeyToDocumentData(getTLDSource(), equality, filter, false, false).withRangeProvider(tldRangeProvider);
         drive(data, getEntry(), 2);
         assertFields(Set.of("FIELD_A", "FIELD_B"));
@@ -105,8 +99,7 @@ public class KeyToDocumentDataTest {
 
     @Test
     public void testTLDData_TLDEquality_withFilter() {
-        KeyProjection projection = new KeyProjection(Set.of("FIELD_A", "FIELD_B"), Projection.ProjectionType.INCLUDES);
-        EventDataQueryFilter filter = new EventDataQueryFieldFilter(projection);
+        EventDataQueryFilter filter = new EventDataQueryFieldFilter().withFields(Set.of("FIELD_A", "FIELD_B"));
         KeyToDocumentData data = new KeyToDocumentData(getTLDSource(), tldEquality, filter, false, false).withRangeProvider(tldRangeProvider);
         drive(data, getEntry(), 4);
         assertFields(Set.of("FIELD_A", "FIELD_B"));
