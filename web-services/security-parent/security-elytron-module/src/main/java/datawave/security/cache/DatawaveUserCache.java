@@ -2,19 +2,18 @@ package datawave.security.cache;
 
 import java.time.Duration;
 import java.util.Collection;
-import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
 
-import com.google.common.base.Preconditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import com.google.common.base.Preconditions;
 
 import datawave.security.authorization.DatawaveUser;
 
@@ -28,7 +27,7 @@ public class DatawaveUserCache implements ElytronCache {
     private final Cache<String,Collection<DatawaveUser>> cache;
 
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
-    
+
     /**
      * Return a new {@link DatawaveUserCache} with the given maximum size and time to live for entries in the cache.
      *
@@ -59,7 +58,7 @@ public class DatawaveUserCache implements ElytronCache {
     public void put(String key, Collection<DatawaveUser> users) {
         Preconditions.checkNotNull(key, "key cannot be null");
         Preconditions.checkNotNull(users, "user collection cannot be null");
-        
+
         lock.writeLock().lock();
         try {
             cache.put(key, users);
@@ -133,27 +132,27 @@ public class DatawaveUserCache implements ElytronCache {
     public void evictUsersWithName(String name) {
         lock.writeLock().lock();
         try {
-            if(log.isTraceEnabled()) {
+            if (log.isTraceEnabled()) {
                 log.trace("Evicting users with name {}", name);
             }
-            
+
             int totalEvictions = 0;
             ConcurrentMap<String,Collection<DatawaveUser>> map = cache.asMap();
-            for(String key : map.keySet()) {
+            for (String key : map.keySet()) {
                 Collection<DatawaveUser> users = map.get(key);
-                if(users != null && users.stream().anyMatch(user -> user.getName().equals(name))) {
+                if (users != null && users.stream().anyMatch(user -> user.getName().equals(name))) {
                     totalEvictions++;
                     map.remove(key);
                 }
             }
-            
-            if(log.isTraceEnabled()) {
+
+            if (log.isTraceEnabled()) {
                 log.trace("Removed {} entries with user {}", totalEvictions, name);
             }
         } finally {
             lock.writeLock().unlock();
         }
-        
+
     }
 
     @Override

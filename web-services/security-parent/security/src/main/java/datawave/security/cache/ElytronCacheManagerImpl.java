@@ -27,21 +27,21 @@ import datawave.security.authorization.DatawaveUser;
 public class ElytronCacheManagerImpl implements ElytronCacheManager {
 
     private static final Logger log = LoggerFactory.getLogger(ElytronCacheManagerImpl.class);
-    
+
     /**
      * The list of managed Elytron caches.
      */
     private final List<ElytronCache> caches = new ArrayList<>();
-    
+
     /**
      * Guards against concurrent read/write operations.
      */
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
-    
+
     @Override
     public void addCache(ElytronCache cache) {
         Preconditions.checkNotNull(cache, "cache cannot be null");
-       
+
         lock.writeLock().lock();
         if (log.isTraceEnabled()) {
             log.trace("Adding cache {}", cache.getClass().getName());
