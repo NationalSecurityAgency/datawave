@@ -22,7 +22,7 @@ embed-server --server-config=standalone-full.xml
 /subsystem=elytron/key-store=serverKeyStore:remove
 /subsystem=elytron/key-store=serverKeyStore:add(path=${KEYSTORE},credential-reference={clear-text="${env.KEYSTORE_PASSWORD}"},type=${env.KEYSTORE_TYPE})
 /subsystem=elytron/key-manager=serverKeyManager:remove
-/subsystem=elytron/key-manager=serverKeyManager:add(key-store=serverKeyStore,credential-reference={clear-text=${env.KEYSTORE_PASSWORD})
+/subsystem=elytron/key-manager=serverKeyManager:add(key-store=serverKeyStore,credential-reference={clear-text=${env.KEYSTORE_PASSWORD}})
 /subsystem=elytron/key-store=serverTrustStore:remove
 /subsystem=elytron/key-store=serverTrustStore:add(path=${TRUSTSTORE},credential-reference={clear-text="${env.TRUSTSTORE_PASSWORD}"},type=${env.TRUSTSTORE_TYPE})
 /subsystem=elytron/trust-manager=serverTrustManager:remove
