@@ -1,5 +1,6 @@
 package datawave.security.cache;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -25,7 +26,26 @@ class DatawaveUserCacheTest {
     private static final Set<String> roles = Set.of("Administrator", "InternalUser");
     private static final Multimap<String,String> rolesToAuths = ImmutableMultimap.of("Administrator", "A", "Administrator", "B", "Administrator", "C",
                     "InternalUser", "A");
-
+    
+    /**
+     * Verify putting a null key results in an NPE.
+     */
+    @Test
+    void testPutGivenNullKey() {
+        DatawaveUserCache cache = new DatawaveUserCache(-1, -1);
+        Set<DatawaveUser> users = Set.of(createUser("cn=user"), createUser("cn=proxyUser"));
+        assertThatThrownBy(() -> cache.put(null, users)).isInstanceOf(NullPointerException.class).hasMessage("key cannot be null");
+    }
+    
+    /**
+     * Verify putting a null value results in an NPE.
+     */
+    @Test
+    void testPutGivenNullValue() {
+        DatawaveUserCache cache = new DatawaveUserCache(-1, -1);
+        assertThatThrownBy(() -> cache.put("abc", null)).isInstanceOf(NullPointerException.class).hasMessage("user collection cannot be null");
+    }
+    
     /**
      * Verify putting and getting entries to/from the cache works as expected.
      */
@@ -61,7 +81,7 @@ class DatawaveUserCacheTest {
 
         Set<DatawaveUser> users3 = Set.of(createUser("cn=user3"), createUser("cn=proxyUser3"));
         cache.put("c", users3);
-
+        
         Set<DatawaveUser> allUsers = cache.getUsers();
         assertEquals(6, allUsers.size());
         assertTrue(allUsers.containsAll(users1));
@@ -88,7 +108,7 @@ class DatawaveUserCacheTest {
         cache.put("a", Set.of(createUser("cn=user1"), createUser("cn=proxyUser1")));
         cache.put("b", Set.of(createUser("cn=user2"), createUser("cn=proxyUser2")));
         cache.put("c", Set.of(createUser("cn=user3"), createUser("cn=proxyUser3")));
-
+        
         Set<DatawaveUser> matchingUsers = cache.getUsersWhereNameContains("a");
         assertTrue(matchingUsers.isEmpty());
     }
@@ -106,7 +126,7 @@ class DatawaveUserCacheTest {
         cache.put("a", Set.of(userA, createUser("cn=proxyUser1")));
         cache.put("b", Set.of(createUser("cn=user2"), proxyUserA));
         cache.put("c", Set.of(createUser("cn=user3"), createUser("cn=proxyUser3")));
-
+        
         Set<DatawaveUser> matchingUsers = cache.getUsersWhereNameContains("a");
         assertEquals(2, matchingUsers.size());
         assertTrue(matchingUsers.contains(userA));
@@ -132,7 +152,7 @@ class DatawaveUserCacheTest {
         cache.put("a", Set.of(createUser("cn=user1"), createUser("cn=proxyUser1")));
         cache.put("b", Set.of(createUser("cn=user2"), createUser("cn=proxyUser2")));
         cache.put("c", Set.of(createUser("cn=user3"), createUser("cn=proxyUser3")));
-
+        
         assertNull(cache.getUserWithName("cn=user4<" + TEST_ISSUER + ">"));
     }
 
@@ -147,7 +167,7 @@ class DatawaveUserCacheTest {
         cache.put("b", Set.of(createUser("cn=user2"), createUser("cn=proxyUser2")));
         cache.put("c", Set.of(createUser("cn=user3"), createUser("cn=proxyUser3")));
         cache.put("d", Set.of(createUser("cn=user4"), createUser("cn=proxyUser2")));
-
+        
         assertNotNull(cache.getUserWithName("cn=proxyuser2<" + TEST_ISSUER + ">"));
     }
 
@@ -161,7 +181,7 @@ class DatawaveUserCacheTest {
         cache.put("a", Set.of(createUser("cn=user1"), createUser("cn=proxyUser1")));
         cache.put("b", Set.of(createUser("cn=user2"), createUser("cn=proxyUser2")));
         cache.put("c", Set.of(createUser("cn=user3"), createUser("cn=proxyUser3")));
-
+        
         cache.evictUsersWithName("cn=proxyuser4<" + TEST_ISSUER + ">");
         assertNotNull(cache.get("a"));
         assertNotNull(cache.get("b"));
@@ -179,7 +199,7 @@ class DatawaveUserCacheTest {
         cache.put("b", Set.of(createUser("cn=user2"), createUser("cn=proxyUser2")));
         cache.put("c", Set.of(createUser("cn=user3"), createUser("cn=proxyUser3")));
         cache.put("d", Set.of(createUser("cn=user4"), createUser("cn=proxyUser2")));
-
+        
         cache.evictUsersWithName("cn=proxyuser2<" + TEST_ISSUER + ">");
         assertNotNull(cache.get("a"));
         assertNotNull(cache.get("c"));
@@ -199,7 +219,7 @@ class DatawaveUserCacheTest {
         cache.put("b", Set.of(createUser("cn=user2"), createUser("cn=proxyUser2")));
         cache.put("c", Set.of(createUser("cn=user3"), createUser("cn=proxyUser3")));
         cache.put("d", Set.of(createUser("cn=user4"), createUser("cn=proxyUser2")));
-
+        
         cache.clear();
 
         assertNull(cache.get("a"));

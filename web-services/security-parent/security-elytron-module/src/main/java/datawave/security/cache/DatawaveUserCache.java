@@ -9,6 +9,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
 
+import com.google.common.base.Preconditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,6 +57,9 @@ public class DatawaveUserCache implements ElytronCache {
      *            the users
      */
     public void put(String key, Collection<DatawaveUser> users) {
+        Preconditions.checkNotNull(key, "key cannot be null");
+        Preconditions.checkNotNull(users, "user collection cannot be null");
+        
         lock.writeLock().lock();
         try {
             cache.put(key, users);
@@ -85,9 +89,7 @@ public class DatawaveUserCache implements ElytronCache {
         lock.readLock().lock();
         try {
             // @formatter:off
-            return cache.asMap().keySet().stream()
-                            .map(this::get)
-                            .filter(Objects::nonNull)
+            return cache.asMap().values().stream()
                             .flatMap(Collection::stream)
                             .collect(Collectors.toSet());
             // @formatter:on
@@ -101,9 +103,7 @@ public class DatawaveUserCache implements ElytronCache {
         lock.readLock().lock();
         try {
             // @formatter:off
-            return cache.asMap().keySet().stream()
-                            .map(this::get)
-                            .filter(Objects::nonNull)
+            return cache.asMap().values().stream()
                             .flatMap(Collection::stream)
                             .filter(user -> user.getName().contains(substring))
                             .collect(Collectors.toSet());
@@ -118,9 +118,7 @@ public class DatawaveUserCache implements ElytronCache {
         lock.readLock().lock();
         try {
             // @formatter:off
-            return cache.asMap().keySet().stream()
-                            .map(this::get)
-                            .filter(Objects::nonNull)
+            return cache.asMap().values().stream()
                             .flatMap(Collection::stream)
                             .filter(user -> user.getName().equals(name))
                             .findFirst()
@@ -142,7 +140,8 @@ public class DatawaveUserCache implements ElytronCache {
             int totalEvictions = 0;
             ConcurrentMap<String,Collection<DatawaveUser>> map = cache.asMap();
             for(String key : map.keySet()) {
-                if(map.get(key).stream().anyMatch(user -> user.getName().equals(name))) {
+                Collection<DatawaveUser> users = map.get(key);
+                if(users != null && users.stream().anyMatch(user -> user.getName().equals(name))) {
                     totalEvictions++;
                     map.remove(key);
                 }
