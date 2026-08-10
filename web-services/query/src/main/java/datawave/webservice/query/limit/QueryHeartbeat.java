@@ -63,7 +63,10 @@ public class QueryHeartbeat {
      */
     public void stopWithoutNotifyingListener() {
         try {
-            this.node.close();
+            // Stop the node only if it is active. A non-active Persistent node will have a null path.
+            if (this.node.getActualPath() != null) {
+                this.node.close();
+            }
         } catch (Exception e) {
             log.error("Error closing ephemeral node", e);
         }
@@ -93,17 +96,16 @@ public class QueryHeartbeat {
         if (o == null || getClass() != o.getClass())
             return false;
         QueryHeartbeat heartbeat = (QueryHeartbeat) o;
-        return Objects.equals(queryId, heartbeat.queryId) && Objects.equals(node, heartbeat.node) && Objects.equals(listener, heartbeat.listener);
+        return Objects.equals(queryId, heartbeat.queryId);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(queryId, node, listener);
+        return Objects.hash(queryId);
     }
 
     @Override
     public String toString() {
-        return new StringJoiner(", ", QueryHeartbeat.class.getSimpleName() + "[", "]").add("queryId=" + queryId).add("node=" + node).add("listener=" + listener)
-                        .toString();
+        return new StringJoiner(", ", QueryHeartbeat.class.getSimpleName() + "[", "]").add("queryId=" + queryId).toString();
     }
 }

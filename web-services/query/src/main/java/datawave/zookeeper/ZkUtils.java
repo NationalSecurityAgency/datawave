@@ -7,6 +7,9 @@ import org.apache.hadoop.fs.Path;
 import org.apache.zookeeper.server.quorum.QuorumPeer;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig;
 
+/**
+ * Contains utility methods for working with Zookeeper.
+ */
 public final class ZkUtils {
 
     /**
@@ -41,6 +44,25 @@ public final class ZkUtils {
             // Try the zookeeper config as is.
         }
         return zookeeperConfig;
+    }
+
+    /**
+     * Normalize a Zookeeper node path. If the given path is null or blank, a null string will be returned. The path will be trimmed, and prefixed with
+     * {@code /} if it is not already.
+     *
+     * @param path
+     *            the path to normalize
+     * @return the normalized path
+     */
+    public static String normalizePath(String path) {
+        if (path == null || path.isBlank()) {
+            return null;
+        }
+        path = path.trim();
+        if (!path.startsWith("/")) {
+            path = "/" + path;
+        }
+        return path;
     }
 
     private ZkUtils() {

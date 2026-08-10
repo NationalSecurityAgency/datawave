@@ -2,7 +2,6 @@ package datawave.webservice.query.limit;
 
 import java.util.regex.Pattern;
 
-
 /**
  * Utility functions and constants for the query limiter feature.
  */

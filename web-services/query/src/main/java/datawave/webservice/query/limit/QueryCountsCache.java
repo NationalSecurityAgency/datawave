@@ -6,6 +6,7 @@ import java.io.ByteArrayInputStream;
 import java.io.DataInput;
 import java.io.DataInputStream;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -45,12 +46,18 @@ public class QueryCountsCache extends LocalZkCache {
     private final ConcurrentHashMap<String,AtomicInteger> systemQueryLogicCounts = new ConcurrentHashMap<>();
 
     /**
+     * Tracks which node paths have already had their counts applied, keyed by ZK path. This makes count application idempotent. A create event for a path
+     * already present here is a no-op, and a delete event for a path not present here is a no-op.
+     */
+    private final Set<String> countedQueries = ConcurrentHashMap.newKeySet();
+
+    /**
      * The system limit provider. This is used to determine whether systems count towards user limits when incrementing counts.
      */
     private SystemLimitProvider systemLimitProvider;
 
     public QueryCountsCache(CuratorFramework client, SystemLimitProvider systemLimitProvider) {
-        super(client, false);
+        super(client);
         this.systemLimitProvider = systemLimitProvider;
         this.cache.start();
     }
@@ -63,14 +70,14 @@ public class QueryCountsCache extends LocalZkCache {
     @Override
     protected void handleCreate(ChildData childData) {
         if (isNotCacheRoot(childData)) {
-            modifyCount(childData, 1);
+            applyCreate(childData);
         }
     }
 
     @Override
     protected void handleDelete(ChildData childData) {
         if (isNotCacheRoot(childData)) {
-            modifyCount(childData, -1);
+            applyDelete(childData);
         }
     }
 
@@ -78,47 +85,78 @@ public class QueryCountsCache extends LocalZkCache {
     protected void rebuildLocalCaches() {
         lock.writeLock().lock();
         try {
-            // Clear the count maps.
+            // Clear the count maps and the idempotency-tracking set together, so they stay consistent.
+            countedQueries.clear();
             userQueryCounts.clear();
             userQueryLogicCounts.clear();
             systemQueryCounts.clear();
             systemQueryLogicCounts.clear();
 
             // Recount the active queries.
-            cache.stream().filter((node) -> !node.getPath().equals(QUERIES_ROOT_PATH)).forEach((child) -> modifyCount(child, 1));
+            cache.stream().filter((node) -> !node.getPath().equals(QUERIES_ROOT_PATH)).forEach(this::applyCreate);
         } finally {
             lock.writeLock().unlock();
         }
 
     }
 
-    /**
-     * Modify the counts for the user, system, and query logic extracted from the given node by the given delta.
-     *
-     * @param node
-     *            the node
-     * @param delta
-     *            the delta
-     */
-    private void modifyCount(ChildData node, int delta) {
-        String userDn;
-        String system;
-        String queryLogic;
+    private void applyCreate(ChildData node) {
+        Triple<String,String,String> data;
         try {
-            // Parse the query information from the data.
-            Triple<String,String,String> query = parseData(node.getData());
-            userDn = query.getLeft();
-            system = query.getMiddle();
-            queryLogic = query.getRight();
+            data = parseData(node.getData());
         } catch (Exception e) {
             log.error("Failed to parse data for node {}", node.getPath(), e);
             return;
         }
 
-        if (log.isTraceEnabled()) {
-            log.trace("Incrementing counts for user: {}, system: {}, queryLogic: {} by {}", userDn, system, queryLogic, delta);
+        // add() returns true only if the path wasn't already tracked, which is the only case where we want to increment the counts.
+        if (countedQueries.add(node.getPath())) {
+            if (log.isTraceEnabled()) {
+                log.trace("Incrementing counts for user: {}, system: {}, queryLogic: {} for node {}", data.getLeft(), data.getMiddle(), data.getRight(),
+                                node.getPath());
+            }
+            adjustCounts(data, 1);
+        } else {
+            if (log.isTraceEnabled()) {
+                log.trace("Node {} was already counted, skipping duplicate create event", node.getPath());
+            }
         }
+    }
 
+    private void applyDelete(ChildData node) {
+        // remove() returns true only if the path was tracked, which is the only case where we want to decrement the counts.
+        if (countedQueries.remove(node.getPath())) {
+            Triple<String,String,String> data;
+            try {
+                data = parseData(node.getData());
+            } catch (Exception e) {
+                log.error("Failed to parse data for node {}", node.getPath(), e);
+                return;
+            }
+            if (log.isTraceEnabled()) {
+                log.trace("Decrementing counts for user: {}, system: {}, queryLogic: {} for node {}", data.getLeft(), data.getMiddle(), data.getRight(),
+                                node.getPath());
+            }
+            adjustCounts(data, -1);
+        } else {
+            if (log.isTraceEnabled()) {
+                log.trace("Node {} was not tracked as counted, skipping delete event", node.getPath());
+            }
+        }
+    }
+
+    /**
+     * Adjust the counts for the user, system, and query logic extracted from the given node by the given delta.
+     *
+     * @param data
+     *            the data parsed from the node
+     * @param delta
+     *            the delta
+     */
+    private void adjustCounts(Triple<String,String,String> data, int delta) {
+        String userDn = data.getLeft();
+        String system = data.getMiddle();
+        String queryLogic = data.getRight();
         try {
             modifyCount(systemQueryCounts, system, delta);
             modifyCount(systemQueryLogicCounts, getOwnerQueryLogicKey(system, queryLogic), delta);
@@ -128,8 +166,7 @@ public class QueryCountsCache extends LocalZkCache {
                 modifyCount(userQueryLogicCounts, getOwnerQueryLogicKey(userDn, queryLogic), delta);
             }
         } catch (Exception e) {
-            log.error("Failed to increment counts for user: {}, system: {}, queryLogic: {} by {} for node {}", userDn, system, queryLogic, delta,
-                            node.getPath(), e);
+            log.error("Failed to adjusts counts for user: {}, system: {}, queryLogic: {} by {}", userDn, system, queryLogic, delta, e);
         }
     }
 
@@ -149,7 +186,7 @@ public class QueryCountsCache extends LocalZkCache {
             if (existingValue == null) {
                 return delta > 0 ? new AtomicInteger(delta) : null;
             } else {
-                // If there is an existing mapping, modify the value by the delta. If the updated value is 0 or greater, delete the mapping. Otherwise, return
+                // If there is an existing mapping, modify the value by the delta. If the updated value is 0 or less, delete the mapping. Otherwise, return
                 // the updated value.
                 return existingValue.addAndGet(delta) <= 0 ? null : existingValue;
             }
@@ -231,8 +268,13 @@ public class QueryCountsCache extends LocalZkCache {
      * @return the count for the given key in the map, defaulting to 0
      */
     private int getCount(String key, ConcurrentHashMap<String,AtomicInteger> map) {
-        AtomicInteger count = map.get(key);
-        return count != null ? count.get() : 0;
+        lock.readLock().lock();
+        try {
+            AtomicInteger count = map.get(key);
+            return count != null ? count.get() : 0;
+        } finally {
+            lock.readLock().unlock();
+        }
     }
 
     private static boolean isNotCacheRoot(ChildData childData) {
@@ -256,7 +298,7 @@ public class QueryCountsCache extends LocalZkCache {
      * Parses and returns a {@link Triple} with the user DN, system, and query logic in that order.
      *
      * @param data
-     *            the order to parse
+     *            the dataorder to parse
      * @return the triple
      */
     private static Triple<String,String,String> parseData(byte[] data) {
@@ -276,6 +318,7 @@ public class QueryCountsCache extends LocalZkCache {
      *
      * @see LocalZkCache#close()
      */
+    @Override
     public void close() {
         lock.writeLock().lock();
         try {

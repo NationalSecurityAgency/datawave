@@ -112,7 +112,7 @@ public class UserLimitProvider {
             // If the custom query limit is null or less than zero, use the default query limit.
             if (customQueryLimit == null || customQueryLimit < 0) {
                 if (log.isDebugEnabled()) {
-                    log.trace("Using default user query limit of " + defaultUserQueryLimit + " for user '" + userDn + "'");
+                    log.debug("Using default user query limit of " + defaultUserQueryLimit + " for user '" + userDn + "'");
                 }
                 customQueryLimit = defaultUserQueryLimit;
             }

@@ -43,13 +43,99 @@ class ZkLockTest {
     }
 
     /**
+     * Verify that constructor arguments are validated.
+     */
+    @Test
+    void testInvalidConstructorArgs() throws InterruptedException {
+        assertThatThrownBy(() -> new ZkLock(null, "/locks", 1, TimeUnit.SECONDS, true)).isInstanceOf(NullPointerException.class)
+                        .hasMessage("client must not be null");
+        try (CuratorFramework client = getClient()) {
+            assertThatThrownBy(() -> new ZkLock(client, "/locks", -1, TimeUnit.SECONDS, true)).isInstanceOf(IllegalArgumentException.class)
+                            .hasMessage("defaultTimeout must be >= 0");
+            assertThatThrownBy(() -> new ZkLock(client, "/locks", 1, null, false)).isInstanceOf(NullPointerException.class)
+                            .hasMessage("defaultTimeUnit must not be null");
+        }
+    }
+
+    /**
+     * Verify that when a {@link ZkLock} is created with a null root path, the root path is ignored.
+     */
+    @Test
+    void testZkLockGivenNullRootPath() throws Exception {
+        try (CuratorFramework client = getClient()) {
+            ZkLock lock = new ZkLock(client, null, 1, TimeUnit.SECONDS, false);
+            lock.callWithLock("id", () -> true);
+
+            // Verify the lock path consists of just the lock id.
+            assertThat(client.checkExists().forPath("/id")).isNotNull();
+        }
+    }
+
+    /**
+     * Verify that when a {@link ZkLock} is created with a null root path, the root path is ignored.
+     */
+    @Test
+    void testZkLockGivenBlankRootPath() throws Exception {
+        try (CuratorFramework client = getClient()) {
+            ZkLock lock = new ZkLock(client, "   ", 1, TimeUnit.SECONDS, false);
+            lock.callWithLock("id", () -> true);
+
+            // Verify the lock path consists of just the lock id.
+            assertThat(client.checkExists().forPath("/id")).isNotNull();
+        }
+    }
+
+    /**
+     * Verify that when a {@link ZkLock} is created with a null root path, and is given a lock id with a leading slash, the leading slash is allowed.
+     */
+    @Test
+    void testZkLockGivenBlankRootPathAndLockIdWithLeadingSlash() throws Exception {
+        try (CuratorFramework client = getClient()) {
+            ZkLock lock = new ZkLock(client, "   ", 1, TimeUnit.SECONDS, false);
+            lock.callWithLock("/id", () -> true);
+
+            // Verify the lock path consists of just the lock id.
+            assertThat(client.checkExists().forPath("/id")).isNotNull();
+        }
+    }
+
+    /**
+     * Verify that when a {@link ZkLock} is created with a root path without a leading slash, a leading slash is added.
+     */
+    @Test
+    void testZkLockGivenRootPathWithoutLeadingSlash() throws Exception {
+        try (CuratorFramework client = getClient()) {
+            ZkLock lock = new ZkLock(client, "root", 1, TimeUnit.SECONDS, false);
+            lock.callWithLock("id", () -> true);
+
+            // Verify the lock path consists of just the lock id.
+            assertThat(client.checkExists().forPath("/root/id")).isNotNull();
+        }
+    }
+
+    /**
+     * Verify that when a {@link ZkLock} is created with a root path with a leading slash, and a lock id with a leading slash, the lock path is normalized
+     * appropriately.
+     */
+    @Test
+    void testZkLockGivenRootPathWithLeadingSlashAndLockIdWithLeadingSlash() throws Exception {
+        try (CuratorFramework client = getClient()) {
+            ZkLock lock = new ZkLock(client, "root", 1, TimeUnit.SECONDS, false);
+            lock.callWithLock("id", () -> true);
+
+            // Verify the lock path consists of just the lock id.
+            assertThat(client.checkExists().forPath("/root/id")).isNotNull();
+        }
+    }
+
+    /**
      * Verify that when the timeout is exceeded when attempting to acquire a lock that is already held, a {@link TimeoutException} is thrown.
      */
     @Test
     void testCallWithLockWhenTimeoutExceeded() throws Exception {
         try (CuratorFramework client = getClient()) {
             // Configure a timeout of 1 second.
-            ZkLock lock = new ZkLock(client, "/locks", 1, TimeUnit.SECONDS);
+            ZkLock lock = new ZkLock(client, "/locks", 1, TimeUnit.SECONDS, true);
 
             // Obtain a lock for "id" and hold it for 3 seconds.
             CompletableFuture.runAsync(() -> {
@@ -69,7 +155,7 @@ class ZkLockTest {
 
             // Verify that we get a timeout exception because we cannot obtain the lock for 'id' within 1 second.
             assertThatThrownBy(() -> lock.callWithLock("id", () -> null)).isInstanceOf(TimeoutException.class)
-                            .hasMessage("Failed to acquire lock for 'id' within 1 SECONDS");
+                            .hasMessage("Failed to acquire lock for /locks/id within 1 SECONDS");
         }
     }
 
@@ -80,7 +166,7 @@ class ZkLockTest {
     void testCallWithLockDoesNotBlockCallWithDifferentId() throws Exception {
         try (CuratorFramework client = getClient()) {
             // Configure a timeout of 1 second.
-            ZkLock lock = new ZkLock(client, "/locks", 1, TimeUnit.SECONDS);
+            ZkLock lock = new ZkLock(client, "/locks", 1, TimeUnit.SECONDS, true);
 
             // Obtain a lock for "id" and hold it for 3 seconds.
             CompletableFuture.runAsync(() -> {
@@ -109,7 +195,7 @@ class ZkLockTest {
     @Test
     void testCallWithLockWhenTimeoutNotExceeded() throws Exception {
         try (CuratorFramework client = getClient()) {
-            ZkLock lock = new ZkLock(client, "/locks", 3, TimeUnit.SECONDS);
+            ZkLock lock = new ZkLock(client, "/locks", 3, TimeUnit.SECONDS, true);
 
             SingleThreadGuard guard = new SingleThreadGuard();
             int count = lock.callWithLock("id", guard::incrementAndGet);
@@ -124,7 +210,7 @@ class ZkLockTest {
     @Test
     void testContendingThreads() throws InterruptedException {
         try (CuratorFramework client = getClient()) {
-            ZkLock lock = new ZkLock(client, "/locks", 3, TimeUnit.SECONDS);
+            ZkLock lock = new ZkLock(client, "/locks", 3, TimeUnit.SECONDS, true);
 
             // Create a list of 10 random callables that will attempt to increment the count in the SingleThreadGuard via the ZLock.
             SingleThreadGuard guard = new SingleThreadGuard();
@@ -143,6 +229,46 @@ class ZkLockTest {
             int totalIncrements = callables.stream().map(RandomCallable::getTotalIncrements).reduce(0, Integer::sum);
             assertThat(totalIncrements).isEqualTo(guard.count);
             executor.shutdown();
+        }
+    }
+
+    /**
+     * Verify that when a {@link ZkLock} is created that should clean up the lock path after the lock is released and no other threads are waiting to acquire
+     * the lock, the lock path is deleted.
+     */
+    @Test
+    void testPostLockReleaseCleanup() throws Exception {
+        try (CuratorFramework client = getClient()) {
+            ZkLock lock = new ZkLock(client, "/locks", 3, TimeUnit.SECONDS, true);
+
+            SingleThreadGuard guard = new SingleThreadGuard();
+            int count = lock.callWithLock("id", guard::incrementAndGet);
+
+            assertThat(count).isEqualTo(1);
+
+            // Verify that lock path was cleaned up.
+            assertThat(client.checkExists().forPath("/locks/id")).isNull();
+            // Verify the root path still exists.
+            assertThat(client.checkExists().forPath("/locks")).isNotNull();
+        }
+    }
+
+    /**
+     * Verify that when a {@link ZkLock} is created that should not clean up the lock path after the lock is released and no other threads are waiting to
+     * acquire the lock, the lock path remains.
+     */
+    @Test
+    void testNoPostLockReleaseCleanup() throws Exception {
+        try (CuratorFramework client = getClient()) {
+            ZkLock lock = new ZkLock(client, "/locks", 3, TimeUnit.SECONDS, false);
+
+            SingleThreadGuard guard = new SingleThreadGuard();
+            int count = lock.callWithLock("id", guard::incrementAndGet);
+
+            assertThat(count).isEqualTo(1);
+
+            // Verify that lock path was not cleaned up.
+            assertThat(client.checkExists().forPath("/locks/id")).isNotNull();
         }
     }
 
@@ -204,6 +330,7 @@ class ZkLockTest {
                 // Sleep a random delay of 50-75 ms to increase likelihood of attempting to obtain the lock while another thread is holding it.
                 long randomDelay = ThreadLocalRandom.current().nextLong(50, 75);
                 try {
+                    // noinspection BusyWait
                     Thread.sleep(randomDelay);
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);

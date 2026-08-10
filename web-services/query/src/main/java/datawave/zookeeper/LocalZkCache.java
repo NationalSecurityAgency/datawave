@@ -42,20 +42,16 @@ public abstract class LocalZkCache {
     protected final CuratorCache cache;
 
     /**
-     * Create a new {@link LocalZkCache} with the given Zookeeper client.
+     * Create a new {@link LocalZkCache} with the given Zookeeper client. The underlying Zookeeper cache will not be started, and must be started via
+     * {@link CuratorCache#start()}.
      *
      * @param client
      *            the Zookeeper client to use when creating the underlying Zookeeper cache
-     * @param startCache
-     *            whether to start the cache
      */
-    protected LocalZkCache(CuratorFramework client, boolean startCache) {
+    protected LocalZkCache(CuratorFramework client) {
         this.cache = createCuratorCache(client);
         this.cache.listenable().addListener(getCuratorCacheListener());
         client.getConnectionStateListenable().addListener(getConnectionStateListener());
-        if (startCache) {
-            this.cache.start();
-        }
     }
 
     /**
@@ -77,7 +73,7 @@ public abstract class LocalZkCache {
                             try{
                                 rebuild();
                             } catch (Exception e) {
-                                log.error("Error occured while rebuilding cache", e);
+                                log.error("Error occurred while rebuilding cache", e);
                             }
                         })
                         .forCreates((child) -> {
@@ -192,7 +188,7 @@ public abstract class LocalZkCache {
             try {
                 rebuildLocalCaches();
             } catch (Exception e) {
-                log.error("Error occured while rebuilding local caches", e);
+                log.error("Error occurred while rebuilding local caches", e);
                 throw e;
             }
 

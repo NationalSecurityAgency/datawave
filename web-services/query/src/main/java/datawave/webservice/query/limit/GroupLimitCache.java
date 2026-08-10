@@ -97,16 +97,16 @@ public class GroupLimitCache {
             return false;
         }
         GroupLimitCache that = (GroupLimitCache) o;
-        return Objects.equals(groupLimits, that.groupLimits) && Objects.equals(cache, that.cache);
+        return Objects.equals(groupLimits, that.groupLimits);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(groupLimits, cache);
+        return Objects.hash(groupLimits);
     }
 
     @Override
     public String toString() {
-        return new StringJoiner(", ", GroupLimitCache.class.getSimpleName() + "[", "]").add("groupLimits=" + groupLimits).add("cache=" + cache).toString();
+        return new StringJoiner(", ", GroupLimitCache.class.getSimpleName() + "[", "]").add("groupLimits=" + groupLimits).toString();
     }
 }

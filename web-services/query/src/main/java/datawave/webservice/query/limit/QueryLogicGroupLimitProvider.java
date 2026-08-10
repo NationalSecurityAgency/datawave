@@ -31,16 +31,65 @@ public class QueryLogicGroupLimitProvider {
 
     private final ReadWriteLock groupCacheLock = new ReentrantReadWriteLock();
     private final Map<String,Set<String>> groupsToQueryLogics = new HashMap<>();
+    private final QueryLogicsUpdateListener queryLogicsUpdateListener;
 
     public QueryLogicGroupLimitProvider(long maxCacheSize, Collection<QueryLogicGroupLimitConfiguration> configs) {
         this.maxCacheSize = maxCacheSize;
         if (configs != null && !configs.isEmpty()) {
             validateConfigs(configs);
             populateLimits(configs);
+            this.queryLogicsUpdateListener = createQueryLogicsUpdateListener();
         } else {
             this.groupLimitCache = GroupLimitCache.emptyInstance();
             this.groupsToLimits = Map.of();
+            this.queryLogicsUpdateListener = null;
         }
+    }
+
+    /**
+     * Create and return a {@link QueryLogicsUpdateListener} that will update this provider with any new/removed query logics. These changes will be reflected
+     * when we determine which query logic groups match a given query logic.
+     *
+     * @return the listener
+     */
+    private QueryLogicsUpdateListener createQueryLogicsUpdateListener() {
+        return new QueryLogicsUpdateListener() {
+
+            @Override
+            public void forCreate(String queryLogic) {
+                groupCacheLock.writeLock().lock();
+                try {
+                    for (Map.Entry<String,QueryLogicGroupLimit> entry : groupsToLimits.entrySet()) {
+                        String group = entry.getKey();
+                        QueryLogicGroupLimit limit = entry.getValue();
+                        if (limit.getMatcher().matches(queryLogic)) {
+                            Set<String> queryLogics = groupsToQueryLogics.computeIfAbsent(group, k -> new HashSet<>());
+                            queryLogics.add(queryLogic);
+                        }
+                    }
+                } catch (Exception e) {
+                    log.error("Failed to add query logic " + queryLogic);
+                    throw new RuntimeException("Failed to add query logic " + queryLogic, e);
+                } finally {
+                    groupCacheLock.writeLock().unlock();
+                }
+            }
+
+            @Override
+            public void forDelete(String queryLogic) {
+                groupCacheLock.writeLock().lock();
+                try {
+                    for (Set<String> queryLogics : groupsToQueryLogics.values()) {
+                        queryLogics.remove(queryLogic);
+                    }
+                } catch (Exception e) {
+                    log.error("Failed to remove query logic " + queryLogic);
+                    throw new RuntimeException("Failed to remove query logic " + queryLogic, e);
+                } finally {
+                    groupCacheLock.writeLock().unlock();
+                }
+            }
+        };
     }
 
     /**
@@ -149,6 +198,13 @@ public class QueryLogicGroupLimitProvider {
         return overrides;
     }
 
+    /**
+     * Return a {@link LinkedHashMap} containing the mappings of the given map, sorted by value.
+     *
+     * @param map
+     *            the map to sort
+     * @return the sorted map
+     */
     private Map<String,QueryLogicGroupLimit> getMapSortedByValue(Map<String,QueryLogicGroupLimit> map) {
         // @formatter:off
         return map.entrySet().stream()
@@ -157,6 +213,13 @@ public class QueryLogicGroupLimitProvider {
         // @formatter:on
     }
 
+    /**
+     * Return a map of groups to limits where each group contains the given query logic, and the limit reflects the lowest limit configured for the group.
+     *
+     * @param queryLogic
+     *            the query logic
+     * @return the map of groups to limits
+     */
     public Map<String,Integer> getBestGroupLimits(String queryLogic) {
         return groupLimitCache.getBestGroupLimits(queryLogic);
     }
@@ -181,7 +244,38 @@ public class QueryLogicGroupLimitProvider {
         }
     }
 
-    public void updateQueryLogics(Set<String> queryLogics) {
+    /**
+     * Update the initial set of query logics for this {@link QueryLogicGroupLimitProvider}, and register a listener for any query logic additions/removals.
+     *
+     * @param cache
+     *            the cache
+     */
+    public void initializeFrom(QueryLogicCache cache) {
+        if (cache != null && this.queryLogicsUpdateListener != null) {
+            cache.addListener(this.queryLogicsUpdateListener);
+            updateQueryLogics(cache.getQueryLogics());
+        }
+    }
+
+    /**
+     * Stop listening for updates from the given {@link QueryLogicCache}.
+     *
+     * @param cache
+     *            the cache
+     */
+    public void stopListeningTo(QueryLogicCache cache) {
+        if (cache != null && this.queryLogicsUpdateListener != null) {
+            cache.removeListener(this.queryLogicsUpdateListener);
+        }
+    }
+
+    /**
+     * Update the set of query logics used to pre-identify matches between groups and query logics that match against the groups' patterns.
+     *
+     * @param queryLogics
+     *            the query logics
+     */
+    private void updateQueryLogics(Set<String> queryLogics) {
         this.groupCacheLock.writeLock().lock();
         try {
             this.groupsToQueryLogics.clear();
@@ -197,46 +291,6 @@ public class QueryLogicGroupLimitProvider {
         } finally {
             this.groupCacheLock.writeLock().unlock();
         }
-    }
-
-    public QueryLogicsUpdateListener createQueryLogicsUpdateListener() {
-        return new QueryLogicsUpdateListener() {
-
-            @Override
-            public void forCreate(String queryLogic) {
-                groupCacheLock.writeLock().lock();
-                try {
-                    for (Map.Entry<String,QueryLogicGroupLimit> entry : groupsToLimits.entrySet()) {
-                        String group = entry.getKey();
-                        QueryLogicGroupLimit limit = entry.getValue();
-                        if (limit.getMatcher().matches(queryLogic)) {
-                            Set<String> queryLogics = groupsToQueryLogics.computeIfAbsent(group, k -> new HashSet<>());
-                            queryLogics.add(queryLogic);
-                        }
-                    }
-                } catch (Exception e) {
-                    log.error("Failed to add query logic " + queryLogic);
-                    throw new RuntimeException("Failed to add query logic " + queryLogic, e);
-                } finally {
-                    groupCacheLock.writeLock().unlock();
-                }
-            }
-
-            @Override
-            public void forDelete(String queryLogic) {
-                groupCacheLock.writeLock().lock();
-                try {
-                    for (Set<String> queryLogics : groupsToQueryLogics.values()) {
-                        queryLogics.remove(queryLogic);
-                    }
-                } catch (Exception e) {
-                    log.error("Failed to remove query logic " + queryLogic);
-                    throw new RuntimeException("Failed to remove query logic " + queryLogic, e);
-                } finally {
-                    groupCacheLock.writeLock().unlock();
-                }
-            }
-        };
     }
 
     /**
@@ -259,6 +313,11 @@ public class QueryLogicGroupLimitProvider {
             // Then sort by the query limit from lowest to highest.
             if (comparison == 0) {
                 comparison = Integer.compare(limit, o.limit);
+            }
+
+            // Finally, compare by equality of the matcher to avoid collapsing entries with different matchers.
+            if (comparison == 0) {
+                return matcher.equals(o.matcher) ? 0 : 1;
             }
 
             return comparison;

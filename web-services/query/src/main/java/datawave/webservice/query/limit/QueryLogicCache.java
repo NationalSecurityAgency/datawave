@@ -30,15 +30,18 @@ public class QueryLogicCache extends LocalZkCache {
     /**
      * The local mirror of query logics. Writes are expected to happen infrequently.
      */
-    private final Set<String> queryLogics = new CopyOnWriteArraySet<>();
+    private final Set<String> queryLogics;
 
     /**
      * The list of listeners that will be notified of updates to {@link #queryLogics}. Writes are expected to happen infrequently.
      */
-    private final List<QueryLogicsUpdateListener> listeners = new CopyOnWriteArrayList<>();
+    private final List<QueryLogicsUpdateListener> listeners;
 
     public QueryLogicCache(CuratorFramework client) {
-        super(client, true);
+        super(client);
+        queryLogics = new CopyOnWriteArraySet<>();
+        listeners = new CopyOnWriteArrayList<>();
+        client.start();
     }
 
     @Override
@@ -58,7 +61,7 @@ public class QueryLogicCache extends LocalZkCache {
                 try {
                     listener.forCreate(queryLogic);
                 } catch (Exception e) {
-                    log.error("Error throw by listener {} notified of creation of query logic {}", listener, queryLogic, e);
+                    log.error("Error thrown by listener {} notified of creation of query logic {}", listener, queryLogic, e);
                 }
             });
         }
@@ -99,7 +102,7 @@ public class QueryLogicCache extends LocalZkCache {
                                     log.error("Error occurred while adding query logic from node {}", path, e);
                                 }
                             });
-            if(log.isTraceEnabled()) {
+            if(log.isDebugEnabled()) {
                 log.debug("Rebuilt with querylogics: {}", this.queryLogics);
             }
         } finally {
@@ -127,9 +130,17 @@ public class QueryLogicCache extends LocalZkCache {
     }
 
     /**
+     * Remove the given listener from this {@link QueryLogicCache} by identity.
+     * @param listener the listener to remove
+     */
+    public void removeListener(QueryLogicsUpdateListener listener) {
+        this.listeners.removeIf((element) -> element == listener);
+    }
+
+    /**
      * Return whether the given node does not have the path {@value QueryLimiterUtils#QUERY_LOGICS_ROOT_PATH}.
      * @param childData the node
-     * @return true if the node does not have
+     * @return true if the node is not the root query logics node
      */
     private static boolean isNotCacheRoot(ChildData childData) {
         return !childData.getPath().equals(QUERY_LOGICS_ROOT_PATH);

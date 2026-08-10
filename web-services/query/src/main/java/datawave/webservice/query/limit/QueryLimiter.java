@@ -39,7 +39,7 @@ public class QueryLimiter {
     private static final Logger log = Logger.getLogger(QueryLimiter.class);
 
     /**
-     * A read-write lock that prevents queries from
+     * A read-write lock to guard the limiter state between configuration updates and limit evaluations.
      */
     private final ReadWriteLock limiterLock = new ReentrantReadWriteLock();
 
@@ -315,6 +315,12 @@ public class QueryLimiter {
                 throw new IllegalStateException("No heartbeat cache set");
             }
 
+            // If we previously activated this limiter, the query logic cache will have a listener registered for the current query logic group limit provider.
+            // Ensure we remove this listener before the providers are recreated so that we do not accumulate any stale listeners.
+            if (this.queryLogicGroupLimitProvider != null) {
+                this.queryLogicGroupLimitProvider.stopListeningTo(queryLogicCache);
+            }
+
             // Create the limit providers.
             this.queryLogicGroupLimitProvider = new QueryLogicGroupLimitProvider(configuration.getInternalCacheMaxSize(),
                             configuration.getQueryLogicGroupConfigs());
@@ -393,9 +399,9 @@ public class QueryLimiter {
 
             // Update the query logic limit provider with the existing set of distinct query logics, and register a listener so that it will be notified of any
             // query logic additions/removals.
-            this.queryLogicGroupLimitProvider.updateQueryLogics(this.queryLogicCache.getQueryLogics());
-            this.queryLogicCache.addListener(this.queryLogicGroupLimitProvider.createQueryLogicsUpdateListener());
+            this.queryLogicGroupLimitProvider.initializeFrom(queryLogicCache);
 
+            // Mark the query limiter as activated.
             this.activated.set(true);
         } catch (Exception e) {
             log.error("Activation failed. Deactivating query limiter.", e);
@@ -461,6 +467,8 @@ public class QueryLimiter {
         try {
             // Clear the query limiter.
             clear();
+
+            // Shutdown the QueryHeartbeatCache.
 
             // Close the Zookeeper client.
             if (this.client != null) {
@@ -530,7 +538,7 @@ public class QueryLimiter {
     /**
      * Track the following information for the given query on Zookeeper for the current system, and count it towards any configured query limits. If the
      * provided system is null or blank, a default value of {@value QueryLimiterUtils#EMPTY_SYSTEM_FROM} will be used as the system. If this
-     * {@link QueryLimiter} is not currently enforcing limits,
+     * {@link QueryLimiter} is not currently enforcing limits, the query will not be tracked.
      *
      * @param queryId
      *            the query ID

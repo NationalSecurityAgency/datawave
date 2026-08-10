@@ -146,7 +146,7 @@ public class QueryHeartbeatCache {
         // Use a read lock that allows concurrent reads, but blocks if setup() or shutdown() is holding the write lock.
         lock.readLock().lock();
         try {
-            return cache.asMap().keySet();
+            return Set.copyOf(cache.asMap().keySet());
         } finally {
             lock.readLock().unlock();
         }
@@ -265,7 +265,6 @@ public class QueryHeartbeatCache {
                 log.error("Error shutting down scheduled executor service", e);
             }
 
-            // Clear the cache. If the client
             try {
                 // If the client is considered connected, attempt to stop the heartbeats before removing them from the cache to gracefully delete the
                 // ephemeral nodes. If the client is not connected, we do not want to call any of the QueryHeartbeat stop methods, as the retry policy for the

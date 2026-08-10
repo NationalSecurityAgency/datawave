@@ -37,7 +37,9 @@ public class ActiveQueryTracker {
 
     public ActiveQueryTracker(CuratorFramework client) {
         this.client = client;
-        this.zkLock = new ZkLock(client, "/locks", 30, TimeUnit.SECONDS);
+        // Create a ZLock to prevent multiple threads from the same JVM or different webserver from tracking a new query with the same query ID. The underlying
+        // node for each query ID will be deleted after the lock is released, and no other threads are waiting to acquire the lock for the query ID.
+        this.zkLock = new ZkLock(client, "/locks", 30, TimeUnit.SECONDS, true);
     }
 
     /**
@@ -123,7 +125,7 @@ public class ActiveQueryTracker {
     /**
      * Create and return a new {@link QueryHeartbeat} that contains an ephemeral node closeable by the heartbeat. The node will have the path
      * {@code /queries/<queryId>}, and its data will consist of the userDn, system, and queryLogic written to it. The node will not persist beyond the lifetime
-     * of the client fo this {@link ActiveQueryTracker}.
+     * of the client for this {@link ActiveQueryTracker}.
      *
      * @param queryId
      *            the query ID
@@ -143,8 +145,11 @@ public class ActiveQueryTracker {
 
         // Start the node and ensure it is created before returning the heartbeat.
         node.start();
-        node.waitForInitialCreate(1, TimeUnit.SECONDS);
-
+        boolean created = node.waitForInitialCreate(5, TimeUnit.SECONDS);
+        // If the node is not created within the timeout, throw an exception. We do not want to return a non-ready heartbeat.
+        if (!created) {
+            throw new QueryTrackingTimeoutException("Failed to create ephemeral node to track query " + queryId + " within 5 seconds");
+        }
         return new QueryHeartbeat(queryId, node);
     }
 
