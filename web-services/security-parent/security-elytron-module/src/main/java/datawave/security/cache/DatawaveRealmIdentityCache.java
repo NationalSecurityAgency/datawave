@@ -72,7 +72,13 @@ public class DatawaveRealmIdentityCache implements RealmIdentityCache, ElytronCa
             public void onRemoval(@Nullable Principal principal, @Nullable RealmIdentity realmIdentity, RemovalCause removalCause) {
                 if (removalCause == RemovalCause.EXPIRED || removalCause == RemovalCause.SIZE) {
                     if (realmIdentity != null) {
-                        realmPrincipalsToDomainPrincipals.removeAll(realmIdentity.getRealmIdentityPrincipal());
+                        if (obtainedWriteLock()) {
+                            try {
+                                realmPrincipalsToDomainPrincipals.removeAll(realmIdentity.getRealmIdentityPrincipal());
+                            } finally {
+                                lock.writeLock().lock();
+                            }
+                        }
                     }
                 }
             }
