@@ -94,13 +94,13 @@ public class DatawaveRealmIdentityCache implements RealmIdentityCache, ElytronCa
     public void put(Principal principal, RealmIdentity realmIdentity) {
         Preconditions.checkArgument(principal instanceof DatawavePrincipal, "principal must be of type " + DatawavePrincipal.class.getName());
 
-        try {
-            if (obtainedWriteLock()) {
+        if (obtainedWriteLock()) {
+            try {
                 domainPrincipalsToRealmIdentities.put((DatawavePrincipal) principal, realmIdentity);
                 realmPrincipalsToDomainPrincipals.put(realmIdentity.getRealmIdentityPrincipal(), principal);
+            } finally {
+                lock.writeLock().lock();
             }
-        } finally {
-            lock.writeLock().unlock();
         }
     }
 
