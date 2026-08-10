@@ -4,8 +4,9 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
-import datawave.concurrent.ThreadUtils;
 import org.apache.log4j.Logger;
+
+import datawave.concurrent.ThreadUtils;
 
 /**
  * Utilities for working with ThreadPools.
