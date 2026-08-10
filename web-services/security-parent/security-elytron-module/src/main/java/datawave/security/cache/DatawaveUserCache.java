@@ -95,7 +95,7 @@ public class DatawaveUserCache implements ElytronCache {
                         .filter(user -> user.getName().equals(name))
                         .findFirst()
                         .orElse(null);
-        // @formatter:off
+        // @formatter:on
     }
 
     @Override
