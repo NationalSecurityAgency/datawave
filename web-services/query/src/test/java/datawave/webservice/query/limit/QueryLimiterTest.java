@@ -20,11 +20,6 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-import com.fasterxml.jackson.databind.json.JsonMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import datawave.zookeeper.ZkClientBuilder;
-import datawave.zookeeper.ZkPojoPublisher;
-import datawave.zookeeper.ZkPojoPublisherImpl;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.retry.RetryNTimes;
@@ -32,10 +27,15 @@ import org.apache.curator.test.TestingServer;
 import org.apache.zookeeper.data.Stat;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import com.fasterxml.jackson.databind.json.JsonMapper;
+
+import datawave.zookeeper.ZkClientBuilder;
+import datawave.zookeeper.ZkPojoPublisher;
+import datawave.zookeeper.ZkPojoPublisherImpl;
 
 /**
  * Test cases for testing the functionality of {@link QueryLimiter}.
@@ -50,9 +50,9 @@ class QueryLimiterTest {
     private static final String system2 = "SYSTEM-02";
     private static final String tldQueryLogic = "TLDQueryLogic";
     private static final String eventQueryLogic = "EventQueryLogic";
-    
-    private static final JsonMapper jsonMapper = JsonMapper.builder().addModule(new JavaTimeModule()).build();
-    
+
+    private static final JsonMapper jsonMapper = new JsonMapper();
+
     private static String validJsonFile;
     private static String invalidYamlFile;
 
@@ -94,7 +94,8 @@ class QueryLimiterTest {
         server = new TestingServer();
         heartbeatCache = new QueryHeartbeatCache();
         heartbeatCache.setup();
-        configPublisher = new QueryLimitConfigPublisher(new ZkClientBuilder().withConnectString(server.getConnectString()).withNamespace(PUBLISHER_NAMESPACE), null);
+        configPublisher = new QueryLimitConfigPublisher();
+        configPublisher.setZkClientBuilder(new ZkClientBuilder().withConnectString(server.getConnectString()).withNamespace(PUBLISHER_NAMESPACE));
         configPublisher.setup();
     }
 
@@ -535,64 +536,56 @@ class QueryLimiterTest {
         assertEquals(100, updatedConfig.getDefaultUserQueryLimit());
         assertEquals(1000, updatedConfig.getDefaultSystemQueryLimit());
     }
-    
+
     /**
-     * Verify that when an invalid configuration is supplied by the internal {@link ZkPojoPublisher}, the {@link QueryLimiter} is not updated, the
-     * original configuration is preserved, and the error is written to the publisher attempt nodes.
+     * Verify that when an invalid configuration is supplied by the internal {@link ZkPojoPublisher}, the {@link QueryLimiter} is not updated, the original
+     * configuration is preserved, and the error is written to the publisher attempt nodes.
      */
     @Test
-    void testInvalidConfigurationUpdate() throws Exception {
+    void testRevertingBackToOldConfiguration() throws Exception {
         QueryLimitConfiguration originalConfig = new QueryLimitConfiguration();
         originalConfig.setDefaultSystemQueryLimit(100);
         originalConfig.setDefaultUserQueryLimit(5);
         givenConfig(originalConfig);
-        
+
         QueryLimiter limiter = getLimiter(system1);
-        
+
         // Create the path node. This should trigger a configuration reload that is passed to the limiter.
         try (CuratorFramework client = createReloaderClient()) {
             client.create().forPath("/path", invalidYamlFile.getBytes(StandardCharsets.UTF_8));
-            
+
             String serverIpAddress = InetAddress.getLocalHost().getHostAddress();
             String latestAttemptNode = "/attempts/" + serverIpAddress + "/latest";
-            
+
             // Wait until we see that the attempt nodes were updated.
             try {
                 Awaitility.await().atMost(4, TimeUnit.SECONDS).until(() -> client.checkExists().forPath(latestAttemptNode) != null);
             } catch (Exception e) {
                 fail("Timeout exceeded while waiting for node " + latestAttemptNode + " to be created: " + e.getMessage());
             }
-            
+
             // Verify that the attempt nodes were updated with the error.
             ZkPojoPublisherImpl.PublishAttempt publishAttempt = jsonMapper.readValue(getData(client, latestAttemptNode),
                             ZkPojoPublisherImpl.PublishAttempt.class);
             assertThat(publishAttempt.getStatus()).isEqualTo(ZkPojoPublisherImpl.Status.LISTENER_ERROR);
             assertThat(publishAttempt.getErrors().get(0).getMessage()).startsWith("Exception thrown by listener datawave.webservice.query.limit.QueryLimiter");
-            assertThat(publishAttempt.getErrors().get(0).getStacktrace()).startsWith("datawave.webservice.query.limit.ConfigurationUpdateException: Failed to apply new configuration. Old configuration restored.");
+            assertThat(publishAttempt.getErrors().get(0).getStacktrace()).startsWith(
+                            "datawave.webservice.query.limit.ConfigurationUpdateException: Failed to apply new configuration. Old configuration restored.");
         }
-        
+
         // Verify that we reverted back to the old configuration.
         assertSame(originalConfig, limiter.getConfiguration());
         assertTrue(limiter.isEnforcingLimits());
     }
-    
-    /**
-     * Verify that if an exception is thrown when update the QueryLimiter with a valid configuration, we revert back to the old configuration and put the
-     * limiter in a valid state.
-     */
-    @Test
-    void testRevertingBackToOldConfiguration() {
-    
-    }
-    
+
     private String getData(CuratorFramework client, String path) throws Exception {
         Stat stat = client.checkExists().forPath(path);
-        if(stat == null) {
-            Assertions.fail("Node " + path + " does not exist");
+        if (stat == null) {
+            fail("Node " + path + " does not exist");
         }
         return new String(client.getData().forPath(path), StandardCharsets.UTF_8);
     }
-    
+
     private QueryLimiter getLimiter(String system) {
         if (systemToLimiter.containsKey(system)) {
             return systemToLimiter.get(system);

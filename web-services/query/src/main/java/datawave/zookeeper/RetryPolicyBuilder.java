@@ -7,16 +7,17 @@ import org.apache.curator.RetryPolicy;
  * interacting with Zookeeper.
  */
 public interface RetryPolicyBuilder {
-    
+
     /**
      * Create and return a new {@link RetryPolicy}.
      *
      * @return the new policy
      */
     RetryPolicy build();
-    
+
     /**
      * Return a duplicate of this {@link RetryPolicy}.
+     *
      * @return the duplicate
      */
     RetryPolicyBuilder duplicate();

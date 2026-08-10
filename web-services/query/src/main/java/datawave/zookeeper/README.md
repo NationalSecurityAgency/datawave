@@ -21,13 +21,13 @@ If an instance of the class is successfully deserialized from the file, it will 
 
 ```text
 /status # The data will be SUCCESS
-/cause  # The data will be one of the values of the enum ZkObjectPublishCause
+/trigger  # The data will be one of the values of the enum ZkObjectPublishCause
 /time   # The data will be an ISO-8601 string representing the time of the publish attempt
 ```
 If an error occurs, either when loading an instance of the class from the file, or when providing the new instance to subscribers, the children will follow the structure:
 ```text
 /status                     # The data will be RELOAD_ERROR or SUBSCRIBER_ERROR
-/cause                      # The data will be one of the values of the enum ZkObjectPublishCause
+/trigger                      # The data will be one of the values of the enum ZkObjectPublishCause
 /time                       # The data will be an ISO-8601 string representing the time of the publish attempt
 /errors                     # A node containing error_N nodes where N is a number ranging from 0 to one less than the total errors
 /errors/error_N/message     # A short description of the error

@@ -11,44 +11,32 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
 
-import datawave.configuration.spring.SpringBean;
-import datawave.zookeeper.ZkClientBuilder;
-import datawave.zookeeper.ZkPojoPublisher;
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
+
 import org.apache.curator.framework.CuratorFramework;
-
-import com.google.common.base.Preconditions;
-
-import datawave.zookeeper.ZkPojoPublisherImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
-import javax.annotation.security.DeclareRoles;
-import javax.annotation.security.RolesAllowed;
-import javax.annotation.security.RunAs;
-import javax.ejb.Singleton;
-import javax.ejb.Startup;
-import javax.inject.Inject;
+import com.google.common.base.Preconditions;
+
+import datawave.zookeeper.ZkClientBuilder;
+import datawave.zookeeper.ZkPojoPublisher;
+import datawave.zookeeper.ZkPojoPublisherImpl;
 
 /**
  * This class is responsible for determining if any concurrent query limits are going to be exceeded for a user, system, or query logic when a new query is
  * submitted. It is expected that only a singleton instance of {@link QueryLimiter} will be created via CDI.
  */
-@RunAs("InternalUser")
-@RolesAllowed({"AuthorizedUser", "AuthorizedQueryServer", "InternalUser", "Administrator"})
-@DeclareRoles({"AuthorizedUser", "AuthorizedQueryServer", "InternalUser", "Administrator"})
-@Singleton
-@Startup
 public class QueryLimiter {
 
     private static final Logger log = LoggerFactory.getLogger(QueryLimiter.class);
-    
+
     /**
      * The Zookeeper namespace that active query nodes will be stored under.
      */
     public static final String NAMESPACE = "ActiveQueries";
-    
+
     /**
      * The default value to use as a system name when no system is provided with a query.
      */
@@ -58,7 +46,7 @@ public class QueryLimiter {
      * A lock that guards read/write access to properties of this {@link QueryLimiter}.
      */
     private final ReadWriteLock limiterLock = new ReentrantReadWriteLock();
-    
+
     /**
      * Whether this {@link QueryLimiter} is considered activated.
      */
@@ -67,55 +55,43 @@ public class QueryLimiter {
     /**
      * The Zookeeper client builder.
      */
-    @Inject
-    @SpringBean(name = "defaultZkClientBuilder")
-    @SuppressWarnings("CdiInjectionPointsInspection")
     private ZkClientBuilder zkClientBuilder;
-    
+
     /**
      * The configuration to initialize the limit providers with.
      */
-    @Inject
-    @SpringBean
-    @SuppressWarnings("CdiInjectionPointsInspection")
     private QueryLimitConfiguration configuration;
-    
+
     /**
      * A cache to store heartbeats of active queries within.
      */
-    @Inject
-    @SpringBean
-    @SuppressWarnings("CdiInjectionPointsInspection")
     private QueryHeartbeatCache heartbeatCache;
-    
+
     /**
      * The publisher that the query limiter will listen to for updates to the configuration.
      */
-    @Inject
-    @SpringBean(name = "queryLimitConfigPublisher")
-    @SuppressWarnings("CdiInjectionPointsInspection")
     private ZkPojoPublisher<QueryLimitConfiguration> configPublisher;
-    
+
     /**
      * The listener for configuration updates. If this is not null, we are listening for updates.
      */
     private Consumer<QueryLimitConfiguration> configUpdateListener;
-    
+
     /**
      * Provides configured limits for query logic groups.
      */
     private QueryLogicGroupLimitProvider queryLogicGroupLimitProvider;
-    
+
     /**
      * Provides configured limits for users.
      */
     private UserLimitProvider userLimitProvider;
-    
+
     /**
      * Provides configured limits for systems.
      */
     private SystemLimitProvider systemLimitProvider;
-    
+
     /**
      * The tracker responsible for creating nodes in Zookeeper that track active queries.
      */
@@ -135,7 +111,7 @@ public class QueryLimiter {
     public void setZkClientBuilder(ZkClientBuilder zkClientBuilder) {
         this.zkClientBuilder = zkClientBuilder;
     }
-    
+
     /**
      * Set the config publisher that will notify this {@link QueryLimiter} of configuration updates.
      *
@@ -198,25 +174,20 @@ public class QueryLimiter {
     @PostConstruct
     public void setup() {
         if (log.isDebugEnabled()) {
-            log.debug("Setting up query limiter.");
+            log.debug("Setting up with zkClientBuilder={}, configuration={}", zkClientBuilder, configuration);
         }
 
         limiterLock.writeLock().lock();
         try {
-            if (log.isDebugEnabled()) {
-                log.debug("Setting up with zkClientBuilder={}, configuration={}", zkClientBuilder,  configuration);
-            }
-
             if (this.configuration != null) {
                 activate();
             } else {
                 clear();
             }
-
-            if (log.isDebugEnabled()) {
-                log.debug("Setup complete.");
-            }
         } finally {
+            if (log.isDebugEnabled()) {
+                log.debug("Setup complete. Enforcing limits: {}", isEnforcingLimits());
+            }
             limiterLock.writeLock().unlock();
         }
     }
@@ -252,6 +223,7 @@ public class QueryLimiter {
             // The active query tracker instance can be reused between configuration updates.
             if (this.activeQueryTracker == null) {
                 this.activeQueryTracker = new ActiveQueryTracker(client);
+                log.debug("Created query tracker instance");
             }
 
             // Listen for configuration updates. We only need to do this once. Any exception thrown by the subscribing consumer will be captured by the POJO
@@ -259,6 +231,7 @@ public class QueryLimiter {
             if (this.configUpdateListener == null && this.configPublisher != null) {
                 this.configUpdateListener = createConfigUpdateConsumer();
                 this.configPublisher.addListener(this.configUpdateListener);
+                log.debug("Registered listener for configuration updates");
             }
 
             this.activated.set(true);
@@ -270,7 +243,7 @@ public class QueryLimiter {
             limiterLock.writeLock().unlock();
         }
     }
-    
+
     /**
      * Return a new {@link Consumer<Object>} that can be registered with a {@link ZkPojoPublisherImpl} to update this {@link QueryLimiter} when a new
      * {@link QueryLimitConfiguration} is published. The update steps will be as follows:
@@ -280,22 +253,23 @@ public class QueryLimiter {
      * <li>Update the configuration and call {@link #setup()}.</li>
      * <li>If the previous step fails, restore the old configuration and call {@link #setup()}.</li>
      * </ol>
+     *
      * @return the consumer
      */
     private Consumer<QueryLimitConfiguration> createConfigUpdateConsumer() {
         return newConfig -> {
-            if(log.isDebugEnabled()) {
+            if (log.isDebugEnabled()) {
                 log.debug("Received config update from publisher: {}", newConfig);
             }
-            
+
             // Keep a backup copy of the old configuration.
             QueryLimitConfiguration oldConfig = this.configuration;
-            
+
             try {
                 // Attempt to update the query limiter using the new configuration.
                 setConfiguration(newConfig);
                 setup();
-                if(log.isDebugEnabled()) {
+                if (log.isDebugEnabled()) {
                     log.debug("New configuration applied. Query limits enforced: {}", isEnforcingLimits());
                 }
             } catch (Exception newConfigException) {
@@ -304,7 +278,7 @@ public class QueryLimiter {
                     // If the update failed for any reason, attempt to update the limiter with the old configuration.
                     setConfiguration(oldConfig);
                     setup();
-                    if(log.isDebugEnabled()) {
+                    if (log.isDebugEnabled()) {
                         log.debug("Old configuration restored. Query limits enforced: {}", isEnforcingLimits());
                     }
                 } catch (Exception e) {
@@ -356,13 +330,13 @@ public class QueryLimiter {
         log.debug("Shutting down query limiter.");
         try {
             clear();
-            
+
             // Stop listening for updates for the configuration.
-            if(this.configUpdateListener != null && this.configPublisher != null) {
+            if (this.configUpdateListener != null && this.configPublisher != null) {
                 this.configPublisher.removeListener(this.configUpdateListener);
                 this.configUpdateListener = null;
             }
-            
+
             // Close the Zookeeper client.
             if (this.client != null) {
                 try {

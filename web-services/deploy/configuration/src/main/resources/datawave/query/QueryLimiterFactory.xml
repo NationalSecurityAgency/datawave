@@ -151,13 +151,13 @@
         - hdfsConfigUrls: A comma-delimited list of HDFS configuration files, e.g.
             file:///opt/datawave/hadoop-warehouse/conf/core-site.xml,file:///opt/datawave/hadoop-warehouse/conf/hdfs-site.xml
     -->
-    <bean id="queryLimitConfigPublisher" class="datawave.webservice.query.limit.QueryLimitConfigPublisher">
-        <constructor-arg name="zkClientBuilder">
+    <bean id="queryLimitConfigPublisher" class="datawave.webservice.query.limit.QueryLimitConfigPublisher" init-method="setup" destroy-method="shutdown">
+        <property name="zkClientBuilder">
             <bean class="datawave.zookeeper.ZkClientBuilder">
                 <property name="connectString" value="${zookeeper.hosts}"/>
                 <property name="namespace" value="pojoPublishers/queryLimitConfig"/>
-                <property name="sessionTimeoutMs" value="50000"/>
-                <property name="connectionTimeoutMs" value="50000" />
+                <property name="sessionTimeoutMs" value="60000"/>
+                <property name="connectionTimeoutMs" value="60000" />
                 <property name="retryPolicyBuilder">
                     <bean class="datawave.zookeeper.RetryNTimesBuilder" >
                         <property name="n" value="10"/>
@@ -165,7 +165,15 @@
                     </bean>
                 </property>
             </bean>
-        </constructor-arg>
-        <constructor-arg name="hdfsConfigUrls" value="${hdfs.site.config.urls}"/>
+        </property>
+        <property name="hdfsConfigUrls" value="${hdfs.site.config.urls}"/>
+    </bean>
+
+    <!-- Configuration for the QueryLimiter. -->
+    <bean id="queryLimiter" class="datawave.webservice.query.limit.QueryLimiter" init-method="setup" destroy-method="shutdown">
+        <property name="zkClientBuilder" ref="defaultZkClientBuilder"/>
+        <property name="configuration" ref="queryLimitConfiguration"/>
+        <property name="heartbeatCache" ref="queryHeartbeatCache"/>
+        <property name="configPublisher" ref="queryLimitConfigPublisher"/>
     </bean>
 </beans>

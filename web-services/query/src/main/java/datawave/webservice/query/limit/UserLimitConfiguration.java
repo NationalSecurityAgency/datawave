@@ -16,7 +16,7 @@ public class UserLimitConfiguration {
      */
     @JsonProperty
     private String userDn;
-    
+
     /**
      * The user's concurrent query limit. This applies to the total number of queries the user may run across all systems.
      */

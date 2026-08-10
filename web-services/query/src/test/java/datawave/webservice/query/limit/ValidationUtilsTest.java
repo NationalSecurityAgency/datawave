@@ -68,8 +68,8 @@ class ValidationUtilsTest {
         void testConfigWithBlankGroupName() {
             givenConfig(" ", "TLDQueryLogic", 50);
 
-            assertThatThrownBy(() -> ValidationUtils.validateQueryLogicGroupConfigs(configs))
-                            .isInstanceOf(IllegalArgumentException.class).hasMessage("Query logic group limit configuration given with blank group name");
+            assertThatThrownBy(() -> ValidationUtils.validateQueryLogicGroupConfigs(configs)).isInstanceOf(IllegalArgumentException.class)
+                            .hasMessage("Query logic group limit configuration given with blank group name");
         }
 
         /**
@@ -80,8 +80,8 @@ class ValidationUtilsTest {
             givenConfig("TLD", "TLDQueryLogic", 50);
             givenConfig("TLD", "TLD*", 25);
 
-            assertThatThrownBy(() -> ValidationUtils.validateQueryLogicGroupConfigs(configs))
-                            .isInstanceOf(IllegalArgumentException.class).hasMessage("Multiple query logic group configurations given with group name 'TLD'");
+            assertThatThrownBy(() -> ValidationUtils.validateQueryLogicGroupConfigs(configs)).isInstanceOf(IllegalArgumentException.class)
+                            .hasMessage("Multiple query logic group configurations given with group name 'TLD'");
         }
 
         /**
@@ -91,8 +91,8 @@ class ValidationUtilsTest {
         void testConfigWithNegativeLimit() {
             givenConfig("TLD", "TLDQueryLogic", -1);
 
-            assertThatThrownBy(() -> ValidationUtils.validateQueryLogicGroupConfigs(configs))
-                            .isInstanceOf(IllegalArgumentException.class).hasMessage("Negative limit given for query logic group 'TLD'");
+            assertThatThrownBy(() -> ValidationUtils.validateQueryLogicGroupConfigs(configs)).isInstanceOf(IllegalArgumentException.class)
+                            .hasMessage("Negative limit given for query logic group 'TLD'");
         }
 
         /**
@@ -102,8 +102,8 @@ class ValidationUtilsTest {
         void testConfigWithBlankQueryLogicPattern() {
             givenConfig("TLD", " ", 50);
 
-            assertThatThrownBy(() -> ValidationUtils.validateQueryLogicGroupConfigs(configs))
-                            .isInstanceOf(IllegalArgumentException.class).hasMessage("Blank query logic pattern given for query logic group 'TLD'");
+            assertThatThrownBy(() -> ValidationUtils.validateQueryLogicGroupConfigs(configs)).isInstanceOf(IllegalArgumentException.class)
+                            .hasMessage("Blank query logic pattern given for query logic group 'TLD'");
         }
 
         /**
@@ -113,8 +113,8 @@ class ValidationUtilsTest {
         void testConfigWithUncompilableQueryLogicPattern() {
             givenConfig("TLD", "TLD[", 50);
 
-            assertThatThrownBy(() -> ValidationUtils.validateQueryLogicGroupConfigs(configs))
-                            .isInstanceOf(IllegalArgumentException.class).hasMessage("Invalid regex in query logic pattern 'TLD[' for query logic group 'TLD'");
+            assertThatThrownBy(() -> ValidationUtils.validateQueryLogicGroupConfigs(configs)).isInstanceOf(IllegalArgumentException.class)
+                            .hasMessage("Invalid regex in query logic pattern 'TLD[' for query logic group 'TLD'");
         }
 
         private void givenConfig(String groupName, String queryLogicPattern, int queryLimit) {
@@ -194,8 +194,8 @@ class ValidationUtilsTest {
         void testConfigWithBlankSystemPattern() {
             givenSystemConfig(" ", 10, true, null);
 
-            assertThatThrownBy(() -> ValidationUtils.validateSystemLimitConfigs(configs, 200))
-                            .isInstanceOf(IllegalArgumentException.class).hasMessage("System query limit configuration specified with blank system pattern");
+            assertThatThrownBy(() -> ValidationUtils.validateSystemLimitConfigs(configs, 200)).isInstanceOf(IllegalArgumentException.class)
+                            .hasMessage("System query limit configuration specified with blank system pattern");
         }
 
         /**
@@ -205,8 +205,8 @@ class ValidationUtilsTest {
         void testConfigWithUncompilableSystemPattern() {
             givenSystemConfig("SYS[", 10, true, null);
 
-            assertThatThrownBy(() -> ValidationUtils.validateSystemLimitConfigs(configs, 200))
-                            .isInstanceOf(IllegalArgumentException.class).hasMessage("Invalid regex in system pattern 'SYS['");
+            assertThatThrownBy(() -> ValidationUtils.validateSystemLimitConfigs(configs, 200)).isInstanceOf(IllegalArgumentException.class)
+                            .hasMessage("Invalid regex in system pattern 'SYS['");
         }
 
         /**
@@ -217,8 +217,7 @@ class ValidationUtilsTest {
             givenSystemConfig("SYSTEM_01*", 10, true, null);
             givenSystemConfig("SYSTEM_01*", 10, true, null);
 
-            assertThatThrownBy(() -> ValidationUtils.validateSystemLimitConfigs(configs, 200))
-                            .isInstanceOf(IllegalArgumentException.class)
+            assertThatThrownBy(() -> ValidationUtils.validateSystemLimitConfigs(configs, 200)).isInstanceOf(IllegalArgumentException.class)
                             .hasMessage("Multiple query limit configurations specified with system pattern 'SYSTEM_01*'");
         }
 
@@ -230,8 +229,7 @@ class ValidationUtilsTest {
             givenSystemConfig("SYSTEM_01", 10, true, null); // Literals only.
             givenSystemConfig("SYSTEM\\_01", 10, true, null); // Literals and escaped literals.
 
-            assertThatThrownBy(() -> ValidationUtils.validateSystemLimitConfigs(configs, 200))
-                            .isInstanceOf(IllegalArgumentException.class)
+            assertThatThrownBy(() -> ValidationUtils.validateSystemLimitConfigs(configs, 200)).isInstanceOf(IllegalArgumentException.class)
                             .hasMessage("System pattern 'SYSTEM\\_01' will resolve to an exact match that is equivalent to system pattern 'SYSTEM_01' from "
                                             + "another system configuration.");
         }
@@ -243,9 +241,8 @@ class ValidationUtilsTest {
         void testImpliedWildcardSystemPatternThatDoesNotApplyToUserLimit() {
             givenSystemConfig("*", 10, false, null);
 
-            assertThatThrownBy(() -> ValidationUtils.validateSystemLimitConfigs(configs, 200))
-                            .isInstanceOf(IllegalArgumentException.class)
-                            .hasMessage("System pattern '*' is wildcard-only and may not be used to override whether queries count against user limits to false");
+            assertThatThrownBy(() -> ValidationUtils.validateSystemLimitConfigs(configs, 200)).isInstanceOf(IllegalArgumentException.class).hasMessage(
+                            "System pattern '*' is wildcard-only and may not be used to override whether queries count against user limits to false");
         }
 
         /**
@@ -255,9 +252,8 @@ class ValidationUtilsTest {
         void testExplicitWildcardSystemPatternThatDoesNotApplyToUserLimit() {
             givenSystemConfig(".*", 10, false, null);
 
-            assertThatThrownBy(() -> ValidationUtils.validateSystemLimitConfigs(configs, 200))
-                            .isInstanceOf(IllegalArgumentException.class)
-                            .hasMessage("System pattern '.*' is wildcard-only and may not be used to override whether queries count against user limits to false");
+            assertThatThrownBy(() -> ValidationUtils.validateSystemLimitConfigs(configs, 200)).isInstanceOf(IllegalArgumentException.class).hasMessage(
+                            "System pattern '.*' is wildcard-only and may not be used to override whether queries count against user limits to false");
         }
 
         private void givenSystemConfig(String systemPattern, Integer queryLimit, Boolean countsAgainstUserLimit, Map<String,Integer> queryLogicGroupLimits) {

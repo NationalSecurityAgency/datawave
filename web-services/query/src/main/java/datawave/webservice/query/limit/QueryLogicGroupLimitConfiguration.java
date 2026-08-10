@@ -9,19 +9,19 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * Represents a custom query limit configuration that can be configured for query logics.
  */
 public class QueryLogicGroupLimitConfiguration {
-    
+
     /**
      * The name of the query logic group.
      */
     @JsonProperty
     private String groupName;
-    
+
     /**
      * The query logic regex pattern.
      */
     @JsonProperty
     private String queryLogicPattern;
-    
+
     /**
      * The default concurrency limit for users. This applies to the total concurrent queries a user may run that originate from a query logic in the group
      * across all systems.

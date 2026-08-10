@@ -22,7 +22,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import datawave.zookeeper.ZkClientBuilder;
 import org.apache.curator.test.TestingServer;
 import org.apache.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
@@ -33,6 +32,8 @@ import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+
+import datawave.zookeeper.ZkClientBuilder;
 
 /**
  * Contains tests that effectively stress test the {@link QueryLimiter} when multiple threads are recording new active queries.

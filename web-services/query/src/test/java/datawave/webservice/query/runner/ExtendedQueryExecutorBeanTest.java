@@ -233,7 +233,8 @@ public class ExtendedQueryExecutorBeanTest {
 
     QueryExpirationProperties queryExpirationConf;
 
-    @Mock QueryLimiter queryLimiter;
+    @Mock
+    QueryLimiter queryLimiter;
 
     @BeforeAll
     public static void setup() throws Exception {}

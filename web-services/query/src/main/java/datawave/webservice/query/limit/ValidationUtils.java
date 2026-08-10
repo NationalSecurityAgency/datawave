@@ -27,7 +27,7 @@ public final class ValidationUtils {
             if (config.getInternalCacheMaxSize() < 1) {
                 throw new IllegalArgumentException("Internal cache max size must be greater than 0");
             }
-            
+
             // No need to validate the default system query limit. Any negative value implies no limit for systems.
 
             List<QueryLogicGroupLimitConfiguration> queryLogicGroupConfigs = config.getQueryLogicGroupConfigs();
