@@ -2,8 +2,11 @@ package datawave.security.cache;
 
 import java.time.Duration;
 import java.util.Collection;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -70,6 +73,7 @@ public class DatawaveUserCache implements ElytronCache {
         // @formatter:off
         return cache.asMap().keySet().stream()
                         .map(this::get)
+                        .filter(Objects::nonNull)
                         .flatMap(Collection::stream)
                         .collect(Collectors.toSet());
         // @formatter:on
@@ -80,6 +84,7 @@ public class DatawaveUserCache implements ElytronCache {
         // @formatter:off
         return cache.asMap().keySet().stream()
                         .map(this::get)
+                        .filter(Objects::nonNull)
                         .flatMap(Collection::stream)
                         .filter(user -> user.getName().contains(substring))
                         .collect(Collectors.toSet());
@@ -91,6 +96,7 @@ public class DatawaveUserCache implements ElytronCache {
         // @formatter:off
         return cache.asMap().keySet().stream()
                         .map(this::get)
+                        .filter(Objects::nonNull)
                         .flatMap(Collection::stream)
                         .filter(user -> user.getName().equals(name))
                         .findFirst()
