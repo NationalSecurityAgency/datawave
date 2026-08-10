@@ -28,6 +28,8 @@ import org.apache.log4j.Logger;
 
 import com.google.common.base.Preconditions;
 
+import datawave.ingest.util.ThreadUtil;
+
 /**
  * This class is responsible for determining if any concurrent query limits are going to be exceeded for a user, system, or query logic when a new query is
  * submitted. It is expected that only a singleton instance of {@link QueryLimiter} will be created via CDI.
@@ -362,7 +364,7 @@ public class QueryLimiter {
                 if (log.isDebugEnabled()) {
                     log.debug("Waiting for query logic cache to reach healthy state with a timeout of " + queryLogicCacheTimeoutMs + "ms");
                 }
-                boolean healthy = QueryLimiterUtils.await(queryLogicCacheTimeoutMs, 100, () -> this.queryLogicCache.isHealthy());
+                boolean healthy = ThreadUtil.blockUntil(queryLogicCacheTimeoutMs, 100, () -> this.queryLogicCache.isHealthy());
                 if (!healthy) {
                     log.warn("Query logic cache failed to reach healthy state within timeout of " + queryLogicCacheTimeoutMs + "ms");
                 }
@@ -384,7 +386,7 @@ public class QueryLimiter {
             if (log.isDebugEnabled()) {
                 log.debug("Waiting for query counts cache to reach healthy state with a timeout of " + queryCountsCacheTimeoutMs + "ms");
             }
-            boolean healthy = QueryLimiterUtils.await(queryCountsCacheTimeoutMs, 100, () -> this.queryCountsCache.isHealthy());
+            boolean healthy = ThreadUtil.blockUntil(queryCountsCacheTimeoutMs, 100, () -> this.queryCountsCache.isHealthy());
             if (!healthy) {
                 log.warn("Query counts cache failed to reach healthy state within timeout of " + queryCountsCacheTimeoutMs + "ms");
             }
