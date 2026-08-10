@@ -26,6 +26,8 @@ public class DatawaveUserCache implements ElytronCache {
 
     private final Cache<String,Collection<DatawaveUser>> cache;
 
+    private final ReadWriteLock lock = new ReentrantReadWriteLock();
+    
     /**
      * Return a new {@link DatawaveUserCache} with the given maximum size and time to live for entries in the cache.
      *
@@ -54,7 +56,12 @@ public class DatawaveUserCache implements ElytronCache {
      *            the users
      */
     public void put(String key, Collection<DatawaveUser> users) {
-        cache.put(key, users);
+        lock.writeLock().lock();
+        try {
+            cache.put(key, users);
+        } finally {
+            lock.writeLock().unlock();
+        }
     }
 
     /**
@@ -65,69 +72,100 @@ public class DatawaveUserCache implements ElytronCache {
      * @return the user collection, possibly null
      */
     public Collection<DatawaveUser> get(String key) {
-        return cache.getIfPresent(key);
+        lock.readLock().lock();
+        try {
+            return cache.getIfPresent(key);
+        } finally {
+            lock.readLock().unlock();
+        }
     }
 
     @Override
     public Set<DatawaveUser> getUsers() {
-        // @formatter:off
-        return cache.asMap().keySet().stream()
-                        .map(this::get)
-                        .filter(Objects::nonNull)
-                        .flatMap(Collection::stream)
-                        .collect(Collectors.toSet());
-        // @formatter:on
+        lock.readLock().lock();
+        try {
+            // @formatter:off
+            return cache.asMap().keySet().stream()
+                            .map(this::get)
+                            .filter(Objects::nonNull)
+                            .flatMap(Collection::stream)
+                            .collect(Collectors.toSet());
+            // @formatter:on
+        } finally {
+            lock.readLock().unlock();
+        }
     }
 
     @Override
     public Set<DatawaveUser> getUsersWhereNameContains(String substring) {
-        // @formatter:off
-        return cache.asMap().keySet().stream()
-                        .map(this::get)
-                        .filter(Objects::nonNull)
-                        .flatMap(Collection::stream)
-                        .filter(user -> user.getName().contains(substring))
-                        .collect(Collectors.toSet());
-        // @formatter:on
+        lock.readLock().lock();
+        try {
+            // @formatter:off
+            return cache.asMap().keySet().stream()
+                            .map(this::get)
+                            .filter(Objects::nonNull)
+                            .flatMap(Collection::stream)
+                            .filter(user -> user.getName().contains(substring))
+                            .collect(Collectors.toSet());
+            // @formatter:on
+        } finally {
+            lock.readLock().unlock();
+        }
     }
 
     @Override
     public DatawaveUser getUserWithName(String name) {
-        // @formatter:off
-        return cache.asMap().keySet().stream()
-                        .map(this::get)
-                        .filter(Objects::nonNull)
-                        .flatMap(Collection::stream)
-                        .filter(user -> user.getName().equals(name))
-                        .findFirst()
-                        .orElse(null);
-        // @formatter:on
+        lock.readLock().lock();
+        try {
+            // @formatter:off
+            return cache.asMap().keySet().stream()
+                            .map(this::get)
+                            .filter(Objects::nonNull)
+                            .flatMap(Collection::stream)
+                            .filter(user -> user.getName().equals(name))
+                            .findFirst()
+                            .orElse(null);
+            // @formatter:on
+        } finally {
+            lock.readLock().unlock();
+        }
     }
 
     @Override
     public void evictUsersWithName(String name) {
-        if(log.isTraceEnabled()) {
-            log.trace("Evicting users with name {}", name);
-        }
-
-        int totalEvictions = 0;
-        ConcurrentMap<String,Collection<DatawaveUser>> map = cache.asMap();
-        for(String key : map.keySet()) {
-            if(map.get(key).stream().anyMatch(user -> user.getName().equals(name))) {
-                totalEvictions++;
-                map.remove(key);
+        lock.writeLock().lock();
+        try {
+            if(log.isTraceEnabled()) {
+                log.trace("Evicting users with name {}", name);
             }
+            
+            int totalEvictions = 0;
+            ConcurrentMap<String,Collection<DatawaveUser>> map = cache.asMap();
+            for(String key : map.keySet()) {
+                if(map.get(key).stream().anyMatch(user -> user.getName().equals(name))) {
+                    totalEvictions++;
+                    map.remove(key);
+                }
+            }
+            
+            if(log.isTraceEnabled()) {
+                log.trace("Removed {} entries with user {}", totalEvictions, name);
+            }
+        } finally {
+            lock.writeLock().unlock();
         }
-
-        if(log.isTraceEnabled()) {
-            log.trace("Removed {} entries with user {}", totalEvictions, name);
-        }
+        
     }
 
     @Override
     public void clear() {
-        log.trace("Clearing the cache");
-        cache.invalidateAll();
-        cache.cleanUp();
+        lock.writeLock().lock();
+        try {
+            log.trace("Clearing the cache");
+            cache.invalidateAll();
+            cache.cleanUp();
+        } finally {
+            lock.writeLock().unlock();
+        }
     }
 }
