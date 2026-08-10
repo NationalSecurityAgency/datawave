@@ -11,6 +11,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.Principal;
 import java.security.spec.AlgorithmParameterSpec;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -35,7 +36,6 @@ import org.wildfly.security.evidence.Evidence;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.HashMultimap;
-import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
 
 import datawave.security.authorization.DatawavePrincipal;
@@ -99,7 +99,7 @@ public class DatawaveSecurityRealm implements SecurityRealm {
     /**
      * The local user roles loaded from the properties file specified in the {@value Config#OPTION_ROLE_PROPERTIES} config option.
      */
-    private Multimap<String,String> localUserRoles = ImmutableMultimap.of();
+    private UserRoleMap localUserRoles = new UserRoleMap();
 
     /**
      * This method is invoked by the Wildfly Elytron subsystem when the realm is first created to provide configuration parameters. These parameters are
@@ -237,22 +237,15 @@ public class DatawaveSecurityRealm implements SecurityRealm {
         // Extract the roles for each username.
         Multimap<String,String> localRoles = HashMultimap.create();
         for (String username : properties.stringPropertyNames()) {
-            // Ensure the username is lowercase to facilitate case-insensitive matching.
-            username = username.toLowerCase();
-            String rolesStr = properties.getProperty(username);
-            // Roles are expected to be comma-delimited.
-            if (rolesStr != null && !rolesStr.isBlank()) {
-                String[] roles = rolesStr.split(",");
-                for (String role : roles) {
-                    role = role.trim();
-                    if (!role.isBlank()) {
-                        localRoles.put(username, role);
-                    }
-                }
+            String roleStr = properties.getProperty(username);
+            if (roleStr != null && !roleStr.isBlank()) {
+                // Roles are expected to be comma-delimited.
+                Collection<String> roles = Arrays.asList(roleStr.split(","));
+                localRoles.putAll(username, roles);
             }
         }
 
-        this.localUserRoles = ImmutableMultimap.copyOf(localRoles);
+        this.localUserRoles = new UserRoleMap(localRoles);
         if (log.isDebugEnabled()) {
             log.debug("Successfully loaded local user roles from properties file {}", rolePropertiesPath);
         }
@@ -263,7 +256,7 @@ public class DatawaveSecurityRealm implements SecurityRealm {
      *
      * @return the local user roles.
      */
-    Multimap<String,String> getLocalUserRoles() {
+    UserRoleMap getLocalUserRoles() {
         return this.localUserRoles;
     }
 
@@ -498,7 +491,7 @@ public class DatawaveSecurityRealm implements SecurityRealm {
             }
 
             // Add all local roles associated with the principal name to the primary user's roles.
-            Collection<String> localRoles = localUserRoles.get(principalName.toLowerCase());
+            Collection<String> localRoles = localUserRoles.get(principalName);
             if (!localRoles.isEmpty()) {
                 if (log.isTraceEnabled()) {
                     log.trace("Added local roles {} for principal username {}", localRoles, principalName);
