@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.atMostOnce;
 import static org.mockito.Mockito.mock;
@@ -16,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.wildfly.security.evidence.Evidence;
@@ -47,6 +49,11 @@ class DatawaveEvidenceDecoderTest {
     private SecurityEJBProvider securityEJBProvider;
     private DatawaveUserProvider datawaveUserProvider;
     private DatawaveEvidenceDecoder evidenceDecoder;
+
+    @BeforeAll
+    static void beforeAll() {
+
+    }
 
     @BeforeEach
     void setUp() {
@@ -159,9 +166,10 @@ class DatawaveEvidenceDecoderTest {
      */
     @Test
     void testCaching() throws Exception {
-        configMap.put(DatawaveEvidenceDecoder.Config.OPTION_JWT_ENABLED, "true");
+        configMap.put(DatawaveEvidenceDecoder.Config.OPTION_TRUSTED_HEADERS_ENABLED, "true");
 
-        JWTEvidence evidence = new JWTEvidence("token");
+        TrustedHeaderEvidence evidence = new TrustedHeaderEvidence(TEST_SUBJECT + "<" + TEST_ISSUER + ">",
+                        List.of(SubjectIssuerDNPair.of(TEST_SUBJECT, TEST_ISSUER)));
 
         when(datawaveUserProvider.getUsers(evidence)).thenReturn(Set.of(createUser()));
 
@@ -171,6 +179,24 @@ class DatawaveEvidenceDecoderTest {
 
         // The users should have been fetch from the provider only once, and then the cache should have been used for the subsequent calls.
         verify(datawaveUserProvider, atMostOnce()).getUsers(evidence);
+    }
+
+    /**
+     * Verify that users for {@link JWTEvidence} are not cached.
+     */
+    @Test
+    void testJWTEvidenceIsNotCached() throws Exception {
+        configMap.put(DatawaveEvidenceDecoder.Config.OPTION_JWT_ENABLED, "true");
+
+        JWTEvidence evidence = new JWTEvidence("token");
+        when(datawaveUserProvider.getUsers(evidence)).thenReturn(Set.of(createUser()));
+
+        assertNotNull(decode(evidence));
+        assertNotNull(decode(evidence));
+        assertNotNull(decode(evidence));
+
+        // The users should have been fetch from the provider only once, and then the cache should have been used for the subsequent calls.
+        verify(datawaveUserProvider, atLeast(3)).getUsers(evidence);
     }
 
     private Principal decode(Evidence evidence) {
