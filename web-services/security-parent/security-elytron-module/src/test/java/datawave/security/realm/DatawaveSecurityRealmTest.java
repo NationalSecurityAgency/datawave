@@ -40,7 +40,6 @@ import org.wildfly.security.evidence.Evidence;
 import org.wildfly.security.evidence.PasswordGuessEvidence;
 
 import com.google.common.collect.ImmutableMultimap;
-import com.google.common.collect.Multimap;
 
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
@@ -139,7 +138,7 @@ class DatawaveSecurityRealmTest {
         assertNotNull(realm.getX509EvidenceValidator());
 
         // Verify that local roles were loaded, and that only non-blank, trimmed roles were stored.
-        Multimap<String,String> localUserRoles = realm.getLocalUserRoles();
+        UserRoleMap localUserRoles = realm.getLocalUserRoles();
         assertTrue(localUserRoles.get(USER_1_PRINCIPAL_NAME).containsAll(Set.of("LocalRoleA", "LocalRoleB", "LocalRoleC")));
         assertTrue(localUserRoles.get(USER_1_EVIDENCE_NAME).containsAll(Set.of("LocalRoleD", "LocalRoleE")));
 

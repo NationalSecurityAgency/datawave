@@ -72,7 +72,13 @@ public class DatawaveRealmIdentityCache implements RealmIdentityCache, ElytronCa
             public void onRemoval(@Nullable Principal principal, @Nullable RealmIdentity realmIdentity, RemovalCause removalCause) {
                 if (removalCause == RemovalCause.EXPIRED || removalCause == RemovalCause.SIZE) {
                     if (realmIdentity != null) {
-                        realmPrincipalsToDomainPrincipals.removeAll(realmIdentity.getRealmIdentityPrincipal());
+                        if (obtainedWriteLock()) {
+                            try {
+                                realmPrincipalsToDomainPrincipals.removeAll(realmIdentity.getRealmIdentityPrincipal());
+                            } finally {
+                                lock.writeLock().unlock();
+                            }
+                        }
                     }
                 }
             }
@@ -94,13 +100,13 @@ public class DatawaveRealmIdentityCache implements RealmIdentityCache, ElytronCa
     public void put(Principal principal, RealmIdentity realmIdentity) {
         Preconditions.checkArgument(principal instanceof DatawavePrincipal, "principal must be of type " + DatawavePrincipal.class.getName());
 
-        try {
-            if (obtainedWriteLock()) {
+        if (obtainedWriteLock()) {
+            try {
                 domainPrincipalsToRealmIdentities.put((DatawavePrincipal) principal, realmIdentity);
                 realmPrincipalsToDomainPrincipals.put(realmIdentity.getRealmIdentityPrincipal(), principal);
+            } finally {
+                lock.writeLock().unlock();
             }
-        } finally {
-            lock.writeLock().unlock();
         }
     }
 

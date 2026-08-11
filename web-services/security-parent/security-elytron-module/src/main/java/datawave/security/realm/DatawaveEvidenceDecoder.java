@@ -120,15 +120,14 @@ public class DatawaveEvidenceDecoder implements EvidenceDecoder {
 
             try {
                 // Check if we already have users cached for the evidence.
-                String cacheKey = getCacheKey(evidence);
-                Collection<DatawaveUser> users = cache.get(cacheKey);
+                Collection<DatawaveUser> users = getCachedUsers(evidence);
 
                 // Otherwise, fetch users from the user provider for the evidence and cache them.
                 if (users == null) {
                     log.trace("No users found in cache, fetching users from user provider");
                     DatawaveUserProvider userProvider = getDatawaveUserProvider();
                     users = userProvider.getUsers(evidence);
-                    cache.put(cacheKey, users);
+                    cacheUsers(evidence, users);
                 } else {
                     log.trace("Users loaded from cache");
                 }
@@ -144,7 +143,7 @@ public class DatawaveEvidenceDecoder implements EvidenceDecoder {
             }
         } else {
             if (log.isWarnEnabled()) {
-                log.warn("Unable to decoded evidence {} which is not a {}", evidence, DatawaveEvidence.class.getName());
+                log.warn("Unable to decode evidence {} which is not a {}", evidence, DatawaveEvidence.class.getName());
             }
         }
 
@@ -152,7 +151,40 @@ public class DatawaveEvidenceDecoder implements EvidenceDecoder {
     }
 
     /**
-     * Return a cache key representing the given evidence
+     * Get the users (if any) cached for the given evidence.
+     *
+     * @param evidence
+     *            the evidence
+     * @return the cached users, or null if there are none cached
+     */
+    private Collection<DatawaveUser> getCachedUsers(Evidence evidence) {
+        String cacheKey = getCacheKey(evidence);
+        return cacheKey != null ? cache.get(cacheKey) : null;
+    }
+
+    /**
+     * Cache users for the given evidence.
+     *
+     * @param evidence
+     *            the evidence
+     * @param users
+     *            the users
+     */
+    private void cacheUsers(Evidence evidence, Collection<DatawaveUser> users) {
+        String cacheKey = getCacheKey(evidence);
+        if (cacheKey != null) {
+            cache.put(cacheKey, users);
+        }
+    }
+
+    /**
+     * Return a cache key representing the given evidence. The following will be returned based on the evidence type:
+     * <ul>
+     * <li>{@link JWTEvidence}: returns null. We do not cache users for JWT tokens. Users should always be resolved directly from the token to ensure we check
+     * if the token has expired.</li>
+     * <li>{@link TrustedHeaderEvidence}: returns the entities as a String.</li>
+     * <li>{@link X509CertificateEvidence}: returns the entities as a String.</li>
+     * </ul>
      *
      * @param evidence
      *            the evidence
@@ -160,7 +192,7 @@ public class DatawaveEvidenceDecoder implements EvidenceDecoder {
      */
     private String getCacheKey(Evidence evidence) {
         if (evidence instanceof JWTEvidence) {
-            return ((JWTEvidence) evidence).getToken();
+            return null;
         } else if (evidence instanceof TrustedHeaderEvidence) {
             return getEntitiesAsString(((TrustedHeaderEvidence) evidence).getEntities());
         } else if (evidence instanceof X509CertificateEvidence) {

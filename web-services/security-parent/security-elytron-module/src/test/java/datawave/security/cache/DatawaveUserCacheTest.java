@@ -1,5 +1,6 @@
 package datawave.security.cache;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -25,6 +26,25 @@ class DatawaveUserCacheTest {
     private static final Set<String> roles = Set.of("Administrator", "InternalUser");
     private static final Multimap<String,String> rolesToAuths = ImmutableMultimap.of("Administrator", "A", "Administrator", "B", "Administrator", "C",
                     "InternalUser", "A");
+
+    /**
+     * Verify putting a null key results in an NPE.
+     */
+    @Test
+    void testPutGivenNullKey() {
+        DatawaveUserCache cache = new DatawaveUserCache(-1, -1);
+        Set<DatawaveUser> users = Set.of(createUser("cn=user"), createUser("cn=proxyUser"));
+        assertThatThrownBy(() -> cache.put(null, users)).isInstanceOf(NullPointerException.class).hasMessage("key cannot be null");
+    }
+
+    /**
+     * Verify putting a null value results in an NPE.
+     */
+    @Test
+    void testPutGivenNullValue() {
+        DatawaveUserCache cache = new DatawaveUserCache(-1, -1);
+        assertThatThrownBy(() -> cache.put("abc", null)).isInstanceOf(NullPointerException.class).hasMessage("user collection cannot be null");
+    }
 
     /**
      * Verify putting and getting entries to/from the cache works as expected.
