@@ -53,8 +53,10 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
     private String initialPlan;
     private String plannedScript;
 
-    // the planner clones created by the latest call to process(): the one used for initial planning, and one per sub-plan. Each allocates its own thread
-    // pool, so they must be shut down when this planner is closed.
+    // The planner clones created by the latest call to process(): the one used for initial planning, and one per sub-plan. Each allocates its own thread
+    // pool, so they must be shut down when this planner is closed. Both fields are guarded by plannerCloneLock because process() and close() can run on
+    // different threads: a query may be cancelled or expired while its pages are still being fetched.
+    private final Object plannerCloneLock = new Object();
     private DefaultQueryPlanner initialPlanner;
     private List<SubPlanCallable> subPlans = Collections.emptyList();
 
@@ -162,17 +164,24 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
      * {@link DefaultQueryPlanner#close(GenericQueryConfiguration, Query)}.
      */
     private void releaseClonedPlanners() {
-        if (initialPlanner != null) {
-            initialPlanner.shutdownExecutor();
-            initialPlanner = null;
+        DefaultQueryPlanner planner;
+        List<SubPlanCallable> plans;
+
+        // Claim the clones under the lock so that concurrent callers cannot both release the same set, then shut them down outside of it: releasing a
+        // sub-plan acquires that sub-plan's own monitor, and this lock is never held while doing so.
+        synchronized (plannerCloneLock) {
+            planner = this.initialPlanner;
+            this.initialPlanner = null;
+            plans = this.subPlans;
+            this.subPlans = Collections.emptyList();
         }
-        for (SubPlanCallable subPlan : subPlans) {
-            DefaultQueryPlanner subPlanner = subPlan.getSubPlanner();
-            if (subPlanner != null) {
-                subPlanner.shutdownExecutor();
-            }
+
+        if (planner != null) {
+            planner.shutdownExecutor();
         }
-        subPlans = Collections.emptyList();
+        for (SubPlanCallable subPlan : plans) {
+            subPlan.releasePlanner();
+        }
     }
 
     /**
@@ -337,12 +346,15 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
         boolean deferPushdownPullup = shardQueryConfig.isDeferPushdownPullup();
         shardQueryConfig.setDeferPushdownPullup(true);
 
-        // now let's do the initial planning
-        this.initialPlanner = this.queryPlanner.clone();
-        initialPlanner.process(shardQueryConfig, query, settings, scannerFactory);
+        // now let's do the initial planning, tracking the clone before it is used so that a concurrent close() cannot miss it
+        DefaultQueryPlanner planner = this.queryPlanner.clone();
+        synchronized (plannerCloneLock) {
+            this.initialPlanner = planner;
+        }
+        planner.process(shardQueryConfig, query, settings, scannerFactory);
 
         // Our initial plan and planned script will both be the initial planned script
-        this.initialPlan = this.plannedScript = initialPlanner.getPlannedScript();
+        this.initialPlan = this.plannedScript = planner.getPlannedScript();
 
         // and reset the expansion flags to what we had previously
         shardQueryConfig.setGeneratePlanOnly(generatePlanOnly);
@@ -361,7 +373,9 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
             SubPlanCallable subPlan = new SubPlanCallable(this.queryPlanner, planningConfig, dateRange, scannerFactory);
             futures.add(subPlan);
         }
-        this.subPlans = futures;
+        synchronized (plannerCloneLock) {
+            this.subPlans = futures;
+        }
 
         // create a listener for plan updates and update the configuration
         PlanListener listener = plan -> {

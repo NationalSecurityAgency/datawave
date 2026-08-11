@@ -1,6 +1,7 @@
 package datawave.query.planner;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
@@ -11,9 +12,13 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.Test;
 
 import datawave.core.query.configuration.GenericQueryConfiguration;
@@ -22,6 +27,7 @@ import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
 import datawave.query.CloseableIterable;
 import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.exceptions.DatawaveAsyncOperationException;
 import datawave.query.exceptions.DatawaveQueryException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.tables.ScannerFactory;
@@ -75,11 +81,15 @@ class DatePartitionedQueryPlannerFailureIT {
         private final List<StubQueryPlanner> closed = new ArrayList<>();
         private boolean throwOnReprocess;
         private boolean executorShutdown;
+        private boolean reprocessed;
+        // run while a sub-plan is being planned, to simulate a close() landing mid-flight
+        private Runnable onReprocess;
 
         @Override
         public StubQueryPlanner clone() {
             StubQueryPlanner copy = new StubQueryPlanner();
             copy.throwOnReprocess = this.throwOnReprocess;
+            copy.onReprocess = this.onReprocess;
             clones.add(copy);
             return copy;
         }
@@ -93,6 +103,10 @@ class DatePartitionedQueryPlannerFailureIT {
         @Override
         public CloseableIterable<QueryData> reprocess(ShardQueryConfiguration config, Query settings, ScannerFactory scannerFactory)
                         throws DatawaveQueryException {
+            this.reprocessed = true;
+            if (onReprocess != null) {
+                onReprocess.run();
+            }
             if (throwOnReprocess) {
                 throw new DatawaveQueryException("stubbed sub-plan failure");
             }
@@ -181,6 +195,67 @@ class DatePartitionedQueryPlannerFailureIT {
 
         assertEquals(firstRoundClones.size(), firstRoundClones.stream().filter(c -> c.executorShutdown).count(),
                         "expected the previous round's clones to have been released");
+    }
+
+    private SubPlanCallable newSubPlanCallable(StubQueryPlanner inner, ShardQueryConfiguration config) {
+        // A planned query always carries an id by the time sub-plans are built - getUpdatedConfig() copies it onto each sub-plan's config - so give the
+        // hand-built config one here rather than tripping over it inside the callable.
+        config.getQuery().setId(UUID.randomUUID());
+        Map.Entry<Pair<Date,Date>,Set<String>> dateRange = Map.entry(Pair.of(BEGIN, END), Collections.emptySet());
+        return new SubPlanCallable(inner, config, dateRange, null);
+    }
+
+    /**
+     * A sub-plan that is released before it starts planning must refuse to plan at all. Planning would clone a planner and start its thread pool, and the
+     * owning planner has already finished releasing clones by that point, so nothing would be left to shut that pool down.
+     */
+    @Test
+    void releasedSubPlanRefusesToPlan() {
+        StubQueryPlanner inner = new StubQueryPlanner();
+        SubPlanCallable callable = newSubPlanCallable(inner, newConfig());
+
+        callable.releasePlanner();
+
+        DatawaveAsyncOperationException e = assertThrows(DatawaveAsyncOperationException.class, callable::call);
+        assertInstanceOf(IllegalStateException.class, e.getCause(), "expected the release to be reported as the cause");
+        assertTrue(inner.clones.stream().noneMatch(c -> c.reprocessed), "a released sub-plan must never start planning");
+    }
+
+    /**
+     * A release that arrives while a sub-plan is planning must not shut the planner clone's thread pool down underneath it - the in-flight plan would then be
+     * submitting work to a terminated pool. The shutdown is deferred until planning completes, and must actually happen at that point.
+     */
+    @Test
+    void releaseDuringPlanningIsDeferredUntilPlanningCompletes() throws Exception {
+        StubQueryPlanner inner = new StubQueryPlanner();
+        SubPlanCallable callable = newSubPlanCallable(inner, newConfig());
+
+        AtomicBoolean shutdownWhilePlanning = new AtomicBoolean();
+        inner.onReprocess = () -> {
+            callable.releasePlanner();
+            shutdownWhilePlanning.set(inner.clones.get(0).executorShutdown);
+        };
+
+        callable.call();
+
+        assertFalse(shutdownWhilePlanning.get(), "the thread pool must not be shut down while the sub-plan is still planning");
+        assertTrue(inner.clones.get(0).executorShutdown, "the thread pool must be shut down once planning completes");
+    }
+
+    /**
+     * Releasing the same sub-plan twice must shut its thread pool down only once.
+     */
+    @Test
+    void releasingSubPlanTwiceShutsDownOnce() throws Exception {
+        StubQueryPlanner inner = new StubQueryPlanner();
+        SubPlanCallable callable = newSubPlanCallable(inner, newConfig());
+
+        callable.call();
+        callable.releasePlanner();
+        inner.clones.get(0).executorShutdown = false;
+        callable.releasePlanner();
+
+        assertFalse(inner.clones.get(0).executorShutdown, "a second release must not shut the pool down again");
     }
 
     @Test
