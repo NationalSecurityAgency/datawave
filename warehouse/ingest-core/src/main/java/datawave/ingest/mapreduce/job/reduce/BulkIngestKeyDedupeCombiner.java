@@ -20,7 +20,7 @@ import datawave.ingest.mapreduce.job.writer.BulkContextWriter;
 import datawave.ingest.mapreduce.job.writer.ContextWriter;
 import datawave.ingest.mapreduce.job.writer.LiveContextWriter;
 import datawave.ingest.metric.IngestOutput;
-import datawave.ingest.table.aggregator.PropogatingCombiner;
+import datawave.ingest.table.aggregator.PropagatingCombiner;
 
 public class BulkIngestKeyDedupeCombiner<K2,V2> extends AggregatingReducer<BulkIngestKey,Value,K2,V2> {
 
@@ -188,8 +188,8 @@ public class BulkIngestKeyDedupeCombiner<K2,V2> extends AggregatingReducer<BulkI
 
                         mergedValues++;
 
-                        if (agg instanceof PropogatingCombiner) {
-                            ((PropogatingCombiner) agg).reset();
+                        if (agg instanceof PropagatingCombiner) {
+                            ((PropagatingCombiner) agg).reset();
                         }
                     }
 

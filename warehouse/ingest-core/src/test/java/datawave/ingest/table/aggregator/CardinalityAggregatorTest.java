@@ -19,31 +19,31 @@ import com.google.common.collect.Iterators;
 
 public class CardinalityAggregatorTest {
 
-    final PropogatingCombiner agg = new CardinalityAggregator();
+    final PropagatingCombiner agg = new CardinalityAggregator();
 
     @Test
     public void testResetPropagate() {
         agg.reset();
-        assertTrue(agg.propogateKey());
-        agg.setPropogate(false);
-        assertFalse(agg.propogateKey());
+        assertTrue(agg.propagatekey());
+        agg.setPropagate(false);
+        assertFalse(agg.propagatekey());
         agg.reset();
-        assertTrue(agg.propogateKey());
+        assertTrue(agg.propagatekey());
     }
 
     @Test
     public void testEmptyCardinality() throws IOException {
         agg.reset();
-        assertTrue(agg.propogateKey());
+        assertTrue(agg.propagatekey());
         Value result = agg.reduce(new Key("key"), Collections.emptyIterator());
-        assertFalse(agg.propogateKey());
+        assertFalse(agg.propagatekey());
         assertEquals(CardinalityAggregator.EMPTY_VALUE, result);
     }
 
     @Test
     public void testSingleCardinality() throws IOException {
         agg.reset();
-        assertTrue(agg.propogateKey());
+        assertTrue(agg.propagatekey());
 
         HyperLogLogPlus cardinality = new HyperLogLogPlus(10);
         cardinality.offer("A");
@@ -51,7 +51,7 @@ public class CardinalityAggregatorTest {
         cardinality.offer("C");
         Value val = new Value(cardinality.getBytes());
         Value result = agg.reduce(new Key("key"), Iterators.singletonIterator(val));
-        assertTrue(agg.propogateKey());
+        assertTrue(agg.propagatekey());
         assertNotNull(result);
         assertNotNull(result.get());
         HyperLogLogPlus resultcard = HyperLogLogPlus.Builder.build(result.get());
@@ -79,7 +79,7 @@ public class CardinalityAggregatorTest {
         list.add(bval);
 
         Value result = agg.reduce(new Key("key"), list.iterator());
-        assertTrue(agg.propogateKey());
+        assertTrue(agg.propagatekey());
 
         assertNotNull(result);
         assertNotNull(result.get());

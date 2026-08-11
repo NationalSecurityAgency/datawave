@@ -11,7 +11,7 @@ import org.apache.accumulo.core.data.Value;
  *
  *
  */
-public class DateIndexDateAggregator extends PropogatingCombiner {
+public class DateIndexDateAggregator extends PropagatingCombiner {
 
     @Override
     public Value reduce(Key key, Iterator<Value> iter) {
@@ -38,13 +38,7 @@ public class DateIndexDateAggregator extends PropogatingCombiner {
         }
     }
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see datawave.ingest.table.aggregator.PropogatingAggregator#propogateKey()
-     */
-    @Override
-    public boolean propogateKey() {
+    public boolean propagatekey() {
         return true;
     }
 }
