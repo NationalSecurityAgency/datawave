@@ -43,7 +43,7 @@ public class DocumentRangeScan implements RunnableWithContext {
 
     private final KeyWithContext keyWithContext;
     private final DocumentScannerConfig config;
-    private final Authorizations auths;
+    private final Set<Authorizations> auths;
 
     private final long resultQueueOfferTimeMillis;
     private final BlockingQueue<Result> resultQueue;
