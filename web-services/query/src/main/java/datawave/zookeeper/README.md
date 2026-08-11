@@ -1,11 +1,9 @@
 # ZkPojoPublisher
 
-The class [ZkPojoPublisher](ZkPojoPublisher.java) provides the ability to trigger and publish updates of a configured class instance to any subscribers using Zookeeper to listen for updates and triggering events. A publisher instance can be configured with the following:
-* `namespace`: The unique namespace for the ZkPojoPublisher. **It is critical that this namespace is unique to any configured ZkPojoPublisher instances** on the same server in order to prevent multiple publishers from writing to the same `/<namespace>/attempts/<serverIpAddress>` node in Zookeeper.
-* `zookeeperConfig`: The zookeeper connect string, or a filepath of a zookeeper configuration file.
+The interface [ZkPojoPublisher](ZkPojoPublisher.java) and its corresponding implementation [ZkPojoPublisherImpl](ZkPojoPublisherImpl.java) provides the ability to trigger and publish updates of a configured class instance to any subscribers using Zookeeper to listen for updates and triggering events. A publisher instance can be configured with the following:
+* `zkClienttBuilder`: An instance of [ZkClientBuilder](ZkClientBuilder.java).
 * `hdfsConfigUrls`: A comma-delimited list of hadoop configuration files.
-* `objectClass`: The class of the object type the publisher will deserialize and publish.
-* `objectValidators`: All validators that a successfully deserialized instance of `objectClass` will be supplied to before being supplied to all subscribers.
+* `pojoClass`: The class of the object type the publisher will deserialize and publish.
 
 A ZkPojoPublisher will attempt to reload and publish a new instance of its configured class when one of the following happens:
 
@@ -17,20 +15,59 @@ Upon receiving a trigger event, the publisher will attempt to read and deseriali
 * An HDFS file: `hdfs://path/to/file`
 * A local file: `file://path/to/file` or `/path/to/file`
  
-If an instance of the class is successfully deserialized from the file, it will be validated against any configured object validators. Afterward it will be provided to all subscribers that have subscribed to the publisher via `ZkPojoPublisher.subscribeToUpdates(Consumer)`. The status of any triggered attempt will be recorded under the node `/<namespace>/attempts/<serverIpAddress>`. Upon a success, the children of that node will follow the structure:
-
-```text
-/status # The data will be SUCCESS
-/trigger  # The data will be one of the values of the enum ZkObjectPublishCause
-/time   # The data will be an ISO-8601 string representing the time of the publish attempt
+If an instance of the class is successfully deserialized from the file, it will be validated against any configured object validators. Afterward it will be provided to all subscribers that have subscribed to the publisher via `ZkPojoPublisher.addListener(Consumer<T>)`. The status of any triggered attempt will be recorded under the node `/<namespace>/attempts/<serverIpAddress>/latest`, which will always reflect the latest reload attempt. The data of the node will be JSON serialized from an instance of [ZkPojoPublisherImpl.PublishAttempt](ZkPojoPublisherImpl.java):
+```js
+{
+    // The epoch timestamp in ms when the publish atempt was triggered.
+    "timestamp":1786412869000,
+    // The root trigger for the publish attempt. 
+    // See ZkPojoPublisherImpl.Trigger for possible values.
+    "trigger":"PATH_NODE_MODIFIED",
+    // The final status of the publish attempt.
+    // See ZkPojoPublisherImpl.Status for possible values.
+    "status":"SUCCESS",
+    // A list of of any errors captured during the publish attempt, 
+    // and any relevant stacktraces. 
+    "errors": []    
+    
+}
 ```
-If an error occurs, either when loading an instance of the class from the file, or when providing the new instance to subscribers, the children will follow the structure:
-```text
-/status                     # The data will be RELOAD_ERROR or SUBSCRIBER_ERROR
-/trigger                      # The data will be one of the values of the enum ZkObjectPublishCause
-/time                       # The data will be an ISO-8601 string representing the time of the publish attempt
-/errors                     # A node containing error_N nodes where N is a number ranging from 0 to one less than the total errors
-/errors/error_N/message     # A short description of the error
-/errors/error_N/stacktrace  # The stack trace of the error's exception, if any. If no exception was caught, this node will not exist.
+An example of JSON where an error when trying to load the file occurred:
+```js
+{
+    "timestamp":1786412869000,
+    "trigger":"PATH_NODE_MODIFIED",
+    "status":"LOAD_ERROR",
+    "errors": [
+        {
+            "message": "File not found: i/do/not/exist",
+            // Truncated here for the example, but the full stacktrace would be included in production.
+            "stacktrace": "java.nio.file.NoSuchFileException: i/do/not/exist\n\tat ...."
+        }
+    ]    
+    
+}
 ```
-The nodes under `/<namespace>/attempts/<serverIpAddress>` will always reflect the latest reload attempt.
+An example of JSON where one or more listeners threw an error after being supplied the new POJO:
+```js
+{
+    "timestamp":1786412869000,
+    "trigger":"PATH_NODE_MODIFIED",
+    "status":"LISTENER_ERROR",
+    // and any relevant stacktraces. 
+        "errors" : [ {
+        "message" : "Exception thrown by listener datawave.zookeeper.ZkPojoPublisherImplTest$$Lambda$670/0x00000008403b5c40",
+        // Truncated here for the example, but the full stacktrace would be included in production.
+        "stacktrace" : "java.lang.NullPointerException: Something bad happened!\n\tat ...."
+    }, {
+        "message" : "Exception thrown by listener datawave.zookeeper.ZkPojoPublisherImplTest$$Lambda$671/0x00000008403b5040",
+        // Truncated here for the example, but the full stacktrace would be included in production.
+        "stacktrace" : "java.lang.IllegalArgumentException: I don't like this configuration.\n\tat ...."
+    }, {
+        "message" : "Exception thrown by listener datawave.zookeeper.ZkPojoPublisherImplTest$$Lambda$672/0x00000008403b5440",
+        // Truncated here for the example, but the full stacktrace would be included in production.
+        "stacktrace" : "java.lang.UnsupportedOperationException: Why do I even exist?\n\tat ...."
+    } ]  
+    
+}
+```
