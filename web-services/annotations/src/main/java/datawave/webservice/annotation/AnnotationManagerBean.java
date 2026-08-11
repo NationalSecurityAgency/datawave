@@ -371,12 +371,42 @@ public class AnnotationManagerBean implements AnnotationManager {
         final String analyticHash = a.getAnalyticSourceHash();
         final Optional<AnnotationSource> result = context.getAnnotationSource(analyticHash);
         if (result.isPresent()) {
-            return injectAnnotationSource(a, result.get());
+            // when returning the source in the context of an annotation, mask/remove the source's visibility
+            // (which currently is the union of visibility for all things annotated with that source)
+            return injectAnnotationSource(a, maskSourceMetadata(result.get()));
         } else {
             log.debug("No analytic source found for annotation {}/{}/{} {}, using analyticHash {}", a.getShard(), a.getDataType(), a.getUid(),
                             a.getAnnotationId(), a.getAnalyticSourceHash());
             return a;
         }
+    }
+
+    /**
+     * When returning the source in the context of an annotation mask/remove certain metadata from the source (e.g., visibility) because the metadata on the
+     * annotation itself takes precedence.
+     *
+     * @param annotationSource
+     *            the annotation source with metadata fields to mask
+     * @return a new source with masked fields removed, if no fields were found to remove, the original source.
+     */
+    protected final AnnotationSource maskSourceMetadata(AnnotationSource annotationSource) {
+        final List<String> fieldsToMask = config.getAnnotationConfig().getMaskSourceMetadata();
+        if (fieldsToMask == null || fieldsToMask.isEmpty()) {
+            // no fields to mask, make no changes.
+            return annotationSource;
+        }
+
+        AnnotationSource.Builder builder = null;
+        for (String key : fieldsToMask) {
+            if (annotationSource.containsMetadata(key)) {
+                if (builder == null) {
+                    builder = annotationSource.toBuilder();
+                }
+                builder.removeMetadata(key);
+            }
+        }
+
+        return (builder == null) ? annotationSource : builder.build();
     }
 
     /**
