@@ -15,7 +15,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -37,9 +36,9 @@ import com.google.common.collect.SetMultimap;
 
 import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.data.ColumnFamilyConstants;
 import datawave.metadata.protobuf.EdgeMetadata.MetadataValue;
 import datawave.security.authorization.JWTTokenHandler;
+import datawave.table.constants.MetadataColumnFamilyConstants;
 import datawave.webservice.dictionary.edge.DefaultEdgeDictionary;
 import datawave.webservice.dictionary.edge.DefaultMetadata;
 import datawave.webservice.dictionary.edge.EventField;
@@ -167,7 +166,7 @@ public class EdgeDictionaryImplTest {
 
     private static Key generateKeyForEdgeMetadata(String source_attribute1) {
         Text row = new Text(EDGE_TYPE + EdgeDictionary.COL_SEPARATOR + SOURCE_RELATIONSHIP + "-" + SINK_RELATIONSHIP);
-        Text colf = ColumnFamilyConstants.COLF_EDGE;
+        Text colf = MetadataColumnFamilyConstants.COLF_EDGE;
         Text colq = new Text(source_attribute1 + "-" + SINK_ATTRIBUTE1);
         Text colv = new Text("");
 
@@ -197,7 +196,7 @@ public class EdgeDictionaryImplTest {
     public static class DefaultDatawaveEdgeDictionaryImplTestConfiguration {
         @Bean
         @Qualifier("warehouse")
-        public AccumuloClient warehouseClient() throws AccumuloSecurityException, AccumuloException {
+        public AccumuloClient warehouseClient() throws AccumuloSecurityException {
             return new InMemoryAccumuloClient("root", new InMemoryAccumulo());
         }
     }

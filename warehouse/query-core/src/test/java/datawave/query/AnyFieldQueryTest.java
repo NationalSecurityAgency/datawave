@@ -49,7 +49,6 @@ import org.junit.Test;
 
 import com.google.common.collect.Multimap;
 
-import datawave.data.ColumnFamilyConstants;
 import datawave.ingest.data.config.ingest.CompositeIngest;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.FullTableScansDisallowedException;
@@ -67,6 +66,7 @@ import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.FileType;
 import datawave.query.testframework.GenericCityFields;
+import datawave.table.constants.MetadataColumnFamilyConstants;
 
 public class AnyFieldQueryTest extends AbstractFunctionalQuery {
 
@@ -159,7 +159,7 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
 
             // remove the metadata entries
             Multimap<String,KeyValue> metadata = removeMetadataEntries(JexlASTHelper.getIdentifierNames(JexlASTHelper.parseJexlQuery(anyCity)),
-                            ColumnFamilyConstants.COLF_I);
+                            MetadataColumnFamilyConstants.COLF_I);
 
             // expect no results
             runTest(query, Collections.emptyList());
@@ -552,7 +552,7 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
 
         // remove the metadata entries
         Multimap<String,KeyValue> metadata = removeMetadataEntries(JexlASTHelper.getIdentifierNames(JexlASTHelper.parseJexlQuery(expect)),
-                        ColumnFamilyConstants.COLF_RI);
+                        MetadataColumnFamilyConstants.COLF_RI);
 
         // expect no results
         try {
@@ -681,7 +681,7 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
 
         // remove the metadata entries
         Multimap<String,KeyValue> metadata = removeMetadataEntries(JexlASTHelper.getIdentifierNames(JexlASTHelper.parseJexlQuery(expect)),
-                        ColumnFamilyConstants.COLF_I);
+                        MetadataColumnFamilyConstants.COLF_I);
 
         // expect no results (or error until #567 is fixed)
         try {
