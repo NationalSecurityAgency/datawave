@@ -4,6 +4,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
+import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.hadoop.conf.Configuration;
@@ -40,11 +41,23 @@ public class BulkIngestKey implements WritableComparable<BulkIngestKey> {
      */
     private static int lastResolvedTableId = 0;
 
+    /**
+     * {@link #hashCode} before it has been computed. A key whose hash genuinely is zero simply recomputes it on every call, which costs a little and returns
+     * the same answer.
+     */
+    private static final int UNCOMPUTED_HASH = 0;
+
     protected Text tableName = null;
-    protected Key key = new Key();
+
+    /**
+     * Deliberately not initialized here: the 2-arg constructor and {@link #readFields(DataInput)} both replace the field immediately, so a field initializer
+     * would allocate a {@link Key} per mapper-emitted record just to discard it. The no-arg constructor supplies the default instead.
+     */
+    protected Key key;
+
     // computed hashcode. we won't write this through the writable interface
     // to avoid increasing the size of our spilled data
-    protected int hashCode = 31;
+    protected int hashCode = UNCOMPUTED_HASH;
 
     /**
      * The dictionary id of {@link #tableName}, resolved on first use rather than at construction: a mapper builds far more of these than it serializes or
@@ -54,6 +67,8 @@ public class BulkIngestKey implements WritableComparable<BulkIngestKey> {
 
     public BulkIngestKey() {
         this.tableName = new Text();
+        this.key = new Key();
+        // eager, see buildHashCode()
         buildHashCode();
     }
 
@@ -64,6 +79,7 @@ public class BulkIngestKey implements WritableComparable<BulkIngestKey> {
             this.tableName = new Text();
         }
         this.key = key;
+        // eager, see buildHashCode()
         buildHashCode();
     }
 
@@ -104,6 +120,13 @@ public class BulkIngestKey implements WritableComparable<BulkIngestKey> {
 
     /**
      * Build the computed hash code.
+     * <p>
+     * {@link #hashCode()} computes this on demand, so the mutators that used to call this - {@link #readFields(DataInput)} and {@link #setTableName(Text)} -
+     * only mark it {@link #UNCOMPUTED_HASH} now. Most keys a mapper builds are never hashed: they are written, compared, or collapsed by a dedupe writer that
+     * uses {@code compareTo}, and hashing costs a walk over the whole table name plus the {@link Key}'s five components.
+     * <p>
+     * The constructors still build it eagerly, for backwards compatibility with anything reading the protected {@link #hashCode} field directly rather than
+     * calling {@link #hashCode()}. That is temporary - once the field is private, the constructors can leave it {@link #UNCOMPUTED_HASH} like the mutators do.
      */
     protected void buildHashCode() {
         final int prime = 31;
@@ -113,12 +136,24 @@ public class BulkIngestKey implements WritableComparable<BulkIngestKey> {
         hashCode = result;
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * The deserializer reads records into one reused key object, and records arrive grouped by table, so {@link #tableId} and {@link #tableName} already hold
+     * the answer for all but the first record of each run - {@code tableId} is only ever non-negative when {@code tableName} is the name the installed
+     * dictionary gives that id. Reading the same id again therefore skips resolving and copying the name, which is the only allocation the table component
+     * costs. Two records read back to back into the same object then share one {@code tableName} instance; nothing mutates it, since a run ending allocates a
+     * fresh {@link Text} rather than overwriting the old one.
+     * <p>
+     * Like {@link #getTableId()}, this trusts that the id a table has is stable for the life of the JVM, which {@link TableNameDictionary} guarantees by
+     * installing once, before the first record is read.
+     */
     @Override
     public void readFields(DataInput in) throws IOException {
         int id = WritableUtils.readVInt(in);
         if (id < 0) {
             tableName = new Text(readText(in));
-        } else {
+        } else if (id != tableId) {
             Text name = TableNameDictionary.get().nameFor(id);
             if (null == name) {
                 throw new IOException("Table id " + id + " is not in this JVM's table name dictionary, which holds " + TableNameDictionary.get().size()
@@ -139,7 +174,7 @@ public class BulkIngestKey implements WritableComparable<BulkIngestKey> {
         // pass in copy=false to save double allocation of byte[]s
         key = new Key(row, cf, cq, cv, ts, in.readBoolean(), false);
 
-        buildHashCode();
+        hashCode = UNCOMPUTED_HASH;
     }
 
     /* Read in byte[] to save Text object creation */
@@ -158,12 +193,12 @@ public class BulkIngestKey implements WritableComparable<BulkIngestKey> {
             writeText(out, tableName);
         }
 
-        // reuse a text object for writing
-        Text t = new Text();
-        writeText(out, key.getRow(t));
-        writeText(out, key.getColumnFamily(t));
-        writeText(out, key.getColumnQualifier(t));
-        writeText(out, key.getColumnVisibility(t));
+        // write each component straight from the Key's backing arrays: getRow(Text) and friends would copy
+        // every component into a scratch Text first just to hand write() the same bytes
+        writeByteSequence(out, key.getRowData());
+        writeByteSequence(out, key.getColumnFamilyData());
+        writeByteSequence(out, key.getColumnQualifierData());
+        writeByteSequence(out, key.getColumnVisibilityData());
 
         WritableUtils.writeVLong(out, key.getTimestamp());
         out.writeBoolean(key.isDeleted());
@@ -172,6 +207,16 @@ public class BulkIngestKey implements WritableComparable<BulkIngestKey> {
     private void writeText(DataOutput out, Text t) throws IOException {
         WritableUtils.writeVInt(out, t.getLength());
         out.write(t.getBytes(), 0, t.getLength());
+    }
+
+    private void writeByteSequence(DataOutput out, ByteSequence bs) throws IOException {
+        WritableUtils.writeVInt(out, bs.length());
+        if (bs.isBackedByArray()) {
+            out.write(bs.getBackingArray(), bs.offset(), bs.length());
+        } else {
+            // no Key produces an array-less ByteSequence today, but the interface permits one
+            out.write(bs.toArray());
+        }
     }
 
     @Override
@@ -188,7 +233,7 @@ public class BulkIngestKey implements WritableComparable<BulkIngestKey> {
     public void setTableName(final Text tableName) {
         this.tableName.set(tableName);
         this.tableId = UNRESOLVED_ID;
-        buildHashCode();
+        this.hashCode = UNCOMPUTED_HASH;
     }
 
     @Override
@@ -219,6 +264,9 @@ public class BulkIngestKey implements WritableComparable<BulkIngestKey> {
 
     @Override
     public int hashCode() {
+        if (hashCode == UNCOMPUTED_HASH) {
+            buildHashCode();
+        }
         return hashCode;
     }
 
@@ -249,13 +297,30 @@ public class BulkIngestKey implements WritableComparable<BulkIngestKey> {
             int o2 = s2;
             int[] startAndLen = {0, 0};
 
-            // the table, as a dictionary id
-            startAndLen[0] = o1;
-            int id1 = readVInt(b1, startAndLen);
-            o1 += startAndLen[1];
-            startAndLen[0] = o2;
-            int id2 = readVInt(b2, startAndLen);
-            o2 += startAndLen[1];
+            // the table, as a dictionary id. write() only ever emits ids >= -1, and every one of those occupies
+            // the single byte form of the vint encoding, which stores the value as the byte itself - so the common
+            // decode is one array read. A first byte below -1 is a multi byte length marker, or a single byte value
+            // no writer produces; either way the general decoder handles it.
+            int id1;
+            byte first1 = b1[o1];
+            if (first1 >= -1) {
+                id1 = first1;
+                o1++;
+            } else {
+                startAndLen[0] = o1;
+                id1 = readVInt(b1, startAndLen);
+                o1 += startAndLen[1];
+            }
+            int id2;
+            byte first2 = b2[o2];
+            if (first2 >= -1) {
+                id2 = first2;
+                o2++;
+            } else {
+                startAndLen[0] = o2;
+                id2 = readVInt(b2, startAndLen);
+                o2 += startAndLen[1];
+            }
 
             int idResult = TableNameDictionary.compareIds(id1, id2);
             if (idResult != 0) {
