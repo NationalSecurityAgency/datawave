@@ -1,5 +1,7 @@
 package datawave.query.tables.edge;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -7,40 +9,45 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.inject.Inject;
-
 import org.apache.accumulo.core.security.Authorizations;
-import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.junit.Arquillian;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.asset.StringAsset;
-import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.logic.QueryLogic;
 import datawave.core.query.logic.QueryLogicFactory;
 import datawave.microservice.query.QueryImpl;
 import datawave.security.authorization.ProxiedUserDetails;
-import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.exception.UnauthorizedQueryException;
 
-@RunWith(Arquillian.class)
-public class EdgeQueryFunctionalTest extends BaseEdgeQueryTest {
+@ExtendWith(SpringExtension.class)
+@ComponentScan(basePackages = "datawave.query")
+// @formatter:off
+@ContextConfiguration(locations = {
+        "classpath:datawave/query/QueryLogicFactory.xml",
+        "classpath:beanRefContext.xml",
+        "classpath:MarkingFunctionsContext.xml",
+        "classpath:MetadataHelperContext.xml",
+        "classpath:CacheContext.xml"})
+// @formatter:on
+public class EdgeQueryFunctionalTest extends BaseEdgeQueryTestJUnit5 {
     protected EdgeQueryLogic logic;
 
-    @Inject
+    @Autowired
     protected ApplicationContext applicationContext;
 
     protected QueryLogicFactory factory = new TestQueryLogicFactory();
 
-    @Before
+    @BeforeEach
     public void setup() throws Exception {
         logic = (EdgeQueryLogic) createLogic();
     }
@@ -58,18 +65,6 @@ public class EdgeQueryFunctionalTest extends BaseEdgeQueryTest {
      * This will override EdgeModelAware's default context loading behavior, and avoid the pitfalls of failed classpath resolution and/or non-interpolated
      * resource files while debugging within Eclipse...all the stuff that works seamlessly when running Maven from the CL
      */
-
-    @Deployment
-    public static JavaArchive createDeployment() throws Exception {
-        return ShrinkWrap.create(JavaArchive.class)
-                        .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.query", "datawave.webservice.query.result.event",
-                                        "datawave.core.query.result.event")
-                        .deleteClass(DefaultEdgeEventQueryLogic.class).deleteClass(RemoteEdgeDictionary.class)
-                        .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class)
-                        .addAsManifestResource(new StringAsset(
-                                        "<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>" + "</alternatives>"),
-                                        "beans.xml");
-    }
 
     public EdgeQueryLogic runLogic(QueryImpl q, Set<Authorizations> auths) throws Exception {
         GenericQueryConfiguration config = logic.initialize(client, q, auths);
@@ -452,16 +447,17 @@ public class EdgeQueryFunctionalTest extends BaseEdgeQueryTest {
         compareResults(logic, factory, expected);
     }
 
-    @Test(expected = UnsupportedOperationException.class)
-    public void testUnknownFunction() throws Exception {
+    @Test
+    public void testUnknownFunction() {
+        assertThrows(UnsupportedOperationException.class, () -> {
+            QueryImpl q = configQuery("SOURCE == 'SUN' && (filter:includeregex(SINK, 'earth|mars'))", auths);
 
-        QueryImpl q = configQuery("SOURCE == 'SUN' && (filter:includeregex(SINK, 'earth|mars'))", auths);
+            EdgeQueryLogic logic = runLogic(q, auths);
 
-        EdgeQueryLogic logic = runLogic(q, auths);
+            List<String> expected = new ArrayList<>();
 
-        List<String> expected = new ArrayList<>();
-
-        compareResults(logic, factory, expected);
+            compareResults(logic, factory, expected);
+        });
     }
 
     @Test
