@@ -315,8 +315,6 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
 
     // The number in-order that this term was in the query when built
     private final int termNumber;
-    // A query lock to verify if the query is still running
-    private final QueryLock queryLock;
     // are we allowing reuse of the hdfs directories
     private final boolean allowDirReuse;
 
@@ -395,7 +393,6 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         this.datatypeFilter = null;
 
         this.termNumber = 0;
-        this.queryLock = null;
         this.allowDirReuse = false;
         // TODO pull this default into builder
         // this.hdfsBackedSetBufferSize = 10000;
@@ -440,19 +437,18 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         this.termNumber = builder.termNumber;
 
         if (builder.limitLookup) {
-            setControl = new InMemoryControl<>();
+            setControl = new InMemoryControl<>(builder.queryLock);
         } else {
             // Note: We have already selected the control directory at random in the DefaultQueryPlanner
             // @see DefaultQueryPlanner#getShuffledIvaratoCacheDirConfigs(ShardQueryConfiguration)
             if (builder.ivaratorCacheDirs.size() > 0) {
-                setControl = new HdfsBackedControl<>(builder.ivaratorCacheDirs, builder.persistOptions, builder.hdfsBackedSetBufferSize, builder.numRetries,
-                                builder.maxOpenFiles);
+                setControl = new HdfsBackedControl<>(builder.queryLock, builder.ivaratorCacheDirs, builder.persistOptions, builder.hdfsBackedSetBufferSize,
+                                builder.numRetries, builder.maxOpenFiles);
             } else {
                 throw new IllegalStateException("No ivarator cache dirs specified!");
             }
         }
 
-        this.queryLock = builder.queryLock;
         this.allowDirReuse = builder.allowDirReuse;
         this.scanTimeout = builder.scanTimeout;
         this.maxResults = builder.maxResults;
@@ -489,7 +485,6 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         this.negated = other.negated;
 
         this.termNumber = other.termNumber;
-        this.queryLock = other.queryLock;
         this.allowDirReuse = other.allowDirReuse;
         this.scanTimeout = other.scanTimeout;
         this.maxResults = other.maxResults;
@@ -1558,16 +1553,53 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         void removeTask(String taskName);
     }
 
-    public class InMemoryControl<E> implements Control<E> {
-        public static final String IN_MEMORY_CONTROL_NAME = "InMemory";
-        public static final String IN_MEMORY_STORAGE_NAME = "TreeSet";
-
+    public static abstract class AbstractControl<E> implements Control<E> {
         // cancelled check interval is 1 minute
         public static final int CANCELLED_CHECK_INTERVAL = 1000 * 60;
 
-        private final ExecutorService inMemoryExecutor = MoreExecutors.newDirectExecutorService();
         private volatile long lastCancelledCheck = System.currentTimeMillis() - RANDOM.nextInt(CANCELLED_CHECK_INTERVAL);
         private volatile boolean cancelled = false;
+
+        private final QueryLock queryLock;
+
+        private AbstractControl(QueryLock queryLock) {
+            this.queryLock = queryLock;
+        }
+
+        @Override
+        public boolean isCancelledQuery() {
+            // if we have not determined we are cancelled yet, then check
+            if (!cancelled && queryLock != null) {
+                // but only if the last check was so long ago
+                long now = System.currentTimeMillis();
+                if ((now - lastCancelledCheck) > CANCELLED_CHECK_INTERVAL) {
+                    synchronized (this) {
+                        // now recheck the cancelled flag and timeout to ensure we really need to make the calls
+                        if (!cancelled && ((now - lastCancelledCheck) > CANCELLED_CHECK_INTERVAL)) {
+                            cancelled = !queryLock.isQueryRunning();
+                            lastCancelledCheck = now;
+                        }
+                    }
+                }
+            }
+            return cancelled;
+        }
+
+        @Override
+        public void setCancelled() {
+            cancelled = true;
+        }
+    }
+
+    public class InMemoryControl<E> extends AbstractControl<E> {
+        public static final String IN_MEMORY_CONTROL_NAME = "InMemory";
+        public static final String IN_MEMORY_STORAGE_NAME = "TreeSet";
+
+        private final ExecutorService inMemoryExecutor = MoreExecutors.newDirectExecutorService();
+
+        public InMemoryControl(QueryLock queryLock) {
+            super(queryLock);
+        }
 
         @Override
         public IvaratorFuture submitTask(String taskName, IvaratorRunnable task) {
@@ -1618,33 +1650,9 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         }
 
         @Override
-        public boolean isCancelledQuery() {
-            // if we have not determined we are cancelled yet, then check
-            if (!cancelled && queryLock != null) {
-                // but only if the last check was so long ago
-                long now = System.currentTimeMillis();
-                if ((now - lastCancelledCheck) > CANCELLED_CHECK_INTERVAL) {
-                    synchronized (this) {
-                        // now recheck the cancelled flag and timeout to ensure we really need to make the calls
-                        if (!cancelled && ((now - lastCancelledCheck) > CANCELLED_CHECK_INTERVAL)) {
-                            cancelled = !queryLock.isQueryRunning();
-                            lastCancelledCheck = now;
-                        }
-                    }
-                }
-            }
-            return cancelled;
-        }
-
-        @Override
         public boolean isCompleteAndPersisted(String row) throws IOException {
             // nothing is ever persisted, in memory only
             return false;
-        }
-
-        @Override
-        public void setCancelled() {
-            cancelled = true;
         }
 
         @Override
@@ -1663,7 +1671,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         }
     }
 
-    public class HdfsBackedControl<E> extends InMemoryControl<E> implements Control<E> {
+    public class HdfsBackedControl<E> extends AbstractControl<E> {
         public static final String OWNERSHIP_FILE = "ownership";
         public static final String COMPLETE_FILE = "complete";
 
@@ -1681,8 +1689,9 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         // the max number of files to open simultaneously during a merge source
         private final int maxOpenFiles;
 
-        public HdfsBackedControl(List<IvaratorCacheDir> ivaratorCacheDirs, FileSortedSet.PersistOptions persistOptions, int hdfsBackedSetBufferSize,
-                        int numRetries, int maxOpenFiles) {
+        public HdfsBackedControl(QueryLock queryLock, List<IvaratorCacheDir> ivaratorCacheDirs, FileSortedSet.PersistOptions persistOptions,
+                        int hdfsBackedSetBufferSize, int numRetries, int maxOpenFiles) {
+            super(queryLock);
             this.ivaratorCacheDirs = ivaratorCacheDirs;
             this.controlFs = ivaratorCacheDirs.get(0).getFs();
             this.controlDir = new Path(ivaratorCacheDirs.get(0).getPathURI());
