@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import datawave.query.iterator.logic.IndexIterator;
 import org.apache.accumulo.core.client.PluginEnvironment;
 import org.apache.accumulo.core.client.sample.SamplerConfiguration;
 import org.apache.accumulo.core.data.Key;
@@ -31,6 +32,7 @@ import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.jupiter.api.Nested;
 import org.junit.rules.TemporaryFolder;
 
 import datawave.core.iterators.filesystem.FileSystemCache;
@@ -131,10 +133,7 @@ public class IteratorBuildingVisitorTest {
         Assert.assertEquals(0, visitor.getDeepCopiesCalled());
     }
 
-    /**
-     * index only null value should result in an error
-     */
-    @Test(expected = DatawaveFatalQueryException.class)
+    @Test
     public void visitEqNode_nullValueIndexOnlyTest() {
         ASTEQNode node = (ASTEQNode) JexlNodeFactory.buildEQNode("FIELD", "blah");
         node.jjtAddChild(JexlNodes.makeStringLiteral(), 1);
@@ -144,8 +143,9 @@ public class IteratorBuildingVisitorTest {
 
         node.jjtAccept(visitor, null);
 
-        // this should never be reached
-        Assert.assertFalse(true);
+        NestedIterator<Key> root = visitor.root();
+
+        Assert.assertNotNull("Root iterator should not be null", root);
     }
 
     /**
@@ -167,10 +167,7 @@ public class IteratorBuildingVisitorTest {
         Assert.assertEquals(1, visitor.getDeepCopiesCalled());
     }
 
-    /**
-     * null value should result in an error. In this case a top level negation is not allowed, so pair it with an indexed lookup
-     */
-    @Test(expected = DatawaveFatalQueryException.class)
+    @Test
     public void visitNeNode_nullValueIndexOnlyTest() throws ParseException {
         ASTJexlScript query = JexlASTHelper.parseJexlQuery("FOO == 'bar' && FIELD != null");
 
@@ -179,8 +176,8 @@ public class IteratorBuildingVisitorTest {
 
         query.jjtAccept(visitor, null);
 
-        // this should never be reached
-        Assert.assertFalse(true);
+        NestedIterator<Key> root = visitor.root();
+        Assert.assertNotNull("Root iterator should not be null", root);
     }
 
     @Test
