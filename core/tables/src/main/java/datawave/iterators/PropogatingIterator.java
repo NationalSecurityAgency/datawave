@@ -19,7 +19,8 @@ import org.apache.accumulo.core.iterators.IteratorUtil.IteratorScope;
 import org.apache.accumulo.core.iterators.OptionDescriber;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iteratorsImpl.conf.ColumnToClassMapping;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
@@ -91,7 +92,7 @@ public class PropogatingIterator implements SortedKeyValueIterator<Key,Value>, O
      */
     protected Map<String,String> options = Maps.newHashMap();
 
-    private static final Logger log = Logger.getLogger(PropogatingIterator.class);
+    private static final Logger log = LoggerFactory.getLogger(PropogatingIterator.class);
 
     /**
      * Deep copy implementation
@@ -155,11 +156,11 @@ public class PropogatingIterator implements SortedKeyValueIterator<Key,Value>, O
             // always propagate deletes
             if (aggr.propogateKey() || workKey.isDeleted()) {
                 if (log.isTraceEnabled())
-                    log.trace("propogating " + workKey);
+                    log.trace("propogating {}", workKey);
                 aggrKey = workKey;
             } else {
                 if (log.isTraceEnabled())
-                    log.trace("Not propogating " + workKey);
+                    log.trace("Not propogating {}", workKey);
                 return false;
             }
         } else {
@@ -185,11 +186,11 @@ public class PropogatingIterator implements SortedKeyValueIterator<Key,Value>, O
         }
 
         if (log.isTraceEnabled()) {
-            log.trace("Key is " + key);
+            log.trace("Key is {}", key);
         }
 
         if (log.isTraceEnabled()) {
-            log.trace(key + "agg == " + (aggr == null) + " " + key.isDeleted());
+            log.trace("{} agg == {} {}", key, (aggr == null), key.isDeleted());
         }
         return aggr;
     }
@@ -328,7 +329,7 @@ public class PropogatingIterator implements SortedKeyValueIterator<Key,Value>, O
                 propAgg.setPropogate(shouldPropogate);
                 if (familyOption.getKey().equals(AGGREGATOR_DEFAULT) || familyOption.getKey().equals(AGGREGATOR_DEFAULT_OPT)) {
                     if (log.isTraceEnabled())
-                        log.debug("Default aggregator is " + propAgg.getClass());
+                        log.debug("Default aggregator is {}", propAgg.getClass());
                     defaultAgg = propAgg;
                 } else {
                     aggMap.put(new ArrayByteSequence(familyOption.getKey().getBytes()), propAgg);

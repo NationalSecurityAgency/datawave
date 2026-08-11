@@ -6,7 +6,8 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.Combiner;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.iterators.ValueCombiner;
 
@@ -19,7 +20,7 @@ public abstract class PropogatingCombiner extends Combiner {
 
     private static final Value EMPTY_VALUE = new Value(new byte[0]);
 
-    private static final Logger log = Logger.getLogger(PropogatingCombiner.class);
+    private static final Logger log = LoggerFactory.getLogger(PropogatingCombiner.class);
 
     /**
      * Flag to determine if we propogate the removals
@@ -89,7 +90,7 @@ public abstract class PropogatingCombiner extends Combiner {
     @Override
     public Value reduce(Key key, Iterator<Value> iter) {
         if (log.isTraceEnabled()) {
-            log.trace("combining key " + key + ", iter.hasNext? " + iter.hasNext());
+            log.trace("combining key {}, iter.hasNext? {}", key, iter.hasNext());
         }
         while (iter.hasNext()) {
             collect(iter.next());

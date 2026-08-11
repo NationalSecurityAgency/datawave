@@ -8,7 +8,8 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -20,7 +21,7 @@ public class ValueCombiner implements Iterator<Value> {
     boolean hasNext;
     PartialKey keysToCombine = PartialKey.ROW_COLFAM_COLQUAL_COLVIS;
 
-    private static final Logger log = Logger.getLogger(ValueCombiner.class);
+    private static final Logger log = LoggerFactory.getLogger(ValueCombiner.class);
 
     /**
      * Constructs an iterator over Values whose Keys are versions of the current topKey of the source SortedKeyValueIterator.
@@ -41,9 +42,9 @@ public class ValueCombiner implements Iterator<Value> {
 
     private boolean _hasNext() {
         if (log.isTraceEnabled()) {
-            log.trace("source hastop ? " + source.hasTop() + " " + topKey);
+            log.trace("source hastop ? {} {}", source.hasTop(), topKey);
             if (source.hasTop())
-                log.trace(source.getTopKey());
+                log.trace("{}", source.getTopKey());
 
         }
         return source.hasTop() && topKey.equals(source.getTopKey(), keysToCombine);
