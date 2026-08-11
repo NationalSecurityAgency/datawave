@@ -457,6 +457,76 @@ class DatePartitionerIT {
             // @formatter:on
         }
 
+        /**
+         * An enclosing hole in one datatype spans two separated holes in others. The union is the enclosing hole, so the days between the inner holes must
+         * remain unindexed: ending the merged range at an inner hole's end would report those days as indexed for a datatype that has no index covering them,
+         * silently dropping its documents from the results.
+         */
+        @Test
+        void holesNestedWithSeparatedInnerHoles() {
+            Date begin = startOfDay("20130101");
+            Date end = endOfDay("20130110");
+            Map<String,IndexFieldHole> byDatatype = new HashMap<>();
+            byDatatype.put("datatype-a", hole("F", "datatype-a", "20130101", "20130110"));
+            byDatatype.put("datatype-b", hole("F", "datatype-b", "20130102", "20130103"));
+            byDatatype.put("datatype-c", hole("F", "datatype-c", "20130105", "20130106"));
+            Map<String,Map<String,IndexFieldHole>> holes = new HashMap<>();
+            holes.put("F", byDatatype);
+
+            SortedMap<Pair<Date,Date>,Set<String>> result = DatePartitioner.partition(holes, begin, end);
+
+            assertPartition(result, range(begin, end, "F"));
+        }
+
+        /**
+         * The same nesting, but with the enclosing hole ending before the query range does. The merged range must still cover the enclosing hole in full, and
+         * must not swallow the trailing indexed portion of the query range.
+         */
+        @Test
+        void holesNestedWithSeparatedInnerHolesFollowedByIndexedRange() {
+            Date begin = startOfDay("20130101");
+            Date end = endOfDay("20130110");
+            Map<String,IndexFieldHole> byDatatype = new HashMap<>();
+            byDatatype.put("datatype-a", hole("F", "datatype-a", "20130101", "20130108"));
+            byDatatype.put("datatype-b", hole("F", "datatype-b", "20130102", "20130103"));
+            byDatatype.put("datatype-c", hole("F", "datatype-c", "20130105", "20130106"));
+            Map<String,Map<String,IndexFieldHole>> holes = new HashMap<>();
+            holes.put("F", byDatatype);
+
+            SortedMap<Pair<Date,Date>,Set<String>> result = DatePartitioner.partition(holes, begin, end);
+
+            // @formatter:off
+            assertPartition(result,
+                            range(begin, endOfDay("20130108"), "F"),
+                            range(startOfDay("20130109"), end));
+            // @formatter:on
+        }
+
+        /**
+         * Nesting must not merge holes that are genuinely disjoint from the enclosing one: a hole starting more than a day after the enclosing hole ends still
+         * gets its own range.
+         */
+        @Test
+        void holesNestedThenDisjointAcrossDatatypes() {
+            Date begin = startOfDay("20130101");
+            Date end = endOfDay("20130112");
+            Map<String,IndexFieldHole> byDatatype = new HashMap<>();
+            byDatatype.put("datatype-a", hole("F", "datatype-a", "20130101", "20130108"));
+            byDatatype.put("datatype-b", hole("F", "datatype-b", "20130103", "20130104"));
+            byDatatype.put("datatype-c", hole("F", "datatype-c", "20130111", "20130112"));
+            Map<String,Map<String,IndexFieldHole>> holes = new HashMap<>();
+            holes.put("F", byDatatype);
+
+            SortedMap<Pair<Date,Date>,Set<String>> result = DatePartitioner.partition(holes, begin, end);
+
+            // @formatter:off
+            assertPartition(result,
+                            range(begin, endOfDay("20130108"), "F"),
+                            range(startOfDay("20130109"), new Date(startOfDay("20130111").getTime() - 1)),
+                            range(startOfDay("20130111"), end, "F"));
+            // @formatter:on
+        }
+
         @Test
         void holesDisjointAcrossDatatypes() {
             Date begin = startOfDay("20130101");
