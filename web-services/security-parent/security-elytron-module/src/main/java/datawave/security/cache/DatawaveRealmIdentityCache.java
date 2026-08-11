@@ -76,7 +76,7 @@ public class DatawaveRealmIdentityCache implements RealmIdentityCache, ElytronCa
                             try {
                                 realmPrincipalsToDomainPrincipals.removeAll(realmIdentity.getRealmIdentityPrincipal());
                             } finally {
-                                lock.writeLock().lock();
+                                lock.writeLock().unlock();
                             }
                         }
                     }
@@ -105,7 +105,7 @@ public class DatawaveRealmIdentityCache implements RealmIdentityCache, ElytronCa
                 domainPrincipalsToRealmIdentities.put((DatawavePrincipal) principal, realmIdentity);
                 realmPrincipalsToDomainPrincipals.put(realmIdentity.getRealmIdentityPrincipal(), principal);
             } finally {
-                lock.writeLock().lock();
+                lock.writeLock().unlock();
             }
         }
     }
