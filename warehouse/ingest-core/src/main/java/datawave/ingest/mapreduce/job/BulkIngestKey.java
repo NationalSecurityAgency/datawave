@@ -6,6 +6,7 @@ import java.io.IOException;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.io.WritableComparator;
@@ -14,16 +15,42 @@ import org.apache.hadoop.io.WritableUtils;
 /**
  * Used during bulk ingest to convey the table name to the reducer and stores the key for sorting.
  * <p>
- * <strong>Note:</strong> For serialization and binary comparison, this class does not handle keys with the deleted flag set. This should not be a problem for
- * ingest of new data.
+ * The table name is serialized as a {@link TableNameDictionary} id when the job has published its output tables, and inline - a length prefix followed by the
+ * name, as it has always been - when it has not. See {@link TableNameDictionary} for how the two forms interoperate and why the encoding leaves the sort order
+ * of a fully declared job unchanged.
  */
 public class BulkIngestKey implements WritableComparable<BulkIngestKey> {
+
+    /** {@link #tableId} before the table name has been looked up in the installed dictionary */
+    private static final int UNRESOLVED_ID = Integer.MIN_VALUE;
+
+    /**
+     * The table id {@link #getTableId()} resolved most recently, kept as a one entry memo across keys.
+     * <p>
+     * Keys arrive in runs on the same table - a handler emits an event key, then its field index entries, then its global index entries - so most lookups ask
+     * for the table the previous key asked for. Skipping the hash lookup on those is worth it because the lookup is a {@link Text} probe: {@code Text.hashCode}
+     * is not memoized, so it walks every byte of the name to hash it and then walks them again in {@code equals}. The memo replaces that with a single
+     * {@code Text.equals} against the name the id stands for, which rejects a different table on the length comparison it starts with.
+     * <p>
+     * Only the id is stored, and it is validated against {@link TableNameDictionary#nameFor(int)} before being trusted. That is what lets this be a plain
+     * {@code int} with no synchronization: an {@code int} write cannot tear, so every value this field can hold is either rejected by the equality check or is
+     * genuinely the id of the name being resolved. A race between threads costs a missed memo, never a wrong id, and a dictionary swap invalidates the memo for
+     * free because the validation reads the names of whichever dictionary is now installed. Caching the name alongside the id in a second field would not be
+     * safe this way - a reader could pair one thread's name with another thread's id.
+     */
+    private static int lastResolvedTableId = 0;
 
     protected Text tableName = null;
     protected Key key = new Key();
     // computed hashcode. we won't write this through the writable interface
     // to avoid increasing the size of our spilled data
     protected int hashCode = 31;
+
+    /**
+     * The dictionary id of {@link #tableName}, resolved on first use rather than at construction: a mapper builds far more of these than it serializes or
+     * compares, and the ones a dedupe writer collapses never need an id at all.
+     */
+    protected int tableId = UNRESOLVED_ID;
 
     public BulkIngestKey() {
         this.tableName = new Text();
@@ -49,6 +76,33 @@ public class BulkIngestKey implements WritableComparable<BulkIngestKey> {
     }
 
     /**
+     * The id the installed {@link TableNameDictionary} gives {@link #tableName}, resolved and cached on first use. The hash lookup is skipped entirely when
+     * this key is on the same table as the last one to ask - see {@link #lastResolvedTableId}.
+     *
+     * @return the dictionary id, or {@link TableNameDictionary#UNKNOWN_ID} if the dictionary does not know this table
+     */
+    protected int getTableId() {
+        if (tableId == UNRESOLVED_ID) {
+            TableNameDictionary dictionary = TableNameDictionary.get();
+
+            // read the memo once into a local, so the name it is validated against is the name of the id we return
+            int last = lastResolvedTableId;
+            Text lastName = dictionary.nameFor(last);
+            if (null != lastName && lastName.equals(tableName)) {
+                tableId = last;
+            } else {
+                tableId = dictionary.idFor(tableName);
+                // an unknown table has no id to remember, and leaving the memo alone keeps it useful for the keys
+                // on either side of it
+                if (tableId != TableNameDictionary.UNKNOWN_ID) {
+                    lastResolvedTableId = tableId;
+                }
+            }
+        }
+        return tableId;
+    }
+
+    /**
      * Build the computed hash code.
      */
     protected void buildHashCode() {
@@ -61,7 +115,20 @@ public class BulkIngestKey implements WritableComparable<BulkIngestKey> {
 
     @Override
     public void readFields(DataInput in) throws IOException {
-        tableName = new Text(readText(in));
+        int id = WritableUtils.readVInt(in);
+        if (id < 0) {
+            tableName = new Text(readText(in));
+        } else {
+            Text name = TableNameDictionary.get().nameFor(id);
+            if (null == name) {
+                throw new IOException("Table id " + id + " is not in this JVM's table name dictionary, which holds " + TableNameDictionary.get().size()
+                                + " tables. The writer and the reader of this record disagree on " + TableConfigurationUtil.JOB_OUTPUT_TABLE_NAMES + ".");
+            }
+            // copy: the dictionary's Text is shared with every other key on this table, and setTableName writes through
+            tableName = new Text(name);
+        }
+        // adopt the id the record was written with rather than re-resolving, so the object ordering cannot drift from the serialized ordering
+        tableId = id;
 
         byte[] row = readText(in);
         byte[] cf = readText(in);
@@ -84,7 +151,13 @@ public class BulkIngestKey implements WritableComparable<BulkIngestKey> {
 
     @Override
     public void write(DataOutput out) throws IOException {
-        writeText(out, tableName);
+        int id = getTableId();
+        WritableUtils.writeVInt(out, id);
+        if (id < 0) {
+            // not a table this job declared: fall back to the name, which every reader still understands
+            writeText(out, tableName);
+        }
+
         // reuse a text object for writing
         Text t = new Text();
         writeText(out, key.getRow(t));
@@ -114,12 +187,18 @@ public class BulkIngestKey implements WritableComparable<BulkIngestKey> {
      */
     public void setTableName(final Text tableName) {
         this.tableName.set(tableName);
+        this.tableId = UNRESOLVED_ID;
         buildHashCode();
     }
 
     @Override
     public int compareTo(BulkIngestKey other) {
-        int result = tableName.compareTo(other.tableName);
+        int thisId = getTableId();
+        int result = TableNameDictionary.compareIds(thisId, other.getTableId());
+        if (result == 0 && thisId < 0) {
+            // neither table is in the dictionary, which is the one case the ids do not separate
+            result = tableName.compareTo(other.tableName);
+        }
         if (result == 0) {
             result = key.compareTo(other.key);
         }
@@ -149,15 +228,60 @@ public class BulkIngestKey implements WritableComparable<BulkIngestKey> {
             super(BulkIngestKey.class);
         }
 
+        /**
+         * Installs the job's {@link TableNameDictionary}. MapReduce resolves the map output key comparator through
+         * {@code WritableComparator.get(Class, Configuration)} while it builds the map output collector and again while it builds the reduce side merge, so
+         * this runs in both JVMs and, in both, before any {@link BulkIngestKey} is serialized or deserialized.
+         *
+         * @param conf
+         *            the job configuration
+         */
+        @Override
+        public void setConf(Configuration conf) {
+            super.setConf(conf);
+            TableNameDictionary.configure(conf);
+        }
+
         @Override
         public int compare(byte[] b1, int s1, int l1, byte[] b2, int s2, int l2) {
 
             int o1 = s1;
             int o2 = s2;
             int[] startAndLen = {0, 0};
-            // 5 parts to read (all Text... vint gives size of Text):
-            // table name, row, col fam, col qual, col vis
-            for (int i = 0; i < 5; i++) {
+
+            // the table, as a dictionary id
+            startAndLen[0] = o1;
+            int id1 = readVInt(b1, startAndLen);
+            o1 += startAndLen[1];
+            startAndLen[0] = o2;
+            int id2 = readVInt(b2, startAndLen);
+            o2 += startAndLen[1];
+
+            int idResult = TableNameDictionary.compareIds(id1, id2);
+            if (idResult != 0) {
+                return idResult;
+            }
+
+            if (id1 < 0) {
+                // neither table is in the dictionary, so both records carry their name inline and the tie breaks on the names
+                startAndLen[0] = o1;
+                int nl1 = readVInt(b1, startAndLen);
+                o1 += startAndLen[1];
+                startAndLen[0] = o2;
+                int nl2 = readVInt(b2, startAndLen);
+                o2 += startAndLen[1];
+
+                int nameResult = compareBytes(b1, o1, nl1, b2, o2, nl2);
+                if (nameResult != 0) {
+                    return nameResult;
+                }
+                o1 += nl1;
+                o2 += nl2;
+            }
+
+            // 4 parts to read (all Text... vint gives size of Text):
+            // row, col fam, col qual, col vis
+            for (int i = 0; i < 4; i++) {
                 startAndLen[0] = o1;
                 // get Text's length in bytes
                 int tl1 = readVInt(b1, startAndLen);
