@@ -50,11 +50,6 @@ class DatawaveEvidenceDecoderTest {
     private DatawaveUserProvider datawaveUserProvider;
     private DatawaveEvidenceDecoder evidenceDecoder;
 
-    @BeforeAll
-    static void beforeAll() {
-
-    }
-
     @BeforeEach
     void setUp() {
         evidenceDecoder = null;
