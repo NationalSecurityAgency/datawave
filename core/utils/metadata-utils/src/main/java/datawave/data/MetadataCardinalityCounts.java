@@ -4,7 +4,6 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.Serializable;
 
-import datawave.table.constants.MetadataColumnFamilyConstants;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
@@ -12,6 +11,8 @@ import org.apache.accumulo.core.security.ColumnVisibility;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
+
+import datawave.table.constants.MetadataColumnFamilyConstants;
 
 /**
  * This class can be used to handle the selectivity entries in the metadata table.
