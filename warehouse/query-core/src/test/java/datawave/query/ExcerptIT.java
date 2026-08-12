@@ -27,8 +27,8 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.data.type.LcType;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
@@ -131,7 +131,7 @@ public class ExcerptIT extends AbstractQueryTest {
 
     @BeforeAll
     public static void setupIngest() throws AccumuloSecurityException, AccumuloException {
-        InMemoryInstance i = new InMemoryInstance(TermFrequencyContextIT.class.getName());
+        InMemoryAccumulo i = new InMemoryAccumulo(TermFrequencyContextIT.class.getName());
         client = new InMemoryAccumuloClient("", i);
 
         ingest = new AbstractIngest(client, auths);

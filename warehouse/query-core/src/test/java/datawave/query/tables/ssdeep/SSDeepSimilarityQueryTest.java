@@ -68,8 +68,8 @@ public class SSDeepSimilarityQueryTest {
     public static void loadData() throws Exception {
         final String tableName = SSDeepIndexHandler.DEFAULT_SSDEEP_INDEX_TABLE_NAME;
 
-        InMemoryAccumulo inMemoryInstance = new InMemoryAccumulo("ssdeepTestInstance");
-        accumuloClient = new InMemoryAccumuloClient("root", inMemoryInstance);
+        InMemoryAccumulo inMemoryAccumulo = new InMemoryAccumulo("ssdeepTestInstance");
+        accumuloClient = new InMemoryAccumuloClient("root", inMemoryAccumulo);
 
         /* create the table */
         TableOperations tops = accumuloClient.tableOperations();

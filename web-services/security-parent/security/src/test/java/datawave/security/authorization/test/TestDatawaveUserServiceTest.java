@@ -232,11 +232,11 @@ public class TestDatawaveUserServiceTest {
     }
 
     private static class MockAccumuloConnectionFactory implements AccumuloConnectionFactory {
-        private InMemoryAccumulo inMemoryInstance = new InMemoryAccumulo();
+        private InMemoryAccumulo inMemoryAccumulo = new InMemoryAccumulo();
 
         public MockAccumuloConnectionFactory() {
             try {
-                new InMemoryAccumuloClient("root", inMemoryInstance).securityOperations().changeUserAuthorizations("root", new Authorizations("PUB", "PVT"));
+                new InMemoryAccumuloClient("root", inMemoryAccumulo).securityOperations().changeUserAuthorizations("root", new Authorizations("PUB", "PVT"));
             } catch (AccumuloException | AccumuloSecurityException e) {
                 throw new RuntimeException(e);
             }
@@ -244,13 +244,13 @@ public class TestDatawaveUserServiceTest {
 
         @Override
         public AccumuloClient getClient(String userDN, Collection<String> proxiedDNs, Priority priority, Map<String,String> trackingMap) throws Exception {
-            return new InMemoryAccumuloClient("root", inMemoryInstance);
+            return new InMemoryAccumuloClient("root", inMemoryAccumulo);
         }
 
         @Override
         public AccumuloClient getClient(String userDN, Collection<String> proxiedDNs, String poolName, Priority priority, Map<String,String> trackingMap)
                         throws Exception {
-            return new InMemoryAccumuloClient("root", inMemoryInstance);
+            return new InMemoryAccumuloClient("root", inMemoryAccumulo);
         }
 
         @Override

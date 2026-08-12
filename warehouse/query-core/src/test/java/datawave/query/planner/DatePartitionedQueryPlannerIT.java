@@ -30,8 +30,8 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.query.QueryParameters;
 import datawave.query.exceptions.DatawaveFatalQueryException;
@@ -129,7 +129,7 @@ class DatePartitionedQueryPlannerIT extends AbstractQueryTest {
     @BeforeAll
     static void beforeAll() throws Exception {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
-        client = new InMemoryAccumuloClient("", new InMemoryInstance(DatePartitionedQueryPlannerIT.class.getName()));
+        client = new InMemoryAccumuloClient("", new InMemoryAccumulo(DatePartitionedQueryPlannerIT.class.getName()));
     }
 
     @BeforeEach
