@@ -229,8 +229,8 @@ class QueryUncaughtExceptionHandlerTest {
             CountDownLatch startLatch = new CountDownLatch(1);
             CountDownLatch doneLatch = new CountDownLatch(threadCount);
 
-            List<RuntimeException> thrownExceptions = Collections.synchronizedList(new ArrayList<>());
-            List<Thread> fakeThreads = Collections.synchronizedList(new ArrayList<>());
+            List<Exception> validExceptions = Collections.synchronizedList(new ArrayList<>());
+            List<ImmutablePair<Throwable, Thread>> testPairs = Collections.synchronizedList(new ArrayList<>());
 
             try {
                 // Submit a bunch of tasks that will attempt to pass a thread and exception to the handler.
@@ -239,11 +239,11 @@ class QueryUncaughtExceptionHandlerTest {
                     pool.submit(() -> {
                         Thread fakeThread = new Thread("fake-" + idx);
                         RuntimeException ex = new RuntimeException("exception-" + idx);
-                        thrownExceptions.add(ex);
-                        fakeThreads.add(fakeThread);
+                        testPairs.add(ImmutablePair.of(ex, fakeThread));
                         readyLatch.countDown();
                         try {
                             startLatch.await();
+                            validExceptions.add(ex);
                             handler.uncaughtException(fakeThread, ex);
                         } catch (InterruptedException e) {
                             Thread.currentThread().interrupt();
@@ -265,11 +265,18 @@ class QueryUncaughtExceptionHandlerTest {
                 // Verify we captured an exception.
                 assertNotNull(capturedException, "An exception should have been captured");
                 assertNotNull(capturedThread, "A thread should have been captured");
-                assertTrue(thrownExceptions.contains(capturedException), "Captured exception must be one of the thrown exceptions");
-
+                assertTrue(validExceptions.contains(capturedException), "Captured exception must be one of the thrown exceptions");
+                
                 // Verify the exception and thread came from the same call.
-                int capturedIdx = thrownExceptions.indexOf(capturedException);
-                assertSame(fakeThreads.get(capturedIdx), capturedThread, "Captured throwable and thread must originate from the same uncaughtException call");
+                ImmutablePair<Throwable, Thread> thrownPair = null;
+                for(ImmutablePair<Throwable,Thread> pair : testPairs) {
+                    if(pair.getLeft() == capturedException) {
+                        thrownPair = pair;
+                    }
+                }
+    
+                assertNotNull(thrownPair, "An uncaught exception should have been captured");
+                assertSame(thrownPair.getRight(), capturedThread, "Captured throwable and thread must originate from the same uncaughtException call");
             } finally {
                 pool.shutdownNow();
             }
