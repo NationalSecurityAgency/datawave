@@ -3,6 +3,7 @@ package datawave.ingest.mapreduce.job;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.Arrays;
 
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
@@ -19,6 +20,22 @@ import org.apache.hadoop.io.WritableUtils;
  * The table name is serialized as a {@link BulkIndexKeyTableLookup} id when the job has published its output tables, and inline - a length prefix followed by
  * the name, as it has always been - when it has not. See {@link BulkIndexKeyTableLookup} for how the two forms interoperate and why the encoding leaves the
  * sort order of a fully declared job unchanged.
+ *
+ * <h2>The serialized layout</h2>
+ *
+ * <pre>
+ * vint(tableId) [ vint(nameLen) nameBytes ]   the name only when tableId &lt; 0, i.e. the table is not in the dictionary
+ * vint(rowLen) vint(cfLen) vint(cqLen) vint(cvLen)   the header: the four component lengths, together
+ * rowBytes cfBytes cqBytes cvBytes                   the data region: component bytes back to back, no vints inside
+ * vlong(timestamp) boolean(deleted)
+ * </pre>
+ *
+ * The four length vints used to sit immediately ahead of the bytes they measure. Moving them together into a header carries exactly the same information in
+ * exactly the same number of bytes - what it buys is a data region that {@link Comparator} can scan in one call rather than four, for the reasons that method's
+ * javadoc sets out.
+ * <p>
+ * The layout is job-internal. It appears only in map output, spill files, and the shuffle, never in an RFile or an Accumulo table, and a job's writers and
+ * readers are always the same build, so there is no compatibility to keep with any other form of it.
  */
 public class BulkIngestKey implements WritableComparable<BulkIngestKey> {
 
@@ -128,6 +145,9 @@ public class BulkIngestKey implements WritableComparable<BulkIngestKey> {
      * <p>
      * Like {@link #getTableId()}, this trusts that the id a table has is stable for the life of the JVM, which {@link BulkIndexKeyTableLookup} guarantees by
      * installing once, before the first record is read.
+     * <p>
+     * The four component lengths arrive together, ahead of the bytes they measure - see the class javadoc for the layout - so all four are decoded before the
+     * first component array is allocated.
      */
     @Override
     public void readFields(DataInput in) throws IOException {
@@ -146,10 +166,16 @@ public class BulkIngestKey implements WritableComparable<BulkIngestKey> {
         // adopt the id the record was written with rather than re-resolving, so the object ordering cannot drift from the serialized ordering
         tableId = id;
 
-        byte[] row = readText(in);
-        byte[] cf = readText(in);
-        byte[] cq = readText(in);
-        byte[] cv = readText(in);
+        // the header, then the data region it describes
+        int rowLen = WritableUtils.readVInt(in);
+        int cfLen = WritableUtils.readVInt(in);
+        int cqLen = WritableUtils.readVInt(in);
+        int cvLen = WritableUtils.readVInt(in);
+
+        byte[] row = readBytes(in, rowLen);
+        byte[] cf = readBytes(in, cfLen);
+        byte[] cq = readBytes(in, cqLen);
+        byte[] cv = readBytes(in, cvLen);
 
         long ts = WritableUtils.readVLong(in);
         // pass in copy=false to save double allocation of byte[]s
@@ -158,13 +184,24 @@ public class BulkIngestKey implements WritableComparable<BulkIngestKey> {
         hashCode = UNCOMPUTED_HASH;
     }
 
-    /* Read in byte[] to save Text object creation */
+    /* Read a length-prefixed byte[] - the inline table name's form - to save Text object creation */
     private byte[] readText(DataInput in) throws IOException {
-        byte[] data = new byte[WritableUtils.readVInt(in)];
-        in.readFully(data, 0, data.length);
+        return readBytes(in, WritableUtils.readVInt(in));
+    }
+
+    /* Read a component of the length its header entry gave */
+    private byte[] readBytes(DataInput in, int length) throws IOException {
+        byte[] data = new byte[length];
+        in.readFully(data, 0, length);
         return data;
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Writes the table id (and, for a table the dictionary does not know, the name inline), then the four component lengths as a header, then the four
+     * components' bytes back to back, then the timestamp and the deleted flag. The class javadoc has the layout and why the lengths are grouped.
+     */
     @Override
     public void write(DataOutput out) throws IOException {
         int id = getTableId();
@@ -176,10 +213,21 @@ public class BulkIngestKey implements WritableComparable<BulkIngestKey> {
 
         // write each component straight from the Key's backing arrays: getRow(Text) and friends would copy
         // every component into a scratch Text first just to hand write() the same bytes
-        writeByteSequence(out, key.getRowData());
-        writeByteSequence(out, key.getColumnFamilyData());
-        writeByteSequence(out, key.getColumnQualifierData());
-        writeByteSequence(out, key.getColumnVisibilityData());
+        ByteSequence row = key.getRowData();
+        ByteSequence cf = key.getColumnFamilyData();
+        ByteSequence cq = key.getColumnQualifierData();
+        ByteSequence cv = key.getColumnVisibilityData();
+
+        // the header: all four lengths, ahead of all four components
+        WritableUtils.writeVInt(out, row.length());
+        WritableUtils.writeVInt(out, cf.length());
+        WritableUtils.writeVInt(out, cq.length());
+        WritableUtils.writeVInt(out, cv.length());
+
+        writeByteSequence(out, row);
+        writeByteSequence(out, cf);
+        writeByteSequence(out, cq);
+        writeByteSequence(out, cv);
 
         WritableUtils.writeVLong(out, key.getTimestamp());
         out.writeBoolean(key.isDeleted());
@@ -191,7 +239,6 @@ public class BulkIngestKey implements WritableComparable<BulkIngestKey> {
     }
 
     private void writeByteSequence(DataOutput out, ByteSequence bs) throws IOException {
-        WritableUtils.writeVInt(out, bs.length());
         if (bs.isBackedByArray()) {
             out.write(bs.getBackingArray(), bs.offset(), bs.length());
         } else {
@@ -271,6 +318,48 @@ public class BulkIngestKey implements WritableComparable<BulkIngestKey> {
             BulkIndexKeyTableLookup.configure(conf);
         }
 
+        /**
+         * {@inheritDoc}
+         * <p>
+         * After the table component, this decodes both records' four component lengths - which the layout groups into a header ahead of the data, see the
+         * {@link BulkIngestKey} class javadoc - and settles the four components with a <em>single</em>
+         * {@link Arrays#mismatch(byte[], int, int, byte[], int, int)} over the data region rather than a comparison per component.
+         *
+         * <h2>Why the header makes one scan enough</h2>
+         *
+         * The old interleaved layout could not be scanned this way, because a length vint sat between every pair of components: the vints are part of the bytes
+         * being scanned, they do not order the components they measure, and a first difference landing inside one meant the scan had learned nothing usable.
+         * With the lengths hoisted out, the data region is nothing but component bytes, and the header is read before the scan rather than during it. That
+         * turns the two cases the header can present into two straightforward ones:
+         *
+         * <ul>
+         * <li><strong>the headers agree through component {@code d-1}</strong> - then components {@code 0..d-1} occupy the same offsets, relative to each
+         * record's data start, in both records. The whole {@code alignedLen} byte prefix of the data region is therefore alignment-safe, and one scan over it
+         * finds the first byte the two records disagree on. Because both ranges are the same length and the byte at index {@code k} belongs to the same
+         * component at the same intra-component offset in both, its unsigned difference is exactly what a per component {@code compareBytes} would have
+         * returned, and every earlier component was equal - so it is the answer.</li>
+         * <li><strong>the headers differ at component {@code d}</strong> - then the header has said, before a single data byte is read, precisely where
+         * alignment breaks. Components after {@code d} are never examined, because component {@code d} <em>must</em> decide: its two contents differ in length,
+         * so either they differ in some byte, or one is a proper prefix of the other and {@code compareBytes} returns the nonzero length difference.</li>
+         * </ul>
+         *
+         * Only when all four lengths agree and the entire data region matches does anything past it get decoded, and then the timestamp and deleted flag are
+         * compared by value exactly as they always were.
+         *
+         * @param b1
+         *            the buffer holding the left record
+         * @param s1
+         *            the offset of the left record
+         * @param l1
+         *            the serialized length of the left record
+         * @param b2
+         *            the buffer holding the right record
+         * @param s2
+         *            the offset of the right record
+         * @param l2
+         *            the serialized length of the right record
+         * @return a negative number, zero, or a positive number as the left record sorts before, with, or after the right
+         */
         @Override
         public int compare(byte[] b1, int s1, int l1, byte[] b2, int s2, int l2) {
 
@@ -325,26 +414,112 @@ public class BulkIngestKey implements WritableComparable<BulkIngestKey> {
                 o2 += nl2;
             }
 
-            // 4 parts to read (all Text... vint gives size of Text):
-            // row, col fam, col qual, col vis
-            for (int i = 0; i < 4; i++) {
+            // the header: the lengths of row, col fam, col qual and col vis, in that order, for each record.
+            // writeVInt stores any value in 0..127 as the byte itself, and every component sharded ingest emits
+            // is shorter than that - so the common header is four single-byte entries, recognized in one test by
+            // all four bytes being non-negative at once, and read without the general decoder or its int[] traffic
+            int rowLen1;
+            int cfLen1;
+            int cqLen1;
+            int cvLen1;
+            if ((b1[o1] | b1[o1 + 1] | b1[o1 + 2] | b1[o1 + 3]) >= 0) {
+                rowLen1 = b1[o1];
+                cfLen1 = b1[o1 + 1];
+                cqLen1 = b1[o1 + 2];
+                cvLen1 = b1[o1 + 3];
+                o1 += 4;
+            } else {
+                // at least one component is 128 bytes or longer, so its entry needs the multi byte vint form
                 startAndLen[0] = o1;
-                // get Text's length in bytes
-                int tl1 = readVInt(b1, startAndLen);
+                rowLen1 = readLength(b1, startAndLen);
                 o1 += startAndLen[1];
-                startAndLen[0] = o2;
-                int tl2 = readVInt(b2, startAndLen);
-                o2 += startAndLen[1];
-
-                int result = compareBytes(b1, o1, tl1, b2, o2, tl2);
-                if (result != 0) {
-                    return result;
-                }
-                o1 += tl1;
-                o2 += tl2;
+                startAndLen[0] = o1;
+                cfLen1 = readLength(b1, startAndLen);
+                o1 += startAndLen[1];
+                startAndLen[0] = o1;
+                cqLen1 = readLength(b1, startAndLen);
+                o1 += startAndLen[1];
+                startAndLen[0] = o1;
+                cvLen1 = readLength(b1, startAndLen);
+                o1 += startAndLen[1];
             }
 
+            int rowLen2;
+            int cfLen2;
+            int cqLen2;
+            int cvLen2;
+            if ((b2[o2] | b2[o2 + 1] | b2[o2 + 2] | b2[o2 + 3]) >= 0) {
+                rowLen2 = b2[o2];
+                cfLen2 = b2[o2 + 1];
+                cqLen2 = b2[o2 + 2];
+                cvLen2 = b2[o2 + 3];
+                o2 += 4;
+            } else {
+                startAndLen[0] = o2;
+                rowLen2 = readLength(b2, startAndLen);
+                o2 += startAndLen[1];
+                startAndLen[0] = o2;
+                cfLen2 = readLength(b2, startAndLen);
+                o2 += startAndLen[1];
+                startAndLen[0] = o2;
+                cqLen2 = readLength(b2, startAndLen);
+                o2 += startAndLen[1];
+                startAndLen[0] = o2;
+                cvLen2 = readLength(b2, startAndLen);
+                o2 += startAndLen[1];
+            }
+
+            // the data regions start where the headers end
+            int data1 = o1;
+            int data2 = o2;
+
+            // alignedLen is the number of leading data bytes the two records lay out identically - which is what
+            // makes one scan of them sound - and dl1/dl2 are the two lengths of the first component whose lengths
+            // differ, the component that must decide when the aligned prefix ties. dl1 stays -1 if all four agree.
+            int alignedLen;
+            int dl1 = -1;
+            int dl2 = -1;
+            if (rowLen1 != rowLen2) {
+                alignedLen = 0;
+                dl1 = rowLen1;
+                dl2 = rowLen2;
+            } else if (cfLen1 != cfLen2) {
+                alignedLen = rowLen1;
+                dl1 = cfLen1;
+                dl2 = cfLen2;
+            } else if (cqLen1 != cqLen2) {
+                alignedLen = rowLen1 + cfLen1;
+                dl1 = cqLen1;
+                dl2 = cqLen2;
+            } else if (cvLen1 != cvLen2) {
+                alignedLen = rowLen1 + cfLen1 + cqLen1;
+                dl1 = cvLen1;
+                dl2 = cvLen2;
+            } else {
+                alignedLen = rowLen1 + cfLen1 + cqLen1 + cvLen1;
+            }
+
+            // one scan over every byte the two records place at the same offset. Both ranges are alignedLen long, so
+            // mismatch cannot report the one-is-a-prefix-of-the-other outcome - a non-negative k is a genuine
+            // differing byte, at the same offset within the same component of both records.
+            int k = Arrays.mismatch(b1, data1, data1 + alignedLen, b2, data2, data2 + alignedLen);
+            if (k >= 0) {
+                return (b1[data1 + k] & 0xff) - (b2[data2 + k] & 0xff);
+            }
+
+            if (dl1 >= 0) {
+                // the aligned prefix matched, so every component ahead of the length-differing one is equal and that
+                // component decides. It cannot tie: its two lengths differ, so either some byte differs, or one
+                // content is a proper prefix of the other and compareBytes returns the length difference. Nothing
+                // after it is ever looked at.
+                return compareBytes(b1, data1 + alignedLen, dl1, b2, data2 + alignedLen, dl2);
+            }
+
+            // all four components are equal; alignedLen is the whole data region, so the timestamps follow it
+
             // get timestamps (vlong)
+            o1 = data1 + alignedLen;
+            o2 = data2 + alignedLen;
             startAndLen[0] = o1;
             long ts1 = readVLong(b1, startAndLen);
             o1 += startAndLen[1];
@@ -367,6 +542,27 @@ public class BulkIngestKey implements WritableComparable<BulkIngestKey> {
             }
 
             return 0;
+        }
+
+        /**
+         * Reads one header entry - a component length, which is never negative. Only called on the header fallback path, when some component in the record is
+         * 128 bytes or longer: the other entries of such a header are usually still the single byte {@code 0..127} form, so this keeps that case to one array
+         * read and consults the general decoder only for the entries that really are multi byte.
+         *
+         * @see Comparator#readVLong(byte[], int[])
+         * @param bytes
+         *            payload containing the header
+         * @param startAndLen
+         *            index 0 holds the offset into the byte array and position 1 is populated with the length of the bytes
+         * @return the component length
+         */
+        private static int readLength(byte[] bytes, int[] startAndLen) {
+            byte first = bytes[startAndLen[0]];
+            if (first >= 0) {
+                startAndLen[1] = 1;
+                return first;
+            }
+            return readVInt(bytes, startAndLen);
         }
 
         public static boolean readBoolean(byte[] bytes, int start) {
