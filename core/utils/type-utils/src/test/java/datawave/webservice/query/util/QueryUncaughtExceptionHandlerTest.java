@@ -230,7 +230,7 @@ class QueryUncaughtExceptionHandlerTest {
             CountDownLatch doneLatch = new CountDownLatch(threadCount);
 
             List<Exception> validExceptions = Collections.synchronizedList(new ArrayList<>());
-            List<ImmutablePair<Throwable, Thread>> testPairs = Collections.synchronizedList(new ArrayList<>());
+            List<ImmutablePair<Throwable,Thread>> testPairs = Collections.synchronizedList(new ArrayList<>());
 
             try {
                 // Submit a bunch of tasks that will attempt to pass a thread and exception to the handler.
@@ -266,15 +266,15 @@ class QueryUncaughtExceptionHandlerTest {
                 assertNotNull(capturedException, "An exception should have been captured");
                 assertNotNull(capturedThread, "A thread should have been captured");
                 assertTrue(validExceptions.contains(capturedException), "Captured exception must be one of the thrown exceptions");
-                
+
                 // Verify the exception and thread came from the same call.
-                ImmutablePair<Throwable, Thread> thrownPair = null;
-                for(ImmutablePair<Throwable,Thread> pair : testPairs) {
-                    if(pair.getLeft() == capturedException) {
+                ImmutablePair<Throwable,Thread> thrownPair = null;
+                for (ImmutablePair<Throwable,Thread> pair : testPairs) {
+                    if (pair.getLeft() == capturedException) {
                         thrownPair = pair;
                     }
                 }
-    
+
                 assertNotNull(thrownPair, "An uncaught exception should have been captured");
                 assertSame(thrownPair.getRight(), capturedThread, "Captured throwable and thread must originate from the same uncaughtException call");
             } finally {
