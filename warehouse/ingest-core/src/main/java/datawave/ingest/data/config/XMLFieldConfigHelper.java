@@ -482,6 +482,9 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
             fieldInfo.tokenized = this.defaultTokenized;
             fieldInfo.reverseTokenized = this.defaultReverseTokenized;
             String fieldType = this.defaultFieldType;
+            String combine = null;
+            String groupingPolicyAttr = null;
+            String allowMissingAttr = null;
 
             for (int i = 0; i < sz; i++) {
                 final String qn = attributes.getQName(i);
@@ -502,18 +505,13 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
                 } else if (INDEX_TYPE.equals(qn)) {
                     fieldType = lv;
                 } else if (COMBINE.equals(qn)) {
-                    if (lv != null && !lv.equals("")) {
-                        fieldInfo.combined = true;
-                        this.fieldHelper.addCombinedField(name, lv);
-                    }
+                    combine = lv;
                 } else if (GROUPING_POLICY.equals(qn)) {
-                    if (lv != null && !lv.equals("") && !this.fieldHelper.defaultGroupingPolicy.equals(VirtualIngest.GroupingPolicy.valueOf(lv))) {
-                        this.fieldHelper.addGroupingPolicy(name, lv);
-                    }
+                    groupingPolicyAttr = lv;
                 } else if (ALLOW_MISSING.equals(qn)) {
-                    this.fieldHelper.addAllowMissing(name, Boolean.parseBoolean(lv));
+                    allowMissingAttr = lv;
                 } else {
-                    throw new IllegalArgumentException(UNEXPECTED_ATTRIBUTE + uri + " in 'field' tag: '" + qn + "'");
+                    throw new IllegalArgumentException("Unexpected attribute encountered in: " + uri + " in 'field' tag: '" + qn + "'");
                 }
             }
 
@@ -522,6 +520,17 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
             } else if (!this.fieldHelper.addKnownField(name, fieldInfo)) {
                 throw new IllegalArgumentException(
                                 "Field " + name + " was already seen, check configuration file for duplicate entries (among fieldPattern, field tags)");
+            }
+
+            if (combine != null && !combine.isEmpty()) {
+                fieldInfo.combined = true;
+                this.fieldHelper.addCombinedField(name, combine);
+            }
+            if (groupingPolicyAttr != null && !groupingPolicyAttr.isEmpty()) {
+                this.fieldHelper.addGroupingPolicy(name, groupingPolicyAttr);
+            }
+            if (allowMissingAttr != null && !allowMissingAttr.isEmpty()) {
+                this.fieldHelper.addAllowMissing(name, Boolean.parseBoolean(allowMissingAttr));
             }
             if (fieldType != null) {
                 if (this.ingestHelper != null) {

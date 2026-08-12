@@ -278,11 +278,20 @@ public class XMLFieldConfigHelperTest {
 
         Multimap<String,NormalizedContentInterface> results = ingestHelper.getVirtualFields(eventFields);
 
+        // A=B.C, same group
         assertTrue(results.containsKey("A"));
-        assertFalse(results.containsKey("D"));// different groups
-        assertTrue(results.containsKey("G"));// different groups but with groupingPolicy override
-        assertFalse(results.containsKey("H"));// default allowMissing=false
-        assertTrue(results.containsKey("I"));// override allowMissing=true
+
+        // D=E.F, different groups, no policy override
+        assertFalse(results.containsKey("D"));
+
+        // G=X.Y, different groups but with groupingPolicy override
+        assertTrue(results.containsKey("G"));
+
+        // H=B.DNE, default allowMissing=false
+        assertFalse(results.containsKey("H"));
+
+        // I=B.DNE, override groupingPolicy and allowMissing=true
+        assertTrue(results.containsKey("I"));
 
         assertEquals("banana(cantaloupe)", results.get("A").iterator().next().getEventFieldValue());
         assertEquals("ketchup(meatball)", results.get("G").iterator().next().getEventFieldValue());

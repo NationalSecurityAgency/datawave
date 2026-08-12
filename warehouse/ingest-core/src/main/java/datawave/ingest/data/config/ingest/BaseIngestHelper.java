@@ -281,7 +281,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
 
         // Load the proper list of fields to (not) index
         if (fieldConfigHelper != null && log.isInfoEnabled()) {
-            log.info("Using field config helper for {}", this.getType().typeName());
+            log.info("Using field config helper for {} this will override property-based index configs", this.getType().typeName());
         } else if (configProperty == null && log.isWarnEnabled()) {
             log.warn("No index fields or disallowlist fields specified, not generating index fields for {}", this.getType().typeName());
         } else {
