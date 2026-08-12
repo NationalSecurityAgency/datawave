@@ -91,11 +91,18 @@ public class DatawavePrincipal implements ProxiedUserDetails, Principal, Seriali
         }
     }
 
-    /*
-     * The purpose here is to return a List of DatawaveUsers where the original caller is first followed by any entities in X-ProxiedEntitiesChain in the order
-     * that they were traversed and ending with the entity that made the final call. The List that is passed is not modified. This method makes the following
-     * assumptions about the List that is passed to ths method: 1) The first element is the one that made the final call 2) Additional elements (if any) are
-     * from X-ProxiedEntitiesChain in chronological order of the calls
+    /**
+     * Returns a {@link List} of users where the first element is the original caller, followed by any entities in the X-ProxiedEntitiesChain in the order that
+     * they were traversed, ending with the entity that made the final call. The terminal server, if present, will be the last user in the list. This method
+     * makes the following assumptions:
+     * <ol>
+     * <li>The first element is the one that made the final call.</li>
+     * <li>Additional elements (if any) are from X-ProxiedEntitiesChain in chronological order of the calls.</li>
+     * </ol>
+     *
+     * @param datawaveUsers
+     *            the users (will not be modified)
+     * @return the ordered users
      */
     static protected List<DatawaveUser> orderProxiedUsers(List<DatawaveUser> datawaveUsers) {
         List<DatawaveUser> users = new ArrayList<>();
@@ -113,6 +120,15 @@ public class DatawavePrincipal implements ProxiedUserDetails, Principal, Seriali
     @Override
     public Collection<DatawaveUser> getProxiedUsers() {
         return Collections.unmodifiableCollection(this.proxiedUsers);
+    }
+
+    /**
+     * Return a new list containing the proxied users of this {@link DatawavePrincipal} as ordered by {@link #getOrderedProxiedUsers()}.
+     *
+     * @return the ordered proxied users
+     */
+    public List<DatawaveUser> getOrderedProxiedUsers() {
+        return orderProxiedUsers(this.proxiedUsers);
     }
 
     @Override

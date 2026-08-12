@@ -468,8 +468,8 @@ public class DatawaveSecurityRealm implements SecurityRealm {
                 mapAttributes.addAll(ATTRIBUTE_PRIMARY_USER_ROLES, primaryUser.getRoles());
             }
 
-            // Add all roles for the proxied users.
-            Iterator<DatawaveUser> proxiedUsers = principal.getProxiedUsers().iterator();
+            // Add all roles for the proxied users. We must iterate through the proxied users in chronological order from original caller to last.
+            Iterator<DatawaveUser> proxiedUsers = principal.getOrderedProxiedUsers().iterator();
             Set<String> proxyUserKeys = new HashSet<>();
             int proxyUserNum = 0;
             while (proxiedUsers.hasNext()) {
