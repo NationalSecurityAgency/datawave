@@ -26,22 +26,6 @@ public class BulkIngestKey implements WritableComparable<BulkIngestKey> {
     private static final int UNRESOLVED_ID = Integer.MIN_VALUE;
 
     /**
-     * The table id {@link #getTableId()} resolved most recently, kept as a one entry memo across keys.
-     * <p>
-     * Keys arrive in runs on the same table - a handler emits an event key, then its field index entries, then its global index entries - so most lookups ask
-     * for the table the previous key asked for. Skipping the hash lookup on those is worth it because the lookup is a {@link Text} probe: {@code Text.hashCode}
-     * is not memoized, so it walks every byte of the name to hash it and then walks them again in {@code equals}. The memo replaces that with a single
-     * {@code Text.equals} against the name the id stands for, which rejects a different table on the length comparison it starts with.
-     * <p>
-     * Only the id is stored, and it is validated against {@link BulkIndexKeyTableLookup#nameFor(int)} before being trusted. That is what lets this be a plain
-     * {@code int} with no synchronization: an {@code int} write cannot tear, so every value this field can hold is either rejected by the equality check or is
-     * genuinely the id of the name being resolved. A race between threads costs a missed memo, never a wrong id, and a dictionary swap invalidates the memo for
-     * free because the validation reads the names of whichever dictionary is now installed. Caching the name alongside the id in a second field would not be
-     * safe this way - a reader could pair one thread's name with another thread's id.
-     */
-    private static int lastResolvedTableId = 0;
-
-    /**
      * {@link #hashCode} before it has been computed. A key whose hash genuinely is zero simply recomputes it on every call, which costs a little and returns
      * the same answer.
      */
@@ -92,28 +76,15 @@ public class BulkIngestKey implements WritableComparable<BulkIngestKey> {
     }
 
     /**
-     * The id the installed {@link BulkIndexKeyTableLookup} gives {@link #tableName}, resolved and cached on first use. The hash lookup is skipped entirely when
-     * this key is on the same table as the last one to ask - see {@link #lastResolvedTableId}.
+     * The id the installed {@link BulkIndexKeyTableLookup} gives {@link #tableName}, resolved and cached on first use. Keys arrive in runs on the same table,
+     * and {@link BulkIndexKeyTableLookup#idFor(Text)} memoizes the last table it resolved, so the common resolution is one short {@code Text.equals} rather
+     * than a hash probe over the name.
      *
      * @return the dictionary id, or {@link BulkIndexKeyTableLookup#UNKNOWN_ID} if the dictionary does not know this table
      */
     protected int getTableId() {
         if (tableId == UNRESOLVED_ID) {
-            BulkIndexKeyTableLookup dictionary = BulkIndexKeyTableLookup.get();
-
-            // read the memo once into a local, so the name it is validated against is the name of the id we return
-            int last = lastResolvedTableId;
-            Text lastName = dictionary.nameFor(last);
-            if (null != lastName && lastName.equals(tableName)) {
-                tableId = last;
-            } else {
-                tableId = dictionary.idFor(tableName);
-                // an unknown table has no id to remember, and leaving the memo alone keeps it useful for the keys
-                // on either side of it
-                if (tableId != BulkIndexKeyTableLookup.UNKNOWN_ID) {
-                    lastResolvedTableId = tableId;
-                }
-            }
+            tableId = BulkIndexKeyTableLookup.get().idFor(tableName);
         }
         return tableId;
     }
@@ -129,6 +100,16 @@ public class BulkIngestKey implements WritableComparable<BulkIngestKey> {
      * calling {@link #hashCode()}. That is temporary - once the field is private, the constructors can leave it {@link #UNCOMPUTED_HASH} like the mutators do.
      */
     protected void buildHashCode() {
+        /**
+         * BulkIngestKey outKey = new BulkIngestKey(key.getTableName(), key.getKey()); outKey.getKey().setTimestamp(-1 * ts); // mutates the Key AFTER the hash
+         * is built
+         *
+         * On integration, outKey's hash reflects the pre-mutation timestamp. Two events on the same day produce outKeys that are equal by compareTo but have
+         * different hashCodes — a latent equals/hashCode violation that happens to be harmless because HashMultimap then keeps them in separate buckets and the
+         * reducer dedupes downstream. If the constructor were lazy, the hash would be computed post-mutation at cache.put, the equal keys would collide, and
+         * HashMultimap's set semantics would start deduping (key,value) pairs in the mapper — a real behavior change. Keeping the constructor eager preserves
+         * the integration behavior bit-for-bit. So: hashcode does not manipulate the dedupe path, and the constructor is precisely why.
+         */
         final int prime = 31;
         int result = 1;
         result = prime * result + ((key == null) ? 0 : key.hashCode());

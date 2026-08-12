@@ -86,6 +86,23 @@ final class BulkIndexKeyTableLookup {
      */
     private final String signature;
 
+    /**
+     * The id {@link #idFor(Text)} resolved most recently, kept as a one entry memo.
+     * <p>
+     * Resolutions arrive in runs on the same table - a handler emits an event key, then its field index entries, then its global index entries - so most ask
+     * for the table the previous one asked for. Skipping the map probe on those is worth it because the probe is keyed by {@link Text}: {@code Text.hashCode}
+     * is not memoized, so it walks every byte of the name to hash it and then walks them again in {@code equals}. The memo replaces that with a single
+     * {@code Text.equals} against the name the id stands for, which rejects a different table on the length comparison it starts with.
+     * <p>
+     * Only the id is stored, and it is validated against {@link #names} before being trusted. That is what lets this be a plain {@code int} with no
+     * synchronization: an {@code int} write cannot tear, and only ids this dictionary assigned are ever stored, so every value this field can hold names a
+     * valid entry of {@code names} and is either rejected by the equality check or is genuinely the id of the name being resolved. A race between threads costs
+     * a missed memo, never a wrong id. Caching the name alongside the id in a second field would not be safe this way - a reader could pair one thread's name
+     * with another thread's id. Because the memo lives on the dictionary instance, installing a new dictionary starts with a fresh memo rather than one that
+     * must be re-validated against another dictionary's names.
+     */
+    private int lastResolvedId = 0;
+
     private BulkIndexKeyTableLookup(Configuration conf, Collection<String> tableNames, String signature) {
         this.conf = conf;
         this.signature = signature;
@@ -160,22 +177,32 @@ final class BulkIndexKeyTableLookup {
     }
 
     /**
-     * The id standing for the given table name.
-     * <p>
-     * This is a hash lookup on a {@link Text}, which is not as cheap as it sounds: {@code Text.hashCode()} is {@code WritableComparator.hashBytes} over the
-     * whole name and is not memoized, so every call walks all of the name's bytes to hash it and walks them again inside {@code equals}. Callers resolving one
-     * table repeatedly should avoid it - {@link BulkIngestKey#getTableId()} memoizes against {@link #nameFor(int)} rather than calling here per key.
+     * The id standing for the given table name, with the most recently resolved table memoized - see {@link #lastResolvedId}. Resolving the same table
+     * repeatedly, which is how resolutions actually arrive, costs one short {@code Text.equals} rather than a map probe that hashes the whole name.
      *
      * @param tableName
      *            the table name, which may be null
      * @return the table's id, or {@link #UNKNOWN_ID} if this dictionary does not contain it
      */
     public int idFor(Text tableName) {
-        if (null == tableName) {
+        // the empty check keeps the fallback dictionary free: EMPTY would otherwise hash the whole name just to probe a map with nothing in it
+        if (null == tableName || names.length == 0) {
             return UNKNOWN_ID;
         }
+
+        // read the memo once into a local, so the name it is validated against is the name of the id we return
+        int last = lastResolvedId;
+        if (names[last].equals(tableName)) {
+            return last;
+        }
+
         Integer id = ids.get(tableName);
-        return (null == id) ? UNKNOWN_ID : id;
+        if (null == id) {
+            // an unknown table has no id to remember, and leaving the memo alone keeps it useful for the resolutions on either side of it
+            return UNKNOWN_ID;
+        }
+        lastResolvedId = id;
+        return id;
     }
 
     /**
