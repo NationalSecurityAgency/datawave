@@ -1,9 +1,10 @@
 package datawave.query.iterator.logic;
 
-import datawave.query.attributes.AttributeFactory;
-import datawave.query.attributes.Document;
-import datawave.query.data.parsers.FieldIndexKey;
-import datawave.query.jexl.functions.FieldIndexAggregator;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.Collection;
+import java.util.Collections;
+
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -11,27 +12,25 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.hadoop.io.Text;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.Collection;
-import java.util.Collections;
+import datawave.query.attributes.AttributeFactory;
+import datawave.query.attributes.Document;
+import datawave.query.jexl.functions.FieldIndexAggregator;
 
 /**
- * A specialized {@link FieldIndexAggregator} that handles null and not-null checks efficiently
- * for non-event (index-only) fields.
+ * A specialized {@link FieldIndexAggregator} that handles null and not-null checks efficiently for non-event (index-only) fields.
  * <p>
- * Instead of scanning all indexed terms for a document, it returns a single key per document ID
- * and immediately seeks past the remaining terms.
+ * Instead of scanning all indexed terms for a document, it returns a single key per document ID and immediately seeks past the remaining terms.
  */
 public class NullFieldIndexAggregator implements FieldIndexAggregator {
 
     @Override
-    public Key apply(SortedKeyValueIterator<Key, Value> itr) throws IOException{
-        return apply(itr,null, Collections.emptyList(),false);
+    public Key apply(SortedKeyValueIterator<Key,Value> itr) throws IOException {
+        return apply(itr, null, Collections.emptyList(), false);
     }
 
     @Override
-    public Key apply(SortedKeyValueIterator<Key, Value> itr, Range range, Collection<ByteSequence> columnFamilies, boolean includeColumnFamilies) throws IOException {
+    public Key apply(SortedKeyValueIterator<Key,Value> itr, Range range, Collection<ByteSequence> columnFamilies, boolean includeColumnFamilies)
+                    throws IOException {
         if (itr.hasTop()) {
             Key topKey = itr.getTopKey();
 
@@ -60,8 +59,7 @@ public class NullFieldIndexAggregator implements FieldIndexAggregator {
     }
 
     @Override
-    public Key apply(SortedKeyValueIterator<Key, Value> itr, Document doc, AttributeFactory attrs) throws IOException {
-        return apply(itr,null, Collections.emptyList(),false);
+    public Key apply(SortedKeyValueIterator<Key,Value> itr, Document doc, AttributeFactory attrs) throws IOException {
+        return apply(itr, null, Collections.emptyList(), false);
     }
 }
-

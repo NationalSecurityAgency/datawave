@@ -26,7 +26,6 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
-import datawave.query.iterator.logic.NullFieldIndexAggregator;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
@@ -92,6 +91,7 @@ import datawave.query.iterator.builder.OrIteratorBuilder;
 import datawave.query.iterator.builder.TermFrequencyIndexBuilder;
 import datawave.query.iterator.ivarator.IvaratorCacheDir;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
+import datawave.query.iterator.logic.NullFieldIndexAggregator;
 import datawave.query.iterator.logic.OrIterator;
 import datawave.query.iterator.logic.RangeFilterIterator;
 import datawave.query.iterator.logic.RegexFilterIterator;
@@ -628,7 +628,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             if (this.indexOnlyFields.contains(builder.getField())) {
                 builder.setKeyTransform(new NullFieldIndexAggregator());
                 builder.setValue("");
-            }else{
+            } else {
                 checkForSatisfactionError();
                 return null;
             }
@@ -689,9 +689,9 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         // the evaluation can handle a term in the form 'FIELD == null', however no IndexIterator should be built
         if (builder.getValue() == null) {
             if (indexOnlyFields.contains(builder.getField())) {
-               builder.setKeyTransform(new NullFieldIndexAggregator());
-               builder.setValue("");
-            }else{
+                builder.setKeyTransform(new NullFieldIndexAggregator());
+                builder.setValue("");
+            } else {
                 return null;
             }
 
