@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -19,7 +20,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.apache.commons.lang3.tuple.ImmutableTriple;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -39,6 +40,21 @@ class QueryUncaughtExceptionHandlerTest {
     }
 
     /**
+     * Verifies that the methods {@link QueryUncaughtExceptionHandler#getThread()} and {@link QueryUncaughtExceptionHandler#getThrowable()} are marked
+     * deprecated in favor of {@link QueryUncaughtExceptionHandler#getUncaughtException()}, which allows atomic gets of the thread and throwable.
+     */
+    @Test
+    void nonAtomicGettersAreDeprecated() throws NoSuchMethodException {
+        // Retrieve the method from the target class by its name and parameter types
+        Method getThreadMethod = QueryUncaughtExceptionHandler.class.getMethod("getThread");
+        Method getThrowable = QueryUncaughtExceptionHandler.class.getMethod("getThrowable");
+
+        // Assert that the @Deprecated annotation is present
+        assertTrue(getThreadMethod.isAnnotationPresent(Deprecated.class), "The method 'getThread()' should be marked as @Deprecated");
+        assertTrue(getThrowable.isAnnotationPresent(Deprecated.class), "The method 'getThrowable()' should be marked as @Deprecated");
+    }
+
+    /**
      * Contains tests for scenarios involving a single thread.
      */
     @Nested
@@ -52,6 +68,7 @@ class QueryUncaughtExceptionHandlerTest {
         void initialStateIsEmpty() {
             assertNull(handler.getThrowable());
             assertNull(handler.getThread());
+            assertNull(handler.getUncaughtException());
             assertTrue(handler.getMessages().isEmpty());
         }
 
@@ -67,6 +84,10 @@ class QueryUncaughtExceptionHandlerTest {
 
             assertSame(exception, handler.getThrowable());
             assertSame(thread, handler.getThread());
+
+            ImmutablePair<Throwable,Thread> uncaughtException = handler.getUncaughtException();
+            assertSame(exception, uncaughtException.getLeft());
+            assertSame(thread, uncaughtException.getRight());
         }
 
         /**
@@ -84,6 +105,10 @@ class QueryUncaughtExceptionHandlerTest {
 
             assertSame(exception1, handler.getThrowable());
             assertSame(thread1, handler.getThread());
+
+            ImmutablePair<Throwable,Thread> uncaughtException = handler.getUncaughtException();
+            assertSame(exception1, uncaughtException.getLeft());
+            assertSame(thread1, uncaughtException.getRight());
         }
 
         /**
@@ -101,6 +126,10 @@ class QueryUncaughtExceptionHandlerTest {
 
             assertSame(exception, handler.getThrowable());
             assertSame(thread, handler.getThread());
+
+            ImmutablePair<Throwable,Thread> uncaughtException = handler.getUncaughtException();
+            assertSame(exception, uncaughtException.getLeft());
+            assertSame(thread, uncaughtException.getRight());
         }
 
         /**
@@ -116,6 +145,10 @@ class QueryUncaughtExceptionHandlerTest {
 
             assertSame(exception, handler.getThrowable());
             assertSame(thread, handler.getThread());
+
+            ImmutablePair<Throwable,Thread> uncaughtException = handler.getUncaughtException();
+            assertSame(exception, uncaughtException.getLeft());
+            assertSame(thread, uncaughtException.getRight());
         }
 
         /**
@@ -123,12 +156,16 @@ class QueryUncaughtExceptionHandlerTest {
          */
         @Test
         void nullThreadWithRealThrowableIsStillCaptured() {
-            RuntimeException ex = new RuntimeException("boom");
+            RuntimeException exception = new RuntimeException("boom");
 
-            handler.uncaughtException(null, ex);
+            handler.uncaughtException(null, exception);
 
-            assertSame(ex, handler.getThrowable());
+            assertSame(exception, handler.getThrowable());
             assertNull(handler.getThread());
+
+            ImmutablePair<Throwable,Thread> uncaughtException = handler.getUncaughtException();
+            assertSame(exception, uncaughtException.getLeft());
+            assertNull(uncaughtException.getRight());
         }
 
         /**
@@ -221,16 +258,17 @@ class QueryUncaughtExceptionHandlerTest {
                 startLatch.countDown();
                 assertTrue(doneLatch.await(15, TimeUnit.SECONDS), "Threads failed to complete in time");
 
-                Throwable captured = handler.getThrowable();
-                Thread capturedThread = handler.getThread();
+                ImmutablePair<Throwable,Thread> uncaughtException = handler.getUncaughtException();
+                Throwable capturedException = uncaughtException.getLeft();
+                Thread capturedThread = uncaughtException.getRight();
 
                 // Verify we captured an exception.
-                assertNotNull(captured, "An exception should have been captured");
+                assertNotNull(capturedException, "An exception should have been captured");
                 assertNotNull(capturedThread, "A thread should have been captured");
-                assertTrue(thrownExceptions.contains(captured), "Captured exception must be one of the thrown exceptions");
+                assertTrue(thrownExceptions.contains(capturedException), "Captured exception must be one of the thrown exceptions");
 
                 // Verify the exception and thread came from the same call.
-                int capturedIdx = thrownExceptions.indexOf(captured);
+                int capturedIdx = thrownExceptions.indexOf(capturedException);
                 assertSame(fakeThreads.get(capturedIdx), capturedThread, "Captured throwable and thread must originate from the same uncaughtException call");
             } finally {
                 pool.shutdownNow();
@@ -274,12 +312,16 @@ class QueryUncaughtExceptionHandlerTest {
                     startLatch.countDown();
                     assertTrue(doneLatch.await(10, TimeUnit.SECONDS));
 
-                    // Verify we captured an exception.
-                    assertNotNull(handler.getThrowable(), "Trial " + trial + ": throwable missing");
-                    assertNotNull(handler.getThread(), "Trial " + trial + ": thread missing");
+                    ImmutablePair<Throwable,Thread> uncaughtException = handler.getUncaughtException();
+                    Throwable capturedException = uncaughtException.getLeft();
+                    Thread capturedThread = uncaughtException.getRight();
 
-                    String threadName = handler.getThread().getName();
-                    String exMessage = handler.getThrowable().getMessage();
+                    // Verify we captured an exception.
+                    assertNotNull(capturedException, "Trial " + trial + ": throwable missing");
+                    assertNotNull(capturedThread, "Trial " + trial + ": thread missing");
+
+                    String threadName = capturedThread.getName();
+                    String exMessage = capturedException.getMessage();
                     String threadSuffix = threadName.substring(threadName.lastIndexOf('-') + 1);
                     String exSuffix = exMessage.substring(exMessage.lastIndexOf('-') + 1);
 
@@ -413,10 +455,10 @@ class QueryUncaughtExceptionHandlerTest {
     class OrderingGuaranteeBehavior {
 
         @SuppressWarnings("unchecked")
-        private AtomicReference<ImmutableTriple<Long,Throwable,Thread>> atomicRefFor(QueryUncaughtExceptionHandler h) throws Exception {
+        private AtomicReference<ImmutablePair<Long,ImmutablePair<Throwable,Thread>>> atomicRefFor(QueryUncaughtExceptionHandler h) throws Exception {
             Field field = QueryUncaughtExceptionHandler.class.getDeclaredField("atomicRef");
             field.setAccessible(true);
-            return (AtomicReference<ImmutableTriple<Long,Throwable,Thread>>) field.get(h);
+            return (AtomicReference<ImmutablePair<Long,ImmutablePair<Throwable,Thread>>>) field.get(h);
         }
 
         private AtomicLong sequenceGeneratorFor(QueryUncaughtExceptionHandler h) throws Exception {
@@ -430,13 +472,13 @@ class QueryUncaughtExceptionHandlerTest {
          */
         @Test
         void earlierSequenceOverwritesAlreadyStoredLaterSequence() throws Exception {
-            AtomicReference<ImmutableTriple<Long,Throwable,Thread>> atomicRef = atomicRefFor(handler);
+            AtomicReference<ImmutablePair<Long,ImmutablePair<Throwable,Thread>>> atomicRef = atomicRefFor(handler);
             AtomicLong sequenceGenerator = sequenceGeneratorFor(handler);
 
             // Simulate a "late" caller (sequence 5) whose write already landed first in wall-clock time.
             Throwable lateThrowable = new RuntimeException("late-already-stored");
             Thread lateThread = new Thread("late-thread");
-            atomicRef.set(ImmutableTriple.of(5L, lateThrowable, lateThread));
+            atomicRef.set(ImmutablePair.of(5L, ImmutablePair.of(lateThrowable, lateThread)));
 
             // The generator hasn't dispensed any sequence numbers on this instance yet, so the next real call receives sequence 0, simulating a earlier call.
             assertEquals(0L, sequenceGenerator.get(), "test setup assumption: generator must be untouched");
@@ -446,9 +488,10 @@ class QueryUncaughtExceptionHandlerTest {
             handler.uncaughtException(earlyThread, earlyThrowable);
 
             // Verify that the handler contains the exception and thread from the 'earlier' call.
-            assertSame(earlyThrowable, handler.getThrowable(),
+            ImmutablePair<Throwable,Thread> uncaughtException = handler.getUncaughtException();
+            assertSame(earlyThrowable, uncaughtException.getLeft(),
                             "A call assigned a lower sequence number must overwrite an already-stored higher-sequence value");
-            assertSame(earlyThread, handler.getThread());
+            assertSame(earlyThread, uncaughtException.getRight());
         }
 
         /**
@@ -456,13 +499,13 @@ class QueryUncaughtExceptionHandlerTest {
          */
         @Test
         void laterSequenceNeverOverwritesAlreadyStoredEarlierSequence() throws Exception {
-            AtomicReference<ImmutableTriple<Long,Throwable,Thread>> atomicRef = atomicRefFor(handler);
+            AtomicReference<ImmutablePair<Long,ImmutablePair<Throwable,Thread>>> atomicRef = atomicRefFor(handler);
             AtomicLong sequenceGenerator = sequenceGeneratorFor(handler);
 
             // Simulate the true first call (sequence 0) already having been stored.
             Throwable earlyThrowable = new RuntimeException("true-earliest-call");
             Thread earlyThread = new Thread("early-thread");
-            atomicRef.set(ImmutableTriple.of(0L, earlyThrowable, earlyThread));
+            atomicRef.set(ImmutablePair.of(0L, ImmutablePair.of(earlyThrowable, earlyThread)));
 
             // Advance the generator so the next real call receives a higher sequence number, simulating a caller that genuinely happened later.
             sequenceGenerator.set(999L);
@@ -470,9 +513,10 @@ class QueryUncaughtExceptionHandlerTest {
             handler.uncaughtException(new Thread("late-thread"), new RuntimeException("late-loser"));
 
             // Verify that the handler contains the exception and thread from the 'earlier' call.
-            assertSame(earlyThrowable, handler.getThrowable(),
+            ImmutablePair<Throwable,Thread> uncaughtException = handler.getUncaughtException();
+            assertSame(earlyThrowable, uncaughtException.getLeft(),
                             "A call assigned a higher sequence number must never overwrite an already-stored lower-sequence value");
-            assertSame(earlyThread, handler.getThread());
+            assertSame(earlyThread, uncaughtException.getRight());
         }
 
         /**
@@ -480,7 +524,7 @@ class QueryUncaughtExceptionHandlerTest {
          */
         @Test
         void repeatedOutOfOrderArrivalsConvergeOnLowestSequence() throws Exception {
-            AtomicReference<ImmutableTriple<Long,Throwable,Thread>> atomicRef = atomicRefFor(handler);
+            AtomicReference<ImmutablePair<Long,ImmutablePair<Throwable,Thread>>> atomicRef = atomicRefFor(handler);
             AtomicLong sequenceGenerator = sequenceGeneratorFor(handler);
 
             // Drive the real merge logic (via the real sequence generator + real uncaughtException call) with a deliberately scrambled arrival order:
@@ -502,8 +546,9 @@ class QueryUncaughtExceptionHandlerTest {
             }
 
             // Verify the handler has the throwable and thread from sequence 0.
-            assertSame(winningThrowable, handler.getThrowable(), "Only the candidate with sequence 0 should survive regardless of arrival order");
-            assertSame(winningThread, handler.getThread());
+            ImmutablePair<Throwable,Thread> uncaughtException = handler.getUncaughtException();
+            assertSame(winningThrowable, uncaughtException.getLeft(), "Only the candidate with sequence 0 should survive regardless of arrival order");
+            assertSame(winningThread, uncaughtException.getRight());
             assertEquals(0L, atomicRef.get().getLeft().longValue());
         }
     }

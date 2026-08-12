@@ -1,14 +1,13 @@
 package datawave.webservice.query.util;
 
 import java.lang.Thread.UncaughtExceptionHandler;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.apache.commons.lang3.tuple.ImmutableTriple;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 
 /**
  * Implementation of {@link UncaughtExceptionHandler} that captures and retains the first exception only thrown during a query.
@@ -16,7 +15,7 @@ import org.apache.commons.lang3.tuple.ImmutableTriple;
 public class QueryUncaughtExceptionHandler implements UncaughtExceptionHandler {
 
     private final AtomicLong sequenceGenerator = new AtomicLong();
-    private final AtomicReference<ImmutableTriple<Long,Throwable,Thread>> atomicRef = new AtomicReference<>();
+    private final AtomicReference<ImmutablePair<Long,ImmutablePair<Throwable,Thread>>> atomicRef = new AtomicReference<>();
     private final Queue<String> messages = new ConcurrentLinkedQueue<>();
 
     /**
@@ -34,7 +33,7 @@ public class QueryUncaughtExceptionHandler implements UncaughtExceptionHandler {
         }
         // Get a sequence as the very first action after the null check, so that it reflects call order as much as possible, not CAS-completion order.
         long sequence = sequenceGenerator.getAndIncrement();
-        ImmutableTriple<Long,Throwable,Thread> candidate = new ImmutableTriple<>(sequence, throwable, thread);
+        ImmutablePair<Long,ImmutablePair<Throwable,Thread>> candidate = ImmutablePair.of(sequence, ImmutablePair.of(throwable, thread));
 
         // Always retain whichever candidate has the lowest sequence number, regardless of which thread's update executes first. A later-sequenced value can
         // never beat an earlier one, even if it reaches this line first.
@@ -42,38 +41,56 @@ public class QueryUncaughtExceptionHandler implements UncaughtExceptionHandler {
     }
 
     /**
-     * Return the thread of the first non-null throwable supplied to {@link #uncaughtException(Thread, Throwable)}.
+     * Return the thread of the first non-null throwable supplied to {@link #uncaughtException(Thread, Throwable)}. <strong>Warning:</strong>: this method can
+     * possibly diverge from {@link #getThrowable()} in high-contention scenarios. {@link #getUncaughtException()} is recommended.
      *
      * @return the thread, possibly null, even if {@link #getThrowable()} returns non-null
+     * @deprecated in favor of {@link #getUncaughtException()} that supports atomic fetching of an uncaught exception and its associated thread
      */
+    @Deprecated
     public Thread getThread() {
-        ImmutableTriple<Long,Throwable,Thread> triple = atomicRef.get();
-        return triple == null ? null : triple.getRight();
+        ImmutablePair<Long,ImmutablePair<Throwable,Thread>> ref = atomicRef.get();
+        return ref == null ? null : ref.getRight().getRight();
     }
 
     /**
-     *
-     * Returns the first non-null throwable supplied to {@link #uncaughtException(Thread, Throwable)}.
+     * Return the first non-null throwable supplied to {@link #uncaughtException(Thread, Throwable)}. <strong>Warning:</strong> this method can possibly diverge
+     * from {@link #getThread()} ()} in high-contention scenarios. {@link #getUncaughtException()} is recommended.
      *
      * @return the throwable, possibly null
+     * @deprecated in favor of {@link #getUncaughtException()} that supports atomic fetching of an uncaught exception and its associated thread
      */
+    @Deprecated
     public Throwable getThrowable() {
-        ImmutableTriple<Long,Throwable,Thread> triple = atomicRef.get();
-        return triple == null ? null : triple.getMiddle();
+        ImmutablePair<Long,ImmutablePair<Throwable,Thread>> ref = atomicRef.get();
+        return ref == null ? null : ref.getRight().getLeft();
     }
 
     /**
-     * Add a message to this {@link QueryUncaughtExceptionHandler}.
+     * Return the first non-null uncaught exception supplied to {@link #uncaughtException(Thread, Throwable)} (never null), and its associated thread (possibly
+     * null).
+     *
+     * @return a pair consisting of the uncaught exception and its associated thread
+     */
+    public ImmutablePair<Throwable,Thread> getUncaughtException() {
+        ImmutablePair<Long,ImmutablePair<Throwable,Thread>> ref = atomicRef.get();
+        return ref == null ? null : ref.getRight();
+    }
+
+    /**
+     * Add a message to this {@link QueryUncaughtExceptionHandler} if the message is not null.
      *
      * @param message
      *            the message to add
      */
     public void addMessage(String message) {
-        messages.add(message);
+        if (message != null) {
+            messages.add(message);
+        }
     }
 
     /**
-     * Return a copy of the messages of this {@link QueryUncaughtExceptionHandler}.
+     * Return a copy of the messages of this {@link QueryUncaughtExceptionHandler}. Possibly empty, but never null.
      *
      * @return the messages
      */
