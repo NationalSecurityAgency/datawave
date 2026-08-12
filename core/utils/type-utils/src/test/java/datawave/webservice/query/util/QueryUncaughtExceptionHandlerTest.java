@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.fail;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
@@ -63,7 +62,6 @@ public class QueryUncaughtExceptionHandlerTest {
         assertSame(second, handler.getThrowable());
         assertSame(writer, handler.getThread());
     }
-
 
     /**
      * The recorded thread and throwable are read through two separate unsynchronized accessors, so a reader can observe one without the other rather than a
