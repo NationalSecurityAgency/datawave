@@ -16,9 +16,9 @@ import org.apache.hadoop.io.WritableUtils;
 /**
  * Used during bulk ingest to convey the table name to the reducer and stores the key for sorting.
  * <p>
- * The table name is serialized as a {@link TableNameDictionary} id when the job has published its output tables, and inline - a length prefix followed by the
- * name, as it has always been - when it has not. See {@link TableNameDictionary} for how the two forms interoperate and why the encoding leaves the sort order
- * of a fully declared job unchanged.
+ * The table name is serialized as a {@link BulkIndexKeyTableLookup} id when the job has published its output tables, and inline - a length prefix followed by
+ * the name, as it has always been - when it has not. See {@link BulkIndexKeyTableLookup} for how the two forms interoperate and why the encoding leaves the
+ * sort order of a fully declared job unchanged.
  */
 public class BulkIngestKey implements WritableComparable<BulkIngestKey> {
 
@@ -33,7 +33,7 @@ public class BulkIngestKey implements WritableComparable<BulkIngestKey> {
      * is not memoized, so it walks every byte of the name to hash it and then walks them again in {@code equals}. The memo replaces that with a single
      * {@code Text.equals} against the name the id stands for, which rejects a different table on the length comparison it starts with.
      * <p>
-     * Only the id is stored, and it is validated against {@link TableNameDictionary#nameFor(int)} before being trusted. That is what lets this be a plain
+     * Only the id is stored, and it is validated against {@link BulkIndexKeyTableLookup#nameFor(int)} before being trusted. That is what lets this be a plain
      * {@code int} with no synchronization: an {@code int} write cannot tear, so every value this field can hold is either rejected by the equality check or is
      * genuinely the id of the name being resolved. A race between threads costs a missed memo, never a wrong id, and a dictionary swap invalidates the memo for
      * free because the validation reads the names of whichever dictionary is now installed. Caching the name alongside the id in a second field would not be
@@ -92,14 +92,14 @@ public class BulkIngestKey implements WritableComparable<BulkIngestKey> {
     }
 
     /**
-     * The id the installed {@link TableNameDictionary} gives {@link #tableName}, resolved and cached on first use. The hash lookup is skipped entirely when
+     * The id the installed {@link BulkIndexKeyTableLookup} gives {@link #tableName}, resolved and cached on first use. The hash lookup is skipped entirely when
      * this key is on the same table as the last one to ask - see {@link #lastResolvedTableId}.
      *
-     * @return the dictionary id, or {@link TableNameDictionary#UNKNOWN_ID} if the dictionary does not know this table
+     * @return the dictionary id, or {@link BulkIndexKeyTableLookup#UNKNOWN_ID} if the dictionary does not know this table
      */
     protected int getTableId() {
         if (tableId == UNRESOLVED_ID) {
-            TableNameDictionary dictionary = TableNameDictionary.get();
+            BulkIndexKeyTableLookup dictionary = BulkIndexKeyTableLookup.get();
 
             // read the memo once into a local, so the name it is validated against is the name of the id we return
             int last = lastResolvedTableId;
@@ -110,7 +110,7 @@ public class BulkIngestKey implements WritableComparable<BulkIngestKey> {
                 tableId = dictionary.idFor(tableName);
                 // an unknown table has no id to remember, and leaving the memo alone keeps it useful for the keys
                 // on either side of it
-                if (tableId != TableNameDictionary.UNKNOWN_ID) {
+                if (tableId != BulkIndexKeyTableLookup.UNKNOWN_ID) {
                     lastResolvedTableId = tableId;
                 }
             }
@@ -145,7 +145,7 @@ public class BulkIngestKey implements WritableComparable<BulkIngestKey> {
      * costs. Two records read back to back into the same object then share one {@code tableName} instance; nothing mutates it, since a run ending allocates a
      * fresh {@link Text} rather than overwriting the old one.
      * <p>
-     * Like {@link #getTableId()}, this trusts that the id a table has is stable for the life of the JVM, which {@link TableNameDictionary} guarantees by
+     * Like {@link #getTableId()}, this trusts that the id a table has is stable for the life of the JVM, which {@link BulkIndexKeyTableLookup} guarantees by
      * installing once, before the first record is read.
      */
     @Override
@@ -154,9 +154,9 @@ public class BulkIngestKey implements WritableComparable<BulkIngestKey> {
         if (id < 0) {
             tableName = new Text(readText(in));
         } else if (id != tableId) {
-            Text name = TableNameDictionary.get().nameFor(id);
+            Text name = BulkIndexKeyTableLookup.get().nameFor(id);
             if (null == name) {
-                throw new IOException("Table id " + id + " is not in this JVM's table name dictionary, which holds " + TableNameDictionary.get().size()
+                throw new IOException("Table id " + id + " is not in this JVM's table name dictionary, which holds " + BulkIndexKeyTableLookup.get().size()
                                 + " tables. The writer and the reader of this record disagree on " + TableConfigurationUtil.JOB_OUTPUT_TABLE_NAMES + ".");
             }
             // copy: the dictionary's Text is shared with every other key on this table, and setTableName writes through
@@ -239,7 +239,7 @@ public class BulkIngestKey implements WritableComparable<BulkIngestKey> {
     @Override
     public int compareTo(BulkIngestKey other) {
         int thisId = getTableId();
-        int result = TableNameDictionary.compareIds(thisId, other.getTableId());
+        int result = BulkIndexKeyTableLookup.compareIds(thisId, other.getTableId());
         if (result == 0 && thisId < 0) {
             // neither table is in the dictionary, which is the one case the ids do not separate
             result = tableName.compareTo(other.tableName);
@@ -277,7 +277,7 @@ public class BulkIngestKey implements WritableComparable<BulkIngestKey> {
         }
 
         /**
-         * Installs the job's {@link TableNameDictionary}. MapReduce resolves the map output key comparator through
+         * Installs the job's {@link BulkIndexKeyTableLookup}. MapReduce resolves the map output key comparator through
          * {@code WritableComparator.get(Class, Configuration)} while it builds the map output collector and again while it builds the reduce side merge, so
          * this runs in both JVMs and, in both, before any {@link BulkIngestKey} is serialized or deserialized.
          *
@@ -287,7 +287,7 @@ public class BulkIngestKey implements WritableComparable<BulkIngestKey> {
         @Override
         public void setConf(Configuration conf) {
             super.setConf(conf);
-            TableNameDictionary.configure(conf);
+            BulkIndexKeyTableLookup.configure(conf);
         }
 
         @Override
@@ -322,7 +322,7 @@ public class BulkIngestKey implements WritableComparable<BulkIngestKey> {
                 o2 += startAndLen[1];
             }
 
-            int idResult = TableNameDictionary.compareIds(id1, id2);
+            int idResult = BulkIndexKeyTableLookup.compareIds(id1, id2);
             if (idResult != 0) {
                 return idResult;
             }

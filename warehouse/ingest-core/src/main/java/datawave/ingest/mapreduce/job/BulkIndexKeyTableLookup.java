@@ -54,9 +54,9 @@ import org.apache.log4j.Logger;
  *
  * @see BulkIngestKey
  */
-public final class TableNameDictionary {
+final class BulkIndexKeyTableLookup {
 
-    private static final Logger log = Logger.getLogger(TableNameDictionary.class);
+    private static final Logger log = Logger.getLogger(BulkIndexKeyTableLookup.class);
 
     /**
      * Set to false in the job configuration to write table names inline as before. The encoding is job-transient - it appears only in map output and spill
@@ -68,9 +68,9 @@ public final class TableNameDictionary {
     public static final int UNKNOWN_ID = -1;
 
     /** the dictionary in force when no job configuration has been seen: every table is unknown, so behavior matches the pre-dictionary encoding */
-    public static final TableNameDictionary EMPTY = new TableNameDictionary(null, Collections.emptySet(), "");
+    public static final BulkIndexKeyTableLookup EMPTY = new BulkIndexKeyTableLookup(null, Collections.emptySet(), "");
 
-    private static volatile TableNameDictionary installed = EMPTY;
+    private static volatile BulkIndexKeyTableLookup installed = EMPTY;
 
     private final Configuration conf;
 
@@ -86,7 +86,7 @@ public final class TableNameDictionary {
      */
     private final String signature;
 
-    private TableNameDictionary(Configuration conf, Collection<String> tableNames, String signature) {
+    private BulkIndexKeyTableLookup(Configuration conf, Collection<String> tableNames, String signature) {
         this.conf = conf;
         this.signature = signature;
 
@@ -124,7 +124,7 @@ public final class TableNameDictionary {
             return;
         }
 
-        TableNameDictionary dictionary = new TableNameDictionary(conf, TableConfigurationUtil.getJobOutputTableNames(conf), signature);
+        BulkIndexKeyTableLookup dictionary = new BulkIndexKeyTableLookup(conf, TableConfigurationUtil.getJobOutputTableNames(conf), signature);
         installed = dictionary;
 
         if (log.isInfoEnabled()) {
@@ -138,7 +138,7 @@ public final class TableNameDictionary {
      *
      * @return the installed dictionary
      */
-    public static TableNameDictionary get() {
+    public static BulkIndexKeyTableLookup get() {
         return installed;
     }
 
@@ -149,8 +149,8 @@ public final class TableNameDictionary {
      *            the output tables of the job being simulated
      * @return the installed dictionary
      */
-    public static TableNameDictionary install(Collection<String> tableNames) {
-        installed = new TableNameDictionary(null, tableNames, String.join(",", tableNames));
+    public static BulkIndexKeyTableLookup install(Collection<String> tableNames) {
+        installed = new BulkIndexKeyTableLookup(null, tableNames, String.join(",", tableNames));
         return installed;
     }
 
