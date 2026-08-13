@@ -128,7 +128,7 @@ if [ "${DW_REDEPLOY_IN_PROGRESS}" == true ] ; then
 fi
 
 if [ "${OK_TO_EXEC_INIT_SCRIPT}" == true ] ; then
-    ${ACCUMULO_HOME}/bin/accumulo shell -u root -p "${DW_ACCUMULO_PASSWORD}" -f "${ACCUMULO_TMP_SCRIPT}" || ( fatal "Failed to execute $ACCUMULO_TMP_SCRIPT on Accumulo!" && exit 1 )
+    ${ACCUMULO_HOME}/bin/accumulo shell --user root --password "${DW_ACCUMULO_PASSWORD}" -f "${ACCUMULO_TMP_SCRIPT}" || ( fatal "Failed to execute $ACCUMULO_TMP_SCRIPT on Accumulo!" && exit 1 )
 fi
 
 # ----------------------

@@ -49,4 +49,4 @@ done
 
 DAILY_SPLITS=$(for ((i = 0; i < $NUM_DAYS; i++)); do for ((j = 0; j < $NUM_DATE_INDEX_SHARDS; j++)); do date -d "${DATE} + ${i} days" +%Y%m%d | awk "{print \\$1 \"_\" ${j}}" ; done ; done | tr "\n" " ")
 echo "Creating the following splits for dateIndex: $DAILY_SPLITS"
-$WAREHOUSE_ACCUMULO_HOME/bin/accumulo shell -u $USERNAME -p $PASSWORD -e "addsplits ${DAILY_SPLITS} -t dateIndex" -zi $WAREHOUSE_INSTANCE_NAME -zh $WAREHOUSE_ZOOKEEPERS
+$WAREHOUSE_ACCUMULO_HOME/bin/accumulo shell --user $USERNAME --password $PASSWORD -e "addsplits ${DAILY_SPLITS} -t dateIndex" -zi $WAREHOUSE_INSTANCE_NAME -zh $WAREHOUSE_ZOOKEEPERS

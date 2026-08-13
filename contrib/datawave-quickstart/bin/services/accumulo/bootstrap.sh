@@ -54,7 +54,7 @@ DW_ACCUMULO_SYMLINK="accumulo"
 DW_ACCUMULO_INSTANCE_NAME="my-instance-01"
 DW_ACCUMULO_PASSWORD="${DW_ACCUMULO_PASSWORD:-secret}"
 
-alias ashell="accumulo shell -u root -p \${DW_ACCUMULO_PASSWORD}"
+alias ashell="accumulo shell --user root --password \${DW_ACCUMULO_PASSWORD}"
 
 # Note that example configuration is provided for setting up VFS classpath for DataWave jars,
 # but it is disabled by default, as it doesn't really buy you anything on a standalone cluster.
