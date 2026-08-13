@@ -17,9 +17,9 @@ import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.marking.AccessExpressionMarkings;
 
 /**
- * Test data for the ingest benchmarks.
+ * Generates the synthetic event pools the ingest benchmarks measure.
  * <p>
- * Three axes matter for the measurements this fixture feeds:
+ * Three axes matter for the measurements they feed:
  * <ul>
  * <li><b>Event size.</b> Events carry between {@link #MIN_FIELDS} and {@link #MAX_FIELDS} fields, drawn from a seeded generator so a run is reproducible. A
  * pool of at least {@link #DEFAULT_EVENT_COUNT} events means no single event shape dominates the measurement, and inline caches and branch predictors see the
@@ -27,15 +27,15 @@ import datawave.marking.AccessExpressionMarkings;
  * <li><b>Normalizer coverage.</b> {@link #TYPE_SAMPLES} pairs every concrete {@code datawave.data.type.Type} with a value it normalizes cleanly, verified
  * rather than assumed. Types are assigned to fields round robin by field index, so every event of at least {@link #TYPE_COUNT} fields covers each normalizer
  * and the pool covers all of them many times over. Normalizer cost varies by more than an order of magnitude across these — {@code DateType} walks a list of
- * {@code SimpleDateFormat} patterns, {@code NoOpType} returns its input — so a single-type fixture misrepresents where time goes.</li>
+ * {@code SimpleDateFormat} patterns, {@code NoOpType} returns its input — so generating a single type misrepresents where time goes.</li>
  * <li><b>Visibility diversity.</b> Events rotate through {@link #EVENT_VISIBILITIES} and, when a marked stride is requested, individual fields carry their own
  * {@link AccessExpressionMarkings} drawn from {@link #FIELD_VISIBILITIES}. This matters because {@code FlattenedVisibilityCache} is keyed on
- * {@code ColumnVisibility}: a fixture with one visibility hits that cache on every lookup after the first and makes the visibility path look free.</li>
+ * {@code ColumnVisibility}: a pool with one visibility hits that cache on every lookup after the first and makes the visibility path look free.</li>
  * </ul>
  */
-final class IngestFixture {
+final class BenchmarkEventGenerator {
 
-    private IngestFixture() {}
+    private BenchmarkEventGenerator() {}
 
     /** Smallest event, in fields. */
     static final int MIN_FIELDS = 15;

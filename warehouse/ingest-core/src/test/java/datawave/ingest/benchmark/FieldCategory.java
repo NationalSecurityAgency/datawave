@@ -28,8 +28,8 @@ enum FieldCategory {
     TOKENIZED_INDEX_ONLY;
 
     /**
-     * Category for a field index under the repeating assignment used by the fixture. Fields cycle event-only, indexed, index-only, tokenized so every event
-     * carries all four.
+     * Category for a field index under the repeating assignment used by {@link BenchmarkEventGenerator}. Fields cycle event-only, indexed, index-only,
+     * tokenized so every event carries all four.
      *
      * @param fieldIndex
      *            zero based field index

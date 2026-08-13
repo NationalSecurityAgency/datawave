@@ -42,7 +42,8 @@ import datawave.table.constants.TableName;
  * Benchmark and structural-instrumentation harness for the ingest hot path, {@link ShardedDataTypeHandler#processBulk}.
  * <p>
  * This is a command line utility, not a test. It carries no test annotations and declares no test methods, so no build or CI configuration has to know it
- * exists; it lives under the test sources only because it needs the test-scoped dependencies and {@link IngestFixture}. Run it with {@link #main(String[])}.
+ * exists; it lives under the test sources only because it needs the test-scoped dependencies and {@link BenchmarkEventGenerator}. Run it with
+ * {@link #main(String[])}.
  * <p>
  * Measurements come in two kinds:
  * <ul>
@@ -50,8 +51,9 @@ import datawave.table.constants.TableName;
  * pool. These are exact and independent of machine speed, so a violation throws.</li>
  * <li><b>Timing</b> — wall clock and per-thread allocation, printed as a table and never checked, since it depends on the machine.</li>
  * </ul>
- * Test data comes from {@link IngestFixture}: pools of at least {@link IngestFixture#DEFAULT_EVENT_COUNT} events sized between {@link IngestFixture#MIN_FIELDS}
- * and {@link IngestFixture#MAX_FIELDS} fields, covering every concrete normalizer type and rotating event and field visibilities.
+ * Test data comes from {@link BenchmarkEventGenerator}: pools of at least {@link BenchmarkEventGenerator#DEFAULT_EVENT_COUNT} events sized between
+ * {@link BenchmarkEventGenerator#MIN_FIELDS} and {@link BenchmarkEventGenerator#MAX_FIELDS} fields, covering every concrete normalizer type and rotating event
+ * and field visibilities.
  * <p>
  * Iteration counts are overridable with {@code -Ddatawave.benchmark.iterations=N} and {@code -Ddatawave.benchmark.warmup=N};
  * {@code -Ddatawave.benchmark.scenarios=off|on|both} selects the bloom-filter arm for a profiler run.
@@ -72,12 +74,12 @@ public class IngestHotPathBenchmark {
     private static final int BLOOM_WARMUP = Integer.getInteger("datawave.benchmark.bloom.warmup", 5);
     private static final int BLOOM_ITERATIONS = Integer.getInteger("datawave.benchmark.bloom.iterations", 25);
 
-    /** Events per pool. Never below the fixture's floor. */
-    private static final int EVENT_COUNT = Math.max(IngestFixture.DEFAULT_EVENT_COUNT, Integer.getInteger("datawave.benchmark.events", 250));
+    /** Events per pool. Never below the generator's floor. */
+    private static final int EVENT_COUNT = Math.max(BenchmarkEventGenerator.DEFAULT_EVENT_COUNT, Integer.getInteger("datawave.benchmark.events", 250));
 
     /**
-     * Fixed event sizes for the scaling sweep, spanning the fixture's size range. The sweep needs one size at a time to separate linear growth from a quadratic
-     * term; the mixed-size arm is measured separately by {@link #benchmarkVariableEventSizes()}.
+     * Fixed event sizes for the scaling sweep, spanning the generator's size range. The sweep needs one size at a time to separate linear growth from a
+     * quadratic term; the mixed-size arm is measured separately by {@link #benchmarkVariableEventSizes()}.
      */
     private static final int[] SWEEP_FIELD_COUNTS = {15, 25, 30, 35, 45};
 
@@ -105,14 +107,14 @@ public class IngestHotPathBenchmark {
     }
 
     /** How much variety the test data carries. */
-    enum Fixture {
+    enum DataVariety {
         /** One cheap type, one value, no field markings — the original shape. */
         UNIFORM,
         /** Every concrete normalizer, rotating event visibilities, strided field markings. */
         DIVERSE
     }
 
-    // ---------------------------------------------------------------- fixtures
+    // ---------------------------------------------------------------- instrumentation
 
     /**
      * A cheap Type that counts {@code normalize} invocations. Counting rather than timing is what makes the "each normalizer runs twice" claim falsifiable
@@ -248,7 +250,7 @@ public class IngestHotPathBenchmark {
 
     private final List<Result> results = new ArrayList<>();
 
-    private Configuration baseConfiguration(String dataTypeName, boolean bloomEnabled, FieldMode mode, Fixture fixture, String uniformType) {
+    private Configuration baseConfiguration(String dataTypeName, boolean bloomEnabled, FieldMode mode, DataVariety variety, String uniformType) {
         Configuration conf = new Configuration();
         conf.set(dataTypeName + DataTypeHelper.Properties.INGEST_POLICY_ENFORCER_CLASS, IngestPolicyEnforcer.NoOpIngestPolicyEnforcer.class.getName());
         conf.set(DataTypeHelper.Properties.DATA_NAME, dataTypeName);
@@ -268,19 +270,19 @@ public class IngestHotPathBenchmark {
         conf.set(ShardedDataTypeHandler.SHARD_GRIDX_LPRIORITY, "30");
 
         // declare the full field-name space, so a short event's fields are configured just like a long one's
-        String allFields = String.join(",", IngestFixture.configuredFieldNames());
+        String allFields = String.join(",", BenchmarkEventGenerator.configuredFieldNames());
         if (mode == FieldMode.NORMALIZED_ONLY) {
             // normalized but NOT indexed: this is the branch that reaches
             // BaseIngestHelper.normalizeFieldValue(NormalizedContentInterface, Type)
             conf.set(dataTypeName + ".data.category.normalized", allFields);
-        } else if (fixture == Fixture.UNIFORM) {
+        } else if (variety == DataVariety.UNIFORM) {
             // single category, used by the normalization comparisons
             conf.set(dataTypeName + ".data.category.index", allFields);
         } else {
             // four categories: event-only fields are simply absent from every index list
-            List<String> indexed = IngestFixture.fieldNamesFor(FieldCategory.INDEXED);
-            List<String> indexOnly = IngestFixture.fieldNamesFor(FieldCategory.INDEX_ONLY);
-            List<String> tokenized = IngestFixture.fieldNamesFor(FieldCategory.TOKENIZED_INDEX_ONLY);
+            List<String> indexed = BenchmarkEventGenerator.fieldNamesFor(FieldCategory.INDEXED);
+            List<String> indexOnly = BenchmarkEventGenerator.fieldNamesFor(FieldCategory.INDEX_ONLY);
+            List<String> tokenized = BenchmarkEventGenerator.fieldNamesFor(FieldCategory.TOKENIZED_INDEX_ONLY);
 
             List<String> allIndexed = new ArrayList<>(indexed);
             allIndexed.addAll(indexOnly);
@@ -296,10 +298,10 @@ public class IngestHotPathBenchmark {
             conf.setBoolean(dataTypeName + ".data.category.token.fieldname.designator.enabled", false);
         }
 
-        if (fixture == Fixture.DIVERSE) {
+        if (variety == DataVariety.DIVERSE) {
             // one Type per field, round robin over every concrete normalizer except on tokenized fields
-            for (int i = 0; i < IngestFixture.MAX_FIELDS; i++) {
-                conf.set(dataTypeName + ".FIELD_" + i + ".data.field.type.class", IngestFixture.typeClassForCategory(i));
+            for (int i = 0; i < BenchmarkEventGenerator.MAX_FIELDS; i++) {
+                conf.set(dataTypeName + ".FIELD_" + i + ".data.field.type.class", BenchmarkEventGenerator.typeClassForCategory(i));
             }
             conf.set(dataTypeName + ".data.default.type.class", "datawave.data.type.NoOpType");
         } else {
@@ -321,7 +323,7 @@ public class IngestHotPathBenchmark {
         TypeRegistry.reset();
         if (!jvmWarmed) {
             jvmWarmed = true;
-            measure("jvm-warmup", IngestFixture.fixedFieldCounts(20, 30), false, FieldMode.INDEXED, Fixture.DIVERSE, CountingType.class.getName(),
+            measure("jvm-warmup", BenchmarkEventGenerator.fixedFieldCounts(20, 30), false, FieldMode.INDEXED, DataVariety.DIVERSE, CountingType.class.getName(),
                             UNIFORM_VALUE, MARKED_FIELD_STRIDE, 3000, 3000);
             results.clear();
             TypeRegistry.reset();
@@ -329,25 +331,26 @@ public class IngestHotPathBenchmark {
     }
 
     private Result measure(String name, int[] fieldCounts, boolean bloomEnabled) throws Exception {
-        return measure(name, fieldCounts, bloomEnabled, FieldMode.INDEXED, Fixture.DIVERSE, CountingType.class.getName(), UNIFORM_VALUE, MARKED_FIELD_STRIDE);
+        return measure(name, fieldCounts, bloomEnabled, FieldMode.INDEXED, DataVariety.DIVERSE, CountingType.class.getName(), UNIFORM_VALUE,
+                        MARKED_FIELD_STRIDE);
     }
 
-    private Result measure(String name, int[] fieldCounts, boolean bloomEnabled, FieldMode mode, Fixture fixture, String uniformType, String uniformValue,
+    private Result measure(String name, int[] fieldCounts, boolean bloomEnabled, FieldMode mode, DataVariety variety, String uniformType, String uniformValue,
                     int markedStride) throws Exception {
         int warmup = bloomEnabled ? BLOOM_WARMUP : WARMUP_ITERATIONS;
         int iterations = bloomEnabled ? BLOOM_ITERATIONS : MEASURED_ITERATIONS;
-        return measure(name, fieldCounts, bloomEnabled, mode, fixture, uniformType, uniformValue, markedStride, warmup, iterations);
+        return measure(name, fieldCounts, bloomEnabled, mode, variety, uniformType, uniformValue, markedStride, warmup, iterations);
     }
 
-    private Result measure(String name, int[] fieldCounts, boolean bloomEnabled, FieldMode mode, Fixture fixture, String uniformType, String uniformValue,
+    private Result measure(String name, int[] fieldCounts, boolean bloomEnabled, FieldMode mode, DataVariety variety, String uniformType, String uniformValue,
                     int markedStride, int warmupIterations, int measuredIterations) throws Exception {
-        return measure(name, fieldCounts, bloomEnabled, mode, fixture, uniformType, uniformValue, markedStride, warmupIterations, measuredIterations, null);
+        return measure(name, fieldCounts, bloomEnabled, mode, variety, uniformType, uniformValue, markedStride, warmupIterations, measuredIterations, null);
     }
 
-    private Result measure(String name, int[] fieldCounts, boolean bloomEnabled, FieldMode mode, Fixture fixture, String uniformType, String uniformValue,
+    private Result measure(String name, int[] fieldCounts, boolean bloomEnabled, FieldMode mode, DataVariety variety, String uniformType, String uniformValue,
                     int markedStride, int warmupIterations, int measuredIterations, String contentOverride) throws Exception {
         String dataTypeName = "bench" + SCENARIO_SEQ.incrementAndGet();
-        Configuration conf = baseConfiguration(dataTypeName, bloomEnabled, mode, fixture, uniformType);
+        Configuration conf = baseConfiguration(dataTypeName, bloomEnabled, mode, variety, uniformType);
         TypeRegistry.reset();
         TypeRegistry.getInstance(conf);
 
@@ -358,13 +361,13 @@ public class IngestHotPathBenchmark {
         helper.setup(conf);
 
         Type dataType = TypeRegistry.getType(dataTypeName);
-        List<RawRecordContainer> pool = IngestFixture.eventPool(fieldCounts, dataType, fixture == Fixture.DIVERSE, uniformValue, contentOverride);
+        List<RawRecordContainer> pool = BenchmarkEventGenerator.eventPool(fieldCounts, dataType, variety == DataVariety.DIVERSE, uniformValue, contentOverride);
 
         // pre-normalize each event's fields once, then annotate with per-field markings
         List<Multimap<String,NormalizedContentInterface>> fieldSets = new ArrayList<>(pool.size());
         for (RawRecordContainer record : pool) {
             Multimap<String,NormalizedContentInterface> f = helper.getEventFields(record);
-            IngestFixture.applyFieldMarkings(f, fixture == Fixture.DIVERSE ? markedStride : 0);
+            BenchmarkEventGenerator.applyFieldMarkings(f, variety == DataVariety.DIVERSE ? markedStride : 0);
             fieldSets.add(f);
         }
 
@@ -462,20 +465,20 @@ public class IngestHotPathBenchmark {
     // ---------------------------------------------------------------- scenarios
 
     /**
-     * Sweeps a fixed event size across the fixture's range with bloom filtering off and on. Per-key cost that stays flat as event size grows indicates linear
+     * Sweeps a fixed event size across the generator's range with bloom filtering off and on. Per-key cost that stays flat as event size grows indicates linear
      * scaling; per-key cost that itself grows indicates a quadratic term.
      */
     public void benchmarkCreateColumnsScaling() throws Exception {
-        // bloom is opt-in here: see benchmarkBloomVersusTokenCount for why it cannot run over this fixture
+        // bloom is opt-in here: see benchmarkBloomVersusTokenCount for why it cannot run over this data
         String arms = System.getProperty("datawave.benchmark.scenarios", "off");
         if (!"on".equals(arms)) {
             for (int fields : SWEEP_FIELD_COUNTS) {
-                measure("bloom-off/" + fields, IngestFixture.fixedFieldCounts(EVENT_COUNT, fields), false);
+                measure("bloom-off/" + fields, BenchmarkEventGenerator.fixedFieldCounts(EVENT_COUNT, fields), false);
             }
         }
         if (!"off".equals(arms)) {
             for (int fields : SWEEP_FIELD_COUNTS) {
-                measure("bloom-on/" + fields, IngestFixture.fixedFieldCounts(EVENT_COUNT, fields), true);
+                measure("bloom-on/" + fields, BenchmarkEventGenerator.fixedFieldCounts(EVENT_COUNT, fields), true);
             }
         }
         printTable();
@@ -486,10 +489,10 @@ public class IngestHotPathBenchmark {
      * whether size variation itself costs anything.
      */
     public void benchmarkVariableEventSizes() throws Exception {
-        int[] variable = IngestFixture.variableFieldCounts(EVENT_COUNT);
+        int[] variable = BenchmarkEventGenerator.variableFieldCounts(EVENT_COUNT);
         int mean = (int) Math.round(Arrays.stream(variable).average().orElse(30));
 
-        Result fixed = measure("fixed at mean", IngestFixture.fixedFieldCounts(EVENT_COUNT, mean), false);
+        Result fixed = measure("fixed at mean", BenchmarkEventGenerator.fixedFieldCounts(EVENT_COUNT, mean), false);
         Result mixed = measure("mixed 15-45", variable, false);
 
         printTable();
@@ -500,9 +503,9 @@ public class IngestHotPathBenchmark {
 
     /**
      * Quantifies how bloom filtering scales against the number of tokens in a single tokenized field. {@code createBloomFilter} runs once per indexed term and
-     * each build walks the whole field map, so on a tokenized field the quadratic term is driven by token count, not field count. The full fixture, whose long
-     * content field produces several hundred tokens, does not complete in usable time with bloom filtering on; this sweep bounds the problem by holding the
-     * token count small and reporting the growth so the full-size cost can be extrapolated rather than waited for.
+     * each build walks the whole field map, so on a tokenized field the quadratic term is driven by token count, not field count. The full event pool, whose
+     * long content field produces several hundred tokens, does not complete in usable time with bloom filtering on; this sweep bounds the problem by holding
+     * the token count small and reporting the growth so the full-size cost can be extrapolated rather than waited for.
      */
     public void benchmarkBloomVersusTokenCount() throws Exception {
         System.out.println();
@@ -521,11 +524,11 @@ public class IngestHotPathBenchmark {
 
     /** One point of the token sweep: a 4-event pool whose long content field carries {@code tokens} tokens. */
     private Result measureTokenSweep(int tokens, boolean bloomEnabled) throws Exception {
-        String content = IngestFixture.contentWithTokens(tokens);
+        String content = BenchmarkEventGenerator.contentWithTokens(tokens);
         int warmup = bloomEnabled ? 2 : 50;
         int iterations = bloomEnabled ? 8 : 200;
-        return measure("tok" + tokens, IngestFixture.fixedFieldCounts(4, IngestFixture.MIN_FIELDS), bloomEnabled, FieldMode.INDEXED, Fixture.DIVERSE,
-                        CountingType.class.getName(), UNIFORM_VALUE, MARKED_FIELD_STRIDE, warmup, iterations, content);
+        return measure("tok" + tokens, BenchmarkEventGenerator.fixedFieldCounts(4, BenchmarkEventGenerator.MIN_FIELDS), bloomEnabled, FieldMode.INDEXED,
+                        DataVariety.DIVERSE, CountingType.class.getName(), UNIFORM_VALUE, MARKED_FIELD_STRIDE, warmup, iterations, content);
     }
 
     /**
@@ -535,19 +538,19 @@ public class IngestHotPathBenchmark {
      */
     public void bloomFilterIsBuiltOncePerIndexedTerm() throws Exception {
         // a short content override keeps the bloom arm affordable; see benchmarkBloomVersusTokenCount
-        int[] variable = IngestFixture.fixedFieldCounts(4, IngestFixture.MIN_FIELDS);
-        String shortContent = IngestFixture.contentWithTokens(5);
-        Result off = measure("bloom-off", variable, false, FieldMode.INDEXED, Fixture.DIVERSE, CountingType.class.getName(), UNIFORM_VALUE, MARKED_FIELD_STRIDE,
-                        20, 50, shortContent);
-        Result on = measure("bloom-on", variable, true, FieldMode.INDEXED, Fixture.DIVERSE, CountingType.class.getName(), UNIFORM_VALUE, MARKED_FIELD_STRIDE, 2,
-                        6, shortContent);
+        int[] variable = BenchmarkEventGenerator.fixedFieldCounts(4, BenchmarkEventGenerator.MIN_FIELDS);
+        String shortContent = BenchmarkEventGenerator.contentWithTokens(5);
+        Result off = measure("bloom-off", variable, false, FieldMode.INDEXED, DataVariety.DIVERSE, CountingType.class.getName(), UNIFORM_VALUE,
+                        MARKED_FIELD_STRIDE, 20, 50, shortContent);
+        Result on = measure("bloom-on", variable, true, FieldMode.INDEXED, DataVariety.DIVERSE, CountingType.class.getName(), UNIFORM_VALUE,
+                        MARKED_FIELD_STRIDE, 2, 6, shortContent);
 
         checkEquals(0, off.bloomPerPass, "bloom filter should not be built when disabled");
         check(on.bloomPerPass > on.events, "expected more than one build per event, got " + on.bloomPerPass + " over " + on.events + " events");
         check(on.bloomPerPass >= on.totalFieldsPerPass,
                         "expected at least one build per field, got " + on.bloomPerPass + " for " + on.totalFieldsPerPass + " fields");
         // Two flattens per indexed term come from createColumns (the shard event loop plus the forward
-        // term loop). The tokenized fixture adds more: flushTokenOffsetCache calls getVisibility once per
+        // term loop). The tokenized data adds more: flushTokenOffsetCache calls getVisibility once per
         // term-frequency entry and once for TERM_COUNT, so flatten runs ahead of 2x builds rather than
         // equalling it.
         check(on.flattenPerPass >= 2 * on.bloomPerPass,
@@ -562,7 +565,7 @@ public class IngestHotPathBenchmark {
      * event.
      */
     public void visibilityIsFlattenedPerFieldNotPerEvent() throws Exception {
-        Result r = measure("flatten-probe", IngestFixture.variableFieldCounts(EVENT_COUNT), false);
+        Result r = measure("flatten-probe", BenchmarkEventGenerator.variableFieldCounts(EVENT_COUNT), false);
         check(r.flattenPerPass > r.events, "expected far more flatten calls than events, got " + r.flattenPerPass + " over " + r.events);
         check(r.flattenPerPass >= 2 * r.totalFieldsPerPass, "expected at least two flatten calls per field");
         System.out.printf("flatten calls over %d events (%d fields): %d (%.2f per field)%n", r.events, r.totalFieldsPerPass, r.flattenPerPass,
@@ -578,7 +581,7 @@ public class IngestHotPathBenchmark {
         String cheap = CountingType.class.getName();
         String pricey = CountingDateType.class.getName();
         String dateValue = "2024-06-15T10:30:00.000Z";
-        int[] variable = IngestFixture.variableFieldCounts(EVENT_COUNT);
+        int[] variable = BenchmarkEventGenerator.variableFieldCounts(EVENT_COUNT);
         long totalFields = Arrays.stream(variable).sum();
 
         long indexedCheap = countNormalizations(variable, FieldMode.INDEXED, cheap, UNIFORM_VALUE);
@@ -601,13 +604,13 @@ public class IngestHotPathBenchmark {
     /** Normalizes every event in the pool once and returns the total normalizer invocations. */
     private long countNormalizations(int[] fieldCounts, FieldMode mode, String uniformType, String uniformValue) throws Exception {
         String dataTypeName = "norm" + SCENARIO_SEQ.incrementAndGet();
-        Configuration conf = baseConfiguration(dataTypeName, false, mode, Fixture.UNIFORM, uniformType);
+        Configuration conf = baseConfiguration(dataTypeName, false, mode, DataVariety.UNIFORM, uniformType);
         TypeRegistry.reset();
         TypeRegistry.getInstance(conf);
 
         BenchIngestHelper helper = new BenchIngestHelper();
         helper.setup(conf);
-        List<RawRecordContainer> pool = IngestFixture.eventPool(fieldCounts, TypeRegistry.getType(dataTypeName), false, uniformValue);
+        List<RawRecordContainer> pool = BenchmarkEventGenerator.eventPool(fieldCounts, TypeRegistry.getType(dataTypeName), false, uniformValue);
 
         NORMALIZE_CALLS.set(0);
         for (RawRecordContainer record : pool) {
@@ -625,11 +628,11 @@ public class IngestHotPathBenchmark {
         String cheap = CountingType.class.getName();
         String pricey = CountingDateType.class.getName();
         String dateValue = "2024-06-15T10:30:00.000Z";
-        int[] variable = IngestFixture.variableFieldCounts(EVENT_COUNT);
+        int[] variable = BenchmarkEventGenerator.variableFieldCounts(EVENT_COUNT);
 
         System.out.println();
-        System.out.printf("=== normalization phase: getEventFields (%d events, %d..%d fields, %d iterations) ===%n", variable.length, IngestFixture.MIN_FIELDS,
-                        IngestFixture.MAX_FIELDS, MEASURED_ITERATIONS);
+        System.out.printf("=== normalization phase: getEventFields (%d events, %d..%d fields, %d iterations) ===%n", variable.length,
+                        BenchmarkEventGenerator.MIN_FIELDS, BenchmarkEventGenerator.MAX_FIELDS, MEASURED_ITERATIONS);
         System.out.printf("%-26s %12s %12s %10s %12s%n", "scenario", "median(ns)", "p90(ns)", "norm/field", "bytes/event");
 
         timeNormalization("indexed, cheap type", variable, FieldMode.INDEXED, cheap, UNIFORM_VALUE);
@@ -641,18 +644,18 @@ public class IngestHotPathBenchmark {
         System.out.println();
     }
 
-    /** A {@code uniformValue} of null selects the diverse all-types fixture. */
+    /** A {@code uniformValue} of null selects the diverse all-types pool. */
     private void timeNormalization(String label, int[] fieldCounts, FieldMode mode, String uniformType, String uniformValue) throws Exception {
-        Fixture fixture = uniformValue == null ? Fixture.DIVERSE : Fixture.UNIFORM;
+        DataVariety variety = uniformValue == null ? DataVariety.DIVERSE : DataVariety.UNIFORM;
         String dataTypeName = "normt" + SCENARIO_SEQ.incrementAndGet();
-        Configuration conf = baseConfiguration(dataTypeName, false, mode, fixture, uniformType);
+        Configuration conf = baseConfiguration(dataTypeName, false, mode, variety, uniformType);
         TypeRegistry.reset();
         TypeRegistry.getInstance(conf);
 
         BenchIngestHelper helper = new BenchIngestHelper();
         helper.setup(conf);
         Type dataType = TypeRegistry.getType(dataTypeName);
-        List<RawRecordContainer> pool = IngestFixture.eventPool(fieldCounts, dataType, fixture == Fixture.DIVERSE,
+        List<RawRecordContainer> pool = BenchmarkEventGenerator.eventPool(fieldCounts, dataType, variety == DataVariety.DIVERSE,
                         uniformValue == null ? UNIFORM_VALUE : uniformValue);
 
         for (int i = 0; i < WARMUP_ITERATIONS; i++) {
@@ -686,17 +689,18 @@ public class IngestHotPathBenchmark {
     }
 
     /** Every concrete normalizer type should be represented across the pool. */
-    public void fixtureCoversEveryNormalizerType() throws Exception {
-        int[] variable = IngestFixture.variableFieldCounts(EVENT_COUNT);
+    public void generatorCoversEveryNormalizerType() throws Exception {
+        int[] variable = BenchmarkEventGenerator.variableFieldCounts(EVENT_COUNT);
         int maxFields = Arrays.stream(variable).max().orElse(0);
-        check(maxFields >= IngestFixture.TYPE_COUNT, "largest event must cover every type, was " + maxFields + " fields");
-        check(variable.length >= IngestFixture.DEFAULT_EVENT_COUNT, "pool must hold at least " + IngestFixture.DEFAULT_EVENT_COUNT + " events");
-        checkEquals(IngestFixture.MIN_FIELDS, Arrays.stream(variable).min().orElse(0), "smallest event size");
-        checkEquals(IngestFixture.MAX_FIELDS, maxFields, "largest event size");
+        check(maxFields >= BenchmarkEventGenerator.TYPE_COUNT, "largest event must cover every type, was " + maxFields + " fields");
+        check(variable.length >= BenchmarkEventGenerator.DEFAULT_EVENT_COUNT,
+                        "pool must hold at least " + BenchmarkEventGenerator.DEFAULT_EVENT_COUNT + " events");
+        checkEquals(BenchmarkEventGenerator.MIN_FIELDS, Arrays.stream(variable).min().orElse(0), "smallest event size");
+        checkEquals(BenchmarkEventGenerator.MAX_FIELDS, maxFields, "largest event size");
 
         Result r = measure("type-coverage", variable, false);
         System.out.printf("pool: %d events, %d..%d fields (mean %.1f), %d types, %d keys/pass%n", r.events, r.minFields, r.maxFields, r.meanFields,
-                        IngestFixture.TYPE_COUNT, r.keysPerPass);
+                        BenchmarkEventGenerator.TYPE_COUNT, r.keysPerPass);
     }
 
     /** Scenarios run when no arguments are given. {@code profile} is deliberately excluded: it duplicates work the others already do. */
@@ -725,7 +729,7 @@ public class IngestHotPathBenchmark {
             run("bloom-builds");
             run("flatten");
             run("normalizer-calls");
-            run("fixture-coverage");
+            run("generator-coverage");
             return;
         }
 
@@ -748,8 +752,8 @@ public class IngestHotPathBenchmark {
             benchmark.visibilityIsFlattenedPerFieldNotPerEvent();
         } else if ("normalizer-calls".equals(scenario)) {
             benchmark.normalizerInvocationsPerField();
-        } else if ("fixture-coverage".equals(scenario)) {
-            benchmark.fixtureCoversEveryNormalizerType();
+        } else if ("generator-coverage".equals(scenario)) {
+            benchmark.generatorCoversEveryNormalizerType();
         } else if ("profile".equals(scenario)) {
             benchmark.profileMixedWorkload();
         } else {
@@ -761,7 +765,7 @@ public class IngestHotPathBenchmark {
     /** The mixed-size workload on its own, so a profiler recording covers only it. Select an arm with {@code -Ddatawave.benchmark.scenarios=off|on|both}. */
     private void profileMixedWorkload() throws Exception {
         String arms = System.getProperty("datawave.benchmark.scenarios", "both");
-        int[] variable = IngestFixture.variableFieldCounts(EVENT_COUNT);
+        int[] variable = BenchmarkEventGenerator.variableFieldCounts(EVENT_COUNT);
         if (!"on".equals(arms)) {
             measure("mixed bloom-off", variable, false);
         }
