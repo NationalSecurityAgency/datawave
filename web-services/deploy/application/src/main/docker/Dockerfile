@@ -1,7 +1,7 @@
 FROM jboss/wildfly:17.0.1.Final AS wildfly
 FROM rockylinux/rockylinux:8
 
-RUN dnf -y install dnf-plugins-core epel-release java-11-openjdk-devel && \
+RUN dnf -y install dnf-plugins-core epel-release java-17-openjdk-devel && \
     dnf config-manager --set-enabled powertools && \
     chmod -R 777 /usr/lib/jvm/java-11/bin/* && \
     groupadd -r jboss -g 1000 && \

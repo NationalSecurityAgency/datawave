@@ -79,7 +79,7 @@ RUN find /opt/datawave -type f -exec chmod 0640 {} \;
 RUN find /opt/datawave -name "*.sh" -type f -exec chmod 0750 {} \;
 
 # Install dependencies, configure password-less/zero-prompt SSH...
-RUN dnf -y install gcc-c++ openssl python3 openssh openssh-server openssh-clients openssl-libs java-11-openjdk-devel which bc wget git iproute && \
+RUN dnf -y install gcc-c++ openssl python3 openssh openssh-server openssh-clients openssl-libs java-17-openjdk-devel which bc wget git iproute && \
     /bin/bash -c "source /opt/datawave/contrib/datawave-quickstart/bin/env.sh && jdkIsConfigured" && \
     echo "source /opt/datawave/contrib/datawave-quickstart/bin/env.sh" >> ~/.bashrc && \
     dnf clean all && \
