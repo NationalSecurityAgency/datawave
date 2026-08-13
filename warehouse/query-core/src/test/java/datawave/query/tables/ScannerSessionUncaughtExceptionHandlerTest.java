@@ -20,7 +20,6 @@ import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -172,8 +171,8 @@ public class ScannerSessionUncaughtExceptionHandlerTest {
 
         awaitFailed(session);
 
-        ImmutablePair<Throwable,Thread> uncaughtException = query.getUncaughtExceptionHandler().getUncaughtException();
-        Throwable handlerFailure = uncaughtException == null ? null : uncaughtException.getLeft();
+        QueryUncaughtExceptionHandler handler = query.getUncaughtExceptionHandler();
+        Throwable handlerFailure = handler.hasUncaughtException() ? handler.getUncaughtException().getLeft() : null;
         Throwable serviceFailure = session.failureCause();
 
         assertNotNull(handlerFailure, "the handler channel did not record the failure");

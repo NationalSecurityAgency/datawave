@@ -1,6 +1,7 @@
 package datawave.webservice.query.util;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -69,6 +70,7 @@ class QueryUncaughtExceptionHandlerTest {
             assertNull(handler.getThrowable());
             assertNull(handler.getThread());
             assertNull(handler.getUncaughtException());
+            assertFalse(handler.hasUncaughtException());
             assertTrue(handler.getMessages().isEmpty());
         }
 
@@ -84,6 +86,7 @@ class QueryUncaughtExceptionHandlerTest {
 
             assertSame(exception, handler.getThrowable());
             assertSame(thread, handler.getThread());
+            assertTrue(handler.hasUncaughtException());
 
             ImmutablePair<Throwable,Thread> uncaughtException = handler.getUncaughtException();
             assertSame(exception, uncaughtException.getLeft());
@@ -119,6 +122,7 @@ class QueryUncaughtExceptionHandlerTest {
             handler.uncaughtException(new Thread("t1"), null);
             assertNull(handler.getThrowable());
             assertNull(handler.getThread());
+            assertFalse(handler.hasUncaughtException());
 
             Thread thread = new Thread("t2");
             RuntimeException exception = new RuntimeException("first");
@@ -126,6 +130,7 @@ class QueryUncaughtExceptionHandlerTest {
 
             assertSame(exception, handler.getThrowable());
             assertSame(thread, handler.getThread());
+            assertTrue(handler.hasUncaughtException());
 
             ImmutablePair<Throwable,Thread> uncaughtException = handler.getUncaughtException();
             assertSame(exception, uncaughtException.getLeft());
@@ -145,6 +150,7 @@ class QueryUncaughtExceptionHandlerTest {
 
             assertSame(exception, handler.getThrowable());
             assertSame(thread, handler.getThread());
+            assertTrue(handler.hasUncaughtException());
 
             ImmutablePair<Throwable,Thread> uncaughtException = handler.getUncaughtException();
             assertSame(exception, uncaughtException.getLeft());
@@ -162,10 +168,21 @@ class QueryUncaughtExceptionHandlerTest {
 
             assertSame(exception, handler.getThrowable());
             assertNull(handler.getThread());
+            assertTrue(handler.hasUncaughtException());
 
             ImmutablePair<Throwable,Thread> uncaughtException = handler.getUncaughtException();
             assertSame(exception, uncaughtException.getLeft());
             assertNull(uncaughtException.getRight());
+        }
+
+        /**
+         * Verify null messages are not captured.
+         */
+        @Test
+        void nullMessageIsNotAdded() {
+            handler.addMessage(null);
+
+            assertTrue(handler.getMessages().isEmpty());
         }
 
         /**
@@ -265,6 +282,7 @@ class QueryUncaughtExceptionHandlerTest {
                 // Verify we captured an exception.
                 assertNotNull(capturedException, "An exception should have been captured");
                 assertNotNull(capturedThread, "A thread should have been captured");
+                assertTrue(handler.hasUncaughtException());
                 assertTrue(validExceptions.contains(capturedException), "Captured exception must be one of the thrown exceptions");
 
                 // Verify the exception and thread came from the same call.
@@ -326,6 +344,7 @@ class QueryUncaughtExceptionHandlerTest {
                     // Verify we captured an exception.
                     assertNotNull(capturedException, "Trial " + trial + ": throwable missing");
                     assertNotNull(capturedThread, "Trial " + trial + ": thread missing");
+                    assertTrue(handler.hasUncaughtException());
 
                     String threadName = capturedThread.getName();
                     String exMessage = capturedException.getMessage();
@@ -426,8 +445,7 @@ class QueryUncaughtExceptionHandlerTest {
                         try {
                             startLatch.await();
                             for (int j = 0; j < 50; j++) {
-                                handler.getThrowable();
-                                handler.getThread();
+                                handler.getUncaughtException();
                                 List<String> m = handler.getMessages();
                                 if (m == null) {
                                     errors.incrementAndGet();

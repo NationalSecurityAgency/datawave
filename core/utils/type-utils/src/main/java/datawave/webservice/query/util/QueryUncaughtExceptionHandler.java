@@ -10,16 +10,29 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 
 /**
- * Implementation of {@link UncaughtExceptionHandler} that captures and retains the first exception only thrown during a query.
+ * Implementation of {@link UncaughtExceptionHandler} that atomically captures and retains the first exception thrown during a query.
  */
 public class QueryUncaughtExceptionHandler implements UncaughtExceptionHandler {
 
+    /**
+     * Generates sequences for candidate calls to {@link #uncaughtException(Thread, Throwable)} to identify the chronologically first call.
+     */
     private final AtomicLong sequenceGenerator = new AtomicLong();
+
+    /**
+     * A reference to the currently captured exception and its thread.
+     */
     private final AtomicReference<ImmutablePair<Long,ImmutablePair<Throwable,Thread>>> atomicRef = new AtomicReference<>();
+
+    /**
+     * The recorded messages.
+     */
     private final Queue<String> messages = new ConcurrentLinkedQueue<>();
 
     /**
-     * Add an uncaught exception to this {@link QueryUncaughtExceptionHandler}. Only the first non-null exception will be kept.
+     * Atomically add an uncaught exception to this {@link QueryUncaughtExceptionHandler}. Only the chronologically first non-null exception will be kept. Under
+     * high contention, it is possible for an exception to be recorded for a chronologically later call to this method whose thread's CAS-operation completes
+     * first. The captured exception will later be replaced by a call to the method that occurred earlier.
      *
      * @param thread
      *            the thread
@@ -67,14 +80,27 @@ public class QueryUncaughtExceptionHandler implements UncaughtExceptionHandler {
     }
 
     /**
-     * Return the first non-null uncaught exception supplied to {@link #uncaughtException(Thread, Throwable)} (never null), and its associated thread (possibly
-     * null).
+     * Return the first non-null uncaught exception supplied to {@link #uncaughtException(Thread, Throwable)}, or null if no exception has been caught. If a
+     * non-null pair is returned, the throwable for the pair will never be null, but the thread of the pair can be null.
+     * <p>
+     * NOTE: it is possible for this method to return different pairs in the case when {@link #uncaughtException(Thread, Throwable)} is initially called
+     * concurrently. This is only a concern when trying to call this method immediately after the contending threads supply exceptions to
+     * {@link #uncaughtException(Thread, Throwable)}.
      *
      * @return a pair consisting of the uncaught exception and its associated thread
      */
     public ImmutablePair<Throwable,Thread> getUncaughtException() {
         ImmutablePair<Long,ImmutablePair<Throwable,Thread>> ref = atomicRef.get();
         return ref == null ? null : ref.getRight();
+    }
+
+    /**
+     * Return whether an exception has been captured via {@link #uncaughtException(Thread, Throwable)}.
+     *
+     * @return true if an exception has been caught, or false otherwise
+     */
+    public boolean hasUncaughtException() {
+        return atomicRef.get() != null;
     }
 
     /**
