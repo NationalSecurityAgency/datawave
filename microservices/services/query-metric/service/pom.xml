@@ -20,7 +20,7 @@
     <properties>
         <spotbugs.excludes.file>${basedir}/spotbugs-exclude.xml</spotbugs.excludes.file>
         <start-class>datawave.microservice.querymetric.QueryMetricService</start-class>
-        <version.accumulo>2.1.4-5792fed3-bulkv2</version.accumulo>
+        <version.accumulo>2.1.6-5792fed3-bulkv2</version.accumulo>
         <version.cache-api>1.1.1</version.cache-api>
         <version.commons-jexl3>3.3</version.commons-jexl3>
         <version.commons-lang3>3.20.0</version.commons-lang3>

@@ -23,7 +23,7 @@
         <url>https://github.com/NationalSecurityAgency/datawave</url>
     </scm>
     <properties>
-        <version.accumulo>2.1.4-5792fed3-bulkv2</version.accumulo>
+        <version.accumulo>2.1.6-5792fed3-bulkv2</version.accumulo>
         <version.datawave>7.37.3</version.datawave>
         <version.datawave.starter>4.0.9</version.datawave.starter>
         <version.datawave.starter-cache>4.0.4</version.datawave.starter-cache>
