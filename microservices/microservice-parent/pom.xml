@@ -759,8 +759,8 @@
                                     <quiet>true</quiet>
                                     <javaApiLinks>
                                         <property>
-                                            <name>api_11.0</name>
-                                            <value>https://docs.oracle.com/en/java/javase/11/docs/api</value>
+                                            <name>api_17.0</name>
+                                            <value>https://docs.oracle.com/en/java/javase/17/docs/api</value>
                                         </property>
                                     </javaApiLinks>
                                 </configuration>

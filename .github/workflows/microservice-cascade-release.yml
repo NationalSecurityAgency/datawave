@@ -86,7 +86,7 @@ on:
         description: "Default true. Computes and prints the cascade plan but does not release, bump, push, or run compose. Flip to false to actually release."
 
 env:
-  JAVA_VERSION: '11'
+  JAVA_VERSION: '17'
   JAVA_DISTRIBUTION: 'zulu'
   MAVEN_OPTS: "-Djansi.force=true -Dhttps.protocols=TLSv1.2 -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=WARN -Djava.awt.headless=true -XX:ThreadStackSize=1m -Daether.connector.basic.threads=8 -Daether.metadataResolver.threads=8 -Daether.syncContext.named.time=480"
   GITHUB_USERNAME: ${{ secrets.GHCR_WRITE_USER_NAME }}

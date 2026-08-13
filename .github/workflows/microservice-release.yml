@@ -82,7 +82,7 @@ on:
         default: ""
         description: "Branch to release from. When empty, uses the triggering ref. Set by the cascade workflow for non-final releases."
 env:
-  JAVA_VERSION: '11'
+  JAVA_VERSION: '17'
   JAVA_DISTRIBUTION: 'zulu' #This is the default on v1 of the action for 1.8
   MAVEN_OPTS: "-Djansi.force=true -Dhttps.protocols=TLSv1.2 -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=WARN -Djava.awt.headless=true -XX:ThreadStackSize=1m -Daether.connector.basic.threads=8 -Daether.metadataResolver.threads=8 -Daether.syncContext.named.time=480"
   GITHUB_REGISTRY: ghcr.io
