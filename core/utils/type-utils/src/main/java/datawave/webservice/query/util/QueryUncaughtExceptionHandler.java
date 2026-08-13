@@ -10,7 +10,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 
 /**
- * Implementation of {@link UncaughtExceptionHandler} that atomically captures and retains the first exception thrown during a query.
+ * Implementation of {@link UncaughtExceptionHandler} that atomically captures and retains the chronologically first exception recorded to the handler.
  */
 public class QueryUncaughtExceptionHandler implements UncaughtExceptionHandler {
 

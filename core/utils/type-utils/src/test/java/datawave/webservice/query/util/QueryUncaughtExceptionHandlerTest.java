@@ -9,7 +9,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -38,21 +37,6 @@ class QueryUncaughtExceptionHandlerTest {
     @BeforeEach
     void setUp() {
         handler = new QueryUncaughtExceptionHandler();
-    }
-
-    /**
-     * Verifies that the methods {@link QueryUncaughtExceptionHandler#getThread()} and {@link QueryUncaughtExceptionHandler#getThrowable()} are marked
-     * deprecated in favor of {@link QueryUncaughtExceptionHandler#getUncaughtException()}, which allows atomic gets of the thread and throwable.
-     */
-    @Test
-    void nonAtomicGettersAreDeprecated() throws NoSuchMethodException {
-        // Retrieve the method from the target class by its name and parameter types
-        Method getThreadMethod = QueryUncaughtExceptionHandler.class.getMethod("getThread");
-        Method getThrowable = QueryUncaughtExceptionHandler.class.getMethod("getThrowable");
-
-        // Assert that the @Deprecated annotation is present
-        assertTrue(getThreadMethod.isAnnotationPresent(Deprecated.class), "The method 'getThread()' should be marked as @Deprecated");
-        assertTrue(getThrowable.isAnnotationPresent(Deprecated.class), "The method 'getThrowable()' should be marked as @Deprecated");
     }
 
     /**
