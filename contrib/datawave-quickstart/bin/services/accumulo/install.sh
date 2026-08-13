@@ -127,7 +127,7 @@ if [ -n "${DW_ACCUMULO_VFS_DATAWAVE_DIR}" ] && [ "${DW_ACCUMULO_VFS_DATAWAVE_ENA
 fi
 
 # Initialize Accumulo
-"${ACCUMULO_HOME}/bin/accumulo" init \
+"${ACCUMULO_HOME}/bin/accumulo" inst init \
  --clear-instance-name \
  --instance-name "${DW_ACCUMULO_INSTANCE_NAME}" \
  --password "${DW_ACCUMULO_PASSWORD}" || ( fatal "Failed to initialize Accumulo" && exit 1 )
