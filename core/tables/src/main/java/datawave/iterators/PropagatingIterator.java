@@ -24,21 +24,18 @@ import org.apache.log4j.Logger;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 
-import datawave.ingest.table.aggregator.PropogatingCombiner;
+import datawave.ingest.table.aggregator.PropagatingCombiner;
 
 /**
- * Purpose: Handle arbitrary propogating aggregations.
+ * Purpose: Handle arbitrary propagating aggregations.
  *
  * Design: Though very similar to the DeletingIterator, due to private methods and members, we cannot directly extend the DeletingIterator. As a result, the
  * class extends SKVI. This class {@code USES --> PropogatingAggregator}. Note that propAgg can be null
  *
  * Initially the TotalAggregatingIterator, this class was a direct copy. At some point it was identified that there was an artifact where deletes would not be
- * propogated. As a result, this class becomes nearly identical to the DeletingIterator, whereby deletes are always propogated until a full major compaction.
- *
- * @deprecated for {@link PropagatingIterator} with the correct spelling of propagate
+ * propagated. As a result, this class becomes nearly identical to the DeletingIterator, whereby deletes are always propagated until a full major compaction.
  */
-@Deprecated
-public class PropogatingIterator implements SortedKeyValueIterator<Key,Value>, OptionDescriber {
+public class PropagatingIterator implements SortedKeyValueIterator<Key,Value>, OptionDescriber {
 
     public static final String ATTRIBUTE_NAME = "agg";
 
@@ -79,28 +76,28 @@ public class PropogatingIterator implements SortedKeyValueIterator<Key,Value>, O
     protected IteratorEnvironment env;
 
     /**
-     * Propogating iterator
+     * Propagating iterator
      */
-    protected PropogatingCombiner defaultAgg = null;
-    protected Map<ByteSequence,PropogatingCombiner> aggMap;
+    protected PropagatingCombiner defaultAgg = null;
+    protected Map<ByteSequence,PropagatingCombiner> aggMap;
 
     /**
-     * variable to determine if we should propogate deletes
+     * variable to determine if we should propagate deletes
      */
-    private boolean shouldPropogate;
+    private boolean shouldPropagate;
 
     /**
      * Combiner options so that we can effectively deep copy
      */
     protected Map<String,String> options = Maps.newHashMap();
 
-    private static final Logger log = Logger.getLogger(PropogatingIterator.class);
+    private static final Logger log = Logger.getLogger(PropagatingIterator.class);
 
     /**
      * Deep copy implementation
      */
-    public PropogatingIterator deepCopy(IteratorEnvironment env) {
-        return new PropogatingIterator(this, env);
+    public PropagatingIterator deepCopy(IteratorEnvironment env) {
+        return new PropagatingIterator(this, env);
     }
 
     /**
@@ -111,18 +108,18 @@ public class PropogatingIterator implements SortedKeyValueIterator<Key,Value>, O
      * @param env
      *            an interator environment
      */
-    private PropogatingIterator(PropogatingIterator other, IteratorEnvironment env) {
+    private PropagatingIterator(PropagatingIterator other, IteratorEnvironment env) {
         iterator = other.iterator.deepCopy(env);
         this.env = env;
         if (null != defaultAgg)
-            defaultAgg = (PropogatingCombiner) other.defaultAgg.deepCopy(env);
+            defaultAgg = (PropagatingCombiner) other.defaultAgg.deepCopy(env);
         this.aggMap = Maps.newHashMap();
         options.putAll(other.options);
         // this will configure us and deep copy safely
         validateOptions(options);
     }
 
-    public PropogatingIterator() {
+    public PropagatingIterator() {
         aggMap = Maps.newHashMap();
     }
 
@@ -140,7 +137,7 @@ public class PropogatingIterator implements SortedKeyValueIterator<Key,Value>, O
 
         final Key keyToAggregate = workKey;
 
-        PropogatingCombiner aggr = getAggregator(workKey);
+        PropagatingCombiner aggr = getAggregator(workKey);
 
         Value aggregatedValue;
 
@@ -156,13 +153,13 @@ public class PropogatingIterator implements SortedKeyValueIterator<Key,Value>, O
             aggregatedValue = aggr.reduce(keyToAggregate, aggr.getValues(iterator));
 
             // always propagate deletes
-            if (aggr.propogateKey() || workKey.isDeleted()) {
+            if (aggr.propagateKey() || workKey.isDeleted()) {
                 if (log.isTraceEnabled())
-                    log.trace("propogating " + workKey);
+                    log.trace("propagating " + workKey);
                 aggrKey = workKey;
             } else {
                 if (log.isTraceEnabled())
-                    log.trace("Not propogating " + workKey);
+                    log.trace("Not propagating " + workKey);
                 return false;
             }
         } else {
@@ -177,8 +174,8 @@ public class PropogatingIterator implements SortedKeyValueIterator<Key,Value>, O
 
     }
 
-    private PropogatingCombiner getAggregator(Key key) {
-        PropogatingCombiner aggr = aggMap.get(key.getColumnFamilyData());
+    private PropagatingCombiner getAggregator(Key key) {
+        PropagatingCombiner aggr = aggMap.get(key.getColumnFamilyData());
 
         if (null == aggr) {
             if (log.isTraceEnabled()) {
@@ -220,7 +217,7 @@ public class PropogatingIterator implements SortedKeyValueIterator<Key,Value>, O
      * @throws IOException
      *             for issues with read/write
      */
-    public PropogatingIterator(SortedKeyValueIterator<Key,Value> iterator, ColumnToClassMapping<Combiner> Aggregators) throws IOException {
+    public PropagatingIterator(SortedKeyValueIterator<Key,Value> iterator, ColumnToClassMapping<Combiner> Aggregators) throws IOException {
         this.iterator = iterator;
         findTop();
     }
@@ -320,15 +317,15 @@ public class PropogatingIterator implements SortedKeyValueIterator<Key,Value>, O
         // Don't propagate for either scan or full major compaction. In either case, the aggregated result has combined
         // all existing values for a key so we don't need to propagate temporary state that is only used to combine
         // partial results with new info.
-        shouldPropogate = !(env.getIteratorScope() == IteratorScope.majc && env.isFullMajorCompaction()) && !(env.getIteratorScope() == IteratorScope.scan);
+        shouldPropagate = !(env.getIteratorScope() == IteratorScope.majc && env.isFullMajorCompaction()) && !(env.getIteratorScope() == IteratorScope.scan);
 
-        PropogatingCombiner propAgg = null;
+        PropagatingCombiner propAgg = null;
 
         for (Entry<String,String> familyOption : options.entrySet()) {
             Object agg = createAggregator(familyOption.getValue());
-            if (agg instanceof PropogatingCombiner) {
-                propAgg = PropogatingCombiner.class.cast(agg);
-                propAgg.setPropogate(shouldPropogate);
+            if (agg instanceof PropagatingCombiner) {
+                propAgg = PropagatingCombiner.class.cast(agg);
+                propAgg.setPropagate(shouldPropagate);
                 if (familyOption.getKey().equals(AGGREGATOR_DEFAULT) || familyOption.getKey().equals(AGGREGATOR_DEFAULT_OPT)) {
                     if (log.isTraceEnabled())
                         log.debug("Default aggregator is " + propAgg.getClass());

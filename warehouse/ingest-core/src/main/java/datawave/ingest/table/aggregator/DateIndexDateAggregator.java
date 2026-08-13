@@ -38,7 +38,8 @@ public class DateIndexDateAggregator extends PropagatingCombiner {
         }
     }
 
-    public boolean propagatekey() {
+    @Override
+    public boolean propagateKey() {
         return true;
     }
 }

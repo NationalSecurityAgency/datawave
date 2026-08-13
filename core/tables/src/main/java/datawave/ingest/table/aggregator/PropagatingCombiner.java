@@ -70,7 +70,7 @@ public abstract class PropagatingCombiner extends Combiner {
      *
      * @return a boolean on whether to propagate
      */
-    public boolean propagatekey() {
+    public boolean propagateKey() {
         return this.propagate;
     }
 

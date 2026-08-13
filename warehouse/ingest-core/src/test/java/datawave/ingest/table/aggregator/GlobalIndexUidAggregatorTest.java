@@ -829,7 +829,7 @@ public class GlobalIndexUidAggregatorTest {
 
         assertEquals(0, result.getCOUNT());
         assertTrue(result.getIGNORE());
-        assertFalse(agg.propagatekey());
+        assertFalse(agg.propagateKey());
     }
 
     @Test
@@ -840,7 +840,7 @@ public class GlobalIndexUidAggregatorTest {
 
         assertEquals(0, result.getCOUNT());
         assertTrue(result.getIGNORE());
-        assertTrue(agg.propagatekey());
+        assertTrue(agg.propagateKey());
     }
 
     @Test
@@ -850,7 +850,7 @@ public class GlobalIndexUidAggregatorTest {
         Uid.List result = valueToUidList(agg(values));
 
         assertEquals(0, result.getCOUNT());
-        assertFalse(agg.propagatekey());
+        assertFalse(agg.propagateKey());
         assertTrue(result.getIGNORE());
     }
 
@@ -861,7 +861,7 @@ public class GlobalIndexUidAggregatorTest {
         Uid.List result = valueToUidList(agg(values));
 
         assertEquals(0, result.getCOUNT());
-        assertTrue(agg.propagatekey());
+        assertTrue(agg.propagateKey());
         assertTrue(result.getIGNORE());
     }
 
@@ -873,7 +873,7 @@ public class GlobalIndexUidAggregatorTest {
 
         assertEquals(0, result.getCOUNT());
         assertTrue(result.getIGNORE());
-        assertFalse(agg.propagatekey());
+        assertFalse(agg.propagateKey());
     }
 
     @Test
@@ -884,7 +884,7 @@ public class GlobalIndexUidAggregatorTest {
 
         assertEquals(-1, result.getCOUNT());
         assertTrue(result.getIGNORE());
-        assertTrue(agg.propagatekey());
+        assertTrue(agg.propagateKey());
     }
 
     @Test
@@ -894,7 +894,7 @@ public class GlobalIndexUidAggregatorTest {
         Uid.List result = valueToUidList(agg(values));
 
         assertEquals(1, result.getUIDList().size());
-        assertTrue(agg.propagatekey());
+        assertTrue(agg.propagateKey());
     }
 
     @Test

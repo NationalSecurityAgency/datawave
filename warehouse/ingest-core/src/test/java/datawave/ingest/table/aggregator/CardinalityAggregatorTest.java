@@ -24,26 +24,26 @@ public class CardinalityAggregatorTest {
     @Test
     public void testResetPropagate() {
         agg.reset();
-        assertTrue(agg.propagatekey());
+        assertTrue(agg.propagateKey());
         agg.setPropagate(false);
-        assertFalse(agg.propagatekey());
+        assertFalse(agg.propagateKey());
         agg.reset();
-        assertTrue(agg.propagatekey());
+        assertTrue(agg.propagateKey());
     }
 
     @Test
     public void testEmptyCardinality() throws IOException {
         agg.reset();
-        assertTrue(agg.propagatekey());
+        assertTrue(agg.propagateKey());
         Value result = agg.reduce(new Key("key"), Collections.emptyIterator());
-        assertFalse(agg.propagatekey());
+        assertFalse(agg.propagateKey());
         assertEquals(CardinalityAggregator.EMPTY_VALUE, result);
     }
 
     @Test
     public void testSingleCardinality() throws IOException {
         agg.reset();
-        assertTrue(agg.propagatekey());
+        assertTrue(agg.propagateKey());
 
         HyperLogLogPlus cardinality = new HyperLogLogPlus(10);
         cardinality.offer("A");
@@ -51,7 +51,7 @@ public class CardinalityAggregatorTest {
         cardinality.offer("C");
         Value val = new Value(cardinality.getBytes());
         Value result = agg.reduce(new Key("key"), Iterators.singletonIterator(val));
-        assertTrue(agg.propagatekey());
+        assertTrue(agg.propagateKey());
         assertNotNull(result);
         assertNotNull(result.get());
         HyperLogLogPlus resultcard = HyperLogLogPlus.Builder.build(result.get());
@@ -79,7 +79,7 @@ public class CardinalityAggregatorTest {
         list.add(bval);
 
         Value result = agg.reduce(new Key("key"), list.iterator());
-        assertTrue(agg.propagatekey());
+        assertTrue(agg.propagateKey());
 
         assertNotNull(result);
         assertNotNull(result.get());

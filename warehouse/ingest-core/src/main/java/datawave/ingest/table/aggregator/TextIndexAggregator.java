@@ -49,7 +49,8 @@ public class TextIndexAggregator extends PropagatingCombiner {
      *
      * @return a boolean on whether to propagate or not
      */
-    public boolean propagatekey() {
+    @Override
+    public boolean propagateKey() {
         return true;
     }
 

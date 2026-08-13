@@ -318,7 +318,7 @@ public class GlobalIndexUidAggregator extends PropagatingCombiner {
     }
 
     @Override
-    public boolean propagatekey() {
+    public boolean propagateKey() {
 
         // This method is called after reduce and then aggregate, so all of the work to combine has been done.
         // If the propogate flag is true, then this might have been a partial major compaction, scan, or minor
