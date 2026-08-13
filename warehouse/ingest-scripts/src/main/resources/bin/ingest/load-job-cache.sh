@@ -15,8 +15,9 @@ cd $THIS_DIR || exit
 . ../ingest/ingest-libs.sh
 . ../ingest/job-cache-env.sh
 
-# Check that there are no other instances of this script running
-acquire_lock_file $(basename "$0") || exit 1
+# Check that there are no other instances of this script running. Exit 2 rather than 1 so that
+# callers can tell a load that is already in progress from one that failed.
+acquire_lock_file $(basename "$0") || exit 2
 
 # Abort rather than swap in a job cache that was not fully built. Every step below feeds the
 # directory that job-cache-env.sh is repointed at on the last line of this script, so a step that
