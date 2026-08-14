@@ -1,29 +1,40 @@
 package datawave.ingest.mapreduce.handler.dateindex;
 
+import java.text.ParseException;
+import java.time.format.DateTimeParseException;
 import java.util.BitSet;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.TimeZone;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /**
- *
+ * Tests for DateIndexUtil.
  */
 public class DateIndexUtilTest {
 
+    /**
+     * Verify that {@link DateIndexUtil#getBits} returns a BitSet with only the specified index set to true.
+     */
     @Test
     public void testGetBits() {
         BitSet bits = DateIndexUtil.getBits(20);
         for (int i = 0; i < 20; i++) {
-            Assert.assertFalse(bits.get(i));
+            Assertions.assertFalse(bits.get(i));
         }
-        Assert.assertTrue(bits.get(20));
+        Assertions.assertTrue(bits.get(20));
         for (int i = 21; i < bits.size(); i++) {
-            Assert.assertFalse(bits.get(i));
+            Assertions.assertFalse(bits.get(i));
         }
     }
 
+    /**
+     * Verify that {@link DateIndexUtil#merge} correctly combines the true bits of two given BitSets into a single BitSet.
+     */
     @Test
     public void testMerge() {
 
@@ -48,11 +59,159 @@ public class DateIndexUtilTest {
 
         for (int i = 0; i < 40 * 4; i++) {
             if (bits.contains(i)) {
-                Assert.assertTrue(bitSet.get(i));
+                Assertions.assertTrue(bitSet.get(i));
             } else {
-                Assert.assertFalse(bitSet.get(i));
+                Assertions.assertFalse(bitSet.get(i));
             }
         }
+    }
+
+    private Date create(int year, int month, int day, int hour, int minute, int second, int millis) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTimeZone(TimeZone.getDefault());
+        calendar.set(year, month, day, hour, minute, second);
+        calendar.set(Calendar.MILLISECOND, millis);
+        return calendar.getTime();
+    }
+
+    /**
+     * Verify that {@link DateIndexUtil#format} formats a valid Date object into a yyyyMMdd string representation.
+     */
+    @Test
+    public void testFormat() {
+        Date date = create(2026,Calendar.AUGUST,13,7,7,7,0);
+        String dateStr = "20260813";
+        Assertions.assertEquals(dateStr, DateIndexUtil.format(date));
+    }
+
+    /**
+     * Verify that {@link DateIndexUtil#format} throws a NullPointerException when attempting to format a null Date.
+     */
+    @Test
+    public void testFormatNullDate(){
+        Date date = null;
+        Assertions.assertThrows(NullPointerException.class, () -> {
+            DateIndexUtil.format(date);
+        });
+    }
+
+    /**
+     * Verify that {@link DateIndexUtil#getBeginDate} properly parses a yyyyMMdd string into a Date representing the very beginning of that day.
+     */
+    @Test
+    public void testGetBeginDate() throws ParseException {
+        String dateStr = "20260813";
+        Date date = create(2026,Calendar.AUGUST,13,0,0,0,0);
+        Assertions.assertEquals(date, DateIndexUtil.getBeginDate(dateStr));
+    }
+
+    /**
+     * Verify that {@link DateIndexUtil#getBeginDate} throws a DateTimeParseException when the date string is too short.
+     */
+    @Test
+    public void testGetBeginDateStringTooShort(){
+        String dateStr = "202608";
+        Assertions.assertThrows(DateTimeParseException.class, () -> {
+            DateIndexUtil.getBeginDate(dateStr);
+        });
+    }
+
+    /**
+     * Verify that {@link DateIndexUtil#getBeginDate} throws a DateTimeParseException when the date string contains invalid non-numeric characters.
+     */
+    @Test
+    public void testGetBeginDateInvalidCharacter(){
+        String dateStr = "2026!081";
+        Assertions.assertThrows(DateTimeParseException.class, () -> {
+            DateIndexUtil.getBeginDate(dateStr);
+        });
+    }
+
+    /**
+     * Verify that {@link DateIndexUtil#getBeginDate} throws an IllegalArgumentException when the input date string is null.
+     */
+    @Test
+    public void testGetBeginDateNullString(){
+        String dateStr = null;
+        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+            DateIndexUtil.getBeginDate(dateStr);
+        });
+    }
+
+    /**
+     * Verify that {@link DateIndexUtil#getBeginDate} throws an IllegalArgumentException when the input date string is empty.
+     */
+    @Test
+    public void testGetBeginDateEmptyString(){
+        String dateStr = "";
+        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+            DateIndexUtil.getBeginDate(dateStr);
+        });
+    }
+
+    /**
+     * Verify that {@link DateIndexUtil#getEndDate} properly parses a yyyyMMdd string into a Date representing the very end of that day (23:59:59.999).
+     */
+    @Test
+    public void testGetEndDate() throws ParseException {
+        String dateStr = "20260813";
+        Date date = create(2026,Calendar.AUGUST,13,23,59,59,999);
+        Assertions.assertEquals(date, DateIndexUtil.getEndDate(dateStr));
+    }
+
+    /**
+     * Verify that {@link DateIndexUtil#getEndDate} throws a DateTimeParseException when the date string is too short.
+     */
+    @Test
+    public void testGetEndDateStringTooShort(){
+        String dateStr = "202608";
+        Assertions.assertThrows(DateTimeParseException.class, () -> {
+            DateIndexUtil.getEndDate(dateStr);
+        });
+    }
+
+    /**
+     * Verify that {@link DateIndexUtil#getEndDate} throws a DateTimeParseException when the date string contains invalid non-numeric characters.
+     */
+    @Test
+    public void testGetEndDateInvalidCharacter(){
+        String dateStr = "2026!081";
+        Assertions.assertThrows(DateTimeParseException.class, () -> {
+            DateIndexUtil.getEndDate(dateStr);
+        });
+    }
+
+    /**
+     * Verify that {@link DateIndexUtil#getEndDate} throws an IllegalArgumentException when the input date string is null.
+     */
+    @Test
+    public void testGetEndDateNullString(){
+        String dateStr = null;
+        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+            DateIndexUtil.getEndDate(dateStr);
+        });
+    }
+
+    /**
+     * Verify that {@link DateIndexUtil#getEndDate} throws an IllegalArgumentException when the input date string is empty.
+     */
+    @Test
+    public void testGetEndDateHasEmptyString(){
+        String dateStr = "";
+        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+            DateIndexUtil.getEndDate(dateStr);
+        });
+    }
+
+    /**
+     * Verify that {@link DateIndexUtil#getEndDate} throws a DateTimeParseException when the input date string does not have the expected length.
+     */
+    @Test
+    public void testGetEndDateInvalidStringLength(){
+        String dateStr = "202608";
+        Assertions.assertThrows(DateTimeParseException.class, () -> {
+            DateIndexUtil.getEndDate(dateStr);
+        });
     }
 
 }

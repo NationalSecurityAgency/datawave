@@ -1,34 +1,48 @@
 package datawave.ingest.mapreduce.handler.dateindex;
 
+import com.google.common.base.Preconditions;
+
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.TemporalAccessor;
 import java.util.BitSet;
-import java.util.Calendar;
 import java.util.Date;
 
 /**
- *
+ * Utility class for handling date operations and shard tracking during MapReduce ingest.
+ * <p>
+ * This class provides thread-safe static methods to format and parse dates to and from
+ * the {@code yyyyMMdd} string format, including resolving dates to the beginning or
+ * end of a day. It also includes helper methods for generating and merging
+ * {@link BitSet} objects, which are typically used to represent and track individual
+ * shards for date-indexed records.
+ * <p>
+ * Defines standard constants for common date index types (EVENT, LOADED, ACTIVITY).
  */
 public class DateIndexUtil {
-
     public static final String EVENT_DATE_TYPE = "EVENT";
     public static final String LOADED_DATE_TYPE = "LOADED";
     public static final String ACTIVITY_DATE_TYPE = "ACTIVITY";
-    public static final ThreadLocal<SimpleDateFormat> format = ThreadLocal.withInitial(() -> new SimpleDateFormat("yyyyMMdd"));
+    public static final ThreadLocal<DateTimeFormatter> formatter = ThreadLocal.withInitial(() -> DateTimeFormatter.BASIC_ISO_DATE);
+    private static final int MAX_MILLIS = 999_000_000;
 
     /**
-     * Format the date into yyyyMMdd
+     * Format the date into yyyyMMdd with time zone set to the system default.
      *
      * @param date
      *            then date to be formatted
      * @return the string representation in yyyyMMdd format
      */
     public static String format(Date date) {
-        return format.get().format(date);
+        Preconditions.checkNotNull(date, "date cannot be null");
+        LocalDate local = date.toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate();
+        return local.format(formatter.get());
     }
 
     /**
-     * Get the date with time set to 00:00:00
+     * Get the date with time set to 00:00:00.000 and time zone set to the system default.
      *
      * @param dateStr
      *            string representation of the date
@@ -37,11 +51,14 @@ public class DateIndexUtil {
      *             if there is a problem parsing the date
      */
     public static Date getBeginDate(String dateStr) throws ParseException {
-        return format.get().parse(dateStr);
+        Preconditions.checkArgument(dateStr != null && !dateStr.isBlank() , "date string cannot be null or blank");
+        TemporalAccessor temp = formatter.get().parse(dateStr);
+        LocalDate local = LocalDate.from(temp);
+        return Date.from(local.atStartOfDay(ZoneId.systemDefault()).toInstant());
     }
 
     /**
-     * Get the date with time set to 23:59:59
+     * Get the date with time set to 23:59:59.999 and time zone set to the system default.
      *
      * @param dateStr
      *            string representation of the date
@@ -50,13 +67,10 @@ public class DateIndexUtil {
      *             if there is a problem parsing the date
      */
     public static Date getEndDate(String dateStr) throws ParseException {
-        Calendar cal = Calendar.getInstance();
-        cal.setTime(format.get().parse(dateStr));
-        cal.set(Calendar.HOUR_OF_DAY, 23);
-        cal.set(Calendar.MINUTE, 59);
-        cal.set(Calendar.SECOND, 59);
-        cal.set(Calendar.MILLISECOND, 999);
-        return cal.getTime();
+        Preconditions.checkArgument(dateStr != null && !dateStr.isBlank(), "date string cannot be null or blank");
+        TemporalAccessor temp = formatter.get().parse(dateStr);
+        LocalDate local = LocalDate.from(temp);
+        return Date.from(local.atTime(23, 59, 59,MAX_MILLIS).atZone(ZoneId.systemDefault()).toInstant());
     }
 
     /**
@@ -73,7 +87,7 @@ public class DateIndexUtil {
     }
 
     /**
-     * Merge to bit sets into one. This will actually modify bits1 or bits2, depending which one is larger.
+     * Merge to bit sets into one. This will actually modify bits1 or bits2, depending on which one is larger.
      *
      * @param bits1
      *            the first bit set
