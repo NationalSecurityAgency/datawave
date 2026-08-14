@@ -7,7 +7,8 @@ import java.util.concurrent.TimeoutException;
 
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
-import org.apache.zookeeper.server.quorum.QuorumPeerConfig;
+
+import com.google.common.base.Preconditions;
 
 /**
  * A configurable Zookeeper client builder that can provide instances {@link CuratorFrameworkFactory} and {@link CuratorFramework}.
@@ -167,11 +168,17 @@ public class ZkClientBuilder {
      * Return a new {@link CuratorFrameworkFactory.Builder} that reflects the configuration of this {@link ZkClientBuilder}.
      *
      * @return the new builder
+     * @throws IllegalArgumentException
+     *             if the connectString is null or blank
+     * @throws NullPointerException
+     *             if the retryPolicyBuilder is null
      */
-    public CuratorFrameworkFactory.Builder createFactoryBuilder() throws QuorumPeerConfig.ConfigException {
+    public CuratorFrameworkFactory.Builder createFactoryBuilder() {
+        Preconditions.checkArgument(connectString != null && !connectString.isBlank(), "connectString must not be null or blank");
+        Preconditions.checkNotNull(retryPolicyBuilder, "retryPolicyBuilder must not be null");
         // @formatter:off
         return CuratorFrameworkFactory.builder()
-                        .connectString(ZkUtils.getQuorumPeerConfig(connectString))
+                        .connectString(ZkUtils.getConnectString(connectString))
                         .namespace(namespace)
                         .sessionTimeoutMs(sessionTimeoutMs)
                         .connectionTimeoutMs(connectionTimeoutMs)
@@ -193,11 +200,6 @@ public class ZkClientBuilder {
     /**
      * Return a new, started {@link CuratorFramework} client. The execution of the current thread will be halted until the connection to Zookeeper is fully
      * established, or until maxWaitTime has been exceeded.
-     * <ul>
-     * <li>If maxWaitTime is less than one, and timeUnit is not null, the thread will not be halted.</li>
-     * <li>If maxWaitTime is less than one, and timeUnit is null, the thread will be halted indefinitely until the connection is established.</li>
-     * </ul>
-     * The behavior above aligns with that of {@link CuratorFramework#blockUntilConnected(int, TimeUnit)}.
      *
      * @param maxWaitTime
      *            the max wait time
@@ -208,15 +210,28 @@ public class ZkClientBuilder {
      *             if the client fails to connect to Zookeeper within the wait period
      * @throws Exception
      *             if an error occurs while creating the builder for the client, or while waiting for the client to connect
+     * @throws IllegalArgumentException
+     *             if maxWaitTime is less than 1
+     * @throws NullPointerException
+     *             if timeUnit is null
      */
     public CuratorFramework buildAndStart(int maxWaitTime, TimeUnit timeUnit) throws Exception {
+        Preconditions.checkArgument(maxWaitTime > 0, "maxWaitTime must be greater than 0");
+        Preconditions.checkNotNull(timeUnit, "timeUnit must not be null");
         CuratorFramework client = build();
-        client.start();
-        boolean connected = client.blockUntilConnected(maxWaitTime, timeUnit);
-        if (!connected) {
-            throw new TimeoutException("Failed to connect to zookeeper within timeout of " + maxWaitTime + " " + timeUnit);
+        try {
+            client.start();
+            boolean connected = client.blockUntilConnected(maxWaitTime, timeUnit);
+            if (!connected) {
+                throw new TimeoutException("Failed to connect to zookeeper within timeout of " + maxWaitTime + " " + timeUnit);
+            }
+            return client;
+        } catch (Exception e) {
+            // If an exception occurs after starting the client, ensure any connection to Zookeeper is closed.
+            client.close();
+            throw e;
         }
-        return client;
+
     }
 
     /**

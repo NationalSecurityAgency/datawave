@@ -200,6 +200,16 @@ class ZkLockTest {
         }
 
         /**
+         * Verify that a lock ID that resolves to an empty path results in an exception.
+         */
+        @Test
+        void lockIdNormalizedToEmptyPathThrowsIllegalArgumentException() {
+            ZkLock lock = new ZkLock(client, "/locks", 5, TimeUnit.SECONDS, false);
+            assertThatThrownBy(() -> lock.callWithLock("/", () -> null)).isInstanceOf(IllegalArgumentException.class)
+                            .hasMessageContaining("lockId '/' normalized to an empty path");
+        }
+
+        /**
          * Verify that multiple consecutive slashes are collapsed.
          */
         @Test
@@ -378,17 +388,18 @@ class ZkLockTest {
          */
         @Test
         void nodeNotEmptyExceptionIsSwallowedWhenAnotherThreadIsWaiting() throws Exception {
-            ZkLock lock = new ZkLock(client, "/locks", 10, TimeUnit.SECONDS, true);
+            ZkLock lockA = new ZkLock(client, "/locks", 10, TimeUnit.SECONDS, true);
+            ZkLock lockB = new ZkLock(client, "/locks", 10, TimeUnit.SECONDS, true);
             CountDownLatch aHolding = new CountDownLatch(1);
             CountDownLatch aRelease = new CountDownLatch(1);
             CountDownLatch bAcquired = new CountDownLatch(1);
             ExecutorService executor = Executors.newFixedThreadPool(2);
 
-            // Let the first holder A obtain and hold the lock.
+            // Let the first holder A obtain and hold the lock via lockA.
             try {
                 Future<?> futureA = executor.submit(() -> {
                     try {
-                        lock.callWithLock("shared", () -> {
+                        lockA.callWithLock("shared", () -> {
                             aHolding.countDown();
                             aRelease.await();
                             return null;
@@ -399,10 +410,10 @@ class ZkLockTest {
                 });
                 assertThat(aHolding.await(5, TimeUnit.SECONDS)).isTrue();
 
-                // Create a future B that will queue up to obtain the lock.
+                // Create a future B that will queue up to obtain the lock via lockB.
                 Future<?> futureB = executor.submit(() -> {
                     try {
-                        lock.callWithLock("shared", () -> {
+                        lockB.callWithLock("shared", () -> {
                             bAcquired.countDown();
                             return null;
                         });

@@ -4,35 +4,55 @@ import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
+import java.util.regex.Pattern;
 
 import org.apache.zookeeper.server.quorum.QuorumPeer;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import com.google.common.base.Preconditions;
 
 /**
  * Utility class for Zookeeper operations.
  */
 public final class ZkUtils {
 
-    private static final Cache<String,String> zkConfigCache = Caffeine.newBuilder().maximumSize(16).build();
+    // @formatter:off
+    private static final Cache<String,String> zkConfigCache = Caffeine.newBuilder()
+                    .maximumSize(16)
+                    .expireAfterWrite(Duration.ofMinutes(10))
+                    .build();
+    // @formatter:on
+
+    private static final Pattern CONSECUTIVE_SLASH_REGEX = Pattern.compile("/{2,}");
 
     /**
-     * Return a formatted Zookeeper connect string that can be used to connect to a running Zookeeper server. The config string can be a list of servers or a
-     * path to a Zookeeper config file. If a valid connect string is already cached for the given config, the cached connect string will be returned.
+     * Return a formatted Zookeeper connect string that can be used to connect to a running Zookeeper server. If the string is a path to a Zookeeper
+     * configuration file, the connect string will be resolved using {@link QuorumPeerConfig}. If a connect string is already cached for the given config
+     * argument, the cached connect string will be returned.
      *
      * @param config
      *            the configuration file/string
      * @return the configuration
-     * @throws QuorumPeerConfig.ConfigException
-     *             if the argument is a file that cannot be parsed as a zookeeper config file
+     * @throws NullPointerException
+     *             if the configuration s
+     * @throws IllegalArgumentException
+     *             if config is null or blank, or is a path to a Zookeeper configuration file that could not be parsed with {@link QuorumPeerConfig}
      */
-    public static String getQuorumPeerConfig(String config) throws QuorumPeerConfig.ConfigException {
+    public static String getConnectString(String config) {
+        Preconditions.checkArgument(config != null && !config.isBlank(), "config must not be null or blank");
         String connectString = zkConfigCache.getIfPresent(config);
         if (connectString == null) {
-            connectString = extractQuorumPeerConfig(config);
-            zkConfigCache.put(config, connectString);
+            try {
+                connectString = parseQuorumPeerConfig(config);
+            } catch (QuorumPeerConfig.ConfigException e) {
+                throw new IllegalArgumentException("Unable to parse quorum peer config: " + config, e);
+            }
+            if (connectString != null) {
+                zkConfigCache.put(config, connectString);
+            }
         }
         return connectString;
     }
@@ -41,38 +61,36 @@ public final class ZkUtils {
      * Return a formatted Zookeeper connect string that can be used to connect to a running Zookeeper server. The config string can be a list of servers or a
      * path to a Zookeeper config file.
      *
-     * @param config
+     * @param configStr
      *            the configuration file/string
      * @return the configuration
      * @throws QuorumPeerConfig.ConfigException
      *             if the argument is a file that cannot be parsed as a zookeeper config file
      */
-    private static String extractQuorumPeerConfig(String config) throws QuorumPeerConfig.ConfigException {
-        URI zookeeperConfigFile;
+    private static String parseQuorumPeerConfig(String configStr) throws QuorumPeerConfig.ConfigException {
+        Path path;
         try {
-            URI uri = new URI(config);
+            URI uri = new URI(configStr);
             // Create the path differently depending on whether the config is a filepath with a URI scheme or not. This is important to avoid errors when trying
             // to determine if the config points to a file.
-            Path path = uri.getScheme() != null ? Paths.get(uri) : Paths.get(config);
+            path = uri.getScheme() != null ? Paths.get(uri) : Paths.get(configStr);
             if (!Files.isRegularFile(path)) {
-                zkConfigCache.put(config, config);
-                return config;
+                return configStr;
             }
-            zookeeperConfigFile = uri;
         } catch (Exception e) {
             // The config argument does not point to an existing file. Try it as is.
-            return config;
+            return configStr;
         }
 
         // If the config points to an existing file, attempt to parse it as a zookeeper config file.
-        QuorumPeerConfig zooConfig = new QuorumPeerConfig();
-        zooConfig.parse(zookeeperConfigFile.getPath());
+        QuorumPeerConfig config = new QuorumPeerConfig();
+        config.parse(path.toString());
         StringBuilder sb = new StringBuilder();
 
-        int port = zooConfig.getClientPortAddress().getPort();
+        int port = config.getClientPortAddress().getPort();
 
         // If there are any servers in the config, add their client addresses.
-        for (QuorumPeer.QuorumServer server : zooConfig.getServers().values()) {
+        for (QuorumPeer.QuorumServer server : config.getServers().values()) {
             if (sb.length() > 0) {
                 sb.append(',');
             }
@@ -81,7 +99,7 @@ public final class ZkUtils {
 
         // If no server addresses were added, use the hostname of the client port address.
         if (sb.length() == 0) {
-            sb.append(zooConfig.getClientPortAddress().getHostName()).append(':').append(port);
+            sb.append(config.getClientPortAddress().getHostName()).append(':').append(port);
         }
         return sb.toString();
     }
@@ -104,7 +122,7 @@ public final class ZkUtils {
             return "";
         }
         path = path.trim();
-        path = path.replaceAll("/{2,}", "/");
+        path = CONSECUTIVE_SLASH_REGEX.matcher(path).replaceAll("/");
         if (!path.startsWith("/")) {
             path = "/" + path;
         }

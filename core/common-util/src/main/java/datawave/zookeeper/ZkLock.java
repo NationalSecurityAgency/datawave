@@ -124,15 +124,15 @@ public class ZkLock {
      *            the lock to obtain
      * @param callable
      *            the callable to invoke
-     * @return the result of invoking {@link Callable#call()} on the callout
+     * @return the result of invoking {@link Callable#call()} on the callable
      * @param <T>
      *            the type returned by {@link Callable#call()}
      * @throws TimeoutException
      *             if the lock fails to be acquired within the timeout
-     * @throws IllegalStateException
-     *             if the calling thread already holds this lock (unsupported reentrant acquisition)
      * @throws Exception
      *             if an error occurs while attempting to obtain the lock
+     * @throws IllegalArgumentException
+     *             if the lockId is null or blank, or normalizes to an empty path
      */
     public <T> T callWithLock(String lockId, Callable<T> callable) throws Exception {
         return callWithLock(lockId, this.defaultTimeout, this.defaultTimeUnit, callable);
@@ -150,15 +150,15 @@ public class ZkLock {
      *            the time unit for the timeout
      * @param callable
      *            the callable to invoke
-     * @return the result of invoking {@link Callable#call()} on the callout
+     * @return the result of invoking {@link Callable#call()} on the callable
      * @param <T>
      *            the type returned by {@link Callable#call()}
      * @throws TimeoutException
      *             if the lock fails to be acquired within the timeout
-     * @throws IllegalStateException
-     *             if the calling thread already holds this lock (unsupported reentrant acquisition)
      * @throws Exception
      *             if an error occurs while attempting to obtain the lock
+     * @throws IllegalArgumentException
+     *             if the lockId is null or blank, or normalizes to an empty path
      */
     public <T> T callWithLock(String lockId, int timeout, TimeUnit timeUnit, Callable<T> callable) throws Exception {
         return callWithLock(lockId, timeout, timeUnit, this.deleteLocksAfterRelease, callable);
@@ -179,15 +179,15 @@ public class ZkLock {
      *            instance-level default for this call only
      * @param callable
      *            the callable to invoke
-     * @return the result of invoking {@link Callable#call()} on the callout
+     * @return the result of invoking {@link Callable#call()} on the callable
      * @param <T>
      *            the type returned by {@link Callable#call()}
      * @throws TimeoutException
      *             if the lock fails to be acquired within the timeout
-     * @throws IllegalStateException
-     *             if the calling thread already holds this lock (unsupported reentrant acquisition)
      * @throws Exception
      *             if an error occurs while attempting to obtain the lock
+     * @throws IllegalArgumentException
+     *             if the lockId is null or blank, or normalizes to an empty path
      */
     public <T> T callWithLock(String lockId, int timeout, TimeUnit timeUnit, boolean deleteLocksAfterRelease, Callable<T> callable) throws Exception {
         String lockPath = getLockPath(lockId);
@@ -211,8 +211,7 @@ public class ZkLock {
             }
             if (!acquired) {
                 if (log.isDebugEnabled()) {
-                    log.debug("Failed to acquire lock for {} within timeout of {} {}. {} other participants waiting on lock.", lockPath, timeout, timeUnit,
-                                    entry.mutex.getParticipantNodes().size());
+                    log.debug("Failed to acquire lock for {} within timeout of {} {}.", lockPath, timeout, timeUnit);
                 }
                 throw new TimeoutException("Failed to acquire lock for " + lockPath + " within " + timeout + " " + timeUnit);
             }
@@ -225,7 +224,7 @@ public class ZkLock {
 
             // Deregister this invocation's use of the entry. If no other invocation (any thread, including nested ones) is still using this lock path, remove
             // it from the cache.
-            boolean stilInUse = locks.compute(lockPath, (path, existing) -> {
+            boolean stillInUse = locks.compute(lockPath, (path, existing) -> {
                 if (existing == null) {
                     // Should not happen: we are the ones holding a reference count on this entry.
                     log.warn("Cached lock is null where it should have been impossible.");
@@ -235,12 +234,13 @@ public class ZkLock {
             }) != null;
 
             // If the lock was acquired, is no longer in use, and we are to delete locks after release, attempt to do so.
-            if (acquired && !stilInUse && deleteLocksAfterRelease) {
+            if (acquired && !stillInUse && deleteLocksAfterRelease) {
                 try {
                     client.delete().forPath(lockPath);
-                } catch (KeeperException.NoNodeException e) {
-                    // Safe to ignore. Another participant (e.g., in a different process) queued up and created a child node.
-                    if (log.isDebugEnabled()) {
+                } catch (KeeperException.NoNodeException | KeeperException.NotEmptyException e) {
+                    // Safe to ignore. Either the lock path was cleaned up on another thread, or there are children underneath the lock path indicating another
+                    // thread is waiting for the lock.
+                    if (log.isDebugEnabled() && e instanceof KeeperException.NotEmptyException) {
                         log.debug("Not deleting lock node {} after release; another participant is still waiting on it.", lockPath);
                     }
                 }
@@ -258,6 +258,7 @@ public class ZkLock {
     private String getLockPath(String lockId) {
         Preconditions.checkArgument(lockId != null && !lockId.isBlank(), "lockId must not be null or blank");
         String normalizedId = ZkUtils.normalizePath(lockId);
+        Preconditions.checkArgument(!normalizedId.isBlank(), "lockId '" + lockId + "' normalized to an empty path");
         return rootPath != null ? rootPath + normalizedId : normalizedId;
     }
 }

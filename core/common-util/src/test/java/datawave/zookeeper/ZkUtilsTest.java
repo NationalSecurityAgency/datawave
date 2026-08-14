@@ -1,7 +1,7 @@
 package datawave.zookeeper;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -13,7 +13,6 @@ import java.nio.file.Path;
 import java.util.Properties;
 
 import org.apache.zookeeper.server.quorum.QuorumPeer;
-import org.apache.zookeeper.server.quorum.QuorumPeerConfig;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -22,7 +21,7 @@ import org.junitpioneer.jupiter.SetSystemProperty;
 class ZkUtilsTest {
 
     /**
-     * Tests for {@link ZkUtils#getQuorumPeerConfig(String)}.
+     * Tests for {@link ZkUtils#getConnectString(String)}.
      */
     @Nested
     class GetQuorumPeerConfigTests {
@@ -31,76 +30,77 @@ class ZkUtilsTest {
         Path tempDir;
 
         /**
-         * Verify that when {@link ZkUtils#getQuorumPeerConfig(String)} is given a non-filepath argument, the original argument is returned.
+         * Verify a null config results in an exception.
          */
         @Test
-        void testPlainConnectStringIsReturnedAsIs() throws QuorumPeerConfig.ConfigException {
-            assertEquals("localhost:2181", ZkUtils.getQuorumPeerConfig("localhost:2181"));
+        void testNullConfig() {
+            assertThatThrownBy(() -> ZkUtils.getConnectString(null)).isInstanceOf(IllegalArgumentException.class)
+                            .hasMessageContaining("config must not be null or blank");
         }
 
         /**
-         * Verify that when {@link ZkUtils#getQuorumPeerConfig(String)} is given a filepath that does not point to an existing file, the original argument is
-         * returned.
+         * Verify a blank config results in an exception.
          */
         @Test
-        void testNonExistentFilePathIsReturnedAsIs() throws QuorumPeerConfig.ConfigException {
+        void testBlankConfig() {
+            assertThatThrownBy(() -> ZkUtils.getConnectString("  ")).isInstanceOf(IllegalArgumentException.class)
+                            .hasMessageContaining("config must not be null or blank");
+        }
+
+        /**
+         * Verify that given a non-filepath argument, the original argument is returned.
+         */
+        @Test
+        void testPlainConnectStringIsReturnedAsIs() {
+            assertEquals("localhost:2181", ZkUtils.getConnectString("localhost:2181"));
+        }
+
+        /**
+         * Verify that given a filepath that does not point to an existing file, the original argument is returned.
+         */
+        @Test
+        void testNonExistentFilePath() {
             String config = tempDir.resolve("non-existent.cfg").toString();
-            assertEquals(config, ZkUtils.getQuorumPeerConfig(config));
+            assertEquals(config, ZkUtils.getConnectString(config));
         }
 
         /**
-         * Verify that when {@link ZkUtils#getQuorumPeerConfig(String)} is given a directory path, the original argument is returned.
+         * Verify that given a directory path, the original argument is returned.
          */
         @Test
-        void testDirectoryPathIsReturnedAsIs() throws QuorumPeerConfig.ConfigException {
+        void testDirectoryPath() {
             String config = tempDir.toString();
-            assertEquals(config, ZkUtils.getQuorumPeerConfig(config));
+            assertEquals(config, ZkUtils.getConnectString(config));
         }
 
         /**
-         * Verify that when {@link ZkUtils#getQuorumPeerConfig(String)} is given invalid URI syntax, the original argument is returned.
+         * Verify that given invalid URI syntax, the original argument is returned.
          */
         @Test
-        void testInvalidURISyntax() throws QuorumPeerConfig.ConfigException {
+        void testInvalidURISyntax() {
             String config = "not a valid : uri string";
-            assertEquals(config, ZkUtils.getQuorumPeerConfig(config));
+            assertEquals(config, ZkUtils.getConnectString(config));
         }
 
         /**
-         * Verify that when {@link ZkUtils#getQuorumPeerConfig(String)} is given invalid zookeeper config file with invalid contents, an exception is thrown.
+         * Verify that given invalid zookeeper config file with invalid contents, an exception is thrown.
          */
         @Test
-        void testInvalidConfigFileContentsThrowsException() throws IOException {
+        void testInvalidConfigFileContents() throws IOException {
             Properties properties = new Properties();
             properties.put("tickTime", "2000");
 
             String path = createZookeeperCfgFile(properties);
-            assertThrows(QuorumPeerConfig.ConfigException.class, () -> ZkUtils.getQuorumPeerConfig(path));
+
+            assertThatThrownBy(() -> ZkUtils.getConnectString(path)).isInstanceOf(IllegalArgumentException.class)
+                            .hasMessageContaining("Unable to parse quorum peer config");
         }
 
         /**
-         * Verify that when {@link ZkUtils#getQuorumPeerConfig(String)} is given a valid zookeeper config path with the URI scheme {@code file://}, it is able
-         * to load and read the file.
+         * Verify that given a valid zookeeper config path with the URI scheme {@code file://}, the file is parsed.
          */
         @Test
-        void testFileSchemePointingToConfigFile() throws QuorumPeerConfig.ConfigException, IOException {
-            Properties properties = new Properties();
-            properties.put("tickTime", "2000");
-            properties.put("dataDir", "/var/zookeeper");
-            properties.put("initLimit", "2");
-            properties.put("syncLimit", "5");
-            properties.put("clientPort", "2181");
-
-            String path = createZookeeperCfgFile(properties);
-            assertEquals("0.0.0.0:2181", ZkUtils.getQuorumPeerConfig("file://" + path));
-        }
-
-        /**
-         * Verify that when {@link ZkUtils#getQuorumPeerConfig(String)} is given a valid zookeeper config without a client port address, the default client port
-         * address {@code 0.0.0.0} is returned.
-         */
-        @Test
-        void testConfigFileWithoutClientPortAddressReturnsDefaultClientPortAddress() throws QuorumPeerConfig.ConfigException, IOException {
+        void testFileSchemePointingToConfigFile() throws IOException {
             Properties properties = new Properties();
             properties.put("tickTime", "2000");
             properties.put("dataDir", "/var/zookeeper");
@@ -109,15 +109,30 @@ class ZkUtilsTest {
             properties.put("clientPort", "2181");
 
             String path = createZookeeperCfgFile(properties);
-            assertEquals("0.0.0.0:2181", ZkUtils.getQuorumPeerConfig(path));
+            assertEquals("0.0.0.0:2181", ZkUtils.getConnectString("file://" + path));
         }
 
         /**
-         * Verify that when {@link ZkUtils#getQuorumPeerConfig(String)} is given a valid zookeeper config without servers, the default client port address is
-         * returned.
+         * Verify that given a valid zookeeper config without a client port address, the default client port address {@code 0.0.0.0} is returned.
          */
         @Test
-        void testConfigFileWithoutServersReturnsDefaultClientPortAddress() throws QuorumPeerConfig.ConfigException, IOException {
+        void testConfigFileWithoutClientPortAddressReturnsDefaultClientPortAddress() throws IOException {
+            Properties properties = new Properties();
+            properties.put("tickTime", "2000");
+            properties.put("dataDir", "/var/zookeeper");
+            properties.put("initLimit", "2");
+            properties.put("syncLimit", "5");
+            properties.put("clientPort", "2181");
+
+            String path = createZookeeperCfgFile(properties);
+            assertEquals("0.0.0.0:2181", ZkUtils.getConnectString(path));
+        }
+
+        /**
+         * Verify that given a valid zookeeper config without servers, the default client port address is returned.
+         */
+        @Test
+        void testConfigFileWithoutServersReturnsDefaultClientPortAddress() throws IOException {
             Properties properties = new Properties();
             properties.put("tickTime", "2000");
             properties.put("dataDir", "/var/zookeeper");
@@ -130,16 +145,15 @@ class ZkUtilsTest {
             InetSocketAddress clientSocketAddress = new InetSocketAddress(InetAddress.getByName("192.168.1.50"), 2181);
             String expected = clientSocketAddress.getHostName() + ":2181";
 
-            assertEquals(expected, ZkUtils.getQuorumPeerConfig(path));
+            assertEquals(expected, ZkUtils.getConnectString(path));
         }
 
         /**
-         * Verify that when {@link ZkUtils#getQuorumPeerConfig(String)} is given a valid zookeeper config with servers, a comma-delimited list of the server
-         * client port addresses are returned.
+         * Verify given a valid zookeeper config with servers, a comma-delimited list of the server client port addresses are returned.
          */
         @SetSystemProperty(key = QuorumPeer.CONFIG_KEY_MULTI_ADDRESS_ENABLED, value = "true")
         @Test
-        void testConfigFileWithServersReturnsServerClientPortAddresses() throws QuorumPeerConfig.ConfigException, IOException {
+        void testConfigFileWithServersReturnsServerClientPortAddresses() throws IOException {
             // In order to not trigger a QuorumPeer exception, we need to create a myid file with one of the server IDs in it.
             Path myidPath = tempDir.resolve("myid");
             Files.write(myidPath, "1".getBytes(StandardCharsets.UTF_8));
@@ -156,7 +170,7 @@ class ZkUtilsTest {
             properties.setProperty("dataDir", tempDir.toString());
 
             String path = createZookeeperCfgFile(properties);
-            assertEquals("client1:2181,client2:2181", ZkUtils.getQuorumPeerConfig(path));
+            assertEquals("client1:2181,client2:2181", ZkUtils.getConnectString(path));
         }
 
         private String createZookeeperCfgFile(Properties properties) throws IOException {
@@ -186,6 +200,14 @@ class ZkUtilsTest {
         @Test
         void blankPathReturnsEmptyString() {
             assertEquals("", ZkUtils.normalizePath("   "));
+        }
+
+        /**
+         * Verify that an empty string is returned given a path consisting only of slashes.
+         */
+        @Test
+        void slashOnlyPathReturnsEmptyString() {
+            assertEquals("", ZkUtils.normalizePath("///"));
         }
 
         /**
