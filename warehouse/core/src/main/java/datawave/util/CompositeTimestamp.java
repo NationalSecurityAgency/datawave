@@ -1,13 +1,16 @@
 package datawave.util;
 
-import java.util.Calendar;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.TimeZone;
 
 /**
  * The composite timestamp allows us to encode two values in the timestamp to be used in accumulo keys. The event date will take the first (right hand most) 46
  * bits. The last 17 bits (except for the sign bit) will be used to encode how many days after the event date that we should base the ageoff on. If the
- * timestamp is negative, then to calculate the values the complement is taken and then the two values are extracted. The ageoff is encoded as an age off delta
+ * timestamp is negative, then to calculate the values, the complement is taken and then the two values are extracted. The ageoff is encoded as an age off delta
  * which is the number of days after the event date.
  */
 public class CompositeTimestamp {
@@ -93,24 +96,27 @@ public class CompositeTimestamp {
      * @param tz
      * @return the age off delta
      */
+    @Deprecated
     public static int computeAgeOffDeltaDays(long eventDate, long ageOffDate, TimeZone tz) {
+        return computeAgeOffDeltaDays(eventDate,ageOffDate,tz.toZoneId());
+    }
+
+    /**
+     * Calculate an age off delta based on a timezone. This will calculate the begininning of the day in the given timezone for both the event date and the age
+     * off date, and then will return that difference in days.
+     *
+     * @param eventDate
+     * @param ageOffDate
+     * @param zone
+     * @return the age off delta
+     */
+    public static int computeAgeOffDeltaDays(long eventDate, long ageOffDate, ZoneId zone) {
         validateEventDate(eventDate);
-        Calendar c = Calendar.getInstance(tz);
-        c.setTimeInMillis(eventDate);
-        c.set(Calendar.HOUR_OF_DAY, 0);
-        c.set(Calendar.MINUTE, 0);
-        c.set(Calendar.SECOND, 0);
-        c.set(Calendar.MILLISECOND, 0);
-        long eventDateStart = c.getTimeInMillis();
+        LocalDate eventDateStart = Instant.ofEpochMilli(eventDate).atZone(zone).toLocalDate();
 
-        c.setTimeInMillis(ageOffDate);
-        c.set(Calendar.HOUR_OF_DAY, 0);
-        c.set(Calendar.MINUTE, 0);
-        c.set(Calendar.SECOND, 0);
-        c.set(Calendar.MILLISECOND, 0);
-        long ageOffDateStart = c.getTimeInMillis();
+        LocalDate ageOffDateStart = Instant.ofEpochMilli(ageOffDate).atZone(zone).toLocalDate();
 
-        long delta = (ageOffDateStart - eventDateStart) / MILLIS_PER_DAY;
+        long delta = ChronoUnit.DAYS.between(eventDateStart,ageOffDateStart);
         validateAgeOffDelta(delta);
         return (int) delta;
     }
@@ -141,8 +147,21 @@ public class CompositeTimestamp {
      * @param tz
      * @return The composite timestamp
      */
+    @Deprecated
     public static long getCompositeTimeStamp(long eventDate, long ageOffDate, TimeZone tz) {
-        return getCompositeDeltaTimeStamp(eventDate, computeAgeOffDeltaDays(eventDate, ageOffDate, tz));
+        return getCompositeTimeStamp(eventDate, ageOffDate, tz.toZoneId());
+    }
+
+    /**
+     * Get the composite timestamp using the supplied eventDate and an age off delta in days based on the supplied age off date and time zone.
+     *
+     * @param eventDate
+     * @param ageOffDate
+     * @param zone
+     * @return The composite timestamp
+     */
+    public static long getCompositeTimeStamp(long eventDate, long ageOffDate, ZoneId zone) {
+        return getCompositeDeltaTimeStamp(eventDate, computeAgeOffDeltaDays(eventDate, ageOffDate, zone));
     }
 
     /**
@@ -155,6 +174,7 @@ public class CompositeTimestamp {
     public static long getCompositeTimeStamp(long eventDate, long ageOffDate) {
         return getCompositeTimeStamp(eventDate, ageOffDate, TimeZone.getTimeZone("GMT"));
     }
+
 
     /**
      * Return a comparator for composite timestamps. Orders firstly on the event date, and if equal then on the ageoff date. Note for values with the same event

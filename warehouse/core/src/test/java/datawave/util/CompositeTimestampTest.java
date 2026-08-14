@@ -1,7 +1,12 @@
 package datawave.util;
 
+import java.awt.*;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.zone.ZoneRulesException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -13,8 +18,10 @@ import java.util.concurrent.TimeUnit;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 public class CompositeTimestampTest {
+
 
     @Test
     public void testConversion() {
@@ -373,5 +380,128 @@ public class CompositeTimestampTest {
         // and the comparator will maintain that ordering
         Assert.assertTrue(isOrdered(CompositeTimestamp.comparator(), t1, t2, t3));
     }
+
+
+    /**
+     * * Verify that {@link CompositeTimestamp#computeAgeOffDeltaDays} accurately calculates the difference in days between an event date and an age off date for a given time zone.
+     */
+    @Test
+    public void testComputeAgeOffDeltaDays(){
+        ZoneId zone = ZoneId.of("GMT");
+
+        // Event Date: August 1, 2026 at 10:00 AM
+        ZonedDateTime eventTime = ZonedDateTime.of(2026, 8, 1, 10, 0, 0, 0, zone);
+        long eventDateMillis = eventTime.toInstant().toEpochMilli();
+
+        System.out.println(eventDateMillis);
+        // Event Date: August 6, 2026 at 3:00 PM
+        ZonedDateTime ageOffTime = ZonedDateTime.of(2026, 8, 6, 15, 0, 0, 0, zone);
+        long ageOffDateMillis = ageOffTime.toInstant().toEpochMilli();
+        System.out.println(ageOffDateMillis);
+        int deltaDays = CompositeTimestamp.computeAgeOffDeltaDays(eventDateMillis, ageOffDateMillis, zone);
+
+        Assertions.assertEquals(5, deltaDays);
+    }
+
+    /**
+     * * Verify that {@link CompositeTimestamp#computeAgeOffDeltaDays} throws a ZoneRulesException when an invalid time zone ID is used.
+     */
+    @Test
+    public void testComputeAgeOffDeltaDaysInvalidTimeZone(){
+        // Event Date: August 1, 2026 at 10:00 AM
+        long eventDateMillis = 1785578400000L;
+
+        // Event Date: August 6, 2026 at 3:00 PM
+        long ageOffDateMillis = 1786028400000L;
+
+        Assertions.assertThrows(ZoneRulesException.class, () -> {
+            CompositeTimestamp.computeAgeOffDeltaDays(eventDateMillis,ageOffDateMillis,ZoneId.of("GT3RS"));
+        });
+    }
+
+    /**
+     * Verify that {@link CompositeTimestamp#getCompositeTimeStamp} successfully generates a composite timestamp given valid event and age off dates in a specific time zone.
+     */
+    @Test
+    public void testGetCompositeTimeStamp(){
+        // Event Date: August 1, 2026 at 10:00 AM
+        long eventDateMillis = 1785578400000L;
+
+        // Event Date: August 6, 2026 at 3:00 PM
+        long ageOffDateMillis = 1786028400000L;
+
+        long compositeTs = CompositeTimestamp.getCompositeTimeStamp(eventDateMillis, ageOffDateMillis, ZoneId.of("GMT"));
+
+        Assertions.assertTrue(compositeTs > 0, "Composite timestamp should be greater than 0");
+        Assertions.assertEquals(353629299288320L,compositeTs);
+    }
+
+    /**
+     * Verify that {@link CompositeTimestamp#getCompositeTimeStamp} throws a ZoneRulesException when an invalid time zone ID is used.
+     */
+    @Test
+    public void testGetCompositeTimeStampInvalidTimeZone(){
+        // Event Date: August 1, 2026 at 10:00 AM
+        long eventDateMillis = 1785578400000L;
+
+        // Event Date: August 6, 2026 at 3:00 PM
+        long ageOffDateMillis = 1786028400000L;
+
+        Assertions.assertThrows(ZoneRulesException.class, () -> {
+            CompositeTimestamp.getCompositeTimeStamp(eventDateMillis, ageOffDateMillis, ZoneId.of("GTR"));
+        });
+
+    }
+
+    /**
+     * Verify that {@link CompositeTimestamp#getCompositeTimeStamp} correctly handles and flips the sign for a negative event date (pre-1970).
+     */
+    @Test
+    public void testGetCompositeTimeStampNegativeEventDate() {
+        ZoneId zone = ZoneId.of("GMT");
+
+        // A date before Jan 1 1970 will be a negative long
+        long eventDateMillis = ZonedDateTime.of(1969, 8, 1, 10, 0, 0, 0, zone).toInstant().toEpochMilli();
+        long ageOffDateMillis = ZonedDateTime.of(1969, 8, 6, 15, 0, 0, 0, zone).toInstant().toEpochMilli();
+
+        long compositeTs = CompositeTimestamp.getCompositeTimeStamp(eventDateMillis, ageOffDateMillis, zone);
+
+        Assertions.assertTrue(compositeTs < 0, "Composite timestamp should be negative when event date is negative");
+    }
+
+    /**
+     * Verify that {@link CompositeTimestamp#computeAgeOffDeltaDays} throws an exception when the calculated delta is invalid (e.g., negative delta or exceeding bit allocation).
+     */
+    @Test
+    public void testComputeAgeOffDeltaDaysInvalidDelta() {
+        ZoneId zone = ZoneId.of("GMT");
+        long eventDateMillis = ZonedDateTime.of(2026, 8, 10, 10, 0, 0, 0, zone).toInstant().toEpochMilli();
+
+        // Age off date is before the event date, resulting in a negative delta
+        long ageOffDateMillis = ZonedDateTime.of(2026, 8, 1, 15, 0, 0, 0, zone).toInstant().toEpochMilli();
+
+        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+            CompositeTimestamp.computeAgeOffDeltaDays(eventDateMillis, ageOffDateMillis, zone);
+        });
+    }
+
+    /**
+     * Verify that {@link CompositeTimestamp#computeAgeOffDeltaDays} returns a delta of 0 when both dates fall on the same day in the given time zone.
+     */
+    @Test
+    public void testComputeAgeOffDeltaDaysSameDay() {
+        ZoneId zone = ZoneId.of("GMT");
+
+        // Both are on August 1, 2026
+        long eventDateMillis = ZonedDateTime.of(2026, 8, 1, 1, 0, 0, 0, zone).toInstant().toEpochMilli();
+        long ageOffDateMillis = ZonedDateTime.of(2026, 8, 1, 23, 0, 0, 0, zone).toInstant().toEpochMilli();
+
+        int deltaDays = CompositeTimestamp.computeAgeOffDeltaDays(eventDateMillis, ageOffDateMillis, zone);
+
+        Assertions.assertEquals(0, deltaDays);
+    }
+
+
+
 
 }
