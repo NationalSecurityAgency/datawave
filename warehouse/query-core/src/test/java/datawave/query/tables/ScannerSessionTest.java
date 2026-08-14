@@ -75,6 +75,25 @@ public class ScannerSessionTest {
         instance.stop();
     }
 
+    /**
+     * Waits for the requested number of splits to become visible on the table.
+     *
+     * @param tableName
+     *            the table to poll
+     * @param expected
+     *            the number of splits to wait for
+     */
+    private static void awaitSplits(String tableName, int expected)
+                    throws TableNotFoundException, AccumuloSecurityException, AccumuloException, InterruptedException {
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(30);
+        while (client.tableOperations().listSplits(tableName).size() < expected) {
+            if (System.nanoTime() > deadline) {
+                throw new IllegalStateException("Table " + tableName + " did not reach " + expected + " splits");
+            }
+            sleep(50);
+        }
+    }
+
     private static void setupTable()
                     throws TableExistsException, AccumuloSecurityException, AccumuloException, TableNotFoundException, InterruptedException, IOException {
         client.tableOperations().create("testTable");
@@ -86,8 +105,8 @@ public class ScannerSessionTest {
         }
         client.tableOperations().addSplits("testTable", splits);
 
-        // give the table a chance to be split
-        sleep(10000);
+        // give the table a chance to be split, returning as soon as the splits are visible rather than always paying the worst case
+        awaitSplits("testTable", splits.size());
 
         // force writing all the data or fail
         try {
