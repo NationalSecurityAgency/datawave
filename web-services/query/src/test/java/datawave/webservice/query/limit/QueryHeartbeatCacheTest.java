@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatNoException;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -19,22 +20,21 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-class QueryHeartbeatCacheImplTest {
+class QueryHeartbeatCacheTest {
 
     private TestingServer server;
-    private QueryHeartbeatCacheImpl cache;
+    private QueryHeartbeatCache cache;
 
     @BeforeEach
     void setUp() throws Exception {
         server = new TestingServer();
-        cache = new QueryHeartbeatCacheImpl();
-        cache.setup();
+        cache = new QueryHeartbeatCache(10, TimeUnit.MINUTES);
     }
 
     @AfterEach
     void tearDown() throws Exception {
         if (this.cache != null) {
-            this.cache.shutdown();
+            this.cache.close(true);
         }
         if (this.server != null) {
             this.server.close();
@@ -52,7 +52,7 @@ class QueryHeartbeatCacheImplTest {
     }
 
     /**
-     * Verify that {@link QueryHeartbeatCacheImpl#getQueryIds()} returns the keyset of the underlying cache.
+     * Verify that {@link QueryHeartbeatCache#getQueryIds()} returns the keyset of the underlying cache.
      */
     @Test
     void testGetQueryIds() throws InterruptedException {
@@ -68,7 +68,7 @@ class QueryHeartbeatCacheImplTest {
     }
 
     /**
-     * Verify that {@link QueryHeartbeatCacheImpl#stopAndRemoveHeartbeats(Set)} removes the heartbeats, and does not throw an error if a mapping is not found.
+     * Verify that {@link QueryHeartbeatCache#stopAndRemove(Collection)} removes the heartbeats, and does not throw an error if a mapping is not found.
      */
     @Test
     void testStopAndRemoveMultipleHeartbeats() throws InterruptedException {
@@ -129,7 +129,7 @@ class QueryHeartbeatCacheImplTest {
     }
 
     /**
-     * Verify that {@link QueryHeartbeatCacheImpl#removeAllStoppedHeartbeats()} will remove any stopped heartbeats present in the cache.
+     * Verify that {@link QueryHeartbeatCache#removeAllStoppedHeartbeats()} will remove any stopped heartbeats present in the cache.
      */
     @Test
     void testRemoveAllStoppedHeartbeats() throws InterruptedException, IOException {
@@ -170,10 +170,7 @@ class QueryHeartbeatCacheImplTest {
     @Test
     void testTimedCleanupOfStoppedHeartbeats() throws IOException, InterruptedException {
         // Create a cache with a cleanup interval of 1.5 seconds.
-        QueryHeartbeatCacheImpl cache = new QueryHeartbeatCacheImpl();
-        cache.setCleanupInterval(1500);
-        cache.setCleanupUnit(TimeUnit.MILLISECONDS);
-        cache.setup();
+        QueryHeartbeatCache cache = new QueryHeartbeatCache(1500, TimeUnit.MILLISECONDS);
 
         // Create heartbeats.
         QueryHeartbeat heartbeat1 = createHeartbeat("queryId1");
@@ -201,20 +198,18 @@ class QueryHeartbeatCacheImplTest {
         assertThat(cache.get(heartbeat2.getQueryId())).isNull();
         assertThat(cache.get(heartbeat3.getQueryId())).isNotNull();
         assertThat(cache.get(heartbeat4.getQueryId())).isNotNull();
-
-        cache.shutdown();
     }
 
     /**
-     * Verify that {@link QueryHeartbeatCacheImpl#shutdown()} clears the cache.
+     * Verify that {@link QueryHeartbeatCache#close(boolean)} ()} clears the cache.
      */
     @Test
-    void testShutdown() throws InterruptedException {
+    void testClose() throws InterruptedException {
         cache.put(createHeartbeat("queryId1"));
         cache.put(createHeartbeat("queryId2"));
         cache.put(createHeartbeat("queryId3"));
 
-        cache.shutdown();
+        cache.close(true);
 
         assertThat(cache.get("queryId1")).isNull();
         assertThat(cache.get("queryId2")).isNull();

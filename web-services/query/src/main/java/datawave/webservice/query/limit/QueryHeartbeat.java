@@ -63,7 +63,7 @@ public class QueryHeartbeat {
     }
 
     /**
-     * Stop and delete the heartbeat without notifying the internal listener. This is used by {@link QueryHeartbeatCacheImpl} to avoid necessary looping calls.
+     * Stop and delete the heartbeat without notifying the internal listener. This is used by {@link QueryHeartbeatCache} to avoid necessary looping calls.
      */
     public void stopWithoutNotifyingListener() {
         if (!stopped) {

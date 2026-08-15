@@ -113,7 +113,7 @@ class QueryLimiterImplConcurrencyTest {
      * Verify that when the max default limit for a user is reached across all systems, that additional queries are not allowed to be created for the user.
      */
     @Test
-    void testDefaultUserLimit() throws InterruptedException, ExecutionException {
+    void testDefaultUserLimit() throws Exception {
         // Establish a default user limit of 20.
         QueryLimitConfiguration config = new QueryLimitConfiguration();
         config.setDefaultSystemQueryLimit(100);
@@ -141,7 +141,7 @@ class QueryLimiterImplConcurrencyTest {
      * Verify that when the max default limit for a system is reached, that additional queries are not allowed to be created on the system.
      */
     @Test
-    void testDefaultSystemLimit() throws ExecutionException, InterruptedException {
+    void testDefaultSystemLimit() throws Exception {
         // Establish a default system limit of 10.
         QueryLimitConfiguration config = new QueryLimitConfiguration();
         config.setDefaultSystemQueryLimit(10);
@@ -170,7 +170,7 @@ class QueryLimiterImplConcurrencyTest {
      * for that query logic group.
      */
     @Test
-    void testQueryLogicGroupLimit() throws ExecutionException, InterruptedException {
+    void testQueryLogicGroupLimit() throws Exception {
         QueryLimitConfiguration config = new QueryLimitConfiguration();
         config.setDefaultSystemQueryLimit(100);
         config.setDefaultUserQueryLimit(15);
@@ -218,7 +218,7 @@ class QueryLimiterImplConcurrencyTest {
      * Verify that when an individual user reaches their custom query limit across multiple systems, that they are not allowed to create any more queries.
      */
     @Test
-    void testCustomUserLimit() throws ExecutionException, InterruptedException {
+    void testCustomUserLimit() throws Exception {
         QueryLimitConfiguration config = new QueryLimitConfiguration();
         config.setDefaultSystemQueryLimit(100);
         config.setDefaultUserQueryLimit(20);
@@ -287,7 +287,7 @@ class QueryLimiterImplConcurrencyTest {
      * Verify that when a system reaches a custom query limit across multiple systems, that no more queries may be created on the system.
      */
     @Test
-    void testCustomSystemLimit() throws ExecutionException, InterruptedException {
+    void testCustomSystemLimit() throws Exception {
         QueryLimitConfiguration config = new QueryLimitConfiguration();
         config.setDefaultSystemQueryLimit(100);
         config.setDefaultUserQueryLimit(20);
@@ -588,10 +588,12 @@ class QueryLimiterImplConcurrencyTest {
             ZkClientBuilder zkClientBuilder = new ZkClientBuilder();
             zkClientBuilder.setConnectString(server.getConnectString());
 
+            QueryLimiterImplConfiguration config = new QueryLimiterImplConfiguration();
+            config.setZkClientBuilder(zkClientBuilder);
+            config.setLimitConfiguration(this.limitConfig);
+
             QueryLimiterImpl limiter = new QueryLimiterImpl();
-            limiter.setZkClientBuilder(zkClientBuilder);
-            limiter.setConfiguration(this.limitConfig);
-            limiter.setHeartbeatCache(new QueryHeartbeatCacheImpl());
+            limiter.setConfiguration(config);
             limiter.setup();
             serversToLimiters.put(system, limiter);
         }

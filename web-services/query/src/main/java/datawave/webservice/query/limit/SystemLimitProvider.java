@@ -38,7 +38,7 @@ public class SystemLimitProvider {
                     QueryLogicGroupLimitProvider groupLimitProvider) {
         // If the default system query limit is less than zero, set it to the no-limit value.
         if (defaultSystemQueryLimit < 0) {
-            this.defaultSystemQueryLimit = QueryLimitConstants.NO_LIMIT;
+            this.defaultSystemQueryLimit = QueryLimiterUtils.NO_LIMIT;
         } else {
             this.defaultSystemQueryLimit = defaultSystemQueryLimit;
         }
@@ -72,7 +72,7 @@ public class SystemLimitProvider {
 
             // Verify that the pattern compiles if it is not simply a * as is occasionally used as a wildcard in configurations.
             try {
-                if (!systemPattern.equals(QueryLimitConstants.ASTERISK)) {
+                if (!systemPattern.equals(QueryLimiterUtils.ASTERISK)) {
                     Pattern.compile(systemPattern);
                 }
             } catch (PatternSyntaxException e) {
@@ -105,7 +105,7 @@ public class SystemLimitProvider {
 
             // Safeguard against allowing a configuration to potentially set whether queries on a system counts against user limits to false for all
             // systems. Only allow this to be done for exact system names, or non-wildcard-only patterns.
-            if (QueryLimitConstants.wildcardOnlyPattern.matcher(systemPattern).matches() && !config.getCountsAgainstUserLimit()) {
+            if (QueryLimiterUtils.wildcardOnlyPattern.matcher(systemPattern).matches() && !config.getCountsAgainstUserLimit()) {
                 throw new IllegalArgumentException("System pattern '" + systemPattern
                                 + "' is wildcard-only and may not be used to override whether queries count against user limits to false");
             }
@@ -119,7 +119,7 @@ public class SystemLimitProvider {
                         throw new IllegalArgumentException(
                                         "User group query limit configuration given with blank group pattern for system pattern '" + systemPattern + "'");
                     }
-                    if (!groupPattern.equals(QueryLimitConstants.ASTERISK)) {
+                    if (!groupPattern.equals(QueryLimiterUtils.ASTERISK)) {
                         try {
                             Pattern.compile(groupPattern);
                         } catch (PatternSyntaxException e) {
@@ -167,7 +167,7 @@ public class SystemLimitProvider {
                 customQueryLimit = defaultSystemQueryLimit;
             } else if (customQueryLimit < 0) {
                 // Otherwise, if the custom query limit is less than 0, set it to the no-limit value.
-                customQueryLimit = QueryLimitConstants.NO_LIMIT;
+                customQueryLimit = QueryLimiterUtils.NO_LIMIT;
             }
 
             // If the custom counts against user limits is null, default to true.

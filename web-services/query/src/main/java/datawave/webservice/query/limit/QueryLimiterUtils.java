@@ -2,10 +2,12 @@ package datawave.webservice.query.limit;
 
 import java.util.regex.Pattern;
 
+import com.google.common.base.Preconditions;
+
 /**
  * Useful constants for the query limit feature.
  */
-public final class QueryLimitConstants {
+public final class QueryLimiterUtils {
 
     /**
      * A simple asterisk may be used in configuration files as a wildcard only pattern.
@@ -27,7 +29,26 @@ public final class QueryLimitConstants {
      */
     public static final String ZOOKEEPER_NAMESPACE = "ActiveQueries";
 
-    private QueryLimitConstants() {
+    /**
+     * The default system to use if a null or blank system is supplied by a user.
+     */
+    public static final String EMPTY_SYSTEM_FROM = "EMPTY_SYSTEM_FROM";
+
+    public static String normalizeUserDn(String userDn) {
+        Preconditions.checkArgument(userDn != null && !userDn.isBlank(), "userDn cannot be null or blank");
+        return userDn.trim().toLowerCase();
+    }
+
+    public static String normalizeSystem(String system) {
+        return (system == null || system.isBlank()) ? EMPTY_SYSTEM_FROM : system.trim();
+    }
+
+    public static String normalizeQueryLogic(String queryLogic) {
+        Preconditions.checkArgument(queryLogic != null && !queryLogic.isBlank(), "queryLogic cannot be null or blank");
+        return queryLogic.trim();
+    }
+
+    private QueryLimiterUtils() {
         throw new UnsupportedOperationException();
     }
 }

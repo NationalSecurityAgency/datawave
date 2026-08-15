@@ -30,7 +30,7 @@ class ActiveQueryTrackerTest {
         // @formatter:off
         client = CuratorFrameworkFactory.builder()
                 .connectString(server.getConnectString())
-                .namespace(QueryLimitConstants.ZOOKEEPER_NAMESPACE)
+                .namespace(QueryLimiterUtils.ZOOKEEPER_NAMESPACE)
                 .sessionTimeoutMs(60000)
                 .connectionTimeoutMs(60000)
                 .retryPolicy(new RetryNTimes(10, 1000))

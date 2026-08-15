@@ -30,24 +30,21 @@ class QueryLimiterImplTest {
     private static final String eventQueryLogic = "EventQueryLogic";
 
     private final Map<String,QueryLimiterImpl> systemToLimiter = new HashMap<>();
-    private QueryHeartbeatCacheImpl heartbeatCache;
-    private QueryLimitConfiguration config;
+    private QueryLimitConfiguration limitConfig;
     private ZkClientBuilder zkClientBuilder;
     private TestingServer server;
 
     @BeforeEach
     void setUp() throws Exception {
         server = new TestingServer();
-        heartbeatCache = new QueryHeartbeatCacheImpl();
         zkClientBuilder = new ZkClientBuilder();
         zkClientBuilder.setConnectString(server.getConnectString());
     }
 
     @AfterEach
     void tearDown() throws IOException {
-        heartbeatCache.shutdown();
         systemToLimiter.clear();
-        config = null;
+        limitConfig = null;
         if (server != null) {
             server.close();
         }
@@ -58,14 +55,18 @@ class QueryLimiterImplTest {
      */
     @Test
     void testDefaultUserQueryLimitLessThanOne() {
-        QueryLimiterImpl limiter = new QueryLimiterImpl();
-        limiter.setZkClientBuilder(zkClientBuilder);
+        QueryLimiterImplConfiguration config = new QueryLimiterImplConfiguration();
+        config.setZkClientBuilder(zkClientBuilder);
 
-        QueryLimitConfiguration config = new QueryLimitConfiguration();
-        config.setDefaultUserQueryLimit(0);
+        QueryLimitConfiguration limitConfig = new QueryLimitConfiguration();
+        limitConfig.setDefaultUserQueryLimit(0);
+        config.setLimitConfiguration(limitConfig);
+
+        QueryLimiterImpl limiter = new QueryLimiterImpl();
         limiter.setConfiguration(config);
 
-        assertThatThrownBy(limiter::setup).isInstanceOf(IllegalArgumentException.class).hasMessage("Default user query limit must be greater than 0");
+        assertThatThrownBy(limiter::setup).isInstanceOf(RuntimeException.class).hasRootCauseInstanceOf(IllegalStateException.class)
+                        .hasRootCauseMessage("Default user query limit must be greater than 0");
     }
 
     /**
@@ -73,16 +74,20 @@ class QueryLimiterImplTest {
      */
     @Test
     void testDefaultQueryLimitLessThanOne() {
-        QueryLimiterImpl limiter = new QueryLimiterImpl();
-        limiter.setZkClientBuilder(zkClientBuilder);
+        QueryLimiterImplConfiguration config = new QueryLimiterImplConfiguration();
+        config.setZkClientBuilder(zkClientBuilder);
 
-        QueryLimitConfiguration config = new QueryLimitConfiguration();
-        config.setDefaultUserQueryLimit(100);
-        config.setDefaultSystemQueryLimit(5000);
-        config.setInternalCacheMaxSize(0);
+        QueryLimitConfiguration limitConfig = new QueryLimitConfiguration();
+        limitConfig.setDefaultUserQueryLimit(100);
+        limitConfig.setDefaultSystemQueryLimit(5000);
+        limitConfig.setInternalCacheMaxSize(0);
+        config.setLimitConfiguration(limitConfig);
+
+        QueryLimiterImpl limiter = new QueryLimiterImpl();
         limiter.setConfiguration(config);
 
-        assertThatThrownBy(limiter::setup).isInstanceOf(IllegalArgumentException.class).hasMessage("Internal cache max size must be greater than 0");
+        assertThatThrownBy(limiter::setup).isInstanceOf(RuntimeException.class).hasRootCauseInstanceOf(IllegalStateException.class)
+                        .hasRootCauseMessage("Internal max cache size must be greater than 0");
     }
 
     /**
@@ -470,10 +475,12 @@ class QueryLimiterImplTest {
         if (systemToLimiter.containsKey(system)) {
             return systemToLimiter.get(system);
         } else {
+            QueryLimiterImplConfiguration config = new QueryLimiterImplConfiguration();
+            config.setZkClientBuilder(zkClientBuilder);
+            config.setLimitConfiguration(limitConfig);
+
             QueryLimiterImpl limiter = new QueryLimiterImpl();
-            limiter.setZkClientBuilder(zkClientBuilder);
             limiter.setConfiguration(config);
-            limiter.setHeartbeatCache(heartbeatCache);
             limiter.setup();
             systemToLimiter.put(system, limiter);
             return limiter;
@@ -506,6 +513,6 @@ class QueryLimiterImplTest {
     }
 
     private void givenConfig(QueryLimitConfiguration config) {
-        this.config = config;
+        this.limitConfig = config;
     }
 }
