@@ -759,8 +759,9 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
         // copy it
         NormalizedContentInterface copy = new NormalizedFieldAndValue(normalizedContent);
         try {
-            copy.setEventFieldValue(datawaveType.normalize(copy.getIndexedFieldValue()));
-            copy.setIndexedFieldValue(datawaveType.normalize(copy.getIndexedFieldValue()));
+            String indexedFieldValue = datawaveType.normalize(copy.getIndexedFieldValue());
+            copy.setEventFieldValue(indexedFieldValue);
+            copy.setIndexedFieldValue(indexedFieldValue);
         } catch (Exception ex) {
             copy.setError(ex);
         }
