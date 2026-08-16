@@ -22,7 +22,7 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 @Warmup(iterations = 3, time = 2, timeUnit = TimeUnit.SECONDS)
 @Measurement(iterations = 5, time = 3, timeUnit = TimeUnit.SECONDS)
 @State(Scope.Benchmark)
-public class QueryStatsDClientAtomicIntegerBenchmark {
+public class QueryStatsDClientAtomicIntegerBenchmarkTest {
 
     private QueryStatsDClientAtomicInteger qc;
 
@@ -64,7 +64,7 @@ public class QueryStatsDClientAtomicIntegerBenchmark {
             builder.threads(Integer.parseInt(t));
         }
 
-        builder.include(QueryStatsDClientAtomicIntegerBenchmark.class.getSimpleName()).forks(2).build();
+        builder.include(QueryStatsDClientAtomicIntegerBenchmarkTest.class.getSimpleName()).forks(2).build();
 
         new Runner(builder.build()).run();
     }

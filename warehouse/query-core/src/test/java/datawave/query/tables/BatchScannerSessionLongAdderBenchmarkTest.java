@@ -14,8 +14,6 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Level;
@@ -37,17 +35,13 @@ import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
 
-@ExtendWith(MockitoExtension.class)
 @BenchmarkMode(Mode.Throughput)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
-@Warmup(iterations = 5, time = 5, timeUnit = TimeUnit.SECONDS)
-@Measurement(iterations = 10, time = 5, timeUnit = TimeUnit.SECONDS)
+@Warmup(iterations = 10, time = 10, timeUnit = TimeUnit.SECONDS)
+@Measurement(iterations = 12, time = 12, timeUnit = TimeUnit.SECONDS)
 
 public class BatchScannerSessionLongAdderBenchmarkTest {
 
-    // ------------------------------------------------------------------------
-    // 1. Shared Global State: Executed ONCE per trial across all threads
-    // ------------------------------------------------------------------------
     @State(Scope.Benchmark)
     public static class GlobalState {
         public AccumuloClient client;
@@ -67,7 +61,6 @@ public class BatchScannerSessionLongAdderBenchmarkTest {
 
             TableOperations tops = client.tableOperations();
 
-            // Safely prepare the table once before any thread creates a scanner
             if (tops.exists(tableName)) {
                 tops.delete(tableName);
             }
@@ -77,16 +70,16 @@ public class BatchScannerSessionLongAdderBenchmarkTest {
             Key key = new Key("row", "cf", "cq", "VIZ-A", ts);
 
             try (BatchWriter bw = client.createBatchWriter(tableName)) {
-                Mutation m = new Mutation(key.getRow());
-                m.put(key.getColumnFamily(), key.getColumnQualifier(), key.getColumnVisibilityParsed(), key.getTimestamp(), new Value());
-                bw.addMutation(m);
+                // Insert 10,000 rows to create actual processing work
+                for (int i = 0; i < 10000; i++) {
+                    Mutation m = new Mutation("row" + i);
+                    m.put("cf", "cq", new Value());
+                    bw.addMutation(m);
+                }
             }
         }
     }
 
-    // ------------------------------------------------------------------------
-    // 2. Per-Thread State: Created independently for each thread
-    // ------------------------------------------------------------------------
     @State(Scope.Thread)
     public static class ThreadState {
         public BatchScannerSessionLongAdder scanner;
@@ -94,17 +87,11 @@ public class BatchScannerSessionLongAdderBenchmarkTest {
         @Setup(Level.Trial)
         public void setupThread(GlobalState global) {
             // Build a unique scanner per thread referencing the shared global client
-            scanner = BatchScannerSessionLongAdderBuilder.create(global.client)
-                    .setTableName(global.tableName)
-                    .setAuthorizations(global.authorizations)
-                    .setQuery(global.query)
-                    .build();
+            scanner = BatchScannerSessionLongAdderBuilder.create(global.client).setTableName(global.tableName).setAuthorizations(global.authorizations)
+                            .setQuery(global.query).build();
         }
     }
 
-    // ------------------------------------------------------------------------
-    // 3. Benchmark Execution
-    // ------------------------------------------------------------------------
     @Benchmark
     public void benchRun(ThreadState state, Blackhole bh) throws Exception {
         state.scanner.run();
@@ -114,11 +101,8 @@ public class BatchScannerSessionLongAdderBenchmarkTest {
         bh.consume(state.scanner);
     }
 
-    // ------------------------------------------------------------------------
-    // 4. Runner Main Method
-    // ------------------------------------------------------------------------
     public static void main(String[] args) throws RunnerException {
-        String[] threadList = new String[] {"1", "4", "14"};
+        String[] threadList = new String[] {"10", "64", "128"};
 
         OptionsBuilder builder = new OptionsBuilder();
 
@@ -127,33 +111,8 @@ public class BatchScannerSessionLongAdderBenchmarkTest {
             builder.threads(Integer.parseInt(t));
         }
 
-        builder.include(BatchScannerSessionLongAdderBenchmarkTest.class.getSimpleName())
-                .forks(2)
-                .build();
+        builder.include(BatchScannerSessionLongAdderBenchmarkTest.class.getSimpleName()).forks(2).build();
 
         new Runner(builder.build()).run();
     }
 }
-
-/*
-# Run complete. Total time: 00:07:36
-
-REMEMBER: The numbers below are just data. To gain reusable insights, you need to follow up on
-why the numbers are the way they are. Use profilers (see -prof, -lprof), design factorial
-experiments, perform baseline and negative tests that provide experimental control, make sure
-the benchmarking environment is safe on JVM/OS/HW level, ask for reviews from the domain experts.
-Do not assume the numbers tell you what you want them to tell.
-
-NOTE: Current JVM experimentally supports Compiler Blackholes, and they are in use. Please exercise
-extra caution when trusting the results, look into the generated code to check the benchmark still
-works, and factor in a small probability of new VM bugs. Additionally, while comparisons between
-different JVMs are already problematic, the performance difference caused by different Blackhole
-modes can be very significant. Please make sure you use the consistent Blackhole mode for comparisons.
-
-Benchmark                                           (threads)   Mode  Cnt     Score     Error   Units
-BatchScannerSessionLongAdderBenchmarkTest.benchRun          1  thrpt   20  1800.164 ±  54.982  ops/us
-BatchScannerSessionLongAdderBenchmarkTest.benchRun          4  thrpt   20  1736.511 ±  10.018  ops/us
-BatchScannerSessionLongAdderBenchmarkTest.benchRun         14  thrpt   20  1588.836 ± 237.246  ops/us
-
-Process finished with exit code 0
- */

@@ -103,9 +103,9 @@ public class BatchScannerSessionLongAdder extends ScannerSession implements Iter
 
     protected long scanLimitTimeout = -1;
 
-    private static final Logger log = Logger.getLogger(BatchScannerSessionLongAdder.class);
+    private static final Logger log = Logger.getLogger(datawave.query.tables.BatchScannerSessionLongAdder.class);
 
-    protected Map<String,LongAdder> serverFailureMap;
+    protected Map<String,AtomicInteger> serverFailureMap;
 
     protected Map<String,LongAdder> serverMap;
 
@@ -186,7 +186,8 @@ public class BatchScannerSessionLongAdder extends ScannerSession implements Iter
      * @param ranges
      *            list of ranges
      */
-    public BatchScannerSessionLongAdder(String tableName, Set<Authorizations> auths, ResourceQueue delegator, int maxResults, Query settings, Collection<Range> ranges) {
+    public BatchScannerSessionLongAdder(String tableName, Set<Authorizations> auths, ResourceQueue delegator, int maxResults, Query settings,
+                    Collection<Range> ranges) {
 
         super(tableName, auths, delegator, maxResults, settings);
         Preconditions.checkNotNull(delegator);
@@ -211,7 +212,7 @@ public class BatchScannerSessionLongAdder extends ScannerSession implements Iter
 
     }
 
-    public BatchScannerSessionLongAdder updateThreadService(ExecutorService service) {
+    public datawave.query.tables.BatchScannerSessionLongAdder updateThreadService(ExecutorService service) {
         if (service != null)
             this.service.shutdownNow();
         this.service = service;
@@ -222,7 +223,7 @@ public class BatchScannerSessionLongAdder extends ScannerSession implements Iter
         this.scanLimitTimeout = timeout;
     }
 
-    public BatchScannerSessionLongAdder setThreads(int threads) {
+    public datawave.query.tables.BatchScannerSessionLongAdder setThreads(int threads) {
         if (service != null)
             service.shutdownNow();
         this.threadCount = threads;
@@ -231,12 +232,12 @@ public class BatchScannerSessionLongAdder extends ScannerSession implements Iter
         return this;
     }
 
-    public BatchScannerSessionLongAdder setConfig(GenericQueryConfiguration config) {
+    public datawave.query.tables.BatchScannerSessionLongAdder setConfig(GenericQueryConfiguration config) {
         this.config = config;
         return this;
     }
 
-    public BatchScannerSessionLongAdder updateIdentifier(String threadId) {
+    public datawave.query.tables.BatchScannerSessionLongAdder updateIdentifier(String threadId) {
         this.threadId.append(threadId);
         return this;
     }
@@ -248,7 +249,7 @@ public class BatchScannerSessionLongAdder extends ScannerSession implements Iter
      *            list of scanner chunks
      * @return the scanner session
      */
-    public synchronized BatchScannerSessionLongAdder setChunkIter(Iterator<List<ScannerChunk>> chunkIter) {
+    public synchronized datawave.query.tables.BatchScannerSessionLongAdder setChunkIter(Iterator<List<ScannerChunk>> chunkIter) {
 
         scannerBatches = chunkIter;
 
@@ -258,10 +259,10 @@ public class BatchScannerSessionLongAdder extends ScannerSession implements Iter
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof BatchScannerSessionLongAdder) {
+        if (obj instanceof datawave.query.tables.BatchScannerSessionLongAdder) {
             EqualsBuilder builder = new EqualsBuilder();
-            builder.append(localTableName, ((BatchScannerSessionLongAdder) obj).localTableName);
-            builder.append(localAuths, ((BatchScannerSessionLongAdder) obj).localAuths);
+            builder.append(localTableName, ((datawave.query.tables.BatchScannerSessionLongAdder) obj).localTableName);
+            builder.append(localAuths, ((datawave.query.tables.BatchScannerSessionLongAdder) obj).localAuths);
             return builder.isEquals();
         }
 
@@ -340,7 +341,7 @@ public class BatchScannerSessionLongAdder extends ScannerSession implements Iter
                 } else {
                     if (log.isTraceEnabled()) {
                         log.trace("Parking for 10 milliseconds until we have additional work that can be done; " + threadCount + " "
-                                + (threadCount * RANGE_MULTIPLIER) + " " + currentBatch.size() + " >= " + (threadCount * QUEUE_MULTIPLIER));
+                                        + (threadCount * RANGE_MULTIPLIER) + " " + currentBatch.size() + " >= " + (threadCount * QUEUE_MULTIPLIER));
                     }
                     Thread.sleep(10);
                     if (Thread.interrupted() || !isRunning()) {
@@ -397,13 +398,7 @@ public class BatchScannerSessionLongAdder extends ScannerSession implements Iter
 
         for (ScannerChunk chunk : newChunks) {
 
-            LongAdder numChunks = serverMap.get(chunk.getLastKnownLocation());
-            if (numChunks == null) {
-                numChunks = new LongAdder();
-                numChunks.add(1);
-                serverMap.put(chunk.getLastKnownLocation(), numChunks);
-            } else
-                numChunks.increment();
+            serverMap.computeIfAbsent(chunk.getLastKnownLocation(), k -> new LongAdder()).increment();
 
             Scan scan = null;
 
@@ -420,14 +415,14 @@ public class BatchScannerSessionLongAdder extends ScannerSession implements Iter
                 scan.setVisitors(visitorFunctions);
 
                 Scan childScan = new Scan(localTableName, localAuths, new ScannerChunk(chunk), delegatorReference, BatchResource.class,
-                        ((SpeculativeScan) scan).getQueue(), service);
+                                ((SpeculativeScan) scan).getQueue(), service);
 
                 childScan.setVisitors(visitorFunctions);
 
                 ((SpeculativeScan) scan).addScan(childScan);
 
                 childScan = new Scan(localTableName, localAuths, new ScannerChunk(chunk), delegatorReference, delegatedResourceInitializer,
-                        ((SpeculativeScan) scan).getQueue(), service);
+                                ((SpeculativeScan) scan).getQueue(), service);
 
                 childScan.setVisitors(visitorFunctions);
 
@@ -447,27 +442,21 @@ public class BatchScannerSessionLongAdder extends ScannerSession implements Iter
             }
             submitScan(scan, true);
         }
-
     }
 
     /**
-     *
+     * Submits all pending scanner chunks currently in currentBatch.
      */
     protected void submitTasks() {
 
-        List<ScannerChunk> newChunks;
-        newChunks = Lists.newArrayList(currentBatch);
-        currentBatch.clear();
+        List<ScannerChunk> newChunks = new ArrayList<>();
+        // Atomically remove all pending chunks from currentBatch into newChunks
+        currentBatch.drainTo(newChunks);
+
         Collections.shuffle(newChunks);
         for (ScannerChunk chunk : newChunks) {
 
-            LongAdder numChunks = serverMap.get(chunk.getLastKnownLocation());
-            if (numChunks == null) {
-                numChunks = new LongAdder();
-                numChunks.add(1);
-                serverMap.put(chunk.getLastKnownLocation(), numChunks);
-            } else
-                numChunks.increment();
+            serverMap.computeIfAbsent(chunk.getLastKnownLocation(), k -> new LongAdder()).increment();
 
             Scan scan = null;
 
@@ -476,13 +465,14 @@ public class BatchScannerSessionLongAdder extends ScannerSession implements Iter
                 if (log.isTraceEnabled()) {
                     log.trace("Using speculative execution");
                 }
+
                 scan = new SpeculativeScan(localTableName, localAuths, chunk, delegatorReference, delegatedResourceInitializer, resultQueue, service);
 
                 ((SpeculativeScan) scan).addScan(new Scan(localTableName, localAuths, new ScannerChunk(chunk), delegatorReference, BatchResource.class,
-                        ((SpeculativeScan) scan).getQueue(), service));
+                                ((SpeculativeScan) scan).getQueue(), service));
 
                 ((SpeculativeScan) scan).addScan(new Scan(localTableName, localAuths, new ScannerChunk(chunk), delegatorReference, delegatedResourceInitializer,
-                        ((SpeculativeScan) scan).getQueue(), service));
+                                ((SpeculativeScan) scan).getQueue(), service));
 
             } else {
                 scan = new Scan(localTableName, localAuths, chunk, delegatorReference, delegatedResourceInitializer, resultQueue, service);
@@ -517,7 +507,7 @@ public class BatchScannerSessionLongAdder extends ScannerSession implements Iter
      *            options
      * @return the scan session
      */
-    public BatchScannerSessionLongAdder setOptions(SessionOptions options) {
+    public datawave.query.tables.BatchScannerSessionLongAdder setOptions(SessionOptions options) {
         return this;
     }
 
@@ -576,14 +566,13 @@ public class BatchScannerSessionLongAdder extends ScannerSession implements Iter
             }
         } else {
             // we've timed out
-            LongAdder failCount = serverFailureMap.get(finishedScan.getScanLocation());
+            AtomicInteger failCount = serverFailureMap.get(finishedScan.getScanLocation());
 
             if (null == failCount) {
-                failCount = new LongAdder();
-                failCount.add(1);
+                failCount = new AtomicInteger(1);
                 serverFailureMap.put(finishedScan.getScanLocation(), failCount);
             } else {
-                failCount.increment();
+                failCount.incrementAndGet();
             }
 
             submitScan(finishedScan, false);
@@ -599,7 +588,7 @@ public class BatchScannerSessionLongAdder extends ScannerSession implements Iter
     @Override
     public void onFailure(Throwable t) {
         if (isInterruptedException(t)) {
-            log.info("BatchScannerSession interrupted");
+            log.info("BatchScannerSessionLongAdder interrupted");
         } else {
             log.error("BatchScanerSession failed", t);
         }
@@ -610,7 +599,7 @@ public class BatchScannerSessionLongAdder extends ScannerSession implements Iter
 
     private boolean isInterruptedException(Throwable t) {
         while (t != null && !(t instanceof InterruptedException || t instanceof InterruptedIOException)
-                && !(t.getMessage() != null && t.getMessage().contains("InterruptedException"))) {
+                        && !(t.getMessage() != null && t.getMessage().contains("InterruptedException"))) {
             t = t.getCause();
         }
         return t != null;
@@ -749,23 +738,27 @@ public class BatchScannerSessionLongAdder extends ScannerSession implements Iter
 
     @Override
     public boolean canRun(ScannerChunk chunk) {
-        if (!scannerBatches.hasNext() && runnableCount.get() <= serverMap.get(chunk.getLastKnownLocation()).sum()) {
+        String location = chunk.getLastKnownLocation();
+
+        LongAdder serverCount = serverMap.get(location);
+        long maxRunnable = (serverCount != null) ? serverCount.sum() : 0;
+
+        // Initial capacity check
+        if (!scannerBatches.hasNext() && runnableCount.get() <= maxRunnable) {
             return true;
         }
-        LongAdder failCount = serverFailureMap.get(chunk.getLastKnownLocation());
-        if (null == failCount || failCount.sum() == 0) {
+
+        AtomicInteger failCount = serverFailureMap.get(location);
+        if (failCount == null || failCount.get() <= 0) {
             return true;
         }
-        failCount.decrement();
-        long val = failCount.sum();
-        if (val <= 0) {
-            //LongAdder failCount2 = new LongAdder();
-            //failCount = failCount2;
-            failCount.reset();
+
+        int remainingFailures = failCount.decrementAndGet();
+        if (remainingFailures <= 0) {
+            failCount.set(0);
             return true;
         } else {
-            // must run if we have no other work to do.
-            if (runnableCount.get() <= serverMap.get(chunk.getLastKnownLocation()).sum()) {
+            if (runnableCount.get() <= maxRunnable) {
                 return true;
             }
         }
