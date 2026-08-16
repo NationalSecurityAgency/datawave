@@ -920,12 +920,12 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
     public void writeBitsetIndexKey(Multimap<BulkIngestKey,Value> values, RawRecordContainer event, String field, String value, byte[] visibility,
                     byte[] maskedVisibility, MaskedFieldHelper maskedFieldHelper, byte[] shardId, Direction direction) {
         if (shardId != null && value != null && field != null && visibility != null) {
-            String fullShard = new String(shardId);
-            String cq = fullShard.substring(0, 8) + '\u0000' + event.getDataType().outputName();
-            String viz = new String(visibility);
+            String fullShard = new String(shardId, StandardCharsets.UTF_8);
+            byte[] cf = utf8(field);
+            byte[] cq = shardPrefixedBytes(shardId, 8, utf8(event.getDataType().outputName()));
             long ts = getIndexTimestamp(event.getTimestamp());
 
-            Key key = new Key(value, field, cq, viz, ts);
+            Key key = buildKey(utf8(value), cf, cf.length, cq, cq.length, visibility, ts, false);
             BulkIngestKey bulkIngestKey = new BulkIngestKey(getShardBitsetIndexTableName(), key);
             Value bitSetValue = getValueForBitsetIndex(fullShard);
             values.put(bulkIngestKey, bitSetValue);
@@ -934,8 +934,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
                 // write both the masked value and masked visibility
                 // and the original value at the masked visibility
                 String maskedValue = maskedFieldHelper.get(field);
-                String maskedViz = new String(maskedVisibility);
-                Key maskedKey = new Key(maskedValue, field, cq, maskedViz, ts);
+                Key maskedKey = buildKey(utf8(maskedValue), cf, cf.length, cq, cq.length, maskedVisibility, ts, false);
                 BulkIngestKey maskedBulkIngestKey = new BulkIngestKey(getShardBitsetIndexTableName(), maskedKey);
                 values.put(maskedBulkIngestKey, bitSetValue);
             }
@@ -971,13 +970,13 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
     public void writeShardDayIndexKey(Multimap<BulkIngestKey,Value> values, RawRecordContainer event, String field, String value, byte[] visibility,
                     byte[] maskedVisibility, MaskedFieldHelper maskedFieldHelper, byte[] shardId, Direction direction) {
         if (shardId != null && value != null && field != null && visibility != null) {
-            String fullShard = new String(shardId);
-            String row = fullShard.substring(0, 8) + '\u0000' + value;
-            String cq = event.getDataType().outputName();
-            String viz = new String(visibility);
+            String fullShard = new String(shardId, StandardCharsets.UTF_8);
+            byte[] cf = utf8(field);
+            byte[] cq = utf8(event.getDataType().outputName());
+            byte[] row = shardPrefixedBytes(shardId, 8, utf8(value));
             long ts = getIndexTimestamp(event.getTimestamp());
 
-            Key key = new Key(row, field, cq, viz, ts);
+            Key key = buildKey(row, cf, cf.length, cq, cq.length, visibility, ts, false);
             BulkIngestKey bulkIngestKey = new BulkIngestKey(getShardDayIndexTableName(), key);
             Value bitSetValue = getValueForDayIndex(fullShard);
             values.put(bulkIngestKey, bitSetValue);
@@ -986,9 +985,8 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
                 // write both the masked value and masked visibility
                 // and the original value at the masked visibility
                 String maskedValue = maskedFieldHelper.get(field);
-                String maskedRow = fullShard.substring(0, 8) + '\u0000' + maskedValue;
-                String maskedViz = new String(maskedVisibility);
-                Key maskedKey = new Key(maskedRow, field, cq, maskedViz, ts);
+                byte[] maskedRow = shardPrefixedBytes(shardId, 8, utf8(maskedValue));
+                Key maskedKey = buildKey(maskedRow, cf, cf.length, cq, cq.length, maskedVisibility, ts, false);
                 BulkIngestKey maskedBulkIngestKey = new BulkIngestKey(getShardDayIndexTableName(), maskedKey);
                 values.put(maskedBulkIngestKey, bitSetValue);
             }
@@ -1066,13 +1064,14 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
                     byte[] maskedVisibility, MaskedFieldHelper maskedFieldHelper, byte[] shardId, Direction direction) {
 
         if (shardId != null && value != null && field != null && visibility != null) {
-            String fullShard = new String(shardId);
+            String fullShard = new String(shardId, StandardCharsets.UTF_8);
+            byte[] cf = utf8(field);
+            byte[] cq = utf8(event.getDataType().outputName());
             // you are insane if the data is from the year 999 or 10,000
-            String row = fullShard.substring(0, 4) + '\u0000' + value;
-            String cq = event.getDataType().outputName();
-            String viz = new String(visibility);
+            byte[] row = shardPrefixedBytes(shardId, 4, utf8(value));
+            long ts = getIndexTimestamp(event.getTimestamp());
 
-            Key key = new Key(row, field, cq, viz, getIndexTimestamp(event.getTimestamp()));
+            Key key = buildKey(row, cf, cf.length, cq, cq.length, visibility, ts, false);
             BulkIngestKey bulkIngestKey = new BulkIngestKey(getShardYearIndexTableName(), key);
             Value bitsetValue = getValueForYearIndex(fullShard);
             values.put(bulkIngestKey, bitsetValue);
@@ -1081,9 +1080,8 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
                 // write both the masked value and masked visibility
                 // and the original value at the masked visibility
                 String maskedValue = maskedFieldHelper.get(field);
-                String maskedRow = fullShard.substring(0, 4) + '\u0000' + maskedValue;
-                String maskedViz = new String(maskedVisibility);
-                Key maskedKey = new Key(maskedRow, field, cq, maskedViz, getIndexTimestamp(event.getTimestamp()));
+                byte[] maskedRow = shardPrefixedBytes(shardId, 4, utf8(maskedValue));
+                Key maskedKey = buildKey(maskedRow, cf, cf.length, cq, cq.length, maskedVisibility, ts, false);
                 BulkIngestKey maskedBulkIngestKey = new BulkIngestKey(getShardYearIndexTableName(), maskedKey);
                 values.put(maskedBulkIngestKey, bitsetValue);
             }
@@ -1186,6 +1184,27 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
      */
     private static byte[] utf8(String s) {
         return s.getBytes(StandardCharsets.UTF_8);
+    }
+
+    /**
+     * Builds a shard-prefixed byte array of the form {@code shardId[0, prefixLen) + '\0' + suffix}. Used to construct the row (day/year index tables) or column
+     * qualifier (bitset index table) for the alternate global index implementations, mirroring the string concatenation
+     * {@code shard.substring(0, prefixLen) + '\u0000' + suffix} without decoding the shard id to a String or re-encoding the result back to bytes.
+     *
+     * @param shardId
+     *            the full shard id bytes
+     * @param prefixLen
+     *            the number of leading bytes of the shard id to retain (8 for day granularity, 4 for year granularity)
+     * @param suffix
+     *            the UTF-8 encoded suffix bytes
+     * @return the shard-prefixed bytes
+     */
+    private static byte[] shardPrefixedBytes(byte[] shardId, int prefixLen, byte[] suffix) {
+        byte[] result = new byte[prefixLen + 1 + suffix.length];
+        System.arraycopy(shardId, 0, result, 0, prefixLen);
+        result[prefixLen] = 0;
+        System.arraycopy(suffix, 0, result, prefixLen + 1, suffix.length);
+        return result;
     }
 
     /**
