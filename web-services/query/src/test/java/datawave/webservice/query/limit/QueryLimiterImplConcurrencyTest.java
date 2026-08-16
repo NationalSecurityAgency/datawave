@@ -85,7 +85,7 @@ class QueryLimiterImplConcurrencyTest {
 
     @AfterEach
     void tearDown() throws IOException {
-        serversToLimiters.values().forEach(QueryLimiterImpl::shutdown);
+        serversToLimiters.values().forEach(QueryLimiterImpl::close);
         serversToLimiters.clear();
 
         if (server != null) {

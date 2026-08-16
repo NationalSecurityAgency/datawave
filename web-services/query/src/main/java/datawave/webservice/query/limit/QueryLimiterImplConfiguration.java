@@ -17,7 +17,7 @@ public class QueryLimiterImplConfiguration {
 
     private long heartbeatCleanupInterval = 10;
 
-    private TimeUnit heartbeatCleanupTimeUnit = TimeUnit.MINUTES;
+    private TimeUnit heartbeatCleanupIntervalUnit = TimeUnit.MINUTES;
 
     private int zkClientConnectTimeout = 3;
 
@@ -26,10 +26,10 @@ public class QueryLimiterImplConfiguration {
     public QueryLimiterImplConfiguration() {}
 
     public QueryLimiterImplConfiguration(QueryLimiterImplConfiguration other) {
-        this.zkClientBuilder = other.zkClientBuilder.duplicate();
+        this.zkClientBuilder = other.zkClientBuilder == null ? null : other.zkClientBuilder.duplicate();
         this.limitConfiguration = other.limitConfiguration == null ? null : other.limitConfiguration.deepCopy();
         this.heartbeatCleanupInterval = other.heartbeatCleanupInterval;
-        this.heartbeatCleanupTimeUnit = other.heartbeatCleanupTimeUnit;
+        this.heartbeatCleanupIntervalUnit = other.heartbeatCleanupIntervalUnit;
         this.zkClientConnectTimeout = other.zkClientConnectTimeout;
         this.zkClientConnectTimeoutUnit = other.zkClientConnectTimeoutUnit;
     }
@@ -58,12 +58,12 @@ public class QueryLimiterImplConfiguration {
         this.heartbeatCleanupInterval = heartbeatCleanupInterval;
     }
 
-    public TimeUnit getHeartbeatCleanupTimeUnit() {
-        return heartbeatCleanupTimeUnit;
+    public TimeUnit getHeartbeatCleanupIntervalUnit() {
+        return heartbeatCleanupIntervalUnit;
     }
 
-    public void setHeartbeatCleanupTimeUnit(TimeUnit heartbeatCleanupTimeUnit) {
-        this.heartbeatCleanupTimeUnit = heartbeatCleanupTimeUnit;
+    public void setHeartbeatCleanupIntervalUnit(TimeUnit heartbeatCleanupIntervalUnit) {
+        this.heartbeatCleanupIntervalUnit = heartbeatCleanupIntervalUnit;
     }
 
     public int getZkClientConnectTimeout() {
@@ -99,12 +99,12 @@ public class QueryLimiterImplConfiguration {
         QueryLimiterImplConfiguration that = (QueryLimiterImplConfiguration) o;
         return heartbeatCleanupInterval == that.heartbeatCleanupInterval && zkClientConnectTimeout == that.zkClientConnectTimeout
                         && Objects.equals(zkClientBuilder, that.zkClientBuilder) && Objects.equals(limitConfiguration, that.limitConfiguration)
-                        && heartbeatCleanupTimeUnit == that.heartbeatCleanupTimeUnit && zkClientConnectTimeoutUnit == that.zkClientConnectTimeoutUnit;
+                        && heartbeatCleanupIntervalUnit == that.heartbeatCleanupIntervalUnit && zkClientConnectTimeoutUnit == that.zkClientConnectTimeoutUnit;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(zkClientBuilder, limitConfiguration, heartbeatCleanupInterval, heartbeatCleanupTimeUnit, zkClientConnectTimeout,
+        return Objects.hash(zkClientBuilder, limitConfiguration, heartbeatCleanupInterval, heartbeatCleanupIntervalUnit, zkClientConnectTimeout,
                         zkClientConnectTimeoutUnit);
     }
 
@@ -112,7 +112,7 @@ public class QueryLimiterImplConfiguration {
     public String toString() {
         return new StringJoiner(", ", QueryLimiterImplConfiguration.class.getSimpleName() + "[", "]").add("zkClientBuilder=" + zkClientBuilder)
                         .add("limitConfiguration=" + limitConfiguration).add("heartbeatCleanupInterval=" + heartbeatCleanupInterval)
-                        .add("heartbeatCleanupTimeUnit=" + heartbeatCleanupTimeUnit).add("zkClientConnectTimeout=" + zkClientConnectTimeout)
+                        .add("heartbeatCleanupTimeUnit=" + heartbeatCleanupIntervalUnit).add("zkClientConnectTimeout=" + zkClientConnectTimeout)
                         .add("zkClientConnectTimeoutUnit=" + zkClientConnectTimeoutUnit).toString();
     }
 }

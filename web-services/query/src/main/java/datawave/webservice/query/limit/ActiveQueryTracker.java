@@ -9,6 +9,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
+import com.google.common.base.Preconditions;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.nodes.PersistentNode;
 import org.apache.zookeeper.CreateMode;
@@ -38,6 +39,7 @@ public class ActiveQueryTracker {
      * Create and return a new {@link ActiveQueryTracker} instance
      */
     public ActiveQueryTracker(CuratorFramework client) {
+        Preconditions.checkNotNull(client, "zookeeper client cannot be null");
         this.client = client;
     }
 

@@ -2,6 +2,7 @@ package datawave.webservice.query.limit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -40,7 +41,19 @@ class QueryHeartbeatCacheTest {
             this.server.close();
         }
     }
-
+    
+    @Test
+    void testCleanupIntervalLessThanOne() {
+        assertThatThrownBy(() -> new QueryHeartbeatCache(0, TimeUnit.MINUTES)).isInstanceOf(IllegalArgumentException.class)
+                        .hasMessage("cleanup interval must be greater than 0");
+    }
+    
+    @Test
+    void testNullCleanupUnit() {
+        assertThatThrownBy(() -> new QueryHeartbeatCache(10, null)).isInstanceOf(NullPointerException.class)
+                        .hasMessage("cleanup interval unit must not be null");
+    }
+    
     /**
      * Verify that adding and retrieving a heartbeat by query ID works.
      */
@@ -126,42 +139,6 @@ class QueryHeartbeatCacheTest {
     @Test
     void testStopAndRemoveHeartbeatWithoutMatch() {
         assertThatNoException().isThrownBy(() -> cache.stopAndRemove("queryId"));
-    }
-
-    /**
-     * Verify that {@link QueryHeartbeatCache#removeAllStoppedHeartbeats()} will remove any stopped heartbeats present in the cache.
-     */
-    @Test
-    void testRemoveAllStoppedHeartbeats() throws InterruptedException, IOException {
-        // Create heartbeats.
-        QueryHeartbeat heartbeat1 = createHeartbeat("queryId1");
-        QueryHeartbeat heartbeat2 = createHeartbeat("queryId2");
-        QueryHeartbeat heartbeat3 = createHeartbeat("queryId3");
-        QueryHeartbeat heartbeat4 = createHeartbeat("queryId4");
-
-        // Add them to the cache.
-        cache.put(heartbeat1);
-        cache.put(heartbeat2);
-        cache.put(heartbeat3);
-        cache.put(heartbeat4);
-
-        // Clear the listeners for the first two heartbeats and stop them. They will not evict themselves from the cache.
-        heartbeat1.clearListeners();
-        heartbeat1.stop();
-        heartbeat2.clearListeners();
-        heartbeat2.stop();
-
-        // Verify that we still see them in the cache.
-        assertThat(cache.get(heartbeat1.getQueryId())).isNotNull();
-        assertThat(cache.get(heartbeat2.getQueryId())).isNotNull();
-
-        cache.removeAllStoppedHeartbeats();
-
-        // Verify that we no longer see the stopped heartbeats in the cache, but do see the still-active heartbeats.
-        assertThat(cache.get(heartbeat1.getQueryId())).isNull();
-        assertThat(cache.get(heartbeat2.getQueryId())).isNull();
-        assertThat(cache.get(heartbeat3.getQueryId())).isNotNull();
-        assertThat(cache.get(heartbeat4.getQueryId())).isNotNull();
     }
 
     /**

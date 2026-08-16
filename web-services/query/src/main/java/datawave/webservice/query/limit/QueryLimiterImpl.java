@@ -26,7 +26,6 @@ import org.slf4j.LoggerFactory;
 import com.google.common.base.Preconditions;
 
 import datawave.configuration.spring.SpringBean;
-import datawave.zookeeper.ZkClientBuilder;
 
 /**
  * The implementation of {@link QueryLimiter}.
@@ -37,65 +36,7 @@ import datawave.zookeeper.ZkClientBuilder;
 @Singleton
 @Startup
 public class QueryLimiterImpl implements QueryLimiter {
-
-    private enum State {
-        /**
-         * Represents an uninitialized state.
-         */
-        UNINITIALIZED(false) {
-            @Override
-            State getActivationFailureState() {
-                return UNINITIALIZED;
-            }
-        },
-
-        /**
-         * Represents an idle state where limits are not enforced, and active queries will not be tracked.
-         */
-        IDLE(true) {
-            @Override
-            State getActivationFailureState() {
-                return IDLE;
-            }
-        },
-
-        /**
-         * Represents an active state where query limits are enforced, and active queries are tracked.
-         */
-        ACTIVE(true) {
-            @Override
-            State getActivationFailureState() {
-                return IDLE;
-            }
-        },
-
-        /**
-         * Represents a closed state where the limiter has been shut down.
-         */
-        CLOSED(false) {
-            @Override
-            State getActivationFailureState() {
-                return CLOSED;
-            }
-        };
-
-        /**
-         * Whether interaction with the limiter is allowed when it is in the current state.
-         */
-        private final boolean interactionAllowed;
-
-        State(boolean interactionAllowed) {
-            this.interactionAllowed = interactionAllowed;
-        }
-
-        /**
-         * Return the {@link State} the limiter should transition to from this {@link State} if an error occurs during activation.
-         *
-         * @return the transition state
-         */
-        abstract State getActivationFailureState();
-    }
-
+    
     private static final Logger log = LoggerFactory.getLogger(QueryLimiterImpl.class);
 
     /**
@@ -152,7 +93,7 @@ public class QueryLimiterImpl implements QueryLimiter {
     }
 
     /**
-     * A lock that will block access to operations for this {@link QueryLimiterImpl} while {@link #setup()} or {@link #shutdown()} is executing.
+     * A lock that will block access to operations for this {@link QueryLimiterImpl} while {@link #setup()} or {@link #close()} is executing.
      */
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
 
@@ -169,13 +110,11 @@ public class QueryLimiterImpl implements QueryLimiter {
         lock.writeLock().lock();
         try {
             if (log.isDebugEnabled()) {
-                log.debug("Initializing limiter");
+                log.debug("Setting up limiter");
             }
 
-            // Activate the limiter.
+            // Attempt to activate the limiter.
             activate();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
         } finally {
             if (log.isDebugEnabled()) {
                 log.debug("State after setup: {}, limiter enabled: {}", getState(), isEnabled());
@@ -187,80 +126,146 @@ public class QueryLimiterImpl implements QueryLimiter {
     /**
      * Attempt to activate this {@link QueryLimiterImpl} instance.
      */
-    private void activate() throws Exception {
+    private void activate() {
         lock.writeLock().lock();
         try {
-            log.debug("Activating query limiter with configuration {}", this.config);
+            if(log.isDebugEnabled()) {
+                log.debug("Activating limiter with configuration {}", this.config);
+            }
 
-            // Validate the configuration.
-            validateConfiguration();
-
-            // Create the limit providers.
+            Preconditions.checkNotNull(this.config, "Limiter configuration cannot be null");
+            
+            initLimitProviders();
+            initZkClient();
+            initHeartbeatCache();
+            initActiveQueryTracker();
+            
+            // Mark the limiter as active.
+            setState(State.ACTIVE);
+        } catch (Exception e) {
+            log.error("Failed to activate limiter", e);
+            deactivate(getState().getActivationFailureState());
+            throw new RuntimeException("Failed to activate limiter", e);
+        } finally {
+            lock.writeLock().unlock();
+        }
+    }
+    
+    /**
+     * Initialize the limit providers.
+     */
+    private void initLimitProviders() {
+        lock.writeLock().lock();
+        try {
+            if(log.isDebugEnabled()) {
+                log.debug("Creating limit providers from query limit configuration {}", this.config.getLimitConfiguration());
+            }
+            
             QueryLimitConfiguration limitConfiguration = this.config.getLimitConfiguration();
+            Preconditions.checkNotNull(limitConfiguration, "Query limit configuration cannot be null");
+            Preconditions.checkArgument(limitConfiguration.getDefaultUserQueryLimit() > 0, "Default user query limit must be greater than 0");
+            Preconditions.checkArgument(limitConfiguration.getInternalCacheMaxSize() > 0, "Internal max cache size must be greater than 0");
+            
             this.queryLogicGroupLimitProvider = new QueryLogicGroupLimitProvider(limitConfiguration.getInternalCacheMaxSize(),
                             limitConfiguration.getQueryLogicGroupConfigs());
             this.userLimitProvider = new UserLimitProvider(limitConfiguration.getDefaultUserQueryLimit(), limitConfiguration.getInternalCacheMaxSize(),
                             limitConfiguration.getUserConfigs(), queryLogicGroupLimitProvider);
             this.systemLimitProvider = new SystemLimitProvider(limitConfiguration.getDefaultSystemQueryLimit(), limitConfiguration.getInternalCacheMaxSize(),
                             limitConfiguration.getSystemConfigs(), queryLogicGroupLimitProvider);
-
-            // If the Zookeeper client is null, initialize it.
-            if (this.zkClient == null) {
-                ZkClientBuilder clientBuilder = config.getZkClientBuilder();
-                if (clientBuilder == null) {
-                    throw new IllegalStateException("Zookeeper client builder cannot be null");
-                }
-                log.debug("Creating Zookeeper client with namespace {} using builder {}", QueryLimiterUtils.ZOOKEEPER_NAMESPACE, clientBuilder);
-                this.zkClient = clientBuilder.duplicate().withNamespace(QueryLimiterUtils.ZOOKEEPER_NAMESPACE).build();
-                this.zkClient.start();
-                boolean connected = this.zkClient.blockUntilConnected(this.config.getZkClientConnectTimeout(), this.config.getZkClientConnectTimeoutUnit());
-                if (!connected) {
-                    // If we did not connect within the timeout, close the client and throw an exception.
-                    this.zkClient.close();
-                    throw new IllegalStateException("Zookeeper client failed to connect within timeout of " + this.config.getZkClientConnectTimeout() + " "
-                                    + this.config.getZkClientConnectTimeoutUnit());
-                }
-            }
-
-            // If the heartbeat cache is null, initialize it.
-            if (heartbeatCache == null) {
-                this.heartbeatCache = new QueryHeartbeatCache(this.config.getHeartbeatCleanupInterval(), this.config.getHeartbeatCleanupTimeUnit());
-            }
-
-            // Mark the limiter as active.
-            setState(State.ACTIVE);
         } catch (Exception e) {
-            log.error("Error when activating query limiter", e);
-            deactivate(getState().getActivationFailureState());
-            throw e;
+            log.error("Failed to initialize limit providers", e);
+            throw new RuntimeException("Failed to initialize limit providers", e);
         } finally {
             lock.writeLock().unlock();
         }
     }
-
+    
     /**
-     * Validate the configuration of this {@link QueryLimiterImpl} instance.
+     * Initialize the Zookeeper client. This should only be done once in a {@link QueryLimiterImpl}'s lifetime.
      */
-    private void validateConfiguration() {
-        lock.readLock().lock();
+    private void initZkClient() {
+        lock.writeLock().lock();
         try {
-            Preconditions.checkState(this.config != null, "Configuration has not been set");
-            QueryLimitConfiguration limitConfiguration = this.config.getLimitConfiguration();
-            Preconditions.checkState(limitConfiguration != null, "Limit configuration has not been set");
-            Preconditions.checkState(limitConfiguration.getDefaultUserQueryLimit() > 0, "Default user query limit must be greater than 0");
-            Preconditions.checkState(limitConfiguration.getInternalCacheMaxSize() > 0, "Internal max cache size must be greater than 0");
-            Preconditions.checkState(this.config.getZkClientBuilder() != null, "Zookeeper client builder has not been set");
-            Preconditions.checkState(this.config.getHeartbeatCleanupInterval() > 0, "Heartbeat cleanup interval must be greater than 0");
-            Preconditions.checkState(this.config.getZkClientConnectTimeout() > 0, "Zookeeper client connect timeout must be greater than 0");
-            Preconditions.checkState(this.config.getZkClientConnectTimeoutUnit() != null, "Zookeeper client connect timeout unit must not be null");
+            // Initialize the Zookeeper client only if it hasn't been initialized yet.
+            if (this.zkClient == null) {
+                if(log.isDebugEnabled()) {
+                    log.debug("Creating Zookeeper client with namespace {} and client connect time out of {} {} using client builder {}",
+                                    QueryLimiterUtils.ZOOKEEPER_NAMESPACE, this.config.getZkClientConnectTimeout(),
+                                    this.config.getZkClientConnectTimeoutUnit(), this.config.getZkClientBuilder());
+                }
+                
+                Preconditions.checkNotNull(this.config.getZkClientBuilder(), "Zookeeper client builder cannot be null");
+                Preconditions.checkArgument(this.config.getZkClientConnectTimeout() > 0, "Zookeeper client connect timeout must be greater than 0");
+                Preconditions.checkNotNull(this.config.getZkClientConnectTimeoutUnit(), "Zookeeper client connect timeout unit cannot be null");
+                
+                this.zkClient = this.config.getZkClientBuilder().duplicate().withNamespace(QueryLimiterUtils.ZOOKEEPER_NAMESPACE).build();
+                this.zkClient.start();
+                boolean connected = this.zkClient.blockUntilConnected(this.config.getZkClientConnectTimeout(), this.config.getZkClientConnectTimeoutUnit());
+                if (!connected) {
+                    // If we did not connect within the timeout, close the client and throw an exception.
+                    throw new IllegalStateException("Zookeeper client failed to connect within timeout of " + this.config.getZkClientConnectTimeout() + " "
+                                    + this.config.getZkClientConnectTimeoutUnit());
+                }
+            } else {
+                log.debug("Zookeeper client already exists, skipping initialization");
+            }
+        } catch (Exception e) {
+            log.error("Failed to initialize Zookeeper client", e);
+            // If an error occurred, ensure the Zookeeper client is closed to avoid leaking the connection.
+            closeZkClient();
+            throw new RuntimeException("Failed to initialize Zookeeper client", e);
         } finally {
-            lock.readLock().unlock();
+            lock.writeLock().unlock();
         }
     }
-
+    
+    /**
+     * Initialize the heartbeat cache. This should only be done once in a {@link QueryLimiterImpl}'s lifetime.
+     */
+    private void initHeartbeatCache() {
+        lock.writeLock().lock();
+        try {
+            // Initialize the heart beat cache only if it hasn't been initialized yet.
+            if (heartbeatCache == null) {
+                if(log.isDebugEnabled()) {
+                    log.debug("Creating heartbeat cache with periodic cleanup of stopped heartbeats every {} {}", config.getHeartbeatCleanupInterval(),
+                                    config.getHeartbeatCleanupIntervalUnit());
+                }
+                this.heartbeatCache = new QueryHeartbeatCache(this.config.getHeartbeatCleanupInterval(), this.config.getHeartbeatCleanupIntervalUnit());
+            } else {
+                log.debug("Heartbeat cache already exists, skipping initialization");
+            }
+        } catch (Exception e) {
+            log.error("Failed to initialize heartbeat cache", e);
+            throw new RuntimeException("Failed to initialize heartbeat cache", e);
+        } finally {
+            lock.writeLock().unlock();
+        }
+    }
+    
+    /**
+     * Initialize the active query tracker. This should only be done once in a {@link QueryLimiterImpl}'s lifetime.
+     */
+    private void initActiveQueryTracker() {
+        lock.writeLock().lock();
+        try {
+            if(activeQueryTracker == null) {
+                log.debug("Creating active query tracker");
+                this.activeQueryTracker = new ActiveQueryTracker(this.zkClient);
+            } else {
+                log.debug("Active query tracker already exists, skipping initialization");
+            }
+        } catch (Exception e) {
+            log.error("Failed to initialize active query tracker", e);
+            throw new RuntimeException("Failed to initialize active query tracker", e);
+        } finally {
+            lock.writeLock().unlock();
+        }
+    }
+    
     /**
      * Deactivate this {@link QueryLimiterImpl}. This method specifically does not close the heartbeat cache or Zookeeper client, that should only be done when
-     * {@link #shutdown()} is called.
+     * {@link #close()} is called.
      */
     private void deactivate(State newState) {
         lock.writeLock().lock();
@@ -272,7 +277,7 @@ public class QueryLimiterImpl implements QueryLimiter {
             this.systemLimitProvider = null;
             this.userLimitProvider = null;
         } catch (Exception e) {
-            log.error("Error when deactivating query limiter", e);
+            log.error("Error when deactivating limiter", e);
             throw e;
         } finally {
             lock.writeLock().unlock();
@@ -280,19 +285,21 @@ public class QueryLimiterImpl implements QueryLimiter {
     }
 
     /**
-     * Close this {@link QueryLimiterImpl} and the underlying zookeeper client.
+     * Close this {@link QueryLimiterImpl} and releases its resources. Calling this method will result in the deletion of all ephemeral nodes used to track
+     * active queries in Zookeeper.
      */
     @PreDestroy
-    public void shutdown() {
+    public void close() {
         lock.writeLock().lock();
         try {
             log.debug("Shutting down limiter");
             deactivate(State.CLOSED);
 
-            // Shut down the heartbeat cache, and stop all heartbeats.
+            // Shut down the heartbeat cache, and stop all heartbeats. This needs to be done before closing the Zookeeper client.
+            log.debug("Closing heartbeat cache");
             if (this.heartbeatCache != null) {
                 try {
-                    log.debug("Shutting down heartbeat cache");
+                    // Ensure heartbeats in the cache are stopped after they're removed.
                     this.heartbeatCache.close(true);
                 } catch (Exception e) {
                     log.error("Error when shutting down heartbeat cache", e);
@@ -300,11 +307,26 @@ public class QueryLimiterImpl implements QueryLimiter {
                     this.heartbeatCache = null;
                 }
             }
-
-            // Close the zookeeper client.
-            if (this.zkClient != null) {
+            
+            // Nullify the active query tracker.
+            this.activeQueryTracker = null;
+            
+            // Close the Zookeeper client.
+            closeZkClient();
+        } finally {
+            lock.writeLock().unlock();
+        }
+    }
+    
+    /**
+     * Close the Zookeeper client.
+     */
+    private void closeZkClient() {
+        lock.writeLock().lock();
+        try {
+            log.debug("Closing Zookeeper client");
+            if(this.zkClient != null) {
                 try {
-                    log.debug("Shutting down Zookeeper client");
                     this.zkClient.close();
                 } catch (Exception e) {
                     log.error("Error closing Zookeeper client", e);
@@ -315,7 +337,6 @@ public class QueryLimiterImpl implements QueryLimiter {
         } finally {
             lock.writeLock().unlock();
         }
-
     }
 
     /**
@@ -332,7 +353,7 @@ public class QueryLimiterImpl implements QueryLimiter {
      * @throws Exception
      *             if an exception occurs
      * @throws IllegalStateException
-     *             if the query limiter has never been initialized or has been closed
+     *             if the limiter has never been initialized or has been closed
      */
     @Override
     public QueryLimiterResponse checkLimits(String userDn, String system, String queryLogic) throws Exception {
@@ -342,8 +363,8 @@ public class QueryLimiterImpl implements QueryLimiter {
 
         lock.readLock().lock();
         try {
-            if (log.isDebugEnabled()) {
-                log.debug("Checking limits - userDn: {}, system: {}, queryLogic: {}", userDn, system, queryLogic);
+            if (log.isTraceEnabled()) {
+                log.trace("Checking limits - userDn: {}, system: {}, queryLogic: {}", userDn, system, queryLogic);
             }
 
             if (isEnabled()) {
@@ -358,7 +379,9 @@ public class QueryLimiterImpl implements QueryLimiter {
             } else {
                 State state = getState();
                 if (state.interactionAllowed) {
-                    log.debug("Query limiter is in state {}, returning no limit met by default", state);
+                    if(log.isTraceEnabled()) {
+                        log.trace("Query limiter is in state {}, returning no limit met by default", state);
+                    }
                     return QueryLimiterResponse.hasNotMetLimit();
                 } else {
                     throw new IllegalStateException("Checking limits not allowed while limiter is in state " + state);
@@ -385,7 +408,7 @@ public class QueryLimiterImpl implements QueryLimiter {
      * @throws Exception
      *             if an error occurs
      * @throws IllegalStateException
-     *             if the query limiter has never been initialized or has been closed
+     *             if the limiter has never been initialized or has been closed
      */
     @Override
     public void markActive(String queryId, String userDn, String system, String queryLogic) throws Exception {
@@ -397,20 +420,22 @@ public class QueryLimiterImpl implements QueryLimiter {
         lock.readLock().lock();
         try {
             if (isEnabled()) {
-                if (log.isDebugEnabled()) {
-                    log.debug("Marking query active: queryId={}, userDn={}, system={}, queryLogic={}", queryId, userDn, system, queryLogic);
+                if (log.isTraceEnabled()) {
+                    log.trace("Marking query active: queryId={}, userDn={}, system={}, queryLogic={}", queryId, userDn, system, queryLogic);
                 }
                 boolean systemCountsTowardsUserLimits = systemLimitProvider.countsAgainstUserLimit(system);
-                QueryHeartbeat heartbeat = getActiveQueryTracker().trackQuery(queryId, userDn, system, queryLogic, systemCountsTowardsUserLimits);
+                QueryHeartbeat heartbeat = activeQueryTracker.trackQuery(queryId, userDn, system, queryLogic, systemCountsTowardsUserLimits);
                 // Store the heartbeat into the cache. This acts as a means to keep the connection to Zookeeper alive for the ephemeral nodes stored in the
                 // heartbeat.
                 heartbeatCache.put(heartbeat);
             } else {
                 State state = getState();
                 if (state.interactionAllowed) {
-                    log.debug("Query limiter is in state {}, query {} will not be marked active.", state, queryId);
+                    if(log.isTraceEnabled()) {
+                        log.trace("Query limiter is in state {}, query {} will not be marked active.", state, queryId);
+                    }
                 } else {
-                    throw new IllegalStateException("Marking queries not allowed while limiter is in state " + state);
+                    throw new IllegalStateException("Marking queries active not allowed while limiter is in state " + state);
                 }
             }
         } finally {
@@ -424,14 +449,14 @@ public class QueryLimiterImpl implements QueryLimiter {
      *
      * @return the set of IDs for active queries
      * @throws IllegalStateException
-     *             if the query limiter has never been initialized or has been closed
+     *             if the limiter has never been initialized or has been closed
      */
     @Override
     public Set<String> getActiveQueries() {
         lock.readLock().lock();
         try {
             State state = getState();
-            // Even if the limiter is disabled, there may be active queries lingering from when the query limiter was previously active. Allow callers to
+            // Even if the limiter is disabled, there may be active queries lingering from when the limiter was previously active. Allow callers to
             // retrieve information about active queries.
             if (isEnabled() || state.interactionAllowed) {
                 return heartbeatCache.getQueryIds();
@@ -449,23 +474,23 @@ public class QueryLimiterImpl implements QueryLimiter {
      * @param queryIds
      *            the query IDs
      * @throws IllegalStateException
-     *             if the query limiter has never been initialized or has been closed
+     *             if the limiter has never been initialized or has been closed
      */
     @Override
     public void markInactive(Collection<String> queryIds) {
         Preconditions.checkNotNull(queryIds, "queryIds cannot be null");
         lock.readLock().lock();
         try {
-            if (log.isDebugEnabled()) {
-                log.debug("Stopping counting queries towards limits: {}", queryIds);
+            if (log.isTraceEnabled()) {
+                log.trace("Stopping counting queries towards limits: {}", queryIds);
             }
             State state = getState();
-            // Even if the limiter is disabled, there may be active queries lingering from when the query limiter was previously active. Allow callers to mark
+            // Even if the limiter is disabled, there may be active queries lingering from when the limiter was previously active. Allow callers to mark
             // these queries as inactive.
             if (isEnabled() || state.interactionAllowed) {
                 heartbeatCache.stopAndRemove(queryIds);
             } else {
-                throw new IllegalStateException("Stopping active queries not allowed while limiter is in state " + state);
+                throw new IllegalStateException("Marking queries inactive not allowed while limiter is in state " + state);
             }
         } finally {
             lock.readLock().unlock();
@@ -483,16 +508,16 @@ public class QueryLimiterImpl implements QueryLimiter {
         Preconditions.checkArgument(queryId != null && !queryId.isBlank(), "queryId cannot be null or blank");
         lock.readLock().lock();
         try {
-            if (log.isDebugEnabled()) {
-                log.debug("Stop counting query {} towards limits", queryId);
+            if (log.isTraceEnabled()) {
+                log.trace("Stop counting query {} towards limits", queryId);
             }
             State state = getState();
-            // Even if the limiter is disabled, the given query may be lingering from when the query limiter was previously active. Allow callers to mark
+            // Even if the limiter is disabled, the given query may be lingering from when the limiter was previously active. Allow callers to mark
             // the query as inactive.
             if (isEnabled() || state.interactionAllowed) {
                 heartbeatCache.stopAndRemove(queryId);
             } else {
-                throw new IllegalStateException("Stopping active queries not allowed while limiter is in state " + state);
+                throw new IllegalStateException("Marking queries inactive not allowed while limiter is in state " + state);
             }
         } finally {
             lock.readLock().unlock();
@@ -504,7 +529,7 @@ public class QueryLimiterImpl implements QueryLimiter {
      *
      * @return true if the limiter is enabled, or false otherwise
      */
-    private boolean isEnabled() {
+    public boolean isEnabled() {
         lock.readLock().lock();
         try {
             return getState() == State.ACTIVE;
@@ -536,7 +561,7 @@ public class QueryLimiterImpl implements QueryLimiter {
      *
      * @return the state
      */
-    private State getState() {
+    public State getState() {
         lock.readLock().lock();
         try {
             return state.get();
@@ -546,15 +571,64 @@ public class QueryLimiterImpl implements QueryLimiter {
     }
 
     /**
-     * Return the {@link ActiveQueryTracker} instance, initializing it if needed.
-     *
-     * @return the active query tracker
+     * Represents the state of a {@link QueryLimiterImpl}.
      */
-    private ActiveQueryTracker getActiveQueryTracker() {
-        if (this.activeQueryTracker == null) {
-            this.activeQueryTracker = new ActiveQueryTracker(zkClient);
+    public enum State {
+        /**
+         * Represents an uninitialized state.
+         */
+        UNINITIALIZED(false) {
+            @Override
+            State getActivationFailureState() {
+                return UNINITIALIZED;
+            }
+        },
+        
+        /**
+         * Represents an idle state where limits are not enforced, and active queries will not be tracked.
+         */
+        IDLE(true) {
+            @Override
+            State getActivationFailureState() {
+                return IDLE;
+            }
+        },
+        
+        /**
+         * Represents an active state where query limits are enforced, and active queries are tracked.
+         */
+        ACTIVE(true) {
+            @Override
+            State getActivationFailureState() {
+                return IDLE;
+            }
+        },
+        
+        /**
+         * Represents a closed state where the limiter has been shut down.
+         */
+        CLOSED(false) {
+            @Override
+            State getActivationFailureState() {
+                return CLOSED;
+            }
+        };
+        
+        /**
+         * Whether interaction with the limiter is allowed when it is in the current state.
+         */
+        private final boolean interactionAllowed;
+        
+        State(boolean interactionAllowed) {
+            this.interactionAllowed = interactionAllowed;
         }
-        return this.activeQueryTracker;
+        
+        /**
+         * Return the {@link State} the limiter should transition to from this {@link State} if an error occurs during activation.
+         *
+         * @return the transition state
+         */
+        abstract State getActivationFailureState();
     }
 
     /**
@@ -638,7 +712,6 @@ public class QueryLimiterImpl implements QueryLimiter {
         private void checkUserLimits(Map<String,Integer> groupLimits, int queryLimit) throws Exception {
             Set<String> queryLogics = new HashSet<>();
             int totalUserQueries = 0;
-            ActiveQueryTracker tracker = getActiveQueryTracker();
 
             // If groupsLimit is not empty, then we found one or more best-matching groups for the query logic.
             if (!groupLimits.isEmpty()) {
@@ -651,7 +724,7 @@ public class QueryLimiterImpl implements QueryLimiter {
 
                 // Fetch the total running queries for each query logic for the user.
                 for (String queryLogic : queryLogics) {
-                    int totalQueriesForQueryLogic = tracker.getTotalUserQueriesForQueryLogic(userDn, queryLogic);
+                    int totalQueriesForQueryLogic = activeQueryTracker.getTotalUserQueriesForQueryLogic(userDn, queryLogic);
                     // Update each group limit checker with the total. If we met a limit after doing so, update our status and return early.
                     for (QueryLogicGroupLimitChecker limitChecker : limitCheckers) {
                         limitChecker.incrementTotal(queryLogic, totalQueriesForQueryLogic);
@@ -675,7 +748,7 @@ public class QueryLimiterImpl implements QueryLimiter {
 
             // If we've reached this point, we did not meet any user limits configured for the query logic. Check if the total number of queries for the user
             // meets their max query limit. Pass in the query logics we already counted as well as the current total to avoid unnecessary scanning in Zookeeper.
-            if (tracker.totalUserQueriesMeetsLimit(userDn, queryLimit, queryLogics, totalUserQueries)) {
+            if (activeQueryTracker.totalUserQueriesMeetsLimit(userDn, queryLimit, queryLogics, totalUserQueries)) {
                 this.metLimit = true;
                 this.message = "User '" + userDn + "' has reached limit of " + queryLimit + " running queries";
             }
@@ -688,7 +761,6 @@ public class QueryLimiterImpl implements QueryLimiter {
             Set<String> queryLogics = new HashSet<>();
             int totalSystemQueries = 0;
             int queryLimit = systemLimitProvider.getDefaultSystemQueryLimit();
-            ActiveQueryTracker tracker = getActiveQueryTracker();
 
             // Check if any custom limits apply for the system.
             Optional<SystemLimits> optional = systemLimitProvider.getCustomLimits(system);
@@ -711,7 +783,7 @@ public class QueryLimiterImpl implements QueryLimiter {
 
                         // Fetch the total running queries for each query logic for the system.
                         for (String queryLogic : queryLogics) {
-                            int totalQueriesForQueryLogic = tracker.getTotalSystemQueriesForQueryLogic(system, queryLogic);
+                            int totalQueriesForQueryLogic = activeQueryTracker.getTotalSystemQueriesForQueryLogic(system, queryLogic);
                             // Update each group limit checker with the total. If we met a limit after doing so, update our status and return early.
                             for (QueryLogicGroupLimitChecker limitChecker : limitCheckers) {
                                 limitChecker.incrementTotal(queryLogic, totalQueriesForQueryLogic);
@@ -742,7 +814,7 @@ public class QueryLimiterImpl implements QueryLimiter {
             // system meets their max query limit. Pass in the query logics we already counted as well as the current total to avoid unnecessary scanning in
             // Zookeeper.
             if (queryLimit != QueryLimiterUtils.NO_LIMIT) {
-                if (tracker.totalSystemQueriesMeetsLimit(system, queryLimit, queryLogics, totalSystemQueries)) {
+                if (activeQueryTracker.totalSystemQueriesMeetsLimit(system, queryLimit, queryLogics, totalSystemQueries)) {
                     this.metLimit = true;
                     this.message = "System '" + system + "' has reached limit of " + queryLimit + " running queries";
                 }
@@ -768,7 +840,7 @@ public class QueryLimiterImpl implements QueryLimiter {
          */
         private void loadDistinctQueryLogics() {
             if (distinctQueryLogics == null) {
-                distinctQueryLogics = getActiveQueryTracker().getDistinctQueryLogics();
+                distinctQueryLogics = activeQueryTracker.getDistinctQueryLogics();
             }
         }
     }
