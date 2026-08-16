@@ -35,6 +35,7 @@ public class CompositeTimestamp {
      * Determine if the timestamp is composite (i.e. non-zero age off delta)
      *
      * @param ts
+     *            the timestamp the timestamp
      * @return True if composite
      */
     public static boolean isCompositeTimestamp(long ts) {
@@ -46,6 +47,7 @@ public class CompositeTimestamp {
      * Get the event date portion of the timestamp
      *
      * @param ts
+     *            the timestamp
      * @return the event date
      */
     public static long getEventDate(long ts) {
@@ -61,6 +63,7 @@ public class CompositeTimestamp {
      * Determine the age off date portion of the timestamp. This is the event date plus the ageoff delta converted to milliseconds.
      *
      * @param ts
+     *            the timestamp
      * @return The age off date
      */
     public static long getAgeOffDate(long ts) {
@@ -78,6 +81,7 @@ public class CompositeTimestamp {
      * Determine the age off delta porton of the timestamp. This is the number of days difference from the event date.
      *
      * @param ts
+     *            the timestamp
      * @return the age off delta
      */
     public static int getAgeOffDeltaDays(long ts) {
@@ -92,31 +96,37 @@ public class CompositeTimestamp {
      * off date, and then will return that difference in days.
      *
      * @param eventDate
+     *            the epoch timestamp (in milliseconds) of when the event occurred
      * @param ageOffDate
+     *            the epoch timestamp (in milliseconds) of when the event should expire
      * @param tz
-     * @return the age off delta
+     *            the time zone
+     * @return the age off delta, the number of days between the event and its expiration (TTL in days)
      */
     @Deprecated
     public static int computeAgeOffDeltaDays(long eventDate, long ageOffDate, TimeZone tz) {
-        return computeAgeOffDeltaDays(eventDate,ageOffDate,tz.toZoneId());
+        return computeAgeOffDeltaDays(eventDate, ageOffDate, tz.toZoneId());
     }
 
     /**
-     * Calculate an age off delta based on a timezone. This will calculate the begininning of the day in the given timezone for both the event date and the age
+     * Calculate an age off delta based on a timezone. This will calculate the beginning of the day in the given timezone for both the event date and the age
      * off date, and then will return that difference in days.
      *
      * @param eventDate
+     *            the epoch timestamp (in milliseconds) of when the event occurred
      * @param ageOffDate
+     *            the epoch timestamp (in milliseconds) of when the event should expire
      * @param zone
-     * @return the age off delta
+     *            the time zone
+     * @return the age off delta, the number of days between the event and its expiration (TTL in days)
      */
     public static int computeAgeOffDeltaDays(long eventDate, long ageOffDate, ZoneId zone) {
         validateEventDate(eventDate);
-        LocalDate eventDateStart = Instant.ofEpochMilli(eventDate).atZone(zone).toLocalDate();
+        LocalDate eventDateStart = LocalDate.ofInstant(Instant.ofEpochMilli(eventDate), zone);
 
-        LocalDate ageOffDateStart = Instant.ofEpochMilli(ageOffDate).atZone(zone).toLocalDate();
+        LocalDate ageOffDateStart = LocalDate.ofInstant(Instant.ofEpochMilli(ageOffDate), zone);
 
-        long delta = ChronoUnit.DAYS.between(eventDateStart,ageOffDateStart);
+        long delta = ChronoUnit.DAYS.between(eventDateStart, ageOffDateStart);
         validateAgeOffDelta(delta);
         return (int) delta;
     }
@@ -125,7 +135,9 @@ public class CompositeTimestamp {
      * Get the composite timestamp using the supplied event date and age off delta in days.
      *
      * @param eventDate
+     *            the epoch timestamp (in milliseconds) of when the event occurred
      * @param ageOffDeltaDays
+     *            the time-to-live (TTL) for the event, expressed as a number of days
      * @return The composite timestamp
      */
     public static long getCompositeDeltaTimeStamp(long eventDate, int ageOffDeltaDays) {
@@ -143,8 +155,11 @@ public class CompositeTimestamp {
      * Get the composite timestamp using the supplied eventDate and an age off delta in days based on the supplied age off date and time zone.
      *
      * @param eventDate
+     *            the epoch timestamp (in milliseconds) of when the event occurred
      * @param ageOffDate
+     *            the epoch timestamp (in milliseconds) of when the event should expire
      * @param tz
+     *            the time zone
      * @return The composite timestamp
      */
     @Deprecated
@@ -156,8 +171,11 @@ public class CompositeTimestamp {
      * Get the composite timestamp using the supplied eventDate and an age off delta in days based on the supplied age off date and time zone.
      *
      * @param eventDate
+     *            the epoch timestamp (in milliseconds) of when the event occurred
      * @param ageOffDate
+     *            the epoch timestamp (in milliseconds) of when the event should expire
      * @param zone
+     *            the time zone
      * @return The composite timestamp
      */
     public static long getCompositeTimeStamp(long eventDate, long ageOffDate, ZoneId zone) {
@@ -168,13 +186,14 @@ public class CompositeTimestamp {
      * Get the composite timestamp using the supplied eventDate and an age off delta in days based on the supplied age off date using the GMT timezone
      *
      * @param eventDate
+     *            the epoch timestamp (in milliseconds) of when the event occurred
      * @param ageOffDate
+     *            the epoch timestamp (in milliseconds) of when the event should expire
      * @return The composite timestamp
      */
     public static long getCompositeTimeStamp(long eventDate, long ageOffDate) {
         return getCompositeTimeStamp(eventDate, ageOffDate, TimeZone.getTimeZone("GMT"));
     }
-
 
     /**
      * Return a comparator for composite timestamps. Orders firstly on the event date, and if equal then on the ageoff date. Note for values with the same event

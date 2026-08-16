@@ -1,8 +1,13 @@
 package datawave.util;
 
-import java.awt.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+
 import java.time.Instant;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -16,12 +21,9 @@ import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import org.junit.Assert;
 import org.junit.Test;
-import org.junit.jupiter.api.Assertions;
 
 public class CompositeTimestampTest {
-
 
     @Test
     public void testConversion() {
@@ -31,13 +33,13 @@ public class CompositeTimestampTest {
 
         long compositeTS = CompositeTimestamp.getCompositeTimeStamp(eventDate, ageOff);
 
-        Assert.assertEquals(expectedTS, compositeTS);
-        Assert.assertTrue(CompositeTimestamp.isCompositeTimestamp(compositeTS));
-        Assert.assertFalse(CompositeTimestamp.isCompositeTimestamp(eventDate));
-        Assert.assertFalse(CompositeTimestamp.isCompositeTimestamp(ageOff));
-        Assert.assertEquals(CompositeTimestamp.getEventDate(compositeTS), eventDate);
-        Assert.assertEquals(CompositeTimestamp.getAgeOffDate(compositeTS), ageOff);
-        Assert.assertEquals(CompositeTimestamp.getAgeOffDeltaDays(compositeTS), (ageOff - eventDate) / CompositeTimestamp.MILLIS_PER_DAY);
+        assertEquals(expectedTS, compositeTS);
+        assertTrue(CompositeTimestamp.isCompositeTimestamp(compositeTS));
+        assertFalse(CompositeTimestamp.isCompositeTimestamp(eventDate));
+        assertFalse(CompositeTimestamp.isCompositeTimestamp(ageOff));
+        assertEquals(CompositeTimestamp.getEventDate(compositeTS), eventDate);
+        assertEquals(CompositeTimestamp.getAgeOffDate(compositeTS), ageOff);
+        assertEquals(CompositeTimestamp.getAgeOffDeltaDays(compositeTS), (ageOff - eventDate) / CompositeTimestamp.MILLIS_PER_DAY);
     }
 
     @Test
@@ -48,13 +50,13 @@ public class CompositeTimestampTest {
 
         long compositeTS = CompositeTimestamp.getCompositeTimeStamp(eventDate, ageOff);
 
-        Assert.assertEquals(expectedTS, compositeTS);
-        Assert.assertTrue(CompositeTimestamp.isCompositeTimestamp(compositeTS));
-        Assert.assertFalse(CompositeTimestamp.isCompositeTimestamp(eventDate));
-        Assert.assertFalse(CompositeTimestamp.isCompositeTimestamp(ageOff));
-        Assert.assertEquals(CompositeTimestamp.getEventDate(compositeTS), eventDate);
-        Assert.assertEquals(CompositeTimestamp.getAgeOffDate(compositeTS), ageOff);
-        Assert.assertEquals(CompositeTimestamp.getAgeOffDeltaDays(compositeTS), (ageOff - eventDate) / CompositeTimestamp.MILLIS_PER_DAY);
+        assertEquals(expectedTS, compositeTS);
+        assertTrue(CompositeTimestamp.isCompositeTimestamp(compositeTS));
+        assertFalse(CompositeTimestamp.isCompositeTimestamp(eventDate));
+        assertFalse(CompositeTimestamp.isCompositeTimestamp(ageOff));
+        assertEquals(CompositeTimestamp.getEventDate(compositeTS), eventDate);
+        assertEquals(CompositeTimestamp.getAgeOffDate(compositeTS), ageOff);
+        assertEquals(CompositeTimestamp.getAgeOffDeltaDays(compositeTS), (ageOff - eventDate) / CompositeTimestamp.MILLIS_PER_DAY);
     }
 
     @Test
@@ -65,13 +67,13 @@ public class CompositeTimestampTest {
 
         long compositeTS = CompositeTimestamp.getCompositeTimeStamp(eventDate, ageOff);
 
-        Assert.assertEquals(expectedTS, compositeTS);
-        Assert.assertTrue(CompositeTimestamp.isCompositeTimestamp(compositeTS));
-        Assert.assertFalse(CompositeTimestamp.isCompositeTimestamp(eventDate));
-        Assert.assertFalse(CompositeTimestamp.isCompositeTimestamp(ageOff));
-        Assert.assertEquals(CompositeTimestamp.getEventDate(compositeTS), eventDate);
-        Assert.assertEquals(CompositeTimestamp.getAgeOffDate(compositeTS), ageOff);
-        Assert.assertEquals(CompositeTimestamp.getAgeOffDeltaDays(compositeTS), (ageOff - eventDate) / CompositeTimestamp.MILLIS_PER_DAY);
+        assertEquals(expectedTS, compositeTS);
+        assertTrue(CompositeTimestamp.isCompositeTimestamp(compositeTS));
+        assertFalse(CompositeTimestamp.isCompositeTimestamp(eventDate));
+        assertFalse(CompositeTimestamp.isCompositeTimestamp(ageOff));
+        assertEquals(CompositeTimestamp.getEventDate(compositeTS), eventDate);
+        assertEquals(CompositeTimestamp.getAgeOffDate(compositeTS), ageOff);
+        assertEquals(CompositeTimestamp.getAgeOffDeltaDays(compositeTS), (ageOff - eventDate) / CompositeTimestamp.MILLIS_PER_DAY);
     }
 
     @Test
@@ -82,13 +84,13 @@ public class CompositeTimestampTest {
 
         long compositeTS = CompositeTimestamp.getCompositeTimeStamp(eventDate, ageOff);
 
-        Assert.assertEquals(expectedTS, compositeTS);
-        Assert.assertTrue(CompositeTimestamp.isCompositeTimestamp(compositeTS));
-        Assert.assertFalse(CompositeTimestamp.isCompositeTimestamp(eventDate));
-        Assert.assertFalse(CompositeTimestamp.isCompositeTimestamp(ageOff));
-        Assert.assertEquals(CompositeTimestamp.getEventDate(compositeTS), eventDate);
-        Assert.assertEquals(CompositeTimestamp.getAgeOffDate(compositeTS), ageOff);
-        Assert.assertEquals(CompositeTimestamp.getAgeOffDeltaDays(compositeTS), (ageOff - eventDate) / CompositeTimestamp.MILLIS_PER_DAY);
+        assertEquals(expectedTS, compositeTS);
+        assertTrue(CompositeTimestamp.isCompositeTimestamp(compositeTS));
+        assertFalse(CompositeTimestamp.isCompositeTimestamp(eventDate));
+        assertFalse(CompositeTimestamp.isCompositeTimestamp(ageOff));
+        assertEquals(CompositeTimestamp.getEventDate(compositeTS), eventDate);
+        assertEquals(CompositeTimestamp.getAgeOffDate(compositeTS), ageOff);
+        assertEquals(CompositeTimestamp.getAgeOffDeltaDays(compositeTS), (ageOff - eventDate) / CompositeTimestamp.MILLIS_PER_DAY);
     }
 
     @Test
@@ -99,28 +101,28 @@ public class CompositeTimestampTest {
 
         long compositeTS = CompositeTimestamp.getCompositeTimeStamp(eventDate, ageOff);
 
-        Assert.assertEquals(expectedTS, compositeTS);
-        Assert.assertTrue(CompositeTimestamp.isCompositeTimestamp(compositeTS));
-        Assert.assertFalse(CompositeTimestamp.isCompositeTimestamp(eventDate));
-        Assert.assertFalse(CompositeTimestamp.isCompositeTimestamp(ageOff));
-        Assert.assertEquals(CompositeTimestamp.getEventDate(compositeTS), eventDate);
-        Assert.assertEquals(CompositeTimestamp.getAgeOffDate(compositeTS), ageOff);
-        Assert.assertEquals(CompositeTimestamp.getAgeOffDeltaDays(compositeTS), (ageOff - eventDate) / CompositeTimestamp.MILLIS_PER_DAY);
+        assertEquals(expectedTS, compositeTS);
+        assertTrue(CompositeTimestamp.isCompositeTimestamp(compositeTS));
+        assertFalse(CompositeTimestamp.isCompositeTimestamp(eventDate));
+        assertFalse(CompositeTimestamp.isCompositeTimestamp(ageOff));
+        assertEquals(CompositeTimestamp.getEventDate(compositeTS), eventDate);
+        assertEquals(CompositeTimestamp.getAgeOffDate(compositeTS), ageOff);
+        assertEquals(CompositeTimestamp.getAgeOffDeltaDays(compositeTS), (ageOff - eventDate) / CompositeTimestamp.MILLIS_PER_DAY);
     }
 
     @Test
     public void testEventUpperDateBound() {
         long eventDate = (-1L >>> 18);
         long compositeTS = CompositeTimestamp.getCompositeTimeStamp(eventDate, eventDate);
-        Assert.assertEquals(eventDate, compositeTS);
-        Assert.assertFalse(CompositeTimestamp.isCompositeTimestamp(compositeTS));
-        Assert.assertEquals(CompositeTimestamp.getEventDate(compositeTS), eventDate);
-        Assert.assertEquals(CompositeTimestamp.getAgeOffDate(compositeTS), eventDate);
-        Assert.assertEquals(CompositeTimestamp.getAgeOffDeltaDays(compositeTS), (eventDate - eventDate) / CompositeTimestamp.MILLIS_PER_DAY);
+        assertEquals(eventDate, compositeTS);
+        assertFalse(CompositeTimestamp.isCompositeTimestamp(compositeTS));
+        assertEquals(eventDate, CompositeTimestamp.getEventDate(compositeTS));
+        assertEquals(eventDate, CompositeTimestamp.getAgeOffDate(compositeTS));
+        assertEquals((eventDate - eventDate) / CompositeTimestamp.MILLIS_PER_DAY, CompositeTimestamp.getAgeOffDeltaDays(compositeTS));
 
         try {
             CompositeTimestamp.getCompositeTimeStamp(eventDate + 1, 0);
-            Assert.fail("Expected event date greater than 17 bits to fail");
+            fail("Expected event date greater than 17 bits to fail");
         } catch (IllegalArgumentException e) {
             // expected
         }
@@ -130,15 +132,15 @@ public class CompositeTimestampTest {
     public void testEventLowerDateBound() {
         long eventDate = (0 - (-1L >>> 18));
         long compositeTS = CompositeTimestamp.getCompositeTimeStamp(eventDate, eventDate);
-        Assert.assertEquals(eventDate, compositeTS);
-        Assert.assertFalse(CompositeTimestamp.isCompositeTimestamp(compositeTS));
-        Assert.assertEquals(CompositeTimestamp.getEventDate(compositeTS), eventDate);
-        Assert.assertEquals(CompositeTimestamp.getAgeOffDate(compositeTS), eventDate);
-        Assert.assertEquals(CompositeTimestamp.getAgeOffDeltaDays(compositeTS), (eventDate - eventDate) / CompositeTimestamp.MILLIS_PER_DAY);
+        assertEquals(eventDate, compositeTS);
+        assertFalse(CompositeTimestamp.isCompositeTimestamp(compositeTS));
+        assertEquals(eventDate, CompositeTimestamp.getEventDate(compositeTS));
+        assertEquals(eventDate, CompositeTimestamp.getAgeOffDate(compositeTS));
+        assertEquals((eventDate - eventDate) / CompositeTimestamp.MILLIS_PER_DAY, CompositeTimestamp.getAgeOffDeltaDays(compositeTS));
 
         try {
             CompositeTimestamp.getCompositeTimeStamp(eventDate - 1, 0);
-            Assert.fail("Expected event date greater than 17 bits to fail");
+            fail("Expected event date greater than 17 bits to fail");
         } catch (IllegalArgumentException e) {
             // expected
         }
@@ -150,28 +152,28 @@ public class CompositeTimestampTest {
         long ageOffEventDays = (-1L >>> 47);
         long ageOffEventDelta = ageOffEventDays * 1000 * 60 * 60 * 24;
         long compositeTS = CompositeTimestamp.getCompositeTimeStamp(eventDate, eventDate + ageOffEventDelta);
-        Assert.assertTrue(CompositeTimestamp.isCompositeTimestamp(compositeTS));
-        Assert.assertEquals(CompositeTimestamp.getEventDate(compositeTS), eventDate);
-        Assert.assertEquals(CompositeTimestamp.getAgeOffDate(compositeTS), eventDate + ageOffEventDelta);
-        Assert.assertEquals(CompositeTimestamp.getAgeOffDeltaDays(compositeTS), (ageOffEventDelta) / CompositeTimestamp.MILLIS_PER_DAY);
+        assertTrue(CompositeTimestamp.isCompositeTimestamp(compositeTS));
+        assertEquals(eventDate, CompositeTimestamp.getEventDate(compositeTS));
+        assertEquals(CompositeTimestamp.getAgeOffDate(compositeTS), eventDate + ageOffEventDelta);
+        assertEquals(CompositeTimestamp.getAgeOffDeltaDays(compositeTS), (ageOffEventDelta) / CompositeTimestamp.MILLIS_PER_DAY);
 
         try {
             CompositeTimestamp.getCompositeTimeStamp(eventDate, eventDate - CompositeTimestamp.MILLIS_PER_DAY);
-            Assert.fail("Expected ageoff date less than event date to fail");
+            fail("Expected ageoff date less than event date to fail");
         } catch (IllegalArgumentException e) {
             // expected
         }
 
         try {
             CompositeTimestamp.getCompositeTimeStamp(CompositeTimestamp.MILLIS_PER_DAY, 0);
-            Assert.fail("Expected ageoff date less than event date to fail");
+            fail("Expected ageoff date less than event date to fail");
         } catch (IllegalArgumentException e) {
             // expected
         }
 
         try {
             CompositeTimestamp.getCompositeTimeStamp(eventDate, eventDate + ageOffEventDelta + CompositeTimestamp.MILLIS_PER_DAY);
-            Assert.fail("Expected age off date greater than " + ageOffEventDays + " days from event date to fail");
+            fail("Expected age off date greater than " + ageOffEventDays + " days from event date to fail");
         } catch (IllegalArgumentException e) {
             // expected
         }
@@ -184,12 +186,12 @@ public class CompositeTimestampTest {
 
         long compositeTS = CompositeTimestamp.getCompositeTimeStamp(eventDate, ageOff);
 
-        Assert.assertEquals(-1L, compositeTS);
+        assertEquals(-1L, compositeTS);
         // since the ageoff is equal to the event date, this is not considered a composite timestamp
-        Assert.assertFalse(CompositeTimestamp.isCompositeTimestamp(compositeTS));
-        Assert.assertEquals(CompositeTimestamp.getEventDate(compositeTS), eventDate);
-        Assert.assertEquals(CompositeTimestamp.getAgeOffDate(compositeTS), ageOff);
-        Assert.assertEquals(CompositeTimestamp.getAgeOffDeltaDays(compositeTS), (eventDate - ageOff) / CompositeTimestamp.MILLIS_PER_DAY);
+        assertFalse(CompositeTimestamp.isCompositeTimestamp(compositeTS));
+        assertEquals(eventDate, CompositeTimestamp.getEventDate(compositeTS));
+        assertEquals(ageOff, CompositeTimestamp.getAgeOffDate(compositeTS));
+        assertEquals((eventDate - ageOff) / CompositeTimestamp.MILLIS_PER_DAY, CompositeTimestamp.getAgeOffDeltaDays(compositeTS));
     }
 
     @Test
@@ -200,8 +202,8 @@ public class CompositeTimestampTest {
         long now = System.currentTimeMillis();
 
         Date endGame = new Date(TimeUnit.MILLISECONDS.toMillis(eventDate));
-        Assert.assertTrue("Doomsday is " + endGame + ".  You have less than one year before timestamps roll over.  Get cracking.",
-                        (now + (365L * CompositeTimestamp.MILLIS_PER_DAY)) < eventDate);
+        assertTrue((now + (365L * CompositeTimestamp.MILLIS_PER_DAY)) < eventDate,
+                        "Doomsday is " + endGame + ".  You have less than one year before timestamps roll over.  Get cracking.");
 
     }
 
@@ -212,7 +214,7 @@ public class CompositeTimestampTest {
 
         try {
             CompositeTimestamp.getCompositeTimeStamp(eventDate, ageOff);
-            Assert.fail("Expected event date to fail");
+            fail("Expected event date to fail");
         } catch (IllegalArgumentException e) {
             // expected
         }
@@ -224,26 +226,26 @@ public class CompositeTimestampTest {
         long ts = CompositeTimestamp.getCompositeTimeStamp(CompositeTimestamp.MIN_EVENT_DATE, CompositeTimestamp.MIN_EVENT_DATE);
         long event = CompositeTimestamp.getEventDate(ts);
         long age = CompositeTimestamp.getEventDate(ts);
-        Assert.assertEquals(event, age);
+        assertEquals(event, age);
     }
 
     @Test
     public void testInvalid() {
         try {
             CompositeTimestamp.getEventDate(CompositeTimestamp.INVALID_TIMESTAMP);
-            Assert.fail("Invalid timestamp not detected");
+            fail("Invalid timestamp not detected");
         } catch (IllegalArgumentException e) {
 
         }
         try {
             CompositeTimestamp.getAgeOffDate(CompositeTimestamp.INVALID_TIMESTAMP);
-            Assert.fail("Invalid timestamp not detected");
+            fail("Invalid timestamp not detected");
         } catch (IllegalArgumentException e) {
 
         }
         try {
             CompositeTimestamp.isCompositeTimestamp(CompositeTimestamp.INVALID_TIMESTAMP);
-            Assert.fail("Invalid timestamp not detected");
+            fail("Invalid timestamp not detected");
         } catch (IllegalArgumentException e) {
 
         }
@@ -278,9 +280,9 @@ public class CompositeTimestampTest {
         long t3 = CompositeTimestamp.getCompositeTimeStamp(aDate, twoMonthsLater);
 
         // in this case the natural ordering will be correct
-        Assert.assertTrue(isOrdered(t1, t2, t3));
+        assertTrue(isOrdered(t1, t2, t3));
         // and the comparator will maintain that ordering
-        Assert.assertTrue(isOrdered(CompositeTimestamp.comparator(), t1, t2, t3));
+        assertTrue(isOrdered(CompositeTimestamp.comparator(), t1, t2, t3));
 
         cal = Calendar.getInstance();
         cal.setTimeInMillis(0);
@@ -297,10 +299,10 @@ public class CompositeTimestampTest {
         t3 = CompositeTimestamp.getCompositeTimeStamp(aDate, twoMonthsLater);
 
         // in this case the natural ordering will be incorrect ( and in fact exactly opposite )
-        Assert.assertFalse(isOrdered(t1, t2, t3));
-        Assert.assertTrue(isOrdered(t2, t2, t1));
+        assertFalse(isOrdered(t1, t2, t3));
+        assertTrue(isOrdered(t2, t2, t1));
         // but the comparator will maintain the correct ordering
-        Assert.assertTrue(isOrdered(CompositeTimestamp.comparator(), t1, t2, t3));
+        assertTrue(isOrdered(CompositeTimestamp.comparator(), t1, t2, t3));
     }
 
     @Test
@@ -318,9 +320,9 @@ public class CompositeTimestampTest {
         long t3 = CompositeTimestamp.getCompositeTimeStamp(twoMonthsLater, twoMonthsLater);
 
         // in this case the natural ordering will be correct
-        Assert.assertTrue(isOrdered(t1, t2, t3));
+        assertTrue(isOrdered(t1, t2, t3));
         // and the comparator will maintain that ordering
-        Assert.assertTrue(isOrdered(CompositeTimestamp.comparator(), t1, t2, t3));
+        assertTrue(isOrdered(CompositeTimestamp.comparator(), t1, t2, t3));
 
         cal = Calendar.getInstance();
         cal.setTimeInMillis(0);
@@ -337,9 +339,9 @@ public class CompositeTimestampTest {
         t3 = CompositeTimestamp.getCompositeTimeStamp(twoMonthsLater, twoMonthsLater);
 
         // in this case the natural ordering will be correct
-        Assert.assertTrue(isOrdered(t1, t2, t3));
+        assertTrue(isOrdered(t1, t2, t3));
         // and the comparator will maintain that ordering
-        Assert.assertTrue(isOrdered(CompositeTimestamp.comparator(), t1, t2, t3));
+        assertTrue(isOrdered(CompositeTimestamp.comparator(), t1, t2, t3));
     }
 
     @Test
@@ -357,9 +359,9 @@ public class CompositeTimestampTest {
         long t3 = CompositeTimestamp.getCompositeTimeStamp(twoMonthsLater, twoMonthsLater);
 
         // in this case the natural ordering will be incorrect
-        Assert.assertFalse(isOrdered(t1, t2, t3));
+        assertFalse(isOrdered(t1, t2, t3));
         // but the comparator will maintain the correct ordering
-        Assert.assertTrue(isOrdered(CompositeTimestamp.comparator(), t1, t2, t3));
+        assertTrue(isOrdered(CompositeTimestamp.comparator(), t1, t2, t3));
 
         cal = Calendar.getInstance();
         cal.setTimeInMillis(0);
@@ -376,80 +378,76 @@ public class CompositeTimestampTest {
         t3 = CompositeTimestamp.getCompositeTimeStamp(twoMonthsLater, twoMonthsLater);
 
         // in this case the natural ordering will be correct (surprisingly)
-        Assert.assertTrue(isOrdered(t1, t2, t3));
+        assertTrue(isOrdered(t1, t2, t3));
         // and the comparator will maintain that ordering
-        Assert.assertTrue(isOrdered(CompositeTimestamp.comparator(), t1, t2, t3));
+        assertTrue(isOrdered(CompositeTimestamp.comparator(), t1, t2, t3));
     }
 
-
     /**
-     * * Verify that {@link CompositeTimestamp#computeAgeOffDeltaDays} accurately calculates the difference in days between an event date and an age off date for a given time zone.
+     * Verify that {@link CompositeTimestamp#computeAgeOffDeltaDays} accurately calculates the difference in days between an event date and an age off date for
+     * a given time zone.
      */
     @Test
-    public void testComputeAgeOffDeltaDays(){
+    public void testComputeAgeOffDeltaDays() {
         ZoneId zone = ZoneId.of("GMT");
 
         // Event Date: August 1, 2026 at 10:00 AM
         ZonedDateTime eventTime = ZonedDateTime.of(2026, 8, 1, 10, 0, 0, 0, zone);
         long eventDateMillis = eventTime.toInstant().toEpochMilli();
 
-        System.out.println(eventDateMillis);
         // Event Date: August 6, 2026 at 3:00 PM
         ZonedDateTime ageOffTime = ZonedDateTime.of(2026, 8, 6, 15, 0, 0, 0, zone);
         long ageOffDateMillis = ageOffTime.toInstant().toEpochMilli();
-        System.out.println(ageOffDateMillis);
+
         int deltaDays = CompositeTimestamp.computeAgeOffDeltaDays(eventDateMillis, ageOffDateMillis, zone);
 
-        Assertions.assertEquals(5, deltaDays);
+        assertEquals(5, deltaDays);
     }
 
     /**
      * * Verify that {@link CompositeTimestamp#computeAgeOffDeltaDays} throws a ZoneRulesException when an invalid time zone ID is used.
      */
     @Test
-    public void testComputeAgeOffDeltaDaysInvalidTimeZone(){
+    public void testComputeAgeOffDeltaDaysInvalidTimeZone() {
         // Event Date: August 1, 2026 at 10:00 AM
-        long eventDateMillis = 1785578400000L;
+        long eventDateMillis = ZonedDateTime.of(LocalDateTime.of(2026, 8, 1, 10, 0, 0), ZoneId.of("GMT")).toInstant().toEpochMilli();
 
         // Event Date: August 6, 2026 at 3:00 PM
-        long ageOffDateMillis = 1786028400000L;
+        long ageOffDateMillis = ZonedDateTime.of(LocalDateTime.of(2026, 8, 1, 15, 0, 0), ZoneId.of("GMT")).toInstant().toEpochMilli();
 
-        Assertions.assertThrows(ZoneRulesException.class, () -> {
-            CompositeTimestamp.computeAgeOffDeltaDays(eventDateMillis,ageOffDateMillis,ZoneId.of("GT3RS"));
-        });
+        assertThrows(ZoneRulesException.class, () -> CompositeTimestamp.computeAgeOffDeltaDays(eventDateMillis, ageOffDateMillis, ZoneId.of("GT3RS")));
     }
 
     /**
-     * Verify that {@link CompositeTimestamp#getCompositeTimeStamp} successfully generates a composite timestamp given valid event and age off dates in a specific time zone.
+     * Verify that {@link CompositeTimestamp#getCompositeTimeStamp} successfully generates a composite timestamp given valid event and age off dates in a
+     * specific time zone.
      */
     @Test
-    public void testGetCompositeTimeStamp(){
+    public void testGetCompositeTimeStamp() {
         // Event Date: August 1, 2026 at 10:00 AM
-        long eventDateMillis = 1785578400000L;
+        long eventDateMillis = ZonedDateTime.of(LocalDateTime.of(2026, 8, 1, 10, 0, 0), ZoneId.of("GMT")).toInstant().toEpochMilli();
 
         // Event Date: August 6, 2026 at 3:00 PM
-        long ageOffDateMillis = 1786028400000L;
+        long ageOffDateMillis = ZonedDateTime.of(LocalDateTime.of(2026, 8, 1, 15, 0, 0), ZoneId.of("GMT")).toInstant().toEpochMilli();
 
         long compositeTs = CompositeTimestamp.getCompositeTimeStamp(eventDateMillis, ageOffDateMillis, ZoneId.of("GMT"));
 
-        Assertions.assertTrue(compositeTs > 0, "Composite timestamp should be greater than 0");
-        Assertions.assertEquals(353629299288320L,compositeTs);
+        assertTrue(compositeTs > 0, "Composite timestamp should be greater than 0");
+        assertEquals(353629299288320L, compositeTs);
     }
 
     /**
      * Verify that {@link CompositeTimestamp#getCompositeTimeStamp} throws a ZoneRulesException when an invalid time zone ID is used.
      */
     @Test
-    public void testGetCompositeTimeStampInvalidTimeZone(){
+    public void testGetCompositeTimeStampInvalidTimeZone() {
         // Event Date: August 1, 2026 at 10:00 AM
-        long eventDateMillis = 1785578400000L;
+        long eventDateMillis = ZonedDateTime.of(LocalDateTime.of(2026, 8, 1, 10, 0, 0), ZoneId.of("GMT")).toInstant().toEpochMilli();
 
         // Event Date: August 6, 2026 at 3:00 PM
-        long ageOffDateMillis = 1786028400000L;
+        long ageOffDateMillis = ZonedDateTime.of(LocalDateTime.of(2026, 8, 1, 15, 0, 0), ZoneId.of("GMT")).toInstant().toEpochMilli();
 
-        Assertions.assertThrows(ZoneRulesException.class, () -> {
-            CompositeTimestamp.getCompositeTimeStamp(eventDateMillis, ageOffDateMillis, ZoneId.of("GTR"));
-        });
+        assertThrows(ZoneRulesException.class, () -> CompositeTimestamp.getCompositeTimeStamp(eventDateMillis, ageOffDateMillis, ZoneId.of("GTR")));
 
     }
 
@@ -466,11 +464,12 @@ public class CompositeTimestampTest {
 
         long compositeTs = CompositeTimestamp.getCompositeTimeStamp(eventDateMillis, ageOffDateMillis, zone);
 
-        Assertions.assertTrue(compositeTs < 0, "Composite timestamp should be negative when event date is negative");
+        assertTrue(compositeTs < 0, "Composite timestamp should be negative when event date is negative");
     }
 
     /**
-     * Verify that {@link CompositeTimestamp#computeAgeOffDeltaDays} throws an exception when the calculated delta is invalid (e.g., negative delta or exceeding bit allocation).
+     * Verify that {@link CompositeTimestamp#computeAgeOffDeltaDays} throws an exception when the calculated delta is invalid (e.g., negative delta or exceeding
+     * bit allocation).
      */
     @Test
     public void testComputeAgeOffDeltaDaysInvalidDelta() {
@@ -480,9 +479,8 @@ public class CompositeTimestampTest {
         // Age off date is before the event date, resulting in a negative delta
         long ageOffDateMillis = ZonedDateTime.of(2026, 8, 1, 15, 0, 0, 0, zone).toInstant().toEpochMilli();
 
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            CompositeTimestamp.computeAgeOffDeltaDays(eventDateMillis, ageOffDateMillis, zone);
-        });
+        assertThrows(IllegalArgumentException.class, () -> CompositeTimestamp.computeAgeOffDeltaDays(eventDateMillis, ageOffDateMillis, zone));
+
     }
 
     /**
@@ -498,10 +496,6 @@ public class CompositeTimestampTest {
 
         int deltaDays = CompositeTimestamp.computeAgeOffDeltaDays(eventDateMillis, ageOffDateMillis, zone);
 
-        Assertions.assertEquals(0, deltaDays);
+        assertEquals(0, deltaDays);
     }
-
-
-
-
 }
