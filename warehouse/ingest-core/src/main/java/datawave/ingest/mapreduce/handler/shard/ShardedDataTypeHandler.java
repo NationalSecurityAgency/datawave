@@ -1,5 +1,7 @@
 package datawave.ingest.mapreduce.handler.shard;
 
+import java.nio.ByteBuffer;
+import java.nio.charset.CharacterCodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -848,8 +850,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
             // It was observed that the normalized mask values aren't coming back reversed, so account for that before creating the row.
             String normalizedMaskedValue = helper.getNormalizedMaskedValue(column);
 
-            Text colq = new Text(shardId);
-            TextUtil.textAppend(colq, event.getDataType().outputName(), helper.getReplaceMalformedUTF8());
+            byte[] colq = joinWithNulls(shardId, utf8(event.getDataType().outputName(), helper.getReplaceMalformedUTF8()));
 
             // if this method was called with the intention to create reverse index keys, ensure the masked values are reversed.
             if (!StringUtils.isEmpty(normalizedMaskedValue)) {
@@ -872,8 +873,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
             }
         } else if (!StringUtils.isEmpty(fieldValue)) {
             // This field is not masked. Add a key with the original field value and masked visibility
-            Text colq = new Text(shardId);
-            TextUtil.textAppend(colq, event.getDataType().outputName(), helper.getReplaceMalformedUTF8());
+            byte[] colq = joinWithNulls(shardId, utf8(event.getDataType().outputName(), helper.getReplaceMalformedUTF8()));
 
             /*
              * For values that are not being masked, we use the "unmaskedValue" and the masked visibility e.g. release the value as it was in the event at the
@@ -1176,6 +1176,11 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
     }
 
     /**
+     * The {@code 'fi'} column family prefix used for field index entries in the shard table (see {@link #createShardFieldIndexColumn}).
+     */
+    private static final byte[] FI_COLF_PREFIX = {'f', 'i'};
+
+    /**
      * Encode a String as UTF-8 bytes. Key components are always UTF-8 encoded, matching the encoding performed by {@link Text}.
      *
      * @param s
@@ -1184,6 +1189,53 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
      */
     private static byte[] utf8(String s) {
         return s.getBytes(StandardCharsets.UTF_8);
+    }
+
+    /**
+     * Encode a String as UTF-8 bytes, honoring the same "replace malformed characters" semantics as {@link TextUtil#textAppend(Text, String, boolean)} /
+     * {@link Text#encode(String, boolean)}, rather than the silent-replace behavior of {@link String#getBytes(java.nio.charset.Charset)}.
+     *
+     * @param s
+     *            the string to encode
+     * @param replaceMalformedUTF8
+     *            whether to replace malformed/unmappable characters instead of throwing
+     * @return the UTF-8 bytes
+     */
+    private static byte[] utf8(String s, boolean replaceMalformedUTF8) {
+        try {
+            ByteBuffer buffer = Text.encode(s, replaceMalformedUTF8);
+            byte[] bytes = new byte[buffer.limit()];
+            System.arraycopy(buffer.array(), 0, bytes, 0, bytes.length);
+            return bytes;
+        } catch (CharacterCodingException e) {
+            throw new IllegalArgumentException(e);
+        }
+    }
+
+    /**
+     * Concatenates byte array segments with a single {@code NUL} byte between each pair, e.g. {@code joinWithNulls(a, b, c)} produces
+     * {@code a + '\0' + b + '\0' + c}. This computes the exact final length up front and copies each segment once, avoiding the repeated encode-then-grow-
+     * then-copy behavior of building the same layout via {@link Text#append(byte[], int, int)}.
+     *
+     * @param parts
+     *            the byte array segments to join
+     * @return the joined bytes
+     */
+    private static byte[] joinWithNulls(byte[]... parts) {
+        int len = parts.length - 1;
+        for (byte[] part : parts) {
+            len += part.length;
+        }
+        byte[] result = new byte[len];
+        int pos = 0;
+        for (int i = 0; i < parts.length; i++) {
+            System.arraycopy(parts[i], 0, result, pos, parts[i].length);
+            pos += parts[i].length;
+            if (i < parts.length - 1) {
+                result[pos++] = 0;
+            }
+        }
+        return result;
     }
 
     /**
@@ -1271,6 +1323,28 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
     protected Key createKey(byte[] row, Text colf, String colq, byte[] vis, long ts, boolean delete) {
         byte[] colqBytes = utf8(colq);
         return buildKey(row, colf.getBytes(), colf.getLength(), colqBytes, colqBytes.length, vis, ts, delete);
+    }
+
+    /**
+     * Create Key from input parameters. Overload of {@link #createKey(byte[], Text, Text, byte[], long, boolean)} for callers who have already assembled the
+     * column qualifier bytes directly (e.g. via {@link #joinWithNulls(byte[]...)}), avoiding an intermediate {@link Text}.
+     *
+     * @param row
+     *            the row
+     * @param colf
+     *            the column family
+     * @param colq
+     *            the column qualifier
+     * @param vis
+     *            the column visibility
+     * @param ts
+     *            the timestamp
+     * @param delete
+     *            the delete flag of the key
+     * @return Accumulo Key object
+     */
+    protected Key createKey(byte[] row, Text colf, byte[] colq, byte[] vis, long ts, boolean delete) {
+        return buildKey(row, colf.getBytes(), colf.getLength(), colq, colq.length, vis, ts, delete);
     }
 
     /**
@@ -1389,6 +1463,29 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
     }
 
     /**
+     * Create Key from input parameters. Overload of {@link #createIndexKey(byte[], Text, Text, byte[], long, boolean)} for the global index case where the
+     * column qualifier has already been assembled directly as bytes (e.g. via {@link #joinWithNulls(byte[]...)}), avoiding an intermediate {@link Text}.
+     *
+     * @param row
+     *            the row
+     * @param colf
+     *            the column family
+     * @param colq
+     *            the column qualifier
+     * @param vis
+     *            the column visibility
+     * @param ts
+     *            the timestamp
+     * @param delete
+     *            the delete flag of the key
+     * @return Accumulo Key object
+     */
+    protected Key createIndexKey(String row, String colf, byte[] colq, byte[] vis, long ts, boolean delete) {
+        byte[] colfBytes = utf8(colf);
+        return buildKey(utf8(row), colfBytes, colfBytes.length, colq, colq.length, vis, getIndexTimestamp(ts), delete);
+    }
+
+    /**
      * trim the event date and ageoff portions of the ts to the beginning of the day
      *
      * @param ts
@@ -1472,10 +1569,8 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
         }
 
         // Create unmasked colq
-        Text unmaskedColq = new Text(fieldName);
-        if (!StringUtils.isEmpty(fieldValue)) {
-            TextUtil.textAppend(unmaskedColq, fieldValue, replaceMalformedUTF8);
-        }
+        byte[] unmaskedColq = StringUtils.isEmpty(fieldValue) ? utf8(fieldName, replaceMalformedUTF8)
+                        : joinWithNulls(utf8(fieldName, replaceMalformedUTF8), utf8(fieldValue, replaceMalformedUTF8));
 
         // If this field needs to be masked, then create two keys
         if (null != maskedFieldHelper && maskedFieldHelper.contains(indexedFieldName)) {
@@ -1521,8 +1616,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
                     Multimap<BulkIngestKey,Value> values, boolean replaceMalformedUTF8, boolean deleteMode, String fieldName, String maskedFieldValue) {
         if (!StringUtils.isEmpty(maskedFieldValue)) {
             // Create masked colq
-            Text maskedColq = new Text(fieldName);
-            TextUtil.textAppend(maskedColq, maskedFieldValue, replaceMalformedUTF8);
+            byte[] maskedColq = joinWithNulls(utf8(fieldName, replaceMalformedUTF8), utf8(maskedFieldValue, replaceMalformedUTF8));
 
             // Another key with masked value and masked visibility
             Key cbKey = createKey(shardId, colf, maskedColq, maskedVisibility, event.getTimestamp(), deleteMode);
@@ -1571,11 +1665,9 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
         Multimap<BulkIngestKey,Value> values = HashMultimap.create();
 
         if (!StringUtils.isEmpty(fieldValue)) {
-            Text colf = new Text("fi");
-            TextUtil.textAppend(colf, fieldName, replaceMalformedUTF8);
-            Text unmaskedColq = new Text(fieldValue);
-            TextUtil.textAppend(unmaskedColq, event.getDataType().outputName(), replaceMalformedUTF8);
-            TextUtil.textAppend(unmaskedColq, event.getId().toString(), replaceMalformedUTF8);
+            byte[] colf = joinWithNulls(FI_COLF_PREFIX, utf8(fieldName, replaceMalformedUTF8));
+            byte[] idSuffix = joinWithNulls(utf8(event.getDataType().outputName(), replaceMalformedUTF8), utf8(event.getId().toString(), replaceMalformedUTF8));
+            byte[] unmaskedColq = joinWithNulls(utf8(fieldValue, replaceMalformedUTF8), idSuffix);
 
             if (value == null) {
                 value = NULL_VALUE;
@@ -1590,9 +1682,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
                 // We need to use the normalized masked values
                 final String normalizedMaskedValue = helper.getNormalizedMaskedValue(fieldName);
                 if (!StringUtils.isEmpty(normalizedMaskedValue)) {
-                    Text maskedColq = new Text(normalizedMaskedValue);
-                    TextUtil.textAppend(maskedColq, event.getDataType().outputName(), replaceMalformedUTF8);
-                    TextUtil.textAppend(maskedColq, event.getId().toString(), replaceMalformedUTF8);
+                    byte[] maskedColq = joinWithNulls(utf8(normalizedMaskedValue, replaceMalformedUTF8), idSuffix);
 
                     // Put masked colq with masked visibility
                     Key key = createKey(shardId, colf, maskedColq, maskedVisibility, event.getTimestamp(), deleteMode);
@@ -1649,11 +1739,9 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
         boolean deleteMode = helper.getDeleteMode();
 
         if (!StringUtils.isEmpty(fieldValue)) {
-            Text colf = new Text("fi");
-            TextUtil.textAppend(colf, fieldName, replaceMalformedUTF8);
-            Text unmaskedColq = new Text(fieldValue);
-            TextUtil.textAppend(unmaskedColq, event.getDataType().outputName(), replaceMalformedUTF8);
-            TextUtil.textAppend(unmaskedColq, event.getId().toString(), replaceMalformedUTF8);
+            byte[] colf = joinWithNulls(FI_COLF_PREFIX, utf8(fieldName, replaceMalformedUTF8));
+            byte[] idSuffix = joinWithNulls(utf8(event.getDataType().outputName(), replaceMalformedUTF8), utf8(event.getId().toString(), replaceMalformedUTF8));
+            byte[] unmaskedColq = joinWithNulls(utf8(fieldValue, replaceMalformedUTF8), idSuffix);
 
             if (value == null) {
                 value = NULL_VALUE;
@@ -1668,9 +1756,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
                 // We need to use the normalized masked values
                 final String normalizedMaskedValue = helper.getNormalizedMaskedValue(fieldName);
                 if (!StringUtils.isEmpty(normalizedMaskedValue)) {
-                    Text maskedColq = new Text(normalizedMaskedValue);
-                    TextUtil.textAppend(maskedColq, event.getDataType().outputName(), replaceMalformedUTF8);
-                    TextUtil.textAppend(maskedColq, event.getId().toString(), replaceMalformedUTF8);
+                    byte[] maskedColq = joinWithNulls(utf8(normalizedMaskedValue, replaceMalformedUTF8), idSuffix);
 
                     // Put masked colq with masked visibility
                     Key key = createKey(shardId, colf, maskedColq, maskedVisibility, event.getTimestamp(), deleteMode);
@@ -1775,8 +1861,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
             // These Keys are for the index, so if they are masked, we really want to use the normalized masked values
             final String normalizedMaskedValue = helper.getNormalizedMaskedValue(fieldName);
 
-            Text colq = new Text(shardId);
-            TextUtil.textAppend(colq, event.getDataType().outputName(), helper.getReplaceMalformedUTF8());
+            byte[] colq = joinWithNulls(shardId, utf8(event.getDataType().outputName(), helper.getReplaceMalformedUTF8()));
 
             Value val = createUidArray(event.getId().toString(), deleteMode);
 
@@ -1797,8 +1882,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
             }
         } else if (!StringUtils.isEmpty(fieldValue)) {
             // This field is not masked. Add a key with the original field value and masked visibility
-            Text colq = new Text(shardId);
-            TextUtil.textAppend(colq, event.getDataType().outputName(), helper.getReplaceMalformedUTF8());
+            byte[] colq = joinWithNulls(shardId, utf8(event.getDataType().outputName(), helper.getReplaceMalformedUTF8()));
 
             // Create a UID object for the Value
             Value val = createUidArray(event.getId().toString(), deleteMode);
