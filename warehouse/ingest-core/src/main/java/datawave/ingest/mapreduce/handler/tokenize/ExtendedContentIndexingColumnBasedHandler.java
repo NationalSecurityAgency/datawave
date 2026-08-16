@@ -592,7 +592,7 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
                     TaskInputOutputContext<KEYIN,? extends RawRecordContainer,KEYOUT,VALUEOUT> context, StatusReporter reporter, Text uid, byte[] visibility,
                     byte[] shardId, byte[] rawValue) throws IOException, InterruptedException, MutationsRejectedException {
 
-        Key k = createKey(shardId, new Text(ColumnFamilyConstants.FULL_CONTENT), uid, visibility, event.getTimestamp(), this.ingestHelper.getDeleteMode());
+        Key k = createKey(shardId, ColumnFamilyConstants.FULL_CONTENT_TEXT, uid, visibility, event.getTimestamp(), this.ingestHelper.getDeleteMode());
 
         ByteArrayOutputStream baos = null;
         Base64OutputStream b64os = null;
@@ -847,11 +847,10 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
         // Colf: Field Name
         // Colq: Shard Id : DataType
         // Value: UID
-        Text colf = new Text(nFV.getIndexedFieldName());
         Text colq = new Text(shardId);
         TextUtil.textAppend(colq, this.eventDataTypeName, replacedMalformedUTF8);
 
-        Key k = this.createIndexKey(nFV.getIndexedFieldValue().getBytes(), colf, colq, visibility, event.getTimestamp(), deleteMode);
+        Key k = this.createIndexKey(nFV.getIndexedFieldValue(), nFV.getIndexedFieldName(), colq, visibility, event.getTimestamp(), deleteMode);
 
         // Create a UID object for the Value
         Value val = createUidArray(eventUid, deleteMode);

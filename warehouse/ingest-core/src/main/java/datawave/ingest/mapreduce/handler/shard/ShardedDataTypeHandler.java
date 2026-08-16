@@ -1,5 +1,6 @@
 package datawave.ingest.mapreduce.handler.shard;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
@@ -847,7 +848,6 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
             // It was observed that the normalized mask values aren't coming back reversed, so account for that before creating the row.
             String normalizedMaskedValue = helper.getNormalizedMaskedValue(column);
 
-            Text colf = new Text(column);
             Text colq = new Text(shardId);
             TextUtil.textAppend(colq, event.getDataType().outputName(), helper.getReplaceMalformedUTF8());
 
@@ -860,19 +860,18 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
                     }
                 }
                 // Create a key for the masked field value with the masked visibility.
-                Key k = this.createIndexKey(normalizedMaskedValue.getBytes(), colf, colq, maskedVisibility, event.getTimestamp(), false);
+                Key k = this.createIndexKey(normalizedMaskedValue, column, colq, maskedVisibility, event.getTimestamp(), false);
                 BulkIngestKey bkey = new BulkIngestKey(tableName, k);
                 values.put(bkey, indexValue);
             }
             if (!StringUtils.isEmpty(fieldValue)) {
                 // Now create a key for the unmasked value with the original visibility
-                Key k = this.createIndexKey(fieldValue.getBytes(), colf, colq, visibility, event.getTimestamp(), deleteMode);
+                Key k = this.createIndexKey(fieldValue, column, colq, visibility, event.getTimestamp(), deleteMode);
                 BulkIngestKey bkey = new BulkIngestKey(tableName, k);
                 values.put(bkey, indexValue);
             }
         } else if (!StringUtils.isEmpty(fieldValue)) {
             // This field is not masked. Add a key with the original field value and masked visibility
-            Text colf = new Text(column);
             Text colq = new Text(shardId);
             TextUtil.textAppend(colq, event.getDataType().outputName(), helper.getReplaceMalformedUTF8());
 
@@ -886,7 +885,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
                 refVisibility = maskedVisibility;
             }
 
-            Key k = this.createIndexKey(fieldValue.getBytes(), colf, colq, refVisibility, event.getTimestamp(), deleteMode);
+            Key k = this.createIndexKey(fieldValue, column, colq, refVisibility, event.getTimestamp(), deleteMode);
             BulkIngestKey bkey = new BulkIngestKey(tableName, k);
             values.put(bkey, indexValue);
         }
@@ -1149,6 +1148,47 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
     }
 
     /**
+     * The single place where an Accumulo {@link Key} is actually constructed. All {@code createKey}/{@code createIndexKey} overloads funnel through here.
+     * <p>
+     * The column family and qualifier are passed as a backing array plus an explicit length so that a {@link Text}'s over-allocated backing array can be used
+     * directly (see {@link Text#getBytes()} vs {@link Text#getLength()}) without copying it first.
+     *
+     * @param row
+     *            the row bytes
+     * @param colf
+     *            the column family backing array
+     * @param colfLen
+     *            the number of valid bytes in {@code colf}
+     * @param colq
+     *            the column qualifier backing array
+     * @param colqLen
+     *            the number of valid bytes in {@code colq}
+     * @param vis
+     *            the column visibility bytes
+     * @param ts
+     *            the timestamp
+     * @param delete
+     *            the delete flag of the key
+     * @return Accumulo Key object
+     */
+    private static Key buildKey(byte[] row, byte[] colf, int colfLen, byte[] colq, int colqLen, byte[] vis, long ts, boolean delete) {
+        Key k = new Key(row, 0, row.length, colf, 0, colfLen, colq, 0, colqLen, vis, 0, vis.length, ts);
+        k.setDeleted(delete);
+        return k;
+    }
+
+    /**
+     * Encode a String as UTF-8 bytes. Key components are always UTF-8 encoded, matching the encoding performed by {@link Text}.
+     *
+     * @param s
+     *            the string to encode
+     * @return the UTF-8 bytes
+     */
+    private static byte[] utf8(String s) {
+        return s.getBytes(StandardCharsets.UTF_8);
+    }
+
+    /**
      * Create Key from input parameters
      *
      * @param row
@@ -1166,9 +1206,74 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
      * @return Accumulo Key object
      */
     protected Key createKey(byte[] row, Text colf, Text colq, byte[] vis, long ts, boolean delete) {
-        Key k = new Key(row, 0, row.length, colf.getBytes(), 0, colf.getLength(), colq.getBytes(), 0, colq.getLength(), vis, 0, vis.length, ts);
-        k.setDeleted(delete);
-        return k;
+        return buildKey(row, colf.getBytes(), colf.getLength(), colq.getBytes(), colq.getLength(), vis, ts, delete);
+    }
+
+    /**
+     * Create Key from input parameters. Overload of {@link #createKey(byte[], Text, Text, byte[], long, boolean)} for callers that already have the column
+     * family and qualifier as raw bytes, avoiding a pair of intermediate {@link Text} objects.
+     *
+     * @param row
+     *            the row
+     * @param colf
+     *            the column family
+     * @param colq
+     *            the column qualifier
+     * @param vis
+     *            the column visibility
+     * @param ts
+     *            the timestamp
+     * @param delete
+     *            the delete flag of the key
+     * @return Accumulo Key object
+     */
+    protected Key createKey(byte[] row, byte[] colf, byte[] colq, byte[] vis, long ts, boolean delete) {
+        return buildKey(row, colf, colf.length, colq, colq.length, vis, ts, delete);
+    }
+
+    /**
+     * Create Key from input parameters. Overload of {@link #createKey(byte[], Text, Text, byte[], long, boolean)} for callers whose column qualifier is a
+     * String, avoiding an intermediate {@link Text}.
+     *
+     * @param row
+     *            the row
+     * @param colf
+     *            the column family
+     * @param colq
+     *            the column qualifier
+     * @param vis
+     *            the column visibility
+     * @param ts
+     *            the timestamp
+     * @param delete
+     *            the delete flag of the key
+     * @return Accumulo Key object
+     */
+    protected Key createKey(byte[] row, Text colf, String colq, byte[] vis, long ts, boolean delete) {
+        byte[] colqBytes = utf8(colq);
+        return buildKey(row, colf.getBytes(), colf.getLength(), colqBytes, colqBytes.length, vis, ts, delete);
+    }
+
+    /**
+     * Create Key from input parameters. Overload of {@link #createKey(byte[], Text, Text, byte[], long, boolean)} for callers whose column family and qualifier
+     * are Strings, avoiding a pair of intermediate {@link Text} objects.
+     *
+     * @param row
+     *            the row
+     * @param colf
+     *            the column family
+     * @param colq
+     *            the column qualifier
+     * @param vis
+     *            the column visibility
+     * @param ts
+     *            the timestamp
+     * @param delete
+     *            the delete flag of the key
+     * @return Accumulo Key object
+     */
+    protected Key createKey(byte[] row, String colf, String colq, byte[] vis, long ts, boolean delete) {
+        return createKey(row, utf8(colf), utf8(colq), vis, ts, delete);
     }
 
     /**
@@ -1193,10 +1298,75 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
      * @return Accumulo Key object
      */
     protected Key createIndexKey(byte[] row, Text colf, Text colq, byte[] vis, long ts, boolean delete) {
-        Key k = new Key(row, 0, row.length, colf.getBytes(), 0, colf.getLength(), colq.getBytes(), 0, colq.getLength(), vis, 0, vis.length,
-                        getIndexTimestamp(ts));
-        k.setDeleted(delete);
-        return k;
+        return buildKey(row, colf.getBytes(), colf.getLength(), colq.getBytes(), colq.getLength(), vis, getIndexTimestamp(ts), delete);
+    }
+
+    /**
+     * Create Key from input parameters. Overload of {@link #createIndexKey(byte[], Text, Text, byte[], long, boolean)} for callers that already have the column
+     * family and qualifier as raw bytes, avoiding a pair of intermediate {@link Text} objects.
+     *
+     * @param row
+     *            the row
+     * @param colf
+     *            the column family
+     * @param colq
+     *            the column qualifier
+     * @param vis
+     *            the column visibility
+     * @param ts
+     *            the timestamp
+     * @param delete
+     *            the delete flag of the key
+     * @return Accumulo Key object
+     */
+    protected Key createIndexKey(byte[] row, byte[] colf, byte[] colq, byte[] vis, long ts, boolean delete) {
+        return buildKey(row, colf, colf.length, colq, colq.length, vis, getIndexTimestamp(ts), delete);
+    }
+
+    /**
+     * Create Key from input parameters. Overload of {@link #createIndexKey(byte[], Text, Text, byte[], long, boolean)} for the common global index case where
+     * the row is a field value and the column family is a field name, avoiding an intermediate byte array and {@link Text}.
+     *
+     * @param row
+     *            the row
+     * @param colf
+     *            the column family
+     * @param colq
+     *            the column qualifier
+     * @param vis
+     *            the column visibility
+     * @param ts
+     *            the timestamp
+     * @param delete
+     *            the delete flag of the key
+     * @return Accumulo Key object
+     */
+    protected Key createIndexKey(String row, String colf, Text colq, byte[] vis, long ts, boolean delete) {
+        byte[] colfBytes = utf8(colf);
+        return buildKey(utf8(row), colfBytes, colfBytes.length, colq.getBytes(), colq.getLength(), vis, getIndexTimestamp(ts), delete);
+    }
+
+    /**
+     * Create Key from input parameters. Overload of {@link #createIndexKey(byte[], Text, Text, byte[], long, boolean)} for the term dictionary case where the
+     * column family is a shared constant and the column qualifier is a field name, avoiding an intermediate byte array and {@link Text}.
+     *
+     * @param row
+     *            the row
+     * @param colf
+     *            the column family
+     * @param colq
+     *            the column qualifier
+     * @param vis
+     *            the column visibility
+     * @param ts
+     *            the timestamp
+     * @param delete
+     *            the delete flag of the key
+     * @return Accumulo Key object
+     */
+    protected Key createIndexKey(String row, Text colf, String colq, byte[] vis, long ts, boolean delete) {
+        byte[] colqBytes = utf8(colq);
+        return buildKey(utf8(row), colf.getBytes(), colf.getLength(), colqBytes, colqBytes.length, vis, getIndexTimestamp(ts), delete);
     }
 
     /**
@@ -1586,7 +1756,6 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
             // These Keys are for the index, so if they are masked, we really want to use the normalized masked values
             final String normalizedMaskedValue = helper.getNormalizedMaskedValue(fieldName);
 
-            Text colf = new Text(fieldName);
             Text colq = new Text(shardId);
             TextUtil.textAppend(colq, event.getDataType().outputName(), helper.getReplaceMalformedUTF8());
 
@@ -1595,7 +1764,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
             // Dont create index entries for empty values
             if (!StringUtils.isEmpty(normalizedMaskedValue)) {
                 // Create a key for the masked field value with the masked visibility
-                Key k = this.createIndexKey(normalizedMaskedValue.getBytes(), colf, colq, maskedVisibility, event.getTimestamp(), false);
+                Key k = this.createIndexKey(normalizedMaskedValue, fieldName, colq, maskedVisibility, event.getTimestamp(), false);
 
                 BulkIngestKey bkey = new BulkIngestKey(tableName, k);
                 values.put(bkey, val);
@@ -1603,13 +1772,12 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
 
             if (!StringUtils.isEmpty(fieldValue)) {
                 // Now create a key for the unmasked value with the original visibility
-                Key k = this.createIndexKey(fieldValue.getBytes(), colf, colq, visibility, event.getTimestamp(), deleteMode);
+                Key k = this.createIndexKey(fieldValue, fieldName, colq, visibility, event.getTimestamp(), deleteMode);
                 BulkIngestKey bkey = new BulkIngestKey(tableName, k);
                 values.put(bkey, val);
             }
         } else if (!StringUtils.isEmpty(fieldValue)) {
             // This field is not masked. Add a key with the original field value and masked visibility
-            Text colf = new Text(fieldName);
             Text colq = new Text(shardId);
             TextUtil.textAppend(colq, event.getDataType().outputName(), helper.getReplaceMalformedUTF8());
 
@@ -1626,7 +1794,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
                 refVisibility = maskedVisibility;
             }
 
-            Key k = this.createIndexKey(fieldValue.getBytes(), colf, colq, refVisibility, event.getTimestamp(), deleteMode);
+            Key k = this.createIndexKey(fieldValue, fieldName, colq, refVisibility, event.getTimestamp(), deleteMode);
             BulkIngestKey bkey = new BulkIngestKey(tableName, k);
             values.put(bkey, val);
 
@@ -1664,14 +1832,10 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
         // Colf: Field Name
         // Colq: Shard Id : DataType
         // Value: UID
-        Text colf = new Text(directionColFam);
-        Text colq = new Text(fieldName);
-
-        Key k = this.createIndexKey(fieldValue.getBytes(), colf, colq, visibility, event.getTimestamp(), false);
-        Value val = new Value("".getBytes());
+        Key k = this.createIndexKey(fieldValue, directionColFam, fieldName, visibility, event.getTimestamp(), false);
 
         BulkIngestKey bKey = new BulkIngestKey(tableName, k);
-        values.put(bKey, val);
+        values.put(bKey, NULL_VALUE);
 
     }
 
@@ -1713,33 +1877,23 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
             // These Keys are for the index, so if they are masked, we really want to use the normalized masked values
             final String normalizedMaskedValue = helper.getNormalizedMaskedValue(fieldName);
 
-            Text colf = new Text(directionColFam);
-            Text colq = new Text(fieldName);
-
-            Value val = new Value("".getBytes());
-
             // Dont create index entries for empty values
             if (!StringUtils.isEmpty(normalizedMaskedValue)) {
                 // Create a key for the masked field value with the masked visibility
-                Key k = this.createIndexKey(normalizedMaskedValue.getBytes(), colf, colq, maskedVisibility, event.getTimestamp(), false);
+                Key k = this.createIndexKey(normalizedMaskedValue, directionColFam, fieldName, maskedVisibility, event.getTimestamp(), false);
 
                 BulkIngestKey bkey = new BulkIngestKey(tableName, k);
-                values.put(bkey, val);
+                values.put(bkey, NULL_VALUE);
             }
 
             if (!StringUtils.isEmpty(fieldValue)) {
                 // Now create a key for the unmasked value with the original visibility
-                Key k = this.createIndexKey(fieldValue.getBytes(), colf, colq, visibility, event.getTimestamp(), deleteMode);
+                Key k = this.createIndexKey(fieldValue, directionColFam, fieldName, visibility, event.getTimestamp(), deleteMode);
                 BulkIngestKey bkey = new BulkIngestKey(tableName, k);
-                values.put(bkey, val);
+                values.put(bkey, NULL_VALUE);
             }
         } else if (!StringUtils.isEmpty(fieldValue)) {
             // This field is not masked. Add a key with the original field value and masked visibility
-            Text colf = new Text(directionColFam);
-            Text colq = new Text(fieldName);
-            // TextUtil.textAppend(colq, event.getDataType().outputName(), helper.getReplaceMalformedUTF8());
-
-            Value val = new Value("".getBytes());
 
             /**
              * For values that are not being masked, we use the "unmaskedValue" and the masked visibility e.g. release the value as it was in the event at the
@@ -1751,9 +1905,9 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
                 refVisibility = maskedVisibility;
             }
 
-            Key k = this.createIndexKey(fieldValue.getBytes(), colf, colq, refVisibility, event.getTimestamp(), deleteMode);
+            Key k = this.createIndexKey(fieldValue, directionColFam, fieldName, refVisibility, event.getTimestamp(), deleteMode);
             BulkIngestKey bkey = new BulkIngestKey(tableName, k);
-            values.put(bkey, val);
+            values.put(bkey, NULL_VALUE);
 
         }
     }
