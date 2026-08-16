@@ -9,8 +9,12 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.TimeZone;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Tests for DateIndexUtil.
@@ -24,11 +28,11 @@ public class DateIndexUtilTest {
     public void testGetBits() {
         BitSet bits = DateIndexUtil.getBits(20);
         for (int i = 0; i < 20; i++) {
-            Assertions.assertFalse(bits.get(i));
+            assertFalse(bits.get(i));
         }
-        Assertions.assertTrue(bits.get(20));
+        assertTrue(bits.get(20));
         for (int i = 21; i < bits.size(); i++) {
-            Assertions.assertFalse(bits.get(i));
+            assertFalse(bits.get(i));
         }
     }
 
@@ -59,9 +63,9 @@ public class DateIndexUtilTest {
 
         for (int i = 0; i < 40 * 4; i++) {
             if (bits.contains(i)) {
-                Assertions.assertTrue(bitSet.get(i));
+                assertTrue(bitSet.get(i));
             } else {
-                Assertions.assertFalse(bitSet.get(i));
+                assertFalse(bitSet.get(i));
             }
         }
     }
@@ -81,7 +85,7 @@ public class DateIndexUtilTest {
     public void testFormat() {
         Date date = create(2026,Calendar.AUGUST,13,7,7,7,0);
         String dateStr = "20260813";
-        Assertions.assertEquals(dateStr, DateIndexUtil.format(date));
+        assertEquals(dateStr, DateIndexUtil.format(date));
     }
 
     /**
@@ -90,7 +94,7 @@ public class DateIndexUtilTest {
     @Test
     public void testFormatNullDate(){
         Date date = null;
-        Assertions.assertThrows(NullPointerException.class, () -> {
+        assertThrows(NullPointerException.class, () -> {
             DateIndexUtil.format(date);
         });
     }
@@ -102,7 +106,7 @@ public class DateIndexUtilTest {
     public void testGetBeginDate() throws ParseException {
         String dateStr = "20260813";
         Date date = create(2026,Calendar.AUGUST,13,0,0,0,0);
-        Assertions.assertEquals(date, DateIndexUtil.getBeginDate(dateStr));
+        assertEquals(date, DateIndexUtil.getBeginDate(dateStr));
     }
 
     /**
@@ -111,7 +115,7 @@ public class DateIndexUtilTest {
     @Test
     public void testGetBeginDateStringTooShort(){
         String dateStr = "202608";
-        Assertions.assertThrows(DateTimeParseException.class, () -> {
+        assertThrows(DateTimeParseException.class, () -> {
             DateIndexUtil.getBeginDate(dateStr);
         });
     }
@@ -122,7 +126,7 @@ public class DateIndexUtilTest {
     @Test
     public void testGetBeginDateInvalidCharacter(){
         String dateStr = "2026!081";
-        Assertions.assertThrows(DateTimeParseException.class, () -> {
+        assertThrows(DateTimeParseException.class, () -> {
             DateIndexUtil.getBeginDate(dateStr);
         });
     }
@@ -133,7 +137,7 @@ public class DateIndexUtilTest {
     @Test
     public void testGetBeginDateNullString(){
         String dateStr = null;
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             DateIndexUtil.getBeginDate(dateStr);
         });
     }
@@ -144,7 +148,7 @@ public class DateIndexUtilTest {
     @Test
     public void testGetBeginDateEmptyString(){
         String dateStr = "";
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             DateIndexUtil.getBeginDate(dateStr);
         });
     }
@@ -156,7 +160,7 @@ public class DateIndexUtilTest {
     public void testGetEndDate() throws ParseException {
         String dateStr = "20260813";
         Date date = create(2026,Calendar.AUGUST,13,23,59,59,999);
-        Assertions.assertEquals(date, DateIndexUtil.getEndDate(dateStr));
+        assertEquals(date, DateIndexUtil.getEndDate(dateStr));
     }
 
     /**
@@ -165,7 +169,7 @@ public class DateIndexUtilTest {
     @Test
     public void testGetEndDateStringTooShort(){
         String dateStr = "202608";
-        Assertions.assertThrows(DateTimeParseException.class, () -> {
+        assertThrows(DateTimeParseException.class, () -> {
             DateIndexUtil.getEndDate(dateStr);
         });
     }
@@ -176,7 +180,7 @@ public class DateIndexUtilTest {
     @Test
     public void testGetEndDateInvalidCharacter(){
         String dateStr = "2026!081";
-        Assertions.assertThrows(DateTimeParseException.class, () -> {
+        assertThrows(DateTimeParseException.class, () -> {
             DateIndexUtil.getEndDate(dateStr);
         });
     }
@@ -187,7 +191,7 @@ public class DateIndexUtilTest {
     @Test
     public void testGetEndDateNullString(){
         String dateStr = null;
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             DateIndexUtil.getEndDate(dateStr);
         });
     }
@@ -198,7 +202,7 @@ public class DateIndexUtilTest {
     @Test
     public void testGetEndDateHasEmptyString(){
         String dateStr = "";
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             DateIndexUtil.getEndDate(dateStr);
         });
     }
@@ -209,7 +213,7 @@ public class DateIndexUtilTest {
     @Test
     public void testGetEndDateInvalidStringLength(){
         String dateStr = "202608";
-        Assertions.assertThrows(DateTimeParseException.class, () -> {
+        assertThrows(DateTimeParseException.class, () -> {
             DateIndexUtil.getEndDate(dateStr);
         });
     }
