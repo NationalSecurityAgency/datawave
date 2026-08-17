@@ -9,9 +9,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.security.Principal;
 import java.security.spec.AlgorithmParameterSpec;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.Test;
 import org.wildfly.security.auth.SupportLevel;
@@ -363,6 +368,133 @@ class DatawaveRealmIdentityCacheTest {
 
         assertNull(cache.get(principal2));
         assertNull(cache.get(principal4));
+    }
+
+    /**
+     * Verify that {@link DatawaveRealmIdentityCache#put(Principal, RealmIdentity)} stores the entry when the calling thread carries an interrupt. The cache
+     * sits on the authentication path, where request threads can be interrupted by a client disconnect or a timeout.
+     */
+    @Test
+    void testPutOnInterruptedThread() {
+        DatawaveRealmIdentityCache cache = new DatawaveRealmIdentityCache(-1, -1);
+        DatawavePrincipal principal = createPrincipal(createUser("cn=user1"));
+        RealmIdentity identity = new SimpleNameRealmIdentity("realmUser1");
+
+        Thread.currentThread().interrupt();
+        try {
+            cache.put(principal, identity);
+        } finally {
+            assertTrue(Thread.interrupted(), "the interrupt should not have been consumed");
+        }
+
+        assertEquals(identity, cache.get(principal));
+    }
+
+    /**
+     * Verify that {@link DatawaveRealmIdentityCache#get(Principal)} returns a cached entry when the calling thread carries an interrupt. Reporting a miss here
+     * silently forces a full re-authentication for that request.
+     */
+    @Test
+    void testGetOnInterruptedThread() {
+        DatawaveRealmIdentityCache cache = new DatawaveRealmIdentityCache(-1, -1);
+        DatawavePrincipal principal = createPrincipal(createUser("cn=user1"));
+        RealmIdentity identity = new SimpleNameRealmIdentity("realmUser1");
+        cache.put(principal, identity);
+
+        Thread.currentThread().interrupt();
+        try {
+            assertEquals(identity, cache.get(principal));
+            assertEquals(identity, cache.get(new NamePrincipal("realmUser1")));
+        } finally {
+            assertTrue(Thread.interrupted(), "the interrupt should not have been consumed");
+        }
+    }
+
+    /**
+     * Verify that concurrent readers, writers and removers leave the cache consistent and never fail. Reads must also not stall behind the writers.
+     */
+    @Test
+    void testConcurrentAccess() throws Exception {
+        DatawaveRealmIdentityCache cache = new DatawaveRealmIdentityCache(-1, -1);
+
+        int threadCount = 16;
+        int iterations = 2000;
+        List<DatawavePrincipal> principals = new ArrayList<>();
+        List<RealmIdentity> identities = new ArrayList<>();
+        for (int i = 0; i < 32; i++) {
+            principals.add(createPrincipal(createUser("cn=user" + i)));
+            identities.add(new SimpleNameRealmIdentity("realmUser" + i));
+        }
+
+        ExecutorService executor = Executors.newFixedThreadPool(threadCount);
+        List<Future<?>> futures = new ArrayList<>();
+        try {
+            for (int t = 0; t < threadCount; t++) {
+                final int offset = t;
+                futures.add(executor.submit(() -> {
+                    for (int i = 0; i < iterations; i++) {
+                        int index = (i + offset) % principals.size();
+                        DatawavePrincipal principal = principals.get(index);
+                        switch ((i + offset) % 4) {
+                            case 0:
+                                cache.put(principal, identities.get(index));
+                                break;
+                            case 1:
+                                cache.get(principal);
+                                break;
+                            case 2:
+                                cache.get(new NamePrincipal("realmUser" + index));
+                                break;
+                            default:
+                                cache.remove(principal);
+                                break;
+                        }
+                    }
+                }));
+            }
+            // Any data race in the cache surfaces here as an exception from the worker.
+            for (Future<?> future : futures) {
+                future.get(60, TimeUnit.SECONDS);
+            }
+        } finally {
+            executor.shutdownNow();
+        }
+
+        // The cache must still be usable and internally consistent once the storm subsides.
+        cache.clear();
+        DatawavePrincipal principal = createPrincipal(createUser("cn=after"));
+        RealmIdentity identity = new SimpleNameRealmIdentity("realmAfter");
+        cache.put(principal, identity);
+        assertEquals(identity, cache.get(principal));
+        assertEquals(identity, cache.get(new NamePrincipal("realmAfter")));
+    }
+
+    /**
+     * Verify that evicting one domain principal leaves the reverse mapping intact for a sibling domain principal that resolves to the same realm identity
+     * principal and still holds a live entry.
+     */
+    @Test
+    void testEvictionRetainsSiblingMappings() {
+        // A size of one guarantees the first entry is evicted once the second is written.
+        DatawaveRealmIdentityCache cache = new DatawaveRealmIdentityCache(1, -1);
+
+        DatawavePrincipal principal1 = createPrincipal(createUser("cn=user1"));
+        DatawavePrincipal principal2 = createPrincipal(createUser("cn=user2"));
+        // Both principals resolve to the same realm identity principal.
+        cache.put(principal1, new SimpleNameRealmIdentity("sharedRealmUser"));
+        RealmIdentity identity2 = new SimpleNameRealmIdentity("sharedRealmUser");
+        cache.put(principal2, identity2);
+
+        // Caffeine evicts on a maintenance pass, so poll until the first entry is gone.
+        long deadline = System.currentTimeMillis() + 10_000;
+        while (cache.get(principal1) != null && System.currentTimeMillis() < deadline) {
+            Thread.onSpinWait();
+        }
+        assertNull(cache.get(principal1), "the first entry should have been evicted on size");
+
+        // The surviving entry must still be reachable by its realm identity principal.
+        assertEquals(identity2, cache.get(principal2));
+        assertEquals(identity2, cache.get(new NamePrincipal("sharedRealmUser")));
     }
 
     private DatawaveUser createUser(String subjectDn) {
