@@ -31,6 +31,7 @@ import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.admin.NamespaceOperations;
 import org.apache.accumulo.core.client.admin.NewTableConfiguration;
 import org.apache.accumulo.core.client.admin.TableOperations;
+import org.apache.accumulo.core.client.admin.TabletAvailability;
 import org.apache.accumulo.core.conf.Property;
 import org.apache.accumulo.core.data.constraints.DefaultKeySizeConstraint;
 import org.apache.accumulo.core.iterators.Combiner;
@@ -270,12 +271,14 @@ public class TableConfigurationUtil {
             try {
                 if (!tops.exists(table)) {
                     boolean disableVersioning = conf != null && conf.getBoolean(table + DISABLE_VERSIONING_ITERATOR, false);
+                    // Accumulo 4 defaults new tablets to ONDEMAND, but TableOperations.locate() throws
+                    // for anything other than HOSTED, which GenerateShardSplits depends on.
                     if (disableVersioning) {
-                        tops.create(table, new NewTableConfiguration().withoutDefaults());
+                        tops.create(table, new NewTableConfiguration().withoutDefaults().withInitialTabletAvailability(TabletAvailability.HOSTED));
                         // withoutDefaults will also skip the default table constraint, so set that
                         tops.setProperty(table, Property.TABLE_CONSTRAINT_PREFIX + "1", DefaultKeySizeConstraint.class.getName());
                     } else {
-                        tops.create(table);
+                        tops.create(table, new NewTableConfiguration().withInitialTabletAvailability(TabletAvailability.HOSTED));
                     }
                 }
             } catch (TableExistsException te) {

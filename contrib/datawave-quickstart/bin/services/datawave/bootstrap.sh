@@ -71,7 +71,9 @@ function createAccumuloShellInitScript() {
    DW_ACCUMULO_SHELL_INIT_SCRIPT="
    createnamespace datawave
    createtable datawave.queryMetrics_m
+   setavailability -t datawave.queryMetrics_m -a HOSTED
    createtable datawave.queryMetrics_s
+   setavailability -t datawave.queryMetrics_s -a HOSTED
    setauths -s ${DW_DATAWAVE_ACCUMULO_AUTHS}"
 
    if [ "${DW_ACCUMULO_VFS_DATAWAVE_ENABLED}" != false ] ; then
