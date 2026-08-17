@@ -34,6 +34,11 @@ public final class QueryLimiterUtils {
      */
     public static final String EMPTY_SYSTEM_FROM = "EMPTY_SYSTEM_FROM";
 
+    public static String normalizeQueryId(String queryId) {
+        Preconditions.checkArgument(queryId != null && !queryId.isBlank(), "queryId cannot be null or blank");
+        return queryId.trim();
+    }
+
     public static String normalizeUserDn(String userDn) {
         Preconditions.checkArgument(userDn != null && !userDn.isBlank(), "userDn cannot be null or blank");
         return userDn.trim().toLowerCase();

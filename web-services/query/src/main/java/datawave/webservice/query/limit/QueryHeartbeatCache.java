@@ -16,7 +16,6 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.base.Preconditions;
 
-
 /**
  * The implementation of {@link QueryHeartbeatCache}.
  */
@@ -53,7 +52,7 @@ public class QueryHeartbeatCache {
             throw e;
         }
     }
-    
+
     /**
      * Iterates through the entries of the cache and evicts all {@link QueryHeartbeat} instances that are stopped. This will be called on regular basis with the
      * cleanup interval that this {@link QueryHeartbeatCache} was configured with.
@@ -76,8 +75,7 @@ public class QueryHeartbeatCache {
             log.trace("Removed stopped heartbeats {}", queryIds);
         }
     }
-    
-    
+
     /**
      * Associate the given {@link QueryHeartbeat} with its query ID in the cache. A listener will be set in the heartbeat that will notify this cache when
      * {@link QueryHeartbeat#stop()} is called and automatically evict the heartbeat from the cache.
@@ -134,7 +132,6 @@ public class QueryHeartbeatCache {
      *             if this {@link QueryHeartbeatCache} has been closed
      */
     public void stopAndRemove(Collection<String> queryIds) {
-        Preconditions.checkNotNull(queryIds, "queryIds must not be null");
         if (log.isTraceEnabled()) {
             log.trace("Stopping heartbeats for {} queries", queryIds.size());
         }
@@ -161,7 +158,6 @@ public class QueryHeartbeatCache {
      *             if this {@link QueryHeartbeatCache} has been closed
      */
     public void stopAndRemove(String queryId) {
-        Preconditions.checkNotNull(queryId, "queryId must not be null");
         if (log.isTraceEnabled()) {
             log.trace("Stopping and removing heartbeat for query {}", queryId);
         }

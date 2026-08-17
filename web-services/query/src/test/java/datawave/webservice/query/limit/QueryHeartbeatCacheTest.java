@@ -41,19 +41,19 @@ class QueryHeartbeatCacheTest {
             this.server.close();
         }
     }
-    
+
     @Test
     void testCleanupIntervalLessThanOne() {
         assertThatThrownBy(() -> new QueryHeartbeatCache(0, TimeUnit.MINUTES)).isInstanceOf(IllegalArgumentException.class)
                         .hasMessage("cleanup interval must be greater than 0");
     }
-    
+
     @Test
     void testNullCleanupUnit() {
         assertThatThrownBy(() -> new QueryHeartbeatCache(10, null)).isInstanceOf(NullPointerException.class)
                         .hasMessage("cleanup interval unit must not be null");
     }
-    
+
     /**
      * Verify that adding and retrieving a heartbeat by query ID works.
      */
