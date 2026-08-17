@@ -1,12 +1,10 @@
 package datawave.query.jexl.functions;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.commons.vfs2.impl.VFSClassLoader;
 import org.apache.log4j.Logger;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
@@ -31,12 +29,11 @@ public class JexlFunctionNamespaceRegistry {
     }
 
     public static Map<String,Object> getConfiguredFunctions() {
+        // Do not reference commons-vfs2 classes here. Accumulo 4 removed VFS classloading and no
+        // longer ships commons-vfs2, and a NoClassDefFoundError raised inside a tserver scan thread
+        // during iterator initialization halts the tserver VM.
         ClassLoader thisClassLoader = JexlFunctionNamespaceRegistry.class.getClassLoader();
-        if (thisClassLoader instanceof VFSClassLoader) {
-            log.debug("thisClassLoader is a VFSClassLoader with resources:" + Arrays.toString(((VFSClassLoader) thisClassLoader).getFileObjects()));
-        } else {
-            log.debug("thisClassLoader is a :" + thisClassLoader.getClass());
-        }
+        log.debug("thisClassLoader is a :" + thisClassLoader.getClass());
         ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext();
         try {
             // To prevent failure when this is run on the tservers:
@@ -44,7 +41,6 @@ public class JexlFunctionNamespaceRegistry {
             // The spring ApplicationContext will prefer the current thread's context classloader, so the spring context would fail to find
             // any classes or context files to load.
             // Instead, set the classloader on the ApplicationContext to be the one that is loading this class.
-            // It is a VFSClassLoader that has the accumulo lib/ext jars set as its resources.
             // After setting the classloader, then set the config locations and refresh the context.
             context.setClassLoader(thisClassLoader);
             context.setConfigLocation(JEXL_FUNCTION_NAMESPACE_CONTEXT);
