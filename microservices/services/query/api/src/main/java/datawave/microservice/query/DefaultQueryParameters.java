@@ -2,6 +2,10 @@ package datawave.microservice.query;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.format.ResolverStyle;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
@@ -238,9 +242,10 @@ public class DefaultQueryParameters implements QueryParameters {
 
     public static synchronized String formatDate(Date d) throws ParseException {
         String formatPattern = "yyyyMMdd HHmmss.SSS";
-        SimpleDateFormat formatter = new SimpleDateFormat(formatPattern);
-        formatter.setLenient(false);
-        return formatter.format(d);
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(formatPattern)
+                .withResolverStyle(ResolverStyle.LENIENT);
+
+        return formatter.format(d.toInstant());
     }
 
     protected static final String defaultStartTime = "000000";
@@ -255,15 +260,42 @@ public class DefaultQueryParameters implements QueryParameters {
         dateFormat.setLenient(false);
     }
 
+    /** Parses a string representation of a date into a Date object representing the start time of a query.
+     *
+     * @param s the string representation of the date ("yyyyMMdd")
+     * @return a Date object representing the starting instant
+     * @throws ParseException if the provided string cannot be parsed into a valid date
+     */
     public static Date parseStartDate(String s) throws ParseException {
         return parseDate(s, defaultStartTime, defaultStartMillisec);
     }
 
+    /** Parses a string representation of a date into a Date object representing the end time of a query.
+     *
+     * @param s the string representation of the date ("yyyyMMdd")
+     * @return a Date object representing the ending instant
+     * @throws ParseException if the provided string cannot be parsed into a valid date
+     */
     public static Date parseEndDate(String s) throws ParseException {
         return parseDate(s, defaultEndTime, defaultEndMillisec);
     }
 
-    public static synchronized Date parseDate(String s, String defaultTime, String defaultMillisec) throws ParseException {
+
+    /**
+     *
+     * @param s The base date. May be one of the following:
+     * <ul>
+     *      <li> The value "+24Hours" </li>
+     *      <li> A date in the format yyyyMMdd </li>
+     *      <li> A date in the format yyyyMMdd HHmmss </li>
+     *      <li> A date in the format yyyyMMdd HHmmss.SSS </li>
+     * </ul>
+     *
+     * @param defaultTime A string representing a time of day in the format HHmmss.
+     * @param defaultMillisec A string representing the milliseconds of a day in the format SSS
+     * @return a parsed Date object applying the provided defaults and business logic
+     */
+    public static synchronized Date parseDate(String s, String defaultTime, String defaultMillisec) {
         Date d;
         ParseException e = null;
         synchronized (DefaultQueryParameters.dateFormat) {
