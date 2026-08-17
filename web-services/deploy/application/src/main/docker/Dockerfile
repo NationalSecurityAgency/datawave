@@ -3,7 +3,7 @@ FROM rockylinux/rockylinux:8
 
 RUN dnf -y install dnf-plugins-core epel-release java-17-openjdk-devel && \
     dnf config-manager --set-enabled powertools && \
-    chmod -R 777 /usr/lib/jvm/java-11/bin/* && \
+    chmod -R 777 /usr/lib/jvm/java-17/bin/* && \
     groupadd -r jboss -g 1000 && \
     useradd -u 1000 -r -g jboss -m -d /opt/jboss -s /sbin/nologin -c "JBoss User" jboss && \
     groupadd -r hadoop && \
@@ -11,10 +11,10 @@ RUN dnf -y install dnf-plugins-core epel-release java-17-openjdk-devel && \
     chown -R datawave:hadoop /opt/datawave /opt/jboss && \
     chmod -R ug+rX,o-rx /opt/datawave /opt/jboss
 
-ENV JAVA_VERSION=11 \
-    JAVA_HOME=/usr/lib/jvm/java-11
+ENV JAVA_VERSION=17 \
+    JAVA_HOME=/usr/lib/jvm/java-17
 
-LABEL version="11"
+LABEL version="17"
 
 RUN dnf update -y && \
     dnf install -y which less bind-utils net-tools lsof nethogs dstat strace htop iperf iperf3 socat iftop xmlstarlet augeas bsdtar unzip
