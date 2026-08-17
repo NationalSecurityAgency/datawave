@@ -173,6 +173,8 @@ public class EdgeEventFieldUtil {
     }
 
     public void setEdgeDuration(EdgeDefinition edgeDef, EdgeDataBundle edgeDataBundle) {
+        // clear previous edgeDef duration setting
+        edgeDataBundle.setDurationValue(null);
         if (edgeDef.hasDuration()) {
             if (edgeDef.getUDDuration()) {
                 NormalizedContentInterface upnci = getNullKeyedNCI(edgeDef.getUpTime(), normalizedFields);

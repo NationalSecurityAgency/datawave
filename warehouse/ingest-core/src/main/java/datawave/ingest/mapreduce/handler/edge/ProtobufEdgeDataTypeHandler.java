@@ -518,9 +518,9 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         }
 
         // check value denylist
-        if (edgeConfig.enableDisallowist()
-                        && edgeConfig.isDisallowistValue(edgeDataBundle.getDataTypeName(), edgeDataBundle.getSource().getValue(ValueType.INDEXED))
-                        || edgeConfig.isDisallowistValue(edgeDataBundle.getDataTypeName(), edgeDataBundle.getSink().getValue(ValueType.INDEXED))) {
+        if (edgeConfig.enableDisallowist() && (edgeConfig.isDisallowistValue(edgeDataBundle.getDataTypeName(),
+                        edgeDataBundle.getSource().getValue(ValueType.INDEXED))
+                        || edgeConfig.isDisallowistValue(edgeDataBundle.getDataTypeName(), edgeDataBundle.getSink().getValue(ValueType.INDEXED)))) {
 
             return null;
         }
