@@ -94,7 +94,7 @@ module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.ap
 /system-property=dw.ssl.context.info.trustStorePassword:add(value="${TRUSTSTORE_PASSWORD}")
 
 # Required to allow the elytron module to lookup a SecurityEJBProvider instance from JNDI.
-/system-property=dw.security.ejb.provider.jndi:add(value=java:global/datawave-ws-deploy-application-${project.version}-compose/gov.nsa.datawave.webservices-datawave-ws-security-${project.version}/SecurityEJBProviderImpl)
+/system-property=dw.security.ejb.provider.jndi:add(value=java:global/datawave-ws-deploy-application-${project.version}-${build.env}/gov.nsa.datawave.webservices-datawave-ws-security-${project.version}/SecurityEJBProviderImpl)
 
 # Proxied entities to be pruned from credentials.
 /system-property=dw.trusted.proxied.entities:add(value="${trusted.proxied.entities}")
