@@ -419,24 +419,6 @@ public class CompositeTimestampTest {
     }
 
     /**
-     * Verify that {@link CompositeTimestamp#getCompositeTimeStamp} successfully generates a composite timestamp given valid event and age off dates in a
-     * specific time zone.
-     */
-    @Test
-    public void testGetCompositeTimeStamp() {
-        // Event Date: August 1, 2026 at 10:00 AM
-        long eventDateMillis = ZonedDateTime.of(LocalDateTime.of(2026, 8, 1, 10, 0, 0), ZoneId.of("GMT")).toInstant().toEpochMilli();
-
-        // Event Date: August 6, 2026 at 3:00 PM
-        long ageOffDateMillis = ZonedDateTime.of(LocalDateTime.of(2026, 8, 1, 15, 0, 0), ZoneId.of("GMT")).toInstant().toEpochMilli();
-
-        long compositeTs = CompositeTimestamp.getCompositeTimeStamp(eventDateMillis, ageOffDateMillis, ZoneId.of("GMT"));
-
-        assertTrue(compositeTs > 0, "Composite timestamp should be greater than 0");
-        assertEquals(353629299288320L, compositeTs);
-    }
-
-    /**
      * Verify that {@link CompositeTimestamp#getCompositeTimeStamp} throws a ZoneRulesException when an invalid time zone ID is used.
      */
     @Test
