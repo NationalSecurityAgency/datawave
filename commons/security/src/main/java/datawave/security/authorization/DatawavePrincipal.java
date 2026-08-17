@@ -35,6 +35,7 @@ public class DatawavePrincipal implements ProxiedUserDetails, Principal, Seriali
     private final List<DatawaveUser> proxiedUsers = new ArrayList<>();
     @XmlElement
     private final long creationTime;
+    private transient int hashCode;
 
     /**
      * This constructor should not be used. It is here to allow JAX-B mapping and CDI proxying of this class.
@@ -203,10 +204,17 @@ public class DatawavePrincipal implements ProxiedUserDetails, Principal, Seriali
         return proxiedUsers.equals(that.proxiedUsers);
     }
 
+    /**
+     * Memoized, since hashing walks the auth and role sets of every proxied user. Valid only while this class remains immutable.
+     */
     @Override
     public int hashCode() {
-        int result = username.hashCode();
-        result = 31 * result + proxiedUsers.hashCode();
+        int result = hashCode;
+        if (result == 0) {
+            result = username.hashCode();
+            result = 31 * result + proxiedUsers.hashCode();
+            hashCode = result;
+        }
         return result;
     }
 

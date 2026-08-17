@@ -49,12 +49,12 @@ public class DatawaveEvidenceDecoder implements EvidenceDecoder {
     /**
      * A cache of {@link DatawaveUser}.
      */
-    private DatawaveUserCache cache;
+    private volatile DatawaveUserCache cache;
 
     /**
      * Whether initialization is complete.
      */
-    private boolean initializationComplete = false;
+    private volatile boolean initializationComplete = false;
 
     /**
      * Initializes this role decoder with the given configuration options. This method is invoked once by the Wildfly Elytron subsystem when the decoder is
@@ -74,6 +74,17 @@ public class DatawaveEvidenceDecoder implements EvidenceDecoder {
      * Perform any initialization that could not be completed until EJBs are available for use.
      */
     private void completeInitialization() {
+        // Checked without synchronizing so that the steady state stays lock free. Concurrent first requests fall through to the synchronized path, which
+        // rechecks, so exactly one user cache is built and registered with the cache manager.
+        if (!initializationComplete) {
+            initializeOnce();
+        }
+    }
+
+    /**
+     * Perform the one time initialization guarded by this decoder's monitor.
+     */
+    private synchronized void initializeOnce() {
         if (!initializationComplete) {
             // Log the configuration.
             if (log.isDebugEnabled()) {
