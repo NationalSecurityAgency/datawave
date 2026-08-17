@@ -28,6 +28,16 @@ public class CountResultPostprocessor implements ResultPostprocessor {
     @Override
     public void apply(List<Object> results) {
         if (results.size() > 1) {
+            boolean hasCountResult = results.stream().anyMatch(result -> result instanceof EventBase && !((EventBase<?,?>) result).isIntermediateResult());
+            if (!hasCountResult) {
+                return;
+            }
+            results.removeIf(result -> result instanceof EventBase && ((EventBase<?,?>) result).isIntermediateResult());
+
+            if (results.size() <= 1) {
+                return;
+            }
+
             EventBase firstResult = null;
             Long count = 0L;
             Set<ColumnVisibility> columnVisibilities = Sets.newHashSet();

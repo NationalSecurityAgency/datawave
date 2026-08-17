@@ -730,6 +730,8 @@
                                             <include>gov.nsa.datawave.core:datawave-core-query</include>
                                             <include>gov.nsa.datawave.core:datawave-core-tables</include>
                                             <include>gov.nsa.datawave.core:accumulo-utils</include>
+                                            <include>org.apache.accumulo:accumulo-access-core</include>
+                                            <include>jakarta.xml.bind:jakarta.xml.bind-api</include>
                                             <include>gov.nsa.datawave.core:metadata-utils</include>
                                             <include>gov.nsa.datawave.core:type-utils</include>
                                             <include>gov.nsa.datawave.core:base-rest-responses</include>
@@ -781,6 +783,8 @@
                                             <include>gov.nsa.datawave.core:datawave-core-common-util</include>
                                             <include>gov.nsa.datawave.core:datawave-core-tables</include>
                                             <include>gov.nsa.datawave.core:accumulo-utils</include>
+                                            <include>org.apache.accumulo:accumulo-access-core</include>
+                                            <include>jakarta.xml.bind:jakarta.xml.bind-api</include>
                                             <include>gov.nsa.datawave.core:metadata-utils</include>
                                             <include>gov.nsa.datawave.core:type-utils</include>
                                             <include>gov.nsa.datawave.core:base-rest-responses</include>

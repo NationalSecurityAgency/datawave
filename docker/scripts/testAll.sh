@@ -29,8 +29,8 @@ runTest () {
 
         attempt_start_time=$(date +%s%N)
         QUERY_RESPONSE="$(timeout ${QUERY_TIMEOUT} ${SCRIPT_DIR}/$1)"
-        attempt_end_time=$(date +%s%N)
         EXIT_CODE=$?
+        attempt_end_time=$(date +%s%N)
 
         if [[ "$QUERY_RESPONSE" == *"Returned $2 events"* ]] ; then
             if [ ! -z "$3" ] ; then
@@ -193,9 +193,15 @@ runTest query.sh 12 2
 # Gives option to skip the cleanup stage
 if [ "${1}" == "-noCleanup" ] ; then
     printTestSummary
-    exit 0
+    [ -z "${TEST_FAILURES}" ] && exit 0 || exit 1
 fi
 
 printTestSummary
 # The cleanup script will only delete the logs for tests that passed. Failed test logs will remain.
 "$SCRIPT_DIR"/cleanup.sh "${TESTS_PASSED}"
+
+# Individual tests return non-zero after exhausting their retries, but this
+# script intentionally continues so every test can run and be included in the
+# summary. Propagate the aggregate result after cleanup so callers such as CI
+# cannot report success when any test failed.
+[ -z "${TEST_FAILURES}" ] && exit 0 || exit 1

@@ -42,6 +42,7 @@ services:
       - "${DW_HOST_FQDN}:${DW_HOST_IP}"
     volumes:
       - hadoop_conf:/opt/datawave/contrib/datawave-quickstart/hadoop/client/conf
+      - hadoop_conf:/etc/hadoop/conf:ro
       - quickstart_data:/opt/datawave/contrib/datawave-quickstart/data
       - ./logs:/logs
       - ~/.m2:/root/.m2
