@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave</groupId>
         <artifactId>datawave-parent</artifactId>
-        <version>7.40.0-SNAPSHOT</version>
+        <version>7.45.0-SNAPSHOT</version>
     </parent>
     <groupId>gov.nsa.datawave.webservices</groupId>
     <artifactId>datawave-ws-parent</artifactId>
@@ -516,20 +516,6 @@
                 <scope>test</scope>
                 <optional>true</optional>
             </dependency>
-            <dependency>
-                <groupId>org.powermock</groupId>
-                <artifactId>powermock-module-junit4-rule-agent</artifactId>
-                <version>2.0.2</version>
-                <scope>test</scope>
-                <optional>true</optional>
-            </dependency>
-            <dependency>
-                <groupId>org.powermock</groupId>
-                <artifactId>powermock-reflect</artifactId>
-                <version>2.0.2</version>
-                <scope>test</scope>
-                <optional>true</optional>
-            </dependency>
         </dependencies>
     </dependencyManagement>
     <dependencies>
@@ -614,24 +600,6 @@
                                         <exclude>org.apache.commons:commons-vfs2</exclude>
                                     </excludes>
                                 </requireReleaseDeps>
-                            </rules>
-                            <fail>true</fail>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>enforce-banned-dependencies</id>
-                        <goals>
-                            <goal>enforce</goal>
-                        </goals>
-                        <configuration>
-                            <rules>
-                                <bannedDependencies>
-                                    <excludes>
-                                        <exclude>log4j:log4j</exclude>
-                                        <exclude>org.slf4j:slf4j-log4j12</exclude>
-                                    </excludes>
-                                    <includes />
-                                </bannedDependencies>
                             </rules>
                             <fail>true</fail>
                         </configuration>

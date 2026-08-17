@@ -50,9 +50,10 @@ import datawave.ingest.util.BloomFilterUtil;
 import datawave.ingest.util.BloomFilterWrapper;
 import datawave.ingest.util.DiskSpaceStarvationStrategy;
 import datawave.marking.MarkingFunctions;
+import datawave.marking.Markings;
 import datawave.query.model.Direction;
+import datawave.table.constants.TableName;
 import datawave.util.CompositeTimestamp;
-import datawave.util.TableName;
 import datawave.util.TextUtil;
 import datawave.util.time.DateHelper;
 
@@ -219,7 +220,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
     private RawRecordMetadata metadata = null;
     private ShardIdFactory shardIdFactory = null;
     private LoadingCache<String,String> dCache = null;
-    protected MarkingFunctions markingFunctions;
+    protected MarkingFunctions<?> markingFunctions;
     protected IngestConfiguration ingestConfig = IngestConfigurationFactory.getIngestConfiguration();
 
     // default setting is a standard index with uid and event keys
@@ -1129,22 +1130,19 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
      */
     public byte[] getVisibility(RawRecordContainer event, NormalizedContentInterface value) {
         ColumnVisibility visibility = event.getVisibility();
-        if (value.getMarkings() != null && !value.getMarkings().isEmpty()) {
-            try {
-                visibility = markingFunctions.translateToColumnVisibility(value.getMarkings());
-            } catch (MarkingFunctions.Exception e) {
-                throw new RuntimeException("Cannot convert record-level markings into a column visibility", e);
-            }
+        Markings<?> markings = value.getMarkings();
+        if (markings != null && !markings.isEmpty()) {
+            visibility = markings.toColumnVisibility();
         }
         return flatten(visibility);
     }
 
     /**
-     * Create a flattened visibility, using the cache if possible
+     * Normalize a ColumnVisibility expression via AccessExpression and return the expression bytes.
      *
      * @param vis
      *            the visibility
-     * @return the flattened visibility
+     * @return the normalized visibility bytes
      */
     protected byte[] flatten(ColumnVisibility vis) {
         return markingFunctions == null ? vis.flatten() : markingFunctions.flatten(vis);

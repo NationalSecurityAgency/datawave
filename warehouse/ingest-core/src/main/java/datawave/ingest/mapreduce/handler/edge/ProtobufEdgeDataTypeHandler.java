@@ -1,5 +1,7 @@
 package datawave.ingest.mapreduce.handler.edge;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import static datawave.ingest.mapreduce.handler.edge.EdgeIngestConfiguration.EDGE_DEFAULT_DATA_TYPE;
 import static datawave.ingest.mapreduce.handler.edge.EdgeIngestConfiguration.EDGE_TABLE_METADATA_ENABLE;
 import static datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler.METADATA_TABLE_LOADER_PRIORITY;
@@ -20,6 +22,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.accumulo.access.AccessExpression;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
@@ -61,7 +64,9 @@ import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.writer.ContextWriter;
 import datawave.ingest.metadata.RawRecordMetadata;
 import datawave.ingest.table.config.LoadDateTableConfigHelper;
+import datawave.marking.AccessExpressionUtil;
 import datawave.marking.MarkingFunctions;
+import datawave.marking.Markings;
 import datawave.metadata.protobuf.EdgeMetadata;
 import datawave.metadata.protobuf.EdgeMetadata.MetadataValue;
 import datawave.metadata.protobuf.EdgeMetadata.MetadataValue.Metadata;
@@ -90,7 +95,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
     protected String edgeTableName = null;
     protected String metadataTableName = null;
     protected boolean enableMetadata = false;
-    protected MarkingFunctions markingFunctions;
+    protected MarkingFunctions<?> markingFunctions;
 
     protected TaskAttemptContext taskAttemptContext = null;
     protected boolean useStatsLogBloomFilter = false;
@@ -946,15 +951,13 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
      *            the event container
      * @return the visibility as Text object
      */
-    protected Text getVisibility(Map<String,String> markings, RawRecordContainer event) {
-        try {
-            if (null == markings || markings.isEmpty()) {
-                return new Text(flatten(event.getVisibility()));
-            } else {
-                return new Text(flatten(markingFunctions.translateToColumnVisibility(markings)));
-            }
-        } catch (datawave.marking.MarkingFunctions.Exception e) {
-            throw new RuntimeException("Cannot convert markings into column visibility", e);
+    @SuppressWarnings("unchecked")
+    protected Text getVisibility(Markings<?> markings, RawRecordContainer event) {
+        if (null == markings || markings.isEmpty()) {
+            return new Text(flatten(event.getVisibility()));
+        } else {
+            AccessExpression ae = AccessExpressionUtil.normalize(markings.toAccessExpression());
+            return new Text(ae.getExpression().getBytes(UTF_8));
         }
     }
 
@@ -982,7 +985,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
      * @return the flattened visibility
      */
     protected byte[] flatten(ColumnVisibility vis) {
-        return markingFunctions.flatten(vis);
+        return markingFunctions == null ? vis.flatten() : markingFunctions.flatten(vis);
     }
 
     @Override

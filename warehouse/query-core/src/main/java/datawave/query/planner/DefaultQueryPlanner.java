@@ -196,6 +196,7 @@ import datawave.query.util.QueryStopwatch;
 import datawave.query.util.ShardQueryUtils;
 import datawave.query.util.Tuple2;
 import datawave.query.util.TypeMetadata;
+import datawave.query.util.TypeMetadataSerializer;
 import datawave.util.time.TraceStopwatch;
 import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
@@ -316,6 +317,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
     protected CompositeMetadata compositeMetadata;
     protected TypeMetadata typeMetadata;
+    // reused across calls to configureTypeMappings; not thread-safe, so each DefaultQueryPlanner (and clone) gets its own instance
+    private final transient TypeMetadataSerializer typeMetadataSerializer = new TypeMetadataSerializer();
     protected String contentExpansionFields;
     protected String serializedIvaratorDirs;
     protected Set<String> indexedFields;
@@ -2286,13 +2289,18 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             if (config.getNoExpansionIfCurrentDateTypes().contains(dateType)) {
                 // only remap the end date if the user did not specify today's date
                 if (!DateUtils.isSameDay(new Date(), config.getEndDate())) {
+                    Date remappedEndDate = dateIndexData.getEndDate();
+                    if (remappedEndDate.before(config.getBeginDate())) {
+                        throw new NoResultsException("Remapped end date " + remappedEndDate + " is before begin date " + config.getBeginDate()
+                                        + " for date type " + dateType);
+                    }
                     // now lets update the query parameters with the correct end date
                     log.info("Remapped " + dateType + " dates [" + config.getBeginDate() + "," + config.getEndDate() + "] to EVENT dates "
-                                    + config.getBeginDate() + "," + dateIndexData.getEndDate());
+                                    + config.getBeginDate() + "," + remappedEndDate);
 
                     // reset the dates in the configuration, no need to reset them in
                     // the Query settings object
-                    config.setEndDate(dateIndexData.getEndDate());
+                    config.setEndDate(remappedEndDate);
                 } else {
                     log.info("No Remapped dates for " + dateType + " because " + config.getEndDate() + " is today");
                 }
@@ -2324,18 +2332,14 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         if (config.getBeginDateCap() > 0) {
             long minStartTime = System.currentTimeMillis() - config.getBeginDateCap();
             if (config.getBeginDate().getTime() < minStartTime) {
-                if (config.isFailOutsideValidDateRange() && config.getEndDate().getTime() < minStartTime) {
-                    throw new DatawaveQueryException("This requested date range is outside of range of data on this system");
-                } else {
-                    config.setBeginDate(new Date(minStartTime));
-                    log.info("Resetting begin date to the beginDateCap: " + config.getBeginDate());
-                    if (config.getEndDate().getTime() < minStartTime) {
-                        // setting the end date to the same as the begin date will result in no ranges being created (@see
-                        // GenericQueryConfiguration.canRunQuery())
-                        config.setEndDate(new Date(minStartTime - 1));
-                        log.info("Resetting end date to the beginDateCap: " + config.getEndDate());
+                if (config.getEndDate().getTime() < minStartTime) {
+                    if (config.isFailOutsideValidDateRange()) {
+                        throw new DatawaveQueryException("This requested date range is outside of range of data on this system");
                     }
+                    throw new NoResultsException("Both begin and end dates are outside the valid date range cap");
                 }
+                config.setBeginDate(new Date(minStartTime));
+                log.info("Resetting begin date to the beginDateCap: " + config.getBeginDate());
             }
         }
     }
@@ -2674,12 +2678,19 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                     typeMetadata = typeMetadata.reduce(fieldsToRetain);
                 }
 
-                // only compress if enabled AND not reducing per shard
-                // type metadata will be serialized in the VisitorFunction
-                String serializedTypeMetadata = typeMetadata.toString();
-                if (compressMappings && !config.getReduceTypeMetadataPerShard()) {
-                    serializedTypeMetadata = QueryOptions.compressOption(serializedTypeMetadata, QueryOptions.UTF8);
+                // only compress/Kryo-encode if enabled AND not reducing per shard, since in that case
+                // type metadata is re-serialized via toString() in the VisitorFunction instead
+                boolean kryoTypeMetadata = config.isKryoTypeMetadata() && !config.getReduceTypeMetadataPerShard();
+                String serializedTypeMetadata;
+                if (kryoTypeMetadata) {
+                    serializedTypeMetadata = typeMetadataSerializer.serialize(typeMetadata);
+                } else {
+                    serializedTypeMetadata = typeMetadata.toString();
+                    if (compressMappings && !config.getReduceTypeMetadataPerShard()) {
+                        serializedTypeMetadata = QueryOptions.compressOption(serializedTypeMetadata, QueryOptions.UTF8);
+                    }
                 }
+                addOption(cfg, QueryOptions.TYPE_METADATA_KRYO, Boolean.toString(kryoTypeMetadata), false);
 
                 addOption(cfg, QueryOptions.TYPE_METADATA, serializedTypeMetadata, false);
             }
@@ -3034,7 +3045,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             }
             TraceStopwatch stopwatch = config.getTimers().newStartedStopwatch("DefaultQueryPlanner - Begin stream of ranges from inverted index");
 
-            QueryPlanStream stream = getQueryPlanStream(config, scannerFactory, metadataHelper);
+            QueryPlanStream stream = getQueryPlanStream(config, metadataHelper);
             ranges = stream.streamPlans(queryTree);
 
             if (stream instanceof RangeStream) {
@@ -3105,16 +3116,16 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         });
     }
 
-    protected QueryPlanStream getQueryPlanStream(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper metadataHelper) {
+    protected QueryPlanStream getQueryPlanStream(ShardQueryConfiguration config, MetadataHelper metadataHelper) {
 
         if (config.isUseShardedIndex()) {
             return getDayIndexStream(config);
         } else if (config.isUseTruncatedIndex()) {
             this.rangeStreamClass = TruncatedRangeStream.class.getCanonicalName();
             this.createUidsIteratorClass = TruncatedIndexIterator.class;
-            return initializeRangeStream(config, scannerFactory, metadataHelper);
+            return initializeRangeStream(config, metadataHelper);
         } else {
-            return initializeRangeStream(config, scannerFactory, metadataHelper);
+            return initializeRangeStream(config, metadataHelper);
         }
     }
 
@@ -3123,19 +3134,16 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      *
      * @param config
      *            the shard configuration
-     * @param scannerFactory
-     *            the scanner factory
      * @param metadataHelper
      *            the metadata helper
      * @return the range stream
      */
-    private RangeStream initializeRangeStream(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper metadataHelper) {
+    private RangeStream initializeRangeStream(ShardQueryConfiguration config, MetadataHelper metadataHelper) {
         Class<? extends RangeStream> rstream;
         try {
             rstream = Class.forName(rangeStreamClass).asSubclass(RangeStream.class);
 
-            RangeStream stream = rstream.getConstructor(ShardQueryConfiguration.class, ScannerFactory.class, MetadataHelper.class).newInstance(config,
-                            scannerFactory, metadataHelper);
+            RangeStream stream = rstream.getConstructor(ShardQueryConfiguration.class, MetadataHelper.class).newInstance(config, metadataHelper);
 
             //  @formatter:off
             return stream.setUidIntersector(uidIntersector)

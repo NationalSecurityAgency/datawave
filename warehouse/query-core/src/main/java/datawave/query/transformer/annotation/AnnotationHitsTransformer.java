@@ -8,6 +8,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -122,7 +123,7 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
     }
 
     @Override
-    public void initialize(Query settings, MarkingFunctions markingFunctions) {
+    public void initialize(Query settings, MarkingFunctions<?> markingFunctions) {
         super.initialize(settings, markingFunctions);
 
         // handle query parameters for configuration overrides
@@ -305,7 +306,7 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
 
         String dataType = parts[0];
         String uid = parts[1];
-        List<Annotation> annotations = annotationDataAccess.getAnnotations(shard, dataType, uid);
+        Collection<Annotation> annotations = annotationDataAccess.getAnnotations(shard, dataType, uid);
         for (Annotation annotation : annotations) {
             String annotationType = annotation.getAnnotationType();
             if (validTypes.contains(annotationType)) {

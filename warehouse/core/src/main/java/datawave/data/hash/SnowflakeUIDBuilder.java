@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Builds a sequence of SnowflakeUIDs for a particular "machine" instance, which is based on a unique combination of host, process, and process thread.
  */
+@Deprecated(forRemoval = true, since = "7.40.0")
 public class SnowflakeUIDBuilder extends AbstractUIDBuilder<SnowflakeUID> {
 
     private static final BigInteger UNDEFINED_MACHINE_ID = BigInteger.valueOf(-1);

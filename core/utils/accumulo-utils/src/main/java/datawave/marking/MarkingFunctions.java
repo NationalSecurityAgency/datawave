@@ -1,26 +1,22 @@
 package datawave.marking;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
+import static datawave.marking.AccessExpressionMarkings.ACCESS;
 
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.util.Arrays;
+import java.nio.charset.StandardCharsets;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.Map;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.apache.accumulo.access.AccessExpression;
+import org.apache.accumulo.access.ParsedAccessExpression;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.commons.beanutils.BeanUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Charsets;
-import com.google.common.collect.Maps;
 
 /**
  * Accumulo marks all data with a columnVisibility that declares and controls access. MarkingFunctions provide a pattern for mapping a user's preferred means of
@@ -29,26 +25,25 @@ import com.google.common.collect.Maps;
  * human-readable marking like "Patient Privileged Information"
  */
 
-public interface MarkingFunctions {
+public interface MarkingFunctions<T extends Markings<?>> {
 
-    ColumnVisibility combine(Collection<ColumnVisibility> columnVisibilities) throws MarkingFunctions.Exception;
+    ColumnVisibility combineVisibilities(Collection<ColumnVisibility> visibilities) throws MarkingFunctions.Exception;
 
-    @SuppressWarnings("unchecked")
-    Map<String,String> combine(Map<String,String>... markings) throws MarkingFunctions.Exception;
+    T combine(Collection<Markings<?>> markings) throws MarkingFunctions.Exception;
 
-    ColumnVisibility translateToColumnVisibility(Map<String,String> markings) throws MarkingFunctions.Exception;
+    T combine(Markings<?> markings1, Markings<?> markings2) throws MarkingFunctions.Exception;
 
-    Map<String,String> translateFromColumnVisibility(ColumnVisibility columnVisibility) throws MarkingFunctions.Exception;
+    Markings<?> translateFromColumnVisibility(ColumnVisibility columnVisibility) throws MarkingFunctions.Exception;
 
-    Map<String,String> translateFromColumnVisibilityForAuths(ColumnVisibility columnVisibility, Collection<Authorizations> authorizations)
+    Markings<?> translateFromColumnVisibilityForAuths(ColumnVisibility columnVisibility, Collection<Authorizations> authorizations)
                     throws MarkingFunctions.Exception;
 
-    Map<String,String> translateFromColumnVisibilityForAuths(ColumnVisibility columnVisibility, Authorizations authorizations)
-                    throws MarkingFunctions.Exception;
+    Markings<?> translateFromColumnVisibilityForAuths(ColumnVisibility columnVisibility, Authorizations authorizations) throws MarkingFunctions.Exception;
+
+    ColumnVisibility translateToColumnVisibility(Markings<?> markings) throws MarkingFunctions.Exception;
 
     byte[] flatten(ColumnVisibility vis);
 
-    @SuppressWarnings("serial")
     class Exception extends java.lang.Exception {
 
         public Exception() {
@@ -72,105 +67,120 @@ public interface MarkingFunctions {
         }
     }
 
-    class Default implements MarkingFunctions {
-        public static final String COLUMN_VISIBILITY = "columnVisibility";
+    class Default implements MarkingFunctions<AccessExpressionMarkings> {
 
         @Override
-        public ColumnVisibility combine(Collection<ColumnVisibility> expressions) {
+        public ColumnVisibility combineVisibilities(Collection<ColumnVisibility> visibilities) {
+            AccessExpressionMarkings accessExpressionMarkings = combine(
+                            visibilities.stream().filter(Objects::nonNull).map(AccessExpressionMarkings::createMarkings).collect(Collectors.toList()));
 
-            // filter out any empty expressions, then flatten each one (to de-dupe) and concatenate with '&'
-            // flatten the final combined ColumnVisibility and use that to make the ColumnVisibility to return
-            return new ColumnVisibility(new ColumnVisibility(expressions.stream().map(ColumnVisibility::flatten).filter(b -> b.length > 0)
-                            .map(b -> "(" + new String(b, UTF_8) + ")").collect(Collectors.joining("&")).getBytes(UTF_8)).flatten());
+            if (null == accessExpressionMarkings) {
+                // is this correct behavior, does it match other implementations?
+                // switching to null causes lots of NPEs so leaving this as is
+                return new ColumnVisibility();
+            }
+
+            return accessExpressionMarkings.toColumnVisibility();
         }
 
         @Override
-        @SafeVarargs
-        public final Map<String,String> combine(Map<String,String>... markings) {
-            // translate COLUMN_VISIBILITY values to ColumnVisibility, combine them and
-            // return translated back to Map
-            return translateFromColumnVisibility(combine(Arrays.stream(markings).filter(m -> m.containsKey(COLUMN_VISIBILITY))
-                            .map(this::translateToColumnVisibility).collect(Collectors.toSet())));
+        public AccessExpressionMarkings combine(Collection<Markings<?>> markings) {
+
+            Set<AccessExpressionMarkings> uniqueMarkings = new HashSet<>();
+
+            for (Markings<?> marking : markings) {
+                if (null == marking) {
+                    continue;
+                }
+                if (!(marking instanceof AccessExpressionMarkings)) {
+                    throw new RuntimeException(String.format("Unknown markings class %s", marking.getClass().getName()));
+                }
+                uniqueMarkings.add((AccessExpressionMarkings) marking);
+            }
+
+            if (uniqueMarkings.isEmpty()) {
+                return null;
+            }
+
+            if (uniqueMarkings.size() == 1) {
+                return uniqueMarkings.stream().findFirst().get();
+            }
+
+            Set<AccessExpression> uniqueExpressions = uniqueMarkings.stream().map(AccessExpressionMarkings::getMarkings).collect(Collectors.toSet());
+
+            // filter out any empty expressions and concatenate with '&'
+            // @formatter:off
+            ParsedAccessExpression expression = ACCESS.newParsedExpression(uniqueExpressions
+                                                .stream()
+                                                .map(AccessExpression::getExpression)
+                                                .filter(str -> !str.isEmpty())
+                                                .map(str -> "(" + str + ")")
+                                                .collect(Collectors.joining("&"))
+                                                );
+            // @formatter:on
+
+            // normalize the Parsed Expression and then return a copy without the parse tree
+            return AccessExpressionMarkings.builder().columnVisibility(AccessExpressionUtil.normalize(expression).expression).build();
         }
 
         @Override
-        public ColumnVisibility translateToColumnVisibility(Map<String,String> markings) {
-            ColumnVisibility cv = new ColumnVisibility(markings.get(COLUMN_VISIBILITY));
-            return new ColumnVisibility(cv.flatten());
+        public AccessExpressionMarkings combine(Markings<?> markings1, Markings<?> markings2) {
+
+            if (markings1 == null && markings2 == null) {
+                return null;
+            }
+
+            if (markings2 == null) {
+                return (AccessExpressionMarkings) markings1;
+            }
+
+            if (markings1 == null) {
+                return (AccessExpressionMarkings) markings2;
+            }
+
+            if (markings1 instanceof AccessExpressionMarkings && markings2 instanceof AccessExpressionMarkings) {
+                AccessExpressionMarkings aem1 = (AccessExpressionMarkings) markings1;
+                AccessExpressionMarkings aem2 = (AccessExpressionMarkings) markings2;
+                return combine(List.of(aem1, aem2));
+            }
+
+            throw new RuntimeException(String.format("Unknown markings class %s or %s", markings1.getClass().getName(), markings2.getClass().getName()));
+
         }
 
         @Override
-        public Map<String,String> translateFromColumnVisibility(ColumnVisibility expression) {
-            Map<String,String> markings = Maps.newHashMap();
-            markings.put(COLUMN_VISIBILITY, new String(expression.getExpression(), Charsets.UTF_8));
-            return markings;
+        public Markings<?> translateFromColumnVisibility(ColumnVisibility expression) {
+            String cv = new String(expression.getExpression(), StandardCharsets.UTF_8);
+            return AccessExpressionMarkings.builder().accessExpression(AccessExpressionUtil.normalize(cv)).build();
         }
 
         @Override
-        public Map<String,String> translateFromColumnVisibilityForAuths(ColumnVisibility columnVisibility, Collection<Authorizations> authorizations) {
+        public Markings<?> translateFromColumnVisibilityForAuths(ColumnVisibility columnVisibility, Collection<Authorizations> authorizations) {
             return translateFromColumnVisibility(columnVisibility);
         }
 
         @Override
-        public Map<String,String> translateFromColumnVisibilityForAuths(ColumnVisibility columnVisibility, Authorizations authorizations) {
+        public Markings<?> translateFromColumnVisibilityForAuths(ColumnVisibility columnVisibility, Authorizations authorizations) {
             return translateFromColumnVisibility(columnVisibility);
+        }
+
+        @Override
+        public ColumnVisibility translateToColumnVisibility(Markings<?> markings) {
+            if (markings == null) {
+                return null;
+            }
+
+            if (markings instanceof AccessExpressionMarkings) {
+                AccessExpressionMarkings aem = (AccessExpressionMarkings) markings;
+                return aem.toColumnVisibility();
+            }
+
+            throw new RuntimeException(String.format("Unknown markings class %s or %s", markings.getClass().getName()));
         }
 
         @Override
         public byte[] flatten(ColumnVisibility vis) {
             return FlattenedVisibilityCache.flatten(vis);
-        }
-
-    }
-
-    class Util {
-
-        public static Object populate(Object obj, Map<String,String> source) {
-            try {
-                BeanUtils.populate(obj, source);
-            } catch (IllegalAccessException | InvocationTargetException e) {
-                throw new RuntimeException("Error populating object: " + obj.getClass().getName(), e);
-            }
-            return obj;
-        }
-    }
-
-    class Encoding {
-        static private Logger log = LoggerFactory.getLogger(Encoding.class);
-
-        /**
-         * Turn a set of markings into a serializable string
-         *
-         * @param markings
-         *            the markings map to convert to a string
-         * @return a serialized String version of {@code markings}
-         */
-        public static String toString(Map<String,String> markings) {
-            ObjectMapper objectMapper = new ObjectMapper();
-            try {
-                return objectMapper.writeValueAsString(markings);
-            } catch (JsonProcessingException e) {
-                log.error("could not serialize " + markings);
-                return "";
-            }
-        }
-
-        /**
-         * Turn a serialized set of markings into a map
-         *
-         * @param encodedMarkings
-         *            the serialized String markings to convert back to a markings Map
-         * @return a {@link Map} of the de-serialized markings from {@code encodedMarkings}
-         */
-        public static Map<String,String> fromString(String encodedMarkings) {
-            ObjectMapper objectMapper = new ObjectMapper();
-            try {
-                // noinspection unchecked
-                return objectMapper.readValue(encodedMarkings, Map.class);
-            } catch (IOException e) {
-                log.error("could not deserialize " + encodedMarkings);
-                return Collections.emptyMap();
-            }
         }
     }
 
@@ -180,9 +190,9 @@ public interface MarkingFunctions {
     class Factory {
         public static final Logger log = LoggerFactory.getLogger(Factory.class);
 
-        private static MarkingFunctions markingFunctions;
+        private static MarkingFunctions<?> markingFunctions;
 
-        public static synchronized MarkingFunctions createMarkingFunctions() {
+        public static synchronized MarkingFunctions<?> createMarkingFunctions() {
             if (markingFunctions != null)
                 return markingFunctions;
             ClassLoader thisClassLoader = Factory.class.getClassLoader();

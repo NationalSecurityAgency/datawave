@@ -1,5 +1,8 @@
 package datawave.query.discovery;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -26,11 +29,10 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.MapWritable;
 import org.apache.log4j.Logger;
-import org.assertj.core.api.Assertions;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.result.event.DefaultResponseObjectFactory;
@@ -41,7 +43,7 @@ import datawave.microservice.query.QueryImpl;
 import datawave.query.MockAccumuloRecordWriter;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.util.MetadataHelperFactory;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 
 public class DiscoveryLogicTest {
 
@@ -58,16 +60,16 @@ public class DiscoveryLogicTest {
     private String query;
     private String startDate;
     private String endDate;
-    private Map<String,String> parameters = new HashMap<>();
+    private final Map<String,String> parameters = new HashMap<>();
 
     private final List<DiscoveredThing> expected = new ArrayList<>();
 
-    @BeforeClass
+    @BeforeAll
     public static void setUp() {
         System.setProperty(MetadataHelperFactory.ALL_AUTHS_PROPERTY, QUERY_AUTHS);
     }
 
-    @Before
+    @BeforeEach
     public void setup() throws Throwable {
         initClient();
         writeData();
@@ -94,7 +96,7 @@ public class DiscoveryLogicTest {
         writeEntries("ROOSTER", "onyx", "csv", "BAR", "20130102", 5, 24, 2);
         writeEntries("ROOSTER", "onyx", "csv", "BAR", "20130103", 5, 24, 20);
         writeEntries("NETWORK", "bbc", "csv", "FOO", "20130101", 10, 24, 20);
-        writeEntries("NETWORK", "bbc", "csv", "FOO", "20130102", 10, 24, 20);
+        writeEntries("NETWORK", "bbc", "csv", "BAR", "20130102", 10, 24, 20); // formerly FOO
         writeEntries("NETWORK", "bbc", "csv", "FOO", "20130103", 10, 24, 20);
         writeEntries("OCCUPATION", "skydiver", "text", "FOO", "20130101", 10, 10, 5);
         writeEntries("OCCUPATION", "skydiver", "text", "FOO", "20130102", 10, 10, 5);
@@ -218,7 +220,7 @@ public class DiscoveryLogicTest {
         logic.setMetadataHelperFactory(new MetadataHelperFactory());
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         query = null;
         startDate = null;
@@ -241,16 +243,31 @@ public class DiscoveryLogicTest {
         logic.setupQuery(config);
         Iterator<DiscoveredThing> iterator = logic.iterator();
         List<DiscoveredThing> actual = new ArrayList<>();
+
+        DiscoveredThingValuesOnlyConditionalTransformer dtvoct = new DiscoveredThingValuesOnlyConditionalTransformer(logic.getValuesOnly());
         while (iterator.hasNext()) {
-            actual.add(iterator.next());
+            DiscoveredThing dtee = iterator.next();
+            actual.add(dtvoct.apply(dtee));
         }
 
-        Assertions.assertThat(actual).hasSize(expected.size());
+        assertEquals(expected.size(), actual.size());
         for (int i = 0; i < expected.size(); i++) {
             DiscoveredThing actualThing = actual.get(i);
             DiscoveredThing expectedThing = expected.get(i);
-            Assertions.assertThat(actualThing).isEqualTo(expectedThing);
-            Assertions.assertThat(actualThing.getCountsByColumnVisibility()).isEqualTo(expectedThing.getCountsByColumnVisibility());
+            assertInstanceOf(DiscoveredThing.class, actualThing);
+            // N.B.: DiscoveredThingTermIsotope extends DiscoveredThing. Convert to common format for comparison.
+            //@formatter:off
+            DiscoveredThing actualThingg = new DiscoveredThing(actualThing.getTerm(),
+                    actualThing.getField(),
+                    actualThing.getType(),
+                    actualThing.getDate(),
+                    actualThing.getColumnVisibility(),
+                    actualThing.getCount(),
+                    actualThing.getCountsByColumnVisibility());
+            //@formatter:on
+            assertEquals(expectedThing, actualThingg);
+
+            assertEquals(expectedThing.getCountsByColumnVisibility(), actualThing.getCountsByColumnVisibility());
         }
     }
 
@@ -281,7 +298,7 @@ public class DiscoveryLogicTest {
         givenEndDate("20130102");
 
         expect(new DiscoveredThing("bbc", "NETWORK", "csv", "20130101", "FOO", 240L, new MapWritable()));
-        expect(new DiscoveredThing("bbc", "NETWORK", "csv", "20130102", "FOO", 240L, new MapWritable()));
+        expect(new DiscoveredThing("bbc", "NETWORK", "csv", "20130102", "BAR", 240L, new MapWritable()));
         expect(new DiscoveredThing("onyx", "POKEMON", "csv", "20130101", "FOO", 100L, new MapWritable()));
         expect(new DiscoveredThing("onyx", "POKEMON", "csv", "20130102", "FOO", 10L, new MapWritable()));
         expect(new DiscoveredThing("onyx", "ROCK", "csv", "20130101", "FOO", 1L, new MapWritable()));
@@ -299,7 +316,7 @@ public class DiscoveryLogicTest {
         givenEndDate("20130102");
 
         expect(new DiscoveredThing("bbc", "NETWORK", "csv", "20130101", "FOO", 240L, new MapWritable()));
-        expect(new DiscoveredThing("bbc", "NETWORK", "csv", "20130102", "FOO", 240L, new MapWritable()));
+        expect(new DiscoveredThing("bbc", "NETWORK", "csv", "20130102", "BAR", 240L, new MapWritable()));
         expect(new DiscoveredThing("onyx", "POKEMON", "csv", "20130101", "FOO", 100L, new MapWritable()));
         expect(new DiscoveredThing("onyx", "POKEMON", "csv", "20130102", "FOO", 10L, new MapWritable()));
         expect(new DiscoveredThing("onyx", "ROCK", "csv", "20130101", "FOO", 1L, new MapWritable()));
@@ -427,7 +444,7 @@ public class DiscoveryLogicTest {
         givenEndDate("20130102");
         givenParameter(DiscoveryLogic.SUM_COUNTS, "true");
 
-        expect(new DiscoveredThing("bbc", "NETWORK", "csv", "", "FOO", 480L, new MapWritable()));
+        expect(new DiscoveredThing("bbc", "NETWORK", "csv", "", "BAR&FOO", 480L, new MapWritable()));
         expect(new DiscoveredThing("onyx", "POKEMON", "csv", "", "FOO", 110L, new MapWritable()));
         expect(new DiscoveredThing("onyx", "ROCK", "csv", "", "FOO", 4L, new MapWritable()));
         expect(new DiscoveredThing("onyx", "ROOSTER", "csv", "", "BAR", 240L, new MapWritable()));
@@ -442,7 +459,7 @@ public class DiscoveryLogicTest {
         givenEndDate("20130102");
         givenParameter(DiscoveryLogic.SUM_COUNTS, "true");
 
-        expect(new DiscoveredThing("bbc", "NETWORK", "csv", "", "FOO", 480L, new MapWritable()));
+        expect(new DiscoveredThing("bbc", "NETWORK", "csv", "", "BAR&FOO", 480L, new MapWritable()));
         expect(new DiscoveredThing("onyx", "POKEMON", "csv", "", "FOO", 110L, new MapWritable()));
         expect(new DiscoveredThing("onyx", "ROCK", "csv", "", "FOO", 4L, new MapWritable()));
         expect(new DiscoveredThing("onyx", "ROOSTER", "csv", "", "BAR", 240L, new MapWritable()));
@@ -518,6 +535,83 @@ public class DiscoveryLogicTest {
         expect(new DiscoveredThing("xxx.skydiver", "OCCUPATION", "text", "", "FOO", 400L, new MapWritable()));
         expect(new DiscoveredThing("yyy.skydiver", "OCCUPATION", "text", "", "FOO", 400L, new MapWritable()));
 
+        assertQueryResults();
+    }
+
+    @Test
+    public void testValuesOnlyForLiterals() throws Exception {
+        givenQuery("bbc OR onyx");
+        givenStartDate("20130101");
+        givenEndDate("20130102");
+        givenParameter(DiscoveryLogic.SUM_COUNTS, "true");
+        givenParameter(DiscoveryLogic.VALUES_ONLY, "true");
+
+        expect(new DiscoveredThing("bbc", "", "", "", "FOO", 0L, new MapWritable()));
+        expect(new DiscoveredThing("onyx", "", "", "", "FOO", 0L, new MapWritable()));
+        assertQueryResults();
+    }
+
+    @Test
+    public void testValuesOnlyForLiteralsFalseSumCount() throws Exception {
+        givenQuery("bbc OR onyx");
+        givenStartDate("20130101");
+        givenEndDate("20130102");
+        givenParameter(DiscoveryLogic.SUM_COUNTS, "false");
+        givenParameter(DiscoveryLogic.VALUES_ONLY, "true");
+
+        expect(new DiscoveredThing("bbc", "", "", "", "FOO", 0L, new MapWritable()));
+        expect(new DiscoveredThing("onyx", "", "", "", "FOO", 0L, new MapWritable()));
+        assertQueryResults();
+    }
+
+    @Test
+    public void testValuesOnlyForPatterns() throws Exception {
+        givenQuery("*yx OR b*");
+        givenStartDate("20130101");
+        givenEndDate("20130102");
+        givenParameter(DiscoveryLogic.SUM_COUNTS, "true");
+        givenParameter(DiscoveryLogic.VALUES_ONLY, "true");
+
+        expect(new DiscoveredThing("bbc", "", "", "", "FOO", 0L, new MapWritable()));
+        expect(new DiscoveredThing("onyx", "", "", "", "FOO", 0L, new MapWritable()));
+
+        assertQueryResults();
+    }
+
+    @Test
+    public void testValuesOnlyForPatternsNotFound() throws Exception {
+        givenQuery("*nixon OR ford*");
+        givenStartDate("20130101");
+        givenEndDate("20130102");
+        givenParameter(DiscoveryLogic.SUM_COUNTS, "true");
+        givenParameter(DiscoveryLogic.VALUES_ONLY, "true");
+
+        assertQueryResults();
+    }
+
+    @Test
+    public void testValuesOnlyForFieldedLiterals() throws Exception {
+        givenQuery("rock:onyx OR pokemon:onyx");
+        givenStartDate("20130101");
+        givenEndDate("20130102");
+
+        givenParameter(DiscoveryLogic.SUM_COUNTS, "true");
+        givenParameter(DiscoveryLogic.VALUES_ONLY, "true");
+
+        expect(new DiscoveredThing("onyx", "", "", "", "FOO", 0L, new MapWritable()));
+        assertQueryResults();
+    }
+
+    @Test
+    public void testValuesOnlyForFieldedLiteralsExtendedRange() throws Exception {
+        givenQuery("rock:onyx OR pokemon:onyx");
+        givenStartDate("20130101");
+        givenEndDate("20130104");
+
+        givenParameter(DiscoveryLogic.SUM_COUNTS, "true");
+        givenParameter(DiscoveryLogic.VALUES_ONLY, "true");
+
+        expect(new DiscoveredThing("onyx", "", "", "", "FOO", 0L, new MapWritable()));
         assertQueryResults();
     }
 }

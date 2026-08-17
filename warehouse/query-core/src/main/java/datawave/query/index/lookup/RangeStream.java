@@ -11,6 +11,7 @@ import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_VALUE;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.INDEX_HOLE;
 import static datawave.query.util.ValueSerializerType.KRYO;
+import static org.apache.accumulo.core.client.ScannerBase.ConsistencyLevel;
 
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -42,6 +43,7 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
+import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.jexl3.parser.ASTAndNode;
 import org.apache.commons.jexl3.parser.ASTAssignment;
 import org.apache.commons.jexl3.parser.ASTEQNode;
@@ -94,13 +96,17 @@ import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
 import datawave.query.jexl.visitors.order.OrderByCostVisitor;
 import datawave.query.planner.QueryPlan;
 import datawave.query.tables.RangeStreamScanner;
+import datawave.query.tables.RangeStreamScannerBuilder;
+import datawave.query.tables.ScanSessionManager;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.tables.SessionOptions;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.QueryScannerHelper;
 import datawave.query.util.Tuple2;
 import datawave.query.util.Tuples;
-import datawave.util.TableName;
+import datawave.scan.ExecutionHintHelper;
+import datawave.scan.ScannerBuilder;
+import datawave.table.constants.TableName;
 import datawave.util.time.DateHelper;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.PreConditionFailedQueryException;
@@ -154,8 +160,25 @@ public class RangeStream extends BaseVisitor implements QueryPlanStream {
     protected int maxLinesToPrint = -1;
     protected int linesPrinted = 0;
 
+    protected final AccumuloClient client;
+    protected final ScanSessionManager sessionManager = new ScanSessionManager();
+
+    /**
+     * Constructor that accepts a query config and metadata helper
+     *
+     * @param config
+     *            the config
+     * @param metadataHelper
+     *            the metadata helper
+     */
+    public RangeStream(ShardQueryConfiguration config, MetadataHelper metadataHelper) {
+        this(config, null, metadataHelper);
+    }
+
+    @Deprecated(forRemoval = true, since = "7.41.0")
     public RangeStream(ShardQueryConfiguration config, ScannerFactory scanners, MetadataHelper metadataHelper) {
         this.config = config;
+        this.client = config.getClient();
         this.scanners = scanners;
         this.metadataHelper = metadataHelper;
         int maxLookup = (int) Math.max(config.getNumIndexLookupThreads(), 1);
@@ -587,7 +610,16 @@ public class RangeStream extends BaseVisitor implements QueryPlanStream {
 
             if (limitScanners) {
                 // Setup the CreateUidsIterator
-                scannerSession = scanners.newRangeScanner(config.getIndexTableName(), config.getAuthorizations(), config.getQuery());
+
+                //  @formatter:off
+                scannerSession = RangeStreamScannerBuilder.create(client)
+                        .setTableName(config.getIndexTableName())
+                        .setAuthorizations(config.getAuthorizations())
+                        .setQuery(config.getQuery())
+                        .setConfig(config)
+                        .build();
+                sessionManager.addScanner(scannerSession);
+                 // @formatter:on
 
                 uidSetting = new IteratorSetting(stackStart++, createUidsIteratorClass);
                 uidSetting.addOption(CreateUidsIterator.COLLAPSE_UIDS, Boolean.toString(collapseUids));
@@ -597,7 +629,15 @@ public class RangeStream extends BaseVisitor implements QueryPlanStream {
 
             } else {
                 // Setup so this is a pass-through
-                scannerSession = scanners.newRangeScanner(config.getIndexTableName(), config.getAuthorizations(), config.getQuery());
+                //  @formatter:off
+                scannerSession = RangeStreamScannerBuilder.create(client)
+                        .setTableName(config.getIndexTableName())
+                        .setAuthorizations(config.getAuthorizations())
+                        .setQuery(config.getQuery())
+                        .setConfig(config)
+                        .build();
+                sessionManager.addScanner(scannerSession);
+                // @formatter:on
 
                 uidSetting = new IteratorSetting(stackStart++, createUidsIteratorClass);
                 uidSetting.addOption(CreateUidsIterator.COLLAPSE_UIDS, Boolean.toString(false));
@@ -865,7 +905,7 @@ public class RangeStream extends BaseVisitor implements QueryPlanStream {
 
     protected synchronized NumShardFinder getNumShardFinder() {
         if (numShardFinder == null) {
-            numShardFinder = new NumShardFinder(config.getClient());
+            numShardFinder = new NumShardFinder(config.getClient(), config.getTableHints(), config.getTableConsistencyLevels());
         }
         return numShardFinder;
     }
@@ -876,10 +916,19 @@ public class RangeStream extends BaseVisitor implements QueryPlanStream {
     public static class NumShardFinder {
 
         protected final AccumuloClient client;
+        protected final Map<String,ConsistencyLevel> consistencyLevels;
+        protected final Map<String,Map<String,String>> tableHints;
         protected final TreeMap<String,Integer> cache = new TreeMap<>();
 
+        @Deprecated(forRemoval = true, since = "")
         public NumShardFinder(AccumuloClient client) {
+            this(client, null, null);
+        }
+
+        public NumShardFinder(AccumuloClient client, Map<String,Map<String,String>> tableHints, Map<String,ConsistencyLevel> consistencyLevels) {
             this.client = client;
+            this.tableHints = tableHints;
+            this.consistencyLevels = consistencyLevels;
             // prepopulate the cache
             populateCache();
         }
@@ -901,27 +950,47 @@ public class RangeStream extends BaseVisitor implements QueryPlanStream {
                 log.warn("no client configured, will not populate num shards");
                 return;
             }
-            try (Scanner scanner = client.createScanner(TableName.METADATA)) {
-                scanner.setRange(Range.exact(NumShards.NUM_SHARDS, NumShards.NUM_SHARDS_CF));
-                int scannedKeys = 0;
-                for (Map.Entry<Key,Value> entry : scanner) {
-                    // num_shards ns:date_shards
-                    // num_shards ns:20050207_17
-                    String cq = entry.getKey().getColumnQualifier().toString();
-                    if (!cq.contains("_")) {
-                        log.warn("invalid num_shards entry");
-                        continue;
+
+            try {
+                Authorizations auths = client.securityOperations().getUserAuthorizations(client.whoami());
+
+                // @formatter:off
+                ScannerBuilder builder = ScannerBuilder.create(client).setTableName(TableName.METADATA).setAuthorizations(auths);
+                //  @formatter:on
+
+                ConsistencyLevel consistencyLevel = ExecutionHintHelper.getConsistencyLevel(TableName.METADATA, consistencyLevels);
+                if (consistencyLevel != null) {
+                    builder.setConsistencyLevel(consistencyLevel);
+                }
+
+                Map<String,String> hints = ExecutionHintHelper.getExecutionHints(TableName.METADATA, tableHints);
+                if (hints != null) {
+                    builder.setScanType(ExecutionHintHelper.getScanType(hints));
+                    builder.setScanPriority(ExecutionHintHelper.getPriority(hints));
+                }
+
+                try (Scanner scanner = builder.build()) {
+                    scanner.setRange(Range.exact(NumShards.NUM_SHARDS, NumShards.NUM_SHARDS_CF));
+                    int scannedKeys = 0;
+                    for (Map.Entry<Key,Value> entry : scanner) {
+                        // num_shards ns:date_shards
+                        // num_shards ns:20050207_17
+                        String cq = entry.getKey().getColumnQualifier().toString();
+                        if (!cq.contains("_")) {
+                            log.warn("invalid num_shards entry");
+                            continue;
+                        }
+
+                        scannedKeys++;
+                        String[] parts = cq.split("_");
+                        cache.put(parts[0], Integer.parseInt(parts[1]));
                     }
 
-                    scannedKeys++;
-                    String[] parts = cq.split("_");
-                    cache.put(parts[0], Integer.parseInt(parts[1]));
+                    if (scannedKeys == 0) {
+                        log.fatal("no entries in num_shards cache");
+                    }
                 }
-
-                if (scannedKeys == 0) {
-                    log.fatal("no entries in num_shards cache");
-                }
-            } catch (TableNotFoundException | AccumuloException | AccumuloSecurityException e) {
+            } catch (AccumuloException | AccumuloSecurityException | RuntimeException e) {
                 // an exception here shouldn't kill the query
                 log.warn("exception thrown while trying to scan num shards cache: " + e.getMessage());
             }
@@ -1102,6 +1171,8 @@ public class RangeStream extends BaseVisitor implements QueryPlanStream {
 
     @Override
     public void close() {
+        // close range scanners first
+        sessionManager.close();
         streamExecutor.shutdownNow();
         executor.shutdownNow();
     }

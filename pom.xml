@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>gov.nsa.datawave</groupId>
     <artifactId>datawave-parent</artifactId>
-    <version>7.40.0-SNAPSHOT</version>
+    <version>7.45.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>DataWave</name>
     <description>DataWave is a Java-based ingest and query framework that leverages Apache Accumulo to provide fast, secure access to your data.</description>
@@ -51,7 +51,7 @@
         <sonar.exclusions>**/StandardLexer.java,**/*.js,**/*.css,**/*.html</sonar.exclusions>
         <sonar.sourceEncoding>UTF-8</sonar.sourceEncoding>
         <surefire.forkCount>1C</surefire.forkCount>
-        <version.accumulo>2.1.4</version.accumulo>
+        <version.accumulo>2.1.5</version.accumulo>
         <version.arquillian>1.4.1.Final</version.arquillian>
         <version.arquillian-weld-ee-embedded>1.0.0.Final</version.arquillian-weld-ee-embedded>
         <version.assertj>3.20.2</version.assertj>
@@ -75,14 +75,14 @@
         <version.commons-text>1.11.0</version.commons-text>
         <version.curator>5.9.0</version.curator>
         <version.curator.test>5.9.0</version.curator.test>
-        <version.datawave.accumulo-api>4.0.0</version.datawave.accumulo-api>
+        <version.datawave.accumulo-api>4.0.5</version.datawave.accumulo-api>
         <version.datawave.audit-api>4.0.0</version.datawave.audit-api>
         <version.datawave.authorization-api>4.0.0</version.datawave.authorization-api>
-        <version.datawave.dictionary-api>4.0.5</version.datawave.dictionary-api>
+        <version.datawave.dictionary-api>4.0.10</version.datawave.dictionary-api>
         <version.datawave.mapreduce-query-api>1.0.0</version.datawave.mapreduce-query-api>
         <version.datawave.metrics-reporter>3.0.0</version.datawave.metrics-reporter>
         <version.datawave.query-api>1.0.0</version.datawave.query-api>
-        <version.datawave.query-metric-api>4.0.7</version.datawave.query-metric-api>
+        <version.datawave.query-metric-api>4.1.7</version.datawave.query-metric-api>
         <version.deltaspike>1.9.0</version.deltaspike>
         <version.dnsjava>3.6.3</version.dnsjava>
         <version.easymock>5.2.0</version.easymock>
@@ -99,7 +99,7 @@
         <version.hamcrest>1.3</version.hamcrest>
         <version.httpcomponents-httpclient>4.5.13</version.httpcomponents-httpclient>
         <version.httpcomponents-httpcore>4.4.8</version.httpcomponents-httpcore>
-        <version.in-memory-accumulo>4.0.4</version.in-memory-accumulo>
+        <version.in-memory-accumulo>4.0.6</version.in-memory-accumulo>
         <version.infinispan>9.4.21.Final</version.infinispan>
         <version.jackson>2.13.5</version.jackson>
         <version.jackson-mapper-asl>1.9.13</version.jackson-mapper-asl>
@@ -111,7 +111,7 @@
         <version.jaxb-api>2.3.1</version.jaxb-api>
         <version.jaxb-impl>2.3.3</version.jaxb-impl>
         <version.jboss-ejb-api>1.0.2.Final</version.jboss-ejb-api>
-        <version.jcommander>1.72</version.jcommander>
+        <version.jcommander>1.82</version.jcommander>
         <version.jetty>6.1.26</version.jetty>
         <version.jgroups>4.0.19.Final</version.jgroups>
         <version.jjwt>0.11.2</version.jjwt>
@@ -123,7 +123,8 @@
         <version.jython>2.7.2b2</version.jython>
         <version.kryo>2.20</version.kryo>
         <version.kryonet>2.20</version.kryonet>
-        <version.log4j>2.25.4</version.log4j>
+        <version.log4j>2.26.1</version.log4j>
+        <version.lombok>1.18.36</version.lombok>
         <version.lucene>7.5.0</version.lucene>
         <version.metrics-cdi>1.6.0</version.metrics-cdi>
         <version.minlog>1.2</version.minlog>
@@ -132,7 +133,6 @@
         <version.netty>4.1.42.Final</version.netty>
         <version.objenesis>3.3</version.objenesis>
         <version.picketbox>5.0.3.Final</version.picketbox>
-        <version.powermock>2.0.9</version.powermock>
         <version.proto-google-common-protos>2.61.0</version.proto-google-common-protos>
         <version.protobuf>3.16.3</version.protobuf>
         <version.protobuf-java-util>3.16.3</version.protobuf-java-util>
@@ -1376,6 +1376,12 @@
                 </exclusions>
             </dependency>
             <dependency>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok</artifactId>
+                <version>${version.lombok}</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
                 <groupId>org.wildfly</groupId>
                 <artifactId>wildfly-security</artifactId>
                 <version>${version.wildfly}</version>
@@ -1535,36 +1541,6 @@
                 <version>${version.mockito}</version>
                 <scope>test</scope>
             </dependency>
-            <dependency>
-                <groupId>org.powermock</groupId>
-                <artifactId>powermock-api-easymock</artifactId>
-                <version>${version.powermock}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.powermock</groupId>
-                <artifactId>powermock-api-mockito2</artifactId>
-                <version>${version.powermock}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.powermock</groupId>
-                <artifactId>powermock-module-junit4</artifactId>
-                <version>${version.powermock}</version>
-                <scope>test</scope>
-                <exclusions>
-                    <exclusion>
-                        <groupId>junit</groupId>
-                        <artifactId>junit</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.powermock</groupId>
-                <artifactId>powermock-reflect</artifactId>
-                <version>${version.powermock}</version>
-                <scope>test</scope>
-            </dependency>
         </dependencies>
     </dependencyManagement>
     <dependencies>
@@ -1688,6 +1664,11 @@
                     </configuration>
                     <dependencies>
                         <dependency>
+                            <groupId>org.apache.logging.log4j</groupId>
+                            <artifactId>log4j-to-slf4j</artifactId>
+                            <version>${version.log4j}</version>
+                        </dependency>
+                        <dependency>
                             <groupId>org.apache.maven.doxia</groupId>
                             <artifactId>doxia-sink-api</artifactId>
                             <version>2.0.0</version>
@@ -1741,8 +1722,9 @@
                 <plugin>
                     <groupId>io.github.git-commit-id</groupId>
                     <artifactId>git-commit-id-maven-plugin</artifactId>
-                    <version>9.0.1</version>
+                    <version>9.2.0</version>
                     <configuration>
+                        <useNativeGit>true</useNativeGit>
                         <dotGitDirectory>${maven.multiModuleProjectDirectory}/.git</dotGitDirectory>
                         <dateFormat>yyyy-MM-dd'T'HH:mm:ssZ</dateFormat>
                         <generateGitPropertiesFile>true</generateGitPropertiesFile>
@@ -1802,7 +1784,8 @@
                     <artifactId>maven-checkstyle-plugin</artifactId>
                     <version>3.6.0</version>
                     <configuration>
-                        <configLocation>checkstyle.xml</configLocation>
+                        <!-- Use multiModuleProjectDirectory to prevent child modules form looking inside their own sub-folders for checkstyle.xml. -->
+                        <configLocation>${maven.multiModuleProjectDirectory}/checkstyle.xml</configLocation>
                         <failsOnError>true</failsOnError>
                         <failOnViolation>false</failOnViolation>
                         <consoleOutput>true</consoleOutput>
@@ -1903,9 +1886,14 @@
                                             <exclude>log4j:log4j</exclude>
                                             <exclude>ch.qos.reload4j:reload4j</exclude>
                                             <exclude>ch.qos.logback:logback-classic</exclude>
+                                            <!-- exclude all versions of log4j before version.log4j -->
+                                            <exclude>org.apache.logging.log4j:*:(,${version.log4j})</exclude>
                                             <exclude>org.slf4j:slf4j-reload4j</exclude>
                                             <exclude>org.slf4j:slf4j-log4j12</exclude>
                                             <exclude>joda-time:joda-time</exclude>
+                                            <!-- exclude all versions of log4j before version.log4j -->
+                                            <exclude>org.apache.logging.log4j:*:(,${version.log4j})</exclude>
+                                            <exclude>org.powermock:*</exclude>
                                         </excludes>
                                     </bannedDependencies>
                                 </rules>
@@ -1929,6 +1917,10 @@
                                         <!-- Cannot ban hamcrest dependency until fully migrated to JUnit5, so ban the import to prevent reintroduction -->
                                         <reason>Use JUnit5 instead of hamcrest</reason>
                                         <bannedImport>org.hamcrest.**</bannedImport>
+                                    </restrictImports>
+                                    <restrictImports>
+                                        <reason>Use Mockito instead of PowerMock</reason>
+                                        <bannedImport>org.powermock.**</bannedImport>
                                     </restrictImports>
                                 </rules>
                             </configuration>
@@ -2063,11 +2055,6 @@
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>exec-maven-plugin</artifactId>
                     <version>3.5.0</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.codehaus.mojo</groupId>
-                    <artifactId>findbugs-maven-plugin</artifactId>
-                    <version>3.0.5</version>
                 </plugin>
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
