@@ -140,7 +140,9 @@ function datawaveWebIsDeployed() {
 }
 
 function datawaveWebReadyToStart() {
-    ss -ln | grep 8020 && ss -ln | grep 2181 && ss -ln | grep 9997 && return 0
+    # Accumulo 4 tservers no longer bind the fixed 9997 client port (the default
+    # is now the 9800-9899 range), so check for a live tserver process instead
+    ss -ln | grep 8020 && ss -ln | grep 2181 && pgrep -f 'o.start.Main proc tserver' > /dev/null && return 0
     return 1
 }
 
