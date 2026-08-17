@@ -58,6 +58,17 @@ public class DnProperties {
      *
      * @return a new {@link DnProperties}
      */
+    private static InputStream getPropertiesStream(String propertiesFile) {
+        InputStream in = DnProperties.class.getClassLoader().getResourceAsStream(propertiesFile);
+        if (in == null) {
+            ClassLoader tccl = Thread.currentThread().getContextClassLoader();
+            if (tccl != null) {
+                in = tccl.getResourceAsStream(propertiesFile);
+            }
+        }
+        return in;
+    }
+
     public static DnProperties createInstanceFromProperties(String propertiesFile) {
         // Attempt to fetch a subject DN pattern and NPE OU list from system properties.
         String subjectDnPatternValue = System.getProperty(SUBJECT_DN_PATTERN_PROPERTY, "");
@@ -66,8 +77,10 @@ public class DnProperties {
         // If either a subject DN pattern or NPE OU list were not specified, attempt to load them from the properties file.
         if ((subjectDnPatternValue.isBlank()) || (npeOUsValue.isBlank())) {
             // Attempt to load the default subject DN pattern and NPE OU list from the properties file available via the classloader.
+            // Check the thread context classloader as well: in modular containers (e.g. WildFly) this class may live in a
+            // static module whose classloader cannot see resources bundled with the deployment.
             Properties props = new Properties();
-            try (InputStream in = DnProperties.class.getClassLoader().getResourceAsStream(propertiesFile)) {
+            try (InputStream in = getPropertiesStream(propertiesFile)) {
                 props.load(in);
 
                 // Update the subject DN if needed.
