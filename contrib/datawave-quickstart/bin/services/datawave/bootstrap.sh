@@ -32,7 +32,11 @@ DW_DATAWAVE_BUILD_PROFILE=${DW_DATAWAVE_BUILD_PROFILE:-dev}
 DW_BUILD_CACHE_OPTIONS=${DW_BUILD_CACHE_OPTIONS:--Dmaven.build.cache.enabled=false}
 
 # Maven command
-DW_DATAWAVE_BUILD_COMMAND="${DW_DATAWAVE_BUILD_COMMAND:-mvn -P${DW_DATAWAVE_BUILD_PROFILE} -Ddeploy -Dtar -DskipTests -DskipITs ${DW_BUILD_CACHE_OPTIONS} clean package --builder smart -T1.0C}"
+# -Dutils, -Dservices and -Dstarters activate the profiles that build
+# core/in-memory-accumulo, the microservice APIs and the spring-boot starters.
+# The default reactor depends on those artifacts and none of them is published,
+# so without the flags the build fails resolving them.
+DW_DATAWAVE_BUILD_COMMAND="${DW_DATAWAVE_BUILD_COMMAND:-mvn -P${DW_DATAWAVE_BUILD_PROFILE} -Ddeploy -Dtar -DskipTests -DskipITs -Dutils -Dservices -Dstarters ${DW_BUILD_CACHE_OPTIONS} clean package --builder smart -T1.0C}"
 
 # Home of any temp data and *.properties file overrides for this instance of DataWave
 
