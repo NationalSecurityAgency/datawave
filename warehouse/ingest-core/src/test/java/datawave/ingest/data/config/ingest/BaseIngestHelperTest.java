@@ -2,7 +2,6 @@ package datawave.ingest.data.config.ingest;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.concurrent.atomic.AtomicInteger;
@@ -225,30 +224,17 @@ class BaseIngestHelperTest {
         }
 
         /**
-         * Verify that a value is normalized exactly once.
+         * Verify that a value is normalized exactly once and both fields carry the result.
          */
         @Test
         void givenAValueThenNormalizesExactlyOnce() {
             AtomicInteger calls = new AtomicInteger();
             TestBaseIngestHelper helper = new TestBaseIngestHelper();
 
-            helper.normalizeFieldValue(new NormalizedFieldAndValue("FIELD", "MixedCase Value"), new CountingType(calls));
+            NormalizedContentInterface result = helper.normalizeFieldValue(new NormalizedFieldAndValue("FIELD", "MixedCase Value"), new CountingType(calls));
 
             assertEquals(1, calls.get(), "normalize should be invoked once per value");
-        }
-
-        /**
-         * Verify that the event and indexed values are equal but not the same instance.
-         */
-        @Test
-        void givenAValueThenEventAndIndexedValuesAreDistinctInstances() {
-            TestBaseIngestHelper helper = new TestBaseIngestHelper();
-
-            NormalizedContentInterface result = helper.normalizeFieldValue(new NormalizedFieldAndValue("FIELD", "MixedCase Value"),
-                            new CountingType(new AtomicInteger()));
-
             assertEquals(result.getEventFieldValue(), result.getIndexedFieldValue(), "both fields should carry the same normalized text");
-            assertNotSame(result.getEventFieldValue(), result.getIndexedFieldValue(), "event and indexed values should not be the same String instance");
         }
 
         /**

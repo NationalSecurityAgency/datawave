@@ -761,8 +761,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
         try {
             String normalized = datawaveType.normalize(copy.getIndexedFieldValue());
             copy.setEventFieldValue(normalized);
-            // Separate instance so the two fields never alias.
-            copy.setIndexedFieldValue(new String(normalized));
+            copy.setIndexedFieldValue(normalized);
         } catch (Exception ex) {
             copy.setError(ex);
         }
