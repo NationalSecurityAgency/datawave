@@ -1,7 +1,5 @@
 package datawave.ingest.mapreduce.handler.dateindex;
 
-import com.google.common.base.Preconditions;
-
 import java.text.ParseException;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -10,14 +8,14 @@ import java.time.temporal.TemporalAccessor;
 import java.util.BitSet;
 import java.util.Date;
 
+import com.google.common.base.Preconditions;
+
 /**
  * Utility class for handling date operations and shard tracking during MapReduce ingest.
  * <p>
- * This class provides thread-safe static methods to format and parse dates to and from
- * the {@code yyyyMMdd} string format, including resolving dates to the beginning or
- * end of a day. It also includes helper methods for generating and merging
- * {@link BitSet} objects, which are typically used to represent and track individual
- * shards for date-indexed records.
+ * This class provides thread-safe static methods to format and parse dates to and from the {@code yyyyMMdd} string format, including resolving dates to the
+ * beginning or end of a day. It also includes helper methods for generating and merging {@link BitSet} objects, which are typically used to represent and track
+ * individual shards for date-indexed records.
  * <p>
  * Defines standard constants for common date index types (EVENT, LOADED, ACTIVITY).
  */
@@ -51,7 +49,7 @@ public class DateIndexUtil {
      *             if there is a problem parsing the date
      */
     public static Date getBeginDate(String dateStr) throws ParseException {
-        Preconditions.checkArgument(dateStr != null && !dateStr.isBlank() , "date string cannot be null or blank");
+        Preconditions.checkArgument(dateStr != null && !dateStr.isBlank(), "date string cannot be null or blank");
         TemporalAccessor temp = formatter.get().parse(dateStr);
         LocalDate local = LocalDate.from(temp);
         return Date.from(local.atStartOfDay(ZoneId.systemDefault()).toInstant());
@@ -70,7 +68,7 @@ public class DateIndexUtil {
         Preconditions.checkArgument(dateStr != null && !dateStr.isBlank(), "date string cannot be null or blank");
         TemporalAccessor temp = formatter.get().parse(dateStr);
         LocalDate local = LocalDate.from(temp);
-        return Date.from(local.atTime(23, 59, 59,MAX_MILLIS).atZone(ZoneId.systemDefault()).toInstant());
+        return Date.from(local.atTime(23, 59, 59, MAX_MILLIS).atZone(ZoneId.systemDefault()).toInstant());
     }
 
     /**
