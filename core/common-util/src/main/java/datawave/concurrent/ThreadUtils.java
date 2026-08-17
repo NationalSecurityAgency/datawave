@@ -102,7 +102,8 @@ public final class ThreadUtils {
      *            the timeout unit
      * @param pollInterval
      *            the poll interval (0 or greater)
-     * @param pollIntervalUnit the poll interval unit
+     * @param pollIntervalUnit
+     *            the poll interval unit
      * @param condition
      *            the condition
      * @return true if the condition evaluated to true within the timeout, or false otherwise
@@ -110,9 +111,11 @@ public final class ThreadUtils {
      *             if the thread is interrupted
      * @throws IllegalArgumentException
      *             if timeoutMs or pollIntervalMs are less than 0
-     * @throws NullPointerException if timeoutUnit, pollIntervalUnit, or condition are null
+     * @throws NullPointerException
+     *             if timeoutUnit, pollIntervalUnit, or condition are null
      */
-    public static boolean blockUntil(long timeout, TimeUnit timeoutUnit, long pollInterval, TimeUnit pollIntervalUnit, BooleanSupplier condition) throws InterruptedException {
+    public static boolean blockUntil(long timeout, TimeUnit timeoutUnit, long pollInterval, TimeUnit pollIntervalUnit, BooleanSupplier condition)
+                    throws InterruptedException {
         Preconditions.checkArgument(timeout >= 0, "timeout must be 0 or greater");
         Preconditions.checkNotNull(timeoutUnit, "timeout unit cannot be null");
         Preconditions.checkArgument(pollInterval >= 0, "pollInterval must be 0 or greater");
@@ -121,7 +124,7 @@ public final class ThreadUtils {
 
         long deadline = getDeadline(timeout, timeoutUnit);
         long pollIntervalNanos = convertOrCap(pollInterval, pollIntervalUnit::toNanos);
-        
+
         // If the condition does not return true yet, sleep for another interval.
         while (!(condition.getAsBoolean())) {
             long currentTime = System.nanoTime();
@@ -135,7 +138,7 @@ public final class ThreadUtils {
         }
         return true;
     }
-    
+
     /**
      * Calculates the deadline of the given timeout based on a start time of the current system nano time. This method will return:
      * <ul>
@@ -143,16 +146,20 @@ public final class ThreadUtils {
      * <li>{@link Long#MAX_VALUE} if the calculated deadline would overflow into a negative number.</li>
      * <li>The deadline in nanos if there is no chance of overflow.</li>
      * </ul>
-     * @param timeout the timeout
-     * @param timeoutUnit the timeout unit
+     *
+     * @param timeout
+     *            the timeout
+     * @param timeoutUnit
+     *            the timeout unit
      * @return the deadline in nanos
-     * @throws NullPointerException if timeoutUnit is null
+     * @throws NullPointerException
+     *             if timeoutUnit is null
      */
     public static long getDeadline(long timeout, TimeUnit timeoutUnit) {
         if (timeout <= 0) {
             return System.nanoTime();
         }
-        
+
         long timeoutNanos = convertOrCap(timeout, timeoutUnit::toNanos);
         // If timeoutNanos overflowed into a negative number, cap the deadline at Long.MAX_VALUE.
         if (timeoutNanos <= 0) {
@@ -168,19 +175,22 @@ public final class ThreadUtils {
             }
         }
     }
-    
+
     /**
-     * Returns the value of the given time converted by the given function, e.g. {@code TimeUnit::toMillis}. If the converted value is less than
-     * one, it is assumed that the resulting long overflowed, and {@link Long#MAX_VALUE} will be returned.
-     * @param time the time
-     * @param function the function to covert the time to a different unit
+     * Returns the value of the given time converted by the given function, e.g. {@code TimeUnit::toMillis}. If the converted value is less than one, it is
+     * assumed that the resulting long overflowed, and {@link Long#MAX_VALUE} will be returned.
+     *
+     * @param time
+     *            the time
+     * @param function
+     *            the function to covert the time to a different unit
      * @return the conversion
      */
-    public static long convertOrCap(long time, Function<Long, Long> function) {
+    public static long convertOrCap(long time, Function<Long,Long> function) {
         long conversion = function.apply(time);
         return conversion <= 0 ? Long.MAX_VALUE : conversion;
     }
-    
+
     private ThreadUtils() {
         throw new UnsupportedOperationException();
     }

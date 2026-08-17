@@ -15,10 +15,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -266,15 +264,15 @@ class ThreadUtilsTest {
         @DisplayName("Throws an exception given a negative poll interval")
         @Test
         void testNegativePollInterval() {
-            assertThatThrownBy(() -> ThreadUtils.blockUntil(60_000, TimeUnit.MILLISECONDS, -1, TimeUnit.MILLISECONDS, ()  -> true))
+            assertThatThrownBy(() -> ThreadUtils.blockUntil(60_000, TimeUnit.MILLISECONDS, -1, TimeUnit.MILLISECONDS, () -> true))
                             .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("pollInterval must be 0 or greater");
         }
-        
+
         @DisplayName("Throws an exception given a negative poll interval unit")
         @Test
         void testNullPollIntervalUnit() {
-            assertThatThrownBy(() -> ThreadUtils.blockUntil(60_000, TimeUnit.MILLISECONDS, 100, null, ()  -> true))
-                            .isInstanceOf(NullPointerException.class).hasMessageContaining("pollIntervalUnit cannot be null");
+            assertThatThrownBy(() -> ThreadUtils.blockUntil(60_000, TimeUnit.MILLISECONDS, 100, null, () -> true)).isInstanceOf(NullPointerException.class)
+                            .hasMessageContaining("pollIntervalUnit cannot be null");
         }
 
         @DisplayName("Throws an exception given a null condition")
@@ -311,37 +309,37 @@ class ThreadUtilsTest {
             // Assert that the thread was blocked for at least 1000 ms, and no more than 3000 ms.
             assertThat(System.currentTimeMillis() - startTime).isBetween(1000L, 3000L);
         }
-        
+
         @DisplayName("Will cap the timeout at Long.MAX_VALUE given a timeout that will overflow")
         @Test
         void testMaxTimeout() throws InterruptedException {
             AtomicBoolean condition = new AtomicBoolean(false);
             long startTime = System.currentTimeMillis();
-            
+
             // Set this condition to true 1 second in the future.
             CompletableFuture.runAsync(() -> condition.set(true), CompletableFuture.delayedExecutor(1000, TimeUnit.MILLISECONDS));
-            
+
             // Verify that blockUntil returns true after the condition is set to true within the timeout of 3 seconds.
             assertThat(ThreadUtils.blockUntil(Long.MAX_VALUE, TimeUnit.MILLISECONDS, 100, TimeUnit.MILLISECONDS, condition::get)).isTrue();
-            
+
             // Assert that the thread was blocked for at least 1000 ms, and no more than 3000 ms.
             assertThat(System.currentTimeMillis() - startTime).isBetween(1000L, 3000L);
         }
     }
-    
+
     /**
      * Tests for {@link ThreadUtils#getDeadline(long, TimeUnit)}.
      */
     @DisplayName("Method getDeadline()")
     @Nested
     class GetDeadlineTests {
-        
+
         @DisplayName("throws an NPE when given a null timeout unit")
         @Test
         void nullTimeoutUnit() {
             assertThatThrownBy(() -> ThreadUtils.getDeadline(1, null)).isInstanceOf(NullPointerException.class);
         }
-        
+
         @DisplayName("returns the current system nano time given a negative timeout")
         @Test
         void negativeTimeout() {
@@ -351,7 +349,7 @@ class ThreadUtilsTest {
             assertThat(deadline).isGreaterThanOrEqualTo(beforeCall);
             assertThat(deadline).isLessThanOrEqualTo(afterCall);
         }
-        
+
         @DisplayName("returns the current system nano time given a timeout of 0")
         @Test
         void zeroTimeout() {
@@ -361,13 +359,13 @@ class ThreadUtilsTest {
             assertThat(deadline).isGreaterThanOrEqualTo(beforeCall);
             assertThat(deadline).isLessThanOrEqualTo(afterCall);
         }
-        
+
         @DisplayName("returns Long.MAX_VALUE when given timeout that would overflow")
         @Test
         void maxValueTimeout() {
             assertThat(ThreadUtils.getDeadline(Long.MAX_VALUE, TimeUnit.MINUTES)).isEqualTo(Long.MAX_VALUE);
         }
-        
+
         @DisplayName("returns a deadline based on system nano time")
         @Test
         void nonOverflowTimeout() {
@@ -380,29 +378,29 @@ class ThreadUtilsTest {
             assertThat(deadline - delta).isLessThanOrEqualTo(afterCall);
         }
     }
-    
+
     @DisplayName("Method convertOrCap()")
     @Nested
     class ConvertOrCapTests {
-        
+
         @DisplayName("Returns the converted value")
         @Test
         void nonOverflowConversion() {
             assertThat(ThreadUtils.convertOrCap(5, TimeUnit.MINUTES::toMillis)).isEqualTo(TimeUnit.MINUTES.toMillis(5));
         }
-        
+
         @DisplayName("Returns Long.MAX_VALUE when the converted value is 0")
         @Test
         void convertedValueOfZero() {
             assertThat(ThreadUtils.convertOrCap(0, TimeUnit.MINUTES::toMillis)).isEqualTo(Long.MAX_VALUE);
         }
-        
+
         @DisplayName("Returns Long.MAX_VALUE when the converted value is negative")
         @Test
         void convertedValueOfNegative() {
             assertThat(ThreadUtils.convertOrCap(-1, TimeUnit.MINUTES::toMillis)).isEqualTo(Long.MAX_VALUE);
         }
-        
+
         @DisplayName("Returns Long.MAX_VALUE when the value overflowed")
         @Test
         void overflowValue() {
