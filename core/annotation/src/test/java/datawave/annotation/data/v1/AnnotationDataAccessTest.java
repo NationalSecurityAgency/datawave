@@ -52,7 +52,7 @@ import datawave.annotation.protobuf.v1.SegmentBoundary;
 import datawave.annotation.protobuf.v1.SegmentValue;
 import datawave.annotation.test.v1.AnnotationTestDataUtil;
 import datawave.annotation.util.v1.AnnotationUtils;
-import datawave.data.hash.HashUID;
+import datawave.table.hash.HashUID;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class AnnotationDataAccessTest {
@@ -65,6 +65,8 @@ public class AnnotationDataAccessTest {
     private static final Set<Authorizations> accumuloAuthorizations = Set.of(new Authorizations(auths));
     // the object under test
     private AnnotationDataAccess dao;
+
+    private static final Annotation EMPTY = Annotation.getDefaultInstance();
 
     private static final String ANNOTATION_TABLE_NAME = "datawave.annotation";
     private static final String ANNOTATION_SOURCE_TABLE_NAME = "datawave.annotationSource";
@@ -124,10 +126,10 @@ public class AnnotationDataAccessTest {
         // we expect the test annotation to have the same id injected as the annotation retuned from the dao.
         Annotation expectedAnnotation = AnnotationUtils.injectAllHashes(sourceAnnotation);
 
-        List<Annotation> annotation = dao.getAnnotations(sourceAnnotation.getShard(), sourceAnnotation.getDataType(), sourceAnnotation.getUid());
+        Collection<Annotation> annotation = dao.getAnnotations(sourceAnnotation.getShard(), sourceAnnotation.getDataType(), sourceAnnotation.getUid());
         assertFalse(annotation.isEmpty());
         assertEquals(1, annotation.size());
-        Annotation resultAnnotation = annotation.get(0);
+        Annotation resultAnnotation = annotation.stream().findFirst().orElse(EMPTY);
         assertAnnotationsEqual(expectedAnnotation, resultAnnotation);
     }
 
@@ -188,10 +190,10 @@ public class AnnotationDataAccessTest {
         String uidSeed = row + "_" + dataType;
         String documentUid = HashUID.builder().newId(uidSeed.getBytes(StandardCharsets.UTF_8)).toString();
 
-        List<Annotation> annotations = dao.getAnnotations(row, dataType, documentUid);
+        Collection<Annotation> annotations = dao.getAnnotations(row, dataType, documentUid);
         assertFalse(annotations.isEmpty());
         assertEquals(1, annotations.size());
-        Annotation a = annotations.get(0);
+        Annotation a = annotations.stream().findFirst().orElse(EMPTY);
         assertExpectedMetadata(a.getMetadataMap());
         assertExpectedTextSegments(a.getSegmentsList());
 
@@ -222,7 +224,7 @@ public class AnnotationDataAccessTest {
         String uidSeed = row + "_" + dataType;
         String documentUid = HashUID.builder().newId(uidSeed.getBytes(StandardCharsets.UTF_8)).toString();
 
-        List<Annotation> annotations = dao.getAnnotations(row, dataType, documentUid);
+        Collection<Annotation> annotations = dao.getAnnotations(row, dataType, documentUid);
         assertTrue(annotations.isEmpty());
     }
 
@@ -233,7 +235,7 @@ public class AnnotationDataAccessTest {
         String uidSeed = row + "_" + dataType;
         String documentUid = HashUID.builder().newId(uidSeed.getBytes(StandardCharsets.UTF_8)).toString();
 
-        List<Annotation> annotations = dao.getAnnotations(row, dataType, documentUid);
+        Collection<Annotation> annotations = dao.getAnnotations(row, dataType, documentUid);
         assertTrue(annotations.isEmpty());
     }
 
@@ -244,7 +246,7 @@ public class AnnotationDataAccessTest {
         String uidSeed = "helios"; // non-existent uid from this seed.
         String documentUid = HashUID.builder().newId(uidSeed.getBytes(StandardCharsets.UTF_8)).toString();
 
-        List<Annotation> annotations = dao.getAnnotations(row, dataType, documentUid);
+        Collection<Annotation> annotations = dao.getAnnotations(row, dataType, documentUid);
         assertTrue(annotations.isEmpty());
     }
 
@@ -256,10 +258,10 @@ public class AnnotationDataAccessTest {
         String annotationType = "tokens";
         String documentUid = HashUID.builder().newId(uidSeed.getBytes(StandardCharsets.UTF_8)).toString();
 
-        List<Annotation> annotations = dao.getAnnotationsForType(row, dataType, documentUid, annotationType);
+        Collection<Annotation> annotations = dao.getAnnotationsForType(row, dataType, documentUid, annotationType);
         assertFalse(annotations.isEmpty());
         assertEquals(1, annotations.size());
-        Annotation a = annotations.get(0);
+        Annotation a = annotations.stream().findFirst().orElse(EMPTY);
         assertExpectedMetadata(a.getMetadataMap());
         assertExpectedTextSegments(a.getSegmentsList());
     }
@@ -272,7 +274,7 @@ public class AnnotationDataAccessTest {
         String annotationType = "tokens";
         String documentUid = HashUID.builder().newId(uidSeed.getBytes(StandardCharsets.UTF_8)).toString();
 
-        List<Annotation> annotations = dao.getAnnotationsForType(row, dataType, documentUid, annotationType);
+        Collection<Annotation> annotations = dao.getAnnotationsForType(row, dataType, documentUid, annotationType);
         assertTrue(annotations.isEmpty());
     }
 
@@ -360,10 +362,10 @@ public class AnnotationDataAccessTest {
         String documentUid = HashUID.builder().newId(uidSeed.getBytes(StandardCharsets.UTF_8)).toString();
 
         // Get an existing annotation from pre-populated data
-        List<Annotation> annotations = dao.getAnnotations(row, dataType, documentUid);
+        Collection<Annotation> annotations = dao.getAnnotations(row, dataType, documentUid);
         assertFalse(annotations.isEmpty(), "Should have at least one pre-populated annotation");
 
-        Annotation originalAnnotation = annotations.get(0);
+        Annotation originalAnnotation = annotations.stream().findFirst().orElse(EMPTY);
         String originalAnnotationId = originalAnnotation.getAnnotationId();
 
         // Create an updated annotation - clear the annotation ID and segment IDs
@@ -386,7 +388,7 @@ public class AnnotationDataAccessTest {
 
         // Verify we can retrieve the updated annotation (which should have a different id)
         String updateAnnotationId = resultAnnotation.getAnnotationId();
-        assertTrue(!originalAnnotationId.equals(updateAnnotationId), "Updated annotation should have a different id");
+        assertNotEquals(originalAnnotationId, updateAnnotationId, "Updated annotation should have a different id");
 
         Optional<Annotation> updatedRetrieved = dao.getAnnotation(row, dataType, documentUid, updateAnnotationId);
         assertTrue(updatedRetrieved.isPresent(), "Updated annotation should be retrievable");
