@@ -4,7 +4,7 @@
     http://www.springframework.org/schema/beans/spring-beans-4.0.xsd">
 
     <!-- This is the default ZkClientBuilder instance to be injected where required. -->
-    <!-- ZkClientBuilder is mutable, so a new instance should be created for each injection. -->
+    <!-- ZkClientBuilder is mutable, so a new instance should be created for each injection, hence scope=prototype. -->
     <bean id="defaultZkClientBuilder" primary="true" scope="prototype" class="datawave.zookeeper.ZkClientBuilder">
         <property name="connectString" value="${zookeeper.hosts}"/>
         <property name="sessionTimeoutMs" value="50000"/>

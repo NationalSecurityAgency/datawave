@@ -5,6 +5,9 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans
     http://www.springframework.org/schema/beans/spring-beans-4.0.xsd">
 
+    <!-- Import the defaultZkClientBuilder bean definition. -->
+    <import resource="classpath*:datawave/query/ZookeeperFactory.xml"/>
+
     <!-- This file contains the required bean configurations for concurrent query limit enforcement. -->
 
     <!--
