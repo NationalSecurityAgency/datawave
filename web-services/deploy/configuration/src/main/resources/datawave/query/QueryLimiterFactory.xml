@@ -130,18 +130,24 @@
     </bean>
     -->
     <!-- Configuration for the QueryLimitConfiguration. -->
-    <bean id="queryLimitConfig" class="datawave.webservice.query.limit.QueryLimitConfiguration" primary="true">
+    <bean id="queryLimitConfig" class="datawave.webservice.query.limit.QueryLimitConfiguration">
         <property name="defaultSystemQueryLimit" value="5000"/>
         <property name="defaultUserQueryLimit" value="100"/>
     </bean>
 
-    <!-- Configuration for the QueryHeartbeatCache.
-        - cleanupInterval: The interval for which the cache will periodically check and evict heartbeats that were
-            stopped due to an error and not via the QueryHeartbeat.stop() method.
-        - cleanupUnit: The cleanup time unit. This must resolve to a value of java.util.concurrent.TimeUnit.
+    <!-- Sample configuration for a QueryLimiterImpl.
+
+        - zkClientBuilder: The Zookeeper client builder to use.
+        - limitConfiguration: The query limits to enforce.
+        - heartbeatCleanupInterval: The interval at which to clean up stopped heartbeats in the heartbeat cache.
+            Defaults to 10.
+        - heartbeatCleanupIntervalUnit: The time unit for heartbeatCleanupInterval. Defaults to MINUTES.
+        - zkClientConnectTimeout: The timeout for waiting for the Zookeeper client to connect to Zookeeper once started.
+            Defaults to 3.
+        - zkClientConnectTimeoutUnit: The time unit for zkClientConnectTimeout. Defaults to MINUTES.
     -->
-    <bean id="queryHeartbeatCache" class="datawave.webservice.query.limit.QueryHeartbeatCacheImpl" primary="true">
-        <property name="cleanupInterval" value="13"/>
-        <property name="cleanupUnit" value="MINUTES"/>
+    <bean id="queryLimiterConfig" class="datawave.webservice.query.limit.QueryLimiterImplConfiguration" primary="true">
+        <property name="zkClientBuilder" ref="defaultZkClientBuilder"/>
+        <property name="limitConfiguration" ref="queryLimitConfig"/>
     </bean>
 </beans>

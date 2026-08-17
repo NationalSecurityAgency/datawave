@@ -11,7 +11,7 @@
         <property name="connectionTimeoutMs" value="50000" />
         <property name="retryPolicyBuilder">
             <bean class="datawave.zookeeper.RetryNTimesBuilder" >
-                <property name="n" value="10"/>
+                <property name="n" value="3"/>
                 <property name="sleepBetweenRetriesMs" value="1000"/>
             </bean>
         </property>

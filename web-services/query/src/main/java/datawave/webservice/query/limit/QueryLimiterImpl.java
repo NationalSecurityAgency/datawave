@@ -1,5 +1,12 @@
 package datawave.webservice.query.limit;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
+import static datawave.webservice.query.limit.QueryLimiterUtils.normalizeQueryId;
+import static datawave.webservice.query.limit.QueryLimiterUtils.normalizeQueryLogic;
+import static datawave.webservice.query.limit.QueryLimiterUtils.normalizeSystem;
+import static datawave.webservice.query.limit.QueryLimiterUtils.normalizeUserDn;
+
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -23,8 +30,6 @@ import javax.inject.Inject;
 import org.apache.curator.framework.CuratorFramework;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.common.base.Preconditions;
 
 import datawave.configuration.spring.SpringBean;
 
@@ -94,7 +99,7 @@ public class QueryLimiterImpl implements QueryLimiter {
     }
 
     /**
-     * A lock that will block access to operations for this {@link QueryLimiterImpl} while {@link #setup()} or {@link #close()} is executing.
+     * A lock used to block access to operations for this {@link QueryLimiterImpl} while {@link #setup()} or {@link #close()} is executing.
      */
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
 
@@ -134,7 +139,7 @@ public class QueryLimiterImpl implements QueryLimiter {
                 log.debug("Activating limiter with configuration {}", this.config);
             }
 
-            Preconditions.checkNotNull(this.config, "Limiter configuration cannot be null");
+            checkNotNull(this.config, "Limiter configuration cannot be null");
 
             initLimitProviders();
             initZkClient();
@@ -163,9 +168,9 @@ public class QueryLimiterImpl implements QueryLimiter {
             }
 
             QueryLimitConfiguration limitConfiguration = this.config.getLimitConfiguration();
-            Preconditions.checkNotNull(limitConfiguration, "Query limit configuration cannot be null");
-            Preconditions.checkArgument(limitConfiguration.getDefaultUserQueryLimit() > 0, "Default user query limit must be greater than 0");
-            Preconditions.checkArgument(limitConfiguration.getInternalCacheMaxSize() > 0, "Internal max cache size must be greater than 0");
+            checkNotNull(limitConfiguration, "Query limit configuration cannot be null");
+            checkArgument(limitConfiguration.getDefaultUserQueryLimit() > 0, "Default user query limit must be greater than 0");
+            checkArgument(limitConfiguration.getInternalCacheMaxSize() > 0, "Internal max cache size must be greater than 0");
 
             this.queryLogicGroupLimitProvider = new QueryLogicGroupLimitProvider(limitConfiguration.getInternalCacheMaxSize(),
                             limitConfiguration.getQueryLogicGroupConfigs());
@@ -195,9 +200,9 @@ public class QueryLimiterImpl implements QueryLimiter {
                                     this.config.getZkClientBuilder());
                 }
 
-                Preconditions.checkNotNull(this.config.getZkClientBuilder(), "Zookeeper client builder cannot be null");
-                Preconditions.checkArgument(this.config.getZkClientConnectTimeout() > 0, "Zookeeper client connect timeout must be greater than 0");
-                Preconditions.checkNotNull(this.config.getZkClientConnectTimeoutUnit(), "Zookeeper client connect timeout unit cannot be null");
+                checkNotNull(this.config.getZkClientBuilder(), "Zookeeper client builder cannot be null");
+                checkArgument(this.config.getZkClientConnectTimeout() > 0, "Zookeeper client connect timeout must be greater than 0");
+                checkNotNull(this.config.getZkClientConnectTimeoutUnit(), "Zookeeper client connect timeout unit cannot be null");
 
                 this.zkClient = this.config.getZkClientBuilder().duplicate().withNamespace(QueryLimiterUtils.ZOOKEEPER_NAMESPACE).build();
                 this.zkClient.start();
@@ -361,9 +366,9 @@ public class QueryLimiterImpl implements QueryLimiter {
      */
     @Override
     public QueryLimiterResponse checkLimits(String userDn, String system, String queryLogic) throws Exception {
-        userDn = QueryLimiterUtils.normalizeUserDn(userDn);
-        system = QueryLimiterUtils.normalizeSystem(system);
-        queryLogic = QueryLimiterUtils.normalizeQueryLogic(queryLogic);
+        userDn = normalizeUserDn(userDn);
+        system = normalizeSystem(system);
+        queryLogic = normalizeQueryLogic(queryLogic);
 
         lock.readLock().lock();
         try {
@@ -419,10 +424,10 @@ public class QueryLimiterImpl implements QueryLimiter {
      */
     @Override
     public void markActive(String queryId, String userDn, String system, String queryLogic) throws Exception {
-        queryId = QueryLimiterUtils.normalizeQueryId(queryId);
-        userDn = QueryLimiterUtils.normalizeUserDn(userDn);
-        system = QueryLimiterUtils.normalizeSystem(system);
-        queryLogic = QueryLimiterUtils.normalizeQueryLogic(queryLogic);
+        queryId = normalizeQueryId(queryId);
+        userDn = normalizeUserDn(userDn);
+        system = normalizeSystem(system);
+        queryLogic = normalizeQueryLogic(queryLogic);
 
         lock.readLock().lock();
         try {
@@ -487,7 +492,7 @@ public class QueryLimiterImpl implements QueryLimiter {
      */
     @Override
     public void markInactive(Collection<String> queryIds) {
-        Preconditions.checkNotNull(queryIds, "queryIds cannot be null");
+        checkNotNull(queryIds, "queryIds cannot be null");
         Set<String> normalizedQueryIds = queryIds.stream().map(QueryLimiterUtils::normalizeQueryId).collect(Collectors.toSet());
         lock.readLock().lock();
         try {
@@ -517,7 +522,7 @@ public class QueryLimiterImpl implements QueryLimiter {
      */
     @Override
     public void markInactive(String queryId) {
-        queryId = QueryLimiterUtils.normalizeQueryId(queryId);
+        queryId = normalizeQueryId(queryId);
         lock.readLock().lock();
         try {
             if (log.isTraceEnabled()) {
