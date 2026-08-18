@@ -1298,7 +1298,7 @@ public class AnnotationHitsTransformerTest {
         shardQueryConfiguration.setIncludeGroupingContext(true);
 
         transformer = new AnnotationHitsTransformer(shardQueryConfiguration, query, termExtractor, normalizer, annotationDao, allHitsFactory,
-                maxContextBoundary, validTypes, targetField, enrichmentFieldMap);
+                        maxContextBoundary, validTypes, targetField, enrichmentFieldMap);
         transformer.initialize(settings, markingFunctions);
 
         Document doc = getGroupingTestSourceDoc();
