@@ -122,7 +122,6 @@ jobs:
               -Pcompose -Dmicroservice-docker -Ddocker-release ${{ needs.configure-runner.outputs.cache_settings }} -Ddeploy -Dtar -DskipTests \
               -Djkube.container-image.tags.1=latest \
               clean install
-<<<<<<< HEAD
       - name: Docker Compose Clear Space
         run: |
           # free up some space so that we don't run out. This runs before the stack
@@ -135,10 +134,7 @@ jobs:
           export MAVEN_OPTS="${{ env.MAVEN_OPTS }}"
           mvn --show-version --batch-mode --errors -Dutils -Dservices -Dstarters \
               -Pcompose -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -DskipTests ${{ needs.configure-runner.outputs.cache_settings }} clean
-      - name: Docker Compose Accumulo Start
-=======
       - name: Docker Compose Stack Start
->>>>>>> e0976dad99 (Codex assisted: Replace Quickstart container with using the containers from NationalSecurityAgency/datawave-stack-docker-images)
         run: |
           cd docker
           export DW_HOST_IP=127.0.0.1
@@ -157,39 +153,13 @@ jobs:
           docker compose logs
       - name: Docker Compose Web Tests
         run: |
-<<<<<<< HEAD
-          cd docker
-          export DW_HOST_IP=127.0.0.1
-          docker compose exec quickstart bash -c "source ~/.bashrc && datawaveWebTest --blacklist-files QueryMetrics" || true
-      # The stack is torn down below, so capture logs for failures that happen after
-      # the ingest tests -- the earlier Dump Logs step only covers that one step.
-      - name: Dump Logs On Failure
-        if: failure()
-        run: |
-          cd docker
-          docker compose logs || true
-      - name: Tear Down Compose Stack
-        if: always()
-        run: |
-          # Resolves by COMPOSE_PROJECT_NAME, so this removes only the containers,
-          # networks and volumes this job created. Previously nothing tore the stack
-          # down at all, which is why a blanket `docker system prune` was needed to
-          # clear whatever the last job abandoned.
-          cd docker
-          docker compose down --volumes --remove-orphans --timeout 60 || true
-=======
           HOST_PORT=localhost:9443 DW_DATAWAVE_WEB_REMOTE=true \
             bash contrib/datawave-quickstart/bin/services/datawave/test-web/run.sh --blacklist-files QueryMetrics || true
->>>>>>> e0976dad99 (Codex assisted: Replace Quickstart container with using the containers from NationalSecurityAgency/datawave-stack-docker-images)
       - name: Final Operations
         if: always()
         run: |
           cd docker
           docker compose down --volumes --remove-orphans
           if [[ "${{ needs.configure-runner.outputs.runner }}" == "self-hosted" ]]; then
-<<<<<<< HEAD
-            sudo chown -R $(whoami) . ~/.m2 || true
-=======
             sudo chown -R $(whoami) .. ~/.m2 || true
->>>>>>> e0976dad99 (Codex assisted: Replace Quickstart container with using the containers from NationalSecurityAgency/datawave-stack-docker-images)
           fi
