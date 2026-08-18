@@ -9,7 +9,6 @@ import java.nio.charset.StandardCharsets;
 
 import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.DefaultParser;
@@ -22,6 +21,7 @@ public class DataWaveScanCommandTest {
     private static final String ROW = "20260818_0";
     private static final Text EVENT_CF = text("datatype\0uid");
     private static final Text EVENT_CQ = text("FIELD\0value");
+    private static final Text FIELD_INDEX_CF = text("fi\0FIELD");
 
     private final DataWaveScanCommand command = new DataWaveScanCommand();
 
@@ -38,25 +38,66 @@ public class DataWaveScanCommandTest {
     }
 
     @Test
-    public void testRowWithColumnFamilyAndQualifierSeeksToTheColumn() throws Exception {
+    public void testPartialQualifierReachesTheFullKeysSortingUnderIt() throws Exception {
+        // the range is bounded the way new Range(new Key(row, "fi\0FIELD", "value")) would be, so the full key sorting after it is still scanned
+        Range range = range("-r", ROW, "-cf", "fi\\0FIELD", "-cq", "value");
+
+        assertEquals(new Range(new Key(new Text(ROW), FIELD_INDEX_CF, text("value")), true, new Key(new Text(ROW), FIELD_INDEX_CF, text("valuf")), false),
+                        range);
+        assertTrue(range.contains(new Key(new Text(ROW), FIELD_INDEX_CF, text("value\0datatype\0uid"))));
+        assertTrue(range.contains(new Key(new Text(ROW), FIELD_INDEX_CF, text("value"))));
+        assertFalse(range.contains(new Key(new Text(ROW), FIELD_INDEX_CF, text("valuf"))));
+        assertFalse(range.contains(new Key(new Text(ROW), FIELD_INDEX_CF, text("other\0datatype\0uid"))));
+    }
+
+    @Test
+    public void testAQualifierMakesTheColumnFamilyFullyQualified() throws Exception {
+        // a term frequency scan: the family is complete and the qualifier carries the partial bound
+        Range range = range("-r", ROW, "-cf", "tf", "-cq", "datatype\\0uid");
+
+        assertEquals(new Range(new Key(new Text(ROW), text("tf"), text("datatype\0uid")), true, new Key(new Text(ROW), text("tf"), text("datatype\0uie")),
+                        false), range);
+        assertTrue(range.contains(new Key(new Text(ROW), text("tf"), text("datatype\0uid\0FIELD\0value"))));
+        // the family is not extended, so a longer family is out of range even though it starts with tf
+        assertFalse(range.contains(new Key(new Text(ROW), text("tfz"), text("datatype\0uid\0FIELD\0value"))));
+    }
+
+    @Test
+    public void testPartialColumnFamilyReachesTheFullKeysSortingUnderIt() throws Exception {
+        Range range = range("-r", ROW, "-cf", "fi\\0");
+
+        assertEquals(new Range(new Key(new Text(ROW), text("fi\0")), true, new Key(new Text(ROW), text("fi\1")), false), range);
+        assertTrue(range.contains(new Key(new Text(ROW), FIELD_INDEX_CF, text("value\0datatype\0uid"))));
+        assertFalse(range.contains(new Key(new Text(ROW), EVENT_CF, EVENT_CQ)));
+    }
+
+    @Test
+    public void testCompleteColumnFamilyAndQualifier() throws Exception {
         Range range = range("-r", ROW, "-cf", "datatype\\0uid", "-cq", "FIELD\\0value");
 
-        Key start = new Key(new Text(ROW), EVENT_CF, EVENT_CQ, Long.MAX_VALUE);
-        assertEquals(new Range(start, true, start.followingKey(PartialKey.ROW_COLFAM_COLQUAL), false), range);
+        assertEquals(new Range(new Key(new Text(ROW), EVENT_CF, EVENT_CQ), true, new Key(new Text(ROW), EVENT_CF, text("FIELD\0valuf")), false), range);
         assertTrue(range.contains(new Key(new Text(ROW), EVENT_CF, EVENT_CQ, 1L)));
-        assertFalse(range.contains(new Key(new Text(ROW), EVENT_CF, text("FIELD\0other"))));
+        assertFalse(range.contains(new Key(new Text(ROW), EVENT_CF, text("OTHER\0value"))));
         assertFalse(range.contains(new Key(new Text(ROW), text("datatype\0other"), EVENT_CQ)));
     }
 
     @Test
-    public void testRowWithColumnFamilyCoversTheWholeColumnFamily() throws Exception {
+    public void testCompleteColumnFamilyCoversTheColumnFamily() throws Exception {
         Range range = range("-r", ROW, "-cf", "datatype\\0uid");
 
-        Key start = new Key(new Text(ROW), EVENT_CF);
-        assertEquals(new Range(start, true, start.followingKey(PartialKey.ROW_COLFAM), false), range);
+        assertEquals(new Range(new Key(new Text(ROW), EVENT_CF), true, new Key(new Text(ROW), text("datatype\0uie")), false), range);
         assertTrue(range.contains(new Key(new Text(ROW), EVENT_CF, text(""))));
         assertTrue(range.contains(new Key(new Text(ROW), EVENT_CF, text("￿"))));
-        assertFalse(range.contains(new Key(new Text(ROW), text("datatype\0uid\0"), EVENT_CQ)));
+        assertFalse(range.contains(new Key(new Text(ROW), text("datatype\0uie"), EVENT_CQ)));
+    }
+
+    @Test
+    public void testAColumnFamilyAlsoCoversTheChildUidsSortingUnderIt() throws Exception {
+        // a DataWave child uid extends its parent, and partial key bounds cannot exclude it
+        Range range = range("-r", ROW, "-cf", "datatype\\0-abc.def.ghi");
+
+        assertTrue(range.contains(new Key(new Text(ROW), text("datatype\0-abc.def.ghi"), EVENT_CQ)));
+        assertTrue(range.contains(new Key(new Text(ROW), text("datatype\0-abc.def.ghi.1"), EVENT_CQ)));
     }
 
     @Test
@@ -71,23 +112,13 @@ public class DataWaveScanCommandTest {
     }
 
     @Test
-    public void testExclusiveEndKeepsAColumnEndpointOutOfTheRange() throws Exception {
+    public void testExclusiveEndStopsAtTheEndpointLiterally() throws Exception {
         Range range = range("-r", ROW, "-ekcf", "datatype\\0uid", "-ee");
 
         assertEquals(new Key(new Text(ROW), EVENT_CF), range.getEndKey());
         assertFalse(range.isEndKeyInclusive());
         assertTrue(range.contains(new Key(new Text(ROW), text("datatype\0earlier"), EVENT_CQ)));
         assertFalse(range.contains(new Key(new Text(ROW), EVENT_CF, EVENT_CQ)));
-    }
-
-    @Test
-    public void testBeginKeyQualifierRequiresABeginKeyColumnFamily() throws Exception {
-        assertThrows(IllegalArgumentException.class, () -> range("-r", ROW, "-bkcq", "FIELD\\0value"));
-    }
-
-    @Test
-    public void testEndKeyQualifierRequiresAnEndKeyColumnFamily() throws Exception {
-        assertThrows(IllegalArgumentException.class, () -> range("-r", ROW, "-ekcq", "FIELD\\0value"));
     }
 
     @Test
@@ -103,39 +134,16 @@ public class DataWaveScanCommandTest {
     }
 
     @Test
-    public void testColumnFamilyPrefixScopesTheRange() throws Exception {
-        Range range = range("-r", ROW, "-cfp", "fi\\0");
-
-        assertEquals(new Range(new Key(new Text(ROW), text("fi\0")), true, new Key(new Text(ROW), text("fi\1")), false), range);
-        assertTrue(range.contains(new Key(new Text(ROW), text("fi\0FIELD"), text("value\0datatype\0uid"))));
-        assertFalse(range.contains(new Key(new Text(ROW), EVENT_CF, EVENT_CQ)));
-    }
-
-    @Test
-    public void testColumnQualifierPrefixScopesTheRange() throws Exception {
-        Range range = range("-r", ROW, "-cf", "fi\\0FIELD", "-cqp", "value\\0");
-
-        Text fieldIndexCf = text("fi\0FIELD");
-        assertEquals(new Range(new Key(new Text(ROW), fieldIndexCf, text("value\0")), true, new Key(new Text(ROW), fieldIndexCf, text("value\1")), false),
-                        range);
-        assertTrue(range.contains(new Key(new Text(ROW), fieldIndexCf, text("value\0datatype\0uid"))));
-        assertFalse(range.contains(new Key(new Text(ROW), fieldIndexCf, text("valuf"))));
-    }
-
-    @Test
     public void testBeginAndEndKeyOptionsSetTheEndpoints() throws Exception {
         Range range = range("-b", "a", "-e", "b", "-bkcf", "datatype\\0uid", "-ekcf", "datatype\\0uid2");
 
-        Key start = new Key(new Text("a"), EVENT_CF);
-        Key end = new Key(new Text("b"), text("datatype\0uid2"));
-        assertEquals(new Range(start, true, end.followingKey(PartialKey.ROW_COLFAM), false), range);
+        assertEquals(new Range(new Key(new Text("a"), EVENT_CF), true, new Key(new Text("b"), text("datatype\0uid3")), false), range);
     }
 
     @Test
-    public void testEndKeyQualifierIsIncludedWholeUnlessExclusive() throws Exception {
-        Key end = new Key(new Text(ROW), EVENT_CF, EVENT_CQ);
-        assertEquals(end.followingKey(PartialKey.ROW_COLFAM_COLQUAL), range("-r", ROW, "-ekcf", "datatype\\0uid", "-ekcq", "FIELD\\0value").getEndKey());
-        assertEquals(end, range("-r", ROW, "-ekcf", "datatype\\0uid", "-ekcq", "FIELD\\0value", "-ee").getEndKey());
+    public void testEndKeyQualifierCoversTheKeysSortingUnderIt() throws Exception {
+        assertEquals(new Key(new Text(ROW), EVENT_CF, text("FIELD\0valuf")), range("-r", ROW, "-ekcf", "datatype\\0uid", "-ekcq", "FIELD\\0value").getEndKey());
+        assertEquals(new Key(new Text(ROW), EVENT_CF, EVENT_CQ), range("-r", ROW, "-ekcf", "datatype\\0uid", "-ekcq", "FIELD\\0value", "-ee").getEndKey());
     }
 
     @Test
@@ -175,18 +183,13 @@ public class DataWaveScanCommandTest {
     }
 
     @Test
-    public void testPrefixScanRequiresARow() throws Exception {
-        assertThrows(IllegalArgumentException.class, () -> range("-b", "a", "-cfp", "fi\\0"));
+    public void testBeginKeyQualifierRequiresABeginKeyColumnFamily() throws Exception {
+        assertThrows(IllegalArgumentException.class, () -> range("-r", ROW, "-bkcq", "FIELD\\0value"));
     }
 
     @Test
-    public void testQualifierPrefixRequiresAColumnFamily() throws Exception {
-        assertThrows(IllegalArgumentException.class, () -> range("-r", ROW, "-cqp", "value\\0"));
-    }
-
-    @Test
-    public void testPrefixOptionsCannotBeCombinedWithKeyEndpoints() throws Exception {
-        assertThrows(IllegalArgumentException.class, () -> range("-r", ROW, "-cfp", "fi\\0", "-ekcf", "fi\\0x"));
+    public void testEndKeyQualifierRequiresAnEndKeyColumnFamily() throws Exception {
+        assertThrows(IllegalArgumentException.class, () -> range("-r", ROW, "-ekcq", "FIELD\\0value"));
     }
 
     @Test
@@ -200,11 +203,12 @@ public class DataWaveScanCommandTest {
     }
 
     @Test
-    public void testScopedRangeSkipsRedundantColumnFetching() throws Exception {
+    public void testScopedRangeDoesNotAlsoFetchTheColumnExactly() throws Exception {
+        // an exact fetchColumn would undo the partial matching the range provides
         ScannerBase scanner = EasyMock.createMock(ScannerBase.class);
         EasyMock.replay(scanner);
 
-        command.fetchColumns(parse("-r", ROW, "-cf", "datatype\\0uid", "-cq", "FIELD\\0value"), scanner, null);
+        command.fetchColumns(parse("-r", ROW, "-cf", "fi\\0FIELD", "-cq", "value"), scanner, null);
 
         EasyMock.verify(scanner);
     }
@@ -224,7 +228,7 @@ public class DataWaveScanCommandTest {
     public void testColumnListIsDecoded() throws Exception {
         ScannerBase scanner = EasyMock.createMock(ScannerBase.class);
         scanner.fetchColumn(EVENT_CF, EVENT_CQ);
-        scanner.fetchColumnFamily(text("fi\0FIELD"));
+        scanner.fetchColumnFamily(FIELD_INDEX_CF);
         EasyMock.replay(scanner);
 
         command.fetchColumns(parse("-r", ROW, "-c", "datatype\\0uid:FIELD\\0value,fi\\0FIELD"), scanner, null);

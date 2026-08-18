@@ -16,9 +16,11 @@ import org.apache.hadoop.io.Text;
 /**
  * A scan command that restricts the scan range itself to a column family and column qualifier rather than filtering columns out of a whole-row scan.
  * <p>
- * Row and column values are decoded by {@link KeyEscapes} so that null-delimited DataWave key components can be typed, as in {@code -cf datatype\0uid}. An end
- * key is interpreted at the granularity it was given, so {@code -ekcf} stops after the last key in that column family and the named column is included; pass
- * {@code -ee} to use the endpoint literally. Scan interpreters, which the stock command applies, are deprecated in Accumulo 2.1 and are not applied here.
+ * Row and column values are decoded by {@link KeyEscapes} so that null-delimited DataWave key components can be typed, as in {@code -cf datatype\0uid}. The
+ * last component named may be partial, and bounds the range the way a partial key does when building a {@link Range} by hand: the scan starts at that key and
+ * runs through every key sorting under it, so {@code -cf tf -cq datatype\0uid} reaches {@code tf:datatype\0uid\0FIELD\0value}. Naming a qualifier therefore
+ * makes the column family fully qualified, since only one component can carry the bound. Pass {@code -ee} to stop at the end key literally instead. Scan
+ * interpreters, which the stock command applies, are deprecated in Accumulo 2.1 and are not applied here.
  */
 public class DataWaveScanCommand extends ScanCommand {
 
@@ -35,8 +37,6 @@ public class DataWaveScanCommand extends ScanCommand {
     private static final String END_KEY_CF_OPT = "ekcf";
     private static final String END_KEY_CQ_OPT = "ekcq";
     private static final String END_KEY_TS_OPT = "ekts";
-    private static final String COLUMN_FAMILY_PREFIX_OPT = "cfp";
-    private static final String COLUMN_QUALIFIER_PREFIX_OPT = "cqp";
     private static final String NO_ESCAPES_OPT = "no-escapes";
 
     private static final String[] BEGIN_KEY_OPTS = {BEGIN_KEY_CF_OPT, BEGIN_KEY_CQ_OPT, BEGIN_KEY_TS_OPT};
@@ -51,8 +51,6 @@ public class DataWaveScanCommand extends ScanCommand {
         private Text cf;
         private Text cq;
         private Long ts;
-        private boolean cfIsPrefix;
-        private boolean cqIsPrefix;
 
         private boolean isEmpty() {
             return cf == null && cq == null && ts == null;
@@ -79,9 +77,6 @@ public class DataWaveScanCommand extends ScanCommand {
         o.addOption(argOption(END_KEY_CF_OPT, "end-key-cf", "column family the scan range ends at"));
         o.addOption(argOption(END_KEY_CQ_OPT, "end-key-cq", "column qualifier the scan range ends at"));
         o.addOption(argOption(END_KEY_TS_OPT, "end-key-ts", "timestamp the scan range ends at"));
-        o.addOption(argOption(COLUMN_FAMILY_PREFIX_OPT, "column-family-prefix", "scan the column families starting with this prefix, requires -r"));
-        o.addOption(argOption(COLUMN_QUALIFIER_PREFIX_OPT, "column-qualifier-prefix",
-                        "scan the column qualifiers starting with this prefix, requires -r and -cf"));
         o.addOption(new Option(null, NO_ESCAPES_OPT, false, "take row and column values literally instead of decoding \\0, \\xHH, \\n, \\r, \\t and \\\\"));
 
         // the superclass registers these only for the commands it ships, and this command inherits its execute() unchanged
@@ -141,7 +136,7 @@ public class DataWaveScanCommand extends ScanCommand {
                     throws UnsupportedEncodingException {
         if (cl.hasOption(COLUMN_FAMILY_OPT) || cl.hasOption(COLUMN_QUALIFIER_OPT)) {
             if (rangeIsScopedToColumn(cl)) {
-                // the range already starts and ends on the requested column, so filtering for it again would be redundant
+                // the range covers the requested column; fetching it as well would match the value exactly and drop the longer keys sorting under it
                 return;
             }
             Text cf = decode(cl, COLUMN_FAMILY_OPT);
@@ -164,16 +159,15 @@ public class DataWaveScanCommand extends ScanCommand {
     }
 
     /**
-     * Reports whether {@link #getRange(CommandLine, org.apache.accumulo.core.util.interpret.ScanInterpreter)} narrowed the range to exactly the column named by
-     * -cf and -cq, which is the case when a single row was given and no other scoping option overrode it.
+     * Reports whether {@link #getRange(CommandLine, org.apache.accumulo.core.util.interpret.ScanInterpreter)} scoped the range to the column named by -cf and
+     * -cq, which is the case when a single row was given and no explicit endpoint overrode it.
      *
      * @param cl
      *            the parsed command line
      * @return true if the range already restricts the scan to the requested column
      */
     protected boolean rangeIsScopedToColumn(final CommandLine cl) {
-        return cl.hasOption(ROW_OPT) && cl.hasOption(COLUMN_FAMILY_OPT) && !hasAny(cl, BEGIN_KEY_OPTS) && !hasAny(cl, END_KEY_OPTS)
-                        && !cl.hasOption(COLUMN_QUALIFIER_PREFIX_OPT);
+        return cl.hasOption(ROW_OPT) && cl.hasOption(COLUMN_FAMILY_OPT) && !hasAny(cl, BEGIN_KEY_OPTS) && !hasAny(cl, END_KEY_OPTS);
     }
 
     private void validate(final CommandLine cl) {
@@ -184,32 +178,16 @@ public class DataWaveScanCommand extends ScanCommand {
         if (cl.hasOption(COLUMN_QUALIFIER_OPT) && !cl.hasOption(COLUMN_FAMILY_OPT)) {
             throw new IllegalArgumentException("Option -" + COLUMN_FAMILY_OPT + " is required when using -" + COLUMN_QUALIFIER_OPT + ".");
         }
-        if (cl.hasOption(COLUMN_FAMILY_PREFIX_OPT) && cl.hasOption(COLUMN_FAMILY_OPT)) {
-            throw new IllegalArgumentException("Options -" + COLUMN_FAMILY_OPT + " and -" + COLUMN_FAMILY_PREFIX_OPT + " are mutually exclusive.");
-        }
-        if (cl.hasOption(COLUMN_QUALIFIER_PREFIX_OPT) && cl.hasOption(COLUMN_QUALIFIER_OPT)) {
-            throw new IllegalArgumentException("Options -" + COLUMN_QUALIFIER_OPT + " and -" + COLUMN_QUALIFIER_PREFIX_OPT + " are mutually exclusive.");
-        }
-        if (cl.hasOption(COLUMN_QUALIFIER_PREFIX_OPT) && !cl.hasOption(COLUMN_FAMILY_OPT)) {
-            throw new IllegalArgumentException("Option -" + COLUMN_FAMILY_OPT + " is required when using -" + COLUMN_QUALIFIER_PREFIX_OPT + ".");
-        }
-        if ((cl.hasOption(COLUMN_FAMILY_PREFIX_OPT) || cl.hasOption(COLUMN_QUALIFIER_PREFIX_OPT)) && !cl.hasOption(ROW_OPT)) {
-            throw new IllegalArgumentException("A prefix scan covers one row, specify -" + ROW_OPT + ".");
-        }
         if (cl.hasOption(BEGIN_KEY_CQ_OPT) && !cl.hasOption(BEGIN_KEY_CF_OPT)) {
             throw new IllegalArgumentException("Option -" + BEGIN_KEY_CF_OPT + " is required when using -" + BEGIN_KEY_CQ_OPT + ".");
         }
         if (cl.hasOption(END_KEY_CQ_OPT) && !cl.hasOption(END_KEY_CF_OPT)) {
             throw new IllegalArgumentException("Option -" + END_KEY_CF_OPT + " is required when using -" + END_KEY_CQ_OPT + ".");
         }
-        if ((cl.hasOption(COLUMN_FAMILY_PREFIX_OPT) || cl.hasOption(COLUMN_QUALIFIER_PREFIX_OPT)) && (hasAny(cl, BEGIN_KEY_OPTS) || hasAny(cl, END_KEY_OPTS))) {
-            throw new IllegalArgumentException("The prefix options set both ends of the range and cannot be combined with the -bk and -ek options.");
-        }
     }
 
     /**
-     * Builds one end of the range below the row. Explicit begin or end key options win; otherwise a prefix option, or a column named alongside a single row,
-     * scopes both ends alike.
+     * Builds one end of the range below the row. Explicit begin or end key options win; otherwise a column named alongside a single row scopes both ends alike.
      *
      * @param cl
      *            the parsed command line
@@ -229,13 +207,6 @@ public class DataWaveScanCommand extends ScanCommand {
             bound.ts = timestamp(cl, keyOpts[2]);
         } else if (explicitBounds) {
             return bound;
-        } else if (cl.hasOption(COLUMN_FAMILY_PREFIX_OPT)) {
-            bound.cf = decode(cl, COLUMN_FAMILY_PREFIX_OPT);
-            bound.cfIsPrefix = true;
-        } else if (cl.hasOption(COLUMN_QUALIFIER_PREFIX_OPT)) {
-            bound.cf = decode(cl, COLUMN_FAMILY_OPT);
-            bound.cq = decode(cl, COLUMN_QUALIFIER_PREFIX_OPT);
-            bound.cqIsPrefix = true;
         } else if (row != null && cl.hasOption(COLUMN_FAMILY_OPT)) {
             bound.cf = decode(cl, COLUMN_FAMILY_OPT);
             bound.cq = decode(cl, COLUMN_QUALIFIER_OPT);
@@ -244,15 +215,16 @@ public class DataWaveScanCommand extends ScanCommand {
     }
 
     /**
-     * Computes the exclusive key the scan stops at. An inclusive endpoint runs through the end of whatever was named, so that the requested column family,
-     * column qualifier or prefix is itself included in the results.
+     * Computes the exclusive key the scan stops at. The last component named may be a partial value, so an inclusive endpoint runs past everything sorting
+     * under it rather than stopping at the value itself, which is what lets a partial qualifier such as {@code value} reach {@code value\0datatype\0uid}. Only
+     * that last component is extended, so naming a qualifier holds the column family exact.
      *
      * @param endRow
      *            the last row of the scan
      * @param end
      *            the requested endpoint below the row
      * @param inclusive
-     *            whether the endpoint itself should be included
+     *            whether keys sorting under the endpoint should be included
      * @return the exclusive end key
      */
     private Key endKey(final Text endRow, final ColumnBound end, final boolean inclusive) {
@@ -264,19 +236,16 @@ public class DataWaveScanCommand extends ScanCommand {
         if (!inclusive) {
             return key;
         }
-        if (end.cfIsPrefix) {
-            Text following = Range.followingPrefix(end.cf);
-            return (following == null) ? new Key(endRow).followingKey(PartialKey.ROW) : new Key(endRow, following);
-        }
-        if (end.cqIsPrefix) {
-            Text following = Range.followingPrefix(end.cq);
-            return (following == null) ? key.followingKey(PartialKey.ROW_COLFAM) : new Key(endRow, end.cf, following);
-        }
         if (end.ts != null) {
-            // timestamps sort descending, so the key after the requested one is the same key one timestamp earlier
+            // a timestamp is a fixed-width long rather than a partial value, and timestamps sort descending
             return key.followingKey(PartialKey.ROW_COLFAM_COLQUAL_COLVIS_TIME);
         }
-        return key.followingKey((end.cq == null) ? PartialKey.ROW_COLFAM : PartialKey.ROW_COLFAM_COLQUAL);
+        if (end.cq != null) {
+            Text following = Range.followingPrefix(end.cq);
+            return (following == null) ? key.followingKey(PartialKey.ROW_COLFAM) : new Key(endRow, orEmpty(end.cf), following);
+        }
+        Text following = Range.followingPrefix(end.cf);
+        return (following == null) ? new Key(endRow).followingKey(PartialKey.ROW) : new Key(endRow, following);
     }
 
     private boolean hasAny(final CommandLine cl, final String[] opts) {
