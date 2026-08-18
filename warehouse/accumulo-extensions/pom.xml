@@ -36,6 +36,11 @@
         </dependency>
         <dependency>
             <groupId>org.apache.accumulo</groupId>
+            <artifactId>accumulo-shell</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.accumulo</groupId>
             <artifactId>accumulo-start</artifactId>
             <scope>provided</scope>
         </dependency>

@@ -18,6 +18,8 @@
     <allow pkg="org.apache.accumulo.minicluster"/>
     <allow pkg="org.apache.accumulo.hadoop.mapreduce"/>
     <allow pkg="org.apache.accumulo.core.spi"/>
+    <!-- ShellExtension is the supported way to add commands to the shell, and the commands it registers extend the shipped ones -->
+    <allow pkg="org.apache.accumulo.shell"/>
 
     <!-- Temporarily allow some specific classes until accumulo
     team seperates parts of that into public api -->
