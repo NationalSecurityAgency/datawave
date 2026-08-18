@@ -1289,6 +1289,25 @@ public class AnnotationHitsTransformerTest {
         test(Map.entry(HIT_KEY, doc), Map.entry(HIT_KEY, returnDoc));
     }
 
+    @ParameterizedTest(name = "forceStripFields={0}")
+    @CsvSource({"false,false", "true,false", "true,true"})
+    public void verifyForcedGroupingTest(boolean forceGrouping, boolean stripFields) {
+        applyGroupingParameters(forceGrouping, stripFields);
+
+        // the query config already forced grouping notation
+        shardQueryConfiguration.setIncludeGroupingContext(true);
+
+        transformer = new AnnotationHitsTransformer(shardQueryConfiguration, query, termExtractor, normalizer, annotationDao, allHitsFactory,
+                maxContextBoundary, validTypes, targetField, enrichmentFieldMap);
+        transformer.initialize(settings, markingFunctions);
+
+        Document doc = getGroupingTestSourceDoc();
+        // this is forced false because we shouldn't actually be in a forced mode
+        Document returnDoc = getGroupingTestExpectedDoc(false, stripFields);
+
+        test(Map.entry(HIT_KEY, doc), Map.entry(HIT_KEY, returnDoc));
+    }
+
     private void enrichmentFieldMapTest(Document input, Document output) throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException {
         withParameter(AnnotationHitsTransformer.ENABLED_PARAMETER, "true");
         enrichmentFieldMap.put("EVENT_FIELD", "field");
