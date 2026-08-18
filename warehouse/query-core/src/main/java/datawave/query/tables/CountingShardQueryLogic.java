@@ -32,8 +32,9 @@ import datawave.query.transformer.ShardQueryCountTableTransformer;
 public class CountingShardQueryLogic extends ShardQueryLogic {
     private static final Logger log = Logger.getLogger(CountingShardQueryLogic.class);
 
-    // the time to wait before returning an intermediate result
-    private long pageWaitTimeMillis = 0L;
+    // the time to wait before returning an intermediate result. Zero would return an intermediate result
+    // on every call to next(), before the aggregating thread has had any chance to produce the count.
+    private long pageWaitTimeMillis = CountAggregatingIterator.DEFAULT_PAGE_WAIT_TIME_MILLIS;
 
     public CountingShardQueryLogic() {
         super();
