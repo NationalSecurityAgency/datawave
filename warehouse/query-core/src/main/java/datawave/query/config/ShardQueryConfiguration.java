@@ -586,6 +586,12 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private int dayIndexThreshold = -1;
 
     /**
+     * Captures whether we forced includeGroupingNotation on for some internal functionality vs. whether it was requested by the user If we forced it on, we may
+     * take different actions when transforming hits to send back to the userr (e.g., In AnnotationHitsTransformer)
+     */
+    private boolean forcedGroupingContext = false;
+
+    /**
      * Default constructor
      */
     public ShardQueryConfiguration() {
@@ -849,6 +855,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setTruncatedIndexTableName(other.getTruncatedIndexTableName());
         this.setOriginalJexlQuery(other.getOriginalJexlQuery());
         this.setAllHitsQueryConfig(other.getAllHitsQueryConfig());
+        this.setForcedGroupingContext(other.isForcedGroupingContext());
     }
 
     /**
@@ -3200,6 +3207,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getDayIndexThreshold() == that.getDayIndexThreshold() &&
                 isUseTruncatedIndex() == that.isUseTruncatedIndex() &&
                 getTruncatedIndexTableName() == that.getTruncatedIndexTableName() &&
+                isForcedGroupingContext() == that.isForcedGroupingContext() &&
                 Objects.equals(getOriginalJexlQuery(), that.getOriginalJexlQuery()) &&
                 Objects.equals(getAllHitsQueryConfig(), that.getAllHitsQueryConfig());
         // @formatter:on
@@ -3434,6 +3442,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 isDisableIteratorMostRecentUniqueFields(),
                 isUseShardedIndex(),
                 getDayIndexThreshold(),
+                isForcedGroupingContext(),
                 isUseTruncatedIndex(),
                 getTruncatedIndexTableName(),
                 getOriginalJexlQuery(),
@@ -3583,5 +3592,13 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public void setUseNewIndexLookups(boolean useNewIndexLookups) {
         this.useNewIndexLookups = useNewIndexLookups;
+    }
+
+    public boolean isForcedGroupingContext() {
+        return forcedGroupingContext;
+    }
+
+    public void setForcedGroupingContext(boolean forced) {
+        this.forcedGroupingContext = forced;
     }
 }
