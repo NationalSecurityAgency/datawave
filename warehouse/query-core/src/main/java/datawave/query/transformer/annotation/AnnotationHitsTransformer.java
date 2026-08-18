@@ -89,6 +89,12 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
     private final String targetField;
     private final TermExtractor queryTermExtractor;
     private final Normalizer<String> termNormalizer;
+    /**
+     * A snapshot of the jexl query string, taken at construction time. This transformer may be constructed before
+     * {@link ShardQueryConfiguration#getOriginalJexlQuery()} has been populated (e.g. {@code ShardQueryLogic.loadQueryParameters()} fetches the transformer,
+     * via {@code getTransformer()}, before the original jexl query string is parsed and set on the config), so this value is only used as a fallback in
+     * {@link #apply(Entry)} when the live value on {@link #shardQueryConfig} is not yet available.
+     */
     private final String jexlQueryString;
     /**
      * Used for merging data about an annotation that may have been stored in the event with hits against that annotation. The key represents the field that
@@ -102,6 +108,7 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
     private float minScore = DEFAULT_MIN_SCORE;
     private TimeUnit timeUnit = DEFAULT_TIMEUNIT;
     private List<String> forcedReturnFields = new ArrayList<>();
+    private boolean forcedGroupingNotation = false;
 
     private Set<Pattern> searchHitTerms;
     private ObjectMapper objectMapper;
@@ -124,7 +131,20 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
     @Override
     public void initialize(Query settings, MarkingFunctions<?> markingFunctions) {
         super.initialize(settings, markingFunctions);
+        updateConfig(settings);
+    }
 
+    /**
+     * Parses the query parameters relevant to this transform and updates its configuration accordingly. Called once by
+     * {@link #initialize(Query, MarkingFunctions)} when this transform is first constructed, and again by {@code ShardQueryLogic#addConfigBasedTransformers()}
+     * on subsequent pages, following the same initialize()/updateConfig() lifecycle contract used by the other config-based transforms (e.g.
+     * {@code UniqueTransform}, {@code GroupingTransform}, {@code FieldRenameTransform}), in case the query parameters legitimately change across pages (e.g.
+     * after a checkpoint/resume).
+     *
+     * @param settings
+     *            the query settings to read parameters from
+     */
+    public void updateConfig(Query settings) {
         // handle query parameters for configuration overrides
         String enabledStr = settings.findParameter(ENABLED_PARAMETER).getParameterValue();
         if (!enabledStr.isBlank()) {
@@ -201,9 +221,10 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
             if ((!Boolean.parseBoolean(groupingParameter)) && !shardQueryConfig.getIncludeGroupingContext()) {
                 // grouping notation not set, apply it
                 shardQueryConfig.setIncludeGroupingContext(true);
-                // record this on the shared config (not an instance field) so that it is remembered across
-                // pages, since a new AnnotationHitsTransformer instance is created for each page/next() call
-                shardQueryConfig.setForcedGroupingContext(true);
+                // record this so it can be undone after the transform is complete. initialize() only runs once per
+                // query now (this transformer instance is constructed once and reused across all page/next() calls),
+                // so a plain instance field is sufficient to remember this across pages.
+                forcedGroupingNotation = true;
             }
 
             // now check that if return.fields are set that the fields required are included
@@ -272,8 +293,14 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
             // extract terms to lookup hits on if they haven't been extracted yet
             if (searchHitTerms == null) {
                 try {
+                    // prefer the live value from the shared config: this transformer may have been constructed
+                    // before the config's original jexl query was populated (see field javadoc above)
+                    String currentJexlQueryString = shardQueryConfig.getOriginalJexlQuery();
+                    if (currentJexlQueryString == null) {
+                        currentJexlQueryString = jexlQueryString;
+                    }
                     searchHitTerms = new HashSet<>();
-                    for (String normalized : queryTermExtractor.extract(jexlQueryString, termNormalizer)) {
+                    for (String normalized : queryTermExtractor.extract(currentJexlQueryString, termNormalizer)) {
                         searchHitTerms.add(compileNormalized(normalized));
                     }
                 } catch (ParseException | JavaRegexAnalyzer.JavaRegexParseException e) {
@@ -360,7 +387,7 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
     }
 
     private void stripGroupingNotation(Entry<Key,Document> entry) {
-        if (!shardQueryConfig.isForcedGroupingContext()) {
+        if (!forcedGroupingNotation) {
             return;
         }
 

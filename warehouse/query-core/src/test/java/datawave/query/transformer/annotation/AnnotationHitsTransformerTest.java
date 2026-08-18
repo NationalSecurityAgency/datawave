@@ -1309,33 +1309,26 @@ public class AnnotationHitsTransformerTest {
     }
 
     @Test
-    public void forcedGroupingPersistsAcrossPageTransformerInstancesTest() {
-        // ShardQueryLogic builds a brand-new AnnotationHitsTransformer instance for every page/next() call
-        // (see ShardQueryLogic#addConfigBasedTransformers()), but reuses the same ShardQueryConfiguration
-        // across all of those pages. Verify that grouping notation forced on page 1 is still correctly
-        // stripped on page 2, even though page 2's transformer never itself decides to force it.
+    public void forcedGroupingPersistsAcrossMultiplePageApplyCallsTest() {
+        // ShardQueryLogic constructs a single AnnotationHitsTransformer instance per query (initialize() is only
+        // called once) and reuses that same instance -- and its shardQueryConfiguration -- across every
+        // page/next() call. Verify that grouping notation forced on page 1 is still correctly stripped on
+        // subsequent pages using that same instance.
         applyGroupingParameters(true, false);
 
         Document expected = getGroupingTestExpectedDoc(true, false);
 
-        // page 1: first transformer instance forces grouping context on and strips it back out
         transformer = new AnnotationHitsTransformer(shardQueryConfiguration, query, termExtractor, normalizer, annotationDao, allHitsFactory,
                         maxContextBoundary, validTypes, targetField, enrichmentFieldMap);
         transformer.initialize(settings, markingFunctions);
+        assertTrue(shardQueryConfiguration.getIncludeGroupingContext(), "grouping context should be forced on for the life of the query");
+
+        // page 1
         Entry<Key,Document> page1 = transformer.apply(Map.entry(new Key(), getGroupingTestSourceDoc()));
         assertEquals(expected, page1.getValue());
-        assertTrue(shardQueryConfiguration.getIncludeGroupingContext(), "grouping context should remain forced on the shared config for subsequent pages");
-        assertTrue(shardQueryConfiguration.isForcedGroupingContext(), "the shared config should remember that grouping context was forced");
 
-        // page 2: a brand new transformer instance is created (as ShardQueryLogic does per page), reusing the
-        // same, now-mutated, shardQueryConfiguration. Prior to the fix, this instance would see
-        // shardQueryConfiguration.getIncludeGroupingContext() == true (leaked from page 1) and conclude
-        // grouping notation was NOT forced, so it would never strip it -- leaking grouping notation to the caller.
-        transformer = new AnnotationHitsTransformer(shardQueryConfiguration, query, termExtractor, normalizer, annotationDao, allHitsFactory,
-                        maxContextBoundary, validTypes, targetField, enrichmentFieldMap);
-        transformer.initialize(settings, markingFunctions);
+        // page 2: same transformer instance, same shardQueryConfiguration, reused as ShardQueryLogic now does
         Entry<Key,Document> page2 = transformer.apply(Map.entry(new Key(), getGroupingTestSourceDoc()));
-
         assertEquals(expected, page2.getValue());
     }
 
