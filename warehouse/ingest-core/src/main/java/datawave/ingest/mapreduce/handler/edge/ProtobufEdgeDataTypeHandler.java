@@ -303,7 +303,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
 
             EdgeSourceSinkInfo edgeInfo = new EdgeSourceSinkInfo(mSource, mSink, sourceGroup, sinkGroup);
 
-            boolean sameGroup = sourceGroup.equals(sinkGroup) && (sourceGroup != NO_GROUP);
+            boolean sameGroup = sourceGroup.equals(sinkGroup) && !sourceGroup.equals(NO_GROUP);
 
             boolean ignorePreconditionMatchedGroups = !edgeDef.hasJexlPrecondition() || !edgeDef.isGroupAware()
                             || !(matchingGroups.containsKey(sourceGroup) || matchingGroups.containsKey(sinkGroup));
@@ -537,7 +537,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
             Collection<NormalizedContentInterface> ifaceEnrichs = fieldUtil.normalizedFields.get(edgeDef.getEnrichmentField());
             if (null != ifaceEnrichs && !ifaceEnrichs.isEmpty()) {
                 String enrichGroup = getEdgeDefGroup(edgeDef.getEnrichmentField());
-                if (enrichGroup != NO_GROUP) {
+                if (!enrichGroup.equals(NO_GROUP)) {
                     if (enrichGroup.equals(sourceGroup)) {
                         ifaceEnrichs = fieldUtil.depthFirstList.get(edgeDef.getEnrichmentField()).get(sourceSubGroup);
                     } else if (enrichGroup.equals(sinkGroup)) {

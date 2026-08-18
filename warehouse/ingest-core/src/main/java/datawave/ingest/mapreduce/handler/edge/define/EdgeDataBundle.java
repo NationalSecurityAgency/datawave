@@ -117,6 +117,8 @@ public class EdgeDataBundle {
         this.sourceMaskedValue = null;
         this.sinkMaskedValue = null;
         this.forceMaskedVisibility = false;
+        this.enrichedValue = null;
+        this.enrichedIndex = null;
     }
 
     private int getHour(long time) {
@@ -175,6 +177,8 @@ public class EdgeDataBundle {
             }
         } else if (m2 != null) {
             this.markings = m2;
+        } else {
+            this.markings = null;
         }
     }
 
