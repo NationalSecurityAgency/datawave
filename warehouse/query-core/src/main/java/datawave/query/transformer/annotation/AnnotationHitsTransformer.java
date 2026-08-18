@@ -197,7 +197,8 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
         // test for changes that need to be made to the query to support field enrichment from the event
         if (enrichmentFieldMap != null && !enrichmentFieldMap.isEmpty()) {
             String groupingParameter = settings.findParameter(INCLUDE_GROUPING_CONTEXT).getParameterValue();
-            if ((!Boolean.parseBoolean(groupingParameter))) {
+            // only forcing grouping notation when not already set by the config
+            if ((!Boolean.parseBoolean(groupingParameter)) && !shardQueryConfig.getIncludeGroupingContext()) {
                 // grouping notation not set, apply it
                 shardQueryConfig.setIncludeGroupingContext(true);
                 // capture this, so it can be undone after the transform is complete
