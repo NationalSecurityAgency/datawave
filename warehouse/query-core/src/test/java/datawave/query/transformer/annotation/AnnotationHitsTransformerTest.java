@@ -28,6 +28,8 @@ import org.apache.commons.jexl3.parser.ParseException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -1067,6 +1069,224 @@ public class AnnotationHitsTransformerTest {
         source.put("EVENT_FIELD.abc.345.456", new Content("data", HIT_KEY, true), true);
 
         enrichmentFieldMapTest(source, expected);
+    }
+
+    @ParameterizedTest(name = "forceGrouping={0} forceStripFields={1}")
+    @CsvSource({"true,false", "true,true"})
+    public void forceGrouping_null_test(boolean forceGrouping, boolean stripFields) {
+        withParameter(AnnotationHitsTransformer.ENABLED_PARAMETER, "true");
+
+        if (forceGrouping) {
+            // force population of the enrichment field map, this is what forces grouping notation
+            enrichmentFieldMap.put("EVENT_FIELD", "all-hits-field");
+        }
+        if (stripFields) {
+            withParameter(QueryParameters.RETURN_FIELDS, "field1");
+        }
+
+        test(null, null);
+    }
+
+    private void applyGroupingParameters(boolean forceGrouping, boolean stripFields) {
+        withParameter(AnnotationHitsTransformer.ENABLED_PARAMETER, "true");
+        if (forceGrouping) {
+            // force population of the enrichment field map, this is what forces grouping notation
+            enrichmentFieldMap.put("EVENT_FIELD", "all-hits-field");
+        }
+        if (stripFields) {
+            withParameter(QueryParameters.RETURN_FIELDS, "SOME_FIELD");
+        }
+    }
+
+    private Document getGroupingTestSourceDoc() {
+        Document doc = new Document();
+        doc.put("MY.GROUPED.FIELD", new Content("abc", new Key(), true), true);
+        doc.put("EVENT_FIELD", new Content("remove me if stripping fields", new Key(), true));
+
+        return doc;
+    }
+
+    private Document getGroupingTestExpectedDoc(boolean forceGrouping, boolean stripFields) {
+        Document returnDoc = new Document();
+        if (forceGrouping) {
+            returnDoc.put("MY", new Content("abc", new Key(), true));
+        } else {
+            returnDoc.put("MY.GROUPED.FIELD", new Content("abc", new Key(), true), true);
+        }
+        if (!stripFields) {
+            returnDoc.put("EVENT_FIELD", new Content("remove me if stripping fields", new Key(), true));
+        }
+
+        return returnDoc;
+    }
+
+    @ParameterizedTest(name = "forceGrouping={0} forceStripFields={1}")
+    @CsvSource({"false,false", "true,false", "true,true"})
+    public void forceGrouping_noSearchTerms_test(boolean forceGrouping, boolean stripFields) {
+        applyGroupingParameters(forceGrouping, stripFields);
+        Document doc = getGroupingTestSourceDoc();
+        Document returnDoc = getGroupingTestExpectedDoc(forceGrouping, stripFields);
+
+        test(Map.entry(new Key(), doc), Map.entry(new Key(), returnDoc));
+    }
+
+    @ParameterizedTest(name = "forceGrouping={0} forceStripFields={1}")
+    @CsvSource({"false,false", "true,false", "true,true"})
+    public void forceGroupingStrip_nullKey_test(boolean forceGrouping, boolean stripFields) throws ParseException, JavaRegexAnalyzer.JavaRegexParseException {
+        applyGroupingParameters(forceGrouping, stripFields);
+        Document doc = getGroupingTestSourceDoc();
+        Document returnDoc = getGroupingTestExpectedDoc(forceGrouping, stripFields);
+
+        // add some search terms otherwise we don't process far enough to see nullKey checked
+        when(termExtractor.extract(query, normalizer)).thenReturn(Set.of("t1"));
+
+        Map<Key,Document> input = new HashMap<>();
+        input.put(null, doc);
+
+        Map<Key,Document> expected = new HashMap<>();
+        expected.put(null, returnDoc);
+
+        test(input.entrySet().iterator().next(), expected.entrySet().iterator().next());
+    }
+
+    @ParameterizedTest(name = "forceGrouping={0} forceStripFields={1}")
+    @CsvSource({"false,false", "true,false", "true,true"})
+    public void forceGroupingStrip_nullDocument_test(boolean forceGrouping, boolean stripFields)
+                    throws ParseException, JavaRegexAnalyzer.JavaRegexParseException {
+        applyGroupingParameters(forceGrouping, stripFields);
+
+        // add some search terms otherwise we don't process far enough to see nullKey checked
+        when(termExtractor.extract(query, normalizer)).thenReturn(Set.of("t1"));
+
+        Map<Key,Document> input = new HashMap<>();
+        input.put(new Key("a"), null);
+
+        Map<Key,Document> expected = new HashMap<>();
+        expected.put(new Key("a"), null);
+
+        test(input.entrySet().iterator().next(), expected.entrySet().iterator().next());
+    }
+
+    @ParameterizedTest(name = "forceGrouping={0} forceStripFields={1}")
+    @CsvSource({"false,false", "true,false", "true,true"})
+    public void forceGroupingStrip_notKeepDocument_test(boolean forceGrouping, boolean stripFields)
+                    throws ParseException, JavaRegexAnalyzer.JavaRegexParseException {
+        applyGroupingParameters(forceGrouping, stripFields);
+        Document groupedDocument = getGroupingTestSourceDoc();
+        groupedDocument.setToKeep(false);
+        Document returnDoc = getGroupingTestExpectedDoc(forceGrouping, stripFields);
+        returnDoc.setToKeep(false);
+
+        // add some search terms otherwise we don't process far enough to see nullKey checked
+        when(termExtractor.extract(query, normalizer)).thenReturn(Set.of("t1"));
+
+        test(Map.entry(new Key(), groupedDocument), Map.entry(new Key(), returnDoc));
+    }
+
+    @ParameterizedTest(name = "forceGrouping={0} forceStripFields={1}")
+    @CsvSource({"false,false", "true,false", "true,true"})
+    public void forceGroupingStrip_targetFieldConflict_Test(boolean forceGrouping, boolean stripFields)
+                    throws ParseException, JavaRegexAnalyzer.JavaRegexParseException {
+        applyGroupingParameters(forceGrouping, stripFields);
+        Document doc = getGroupingTestSourceDoc();
+        doc.put("TARGET_FIELD", new Content("conflicting", new Key(), true));
+        Document returnDoc = getGroupingTestExpectedDoc(forceGrouping, stripFields);
+        returnDoc.put("TARGET_FIELD", new Content("conflicting", new Key(), true));
+
+        // add some search terms otherwise we don't process far enough to see nullKey checked
+        when(termExtractor.extract(query, normalizer)).thenReturn(Set.of("t1"));
+
+        // set the target field to match the existing field
+        targetField = "TARGET_FIELD";
+
+        test(Map.entry(new Key(), doc), Map.entry(new Key(), returnDoc));
+    }
+
+    @ParameterizedTest(name = "forceGrouping={0} forceStripFields={1}")
+    @CsvSource({"false,false", "true,false", "true,true"})
+    public void forceGroupingStrip_unexpectedKey_test(boolean forceGrouping, boolean stripFields)
+                    throws ParseException, JavaRegexAnalyzer.JavaRegexParseException {
+        applyGroupingParameters(forceGrouping, stripFields);
+        Document doc = getGroupingTestSourceDoc();
+        Document returnDoc = getGroupingTestExpectedDoc(forceGrouping, stripFields);
+
+        // add some search terms otherwise we don't process far enough to see nullKey checked
+        when(termExtractor.extract(query, normalizer)).thenReturn(Set.of("t1"));
+
+        // set the target field to match the existing field
+        targetField = "TARGET_FIELD";
+
+        test(Map.entry(new Key("unexpected"), doc), Map.entry(new Key("unexpected"), returnDoc));
+    }
+
+    @ParameterizedTest(name = "forceGrouping={0} forceStripFields={1}")
+    @CsvSource({"false,false", "true,false", "true,true"})
+    public void forceGroupingStrip_noAnnotations_Test(boolean forceGrouping, boolean stripFields)
+                    throws ParseException, JavaRegexAnalyzer.JavaRegexParseException {
+        applyGroupingParameters(forceGrouping, stripFields);
+        Document doc = getGroupingTestSourceDoc();
+        Document returnDoc = getGroupingTestExpectedDoc(forceGrouping, stripFields);
+
+        // add some search terms otherwise we don't process far enough to see nullKey checked
+        when(termExtractor.extract(query, normalizer)).thenReturn(Set.of("t1"));
+
+        // set the target field to match the existing field
+        targetField = "TARGET_FIELD";
+
+        // no matching annotations
+        when(annotationDao.getAnnotations("20260112_0", "test", "123.345.456")).thenReturn(annotations);
+
+        test(Map.entry(HIT_KEY, doc), Map.entry(HIT_KEY, returnDoc));
+    }
+
+    @ParameterizedTest(name = "forceGrouping={0} forceStripFields={1}")
+    @CsvSource({"false,false", "true,false", "true,true"})
+    public void forceGroupingStrip_noMatchingTypes_Test(boolean forceGrouping, boolean stripFields)
+                    throws ParseException, JavaRegexAnalyzer.JavaRegexParseException {
+        applyGroupingParameters(forceGrouping, stripFields);
+        Document doc = getGroupingTestSourceDoc();
+        Document returnDoc = getGroupingTestExpectedDoc(forceGrouping, stripFields);
+
+        // add some search terms otherwise we don't process far enough to see nullKey checked
+        when(termExtractor.extract(query, normalizer)).thenReturn(Set.of("t1"));
+
+        // set the target field to match the existing field
+        targetField = "TARGET_FIELD";
+
+        // get some annotations
+        givenAnnotation(buildAnnotation("ANNO1", "20260112_0", "test", "123.345.456", "hash", S7, S1, S6, S2, S5, S3, S4));
+        when(annotationDao.getAnnotations("20260112_0", "test", "123.345.456")).thenReturn(annotations);
+
+        // set the types to not include the annotation found
+        validTypes = Set.of("ANNO2");
+
+        test(Map.entry(HIT_KEY, doc), Map.entry(HIT_KEY, returnDoc));
+    }
+
+    @ParameterizedTest(name = "forceGrouping={0} forceStripFields={1}")
+    @CsvSource({"false,false", "true,false", "true,true"})
+    public void forceGroupingStrip_unmatched_Test(boolean forceGrouping, boolean stripFields) throws ParseException, JavaRegexAnalyzer.JavaRegexParseException {
+        applyGroupingParameters(forceGrouping, stripFields);
+        Document doc = getGroupingTestSourceDoc();
+        Document returnDoc = getGroupingTestExpectedDoc(forceGrouping, stripFields);
+        returnDoc.put("TARGET_FIELD", new Content("[]", HIT_KEY, true));
+
+        // add some search terms otherwise we don't process far enough to see nullKey checked
+        when(termExtractor.extract(query, normalizer)).thenReturn(Set.of("t1"));
+
+        // set the target field to match the existing field
+        targetField = "TARGET_FIELD";
+
+        // get some annotations
+        givenAnnotation(buildAnnotation("ANNO1", "20260112_0", "test", "123.345.456", "hash", S7, S1, S6, S2, S5, S3, S4));
+        when(annotationDao.getAnnotations("20260112_0", "test", "123.345.456")).thenReturn(annotations);
+
+        // set the types to not include the annotation found
+        validTypes = Set.of("ANNO1");
+
+        withNormalizers();
+
+        test(Map.entry(HIT_KEY, doc), Map.entry(HIT_KEY, returnDoc));
     }
 
     private void enrichmentFieldMapTest(Document input, Document output) throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException {

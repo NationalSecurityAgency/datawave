@@ -267,78 +267,79 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
             return keyDocumentEntry;
         }
 
-        // extract terms to lookup hits on if they haven't been extracted yet
-        if (searchHitTerms == null) {
-            try {
-                searchHitTerms = new HashSet<>();
-                for (String normalized : queryTermExtractor.extract(jexlQueryString, termNormalizer)) {
-                    searchHitTerms.add(compileNormalized(normalized));
-                }
-            } catch (ParseException | JavaRegexAnalyzer.JavaRegexParseException e) {
-                log.debug("no valid search terms detected for query, skipping all hits", e);
-            }
-        }
-
-        if (searchHitTerms.isEmpty()) {
-            // no search terms, no-op
-            return keyDocumentEntry;
-        }
-
-        Key key = keyDocumentEntry.getKey();
-        Document document = keyDocumentEntry.getValue();
-        if (key == null || document == null || !document.isToKeep()) {
-            // either missing information that is critical or is transient
-            return keyDocumentEntry;
-        } else if (document.get(targetField) != null) {
-            log.warn("Document: " + key + " already contains field: " + targetField + " skipping");
-            return keyDocumentEntry;
-        }
-
-        String shard = key.getRow().toString();
-        String cf = key.getColumnFamily().toString();
-        String[] parts = cf.split("\u0000");
-
-        if (parts.length != 2) {
-            // unexpected doc key
-            log.warn("Cannot apply all hits to result. Unexpected doc key: " + key);
-            return keyDocumentEntry;
-        }
-
-        String dataType = parts[0];
-        String uid = parts[1];
-        Collection<Annotation> annotations = annotationDataAccess.getAnnotations(shard, dataType, uid);
-        for (Annotation annotation : annotations) {
-            String annotationType = annotation.getAnnotationType();
-            if (validTypes.contains(annotationType)) {
-                // this annotation supports allHits
-                TreeMap<SegmentBoundary,List<SegmentValue>> sortedSegments = sort(annotation.getSegmentsList());
-                List<SegmentHit> orderedHits = search(sortedSegments, contextSize, minScore);
+        try {
+            // extract terms to lookup hits on if they haven't been extracted yet
+            if (searchHitTerms == null) {
                 try {
-                    AllHits results = null;
-                    if (!orderedHits.isEmpty()) {
-                        results = allHitsFactory.create(annotation.getAnnotationId(), orderedHits, sortedSegments, timeUnit);
+                    searchHitTerms = new HashSet<>();
+                    for (String normalized : queryTermExtractor.extract(jexlQueryString, termNormalizer)) {
+                        searchHitTerms.add(compileNormalized(normalized));
                     }
-                    enrichAllHitsFromDocument(annotation, results, document);
-                    updateDocument(keyDocumentEntry, results);
-                } catch (AllHitsException e) {
-                    log.warn("failed to process hit(s) on annotation: " + annotation.getAnnotationId() + " for doc: " + dataType + "\\x00" + uid, e);
-                    AllHits error = new AllHits();
-                    error.setAnnotationId(annotation.getAnnotationId());
-                    error.addDynamicProperties("error", e.getMessage());
-                    updateDocument(keyDocumentEntry, error);
-                } finally {
-                    // strip anything we forced into the Document to complete the query
-                    keyDocumentEntry = stripGroupingNotation(keyDocumentEntry);
-                    keyDocumentEntry = removeForcedFields(keyDocumentEntry);
+                } catch (ParseException | JavaRegexAnalyzer.JavaRegexParseException e) {
+                    log.debug("no valid search terms detected for query, skipping all hits", e);
                 }
             }
-        }
 
-        return keyDocumentEntry;
+            if (searchHitTerms.isEmpty()) {
+                // no search terms, no-op
+                return keyDocumentEntry;
+            }
+
+            Key key = keyDocumentEntry.getKey();
+            Document document = keyDocumentEntry.getValue();
+            if (key == null || document == null || !document.isToKeep()) {
+                // either missing information that is critical or is transient
+                return keyDocumentEntry;
+            } else if (document.get(targetField) != null) {
+                log.warn("Document: " + key + " already contains field: " + targetField + " skipping");
+                return keyDocumentEntry;
+            }
+
+            String shard = key.getRow().toString();
+            String cf = key.getColumnFamily().toString();
+            String[] parts = cf.split("\u0000");
+
+            if (parts.length != 2) {
+                // unexpected doc key
+                log.warn("Cannot apply all hits to result. Unexpected doc key: " + key);
+                return keyDocumentEntry;
+            }
+
+            String dataType = parts[0];
+            String uid = parts[1];
+            Collection<Annotation> annotations = annotationDataAccess.getAnnotations(shard, dataType, uid);
+            for (Annotation annotation : annotations) {
+                String annotationType = annotation.getAnnotationType();
+                if (validTypes.contains(annotationType)) {
+                    // this annotation supports allHits
+                    TreeMap<SegmentBoundary,List<SegmentValue>> sortedSegments = sort(annotation.getSegmentsList());
+                    List<SegmentHit> orderedHits = search(sortedSegments, contextSize, minScore);
+                    try {
+                        AllHits results = null;
+                        if (!orderedHits.isEmpty()) {
+                            results = allHitsFactory.create(annotation.getAnnotationId(), orderedHits, sortedSegments, timeUnit);
+                        }
+                        enrichAllHitsFromDocument(annotation, results, document);
+                        updateDocument(keyDocumentEntry, results);
+                    } catch (AllHitsException e) {
+                        log.warn("failed to process hit(s) on annotation: " + annotation.getAnnotationId() + " for doc: " + dataType + "\\x00" + uid, e);
+                        AllHits error = new AllHits();
+                        error.setAnnotationId(annotation.getAnnotationId());
+                        error.addDynamicProperties("error", e.getMessage());
+                        updateDocument(keyDocumentEntry, error);
+                    }
+                }
+            }
+            return keyDocumentEntry;
+        } finally {
+            // strip anything we forced into the Document to complete the query
+            keyDocumentEntry = stripGroupingNotation(keyDocumentEntry);
+            keyDocumentEntry = removeForcedFields(keyDocumentEntry);
+        }
     }
 
     private Entry<Key,Document> removeForcedFields(Entry<Key,Document> entry) {
-        if (forcedReturnFields.isEmpty()) {
+        if (forcedReturnFields.isEmpty() || entry.getValue() == null) {
             return entry;
         }
 
