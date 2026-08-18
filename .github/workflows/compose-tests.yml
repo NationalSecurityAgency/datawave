@@ -43,6 +43,12 @@ jobs:
       GITHUB_USERNAME: ${{ secrets.GHCR_WRITE_USER_NAME }}
       GITHUB_PASSWORD: ${{ secrets.GHCR_WRITE_ACCESS_TOKEN }}
       DW_BUILD_CACHE_OPTIONS: ${{ needs.configure-runner.outputs.cache_settings }}
+      # Without this compose derives the project name from the directory, so every
+      # compose job on a runner shares the project "docker" -- and `up --no-recreate`
+      # then attaches to another job's containers instead of starting its own. A
+      # unique name also labels this job's containers, networks and volumes with
+      # com.docker.compose.project, which is what makes the teardown below scoped.
+      COMPOSE_PROJECT_NAME: dw-${{ github.run_id }}-${{ github.run_attempt }}-${{ inputs.allow-snapshots && 'snap' || 'rel' }}
     steps:
       - name: Set owner of working dir and m2 dir recursively
         #Needed because compose can leave around files owned by root.
@@ -58,6 +64,10 @@ jobs:
       - uses: ./.github/actions/free-space
         with:
           tool-cache: false
+          # Self-hosted runners are persistent, so `docker image prune --all` deletes
+          # the layer cache every build depends on and can remove images a co-tenant
+          # job is still using. Hosted runners are disposable, so let it run there.
+          docker-images: ${{ needs.configure-runner.outputs.runner != 'self-hosted' }}
       - name: Configure Maven Settings
         run: |
           mkdir -p ~/.m2
@@ -113,8 +123,13 @@ jobs:
               clean install
       - name: Docker Compose Clear Space
         run: |
-          # free up some space so that we don't run out
-          docker system prune -f
+          # free up some space so that we don't run out. This runs before the stack
+          # starts, so there is nothing of this job's to reclaim yet -- the targets are
+          # build cache and dangling layers. `until=24h` keeps a concurrently running
+          # job's freshly built images and cache out of scope; a bare `system prune`
+          # would delete them out from under it.
+          docker builder prune --force --filter "until=24h"
+          docker image prune --force --filter "until=24h"
           export MAVEN_OPTS="${{ env.MAVEN_OPTS }}"
           mvn --show-version --batch-mode --errors -Dutils -Dservices -Dstarters \
               -Pcompose -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -DskipTests ${{ needs.configure-runner.outputs.cache_settings }} clean
@@ -145,8 +160,25 @@ jobs:
           cd docker
           export DW_HOST_IP=127.0.0.1
           docker compose exec quickstart bash -c "source ~/.bashrc && datawaveWebTest --blacklist-files QueryMetrics" || true
+      # The stack is torn down below, so capture logs for failures that happen after
+      # the ingest tests -- the earlier Dump Logs step only covers that one step.
+      - name: Dump Logs On Failure
+        if: failure()
+        run: |
+          cd docker
+          docker compose logs || true
+      - name: Tear Down Compose Stack
+        if: always()
+        run: |
+          # Resolves by COMPOSE_PROJECT_NAME, so this removes only the containers,
+          # networks and volumes this job created. Previously nothing tore the stack
+          # down at all, which is why a blanket `docker system prune` was needed to
+          # clear whatever the last job abandoned.
+          cd docker
+          docker compose down --volumes --remove-orphans --timeout 60 || true
       - name: Final Operations
+        if: always()
         run: |
           if [[ "${{ needs.configure-runner.outputs.runner }}" == "self-hosted" ]]; then
-            sudo chown -R $(whoami) . ~/.m2 || true   
+            sudo chown -R $(whoami) . ~/.m2 || true
           fi
