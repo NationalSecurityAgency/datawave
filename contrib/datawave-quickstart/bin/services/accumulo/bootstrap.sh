@@ -79,13 +79,7 @@ instance.secret=${DW_ACCUMULO_PASSWORD}
 tserver.memory.maps.native.enabled=false
 tserver.memory.maps.max=385M
 tserver.cache.data.size=64M
-tserver.cache.index.size=64M
-
-## Trace user
-trace.user=root
-
-## Trace password
-trace.password=${DW_ACCUMULO_PASSWORD}"
+tserver.cache.index.size=64M"
 
 if [ "${DW_ACCUMULO_VFS_DATAWAVE_ENABLED}" != false ] ; then
   DW_ACCUMULO_PROPERTIES="${DW_ACCUMULO_PROPERTIES}
