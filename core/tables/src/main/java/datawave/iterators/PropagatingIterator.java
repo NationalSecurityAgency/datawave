@@ -30,7 +30,7 @@ import datawave.ingest.table.aggregator.PropagatingCombiner;
  * Purpose: Handle arbitrary propagating aggregations.
  *
  * Design: Though very similar to the DeletingIterator, due to private methods and members, we cannot directly extend the DeletingIterator. As a result, the
- * class extends SKVI. This class {@code USES --> PropogatingAggregator}. Note that propAgg can be null
+ * class extends SKVI. This class uses {@link PropagatingCombiner}. Note that propAgg can be null.
  *
  * Initially the TotalAggregatingIterator, this class was a direct copy. At some point it was identified that there was an artifact where deletes would not be
  * propagated. As a result, this class becomes nearly identical to the DeletingIterator, whereby deletes are always propagated until a full major compaction.

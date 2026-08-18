@@ -678,9 +678,9 @@ public class PropagatingIteratorTest {
         HashMap<String,String> emptyOptions = new HashMap<>();
         MockIteratorEnvironment env = new MockIteratorEnvironment(true);
 
-        PropagatingIterator propogatingIterator = new PropagatingIterator();
-        propogatingIterator.init(source, emptyOptions, env);
-        PropagatingIterator deepCopiedPropagatingIterator = propogatingIterator.deepCopy(env);
+        PropagatingIterator propagatingIterator = new PropagatingIterator();
+        propagatingIterator.init(source, emptyOptions, env);
+        PropagatingIterator deepCopiedPropagatingIterator = propagatingIterator.deepCopy(env);
         Assert.assertNotNull("PropagatingIterator default constructor failed to create a valid instance.", deepCopiedPropagatingIterator);
     }
 
@@ -690,9 +690,9 @@ public class PropagatingIteratorTest {
         HashMap<String,String> emptyOptions = new HashMap<>();
         MockIteratorEnvironment env = new MockIteratorEnvironment(true);
 
-        PropagatingIterator propogatingIterator = new PropagatingIterator(source, null);
-        propogatingIterator.init(source, emptyOptions, env);
-        PropagatingIterator deepCopiedPropagatingIterator = propogatingIterator.deepCopy(env);
+        PropagatingIterator propagatingIterator = new PropagatingIterator(source, null);
+        propagatingIterator.init(source, emptyOptions, env);
+        PropagatingIterator deepCopiedPropagatingIterator = propagatingIterator.deepCopy(env);
         Assert.assertNotNull("PropagatingIterator constructor failed to create a valid instance.", deepCopiedPropagatingIterator);
     }
 

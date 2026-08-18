@@ -12,7 +12,7 @@ import datawave.iterators.ValueCombiner;
 
 /**
  *
- * Aids in determining if a value and the corresponding keys should propogate
+ * Aids in determining if a value and the corresponding keys should propagate
  *
  */
 public abstract class PropagatingCombiner extends Combiner {

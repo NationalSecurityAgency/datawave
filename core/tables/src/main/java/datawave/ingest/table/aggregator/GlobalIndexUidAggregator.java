@@ -256,7 +256,7 @@ public class GlobalIndexUidAggregator extends PropagatingCombiner {
             // in the current iteration have been seen, in case a subsequent PB has the UID
             // marked for removal.
             uidsToRemove.add(uid);
-            // Avoid exceeding maxUids in the uidToRemove list, even when propogating.
+            // Avoid exceeding maxUids in the uidToRemove list, even when propagating.
             // Check for this condition after adding each of the remove UID entries to uidsToRemove,
             // which also de-duplicates uids in that Set.
             if (uidsToRemove.size() >= maxUids) {
@@ -321,8 +321,8 @@ public class GlobalIndexUidAggregator extends PropagatingCombiner {
     public boolean propagateKey() {
 
         // This method is called after reduce and then aggregate, so all of the work to combine has been done.
-        // If the propogate flag is true, then this might have been a partial major compaction, scan, or minor
-        // compaction and we want to keep all keys no matter what. When propogate is false, that means it's a scan or
+        // If the propagate flag is true, then this might have been a partial major compaction, scan, or minor
+        // compaction and we want to keep all keys no matter what. When propagate is false, that means it's a scan or
         // full major compaction and therefore we can be certain that the aggregated result has combined all possible
         // values for a given key. In that case, we only need to keep the resulting key/value pair if it has any UIDs
         // (which means either UIDs in the uid list, or a positive uid count).
