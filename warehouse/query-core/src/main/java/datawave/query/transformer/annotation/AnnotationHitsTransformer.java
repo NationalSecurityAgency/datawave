@@ -101,7 +101,6 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
     private int contextSize = DEFAULT_CONTEXT_SIZE;
     private float minScore = DEFAULT_MIN_SCORE;
     private TimeUnit timeUnit = DEFAULT_TIMEUNIT;
-    private boolean forcedGroupingNotation = false;
     private List<String> forcedReturnFields = new ArrayList<>();
 
     private Set<Pattern> searchHitTerms;
@@ -202,8 +201,9 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
             if ((!Boolean.parseBoolean(groupingParameter)) && !shardQueryConfig.getIncludeGroupingContext()) {
                 // grouping notation not set, apply it
                 shardQueryConfig.setIncludeGroupingContext(true);
-                // capture this, so it can be undone after the transform is complete
-                forcedGroupingNotation = true;
+                // record this on the shared config (not an instance field) so that it is remembered across
+                // pages, since a new AnnotationHitsTransformer instance is created for each page/next() call
+                shardQueryConfig.setForcedGroupingContext(true);
             }
 
             // now check that if return.fields are set that the fields required are included
@@ -334,14 +334,14 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
             return keyDocumentEntry;
         } finally {
             // strip anything we forced into the Document to complete the query
-            keyDocumentEntry = stripGroupingNotation(keyDocumentEntry);
-            keyDocumentEntry = removeForcedFields(keyDocumentEntry);
+            stripGroupingNotation(keyDocumentEntry);
+            removeForcedFields(keyDocumentEntry);
         }
     }
 
-    private Entry<Key,Document> removeForcedFields(Entry<Key,Document> entry) {
+    private void removeForcedFields(Entry<Key,Document> entry) {
         if (forcedReturnFields.isEmpty() || entry.getValue() == null) {
-            return entry;
+            return;
         }
 
         Set<Tuple2<String,Attribute<? extends Comparable<?>>>> toRemove = Sets.newHashSet();
@@ -357,17 +357,15 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
         for (Tuple2<String,Attribute<? extends Comparable<?>>> goner : toRemove) {
             entry.getValue().removeAll(goner.first());
         }
-
-        return entry;
     }
 
-    private Entry<Key,Document> stripGroupingNotation(Entry<Key,Document> entry) {
-        if (!forcedGroupingNotation) {
-            return entry;
+    private void stripGroupingNotation(Entry<Key,Document> entry) {
+        if (!shardQueryConfig.isForcedGroupingContext()) {
+            return;
         }
 
         RemoveGroupingContext removeGroupingContext = new RemoveGroupingContext();
-        return removeGroupingContext.apply(entry);
+        removeGroupingContext.apply(entry);
     }
 
     private void enrichAllHitsFromDocument(Annotation annotation, AllHits allHits, Document document) {

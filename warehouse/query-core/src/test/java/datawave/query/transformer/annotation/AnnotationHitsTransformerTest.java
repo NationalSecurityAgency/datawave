@@ -1308,6 +1308,37 @@ public class AnnotationHitsTransformerTest {
         test(Map.entry(HIT_KEY, doc), Map.entry(HIT_KEY, returnDoc));
     }
 
+    @Test
+    public void forcedGroupingPersistsAcrossPageTransformerInstancesTest() {
+        // ShardQueryLogic builds a brand-new AnnotationHitsTransformer instance for every page/next() call
+        // (see ShardQueryLogic#addConfigBasedTransformers()), but reuses the same ShardQueryConfiguration
+        // across all of those pages. Verify that grouping notation forced on page 1 is still correctly
+        // stripped on page 2, even though page 2's transformer never itself decides to force it.
+        applyGroupingParameters(true, false);
+
+        Document expected = getGroupingTestExpectedDoc(true, false);
+
+        // page 1: first transformer instance forces grouping context on and strips it back out
+        transformer = new AnnotationHitsTransformer(shardQueryConfiguration, query, termExtractor, normalizer, annotationDao, allHitsFactory,
+                        maxContextBoundary, validTypes, targetField, enrichmentFieldMap);
+        transformer.initialize(settings, markingFunctions);
+        Entry<Key,Document> page1 = transformer.apply(Map.entry(new Key(), getGroupingTestSourceDoc()));
+        assertEquals(expected, page1.getValue());
+        assertTrue(shardQueryConfiguration.getIncludeGroupingContext(), "grouping context should remain forced on the shared config for subsequent pages");
+        assertTrue(shardQueryConfiguration.isForcedGroupingContext(), "the shared config should remember that grouping context was forced");
+
+        // page 2: a brand new transformer instance is created (as ShardQueryLogic does per page), reusing the
+        // same, now-mutated, shardQueryConfiguration. Prior to the fix, this instance would see
+        // shardQueryConfiguration.getIncludeGroupingContext() == true (leaked from page 1) and conclude
+        // grouping notation was NOT forced, so it would never strip it -- leaking grouping notation to the caller.
+        transformer = new AnnotationHitsTransformer(shardQueryConfiguration, query, termExtractor, normalizer, annotationDao, allHitsFactory,
+                        maxContextBoundary, validTypes, targetField, enrichmentFieldMap);
+        transformer.initialize(settings, markingFunctions);
+        Entry<Key,Document> page2 = transformer.apply(Map.entry(new Key(), getGroupingTestSourceDoc()));
+
+        assertEquals(expected, page2.getValue());
+    }
+
     private void enrichmentFieldMapTest(Document input, Document output) throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException {
         withParameter(AnnotationHitsTransformer.ENABLED_PARAMETER, "true");
         enrichmentFieldMap.put("EVENT_FIELD", "field");
