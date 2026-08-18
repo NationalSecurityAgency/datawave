@@ -1309,11 +1309,11 @@ public class AnnotationHitsTransformerTest {
     }
 
     @Test
-    public void forcedGroupingPersistsAcrossMultiplePageApplyCallsTest() {
+    public void forcedGroupingStrippedAcrossMultiplePageApplyCallsTest() {
         // ShardQueryLogic constructs a single AnnotationHitsTransformer instance per query (initialize() is only
         // called once) and reuses that same instance -- and its shardQueryConfiguration -- across every
-        // page/next() call. Verify that grouping notation forced on page 1 is still correctly stripped on
-        // subsequent pages using that same instance.
+        // page/next() call. Verify that grouping notation forced on the first page/apply() call is still
+        // correctly stripped on subsequent pages/apply() calls using that same instance.
         applyGroupingParameters(true, false);
 
         Document expected = getGroupingTestExpectedDoc(true, false);
@@ -1330,6 +1330,89 @@ public class AnnotationHitsTransformerTest {
         // page 2: same transformer instance, same shardQueryConfiguration, reused as ShardQueryLogic now does
         Entry<Key,Document> page2 = transformer.apply(Map.entry(new Key(), getGroupingTestSourceDoc()));
         assertEquals(expected, page2.getValue());
+
+        // page 3: verify it continues to work beyond just a second call
+        Entry<Key,Document> page3 = transformer.apply(Map.entry(new Key(), getGroupingTestSourceDoc()));
+        assertEquals(expected, page3.getValue());
+    }
+
+    @Test
+    public void updateConfigPicksUpChangedParametersOnSubsequentPageTest()
+                    throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException, JsonProcessingException {
+        // ShardQueryLogic now follows the initialize()/updateConfig() lifecycle contract used by the other
+        // config-based transforms: construct once (calling initialize()), then call updateConfig() on later
+        // pages so that any query parameters which legitimately change across pages (e.g. after a
+        // checkpoint/resume) are picked up, without re-running the full constructor.
+        withParameter(AnnotationHitsTransformer.ENABLED_PARAMETER, "true");
+        withParameter(AnnotationHitsTransformer.MIN_SCORE_PARAMETER, ".9");
+        query = "abc";
+        targetField = "TARGET_FIELD";
+        validTypes = Set.of("ANNO1", "ANNO2");
+
+        transformer = new AnnotationHitsTransformer(shardQueryConfiguration, query, termExtractor, normalizer, annotationDao, allHitsFactory,
+                        maxContextBoundary, validTypes, targetField, enrichmentFieldMap);
+        transformer.initialize(settings, markingFunctions);
+
+        // simulate settings changing on a later page/next() call and ShardQueryLogic invoking updateConfig()
+        // (rather than reconstructing the transformer) on the existing instance
+        withParameter(AnnotationHitsTransformer.MIN_SCORE_PARAMETER, "0");
+        transformer.updateConfig(settings);
+
+        Set<String> queryTerms = Set.of("bbbbbbb", "v2", "v3");
+        givenAnnotation(buildAnnotation("ANNO1", "20260112_0", "test", "123.345.456", "hash", S7, S1, S6, S2, S5, S3, S4));
+        when(termExtractor.extract(query, normalizer)).thenReturn(queryTerms);
+        when(annotationDao.getAnnotations("20260112_0", "test", "123.345.456")).thenReturn(annotations);
+        withNormalizers();
+
+        AnnotationHitsTransformer.SegmentHit hit1 = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), S1.getBoundary(), 0);
+        hit1.setContextEnd(S1.getBoundary());
+        withHits("my-annotation", List.of(hit1));
+
+        Document expected = new Document();
+        expected.put("TARGET_FIELD", new Content(allHitsToString(allHitsResult), HIT_KEY, true));
+
+        // bbbbbbb scores .5, which would have been filtered out by the original min.score of .9, but should now
+        // pass now that updateConfig() lowered min.score to 0
+        Entry<Key,Document> result = transformer.apply(Map.entry(HIT_KEY, new Document()));
+        assertEquals(expected, result.getValue());
+    }
+
+    @Test
+    public void jexlQueryStringReadLiveFromConfigOnFirstApplyTest()
+                    throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException, JsonProcessingException {
+        // AnnotationHitsTransformer may be constructed by ShardQueryLogic before the shared config's original
+        // jexl query string has been populated (see ShardQueryLogic#loadQueryParameters() calling
+        // getTransformer() before setOriginalJexlQuery() is called). Verify that if the config's jexl query is
+        // set (live) between construction and the first apply() call, the live value is used rather than the
+        // (null) value captured at construction time.
+        withParameter(AnnotationHitsTransformer.ENABLED_PARAMETER, "true");
+
+        Set<String> queryTerms = Set.of("aaaaaaa", "v2", "v3");
+        givenAnnotation(buildAnnotation("ANNO1", "20260112_0", "test", "123.345.456", "hash", S7, S1, S6, S2, S5, S3, S4));
+        targetField = "TARGET_FIELD";
+        validTypes = Set.of("ANNO1", "ANNO2");
+        when(annotationDao.getAnnotations("20260112_0", "test", "123.345.456")).thenReturn(annotations);
+        withNormalizers();
+
+        // construct with a null jexlQueryString, simulating the premature getTransformer() call
+        transformer = new AnnotationHitsTransformer(shardQueryConfiguration, null, termExtractor, normalizer, annotationDao, allHitsFactory, maxContextBoundary,
+                        validTypes, targetField, enrichmentFieldMap);
+        transformer.initialize(settings, markingFunctions);
+
+        // the config's jexl query is populated afterward, as it would be later in ShardQueryLogic#initialize()
+        String liveJexlQuery = "abc";
+        shardQueryConfiguration.setOriginalJexlQuery(liveJexlQuery);
+        when(termExtractor.extract(liveJexlQuery, normalizer)).thenReturn(queryTerms);
+
+        AnnotationHitsTransformer.SegmentHit hit1 = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), S1.getBoundary(), 1);
+        hit1.setContextEnd(S1.getBoundary());
+        withHits("my-annotation", List.of(hit1));
+
+        Document expected = new Document();
+        expected.put("TARGET_FIELD", new Content(allHitsToString(allHitsResult), HIT_KEY, true));
+
+        Entry<Key,Document> result = transformer.apply(Map.entry(HIT_KEY, new Document()));
+        assertEquals(expected, result.getValue());
     }
 
     private void enrichmentFieldMapTest(Document input, Document output) throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException {
