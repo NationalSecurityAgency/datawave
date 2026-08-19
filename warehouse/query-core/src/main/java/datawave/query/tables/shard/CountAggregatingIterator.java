@@ -38,7 +38,7 @@ import datawave.webservice.query.result.event.DefaultEvent;
 public class CountAggregatingIterator extends TransformIterator implements Closeable {
     private static final Logger log = Logger.getLogger(CountAggregatingIterator.class);
 
-    private static final long DEFAULT_PAGE_WAIT_TIME_MILLIS = 3_600_000L;
+    public static final long DEFAULT_PAGE_WAIT_TIME_MILLIS = 3_600_000L;
 
     private boolean done = false;
     private final AtomicBoolean executing = new AtomicBoolean(true);
