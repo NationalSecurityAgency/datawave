@@ -2,7 +2,7 @@ volumes:
   hdfs_name:
   hdfs_data:
   zookeeper_data:
-  datawave_accumulo_lib:
+  datawave_accumulo_ext:
 
 services:
   datawave-extlib:
@@ -13,24 +13,15 @@ services:
     command:
       - |
         set -e
-        target=/opt/accumulo/lib
-        mkdir -p "$${target}/ext"
-        for jar in \
-          /opt/datawave-ingest/current/accumulo-warehouse/lib/*.jar \
-          /opt/datawave-ingest/current/lib/accumulo-access-core-*.jar \
-          /opt/datawave-ingest/current/lib/jaxb-api-*.jar; do
-          filename=$${jar##*/}
-          artifact=$${filename%%-[0-9]*.jar}
-          rm -f "$${target}/$${artifact}-"*.jar
-        done
-        rm -f "$${target}/ext/"*.jar
+        target=/opt/accumulo/lib/ext
+        rm -f "$${target}/"*.jar
         cp /opt/datawave-ingest/current/accumulo-warehouse/lib/*.jar "$${target}/"
-        cp /opt/datawave-ingest/current/accumulo-warehouse/lib/ext/*.jar "$${target}/ext/"
+        cp /opt/datawave-ingest/current/accumulo-warehouse/lib/ext/*.jar "$${target}/"
         cp /opt/datawave-ingest/current/lib/accumulo-access-core-*.jar "$${target}/"
         cp /opt/datawave-ingest/current/lib/jaxb-api-*.jar "$${target}/"
-        chmod 0644 /opt/accumulo/lib/*.jar /opt/accumulo/lib/ext/*.jar
+        chmod 0644 "$${target}/"*.jar
     volumes:
-      - datawave_accumulo_lib:/opt/accumulo/lib
+      - datawave_accumulo_ext:/opt/accumulo/lib/ext
     networks: [demo]
 
   hdfs-nn:
@@ -154,7 +145,7 @@ services:
       - HADOOP_CONF_DIR=/stack
     volumes:
       - ./stack:/stack:ro
-      - datawave_accumulo_lib:/opt/accumulo/lib:ro
+      - datawave_accumulo_ext:/opt/accumulo/lib/ext:ro
       - ./stack/accumulo.properties:/opt/accumulo/conf/accumulo.properties:ro
       - ./stack/accumulo-client.properties:/opt/accumulo/conf/accumulo-client.properties:ro
       - ./stack/accumulo-env.sh:/opt/accumulo/conf/accumulo-env.sh:ro
@@ -181,7 +172,7 @@ services:
       - HADOOP_CONF_DIR=/stack
     volumes:
       - ./stack:/stack:ro
-      - datawave_accumulo_lib:/opt/accumulo/lib:ro
+      - datawave_accumulo_ext:/opt/accumulo/lib/ext:ro
       - ./stack/accumulo.properties:/opt/accumulo/conf/accumulo.properties:ro
       - ./stack/accumulo-client.properties:/opt/accumulo/conf/accumulo-client.properties:ro
       - ./stack/accumulo-env.sh:/opt/accumulo/conf/accumulo-env.sh:ro
@@ -203,7 +194,7 @@ services:
       - HADOOP_CONF_DIR=/stack
     volumes:
       - ./stack:/stack:ro
-      - datawave_accumulo_lib:/opt/accumulo/lib:ro
+      - datawave_accumulo_ext:/opt/accumulo/lib/ext:ro
       - ./stack/accumulo.properties:/opt/accumulo/conf/accumulo.properties:ro
       - ./stack/accumulo-client.properties:/opt/accumulo/conf/accumulo-client.properties:ro
       - ./stack/accumulo-env.sh:/opt/accumulo/conf/accumulo-env.sh:ro
@@ -222,7 +213,7 @@ services:
       - "9995:9995"
     volumes:
       - ./stack:/stack:ro
-      - datawave_accumulo_lib:/opt/accumulo/lib:ro
+      - datawave_accumulo_ext:/opt/accumulo/lib/ext:ro
       - ./stack/accumulo.properties:/opt/accumulo/conf/accumulo.properties:ro
       - ./stack/accumulo-client.properties:/opt/accumulo/conf/accumulo-client.properties:ro
       - ./stack/accumulo-env.sh:/opt/accumulo/conf/accumulo-env.sh:ro
