@@ -120,11 +120,11 @@ public class KeywordExtractor {
 
     /**
      * Extract keywords from the {@code orderedContent} field. Will return a KeywordResults object populated with the keywords extracted from the first view in
-     * {@code orderedContent} that has a successful extraction. If no keywords can be extracted from all preferred views, returns an empty
-     * {@code KeywordResults} object.
+     * {@code orderedContent} that has a successful extraction. If content is found but no keywords can be extracted from any preferred view, returns a
+     * {@code KeywordResults} object for the first view with an empty keyword map. This distinguishes found content with no keywords from missing content.
      *
-     * @return a KeywordResults object containing keywords from the first view found in {@code orderedContent} that yields a non-empty set of keywords or an
-     *         empty KeywordResults object if no keywords can be extracted.
+     * @return a KeywordResults object containing keywords from the first view found in {@code orderedContent} that yields a non-empty set of keywords, a result
+     *         for the first view with no keywords if extraction produces none, or {@link #EMPTY_RESULTS} if no content was found
      */
     @Nonnull
     public KeywordResults extractKeywords() {
@@ -145,6 +145,7 @@ public class KeywordExtractor {
             }
         }
 
-        return EMPTY_RESULTS;
+        Map.Entry<String,VisibleContent> firstEntry = orderedContent.get(0);
+        return new KeywordResults(source, firstEntry.getKey(), language, firstEntry.getValue().getVisibility(), new LinkedHashMap<>());
     }
 }
