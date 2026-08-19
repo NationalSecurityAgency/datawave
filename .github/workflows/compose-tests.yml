@@ -162,7 +162,7 @@ jobs:
           echo "Starting docker compose"
           docker compose down --volumes --remove-orphans
           docker compose up -d --wait --wait-timeout 600
-      - name: Docker Compose Ingest Tests
+      - name: Docker Compose Query Integration Tests
         run: |
           cd docker/scripts
           ./testAll.sh
