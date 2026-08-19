@@ -21,11 +21,17 @@ if [ "$1" == "hybrid" ] ; then
    DW_ZOOKEEPER_HOST=${DW_HOSTNAME}
    DW_HADOOP_HOST=${DW_HOSTNAME}
    DW_YARN_HOST=${DW_HOSTNAME}
+   HADOOP_CONF_SOURCE=${HADOOP_CONF_SOURCE:-${HADOOP_CONF_DIR}}
+   if [[ -z "${HADOOP_CONF_SOURCE}" ]]; then
+      echo "HADOOP_CONF_DIR or HADOOP_CONF_SOURCE must be set in hybrid mode" >&2
+      exit 1
+   fi
 else
    COMPOSE_PROFILES=datawave-stack
    DW_ZOOKEEPER_HOST=zookeeper
    DW_HADOOP_HOST=hdfs-nn
    DW_YARN_HOST=yarn-rm
+   HADOOP_CONF_SOURCE=${HADOOP_CONF_SOURCE:-./stack}
 fi
 
 ENV_CONF="\
@@ -43,6 +49,7 @@ DW_HOST_IP=\"${DW_HOST_IP}\"
 DW_ZOOKEEPER_HOST=\"${DW_ZOOKEEPER_HOST}\"
 DW_HADOOP_HOST=\"${DW_HADOOP_HOST}\"
 DW_YARN_HOST=\"${DW_YARN_HOST}\"
+HADOOP_CONF_SOURCE=\"${HADOOP_CONF_SOURCE}\"
 "
 
 # Write .env file using our settings in ENV_CONF

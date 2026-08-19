@@ -232,6 +232,8 @@ DW_HOST_IP="<Your host IP Address>"
 
 DW_ZOOKEEPER_HOST="zookeeper"
 DW_HADOOP_HOST="hdfs-nn"
+DW_YARN_HOST="yarn-rm"
+HADOOP_CONF_SOURCE="./stack"
 ```
 
 #### Hybrid Bootstrap
@@ -255,7 +257,11 @@ DW_HOST_IP="<Your host IP Address>"
 # Backend service locations for hybrid mode.
 DW_ZOOKEEPER_HOST="<Your hostname>"
 DW_HADOOP_HOST="<Your hostname>"
+DW_YARN_HOST="<Your hostname>"
+HADOOP_CONF_SOURCE="<HADOOP_CONF_DIR from your host deployment>"
 ```
+
+Hybrid mode requires either `HADOOP_CONF_DIR` or `HADOOP_CONF_SOURCE` to point to the host deployment's Hadoop configuration directory when `bootstrap.sh hybrid` runs. The directory is mounted at `/etc/hadoop/conf` inside the service containers.
 
 ### Start services
 

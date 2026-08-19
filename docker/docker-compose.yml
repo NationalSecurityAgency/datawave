@@ -1,6 +1,7 @@
 volumes:
   hdfs_name:
   hdfs_data:
+  zookeeper_data:
   datawave_accumulo_lib:
 
 services:
@@ -10,13 +11,23 @@ services:
     user: root
     entrypoint: ["/bin/bash", "-c"]
     command:
-      - >-
-        mkdir -p /opt/accumulo/lib/ext &&
-        rm -f /opt/accumulo/lib/ext/*.jar &&
-        cp /opt/datawave-ingest/current/accumulo-warehouse/lib/*.jar /opt/accumulo/lib/ &&
-        cp /opt/datawave-ingest/current/accumulo-warehouse/lib/ext/*.jar /opt/accumulo/lib/ext/ &&
-        cp /opt/datawave-ingest/current/lib/accumulo-access-core-*.jar /opt/accumulo/lib/ &&
-        cp /opt/datawave-ingest/current/lib/jaxb-api-*.jar /opt/accumulo/lib/ &&
+      - |
+        set -e
+        target=/opt/accumulo/lib
+        mkdir -p "$${target}/ext"
+        for jar in \
+          /opt/datawave-ingest/current/accumulo-warehouse/lib/*.jar \
+          /opt/datawave-ingest/current/lib/accumulo-access-core-*.jar \
+          /opt/datawave-ingest/current/lib/jaxb-api-*.jar; do
+          filename=$${jar##*/}
+          artifact=$${filename%%-[0-9]*.jar}
+          rm -f "$${target}/$${artifact}-"*.jar
+        done
+        rm -f "$${target}/ext/"*.jar
+        cp /opt/datawave-ingest/current/accumulo-warehouse/lib/*.jar "$${target}/"
+        cp /opt/datawave-ingest/current/accumulo-warehouse/lib/ext/*.jar "$${target}/ext/"
+        cp /opt/datawave-ingest/current/lib/accumulo-access-core-*.jar "$${target}/"
+        cp /opt/datawave-ingest/current/lib/jaxb-api-*.jar "$${target}/"
         chmod 0644 /opt/accumulo/lib/*.jar /opt/accumulo/lib/ext/*.jar
     volumes:
       - datawave_accumulo_lib:/opt/accumulo/lib
@@ -123,6 +134,8 @@ services:
       - ZOO_LOG_DIR=/var/log/zookeeper
     ports:
       - "2181:2181"
+    volumes:
+      - zookeeper_data:/var/lib/zookeeper
     networks: [demo]
     healthcheck:
       test: ["CMD-SHELL", "echo ruok | timeout 2 bash -c 'cat > /dev/tcp/localhost/2181' "]
@@ -757,7 +770,7 @@ services:
       - AUDIT_SERVER_URL=http://audit:8080/audit
       - HADOOP_HOST=${DW_HADOOP_HOST}
       - YARN_HOST=${DW_YARN_HOST}
-      - HADOOP_CONF_DIR=${HADOOP_CONF_DIR:-/etc/hadoop/conf}
+      - HADOOP_CONF_DIR=/etc/hadoop/conf
       - "BACKEND=${BACKEND:-rabbitmq}"
       - CACHED_RESULTS=${CACHED_RESULTS:-false}
       - QUERY_CACHE=${QUERY_CACHE:-cache}
@@ -802,7 +815,7 @@ services:
       - ZOOKEEPER_HOST=${DW_ZOOKEEPER_HOST}
       - HADOOP_HOST=${DW_HADOOP_HOST}
       - YARN_HOST=${DW_YARN_HOST}
-      - HADOOP_CONF_DIR=${HADOOP_CONF_DIR:-/etc/hadoop/conf}
+      - HADOOP_CONF_DIR=/etc/hadoop/conf
     ports:
       - "50005:5005"
     volumes:
@@ -841,7 +854,7 @@ services:
       - ZOOKEEPER_HOST=${DW_ZOOKEEPER_HOST}
       - HADOOP_HOST=${DW_HADOOP_HOST}
       - BACKEND=${BACKEND:-rabbitmq}
-      - HADOOP_CONF_DIR=${HADOOP_CONF_DIR:-/etc/hadoop/conf}
+      - HADOOP_CONF_DIR=/etc/hadoop/conf
       - QUERY_CACHE=${QUERY_CACHE:-cache}
       - USE_DEDICATED_INSTANCE=${USE_DEDICATED_INSTANCE:-false}
     # This mapping is required to enable the metrics service to communicate
@@ -890,7 +903,7 @@ services:
       - ZOOKEEPER_HOST=${DW_ZOOKEEPER_HOST}
       - HADOOP_HOST=${DW_HADOOP_HOST}
       - BACKEND=${BACKEND:-rabbitmq}
-      - HADOOP_CONF_DIR=${HADOOP_CONF_DIR:-/etc/hadoop/conf}
+      - HADOOP_CONF_DIR=/etc/hadoop/conf
       - QUERY_CACHE=${QUERY_CACHE:-cache}
       - USE_DEDICATED_INSTANCE=${USE_DEDICATED_INSTANCE:-false}
     # This mapping is required to enable the metrics service to communicate
