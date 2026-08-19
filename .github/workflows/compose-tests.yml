@@ -35,9 +35,6 @@ jobs:
   compose-build-and-test:
     needs: configure-runner
     runs-on: ${{ needs.configure-runner.outputs.runner }}
-    permissions:
-      contents: read
-      packages: read
     env:
       JAVA_VERSION: '11'
       JAVA_DISTRIBUTION: 'zulu' #This is the default on v1 of the action for 1.8
@@ -89,8 +86,8 @@ jobs:
         uses: docker/login-action@v4
         with:
           registry: ${{ env.GITHUB_REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ github.token }}
+          username: ${{ secrets.GHCR_WRITE_USER_NAME }}
+          password: ${{ secrets.GHCR_WRITE_ACCESS_TOKEN }}
       - name: Configure Maven Settings
         run: |
           mkdir -p ~/.m2
