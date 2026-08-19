@@ -756,6 +756,7 @@ services:
     environment:
       - AUDIT_SERVER_URL=http://audit:8080/audit
       - HADOOP_HOST=${DW_HADOOP_HOST}
+      - YARN_HOST=${DW_YARN_HOST}
       - HADOOP_CONF_DIR=${HADOOP_CONF_DIR:-/etc/hadoop/conf}
       - "BACKEND=${BACKEND:-rabbitmq}"
       - CACHED_RESULTS=${CACHED_RESULTS:-false}
@@ -800,6 +801,7 @@ services:
     environment:
       - ZOOKEEPER_HOST=${DW_ZOOKEEPER_HOST}
       - HADOOP_HOST=${DW_HADOOP_HOST}
+      - YARN_HOST=${DW_YARN_HOST}
       - HADOOP_CONF_DIR=${HADOOP_CONF_DIR:-/etc/hadoop/conf}
     ports:
       - "50005:5005"

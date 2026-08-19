@@ -20,10 +20,12 @@ if [ "$1" == "hybrid" ] ; then
    COMPOSE_PROFILES=""
    DW_ZOOKEEPER_HOST=${DW_HOSTNAME}
    DW_HADOOP_HOST=${DW_HOSTNAME}
+   DW_YARN_HOST=${DW_HOSTNAME}
 else
    COMPOSE_PROFILES=datawave-stack
    DW_ZOOKEEPER_HOST=zookeeper
    DW_HADOOP_HOST=hdfs-nn
+   DW_YARN_HOST=yarn-rm
 fi
 
 ENV_CONF="\
@@ -40,6 +42,7 @@ DW_HOST_IP=\"${DW_HOST_IP}\"
 # Backend service locations for the selected deployment mode.
 DW_ZOOKEEPER_HOST=\"${DW_ZOOKEEPER_HOST}\"
 DW_HADOOP_HOST=\"${DW_HADOOP_HOST}\"
+DW_YARN_HOST=\"${DW_YARN_HOST}\"
 "
 
 # Write .env file using our settings in ENV_CONF
