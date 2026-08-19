@@ -258,7 +258,7 @@ fi
 #================================================
 # initialize map/reduce JVM settings
 test -n "${_HeapDump}" && declare -r _heap="-XX:-HeapDumpOnOutOfMemoryError"
-declare -r _DefaultJVMArgs="-XX:+UseConcMarkSweepGC \
+declare -r _DefaultJVMArgs="\
 -Dfile.encoding=UTF8 \
 -Duser.timezone=GMT \
 -XX:+UseNUMA \
