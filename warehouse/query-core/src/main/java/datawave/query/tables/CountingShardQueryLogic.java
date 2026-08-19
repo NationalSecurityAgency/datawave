@@ -35,12 +35,24 @@ public class CountingShardQueryLogic extends ShardQueryLogic {
     // the time to wait before returning an intermediate result
     private long pageWaitTimeMillis = 0L;
 
+    // retained so the aggregation thread can be released when this logic is closed. Volatile because the thread that starts the query is not necessarily the
+    // thread that tears it down, and a reset publishes this reference after the query is already visible to the thread that expires it.
+    private volatile CountAggregatingIterator countAggregatingIterator;
+
     public CountingShardQueryLogic() {
         super();
     }
 
+    /**
+     * Copy constructor. The aggregating iterator is deliberately not copied, so that a copy does not close the thread belonging to the logic it was copied
+     * from.
+     *
+     * @param other
+     *            the logic to copy
+     */
     public CountingShardQueryLogic(CountingShardQueryLogic other) {
         super(other);
+        this.setPageWaitTimeMillis(other.getPageWaitTimeMillis());
     }
 
     @Override
@@ -62,7 +74,20 @@ public class CountingShardQueryLogic extends ShardQueryLogic {
 
     @Override
     public TransformIterator getTransformIterator(Query settings) {
-        return new CountAggregatingIterator(this.iterator(), getTransformer(settings), this.markingFunctions, getPageWaitTimeMillis());
+        countAggregatingIterator = new CountAggregatingIterator(this.iterator(), getTransformer(settings), this.markingFunctions, getPageWaitTimeMillis());
+        return countAggregatingIterator;
+    }
+
+    /**
+     * Closes the aggregating iterator in addition to the usual query resources. Aggregation runs on its own thread, which is not released until the iterator is
+     * closed.
+     */
+    @Override
+    public void close() {
+        if (countAggregatingIterator != null) {
+            countAggregatingIterator.close();
+        }
+        super.close();
     }
 
     @Override
