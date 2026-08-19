@@ -35,6 +35,9 @@ jobs:
   compose-build-and-test:
     needs: configure-runner
     runs-on: ${{ needs.configure-runner.outputs.runner }}
+    permissions:
+      contents: read
+      packages: read
     env:
       JAVA_VERSION: '11'
       JAVA_DISTRIBUTION: 'zulu' #This is the default on v1 of the action for 1.8
@@ -82,6 +85,12 @@ jobs:
           # the layer cache every build depends on and can remove images a co-tenant
           # job is still using. Hosted runners are disposable, so let it run there.
           docker-images: ${{ needs.configure-runner.outputs.runner != 'self-hosted' }}
+      - name: Log in to the Container registry
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.GITHUB_REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
       - name: Configure Maven Settings
         run: |
           mkdir -p ~/.m2
