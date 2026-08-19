@@ -613,6 +613,7 @@ public class RangeStream extends BaseVisitor implements QueryPlanStream {
                         .setAuthorizations(config.getAuthorizations())
                         .setQuery(config.getQuery())
                         .setConfig(config)
+                        .setResultQueueSize(config.getMaxIndexBatchSize())
                         .build();
                 sessionManager.addScanner(scannerSession);
                  // @formatter:on
@@ -631,6 +632,7 @@ public class RangeStream extends BaseVisitor implements QueryPlanStream {
                         .setAuthorizations(config.getAuthorizations())
                         .setQuery(config.getQuery())
                         .setConfig(config)
+                        .setResultQueueSize(config.getMaxIndexBatchSize())
                         .build();
                 sessionManager.addScanner(scannerSession);
                 // @formatter:on
