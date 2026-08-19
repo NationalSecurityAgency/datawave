@@ -60,6 +60,20 @@ jobs:
         uses: actions/checkout@v6
         with:
           ref: ${{ inputs.ref || github.sha }}
+      # TODO: remove this once added to the runners
+      - name: Install RPM build tools
+        run: |
+          if command -v rpmbuild >/dev/null 2>&1; then
+            exit 0
+          elif command -v dnf >/dev/null 2>&1; then
+            sudo dnf install -y rpm-build
+          elif command -v apt-get >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y rpm
+          else
+            echo "::error::Unsupported package manager"
+            exit 1
+          fi
       # Clean up free space
       - uses: ./.github/actions/free-space
         with:
@@ -68,6 +82,12 @@ jobs:
           # the layer cache every build depends on and can remove images a co-tenant
           # job is still using. Hosted runners are disposable, so let it run there.
           docker-images: ${{ needs.configure-runner.outputs.runner != 'self-hosted' }}
+      - name: Log in to the Container registry
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.GITHUB_REGISTRY }}
+          username: ${{ secrets.GHCR_WRITE_USER_NAME }}
+          password: ${{ secrets.GHCR_WRITE_ACCESS_TOKEN }}
       - name: Configure Maven Settings
         run: |
           mkdir -p ~/.m2
@@ -107,18 +127,19 @@ jobs:
             ${{ runner.os }}-maven-build-
             ${{ runner.os }}-maven-format-
             ${{ runner.os }}-maven-
-      # Builds the quickstart and microservice docker images and runs a query test
+      # Builds the DataWave runtime images. Hadoop, ZooKeeper, and Accumulo use
+      # published stack images instead of being rebuilt inside quickstart.
       - name: Docker Compose Update POMs to use Snapshots
         if: ${{ inputs.allow-snapshots }}
         run: |
           export MAVEN_OPTS="${{ env.MAVEN_OPTS }}"
-          mvn --show-version --batch-mode --errors -Dutils -Dservices -Dstarters \
+          mvn --show-version --batch-mode --errors -T1C -Dutils -Dservices -Dstarters \
               versions:update-properties versions:update-parent -DallowSnapshots=true -Dincludes=gov.nsa.*
       - name: Docker Compose Build
         run: |
           export MAVEN_OPTS="${{ env.MAVEN_OPTS }}"
-          mvn --show-version --batch-mode --errors -Dutils -Dservices -Dstarters \
-              -Pcompose -Dmicroservice-docker -Dquickstart-docker ${{ needs.configure-runner.outputs.cache_settings }} -Ddeploy -Dtar -DskipTests \
+          mvn --show-version --batch-mode --errors -T1C -Dutils -Dservices -Dstarters \
+              -Pcompose -Dmicroservice-docker -Ddocker-release ${{ needs.configure-runner.outputs.cache_settings }} -Ddeploy -Dtar -DskipTests \
               -Djkube.container-image.tags.1=latest \
               clean install
       - name: Docker Compose Clear Space
@@ -133,14 +154,15 @@ jobs:
           export MAVEN_OPTS="${{ env.MAVEN_OPTS }}"
           mvn --show-version --batch-mode --errors -Dutils -Dservices -Dstarters \
               -Pcompose -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -DskipTests ${{ needs.configure-runner.outputs.cache_settings }} clean
-      - name: Docker Compose Accumulo Start
+      - name: Docker Compose Stack Start
         run: |
           cd docker
           export DW_HOST_IP=127.0.0.1
           ./bootstrap.sh
           echo "Starting docker compose"
-          docker compose up -d --no-recreate
-      - name: Docker Compose Ingest Tests
+          docker compose down --volumes --remove-orphans
+          docker compose up -d --wait --wait-timeout 600
+      - name: Docker Compose Microservice Query Integration Tests
         run: |
           cd docker/scripts
           ./testAll.sh
@@ -149,36 +171,15 @@ jobs:
         run: |
           cd docker
           docker compose logs
-      - name: Docker Compose Web Start
-        run: |
-          cd docker
-          export DW_HOST_IP=127.0.0.1
-          echo "Starting datawave web"
-          docker compose exec quickstart bash -c "source ~/.bashrc && datawaveWebStart"
       - name: Docker Compose Web Tests
         run: |
-          cd docker
-          export DW_HOST_IP=127.0.0.1
-          docker compose exec quickstart bash -c "source ~/.bashrc && datawaveWebTest --blacklist-files QueryMetrics" || true
-      # The stack is torn down below, so capture logs for failures that happen after
-      # the ingest tests -- the earlier Dump Logs step only covers that one step.
-      - name: Dump Logs On Failure
-        if: failure()
-        run: |
-          cd docker
-          docker compose logs || true
-      - name: Tear Down Compose Stack
-        if: always()
-        run: |
-          # Resolves by COMPOSE_PROJECT_NAME, so this removes only the containers,
-          # networks and volumes this job created. Previously nothing tore the stack
-          # down at all, which is why a blanket `docker system prune` was needed to
-          # clear whatever the last job abandoned.
-          cd docker
-          docker compose down --volumes --remove-orphans --timeout 60 || true
+          HOST_PORT=localhost:9443 DW_DATAWAVE_WEB_REMOTE=true \
+            bash contrib/datawave-quickstart/bin/services/datawave/test-web/run.sh --blacklist-files QueryMetrics || true
       - name: Final Operations
         if: always()
         run: |
+          cd docker
+          docker compose down --volumes --remove-orphans
           if [[ "${{ needs.configure-runner.outputs.runner }}" == "self-hosted" ]]; then
-            sudo chown -R $(whoami) . ~/.m2 || true
+            sudo chown -R $(whoami) .. ~/.m2 || true
           fi
