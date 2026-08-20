@@ -78,7 +78,7 @@ public class DatawaveSecurityRealm implements SecurityRealm {
     /**
      * Indicates whether {@link #completeInitialization()} was called.
      */
-    private boolean initializationComplete = false;
+    private volatile boolean initializationComplete = false;
 
     /**
      * The validator that, if configured, will validate the certificate of any {@link X509CertificateEvidence} instances passed to this realm for verification.
@@ -89,7 +89,7 @@ public class DatawaveSecurityRealm implements SecurityRealm {
      * The realm identity cache. This cache will hold mappings of principals to realm identities to improve performance, and removes the need to wrap this
      * security realm in a Wildfly caching realm.
      */
-    private DatawaveRealmIdentityCache realmIdentityCache;
+    private volatile DatawaveRealmIdentityCache realmIdentityCache;
 
     /**
      * A provider for EJBs not normally injectable within an Elytron context.
@@ -131,6 +131,20 @@ public class DatawaveSecurityRealm implements SecurityRealm {
      *             if an error occurs while completing initialization
      */
     private void completeInitialization() throws RealmUnavailableException {
+        // Checked without synchronizing so that the steady state stays lock free. Concurrent first requests fall through to the synchronized path, which
+        // rechecks, so the realm is initialized exactly once and never publishes a half built cache.
+        if (!initializationComplete) {
+            initializeOnce();
+        }
+    }
+
+    /**
+     * Perform the one time initialization guarded by this realm's monitor.
+     *
+     * @throws RealmUnavailableException
+     *             if an error occurs while completing initialization
+     */
+    private synchronized void initializeOnce() throws RealmUnavailableException {
         if (!initializationComplete) {
             try {
                 logConfig();
@@ -353,8 +367,10 @@ public class DatawaveSecurityRealm implements SecurityRealm {
     private static class CachedRealmIdentity implements RealmIdentity {
 
         private final RealmIdentity identity;
-        private AuthorizationIdentity authorizationIdentity;
-        private Attributes attributes;
+        // A cached identity is shared by every concurrent request that authenticates as the same principal, and verifyEvidence resets both fields. They are
+        // volatile so that a request never observes a partially published value from another request's verification.
+        private volatile AuthorizationIdentity authorizationIdentity;
+        private volatile Attributes attributes;
 
         public CachedRealmIdentity(RealmIdentity identity) {
             this.identity = identity;
@@ -438,11 +454,17 @@ public class DatawaveSecurityRealm implements SecurityRealm {
 
         private final String principalName;
 
-        private Attributes attributes;
+        // The attributes decoded from the principal alone. verifyEvidence derives from these rather than from the last verification's result, so that
+        // per-evidence roles are not re-added to a cached identity on every request.
+        private final Attributes baseAttributes;
+
+        // Mutated by verifyEvidence on an instance shared by every concurrent request for this principal.
+        private volatile Attributes attributes;
 
         public DatawaveRealmIdentity(DatawavePrincipal principal) {
             this.principalName = principal.getName();
-            this.attributes = loadAttributes(principal);
+            this.baseAttributes = loadAttributes(principal);
+            this.attributes = this.baseAttributes;
         }
 
         /**
@@ -468,8 +490,8 @@ public class DatawaveSecurityRealm implements SecurityRealm {
                 mapAttributes.addAll(ATTRIBUTE_PRIMARY_USER_ROLES, primaryUser.getRoles());
             }
 
-            // Add all roles for the proxied users.
-            Iterator<DatawaveUser> proxiedUsers = principal.getProxiedUsers().iterator();
+            // Add all roles for the proxied users. We must iterate through the proxied users in chronological order from original caller to last.
+            Iterator<DatawaveUser> proxiedUsers = principal.getOrderedProxiedUsers().iterator();
             Set<String> proxyUserKeys = new HashSet<>();
             int proxyUserNum = 0;
             while (proxiedUsers.hasNext()) {
@@ -566,13 +588,17 @@ public class DatawaveSecurityRealm implements SecurityRealm {
                 if (!datawaveEvidence.getUsername().equalsIgnoreCase(principalName)) {
                     Collection<String> localRoles = localUserRoles.get(datawaveEvidence.getUsername());
                     if (!localRoles.isEmpty()) {
-                        MapAttributes updatedAttributes = new MapAttributes(this.attributes);
+                        MapAttributes updatedAttributes = new MapAttributes(this.baseAttributes);
                         updatedAttributes.addAll(AttributeConstants.ATTRIBUTE_PRIMARY_USER_ROLES, localRoles);
                         this.attributes = updatedAttributes.asReadOnly();
                         if (log.isTraceEnabled()) {
                             log.trace("Added local roles {} associated with evidence username {}", localRoles, datawaveEvidence.getUsername());
                         }
+                    } else {
+                        this.attributes = this.baseAttributes;
                     }
+                } else {
+                    this.attributes = this.baseAttributes;
                 }
             } catch (Exception e) {
                 log.error("Failed to load local user roles for evidence username {}", datawaveEvidence.getUsername(), e);

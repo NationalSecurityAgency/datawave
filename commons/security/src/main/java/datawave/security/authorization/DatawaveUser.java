@@ -41,6 +41,7 @@ public class DatawaveUser implements Serializable {
     private final Multimap<String,String> roleToAuthMapping;
     private final long creationTime;
     private final long expirationTime;
+    private transient int hashCode;
 
     public DatawaveUser(SubjectIssuerDNPair dn, UserType userType, Collection<String> auths, Collection<String> roles,
                     Multimap<String,String> roleToAuthMapping, long creationTime) {
@@ -132,13 +133,20 @@ public class DatawaveUser implements Serializable {
         return creationTime == that.creationTime && dn.equals(that.dn) && userType == that.userType && auths.equals(that.auths) && roles.equals(that.roles);
     }
 
+    /**
+     * Memoized, since hashing walks the full auth and role sets. Valid only while this class remains immutable.
+     */
     @Override
     public int hashCode() {
-        int result = dn.hashCode();
-        result = 31 * result + userType.hashCode();
-        result = 31 * result + auths.hashCode();
-        result = 31 * result + roles.hashCode();
-        result = 31 * result + (int) (creationTime ^ (creationTime >>> 32));
+        int result = hashCode;
+        if (result == 0) {
+            result = dn.hashCode();
+            result = 31 * result + userType.hashCode();
+            result = 31 * result + auths.hashCode();
+            result = 31 * result + roles.hashCode();
+            result = 31 * result + (int) (creationTime ^ (creationTime >>> 32));
+            hashCode = result;
+        }
         return result;
     }
 
