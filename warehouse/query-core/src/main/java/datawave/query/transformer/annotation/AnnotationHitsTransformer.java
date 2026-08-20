@@ -334,7 +334,7 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
 
             String dataType = parts[0];
             String uid = parts[1];
-            Collection<Annotation> annotations = annotationDataAccess.getAnnotations(shard, dataType, uid);
+            List<Annotation> annotations = annotationDataAccess.getAnnotations(shard, dataType, uid);
             for (Annotation annotation : annotations) {
                 String annotationType = annotation.getAnnotationType();
                 if (validTypes.contains(annotationType)) {
