@@ -45,4 +45,19 @@ class ShardKeyUtilTest {
         assertThrows(IllegalArgumentException.class, () -> ShardKeyUtil.buildRow(1, 0));
         assertThrows(IllegalArgumentException.class, () -> ShardKeyUtil.buildRow(1, -1));
     }
+
+    /**
+     * Java's {@code %} keeps the sign of the dividend, so a negative event id would yield a negative shard and a row no ingest path writes to. An event id is a
+     * counter, so a negative one is a caller bug worth failing on rather than quietly mapping into a valid-looking row.
+     */
+    @Test
+    void testNegativeEventIdIsRejected() {
+        assertThrows(IllegalArgumentException.class, () -> ShardKeyUtil.buildRow(-1, 10));
+        assertThrows(IllegalArgumentException.class, () -> ShardKeyUtil.buildRow(Integer.MIN_VALUE, 10));
+    }
+
+    @Test
+    void testEventIdOfZeroIsAccepted() {
+        assertEquals(ShardKeyUtil.DATE + "_0", ShardKeyUtil.buildRow(0, 10));
+    }
 }
