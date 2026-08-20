@@ -112,7 +112,9 @@ DW_ZOOKEEPER_CMD_FIND_ALL_PIDS="ps -ef | grep 'zookeeper.server.quorum.QuorumPee
 
 DW_ACCUMULO_CMD_START="( cd ${ACCUMULO_HOME}/bin && ./accumulo-cluster start )"
 DW_ACCUMULO_CMD_STOP="( cd ${ACCUMULO_HOME}/bin && ./accumulo-cluster stop )"
-DW_ACCUMULO_CMD_FIND_ALL_PIDS="pgrep -u ${USER} -d ' ' -f 'o.start.Main manager|o.start.Main tserver|o.start.Main monitor|o.start.Main gc|o.start.Main tracer'"
+# Accumulo 4 launches servers as 'accumulo proc <name>'. There is no tracer, and
+# sserver and compactor are new.
+DW_ACCUMULO_CMD_FIND_ALL_PIDS="pgrep -u ${USER} -d ' ' -f 'o.start.Main proc manager|o.start.Main proc tserver|o.start.Main proc monitor|o.start.Main proc gc|o.start.Main proc sserver|o.start.Main proc compactor'"
 
 function bootstrapAccumulo() {
     if [ ! -f "${DW_ACCUMULO_SERVICE_DIR}/${DW_ACCUMULO_DIST}" ]; then
