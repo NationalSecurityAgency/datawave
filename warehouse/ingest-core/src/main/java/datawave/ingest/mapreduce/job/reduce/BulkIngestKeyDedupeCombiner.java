@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
 
+import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.Combiner;
@@ -150,15 +151,15 @@ public class BulkIngestKeyDedupeCombiner<K2,V2> extends AggregatingReducer<BulkI
                     useTSDedup = false;
                 }
 
-                BulkIngestKey outKey = new BulkIngestKey(key.getTableName(), key.getKey());
-                if (useTSDedup && outKey.getKey().getTimestamp() > 0) {
+                if (useTSDedup && key.getKey().getTimestamp() > 0) {
                     /**
                      * Congratulations you have selected to use timestamp deduping
                      *
                      */
-
-                    ts = (outKey.getKey().getTimestamp()) / MILLISPERDAY;
-                    outKey.getKey().setTimestamp(-1 * ts);
+                    Key newKey = new Key(key.getKey());
+                    ts = (newKey.getTimestamp()) / MILLISPERDAY;
+                    newKey.setTimestamp(-1 * ts);
+                    BulkIngestKey outKey = new BulkIngestKey(key.getTableName(), newKey);
                     boolean firstValue = true;
                     int duplicates = 0;
                     for (Value value : values) {
@@ -172,7 +173,6 @@ public class BulkIngestKeyDedupeCombiner<K2,V2> extends AggregatingReducer<BulkI
                     }
                     ctx.getCounter(IngestOutput.TIMESTAMP_DUPLICATE).increment(duplicates);
                 } else {
-
                     Iterator<Value> valueItr = values.iterator();
 
                     Value reducedValue = null;
@@ -193,7 +193,7 @@ public class BulkIngestKeyDedupeCombiner<K2,V2> extends AggregatingReducer<BulkI
                         }
                     }
 
-                    writeBulkIngestKey(outKey, reducedValue, ctx);
+                    writeBulkIngestKey(key, reducedValue, ctx);
 
                     ctx.getCounter(IngestOutput.MERGED_VALUE).increment(mergedValues);
 

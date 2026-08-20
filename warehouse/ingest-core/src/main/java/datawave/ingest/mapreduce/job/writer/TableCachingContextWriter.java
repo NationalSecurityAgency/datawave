@@ -162,7 +162,7 @@ public class TableCachingContextWriter extends AbstractContextWriter<BulkIngestK
 
         // reduce the entries as needed
         if (valueList.size() > 1) {
-            entries.putAll(key, reduceValues(key, valueList, context));
+            entries.putAll(reduceValues(key, valueList, context));
         } else {
             entries.putAll(key, valueList);
         }
@@ -178,7 +178,8 @@ public class TableCachingContextWriter extends AbstractContextWriter<BulkIngestK
     }
 
     /**
-     * Reduce the list of values for a key.
+     * Reduce the list of values for a key. Note that the combiner may emit its result under a key other than the one supplied here (e.g. timestamp-dedup
+     * day-bucketing rewrites the key's timestamp), so the caller must use the key(s) present in the returned multimap rather than assuming the original key.
      *
      * @param key
      *            a key
@@ -186,35 +187,33 @@ public class TableCachingContextWriter extends AbstractContextWriter<BulkIngestK
      *            a set of values
      * @param context
      *            the context
-     * @return the reduced collection of values
+     * @return the reduced entries, keyed by whatever key(s) the combiner actually emitted
      * @throws IOException
      *             if there is an issue with read or write
      * @throws InterruptedException
      *             if the thread is interrupted
      */
-    private Collection<Value> reduceValues(BulkIngestKey key, Collection<Value> values, TaskInputOutputContext<?,?,BulkIngestKey,Value> context)
+    private Multimap<BulkIngestKey,Value> reduceValues(BulkIngestKey key, Collection<Value> values, TaskInputOutputContext<?,?,BulkIngestKey,Value> context)
                     throws IOException, InterruptedException {
         combiner.doReduce(key, values, context);
         try {
-            return combinerCache.getValues(key);
+            return combinerCache.getReduced();
         } finally {
             combinerCache.clear();
         }
     }
 
     /**
-     * This is a context writer that simply puts the keys into a cache, retrievable by the getKeys() and getValues() call
+     * This is a context writer that simply puts the keys/values into a cache, retrievable via the getReduced() call. The combiner may emit its output under a
+     * key other than the one it was given (e.g. timestamp-dedup rewrites the key's timestamp), so callers need the whole reduced multimap rather than a lookup
+     * keyed by the original key.
      */
     private static class CachingContextWriter implements ContextWriter<BulkIngestKey,Value> {
 
         private Multimap<BulkIngestKey,Value> reduced = HashMultimap.create();
 
-        public Collection<BulkIngestKey> getKeys() {
-            return reduced.keySet();
-        }
-
-        public Collection<Value> getValues(BulkIngestKey key) {
-            return reduced.get(key);
+        public Multimap<BulkIngestKey,Value> getReduced() {
+            return reduced;
         }
 
         public void clear() {

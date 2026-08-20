@@ -19,25 +19,25 @@ import org.apache.hadoop.io.WritableUtils;
  */
 public class BulkIngestKey implements WritableComparable<BulkIngestKey> {
 
-    protected Text tableName = null;
-    protected Key key = new Key();
+    protected static int HASHCODE_EVALUATE = -1;
+
+    protected Text tableName;
+    protected Key key;
     // computed hashcode. we won't write this through the writable interface
     // to avoid increasing the size of our spilled data
-    protected int hashCode = 31;
+    protected int hashCode;
 
     public BulkIngestKey() {
-        this.tableName = new Text();
-        buildHashCode();
+        this(new Text(), new Key());
     }
 
     public BulkIngestKey(Text tableName, Key key) {
-        super();
         this.tableName = tableName;
         if (null == this.tableName) {
             this.tableName = new Text();
         }
         this.key = key;
-        buildHashCode();
+        this.hashCode = HASHCODE_EVALUATE;
     }
 
     public Text getTableName() {
@@ -72,7 +72,8 @@ public class BulkIngestKey implements WritableComparable<BulkIngestKey> {
         // pass in copy=false to save double allocation of byte[]s
         key = new Key(row, cf, cq, cv, ts, in.readBoolean(), false);
 
-        buildHashCode();
+        // set the hashcode to recompute lazily
+        hashCode = HASHCODE_EVALUATE;
     }
 
     /* Read in byte[] to save Text object creation */
@@ -114,7 +115,7 @@ public class BulkIngestKey implements WritableComparable<BulkIngestKey> {
      */
     public void setTableName(final Text tableName) {
         this.tableName.set(tableName);
-        buildHashCode();
+        this.hashCode = HASHCODE_EVALUATE;
     }
 
     @Override
@@ -140,6 +141,9 @@ public class BulkIngestKey implements WritableComparable<BulkIngestKey> {
 
     @Override
     public int hashCode() {
+        if (hashCode == HASHCODE_EVALUATE) {
+            buildHashCode();
+        }
         return hashCode;
     }
 

@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
 
+import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.Combiner;
@@ -164,14 +165,15 @@ public class BulkIngestKeyAggregatingReducer<K2,V2> extends AggregatingReducer<B
                     useTSDedup = false;
                 }
 
-                BulkIngestKey outKey = new BulkIngestKey(key.getTableName(), key.getKey());
                 if ((!usingCombiner) && useTSDedup) {
                     /**
                      * Congratulations you have selected to use timestamp deduping
                      *
                      */
-                    ts = (outKey.getKey().getTimestamp()) / MILLISPERDAY;
-                    outKey.getKey().setTimestamp(ts * MILLISPERDAY);
+                    Key newKey = new Key(key.getKey());
+                    ts = (newKey.getTimestamp()) / MILLISPERDAY;
+                    newKey.setTimestamp(ts * MILLISPERDAY);
+                    BulkIngestKey outKey = new BulkIngestKey(key.getTableName(), newKey);
                     boolean firstValue = true;
                     int duplicates = 0;
                     for (Value value : values) {
@@ -207,7 +209,7 @@ public class BulkIngestKeyAggregatingReducer<K2,V2> extends AggregatingReducer<B
 
                     }
 
-                    writeBulkIngestKey(outKey, reducedValue, ctx);
+                    writeBulkIngestKey(key, reducedValue, ctx);
 
                     ctx.getCounter(IngestOutput.MERGED_VALUE).increment(mergedValues);
                 }

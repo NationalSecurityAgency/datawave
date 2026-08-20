@@ -402,18 +402,18 @@ public class BulkIngestKeyAggregatingReducerTest {
         setupTimestampDedup();
         reducer.setup(conf);
 
-        performDoReduce("table1", "r1", 4, 3 * MILLISPERDAY + MILLISPERDAY / 2, ExpectedValueType.FIRST_VALUE);
-        performDoReduce("table1", "r1", 3, 3 * MILLISPERDAY + MILLISPERDAY / 3, ExpectedValueType.FIRST_VALUE);
-        performDoReduce("table1", "r2", 3, 3 * MILLISPERDAY + MILLISPERDAY / 2, ExpectedValueType.FIRST_VALUE);
-        performDoReduce("table1", "r2", 2, 3 * MILLISPERDAY + MILLISPERDAY / 3, ExpectedValueType.FIRST_VALUE);
-        performDoReduce("table1", "r3", 1, 3 * MILLISPERDAY, ExpectedValueType.FIRST_VALUE);
-        performDoReduce("table2", "r1", 2, 3 * MILLISPERDAY, ExpectedValueType.FIRST_VALUE);
-        performDoReduce("table2", "r2", 0, 3 * MILLISPERDAY + MILLISPERDAY / 2, ExpectedValueType.NO_VALUE);
-        performDoReduce("table2", "r2", 0, 3 * MILLISPERDAY + MILLISPERDAY / 3, ExpectedValueType.NO_VALUE);
-        performDoReduce("table2", "r3", 3, 3 * MILLISPERDAY, ExpectedValueType.FIRST_VALUE);
-        performDoReduce("table2", "r3", 3, 4 * MILLISPERDAY, ExpectedValueType.FIRST_VALUE);
-        performDoReduce("table3", "r2", 3, 3 * MILLISPERDAY, ExpectedValueType.FIRST_VALUE);
-        performDoReduce("table4", "r2", 4, 3 * MILLISPERDAY, ExpectedValueType.ALL_VALUES);
+        performDoReduce("table1", "r1", 4, 3 * MILLISPERDAY + MILLISPERDAY / 2, 3 * MILLISPERDAY, ExpectedValueType.FIRST_VALUE);
+        performDoReduce("table1", "r1", 3, 3 * MILLISPERDAY + MILLISPERDAY / 3, 3 * MILLISPERDAY, ExpectedValueType.FIRST_VALUE);
+        performDoReduce("table1", "r2", 3, 3 * MILLISPERDAY + MILLISPERDAY / 2, 3 * MILLISPERDAY, ExpectedValueType.FIRST_VALUE);
+        performDoReduce("table1", "r2", 2, 3 * MILLISPERDAY + MILLISPERDAY / 3, 3 * MILLISPERDAY, ExpectedValueType.FIRST_VALUE);
+        performDoReduce("table1", "r3", 1, 3 * MILLISPERDAY, 3 * MILLISPERDAY, ExpectedValueType.FIRST_VALUE);
+        performDoReduce("table2", "r1", 2, 3 * MILLISPERDAY, 3 * MILLISPERDAY, ExpectedValueType.FIRST_VALUE);
+        performDoReduce("table2", "r2", 0, 3 * MILLISPERDAY + MILLISPERDAY / 2, 3 * MILLISPERDAY, ExpectedValueType.NO_VALUE);
+        performDoReduce("table2", "r2", 0, 3 * MILLISPERDAY + MILLISPERDAY / 3, 3 * MILLISPERDAY, ExpectedValueType.NO_VALUE);
+        performDoReduce("table2", "r3", 3, 3 * MILLISPERDAY, 3 * MILLISPERDAY, ExpectedValueType.FIRST_VALUE);
+        performDoReduce("table2", "r3", 3, 4 * MILLISPERDAY, 4 * MILLISPERDAY, ExpectedValueType.FIRST_VALUE);
+        performDoReduce("table3", "r2", 3, 3 * MILLISPERDAY, 3 * MILLISPERDAY, ExpectedValueType.FIRST_VALUE);
+        performDoReduce("table4", "r2", 4, 3 * MILLISPERDAY, 3 * MILLISPERDAY, ExpectedValueType.ALL_VALUES);
 
         expectedDuplicateKey = 1;
         expectedDupCounter = 13;
@@ -427,17 +427,17 @@ public class BulkIngestKeyAggregatingReducerTest {
         setupVerboseCounters();
         reducer.setup(conf);
 
-        performDoReduce("table1", "r1", 4, 3 * MILLISPERDAY + MILLISPERDAY / 2, ExpectedValueType.FIRST_VALUE);
-        performDoReduce("table1", "r1", 3, 3 * MILLISPERDAY + MILLISPERDAY / 3, ExpectedValueType.FIRST_VALUE);
-        performDoReduce("table1", "r2", 3, 3 * MILLISPERDAY + MILLISPERDAY / 2, ExpectedValueType.FIRST_VALUE);
-        performDoReduce("table1", "r2", 2, 3 * MILLISPERDAY + MILLISPERDAY / 3, ExpectedValueType.FIRST_VALUE);
-        performDoReduce("table1", "r3", 1, 3 * MILLISPERDAY, ExpectedValueType.FIRST_VALUE);
-        performDoReduce("table2", "r1", 2, 3 * MILLISPERDAY, ExpectedValueType.FIRST_VALUE);
-        performDoReduce("table2", "r2", 0, 3 * MILLISPERDAY + MILLISPERDAY / 2, ExpectedValueType.NO_VALUE);
-        performDoReduce("table2", "r2", 0, 3 * MILLISPERDAY + MILLISPERDAY / 3, ExpectedValueType.NO_VALUE);
-        performDoReduce("table2", "r3", 3, 3 * MILLISPERDAY, ExpectedValueType.FIRST_VALUE);
-        performDoReduce("table2", "r3", 3, 4 * MILLISPERDAY, ExpectedValueType.FIRST_VALUE);
-        performDoReduce("table3", "r2", 3, 3 * MILLISPERDAY, ExpectedValueType.FIRST_VALUE);
+        performDoReduce("table1", "r1", 4, 3 * MILLISPERDAY + MILLISPERDAY / 2, 3 * MILLISPERDAY, ExpectedValueType.FIRST_VALUE);
+        performDoReduce("table1", "r1", 3, 3 * MILLISPERDAY + MILLISPERDAY / 3, 3 * MILLISPERDAY, ExpectedValueType.FIRST_VALUE);
+        performDoReduce("table1", "r2", 3, 3 * MILLISPERDAY + MILLISPERDAY / 2, 3 * MILLISPERDAY, ExpectedValueType.FIRST_VALUE);
+        performDoReduce("table1", "r2", 2, 3 * MILLISPERDAY + MILLISPERDAY / 3, 3 * MILLISPERDAY, ExpectedValueType.FIRST_VALUE);
+        performDoReduce("table1", "r3", 1, 3 * MILLISPERDAY, 3 * MILLISPERDAY, ExpectedValueType.FIRST_VALUE);
+        performDoReduce("table2", "r1", 2, 3 * MILLISPERDAY, 3 * MILLISPERDAY, ExpectedValueType.FIRST_VALUE);
+        performDoReduce("table2", "r2", 0, 3 * MILLISPERDAY + MILLISPERDAY / 2, 3 * MILLISPERDAY, ExpectedValueType.NO_VALUE);
+        performDoReduce("table2", "r2", 0, 3 * MILLISPERDAY + MILLISPERDAY / 3, 3 * MILLISPERDAY, ExpectedValueType.NO_VALUE);
+        performDoReduce("table2", "r3", 3, 3 * MILLISPERDAY, 3 * MILLISPERDAY, ExpectedValueType.FIRST_VALUE);
+        performDoReduce("table2", "r3", 3, 4 * MILLISPERDAY, 4 * MILLISPERDAY, ExpectedValueType.FIRST_VALUE);
+        performDoReduce("table3", "r2", 3, 3 * MILLISPERDAY, 3 * MILLISPERDAY, ExpectedValueType.FIRST_VALUE);
 
         expectedDuplicateKey = 1;
         expectedDupCounter = 13;
@@ -455,18 +455,18 @@ public class BulkIngestKeyAggregatingReducerTest {
         reducer.setup(conf);
 
         Mockito.when(taskID.getId()).thenReturn(1);
-        performDoReduce("table1", "r1", 4, 3 * MILLISPERDAY + MILLISPERDAY / 2, ExpectedValueType.FIRST_VALUE);
-        performDoReduce("table1", "r1", 3, 3 * MILLISPERDAY + MILLISPERDAY / 3, ExpectedValueType.FIRST_VALUE);
-        performDoReduce("table1", "r2", 3, 3 * MILLISPERDAY + MILLISPERDAY / 2, ExpectedValueType.FIRST_VALUE);
-        performDoReduce("table1", "r2", 2, 3 * MILLISPERDAY + MILLISPERDAY / 3, ExpectedValueType.FIRST_VALUE);
+        performDoReduce("table1", "r1", 4, 3 * MILLISPERDAY + MILLISPERDAY / 2, 3 * MILLISPERDAY, ExpectedValueType.FIRST_VALUE);
+        performDoReduce("table1", "r1", 3, 3 * MILLISPERDAY + MILLISPERDAY / 3, 3 * MILLISPERDAY, ExpectedValueType.FIRST_VALUE);
+        performDoReduce("table1", "r2", 3, 3 * MILLISPERDAY + MILLISPERDAY / 2, 3 * MILLISPERDAY, ExpectedValueType.FIRST_VALUE);
+        performDoReduce("table1", "r2", 2, 3 * MILLISPERDAY + MILLISPERDAY / 3, 3 * MILLISPERDAY, ExpectedValueType.FIRST_VALUE);
         Mockito.when(taskID.getId()).thenReturn(2);
-        performDoReduce("table1", "r3", 1, 3 * MILLISPERDAY, ExpectedValueType.FIRST_VALUE);
-        performDoReduce("table2", "r1", 2, 3 * MILLISPERDAY, ExpectedValueType.FIRST_VALUE);
-        performDoReduce("table2", "r2", 0, 3 * MILLISPERDAY + MILLISPERDAY / 2, ExpectedValueType.NO_VALUE);
-        performDoReduce("table2", "r2", 0, 3 * MILLISPERDAY + MILLISPERDAY / 3, ExpectedValueType.NO_VALUE);
+        performDoReduce("table1", "r3", 1, 3 * MILLISPERDAY, 3 * MILLISPERDAY, ExpectedValueType.FIRST_VALUE);
+        performDoReduce("table2", "r1", 2, 3 * MILLISPERDAY, 3 * MILLISPERDAY, ExpectedValueType.FIRST_VALUE);
+        performDoReduce("table2", "r2", 0, 3 * MILLISPERDAY + MILLISPERDAY / 2, 3 * MILLISPERDAY, ExpectedValueType.NO_VALUE);
+        performDoReduce("table2", "r2", 0, 3 * MILLISPERDAY + MILLISPERDAY / 3, 3 * MILLISPERDAY, ExpectedValueType.NO_VALUE);
         Mockito.when(taskID.getId()).thenReturn(3);
-        performDoReduce("table2", "r3", 3, 4 * MILLISPERDAY, ExpectedValueType.FIRST_VALUE);
-        performDoReduce("table3", "r2", 3, 3 * MILLISPERDAY, ExpectedValueType.FIRST_VALUE);
+        performDoReduce("table2", "r3", 3, 4 * MILLISPERDAY, 4 * MILLISPERDAY, ExpectedValueType.FIRST_VALUE);
+        performDoReduce("table3", "r2", 3, 3 * MILLISPERDAY, 3 * MILLISPERDAY, ExpectedValueType.FIRST_VALUE);
 
         expectedDupCounter = 13;
         expectedR1Counter = 4;
@@ -559,16 +559,16 @@ public class BulkIngestKeyAggregatingReducerTest {
         setupUsingCombiner();
         reducer.setup(conf);
 
-        performDoReduce("table1", "r1", 4, -3 * MILLISPERDAY + MILLISPERDAY / 2, ExpectedValueType.COMBINED_VALUES);
-        performDoReduce("table1", "r2", 3, 3 * MILLISPERDAY + MILLISPERDAY / 3, ExpectedValueType.COMBINED_VALUES);
-        performDoReduce("table1", "r3", 1, -3 * MILLISPERDAY, ExpectedValueType.COMBINED_VALUES);
-        performDoReduce("table2", "r1", 2, -2 * MILLISPERDAY + MILLISPERDAY, ExpectedValueType.FIRST_VALUE);
-        performDoReduce("table2", "r2", 0, -2 * MILLISPERDAY + MILLISPERDAY, ExpectedValueType.ALL_VALUES);
-        performDoReduce("table2", "r3", 3, -2 * MILLISPERDAY + MILLISPERDAY / 3, ExpectedValueType.FIRST_VALUE);
-        performDoReduce("table3", "r1", 3, -4 * MILLISPERDAY + MILLISPERDAY / 3, ExpectedValueType.COMBINED_VALUES);
-        performDoReduce("table3", "r2", 0, -4 * MILLISPERDAY, ExpectedValueType.COMBINED_VALUES);
-        performDoReduce("table1", "r1", 4, 4 * MILLISPERDAY + MILLISPERDAY / 2, ExpectedValueType.COMBINED_VALUES);
-        performDoReduce("table1", "r2", 3, 2 * MILLISPERDAY + MILLISPERDAY, ExpectedValueType.COMBINED_VALUES);
+        performDoReduce("table1", "r1", 4, -3 * MILLISPERDAY + MILLISPERDAY / 2, -3 * MILLISPERDAY + MILLISPERDAY / 2, ExpectedValueType.COMBINED_VALUES);
+        performDoReduce("table1", "r2", 3, 3 * MILLISPERDAY + MILLISPERDAY / 3, 3 * MILLISPERDAY + MILLISPERDAY / 3, ExpectedValueType.COMBINED_VALUES);
+        performDoReduce("table1", "r3", 1, -3 * MILLISPERDAY, -3 * MILLISPERDAY, ExpectedValueType.COMBINED_VALUES);
+        performDoReduce("table2", "r1", 2, -2 * MILLISPERDAY + MILLISPERDAY, -2 * MILLISPERDAY + MILLISPERDAY, ExpectedValueType.FIRST_VALUE);
+        performDoReduce("table2", "r2", 0, -2 * MILLISPERDAY + MILLISPERDAY, -2 * MILLISPERDAY + MILLISPERDAY, ExpectedValueType.ALL_VALUES);
+        performDoReduce("table2", "r3", 3, -2 * MILLISPERDAY + MILLISPERDAY / 3, -2 * MILLISPERDAY + MILLISPERDAY / 3, ExpectedValueType.FIRST_VALUE);
+        performDoReduce("table3", "r1", 3, -4 * MILLISPERDAY + MILLISPERDAY / 3, -4 * MILLISPERDAY + MILLISPERDAY / 3, ExpectedValueType.COMBINED_VALUES);
+        performDoReduce("table3", "r2", 0, -4 * MILLISPERDAY, -4 * MILLISPERDAY, ExpectedValueType.COMBINED_VALUES);
+        performDoReduce("table1", "r1", 4, 4 * MILLISPERDAY + MILLISPERDAY / 2, 4 * MILLISPERDAY + MILLISPERDAY / 2, ExpectedValueType.COMBINED_VALUES);
+        performDoReduce("table1", "r2", 3, 2 * MILLISPERDAY + MILLISPERDAY, 2 * MILLISPERDAY + MILLISPERDAY, ExpectedValueType.COMBINED_VALUES);
 
         expectedDuplicateKey = 2;
         expectedCombinerCounter = 7;
@@ -578,24 +578,26 @@ public class BulkIngestKeyAggregatingReducerTest {
     }
 
     private void performDoReduce(String table, String row, int numberOfValues) throws Exception {
-        performDoReduce(table, row, numberOfValues, 1L, ExpectedValueType.FIRST_VALUE);
+        performDoReduce(table, row, numberOfValues, 1L, 1L, ExpectedValueType.FIRST_VALUE);
     }
 
-    private void performDoReduce(String table, String row, int numberOfValues, long ts) throws Exception {
-        performDoReduce(table, row, numberOfValues, ts, ExpectedValueType.FIRST_VALUE);
+    private void performDoReduce(String table, String row, int numberOfValues, long ts, long expectedTs) throws Exception {
+        performDoReduce(table, row, numberOfValues, ts, expectedTs, ExpectedValueType.FIRST_VALUE);
     }
 
     private void performDoReduce(String table, String row, int numberOfValues, ExpectedValueType expectedValueType) throws Exception {
-        performDoReduce(table, row, numberOfValues, 1L, expectedValueType);
+        performDoReduce(table, row, numberOfValues, 1L, 1L, expectedValueType);
     }
 
-    private void performDoReduce(String table, String row, int numberOfValues, long ts, ExpectedValueType expectedValueType) throws Exception {
+    private void performDoReduce(String table, String row, int numberOfValues, long ts, long expectedTs, ExpectedValueType expectedValueType) throws Exception {
         Key key = new Key(new Text(row), ts);
+        Key expectedKey = new Key(new Text(row), expectedTs);
         BulkIngestKey bulkIngestKey = new BulkIngestKey(new Text(table), key);
+        BulkIngestKey expectedBulkIngestKey = new BulkIngestKey(new Text(table), expectedKey);
         List<Value> values = new ArrayList<>();
         Value value = new Value(new Text(String.format("%015d", rand.nextInt())));
         if (expectedValueType == ExpectedValueType.FIRST_VALUE) {
-            expected.put(bulkIngestKey, value);
+            expected.put(expectedBulkIngestKey, value);
         }
         for (int i = 0; i < numberOfValues; i++) {
             values.add(value);
@@ -603,9 +605,9 @@ public class BulkIngestKeyAggregatingReducerTest {
         }
 
         if (expectedValueType == ExpectedValueType.COMBINED_VALUES) {
-            expected.put(bulkIngestKey, combineValues(values.iterator()));
+            expected.put(expectedBulkIngestKey, combineValues(values.iterator()));
         } else if (expectedValueType == ExpectedValueType.ALL_VALUES) {
-            expected.putAll(bulkIngestKey, values);
+            expected.putAll(expectedBulkIngestKey, values);
         }
 
         reducer.doReduce(bulkIngestKey, values, context);
