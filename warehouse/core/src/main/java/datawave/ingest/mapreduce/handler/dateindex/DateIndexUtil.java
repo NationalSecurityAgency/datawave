@@ -5,6 +5,16 @@ import java.text.SimpleDateFormat;
 import java.util.BitSet;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.TimeZone;
+import java.util.concurrent.TimeUnit;
+
+import org.apache.accumulo.core.data.Value;
+import org.apache.log4j.Logger;
+
+import com.google.common.base.Preconditions;
+
+import datawave.util.CompositeTimestamp;
+import datawave.util.time.DateHelper;
 
 /**
  *
@@ -15,6 +25,8 @@ public class DateIndexUtil {
     public static final String LOADED_DATE_TYPE = "LOADED";
     public static final String ACTIVITY_DATE_TYPE = "ACTIVITY";
     public static final ThreadLocal<SimpleDateFormat> format = ThreadLocal.withInitial(() -> new SimpleDateFormat("yyyyMMdd"));
+    private static final long MS_PER_DAY = TimeUnit.DAYS.toMillis(1);
+    private static final Logger log = Logger.getLogger(DateIndexUtil.class);
 
     /**
      * Format the date into yyyyMMdd
@@ -92,4 +104,76 @@ public class DateIndexUtil {
         return bits1;
     }
 
+    public static Value getValueForDayIndex(String shardId) {
+        // get the shard number
+        int shardNumber = getOffsetForDayIndex(shardId);
+        BitSet bits = new BitSet();
+        bits.set(shardNumber);
+        return new Value(bits.toByteArray());
+    }
+
+    /**
+     * Get the shard number used as the offset for the day index
+     * <p>
+     *
+     * @param shard
+     *            the shard
+     * @return the day index offset
+     */
+    public static int getOffsetForDayIndex(String shard) {
+        int underscoreIndex = shard.indexOf('_');
+        Preconditions.checkArgument(underscoreIndex > 0, "shard did not contain an underscore: " + shard);
+        String bucket = shard.substring(underscoreIndex + 1);
+        return Integer.parseInt(bucket);
+    }
+
+    public static Value getValueForYearIndex(String shard) {
+        // get the shard number
+        int shardNumber = getOffsetForYearIndex(shard);
+        BitSet bits = new BitSet();
+        bits.set(shardNumber);
+        return new Value(bits.toByteArray());
+    }
+
+    /**
+     * Calculate the day of the year used as the offset for the year index
+     *
+     * @param shard
+     *            the shard
+     * @return the year index offset
+     */
+    public static int getOffsetForYearIndex(String shard) {
+        int index = shard.indexOf('_');
+        String date = shard.substring(0, index);
+        Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
+        calendar.setTime(DateHelper.parse(date));
+
+        int dayOfYear = calendar.get(Calendar.DAY_OF_YEAR);
+        if (log.isTraceEnabled()) {
+            log.trace("day of year: " + dayOfYear);
+        }
+        return dayOfYear;
+    }
+
+    /**
+     * trim the event date and ageoff portions of the ts to the beginning of the day
+     *
+     * @param ts
+     * @return the timestamp to be used for index entries
+     */
+    public static long getIndexTimestamp(long ts) {
+        long tsToDay = trimToBeginningOfDay(CompositeTimestamp.getEventDate(ts));
+        long ageOffToDay = trimToBeginningOfDay(CompositeTimestamp.getAgeOffDate(ts));
+        return CompositeTimestamp.getCompositeTimeStamp(tsToDay, ageOffToDay);
+    }
+
+    /**
+     * Trim ms to the beginning of the day
+     *
+     * @param date
+     * @return the time at the beginning of the day
+     */
+    public static long trimToBeginningOfDay(long date) {
+        return (date / MS_PER_DAY) * MS_PER_DAY;
+    }
 }
