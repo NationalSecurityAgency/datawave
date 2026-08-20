@@ -10,7 +10,6 @@ import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.Scanner;
-import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -19,6 +18,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 
 import datawave.ingest.data.config.ingest.AccumuloHelper;
+import datawave.scan.ScannerBuilder;
 
 public class AccumuloUtil {
     private static final String DEFAULT_METADATA_TABLE = "accumulo.metadata";
@@ -111,7 +111,8 @@ public class AccumuloUtil {
 
         Text currentRow = null;
         List<String> files = null;
-        try (Scanner s = accumuloClient.createScanner(accumuloMetadataTable)) {
+        try (Scanner s = ScannerBuilder.create(accumuloClient).setTableName(accumuloMetadataTable)
+                        .setAuthorizations(accumuloClient.securityOperations().getUserAuthorizations(accumuloClient.whoami())).build()) {
             s.setRange(new Range(new Key(tableId + ";" + startRow), true, new Key(tableId + endRow), true));
             s.fetchColumnFamily("file");
             Iterator<Map.Entry<Key,Value>> metarator = s.iterator();
@@ -143,7 +144,7 @@ public class AccumuloUtil {
                 }
                 metadataFiles.add(new AbstractMap.SimpleEntry<>(split, files));
             }
-        } catch (TableNotFoundException | AccumuloException | AccumuloSecurityException e) {
+        } catch (AccumuloException | AccumuloSecurityException e) {
             throw new RuntimeException("Failed to scan metadata table " + accumuloMetadataTable + " for table " + tableName, e);
         }
 

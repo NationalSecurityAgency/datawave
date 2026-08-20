@@ -29,7 +29,7 @@
         <version.jgit>5.13.5.202508271544-r</version.jgit>
         <version.jsch>0.2.26</version.jsch>
         <!-- dependency declared in datawave-microservice-parent, but the version can be overridden here -->
-        <version.log4j>2.25.3</version.log4j>
+        <version.log4j>2.26.1</version.log4j>
         <!-- dependency declared in datawave-microservice-parent, but the version can be overridden here -->
         <version.slf4j>2.0.17</version.slf4j>
     </properties>

@@ -2,7 +2,6 @@ package datawave.core.iterators;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -11,9 +10,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.OptionDescriber;
@@ -113,17 +110,6 @@ public class FieldedRegexExpansionIterator extends SeekingFilter implements Opti
 
         if (options.containsKey(REVERSE)) {
             this.reverse = Boolean.parseBoolean(options.get(REVERSE));
-        }
-    }
-
-    @Override
-    public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
-        if (!range.isStartKeyInclusive()) {
-            // need to make the start key inclusive because filters operate slightly differently
-            Range seekRange = new Range(range.getStartKey(), true, range.getEndKey(), range.isEndKeyInclusive());
-            super.seek(seekRange, columnFamilies, inclusive);
-        } else {
-            super.seek(range, columnFamilies, inclusive);
         }
     }
 

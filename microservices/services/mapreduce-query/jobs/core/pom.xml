@@ -21,6 +21,8 @@
         <version.datawave>7.37.3</version.datawave>
         <version.datawave.mapreduce-layout-factory>1.0.2</version.datawave.mapreduce-layout-factory>
         <version.datawave.starter-query>1.0.12</version.datawave.starter-query>
+        <!-- dependency declared in datawave-microservice-parent, but the version can be overridden here -->
+        <version.log4j>2.26.1</version.log4j>
         <version.zookeeper>3.9.2</version.zookeeper>
     </properties>
     <dependencyManagement>
@@ -130,6 +132,11 @@
                         <groupId>gov.nsa.datawave.microservice</groupId>
                         <artifactId>mapreduce-layout-factory</artifactId>
                         <version>${version.datawave.mapreduce-layout-factory}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.apache.logging.log4j</groupId>
+                        <artifactId>log4j-slf4j2-impl</artifactId>
+                        <version>${version.log4j}</version>
                     </dependency>
                 </dependencies>
                 <executions>

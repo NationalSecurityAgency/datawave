@@ -23,8 +23,8 @@ import datawave.query.util.MetadataHelper;
 import datawave.query.util.MetadataHelperFactory;
 import datawave.query.util.MockDateIndexHelper;
 import datawave.query.util.MockMetadataHelper;
+import datawave.table.constants.TableName;
 import datawave.test.JexlNodeAssert;
-import datawave.util.TableName;
 import datawave.util.time.DateHelper;
 
 public class FunctionIndexQueryExpansionVisitorTest {

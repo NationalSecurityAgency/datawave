@@ -66,7 +66,7 @@ import datawave.query.model.QueryModel;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tld.TLDQueryIterator;
 import datawave.query.util.QueryStopwatch;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 
 /**
  * <p>
@@ -127,6 +127,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private boolean reduceQueryFieldsPerShard = false;
     private boolean reduceTypeMetadata = false;
     private boolean reduceTypeMetadataPerShard = false;
+    // should TypeMetadata be serialized to iterator options via Kryo instead of its native toString() format
+    private boolean kryoTypeMetadata = false;
     private boolean collectTimingDetails = false;
     private boolean logTimingDetails = false;
     private boolean sendTimingToStatsd = true;
@@ -641,6 +643,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setReduceQueryFieldsPerShard(other.getReduceQueryFieldsPerShard());
         this.setReduceTypeMetadata(other.getReduceTypeMetadata());
         this.setReduceTypeMetadataPerShard(other.getReduceTypeMetadataPerShard());
+        this.setKryoTypeMetadata(other.isKryoTypeMetadata());
         this.setRebuildDatatypeFilter(other.isRebuildDatatypeFilter());
         this.setRebuildDatatypeFilterPerShard(other.isRebuildDatatypeFilterPerShard());
         this.setParseTldUids(other.getParseTldUids());
@@ -2417,6 +2420,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.reduceTypeMetadataPerShard = reduceTypeMetadataPerShard;
     }
 
+    public boolean isKryoTypeMetadata() {
+        return kryoTypeMetadata;
+    }
+
+    public void setKryoTypeMetadata(boolean kryoTypeMetadata) {
+        this.kryoTypeMetadata = kryoTypeMetadata;
+    }
+
     public boolean getLimitAnyFieldLookups() {
         return limitAnyFieldLookups;
     }
@@ -2998,6 +3009,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getReduceQueryFieldsPerShard() == that.getReduceQueryFieldsPerShard() &&
                 getReduceTypeMetadata() == that.getReduceTypeMetadata() &&
                 getReduceTypeMetadataPerShard() == that.getReduceTypeMetadataPerShard() &&
+                isKryoTypeMetadata() == that.isKryoTypeMetadata() &&
                 isRebuildDatatypeFilter() == that.isRebuildDatatypeFilter() &&
                 isRebuildDatatypeFilterPerShard() == that.isRebuildDatatypeFilterPerShard() &&
                 getCollectTimingDetails() == that.getCollectTimingDetails() &&
@@ -3237,6 +3249,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getReduceQueryFieldsPerShard(),
                 getReduceTypeMetadata(),
                 getReduceTypeMetadataPerShard(),
+                isKryoTypeMetadata(),
                 isRebuildDatatypeFilter(),
                 isRebuildDatatypeFilterPerShard(),
                 getCollectTimingDetails(),

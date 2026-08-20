@@ -42,20 +42,52 @@ jobs:
     - uses: ./.github/actions/free-space
       with:
         tool-cache: false
+    - name: Configure Maven Settings
+      run: |
+        mkdir -p ~/.m2
+        cat > ~/.m2/settings.xml <<'EOF'
+        <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+               xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 https://maven.apache.org/xsd/settings-1.0.0.xsd">
+        <servers>
+         <server>
+           <id>github-datawave</id>
+           <username>${env.GITHUB_USERNAME}</username>
+           <password>${env.GITHUB_PASSWORD}</password>
+         </server>
+        </servers>
+        <mirrors>
+         <mirror>
+           <id>google-maven-central</id>
+           <name>Google Cloud Maven Central Mirror</name>
+           <url>https://maven-central.storage-download.googleapis.com/maven2/</url>
+           <mirrorOf>central</mirrorOf>
+         </mirror>
+        </mirrors>
+        </settings>
+        EOF
     - name: Set up JDK ${{env.JAVA_VERSION}}
       uses: actions/setup-java@v5
       with:
         distribution: ${{env.JAVA_DISTRIBUTION}}
         java-version: ${{env.JAVA_VERSION}}
         cache: 'maven'
-        server-id: github-datawave
-        # username and password are the env variables names that maven will use
-        server-username: GITHUB_USERNAME
-        server-password: GITHUB_PASSWORD
+        overwrite-settings: false
     - name: Build and Push DataWave web/ingest images and packages
       run: |
         docker info
-        mvn --show-version --batch-mode --errors --no-transfer-progress --fail-at-end clean deploy -Pkubernetes -Dmaven.build.cache.enabled=false -Dtar -Ddeploy -Ddist -Ddocker-release -Dutils -Dservices -Dstarters -DskipTests -DskipFormat -DskipSpotbugs -Denforcer.skip=true -Dcheckstyle.skip=true
+        MVN_CMD="mvn --show-version --batch-mode --errors --no-transfer-progress --fail-at-end clean deploy -Pkubernetes -Dmaven.build.cache.enabled=false -Dtar -Ddeploy -Ddist -Ddocker-release -Dutils -Dservices -Dstarters -DskipTests -DskipFormat -DskipSpotbugs -Denforcer.skip=true -Dcheckstyle.skip=true"
+        $MVN_CMD || {
+          # On tag builds, release artifacts already exist in the registry from when the release was
+          # cut. The resulting deploy conflict cascades and bans assemble-webservice, preventing the
+          # Docker image push. Retry skipping Maven artifact deployment to at least push the images.
+          if [[ "${{ github.ref_type }}" == "tag" ]]; then
+            echo "Deploy failed on tag build; retrying with -Dmaven.deploy.skip=true to push Docker images"
+            $MVN_CMD -Dmaven.deploy.skip=true
+          else
+            exit 1
+          fi
+        }
     - name: Build and Push microservice images
       run: |
         mvn --show-version --batch-mode --errors --no-transfer-progress --fail-at-end clean deploy -Dmaven.build.cache.enabled=false -Dmicroservice-docker -Dservices -Dstarters -DskipTests -DskipFormat -DskipSpotbugs -Denforcer.skip=true -Dcheckstyle.skip=true -Dmaven.deploy.skip=true

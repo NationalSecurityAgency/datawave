@@ -112,18 +112,21 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
     }
 
     /**
-     * Add phrase excerpts to the documents from the given iterator.
+     * Apply uniqueness to the documents from the given iterator. This is the tserver-side entry point, driven by the query iterator.
      *
      * @param in
      *            the iterator source
-     * @return an iterator that will supply the enriched documents
+     * @param yieldCallback
+     *            the yield callback
+     * @return an iterator that will supply the unique documents
      */
     public Iterator<Entry<Key,Document>> getIterator(final Iterator<Entry<Key,Document>> in, final YieldCallback yieldCallback) {
         return new UniqueTransformIterator(in, yieldCallback);
     }
 
     /**
-     * Apply uniqueness to a document.
+     * Apply uniqueness to a document. Called on the web server, as part of the {@link DocumentTransformer} chain, where an intermediate result is a meaningful
+     * keep-alive for the client waiting on the current page.
      *
      * @param keyDocumentEntry
      *            document entry
@@ -132,6 +135,22 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
     @Nullable
     @Override
     public Entry<Key,Document> apply(@Nullable Entry<Key,Document> keyDocumentEntry) {
+        return apply(keyDocumentEntry, true);
+    }
+
+    /**
+     * Apply uniqueness to a document.
+     *
+     * @param keyDocumentEntry
+     *            document entry
+     * @param emitIntermediateResults
+     *            whether an intermediate result may be returned once the page timeout has elapsed. Only the web server may do so. The tserver has no page to
+     *            keep alive, {@link #queryExecutionForPageStartTime} is never set there, and {@link Document#isIntermediateResult()} is not carried across
+     *            serialization, so an intermediate result emitted by the tserver would arrive at the web server as an ordinary empty document.
+     * @return The document if unique per the configured fields, null otherwise.
+     */
+    @Nullable
+    private Entry<Key,Document> apply(@Nullable Entry<Key,Document> keyDocumentEntry, boolean emitIntermediateResults) {
         if (keyDocumentEntry != null) {
             if (FinalDocumentTrackingIterator.isFinalDocumentKey(keyDocumentEntry.getKey())) {
                 return keyDocumentEntry;
@@ -154,7 +173,8 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
                     synchronized (map) {
                         this.map.put(signature, keyDocumentEntry.getValue());
                     }
-                    return null;
+                    // fall through to the timeout/intermediate-result check below so the mostRecent path
+                    // can still emit keep-alive intermediate results
                 } else if (!isDuplicate(keyDocumentEntry.getValue())) {
                     return keyDocumentEntry;
                 }
@@ -162,11 +182,14 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
                 log.error("Failed to convert document to bytes.  Returning document as unique.", ioe);
             }
 
-            long elapsedExecutionTimeForCurrentPage = System.currentTimeMillis() - this.queryExecutionForPageStartTime;
-            if (elapsedExecutionTimeForCurrentPage > this.queryExecutionForPageTimeout) {
-                Document intermediateResult = new Document();
-                intermediateResult.setIntermediateResult(true);
-                return Maps.immutableEntry(keyDocumentEntry.getKey(), intermediateResult);
+            if (emitIntermediateResults) {
+                long elapsedExecutionTimeForCurrentPage = clock.millis() - this.queryExecutionForPageStartTime;
+                if (elapsedExecutionTimeForCurrentPage > this.queryExecutionForPageTimeout) {
+                    this.queryExecutionForPageStartTime = clock.millis();
+                    Document intermediateResult = new Document();
+                    intermediateResult.setIntermediateResult(true);
+                    return Maps.immutableEntry(keyDocumentEntry.getKey(), intermediateResult);
+                }
             }
         }
 
@@ -419,7 +442,7 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
         private Map.Entry<Key,Document> getNext() {
             Map.Entry<Key,Document> o = null;
             while (o == null && iterator.hasNext()) {
-                o = apply(iterator.next());
+                o = apply(iterator.next(), false);
             }
             // see if there are any results cached by the transform
             if (o == null) {

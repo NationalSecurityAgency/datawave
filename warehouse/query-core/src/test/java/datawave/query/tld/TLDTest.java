@@ -16,6 +16,7 @@ import datawave.query.Constants;
 /**
  * Unit test for {@link TLD}.
  */
+@Deprecated(forRemoval = true)
 public class TLDTest {
 
     // Default values for events
