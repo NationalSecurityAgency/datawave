@@ -592,7 +592,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Construct IteratorSettings");
 
         if (!config.isGeneratePlanOnly()) {
+            cfg = getQueryIterator(metadataHelper, config, "", false, false);
             while (null == cfg) {
+                awaitSettingFuture();
                 cfg = getQueryIterator(metadataHelper, config, "", false, false);
             }
             configureIterator(config, cfg, newQueryString, isFullTable);
@@ -2394,6 +2396,24 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         // no-op
     }
 
+    /**
+     * Blocks until the iterator setting future completes, so that polling {@link #getQueryIterator} is not a hot spin. A failed future is left for the next
+     * getQueryIterator call to surface.
+     */
+    private void awaitSettingFuture() {
+        if (null == settingFuture) {
+            return;
+        }
+        try {
+            settingFuture.get();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new DatawaveAsyncOperationException("Interrupted while building the query iterator", e);
+        } catch (ExecutionException e) {
+            // getQueryIterator will rethrow the cause
+        }
+    }
+
     protected Future<IteratorSetting> loadQueryIterator(final MetadataHelper metadataHelper, final ShardQueryConfiguration config, final Boolean isFullTable,
                     boolean isPreload) {
 
@@ -3510,8 +3530,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         if (compositeMetadata == null && compositeMetadataCallable != null) {
             TraceStopwatch stopwatch = stageStopWatch.newStartedStopwatch(compositeMetadataCallable.stageName());
             try {
-                while (compositeMetadata == null) {
-                    compositeMetadata = compositeMetadataFuture.get(concurrentTimeoutMillis, TimeUnit.MILLISECONDS);
+                compositeMetadata = compositeMetadataFuture.get(concurrentTimeoutMillis, TimeUnit.MILLISECONDS);
+                if (compositeMetadata == null) {
+                    throw new ExecutionException(new IllegalStateException("CompositeMetadata was null"));
                 }
             } catch (InterruptedException | ExecutionException | TimeoutException e) {
                 log.error("Failed to fetch CompositeMetadata", e);
@@ -3531,8 +3552,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         if (typeMetadata == null && typeMetadataCallable != null) {
             TraceStopwatch stopwatch = stageStopWatch.newStartedStopwatch(typeMetadataCallable.stageName());
             try {
-                while (typeMetadata == null) {
-                    typeMetadata = typeMetadataFuture.get(concurrentTimeoutMillis, TimeUnit.MILLISECONDS);
+                typeMetadata = typeMetadataFuture.get(concurrentTimeoutMillis, TimeUnit.MILLISECONDS);
+                if (typeMetadata == null) {
+                    throw new ExecutionException(new IllegalStateException("TypeMetadata was null"));
                 }
             } catch (InterruptedException | ExecutionException | TimeoutException e) {
                 log.error("Failed to fetch TypeMetadata", e);
@@ -3548,8 +3570,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         if (contentExpansionFields == null && contentExpansionFieldsCallable != null) {
             TraceStopwatch stopwatch = stageStopWatch.newStartedStopwatch(contentExpansionFieldsCallable.stageName());
             try {
-                while (contentExpansionFields == null) {
-                    contentExpansionFields = contentExpansionFieldsFuture.get(concurrentTimeoutMillis, TimeUnit.MILLISECONDS);
+                contentExpansionFields = contentExpansionFieldsFuture.get(concurrentTimeoutMillis, TimeUnit.MILLISECONDS);
+                if (contentExpansionFields == null) {
+                    throw new ExecutionException(new IllegalStateException("Content expansion fields were null"));
                 }
             } catch (InterruptedException | ExecutionException | TimeoutException e) {
                 log.error("Failed to fetch Content Expansion fields", e);
@@ -3565,8 +3588,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         if (serializedIvaratorDirs == null && ivaratorCacheDirCallable != null) {
             TraceStopwatch stopwatch = stageStopWatch.newStartedStopwatch(ivaratorCacheDirCallable.stageName());
             try {
-                while (serializedIvaratorDirs == null) {
-                    serializedIvaratorDirs = ivaratorCacheDirFuture.get(concurrentTimeoutMillis, TimeUnit.MILLISECONDS);
+                serializedIvaratorDirs = ivaratorCacheDirFuture.get(concurrentTimeoutMillis, TimeUnit.MILLISECONDS);
+                if (serializedIvaratorDirs == null) {
+                    throw new ExecutionException(new IllegalStateException("Serialized ivarator cache dirs were null"));
                 }
             } catch (InterruptedException | ExecutionException | TimeoutException e) {
                 log.error("Failed to serialize ivarator cache dirs", e);
@@ -3622,9 +3646,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     protected Set<String> getFieldSet(String stageName, Future<Set<String>> future) {
         TraceStopwatch stopwatch = stageStopWatch.newStartedStopwatch(stageName);
         try {
-            Set<String> fields = null;
-            while (fields == null) {
-                fields = future.get(concurrentTimeoutMillis, TimeUnit.MILLISECONDS);
+            Set<String> fields = future.get(concurrentTimeoutMillis, TimeUnit.MILLISECONDS);
+            if (fields == null) {
+                throw new ExecutionException(new IllegalStateException("Stage[" + stageName + "] returned a null field set"));
             }
             return fields;
         } catch (ExecutionException | InterruptedException | TimeoutException e) {
