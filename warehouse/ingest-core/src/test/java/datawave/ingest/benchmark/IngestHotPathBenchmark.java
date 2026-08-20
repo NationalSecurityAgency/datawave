@@ -117,8 +117,7 @@ public class IngestHotPathBenchmark {
     // ---------------------------------------------------------------- instrumentation
 
     /**
-     * A cheap Type that counts {@code normalize} invocations. Counting rather than timing is what makes the "each normalizer runs twice" claim falsifiable
-     * independent of machine speed.
+     * A cheap Type that counts {@code normalize} invocations, so the once-per-value check does not depend on machine speed.
      */
     public static class CountingType extends BaseType<String> {
         private static final long serialVersionUID = 1L;
@@ -135,8 +134,8 @@ public class IngestHotPathBenchmark {
     }
 
     /**
-     * The same counter over an expensive normalizer. {@code DateNormalizer} walks its format list until one parses, so this shows what a redundant second
-     * normalize actually costs rather than only that it happens.
+     * The same counter over an expensive normalizer. {@code DateNormalizer} walks its format list until one parses, so an extra invocation shows up in the
+     * timings, not only the counts.
      */
     public static class CountingDateType extends DateType {
         private static final long serialVersionUID = 1L;
@@ -573,9 +572,8 @@ public class IngestHotPathBenchmark {
     }
 
     /**
-     * The audit predicted BaseIngestHelper normalizes each value twice. That is branch dependent: {@code normalize(NormalizedContentInterface, Type)} on the
-     * indexed path normalizes once, while {@code normalizeFieldValue(NormalizedContentInterface, Type)} on the normalized-but-not-indexed path normalizes the
-     * same input twice. Counted over a whole pass so the ratio holds across event sizes.
+     * Both BaseIngestHelper branches normalize each value exactly once, the indexed path through {@code normalize} and the normalized-only path through
+     * {@code normalizeFieldValue}. Counted over a whole pass so the ratio holds across event sizes.
      */
     public void normalizerInvocationsPerField() throws Exception {
         String cheap = CountingType.class.getName();
@@ -596,9 +594,9 @@ public class IngestHotPathBenchmark {
         System.out.printf("  NORMALIZED-ONLY Date:   %d (%.2f per field)%n", onlyDate, onlyDate / (double) totalFields);
 
         checkEquals(totalFields, indexedCheap, "indexed path should normalize each value once");
-        checkEquals(2 * totalFields, onlyCheap, "normalized-but-not-indexed path should normalize each value twice");
+        checkEquals(totalFields, onlyCheap, "normalized-but-not-indexed path should normalize each value once");
         checkEquals(totalFields, indexedDate, "expensive type, indexed path");
-        checkEquals(2 * totalFields, onlyDate, "expensive type, normalized-only path");
+        checkEquals(totalFields, onlyDate, "expensive type, normalized-only path");
     }
 
     /** Normalizes every event in the pool once and returns the total normalizer invocations. */
@@ -621,8 +619,8 @@ public class IngestHotPathBenchmark {
 
     /**
      * Times the normalization half of the hot path, {@code getEventFields} into {@code BaseIngestHelper.normalizeMap}. The scaling sweep deliberately hoists
-     * this out of the measured loop so it times key generation alone, which means the redundant second normalize on the normalized-but-not-indexed branch is
-     * invisible there. This measures it directly, cheap type against expensive type, indexed branch against normalized-only branch.
+     * this out of the measured loop so it times key generation alone, which means normalization cost is invisible there. This measures it directly, cheap type
+     * against expensive type, indexed branch against normalized-only branch.
      */
     public void benchmarkNormalizationPhase() throws Exception {
         String cheap = CountingType.class.getName();
