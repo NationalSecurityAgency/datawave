@@ -3,6 +3,8 @@ package datawave.test.framework.util;
 import java.util.Iterator;
 import java.util.List;
 
+import com.google.common.base.Preconditions;
+
 /**
  * An iterator that cycles through the list of elements forever
  *
@@ -15,7 +17,12 @@ public class InfiniteIterator<E> implements Iterator<E> {
 
     private int index = 0;
 
+    /**
+     * @param elements
+     *            the elements to cycle through, which must not be null or empty
+     */
     public InfiniteIterator(List<E> elements) {
+        Preconditions.checkArgument(elements != null && !elements.isEmpty(), "elements must not be null or empty");
         this.elements = elements;
     }
 
@@ -26,7 +33,8 @@ public class InfiniteIterator<E> implements Iterator<E> {
 
     @Override
     public E next() {
-        int i = index++ % elements.size();
-        return elements.get(i);
+        E element = elements.get(index);
+        index = (index + 1) % elements.size();
+        return element;
     }
 }

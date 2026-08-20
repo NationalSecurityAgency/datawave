@@ -7,6 +7,8 @@ import java.util.Random;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.base.Preconditions;
+
 /**
  * An iterator that returns a random element
  * <p>
@@ -28,12 +30,11 @@ public class RandomIterator<E> implements Iterator<E> {
      * @param seed
      *            the seed
      * @param elements
-     *            the elements to iterate
+     *            the elements to iterate, which must not be null or empty
      */
     public RandomIterator(long seed, List<E> elements) {
+        this(new Random(seed), elements);
         log.trace("Creating RandomIterator with seed: {}", seed);
-        this.random = new Random(seed);
-        this.elements = elements;
     }
 
     /**
@@ -42,9 +43,10 @@ public class RandomIterator<E> implements Iterator<E> {
      * @param random
      *            the source of randomness
      * @param elements
-     *            the elements to iterate
+     *            the elements to iterate, which must not be null or empty
      */
     public RandomIterator(Random random, List<E> elements) {
+        Preconditions.checkArgument(elements != null && !elements.isEmpty(), "elements must not be null or empty");
         this.random = random;
         this.elements = elements;
     }

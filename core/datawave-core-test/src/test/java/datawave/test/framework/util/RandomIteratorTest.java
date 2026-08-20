@@ -1,6 +1,7 @@
 package datawave.test.framework.util;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
@@ -33,5 +34,16 @@ public class RandomIteratorTest {
             String b = second.next();
             assertEquals(a, b);
         }
+    }
+
+    /**
+     * There is no element to pick from an empty list, so both constructors reject it rather than deferring the failure to {@code Random.nextInt(0)}.
+     */
+    @Test
+    public void testNullOrEmptyElementsAreRejected() {
+        assertThrows(IllegalArgumentException.class, () -> new RandomIterator<>(new Random(42L), null));
+        assertThrows(IllegalArgumentException.class, () -> new RandomIterator<>(new Random(42L), List.of()));
+        assertThrows(IllegalArgumentException.class, () -> new RandomIterator<>(42L, null));
+        assertThrows(IllegalArgumentException.class, () -> new RandomIterator<>(42L, List.of()));
     }
 }
