@@ -53,7 +53,7 @@ import datawave.query.iterator.logic.TermFrequencyIndexIterator;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.model.QueryModel;
 import datawave.query.planner.scanhints.IvaratorScanHint;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 
 public class ShardQueryConfigurationTest {
 
@@ -186,6 +186,8 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("reduceTypeMetadata", true);
         defaultValues.put("reduceTypeMetadataPerShard", false);
         updatedValues.put("reduceTypeMetadataPerShard", true);
+        defaultValues.put("kryoTypeMetadata", false);
+        updatedValues.put("kryoTypeMetadata", true);
         defaultValues.put("collectTimingDetails", false);
         updatedValues.put("collectTimingDetails", true);
         defaultValues.put("logTimingDetails", false);

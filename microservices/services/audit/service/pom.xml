@@ -36,7 +36,7 @@
         <version.jackson>2.14.3</version.jackson>
         <version.jboss-servlet-api>2.0.0.Final</version.jboss-servlet-api>
         <!-- dependency declared in datawave-microservice-parent, but the version can be overridden here -->
-        <version.log4j>2.25.3</version.log4j>
+        <version.log4j>2.26.1</version.log4j>
         <version.rabbit.amqp-client>5.14.2</version.rabbit.amqp-client>
         <version.rabbit.http-client>2.1.0.RELEASE</version.rabbit.http-client>
         <!-- dependency declared in datawave-microservice-parent, but the version can be overridden here -->

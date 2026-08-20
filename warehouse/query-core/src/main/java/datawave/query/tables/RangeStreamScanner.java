@@ -7,6 +7,7 @@ import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -17,6 +18,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.ScannerBase;
@@ -43,6 +45,7 @@ import datawave.query.index.lookup.IndexInfo;
 import datawave.query.index.lookup.IndexMatch;
 import datawave.query.index.lookup.ShardEquality;
 import datawave.query.tables.stats.ScanSessionStats.TIMERS;
+import datawave.query.util.QueryScannerHelper;
 import datawave.query.util.ValueSerializer;
 
 /**
@@ -91,6 +94,9 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
     // Not thread-safe by default
     protected ValueSerializer<IndexInfo> valueSerializer;
 
+    private AccumuloClient client;
+    private final ScanSessionManager sessionManager = new ScanSessionManager();
+
     @Override
     protected String serviceName() {
         String id = "NoQueryId";
@@ -125,9 +131,14 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
         myExecutor = service;
     }
 
+    @Deprecated(forRemoval = true, since = "7.41.0")
     public RangeStreamScanner setScannerFactory(ScannerFactory factory) {
         this.scannerFactory = factory;
         return this;
+    }
+
+    public void setAccumuloClient(AccumuloClient client) {
+        this.client = client;
     }
 
     /**
@@ -663,7 +674,8 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
             if (null != stats)
                 stats.getTimer(TIMERS.SCANNER_START).resume();
 
-            baseScanner = scannerFactory.newSingleScanner(tableName, auths, settings);
+            baseScanner = QueryScannerHelper.createScannerWithoutInfo(client, tableName, auths, settings);
+            sessionManager.addScanner(baseScanner);
 
             if (baseScanner instanceof Scanner)
                 ((Scanner) baseScanner).setReadaheadThreshold(Long.MAX_VALUE);
@@ -683,6 +695,15 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
                 if (log.isTraceEnabled())
                     log.trace("Adding setting, " + setting);
                 baseScanner.addScanIterator(setting);
+            }
+
+            // This scanner is built here rather than through a RunningResource, so the consistency level and execution hints carried by the SessionOptions must
+            // be copied across explicitly. Without this an index lookup always runs at the default IMMEDIATE consistency and can never reach a scan server.
+            baseScanner.setConsistencyLevel(options.getConsistencyLevel());
+
+            Map<String,String> executionHints = new RunningResource.SessionOptionsDelegate(options).getExecutionHints();
+            if (executionHints != null && !executionHints.isEmpty()) {
+                baseScanner.setExecutionHints(executionHints);
             }
 
             // if we have just started or we are at the end of the current range. pop the next range
@@ -762,7 +783,12 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
             if (null != stats)
                 stats.getTimer(TIMERS.SCANNER_START).suspend();
 
-            scannerFactory.close(baseScanner);
+            sessionManager.close(baseScanner);
+
+            if (scannerFactory != null) {
+                scannerFactory.close(baseScanner);
+            }
+
             // no point in running again
             if (ranges.isEmpty() && lastSeenKey == null) {
                 finished = true;

@@ -45,7 +45,7 @@ import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.util.AbstractQueryTest;
 import datawave.query.util.ColorsIngest;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 
 /**
  * A set of tests that exercises multi-shard, multi-day queries
@@ -129,6 +129,9 @@ public class ColorsTest extends AbstractQueryTest {
         // every test also exercises hit terms
         givenParameter(QueryParameters.HIT_LIST, "true");
         logic.setHitList(true);
+
+        // every test also exercises the Kryo TypeMetadata serialization path
+        logic.setKryoTypeMetadata(true);
 
         // default to full date range
         givenDate(ColorsIngest.getStartDay(), ColorsIngest.getEndDay());

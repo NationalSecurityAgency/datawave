@@ -29,7 +29,7 @@
         <version.datawave.starter-query>1.0.12</version.datawave.starter-query>
         <version.hadoop>3.3.4</version.hadoop>
         <!-- dependency declared in datawave-microservice-parent, but the version can be overridden here -->
-        <version.log4j>2.25.3</version.log4j>
+        <version.log4j>2.26.1</version.log4j>
         <version.oozie>4.1.0</version.oozie>
         <!-- dependency declared in datawave-microservice-parent, but the version can be overridden here -->
         <version.slf4j>2.0.17</version.slf4j>

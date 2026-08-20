@@ -19,7 +19,7 @@ import org.apache.hadoop.io.Text;
 
 import com.google.common.base.Splitter;
 
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 
 /**
  * An iterator optimized for the {@link TableName#DATE_INDEX}
