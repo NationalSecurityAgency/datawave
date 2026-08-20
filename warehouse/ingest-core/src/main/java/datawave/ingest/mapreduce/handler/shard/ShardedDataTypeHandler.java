@@ -52,8 +52,8 @@ import datawave.ingest.util.DiskSpaceStarvationStrategy;
 import datawave.marking.MarkingFunctions;
 import datawave.marking.Markings;
 import datawave.query.model.Direction;
+import datawave.table.constants.TableName;
 import datawave.util.CompositeTimestamp;
-import datawave.util.TableName;
 import datawave.util.TextUtil;
 import datawave.util.time.DateHelper;
 
