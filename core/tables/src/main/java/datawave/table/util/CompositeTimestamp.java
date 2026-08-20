@@ -1,4 +1,4 @@
-package datawave.util;
+package datawave.table.util;
 
 import java.util.Calendar;
 import java.util.Comparator;

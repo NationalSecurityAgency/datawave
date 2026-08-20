@@ -1,8 +1,6 @@
-package datawave.iterators;
+package datawave.table.iterators;
 
 import org.apache.accumulo.core.data.Key;
-
-import datawave.ingest.table.aggregator.TruncatingTimestampIterator;
 
 /**
  *
