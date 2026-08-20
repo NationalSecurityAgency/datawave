@@ -1,9 +1,9 @@
 package datawave.query.util;
 
-import static datawave.util.TableName.METADATA;
-import static datawave.util.TableName.SHARD;
-import static datawave.util.TableName.SHARD_INDEX;
-import static datawave.util.TableName.SHARD_RINDEX;
+import static datawave.table.constants.TableName.METADATA;
+import static datawave.table.constants.TableName.SHARD;
+import static datawave.table.constants.TableName.SHARD_INDEX;
+import static datawave.table.constants.TableName.SHARD_RINDEX;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -25,8 +25,8 @@ import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.hadoop.io.Text;
 
-import datawave.data.ColumnFamilyConstants;
 import datawave.ingest.protobuf.Uid;
+import datawave.table.constants.MetadataColumnFamilyConstants;
 import datawave.table.constants.TableName;
 import datawave.test.MacTestUtil;
 
@@ -73,10 +73,10 @@ public class IndexExpansionIngest {
                 Mutation m = new Mutation(field);
                 for (String datatype : datatypes) {
                     Text cq = new Text(datatype);
-                    m.put(ColumnFamilyConstants.COLF_I, cq, EMPTY_VALUE);
-                    m.put(ColumnFamilyConstants.COLF_E, cq, EMPTY_VALUE);
+                    m.put(MetadataColumnFamilyConstants.COLF_I, cq, EMPTY_VALUE);
+                    m.put(MetadataColumnFamilyConstants.COLF_E, cq, EMPTY_VALUE);
                     for (String date : dates) {
-                        m.put(ColumnFamilyConstants.COLF_F, new Text(datatype + '\u0000' + date), createValue(12L));
+                        m.put(MetadataColumnFamilyConstants.COLF_F, new Text(datatype + '\u0000' + date), createValue(12L));
                     }
                 }
                 bw.addMutation(m);
@@ -87,9 +87,9 @@ public class IndexExpansionIngest {
                 Mutation m = new Mutation(field);
                 for (String datatype : datatypes) {
                     Text cq = new Text(datatype);
-                    m.put(ColumnFamilyConstants.COLF_I, cq, EMPTY_VALUE);
-                    m.put(ColumnFamilyConstants.COLF_E, cq, EMPTY_VALUE);
-                    m.put(ColumnFamilyConstants.COLF_F, new Text(datatype + '\u0000' + lastDate), createValue(12L));
+                    m.put(MetadataColumnFamilyConstants.COLF_I, cq, EMPTY_VALUE);
+                    m.put(MetadataColumnFamilyConstants.COLF_E, cq, EMPTY_VALUE);
+                    m.put(MetadataColumnFamilyConstants.COLF_F, new Text(datatype + '\u0000' + lastDate), createValue(12L));
                 }
                 bw.addMutation(m);
             }
