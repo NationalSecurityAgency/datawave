@@ -27,7 +27,7 @@
         <version.jackson>2.14.3</version.jackson>
         <version.junit5>5.12.0</version.junit5>
         <version.junit5.platform>1.12.0</version.junit5.platform>
-        <version.log4j>2.25.3</version.log4j>
+        <version.log4j>2.26.1</version.log4j>
         <version.slf4j>2.0.17</version.slf4j>
         <version.snakeyaml>1.33</version.snakeyaml>
         <version.spring.boot>2.7.1</version.spring.boot>
@@ -230,6 +230,30 @@
     <build>
         <plugins>
             <plugin>
+                <groupId>com.diffplug.spotless</groupId>
+                <artifactId>spotless-maven-plugin</artifactId>
+                <version>2.43.0</version>
+                <configuration>
+                    <java>
+                        <removeUnusedImports />
+                        <importOrder>
+                            <order>\#java,\#javax,\#,java,javax,org,com,</order>
+                        </importOrder>
+                        <excludes>
+                            <exclude>**/thrift/*.java</exclude>
+                        </excludes>
+                    </java>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>apply</goal>
+                        </goals>
+                        <phase>process-sources</phase>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <groupId>com.github.ekryd.sortpom</groupId>
                 <artifactId>sortpom-maven-plugin</artifactId>
                 <version>4.0.0</version>
@@ -266,6 +290,11 @@
                 </configuration>
                 <dependencies>
                     <dependency>
+                        <groupId>org.apache.logging.log4j</groupId>
+                        <artifactId>log4j-to-slf4j</artifactId>
+                        <version>${version.log4j}</version>
+                    </dependency>
+                    <dependency>
                         <groupId>org.apache.maven.doxia</groupId>
                         <artifactId>doxia-sink-api</artifactId>
                         <version>2.0.0</version>
@@ -276,30 +305,6 @@
                         <goals>
                             <goal>check</goal>
                         </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>com.diffplug.spotless</groupId>
-                <artifactId>spotless-maven-plugin</artifactId>
-                <version>2.43.0</version>
-                <configuration>
-                    <java>
-                        <removeUnusedImports />
-                        <importOrder>
-                            <order>\#java,\#javax,\#,java,javax,org,com,</order>
-                        </importOrder>
-                        <excludes>
-                            <exclude>**/thrift/*.java</exclude>
-                        </excludes>
-                    </java>
-                </configuration>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>apply</goal>
-                        </goals>
-                        <phase>process-sources</phase>
                     </execution>
                 </executions>
             </plugin>

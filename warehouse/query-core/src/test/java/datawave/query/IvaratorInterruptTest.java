@@ -1,124 +1,86 @@
 package datawave.query;
 
-import java.io.File;
-import java.io.FilenameFilter;
-import java.io.IOException;
 import java.net.URL;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Arrays;
+import java.nio.file.Path;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
-import java.util.UUID;
-
-import javax.inject.Inject;
 
 import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
-import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.junit.Arquillian;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.asset.StringAsset;
-import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.io.TempDir;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import datawave.configuration.spring.SpringBean;
-import datawave.core.query.configuration.GenericQueryConfiguration;
-import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
-import datawave.microservice.query.QueryImpl;
-import datawave.query.attributes.Attribute;
-import datawave.query.attributes.Document;
-import datawave.query.attributes.PreNormalizedAttribute;
-import datawave.query.attributes.TypeAttribute;
-import datawave.query.function.deserializer.KryoDocumentDeserializer;
+import datawave.query.index.day.IndexIngestUtil;
 import datawave.query.iterator.QueryOptions;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.tables.ShardQueryLogic;
-import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
+import datawave.query.util.AbstractQueryTest;
+import datawave.query.util.TestIndexTableNames;
 import datawave.query.util.WiseGuysIngest;
-import datawave.util.TableName;
-import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
+import datawave.table.constants.TableName;
 
-public abstract class IvaratorInterruptTest {
+@ExtendWith(SpringExtension.class)
+@ComponentScan(basePackages = "datawave.query")
+// @formatter:off
+@ContextConfiguration(locations = {
+        "classpath:datawave/query/QueryLogicFactory.xml",
+        "classpath:beanRefContext.xml",
+        "classpath:MarkingFunctionsContext.xml",
+        "classpath:MetadataHelperContext.xml",
+        "classpath:CacheContext.xml"})
+// @formatter:on
+public class IvaratorInterruptTest extends AbstractQueryTest {
+
     private static final Logger log = Logger.getLogger(IvaratorInterruptTest.class);
+    private static final Authorizations auths = new Authorizations("ALL");
+
+    @TempDir
+    public static Path metadataDir;
+
     private static AccumuloClient client;
 
-    @ClassRule
-    public static TemporaryFolder temporaryFolder = new TemporaryFolder();
-
-    protected Authorizations auths = new Authorizations("ALL");
-    private Set<Authorizations> authSet = Collections.singleton(auths);
-
-    @Inject
-    @SpringBean(name = "EventQuery")
+    @Autowired
+    @Qualifier("EventQuery")
     protected ShardQueryLogic logic;
 
-    private KryoDocumentDeserializer deserializer;
+    @BeforeAll
+    public static void beforeAll() throws Exception {
+        System.setProperty("type.metadata.dir", metadataDir.toFile().getCanonicalPath());
 
-    private final DateFormat format = new SimpleDateFormat("yyyyMMdd");
-
-    @Deployment
-    public static JavaArchive createDeployment() {
-        return ShrinkWrap.create(JavaArchive.class)
-                        .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.query", "org.jboss.logging",
-                                        "datawave.webservice.query.result.event", "datawave.core.query.result.event")
-                        .deleteClass(DefaultEdgeEventQueryLogic.class).deleteClass(RemoteEdgeDictionary.class)
-                        .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class)
-                        .addAsManifestResource(new StringAsset(
-                                        "<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>" + "</alternatives>"),
-                                        "beans.xml");
-    }
-
-    protected static void init(String metadataDir, WiseGuysIngest.WhatKindaRange range) throws Exception {
-        System.setProperty("type.metadata.dir", temporaryFolder.getRoot().getCanonicalPath() + "/" + metadataDir);
-
-        QueryTestTableHelper qtth = new QueryTestTableHelper(ShardRange.class.toString(), log, RebuildingScannerTestHelper.TEARDOWN.NEVER,
+        QueryTestTableHelper qtth = new QueryTestTableHelper(IvaratorInterruptTest.class.toString(), log, RebuildingScannerTestHelper.TEARDOWN.NEVER,
                         RebuildingScannerTestHelper.INTERRUPT.FI_EVERY_OTHER);
         client = qtth.client;
 
-        WiseGuysIngest.writeItAll(client, range);
-        Authorizations auths = new Authorizations("ALL");
-        PrintUtility.printTable(client, auths, TableName.SHARD);
-        PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
-        PrintUtility.printTable(client, auths, QueryTestTableHelper.METADATA_TABLE_NAME);
-        PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
+        WiseGuysIngest.writeItAll(client, WiseGuysIngest.WhatKindaRange.DOCUMENT);
+
+        IndexIngestUtil util = new IndexIngestUtil();
+        util.write(client, auths);
     }
 
-    @AfterClass
-    public static void teardown() throws IOException {
+    @AfterAll
+    public static void afterAll() {
         TypeRegistry.reset();
-
-        File root = new File(temporaryFolder.getRoot().getCanonicalPath() + "/DocumentRange/DatawaveMetadata");
-        FilenameFilter filenameFilter = (dir, name) -> name.equals("typeMetadata") || name.equals("typeMetadata.crc");
-        if (root.exists()) {
-            for (File file : root.listFiles(filenameFilter)) {
-                System.out.println("Deleting file " + file.getCanonicalPath() + " : " + file.delete());
-            }
-        } else {
-            System.out.println("Root doesn't exist");
-        }
     }
 
-    @Before
-    public void setup() throws IOException {
+    @BeforeEach
+    public void setup(@TempDir Path ivaratorCacheDir) throws Exception {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
+        setClientForTest(client);
 
         logic.setFullTableScanEnabled(true);
         // this should force regex expansion into ivarators
@@ -129,122 +91,61 @@ public abstract class IvaratorInterruptTest {
         logic.setHdfsSiteConfigURLs(hadoopConfig.toExternalForm());
 
         // setup a directory for cache results
-        File tmpDir = temporaryFolder.newFolder();
-        IvaratorCacheDirConfig config = new IvaratorCacheDirConfig(tmpDir.toURI().toString());
+        IvaratorCacheDirConfig config = new IvaratorCacheDirConfig(ivaratorCacheDir.toUri().toString());
         logic.setIvaratorCacheDirConfigs(Collections.singletonList(config));
-
-        deserializer = new KryoDocumentDeserializer();
     }
 
-    @RunWith(Arquillian.class)
-    public static class ShardRange extends IvaratorInterruptTest {
-        protected static AccumuloClient client = null;
-
-        @BeforeClass
-        public static void init() throws Exception {
-            init(ShardRange.class.getSimpleName(), WiseGuysIngest.WhatKindaRange.SHARD);
-        }
-
-        @Before
-        public void setup() throws IOException {
-            super.setup();
-            logic.setCollapseUids(true);
-        }
+    @Override
+    public ShardQueryLogic getLogic() {
+        return logic;
     }
 
-    @RunWith(Arquillian.class)
-    public static class DocumentRange extends IvaratorInterruptTest {
-
-        @BeforeClass
-        public static void init() throws Exception {
-            init(DocumentRange.class.getSimpleName(), WiseGuysIngest.WhatKindaRange.DOCUMENT);
-        }
-
-        @Before
-        public void setup() throws IOException {
-            super.setup();
-            logic.setCollapseUids(false);
-        }
+    @Override
+    public Authorizations getAuths() {
+        return auths;
     }
 
-    protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms) throws Exception {
-        log.debug("runTestQuery");
-        log.trace("Creating QueryImpl");
-        QueryImpl settings = new QueryImpl();
-        settings.setBeginDate(startDate);
-        settings.setEndDate(endDate);
-        settings.setPagesize(Integer.MAX_VALUE);
-        settings.setQueryAuthorizations(auths.serialize());
-        settings.setQuery(querystr);
-        settings.setParameters(extraParms);
-        settings.setId(UUID.randomUUID());
+    @Override
+    protected void extraConfigurations() {
+        disableQueryPlanAssertion();
+    }
 
-        log.debug("query: " + settings.getQuery());
-        log.debug("logic: " + settings.getQueryLogicName());
-        logic.setMaxEvaluationPipelines(1);
+    @Override
+    protected void extraAssertions() {
+        // no-op
+    }
 
-        GenericQueryConfiguration config = logic.initialize(client, settings, authSet);
-        logic.setupQuery(config);
-
-        HashSet<String> expectedSet = new HashSet<>(expected);
-        HashSet<String> resultSet;
-        resultSet = new HashSet<>();
-        Set<Document> docs = new HashSet<>();
-        for (Map.Entry<Key,Value> entry : logic) {
-            Document d = deserializer.apply(entry).getValue();
-
-            log.debug(entry.getKey() + " => " + d);
-
-            Attribute<?> attr = d.get("UUID");
-            if (attr == null)
-                attr = d.get("UUID.0");
-
-            Assert.assertNotNull("Result Document did not contain a 'UUID'", attr);
-            Assert.assertTrue("Expected result to be an instance of DatwawaveTypeAttribute, was: " + attr.getClass().getName(),
-                            attr instanceof TypeAttribute || attr instanceof PreNormalizedAttribute);
-
-            TypeAttribute<?> UUIDAttr = (TypeAttribute<?>) attr;
-
-            String UUID = UUIDAttr.getType().getDelegate().toString();
-            Assert.assertTrue("Received unexpected UUID: " + UUID, expected.contains(UUID));
-
-            resultSet.add(UUID);
-            docs.add(d);
-        }
-
-        if (expected.size() > resultSet.size()) {
-            expectedSet.addAll(expected);
-            expectedSet.removeAll(resultSet);
-
-            for (String s : expectedSet) {
-                log.warn("Missing: " + s);
-            }
-        }
-
-        if (!expected.containsAll(resultSet)) {
-            log.error("Expected results " + expected + " differ form actual results " + resultSet);
-        }
-        Assert.assertTrue("Expected results " + expected + " differ form actual results " + resultSet, expected.containsAll(resultSet));
-        Assert.assertEquals("Unexpected number of records", expected.size(), resultSet.size());
+    /**
+     * This test is about exercising ivarator interrupts during shard scans, so only run against the index table types that force a full/shard scan.
+     *
+     * @return a subset of the standard index tables
+     */
+    @Override
+    protected List<String> getIndexTableNames() {
+        return List.of(TableName.SHARD_INDEX, TestIndexTableNames.NO_UID_INDEX);
     }
 
     @Test
     public void testIvaratorInterruptedUnsorted() throws Exception {
-        String query = "UUID =~ '^[CS].*'";
-        String[] results = new String[] {"CORLEONE", "SOPRANO", "CAPONE"};
-        runTestQuery(Arrays.asList(results), query, format.parse("20091231"), format.parse("20150101"), Collections.emptyMap());
+        givenDate("20091231", "20150101");
+        givenQuery("UUID =~ '^[CS].*'");
+        expectUUIDs(Set.of("CORLEONE", "SOPRANO", "CAPONE"));
+
+        planAndExecuteQuery();
     }
 
     @Test
     public void testIvaratorInterruptedSorted() throws Exception {
         Map<String,String> params = new HashMap<>();
-
         // both required in order to force ivarator to call fillSets
         params.put(QueryOptions.SORTED_UIDS, "true");
         logic.getConfig().setUnsortedUIDsEnabled(false);
 
-        String query = "UUID =~ '^[CS].*'";
-        String[] results = new String[] {"CORLEONE", "SOPRANO", "CAPONE"};
-        runTestQuery(Arrays.asList(results), query, format.parse("20091231"), format.parse("20150101"), params);
+        givenDate("20091231", "20150101");
+        givenQuery("UUID =~ '^[CS].*'");
+        givenParameters(params);
+        expectUUIDs(Set.of("CORLEONE", "SOPRANO", "CAPONE"));
+
+        planAndExecuteQuery();
     }
 }

@@ -8,7 +8,6 @@ import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.Scanner;
-import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -21,6 +20,7 @@ import org.apache.log4j.Logger;
 
 import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.ingest.protobuf.TermWeight;
+import datawave.scan.ScannerBuilder;
 import datawave.util.accumulo.RFileUtil;
 
 public class ShardReindexVerificationMapper extends Mapper<Range,String,Key,Value> {
@@ -87,8 +87,8 @@ public class ShardReindexVerificationMapper extends Mapper<Range,String,Key,Valu
 
             try {
                 Authorizations auths = accumuloClient.securityOperations().getUserAuthorizations(accumuloHelper.getUsername());
-                return accumuloClient.createScanner(sourceArg, auths);
-            } catch (AccumuloException | TableNotFoundException | AccumuloSecurityException e) {
+                return ScannerBuilder.create(accumuloClient).setTableName(sourceArg).setAuthorizations(auths).build();
+            } catch (AccumuloException | AccumuloSecurityException e) {
                 throw new RuntimeException("could not setup scanner on " + sourceArg, e);
             }
         } else {

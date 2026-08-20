@@ -41,7 +41,7 @@
         <version.jackson>2.14.3</version.jackson>
         <version.jaxb-impl>2.3.3</version.jaxb-impl>
         <!-- dependency declared in datawave-microservice-parent, but the version can be overridden here -->
-        <version.log4j>2.25.3</version.log4j>
+        <version.log4j>2.26.1</version.log4j>
         <version.protobuf-java>3.25.5</version.protobuf-java>
         <!-- dependency declared in datawave-microservice-parent, but the version can be overridden here -->
         <version.slf4j>2.0.17</version.slf4j>
@@ -100,6 +100,11 @@
             <dependency>
                 <groupId>gov.nsa.datawave.core</groupId>
                 <artifactId>common-utils</artifactId>
+                <version>${version.datawave}</version>
+            </dependency>
+            <dependency>
+                <groupId>gov.nsa.datawave.core</groupId>
+                <artifactId>datawave-core-tables</artifactId>
                 <version>${version.datawave}</version>
             </dependency>
             <dependency>
@@ -235,6 +240,10 @@
         <dependency>
             <groupId>gov.nsa.datawave.core</groupId>
             <artifactId>common-utils</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.core</groupId>
+            <artifactId>datawave-core-tables</artifactId>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.core</groupId>
