@@ -401,7 +401,9 @@ public class ShardIndexQueryTableStaticMethods {
 
         bs.setRanges(ranges);
 
-        SessionOptions options = new SessionOptions();
+        // Start from the session's own options rather than a fresh instance. newLimitedScanner has already applied the execution hint and consistency level for
+        // this table to them, and replacing the options wholesale would silently discard both.
+        SessionOptions options = bs.getOptions();
 
         IteratorSetting setting = configureDateRangeIterator(config);
         options.addScanIterator(setting);
@@ -431,7 +433,8 @@ public class ShardIndexQueryTableStaticMethods {
 
         bs.setRanges(ranges);
 
-        SessionOptions options = new SessionOptions();
+        // See configureTermMatchOnly - the session's options already carry the execution hint and consistency level for this table.
+        SessionOptions options = bs.getOptions();
         options.addScanIterator(configureDateRangeIterator(config));
         IteratorSetting setting = configureGlobalIndexDataTypeFilter(config, config.getDatatypeFilter());
         if (setting != null) {
