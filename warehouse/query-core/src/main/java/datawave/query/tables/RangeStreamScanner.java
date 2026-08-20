@@ -7,6 +7,7 @@ import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -694,6 +695,15 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
                 if (log.isTraceEnabled())
                     log.trace("Adding setting, " + setting);
                 baseScanner.addScanIterator(setting);
+            }
+
+            // This scanner is built here rather than through a RunningResource, so the consistency level and execution hints carried by the SessionOptions must
+            // be copied across explicitly. Without this an index lookup always runs at the default IMMEDIATE consistency and can never reach a scan server.
+            baseScanner.setConsistencyLevel(options.getConsistencyLevel());
+
+            Map<String,String> executionHints = new RunningResource.SessionOptionsDelegate(options).getExecutionHints();
+            if (executionHints != null && !executionHints.isEmpty()) {
+                baseScanner.setExecutionHints(executionHints);
             }
 
             // if we have just started or we are at the end of the current range. pop the next range
