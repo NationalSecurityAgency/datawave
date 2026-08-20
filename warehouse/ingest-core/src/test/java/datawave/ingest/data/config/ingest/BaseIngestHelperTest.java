@@ -1,8 +1,10 @@
 package datawave.ingest.data.config.ingest;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
 import org.apache.hadoop.conf.Configuration;
@@ -11,8 +13,12 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import datawave.TestBaseIngestHelper;
+import datawave.data.normalizer.Normalizer;
+import datawave.data.type.BaseType;
 import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.data.config.DataTypeHelper;
+import datawave.ingest.data.config.NormalizedContentInterface;
+import datawave.ingest.data.config.NormalizedFieldAndValue;
 import datawave.policy.IngestPolicyEnforcer;
 
 class BaseIngestHelperTest {
@@ -190,5 +196,69 @@ class BaseIngestHelperTest {
         abstract String getDisallowListProperty();
 
         abstract Function<String,Boolean> getFunctionUnderTest();
+    }
+
+    /**
+     * Executes tests for {@link BaseIngestHelper#normalizeFieldValue(NormalizedContentInterface, datawave.data.type.Type)}.
+     */
+    @Nested
+    class NormalizeFieldValueTests {
+
+        /** Counts normalize invocations. */
+        private class CountingType extends BaseType<String> {
+
+            private static final long serialVersionUID = 1L;
+
+            private final AtomicInteger calls;
+
+            CountingType(AtomicInteger calls) {
+                super(Normalizer.LC_NO_DIACRITICS_NORMALIZER);
+                this.calls = calls;
+            }
+
+            @Override
+            public String normalize(String in) {
+                calls.incrementAndGet();
+                return super.normalize(in);
+            }
+        }
+
+        /**
+         * Verify that a value is normalized exactly once and both fields carry the result.
+         */
+        @Test
+        void givenAValueThenNormalizesExactlyOnce() {
+            AtomicInteger calls = new AtomicInteger();
+            TestBaseIngestHelper helper = new TestBaseIngestHelper();
+
+            NormalizedContentInterface result = helper.normalizeFieldValue(new NormalizedFieldAndValue("FIELD", "MixedCase Value"), new CountingType(calls));
+
+            assertEquals(1, calls.get(), "normalize should be invoked once per value");
+            assertEquals(result.getEventFieldValue(), result.getIndexedFieldValue(), "both fields should carry the same normalized text");
+        }
+
+        /**
+         * Verify that an unparseable value records the error rather than propagating it.
+         */
+        @Test
+        void givenAnUnparseableValueThenRecordsTheError() {
+            AtomicInteger calls = new AtomicInteger();
+            TestBaseIngestHelper helper = new TestBaseIngestHelper();
+
+            NormalizedContentInterface result = helper.normalizeFieldValue(new NormalizedFieldAndValue("FIELD", "not a date"),
+                            new datawave.data.type.DateType() {
+
+                                private static final long serialVersionUID = 1L;
+
+                                @Override
+                                public String normalize(String in) {
+                                    calls.incrementAndGet();
+                                    return super.normalize(in);
+                                }
+                            });
+
+            assertEquals(1, calls.get(), "a failing normalize should not be retried");
+            assertTrue(result.getError() != null, "the failure should be recorded on the result");
+        }
     }
 }
