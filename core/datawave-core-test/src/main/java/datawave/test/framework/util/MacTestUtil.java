@@ -3,6 +3,7 @@ package datawave.test.framework.util;
 import java.time.Duration;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -159,25 +160,30 @@ public class MacTestUtil {
                 throw new RuntimeException("Failed to add property", e);
             }
         }
-        waitForPropertyAddition(tops, tableName, properties.keySet());
+        waitForPropertyAddition(tops, tableName, properties);
     }
 
     /**
      * When a property is added to accumulo the test must wait until the change is persisted in ZooKeeper. Otherwise, test may execute with an incorrect set of
      * assumptions.
+     * <p>
+     * A property being updated is already present under its old value, so the observed value is compared against the requested one - waiting on key presence
+     * alone would return as soon as the key exists and leave the test reading the previous value.
      *
      * @param tops
      *            an instance of {@link TableOperations}
      * @param tableName
      *            the table name
      * @param properties
-     *            the set of removed properties
+     *            the map of added property key-value pairs
      */
-    private static void waitForPropertyAddition(TableOperations tops, String tableName, Set<String> properties) {
-        waitForProperties(tableName, properties, "added", () -> {
-            Set<String> outstanding = new HashSet<>(properties);
+    private static void waitForPropertyAddition(TableOperations tops, String tableName, Map<String,String> properties) {
+        waitForProperties(tableName, properties.keySet(), "added", () -> {
+            Set<String> outstanding = new HashSet<>(properties.keySet());
             for (Map.Entry<String,String> prop : tops.getProperties(tableName)) {
-                outstanding.remove(prop.getKey());
+                if (properties.containsKey(prop.getKey()) && Objects.equals(properties.get(prop.getKey()), prop.getValue())) {
+                    outstanding.remove(prop.getKey());
+                }
             }
             return outstanding;
         });
