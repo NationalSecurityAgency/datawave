@@ -1,4 +1,4 @@
-FROM quay.io/wildfly/wildfly:26.1.3.Final-jdk11 AS wildfly
+FROM quay.io/wildfly/wildfly:26.1.3.Final-jdk17 AS wildfly
 FROM rockylinux/rockylinux:8
 
 RUN dnf -y install dnf-plugins-core epel-release java-17-openjdk-devel && \
