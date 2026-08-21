@@ -139,10 +139,21 @@ function datawaveWebIsDeployed() {
    return 0
 }
 
+# Accumulo 4 tservers no longer bind the fixed 9997 client port (tserver.port.client
+# now defaults to the 9800-9899 range). Ask accumulo-service which ports the running
+# tservers hold, and confirm one of them is actually being listened on. Note that
+# 'list' prints only its header and still exits 0 when nothing is running, so the
+# port lines are what we test, not the exit status.
+function tserverIsListening() {
+    local port
+    for port in $( "${ACCUMULO_HOME}/bin/accumulo-service" tserver list 2>/dev/null | awk 'NR > 1 { print $NF }' | tr ',' ' ' ) ; do
+        ss -ln | grep -qE "[:.]${port}([[:space:]]|\$)" && return 0
+    done
+    return 1
+}
+
 function datawaveWebReadyToStart() {
-    # Accumulo 4 tservers no longer bind the fixed 9997 client port (the default
-    # is now the 9800-9899 range), so check for a live tserver process instead
-    ss -ln | grep 8020 && ss -ln | grep 2181 && pgrep -f 'o.start.Main proc tserver' > /dev/null && return 0
+    ss -ln | grep 8020 && ss -ln | grep 2181 && tserverIsListening && return 0
     return 1
 }
 
