@@ -1,7 +1,5 @@
 package datawave.query.tables;
 
-import static java.lang.Thread.sleep;
-
 import java.io.IOException;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
@@ -86,8 +84,9 @@ public class ScannerSessionTest {
         }
         client.tableOperations().addSplits("testTable", splits);
 
-        // give the table a chance to be split
-        sleep(10000);
+        // clear client cache so its aware the splits have been created
+        client.tableOperations().clearLocatorCache("testTable");
+        Assert.assertEquals(splits.size(), client.tableOperations().listSplits("testTable").size());
 
         // force writing all the data or fail
         try {

@@ -807,20 +807,30 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
             AllHitsQueryConfig allHitsQueryConfig = getAllHitsQueryConfig();
             if (allHitsQueryConfig != null && allHitsQueryConfig.isEnabled()) {
-                // since this may be called multiple times always rebuild
-                // @formatter:off
-                ((DocumentTransformer) this.transformerInstance).addTransform(new AnnotationHitsTransformer(
-                        getConfig(),
-                        getConfig().getOriginalJexlQuery(),
-                        allHitsQueryConfig.getQueryTermExtractor(),
-                        allHitsQueryConfig.getTermNormalizer(),
-                        getAnnotationDataAccess(),
-                        getAnnotationHitsFactory(),
-                        allHitsQueryConfig.getMaxContextLength(),
-                        allHitsQueryConfig.getValidAnnotationTypes(),
-                        allHitsQueryConfig.getTargetField(),
-                        allHitsQueryConfig.getAnnotationEnrichmentFieldMap()));
-                // @formatter:on
+                // follow the same initialize()/updateConfig() lifecycle contract as the other config-based
+                // transforms below (UniqueTransform, GroupingTransform, FieldRenameTransform): construct once,
+                // then call the cheap updateConfig() on subsequent pages so any legitimately-changed query
+                // parameters are picked up without re-running the constructor's heavier one-time setup work
+                // (query term extractor/normalizer wiring, annotation data access, etc.) or losing local state
+                // (e.g. forcedGroupingNotation, forcedReturnFields) that must persist across pages.
+                DocumentTransform alreadyExists = ((DocumentTransformer) this.transformerInstance).containsTransform(AnnotationHitsTransformer.class);
+                if (alreadyExists != null) {
+                    ((AnnotationHitsTransformer) alreadyExists).updateConfig(getSettings());
+                } else {
+                    // @formatter:off
+                    ((DocumentTransformer) this.transformerInstance).addTransform(new AnnotationHitsTransformer(
+                            getConfig(),
+                            getConfig().getOriginalJexlQuery(),
+                            allHitsQueryConfig.getQueryTermExtractor(),
+                            allHitsQueryConfig.getTermNormalizer(),
+                            getAnnotationDataAccess(),
+                            getAnnotationHitsFactory(),
+                            allHitsQueryConfig.getMaxContextLength(),
+                            allHitsQueryConfig.getValidAnnotationTypes(),
+                            allHitsQueryConfig.getTargetField(),
+                            allHitsQueryConfig.getAnnotationEnrichmentFieldMap()));
+                    // @formatter:on
+                }
             }
 
             if (getConfig().getUniqueFields() != null && !getConfig().getUniqueFields().isEmpty()) {
