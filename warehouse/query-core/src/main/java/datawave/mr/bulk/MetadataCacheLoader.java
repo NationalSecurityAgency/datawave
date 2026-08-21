@@ -23,8 +23,8 @@ import com.google.common.base.Preconditions;
 import com.google.common.cache.CacheLoader;
 import com.google.common.collect.Sets;
 
-import datawave.accumulo.util.AccumuloTableConstants;
 import datawave.query.util.Tuple2;
+import datawave.table.constants.AccumuloTableConstants;
 
 /**
  * A cache loader that maps accumulo metadata ranges to the files and locations.

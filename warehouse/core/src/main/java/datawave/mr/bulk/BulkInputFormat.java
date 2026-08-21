@@ -80,7 +80,6 @@ import com.google.common.collect.Multimap;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.accumulo.inmemory.impl.InMemoryTabletLocator;
-import datawave.accumulo.util.AccumuloTableConstants;
 import datawave.common.util.ArgumentChecker;
 import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.mr.bulk.split.DefaultLocationStrategy;
@@ -88,6 +87,7 @@ import datawave.mr.bulk.split.DefaultSplitStrategy;
 import datawave.mr.bulk.split.LocationStrategy;
 import datawave.mr.bulk.split.RangeSplit;
 import datawave.mr.bulk.split.SplitStrategy;
+import datawave.table.constants.AccumuloTableConstants;
 import datawave.util.TextUtil;
 
 public class BulkInputFormat extends InputFormat<Key,Value> {

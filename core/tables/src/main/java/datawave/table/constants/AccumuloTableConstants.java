@@ -1,4 +1,4 @@
-package datawave.accumulo.util;
+package datawave.table.constants;
 
 import org.apache.accumulo.core.data.TableId;
 
