@@ -144,6 +144,7 @@ public class DateIndexUtil {
      */
     public static int getOffsetForYearIndex(String shard) {
         int index = shard.indexOf('_');
+        Preconditions.checkArgument(index > 0, "shard did not contain an underscore: " + shard);
         String date = shard.substring(0, index);
         Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
         calendar.setTime(DateHelper.parse(date));

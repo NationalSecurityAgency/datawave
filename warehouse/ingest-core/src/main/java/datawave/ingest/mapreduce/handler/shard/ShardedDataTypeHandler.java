@@ -3,7 +3,6 @@ package datawave.ingest.mapreduce.handler.shard;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.BitSet;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map.Entry;
@@ -20,7 +19,6 @@ import org.apache.hadoop.mapreduce.StatusReporter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.log4j.Logger;
 
-import com.google.common.base.Preconditions;
 import com.google.common.base.Stopwatch;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -993,19 +991,16 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
 
     /**
      * Constructs a {@link Value} that contains a {@link BitSet}'s backing byte array. The bitset index is set to the shard offset.
+     * <p>
+     * This is the same offset computation as the day index ({@link DateIndexUtil#getValueForDayIndex(String)}); delegate to it rather than duplicating the
+     * parsing logic.
      *
      * @param shard
      *            the full shard
      * @return a Value containing a BitSet
      */
     public Value getValueForBitsetIndex(String shard) {
-        int underscoreIndex = shard.indexOf('_');
-        Preconditions.checkArgument(underscoreIndex > 0, "shard did not contain an underscore: " + shard);
-        String shardId = shard.substring(underscoreIndex + 1);
-        int offset = Integer.parseInt(shardId);
-        BitSet bitset = new BitSet();
-        bitset.set(offset);
-        return new Value(bitset.toByteArray());
+        return DateIndexUtil.getValueForDayIndex(shard);
     }
 
     /**

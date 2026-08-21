@@ -11,6 +11,10 @@ import datawave.ingest.mapreduce.handler.dateindex.DateIndexUtil;
 import datawave.util.TextUtil;
 
 public class ShardUtil {
+    private ShardUtil() {
+        // static utility class
+    }
+
     /**
      * The single place where an Accumulo {@link Key} is actually constructed. All {@code createKey}/{@code createIndexKey} overloads funnel through here.
      * <p>
@@ -80,9 +84,12 @@ public class ShardUtil {
      *
      * @param parts
      *            the byte array segments to join
-     * @return the joined bytes
+     * @return the joined bytes, or an empty array if no parts are given
      */
     public static byte[] joinWithNulls(byte[]... parts) {
+        if (parts.length == 0) {
+            return new byte[0];
+        }
         int len = parts.length - 1;
         for (byte[] part : parts) {
             len += part.length;
