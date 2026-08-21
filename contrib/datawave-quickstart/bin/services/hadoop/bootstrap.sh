@@ -70,6 +70,7 @@ yarn.nodemanager.aux-services mapreduce_shuffle
 yarn.nodemanager.pmem-check-enabled false
 yarn.nodemanager.vmem-check-enabled false
 yarn.nodemanager.resource.memory-mb 6144
+yarn.nodemanager.disk-health-checker.max-disk-utilization-per-disk-percentage 98.5
 yarn.app.mapreduce.am.resource.mb 1024
 yarn.log.server.url http://localhost:8021/jobhistory/logs"
 
