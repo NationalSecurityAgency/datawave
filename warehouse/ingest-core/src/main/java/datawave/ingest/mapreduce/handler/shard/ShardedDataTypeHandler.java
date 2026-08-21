@@ -1132,9 +1132,11 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
             return values;
         }
 
-        // Create unmasked colq
-        byte[] unmaskedColq = StringUtils.isEmpty(fieldValue) ? ShardUtil.utf8(fieldName, replaceMalformedUTF8)
-                        : ShardUtil.joinWithNulls(ShardUtil.utf8(fieldName, replaceMalformedUTF8), ShardUtil.utf8(fieldValue, replaceMalformedUTF8));
+        // Create unmasked colq. This is only needed (and only computed) when there is a field value to key on, both to
+        // avoid wasted work and so that an unwritten key can never fail the record. Field names use the tolerant, never-
+        // throwing overload since they were never subject to replaceMalformedUTF8 prior to this class using ShardUtil.
+        byte[] unmaskedColq = StringUtils.isEmpty(fieldValue) ? null
+                        : ShardUtil.joinWithNulls(ShardUtil.utf8(fieldName), ShardUtil.utf8(fieldValue, replaceMalformedUTF8));
 
         // If this field needs to be masked, then create two keys
         if (null != maskedFieldHelper && maskedFieldHelper.contains(indexedFieldName)) {
@@ -1180,8 +1182,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
                     Multimap<BulkIngestKey,Value> values, boolean replaceMalformedUTF8, boolean deleteMode, String fieldName, String maskedFieldValue) {
         if (!StringUtils.isEmpty(maskedFieldValue)) {
             // Create masked colq
-            byte[] maskedColq = ShardUtil.joinWithNulls(ShardUtil.utf8(fieldName, replaceMalformedUTF8),
-                            ShardUtil.utf8(maskedFieldValue, replaceMalformedUTF8));
+            byte[] maskedColq = ShardUtil.joinWithNulls(ShardUtil.utf8(fieldName), ShardUtil.utf8(maskedFieldValue, replaceMalformedUTF8));
 
             // Another key with masked value and masked visibility
             Key cbKey = ShardUtil.createKey(shardId, colf, maskedColq, maskedVisibility, event.getTimestamp(), deleteMode);
@@ -1233,7 +1234,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
             byte[] colf = ShardUtil.joinWithNulls(FI_COLF_PREFIX, ShardUtil.utf8(fieldName, replaceMalformedUTF8));
             byte[] idSuffix = ShardUtil.joinWithNulls(ShardUtil.utf8(event.getDataType().outputName(), replaceMalformedUTF8),
                             ShardUtil.utf8(event.getId().toString(), replaceMalformedUTF8));
-            byte[] unmaskedColq = ShardUtil.joinWithNulls(ShardUtil.utf8(fieldValue, replaceMalformedUTF8), idSuffix);
+            byte[] unmaskedColq = ShardUtil.joinWithNulls(ShardUtil.utf8(fieldValue), idSuffix);
 
             if (value == null) {
                 value = NULL_VALUE;
@@ -1248,7 +1249,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
                 // We need to use the normalized masked values
                 final String normalizedMaskedValue = helper.getNormalizedMaskedValue(fieldName);
                 if (!StringUtils.isEmpty(normalizedMaskedValue)) {
-                    byte[] maskedColq = ShardUtil.joinWithNulls(ShardUtil.utf8(normalizedMaskedValue, replaceMalformedUTF8), idSuffix);
+                    byte[] maskedColq = ShardUtil.joinWithNulls(ShardUtil.utf8(normalizedMaskedValue), idSuffix);
 
                     // Put masked colq with masked visibility
                     Key key = ShardUtil.createKey(shardId, colf, maskedColq, maskedVisibility, event.getTimestamp(), deleteMode);
@@ -1308,7 +1309,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
             byte[] colf = ShardUtil.joinWithNulls(FI_COLF_PREFIX, ShardUtil.utf8(fieldName, replaceMalformedUTF8));
             byte[] idSuffix = ShardUtil.joinWithNulls(ShardUtil.utf8(event.getDataType().outputName(), replaceMalformedUTF8),
                             ShardUtil.utf8(event.getId().toString(), replaceMalformedUTF8));
-            byte[] unmaskedColq = ShardUtil.joinWithNulls(ShardUtil.utf8(fieldValue, replaceMalformedUTF8), idSuffix);
+            byte[] unmaskedColq = ShardUtil.joinWithNulls(ShardUtil.utf8(fieldValue), idSuffix);
 
             if (value == null) {
                 value = NULL_VALUE;
@@ -1323,7 +1324,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
                 // We need to use the normalized masked values
                 final String normalizedMaskedValue = helper.getNormalizedMaskedValue(fieldName);
                 if (!StringUtils.isEmpty(normalizedMaskedValue)) {
-                    byte[] maskedColq = ShardUtil.joinWithNulls(ShardUtil.utf8(normalizedMaskedValue, replaceMalformedUTF8), idSuffix);
+                    byte[] maskedColq = ShardUtil.joinWithNulls(ShardUtil.utf8(normalizedMaskedValue), idSuffix);
 
                     // Put masked colq with masked visibility
                     Key key = ShardUtil.createKey(shardId, colf, maskedColq, maskedVisibility, event.getTimestamp(), deleteMode);
