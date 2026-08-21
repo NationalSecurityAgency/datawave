@@ -79,7 +79,13 @@ instance.secret=${DW_ACCUMULO_PASSWORD}
 tserver.memory.maps.native.enabled=false
 tserver.memory.maps.max=385M
 tserver.cache.data.size=64M
-tserver.cache.index.size=64M"
+tserver.cache.index.size=64M
+
+## Scan servers size their caches as a percentage of the heap by default, which
+## is more than the quickstart's small JVMs have. Pin them like the tserver caches.
+sserver.cache.data.size=64M
+sserver.cache.index.size=64M
+sserver.cache.summary.size=32M"
 
 if [ "${DW_ACCUMULO_VFS_DATAWAVE_ENABLED}" != false ] ; then
   DW_ACCUMULO_PROPERTIES="${DW_ACCUMULO_PROPERTIES}
