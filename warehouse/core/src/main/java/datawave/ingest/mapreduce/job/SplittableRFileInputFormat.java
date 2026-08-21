@@ -67,7 +67,7 @@ public class SplittableRFileInputFormat extends RFileInputFormat {
 
     /**
      * Create rfile splits for a given FileSplit. Splits will honor the MIN_BLOCKS_PER_SPLIT config option. Splits may extend more than MIN_BLOCKS_PER_SPLIT if
-     * a given Key spans more index blocks.
+     * a given Key spans more index blocks. Each split carries the range it covers so that reading it requires no further index traversal.
      *
      * @param config
      * @param fileSplit
@@ -76,40 +76,44 @@ public class SplittableRFileInputFormat extends RFileInputFormat {
      */
     public static List<InputSplit> getSplits(Configuration config, FileSplit fileSplit) throws IOException {
         log.info("getting splits for: " + fileSplit);
-        RFile.Reader rfileReader = RFileUtil.getRFileReader(config, fileSplit.getPath());
-
-        // get the first and last keys to bound the blocks while creating splits
-        Key firstKey = rfileReader.getFirstKey();
-        Key lastKey = rfileReader.getLastKey();
-
-        // use the index blocks to create the splits
-        FileSKVIterator iter = rfileReader.getIndex();
-
-        // track the last split key to since multiple splits with the same split key MUST be in the same block
-        Key lastSplit = firstKey;
         List<InputSplit> splits = new ArrayList<>();
-        long blkCount = 0;
-        long splitBlocks = 0;
 
-        int minBlocksPerSplit = config.getInt(MIN_BLOCKS_PER_SPLIT, 1);
+        try (RFile.Reader rfileReader = RFileUtil.getRFileReader(config, fileSplit.getPath())) {
+            // get the first key to bound the blocks while creating splits
+            Key firstKey = rfileReader.getFirstKey();
 
-        Key top = null;
-        while (iter.hasTop()) {
-            splitBlocks++;
-            top = iter.getTopKey();
+            // use the index blocks to create the splits
+            FileSKVIterator iter = rfileReader.getIndex();
 
-            if (!top.equals(lastSplit) && splitBlocks >= minBlocksPerSplit) {
-                splits.add(new RFileSplit(fileSplit.getPath(), fileSplit.getStart(), fileSplit.getLength(), fileSplit.getLocations(), blkCount, splitBlocks,
-                                top));
-                blkCount += splitBlocks;
-                lastSplit = top;
-                splitBlocks = 0;
+            // track the last split key to since multiple splits with the same split key MUST be in the same block
+            Key lastSplit = firstKey;
+            long blkCount = 0;
+            long splitBlocks = 0;
+
+            int minBlocksPerSplit = config.getInt(MIN_BLOCKS_PER_SPLIT, 1);
+
+            // a split runs from the index entry that closed the previous split up to, but not including, the one that closes it
+            Key splitStart = null;
+            Key top = null;
+            while (iter.hasTop()) {
+                splitBlocks++;
+                top = iter.getTopKey();
+
+                if (!top.equals(lastSplit) && splitBlocks >= minBlocksPerSplit) {
+                    splits.add(new RFileSplit(fileSplit.getPath(), fileSplit.getStart(), fileSplit.getLength(), fileSplit.getLocations(), blkCount, splitBlocks,
+                                    top, splitStart, top));
+                    blkCount += splitBlocks;
+                    lastSplit = top;
+                    splitStart = top;
+                    splitBlocks = 0;
+                }
+                iter.next();
             }
-            iter.next();
-        }
 
-        // add the last split
-        splits.add(new RFileSplit(fileSplit.getPath(), fileSplit.getStart(), fileSplit.getLength(), fileSplit.getLocations(), blkCount, splitBlocks + 1, top));
+            // add the last split, which runs to the end of the file
+            splits.add(new RFileSplit(fileSplit.getPath(), fileSplit.getStart(), fileSplit.getLength(), fileSplit.getLocations(), blkCount, splitBlocks + 1,
+                            top, splitStart, null));
+        }
 
         return splits;
     }

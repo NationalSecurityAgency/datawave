@@ -17,6 +17,11 @@ public class RFileSplit extends FileSplit {
     private long numBlocks;
     private Key top;
 
+    // The seek range boundaries, when they were resolved while creating the split, so that reading it needs no index traversal
+    private boolean boundsKnown;
+    private Key startKey;
+    private Key endKey;
+
     public RFileSplit() {
         top = new Key();
     }
@@ -26,6 +31,13 @@ public class RFileSplit extends FileSplit {
         this.startBlock = startBlock;
         this.numBlocks = numBlocks;
         this.top = top;
+    }
+
+    public RFileSplit(Path path, long fileStart, long fileLength, String[] hosts, long startBlock, long numBlocks, Key top, Key startKey, Key endKey) {
+        this(path, fileStart, fileLength, hosts, startBlock, numBlocks, top);
+        this.boundsKnown = true;
+        this.startKey = startKey;
+        this.endKey = endKey;
     }
 
     public long getStartBlock() {
@@ -38,6 +50,24 @@ public class RFileSplit extends FileSplit {
 
     public Key getTopKey() {
         return top;
+    }
+
+    /**
+     * Whether the seek range was resolved while creating this split, which lets a reader seek straight to it instead of walking the index.
+     *
+     * @return true if {@link #getSeekRange()} may be used
+     */
+    public boolean hasSeekRange() {
+        return boundsKnown;
+    }
+
+    /**
+     * The range this split covers, resolved when the split was created
+     *
+     * @return
+     */
+    public Range getSeekRange() {
+        return getSeekRange(startKey, endKey);
     }
 
     /**
@@ -62,6 +92,11 @@ public class RFileSplit extends FileSplit {
         top.write(out);
         out.writeLong(startBlock);
         out.writeLong(numBlocks);
+        out.writeBoolean(boundsKnown);
+        if (boundsKnown) {
+            writeKey(out, startKey);
+            writeKey(out, endKey);
+        }
     }
 
     @Override
@@ -70,5 +105,27 @@ public class RFileSplit extends FileSplit {
         top.readFields(in);
         startBlock = in.readLong();
         numBlocks = in.readLong();
+        boundsKnown = in.readBoolean();
+        if (boundsKnown) {
+            startKey = readKey(in);
+            endKey = readKey(in);
+        }
+    }
+
+    private static void writeKey(DataOutput out, Key key) throws IOException {
+        out.writeBoolean(key != null);
+        if (key != null) {
+            key.write(out);
+        }
+    }
+
+    private static Key readKey(DataInput in) throws IOException {
+        if (!in.readBoolean()) {
+            return null;
+        }
+
+        Key key = new Key();
+        key.readFields(in);
+        return key;
     }
 }

@@ -5,6 +5,10 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.util.AbstractMap;
@@ -179,6 +183,68 @@ public class SplittableRFileInputFormatTest {
         assertEquals(1, splits.size());
     }
 
+    /**
+     * Splits are serialized into the job submission directory, so a split must read back with the range it was created with.
+     */
+    @Test
+    public void testSplitSerialization() throws IOException, InterruptedException {
+        List<Map.Entry<Key,Value>> data = new ArrayList<>();
+        for (int i = 0; i < 100000; i++) {
+            addData(data, i, i);
+        }
+
+        tmpFile = createRFile(data);
+        List<InputSplit> splits = getSplits(config, new Path(tmpFile.toString()));
+        assertTrue("expected the file to produce multiple splits", splits.size() > 1);
+
+        List<InputSplit> roundTripped = new ArrayList<>();
+        for (InputSplit split : splits) {
+            RFileSplit original = (RFileSplit) split;
+            ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+            try (DataOutputStream out = new DataOutputStream(bytes)) {
+                original.write(out);
+            }
+
+            RFileSplit copy = new RFileSplit();
+            try (DataInputStream in = new DataInputStream(new ByteArrayInputStream(bytes.toByteArray()))) {
+                copy.readFields(in);
+            }
+
+            assertEquals(original.getStartBlock(), copy.getStartBlock());
+            assertEquals(original.getNumBlocks(), copy.getNumBlocks());
+            assertEquals(original.getTopKey(), copy.getTopKey());
+            assertEquals(original.hasSeekRange(), copy.hasSeekRange());
+            assertEquals(original.getSeekRange(), copy.getSeekRange());
+            roundTripped.add(copy);
+        }
+
+        verifyCoverage(roundTripped, data);
+    }
+
+    /**
+     * A split created without a resolved range still reads the same content, by walking the index for it.
+     */
+    @Test
+    public void testSplitWithoutResolvedRange() throws IOException, InterruptedException {
+        List<Map.Entry<Key,Value>> data = new ArrayList<>();
+        for (int i = 0; i < 100000; i++) {
+            addData(data, i, i);
+        }
+
+        tmpFile = createRFile(data);
+        List<InputSplit> splits = getSplits(config, new Path(tmpFile.toString()));
+
+        List<InputSplit> unresolved = new ArrayList<>();
+        for (InputSplit split : splits) {
+            RFileSplit rfileSplit = (RFileSplit) split;
+            unresolved.add(new RFileSplit(rfileSplit.getPath(), rfileSplit.getStart(), rfileSplit.getLength(), new String[0], rfileSplit.getStartBlock(),
+                            rfileSplit.getNumBlocks(), rfileSplit.getTopKey()));
+        }
+
+        assertFalse(((RFileSplit) unresolved.get(0)).hasSeekRange());
+        verifyCoverage(unresolved, data);
+    }
+
     private Key createKey(int key) {
         return new Key(String.format("%08x", key));
     }
@@ -232,6 +298,32 @@ public class SplittableRFileInputFormatTest {
         }
         assertEquals("unexpected last key", last, top);
         assertFalse("unexpected key count", i.hasTop());
+    }
+
+    /**
+     * Verify that reading every split in order yields exactly the data the file was created from, so the splits neither drop nor duplicate a key.
+     *
+     * @param splits
+     *            the splits covering the file
+     * @param data
+     *            the data the file was created from
+     */
+    private void verifyCoverage(List<InputSplit> splits, List<Map.Entry<Key,Value>> data) throws IOException {
+        List<Map.Entry<Key,Value>> read = new ArrayList<>();
+        for (InputSplit split : splits) {
+            FileSKVIterator i = SplittableRFileRecordReader.getIterator(config, (RFileSplit) split);
+            while (i.hasTop()) {
+                read.add(new AbstractMap.SimpleEntry<>(new Key(i.getTopKey()), new Value(i.getTopValue())));
+                i.next();
+            }
+            i.close();
+        }
+
+        assertEquals("splits did not cover the file", data.size(), read.size());
+        for (int i = 0; i < data.size(); i++) {
+            assertEquals("unexpected key at " + i, data.get(i).getKey(), read.get(i).getKey());
+            assertEquals("unexpected value at " + i, data.get(i).getValue(), read.get(i).getValue());
+        }
     }
 
     private File createRFile(List<Map.Entry<Key,Value>> data) throws IOException {

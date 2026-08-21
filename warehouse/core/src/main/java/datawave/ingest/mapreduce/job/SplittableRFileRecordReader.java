@@ -36,8 +36,8 @@ public class SplittableRFileRecordReader extends RFileRecordReader {
     }
 
     /**
-     * Open an rfile specified by the split, create an iterator to read the region of the rfile configured in the split by reading the rfile index blocks.
-     * Delegate to the split to get the seek range.
+     * Open an rfile specified by the split and create an iterator over the region of the rfile the split covers. Splits created by
+     * {@link SplittableRFileInputFormat} carry their range, so the index is only walked for a split created without one.
      *
      * @param config
      * @param split
@@ -46,10 +46,27 @@ public class SplittableRFileRecordReader extends RFileRecordReader {
      */
     public static FileSKVIterator getIterator(Configuration config, RFileSplit split) throws IOException {
         Path rfile = split.getPath();
+
+        RFile.Reader rfileReader = RFileUtil.getRFileReader(config, rfile);
+        Range seekRange = split.hasSeekRange() ? split.getSeekRange() : findSeekRange(rfileReader, split);
+
+        rfileReader.seek(seekRange, Collections.emptySet(), false);
+
+        return rfileReader;
+    }
+
+    /**
+     * Locate the range covered by the split by reading the rfile index blocks.
+     *
+     * @param rfileReader
+     * @param split
+     * @return
+     * @throws IOException
+     */
+    private static Range findSeekRange(RFile.Reader rfileReader, RFileSplit split) throws IOException {
         long startIndexBlock = split.getStartBlock();
         long numIndexBlocks = split.getNumBlocks();
 
-        RFile.Reader rfileReader = RFileUtil.getRFileReader(config, rfile);
         FileSKVIterator iter = rfileReader.getIndex();
 
         Key start = null;
@@ -83,10 +100,6 @@ public class SplittableRFileRecordReader extends RFileRecordReader {
             end = iter.getTopKey();
         }
 
-        Range seekRange = split.getSeekRange(start, end);
-
-        rfileReader.seek(seekRange, Collections.emptySet(), false);
-
-        return rfileReader;
+        return split.getSeekRange(start, end);
     }
 }
