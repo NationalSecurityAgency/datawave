@@ -9,7 +9,8 @@ import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.accumulo.core.data.Value;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Preconditions;
 
@@ -26,7 +27,7 @@ public class DateIndexUtil {
     public static final String ACTIVITY_DATE_TYPE = "ACTIVITY";
     public static final ThreadLocal<SimpleDateFormat> format = ThreadLocal.withInitial(() -> new SimpleDateFormat("yyyyMMdd"));
     private static final long MS_PER_DAY = TimeUnit.DAYS.toMillis(1);
-    private static final Logger log = Logger.getLogger(DateIndexUtil.class);
+    private static final Logger log = LoggerFactory.getLogger(DateIndexUtil.class);
 
     /**
      * Format the date into yyyyMMdd
