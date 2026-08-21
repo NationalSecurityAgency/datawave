@@ -157,7 +157,6 @@ public class DatePartitionedQueryPlannerTest {
     public void setup() throws Exception {
         // change to debug to see planning
         Logger.getLogger(DefaultQueryPlanner.class).setLevel(Level.WARN);
-        this.logic.setFullTableScanEnabled(true);
         this.logic.setMaxEvaluationPipelines(1);
         this.logic.setMaxDepthThreshold(100);
         this.logic.setQueryExecutionForPageTimeout(300000000000000L);
