@@ -24,6 +24,7 @@
     </scm>
     <properties>
         <version.commons-io>2.18.0</version.commons-io>
+        <version.commons-logging>1.2</version.commons-logging>
         <version.dropwizard-metrics>4.1.2</version.dropwizard-metrics>
         <version.httpclient>4.5.10</version.httpclient>
         <version.javastatsd>3.1.0</version.javastatsd>
@@ -78,6 +79,12 @@
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>commons-logging</groupId>
+            <artifactId>commons-logging</artifactId>
+            <version>${version.commons-logging}</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.dropwizard.metrics</groupId>
