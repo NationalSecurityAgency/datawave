@@ -6,11 +6,14 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.Locale;
 import java.util.Map.Entry;
 import java.util.SortedMap;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
@@ -32,12 +35,16 @@ import com.codahale.metrics.Timer;
  */
 public class TimelyMetricsReporter extends ScheduledReporter {
     protected static final Pattern RACK_PATTERN = Pattern.compile("[a-zA-Z]\\d+n\\d+");
+    private static final Pattern TIMELY_WHITESPACE_PATTERN = Pattern.compile("\\s", Pattern.UNICODE_CHARACTER_CLASS);
     protected static final long MAX_BACKOFF = TimeUnit.SECONDS.toMillis(120);
+    static final int DEFAULT_CONNECT_TIMEOUT_MILLIS = (int) TimeUnit.SECONDS.toMillis(10);
     protected Logger logger = LoggerFactory.getLogger(getClass());
     protected final String timelyHost;
     protected final int timelyPort;
     protected final String hostname;
     protected final String rackname;
+    final int connectTimeoutMillis;
+    private final Supplier<Socket> socketSupplier;
     protected Socket sock;
     protected PrintWriter out;
     protected long connectTime = 0L;
@@ -45,9 +52,29 @@ public class TimelyMetricsReporter extends ScheduledReporter {
 
     protected TimelyMetricsReporter(String timelyHost, int timelyPort, MetricRegistry registry, String name, MetricFilter filter, TimeUnit rateUnit,
                     TimeUnit durationUnit) {
+        this(timelyHost, timelyPort, registry, name, filter, rateUnit, durationUnit, DEFAULT_CONNECT_TIMEOUT_MILLIS);
+    }
+
+    protected TimelyMetricsReporter(String timelyHost, int timelyPort, MetricRegistry registry, String name, MetricFilter filter, TimeUnit rateUnit,
+                    TimeUnit durationUnit, int connectTimeoutMillis) {
+        this(timelyHost, timelyPort, registry, name, filter, rateUnit, durationUnit, connectTimeoutMillis, Socket::new);
+    }
+
+    TimelyMetricsReporter(String timelyHost, int timelyPort, MetricRegistry registry, String name, MetricFilter filter, TimeUnit rateUnit,
+                    TimeUnit durationUnit, Supplier<Socket> socketSupplier) {
+        this(timelyHost, timelyPort, registry, name, filter, rateUnit, durationUnit, DEFAULT_CONNECT_TIMEOUT_MILLIS, socketSupplier);
+    }
+
+    TimelyMetricsReporter(String timelyHost, int timelyPort, MetricRegistry registry, String name, MetricFilter filter, TimeUnit rateUnit,
+                    TimeUnit durationUnit, int connectTimeoutMillis, Supplier<Socket> socketSupplier) {
         super(registry, name, filter, rateUnit, durationUnit);
+        if (connectTimeoutMillis <= 0) {
+            throw new IllegalArgumentException("connectTimeoutMillis must be greater than zero");
+        }
         this.timelyHost = timelyHost;
         this.timelyPort = timelyPort;
+        this.connectTimeoutMillis = connectTimeoutMillis;
+        this.socketSupplier = socketSupplier;
 
         String host = "unknown";
         String rack = "unknown";
@@ -100,27 +127,34 @@ public class TimelyMetricsReporter extends ScheduledReporter {
         flush();
     }
 
-    private void reportGauge(String name, Gauge<?> gauge, long time) {
-        name = name.replaceAll(" ", "_");
+    void reportGauge(String name, Gauge<?> gauge, long time) {
         Object value = gauge.getValue();
-        if (value != null) {
-            if (value instanceof Float || value instanceof Double) {
-                reportMetric(name, "value", ((Number) value).doubleValue(), "GAUGE", null, time);
-            } else if (value instanceof Number) {
-                reportMetric(name, "value", ((Number) value).longValue(), "GAUGE", null, time);
-            } else {
-                reportMetric(name, "value", String.valueOf(value), "GAUGE", null, time);
-            }
+        if (value instanceof Number) {
+            reportMetric(name, "value", formatNumber((Number) value), "GAUGE", null, time);
+        } else if (value != null) {
+            logger.warn("Skipping non-numeric Timely gauge {} with value type {}", name, value.getClass().getName());
         }
     }
 
+    private static String formatNumber(Number value) {
+        String formattedValue = value.toString();
+        boolean containsWhitespace = formattedValue.codePoints().anyMatch(character -> Character.isWhitespace(character) || Character.isSpaceChar(character));
+        if (!containsWhitespace) {
+            try {
+                Double.parseDouble(formattedValue);
+                return formattedValue;
+            } catch (NumberFormatException e) {
+                // Fall back to Number's numeric contract when toString() is not a Timely value.
+            }
+        }
+        return Double.toString(value.doubleValue());
+    }
+
     private void reportCounter(String name, Counter value, long time) {
-        name = name.replaceAll(" ", "_");
         reportMetric(name, "value", value.getCount(), "COUNTER", null, time);
     }
 
     private void reportHistogram(String name, Histogram histogram, long time) {
-        name = name.replaceAll(" ", "_");
         Snapshot snapshot = histogram.getSnapshot();
         reportMetric(name, "count", histogram.getCount(), "COUNTER", null, time);
         reportMetric(name, "max", snapshot.getMax(), "GAUGE", null, time);
@@ -136,7 +170,6 @@ public class TimelyMetricsReporter extends ScheduledReporter {
     }
 
     private void reportMeter(String name, Metered meter, long time) {
-        name = name.replaceAll(" ", "_");
         reportMetric(name, "count", meter.getCount(), "COUNTER", null, time);
         reportMetric(name, "m1_rate", convertRate(meter.getOneMinuteRate()), "GAUGE", getRateUnit(), time);
         reportMetric(name, "m5_rate", convertRate(meter.getFiveMinuteRate()), "GAUGE", getRateUnit(), time);
@@ -145,7 +178,6 @@ public class TimelyMetricsReporter extends ScheduledReporter {
     }
 
     private void reportTimer(String name, Timer timer, long time) {
-        name = name.replaceAll(" ", "_");
         Snapshot snapshot = timer.getSnapshot();
         reportMetric(name, "max", convertDuration(snapshot.getMax()), "GAUGE", getDurationUnit(), time);
         reportMetric(name, "mean", convertDuration(snapshot.getMean()), "GAUGE", getDurationUnit(), time);
@@ -162,17 +194,17 @@ public class TimelyMetricsReporter extends ScheduledReporter {
     }
 
     protected void reportMetric(String metricName, String sampleName, double value, String sampleType, String units, long time) {
-        reportMetric(metricName, sampleName, String.format("%f", value), sampleType, units, time);
+        reportMetric(metricName, sampleName, Double.toString(value), sampleType, units, time);
     }
 
     protected void reportMetric(String metricName, String sampleName, long value, String sampleType, String units, long time) {
-        reportMetric(metricName, sampleName, String.format("%d", value), sampleType, units, time);
+        reportMetric(metricName, sampleName, String.format(Locale.ROOT, "%d", value), sampleType, units, time);
     }
 
     protected void reportMetric(String metricName, String sampleName, String value, String sampleType, String units, long time) {
         StringBuilder message = new StringBuilder();
-        message.append(String.format("put %s %d %s host=%s rack=%s sample=%s sampleType=%s", metricName, time, value, hostname, rackname, sampleName,
-                        sampleType));
+        message.append(String.format(Locale.ROOT, "put %s %d %s host=%s rack=%s sample=%s sampleType=%s", sanitizeTimelyToken(metricName), time,
+                        sanitizeTimelyToken(value), hostname, rackname, sampleName, sampleType));
         if (units != null) {
             message.append(" units=").append(units);
         }
@@ -181,34 +213,44 @@ public class TimelyMetricsReporter extends ScheduledReporter {
         reportMetric(message.toString());
     }
 
+    static String sanitizeTimelyToken(String value) {
+        return TIMELY_WHITESPACE_PATTERN.matcher(String.valueOf(value)).replaceAll("_");
+    }
+
     protected synchronized void reportMetric(String timelyMetric) {
         out.write(timelyMetric);
     }
 
     protected synchronized void flush() {
-        if (out != null) {
-            out.flush();
+        if (out != null && out.checkError()) {
+            logger.error("Error flushing metrics to Timely at {}:{}", timelyHost, timelyPort);
+            closeConnection();
         }
     }
 
     protected synchronized boolean connect() {
         boolean connected = true;
-        if (sock == null || !sock.isConnected() || out.checkError()) {
+        if (sock != null && (!sock.isConnected() || out == null || out.checkError())) {
+            closeConnection();
+        }
+        if (sock == null) {
             connected = false;
             final long waitTime = (connectTime + backoff) - System.currentTimeMillis();
             if (waitTime <= 0) {
+                Socket newSocket = socketSupplier.get();
                 try {
-                    connectTime = System.currentTimeMillis();
-                    sock = new Socket(timelyHost, timelyPort);
-                    out = new PrintWriter(new OutputStreamWriter(sock.getOutputStream(), UTF_8), false);
+                    newSocket.connect(new InetSocketAddress(timelyHost, timelyPort), connectTimeoutMillis);
+                    PrintWriter newWriter = new PrintWriter(new OutputStreamWriter(newSocket.getOutputStream(), UTF_8), false);
+                    sock = newSocket;
+                    out = newWriter;
                     backoff = 2000;
                     logger.info("Connected to Timely at {}:{}", timelyHost, timelyPort);
                     connected = true;
                 } catch (IOException e) {
+                    connectTime = System.currentTimeMillis();
                     logger.error("Error connecting to Timely at {}:{}. Error: {}", timelyHost, timelyPort, e.getMessage());
                     backoff = Math.min(backoff * 2, MAX_BACKOFF);
-                    sock = null;
-                    out = null;
+                    closeSocket(newSocket);
                 }
             } else {
                 logger.warn("Not writing to Timely, waiting {}ms to reconnect.", waitTime);
@@ -222,15 +264,27 @@ public class TimelyMetricsReporter extends ScheduledReporter {
         try {
             super.stop();
         } finally {
-            if (sock != null) {
-                if (out != null) {
-                    out.close();
-                }
-                try {
-                    sock.close();
-                } catch (IOException e) {
-                    logger.error("Error closing connection to Timely at {}:{}. Error: {}", timelyHost, timelyPort, e.getMessage());
-                }
+            closeConnection();
+        }
+    }
+
+    private synchronized void closeConnection() {
+        PrintWriter writer = out;
+        Socket socket = sock;
+        out = null;
+        sock = null;
+        if (writer != null) {
+            writer.close();
+        }
+        closeSocket(socket);
+    }
+
+    private void closeSocket(Socket socket) {
+        if (socket != null) {
+            try {
+                socket.close();
+            } catch (IOException e) {
+                logger.error("Error closing connection to Timely at {}:{}. Error: {}", timelyHost, timelyPort, e.getMessage());
             }
         }
     }

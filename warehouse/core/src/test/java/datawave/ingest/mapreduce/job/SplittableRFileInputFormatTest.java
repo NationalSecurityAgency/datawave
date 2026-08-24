@@ -6,6 +6,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -22,7 +23,7 @@ import org.apache.accumulo.core.file.rfile.RFileOperations;
 import org.apache.accumulo.core.spi.crypto.CryptoEnvironment;
 import org.apache.accumulo.core.spi.crypto.CryptoService;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.JobContext;
@@ -168,7 +169,7 @@ public class SplittableRFileInputFormatTest {
         tmpFile = createRFile(data);
 
         // link the tmp file to the input format path
-        config.set("mapreduce.input.fileinputformat.inputdir", tmpFile.toString());
+        config.set("mapreduce.input.fileinputformat.inputdir", new Path(tmpFile.toURI()).toString());
 
         SplittableRFileInputFormat inputFormat = new SplittableRFileInputFormat();
         JobContext context = new JobContextImpl(config, new JobID());
@@ -235,21 +236,22 @@ public class SplittableRFileInputFormatTest {
     }
 
     private File createRFile(List<Map.Entry<Key,Value>> data) throws IOException {
-        FileSystem fs = FileSystem.getLocal(new Configuration());
         File tmpFile = File.createTempFile("testSimpleSplits", ".rf");
         tmpFile.delete();
 
         CryptoService cs = CryptoFactoryLoader.getServiceForClient(CryptoEnvironment.Scope.TABLE,
                         new Configuration().getPropsWithPrefix(TABLE_CRYPTO_PREFIX.name()));
-        FileSKVWriter writer = RFileOperations.getInstance().newWriterBuilder().forFile(tmpFile.getCanonicalPath(), fs, new Configuration(), cs)
-                        .withTableConfiguration(DefaultConfiguration.getInstance()).build();
-        writer.startDefaultLocalityGroup();
+        try (FSDataOutputStream output = new FSDataOutputStream(new FileOutputStream(tmpFile), null);
+                        FileSKVWriter writer = RFileOperations.getInstance().newWriterBuilder()
+                                        .forOutputStream(tmpFile.getCanonicalPath(), output, new Configuration(), cs)
+                                        .withTableConfiguration(DefaultConfiguration.getInstance()).build()) {
+            writer.startDefaultLocalityGroup();
 
-        // write data
-        for (Map.Entry<Key,Value> toWrite : data) {
-            writer.append(toWrite.getKey(), toWrite.getValue());
+            // write data
+            for (Map.Entry<Key,Value> toWrite : data) {
+                writer.append(toWrite.getKey(), toWrite.getValue());
+            }
         }
-        writer.close();
 
         return tmpFile;
     }
