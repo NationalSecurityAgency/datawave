@@ -22,6 +22,7 @@
         <module>utils</module>
         <module>base-rest-responses</module>
         <module>tables</module>
+        <module>datawave-core-test</module>
     </modules>
     <dependencies>
         <dependency>
