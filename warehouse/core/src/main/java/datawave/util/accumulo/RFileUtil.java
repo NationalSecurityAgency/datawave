@@ -2,7 +2,6 @@ package datawave.util.accumulo;
 
 import static org.apache.accumulo.core.conf.Property.TABLE_CRYPTO_PREFIX;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -82,13 +81,11 @@ public class RFileUtil {
 
     public static RFile.Reader getRFileReader(Configuration config, Path rfile) throws IOException {
         FileSystem fs = rfile.getFileSystem(config);
-        if (!fs.exists(rfile)) {
-            throw new FileNotFoundException(rfile + " does not exist");
-        }
 
         CryptoService cs = CryptoFactoryLoader.getServiceForClient(CryptoEnvironment.Scope.TABLE, config.getPropsWithPrefix(TABLE_CRYPTO_PREFIX.name()));
         CachableBlockFile.CachableBuilder cb = new CachableBlockFile.CachableBuilder().fsPath(fs, rfile).conf(config).cryptoService(cs);
 
+        // a missing file fails here with a FileNotFoundException, so checking that it exists first would only cost another namenode round trip
         return new RFile.Reader(cb);
     }
 
