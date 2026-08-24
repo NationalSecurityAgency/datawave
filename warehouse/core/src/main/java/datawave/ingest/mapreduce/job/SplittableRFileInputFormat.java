@@ -3,6 +3,11 @@ package datawave.ingest.mapreduce.job;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -22,6 +27,7 @@ import datawave.util.accumulo.RFileUtil;
 public class SplittableRFileInputFormat extends RFileInputFormat {
     private static final Logger log = Logger.getLogger(SplittableRFileInputFormat.class);
     public static final String MIN_BLOCKS_PER_SPLIT = SplittableRFileInputFormat.class.getName() + ".minBlocksPerSplit";
+    public static final String NUM_THREADS = SplittableRFileInputFormat.class.getName() + ".numThreads";
 
     @Override
     protected boolean isSplitable(JobContext context, Path filename) {
@@ -36,7 +42,7 @@ public class SplittableRFileInputFormat extends RFileInputFormat {
     }
 
     /**
-     * Create rfile splits for the configured job. See <code>FileInputFormat</code>
+     * Create rfile splits for the configured job. See <code>FileInputFormat</code>. Set NUM_THREADS to read more than one input file at a time.
      *
      * @param job
      * @return
@@ -46,23 +52,69 @@ public class SplittableRFileInputFormat extends RFileInputFormat {
     public List<InputSplit> getSplits(JobContext job) throws IOException {
         Configuration config = job.getConfiguration();
 
-        List<InputSplit> rfileSplits = new ArrayList<>();
         log.info("getting splits for job");
         int minBlocksPerSplit = config.getInt(MIN_BLOCKS_PER_SPLIT, 1);
         log.info("Blocks per split: " + minBlocksPerSplit);
+
         // get the configured directories/files
+        List<FileSplit> fileSplits = new ArrayList<>();
         for (InputSplit inputSplit : super.getSplits(job)) {
             if (!(inputSplit instanceof FileSplit)) {
                 throw new IllegalArgumentException("Must have file splits");
             }
 
-            // for each file get the index blocks
-            FileSplit fileSplit = (FileSplit) inputSplit;
-            rfileSplits.addAll(getSplits(config, fileSplit));
+            fileSplits.add((FileSplit) inputSplit);
+        }
+
+        int numThreads = config.getInt(NUM_THREADS, 1);
+        List<InputSplit> rfileSplits;
+        if (numThreads > 1) {
+            rfileSplits = getSplits(config, fileSplits, numThreads);
+        } else {
+            rfileSplits = new ArrayList<>();
+            for (FileSplit fileSplit : fileSplits) {
+                // for each file get the index blocks
+                rfileSplits.addAll(getSplits(config, fileSplit));
+            }
         }
         log.info("total splits: " + rfileSplits.size());
 
         return rfileSplits;
+    }
+
+    /**
+     * Create rfile splits for each FileSplit, reading numThreads files at a time. The splits come back in the order they would be created serially.
+     *
+     * @param config
+     * @param fileSplits
+     * @param numThreads
+     * @return
+     * @throws IOException
+     */
+    private static List<InputSplit> getSplits(Configuration config, List<FileSplit> fileSplits, int numThreads) throws IOException {
+        ExecutorService threadPool = Executors.newFixedThreadPool(numThreads);
+        try {
+            List<Future<List<InputSplit>>> pending = new ArrayList<>(fileSplits.size());
+            for (FileSplit fileSplit : fileSplits) {
+                // for each file get the index blocks
+                Callable<List<InputSplit>> task = () -> getSplits(config, fileSplit);
+                pending.add(threadPool.submit(task));
+            }
+
+            List<InputSplit> rfileSplits = new ArrayList<>();
+            for (Future<List<InputSplit>> future : pending) {
+                rfileSplits.addAll(future.get());
+            }
+
+            return rfileSplits;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IOException("interrupted while creating rfile splits", e);
+        } catch (ExecutionException e) {
+            throw new IOException("failed to create rfile splits", e.getCause());
+        } finally {
+            threadPool.shutdownNow();
+        }
     }
 
     /**

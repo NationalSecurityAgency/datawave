@@ -42,6 +42,7 @@ import org.junit.Test;
 public class SplittableRFileInputFormatTest {
     private Configuration config;
     private File tmpFile;
+    private File tmpDir;
 
     @Before
     public void setup() {
@@ -53,6 +54,12 @@ public class SplittableRFileInputFormatTest {
     public void cleanup() {
         if (tmpFile != null && tmpFile.exists()) {
             tmpFile.delete();
+        }
+        if (tmpDir != null && tmpDir.exists()) {
+            for (File file : tmpDir.listFiles()) {
+                file.delete();
+            }
+            tmpDir.delete();
         }
     }
 
@@ -245,6 +252,41 @@ public class SplittableRFileInputFormatTest {
         verifyCoverage(unresolved, data);
     }
 
+    /**
+     * Reading the input files concurrently must produce the same splits, in the same order, as reading them one at a time.
+     */
+    @Test
+    public void testGetSplits_multipleThreads() throws IOException, InterruptedException {
+        tmpDir = createTempDir();
+        for (int file = 0; file < 8; file++) {
+            List<Map.Entry<Key,Value>> data = new ArrayList<>();
+            for (int i = 0; i < 20000; i++) {
+                addData(data, i, i);
+            }
+            createRFile(new File(tmpDir, "file" + file + ".rf"), data);
+        }
+
+        config.set("mapreduce.input.fileinputformat.inputdir", tmpDir.toString());
+
+        SplittableRFileInputFormat inputFormat = new SplittableRFileInputFormat();
+        List<InputSplit> serial = inputFormat.getSplits(new JobContextImpl(config, new JobID()));
+
+        config.setInt(SplittableRFileInputFormat.NUM_THREADS, 4);
+        List<InputSplit> concurrent = inputFormat.getSplits(new JobContextImpl(config, new JobID()));
+
+        assertTrue("expected each file to produce multiple splits", serial.size() > 8);
+        assertEquals("unexpected split count", serial.size(), concurrent.size());
+        for (int i = 0; i < serial.size(); i++) {
+            RFileSplit expected = (RFileSplit) serial.get(i);
+            RFileSplit actual = (RFileSplit) concurrent.get(i);
+            assertEquals("unexpected path at " + i, expected.getPath(), actual.getPath());
+            assertEquals("unexpected start block at " + i, expected.getStartBlock(), actual.getStartBlock());
+            assertEquals("unexpected num blocks at " + i, expected.getNumBlocks(), actual.getNumBlocks());
+            assertEquals("unexpected top key at " + i, expected.getTopKey(), actual.getTopKey());
+            assertEquals("unexpected range at " + i, expected.getSeekRange(), actual.getSeekRange());
+        }
+    }
+
     private Key createKey(int key) {
         return new Key(String.format("%08x", key));
     }
@@ -327,13 +369,18 @@ public class SplittableRFileInputFormatTest {
     }
 
     private File createRFile(List<Map.Entry<Key,Value>> data) throws IOException {
-        FileSystem fs = FileSystem.getLocal(new Configuration());
         File tmpFile = File.createTempFile("testSimpleSplits", ".rf");
         tmpFile.delete();
 
+        return createRFile(tmpFile, data);
+    }
+
+    private File createRFile(File target, List<Map.Entry<Key,Value>> data) throws IOException {
+        FileSystem fs = FileSystem.getLocal(new Configuration());
+
         CryptoService cs = CryptoFactoryLoader.getServiceForClient(CryptoEnvironment.Scope.TABLE,
                         new Configuration().getPropsWithPrefix(TABLE_CRYPTO_PREFIX.name()));
-        FileSKVWriter writer = RFileOperations.getInstance().newWriterBuilder().forFile(tmpFile.getCanonicalPath(), fs, new Configuration(), cs)
+        FileSKVWriter writer = RFileOperations.getInstance().newWriterBuilder().forFile(target.getCanonicalPath(), fs, new Configuration(), cs)
                         .withTableConfiguration(DefaultConfiguration.getInstance()).build();
         writer.startDefaultLocalityGroup();
 
@@ -343,7 +390,15 @@ public class SplittableRFileInputFormatTest {
         }
         writer.close();
 
-        return tmpFile;
+        return target;
+    }
+
+    private File createTempDir() throws IOException {
+        File dir = File.createTempFile("splitFiles", "");
+        dir.delete();
+        dir.mkdir();
+
+        return dir;
     }
 
     // create a simple FileSplit to create an RFileSplit from
