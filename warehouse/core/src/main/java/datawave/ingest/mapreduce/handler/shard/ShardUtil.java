@@ -243,6 +243,28 @@ public class ShardUtil {
     }
 
     /**
+     * Create Key from input parameters. Overload of {@link #createIndexKey(byte[], Text, Text, byte[], long, boolean)} for callers that already have the column
+     * family and qualifier as raw bytes, avoiding a pair of intermediate {@link Text} objects.
+     *
+     * @param row
+     *            the row
+     * @param colf
+     *            the column family
+     * @param colq
+     *            the column qualifier
+     * @param vis
+     *            the column visibility
+     * @param ts
+     *            the timestamp
+     * @param delete
+     *            the delete flag of the key
+     * @return Accumulo Key object
+     */
+    public static Key createIndexKey(byte[] row, byte[] colf, byte[] colq, byte[] vis, long ts, boolean delete) {
+        return buildKey(row, colf, colf.length, colq, colq.length, vis, DateIndexUtil.getIndexTimestamp(ts), delete);
+    }
+
+    /**
      * Create Key from input parameters. Overload of {@link #createIndexKey(byte[], Text, Text, byte[], long, boolean)} for the common global index case where
      * the row is a field value and the column family is a field name, avoiding an intermediate byte array and {@link Text}.
      *

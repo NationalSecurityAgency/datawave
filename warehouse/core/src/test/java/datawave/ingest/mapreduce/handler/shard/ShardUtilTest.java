@@ -1,8 +1,10 @@
 package datawave.ingest.mapreduce.handler.shard;
 
 import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
+import org.apache.accumulo.core.data.Key;
 import org.apache.hadoop.io.Text;
 import org.junit.Test;
 
@@ -67,6 +69,28 @@ public class ShardUtilTest {
         byte[] b = {3, 4};
         byte[] c = {5};
         assertArrayEquals(new byte[] {1, 2, 0, 3, 4, 0, 5}, ShardUtil.joinWithNulls(a, b, c));
+    }
+
+    /**
+     * {@link ShardUtil#createIndexKey(byte[], byte[], byte[], byte[], long, boolean)} must produce a byte-identical {@link Key} to
+     * {@link ShardUtil#createIndexKey(byte[], Text, Text, byte[], long, boolean)}, since it exists purely to let callers who already have {@code colf}/
+     * {@code colq} as raw bytes avoid allocating intermediate {@link Text} objects.
+     */
+    @Test
+    public void createIndexKey_byteArrayOverload_matchesTextOverload() {
+        byte[] row = ShardUtil.utf8("fieldValue");
+        Text colfText = new Text("fieldName");
+        Text colqText = new Text("20240101_0\u0000datatype");
+        byte[] colf = ShardUtil.utf8("fieldName");
+        byte[] colq = ShardUtil.utf8("20240101_0\u0000datatype");
+        byte[] vis = ShardUtil.utf8("A&B");
+        long ts = 1704067200123L;
+
+        for (boolean delete : new boolean[] {false, true}) {
+            Key expected = ShardUtil.createIndexKey(row, colfText, colqText, vis, ts, delete);
+            Key actual = ShardUtil.createIndexKey(row, colf, colq, vis, ts, delete);
+            assertEquals("createIndexKey(byte[], byte[], byte[], ...) mismatch for delete=" + delete, expected, actual);
+        }
     }
 
     @Test
