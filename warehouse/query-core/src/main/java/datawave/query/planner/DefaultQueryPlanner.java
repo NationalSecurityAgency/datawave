@@ -592,10 +592,11 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Construct IteratorSettings");
 
         if (!config.isGeneratePlanOnly()) {
-            cfg = getQueryIterator(metadataHelper, config, "", false, false);
             while (null == cfg) {
-                awaitSettingFuture();
                 cfg = getQueryIterator(metadataHelper, config, "", false, false);
+                if (null == cfg) {
+                    awaitSettingFuture();
+                }
             }
             configureIterator(config, cfg, newQueryString, isFullTable);
         }
