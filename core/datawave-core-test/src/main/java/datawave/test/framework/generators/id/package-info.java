@@ -9,7 +9,7 @@
  * <li>{@link datawave.test.framework.generators.id.FibonacciEventIdGenerator} - {@code 1, 2, 3, 5, 8, ...}</li>
  * <li>{@link datawave.test.framework.generators.id.SquaresEventIdGenerator} - {@code 1, 4, 9, 16, ...}</li>
  * </ul>
- * {@link datawave.test.framework.IngestMetadata} builds its automatic field space from the first two only. Fibonacci and Squares are supported options that no
- * built-in configuration uses yet; a test that assembles its own {@link datawave.test.framework.FieldMetadata} may use either. See the module README.
+ * {@code IngestMetadata} builds its automatic field space from the first two only. Fibonacci and Squares are supported options that no built-in configuration
+ * uses yet; a test that assembles its own {@code FieldMetadata} may use either. See the module README.
  */
 package datawave.test.framework.generators.id;

@@ -10,7 +10,7 @@ import com.google.common.base.Preconditions;
  * Generates random alphanumeric values.
  * <p>
  * The {@link Random} is supplied by the caller rather than created here so that an entire ingest can be reproduced from a single seed. See
- * {@link datawave.test.framework.IngestMetadataBuilder#setSeed(long)}.
+ * {@code IngestMetadataBuilder.setSeed(long)}.
  */
 public class RandomAlphaNumericGenerator implements ValueGenerator<String> {
 
