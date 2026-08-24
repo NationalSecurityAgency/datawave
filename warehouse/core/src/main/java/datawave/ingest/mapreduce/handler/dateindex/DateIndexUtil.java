@@ -105,6 +105,13 @@ public class DateIndexUtil {
         return bits1;
     }
 
+    /**
+     * Constructs a {@link Value} that contains a {@link BitSet}'s backing byte array, with the bit at the day index offset set.
+     *
+     * @param shardId
+     *            the full shard id
+     * @return a Value containing a BitSet with the day index offset bit set
+     */
     public static Value getValueForDayIndex(String shardId) {
         // get the shard number
         int shardNumber = getOffsetForDayIndex(shardId);
@@ -128,6 +135,13 @@ public class DateIndexUtil {
         return Integer.parseInt(bucket);
     }
 
+    /**
+     * Constructs a {@link Value} that contains a {@link BitSet}'s backing byte array, with the bit at the year index offset set.
+     *
+     * @param shard
+     *            the full shard
+     * @return a Value containing a BitSet with the year index offset bit set
+     */
     public static Value getValueForYearIndex(String shard) {
         // get the shard number
         int shardNumber = getOffsetForYearIndex(shard);
@@ -161,6 +175,7 @@ public class DateIndexUtil {
      * trim the event date and ageoff portions of the ts to the beginning of the day
      *
      * @param ts
+     *            the composite timestamp to trim
      * @return the timestamp to be used for index entries
      */
     public static long getIndexTimestamp(long ts) {
@@ -173,6 +188,7 @@ public class DateIndexUtil {
      * Trim ms to the beginning of the day
      *
      * @param date
+     *            the time in milliseconds since the epoch
      * @return the time at the beginning of the day
      */
     public static long trimToBeginningOfDay(long date) {

@@ -988,7 +988,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
     }
 
     /**
-     * Constructs a {@link Value} that contains a {@link BitSet}'s backing byte array. The bitset index is set to the shard offset.
+     * Constructs a {@link Value} that contains a {@link java.util.BitSet}'s backing byte array. The bitset index is set to the shard offset.
      * <p>
      * This is the same offset computation as the day index ({@link DateIndexUtil#getValueForDayIndex(String)}); delegate to it rather than duplicating the
      * parsing logic.
