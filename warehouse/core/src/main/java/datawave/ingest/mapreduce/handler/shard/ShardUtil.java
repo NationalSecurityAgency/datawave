@@ -1,14 +1,11 @@
 package datawave.ingest.mapreduce.handler.shard;
 
-import java.nio.ByteBuffer;
-import java.nio.charset.CharacterCodingException;
 import java.nio.charset.StandardCharsets;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.hadoop.io.Text;
 
 import datawave.ingest.mapreduce.handler.dateindex.DateIndexUtil;
-import datawave.util.TextUtil;
 
 public class ShardUtil {
     private ShardUtil() {
@@ -46,7 +43,11 @@ public class ShardUtil {
     }
 
     /**
-     * Encode a String as UTF-8 bytes. Key components are always UTF-8 encoded, matching the encoding performed by {@link Text}.
+     * Encode a String as UTF-8 bytes. Key components are always UTF-8 encoded.
+     * <p>
+     * This uses the JDK encoder ({@link String#getBytes(java.nio.charset.Charset)}), which never throws: malformed input (e.g. an unpaired surrogate) is
+     * silently replaced, byte for byte identically to {@code new Text(s)} and to {@link Text#encode(String, boolean)} with {@code replace = true}. Key
+     * construction is therefore never able to fail a record on account of a malformed field name or value.
      *
      * @param s
      *            the string to encode
@@ -54,27 +55,6 @@ public class ShardUtil {
      */
     public static byte[] utf8(String s) {
         return s.getBytes(StandardCharsets.UTF_8);
-    }
-
-    /**
-     * Encode a String as UTF-8 bytes, honoring the same "replace malformed characters" semantics as {@link TextUtil#textAppend(Text, String, boolean)} /
-     * {@link Text#encode(String, boolean)}, rather than the silent-replace behavior of {@link String#getBytes(java.nio.charset.Charset)}.
-     *
-     * @param s
-     *            the string to encode
-     * @param replaceMalformedUTF8
-     *            whether to replace malformed/unmappable characters instead of throwing
-     * @return the UTF-8 bytes
-     */
-    public static byte[] utf8(String s, boolean replaceMalformedUTF8) {
-        try {
-            ByteBuffer buffer = Text.encode(s, replaceMalformedUTF8);
-            byte[] bytes = new byte[buffer.limit()];
-            System.arraycopy(buffer.array(), 0, bytes, 0, bytes.length);
-            return bytes;
-        } catch (CharacterCodingException e) {
-            throw new IllegalArgumentException(e);
-        }
     }
 
     /**
