@@ -21,7 +21,7 @@ public class SequentialEventIdGenerator extends AbstractEventIdGenerator {
     @Override
     public List<Integer> generateCountWithinBound(int count, int bound) {
         List<Integer> frequencies = new ArrayList<>();
-        for (long i = 1; i <= bound; i++) {
+        for (long i = 1; i <= bound && frequencies.size() < count; i++) {
             long eventId = i + offset;
             if (!fitsInInt(eventId)) {
                 break;
@@ -29,9 +29,6 @@ public class SequentialEventIdGenerator extends AbstractEventIdGenerator {
 
             if (eventId <= bound) {
                 frequencies.add((int) eventId);
-            }
-            if (frequencies.size() == count) {
-                break;
             }
         }
         return frequencies;

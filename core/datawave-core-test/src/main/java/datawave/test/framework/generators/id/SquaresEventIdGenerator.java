@@ -21,20 +21,13 @@ public class SquaresEventIdGenerator extends AbstractEventIdGenerator {
     @Override
     public List<Integer> generateCountWithinBound(int count, int bound) {
         List<Integer> eventIds = new ArrayList<>();
-        for (long i = 1; i <= bound; i++) {
-            long pow = i * i;
-            long eventId = offset + pow;
-            if (!fitsInInt(eventId)) {
+        for (long i = 1; i <= bound && eventIds.size() < count; i++) {
+            long eventId = offset + (i * i);
+            if (!fitsInInt(eventId) || eventId > bound) {
                 break;
             }
 
-            if (eventId <= bound) {
-                eventIds.add((int) eventId);
-            }
-
-            if (eventId > bound || eventIds.size() >= count) {
-                break;
-            }
+            eventIds.add((int) eventId);
         }
         return eventIds;
     }

@@ -30,19 +30,18 @@ public class FibonacciEventIdGenerator extends AbstractEventIdGenerator {
     public List<Integer> generateCountWithinBound(int count, int bound) {
         long first = 0;
         long second = 1;
-        long sum;
         List<Integer> frequencies = new ArrayList<>();
-        do {
-            sum = first + second;
+        while (frequencies.size() < count) {
+            long sum = first + second;
             long eventId = sum + offset;
-            if (eventId <= bound && fitsInInt(eventId)) {
-                frequencies.add((int) eventId);
-                first = second;
-                second = sum;
-            } else {
+            if (!fitsInInt(eventId) || eventId > bound) {
                 break;
             }
-        } while (frequencies.size() < count);
+
+            frequencies.add((int) eventId);
+            first = second;
+            second = sum;
+        }
 
         return frequencies;
     }
