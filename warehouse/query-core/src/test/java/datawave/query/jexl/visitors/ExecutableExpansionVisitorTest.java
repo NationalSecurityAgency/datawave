@@ -112,8 +112,7 @@ public class ExecutableExpansionVisitorTest extends AbstractQueryTest {
         WiseGuysIngest.writeItAll(sharedClient, WiseGuysIngest.WhatKindaRange.DOCUMENT);
         PrintUtility.printShardTable(sharedClient, auths);
         PrintUtility.printShardIndexTable(sharedClient, auths);
-        PrintUtility.printMetadataTable(sharedClient, auths, QueryTestTableHelper.METADATA_TABLE_NAME);
-        PrintUtility.printMetadataTable(sharedClient, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
+        PrintUtility.printMetadataTable(sharedClient, auths);
     }
 
     @BeforeEach
