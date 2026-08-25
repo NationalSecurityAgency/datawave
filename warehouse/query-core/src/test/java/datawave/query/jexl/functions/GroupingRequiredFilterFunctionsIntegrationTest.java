@@ -108,7 +108,7 @@ public class GroupingRequiredFilterFunctionsIntegrationTest extends AbstractQuer
         GroupingFiltersIngest.writeItAll(clientForTest, GroupingFiltersIngest.Range.DOCUMENT);
         PrintUtility.printShardTable(clientForTest, auths);
         PrintUtility.printShardIndexTable(clientForTest, auths);
-        PrintUtility.printMetadataTable(clientForTest, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
+        PrintUtility.printMetadataTable(clientForTest, auths);
     }
 
     @AfterAll
