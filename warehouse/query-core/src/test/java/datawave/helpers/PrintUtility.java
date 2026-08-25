@@ -103,7 +103,7 @@ public final class PrintUtility {
                     try {
                         valueAsString = valueFormatter.apply(key, entry.getValue());
                     } catch (Exception e) {
-                        log.warn("Could not deserialize value for table " + tableName + "; key: " + key, e);
+                        log.warn("Could not deserialize value for table {}; key; {}", tableName, key, e);
                         valueAsString = "(unable to deserialize value)";
                     }
                     output.write("\t" + valueAsString);
@@ -152,7 +152,7 @@ public final class PrintUtility {
                 try {
                     return decodeTermWeightInfo(value);
                 } catch (Exception e) {
-                    log.error("Failed to decode term weight for key: " + key, e);
+                    log.error("Failed to decode term weight for key: {}", key, e);
                     return UNDECODED_VALUE;
                 }
             case "d":
@@ -160,7 +160,7 @@ public final class PrintUtility {
                 try {
                     return decodeDocument(value);
                 } catch (Exception e) {
-                    log.error("Failed to decode document for key: " + key, e);
+                    log.error("Failed to decode document for key: {}", key, e);
                     return UNDECODED_VALUE;
                 }
             default:
@@ -185,7 +185,7 @@ public final class PrintUtility {
             // This is a UID list.
             return decodeUidList(value);
         } catch (Exception e) {
-            log.error("Failed to decode UID list for key: " + key, e);
+            log.error("Failed to decode UID list for key: {}", key, e);
             return UNDECODED_VALUE;
         }
     });
@@ -228,14 +228,14 @@ public final class PrintUtility {
                     try {
                         return decodeDateFrequencyMap(value);
                     } catch (Exception e) {
-                        log.error("Failed to decode date frequency map for key: " + key, e);
+                        log.error("Failed to decode date frequency map for key: {}", key, e);
                         return UNDECODED_VALUE;
                     }
                 } else {
                     try {
                         return decodeLong(value);
                     } catch (Exception e) {
-                        log.error("Failed to decode frequency value for key: " + key, e);
+                        log.error("Failed to decode frequency value for key: {}", key, e);
                         return UNDECODED_VALUE;
                     }
                 }
@@ -243,7 +243,7 @@ public final class PrintUtility {
                 try {
                     return decodeEdgeMetadata(value);
                 } catch (Exception e) {
-                    log.error("Failed to decode edge metadata value for key: " + key, e);
+                    log.error("Failed to decode edge metadata value for key: {}", key, e);
                     return UNDECODED_VALUE;
                 }
 
@@ -275,7 +275,7 @@ public final class PrintUtility {
         try {
             return decodeBitset(value);
         } catch (Exception e) {
-            log.error("Failed to decode bitset for key: " + key, e);
+            log.error("Failed to decode bitset for key: {}", key, e);
             return UNDECODED_VALUE;
         }
     });
@@ -296,7 +296,7 @@ public final class PrintUtility {
         try {
             return decodeHyperLogLogPlusCardinality(value);
         } catch (Exception e) {
-            log.error("Failed to decode hyperLogLogPlus cardinality for key: " + key, e);
+            log.error("Failed to decode hyperLogLogPlus cardinality for key: {}", key, e);
             return UNDECODED_VALUE;
         }
     });
@@ -317,7 +317,7 @@ public final class PrintUtility {
         try {
             return decodeAnnotationSegment(value);
         } catch (Exception e) {
-            log.error("Failed to decode annotation segment for key: " + key, e);
+            log.error("Failed to decode annotation segment for key: {}", key, e);
             return UNDECODED_VALUE;
         }
     });
@@ -338,7 +338,7 @@ public final class PrintUtility {
         try {
             return decodeAnnotationSource(value);
         } catch (Exception e) {
-            log.error("Failed to decode annotation source for key: " + key, e);
+            log.error("Failed to decode annotation source for key: {}", key, e);
             return UNDECODED_VALUE;
         }
     });
