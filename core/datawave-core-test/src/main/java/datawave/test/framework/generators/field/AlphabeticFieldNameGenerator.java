@@ -3,22 +3,37 @@ package datawave.test.framework.generators.field;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Random;
+
+import com.google.common.base.Preconditions;
 
 /**
  * A field name generator that produces alphabetic field names such as <code>A, B, C</code>
+ * <p>
+ * The {@link Random} is supplied by the caller rather than created here so that an entire ingest can be reproduced from a single seed. See
+ * {@code IngestMetadataBuilder.setSeed(long)}.
  */
 public class AlphabeticFieldNameGenerator implements FieldNameGenerator {
 
     private static final int ALPHABET_SIZE = 26;
 
     private final List<String> fieldNames = new ArrayList<>();
+    private final Random random;
 
-    public static AlphabeticFieldNameGenerator create() {
-        return new AlphabeticFieldNameGenerator();
+    /**
+     * Create a generator of alphabetic field names
+     *
+     * @param random
+     *            the source of randomness
+     * @return the generator
+     */
+    public static AlphabeticFieldNameGenerator create(Random random) {
+        return new AlphabeticFieldNameGenerator(random);
     }
 
-    private AlphabeticFieldNameGenerator() {
-        // no-op
+    private AlphabeticFieldNameGenerator(Random random) {
+        Preconditions.checkNotNull(random, "random cannot be null");
+        this.random = random;
     }
 
     public void generate(int n) {
@@ -49,12 +64,12 @@ public class AlphabeticFieldNameGenerator implements FieldNameGenerator {
     }
 
     public List<String> getFieldNames() {
-        return fieldNames;
+        return Collections.unmodifiableList(fieldNames);
     }
 
     public List<String> getRandomizedFieldNames() {
         List<String> randomized = new ArrayList<>(fieldNames);
-        Collections.shuffle(randomized);
+        Collections.shuffle(randomized, random);
         return randomized;
     }
 
