@@ -11,6 +11,12 @@ env:
   GITHUB_USERNAME: ${{ secrets.GHCR_WRITE_USER_NAME }}
   GITHUB_PASSWORD: ${{ secrets.GHCR_WRITE_ACCESS_TOKEN }}
 
+# Only checkout is needed: the test report is written to the job summary by a
+# local Python script (.github/scripts/junit_flaky_report.py), so no checks or
+# pull-requests permissions are required.
+permissions:
+  contents: read
+
 jobs:
   # Runs the pom sorter and code formatter to ensure that the code
   # is formatted and poms are sorted according to project rules. If changes are found,
@@ -51,6 +57,10 @@ jobs:
     - uses: ./.github/actions/free-space
       with:
         tool-cache: false
+        # Self-hosted runners are persistent, so `docker image prune --all` deletes
+        # the layer cache every build depends on and can remove images a co-tenant
+        # job is still using. Hosted runners are disposable, so let it run there.
+        docker-images: ${{ needs.configure-runner.outputs.runner != 'self-hosted' }}
     - name: Configure Maven Settings
       run: |
         mkdir -p ~/.m2
@@ -88,6 +98,28 @@ jobs:
     - name: Run Integration Tests
       run: |
           mvn --show-version --batch-mode --errors --no-transfer-progress "-Dstyle.color=always" ${{ needs.configure-runner.outputs.cache_settings }}  -Ddeploy -T1C verify -Dfailsafe.rerunFailingTestsCount=3 -Dutils -DskipUTs -DskipFormat -DskipSpotbugs -Denforcer.skip=true -Dcheckstyle.skip=true
+    # Always upload the raw surefire/failsafe XML so failures and flakes are inspectable.
+    - name: Upload Test Reports
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-reports-main
+        path: |
+          **/target/surefire-reports/**
+          **/target/failsafe-reports/**
+        retention-days: 14
+        if-no-files-found: warn
+    # Summarize the JUnit XML into the job summary, surfacing tests that needed
+    # reruns (flakes) which the rerunFailingTestsCount otherwise hides. Uses a
+    # local stdlib-only Python script instead of a Marketplace action.
+    # Non-gating: no --fail-on-* flags + continue-on-error.
+    - name: Publish Test Report
+      if: always()
+      continue-on-error: true
+      run: |
+        python3 .github/scripts/junit_flaky_report.py \
+          --title 'Main Repo Test Report' \
+          '**/target/*-reports/TEST-*.xml'
 
 
 

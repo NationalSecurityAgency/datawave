@@ -277,7 +277,7 @@ public class TableConfigurationUtilTest {
 
         Map<Integer,Map<String,String>> shardAggs = tcu.getTableAggregators("datawave.shard");
         Assert.assertEquals(1, shardAggs.size());
-        Assert.assertEquals("datawave.ingest.table.aggregator.TextIndexAggregator", shardAggs.get(10).get("tf"));
+        Assert.assertEquals("datawave.ingest.table.aggregator.TextIndexAggregator", shardAggs.get(19).get("tf"));
 
         Map<Integer,Map<String,String>> shardIndexAggs = tcu.getTableAggregators("datawave.shardIndex");
         Assert.assertEquals(1, shardIndexAggs.size());

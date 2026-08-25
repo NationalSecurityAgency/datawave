@@ -11,7 +11,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.Scanner;
-import org.apache.accumulo.core.client.ScannerBase.ConsistencyLevel;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
@@ -31,6 +30,7 @@ import datawave.next.retrieval.DocumentIterator;
 import datawave.next.retrieval.DocumentIteratorOptions;
 import datawave.next.stats.ScanTimeStats;
 import datawave.query.iterator.QueryOptions;
+import datawave.scan.ScannerBuilder;
 
 /**
  * Retrieves the document specified by the {@link KeyWithContext}.
@@ -43,7 +43,7 @@ public class DocumentRangeScan implements RunnableWithContext {
 
     private final KeyWithContext keyWithContext;
     private final DocumentScannerConfig config;
-    private final Authorizations auths;
+    private final Set<Authorizations> auths;
 
     private final long resultQueueOfferTimeMillis;
     private final BlockingQueue<Result> resultQueue;
@@ -145,25 +145,30 @@ public class DocumentRangeScan implements RunnableWithContext {
     }
 
     /**
-     * Create a scanner and configure it with an execution hint and consistency level
+     * Create a scanner and configure it with an execution hint and consistency level.
+     * <p>
+     * An execution hint and a consistency level are required. The document scheduler relies on its scans being routed to a dedicated executor pool, so a scan
+     * that is missing either is a configuration error rather than something to fall back from.
      *
      * @return a configured scanner
-     * @throws Exception
-     *             if something goes wrong
      */
-    private Scanner createScanner() throws Exception {
+    protected Scanner createScanner() {
         String tableName = keyWithContext.getContext().getTableName();
-        Scanner scanner = config.getClient().createScanner(tableName, auths);
 
-        if (config.getRetrievalScanHintTable() != null && config.getRetrievalScanHintPool() != null) {
-            Preconditions.checkArgument(tableName.equals(config.getRetrievalScanHintTable()), "Table name did not match execution hint");
-            scanner.setExecutionHints(Map.of("scan_type", config.getRetrievalScanHintPool()));
-        }
+        Preconditions.checkNotNull(tableName);
+        Preconditions.checkNotNull(config.getRetrievalScanHintTable(), "RetrievalScanHintTable cannot be null");
+        Preconditions.checkNotNull(config.getRetrievalExecutorPool(), "RetrievalExecutorPool cannot be null");
+        Preconditions.checkArgument(tableName.equals(config.getRetrievalScanHintTable()), "Table name did not match execution hint");
+        Preconditions.checkNotNull(config.getRetrievalConsistencyLevel(), "RetrievalConsistencyLevel cannot be null");
 
-        if (config.getSearchConsistencyLevel() != null) {
-            scanner.setConsistencyLevel(ConsistencyLevel.valueOf(config.getRetrievalConsistencyLevel()));
-        }
-        return scanner;
+        //  @formatter:off
+        ScannerBuilder builder = ScannerBuilder.create(config.getClient())
+                .setTableName(tableName)
+                .setAuthorizations(auths)
+                .setScanType(config.getRetrievalScanHintPool())
+                .setConsistencyLevel(config.getRetrievalConsistencyLevel());
+        //  @formatter:on
+        return builder.build();
     }
 
     private void executeDocumentScan() {
@@ -190,7 +195,8 @@ public class DocumentRangeScan implements RunnableWithContext {
             setting.addOption(QueryOptions.QUERY, queryData.getQuery());
         }
 
-        try (Scanner scanner = config.getClient().createScanner(keyWithContext.getContext().getTableName(), auths)) {
+        // this is the default retrieval path, so it must honour the configured execution hint and consistency level
+        try (Scanner scanner = createScanner()) {
             scanner.addScanIterator(setting);
 
             Key start = new Key(keyWithContext.getKey().getRow());
