@@ -16,20 +16,17 @@ import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapreduce.Counter;
 import org.apache.hadoop.mapreduce.StatusReporter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.log4j.Logger;
 
 import com.google.common.base.Preconditions;
-import com.google.common.base.Stopwatch;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
-import com.google.common.hash.BloomFilter;
 
 import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.ingest.config.IngestConfiguration;
@@ -39,16 +36,12 @@ import datawave.ingest.data.Type;
 import datawave.ingest.data.config.MaskedFieldHelper;
 import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.ingest.IngestHelperInterface;
-import datawave.ingest.mapreduce.MemberShipTest;
 import datawave.ingest.mapreduce.handler.DataTypeHandler;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.statsd.StatsDEnabledDataTypeHandler;
 import datawave.ingest.metadata.RawRecordMetadata;
 import datawave.ingest.protobuf.Uid;
 import datawave.ingest.table.config.LoadDateTableConfigHelper;
-import datawave.ingest.util.BloomFilterUtil;
-import datawave.ingest.util.BloomFilterWrapper;
-import datawave.ingest.util.DiskSpaceStarvationStrategy;
 import datawave.marking.MarkingFunctions;
 import datawave.marking.Markings;
 import datawave.query.model.Direction;
@@ -132,17 +125,6 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
 
     public static final String NUM_SHARDS = ShardIdFactory.NUM_SHARDS;
     public static final String SHARD_TNAME = "shard.table.name";
-    public static final String SHARD_ININDEX_BLOOM = "shard.table.index.bloom.enable";
-    public static final String SHARD_ININDEX_BLOOM_DISK_THRESHOLD = "shard.table.index.bloom.min.disk.percent"; // % of remaining disk space before n-grams will
-                                                                                                                // cease to be added to the bloom filter
-    public static final String SHARD_ININDEX_BLOOM_DISK_THRESHOLD_PATH = "shard.table.index.bloom.min.disk.path"; // Path used to measure the remaining disk
-                                                                                                                  // space
-    public static final String SHARD_ININDEX_BLOOM_MEMORY_THRESHOLD = "shard.table.index.bloom.min.memory.percent"; // % of remaining memory before n-grams will
-                                                                                                                    // cease to be added to the bloom filter
-    public static final String SHARD_ININDEX_BLOOM_TIMEOUT_THRESHOLD = "shard.table.index.bloom.min.timeout.percent"; // % of remaining time (with respect to
-                                                                                                                      // mapred.task.timeout) before n-grams
-                                                                                                                      // will stop being added to a bloom filter
-    public static final String SHARD_ININDEX_BLOOM_OPTIMUM_MAX_FILTER_SIZE = "shard.table.index.bloom.optimum.max.filter.size"; // Bytes
     public static final String SHARD_STATS_TNAME = "shard.stats.table.name";
     public static final String SHARD_GIDX_TNAME = "shard.global.index.table.name";
     public static final String SHARD_BITSET_INDEX_TABLE_NAME = "shard.bitset.index.table.name";
@@ -202,11 +184,6 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
 
     private static final long MS_PER_DAY = TimeUnit.DAYS.toMillis(1);
 
-    private float bloomFilteringDiskThreshold;
-    private String bloomFilteringDiskThresholdPath;
-    private float bloomFilteringMemoryThreshold;
-    private int bloomFilteringOptimumMaxFilterSize;
-    private float bloomFilteringTimeoutThreshold;
     private Text shardTableName = null;
     private Text shardIndexTableName = null;
     private Text shardBitsetIndexTableName = null;
@@ -236,10 +213,6 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
      * Determines whether or not we produce cardinality estimates for data
      */
     protected boolean produceStats = false;
-    /**
-     * Determines whether or not the bloom filter is enabled.
-     */
-    private boolean bloomFiltersEnabled = false;
 
     boolean isReindexEnabled;
     private Collection<String> requestedFieldsForReindex;
@@ -341,17 +314,6 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
         }
 
         setupToReindexIfEnabled(conf);
-
-        // enabled by default
-        this.bloomFiltersEnabled = conf.getBoolean(SHARD_ININDEX_BLOOM, false);
-        if (this.bloomFiltersEnabled) {
-            this.bloomFilteringDiskThreshold = conf.getFloat(SHARD_ININDEX_BLOOM_DISK_THRESHOLD, 0.0f);
-            this.bloomFilteringDiskThresholdPath = conf.get(SHARD_ININDEX_BLOOM_DISK_THRESHOLD_PATH,
-                            DiskSpaceStarvationStrategy.DEFAULT_PATH_FOR_DISK_SPACE_VALIDATION);
-            this.bloomFilteringMemoryThreshold = conf.getFloat(SHARD_ININDEX_BLOOM_MEMORY_THRESHOLD, 0.0f);
-            this.bloomFilteringTimeoutThreshold = conf.getFloat(SHARD_ININDEX_BLOOM_TIMEOUT_THRESHOLD, 0.0f);
-            this.bloomFilteringOptimumMaxFilterSize = conf.getInt(SHARD_ININDEX_BLOOM_OPTIMUM_MAX_FILTER_SIZE, -1);
-        }
 
         // Event key suppression
         this.suppressEventKeys = conf.getBoolean(SUPPRESS_EVENT_KEYS, false);
@@ -650,8 +612,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
         String fieldName = value.getIndexedFieldName();
         String fieldValue = value.getIndexedFieldValue();
         // produce field index.
-        values.putAll(createShardFieldIndexColumn(event, fieldName, fieldValue, visibility, maskedVisibility, maskedFieldHelper, shardId,
-                        createBloomFilter(event, fields, reporter)));
+        values.putAll(createShardFieldIndexColumn(event, fieldName, fieldValue, visibility, maskedVisibility, maskedFieldHelper, shardId, NULL_VALUE));
 
         // produce index column
         values.putAll(createTermIndexColumn(event, fieldName, fieldValue, visibility, maskedVisibility, maskedFieldHelper, shardId,
@@ -682,89 +643,6 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
             filteredMap.putAll(requestedField, eventFields.get(requestedField));
         }
         return filteredMap;
-    }
-
-    /**
-     * Creates a bloom filter based on a multi-map of normalized fields. The returned wrapper contains not only an instance of the finalized {@link BloomFilter}
-     * class, but also counts of applied field values and n-grams to assist with statistical reporting.
-     *
-     * @param fields
-     *            a multi-map of normalized fields
-     * @return a wrapped bloom filter created from a multi-map of normalized fields
-     */
-    protected BloomFilterWrapper createBloomFilter(final Multimap<String,NormalizedContentInterface> fields) {
-        final BloomFilterUtil factory = BloomFilterUtil.newInstance();
-        return factory.newMultimapBasedFilter(fields);
-    }
-
-    /**
-     * @param event
-     *            the event container
-     * @param fields
-     *            the event fields
-     * @param reporter
-     *            the status reporter
-     * @return the bloom filter
-     */
-    protected Value createBloomFilter(RawRecordContainer event, Multimap<String,NormalizedContentInterface> fields, StatusReporter reporter) {
-        Value filterValue = DataTypeHandler.NULL_VALUE;
-        if (this.bloomFiltersEnabled) {
-
-            try {
-                // Create and start the stopwatch
-                final Stopwatch stopWatch = Stopwatch.createStarted();
-
-                // Create the bloom filter, which may involve NGram expansion
-                final BloomFilterWrapper result = this.createBloomFilter(fields);
-                final BloomFilter<String> bloomFilter = result.getFilter();
-                filterValue = MemberShipTest.toValue(bloomFilter);
-
-                // Stop the stopwatch
-                stopWatch.stop();
-
-                if (null != reporter) {
-                    final Counter filterCounter = reporter.getCounter(MemberShipTest.class.getSimpleName(), "BloomFilterCreated");
-                    if (null != filterCounter) {
-                        filterCounter.increment(1);
-                    }
-
-                    final Counter sizeCounter = reporter.getCounter(MemberShipTest.class.getSimpleName(), "BloomFilterSize");
-                    if (null != sizeCounter) {
-                        sizeCounter.increment(filterValue.getSize());
-                    }
-
-                    final Counter fieldsCounter = reporter.getCounter(MemberShipTest.class.getSimpleName(), "BloomFilterAppliedFields");
-                    if (null != fieldsCounter) {
-                        fieldsCounter.increment(result.getFieldValuesAppliedToFilter());
-                    }
-
-                    final Counter ngramsCounter = reporter.getCounter(MemberShipTest.class.getSimpleName(), "BloomFilterAppliedNGrams");
-                    if (null != ngramsCounter) {
-                        ngramsCounter.increment(result.getNGramsAppliedToFilter());
-                    }
-
-                    final Counter prunedCounter = reporter.getCounter(MemberShipTest.class.getSimpleName(), "BloomFilterPrunedNGrams");
-                    if (null != prunedCounter) {
-                        prunedCounter.increment(result.getNGramsPrunedFromFilter());
-                    }
-
-                    final Counter creationTime = reporter.getCounter(MemberShipTest.class.getSimpleName(), "Creation Time-(ms)");
-                    if (null != creationTime) {
-                        creationTime.increment(stopWatch.elapsed(TimeUnit.MILLISECONDS));
-                    }
-                }
-            } catch (Exception e) {
-                if (null != reporter) {
-                    final Counter errorCounter = reporter.getCounter(MemberShipTest.class.getSimpleName(), "BloomFilterError");
-                    if (null != errorCounter) {
-                        errorCounter.increment(filterValue.getSize());
-                    }
-                }
-            }
-        }
-
-        return filterValue;
-
     }
 
     /**
@@ -1876,60 +1754,6 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
     protected abstract Multimap<String,NormalizedContentInterface> getShardNamesAndValues(RawRecordContainer event,
                     Multimap<String,NormalizedContentInterface> eventFields, boolean createGlobalIndexTerms, boolean createGlobalReverseIndexTerms,
                     StatusReporter reporter);
-
-    /**
-     * Returns the minimum amount of available disk space, expressed as a percentage, allowed for creating a complete bloom filter
-     *
-     * @return the minimum amount of available disk space allowed for creating a complete bloom filter
-     */
-    public float getBloomFilteringDiskThreshold() {
-        return this.bloomFilteringDiskThreshold;
-    }
-
-    /**
-     * Returns the path checked for available disk space when creating a complete bloom filter
-     *
-     * @return the path checked for available disk space when creating a complete bloom filter
-     */
-    public String getBloomFilteringDiskThresholdPath() {
-        return this.bloomFilteringDiskThresholdPath;
-    }
-
-    /**
-     * Returns a value indicating whether or not bloom filters are enabled, which is determined during setup.
-     *
-     * @return true if bloom filters are enabled
-     */
-    public boolean getBloomFiltersEnabled() {
-        return this.bloomFiltersEnabled;
-    }
-
-    /**
-     * Returns the minimum amount of available memory, expressed as a percentage, allowed for creating a complete bloom filter
-     *
-     * @return the minimum amount of available memory allowed for creating a complete bloom filter
-     */
-    public float getBloomFilteringMemoryThreshold() {
-        return this.bloomFilteringMemoryThreshold;
-    }
-
-    /**
-     * Returns the largest ideal size of bloom filters, in bytes, created for normalized content during ingest
-     *
-     * @return the largest ideal size of bloom filters, in bytes, created for normalized content during ingest
-     */
-    public int getBloomFilteringOptimumMaxFilterSize() {
-        return this.bloomFilteringOptimumMaxFilterSize;
-    }
-
-    /**
-     * Returns the minimum amount of remaining task time, expressed as a percentage, allowed for creating a complete bloom filter
-     *
-     * @return the minimum amount of remaining task time, expressed as a percentage, allowed for creating a complete bloom filter
-     */
-    public float getBloomFilteringTimeoutThreshold() {
-        return this.bloomFilteringTimeoutThreshold;
-    }
 
     /**
      * @return map of field names (key) to normalized field values (value) or null
