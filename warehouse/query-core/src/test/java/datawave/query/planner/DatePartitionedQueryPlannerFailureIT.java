@@ -65,12 +65,18 @@ class DatePartitionedQueryPlannerFailureIT {
 
     /** A {@link DatePartitionedQueryPlanner} that bypasses real field index hole lookups so no MetadataHelper is required. */
     private static class TestableDatePartitionedQueryPlanner extends DatePartitionedQueryPlanner {
+        // run after the initial planning pass but before the sub-plans are registered, to simulate a close() landing in that window
+        private Runnable onGetFieldsForQuery;
+
         TestableDatePartitionedQueryPlanner(DefaultQueryPlanner inner) {
             super(inner);
         }
 
         @Override
         protected Set<String> getFieldsForQuery(ASTJexlScript queryTree, MetadataHelper metadataHelper) {
+            if (onGetFieldsForQuery != null) {
+                onGetFieldsForQuery.run();
+            }
             return Collections.emptySet();
         }
     }
@@ -80,22 +86,48 @@ class DatePartitionedQueryPlannerFailureIT {
         private final List<StubQueryPlanner> clones = new ArrayList<>();
         private final List<StubQueryPlanner> closed = new ArrayList<>();
         private boolean throwOnReprocess;
+        private boolean throwOnProcess;
         private boolean executorShutdown;
         private boolean reprocessed;
+        private boolean processed;
+        // the initial-planning flags this planner was handed, captured on entry to process()
+        private Boolean sawGeneratePlanOnly;
+        private Boolean sawExpandValues;
+        private Boolean sawDeferPushdownPullup;
         // run while a sub-plan is being planned, to simulate a close() landing mid-flight
         private Runnable onReprocess;
+        // run while the initial planning pass is in flight, to simulate a close() landing mid-flight
+        private Runnable onProcess;
+        // run once a clone has been created but before the caller has had a chance to register it, to simulate a close() landing in that window
+        private Runnable onClone;
 
         @Override
         public StubQueryPlanner clone() {
             StubQueryPlanner copy = new StubQueryPlanner();
             copy.throwOnReprocess = this.throwOnReprocess;
+            copy.throwOnProcess = this.throwOnProcess;
             copy.onReprocess = this.onReprocess;
+            copy.onProcess = this.onProcess;
             clones.add(copy);
+            if (onClone != null) {
+                onClone.run();
+            }
             return copy;
         }
 
         @Override
         public CloseableIterable<QueryData> process(GenericQueryConfiguration genericConfig, String query, Query settings, ScannerFactory scannerFactory) {
+            this.processed = true;
+            ShardQueryConfiguration config = (ShardQueryConfiguration) genericConfig;
+            this.sawGeneratePlanOnly = config.isGeneratePlanOnly();
+            this.sawExpandValues = config.isExpandValues();
+            this.sawDeferPushdownPullup = config.isDeferPushdownPullup();
+            if (onProcess != null) {
+                onProcess.run();
+            }
+            if (throwOnProcess) {
+                throw new IllegalStateException("stubbed initial planning failure");
+            }
             this.plannedScript = query;
             return DefaultQueryPlanner.emptyCloseableIterator();
         }
@@ -256,6 +288,104 @@ class DatePartitionedQueryPlannerFailureIT {
         callable.releasePlanner();
 
         assertFalse(inner.clones.get(0).executorShutdown, "a second release must not shut the pool down again");
+    }
+
+    /**
+     * A close() that arrives while the initial planning pass is in flight must not shut that clone's thread pool down underneath it - the pass is still
+     * submitting work to that pool. The shutdown is deferred until the pass completes, and must actually happen at that point.
+     */
+    @Test
+    void closeDuringInitialPlanningIsDeferredUntilPlanningCompletes() {
+        StubQueryPlanner inner = new StubQueryPlanner();
+        TestableDatePartitionedQueryPlanner planner = new TestableDatePartitionedQueryPlanner(inner);
+
+        ShardQueryConfiguration config = newConfig();
+        AtomicBoolean shutdownWhilePlanning = new AtomicBoolean();
+        inner.onProcess = () -> {
+            planner.close(config, config.getQuery());
+            shutdownWhilePlanning.set(inner.clones.get(0).executorShutdown);
+        };
+
+        // the outcome of process() is checked last, so that a pool shut down mid-plan is reported as such rather than masked by the abort assertion
+        Exception thrown = null;
+        try {
+            planner.process(config, "FOO == 'bar'", config.getQuery(), null);
+        } catch (Exception e) {
+            thrown = e;
+        }
+
+        assertFalse(shutdownWhilePlanning.get(), "the thread pool must not be shut down while the initial pass is still planning");
+        assertTrue(inner.clones.get(0).executorShutdown, "the thread pool must be shut down once the initial pass completes");
+        // the close() leaves nothing to own the sub-plans, so planning aborts rather than building them
+        assertInstanceOf(DatawaveQueryException.class, thrown, "planning must abort once close() has landed");
+    }
+
+    /**
+     * A close() that arrives after a clone has been created but before process() has registered it must stop that clone from planning at all. Planning would
+     * start a thread pool, and close() has already finished releasing clones by that point, so nothing would be left to shut that pool down.
+     */
+    @Test
+    void closeBeforeInitialPlannerRegistrationAbortsPlanning() {
+        StubQueryPlanner inner = new StubQueryPlanner();
+        TestableDatePartitionedQueryPlanner planner = new TestableDatePartitionedQueryPlanner(inner);
+
+        ShardQueryConfiguration config = newConfig();
+        AtomicBoolean closedOnce = new AtomicBoolean();
+        inner.onClone = () -> {
+            if (closedOnce.compareAndSet(false, true)) {
+                planner.close(config, config.getQuery());
+            }
+        };
+
+        assertThrows(DatawaveQueryException.class, () -> planner.process(config, "FOO == 'bar'", config.getQuery(), null));
+
+        assertEquals(1, inner.clones.size(), "only the unregistered initial-planning clone should have been created");
+        assertFalse(inner.clones.get(0).processed, "a clone created after close() must never start planning");
+    }
+
+    /**
+     * A close() that arrives after the initial planning pass but before the sub-plans are registered must leave those sub-plans released, so that none of them
+     * can go on to clone a planner and start its thread pool.
+     */
+    @Test
+    void closeBeforeSubPlanRegistrationReleasesSubPlans() {
+        StubQueryPlanner inner = new StubQueryPlanner();
+        TestableDatePartitionedQueryPlanner planner = new TestableDatePartitionedQueryPlanner(inner);
+
+        ShardQueryConfiguration config = newConfig();
+        planner.onGetFieldsForQuery = () -> planner.close(config, config.getQuery());
+
+        assertThrows(DatawaveQueryException.class, () -> planner.process(config, "FOO == 'bar'", config.getQuery(), null));
+
+        assertEquals(1, inner.clones.size(), "no sub-plan clone should have been created after close()");
+        assertTrue(inner.clones.get(0).executorShutdown, "the initial-planning clone must still have been released");
+    }
+
+    /**
+     * The initial planning pass runs with the expansion flags temporarily forced. They must be restored even when that pass fails, since the caller's config
+     * outlives a failed plan.
+     */
+    @Test
+    void initialPlanningFailureRestoresConfigFlags() {
+        StubQueryPlanner inner = new StubQueryPlanner();
+        inner.throwOnProcess = true;
+        TestableDatePartitionedQueryPlanner planner = new TestableDatePartitionedQueryPlanner(inner);
+
+        ShardQueryConfiguration config = newConfig();
+        config.setGeneratePlanOnly(false);
+        config.setExpandValues(true);
+        config.setDeferPushdownPullup(false);
+
+        assertThrows(IllegalStateException.class, () -> planner.process(config, "FOO == 'bar'", config.getQuery(), null));
+
+        StubQueryPlanner initialClone = inner.clones.get(0);
+        assertTrue(initialClone.sawGeneratePlanOnly, "the initial planning pass must run with generatePlanOnly set");
+        assertFalse(initialClone.sawExpandValues, "the initial planning pass must run with value expansion disabled");
+        assertTrue(initialClone.sawDeferPushdownPullup, "the initial planning pass must run with pushdown/pullup deferred");
+
+        assertFalse(config.isGeneratePlanOnly(), "generatePlanOnly must be restored after a failed initial plan");
+        assertTrue(config.isExpandValues(), "expandValues must be restored after a failed initial plan");
+        assertFalse(config.isDeferPushdownPullup(), "deferPushdownPullup must be restored after a failed initial plan");
     }
 
     @Test
