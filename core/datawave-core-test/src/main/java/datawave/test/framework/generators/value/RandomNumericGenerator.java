@@ -7,7 +7,9 @@ import org.apache.commons.lang3.RandomStringUtils;
 import com.google.common.base.Preconditions;
 
 /**
- * Generates random numeric values.
+ * Generates random numeric values of an exact digit count.
+ * <p>
+ * Values never lead with a zero, so a generator of length N produces values between <code>10^(N-1)</code> and <code>10^N - 1</code>.
  * <p>
  * The {@link Random} is supplied by the caller rather than created here so that an entire ingest can be reproduced from a single seed. See
  * {@code IngestMetadataBuilder.setSeed(long)}.
@@ -53,6 +55,10 @@ public class RandomNumericGenerator implements ValueGenerator<Integer> {
 
     @Override
     public Integer next() {
-        return Integer.valueOf(RandomStringUtils.random(length, 0, 0, false, true, null, random));
+        // the leading digit is drawn from 1-9 because a leading zero is lost when the value is converted to an Integer
+        StringBuilder value = new StringBuilder(length);
+        value.append((char) ('1' + random.nextInt(9)));
+        value.append(RandomStringUtils.random(length - 1, 0, 0, false, true, null, random));
+        return Integer.valueOf(value.toString());
     }
 }
