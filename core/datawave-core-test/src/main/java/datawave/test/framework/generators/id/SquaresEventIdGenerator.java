@@ -4,8 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- *
- * <code>1, 4, 9, 16, 25, 36, ...</code>
+ * A generator that produces the squares, <code>1, 4, 9, 16, 25, 36, ...</code>
+ * <p>
+ * The offset is added to each generated id, so an offset of 1 produces <code>2, 5, 10, ...</code>
  */
 public class SquaresEventIdGenerator extends AbstractEventIdGenerator {
 

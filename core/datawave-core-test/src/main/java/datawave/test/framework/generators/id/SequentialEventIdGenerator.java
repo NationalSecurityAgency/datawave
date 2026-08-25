@@ -5,6 +5,8 @@ import java.util.List;
 
 /**
  * A generator for a linear id distribution
+ * <p>
+ * The offset is added to each generated id, so an offset of 1 produces <code>2, 3, 4, ...</code>
  */
 public class SequentialEventIdGenerator extends AbstractEventIdGenerator {
 

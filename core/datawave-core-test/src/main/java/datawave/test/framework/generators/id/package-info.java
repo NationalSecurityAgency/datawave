@@ -5,7 +5,8 @@
  * Supported strategies:
  * <ul>
  * <li>{@link datawave.test.framework.generators.id.SequentialEventIdGenerator} - every id, {@code 1, 2, 3, ...}</li>
- * <li>{@link datawave.test.framework.generators.id.ModuloEventIdGenerator} - every nth id, {@code n, 2n, 3n, ...}</li>
+ * <li>{@link datawave.test.framework.generators.id.ModuloEventIdGenerator} - every nth id, {@code n, 2n, 3n, ...}, or another residue class when an offset is
+ * set</li>
  * <li>{@link datawave.test.framework.generators.id.FibonacciEventIdGenerator} - {@code 1, 2, 3, 5, 8, ...}</li>
  * <li>{@link datawave.test.framework.generators.id.SquaresEventIdGenerator} - {@code 1, 4, 9, 16, ...}</li>
  * </ul>

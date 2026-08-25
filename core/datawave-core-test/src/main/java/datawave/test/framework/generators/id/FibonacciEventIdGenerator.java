@@ -5,6 +5,8 @@ import java.util.List;
 
 /**
  * This generator produces the Fibonacci sequence of all positive integers (excludes zero)
+ * <p>
+ * The offset is added to each generated id, so an offset of 1 produces <code>2, 3, 4, 6, 9, ...</code>
  */
 public class FibonacciEventIdGenerator extends AbstractEventIdGenerator {
 

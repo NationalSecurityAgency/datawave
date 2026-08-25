@@ -12,7 +12,9 @@ import java.util.List;
 public interface EventIdGenerator {
 
     /**
-     * Configure an offset. For example, mod 2 offset 1 would generate the values 1, 3, 5, etc
+     * Configure an offset. The meaning of the offset is specific to the implementation, so see the implementing class. For example, a
+     * {@link ModuloEventIdGenerator} with modulo 2 and offset 1 generates the values 1, 3, 5, etc, while a {@link SequentialEventIdGenerator} with offset 1
+     * generates the values 2, 3, 4, etc
      *
      * @param offset
      *            the offset
