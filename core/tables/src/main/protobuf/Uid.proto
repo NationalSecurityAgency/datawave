@@ -4,7 +4,7 @@ syntax = "proto2";
 
 package datawave.table.protobuf;
 
-option java_package = "datawave.ingest.protobuf";
+option java_package = "datawave.table.protobuf";
 option optimize_for = SPEED;
 
 message List {
