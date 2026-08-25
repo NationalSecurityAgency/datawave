@@ -48,7 +48,7 @@ public final class PrintUtility {
      * @see #printTableToDebugLog(AccumuloClient, Authorizations, String, TableWriter)
      */
     public static void printShardTable(final AccumuloClient client, final Authorizations auths) throws TableNotFoundException {
-        printShardTable(client, auths, TableName.SHARD_INDEX);
+        printShardTable(client, auths, TableName.SHARD);
     }
 
     /**
