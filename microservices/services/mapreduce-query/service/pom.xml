@@ -22,11 +22,11 @@
         <image.prefix>datawave/</image.prefix>
         <registry.namespace>nationalsecurityagency/</registry.namespace>
         <start-class>datawave.microservice.query.mapreduce.MapReduceQueryService</start-class>
-        <version.datawave>7.37.3</version.datawave>
+        <version.datawave>7.44.1</version.datawave>
         <version.datawave.authorization-api>4.0.5</version.datawave.authorization-api>
         <version.datawave.mapreduce-query-core-job>1.0.7</version.datawave.mapreduce-query-core-job>
         <version.datawave.starter>4.0.12</version.datawave.starter>
-        <version.datawave.starter-query>1.0.13</version.datawave.starter-query>
+        <version.datawave.starter-query>1.0.14</version.datawave.starter-query>
         <version.hadoop>3.3.4</version.hadoop>
         <!-- dependency declared in datawave-microservice-parent, but the version can be overridden here -->
         <version.log4j>2.26.1</version.log4j>
