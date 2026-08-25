@@ -118,4 +118,62 @@ public class TypeMetadataSerializationRaceTest {
     public void testMalformedMiniMapThrows() {
         assertThrows(IllegalStateException.class, () -> new TypeMetadata("dts:[0:ingestA];types:[bogus];FIELD:[0:0]"));
     }
+
+    /**
+     * An unclosed mini-map bracket hides the delimiters that follow it, so the ingest type entry swallows the normalizer entry. Parsed leniently it yields an
+     * ingest type named "ingestB;types" and no normalizer mini-map at all, leaving every field to resolve its normalizer to "".
+     */
+    @Test
+    public void testUnterminatedIngestTypeMiniMapThrows() {
+        IllegalStateException e = assertThrows(IllegalStateException.class,
+                        () -> new TypeMetadata("dts:[0:ingestA,1:ingestB;types:[0:LcNoDiacriticsType];FIELD1:[0:0];FIELD2:[0:0]"));
+        assertTrue(e.getMessage(), e.getMessage().contains("closing bracket"));
+    }
+
+    /**
+     * The same truncation in the normalizer mini-map, which leniently names index 0 "LcNoDiacriticsType;FIELD1" and so resolves every field holding it to a
+     * normalizer that does not exist.
+     */
+    @Test
+    public void testUnterminatedNormalizerMiniMapThrows() {
+        IllegalStateException e = assertThrows(IllegalStateException.class,
+                        () -> new TypeMetadata("dts:[0:ingestA];types:[0:LcNoDiacriticsType;FIELD1:[0:0];FIELD2:[0:0]"));
+        assertTrue(e.getMessage(), e.getMessage().contains("closing bracket"));
+    }
+
+    /**
+     * A field entry with no bracketed list at all, which used to fail on an array index rather than say what was wrong.
+     */
+    @Test
+    public void testFieldEntryWithoutListThrows() {
+        IllegalStateException e = assertThrows(IllegalStateException.class, () -> new TypeMetadata("dts:[0:ingestA];types:[0:LcNoDiacriticsType];FIELD"));
+        assertTrue(e.getMessage(), e.getMessage().contains("FIELD"));
+    }
+
+    /**
+     * A field entry whose list is never closed, which used to drop the last index pair and then fail on an array index.
+     */
+    @Test
+    public void testUnterminatedFieldEntryThrows() {
+        IllegalStateException e = assertThrows(IllegalStateException.class, () -> new TypeMetadata("dts:[0:ingestA];types:[0:LcNoDiacriticsType];FIELD:[0:0"));
+        assertTrue(e.getMessage(), e.getMessage().contains("bracketed list"));
+    }
+
+    /**
+     * A field entry holding an index with no normalizer index paired to it.
+     */
+    @Test
+    public void testMalformedIndexPairThrows() {
+        IllegalStateException e = assertThrows(IllegalStateException.class, () -> new TypeMetadata("dts:[0:ingestA];types:[0:LcNoDiacriticsType];FIELD:[0]"));
+        assertTrue(e.getMessage(), e.getMessage().contains("index pair"));
+    }
+
+    /**
+     * The guards above must not reject a trailing delimiter, which is an empty entry rather than a malformed field.
+     */
+    @Test
+    public void testTrailingDelimiterStillParses() {
+        TypeMetadata typeMetadata = new TypeMetadata("dts:[0:ingestA];types:[0:LcNoDiacriticsType];FIELD:[0:0];");
+        assertEquals(Collections.singleton("LcNoDiacriticsType"), typeMetadata.getNormalizerNamesForField("FIELD"));
+    }
 }

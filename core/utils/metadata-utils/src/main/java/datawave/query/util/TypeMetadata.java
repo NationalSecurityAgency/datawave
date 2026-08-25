@@ -320,6 +320,10 @@ public class TypeMetadata implements Serializable, KryoSerializable {
         }
 
         String types = split[1];
+        if (!types.endsWith("]")) {
+            throw new IllegalStateException("Malformed TypeMetadata mini-map, expected a closing bracket: '" + typeEntry + "'");
+        }
+
         String typeEntries = types.substring(0, types.length() - 1);
 
         Map<String,Integer> typeMap = new TreeMap<>();
@@ -436,11 +440,14 @@ public class TypeMetadata implements Serializable, KryoSerializable {
      * </pre>
      *
      * The example above gives FIELD1 an LcNoDiacriticsType in both ingest types, and FIELD2 both types in ingestA and a NumberType in ingestB. Parsing is
-     * lenient: input with fewer than three entries is discarded, empty values are skipped (a field absent from a trailing ingest type emits a trailing comma),
-     * and an index with no mini-map entry yields an empty type name.
+     * lenient about what {@link #toString()} emits: input with fewer than three entries is discarded, empty entries and values are skipped (a field absent from
+     * a trailing ingest type emits a trailing comma), and an index with no mini-map entry yields an empty type name. A malformed entry throws instead of
+     * resolving field entries to the wrong types.
      *
      * @param data
      *            a serialized TypeMetadata
+     * @throws IllegalStateException
+     *             if a mini-map or field entry is malformed
      */
     private void fromString(String data) {
         String[] entries = parse(data, ';');
@@ -460,13 +467,21 @@ public class TypeMetadata implements Serializable, KryoSerializable {
                 } else if (entry.startsWith(DATATYPES_PREFIX)) {
                     setDataTypesMiniMap(parseTypes(entry));
                     dataTypesByIndex = invert(getDataTypesMiniMap());
-                } else {
+                } else if (!entry.isEmpty()) {
                     // a field entry, FIELD_NAME:[ingestTypeIndex:normalizerTypeIndex,...], splitting into the field
-                    // name and the bracketed list of index pairs
+                    // name and the bracketed list of index pairs. An empty entry is a trailing delimiter, not a field.
                     String[] entrySplits = parse(entry, ':');
+                    if (entrySplits.length < 2) {
+                        throw new IllegalStateException("Malformed TypeMetadata field entry, expected 'FIELD:[...]': '" + entry + "'");
+                    }
 
                     // get rid of the leading and trailing brackets:
-                    entrySplits[1] = entrySplits[1].substring(1, entrySplits[1].length() - 1);
+                    String indexPairs = entrySplits[1];
+                    if (!indexPairs.startsWith("[") || !indexPairs.endsWith("]")) {
+                        throw new IllegalStateException("Malformed TypeMetadata field entry, expected a bracketed list: '" + entry + "'");
+                    }
+
+                    entrySplits[1] = indexPairs.substring(1, indexPairs.length() - 1);
                     String[] values = parse(entrySplits[1], ',');
 
                     for (String aValue : values) {
@@ -475,6 +490,10 @@ public class TypeMetadata implements Serializable, KryoSerializable {
                             // mini-map. An index the corresponding mini-map does not hold, including any index seen
                             // before its mini-map entry was parsed, resolves to "".
                             String[] vs = Iterables.toArray(Splitter.on(':').omitEmptyStrings().trimResults().split(aValue), String.class);
+                            if (vs.length < 2) {
+                                throw new IllegalStateException("Malformed TypeMetadata index pair, expected 'ingestTypeIndex:normalizerTypeIndex': '" + aValue
+                                                + "' in '" + entry + "'");
+                            }
 
                             String ingestType = ingestTypesByIndex.getOrDefault(Integer.valueOf(vs[0]), "");
                             String dataType = dataTypesByIndex.getOrDefault(Integer.valueOf(vs[1]), "");
