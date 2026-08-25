@@ -177,9 +177,9 @@ public class FacetedQueryLogicTest extends AbstractFunctionalQuery {
         options.put(FacetedConfiguration.FACETED_FIELDS, "CITY");
         options.put(FacetedConfiguration.FACETED_SEARCH_TYPE, FacetedSearchType.FIELD_VALUE_FACETS.name());
 
-        PrintUtility.printTableToLogDebug(client, auths, FacetQueryTestTableHelper.FACET_TABLE_NAME, PrintUtility.FACET_TABLE_WRITER);
-        PrintUtility.printTableToLogDebug(client, auths, FacetQueryTestTableHelper.FACET_METADATA_TABLE_NAME, PrintUtility.SIMPLE_TABLE_WRITER);
-        PrintUtility.printTableToLogDebug(client, auths, FacetQueryTestTableHelper.FACET_HASH_TABLE_NAME, PrintUtility.SIMPLE_TABLE_WRITER);
+        PrintUtility.printFacetTable(client, auths, FacetQueryTestTableHelper.FACET_TABLE_NAME);
+        PrintUtility.printSimpleTable(client, auths, FacetQueryTestTableHelper.FACET_METADATA_TABLE_NAME);
+        PrintUtility.printSimpleTable(client, auths, FacetQueryTestTableHelper.FACET_HASH_TABLE_NAME);
 
         runTest(query, options, expected);
     }

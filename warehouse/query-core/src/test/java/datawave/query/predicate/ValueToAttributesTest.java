@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
 
-import datawave.util.TableName;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
@@ -40,7 +39,6 @@ import datawave.query.tables.ShardQueryLogic;
 import datawave.query.util.AbstractQueryTest;
 import datawave.query.util.CompositeTestingIngest;
 import datawave.query.util.TypeMetadata;
-import datawave.table.constants.TableName;
 
 @ExtendWith(SpringExtension.class)
 @ComponentScan(basePackages = "datawave.query")
@@ -117,9 +115,9 @@ public class ValueToAttributesTest extends AbstractQueryTest {
         // ingest with the document range only; CompositeTestingIngest already uses IndexIngestUtil
         // internally to derive the other shard index table variants that AbstractQueryTest iterates over.
         CompositeTestingIngest.writeItAll(clientForTest, CompositeTestingIngest.WhatKindaRange.DOCUMENT);
-        PrintUtility.printTableToLogDebug(client, auths, TableName.SHARD, PrintUtility.SHARD_TABLE_WRITER);
-        PrintUtility.printTableToLogDebug(client, auths, TableName.SHARD_INDEX, PrintUtility.SHARD_INDEX_TABLE_WRITER);
-        PrintUtility.printTableToLogDebug(client, auths, TableName.METADATA, PrintUtility.METADATA_TABLE_WRITER);
+        PrintUtility.printShardTable(clientForTest, auths);
+        PrintUtility.printShardIndexTable(clientForTest, auths);
+        PrintUtility.printMetadataTable(clientForTest, auths);
     }
 
     @AfterAll

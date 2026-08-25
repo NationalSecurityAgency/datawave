@@ -30,7 +30,6 @@ import datawave.query.tables.ShardQueryLogic;
 import datawave.query.util.AbstractQueryTest;
 import datawave.query.util.WiseGuysIngest;
 import datawave.query.util.WiseGuysIngest.WhatKindaRange;
-import datawave.table.constants.TableName;
 
 @ExtendWith(SpringExtension.class)
 @ComponentScan(basePackages = "datawave.query")
@@ -125,9 +124,9 @@ public class ExcerptTest extends AbstractQueryTest {
         QueryTestTableHelper qtth = new QueryTestTableHelper(ExcerptTest.class.toString(), log);
         client = qtth.client;
         WiseGuysIngest.writeItAll(client, WhatKindaRange.DOCUMENT);
-        PrintUtility.printTableToLogDebug(connector, auths, TableName.SHARD, PrintUtility.SHARD_TABLE_WRITER);
-        PrintUtility.printTableToLogDebug(connector, auths, TableName.SHARD_INDEX, PrintUtility.SHARD_INDEX_TABLE_WRITER);
-        PrintUtility.printTableToLogDebug(connector, auths, QueryTestTableHelper.MODEL_TABLE_NAME, PrintUtility.MODEL_TABLE_WRITER);
+        PrintUtility.printShardTable(client, auths);
+        PrintUtility.printShardIndexTable(client, auths);
+        PrintUtility.printMetadataTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
     }
 
     @BeforeEach

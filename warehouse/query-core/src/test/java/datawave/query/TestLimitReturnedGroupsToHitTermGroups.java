@@ -35,7 +35,6 @@ import datawave.query.function.JexlEvaluation;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.util.AbstractQueryTest;
 import datawave.query.util.CommonalityTokenTestDataIngest;
-import datawave.table.constants.TableName;
 import datawave.test.HitTermAssertions;
 
 /**
@@ -139,9 +138,9 @@ public class TestLimitReturnedGroupsToHitTermGroups extends AbstractQueryTest {
 
         // set to DEBUG if you want table output
         Logger.getLogger(PrintUtility.class).setLevel(Level.INFO);
-        PrintUtility.printTableToLogDebug(connector, auths, TableName.SHARD, PrintUtility.SHARD_TABLE_WRITER);
-        PrintUtility.printTableToLogDebug(connector, auths, TableName.SHARD_INDEX, PrintUtility.SHARD_INDEX_TABLE_WRITER);
-        PrintUtility.printTableToLogDebug(connector, auths, QueryTestTableHelper.MODEL_TABLE_NAME, PrintUtility.MODEL_TABLE_WRITER);
+        PrintUtility.printShardTable(clientForTest, auths);
+        PrintUtility.printShardIndexTable(clientForTest, auths);
+        PrintUtility.printMetadataTable(clientForTest, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
     }
 
     @AfterAll

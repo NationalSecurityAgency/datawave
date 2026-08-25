@@ -47,7 +47,6 @@ import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.util.AbstractQueryTest;
 import datawave.query.util.LimitFieldsTestingIngest;
-import datawave.table.constants.TableName;
 
 /**
  * Tests the {@code limit.fields} feature to ensure that hit terms are always included and that associated fields at the same grouping context are included
@@ -115,9 +114,9 @@ public class HitsAreAlwaysIncludedTest extends AbstractQueryTest {
         // internally to derive the other shard index table variants (NO_UID_INDEX, TRUNCATED_INDEX, etc.)
         // that AbstractQueryTest.planAndExecuteQuery() iterates over.
         LimitFieldsTestingIngest.writeItAll(clientForTest, LimitFieldsTestingIngest.WhatKindaRange.DOCUMENT);
-        PrintUtility.printTableToLogDebug(client, auths, TableName.SHARD, PrintUtility.SHARD_TABLE_WRITER);
-        PrintUtility.printTableToLogDebug(client, auths, TableName.SHARD_INDEX, PrintUtility.SHARD_INDEX_TABLE_WRITER);
-        PrintUtility.printTableToLogDebug(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME, PrintUtility.MODEL_TABLE_WRITER);
+        PrintUtility.printShardTable(clientForTest, auths);
+        PrintUtility.printShardIndexTable(clientForTest, auths);
+        PrintUtility.printMetadataTable(clientForTest, auths);
     }
 
     @AfterAll

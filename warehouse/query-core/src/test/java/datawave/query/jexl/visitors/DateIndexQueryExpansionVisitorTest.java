@@ -58,7 +58,7 @@ public class DateIndexQueryExpansionVisitorTest {
         this.metadataHelper = new MetadataHelperFactory().createMetadataHelper(client, TableName.DATE_INDEX, Collections.singleton(auths));
         this.deleteAndCreateTable();
         DateIndexTestIngest.writeItAll(client);
-        PrintUtility.printTableToLogDebug(client, auths, TableName.DATE_INDEX, PrintUtility.DATE_INDEX_TABLE_WRITER);
+        PrintUtility.printDateIndexTable(client, auths);
         dateIndexHelperScanner = new DateIndexHelperFactory().createDateIndexHelper().initialize(client, TableName.DATE_INDEX, Collections.singleton(auths), 2,
                         0.9f);
 
