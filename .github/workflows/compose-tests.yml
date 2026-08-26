@@ -162,6 +162,9 @@ jobs:
           echo "Starting docker compose"
           docker compose down --volumes --remove-orphans
           docker compose up -d --wait --wait-timeout 600
+      # Ahead of the query tests, which pass whether or not the shard table is split.
+      - name: Docker Compose Verify Shard Splits
+        run: ./docker/scripts/verifySplits.sh
       - name: Docker Compose Microservice Query Integration Tests
         run: |
           cd docker/scripts
