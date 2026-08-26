@@ -173,7 +173,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
      * term dictionary optimization table
      */
 
-    public static final String SHARD_DINDX_LPRIORITY = "shard.dicitonary.index.table.loader.priority";
+    public static final String SHARD_DINDX_LPRIORITY = "shard.dictionary.index.table.loader.priority";
     public static final String SHARD_DICTIONARY_CACHE_ENTRIES = "shard.dictionary.cache.entries";
     public static final String SHARD_DINDX_NAME = "shard.dictionary.index.table.name";
     public static final Text SHARD_DINDX_FLABEL = new Text("for");
