@@ -10,6 +10,11 @@ import java.util.StringJoiner;
 public class QueryLimitConfiguration {
 
     /**
+     * Enable/disable checking query limits
+     */
+    private boolean enabled = false;
+
+    /**
      * The default maximum number of active concurrent queries a user may have across all systems.
      */
     private int defaultUserQueryLimit;
@@ -110,5 +115,13 @@ public class QueryLimitConfiguration {
                         .add("defaultSystemQueryLimit=" + defaultSystemQueryLimit).add("internalCacheMaxSize=" + internalCacheMaxSize)
                         .add("userConfigs=" + userConfigs).add("systemConfigs=" + systemConfigs).add("queryLogicGroupConfigs=" + queryLogicGroupConfigs)
                         .toString();
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
+    }
+
+    public boolean isEnabled() {
+        return enabled;
     }
 }

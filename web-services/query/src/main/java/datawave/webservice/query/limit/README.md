@@ -16,6 +16,8 @@ Information about active queries is tracked and managed in Zookeeper where the f
 - The system the query was submitted on.
 - The query logic the query originated from.
 
+**NOTE**: The query limiter feature is disabled by default unless the property `enabled` has a value of `true` in the configured QueryLimitConfiguration.
+
 ## Configuration
 
 The QueryLimiter bean is typically defined in the file [QueryLimiterFactory.xml](../../../../../../../../deploy/configuration/src/main/resources/datawave/query/QueryLimiterFactory.xml) within the datawave-ws-deploy-configuration module. At a minimum, the following beans must be configured:
@@ -25,7 +27,7 @@ The QueryLimiter bean is typically defined in the file [QueryLimiterFactory.xml]
 
 Limits may be defined and customized on a per-user and per-system basis. They also may be defined for groups of query logics. On a platform-wide basis, the following may be configured:
 - The default concurrent user query limit. This is the total concurrent queries a user may have running across all systems. May be overridden per user.
-- The default concurrent system query limit. Primarily to avoid a system getting overloaded. If the value is set to a negative limit, no limit will be enforced by default on systemsMay be overridden per system.
+- The default concurrent system query limit. Primarily to avoid a system getting overloaded. If the value is set to a negative limit, no limit will be enforced by default on systems. May be overridden per system.
 
 Custom limits for users, systems, and query logic groups are created by defining instances of the following classes and referencing them within the QueryLimitConfiguration bean:
 - [UserLimitConfiguration](UserLimitConfiguration.java) - supports specifying:
