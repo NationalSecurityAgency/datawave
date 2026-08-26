@@ -9,19 +9,26 @@ This package contains the classes necessary for enforcing concurrent query limit
 - The max allowed concurrent queries for the system.
 - The max allowed concurrent queries of the query logic for the system.
 
-Information about active queries is tracked and managed in Zookeeper where the following information for each query is tracked:
+**Query limits are enforced if and only if all the following conditions are true:**
+- `QueryLimiter.setup()` has been called.
+- The `QueryLimiter` instance is configured with a non-null `QueryLimitConfiguration`.
+- The `QueryLogicCache` and `QueryCountsCache` used by the QueryLimiter instance are both in a healthy state.
 
-- The query ID.
-- The user who submitted the query.
-- The system the query was submitted on.
-- The query logic the query originated from.
+Information about active queries is tracked and managed in Zookeeper. The following information for each query is tracked:
+
+- The query ID (required).
+- The user who submitted the query (required).
+- The system the query was submitted on (optional). Defaults to `EMPTY_SYSTEM_FROM` if a no system is provided.
+- The query logic the query originated from (required).
 
 ## Configuration
 
 The QueryLimiter bean is typically defined in the file [QueryLimiterFactory.xml](../../../../../../../../deploy/configuration/src/main/resources/datawave/query/QueryLimiterFactory.xml) within the datawave-ws-deploy-configuration module. At a minimum, the following beans must be configured:
 - A single [QueryLimiter](QueryLimiter.java) instance. This acts as the entrypoint to the query limit feature.
 - A single [QueryLimitConfiguration](QueryLimitConfiguration.java) instance. This contains the configured limits used by the `QueryLimiter` instance.
-- A single [QueryHeartbeatCache](QueryHeartbeatCache.java) instance. This cache contains and maintains connnections to Zookeeper for active queries.
+- A single [QueryHeartbeatCache](QueryHeartbeatCache.java) instance. This cache contains [QueryHeart](QueryHeartbeat.java) instances that maintain the presence of ephemeral nodes in Zookeeper for active queries.
+
+See the [QueryLimiterFactory.xml](../../../../../../../../deploy/configuration/src/main/resources/datawave/query/QueryLimiterFactory.xml) file for examples on how to configure the beans.
 
 Limits may be defined and customized on a per-user and per-system basis. They also may be defined for groups of query logics. On a platform-wide basis, the following may be configured:
 - The default concurrent user query limit. This is the total concurrent queries a user may have running across all systems. May be overridden per user.
@@ -29,7 +36,7 @@ Limits may be defined and customized on a per-user and per-system basis. They al
 
 Custom limits for users, systems, and query logic groups are created by defining instances of the following classes and referencing them within the QueryLimitConfiguration bean:
 - [UserLimitConfiguration](UserLimitConfiguration.java) - supports specifying:
-  - The user DN
+  - The user DN.
   - The user's concurrent query limit. Overrides the default limit.
   - The user's concurrent query limit for different query logic groups. Overrides the default limits for the groups. Regex matching against group names is supported. Pattern uniqueness per user is enforced.
 - [SystemLimitConfiguration](SystemLimitConfiguration.java) - supports specifying:
@@ -58,17 +65,30 @@ When a query is marked as active via `QueryLimiter.countQueryTowardsLimits()`, i
 
 ```
 # Container nodes (will be eligible for auto-cleanup by Zookeeper if they are empty)
-/users/<userDn>/<queryLogic> # Only for queries on systems that count towards the user limit.
-/systems/<system>/<queryLogic>
-/distinctQueryLogics/<queryLogic> # Only created if it does not exist. The root node /distinctQueryLogics 
-    # will be a container node. The individual queryLogic children will be persistent nodes.
+/queries     # Ephemeral nodes tracking active queries will be stored under this node
+/queryLogics # Distinct query logics seen in queries will be stored under this node
 
-# Ephemeral nodes. These will auto-delete themselves if their associated Zookeeper connection ever goes down.
-/users/<userDn>/<queryLogic>/<queryId> # Only for queries on systems that count towards user limit
-/systems/<system>/<queryLogic>/<queryId>
+# An ephemeral node representing the active query. The data will be a byte array containing the user DN, system, and query logic of the query.
+/queries>/<queryId> 
 ```
 
-`ActiveQueryTracker.trackQuery()` will return a [QueryHeartbeat](QueryHeartbeat.java) instance that contain a list of `PersistentNode` (provided by the Apache Curator library) wrappers around the ephemeral nodes listed above. The `QueryHeartbeat` will maintain the connection  to Zookeeper and attempt to keep the ephemeral nodes present in Zookeeper until `QueryHeartbeat.stop()` is called. If `QueryHeartbeat.stop()` is called, or the webserver crashes, the ephemeral nodes will automatically be deleted by Zookeeper.
+`ActiveQueryTracker.trackQuery()` will return a [QueryHeartbeat](QueryHeartbeat.java) instance that contain a `PersistentNode` wrapper around the ephemeral node listed above. The `QueryHeartbeat` will maintain the connection to Zookeeper and attempt to keep the ephemeral node present in Zookeeper until `QueryHeartbeat.stop()` is called. If `QueryHeartbeat.stop()` is called, or the webserver crashes, all ephemeral nodes will automatically be deleted by Zookeeper.
+
+NOTE: Only one `QueryHeartbeat` can be active per query ID for the Zookeeper server. This is enforced by acquiring an InterProcessMutex lock at the path `/locks/<queryId>` under the namespace `ActiveQueries` when tracking a new query. 
+
+NOTE: When a null or blank system is provided to the `QueryLimiter`, the default system `EMPTY_SYSTEM_FROM` will be used instead.
+
+## Caching Layer
+
+The query limiter feature maintains local in-memory caches reflecting the distinct query logics and the total query counts for active queries within two classes:
+- [QueryLogicCache](QueryLogicCache.java) - tracks the distinct query logics seen for all active queries
+- [QueryCountsCache](QueryCountsCache.java) - tracks the total concurrent active queries for users and systems 
+
+These classes both use a backing CuratorCache to listen for node creation/deletion events, and upon receiving them, updates local in-memory collections that are used when checking limits. Both caches also register listeners for connection state changes to their backing Zookeeper client. If the connection enters a state of SUSPENDED, LOST, or READ_ONLY, the caches will be marked unhealthy, and **query limits will not be enforced**. If the connection enters a state of RECONNECTED, a rebuild of the in-memory collections will be triggered to attempt to put the caches back into a healthy state that reflects the latest information.
+
+The [QueryHeartbeatCache](QueryHeartbeatCache.java) will also register a connection state listener to the backing Zookeeper client used to create `QueryHeartbeat` instances. This listener will listen for connection losses and update `QueryHeartbeat.clientConnected` with the status of the client. If `QueryHeartbeat.shutdown()` is called and the client is not considered connected, `QueryHeartbeat.stop()` will not be called on the heartbeats stored in the cache before invalidating them. This avoids a slowdown in shutting down the QueryHeartbeatCache when the backing Zookeeper client may retry multiple times to connect to Zookeeper before giving up.
+
+## HTTP Codes
 
 The following HTTP status codes have been added for responses from the webserver:
 ```

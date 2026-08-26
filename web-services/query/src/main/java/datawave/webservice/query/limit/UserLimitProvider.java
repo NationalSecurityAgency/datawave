@@ -72,7 +72,7 @@ public class UserLimitProvider {
                     if (StringUtils.isBlank(groupPattern)) {
                         throw new IllegalArgumentException("User group query limit configuration given with blank group pattern for user '" + userDn + "'");
                     }
-                    if (!groupPattern.equals(QueryLimitConstants.ASTERISK)) {
+                    if (!groupPattern.equals(QueryLimiterUtils.SIMPLE_WILDCARD)) {
                         try {
                             Pattern.compile(groupPattern);
                         } catch (PatternSyntaxException e) {
@@ -112,7 +112,7 @@ public class UserLimitProvider {
             // If the custom query limit is null or less than zero, use the default query limit.
             if (customQueryLimit == null || customQueryLimit < 0) {
                 if (log.isDebugEnabled()) {
-                    log.trace("Using default user query limit of " + defaultUserQueryLimit + " for user '" + userDn + "'");
+                    log.debug("Using default user query limit of " + defaultUserQueryLimit + " for user '" + userDn + "'");
                 }
                 customQueryLimit = defaultUserQueryLimit;
             }
