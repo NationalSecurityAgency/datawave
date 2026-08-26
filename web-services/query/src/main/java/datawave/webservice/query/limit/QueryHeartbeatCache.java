@@ -1,83 +1,78 @@
 package datawave.webservice.query.limit;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import com.google.common.base.Preconditions;
 
 /**
- * A cache for storing query heartbeats of running queries.
+ * The implementation of {@link QueryHeartbeatCache}.
  */
 public class QueryHeartbeatCache {
 
-    private static final Logger log = Logger.getLogger(QueryHeartbeatCache.class);
+    private static final Logger log = LoggerFactory.getLogger(QueryHeartbeatCache.class);
 
     private final Cache<String,QueryHeartbeat> cache = Caffeine.newBuilder().removalListener((key, value, cause) -> {
-        if (cause.wasEvicted()) {
-            log.debug("Evicted heartbeat for query " + key);
+        if (cause.wasEvicted() && log.isTraceEnabled()) {
+            log.trace("Evicted heartbeat for query {}", key);
         }
     }).build();
 
-    private long cleanupInterval = 10;
-    private TimeUnit cleanupUnit = TimeUnit.MINUTES;
-    private ScheduledExecutorService scheduler;
-
     /**
-     * Return the interval for which {@link QueryHeartbeatCache#removeAllStoppedHeartbeats()} will be called.
-     *
-     * @return the interval
+     * An executor that will periodically clean up the internal cache of any stopped heartbeats.
      */
-    public long getCleanupInterval() {
-        return cleanupInterval;
+    private final ScheduledExecutorService executor;
+
+    public QueryHeartbeatCache(long cleanupInterval, TimeUnit cleanupUnit) {
+        Preconditions.checkArgument(cleanupInterval > 0, "cleanup interval must be greater than 0");
+        Preconditions.checkNotNull(cleanupUnit, "cleanup interval unit must not be null");
+
+        ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
+        try {
+            if (log.isDebugEnabled()) {
+                log.debug("Initializing with periodic cleanup of stopped heartbeats every {} {}", cleanupInterval, cleanupUnit);
+            }
+            executor.scheduleAtFixedRate(this::removeAllStoppedHeartbeats, cleanupInterval, cleanupInterval, cleanupUnit);
+            this.executor = executor;
+        } catch (Exception e) {
+            log.error("Failed to initialize QueryHeartbeatCache", e);
+            // If an error occurs, ensure the executor is closed.
+            executor.shutdownNow();
+            throw e;
+        }
     }
 
     /**
-     * Set the interval for which {@link QueryHeartbeatCache#removeAllStoppedHeartbeats()} should be called.
+     * Iterates through the entries of the cache and evicts all {@link QueryHeartbeat} instances that are stopped. This will be called on regular basis with the
+     * cleanup interval that this {@link QueryHeartbeatCache} was configured with.
      *
-     * @param cleanupInterval
-     *            the interval
+     * @throws IllegalStateException
+     *             if this {@link QueryHeartbeatCache} has been closed
      */
-    public void setCleanupInterval(long cleanupInterval) {
-        this.cleanupInterval = cleanupInterval;
-    }
-
-    /**
-     * Return the time unit of the cleanup interval.
-     *
-     * @return the time unit
-     */
-    public TimeUnit getCleanupUnit() {
-        return cleanupUnit;
-    }
-
-    /**
-     * Set the time unit of the cleanup interval.
-     *
-     * @param cleanupUnit
-     *            the cleanup interval time unit
-     */
-    public void setCleanupUnit(TimeUnit cleanupUnit) {
-        this.cleanupUnit = cleanupUnit;
-    }
-
-    /**
-     * Set up this heartbeat cache.
-     */
-    public void setup() {
-        // If the PersistentNodes within a QueryHeartbeat are ever stopped due to a connection failure, and not via to QueryHeartbeat.stop(), the heartbeat will
-        // not automatically evict itself from the cache. Use a scheduled task to check for any heartbeats that were stopped and evict them to prevent bloating.
-        this.scheduler = Executors.newSingleThreadScheduledExecutor();
-        this.scheduler.scheduleAtFixedRate(this::removeAllStoppedHeartbeats, cleanupInterval, cleanupInterval, cleanupUnit);
-
-        if (log.isDebugEnabled()) {
-            log.debug("Initializing with cleanup schedule that will run every " + cleanupInterval + " " + cleanupUnit);
+    private void removeAllStoppedHeartbeats() {
+        log.trace("Removing all stopped heartbeats");
+        Set<String> queryIds = new HashSet<>();
+        // Collect the query IDs of all heartbeats that are considered stopped.
+        for (QueryHeartbeat heartbeat : cache.asMap().values()) {
+            if (heartbeat.isStopped()) {
+                queryIds.add(heartbeat.getQueryId());
+            }
+        }
+        // Invalidate them.
+        this.cache.invalidateAll(queryIds);
+        if (log.isTraceEnabled()) {
+            log.trace("Removed stopped heartbeats {}", queryIds);
         }
     }
 
@@ -87,27 +82,37 @@ public class QueryHeartbeatCache {
      *
      * @param heartbeat
      *            the heartbeat
+     * @throws NullPointerException
+     *             if heartbeat is null
+     * @throws IllegalStateException
+     *             if this {@link QueryHeartbeatCache} has been closed
      */
     public void put(QueryHeartbeat heartbeat) {
-        // Add a listener to the heartbeat that will automatically trigger the heartbeat's eviction if it is ever stopped outside the cache's stop and remove
-        // method.
-        heartbeat.setListener(new HeartbeatStoppedListener(this));
-        this.cache.put(heartbeat.getQueryId(), heartbeat);
+        Preconditions.checkNotNull(heartbeat, "heartbeat must not be null");
+        if (log.isTraceEnabled()) {
+            log.trace("Adding heartbeat {}", heartbeat);
+        }
+        // Add a listener to the heartbeat that will automatically trigger the heartbeat's eviction if it is ever stopped outside the cache's stop and
+        // remove method.
+        heartbeat.addListener(new HeartbeatStoppedListener(this));
+        cache.put(heartbeat.getQueryId(), heartbeat);
+
     }
 
     /**
-     * Return the {@link QueryHeartbeat} associated with the given query ID, or null if there is no cached {@link QueryHeartbeat} with the query ID.
+     * Return the {@link QueryHeartbeat} associated with the given query ID, or null if there is no cached {@link QueryHeartbeat} with the query ID or this
+     * {@link QueryHeartbeatCache} has been closed.
      *
      * @param queryId
      *            the query ID
      * @return the heartbeat, possibly null
      */
     public QueryHeartbeat get(String queryId) {
-        return this.cache.getIfPresent(queryId);
+        return cache.getIfPresent(queryId);
     }
 
     /**
-     * Return the set of query ID keys in the cache.
+     * Return the set of query ID keys in the cache, or an empty set if this {@link QueryHeartbeatCache} has been closed.
      *
      * @return the query IDs
      */
@@ -121,17 +126,22 @@ public class QueryHeartbeatCache {
      *
      * @param queryIds
      *            the query IDs
+     * @throws NullPointerException
+     *             if queryIds is null
+     * @throws IllegalStateException
+     *             if this {@link QueryHeartbeatCache} has been closed
      */
-    public void stopAndRemoveHeartbeats(Set<String> queryIds) {
+    public void stopAndRemove(Collection<String> queryIds) {
         if (log.isTraceEnabled()) {
-            log.trace("Stopping heartbeats for queries " + queryIds);
+            log.trace("Stopping heartbeats for {} queries", queryIds.size());
         }
-
-        if (queryIds != null && !queryIds.isEmpty()) {
+        if (!queryIds.isEmpty()) {
             ConcurrentMap<String,QueryHeartbeat> map = this.cache.asMap();
             for (String queryId : queryIds) {
-                QueryHeartbeat heartbeat = map.remove(queryId);
-                stopHeartbeat(heartbeat);
+                if (queryId != null) {
+                    QueryHeartbeat heartbeat = map.remove(queryId);
+                    stopHeartbeat(heartbeat);
+                }
             }
         }
     }
@@ -142,12 +152,15 @@ public class QueryHeartbeatCache {
      *
      * @param queryId
      *            the query ID
+     * @throws NullPointerException
+     *             if queryId is null
+     * @throws IllegalStateException
+     *             if this {@link QueryHeartbeatCache} has been closed
      */
-    public void stopAndRemoveHeartbeat(String queryId) {
+    public void stopAndRemove(String queryId) {
         if (log.isTraceEnabled()) {
-            log.trace("Removing heartbeat for query " + queryId);
+            log.trace("Stopping and removing heartbeat for query {}", queryId);
         }
-
         QueryHeartbeat heartbeat = this.cache.asMap().remove(queryId);
         stopHeartbeat(heartbeat);
     }
@@ -163,52 +176,54 @@ public class QueryHeartbeatCache {
             try {
                 heartbeat.stopWithoutNotifyingListener();
             } catch (Exception e) {
-                log.error("Error stopping heartbeat for query " + heartbeat.getQueryId(), e);
+                log.error("Error stopping heartbeat for query {}", heartbeat.getQueryId(), e);
             }
         }
     }
 
     /**
-     * Iterates through the entries of the cache and evicts all {@link QueryHeartbeat} instances that are stopped. This will be called on regular basis with the
-     * cleanup interval that this {@link QueryHeartbeatCache} was configured with.
+     * Closes this {@link QueryHeartbeatCache} and cleans up its internal resources.
+     *
+     * @param stopAllHeartbeats
+     *            whether all heartbeats currently in the cache should be stopped before the cache is cleared
      */
-    public void removeAllStoppedHeartbeats() {
-        Set<String> queryIds = new HashSet<>();
-        // Collect the query IDs of all heartbeats that are considered stopped.
-        for (QueryHeartbeat heartbeat : cache.asMap().values()) {
-            if (heartbeat.isStopped()) {
-                queryIds.add(heartbeat.getQueryId());
+    public void close(boolean stopAllHeartbeats) {
+        if (log.isDebugEnabled()) {
+            log.debug("Closing. Heartbeats will {}be stopped.", (stopAllHeartbeats ? "" : "not "));
+        }
+        // Shut down the executor service.
+        if (this.executor != null) {
+            try {
+                this.executor.shutdown();
+                boolean shutdown = this.executor.awaitTermination(1, TimeUnit.MINUTES);
+                if (!shutdown) {
+                    log.warn("Executor did not terminate within 1 minute");
+                }
+            } catch (Exception e) {
+                log.error("Error shutting down executor", e);
             }
         }
-        // Invalidate them.
-        this.cache.invalidateAll(queryIds);
-    }
 
-    /**
-     * Closes this {@link QueryHeartbeatCache} and shuts down the scheduled cleanup task.
-     */
-    public void shutdown() {
-        log.debug("Shutting down");
-        try {
-            if (this.scheduler != null) {
-                this.scheduler.shutdown();
+        // If heartbeats should be stopped, remove and stop each heartbeat in the cache.
+        if (stopAllHeartbeats) {
+            for (String queryId : Set.copyOf(this.cache.asMap().keySet())) {
+                try {
+                    QueryHeartbeat heartbeat = this.cache.asMap().remove(queryId);
+                    stopHeartbeat(heartbeat);
+                } catch (Exception e) {
+                    log.error("Error stopping heartbeat for query {}", queryId, e);
+                }
             }
-        } catch (Exception e) {
-            log.error("Error shutting down scheduled executor service", e);
-        }
-
-        // Clear the cache and stop all the heartbeats.
-        try {
-            this.cache.asMap().keySet().forEach(this::stopAndRemoveHeartbeat);
-        } catch (Exception e) {
-            log.error("Error clearing heartbeat cache", e);
+        } else {
+            // Otherwise simply clear the cache.
+            this.cache.invalidateAll();
         }
     }
 
     /**
      * A simple listener that can be used to listen for when to evict a {@link QueryHeartbeat} from the cache.
      */
-    public static class HeartbeatStoppedListener {
+    private static class HeartbeatStoppedListener implements Consumer<String> {
 
         private final QueryHeartbeatCache cache;
 
@@ -216,15 +231,9 @@ public class QueryHeartbeatCache {
             this.cache = cache;
         }
 
-        /**
-         * Notifies the listener that the {@link QueryHeartbeat} associated with the given query ID has been stopped. Any cached mapping for the query ID will
-         * be removed.
-         *
-         * @param queryId
-         *            the query ID
-         */
-        public void heartbeatStopped(String queryId) {
-            this.cache.stopAndRemoveHeartbeat(queryId);
+        @Override
+        public void accept(String queryId) {
+            this.cache.stopAndRemove(queryId);
         }
     }
 }

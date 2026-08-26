@@ -33,6 +33,19 @@ public class SystemLimitConfiguration {
         this.queryLogicGroupLimits = queryLogicGroupLimits == null ? Map.of() : Map.copyOf(queryLogicGroupLimits);
     }
 
+    /**
+     * Copy constructor
+     *
+     * @param other
+     *            the instance to copy
+     */
+    public SystemLimitConfiguration(SystemLimitConfiguration other) {
+        this.systemPattern = other.systemPattern;
+        this.countsAgainstUserLimit = other.countsAgainstUserLimit;
+        this.queryLimit = other.queryLimit;
+        this.queryLogicGroupLimits = other.queryLogicGroupLimits == null ? Map.of() : Map.copyOf(other.queryLogicGroupLimits);
+    }
+
     public String getSystemPattern() {
         return systemPattern;
     }
@@ -63,6 +76,15 @@ public class SystemLimitConfiguration {
 
     public void setQueryLogicGroupLimits(Map<String,Integer> queryLogicGroupLimits) {
         this.queryLogicGroupLimits = queryLogicGroupLimits == null ? Map.of() : queryLogicGroupLimits;
+    }
+
+    /**
+     * Return a deep copy of this {@link SystemLimitConfiguration}.
+     *
+     * @return the deep copy
+     */
+    public SystemLimitConfiguration deepCopy() {
+        return new SystemLimitConfiguration(this);
     }
 
     @Override
