@@ -23,7 +23,7 @@ import datawave.iterators.ValueCombiner;
  * Implementation of an Aggregator that aggregates objects of the type Uid.List. This is an optimization for the shardIndex and shardReverseIndex, where the
  * list of UIDs for events will be maintained in the global index for low cardinality terms.
  */
-public class GlobalIndexUidAggregator extends PropogatingCombiner {
+public class GlobalIndexUidAggregator extends PropagatingCombiner {
     private static final Logger log = LoggerFactory.getLogger(GlobalIndexUidAggregator.class);
 
     /**
@@ -127,12 +127,12 @@ public class GlobalIndexUidAggregator extends PropogatingCombiner {
             // include all possible values for a key. In that case, it's possible the adds
             // to which these removes apply are in a different file that wasn't involved in
             // this operation.
-            if (propogate) {
+            if (propagate) {
                 builder.addAllREMOVEDUID(uidsToRemove);
             }
         }
 
-        log.trace("Building aggregate. propogate={}, count={}, uids.size()={}, uidsToRemove.size()={}, builder UIDCount={} REMOVEDUIDCount={}", propogate,
+        log.trace("Building aggregate. propagate={}, count={}, uids.size()={}, uidsToRemove.size()={}, builder UIDCount={} REMOVEDUIDCount={}", propagate,
                         count, uids.size(), uidsToRemove.size(), builder.getUIDCount(), builder.getREMOVEDUIDCount());
         return new Value(builder.build().toByteArray());
     }
@@ -233,7 +233,7 @@ public class GlobalIndexUidAggregator extends PropogatingCombiner {
         // the number of records that are estimated to exist.
         // A partial answer doesn't have all of the counts available, so to be as accurate
         // as possible it's worth propagating negative counts.
-        if (seenIgnore && !propogate) {
+        if (seenIgnore && !propagate) {
             count = Math.max(0, count);
         }
         return aggregate();
@@ -256,7 +256,7 @@ public class GlobalIndexUidAggregator extends PropogatingCombiner {
             // in the current iteration have been seen, in case a subsequent PB has the UID
             // marked for removal.
             uidsToRemove.add(uid);
-            // Avoid exceeding maxUids in the uidToRemove list, even when propogating.
+            // Avoid exceeding maxUids in the uidToRemove list, even when propagating.
             // Check for this condition after adding each of the remove UID entries to uidsToRemove,
             // which also de-duplicates uids in that Set.
             if (uidsToRemove.size() >= maxUids) {
@@ -318,15 +318,15 @@ public class GlobalIndexUidAggregator extends PropogatingCombiner {
     }
 
     @Override
-    public boolean propogateKey() {
+    public boolean propagateKey() {
 
         // This method is called after reduce and then aggregate, so all of the work to combine has been done.
-        // If the propogate flag is true, then this might have been a partial major compaction, scan, or minor
-        // compaction and we want to keep all keys no matter what. When propogate is false, that means it's a scan or
+        // If the propagate flag is true, then this might have been a partial major compaction, scan, or minor
+        // compaction and we want to keep all keys no matter what. When propagate is false, that means it's a scan or
         // full major compaction and therefore we can be certain that the aggregated result has combined all possible
         // values for a given key. In that case, we only need to keep the resulting key/value pair if it has any UIDs
         // (which means either UIDs in the uid list, or a positive uid count).
-        return propogate || !uids.isEmpty() || count > 0;
+        return propagate || !uids.isEmpty() || count > 0;
     }
 
     @Override
@@ -338,7 +338,7 @@ public class GlobalIndexUidAggregator extends PropogatingCombiner {
     @Override
     public SortedKeyValueIterator<Key,Value> deepCopy(IteratorEnvironment env) {
         GlobalIndexUidAggregator copy = (GlobalIndexUidAggregator) super.deepCopy(env);
-        copy.propogate = propogate;
+        copy.propagate = propagate;
         // Not copying other fields that are all cleared in the reset() method.
         return copy;
     }

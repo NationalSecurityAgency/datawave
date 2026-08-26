@@ -21,7 +21,7 @@ import com.google.common.collect.Lists;
 
 public class DateIndexDateAggregatorTest {
 
-    PropogatingCombiner agg = new DateIndexDateAggregator();
+    PropagatingCombiner agg = new DateIndexDateAggregator();
 
     @Test
     public void testSingleShard() {
