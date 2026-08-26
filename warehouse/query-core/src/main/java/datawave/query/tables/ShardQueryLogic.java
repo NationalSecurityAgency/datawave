@@ -843,7 +843,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
                         ((DocumentTransformer) this.transformerInstance).addTransform(new UniqueTransform.Builder()
                                 .withUniqueFields(getConfig().getUniqueFields())
                                 .withQueryExecutionForPageTimeout(this.getQueryExecutionForPageTimeout())
-                                .withModel(getQueryModel())
                                 .withBufferPersistThreshold(getUniqueCacheBufferSize())
                                 .withIvaratorCacheDirConfigs(getLocalIvaratorCacheDirConfigs())
                                 .withHdfsSiteConfigURLs(getHdfsSiteConfigURLs())

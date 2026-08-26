@@ -30,8 +30,11 @@ public class UniqueFields implements Serializable, Cloneable {
     private static final long serialVersionUID = 2269249452109902433L;
 
     private static final String MOST_RECENT_UNIQUE = "_MOST_RECENT_";
+    private static final String MAX_UNIQUE_COUNT = "_MAX_COUNT_";
+
     private final TreeMultimap<String,TemporalGranularity> fieldMap = TreeMultimap.create();
     private boolean mostRecent = false;
+    private int maxCount;
 
     /**
      * Returns a new {@link UniqueFields} parsed from this string. The provided string is expected to have the format returned by
@@ -76,6 +79,7 @@ public class UniqueFields implements Serializable, Cloneable {
             if (nextComma == -1 && nextStartBracket == -1) {
                 String field = string.substring(currentIndex);
                 if (!field.isEmpty()) {
+                    // Check if the field is a special marker indicating that mostRecent should be true.
                     if (field.equals(MOST_RECENT_UNIQUE)) {
                         uniqueFields.setMostRecent(true);
                     } else {
@@ -95,10 +99,11 @@ public class UniqueFields implements Serializable, Cloneable {
                 // Add the field with the ALL granularity.
                 String field = string.substring(currentIndex, nextComma);
                 if (!field.isEmpty()) {
+                    // Check if the field is a special marker indicating that mostRecent should be true.
                     if (field.equals(MOST_RECENT_UNIQUE)) {
                         uniqueFields.setMostRecent(true);
                     } else {
-                        // Add the field only if its not blank. Ignore cases with consecutive commas like field1,,field2[DAY]
+                        // Add the field only if it's not blank. Ignore cases with consecutive commas like field1,,field2[DAY]
                         uniqueFields.put(field, TemporalGranularity.ALL);
                     }
                 }
@@ -112,9 +117,16 @@ public class UniqueFields implements Serializable, Cloneable {
                 String field = string.substring(currentIndex, nextStartBracket);
                 int nextEndBracket = string.indexOf(Constants.BRACKET_END, currentIndex);
                 if (!field.isEmpty()) {
+                    // Check if the field is a special marker indicating that mostRecent should be true.
                     if (field.equals(MOST_RECENT_UNIQUE)) {
                         uniqueFields.setMostRecent(true);
+                        // Check if the field is a special marker specifying a max unique count.
+                    } else if (field.equals(MAX_UNIQUE_COUNT)) {
+                        String count = string.substring((nextStartBracket + 1), nextEndBracket);
+                        int maxCount = Integer.parseInt(count);
+                        uniqueFields.setMaxCount(maxCount);
                     } else {
+                        // Otherwise this is a field with a granuarity.
                         String granularityList = string.substring((nextStartBracket + 1), nextEndBracket);
                         // An empty granularity list, e.g. field[] is equivalent to field[ALL].
                         if (granularityList.isEmpty()) {
@@ -214,7 +226,7 @@ public class UniqueFields implements Serializable, Cloneable {
      */
     public void replace(String field, String replacement) {
         Collection<TemporalGranularity> value = fieldMap.removeAll(field);
-        if (value != null && !value.isEmpty()) {
+        if (!value.isEmpty()) {
             fieldMap.putAll(replacement, value);
         }
     }
@@ -305,7 +317,7 @@ public class UniqueFields implements Serializable, Cloneable {
     /**
      * Returns this {@link UniqueFields} as a formatted string that can later be parsed back into a {@link UniqueFields} using {@link UniqueFields#from(String)}
      * . This is also what will be used when serializing a {@link UniqueFields} to JSON/XML. The string will have the format
-     * {@code field:[UniqueGranularity, ...],...}, e.g. {@code field1[DAY,HOUR],field2[ALL]}
+     * {@code field:[TemporalGranularity, ...],...}, e.g. {@code field1[DAY,HOUR],field2[ALL]}
      *
      * @return a formatted string
      */
@@ -315,6 +327,13 @@ public class UniqueFields implements Serializable, Cloneable {
         StringBuilder sb = new StringBuilder();
         if (mostRecent) {
             sb.append(MOST_RECENT_UNIQUE);
+            sb.append(Constants.COMMA);
+        }
+        if (maxCount > 0) {
+            sb.append(MAX_UNIQUE_COUNT);
+            sb.append(Constants.BRACKET_START);
+            sb.append(maxCount);
+            sb.append(Constants.BRACKET_END);
             sb.append(Constants.COMMA);
         }
         Iterator<String> fieldIterator = fieldMap.keySet().iterator();
@@ -347,6 +366,15 @@ public class UniqueFields implements Serializable, Cloneable {
         return this;
     }
 
+    public int getMaxCount() {
+        return maxCount;
+    }
+
+    public UniqueFields setMaxCount(int maxCount) {
+        this.maxCount = maxCount;
+        return this;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -356,12 +384,12 @@ public class UniqueFields implements Serializable, Cloneable {
             return false;
         }
         UniqueFields that = (UniqueFields) o;
-        return Objects.equals(fieldMap, that.fieldMap) && mostRecent == that.mostRecent;
+        return Objects.equals(fieldMap, that.fieldMap) && mostRecent == that.mostRecent && maxCount == that.maxCount;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(fieldMap, mostRecent);
+        return Objects.hash(fieldMap, mostRecent, maxCount);
     }
 
 }

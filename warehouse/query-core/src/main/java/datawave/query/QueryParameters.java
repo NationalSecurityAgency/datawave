@@ -185,6 +185,7 @@ public class QueryParameters {
     public static final String GROUP_FIELDS_BATCH_SIZE = "group.fields.batch.size";
     public static final String UNIQUE_FIELDS = "unique.fields";
     public static final String MOST_RECENT_UNIQUE = "most.recent.unique";
+    public static final String MAX_UNIQUE_COUNT = "max.unique.count";
 
     /**
      * Used to specify fields which are excluded from QueryModel expansion
