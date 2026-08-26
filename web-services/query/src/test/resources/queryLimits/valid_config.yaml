@@ -1,0 +1,35 @@
+---
+# Represents a QueryLimitConfiguration.
+defaultUserQueryLimit: 100
+defaultSystemQueryLimit: 1000
+internalCacheMaxSize: 200
+userConfigs:
+  - userDn: "CN=User A, C=US"
+    queryLimit: 50
+    queryLogicGroupLimits:
+      EdgeQueryLogic: 15
+      EventQueryLogic: 5
+  - userDn: "CN=User B, C=US"
+    queryLimit: 25
+    queryLogicGroupLimits:
+      EventQueryLogic: 10
+systemConfigs:
+  - systemPattern: ".*Athena"
+    countsAgainstUserLimit: true
+    queryLimit: 2000
+    queryLogicGroupLimits:
+      EdgeQueryLogic: 800
+      EventQueryLogic: 500
+  - systemPattern: ".*Artemis"
+    countsAgainstUserLimit: false
+    queryLimit: 2000
+    queryLogicGroupLimits:
+      EventQueryLogic: 600
+queryLogicGroupConfigs:
+  - groupName: "DefaultEdgeQueryLogicLimit"
+    queryLogicPattern: "Edge.*QueryLogic"
+    queryLimit: 50
+  - groupName: "DefaultEventQueryLogicLimit"
+    queryLogicPattern: "Event.*QueryLogic"
+    queryLimit: 25
+

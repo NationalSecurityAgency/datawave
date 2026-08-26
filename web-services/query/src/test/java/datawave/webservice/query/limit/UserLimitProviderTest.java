@@ -1,7 +1,6 @@
 package datawave.webservice.query.limit;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,40 +22,6 @@ class UserLimitProviderTest {
         provider = null;
         userConfigs.clear();
         groupConfigs.clear();
-    }
-
-    /**
-     * Verify that blank user DNs are forbidden.
-     */
-    @Test
-    void testConfigWithBlankDn() {
-        givenUserConfig("  ", null, null);
-
-        assertThatThrownBy(this::initProvider).isInstanceOf(IllegalArgumentException.class)
-                        .hasMessage("User query limit configuration given with blank user DN");
-    }
-
-    /**
-     * Verify that multiple configurations with the same user DN are forbidden.
-     */
-    @Test
-    void testMultipleConfigsWithSameUserDn() {
-        givenUserConfig("cn=test user, c=us", 100, null);
-        givenUserConfig("cn=test user, c=us", 200, null);
-
-        assertThatThrownBy(this::initProvider).isInstanceOf(IllegalArgumentException.class)
-                        .hasMessage("Multiple query limit configurations specified for user 'cn=test user, c=us'");
-    }
-
-    /**
-     * Verify that negative query limits are forbidden.
-     */
-    @Test
-    void testConfigWithNegativeLimit() {
-        givenUserConfig("cn=test user, c=us", -1, null);
-
-        assertThatThrownBy(this::initProvider).isInstanceOf(IllegalArgumentException.class)
-                        .hasMessage("Negative user query limit given for user 'cn=test user, c=us'");
     }
 
     /**

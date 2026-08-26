@@ -1,0 +1,55 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!-- Represents a valid QueryLimitConfiguration. -->
+<QueryLimitConfiguration>
+    <defaultUserQueryLimit>100</defaultUserQueryLimit>
+    <defaultSystemQueryLimit>1000</defaultSystemQueryLimit>
+    <internalCacheMaxSize>200</internalCacheMaxSize>
+    <userConfigs>
+        <userConfigs>
+            <userDn>CN=User A, C=US</userDn>
+            <queryLimit>50</queryLimit>
+            <queryLogicGroupLimits>
+                <EdgeQueryLogic>15</EdgeQueryLogic>
+                <EventQueryLogic>5</EventQueryLogic>
+            </queryLogicGroupLimits>
+        </userConfigs>
+        <userConfigs>
+            <userDn>CN=User B, C=US</userDn>
+            <queryLimit>25</queryLimit>
+            <queryLogicGroupLimits>
+                <EventQueryLogic>10</EventQueryLogic>
+            </queryLogicGroupLimits>
+        </userConfigs>
+    </userConfigs>
+    <systemConfigs>
+        <systemConfigs>
+            <systemPattern>.*Athena</systemPattern>
+            <countsAgainstUserLimit>true</countsAgainstUserLimit>
+            <queryLimit>2000</queryLimit>
+            <queryLogicGroupLimits>
+                <EdgeQueryLogic>800</EdgeQueryLogic>
+                <EventQueryLogic>500</EventQueryLogic>
+            </queryLogicGroupLimits>
+        </systemConfigs>
+        <systemConfigs>
+            <systemPattern>.*Artemis</systemPattern>
+            <countsAgainstUserLimit>false</countsAgainstUserLimit>
+            <queryLimit>2000</queryLimit>
+            <queryLogicGroupLimits>
+                <EventQueryLogic>600</EventQueryLogic>
+            </queryLogicGroupLimits>
+        </systemConfigs>
+    </systemConfigs>
+    <queryLogicGroupConfigs>
+        <queryLogicGroupConfigs>
+            <groupName>DefaultEdgeQueryLogicLimit</groupName>
+            <queryLogicPattern>Edge.*QueryLogic</queryLogicPattern>
+            <queryLimit>50</queryLimit>
+        </queryLogicGroupConfigs>
+        <queryLogicGroupConfigs>
+            <groupName>DefaultEventQueryLogicLimit</groupName>
+            <queryLogicPattern>Event.*QueryLogic</queryLogicPattern>
+            <queryLimit>25</queryLimit>
+        </queryLogicGroupConfigs>
+    </queryLogicGroupConfigs>
+</QueryLimitConfiguration>

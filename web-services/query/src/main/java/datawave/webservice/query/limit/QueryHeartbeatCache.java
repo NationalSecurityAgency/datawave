@@ -1,5 +1,6 @@
 package datawave.webservice.query.limit;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
@@ -122,7 +123,7 @@ public class QueryHeartbeatCache {
      * @param queryIds
      *            the query IDs
      */
-    public void stopAndRemoveHeartbeats(Set<String> queryIds) {
+    public void stopAndRemoveHeartbeats(Collection<String> queryIds) {
         if (log.isTraceEnabled()) {
             log.trace("Stopping heartbeats for queries " + queryIds);
         }

@@ -47,6 +47,10 @@ When using regex patterns in the configurations above, there is the possibility 
 2. Partial regex (non-wildcard-only): If we cannot find an exact match, then we attempt to find all partial matches, and see if any of their limits are met, checking against the lowest limits first.
 3. Wildcard-only regex: In the case of no exact or partial matches, we use the wildcard match with the lowest limit.
 
+## Dynamic Configuration Updates
+
+The `QueryLimitConfiguration` for the `QueryLimiter` may be updated dynamically through Zookeeper. When the `QueryLimiter` is configured with a [ZkObjectPublisher](../../../zookeeper/ZkObjectPublisher.java), it will subscribe to updates from that publisher. When the publisher receives a triggering event, it will attempt to load a new `QueryLimitConfiguration` from the configured file. See the [ZkObjectPublisher README](../../../zookeeper/README.md) for more details. 
+
 ## Implementation
 
 Checking limits and marking as active/inactive is done through the [QueryLimiter](QueryLimiter.java) class. The three main methods for interacting with the query limit feature are:
@@ -70,7 +74,7 @@ When a query is marked as active via `QueryLimiter.countQueryTowardsLimits()`, i
 
 `ActiveQueryTracker.trackQuery()` will return a [QueryHeartbeat](QueryHeartbeat.java) instance that contain a list of `PersistentNode` (provided by the Apache Curator library) wrappers around the ephemeral nodes listed above. The `QueryHeartbeat` will maintain the connection  to Zookeeper and attempt to keep the ephemeral nodes present in Zookeeper until `QueryHeartbeat.stop()` is called. If `QueryHeartbeat.stop()` is called, or the webserver crashes, the ephemeral nodes will automatically be deleted by Zookeeper.
 
-The following HTTP status codes have been added for responses from the webserver:
+The following HTTP status codes are available for responses from the webserver:
 ```
 412-20  - Concurrent query limit exceeded
 500-164 - Error checking concurrent query limits

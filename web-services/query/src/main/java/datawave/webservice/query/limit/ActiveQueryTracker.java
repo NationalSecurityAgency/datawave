@@ -12,9 +12,7 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 
 import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.framework.recipes.nodes.PersistentNode;
-import org.apache.curator.retry.RetryNTimes;
 import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
 import org.apache.zookeeper.CreateMode;
@@ -26,9 +24,7 @@ import org.apache.zookeeper.server.quorum.QuorumPeerConfig;
 /**
  * This class provides methods for leveraging Zookeeper to track queries and their active status.
  */
-public class ActiveQueryTracker implements AutoCloseable {
-
-    public static final String ZOOKEEPER_NAMESPACE = "ActiveQueries";
+public class ActiveQueryTracker {
 
     private static final Logger log = Logger.getLogger(ActiveQueryTracker.class);
 
@@ -40,28 +36,16 @@ public class ActiveQueryTracker implements AutoCloseable {
 
     private final Lock clientLock = new ReentrantLock();
 
-    private CuratorFramework client;
+    private final CuratorFramework client;
 
     /**
      * Create and return a new {@link ActiveQueryTracker} instance
      *
-     * @param zookeeperConfig
-     *            the zookeeper config
-     * @throws QuorumPeerConfig.ConfigException
-     *             if an error occurs when verifying the zookeeper configuration
+     * @param client
+     *            the zookeeper client
      */
-    public ActiveQueryTracker(String zookeeperConfig) throws QuorumPeerConfig.ConfigException {
-        // @formatter:off
-        this.client = CuratorFrameworkFactory.builder()
-                        .namespace(ZOOKEEPER_NAMESPACE)
-                        .connectString(getQuorumPeerConfig(zookeeperConfig))
-                        .sessionTimeoutMs(60000)
-                        .connectionTimeoutMs(60000)
-                        .retryPolicy(new RetryNTimes(10, 1000))
-                        .build();
-
-        // @formatter:on
-        client.start();
+    public ActiveQueryTracker(CuratorFramework client) {
+        this.client = client;
     }
 
     private static String getQuorumPeerConfig(String zookeeperConfig) throws QuorumPeerConfig.ConfigException {
@@ -90,8 +74,7 @@ public class ActiveQueryTracker implements AutoCloseable {
     }
 
     /**
-     * Begin tracking an active query. All nodes will be created under the namespace {@value ZOOKEEPER_NAMESPACE}. The following nodes will be created as
-     * containers.
+     * Begin tracking an active query. The following nodes will be created as containers.
      *
      * <pre>
      * /users/&lt;userDn&gt;/&lt;queryLogic&gt; (Created only if systemCountsAgainstUserLimit is true)
@@ -143,7 +126,7 @@ public class ActiveQueryTracker implements AutoCloseable {
                 String systemQueryIdPath = getSystemQueryIdPath(system, queryLogic, queryId);
                 Stat stat = client.checkExists().forPath(systemQueryIdPath);
                 if (stat != null) {
-                    throw new QueryAlreadyTrackedException(queryId);
+                    throw new QueryAlreadyTrackedLimitException(queryId);
                 }
 
                 // Ensure we create the following container nodes.
@@ -413,7 +396,7 @@ public class ActiveQueryTracker implements AutoCloseable {
             }
         } catch (Exception e) {
             log.error("Failed to fetch distinct query logics", e);
-            throw new ActiveQueryException(e);
+            throw new QueryLimitException(e);
         } finally {
             clientLock.unlock();
         }
@@ -506,29 +489,5 @@ public class ActiveQueryTracker implements AutoCloseable {
      */
     private String getSystemQueryIdPath(String system, String queryLogic, String queryId) {
         return getSystemQueryLogicPath(system, queryLogic) + "/" + queryId;
-    }
-
-    /**
-     * Close the underlying client used by this {@link ActiveQueryTracker}. NOTE: all ephemeral nodes for {@link QueryHeartbeat} instances created by this
-     * {@link ActiveQueryTracker} will be deleted.
-     */
-    @Override
-    public void close() {
-        if (client != null) {
-            clientLock.lock();
-            try {
-                if (client != null) {
-                    try {
-                        client.close();
-                    } catch (Exception e) {
-                        log.error("Failed to close client", e);
-                    } finally {
-                        client = null;
-                    }
-                }
-            } finally {
-                clientLock.unlock();
-            }
-        }
     }
 }

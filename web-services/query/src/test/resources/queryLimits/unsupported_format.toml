@@ -1,0 +1,4 @@
+# Represents a QueryLimitConfiguration in a format that is not supported.
+defaultUserQueryLimit = 100
+defaultSystemQueryLimit = 1000
+internalCacheMaxSize = 300

@@ -33,6 +33,11 @@ import org.junit.jupiter.api.Test;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
+import datawave.zookeeper.ZkClientBuilder;
+
+/**
+ * Contains tests that effectively stress test the {@link QueryLimiter} when multiple threads are recording new active queries.
+ */
 class QueryLimiterConcurrencyTest {
 
     private static final Logger log = Logger.getLogger(QueryLimiterConcurrencyTest.class);
@@ -57,7 +62,7 @@ class QueryLimiterConcurrencyTest {
     private static final long SIMULTANEOUS_QUERY_CREATION_ALLOWANCE = 250L;
 
     // Set this to true to print the attempt results for debugging purposes.
-    private static final boolean printAttempts = true;
+    private static final boolean printAttempts = false;
 
     private static ExecutorService executor;
 
@@ -584,7 +589,7 @@ class QueryLimiterConcurrencyTest {
     private void ensureLimiterExistsFor(String system) {
         if (!serversToLimiters.containsKey(system)) {
             QueryLimiter limiter = new QueryLimiter();
-            limiter.setZookeeperConfig(server.getConnectString());
+            limiter.setZkClientBuilder(new ZkClientBuilder().withConnectString(server.getConnectString()));
             limiter.setConfiguration(this.limitConfig);
             limiter.setHeartbeatCache(new QueryHeartbeatCache());
             limiter.setup();

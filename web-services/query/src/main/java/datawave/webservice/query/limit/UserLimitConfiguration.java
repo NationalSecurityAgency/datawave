@@ -4,18 +4,29 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.StringJoiner;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 /**
  * Represents a custom query limit configuration that can be configured for a single user.
  */
 public class UserLimitConfiguration {
 
-    // The user DN.
+    /**
+     * The user DN.
+     */
+    @JsonProperty
     private String userDn;
 
-    // The user's concurrent query limit. This applies to the total number of queries the user may run across all systems.
+    /**
+     * The user's concurrent query limit. This applies to the total number of queries the user may run across all systems.
+     */
+    @JsonProperty
     private Integer queryLimit;
 
-    // Map of query logic group names to the user's concurrent query limit for the group. The names may be regex patterns.
+    /**
+     * Map of query logic group names to the user's concurrent query limit for the group. The names may be regex patterns.
+     */
+    @JsonProperty
     private Map<String,Integer> queryLogicGroupLimits;
 
     public UserLimitConfiguration() {

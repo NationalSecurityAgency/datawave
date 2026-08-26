@@ -2,17 +2,11 @@ package datawave.webservice.query.limit;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
-import java.util.regex.Pattern;
-import java.util.regex.PatternSyntaxException;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.github.benmanes.caffeine.cache.Cache;
@@ -25,11 +19,11 @@ public class SystemLimitProvider {
 
     private static final Logger log = Logger.getLogger(SystemLimitProvider.class);
 
-    private final Cache<String,Optional<SystemLimits>> systemLimitCache;
-
     private final int defaultSystemQueryLimit;
 
     private final long maxCacheSize;
+
+    private final Cache<String,Optional<SystemLimits>> systemLimitCache;
 
     private SortedSet<SortableSystemLimit> sortedSystemLimits;
 
@@ -44,94 +38,11 @@ public class SystemLimitProvider {
 
         this.maxCacheSize = maxCacheSize;
         if (configs != null && !configs.isEmpty()) {
-            validateConfigs(configs);
             populateLimits(configs, groupLimitProvider);
             this.systemLimitCache = Caffeine.newBuilder().maximumSize(100).build();
         } else {
             this.sortedSystemLimits = Collections.emptySortedSet();
             this.systemLimitCache = null;
-        }
-    }
-
-    /**
-     * Validate the given configurations.
-     *
-     * @param configs
-     *            the configurations to validate
-     */
-    private void validateConfigs(Collection<SystemLimitConfiguration> configs) {
-        Set<String> systemPatterns = new HashSet<>();
-        Map<String,String> matcherPatterns = new HashMap<>();
-        for (SystemLimitConfiguration config : configs) {
-            // Verify that a system pattern was given.
-            String systemPattern = config.getSystemPattern();
-            if (StringUtils.isBlank(systemPattern)) {
-                throw new IllegalArgumentException("System query limit configuration specified with blank system pattern");
-            }
-
-            // Verify that the pattern compiles if it is not simply a * as is occasionally used as a wildcard in configurations.
-            try {
-                if (!systemPattern.equals(QueryLimitConstants.ASTERISK)) {
-                    Pattern.compile(systemPattern);
-                }
-            } catch (PatternSyntaxException e) {
-                throw new IllegalArgumentException("Invalid regex in system pattern '" + systemPattern + "'", e);
-            }
-
-            // Verify that we have not seen a configuration with the system pattern before.
-            if (systemPatterns.contains(systemPattern)) {
-                throw new IllegalArgumentException("Multiple query limit configurations specified with system pattern '" + systemPattern + "'");
-            } else {
-                systemPatterns.add(systemPattern);
-            }
-
-            // Fetch the matcher that would be used for the system pattern.
-            Matcher matcher = Matcher.getMatcher(systemPattern, maxCacheSize);
-
-            // Verify that we do not have an exact-matching pattern that is equivalent to a previously seen exact-matching pattern, such as 'SYSTEM-01' vs.
-            // 'SYSTEM\\-01'.
-            if (matcher instanceof StringMatcher) {
-                String matcherPattern = ((StringMatcher) matcher).getValue();
-                String equivalentSystemPattern = matcherPatterns.get(matcherPattern);
-                if (equivalentSystemPattern != null) {
-                    throw new IllegalArgumentException(
-                                    "System pattern '" + systemPattern + "' will resolve to an exact match that is equivalent to system pattern '"
-                                                    + equivalentSystemPattern + "' from another system configuration.");
-                } else {
-                    matcherPatterns.put(matcherPattern, systemPattern);
-                }
-            }
-
-            // Safeguard against allowing a configuration to potentially set whether queries on a system counts against user limits to false for all
-            // systems. Only allow this to be done for exact system names, or non-wildcard-only patterns.
-            if (QueryLimitConstants.wildcardOnlyPattern.matcher(systemPattern).matches() && !config.getCountsAgainstUserLimit()) {
-                throw new IllegalArgumentException("System pattern '" + systemPattern
-                                + "' is wildcard-only and may not be used to override whether queries count against user limits to false");
-            }
-
-            // Verify that no invalid group name patterns were provided.
-            Map<String,Integer> groupLimits = config.getQueryLogicGroupLimits();
-            if (groupLimits != null) {
-                for (Map.Entry<String,Integer> entry : groupLimits.entrySet()) {
-                    String groupPattern = entry.getKey();
-                    if (StringUtils.isBlank(groupPattern)) {
-                        throw new IllegalArgumentException(
-                                        "User group query limit configuration given with blank group pattern for system pattern '" + systemPattern + "'");
-                    }
-                    if (!groupPattern.equals(QueryLimitConstants.ASTERISK)) {
-                        try {
-                            Pattern.compile(groupPattern);
-                        } catch (PatternSyntaxException e) {
-                            throw new IllegalArgumentException(
-                                            "Invalid query logic group name pattern: " + groupPattern + " given for system pattern " + systemPattern, e);
-                        }
-                    }
-                    Integer limit = entry.getValue();
-                    if (limit < 0) {
-                        throw new IllegalArgumentException("Negative query logic group limit given for system pattern '" + systemPattern + "': " + limit);
-                    }
-                }
-            }
         }
     }
 

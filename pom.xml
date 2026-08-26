@@ -56,6 +56,7 @@
         <version.arquillian-weld-ee-embedded>1.0.0.Final</version.arquillian-weld-ee-embedded>
         <version.assertj>3.20.2</version.assertj>
         <version.avro>1.11.4</version.avro>
+        <version.awaitutility>4.3.0</version.awaitutility>
         <version.byte-buddy>1.14.11</version.byte-buddy>
         <version.caffeine>3.1.0</version.caffeine>
         <version.commons-beanutils>1.9.4</version.commons-beanutils>
@@ -117,6 +118,7 @@
         <version.jjwt>0.11.2</version.jjwt>
         <version.json>20231013</version.json>
         <version.jts>1.19.0</version.jts>
+        <version.junit-pioneer>2.3.0</version.junit-pioneer>
         <version.junit4>4.13.2</version.junit4>
         <version.junit5>5.12.0</version.junit5>
         <version.junit5.platform>1.12.0</version.junit5.platform>
@@ -149,6 +151,8 @@
         <!-- Different version of weld for tests since the Arquillian embedded EE container needs an older version. -->
         <version.weld-test>2.3.5.Final</version.weld-test>
         <version.wildfly>17.0.1.Final</version.wildfly>
+        <!-- The version of jackson provided by Wildfly 17. -->
+        <version.wildfly.jackson>2.9.9</version.wildfly.jackson>
         <version.woodstox-core>5.4.0</version.woodstox-core>
         <version.woodstox-stax2>3.1.4</version.woodstox-stax2>
         <version.xerces>2.12.2</version.xerces>
@@ -1138,6 +1142,11 @@
                 </exclusions>
             </dependency>
             <dependency>
+                <groupId>org.awaitility</groupId>
+                <artifactId>awaitility</artifactId>
+                <version>${version.awaitutility}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.eclipse.emf</groupId>
                 <artifactId>org.eclipse.emf.common</artifactId>
                 <version>${version.eclipse.emf}</version>
@@ -1473,6 +1482,12 @@
                 <groupId>org.jboss.weld</groupId>
                 <artifactId>weld-core</artifactId>
                 <version>${version.weld-test}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.junit-pioneer</groupId>
+                <artifactId>junit-pioneer</artifactId>
+                <version>${version.junit-pioneer}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>

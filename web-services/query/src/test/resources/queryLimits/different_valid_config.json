@@ -1,0 +1,27 @@
+{
+  "defaultUserQueryLimit" : 50,
+  "defaultSystemQueryLimit" : 2000,
+  "internalCacheMaxSize" : 200,
+  "userConfigs" : [ {
+    "userDn" : "CN=User A, C=US",
+    "queryLimit" : 25,
+    "queryLogicGroupLimits" : {
+      "EdgeQueryLogic" : 20,
+      "EventQueryLogic" : 20
+    }
+  }],
+  "systemConfigs" : [ {
+    "systemPattern" : "Olympus.*Athena",
+    "countsAgainstUserLimit" : true,
+    "queryLimit" : 1500,
+    "queryLogicGroupLimits" : {
+      "EdgeQueryLogic" : 500,
+      "EventQueryLogic" : 500
+    }
+  }],
+  "queryLogicGroupConfigs" : [ {
+    "groupName" : "DefaultEdgeQueryLogicLimit",
+    "queryLogicPattern" : "Edge.*QueryLogic",
+    "queryLimit" : 150
+  }]
+}

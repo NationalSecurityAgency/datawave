@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.StringJoiner;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 /**
  * Configuration for query limits.
  */
@@ -12,32 +14,38 @@ public class QueryLimitConfiguration {
     /**
      * The default maximum number of active concurrent queries a user may have across all systems.
      */
+    @JsonProperty
     private int defaultUserQueryLimit;
 
     /**
-     * The default maximum number of active concurrent queries that may be running on a system.
+     * The default maximum number of active concurrent queries that may be running on a system. Any negative value implies no limit.
      */
+    @JsonProperty
     private int defaultSystemQueryLimit;
 
     /**
      * The maximum size to use for internal caches in {@link GroupLimitCache} and {@link PatternMatcher}. This value should be large enough to hold the number
      * of distinct query logics.
      */
+    @JsonProperty
     private long internalCacheMaxSize = 200;
 
     /**
      * The custom user limit configurations.
      */
+    @JsonProperty
     private List<UserLimitConfiguration> userConfigs;
 
     /**
      * The custom system limit configurations.
      */
+    @JsonProperty
     private List<SystemLimitConfiguration> systemConfigs;
 
     /**
      * The custom query logic group configurations.
      */
+    @JsonProperty
     private List<QueryLogicGroupLimitConfiguration> queryLogicGroupConfigs;
 
     public int getDefaultUserQueryLimit() {

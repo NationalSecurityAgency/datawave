@@ -4,22 +4,36 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.StringJoiner;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 /**
  * Represents a custom query limit configuration that can be configured for matching systems.
  */
 public class SystemLimitConfiguration {
 
-    // The system name regex pattern.
+    /**
+     * The system name regex pattern.
+     */
+    @JsonProperty
     private String systemPattern;
 
-    // Whether queries submitted on matching systems should count against a user's query limit.
+    /**
+     * Whether queries submitted on matching systems should count against user query limits.
+     */
+    @JsonProperty
     private Boolean countsAgainstUserLimit;
 
-    // The maximum number of queries that can run concurrently on matching systems.
+    /**
+     * The maximum number of queries that can run concurrently on matching systems. Any negative value implies no limit.
+     */
+    @JsonProperty
     private Integer queryLimit;
 
-    // Map of query logic group names to the maximum number of queries that can run concurrently on the system when originating from query logics that fall
-    // within the query logic group. The names may be regex patterns.
+    /**
+     * Map of query logic group names to the maximum number of queries that can run concurrently on the system when originating from query logics that fall
+     * within the query logic group. The names may be regex patterns.
+     */
+    @JsonProperty
     private Map<String,Integer> queryLogicGroupLimits;
 
     public SystemLimitConfiguration() {
@@ -83,7 +97,7 @@ public class SystemLimitConfiguration {
     @Override
     public String toString() {
         return new StringJoiner(", ", SystemLimitConfiguration.class.getSimpleName() + "[", "]").add("systemPattern='" + systemPattern + "'")
-                        .add("countsAgainstsUserLimit=" + countsAgainstUserLimit).add("queryLimit=" + queryLimit)
+                        .add("countsAgainstUserLimit=" + countsAgainstUserLimit).add("queryLimit=" + queryLimit)
                         .add("queryLogicGroupLimits=" + queryLogicGroupLimits).toString();
     }
 }

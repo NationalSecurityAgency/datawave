@@ -2,13 +2,16 @@ package datawave.ingest.util;
 
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 import org.apache.log4j.Logger;
+
+import com.google.common.base.Preconditions;
 
 /**
  * Utilities for working with ThreadPools.
  */
-public class ThreadUtil {
+public final class ThreadUtil {
 
     private static final Logger logger = Logger.getLogger(ThreadUtil.class);
 
@@ -78,4 +81,37 @@ public class ThreadUtil {
         return (stop - start);
     }
 
+    /**
+     * Blocks the execution of the current thread until the given condition evaluates to true, or until the timeout has been exceeded.
+     *
+     * @param timeoutMs
+     *            the timeout in milliseconds (0 or greater)
+     * @param pollIntervalMs
+     *            the poll interval in milliseconds (0 or greater)
+     * @param condition
+     *            the condition
+     * @return true if the condition evaluated to true within the timeout, or false otherwise
+     * @throws InterruptedException
+     *             if the thread is interrupted
+     * @throws IllegalArgumentException
+     *             if timeoutMs or pollIntervalMs are less than 0
+     */
+    public static boolean blockUntil(long timeoutMs, long pollIntervalMs, Supplier<Boolean> condition) throws InterruptedException {
+        Preconditions.checkArgument(timeoutMs >= 0, "timeoutMs must be 0 or greater");
+        Preconditions.checkArgument(pollIntervalMs >= 0, "pollIntervalMs must be 0 or greater");
+
+        long endTime = System.currentTimeMillis() + timeoutMs;
+        while (!(condition.get())) {
+            if (System.currentTimeMillis() > endTime) {
+                return false;
+            }
+            // noinspection BusyWait
+            Thread.sleep(Math.min(pollIntervalMs, endTime - System.currentTimeMillis()));
+        }
+        return true;
+    }
+
+    private ThreadUtil() {
+        throw new UnsupportedOperationException();
+    }
 }

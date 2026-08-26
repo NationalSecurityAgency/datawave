@@ -21,12 +21,23 @@ import org.junit.jupiter.params.provider.ValueSource;
 class ActiveQueryTrackerTest {
 
     TestingServer server;
+    CuratorFramework client;
     ActiveQueryTracker tracker;
 
     @BeforeEach
     void setUp() throws Exception {
         server = new TestingServer();
-        tracker = new ActiveQueryTracker(server.getConnectString());
+        // @formatter:off
+        client = CuratorFrameworkFactory.builder()
+                        .connectString(server.getConnectString())
+                        .namespace("ActiveQueries")
+                        .sessionTimeoutMs(60_000)
+                        .connectionTimeoutMs(60_000)
+                        .retryPolicy(new RetryNTimes(10, 1000))
+                        .build();
+        // @formatter:on
+        client.start();
+        tracker = new ActiveQueryTracker(client);
     }
 
     @AfterEach
@@ -48,9 +59,6 @@ class ActiveQueryTrackerTest {
 
         tracker.trackQuery(queryId, user, system, queryLogic, true);
 
-        CuratorFramework client = getClient();
-        client.start();
-
         // Verify that the nodes were created as expected in Zookeeper.
         assertThat(client.checkExists().forPath("/users/" + user.toLowerCase() + "/" + queryLogic + "/" + queryId)).isNotNull();
         assertThat(client.checkExists().forPath("/systems/" + system + "/" + queryLogic + "/" + queryId)).isNotNull();
@@ -68,9 +76,6 @@ class ActiveQueryTrackerTest {
         String queryLogic = "ShardQueryLogic";
 
         tracker.trackQuery(queryId, user, system, queryLogic, false);
-
-        CuratorFramework client = getClient();
-        client.start();
 
         // Verify that the nodes were created as expected in Zookeeper.
         assertThat(client.checkExists().forPath("/systems/" + system + "/" + queryLogic + "/" + queryId)).isNotNull();
@@ -92,7 +97,7 @@ class ActiveQueryTrackerTest {
 
         tracker.trackQuery(queryId, user, system, queryLogic, true);
 
-        assertThatExceptionOfType(QueryAlreadyTrackedException.class).isThrownBy(() -> tracker.trackQuery(queryId, user, system, queryLogic, true));
+        assertThatExceptionOfType(QueryAlreadyTrackedLimitException.class).isThrownBy(() -> tracker.trackQuery(queryId, user, system, queryLogic, true));
     }
 
     /**
@@ -108,9 +113,6 @@ class ActiveQueryTrackerTest {
         QueryHeartbeat heartbeat = tracker.trackQuery(queryId, user, system, queryLogic, true);
 
         heartbeat.stop();
-
-        CuratorFramework client = getClient();
-        client.start();
 
         // Verify the container paths were not deleted.
         assertThat(client.checkExists().forPath("/users/" + user.toLowerCase() + "/" + queryLogic)).isNotNull();
@@ -297,17 +299,5 @@ class ActiveQueryTrackerTest {
 
         // If we pass in arguments that indicate we already counted the EventQueryLogic queries, assert that a limit of 10 will not be met.
         assertThat(tracker.totalSystemQueriesMeetsLimit("SYSTEM-01", 10, Set.of("EventQueryLogic"), 4)).isFalse();
-    }
-
-    private CuratorFramework getClient() {
-        // @formatter:off
-        return CuratorFrameworkFactory.builder()
-                        .connectString(server.getConnectString())
-                        .namespace("ActiveQueries")
-                        .sessionTimeoutMs(60000)
-                        .connectionTimeoutMs(60000)
-                        .retryPolicy(new RetryNTimes(10, 1000))
-                        .build();
-        // @formatter:on
     }
 }

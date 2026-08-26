@@ -3,17 +3,12 @@ package datawave.webservice.query.limit;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
-import java.util.regex.Pattern;
-import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
-
-import org.apache.commons.lang3.StringUtils;
 
 /**
  * This class is responsible for identifying and providing limits that should be enforced for query logic groups.
@@ -29,57 +24,10 @@ public class QueryLogicGroupLimitProvider {
     public QueryLogicGroupLimitProvider(long maxCacheSize, Collection<QueryLogicGroupLimitConfiguration> configs) {
         this.maxCacheSize = maxCacheSize;
         if (configs != null && !configs.isEmpty()) {
-            validateConfigs(configs);
             populateLimits(configs);
         } else {
             this.groupLimitCache = GroupLimitCache.emptyInstance();
             this.groupsToLimits = Map.of();
-        }
-    }
-
-    /**
-     * Validate the given configurations.
-     *
-     * @param configs
-     *            the configurations to validate
-     */
-    private void validateConfigs(Collection<QueryLogicGroupLimitConfiguration> configs) {
-        Set<String> groupNames = new HashSet<>();
-        for (QueryLogicGroupLimitConfiguration config : configs) {
-
-            // Verify that a group name was given.
-            String groupName = config.getGroupName();
-            if (StringUtils.isBlank(groupName)) {
-                throw new IllegalArgumentException("Query logic group limit configuration given with blank group name");
-            }
-
-            // Verify that we have not seen a configuration with the group name before.
-            if (groupNames.contains(groupName)) {
-                throw new IllegalArgumentException("Multiple query logic group configurations given with group name '" + groupName + "'");
-            } else {
-                groupNames.add(groupName);
-            }
-
-            // Verify that the query limit is not negative.
-            if (config.getQueryLimit() < 0) {
-                throw new IllegalArgumentException("Negative limit given for query logic group '" + groupName + "'");
-            }
-
-            // Verify that a query logic pattern was given.
-            String queryLogicPattern = config.getQueryLogicPattern();
-            if (StringUtils.isBlank(queryLogicPattern)) {
-                throw new IllegalArgumentException("Blank query logic pattern given for query logic group '" + groupName + "'");
-            }
-
-            // Verify that the pattern compiles if it is not simply a * as is occasionally used as a wildcard in configurations.
-            try {
-                if (!queryLogicPattern.equals(QueryLimitConstants.ASTERISK)) {
-                    Pattern.compile(queryLogicPattern);
-                }
-            } catch (PatternSyntaxException e) {
-                throw new IllegalArgumentException("Invalid regex in query logic pattern '" + queryLogicPattern + "' for query logic group '" + groupName + "'",
-                                e);
-            }
         }
     }
 

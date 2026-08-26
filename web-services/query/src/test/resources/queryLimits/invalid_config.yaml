@@ -1,0 +1,5 @@
+---
+# Represents a QueryLimitConfiguration that should fail validation.
+"defaultUserQueryLimit": -10
+"defaultSystemQueryLimit": 200
+"internalCacheMaxSize": 300

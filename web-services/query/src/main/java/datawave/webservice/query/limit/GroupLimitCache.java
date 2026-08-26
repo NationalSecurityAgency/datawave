@@ -18,10 +18,10 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 public class GroupLimitCache {
 
     // The set of group limit overrides, sorted in best-match order.
-    private final SortedSet<QueryLogicGroupLimit> groupLimits;
+    private SortedSet<QueryLogicGroupLimit> groupLimits;
 
     // Internal cache for improved lookup efficiency.
-    private final Cache<String,Map<String,Integer>> cache;
+    private Cache<String,Map<String,Integer>> cache;
 
     public static GroupLimitCache of(SortedSet<QueryLogicGroupLimit> groupLimits, long maxCacheSize) {
         if (groupLimits != null && !groupLimits.isEmpty()) {
@@ -91,6 +91,20 @@ public class GroupLimitCache {
         return this.groupLimits == null;
     }
 
+    /**
+     * Cleans up this {@link GroupLimitCache} and releases its underlying resources.
+     */
+    public void cleanUp() {
+        if (groupLimits != null) {
+            groupLimits.clear();
+            groupLimits = null;
+        }
+        if (cache != null) {
+            cache.cleanUp();
+            cache = null;
+        }
+    }
+
     @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) {
@@ -109,4 +123,5 @@ public class GroupLimitCache {
     public String toString() {
         return new StringJoiner(", ", GroupLimitCache.class.getSimpleName() + "[", "]").add("groupLimits=" + groupLimits).add("cache=" + cache).toString();
     }
+
 }
