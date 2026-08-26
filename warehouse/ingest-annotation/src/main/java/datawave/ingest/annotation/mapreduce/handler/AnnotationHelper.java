@@ -2,6 +2,7 @@ package datawave.ingest.annotation.mapreduce.handler;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystemNotFoundException;
 import java.util.Date;
 import java.util.Iterator;
@@ -256,7 +257,7 @@ public class AnnotationHelper {
     }
 
     public Annotation buildAnnotation(byte[] jsonInBytes, RawRecordContainer event) throws InvalidProtocolBufferException, SaxonApiException {
-        return buildAnnotation(jsonInBytes, event.getShardId().getBytes(), event.getId(), event.getVisibility().flatten(), event);
+        return buildAnnotation(jsonInBytes, event.getShardId().getBytes(StandardCharsets.UTF_8), event.getId(), event.getVisibility().flatten(), event);
     }
 
     /**

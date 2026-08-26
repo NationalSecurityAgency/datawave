@@ -1,5 +1,6 @@
 package datawave.iterators.filter.ageoff;
 
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -264,7 +265,7 @@ public class DataTypeAgeOffFilter extends AppliedRule {
         if (null != dataTypeOption) {
             String[] dataTypeArray = dataTypeOption.split(",");
             for (String dt : dataTypeArray)
-                dataTypes.add(new ArrayByteSequence(dt.trim().getBytes()));
+                dataTypes.add(new ArrayByteSequence(dt.trim().getBytes(StandardCharsets.UTF_8)));
         }
 
         isIndextable = false;

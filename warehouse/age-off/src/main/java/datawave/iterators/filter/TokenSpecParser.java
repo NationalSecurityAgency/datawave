@@ -1,5 +1,6 @@
 package datawave.iterators.filter;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -192,7 +193,7 @@ public abstract class TokenSpecParser<B extends TokenSpecParser> {
                     ttl = parseTtl(ParseTokenType.EQUALS);
                 }
                 try {
-                    builder.addToken(tokenStr.getBytes(), ttl);
+                    builder.addToken(tokenStr.getBytes(StandardCharsets.UTF_8), ttl);
                 } catch (IllegalArgumentException ex) {
                     throw error(ex.getMessage(), initialToken.offset, ex);
                 }
