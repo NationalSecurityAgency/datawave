@@ -105,9 +105,6 @@ public class IndexExpansionQueryTest extends AbstractQueryTest {
     // switch between MiniAccumuloCluster and InMemoryAccumulo
     private static final boolean useMAC = false;
 
-    // switch between old code and new code
-    private final boolean useNewIndexLookups = true;
-
     // 10 values per prefix, low expansion thresholds, low scan thresholds
     // using this tests can simulate exceptions or timeouts on initial seek vs. next calls
     private final long expansionThreshold = 500;
@@ -234,7 +231,6 @@ public class IndexExpansionQueryTest extends AbstractQueryTest {
         IvaratorCacheDirConfig config = new IvaratorCacheDirConfig(folder.toUri().toString());
         logic.setIvaratorCacheDirConfigs(Collections.singletonList(config));
 
-        logic.setUseNewIndexLookups(useNewIndexLookups);
         logic.getQueryPlanner().setRules(Collections.emptySet());
 
         logic.setMaxIndexScanTimeMillis(scanThresholdMS);
