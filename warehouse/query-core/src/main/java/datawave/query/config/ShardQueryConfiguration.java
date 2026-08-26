@@ -550,6 +550,11 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private double indexFieldHoleMinThreshold = 1.0d;
 
     /**
+     * Controls whether query IDs are logged on the tserver level via {@link datawave.query.iterator.QueryLogIterator}.
+     */
+    private boolean tserverLoggingActive = true;
+
+    /**
      * The set of date types that, if the query's end date is the current date, will NOT result in any date range adjustments or the addition of a
      * SHARDS_AND_DAYS hint.
      */
@@ -844,6 +849,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setIndexFieldHoleMinThreshold(other.getIndexFieldHoleMinThreshold());
         this.setNoExpansionIfCurrentDateTypes(
                         other.getNoExpansionIfCurrentDateTypes() == null ? null : Sets.newHashSet(other.getNoExpansionIfCurrentDateTypes()));
+        this.setTserverLoggingActive(other.isTserverLoggingActive());
         this.setUseDocumentScheduler(other.isUseDocumentScheduler());
         this.setDocumentScannerConfig(other.getDocumentScannerConfig());
         this.setMaxLinesToPrint(other.getMaxLinesToPrint());
@@ -2974,6 +2980,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.cardinalityThreshold = cardinalityThreshold;
     }
 
+    public boolean isTserverLoggingActive() {
+        return this.tserverLoggingActive;
+    }
+
+    public void setTserverLoggingActive(boolean tserverLoggingActive) {
+        this.tserverLoggingActive = tserverLoggingActive;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -3215,7 +3229,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 isUseTruncatedIndex() == that.isUseTruncatedIndex() &&
                 getTruncatedIndexTableName() == that.getTruncatedIndexTableName() &&
                 Objects.equals(getOriginalJexlQuery(), that.getOriginalJexlQuery()) &&
-                Objects.equals(getAllHitsQueryConfig(), that.getAllHitsQueryConfig());
+                Objects.equals(getAllHitsQueryConfig(), that.getAllHitsQueryConfig()) &&
+                isTserverLoggingActive() == that.isTserverLoggingActive();
         // @formatter:on
     }
 
@@ -3452,7 +3467,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 isUseTruncatedIndex(),
                 getTruncatedIndexTableName(),
                 getOriginalJexlQuery(),
-                getAllHitsQueryConfig()
+                getAllHitsQueryConfig(),
+                isTserverLoggingActive()
         );
         // @formatter:on
     }

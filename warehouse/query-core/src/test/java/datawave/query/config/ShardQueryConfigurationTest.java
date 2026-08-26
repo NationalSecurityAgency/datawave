@@ -622,6 +622,9 @@ public class ShardQueryConfigurationTest {
         defaultValues.put("tableHints", Collections.emptyMap());
         updatedValues.put("tableHints", Collections.singletonMap("A", Collections.singletonMap("B", "C")));
 
+        defaultValues.put("tserverLoggingActive", true);
+        updatedValues.put("tserverLoggingActive", false);
+
         defaultValues.put("useQueryTreeScanHintRules", false);
         updatedValues.put("useQueryTreeScanHintRules", true);
         defaultValues.put("queryTreeScanHintRules", Collections.emptyList());
