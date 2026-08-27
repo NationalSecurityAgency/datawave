@@ -4,7 +4,7 @@
     <groupId>gov.nsa.datawave.microservice</groupId>
     <artifactId>datawave-microservice-parent</artifactId>
     <!--version>4.0.13-3508-RC6</version-->
-    <version>4.0.13-SNAPSHOT</version>
+    <version>4.0.14-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>DataWave Microservices Parent</name>
     <description>DataWave mircoservices provide functionality previously contained in the DataWave
