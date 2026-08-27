@@ -47,7 +47,9 @@ import datawave.ingest.data.tokenize.TokenizationHelper;
 import datawave.ingest.mapreduce.ContextWrappedStatusReporter;
 import datawave.ingest.mapreduce.handler.DataTypeHandler;
 import datawave.ingest.mapreduce.handler.ExtendedDataTypeHandler;
+import datawave.ingest.mapreduce.handler.dateindex.DateIndexUtil;
 import datawave.ingest.mapreduce.handler.shard.AbstractColumnBasedHandler;
+import datawave.ingest.mapreduce.handler.shard.ShardUtil;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.ingest.mapreduce.handler.shard.content.BoundedOffsetQueue;
 import datawave.ingest.mapreduce.handler.shard.content.BoundedOffsetQueue.OffsetList;
@@ -503,7 +505,7 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
 
         Text colq = new Text(fieldName);
         TextUtil.textAppend(colq, fieldValue, this.ingestHelper.getReplaceMalformedUTF8());
-        Key k = createKey(shardId, colf, colq, visibility, event.getTimestamp(), this.ingestHelper.getDeleteMode());
+        Key k = ShardUtil.createKey(shardId, colf, colq, visibility, event.getTimestamp(), this.ingestHelper.getDeleteMode());
         BulkIngestKey bKey = new BulkIngestKey(new Text(this.getShardTableName()), k);
         contextWriter.write(bKey, DataTypeHandler.NULL_VALUE, context);
     }
@@ -592,7 +594,7 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
                     TaskInputOutputContext<KEYIN,? extends RawRecordContainer,KEYOUT,VALUEOUT> context, StatusReporter reporter, Text uid, byte[] visibility,
                     byte[] shardId, byte[] rawValue) throws IOException, InterruptedException, MutationsRejectedException {
 
-        Key k = createKey(shardId, new Text(ColumnFamilyConstants.FULL_CONTENT), uid, visibility, event.getTimestamp(), this.ingestHelper.getDeleteMode());
+        Key k = ShardUtil.createKey(shardId, ColumnFamilyConstants.FULL_CONTENT_TEXT, uid, visibility, event.getTimestamp(), this.ingestHelper.getDeleteMode());
 
         ByteArrayOutputStream baos = null;
         Base64OutputStream b64os = null;
@@ -761,7 +763,7 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
             value = DataTypeHandler.NULL_VALUE;
         }
 
-        Key k = createKey(shardId, colf, colq, visibility, event.getTimestamp(), deleteMode);
+        Key k = ShardUtil.createKey(shardId, colf, colq, visibility, event.getTimestamp(), deleteMode);
         BulkIngestKey bKey = new BulkIngestKey(new Text(this.getShardTableName()), k);
         contextWriter.write(bKey, value, context);
     }
@@ -847,11 +849,10 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
         // Colf: Field Name
         // Colq: Shard Id : DataType
         // Value: UID
-        Text colf = new Text(nFV.getIndexedFieldName());
         Text colq = new Text(shardId);
         TextUtil.textAppend(colq, this.eventDataTypeName, replacedMalformedUTF8);
 
-        Key k = this.createIndexKey(nFV.getIndexedFieldValue().getBytes(), colf, colq, visibility, event.getTimestamp(), deleteMode);
+        Key k = ShardUtil.createIndexKey(nFV.getIndexedFieldValue(), nFV.getIndexedFieldName(), colq, visibility, event.getTimestamp(), deleteMode);
 
         // Create a UID object for the Value
         Value val = createUidArray(eventUid, deleteMode);
@@ -876,7 +877,7 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
             if (getDayIndexEnabled()) {
                 String rowForDay = shard.substring(0, 8) + '\u0000' + nFV.getEventFieldValue();
                 Key key = new Key(rowForDay, nFV.getEventFieldName(), cq, viz);
-                Value value = getValueForDayIndex(shard);
+                Value value = DateIndexUtil.getValueForDayIndex(shard);
                 BulkIngestKey bulkIngestKey = new BulkIngestKey(getShardDayIndexTableName(), key);
                 contextWriter.write(bulkIngestKey, value, context);
             }
@@ -884,7 +885,7 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
             if (getYearIndexEnabled()) {
                 String rowForYear = shard.substring(0, 4) + '\u0000' + nFV.getEventFieldValue();
                 Key key = new Key(rowForYear, nFV.getEventFieldName(), cq, viz);
-                Value value = getValueForYearIndex(shard);
+                Value value = DateIndexUtil.getValueForYearIndex(shard);
                 BulkIngestKey bulkIngestKey = new BulkIngestKey(getShardYearIndexTableName(), key);
                 contextWriter.write(bulkIngestKey, value, context);
             }
