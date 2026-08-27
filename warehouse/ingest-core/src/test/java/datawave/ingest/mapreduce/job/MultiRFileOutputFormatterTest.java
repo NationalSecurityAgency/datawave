@@ -8,8 +8,10 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -51,6 +53,12 @@ public class MultiRFileOutputFormatterTest {
 
     private static final String JOB_ID = "job_201109071404_1";
     private List<String> filenames = new ArrayList<>();
+    /**
+     * Records {@code startNewLocalityGroup}/{@code startDefaultLocalityGroup} calls made on the stub {@code SizeTrackingWriter}s created by
+     * {@link #createFormatter()}, keyed by filename, in call order. A {@code null} entry means {@code startDefaultLocalityGroup}; a non-null entry is the
+     * locality group name passed to {@code startNewLocalityGroup}.
+     */
+    private Map<String,List<String>> localityGroupEvents = new LinkedHashMap<>();
     protected static final Logger logger = Logger.getLogger(MultiRFileOutputFormatterTest.class);
     protected static Map<String,String> mockedConfiguration = new HashMap<>();
 
@@ -132,6 +140,9 @@ public class MultiRFileOutputFormatterTest {
         MultiRFileOutputFormatterTest.logger.setLevel(Level.ALL);
 
         MultiRFileOutputFormatterTest.mockedConfiguration.clear();
+        // start each test with the JVM-wide locality-group lookup empty; tests that need it enabled call
+        // BulkIngestKeyLocalityGroupLookup.install(...) themselves before creating the writer
+        BulkIngestKeyLocalityGroupLookup.reset();
     }
 
     @After
@@ -139,6 +150,7 @@ public class MultiRFileOutputFormatterTest {
 
         MultiRFileOutputFormatterTest.logger.setLevel(testDriverLevel);
         Logger.getLogger(MultiRFileOutputFormatter.class).setLevel(uutLevel);
+        BulkIngestKeyLocalityGroupLookup.reset();
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -436,6 +448,7 @@ public class MultiRFileOutputFormatterTest {
 
     private MultiRFileOutputFormatter createFormatter() {
         this.filenames.clear();
+        this.localityGroupEvents.clear();
         return new MultiRFileOutputFormatter() {
             @Override
             protected Set<String> getTableList() {
@@ -451,7 +464,9 @@ public class MultiRFileOutputFormatterTest {
                 tableConfigs.put(TableName.SHARD, null);
                 tableConfigs.put(TableName.SHARD_INDEX, null);
                 tableIds = new HashSet<>(Arrays.asList(TableName.SHARD, TableName.SHARD_INDEX));
-
+                // the real formatter resolves this from conf in setTableIdsAndConfigs(); tests install/reset the JVM-wide instance directly (see
+                // BulkIngestKeyLocalityGroupLookup#install / #reset) so this just needs to read whatever is currently installed
+                lgLookup = BulkIngestKeyLocalityGroupLookup.get();
             }
 
             @Override
@@ -470,13 +485,13 @@ public class MultiRFileOutputFormatterTest {
             @Override
             protected SizeTrackingWriter openWriter(String filename, AccumuloConfiguration tableConf, String table) {
                 filenames.add(filename);
-                return new SizeTrackingWriter(null) {
+                return new SizeTrackingWriter(null, table, filename) {
                     public void startNewLocalityGroup(String name, Set<ByteSequence> columnFamilies) throws IOException {
-
+                        localityGroupEvents.computeIfAbsent(filename, f -> new ArrayList<>()).add(name);
                     }
 
                     public void startDefaultLocalityGroup() throws IOException {
-
+                        localityGroupEvents.computeIfAbsent(filename, f -> new ArrayList<>()).add(null);
                     }
 
                     public void append(Key key, Value value) throws IOException {
@@ -612,5 +627,119 @@ public class MultiRFileOutputFormatterTest {
 
     private void assertNumFileNames(int expectedNumFiles) {
         assertEquals(filenames.toString(), expectedNumFiles, filenames.size());
+    }
+
+    // ---- locality-group tests -------------------------------------------------------------------------------------------------------------------
+
+    private static final String FULLCONTENT = "fullcontent";
+    private static final String TERMFREQUENCY = "termfrequency";
+
+    /** Install a JVM-wide lookup where {@link TableName#SHARD} has {@code fullcontent -> d} (ordinal 0) and {@code termfrequency -> tf} (ordinal 1). */
+    private void installShardLocalityGroups() {
+        Map<String,Set<Text>> groups = new HashMap<>();
+        groups.put(FULLCONTENT, Collections.singleton(new Text("d")));
+        groups.put(TERMFREQUENCY, Collections.singleton(new Text("tf")));
+        BulkIngestKeyLocalityGroupLookup.install(Collections.singletonMap(TableName.SHARD, groups));
+    }
+
+    private void writeShardEntry(RecordWriter<BulkIngestKey,Value> writer, int shardId, String cf) throws IOException, InterruptedException {
+        writer.write(new BulkIngestKey(new Text(TableName.SHARD), new Key("20100101_" + shardId, cf, "bla")), new Value(new byte[0]));
+    }
+
+    @Test
+    public void testLocalityGroupTransitionsInOrder() throws IOException, InterruptedException {
+        installShardLocalityGroups();
+        RecordWriter<BulkIngestKey,Value> writer = createWriter(formatter, conf);
+
+        writeShardEntry(writer, 1, "d");
+        writeShardEntry(writer, 1, "tf");
+        writeShardEntry(writer, 1, "bla"); // not in any named group -> default
+
+        // index 0 is the shardIndex writer (created upfront, not locality-group aware); index 1 is the shard "shards" writer created on first append
+        assertNumFileNames(2);
+        String shardFile = filenames.get(1);
+        assertEquals(Arrays.asList(FULLCONTENT, TERMFREQUENCY, null), localityGroupEvents.get(shardFile));
+    }
+
+    @Test
+    public void testSameOrdinalKeysDoNotRestartGroup() throws IOException, InterruptedException {
+        installShardLocalityGroups();
+        RecordWriter<BulkIngestKey,Value> writer = createWriter(formatter, conf);
+
+        writeShardEntry(writer, 1, "d");
+        writeShardEntry(writer, 2, "d");
+        writeShardEntry(writer, 3, "d");
+
+        String shardFile = filenames.get(1);
+        // three keys in the same (fullcontent) group must produce exactly one startNewLocalityGroup call, not one per key
+        assertEquals(Collections.singletonList(FULLCONTENT), localityGroupEvents.get(shardFile));
+    }
+
+    @Test
+    public void testRolloverMidGroupRestartsGroupInNewFile() throws IOException, InterruptedException {
+        installShardLocalityGroups();
+        // force a rollover after every single entry
+        MultiRFileOutputFormatter.setRFileLimits(conf, 1, 0);
+        RecordWriter<BulkIngestKey,Value> writer = createWriter(formatter, conf);
+
+        writeShardEntry(writer, 1, "d"); // writer #1 (shard file, filenames.get(1)): starts fullcontent
+        writeShardEntry(writer, 2, "d"); // breaches the 1-entry limit -> rolls to a new file, must start fullcontent again there
+        writeShardEntry(writer, 3, "tf"); // the file from the previous write already holds 1 entry (the limit), so this rolls to yet another new file
+
+        assertNumFileNames(4); // shardIndex + 3 shard files
+        assertEquals(Collections.singletonList(FULLCONTENT), localityGroupEvents.get(filenames.get(1)));
+        assertEquals(Collections.singletonList(FULLCONTENT), localityGroupEvents.get(filenames.get(2)));
+        assertEquals(Collections.singletonList(TERMFREQUENCY), localityGroupEvents.get(filenames.get(3)));
+    }
+
+    @Test
+    public void testPerShardLocationWritersTrackStateIndependently() throws IOException, InterruptedException {
+        installShardLocalityGroups();
+        MultiRFileOutputFormatter.setGenerateMapFilePerShardLocation(conf, true);
+        RecordWriter<BulkIngestKey,Value> writer = createWriter(formatter, conf);
+
+        // shard 1 -> server1, shard 2 -> server2 (see the getShardLocations() override in createFormatter())
+        writeShardEntry(writer, 1, "tf"); // server1's writer starts at ordinal 1 (termfrequency)
+        writeShardEntry(writer, 2, "d"); // server2's writer must independently be able to start at ordinal 0 (fullcontent); a shared/global "current
+                                         // locality group" (the pre-fix bug) would see this as a regression from ordinal 1 down to 0
+        writeShardEntry(writer, 1, "bla"); // server1 progresses 1 (termfrequency) -> default; still valid for that writer alone
+
+        assertNumFileNames(3); // shardIndex, server1's shard file, server2's shard file
+        assertFileNameForShardIndex(0);
+        assertEquals(Arrays.asList(TERMFREQUENCY, null), localityGroupEvents.get(filenames.get(1)));
+        assertEquals(Collections.singletonList(FULLCONTENT), localityGroupEvents.get(filenames.get(2)));
+    }
+
+    @Test
+    public void testNonEnabledTableGetsDefaultAtCreation() throws IOException, InterruptedException {
+        // enable only SHARD; SHARD_INDEX is opted out and must retain the pre-fix behavior of starting the default group immediately at creation,
+        // before any key is written
+        installShardLocalityGroups();
+        RecordWriter<BulkIngestKey,Value> writer = createWriter(formatter, conf);
+
+        assertNumFileNames(1);
+        String shardIndexFile = filenames.get(0);
+        assertFileNameForShardIndex(0);
+        assertEquals(Collections.singletonList((String) null), localityGroupEvents.get(shardIndexFile));
+
+        writeShardEntry(writer, 1, "d");
+        // writing to SHARD must not have touched shardIndex's writer state
+        assertEquals(Collections.singletonList((String) null), localityGroupEvents.get(shardIndexFile));
+    }
+
+    @Test
+    public void testOrdinalRegressionThrowsWithTableAndFileInMessage() throws IOException, InterruptedException {
+        installShardLocalityGroups();
+        RecordWriter<BulkIngestKey,Value> writer = createWriter(formatter, conf);
+
+        writeShardEntry(writer, 1, "tf"); // ordinal 1
+        try {
+            writeShardEntry(writer, 1, "d"); // ordinal 0 -- a regression
+            Assert.fail("Expected an IOException for a locality-group ordinal regression");
+        } catch (IOException e) {
+            String shardFile = filenames.get(1);
+            Assert.assertTrue("message should name the table: " + e.getMessage(), e.getMessage().contains(TableName.SHARD));
+            Assert.assertTrue("message should name the file: " + e.getMessage(), e.getMessage().contains(shardFile));
+        }
     }
 }

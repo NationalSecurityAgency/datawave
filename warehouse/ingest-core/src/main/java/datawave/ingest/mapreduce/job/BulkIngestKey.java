@@ -6,6 +6,7 @@ import java.io.IOException;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.io.WritableComparator;
@@ -16,14 +17,28 @@ import org.apache.hadoop.io.WritableUtils;
  * <p>
  * <strong>Note:</strong> For serialization and binary comparison, this class does not handle keys with the deleted flag set. This should not be a problem for
  * ingest of new data.
+ * <p>
+ * Serialized layout: {@code vint(len) table  vint(lgOrdinal)  vint(len) row  vint(len) cf  vint(len) cq  vint(len) cv  vlong(ts)  bool(deleted)}. The
+ * locality-group ordinal (see {@link BulkIngestKeyLocalityGroupLookup}) is always written, immediately after the table name and before the row; for a table
+ * that is not opted into locality-group awareness it is always {@code 0}, so the byte is one extra, otherwise-inert byte per record.
  */
 public class BulkIngestKey implements WritableComparable<BulkIngestKey> {
+
+    /** Sentinel for {@link #lgOrdinal} meaning "not yet resolved for the current table name / key". */
+    private static final int UNRESOLVED = -1;
 
     protected Text tableName = null;
     protected Key key = new Key();
     // computed hashcode. we won't write this through the writable interface
     // to avoid increasing the size of our spilled data
     protected int hashCode = 31;
+
+    /**
+     * Locality-group ordinal of {@link #key}'s column family within {@link #tableName}. Resolved lazily (see {@link #getLocalityGroupOrdinal()}) via
+     * {@link BulkIngestKeyLocalityGroupLookup#get()}, except when adopted directly from the wire in {@link #readFields(DataInput)}. Not part of
+     * {@link #hashCode} or {@link #equals}: it is a pure function of {@code (tableName, key's column family)}, so equal keys always agree on it.
+     */
+    protected int lgOrdinal = UNRESOLVED;
 
     public BulkIngestKey() {
         this.tableName = new Text();
@@ -49,6 +64,16 @@ public class BulkIngestKey implements WritableComparable<BulkIngestKey> {
     }
 
     /**
+     * @return the locality-group ordinal for this key's table and column family, resolving it lazily (and caching the result) on first access
+     */
+    public int getLocalityGroupOrdinal() {
+        if (UNRESOLVED == lgOrdinal) {
+            lgOrdinal = BulkIngestKeyLocalityGroupLookup.get().ordinalFor(tableName, key.getColumnFamilyData());
+        }
+        return lgOrdinal;
+    }
+
+    /**
      * Build the computed hash code.
      */
     protected void buildHashCode() {
@@ -62,6 +87,8 @@ public class BulkIngestKey implements WritableComparable<BulkIngestKey> {
     @Override
     public void readFields(DataInput in) throws IOException {
         tableName = new Text(readText(in));
+        // adopt the ordinal from the stream rather than re-resolving it, so object order always matches serialized order
+        lgOrdinal = WritableUtils.readVInt(in);
 
         byte[] row = readText(in);
         byte[] cf = readText(in);
@@ -85,6 +112,9 @@ public class BulkIngestKey implements WritableComparable<BulkIngestKey> {
     @Override
     public void write(DataOutput out) throws IOException {
         writeText(out, tableName);
+        // ordinal is always 0..127 (see BulkIngestKeyLocalityGroupLookup), i.e. exactly one byte as a vint; written unconditionally (even when 0) so the
+        // comparator stays branch-free
+        WritableUtils.writeVInt(out, getLocalityGroupOrdinal());
         // reuse a text object for writing
         Text t = new Text();
         writeText(out, key.getRow(t));
@@ -114,6 +144,7 @@ public class BulkIngestKey implements WritableComparable<BulkIngestKey> {
      */
     public void setTableName(final Text tableName) {
         this.tableName.set(tableName);
+        this.lgOrdinal = UNRESOLVED;
         buildHashCode();
     }
 
@@ -121,7 +152,10 @@ public class BulkIngestKey implements WritableComparable<BulkIngestKey> {
     public int compareTo(BulkIngestKey other) {
         int result = tableName.compareTo(other.tableName);
         if (result == 0) {
-            result = key.compareTo(other.key);
+            result = Integer.compare(getLocalityGroupOrdinal(), other.getLocalityGroupOrdinal());
+            if (result == 0) {
+                result = key.compareTo(other.key);
+            }
         }
         return result;
     }
@@ -149,15 +183,55 @@ public class BulkIngestKey implements WritableComparable<BulkIngestKey> {
             super(BulkIngestKey.class);
         }
 
+        /**
+         * Reads the LG lookup for whatever job configuration this comparator is resolved with. MapReduce resolves the sort comparator via
+         * {@code WritableComparator.get(Class, Configuration)} when building the map output collector and again for the reduce merge, so this runs in both JVMs
+         * before any key is serialized.
+         */
+        @Override
+        public void setConf(Configuration conf) {
+            super.setConf(conf);
+            if (null != conf) {
+                BulkIngestKeyLocalityGroupLookup.configure(conf);
+            }
+        }
+
         @Override
         public int compare(byte[] b1, int s1, int l1, byte[] b2, int s2, int l2) {
 
             int o1 = s1;
             int o2 = s2;
             int[] startAndLen = {0, 0};
-            // 5 parts to read (all Text... vint gives size of Text):
-            // table name, row, col fam, col qual, col vis
-            for (int i = 0; i < 5; i++) {
+
+            // table name (vint gives size of Text)
+            startAndLen[0] = o1;
+            int tableLen1 = readVInt(b1, startAndLen);
+            o1 += startAndLen[1];
+            startAndLen[0] = o2;
+            int tableLen2 = readVInt(b2, startAndLen);
+            o2 += startAndLen[1];
+
+            int result = compareBytes(b1, o1, tableLen1, b2, o2, tableLen2);
+            if (result != 0) {
+                return result;
+            }
+            o1 += tableLen1;
+            o2 += tableLen2;
+
+            // locality-group ordinal (vint; single byte for the common case of < 128 groups, but decoded generally so the raw comparator always agrees
+            // with compareTo)
+            startAndLen[0] = o1;
+            int lg1 = readVInt(b1, startAndLen);
+            o1 += startAndLen[1];
+            startAndLen[0] = o2;
+            int lg2 = readVInt(b2, startAndLen);
+            o2 += startAndLen[1];
+            if (lg1 != lg2) {
+                return Integer.compare(lg1, lg2);
+            }
+
+            // 4 parts remain to read (all Text... vint gives size of Text): row, col fam, col qual, col vis
+            for (int i = 0; i < 4; i++) {
                 startAndLen[0] = o1;
                 // get Text's length in bytes
                 int tl1 = readVInt(b1, startAndLen);
@@ -166,7 +240,7 @@ public class BulkIngestKey implements WritableComparable<BulkIngestKey> {
                 int tl2 = readVInt(b2, startAndLen);
                 o2 += startAndLen[1];
 
-                int result = compareBytes(b1, o1, tl1, b2, o2, tl2);
+                result = compareBytes(b1, o1, tl1, b2, o2, tl2);
                 if (result != 0) {
                     return result;
                 }

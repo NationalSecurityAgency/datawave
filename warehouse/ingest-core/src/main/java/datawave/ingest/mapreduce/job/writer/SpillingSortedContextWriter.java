@@ -23,12 +23,21 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.TreeMultimap;
 
 import datawave.ingest.mapreduce.job.BulkIngestKey;
+import datawave.ingest.mapreduce.job.BulkIngestKeyLocalityGroupLookup;
+import datawave.ingest.mapreduce.job.TableConfigurationUtil;
 import datawave.util.accumulo.RFileUtil;
 
 /**
  * ContextWriter that supports spilling data to a work dir as an rfile, then on cleanup reads and commits all rfiles to the context in sorted order. Spills will
  * be generated on every call to commit()/flush(). All spills will be read and rewritten to the context on cleanup(). Spills will be written to the
  * {@link #WORK_DIR}
+ * <p>
+ * <strong>Locality-group note:</strong> spill RFiles are written with {@link RFile#newWriter()} and no locality groups at all (i.e. everything goes into the
+ * default group), and {@link #flush} sorts entries with {@link BulkIngestKey#compareTo} directly rather than replicating {@code MultiRFileOutputFormatter}'s
+ * locality-group-aware writer logic. {@link TableConfigurationUtil#JOB_OUTPUT_LOCALITY_GROUP_TABLES} (see {@link BulkIngestKeyLocalityGroupLookup}) is
+ * therefore <strong>{@code IngestJob}-only</strong>: this class (used by the reindex job) must never see it set for any table it writes to, since a
+ * {@link BulkIngestKey}'s sort order would then no longer match the (groupless) order this class writes spills in. {@link #setup} enforces that with a startup
+ * check.
  */
 public class SpillingSortedContextWriter extends AbstractContextWriter<BulkIngestKey,Value> {
     public static final String WORK_DIR = SpillingSortedContextWriter.class.getName() + ".workDir";
@@ -64,6 +73,16 @@ public class SpillingSortedContextWriter extends AbstractContextWriter<BulkInges
 
         if (fs.exists(workDirPath) && !fs.isDirectory(workDirPath)) {
             throw new IllegalStateException(WORK_DIR + ": " + workDirPath + " is not a directory");
+        }
+
+        // ingest.bulk.locality.groups.tables is IngestJob-only (see the class javadoc): this writer sorts with BulkIngestKey#compareTo and writes
+        // groupless spill RFiles, so an enabled table here would silently produce spills whose key order (by locality-group ordinal) does not match
+        // what gets written (no locality groups at all).
+        BulkIngestKeyLocalityGroupLookup lgLookup = BulkIngestKeyLocalityGroupLookup.configure(conf);
+        if (!lgLookup.isEmpty()) {
+            throw new IllegalStateException(SpillingSortedContextWriter.class.getSimpleName() + " does not support "
+                            + TableConfigurationUtil.JOB_OUTPUT_LOCALITY_GROUP_TABLES
+                            + "; that property is for IngestJob/MultiRFileOutputFormatter only. It was set for at least one output table in this job's configuration.");
         }
     }
 

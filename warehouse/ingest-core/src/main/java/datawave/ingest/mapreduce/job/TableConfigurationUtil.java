@@ -32,9 +32,11 @@ import org.apache.accumulo.core.client.admin.NamespaceOperations;
 import org.apache.accumulo.core.client.admin.NewTableConfiguration;
 import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.accumulo.core.conf.Property;
+import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.constraints.DefaultKeySizeConstraint;
 import org.apache.accumulo.core.iterators.Combiner;
 import org.apache.accumulo.core.iterators.IteratorUtil;
+import org.apache.accumulo.core.util.LocalityGroupUtil;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
@@ -65,6 +67,11 @@ public class TableConfigurationUtil {
     public static final String TABLE_CONFIGURATION_PROPERTY = ".table.accumulo.configuration";
     public static final String JOB_INPUT_TABLE_NAMES = "job.input.table.names";
     public static final String JOB_OUTPUT_TABLE_NAMES = "job.output.table.names";
+    /**
+     * Comma-separated list of output table names for which {@link BulkIngestKey}s should be ordered/emitted by locality group during bulk ingest. Empty (the
+     * default) means the feature is off and no table participates.
+     */
+    public static final String JOB_OUTPUT_LOCALITY_GROUP_TABLES = "ingest.bulk.locality.groups.tables";
     private AccumuloHelper accumuloHelper;
     private TreeMap<String,Map<Integer,Map<String,String>>> combiners = new TreeMap<>();
     private TreeMap<String,Map<Integer,Map<String,String>>> aggregators = new TreeMap<>();
@@ -94,6 +101,26 @@ public class TableConfigurationUtil {
         String[] outputTables = conf.getStrings(JOB_OUTPUT_TABLE_NAMES);
         if (outputTables != null && outputTables.length > 0) {
             tableNames.addAll(Arrays.asList(outputTables));
+        }
+        return tableNames;
+    }
+
+    /**
+     * Get the set of output table names opted in to bulk-ingest locality-group ordering, as defined by {@link #JOB_OUTPUT_LOCALITY_GROUP_TABLES}.
+     *
+     * @param conf
+     *            the hadoop {@link Configuration}
+     * @return the set of opted-in output table names; empty if the property is unset (the feature is off)
+     */
+    public static Set<String> getLocalityGroupTables(Configuration conf) {
+        Set<String> tableNames = new HashSet<>();
+        String[] tables = conf.getStrings(JOB_OUTPUT_LOCALITY_GROUP_TABLES);
+        if (tables != null) {
+            for (String table : tables) {
+                if (org.apache.commons.lang.StringUtils.isNotBlank(table)) {
+                    tableNames.add(table.trim());
+                }
+            }
         }
         return tableNames;
     }
@@ -696,11 +723,13 @@ public class TableConfigurationUtil {
 
                 String group = entry.getKey().substring(prefix.length());
                 String[] parts = group.split("\\.");
-                String[] famStr = entry.getValue().split(",");
                 Set<Text> colFams = new HashSet<>();
-                for (String fam : famStr) {
-                    colFams.add(new Text(fam));
-
+                try {
+                    for (ByteSequence bs : LocalityGroupUtil.decodeColumnFamilies(entry.getValue())) {
+                        colFams.add(new Text(bs.toArray()));
+                    }
+                } catch (LocalityGroupUtil.LocalityGroupConfigurationException e) {
+                    throw new IOException("Invalid locality group definition for table " + tableName + ", group " + parts[0], e);
                 }
                 groupsNfams.put(parts[0], colFams);
 

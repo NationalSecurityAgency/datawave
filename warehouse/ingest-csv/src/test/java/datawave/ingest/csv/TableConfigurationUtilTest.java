@@ -303,5 +303,7 @@ public class TableConfigurationUtilTest {
 
         Map<String,Set<Text>> locGroups = tcu.getLocalityGroups("datawave.shard");
         Assert.assertEquals(2, locGroups.size());
+        Assert.assertEquals(Set.of(new Text("d")), locGroups.get("fullcontent"));
+        Assert.assertEquals(Set.of(new Text("tf")), locGroups.get("termfrequency"));
     }
 }

@@ -13,7 +13,6 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -25,7 +24,6 @@ import org.apache.accumulo.core.conf.AccumuloConfiguration;
 import org.apache.accumulo.core.conf.ConfigurationCopy;
 import org.apache.accumulo.core.conf.Property;
 import org.apache.accumulo.core.crypto.CryptoFactoryLoader;
-import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.LoadPlan;
@@ -52,11 +50,7 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputCommitter;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.log4j.Logger;
 
-import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
-import com.google.common.base.Splitter;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
 import datawave.ingest.data.config.ingest.AccumuloHelper;
@@ -93,7 +87,6 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
     protected static final String GENERATE_MAP_FILE_PER_SHARD_LOCATION = PREFIX + ".generateMapFilePerShardLocation";
 
     protected static final String BASE = "bulk.output.partition.count.";
-    public static final String CONFIGURE_LOCALITY_GROUPS = PREFIX + ".tables";
     public static final String EVENT_PARTITION_COUNT = BASE + "Event";
     public static final String EDGE_PARTITION_COUNT = BASE + "Edge";
     public static final String INDEX_PARTITION_COUNT = BASE + "Index";
@@ -118,9 +111,8 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
     protected boolean generateMapFilePerShardLocation = false;
     private long startWriteTime = 0L;
 
-    protected Map<String,Map<Text,String>> columnFamilyToLocalityGroup;
-
-    protected Map<String,Map<String,Set<ByteSequence>>> localityGroupToColumnFamilies;
+    /** Lookup built once per job configuration in {@link #setTableIdsAndConfigs()}; see {@link BulkIngestKeyLocalityGroupLookup}. */
+    protected BulkIngestKeyLocalityGroupLookup lgLookup;
 
     public static final String CONFIGURED_TABLE_NAMES = PREFIX + ".configTableNames";
 
@@ -184,12 +176,6 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
     public static void setRFileLimits(Configuration conf, int maxEntries, long maxSize) {
         conf.setInt(MAX_RFILE_UNDEDUPPED_ENTRIES, maxEntries);
         conf.setLong(MAX_RFILE_UNCOMPRESSED_SIZE, maxSize);
-    }
-
-    public static void addTableToLocalityGroupConfiguration(Configuration conf, String tableName) {
-        String locs = conf.get(CONFIGURE_LOCALITY_GROUPS, "");
-        Iterable<String> splits = Splitter.on(",").split(locs);
-        conf.set(CONFIGURE_LOCALITY_GROUPS, Joiner.on(",").join(splits, tableName));
     }
 
     public static boolean loadPlanningEnabled(Configuration conf) {
@@ -258,7 +244,16 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
 
         // now create and register the writer
         SizeTrackingWriter writer = openWriter(filename.toString(), tableConf, table);
-        writer.startDefaultLocalityGroup();
+        writer.lgEnabled = lgLookup.isEnabled(new Text(table));
+        if (!writer.lgEnabled) {
+            // this table is not locality-group aware: start (and stay in) the default group immediately, exactly as before. An enabled table instead
+            // starts its first group lazily on the first append (see RecordWriter#write / SizeTrackingWriter#ensureLocalityGroup below), which also makes
+            // rollover correct for free: a new file created mid-group starts that same group first, and a file that only ever sees default keys still
+            // starts default. A writer that never receives any append (an unused table's writer, deleted unread in RecordWriter#close) is safe to close
+            // with no locality group ever started -- RFileWriter/RFile.Writer#close() tolerate zero locality groups having been started.
+            writer.startDefaultLocalityGroup();
+            writer.currentOrdinal = 0;
+        }
         writers.put(key, writer);
         unusedWriterPaths.put(key, filename);
         writerTableNames.put(key, table);
@@ -281,7 +276,7 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
             }
         }
 
-        return new SizeTrackingWriter(builder.build());
+        return new SizeTrackingWriter(builder.build(), table, filename);
         // @formatter:on
     }
 
@@ -389,6 +384,23 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
         long size = 0;
         int entries = 0;
 
+        /** The table and file this writer is writing to; used only to build a clear message if {@link #ensureLocalityGroup} detects an ordinal regression. */
+        private final String table;
+        private final String filename;
+
+        /**
+         * {@code true} if {@link #table} is opted into locality-group ordering (see {@link BulkIngestKeyLocalityGroupLookup}), set once by
+         * {@code createAndRegisterWriter} right after construction. Kept as a plain field (rather than re-consulting the lookup on every append) so the hot
+         * path for a non-enabled table is a single boolean read.
+         */
+        boolean lgEnabled = false;
+
+        /**
+         * The ordinal of the locality group most recently started in the underlying {@link RFileWriter} ({@code -1} until the first group is started). See
+         * {@link #ensureLocalityGroup(int, String, Set)}.
+         */
+        int currentOrdinal = -1;
+
         public long getSize() {
             return size;
         }
@@ -404,6 +416,40 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
 
         public void startDefaultLocalityGroup() throws IOException {
             delegate.startDefaultLocalityGroup();
+        }
+
+        /**
+         * Ensure the underlying writer is positioned in the locality group for {@code ordinal} before the next append, starting it if necessary. Keys must
+         * arrive with non-decreasing ordinals within a single writer (this is what {@link BulkIngestKey}'s sort order guarantees); a decrease means the sort
+         * and this writer disagree, which would otherwise surface as an opaque "keys appended out-of-order"/"invalid column family" error from
+         * {@link RFileWriter} itself.
+         *
+         * @param ordinal
+         *            the ordinal for the key about to be appended, from {@link BulkIngestKeyLocalityGroupLookup#ordinalFor(Text, ByteSequence)} (via
+         *            {@link BulkIngestKey#getLocalityGroupOrdinal()})
+         * @param name
+         *            the locality group name for {@code ordinal}, or {@code null} if {@code ordinal} is the table's default ordinal (see
+         *            {@link BulkIngestKeyLocalityGroupLookup#groupName(Text, int)})
+         * @param families
+         *            the column families for {@code ordinal}, or {@code null} for the default ordinal (ignored when {@code name} is {@code null})
+         * @throws IOException
+         *             if {@code ordinal} is less than the ordinal of the group currently open in this writer
+         */
+        public void ensureLocalityGroup(int ordinal, String name, Set<ByteSequence> families) throws IOException {
+            if (ordinal == currentOrdinal) {
+                return;
+            } else if (ordinal > currentOrdinal) {
+                if (null == name) {
+                    startDefaultLocalityGroup();
+                } else {
+                    startNewLocalityGroup(name, families);
+                }
+                currentOrdinal = ordinal;
+            } else {
+                throw new IOException("Locality group ordinal regression while writing table " + table + " to file " + filename
+                                + ": the writer is already positioned at ordinal " + currentOrdinal + " but the next key requested ordinal " + ordinal
+                                + " (sorted input and the writer disagree)");
+            }
         }
 
         public void append(Key key, Value value) throws IOException {
@@ -424,8 +470,10 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
             return delegate.getLoadPlan(filename);
         }
 
-        public SizeTrackingWriter(RFileWriter delegate) {
+        public SizeTrackingWriter(RFileWriter delegate, String table, String filename) {
             this.delegate = delegate;
+            this.table = table;
+            this.filename = filename;
         }
     }
 
@@ -493,7 +541,7 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
     protected void setTableIdsAndConfigs() throws IOException {
 
         tableConfigs = new HashMap<>();
-        Iterable<String> localityGroupTables = Splitter.on(",").split(conf.get(CONFIGURE_LOCALITY_GROUPS, ""));
+        lgLookup = BulkIngestKeyLocalityGroupLookup.configure(conf);
 
         TableConfigurationUtil tcu = new TableConfigurationUtil(conf);
 
@@ -508,23 +556,6 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
                 ConfigurationCopy tableConfig = new ConfigurationCopy(properties);
                 tableConfig.set(Property.TABLE_FILE_COMPRESSION_TYPE.getKey(),
                                 (compressionTableDisallowList.contains(tableName) ? new NoCompression().getName() : compressionType));
-
-                // the locality groups feature is broken and will be removed in a future MR
-                if (Iterables.contains(localityGroupTables, tableName)) {
-                    Map<String,Set<Text>> localityGroups = tcu.getLocalityGroups(tableName);
-                    // pull the locality groups for this table.
-                    Map<Text,String> cftlg = Maps.newHashMap();
-                    Map<String,Set<ByteSequence>> lgtcf = Maps.newHashMap();
-                    for (Entry<String,Set<Text>> locs : localityGroups.entrySet()) {
-                        lgtcf.put(locs.getKey(), new HashSet<>());
-                        for (Text loc : locs.getValue()) {
-                            cftlg.put(loc, locs.getKey());
-                            lgtcf.get(locs.getKey()).add(new ArrayByteSequence(loc.getBytes()));
-                        }
-                    }
-                    columnFamilyToLocalityGroup.put(tableName, cftlg);
-                    localityGroupToColumnFamilies.put(tableName, lgtcf);
-                }
                 tableConfigs.put(tableName, tableConfig);
             }
         }
@@ -554,9 +585,6 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
         setTableIdsAndConfigs();
 
         fs = workDir.getFileSystem(conf);
-
-        columnFamilyToLocalityGroup = Maps.newHashMap();
-        localityGroupToColumnFamilies = Maps.newHashMap();
 
         loadPlanningEnabled = loadPlanningEnabled(conf);
         if (loadPlanningEnabled) {
@@ -629,11 +657,11 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
         }
 
         return new RecordWriter<BulkIngestKey,Value>() {
-            private String currentLocalityGroup = null;
 
             @Override
             public void write(BulkIngestKey key, Value value) throws IOException {
-                String tableName = key.getTableName().toString();
+                Text tableNameText = key.getTableName();
+                String tableName = tableNameText.toString();
                 SizeTrackingWriter writer;
                 try {
                     writer = getOrCreateWriter(context, tableName, key.getKey().getRow());
@@ -644,21 +672,12 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
                     log.trace("Appending " + key.getKey());
                 }
 
-                final Text keyCf = key.getKey().getColumnFamily();
-                final Map<Text,String> cftlg = columnFamilyToLocalityGroup.get(tableName);
-                if (null != cftlg) {
-                    String localityGroup = cftlg.get(keyCf);
-                    boolean create = false;
-                    if (null == currentLocalityGroup) // defaultLocalityGroup
-                    {
-                        create = true;
-                    } else if (currentLocalityGroup.compareTo(localityGroup) <= 0) {
-                        create = true;
-                    }
-
-                    if (create) {
-                        writer.startNewLocalityGroup(localityGroup, localityGroupToColumnFamilies.get(tableName).get(localityGroup));
-                        currentLocalityGroup = localityGroup;
+                // cheap for the common case of a non-LG-aware table: a single boolean read on the writer, no lookup and no allocation
+                if (writer.lgEnabled) {
+                    int ordinal = key.getLocalityGroupOrdinal();
+                    // only resolve the group name/families (two map probes) when the group actually changes
+                    if (ordinal != writer.currentOrdinal) {
+                        writer.ensureLocalityGroup(ordinal, lgLookup.groupName(tableNameText, ordinal), lgLookup.groupFamilies(tableNameText, ordinal));
                     }
                 }
                 writer.append(key.getKey(), value);
