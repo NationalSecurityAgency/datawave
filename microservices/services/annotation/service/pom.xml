@@ -22,7 +22,7 @@
         <version.accumulo>2.1.4-5792fed3-bulkv2</version.accumulo>
         <version.commons-lang3>3.12.0</version.commons-lang3>
         <version.commons-pool>2.11.1</version.commons-pool>
-        <version.datawave.annotation-core>7.44.0-SNAPSHOT</version.datawave.annotation-core>
+        <version.datawave.annotation-core>7.46.0-SNAPSHOT</version.datawave.annotation-core>
         <version.datawave.hazelcast-client>4.0.6</version.datawave.hazelcast-client>
         <version.datawave.hazelcast-common>4.0.6</version.datawave.hazelcast-common>
         <version.datawave.starter>4.0.9</version.datawave.starter>
