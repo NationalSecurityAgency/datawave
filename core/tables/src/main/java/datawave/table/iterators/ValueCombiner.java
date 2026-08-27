@@ -1,4 +1,4 @@
-package datawave.iterators;
+package datawave.table.iterators;
 
 import java.io.IOException;
 import java.util.Iterator;
@@ -52,7 +52,7 @@ public class ValueCombiner implements Iterator<Value> {
     /**
      * @return <code>true</code> if there is another Value
      *
-     * @see java.util.Iterator#hasNext()
+     * @see Iterator#hasNext()
      */
     @Override
     public boolean hasNext() {
@@ -62,7 +62,7 @@ public class ValueCombiner implements Iterator<Value> {
     /**
      * @return the next Value
      *
-     * @see java.util.Iterator#next()
+     * @see Iterator#next()
      */
     @Override
     public Value next() {
@@ -81,7 +81,7 @@ public class ValueCombiner implements Iterator<Value> {
     /**
      * unsupported
      *
-     * @see java.util.Iterator#remove()
+     * @see Iterator#remove()
      */
     @Override
     public void remove() {
