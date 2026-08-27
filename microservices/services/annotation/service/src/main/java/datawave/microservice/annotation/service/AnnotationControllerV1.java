@@ -377,6 +377,13 @@ public class AnnotationControllerV1 {
 
             final Metadata metadata = metadataList.get(0);
 
+            final AnnotationDataAccess annotationDataAccess = context.initializeAnnotationService();
+            final Optional<Annotation> targetAnnotation = annotationDataAccess.getAnnotation(metadata.getRow(), metadata.getDataType(),
+                            metadata.getInternalId(), annotationId);
+            if (targetAnnotation.isEmpty()) {
+                return jsonNotFound("annotations", idType, id, metadata.toString(), null, annotationId, null);
+            }
+
             //@formatter:off
             final Annotation localizedAnnotation = rawAnnotation.toBuilder()
                     .setShard(metadata.getRow())
@@ -385,7 +392,10 @@ public class AnnotationControllerV1 {
                     .build();
             //@formatter:on
 
-            Optional<Annotation> addResult = writeAnnotation(localizedAnnotation);
+            // link the replacement annotation back to the annotation it is updating so the two remain associated in the store.
+            final Annotation referencedAnnotation = AnnotationUtils.injectUpdateReference(localizedAnnotation, annotationId);
+
+            Optional<Annotation> addResult = writeAnnotation(referencedAnnotation);
             if (addResult.isPresent()) {
                 log.debug("Successfully updated annotation: {}", addResult.get());
                 return jsonOk(addResult.get());
@@ -393,7 +403,7 @@ public class AnnotationControllerV1 {
             // if we make it here, there was a problem
             String message = String.format(
                             "Internal error: Optional return from dao updateAnnotation was empty, id: %s, idType %s, internal id %s, localized annotation: %s",
-                            idType, id, metadata, localizedAnnotation);
+                            idType, id, metadata, referencedAnnotation);
             log.error(message);
             return jsonError(message);
         } catch (InvalidProtocolBufferException e) {

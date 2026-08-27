@@ -2,8 +2,10 @@ package datawave.microservice.annotation.writers.accumulo;
 
 import static datawave.annotation.test.v1.AnnotationAssertions.assertAnnotationSourcesEqual;
 import static datawave.annotation.test.v1.AnnotationAssertions.assertAnnotationsEqual;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Collection;
@@ -36,6 +38,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.annotation.data.AnnotationUpdateException;
 import datawave.annotation.data.v1.AccumuloAnnotationSerializer;
 import datawave.annotation.data.v1.AccumuloAnnotationSourceSerializer;
 import datawave.annotation.data.v1.AnnotationDataAccess;
@@ -148,6 +151,72 @@ public class AccumuloAnnotationWriterTest {
                             String.format("could not retrieve the target annotation source: '%s'", expectedAnnotation.getAnalyticSourceHash()));
             // asserts that the sources (and hashes) are equal
             assertAnnotationSourcesEqual(expectedAnnotation.getSource(), observedAnnotationSourceRef.get());
+        } finally {
+            accumuloConnectionFactory.returnClient(accumuloClient);
+        }
+    }
+
+    @Test
+    public void testAnnotationWriterUpdate() throws Exception {
+        AccumuloClient accumuloClient = accumuloConnectionFactory.getClient(AccumuloAnnotationWriter.USER_DN, AccumuloAnnotationWriter.EMPTY_PROXY_SERVERS,
+                        AccumuloConnectionFactory.Priority.NORMAL, trackingMap);
+        try {
+            accumuloClient.tableOperations().deleteRows(annotationTableName, null, null);
+            accumuloClient.tableOperations().deleteRows(annotationSourceTableName, null, null);
+
+            // write the original annotation first, this is the target of the update.
+            Annotation partialAnnotation = AnnotationTestDataUtil.generateTestAnnotation();
+            Annotation testAnnotation = AnnotationUtils.injectAllHashes(partialAnnotation);
+            Optional<Annotation> originalResult = accumuloAnnotationWriter.write(testAnnotation);
+            assertFalse(originalResult.isEmpty());
+            Annotation originalAnnotation = originalResult.get();
+
+            // build a replacement annotation that references the original via the UPDATE_REFERENCE metadata key, the way
+            // AnnotationControllerV1#updateAnnotation does.
+            Annotation rawUpdate = partialAnnotation.toBuilder().clearAnnotationId().clearSegments().addAllSegments(partialAnnotation.getSegmentsList().stream()
+                            .map(s -> s.toBuilder().clearSegmentHash().build()).collect(java.util.stream.Collectors.toList())).build();
+            Annotation update = AnnotationUtils.injectUpdateReference(rawUpdate, originalAnnotation.getAnnotationId());
+
+            Optional<Annotation> updateResult = accumuloAnnotationWriter.write(update);
+            assertFalse(updateResult.isEmpty());
+            Annotation writtenUpdate = updateResult.get();
+
+            // the update reference metadata must be preserved through the write, and the resulting annotation id must be
+            // different from the original since the metadata (and therefore the content hash) differs.
+            assertEquals(originalAnnotation.getAnnotationId(), writtenUpdate.getMetadataMap().get(AnnotationUtils.UPDATE_REFERENCE),
+                            "expected the written update to reference the original annotation id");
+
+            AnnotationDataAccess dao = accumuloAnnotationWriter.getDataAccess();
+
+            // the original annotation must still be present and unmodified.
+            Optional<Annotation> observedOriginal = dao.getAnnotation(originalAnnotation.getShard(), originalAnnotation.getDataType(),
+                            originalAnnotation.getUid(), originalAnnotation.getAnnotationId());
+            assertFalse(observedOriginal.isEmpty(), "expected the original annotation to remain in the store after the update");
+            assertAnnotationsEqual(originalAnnotation, observedOriginal.get());
+
+            // the update must be independently retrievable and carry the reference to the original.
+            Optional<Annotation> observedUpdate = dao.getAnnotation(writtenUpdate.getShard(), writtenUpdate.getDataType(), writtenUpdate.getUid(),
+                            writtenUpdate.getAnnotationId());
+            assertFalse(observedUpdate.isEmpty(), "expected the update annotation to be retrievable from the store");
+            assertAnnotationsEqual(writtenUpdate, observedUpdate.get());
+        } finally {
+            accumuloConnectionFactory.returnClient(accumuloClient);
+        }
+    }
+
+    @Test
+    public void testAnnotationWriterUpdateTargetNotFound() throws Exception {
+        AccumuloClient accumuloClient = accumuloConnectionFactory.getClient(AccumuloAnnotationWriter.USER_DN, AccumuloAnnotationWriter.EMPTY_PROXY_SERVERS,
+                        AccumuloConnectionFactory.Priority.NORMAL, trackingMap);
+        try {
+            accumuloClient.tableOperations().deleteRows(annotationTableName, null, null);
+            accumuloClient.tableOperations().deleteRows(annotationSourceTableName, null, null);
+
+            Annotation partialAnnotation = AnnotationTestDataUtil.generateTestAnnotation();
+            Annotation update = AnnotationUtils.injectUpdateReference(partialAnnotation, "nonexistentAnnotationId");
+
+            assertThrows(AnnotationUpdateException.class, () -> accumuloAnnotationWriter.write(update),
+                            "expected an update referencing a nonexistent target annotation id to fail");
         } finally {
             accumuloConnectionFactory.returnClient(accumuloClient);
         }

@@ -465,6 +465,8 @@ public class TestAnnotationControllerV1 {
         assertResponseStatus(200, response);
         Annotation resultAnnotation = assertExpectedEntity(Annotation.class, response);
         assertTrue(resultAnnotation.getSegments(0).getValuesList().isEmpty(), "expected the masked segment's empty values list to be preserved");
+        assertEquals(existingAnnotation.getAnnotationId(), resultAnnotation.getMetadataMap().get(AnnotationUtils.UPDATE_REFERENCE),
+                        "expected the updated annotation's metadata to reference the annotation it updates");
         verify(annotationSink, times(1)).send(any());
     }
 
@@ -475,6 +477,22 @@ public class TestAnnotationControllerV1 {
         assertResponseStatus(500, response);
         String errorResponse = assertExpectedEntity(String.class, response);
         assertContains("Invalid annotation json", errorResponse);
+    }
+
+    @Test
+    public void testUpdateAnnotationTargetNotFound() throws Exception {
+        Annotation existingAnnotation = AnnotationUtils.injectAllHashes(generateTestAnnotation());
+        String body = AnnotationJsonUtils.annotationToJsonWithoutIds(existingAnnotation);
+
+        // "aaaaaaaa" is not a real annotation id for this document, so the update should be rejected before anything is sent.
+        ResponseEntity<?> response = annotationController.updateAnnotation("DOCUMENT", "20250704_249/testDataType/abcde.fghij.klmno", "aaaaaaaa", body,
+                        EMPTY_HTTP_HEADERS, defaultUserDetails);
+
+        assertResponseStatus(404, response);
+        String errorResponse = assertExpectedEntity(String.class, response);
+        assertContains("No annotations found for identifier", errorResponse);
+        assertContains("aaaaaaaa", errorResponse);
+        verify(annotationSink, times(0)).send(any());
     }
 
     @Test

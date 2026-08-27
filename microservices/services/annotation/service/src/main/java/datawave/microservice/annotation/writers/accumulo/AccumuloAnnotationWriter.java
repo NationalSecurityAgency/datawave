@@ -12,6 +12,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
+import org.apache.commons.lang3.StringUtils;
 
 import com.google.common.annotations.VisibleForTesting;
 
@@ -21,6 +22,7 @@ import datawave.annotation.data.v1.AnnotationDataAccess;
 import datawave.annotation.protobuf.v1.Annotation;
 import datawave.annotation.protobuf.v1.AnnotationSource;
 import datawave.annotation.protobuf.v1.Segment;
+import datawave.annotation.util.v1.AnnotationUtils;
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.microservice.annotation.writers.AnnotationWriter;
 import datawave.microservice.annotation.writers.accumulo.config.AccumuloAnnotationWriterProperties;
@@ -91,7 +93,12 @@ public class AccumuloAnnotationWriter implements AnnotationWriter {
 
             // let the data access layer assign the annotation identifier.
             Annotation finalAnnotation = annotation.toBuilder().clearAnnotationId().clearSegments().addAllSegments(writtenSegments).build();
-            Optional<Annotation> result = annotationDataAccess.addAnnotation(finalAnnotation);
+
+            // if this annotation carries a reference to another annotation it is updating, delegate to updateAnnotation so that the target
+            // annotation's existence is verified and the linkage is preserved. Otherwise, treat this as a new annotation.
+            String updateTargetId = annotation.getMetadataMap().get(AnnotationUtils.UPDATE_REFERENCE);
+            Optional<Annotation> result = StringUtils.isNotBlank(updateTargetId) ? annotationDataAccess.updateAnnotation(updateTargetId, finalAnnotation)
+                            : annotationDataAccess.addAnnotation(finalAnnotation);
             if (result.isEmpty()) {
                 return result;
             }
