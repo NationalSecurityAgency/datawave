@@ -50,6 +50,7 @@ import datawave.query.attributes.Content;
 import datawave.query.attributes.Document;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.function.RemoveGroupingContext;
+import datawave.query.iterator.profile.FinalDocumentTrackingIterator;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.parser.JavaRegexAnalyzer;
 import datawave.query.transformer.DocumentTransform;
@@ -286,6 +287,11 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
     public Entry<Key,Document> apply(@Nullable Entry<Key,Document> keyDocumentEntry) {
         // check null and enabled status
         if (keyDocumentEntry == null || !enabled) {
+            return keyDocumentEntry;
+        }
+
+        // If this is a final document, bail
+        if (FinalDocumentTrackingIterator.isFinalDocumentKey(keyDocumentEntry.getKey())) {
             return keyDocumentEntry;
         }
 
