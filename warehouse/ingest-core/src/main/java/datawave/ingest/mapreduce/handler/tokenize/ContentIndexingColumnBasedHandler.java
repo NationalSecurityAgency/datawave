@@ -39,6 +39,7 @@ import datawave.ingest.data.tokenize.TokenizationHelper.HeartBeatThread;
 import datawave.ingest.data.tokenize.TokenizationHelper.TokenizerTimeoutException;
 import datawave.ingest.data.tokenize.TruncateAttribute;
 import datawave.ingest.mapreduce.handler.shard.AbstractColumnBasedHandler;
+import datawave.ingest.mapreduce.handler.shard.ShardUtil;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.ingest.mapreduce.handler.shard.content.BoundedOffsetQueue;
 import datawave.ingest.mapreduce.handler.shard.content.BoundedOffsetQueue.OffsetList;
@@ -238,7 +239,7 @@ public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractC
 
         Text colq = new Text(fieldName);
         TextUtil.textAppend(colq, fieldValue, helper.getReplaceMalformedUTF8());
-        Key k = createKey(shardId, colf, colq, fieldVisibility, event.getTimestamp(), helper.getDeleteMode());
+        Key k = ShardUtil.createKey(shardId, colf, colq, fieldVisibility, event.getTimestamp(), helper.getDeleteMode());
         BulkIngestKey bKey = new BulkIngestKey(new Text(this.getShardTableName()), k);
         values.put(bKey, NULL_VALUE);
     }

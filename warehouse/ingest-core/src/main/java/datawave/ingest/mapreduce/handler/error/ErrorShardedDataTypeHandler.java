@@ -41,6 +41,7 @@ import datawave.ingest.data.config.ingest.IngestHelperInterface;
 import datawave.ingest.mapreduce.ContextWrappedStatusReporter;
 import datawave.ingest.mapreduce.handler.ExtendedDataTypeHandler;
 import datawave.ingest.mapreduce.handler.shard.AbstractColumnBasedHandler;
+import datawave.ingest.mapreduce.handler.shard.ShardUtil;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.writer.ContextWriter;
@@ -315,7 +316,7 @@ public class ErrorShardedDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends Abstract
 
         // ShardId 'd' DataType\0UID\0Name for document content event using Event.Writable
         String colq = record.getDataType().outputName() + '\0' + record.getId() + '\0' + EVENT_CONTENT_FIELD;
-        Key k = createKey(getShardId(record), new Text(ColumnFamilyConstants.FULL_CONTENT), new Text(colq), getVisibility(record, null), record.getTimestamp(),
+        Key k = ShardUtil.createKey(getShardId(record), ColumnFamilyConstants.FULL_CONTENT_TEXT, colq, getVisibility(record, null), record.getTimestamp(),
                         this.helper.getDeleteMode());
         BulkIngestKey ebKey = new BulkIngestKey(getShardTableName(), k);
         contextWriter.write(ebKey, value, context);
