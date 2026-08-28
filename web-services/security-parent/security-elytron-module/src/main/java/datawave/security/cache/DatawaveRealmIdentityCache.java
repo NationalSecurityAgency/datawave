@@ -65,12 +65,9 @@ public class DatawaveRealmIdentityCache implements RealmIdentityCache, ElytronCa
 
         // Drop the reverse mapping for an entry the cache evicted on its own. Only the evicted domain principal is unmapped. Other domain principals that
         // resolve to the same realm identity principal may still have live entries.
-        cacheBuilder.evictionListener(new RemovalListener<Principal,RealmIdentity>() {
-            @Override
-            public void onRemoval(@Nullable Principal principal, @Nullable RealmIdentity realmIdentity, RemovalCause removalCause) {
-                if (removalCause == RemovalCause.EXPIRED || removalCause == RemovalCause.SIZE) {
-                    unmapDomainPrincipal(principal, realmIdentity);
-                }
+        cacheBuilder.evictionListener((RemovalListener<Principal,RealmIdentity>) (principal, realmIdentity, removalCause) -> {
+            if (removalCause == RemovalCause.EXPIRED || removalCause == RemovalCause.SIZE) {
+                unmapDomainPrincipal(principal, realmIdentity);
             }
         });
 
