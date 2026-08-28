@@ -1,0 +1,193 @@
+spring:
+  cloud:
+    stream:
+      rabbit:
+        bindings:
+          logAnnotationSink-in-0:
+            consumer:
+              autoBindDlq: true
+          accumuloAnnotationSink-in-0:
+            consumer:
+              autoBindDlq: true
+          dumpAnnotationSink-in-0:
+            consumer:
+              autoBindDlq: true
+              bindQueue: false
+      bindings:
+        annotationSource-out-0:
+          destination: 'annotation'
+          producer:
+            errorChannelEnabled: true
+        logAnnotationSink-in-0:
+          destination: 'annotation'
+          group: 'log'
+        accumuloAnnotationSink-in-0:
+          destination: 'annotation'
+          group: 'accumulo'
+        dumpAnnotationSink-in-0:
+          destination: 'annotation'
+          group: 'dump'
+          consumer:
+            concurrency: 5
+    function:
+      definition: annotationSource;logAnnotationSink;accumuloAnnotationSink;dumpAnnotationSink;busConsumer
+  jackson:
+    default-property-inclusion: non-null
+    deserialization:
+      fail-on-unknown-properties: false
+annotation:
+  health:
+    rabbit:
+      enabled: true
+      attemptRecovery: true
+      fixMissing: true
+      fixInvalid: true
+      queues:
+        - name: 'annotation.log'
+          durable: true
+          exclusive: false
+          autoDelete: false
+          arguments:
+            'x-dead-letter-exchange': 'DLX'
+            'x-dead-letter-routing-key': 'annotation.log'
+        - name: 'annotation.log.dlq'
+          durable: true
+          exclusive: false
+          autoDelete: false
+      exchanges:
+        - name: 'annotation'
+          type: 'topic'
+          durable: true
+          autoDelete: false
+          internal: false
+          delayed: false
+        - name: 'DLX'
+          type: 'direct'
+          durable: true
+          autoDelete: false
+          internal: false
+          delayed: false
+      bindings:
+        - destination: 'annotation.log'
+          destinationType: 'queue'
+          source: 'annotation'
+          routingKey: '#'
+        - destination: 'annotation.log.dlq'
+          destinationType: 'queue'
+          source: 'DLX'
+          routingKey: 'annotation.log'
+      cluster:
+        expectedNodes: 1
+        failIfNodeMissing: true
+        numChecksBeforeFailure: 3
+      management:
+        scheme: 'http'
+        host: 'rabbitmq'
+        port: 15672
+        uri: '/api/'
+
+  annotationAckEnabled: true
+  # The maximum amount of queries we support before reporting Unready
+  maxConnections: 40
+  # By default, query content cloud - set cluster specific config overrides
+  annotationTableName: 'datawave.annotation'
+  annotationSourceTableName: 'datawave.annotationSource'
+  connPoolName: 'WAREHOUSE'
+  priority: 'NORMAL'
+  enableInternalIdLookup: 'true'
+  lookup:
+    datawave-query-host: "quickstart:8443"
+    datawave-response-classes:
+      - "datawave.webservice.result.GenericResponse"
+      - "datawave.webservice.result.VoidResponse"
+      - "datawave.webservice.result.DefaultEventQueryResponse"
+    annotation-unknown-fields-ignores: true
+  writers:
+    log:
+      enabled: false
+    accumulo:
+      enabled: true
+      accumuloConfig:
+        zookeepers: "${accumulo.zookeepers}"
+        instanceName: '${accumulo.instanceName}'
+        username: '${accumulo.username}'
+        password: '${accumulo.password}'
+    file:
+      enabled: true
+      pathUri: 'file:///annotation'
+    dump:
+      enabled: false
+      pathUri: 'file:///annotation-dump'
+
+datawave:
+  swagger:
+    title: "Annotation Service"
+    description: "REST API provided by the Annotation Service"
+  metadata:
+    all-metadata-auths:
+      - PRIVATE,PUBLIC
+    type-substitutions:
+      "[datawave.data.type.DateType]": "datawave.data.type.RawDateType"
+  connection:
+    factory:
+      defaultPoolName: "WAREHOUSE"
+      pools:
+        "WAREHOUSE":
+          zookeepers: '${accumulo.zookeepers}'
+          instance: '${accumulo.instanceName}'
+          username: '${accumulo.username}'
+          password: '${accumulo.password}'
+          lowPriorityPoolSize: 40
+          normalPriorityPoolSize: 40
+          highPriorityPoolSize: 40
+          adminPriorityPoolSize: 40
+
+server:
+  ssl:
+    client-auth: NEED
+
+# Authorization requires a client certificate - this will be used when running from the dev
+#server:
+#  port: 8748
+#  non-secure-port: 8780
+#  servlet:
+#    context-path: /annotation
+#  outbound-ssl:
+#    key-store: ${server.ssl.key-store}
+#    key-store-password: ${server.ssl.key-store-password}
+#    key-store-type: ${server.ssl.key-store-type}
+#    trust-store: ${server.ssl.trust-store}
+#    trust-store-password: ${server.ssl.trust-store-password}
+#    trust-store-type: ${server.ssl.trust-store-type}
+#
+#management:
+#  endpoints:
+#    web:
+#      base-path: "/mgmt"
+#
+#app:
+#  packages: datawave.microservice
+
+swagger:
+  doc:
+    packages: datawave.microservice.annotation
+
+springdoc:
+  api-docs:
+    path: /apidocs
+  show-actuator: true
+  writer-with-default-pretty-printer: true
+  swagger-ui:
+    docExpansion: 'none'
+    operationsSorter: 'method'
+    tagsSorter: 'alpha'
+
+logging:
+  level:
+    root: INFO
+    datawave.microservice.annotation: DEBUG
+    datawave.microservice.annotation.health.rabbit: TRACE
+    org.apache.zookeeper: ERROR
+    org.apache.accumulo: ERROR
+    org.springframework.messaging: DEBUG
+    org.springframework.amqp: DEBUG

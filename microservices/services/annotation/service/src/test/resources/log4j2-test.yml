@@ -1,0 +1,34 @@
+Configuration:
+  status: warn
+  monitorInterval: 60
+
+  Properties:
+    Property:
+      - name: logDir
+        value: "logs/"
+      - name: PID
+        value: "????"
+      - name: LOG_PATTERN
+        value: "%clr{%d{yyyy-MM-dd HH:mm:ss.SSS}}{faint} %clr{%5p} %clr{${sys:PID}}{magenta} %clr{---}{faint} %clr{[%15.15t]}{faint} %clr{%c}{cyan} %clr{:}{faint} %m%n%wEx"
+
+  Appenders:
+    Console:
+      name: Console
+      target: SYSTEM_OUT
+      follow: true
+      PatternLayout:
+        pattern: "${LOG_PATTERN}"
+
+  Loggers:
+    Logger:
+      - name: org.apache.hadoop
+        level: warn
+      - name: org.hibernate
+        level: warn
+      - name: org.springframework
+        level: warn 
+    Root:
+      level: info 
+      AppenderRef:
+        - ref: Console
+          level: info 
