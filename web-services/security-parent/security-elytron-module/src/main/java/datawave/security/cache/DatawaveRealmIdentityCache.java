@@ -232,9 +232,7 @@ public class DatawaveRealmIdentityCache implements RealmIdentityCache, ElytronCa
         }
 
         int totalEvictions = 0;
-        Iterator<DatawavePrincipal> principals = domainPrincipalsToRealmIdentities.asMap().keySet().iterator();
-        while (principals.hasNext()) {
-            DatawavePrincipal principal = principals.next();
+        for (DatawavePrincipal principal : domainPrincipalsToRealmIdentities.asMap().keySet()) {
             if (principal.getProxiedUsers().stream().anyMatch(user -> name.equals(user.getName()))) {
                 totalEvictions++;
                 remove(principal);
