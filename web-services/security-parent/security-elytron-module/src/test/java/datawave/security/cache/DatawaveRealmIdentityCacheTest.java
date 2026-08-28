@@ -301,7 +301,7 @@ class DatawaveRealmIdentityCacheTest {
         cache.put(principal2, new SimpleNameRealmIdentity("realmUser2"));
         cache.put(principal3, new SimpleNameRealmIdentity("realmUser3"));
 
-        assertNull(cache.getUserWithName("cn=user4<cn=" + TEST_ISSUER + ">"));
+        assertNull(cache.getUserWithName("cn=user4<" + TEST_ISSUER + ">"));
     }
 
     /**
