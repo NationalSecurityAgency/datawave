@@ -52,6 +52,7 @@ import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
 import datawave.microservice.query.QueryImpl;
 import datawave.query.QueryTestTableHelper;
+import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.DatawaveQueryException;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
@@ -282,10 +283,12 @@ public class DatePartitionedQueryPlannerTest {
         Set<Date> datesWithoutHoles = new HashSet<>();
         this.eventConfigs.forEach(config -> {
             if (config.getTime() >= this.startDate.getTime() && config.getTime() <= this.endDate.getTime()) {
-                // field has to be in the query and fieldIndexHoleMinThreshold != null and index / frequency < fieldIndexHoleMinThreshold
+                // field has to be in the query and index / frequency < the effective threshold. When no threshold is set on the test, the production
+                // default applies - treating it as "no holes" here would make the all-holes-or-no-holes assertion below vacuous.
+                double threshold = this.fieldIndexHoleMinThreshold != null ? this.fieldIndexHoleMinThreshold
+                                : new ShardQueryConfiguration().getIndexFieldHoleMinThreshold();
                 boolean hasHoles = config.getMetadataCounts().entrySet().stream().filter(e -> fieldsInQuery.contains(e.getKey()))
-                                .anyMatch(e -> this.fieldIndexHoleMinThreshold != null && ((double) (e.getValue().getValue1())
-                                                / ((double) e.getValue().getValue0())) < this.fieldIndexHoleMinThreshold);
+                                .anyMatch(e -> ((double) (e.getValue().getValue1()) / ((double) e.getValue().getValue0())) < threshold);
                 if (hasHoles) {
                     datesWithHoles.add(new Date(config.getTime()));
                 } else {
@@ -295,10 +298,6 @@ public class DatePartitionedQueryPlannerTest {
         });
 
         SortedMap<Pair<Date,Date>,Set<String>> subRanges = queryPlanner.getSubQueryDateRanges(logic.getConfig());
-        // if the subRanges is null, then this implies no holes
-        if (subRanges == null) {
-            return;
-        }
         // Subranges are sorted and should begin with the query beginDate and end with the query endDate
         Pair<Date,Date> firstSubRange = subRanges.keySet().stream().findFirst().get();
         assertNotNull(firstSubRange, "firstSubRange should not be null");

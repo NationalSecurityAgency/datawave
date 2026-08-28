@@ -778,9 +778,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 log.warn("Config object must be an instance of ShardQueryConfiguration to properly close the DefaultQueryPlanner. You gave me a "
                                 + genericConfig);
             }
-            if (null != executor) {
-                executor.shutdown();
-            }
+            shutdownExecutor();
             return;
         }
 
@@ -793,6 +791,14 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             log.error("Failed to close query " + settings.getId(), e);
         }
 
+        shutdownExecutor();
+    }
+
+    /**
+     * Shut down this planner's internal thread pool, if one was ever started. Unlike {@link #close(GenericQueryConfiguration, Query)} this performs no
+     * query-level cleanup, so it is safe to call on planner clones that share a query with the planner they were cloned from.
+     */
+    public void shutdownExecutor() {
         if (null != executor) {
             executor.shutdown();
         }
