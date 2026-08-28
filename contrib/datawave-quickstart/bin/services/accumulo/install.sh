@@ -102,6 +102,9 @@ sed -i'' -e "s~/path/to/hadoop~${HADOOP_HOME}~" "${DW_ACCUMULO_CONF_DIR}/accumul
 sed -i'' -e "s~/path/to/zookeeper~${ZOOKEEPER_HOME}~" "${DW_ACCUMULO_CONF_DIR}/accumulo-env.sh"
 echo "export JAVA_HOME=\"${JAVA_HOME}\"" >> "${DW_ACCUMULO_CONF_DIR}/accumulo-env.sh"
 echo "export PATH=\"\${JAVA_HOME}/bin:\${PATH}\"" >> "${DW_ACCUMULO_CONF_DIR}/accumulo-env.sh"
+# The scan server validates the configured cache sizes against its heap, and the
+# template's 512m is too small for them, so give it the same heap as the tserver
+sed -i'' -e "s~sserver) JAVA_OPTS=('-Xmx512m' '-Xms512m'~sserver) JAVA_OPTS=('-Xmx768m' '-Xms768m'~" "${DW_ACCUMULO_CONF_DIR}/accumulo-env.sh"
 echo 'JAVA_OPTS=('-Dcom.google.protobuf.use_unsafe_pre22_gencode' "${JAVA_OPTS[@]}")' >> "${DW_ACCUMULO_CONF_DIR}/accumulo-env.sh"
 cat "${DW_ACCUMULO_CONF_DIR}/accumulo-env.sh"
 # Update Accumulo bind host if it's not set to localhost
