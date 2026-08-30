@@ -5,7 +5,8 @@ import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
 import org.apache.accumulo.core.conf.DefaultConfiguration;
 import org.apache.accumulo.core.data.TableId;
-import org.apache.accumulo.core.util.ConfigurationImpl;
+
+import datawave.accumulo.core.util.AccumuloConfigurationWrapper;
 
 public class TestPluginEnv implements PluginEnvironment {
 
@@ -13,12 +14,12 @@ public class TestPluginEnv implements PluginEnvironment {
 
     @Override
     public Configuration getConfiguration() {
-        return new ConfigurationImpl(conf);
+        return new AccumuloConfigurationWrapper(conf);
     }
 
     @Override
     public Configuration getConfiguration(TableId tableId) {
-        return new ConfigurationImpl(conf);
+        return new AccumuloConfigurationWrapper(conf);
     }
 
     @Override
