@@ -1057,8 +1057,8 @@ public abstract class BaseQueryMetric implements HasMarkings, Serializable {
      */
     @JsonIgnore
     public boolean isLifecycleFinal() {
-        return Lifecycle.CLOSED == lifecycle || Lifecycle.CANCELLED == lifecycle || Lifecycle.MAXRESULTS == lifecycle || Lifecycle.NEXTTIMEOUT == lifecycle
-                        || Lifecycle.TIMEOUT == lifecycle || Lifecycle.SHUTDOWN == lifecycle;
+        return Lifecycle.CLOSED == lifecycle || Lifecycle.CANCELLED == lifecycle || Lifecycle.MAXRESULTS == lifecycle || Lifecycle.MAXWORK == lifecycle
+                        || Lifecycle.NEXTTIMEOUT == lifecycle || Lifecycle.TIMEOUT == lifecycle || Lifecycle.SHUTDOWN == lifecycle;
     }
 
     public String getQueryAuthorizations() {
