@@ -45,7 +45,7 @@ import datawave.ingest.data.config.NormalizedFieldAndValue;
  * Specialization of the Helper type that validates the configuration for Ingest purposes. These helper classes also have the logic to parse the field names and
  * fields values from the datatypes that they represent.
  */
-public abstract class BaseIngestHelper extends AbstractIngestHelper implements CompositeIngest, VirtualIngest {
+public abstract class BaseIngestHelper extends AbstractIngestHelper implements CompositeIngest, VirtualIngest, WhindexIngest {
 
     /**
      * Configuration parameter to specify that data should be marked for delete on ingest.
@@ -174,6 +174,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
 
     private CompositeIngest compositeIngest;
     private VirtualIngest virtualIngest;
+    private WhindexIngest whindexIngest;
 
     protected boolean useMostPreciseFieldTypeRegex = false;
 
@@ -231,6 +232,9 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
         if (this.compositeIngest == null)
             this.compositeIngest = new CompositeFieldIngestHelper(this.getType());
         this.getCompositeIngest().setup(config);
+
+        // Set up the whindex ingest.
+        this.getWhindexIngest().setup(config);
 
         IngestConfiguration ingestConfiguration = IngestConfigurationFactory.getIngestConfiguration();
         markingsHelper = ingestConfiguration.getMarkingsHelper(config, getType());
@@ -464,12 +468,22 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
     }
 
     /**
-     * lazy instantiation
-     *
      * @return a {@link CompositeIngest}
      */
     public CompositeIngest getCompositeIngest() {
         return this.compositeIngest;
+    }
+
+    /**
+     * Returns the whindex ingest (lazily instantiated).
+     *
+     * @return a {@link WhindexIngest}
+     */
+    public WhindexIngest getWhindexIngest() {
+        if (this.whindexIngest == null) {
+            this.whindexIngest = new WhindexFieldIngestHelper(this.getType());
+        }
+        return this.whindexIngest;
     }
 
     /**
@@ -609,6 +623,18 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
     public boolean isDataTypeField(String fieldName) {
         return this.typeFieldMap.containsKey(fieldName);
 
+    }
+
+    /**
+     * Returns true if fieldName is a whindex field.
+     *
+     * @param fieldName
+     *            the field to check.
+     * @return true if fieldName is a whindex field.
+     */
+    @Override
+    public boolean isWhindexField(String fieldName) {
+        return this.getWhindexIngest().isWhindexField(fieldName);
     }
 
     private void compilePatterns() {
@@ -1192,6 +1218,29 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
     @Override
     public Multimap<String,NormalizedContentInterface> getVirtualFields(Multimap<String,NormalizedContentInterface> values) {
         return normalizeMap(getVirtualIngest().getVirtualFields(values));
+    }
+
+    /**
+     * Returns a multimap containing all WhindexConfigs mapped to their related ValueFields.
+     *
+     * @return a multimap of K:ValueFields to V:WhindexConfig(s)
+     */
+    @Override
+    public Multimap<String,WhindexConfig> getValueFieldsToWhindexConfigs() {
+        return getWhindexIngest().getValueFieldsToWhindexConfigs();
+    }
+
+    /**
+     * Applies the loaded whindex configuration to the Multimap of values passed in. Only applies whindex configurations for which all the necessary fields and
+     * values are present in the Multimap.
+     *
+     * @param values
+     *            the multimap of values to check and apply the whindex configurations to.
+     * @return a multimap of updated values based on the loaded whindex configuration.
+     */
+    @Override
+    public Multimap<String,NormalizedContentInterface> processWhindexFields(Multimap<String,NormalizedContentInterface> values) {
+        return getWhindexIngest().processWhindexFields(values);
     }
 
     /**
