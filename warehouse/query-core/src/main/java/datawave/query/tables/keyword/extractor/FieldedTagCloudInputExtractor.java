@@ -235,6 +235,7 @@ public class FieldedTagCloudInputExtractor implements TagCloudInputExtractor {
         return minScore;
     }
 
+    @Override
     public String getSubType() {
         return subType;
     }
