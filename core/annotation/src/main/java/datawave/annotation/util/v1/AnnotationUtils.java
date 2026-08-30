@@ -16,6 +16,7 @@ import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hasher;
 import com.google.common.hash.Hashing;
 
+import datawave.annotation.data.transform.VisibilityTransformer;
 import datawave.annotation.protobuf.v1.Annotation;
 import datawave.annotation.protobuf.v1.AnnotationSource;
 import datawave.annotation.protobuf.v1.Point;
@@ -28,7 +29,23 @@ public class AnnotationUtils {
     public static final String UPDATE_REFERENCE = "updates";
 
     public static Annotation injectAnnotationSource(Annotation a, AnnotationSource as) {
-        return a.toBuilder().clearSource().setSource(as).clearAnalyticSourceHash().setAnalyticSourceHash(as.getAnalyticSourceHash()).build();
+        return injectAnnotationSource(a, as, false, null);
+    }
+
+    public static Annotation injectAnnotationSource(Annotation a, AnnotationSource as, boolean inheritVisibility, VisibilityTransformer visibilityTransformer) {
+        AnnotationSource asForInjection = as;
+
+        if (inheritVisibility && visibilityTransformer != null) {
+            // building new AnnotationSource from result but overriding the visibility
+            AnnotationSource.Builder newSourceBuilder = AnnotationSource.newBuilder(as);
+            for (String metadataFieldForVisibility : visibilityTransformer.getMetadataFields()) {
+                newSourceBuilder.putMetadata(metadataFieldForVisibility, a.getMetadataMap().get(metadataFieldForVisibility));
+            }
+            asForInjection = newSourceBuilder.build();
+        }
+
+        return a.toBuilder().clearSource().setSource(asForInjection).clearAnalyticSourceHash().setAnalyticSourceHash(asForInjection.getAnalyticSourceHash())
+                        .build();
     }
 
     /**

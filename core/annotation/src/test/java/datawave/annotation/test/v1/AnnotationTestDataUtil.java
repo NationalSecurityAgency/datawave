@@ -29,12 +29,16 @@ public class AnnotationTestDataUtil {
     public static final String VISIBILITY = "PUBLIC";
 
     public static AnnotationSource generateTestAnnotationSource() {
+        return generateTestAnnotationSource(VISIBILITY);
+    }
+
+    public static AnnotationSource generateTestAnnotationSource(String visibility) {
         //@formatter:off
         return AnnotationSource.newBuilder()
                 .setEngine("inline v6")
                 .setModel("GR Supra")
                 .setPlatform("toyota")
-                .putMetadata("visibility", VISIBILITY)
+                .putMetadata("visibility", visibility)
                 .putMetadata("created_date",CREATED_DATE)
                 .putConfiguration("octane","99")
                 .putConfiguration("model_year", "2025")
