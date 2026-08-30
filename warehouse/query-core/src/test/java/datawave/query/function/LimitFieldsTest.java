@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.AbstractMap;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.accumulo.core.data.Key;
 import org.junit.jupiter.api.BeforeEach;
@@ -127,6 +128,93 @@ public class LimitFieldsTest {
         assertNoOriginalCount("FIELD_A");
     }
 
+    /**
+     * Two hit terms may share the same value while remaining distinct attributes, e.g. when the value was matched in both its event form (TypeAttribute) and
+     * its index form (PreNormalizedAttribute). Both attributes must be recognized as hits.
+     */
+    @Test
+    public void testDoNotLimitHitTermsWithSameValueFromEventAndIndexSources() {
+        createEvent("FIELD_A", "value-a", true);
+        createIndex("FIELD_B", "value-a", true);
+        withLimit("FIELD_A", -1);
+        withLimit("FIELD_B", -1);
+        withHitTerm("FIELD_A", "value-a");
+        withIndexHitTerm("FIELD_B", "value-a");
+        drive();
+        assertFieldCount("FIELD_A", 1);
+        assertFieldCount("FIELD_B", 1);
+        assertNoOriginalCount("FIELD_A");
+        assertNoOriginalCount("FIELD_B");
+    }
+
+    /**
+     * Two hit terms may share the same value under different metadata, e.g. different column visibilities within the same document. Each attribute must be
+     * matched against the hit-term key it belongs to, so both must be kept.
+     */
+    @Test
+    public void testDoNotLimitHitTermsWithSameValueUnderDifferentVisibilities() {
+        Key keyVisA = new Key("20250202_0", "datatype\0uid", "", "VIS_A", 0L);
+        Key keyVisB = new Key("20250202_0", "datatype\0uid", "", "VIS_B", 0L);
+        createEvent("FIELD_A", "value-a", keyVisA);
+        createEvent("FIELD_B", "value-a", keyVisB);
+        withLimit("FIELD_A", -1);
+        withLimit("FIELD_B", -1);
+        withHitTerm("FIELD_A", "value-a", keyVisA);
+        withHitTerm("FIELD_B", "value-a", keyVisB);
+        drive();
+        assertFieldCount("FIELD_A", 1);
+        assertFieldCount("FIELD_B", 1);
+        assertNoOriginalCount("FIELD_A");
+        assertNoOriginalCount("FIELD_B");
+    }
+
+    /**
+     * A HIT_TERM may carry a null source, for example when the underlying hit tuple has no source attribute (see JexlEvaluation, which handles a null
+     * hit-tuple source and still emits the Content). Such a hit term cannot participate in exact value matching, but its field name must still drive
+     * group-based retention so that every field in the same group instance is kept. Here NAME.PERSON.1 and AGE.PERSON.1 share group instance PERSON.1 and a
+     * single null-source hit term is present for AGE.PERSON.1, so both grouped fields must be retained even though neither is an exact value match.
+     */
+    @Test
+    public void testDoNotLimitGroupedFieldsWithNullSourceHitTerm() {
+        createGroupedEvent("NAME.PERSON.1", "sam");
+        createGroupedEvent("AGE.PERSON.1", "10");
+        withLimit("NAME", -1);
+        withLimit("AGE", -1);
+        withNullSourceHitTerm("AGE.PERSON.1", "10");
+        drive();
+        assertFieldCount("NAME.PERSON.1", 1);
+        assertFieldCount("AGE.PERSON.1", 1);
+        assertNoOriginalCount("NAME");
+        assertNoOriginalCount("AGE");
+    }
+
+    @Test
+    public void testContextBuild() {
+        Key docKey = new Key("shard", "datatype\0uid");
+        Content attr1 = new Content("a", docKey, true);
+        Content attr2 = new Content("b", docKey, true);
+        Content attr3 = new Content("c", docKey, true);
+        Content attr4 = new Content("d", docKey, true);
+
+        // @formatter:off
+        LimitFields.HitTermContext context = new LimitFields.HitTermContext.Builder()
+            .putHitField("FIELD_1.FIELD.5.3", attr1)
+            .putHitField("FIELD_1.FIELD.5.3", attr2)
+            .putHitField("FIELD_2.FIELD.5.3", attr3)
+            .putHitField("VAL_2.BAR.6.3", attr4)
+            .build();
+        // @formatter:on
+
+        assertEquals(2, context.getGroupAndInstanceSet().size());
+
+        assertTrue(context.containsFieldWithGrouping("FIELD_1.FIELD.5.3"));
+        assertTrue(context.hasGroupAndInstance(FieldName.of("FOO_3.FIELD.7.3").getGroupAndInstance()));
+        assertTrue(context.hasGroupAndInstance(FieldName.of("VAL_2.BAR.6.3").getGroupAndInstance()));
+        assertTrue(context.hasGroupAndInstance(FieldName.of("VAL_2.BAR.7.3").getGroupAndInstance()));
+        assertTrue(context.hasGroupAndInstance(FieldName.of("VAL_1.BAR.7.3").getGroupAndInstance()));
+        assertEquals(Set.of(attr1, attr2, attr3, attr4), Set.copyOf(context.getHitTermAttributes()));
+    }
+
     private void drive() {
         LimitFields limitFields = new LimitFields(limitMap, null);
         Map.Entry<Key,Document> input = new AbstractMap.SimpleEntry<>(key, document);
@@ -158,8 +246,21 @@ public class LimitFieldsTest {
     }
 
     private void withHitTerm(String field, String value) {
+        withHitTerm(field, value, key);
+    }
+
+    private void withHitTerm(String field, String value, Key key) {
         Attribute<?> source = getAttributeFactory().create(field, value, key, true);
         document.put("HIT_TERM", new Content(field + ":" + value, key, true, source));
+    }
+
+    private void withIndexHitTerm(String field, String value) {
+        Attribute<?> source = getPreNormalizedAttributeFactory().create(field, value, key, true);
+        document.put("HIT_TERM", new Content(field + ":" + value, key, true, source));
+    }
+
+    private void withNullSourceHitTerm(String field, String value) {
+        document.put("HIT_TERM", new Content(field + ":" + value, key, true, null));
     }
 
     private void createEvent(String field, String value) {
@@ -167,7 +268,21 @@ public class LimitFieldsTest {
     }
 
     private void createEvent(String field, String value, boolean toKeep) {
+        createEvent(field, value, key, toKeep);
+    }
+
+    private void createEvent(String field, String value, Key key) {
+        createEvent(field, value, key, true);
+    }
+
+    private void createEvent(String field, String value, Key key, boolean toKeep) {
         document.put(field, getAttributeFactory().create(field, value, key, toKeep));
+    }
+
+    private void createGroupedEvent(String field, String value) {
+        // Preserve the grouping context in the document key (put with includeGroupingContext=true); the default put deconstructs
+        // the identifier and would strip the group and instance, collapsing e.g. NAME.PERSON.1 down to NAME.
+        document.put(field, getAttributeFactory().create(field, value, key, true), true);
     }
 
     private void createIndex(String field, String value) {
