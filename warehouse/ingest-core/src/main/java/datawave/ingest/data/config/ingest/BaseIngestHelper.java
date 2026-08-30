@@ -257,8 +257,13 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
 
         // Load the field helper, which takes precedence over the individual field configurations
         this.fieldConfigHelper = ingestConfiguration.getFieldConfigHelper(config, getType(), this);
-        if (this.fieldConfigHelper != null && log.isDebugEnabled()) {
-            log.debug("Field config specified: {}", this.fieldConfigHelper.describeSource());
+        if (this.fieldConfigHelper != null) {
+            if (log.isDebugEnabled()) {
+                log.debug("Field config specified: {}", this.fieldConfigHelper.describeSource());
+            }
+            this.getVirtualIngest().setVirtualFieldDefinitions(this.fieldConfigHelper.getVirtualFieldMap());
+            this.getVirtualIngest().setGroupingPolicies(this.fieldConfigHelper.getGroupingPolicies());
+            this.getVirtualIngest().setAllowMissing(this.fieldConfigHelper.getAllowMissing());
         }
 
         // Process the indexed fields
@@ -276,7 +281,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
 
         // Load the proper list of fields to (not) index
         if (fieldConfigHelper != null && log.isInfoEnabled()) {
-            log.info("Using field config helper for {}", this.getType().typeName());
+            log.info("Using field config helper for {} this will override property-based index configs", this.getType().typeName());
         } else if (configProperty == null && log.isWarnEnabled()) {
             log.warn("No index fields or disallowlist fields specified, not generating index fields for {}", this.getType().typeName());
         } else {
@@ -1187,6 +1192,16 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
     @Override
     public void setVirtualFieldDefinitions(Map<String,String[]> virtualFieldDefinitions) {
         getVirtualIngest().setVirtualFieldDefinitions(virtualFieldDefinitions);
+    }
+
+    @Override
+    public void setGroupingPolicies(Map<String,VirtualIngest.GroupingPolicy> groupingPolicies) {
+        getVirtualIngest().setGroupingPolicies(groupingPolicies);
+    }
+
+    @Override
+    public void setAllowMissing(Map<String,Boolean> allowMissing) {
+        getVirtualIngest().setAllowMissing(allowMissing);
     }
 
     @Override

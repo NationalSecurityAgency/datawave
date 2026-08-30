@@ -24,13 +24,16 @@ import com.google.common.collect.ImmutableSet;
 
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.ingest.data.config.ingest.BaseIngestHelper;
+import datawave.ingest.data.config.ingest.VirtualIngest;
 
 /** Helper class to read XML based Field Configurations */
 public final class XMLFieldConfigHelper implements FieldConfigHelper {
 
     private static final Logger log = LoggerFactory.getLogger(XMLFieldConfigHelper.class);
 
-    /** be explicit and use Apache Xerces-J here instead of relying on java to plug in the proper parser */
+    /**
+     * be explicit and use Apache Xerces-J here instead of relying on java to plug in the proper parser
+     */
     private static final SAXParserFactory parserFactory = SAXParserFactory.newInstance();
 
     private final FieldInfo noMatchFieldInfo = new FieldInfo(true, false, false, false, false);
@@ -38,6 +41,11 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
 
     private final String configSource;
     private final Map<String,FieldInfo> knownFields = new HashMap<>();
+    private final Map<String,String[]> combinedFields = new HashMap<>();
+    private VirtualIngest.GroupingPolicy defaultGroupingPolicy = VirtualIngest.VirtualFieldNormalizer.DEFAULT_GROUPING_POLICY;
+    private final Map<String,VirtualIngest.GroupingPolicy> groupingPolicy = new HashMap<>();
+    private boolean defaultAllowMissing = false;
+    private final Map<String,Boolean> allowMissing = new HashMap<>();
     /**
      * Memoizes the fully resolved FieldInfo per field name, including pattern matches and no-match results. Not thread-safe: instances are confined to a single
      * thread.
@@ -60,6 +68,7 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
         boolean reverseIndexed;
         boolean tokenized;
         boolean reverseTokenized;
+        boolean combined;
 
         FieldInfo() {}
 
@@ -79,9 +88,9 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
      *            the field configuration file name
      * @param baseIngestHelper
      *            the ingest helper
+     * @return null if no a null value was specified for fieldConfigFile - or a populated FieldConfigHelper.
      * @throws IllegalArgumentException
      *             if the file can't be found or an exception occurs when reading the file.
-     * @return null if no a null value was specified for fieldConfigFile - or a populated FieldConfigHelper.
      */
     public static XMLFieldConfigHelper load(String fieldConfigFile, BaseIngestHelper baseIngestHelper) {
         if (fieldConfigFile == null) {
@@ -143,6 +152,30 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
     public boolean addKnownField(String fieldName, FieldInfo info) {
         // must track the fields we've seen so we can properly apply default rules.
         return (knownFields.put(fieldName, info) == null);
+    }
+
+    private void addCombinedField(String fieldName, String combine) {
+        combinedFields.put(fieldName, datawave.util.StringUtils.split(combine, '.'));
+    }
+
+    private void setDefaultGroupingPolicy(VirtualIngest.GroupingPolicy defaultGroupingPolicy) {
+        this.defaultGroupingPolicy = defaultGroupingPolicy;
+    }
+
+    public VirtualIngest.GroupingPolicy getDefaultGroupingPolicy() {
+        return this.defaultGroupingPolicy;
+    }
+
+    private void setDefaultAllowMissing(boolean allow) {
+        this.defaultAllowMissing = allow;
+    }
+
+    private void addGroupingPolicy(String name, String lv) {
+        groupingPolicy.put(name, VirtualIngest.GroupingPolicy.valueOf(lv));
+    }
+
+    private void addAllowMissing(String name, boolean isAllowed) {
+        allowMissing.put(name, isAllowed);
     }
 
     @Override
@@ -214,6 +247,26 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
         return noMatchFieldInfo;
     }
 
+    @Override
+    public boolean isCombinedField(String fieldName) {
+        return combinedFields.containsKey(fieldName);
+    }
+
+    @Override
+    public Map<String,String[]> getVirtualFieldMap() {
+        return combinedFields;
+    }
+
+    @Override
+    public Map<String,VirtualIngest.GroupingPolicy> getGroupingPolicies() {
+        return groupingPolicy;
+    }
+
+    @Override
+    public Map<String,Boolean> getAllowMissing() {
+        return allowMissing;
+    }
+
     public boolean isNoMatchStored() {
         return noMatchFieldInfo.stored;
     }
@@ -277,6 +330,9 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
         public static final String INDEX_TYPE = "indexType";
         public static final String TOKENIZED = "tokenized";
         public static final String REVERSE_TOKENIZED = "reverseTokenized";
+        public static final String COMBINE = "combine";
+        public static final String GROUPING_POLICY = "groupingPolicy";
+        public static final String ALLOW_MISSING = "allowMissing";
 
         static final Set<String> expectedDefaultAttributes;
         static final Set<String> expectedNoMatchAttributes;
@@ -322,7 +378,7 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
             } else if ("fieldPattern".equals(qName)) {
                 startFieldPattern(uri, localName, qName, attributes);
             } else if ("fieldConfig".equals(qName)) {
-                // structurral tag only, ignore for now, but allow.
+                // structural tag only, ignore for now, but allow.
             } else {
                 throw new IllegalArgumentException("Unexpected element encounteded in: " + uri + ": qName: '" + qName + "' localName: '" + localName + "'");
             }
@@ -354,6 +410,10 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
                 } else if (INDEX_TYPE.equals(qn)) {
                     this.defaultFieldType = lv;
                     seenAttr.remove(INDEX_TYPE);
+                } else if (GROUPING_POLICY.equals(qn)) {
+                    this.fieldHelper.setDefaultGroupingPolicy(VirtualIngest.GroupingPolicy.valueOf(lv));
+                } else if (ALLOW_MISSING.equals(qn)) {
+                    this.fieldHelper.setDefaultAllowMissing(Boolean.parseBoolean(lv));
                 } else {
                     throw new IllegalArgumentException(UNEXPECTED_ATTRIBUTE + uri + " in 'default' tag: '" + qn + "'");
                 }
@@ -422,6 +482,9 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
             fieldInfo.tokenized = this.defaultTokenized;
             fieldInfo.reverseTokenized = this.defaultReverseTokenized;
             String fieldType = this.defaultFieldType;
+            String combine = null;
+            String groupingPolicyAttr = null;
+            String allowMissingAttr = null;
 
             for (int i = 0; i < sz; i++) {
                 final String qn = attributes.getQName(i);
@@ -441,8 +504,14 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
                     name = lv;
                 } else if (INDEX_TYPE.equals(qn)) {
                     fieldType = lv;
+                } else if (COMBINE.equals(qn)) {
+                    combine = lv;
+                } else if (GROUPING_POLICY.equals(qn)) {
+                    groupingPolicyAttr = lv;
+                } else if (ALLOW_MISSING.equals(qn)) {
+                    allowMissingAttr = lv;
                 } else {
-                    throw new IllegalArgumentException(UNEXPECTED_ATTRIBUTE + uri + " in 'field' tag: '" + qn + "'");
+                    throw new IllegalArgumentException("Unexpected attribute encountered in: " + uri + " in 'field' tag: '" + qn + "'");
                 }
             }
 
@@ -451,6 +520,17 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
             } else if (!this.fieldHelper.addKnownField(name, fieldInfo)) {
                 throw new IllegalArgumentException(
                                 "Field " + name + " was already seen, check configuration file for duplicate entries (among fieldPattern, field tags)");
+            }
+
+            if (combine != null && !combine.isEmpty()) {
+                fieldInfo.combined = true;
+                this.fieldHelper.addCombinedField(name, combine);
+            }
+            if (groupingPolicyAttr != null && !groupingPolicyAttr.isEmpty()) {
+                this.fieldHelper.addGroupingPolicy(name, groupingPolicyAttr);
+            }
+            if (allowMissingAttr != null && !allowMissingAttr.isEmpty()) {
+                this.fieldHelper.addAllowMissing(name, Boolean.parseBoolean(allowMissingAttr));
             }
             if (fieldType != null) {
                 if (this.ingestHelper != null) {
@@ -517,4 +597,5 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
             }
         }
     }
+
 }
