@@ -42,7 +42,6 @@ import datawave.query.util.VisibilityWiseGuysIngest;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.SubjectIssuerDNPair;
-import datawave.table.constants.TableName;
 import datawave.webservice.query.cache.RunningQueryTimingImpl;
 import datawave.webservice.query.runner.RunningQuery;
 
@@ -77,9 +76,9 @@ public class LongRunningQueryTest {
 
         // Load data for the test
         VisibilityWiseGuysIngest.writeItAll(client);
-        PrintUtility.printTable(client, auths, TableName.SHARD);
-        PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
-        PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
+        PrintUtility.printShardTable(client, auths);
+        PrintUtility.printShardIndexTable(client, auths);
+        PrintUtility.printMetadataTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
 
         logic = new ShardQueryLogic();
         logic.setIncludeGroupingContext(true);

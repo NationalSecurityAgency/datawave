@@ -285,9 +285,9 @@ public class ShardQueryLogicTest extends AbstractQueryTest {
         sharedClient = new QueryTestTableHelper(ShardQueryLogicTest.class.toString(), log, RebuildingScannerTestHelper.TEARDOWN.EVERY_OTHER_SANS_CONSISTENCY,
                         RebuildingScannerTestHelper.INTERRUPT.EVERY_OTHER).client;
         WiseGuysIngest.writeItAll(sharedClient, WiseGuysIngest.WhatKindaRange.DOCUMENT);
-        PrintUtility.printTable(sharedClient, auths, TableName.SHARD);
-        PrintUtility.printTable(sharedClient, auths, TableName.SHARD_INDEX);
-        PrintUtility.printTable(sharedClient, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
+        PrintUtility.printShardTable(sharedClient, auths);
+        PrintUtility.printShardIndexTable(sharedClient, auths, TableName.SHARD_INDEX);
+        PrintUtility.printMetadataTable(sharedClient, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
     }
 
     @AfterAll

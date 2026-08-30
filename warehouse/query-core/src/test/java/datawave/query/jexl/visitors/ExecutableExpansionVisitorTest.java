@@ -62,7 +62,6 @@ import datawave.query.util.AbstractQueryTest;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.MockMetadataHelper;
 import datawave.query.util.WiseGuysIngest;
-import datawave.table.constants.TableName;
 
 @ExtendWith(SpringExtension.class)
 @ComponentScan(basePackages = "datawave.query")
@@ -111,10 +110,9 @@ public class ExecutableExpansionVisitorTest extends AbstractQueryTest {
         sharedClient = qtth.client;
 
         WiseGuysIngest.writeItAll(sharedClient, WiseGuysIngest.WhatKindaRange.DOCUMENT);
-        PrintUtility.printTable(sharedClient, auths, TableName.SHARD);
-        PrintUtility.printTable(sharedClient, auths, TableName.SHARD_INDEX);
-        PrintUtility.printTable(sharedClient, auths, QueryTestTableHelper.METADATA_TABLE_NAME);
-        PrintUtility.printTable(sharedClient, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
+        PrintUtility.printShardTable(sharedClient, auths);
+        PrintUtility.printShardIndexTable(sharedClient, auths);
+        PrintUtility.printMetadataTable(sharedClient, auths);
     }
 
     @BeforeEach
