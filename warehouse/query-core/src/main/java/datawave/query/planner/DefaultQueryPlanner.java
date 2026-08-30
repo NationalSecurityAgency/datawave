@@ -182,6 +182,8 @@ import datawave.query.planner.comparator.DefaultQueryPlanComparator;
 import datawave.query.planner.comparator.GeoWaveQueryPlanComparator;
 import datawave.query.planner.pushdown.PushDownVisitor;
 import datawave.query.planner.pushdown.rules.PushDownRule;
+import datawave.query.planner.replacement.FieldReplacementVisitor;
+import datawave.query.planner.replacement.rules.FieldReplacementRule;
 import datawave.query.planner.rules.FieldTransformRule;
 import datawave.query.planner.rules.FieldTransformRuleVisitor;
 import datawave.query.planner.rules.NodeTransformRule;
@@ -233,6 +235,13 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     protected boolean disableTestNonExistentFields = false;
 
     /**
+     * Disables Field Replacement rules
+     *
+     * @see FieldReplacementVisitor
+     */
+    protected boolean disableFieldReplacementRules = false;
+
+    /**
      * Disables Whindex (value-specific) field mappings for GeoWave functions.
      *
      * @see WhindexVisitor
@@ -278,6 +287,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     // A set of node plans. Basically these are transforms that will be applied to nodes. One example use is to
     // force certain regex patterns to be pushed down to evaluation
     private List<NodeTransformRule> transformRules = Lists.newArrayList();
+
+    private List<FieldReplacementRule> replacementRules = Lists.newArrayList();
 
     protected Class<? extends SortedKeyValueIterator<Key,Value>> queryIteratorClazz = QueryIterator.class;
 
@@ -409,6 +420,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         setPushdownThreshold(other.getPushdownThreshold());
         setVisitorManager(other.getVisitorManager());
         setTransformRules(other.getTransformRules() == null ? null : new ArrayList<>(other.transformRules));
+        setReplacementRules(other.getReplacementRules() == null ? null : new ArrayList<>(other.replacementRules));
     }
 
     public void setMetadataHelper(final MetadataHelper metadataHelper) {
@@ -651,12 +663,12 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     /**
      * This method can be used to recreate a range stream based on plan in the configuration. The plan will be adjusted if needed for executability.
      *
-     * @see DatePartitionedQueryPlanner
      * @param config
      * @param settings
      * @param scannerFactory
      * @return a range stream
      * @throws DatawaveQueryException
+     * @see DatePartitionedQueryPlanner
      */
     public CloseableIterable<QueryData> reprocess(ShardQueryConfiguration config, Query settings, ScannerFactory scannerFactory) throws DatawaveQueryException {
 
@@ -1118,6 +1130,11 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
         // need to fetch field to datatype map first
         timedFetchDatatypes(timers, "Fetch Required Datatypes", config.getQueryTree(), config);
+
+        if (!disableFieldReplacementRules) {
+            // apply the configured field replacements
+            config.setQueryTree(timedApplyFieldReplacementRules(timers, config.getQueryTree(), replacementRules));
+        }
 
         if (!disableWhindexFieldMappings) {
             // apply the value-specific field mappings for GeoWave functions
@@ -1672,6 +1689,11 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     protected ASTJexlScript expandRegexFunctionNodes(final ASTJexlScript script, ShardQueryConfiguration config, MetadataHelper metadataHelper,
                     Set<String> indexOnlyFields) throws DatawaveQueryException {
         return visitorManager.validateAndVisit(() -> (RegexFunctionVisitor.expandRegex(config, metadataHelper, indexOnlyFields, script)));
+    }
+
+    protected ASTJexlScript timedApplyFieldReplacementRules(QueryStopwatch timers, final ASTJexlScript script, List<FieldReplacementRule> fieldReplacementRules)
+                    throws DatawaveQueryException {
+        return visitorManager.timedVisit(timers, "Apply Replacement Field Mappings", () -> (FieldReplacementVisitor.apply(script, fieldReplacementRules)));
     }
 
     protected ASTJexlScript timedApplyWhindexFieldMappings(QueryStopwatch timers, final ASTJexlScript script, ShardQueryConfiguration config,
@@ -3322,6 +3344,14 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         this.transformRules.addAll(transformRules);
     }
 
+    public List<FieldReplacementRule> getReplacementRules() {
+        return Collections.unmodifiableList(replacementRules);
+    }
+
+    public void setReplacementRules(List<FieldReplacementRule> replacementRules) {
+        this.replacementRules.addAll(replacementRules);
+    }
+
     /*
      * (non-Javadoc)
      *
@@ -3399,6 +3429,14 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
     public boolean getDisableTestNonExistentFields() {
         return disableTestNonExistentFields;
+    }
+
+    public void setDisableFieldReplacementRules(boolean disableFieldReplacementRules) {
+        this.disableFieldReplacementRules = disableFieldReplacementRules;
+    }
+
+    public boolean getDisableFieldReplacementRules() {
+        return disableFieldReplacementRules;
     }
 
     public void setDisableWhindexFieldMappings(boolean disableWhindexFieldMappings) {
