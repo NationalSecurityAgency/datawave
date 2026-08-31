@@ -1,9 +1,20 @@
 # Ignore any ide and repo dirs/files
 
 **/.m2/**
+.git
+.git/**
+**/.git
 **/.git/**
 **/.idea/**
+target
+target/**
 **/target/**
+**/node_modules
+**/node_modules/**
+**/src/main/frontend/node
+**/src/main/frontend/node/**
+**/lib
+**/lib/**
 **/*.iml/**
 **/.classpath/**
 **/.project/**

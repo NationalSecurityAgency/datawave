@@ -279,11 +279,7 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
             throw new DatawaveFatalQueryException(e);
         }
 
-        if (config.isUseNewIndexLookups()) {
-            return buildIndexLookup(node, false, false, () -> createFieldedRegexIndexLookup(node));
-        } else {
-            return buildIndexLookup(node, false, false, () -> createLookup(node));
-        }
+        return buildIndexLookup(node, false, false, () -> createFieldedRegexIndexLookup(node));
     }
 
     @Override
@@ -492,11 +488,6 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
      */
     protected boolean shouldExpand(JexlNode node) {
         return (!negated || expandUnfieldedNegations || !hasUnfieldedIdentifier(node)) && (node instanceof ASTERNode);
-    }
-
-    protected IndexLookup createLookup(JexlNode node) {
-        String fieldName = JexlASTHelper.getIdentifier(node);
-        return ShardIndexQueryTableStaticMethods.expandRegexTerms((ASTERNode) node, config, scannerFactory, fieldName, helper, executor);
     }
 
     /**

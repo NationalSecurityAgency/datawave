@@ -353,9 +353,11 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
                     log.error("Failed to suspend timer", e);
                 }
             }
-            if (uncaughtExceptionHandler.getThrowable() != null) {
-                log.error("Exception discovered on hasNext call", uncaughtExceptionHandler.getThrowable());
-                throw new RuntimeException(uncaughtExceptionHandler.getThrowable());
+
+            if (uncaughtExceptionHandler.hasUncaughtException()) {
+                Throwable throwable = uncaughtExceptionHandler.getUncaughtException().getLeft();
+                log.error("Exception discovered on hasNext call", throwable);
+                throw new RuntimeException(throwable);
             }
         }
 
@@ -395,9 +397,10 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
             currentEntry = null;
             return retVal;
         } finally {
-            if (uncaughtExceptionHandler.getThrowable() != null) {
-                log.error("Exception discovered on next call", uncaughtExceptionHandler.getThrowable());
-                throw new RuntimeException(uncaughtExceptionHandler.getThrowable());
+            if (uncaughtExceptionHandler.hasUncaughtException()) {
+                Throwable throwable = uncaughtExceptionHandler.getUncaughtException().getLeft();
+                log.error("Exception discovered on next call", throwable);
+                throw new RuntimeException(throwable);
             }
         }
     }
@@ -579,9 +582,10 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
                 if (!isRunning() || state().equals(State.TERMINATED) || state().equals(State.FAILED)) {
                     log.info("aborting offer on scanner invariant due to thread no longer running");
                     throw new InterruptedException("aborting offer on scanner invariant due to thread no longer running");
-                } else if (uncaughtExceptionHandler.getThrowable() != null) {
-                    log.warn("aborting offer on scanner invariant due to throwable", uncaughtExceptionHandler.getThrowable());
-                    throw new RuntimeException("aborting offer on scanner invariant due to throwable", uncaughtExceptionHandler.getThrowable());
+                } else if (uncaughtExceptionHandler.hasUncaughtException()) {
+                    Throwable throwable = uncaughtExceptionHandler.getUncaughtException().getLeft();
+                    log.warn("aborting offer on scanner invariant due to throwable", throwable);
+                    throw new RuntimeException("aborting offer on scanner invariant due to throwable", throwable);
                 } else if (forceClose) {
                     log.info("cleaning up scanner due to external close");
                     throw new InterruptedException("cleaning up scanner due to external close");

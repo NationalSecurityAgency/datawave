@@ -25,7 +25,6 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
-import datawave.data.ColumnFamilyConstants;
 import datawave.data.hash.UID;
 import datawave.data.normalizer.LcNoDiacriticsNormalizer;
 import datawave.data.normalizer.Normalizer;
@@ -35,6 +34,7 @@ import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.NumberType;
 import datawave.data.type.PointType;
 import datawave.ingest.protobuf.Uid;
+import datawave.table.constants.MetadataColumnFamilyConstants;
 import datawave.table.constants.TableName;
 import datawave.util.time.DateHelper;
 
@@ -120,10 +120,10 @@ public class SizesIngest {
             // write metadata for indexed fields
             for (String field : indexedFields) {
                 Mutation m = new Mutation(field);
-                m.put(ColumnFamilyConstants.COLF_E, new Text(datatype), EMPTY_VALUE);
+                m.put(MetadataColumnFamilyConstants.COLF_E, new Text(datatype), EMPTY_VALUE);
                 // skip F column for now
-                m.put(ColumnFamilyConstants.COLF_I, new Text(datatype), EMPTY_VALUE);
-                m.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\0" + normalizerNameForField(field)), EMPTY_VALUE);
+                m.put(MetadataColumnFamilyConstants.COLF_I, new Text(datatype), EMPTY_VALUE);
+                m.put(MetadataColumnFamilyConstants.COLF_T, new Text(datatype + "\0" + normalizerNameForField(field)), EMPTY_VALUE);
                 bw.addMutation(m);
             }
         }

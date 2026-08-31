@@ -130,6 +130,9 @@ public class ColorsTest extends AbstractQueryTest {
         givenParameter(QueryParameters.HIT_LIST, "true");
         logic.setHitList(true);
 
+        // every test also exercises the Kryo TypeMetadata serialization path
+        logic.setKryoTypeMetadata(true);
+
         // default to full date range
         givenDate(ColorsIngest.getStartDay(), ColorsIngest.getEndDay());
     }

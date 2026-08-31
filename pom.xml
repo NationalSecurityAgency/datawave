@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>gov.nsa.datawave</groupId>
     <artifactId>datawave-parent</artifactId>
-    <version>7.43.0-SNAPSHOT</version>
+    <version>7.46.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>DataWave</name>
     <description>DataWave is a Java-based ingest and query framework that leverages Apache Accumulo to provide fast, secure access to your data.</description>
@@ -51,7 +51,7 @@
         <sonar.exclusions>**/StandardLexer.java,**/*.js,**/*.css,**/*.html</sonar.exclusions>
         <sonar.sourceEncoding>UTF-8</sonar.sourceEncoding>
         <surefire.forkCount>1C</surefire.forkCount>
-        <version.accumulo>2.1.4</version.accumulo>
+        <version.accumulo>2.1.5</version.accumulo>
         <version.arquillian>1.4.1.Final</version.arquillian>
         <version.arquillian-weld-ee-embedded>1.0.0.Final</version.arquillian-weld-ee-embedded>
         <version.assertj>3.20.2</version.assertj>
@@ -99,7 +99,7 @@
         <version.hamcrest>1.3</version.hamcrest>
         <version.httpcomponents-httpclient>4.5.13</version.httpcomponents-httpclient>
         <version.httpcomponents-httpcore>4.4.8</version.httpcomponents-httpcore>
-        <version.in-memory-accumulo>4.0.4</version.in-memory-accumulo>
+        <version.in-memory-accumulo>4.0.6</version.in-memory-accumulo>
         <version.infinispan>9.4.21.Final</version.infinispan>
         <version.jackson>2.13.5</version.jackson>
         <version.jackson-mapper-asl>1.9.13</version.jackson-mapper-asl>
@@ -111,7 +111,7 @@
         <version.jaxb-api>2.3.1</version.jaxb-api>
         <version.jaxb-impl>2.3.3</version.jaxb-impl>
         <version.jboss-ejb-api>1.0.2.Final</version.jboss-ejb-api>
-        <version.jcommander>1.72</version.jcommander>
+        <version.jcommander>1.82</version.jcommander>
         <version.jetty>6.1.26</version.jetty>
         <version.jgroups>4.0.19.Final</version.jgroups>
         <version.jjwt>0.11.2</version.jjwt>

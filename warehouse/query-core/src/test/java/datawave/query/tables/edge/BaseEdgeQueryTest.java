@@ -47,7 +47,12 @@ import datawave.webservice.query.exception.QueryException;
 
 /**
  * A base test class to encapsulate everything needed to run query tests against an edge query logic.
+ *
+ * @deprecated this fixture is bound to JUnit 4, and JUnit 5 does not honor the {@code @BeforeClass} setup it declares when that setup is inherited by a
+ *             subclass. Extend {@link BaseEdgeQueryTestJUnit5} instead, which is an otherwise identical copy. This class remains only for subclasses that have
+ *             not yet been migrated, and should be deleted once there are none.
  */
+@Deprecated
 public abstract class BaseEdgeQueryTest {
 
     public static final Logger log = Logger.getLogger(BaseEdgeQueryTest.class);

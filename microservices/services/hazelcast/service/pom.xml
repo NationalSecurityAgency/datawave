@@ -4,11 +4,11 @@
     <parent>
         <groupId>gov.nsa.datawave.microservice</groupId>
         <artifactId>datawave-microservice-service-parent</artifactId>
-        <version>5.0.13</version>
+        <version>5.0.14</version>
         <relativePath>../../../microservice-service-parent/pom.xml</relativePath>
     </parent>
     <artifactId>hazelcast-service</artifactId>
-    <version>4.0.7-SNAPSHOT</version>
+    <version>4.0.8-SNAPSHOT</version>
     <description>DATAWAVE Hazelcast Server</description>
     <url>https://code.nsa.gov/datawave-hazelcast-service</url>
     <scm>
@@ -19,7 +19,7 @@
     </scm>
     <properties>
         <start-class>datawave.microservice.cached.server.HazelcastService</start-class>
-        <version.datawave.hazelcast-common>4.0.6</version.datawave.hazelcast-common>
+        <version.datawave.hazelcast-common>4.0.7</version.datawave.hazelcast-common>
         <version.hazelcast-kubernetes>2.2.3</version.hazelcast-kubernetes>
         <!-- dependency declared in datawave-microservice-parent, but the version can be overridden here -->
         <version.log4j>2.26.1</version.log4j>

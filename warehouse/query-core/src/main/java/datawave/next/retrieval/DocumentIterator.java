@@ -98,7 +98,10 @@ public class DocumentIterator extends DocumentIteratorOptions implements SortedK
     }
 
     /**
-     * Aggregates the next candidate if one exists
+     * Aggregates candidates, in order, until one matches the query or the candidate list is exhausted.
+     * <p>
+     * A single candidate that fails to match must not be mistaken for the iterator being done: {@code hasTop()} reports done only once {@code tk} is null AND
+     * there are no more candidates left to try, so this must keep advancing through the remaining candidates on a miss rather than trying just one.
      *
      * @throws IOException
      *             if something goes wrong
@@ -106,8 +109,7 @@ public class DocumentIterator extends DocumentIteratorOptions implements SortedK
     private void aggregateNextCandidate() throws IOException {
         tk = null;
         tv = null;
-        // aggregate document
-        if (!candidates.isEmpty()) {
+        while (tk == null && !candidates.isEmpty()) {
             String nextCandidate = candidates.remove(0);
             aggregateCandidate(nextCandidate);
         }
@@ -224,7 +226,9 @@ public class DocumentIterator extends DocumentIteratorOptions implements SortedK
                 Text cf = new Text("fi\0" + field);
                 Text cq = new Text(value + "\0" + candidate);
                 Key start = new Key(range.getStartKey().getRow(), cf, cq);
-                Range range = new Range(start, true, start.followingKey(PartialKey.ROW_COLFAM), false);
+                // bound the range to just this exact (field, value, candidate) entry - stopping at the next column
+                // family (ROW_COLFAM) would sweep in unrelated entries for other values/documents sharing this field
+                Range range = new Range(start, true, start.followingKey(PartialKey.ROW_COLFAM_COLQUAL), false);
                 ranges.add(range);
             }
         }
@@ -259,7 +263,10 @@ public class DocumentIterator extends DocumentIteratorOptions implements SortedK
             for (String value : termFrequencyFieldValues.get(field)) {
                 Text cq = new Text(candidate + "\0" + value + "\0" + field);
                 Key start = new Key(range.getStartKey().getRow(), cf, cq);
-                Range range = new Range(start, true, start.followingKey(PartialKey.ROW_COLFAM), false);
+                // bound the range to just this exact (candidate, value, field) entry - the "tf" column family is
+                // shared by the entire row, so stopping at the next column family (ROW_COLFAM) would sweep in
+                // unrelated term frequency entries for other documents/fields/values
+                Range range = new Range(start, true, start.followingKey(PartialKey.ROW_COLFAM_COLQUAL), false);
                 ranges.add(range);
             }
         }

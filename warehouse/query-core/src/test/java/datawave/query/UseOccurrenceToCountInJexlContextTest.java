@@ -36,7 +36,6 @@ import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.Multimap;
 
 import datawave.core.query.configuration.GenericQueryConfiguration;
-import datawave.data.ColumnFamilyConstants;
 import datawave.data.hash.UID;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.Type;
@@ -56,6 +55,7 @@ import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.util.DateIndexHelperFactory;
 import datawave.query.util.MetadataHelperFactory;
+import datawave.table.constants.MetadataColumnFamilyConstants;
 import datawave.table.constants.TableName;
 
 /**
@@ -515,42 +515,42 @@ public abstract class UseOccurrenceToCountInJexlContextTest {
                 bw = client.createBatchWriter(QueryTestTableHelper.METADATA_TABLE_NAME, bwConfig);
 
                 mutation = new Mutation("NAME");
-                mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), columnVisibility, timeStamp, emptyValue);
-                mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), columnVisibility, timeStamp, emptyValue);
-                mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), columnVisibility, timeStamp,
-                                emptyValue);
-                mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype), columnVisibility, timeStamp, emptyValue);
+                mutation.put(MetadataColumnFamilyConstants.COLF_E, new Text(datatype), columnVisibility, timeStamp, emptyValue);
+                mutation.put(MetadataColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), columnVisibility, timeStamp, emptyValue);
+                mutation.put(MetadataColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), columnVisibility,
+                                timeStamp, emptyValue);
+                mutation.put(MetadataColumnFamilyConstants.COLF_I, new Text(datatype), columnVisibility, timeStamp, emptyValue);
                 bw.addMutation(mutation);
 
                 mutation = new Mutation("FOO");
-                mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), columnVisibility, timeStamp, emptyValue);
-                mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), columnVisibility, timeStamp, emptyValue);
-                mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), columnVisibility, timeStamp,
-                                emptyValue);
+                mutation.put(MetadataColumnFamilyConstants.COLF_E, new Text(datatype), columnVisibility, timeStamp, emptyValue);
+                mutation.put(MetadataColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), columnVisibility, timeStamp, emptyValue);
+                mutation.put(MetadataColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), columnVisibility,
+                                timeStamp, emptyValue);
                 bw.addMutation(mutation);
 
                 mutation = new Mutation("BAR");
-                mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), columnVisibility, timeStamp, emptyValue);
-                mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), columnVisibility, timeStamp, emptyValue);
-                mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), columnVisibility, timeStamp,
-                                emptyValue);
-                mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype), columnVisibility, timeStamp, emptyValue);
+                mutation.put(MetadataColumnFamilyConstants.COLF_E, new Text(datatype), columnVisibility, timeStamp, emptyValue);
+                mutation.put(MetadataColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), columnVisibility, timeStamp, emptyValue);
+                mutation.put(MetadataColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), columnVisibility,
+                                timeStamp, emptyValue);
+                mutation.put(MetadataColumnFamilyConstants.COLF_I, new Text(datatype), columnVisibility, timeStamp, emptyValue);
                 bw.addMutation(mutation);
 
                 mutation = new Mutation("BAZ");
-                mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), columnVisibility, timeStamp, emptyValue);
-                mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), columnVisibility, timeStamp, emptyValue);
-                mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), columnVisibility, timeStamp,
-                                emptyValue);
+                mutation.put(MetadataColumnFamilyConstants.COLF_E, new Text(datatype), columnVisibility, timeStamp, emptyValue);
+                mutation.put(MetadataColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), columnVisibility, timeStamp, emptyValue);
+                mutation.put(MetadataColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), columnVisibility,
+                                timeStamp, emptyValue);
                 bw.addMutation(mutation);
 
                 mutation = new Mutation("UUID");
-                mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), columnVisibility, timeStamp, emptyValue);
-                mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), columnVisibility, timeStamp, emptyValue);
-                mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype), columnVisibility, timeStamp, emptyValue);
-                mutation.put(ColumnFamilyConstants.COLF_RI, new Text(datatype), columnVisibility, timeStamp, emptyValue);
-                mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), columnVisibility, timeStamp,
-                                emptyValue);
+                mutation.put(MetadataColumnFamilyConstants.COLF_E, new Text(datatype), columnVisibility, timeStamp, emptyValue);
+                mutation.put(MetadataColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), columnVisibility, timeStamp, emptyValue);
+                mutation.put(MetadataColumnFamilyConstants.COLF_I, new Text(datatype), columnVisibility, timeStamp, emptyValue);
+                mutation.put(MetadataColumnFamilyConstants.COLF_RI, new Text(datatype), columnVisibility, timeStamp, emptyValue);
+                mutation.put(MetadataColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), columnVisibility,
+                                timeStamp, emptyValue);
                 bw.addMutation(mutation);
             } finally {
                 if (null != bw) {

@@ -1,11 +1,11 @@
 package datawave.iterators;
 
-import static datawave.data.ColumnFamilyConstants.COLF_DESC;
-import static datawave.data.ColumnFamilyConstants.COLF_E;
-import static datawave.data.ColumnFamilyConstants.COLF_F;
-import static datawave.data.ColumnFamilyConstants.COLF_I;
-import static datawave.data.ColumnFamilyConstants.COLF_RI;
 import static datawave.query.util.TestUtils.createDateFrequencyMap;
+import static datawave.table.constants.MetadataColumnFamilyConstants.COLF_DESC;
+import static datawave.table.constants.MetadataColumnFamilyConstants.COLF_E;
+import static datawave.table.constants.MetadataColumnFamilyConstants.COLF_F;
+import static datawave.table.constants.MetadataColumnFamilyConstants.COLF_I;
+import static datawave.table.constants.MetadataColumnFamilyConstants.COLF_RI;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.File;
