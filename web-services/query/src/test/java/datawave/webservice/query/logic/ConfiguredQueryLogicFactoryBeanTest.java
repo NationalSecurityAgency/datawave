@@ -28,6 +28,7 @@ import com.google.common.collect.Multimap;
 import datawave.core.query.logic.BaseQueryLogic;
 import datawave.core.query.logic.QueryLogic;
 import datawave.core.query.logic.QueryLogicFactory;
+import datawave.microservice.query.logic.config.QueryLogicFactoryProperties;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUser.UserType;
@@ -74,9 +75,9 @@ public class ConfiguredQueryLogicFactoryBeanTest {
         ClassPathXmlApplicationContext queryFactory = new ClassPathXmlApplicationContext();
         queryFactory.setConfigLocation("TestConfiguredQueryLogicFactory.xml");
         queryFactory.refresh();
-        QueryLogicFactoryConfiguration factoryConfig = queryFactory.getBean("queryLogicFactoryConfiguration", QueryLogicFactoryConfiguration.class);
+        QueryLogicFactoryProperties factoryProperties = queryFactory.getBean("queryLogicFactoryProperties", QueryLogicFactoryProperties.class);
 
-        ReflectionTestUtils.setField(queryLogicFactory, "queryLogicFactoryConfiguration", factoryConfig);
+        ReflectionTestUtils.setField(queryLogicFactory, "queryLogicFactoryProperties", factoryProperties);
         ReflectionTestUtils.setField(queryLogicFactory, "applicationContext", context);
 
         alternateLogicMap = (Map<String,String>) queryFactory.getBean("ExpandedLogicMap");
@@ -140,10 +141,9 @@ public class ConfiguredQueryLogicFactoryBeanTest {
     @Test
     public void testMappingLogicName() throws QueryException, CloneNotSupportedException {
         // for this test someone with the ADMINISTRATOR role should be redirected to the ADMIN logic
-        QueryLogicFactoryConfiguration config = (QueryLogicFactoryConfiguration) ReflectionTestUtils.getField(queryLogicFactory,
-                        "queryLogicFactoryConfiguration");
-        assertNotNull(config);
-        config.setLogicMap(alternateLogicMap);
+        QueryLogicFactoryProperties properties = (QueryLogicFactoryProperties) ReflectionTestUtils.getField(queryLogicFactory, "queryLogicFactoryProperties");
+        assertNotNull(properties);
+        properties.setQueryLogicsByName(alternateLogicMap);
 
         QueryLogic<?> logic = queryLogicFactory.getQueryLogic(ADMINISTRATOR_LOGIC_NAME, ADMIN_PRINCIPLE);
         assertEquals(adminQueryLogic, logic);

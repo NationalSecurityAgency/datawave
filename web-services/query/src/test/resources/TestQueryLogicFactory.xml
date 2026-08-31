@@ -21,7 +21,7 @@
 		</property>
 	</bean>
 
-	<bean id="QueryLogicFactoryConfiguration" class="datawave.webservice.query.logic.QueryLogicFactoryConfiguration" />
+	<bean id="QueryLogicFactoryProperties" class="datawave.microservice.query.logic.config.QueryLogicFactoryProperties" />
 
 	<bean id="TestQuery" class="datawave.webservice.query.logic.TestQueryLogic">
 		<property name="tableName" value="${metadata.table.name}" />

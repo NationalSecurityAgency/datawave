@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:util="http://www.springframework.org/schema/util"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+        http://www.springframework.org/schema/util
+        http://www.springframework.org/schema/util/spring-util-4.0.xsd">
+
+    <bean id="KeywordUUIDQuery" parent="baseQueryLogic" scope="prototype" class="datawave.query.tables.keyword.KeywordChainedUUIDQueryLogic">
+        <property name="logic1">
+            <bean scope="prototype" parent="BaseEventQuery">
+                <property name="auditType" value="NONE" />
+                <property name="logicDescription" value="Lucene query for event/document UUIDs" />
+                <property name="mandatoryQuerySyntax">
+                    <util:set>
+                        <value>LUCENE-UUID</value>
+                    </util:set>
+                </property>
+                <property name="connPoolName" value="UUID" />
+            </bean>
+        </property>
+        <property name="logic2" ref="KeywordQuery"/>
+        <property name="auditType" value="NONE"/>
+        <property name="chainStrategy">
+            <bean class="datawave.query.tables.keyword.KeywordUUIDChainStrategy"/>
+        </property>
+    </bean>
+
+    <!-- Query Logic that consumes document UIDs and returns extracted keywords -->
+    <bean id="KeywordQuery" parent="baseQueryLogic" scope="prototype"  class="datawave.query.tables.keyword.KeywordQueryLogic">
+        <property name="tableName" value="${datawave.query.logic.logics.KeywordQuery.tableName}" />
+        <property name="maxResults" value="${datawave.query.logic.logics.KeywordQuery.maxResults}" />
+        <property name="maxWork" value="${datawave.query.logic.logics.KeywordQuery.maxWork}" />
+        <property name="auditType" value="${datawave.query.logic.logics.KeywordQuery.auditType}" />
+        <property name="logicDescription" value="${datawave.query.logic.logics.KeywordQuery.logicDescription}" />
+        <property name="queryThreads" value="${datawave.query.logic.logics.KeywordQuery.queryThreads}" />
+        <property name="maxContentChars" value="${datawave.query.logic.logics.KeywordQuery.maxContentChars}"/>
+        <property name="maxKeywords" value="${datawave.query.logic.logics.KeywordQuery.maxKeywords}"/>
+        <property name="maxNgrams" value="${datawave.query.logic.logics.KeywordQuery.maxNgrams}"/>
+        <property name="minNgrams" value="${datawave.query.logic.logics.KeywordQuery.minNgrams}"/>
+        <property name="maxScore" value="${datawave.query.logic.logics.KeywordQuery.maxScore}"/>
+        <property name="preferredViews">
+            <util:list>
+                <value>REVISION_TEXT</value>
+            </util:list>
+        </property>
+        <property name="tagCloudUtils">
+            <bean class="datawave.util.keyword.DefaultTagCloudUtils"/>
+        </property>
+    </bean>
+</beans>

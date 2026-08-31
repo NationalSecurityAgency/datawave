@@ -8,7 +8,7 @@
      http://www.springframework.org/schema/beans/spring-beans.xsd
      http://www.springframework.org/schema/cache
      http://www.springframework.org/schema/cache/spring-cache.xsd">
-     
+
     <cache:annotation-driven cache-manager="markings-cache-manager"/>
 
      <!-- bean id="markings-cache-manager" class="org.infinispan.spring.provider.SpringEmbeddedCacheManagerFactoryBean" /> -->

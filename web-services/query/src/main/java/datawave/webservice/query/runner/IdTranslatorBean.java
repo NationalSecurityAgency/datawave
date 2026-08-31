@@ -6,7 +6,6 @@ import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.UUID;
@@ -46,12 +45,12 @@ import datawave.interceptor.RequiredInterceptor;
 import datawave.interceptor.ResponseInterceptor;
 import datawave.microservice.query.QueryParameters;
 import datawave.microservice.query.QueryPersistence;
+import datawave.microservice.query.translateid.TranslateIdProperties;
 import datawave.query.data.UUIDType;
 import datawave.resteasy.util.DateFormatter;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.util.WSAuthorizationsUtil;
 import datawave.webservice.common.exception.DatawaveWebApplicationException;
-import datawave.webservice.query.configuration.IdTranslatorConfiguration;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.VoidResponse;
 
@@ -69,7 +68,7 @@ public class IdTranslatorBean {
 
     @Inject
     @SpringBean(refreshable = true)
-    private IdTranslatorConfiguration idTranslatorConfiguration;
+    private TranslateIdProperties translateIdProperties;
 
     @Resource
     private EJBContext ctx;
@@ -88,13 +87,12 @@ public class IdTranslatorBean {
 
     @PostConstruct
     public void init() {
-        this.columnVisibility = idTranslatorConfiguration.getColumnVisibility();
+        this.columnVisibility = translateIdProperties.getColumnVisibility();
 
         // Populate the UUIDType map
-        final List<UUIDType> types = idTranslatorConfiguration.getUuidTypes();
         this.uuidTypes.clear();
-        if (null != types) {
-            for (final UUIDType type : types) {
+        if (translateIdProperties.getUuidTypes() != null) {
+            for (final UUIDType type : translateIdProperties.getUuidTypes().values()) {
                 if (null != type) {
                     this.uuidTypes.put(type.getFieldName().toUpperCase(), type);
                 }
@@ -105,7 +103,7 @@ public class IdTranslatorBean {
         final SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
         sdf.setTimeZone(TimeZone.getTimeZone("GMT"));
         try {
-            this.beginDate = sdf.parse(idTranslatorConfiguration.getBeginDate());
+            this.beginDate = sdf.parse(translateIdProperties.getBeginDate());
         } catch (ParseException e) {
             this.log.error(e.getMessage(), e);
         }
@@ -243,7 +241,7 @@ public class IdTranslatorBean {
         String auths = getAuths(logicName, ctx.getCallerPrincipal());
 
         MultivaluedMap<String,String> p = new MultivaluedMapImpl<>();
-        p.putAll(idTranslatorConfiguration.optionalParamsToMap());
+        p.putAll(translateIdProperties.optionalParamsToMap());
         p.putSingle(QueryParameters.QUERY_LOGIC_NAME, logicName);
         p.putSingle(QueryParameters.QUERY_STRING, query);
         p.putSingle(QueryParameters.QUERY_NAME, queryName);

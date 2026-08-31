@@ -16,6 +16,14 @@ warehouse:
     host: localhost
     port: 8125
   tables:
+    annotation:
+      name: 'annotation'
+    annotationSource:
+      name: 'annotationSource'
+    truthmark:
+      name: 'truthmark'
+    truthmarkSource:
+      name: 'truthmarkSource'
     shard:
       name: 'shard'
     index:
@@ -30,6 +38,8 @@ warehouse:
       name: 'DatawaveMetadata'
     edge:
       name: 'protobufedge'
+    ssdeepIndex:
+      name: 'ssdeepIndex'
   errorTables:
     shard:
       name: "error_s"
@@ -57,6 +67,7 @@ warehouse:
     model:
       name: "queryMetrics_m"
   defaults:
+    checkpointable: true
     queryThreads: 100
     indexLookupThreads: 100
     dateIndexThreads: 20
@@ -75,6 +86,7 @@ warehouse:
     maxOrExpansionFstThreshold: 750
     maxFieldIndexRangeSplit: 16
     maxIvaratorSources: 20
+    maxIvaratorSourceWait: 1800000
     maxEvaluationPipelines: 16
     maxPipelineCachedResults: 16
     hdfsSiteConfigURLs: 'file:///etc/hadoop/conf/core-site.xml,file:///etc/hadoop/conf/hdfs-site.xml'
@@ -84,6 +96,7 @@ warehouse:
     ivaratorCacheScanPersistThreshold: 100000
     ivaratorCacheScanTimeoutMinutes: 60
     yieldThresholdMs: 188400
+    maxYields: 20
     modelName: 'DATAWAVE'
     edgeModelName: 'DATAWAVE_EDGE'
 
@@ -160,6 +173,7 @@ datawave:
           reverseIndexTableName: ${warehouse.tables.reverseIndex.name}
           maxResults: -1
           queryThreads: ${warehouse.defaults.queryThreads}
+          maxConcurrentTasks: ${warehouse.defaults.queryThreads}
           indexLookupThreads: ${warehouse.defaults.indexLookupThreads}
           dateIndexThreads: ${warehouse.defaults.dateIndexThreads}
           fullTableScanEnabled: ${warehouse.defaults.fullTableScanEnabled}
@@ -198,6 +212,7 @@ datawave:
           maxOrExpansionFstThreshold: ${warehouse.defaults.maxOrExpansionFstThreshold}
           maxFieldIndexRangeSplit: ${warehouse.defaults.maxFieldIndexRangeSplit}
           maxIvaratorSources: ${warehouse.defaults.maxIvaratorSources}
+          maxIvaratorSourceWait: ${warehouse.defaults.maxIvaratorSourceWait}
           maxEvaluationPipelines: ${warehouse.defaults.maxEvaluationPipelines}
           maxPipelineCachedResults: ${warehouse.defaults.maxPipelineCachedResults}
           hdfsSiteConfigURLs: ${warehouse.defaults.hdfsSiteConfigURLs}
@@ -210,6 +225,7 @@ datawave:
           ivaratorCacheScanPersistThreshold: ${warehouse.defaults.ivaratorCacheScanPersistThreshold}
           ivaratorCacheScanTimeoutMinutes: ${warehouse.defaults.ivaratorCacheScanTimeoutMinutes}
           yieldThresholdMs: ${warehouse.defaults.yieldThresholdMs}
+          maxYields: ${warehouse.defaults.maxYields}
           eventQueryDataDecoratorTransformer:
             requestedDecorators:
               - "CSV"
@@ -236,7 +252,6 @@ datawave:
           statsdHost: ${warehouse.statsd.host}
           statsdPort: ${warehouse.statsd.port}
           evaluationOnlyFields: ""
-          maxConcurrentTasks: 10
           requiredRoles:
             - "AuthorizedUser"
 
@@ -323,9 +338,9 @@ datawave:
           maxResults: 25000
           maxWork: -1
           queryThreads: 16
+          maxConcurrentTasks: 10
           auditType: "NONE"
           logicDescription: "Retrieve graph edges matching the search term(s)"
-          maxConcurrentTasks: 10
           querySyntaxParsers:
             "JEXL": ""
             "LIST": ""
@@ -353,12 +368,12 @@ datawave:
           maxResults: -1
           maxWork: -1
           queryThreads: ${warehouse.defaults.queryThreads}
+          maxConcurrentTasks: ${warehouse.defaults.queryThreads}
           modelTableName: ${warehouse.tables.model.name}
           modelName: "DATAWAVE"
           maxUniqueValues: 20000
           auditType: "NONE"
           logicDescription: "Indexed Fields Only:  Given FIELDNAME returns counts for each unique value. Given FIELDNAME:FIELDVALUE returns count for only that value."
-          maxConcurrentTasks: 10
 
         ErrorFieldIndexCountQuery:
           checkpointable: false
@@ -369,12 +384,12 @@ datawave:
           maxResults: -1
           maxWork: -1
           queryThreads: ${warehouse.defaults.queryThreads}
+          maxConcurrentTasks: ${warehouse.defaults.queryThreads}
           modelTableName: ${warehouse.errorTables.model.name}
           modelName: "DATAWAVE"
           maxUniqueValues: 20000
           auditType: "NONE"
           logicDescription: "FieldIndex count query (experimental)"
-          maxConcurrentTasks: 10
 
         TermFrequencyQuery:
           tableName: ${warehouse.tables.shard.name}
@@ -471,6 +486,52 @@ datawave:
           logicDescription: "Use results of an EdgeQuery to obtain events/documents that created the given edge"
           edgeModelName: "DATAWAVE_EDGE"
           modelTableName: ${warehouse.tables.model.name}
+
+        SSDeepSimilarityQuery:
+          checkpointable: ${warehouse.defaults.checkpointable}
+          tableName: ${warehouse.tables.ssdeepIndex.name}
+          maxResults: -1
+          maxWork: -1
+          auditType: "NONE"
+          indexBuckets: 32
+          queryThreads: 100
+          maxRepeatedCharacters: 3
+          bucketEncodingBase: 32
+          bucketEncodingLength: 2
+          logicDescription: "Query that will retrieve similar ssdeep hashes"
+
+        SSDeepDiscoveryQuery:
+          checkpointable: ${warehouse.defaults.checkpointable}
+          tableName: ${warehouse.tables.index.name}
+          indexTableName: ${warehouse.tables.index.name}
+          reverseIndexTableName: ${warehouse.tables.reverseIndex.name}
+          maxResults: -1
+          maxWork: -1
+          modelTableName: ${warehouse.tables.model.name}
+          modelName: ${warehouse.defaults.modelName}
+          fullTableScanEnabled: ${warehouse.defaults.fullTableScanEnabled}
+          allowLeadingWildcard: true
+          auditType: "NONE"
+          logicDescription: "Discovery query that returns information from the index about the supplied term(s)"
+
+        SSDeepSimilarityDiscoveryQuery:
+          checkpointable: ${warehouse.defaults.checkpointable}
+          tableName: ${warehouse.tables.ssdeepIndex.name}
+          auditType: "NONE"
+          logicDescription: "Query that will retrieve similar ssdeep hashes and then automatically perform a follow-on Discovery query that returns information from the index about the similar hashes"
+
+        KeywordQuery:
+          tableName: ${warehouse.tables.shard.name}
+          maxResults: -1
+          maxWork: -1
+          auditType: "NONE"
+          logicDescription: "Query that returns keywords from content"
+          queryThreads: 100
+          maxContentChars: 32768
+          maxKeywords: 10
+          maxNgrams: 3
+          minNgrams: 1
+          maxScore: "0.6f"
 
     uuidTypes: &defaultUuidTypes
       'EVENT_ID':

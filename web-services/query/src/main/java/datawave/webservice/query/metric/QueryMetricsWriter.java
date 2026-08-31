@@ -43,6 +43,8 @@ import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.microservice.querymetric.BaseQueryMetric.Lifecycle;
 import datawave.microservice.querymetric.BaseQueryMetric.PageMetric;
 import datawave.util.timely.UdpClient;
+import datawave.webservice.config.QueryMetricsTimelyProperties;
+import datawave.webservice.config.QueryMetricsWriterProperties;
 import datawave.webservice.query.exception.QueryExceptionType;
 import datawave.webservice.result.VoidResponse;
 
@@ -72,8 +74,12 @@ public class QueryMetricsWriter {
     private RemoteQueryMetricService remoteQueryMetricService;
 
     @Inject
-    @SpringBean(name = "QueryMetricsWriterConfiguration", refreshable = true)
-    private QueryMetricsWriterConfiguration writerConfig;
+    @SpringBean
+    private QueryMetricsWriterProperties writerProperties;
+
+    @Inject
+    @SpringBean
+    private QueryMetricsTimelyProperties timelyProperties;
 
     private UdpClient timelyClient = null;
 
@@ -86,10 +92,10 @@ public class QueryMetricsWriter {
     @PostConstruct
     private void init() {
         timelyClient = createUdpClient();
-        blockingQueue = new LinkedBlockingQueue(writerConfig.getMaxQueueSize());
+        blockingQueue = new LinkedBlockingQueue(writerProperties.getMaxQueueSize());
         int numWorkers = 1;
-        if (writerConfig.getUseRemoteService()) {
-            numWorkers = writerConfig.getRemoteProcessorThreads();
+        if (writerProperties.getUseRemoteService()) {
+            numWorkers = writerProperties.getRemoteProcessorThreads();
         }
         ExecutorService executorService = Executors.newFixedThreadPool(numWorkers, managedThreadFactory);
         for (int x = 0; x < numWorkers; x++) {
@@ -105,7 +111,7 @@ public class QueryMetricsWriter {
     public void shutdown() {
         // try to ensure that the task running on the managed thread exits before shutdown
         long start = System.currentTimeMillis();
-        long maxShutDownMs = writerConfig.getMaxShutdownMs();
+        long maxShutDownMs = writerProperties.getMaxShutdownMs();
         this.shutDownQueue = true;
         // allow processors to continue for maxShutDownMs or until queue is empty
         while (!blockingQueue.isEmpty() && (maxShutDownMs - (System.currentTimeMillis() - start) > 0)) {
@@ -136,8 +142,8 @@ public class QueryMetricsWriter {
      * @return udpClient
      */
     private UdpClient createUdpClient() {
-        if (writerConfig != null && StringUtils.isNotBlank(writerConfig.getTimelyHost())) {
-            return new UdpClient(writerConfig.getTimelyHost(), writerConfig.getTimelyPort());
+        if (writerProperties != null && StringUtils.isNotBlank(timelyProperties.getHost())) {
+            return new UdpClient(timelyProperties.getHost(), timelyProperties.getPort());
         } else {
             return null;
         }
@@ -173,7 +179,7 @@ public class QueryMetricsWriter {
                 if (queryMetricHolder.getQueryMetric().getLifecycle().compareTo(Lifecycle.INITIALIZED) <= 0) {
                     String queryId = queryMetricHolder.getQueryMetric().getQueryId();
                     log.error(String.format("metric queue limit reached (%d/%d), dropping metric for queryId %s", blockingQueue.size(),
-                                    writerConfig.getMaxQueueSize(), queryId));
+                                    writerProperties.getMaxQueueSize(), queryId));
                 }
             }
         } catch (Exception e) {
@@ -304,7 +310,7 @@ public class QueryMetricsWriter {
                 try {
                     // only process metrics if they are being successfully written
                     if (failedMetrics.isEmpty()) {
-                        processQueryMetrics(getMetricsFromQueue(writerConfig.getBatchSize(), writerConfig.getMaxLatencyMs()));
+                        processQueryMetrics(getMetricsFromQueue(writerProperties.getBatchSize(), writerProperties.getMaxLatencyMs()));
                     } else {
                         if (!writeFailedMetrics(failedMetrics)) {
                             log.error(String.format("Unable to write %d previously failed metrics, not reading from blockingQueue size %d",
@@ -333,7 +339,7 @@ public class QueryMetricsWriter {
          */
         private void processQueryMetrics(List<QueryMetricHolder> metricHolderList) {
             if (!metricHolderList.isEmpty()) {
-                if (writerConfig.getUseRemoteService()) {
+                if (writerProperties.getUseRemoteService()) {
                     processQueryMetricsWithRemoteService(metricHolderList);
                 } else {
                     processQueryMetricsWithHandler(metricHolderList);
@@ -410,7 +416,7 @@ public class QueryMetricsWriter {
             int successful = 0;
             while (itr.hasNext()) {
                 FailureRecord f = itr.next();
-                if (writerConfig.getUseRemoteService()) {
+                if (writerProperties.getUseRemoteService()) {
                     try {
                         writeMetricsToRemoteService(Collections.singletonList(f.getMetric()));
                         itr.remove();
@@ -426,7 +432,7 @@ public class QueryMetricsWriter {
                     }
                 }
             }
-            String destination = writerConfig.getUseRemoteService() ? "RemoteQueryMetricService" : "QueryMetricHandler";
+            String destination = writerProperties.getUseRemoteService() ? "RemoteQueryMetricService" : "QueryMetricHandler";
             log.debug(String.format("wrote %d previously failed metric updates to %s with %d failures", successful, destination, failedMetrics.size()));
             boolean anySuccessful = successful > 0;
             processFailedMetricList(anySuccessful);
@@ -540,7 +546,7 @@ public class QueryMetricsWriter {
                     long createDate = queryMetric.getCreateDate().getTime();
 
                     StringBuilder tagSb = new StringBuilder();
-                    Set<String> configuredMetricTags = writerConfig.getTimelyMetricTags();
+                    Set<String> configuredMetricTags = timelyProperties.getMetricFieldTags();
                     for (String fieldName : configuredMetricTags) {
                         String fieldValue = metricValues.get(fieldName);
                         if (!StringUtils.isBlank(fieldValue)) {

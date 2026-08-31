@@ -21,6 +21,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.env.PropertySourcesPropertyResolver;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
@@ -72,14 +73,14 @@ public class XmlPropertyAnalyzer {
     public static final String YML_HEADER = "Effective Yml\n----------------------------------------\n";
 
     private String xmlContent;
-    private Properties properties;
+    private PropertySourcesPropertyResolver propertyResolver;
     private Map<String,String> propertyPlaceholderByKey = new LinkedHashMap<>();
     private Map<String,Object> propertyValueByKey = new LinkedHashMap<>();
     private Map<String,String> propertyRefByKey = new LinkedHashMap<>();
 
-    public XmlPropertyAnalyzer(String xmlContent, Properties properties) {
+    public XmlPropertyAnalyzer(String xmlContent, PropertySourcesPropertyResolver propertyResolver) {
         this.xmlContent = xmlContent;
-        this.properties = properties;
+        this.propertyResolver = propertyResolver;
         analyzeProperties();
     }
 
@@ -129,7 +130,7 @@ public class XmlPropertyAnalyzer {
                             String value = getPropertyValue(node);
                             if (value.startsWith(PLACEHOLDER_PREFIX)) {
                                 propertyPlaceholderByKey.put(key, value);
-                                propertyValueByKey.put(key, properties.get(value.substring(2, value.length() - 1)));
+                                propertyValueByKey.put(key, propertyResolver.getProperty(value.substring(2, value.length() - 1)));
                             } else {
                                 propertyValueByKey.put(key, valueToObject(value));
                             }
@@ -150,7 +151,7 @@ public class XmlPropertyAnalyzer {
 
                     if (((String) value).startsWith(PLACEHOLDER_PREFIX)) {
                         placeholder = (String) value;
-                        value = properties.getProperty(placeholder.substring(2, placeholder.length() - 1));
+                        value = propertyResolver.getProperty(placeholder.substring(2, placeholder.length() - 1));
                     }
 
                     value = valueToObject(value);

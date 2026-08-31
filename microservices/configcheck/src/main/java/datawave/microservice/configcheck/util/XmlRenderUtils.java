@@ -2,15 +2,19 @@ package datawave.microservice.configcheck.util;
 
 import static datawave.microservice.configcheck.util.FileUtils.getFilePath;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.List;
-import java.util.Properties;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.config.YamlPropertiesFactoryBean;
-import org.springframework.core.CollectionFactory;
+import org.springframework.boot.env.PropertiesPropertySourceLoader;
+import org.springframework.boot.env.YamlPropertySourceLoader;
+import org.springframework.core.env.MutablePropertySources;
+import org.springframework.core.env.PropertySource;
+import org.springframework.core.env.PropertySources;
+import org.springframework.core.env.PropertySourcesPropertyResolver;
 import org.springframework.core.io.PathResource;
 import org.springframework.util.PropertyPlaceholderHelper;
 
@@ -34,30 +38,38 @@ public class XmlRenderUtils {
         return xmlContent;
     }
 
-    public static Properties loadProperties(String configdir, List<String> propertiesFiles) {
-        Properties mergedProperties = CollectionFactory.createStringAdaptingProperties();
-        try {
-            for (String propertiesFile : propertiesFiles) {
-                Properties props = CollectionFactory.createStringAdaptingProperties();
-                props.load(Files.newBufferedReader(getFilePath(configdir, propertiesFile)));
-                mergedProperties.putAll(props);
+    public static PropertySources loadPropertySources(String configdir, List<String> propertiesFiles) throws IOException {
+        MutablePropertySources mutablePropertySources = new MutablePropertySources();
+        PropertiesPropertySourceLoader loader = new PropertiesPropertySourceLoader();
+        for (String propertyFile : propertiesFiles) {
+            PathResource resource = new PathResource(getFilePath(configdir, propertyFile));
+            List<PropertySource<?>> propertySources = loader.load(propertyFile, resource);
+            for (PropertySource<?> propertySource : propertySources) {
+                mutablePropertySources.addLast(propertySource);
             }
-        } catch (Exception e) {
-            log.error("Exception reading properties file", e);
         }
-        return mergedProperties;
+        return mutablePropertySources;
     }
 
-    public static Properties loadYamlAsProperties(String configdir, List<String> yamlFiles) {
-        YamlPropertiesFactoryBean yamlPropFactory = new YamlPropertiesFactoryBean();
-        yamlPropFactory.setResources(yamlFiles.stream().map(yamlFile -> new PathResource(getFilePath(configdir, yamlFile))).toArray(PathResource[]::new));
-        return yamlPropFactory.getObject();
+    public static PropertySources getYamlPropertySources(String configdir, List<String> yamlFiles) throws IOException {
+        MutablePropertySources mutablePropertySources = new MutablePropertySources();
+        YamlPropertySourceLoader loader = new YamlPropertySourceLoader();
+        for (String yamlFile : yamlFiles) {
+            PathResource resource = new PathResource(getFilePath(configdir, yamlFile));
+            List<PropertySource<?>> propertySources = loader.load(yamlFile, resource);
+            for (PropertySource<?> propertySource : propertySources) {
+                mutablePropertySources.addLast(propertySource);
+            }
+        }
+        return mutablePropertySources;
     }
 
-    public static String renderContent(String content, Properties properties) {
+    public static String renderContent(String content, PropertySources propertySources) {
         String renderedXmlContent = null;
         if (content != null) {
-            renderedXmlContent = new PropertyPlaceholderHelper("${", "}").replacePlaceholders(content, properties);
+            PropertyPlaceholderHelper propertyPlaceholderHelper = new PropertyPlaceholderHelper("${", "}");
+            PropertySourcesPropertyResolver resolver = new PropertySourcesPropertyResolver(propertySources);
+            renderedXmlContent = propertyPlaceholderHelper.replacePlaceholders(content, placeholderName -> resolver.getProperty(placeholderName));
         }
         return renderedXmlContent;
     }

@@ -84,6 +84,7 @@ public class AnnotationLookupUUIDTest {
 
     @Deployment
     public static JavaArchive createDeployment() {
+        System.setProperty("datawave.configuration.spring.useBootstrapContext", "false");
         System.setProperty("cdi.bean.context", "annotationBeanRefContext.xml");
 
         //@formatter:off

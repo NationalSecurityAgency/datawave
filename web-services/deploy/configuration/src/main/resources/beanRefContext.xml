@@ -5,25 +5,24 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans
     http://www.springframework.org/schema/beans/spring-beans-4.0.xsd" default-autowire="no">
 
-    <bean class="org.springframework.context.support.ClassPathXmlApplicationContext" autowire="no">
-        <constructor-arg>
+    <bean class="datawave.configuration.spring.SpringContextProperties" autowire="no">
+        <property name="sources">
             <list>
                 <value>classpath*:datawave/configuration/spring/CDIBeanPostProcessor.xml</value>
-                <value>classpath*:MarkingFunctionsContext.xml</value>
-                <value>classpath*:MetadataHelperContext.xml</value>
-                <value>classpath*:MetadataHelperCacheListenerContext.xml</value>
+                <value>classpath*:datawave-compile-time-properties/marking/MarkingFunctionsContext.xml</value>
+                <value>classpath*:datawave-compile-time-properties/metadata/MetadataHelperContext.xml</value>
+                <value>classpath*:datawave-compile-time-properties/metadata/MetadataHelperCacheListenerContext.xml</value>
                 <value>classpath*:CacheContext.xml</value>
-                <value>classpath*:datawave/annotation/AnnotationManagerFactory.xml</value>
-                <value>classpath*:datawave/security/PrincipalFactory.xml</value>
-                <value>classpath*:datawave/query/QueryExpiration.xml</value>
-                <value>classpath*:datawave/query/QueryMetricsWriter.xml</value>
-                <value>classpath*:datawave/query/*QueryLogicFactory.xml</value>
-                <value>classpath*:datawave/query/QueryLimiterFactory.xml</value>
-                <value>classpath*:datawave/query/CachedResults*.xml</value>
-				<value>classpath*:datawave/modification/ModificationServices.xml</value>
+                <value>classpath*:datawave-compile-time-properties/annotation/AnnotationManagerFactory.xml</value>
+                <value>classpath*:datawave-compile-time-properties/query/QueryExpiration.xml</value>
+                <value>classpath*:datawave-compile-time-properties/query/QueryMetricsWriter.xml</value>
+                <value>classpath*:datawave-compile-time-properties/query/*QueryLogicFactory.xml</value>
+                <value>classpath*:datawave-compile-time-properties/query/QueryLimiterFactory.xml</value>
+                <value>classpath*:datawave-compile-time-properties/query/CachedResults*.xml</value>
+                <value>classpath*:datawave-compile-time-properties/modification/ModificationServices.xml</value>
                 <value>classpath*:org/apache/accumulo/operations/LookupBean.xml</value>
                 ${security.testauthservice.context.entry}
             </list>
-        </constructor-arg>
+        </property>
     </bean>
 </beans>

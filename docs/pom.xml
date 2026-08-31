@@ -162,7 +162,7 @@
         <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-core</artifactId>
-            <version>${version.springframework}</version>
+            <version>${version.spring-security-core}</version>
         </dependency>
         <dependency>
             <groupId>org.wildfly</groupId>
@@ -318,7 +318,7 @@
                         <configuration combine.children="append">
                             <sourcepath>${project.build.directory}/dependency</sourcepath>
                             <outputDirectory>${project.build.directory}/apidocs</outputDirectory>
-                            <excludePackageNames>generated-sources.*:datawave.microservice.querymetric</excludePackageNames>
+                            <excludePackageNames>generated-sources.*:datawave.microservice.querymetric:datawave.autoconfigure</excludePackageNames>
                         </configuration>
                     </execution>
                 </executions>

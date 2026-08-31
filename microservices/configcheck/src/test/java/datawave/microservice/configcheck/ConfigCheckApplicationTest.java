@@ -33,7 +33,7 @@ public class ConfigCheckApplicationTest {
                 "render",
                 Path.of(resourcesAbsolutePath, "input/microservice/QueryLogicFactory.xml").toFile().getAbsolutePath(),
                 "--configdir=" + Path.of(resourcesAbsolutePath, "input/microservice/yaml/"),
-                "--yaml=" + "application-query.yml"
+                "--yaml=" + "application.yml,application-query.yml"
         };
         // @formatter:on
 
@@ -75,7 +75,7 @@ public class ConfigCheckApplicationTest {
                 "analyze",
                 Path.of(resourcesAbsolutePath, "input/microservice/QueryLogicFactory.xml").toFile().getAbsolutePath(),
                 "--configdir=" + Path.of(resourcesAbsolutePath, "input/microservice/yaml/"),
-                "--yaml=" + "application-query.yml"
+                "--yaml=" + "application.yml,application-query.yml"
         };
         // @formatter:on
 
@@ -117,7 +117,7 @@ public class ConfigCheckApplicationTest {
                 "analyze",
                 Path.of(resourcesAbsolutePath, "input/microservice/QueryLogicFactory.xml").toFile().getAbsolutePath(),
                 "--configdir=" + Path.of(resourcesAbsolutePath, "input/microservice/yaml/"),
-                "--yaml=" + "application-query.yml",
+                "--yaml=" + "application.yml,application-query.yml",
                 "--fullreport"
         };
         // @formatter:on

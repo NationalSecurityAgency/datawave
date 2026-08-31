@@ -44,7 +44,7 @@ import datawave.test.HitTermAssertions;
  * unexpected fields are returned.
  */
 @ExtendWith(SpringExtension.class)
-@ComponentScan(basePackages = "datawave.query")
+@ComponentScan(basePackages = {"datawave.configuration.spring", "datawave.query"})
 // @formatter:off
 @ContextConfiguration(locations = {
         "classpath:datawave/query/QueryLogicFactory.xml",

@@ -89,6 +89,28 @@
             </modules>
         </profile>
         <profile>
+            <id>starter-query-common</id>
+            <activation>
+                <property>
+                    <name>starter-query-common</name>
+                </property>
+            </activation>
+            <modules>
+                <module>query-common</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>starter-webservice</id>
+            <activation>
+                <property>
+                    <name>starter-webservice</name>
+                </property>
+            </activation>
+            <modules>
+                <module>webservice</module>
+            </modules>
+        </profile>
+        <profile>
             <id>starters</id>
             <activation>
                 <property>
@@ -103,6 +125,8 @@
                 <module>metadata</module>
                 <module>query</module>
                 <module>query-metric</module>
+                <module>query-common</module>
+                <module>webservice</module>
             </modules>
         </profile>
     </profiles>

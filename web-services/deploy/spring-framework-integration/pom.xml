@@ -9,7 +9,16 @@
     <artifactId>spring-framework-integration</artifactId>
     <packaging>pom</packaging>
     <name>${project.artifactId}</name>
+    <properties>
+        <version.datawave.starter-datawave>4.0.12</version.datawave.starter-datawave>
+        <version.spring-cloud-starter-bootstrap>3.1.9</version.spring-cloud-starter-bootstrap>
+    </properties>
     <dependencies>
+        <dependency>
+            <groupId>gov.nsa.datawave.microservice</groupId>
+            <artifactId>spring-boot-starter-datawave-webservice</artifactId>
+            <version>${version.datawave.starter-webservice}</version>
+        </dependency>
         <dependency>
             <groupId>org.easymock</groupId>
             <artifactId>easymock</artifactId>
@@ -52,7 +61,35 @@
                     <groupId>jakarta.validation</groupId>
                     <artifactId>jakarta.validation-api</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>org.apache.logging.log4j</groupId>
+                    <artifactId>log4j-slf4j-impl</artifactId>
+                </exclusion>
             </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.microservice</groupId>
+            <artifactId>spring-boot-starter-datawave</artifactId>
+            <version>${version.datawave.starter-datawave}</version>
+            <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-starter-logging</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.microservice</groupId>
+            <artifactId>spring-boot-starter-datawave-query</artifactId>
+            <version>${version.datawave.starter-query}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.microservice</groupId>
+            <artifactId>spring-boot-starter-datawave-query-common</artifactId>
+            <version>${version.datawave.starter-query-common}</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.webservices</groupId>
@@ -103,7 +140,7 @@
         </dependency>
         <dependency>
             <groupId>org.jboss.arquillian.container</groupId>
-            <artifactId>arquillian-weld-ee-embedded-1.1</artifactId>
+            <artifactId>arquillian-weld-embedded</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -153,6 +190,18 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>org.jboss.weld</groupId>
+            <artifactId>weld-spi</artifactId>
+            <version>3.1.Final</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.weld.module</groupId>
+            <artifactId>weld-web</artifactId>
+            <version>3.1.9.Final</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.picketbox</groupId>
             <artifactId>picketbox</artifactId>
             <scope>test</scope>
@@ -160,6 +209,12 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-bootstrap</artifactId>
+            <version>${version.spring-cloud-starter-bootstrap}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -176,6 +231,30 @@
                             <goal>testCompile</goal>
                         </goals>
                         <phase>test-compile</phase>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>unpack-configuration</id>
+                        <goals>
+                            <goal>unpack</goal>
+                        </goals>
+                        <phase>process-resources</phase>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>gov.nsa.datawave.webservices</groupId>
+                                    <artifactId>datawave-ws-deploy-configuration</artifactId>
+                                    <version>${project.version}</version>
+                                    <classifier>${build.env}</classifier>
+                                </artifactItem>
+                            </artifactItems>
+                            <excludes>META-INF/**</excludes>
+                            <outputDirectory>${project.build.directory}/conf</outputDirectory>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
@@ -219,7 +298,7 @@
                     <reuseForks>false</reuseForks>
                     <additionalClasspathElements>
                         <additionalClasspathElement>${project.build.directory}/conf</additionalClasspathElement>
-                        <additionalClasspathElement>${project.parent.basedir}/web-service/properties</additionalClasspathElement>
+                        <additionalClasspathElement>${project.parent.basedir}/../../properties</additionalClasspathElement>
                     </additionalClasspathElements>
                     <systemPropertyVariables>
                         <log4j1.compatibility>true</log4j1.compatibility>

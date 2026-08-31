@@ -4,11 +4,13 @@ doc.beans.BaseEventQuery.accumuloPassword: ${accumulo.user.password}
 doc.beans.BaseEventQuery.baseIteratorPriority: ${beq.baseIteratorPriority}
 doc.beans.BaseEventQuery.collapseUids: ${query.collapse.uids}
 doc.beans.BaseEventQuery.collapseUidsThreshold: ${query.collapse.uids.threshold}
+doc.beans.BaseEventQuery.collectTimingDetails: ${beq.collectTimingDetails}
 doc.beans.BaseEventQuery.dateIndexTableName: ${date.index.table.name}
 doc.beans.BaseEventQuery.dateIndexThreads: ${date.index.threads}
 doc.beans.BaseEventQuery.defaultDateTypeName: ${default.date.type.name}
 doc.beans.BaseEventQuery.disableIndexOnlyDocuments: ${disable.index.only.documents}
 doc.beans.BaseEventQuery.evaluationOnlyFields: ${evaluation.only.fields}
+doc.beans.BaseEventQuery.fieldRuleClassName: ${event.query.field.rule.class.name}
 doc.beans.BaseEventQuery.finalMaxTermThreshold: ${beq.finalMaxTermThreshold}
 doc.beans.BaseEventQuery.fullTableScanEnabled: ${beq.fullTableScanEnabled}
 doc.beans.BaseEventQuery.hdfsSiteConfigURLs: ${hdfs.site.config.urls}
@@ -24,6 +26,7 @@ doc.beans.BaseEventQuery.maxDepthThreshold: ${beq.maxDepthThreshold}
 doc.beans.BaseEventQuery.maxEvaluationPipelines: ${beq.evaluationPipelines}
 doc.beans.BaseEventQuery.maxFieldIndexRangeSplit: ${beq.fieldIndexRangeSplit}
 doc.beans.BaseEventQuery.maxIndexScanTimeMillis: ${query.max.index.scan.ms}
+doc.beans.BaseEventQuery.maxIvaratorSourceWait: ${beq.maxIvaratorSourceWait}
 doc.beans.BaseEventQuery.maxIvaratorSources: ${beq.maxIvaratorSources}
 doc.beans.BaseEventQuery.maxOrExpansionFstThreshold: ${beq.orExpansionFstThreshold}
 doc.beans.BaseEventQuery.maxOrExpansionThreshold: ${beq.orExpansionThreshold}
@@ -32,12 +35,14 @@ doc.beans.BaseEventQuery.maxPipelineCachedResults: ${beq.pipelineCachedResults}
 doc.beans.BaseEventQuery.maxResults: ${event.query.max.results}
 doc.beans.BaseEventQuery.maxUnfieldedExpansionThreshold: ${beq.unfieldedExpansionThreshold}
 doc.beans.BaseEventQuery.maxValueExpansionThreshold: ${beq.valueExpansionThreshold}
+doc.beans.BaseEventQuery.maxYields: ${query.iterator.max.yields}
 doc.beans.BaseEventQuery.metadataTableName: ${metadata.table.name}
 doc.beans.BaseEventQuery.modelTableName: ${metadata.table.name}
 doc.beans.BaseEventQuery.queryThreads: ${shard.query.threads}
 doc.beans.BaseEventQuery.reverseIndexTableName: ${rindex.table.name}
 doc.beans.BaseEventQuery.tableName: ${shard.table.name}
 doc.beans.BaseEventQuery.useFilters: ${event.query.filters.enabled}
+doc.beans.BaseEventQuery.yieldThresholdMs: ${query.iterator.yield.threshold.ms}
 doc.beans.BaseEventQuery.zookeeperConfig: ${ivarator.zookeeper.hosts}
 doc.beans.BaseModelEventQuery.modelTableName: ${metadata.table.name}
 doc.beans.ContentQuery.tableName: ${shard.table.name}
@@ -75,6 +80,7 @@ doc.beans.FieldIndexCountQuery.modelTableName: ${metadata.table.name}
 doc.beans.FieldIndexCountQuery.queryThreads: ${shard.query.threads}
 doc.beans.FieldIndexCountQuery.reverseIndexTableName: ${rindex.table.name}
 doc.beans.FieldIndexCountQuery.tableName: ${shard.table.name}
+doc.beans.HitHighlights.dateIndexTableName: ${date.index.table.name}
 doc.beans.HitHighlights.finalMaxTermThreshold: ${beq.finalMaxTermThreshold}
 doc.beans.HitHighlights.hdfsSiteConfigURLs: ${hdfs.site.config.urls}
 doc.beans.HitHighlights.indexTableName: ${index.table.name}
@@ -98,14 +104,13 @@ doc.beans.HitHighlights.queryThreads: ${index.query.threads}
 doc.beans.HitHighlights.reverseIndexTableName: ${rindex.table.name}
 doc.beans.HitHighlights.tableName: ${shard.table.name}
 doc.beans.HitHighlights.zookeeperConfig: ${ivarator.zookeeper.hosts}
-doc.beans.IdTranslatorConfiguration.beginDate: ${lookup.uuid.beginDate}
-doc.beans.LookupUUIDConfiguration.beginDate: ${lookup.uuid.beginDate}
+doc.beans.LookupProperties.beginDate: ${lookup.uuid.beginDate}
 doc.beans.LuceneUUIDEventQuery.queryLogics.ErrorEventQuery.indexTableName: ${error.index.table.name}
 doc.beans.LuceneUUIDEventQuery.queryLogics.ErrorEventQuery.metadataTableName: ${error.metadata.table.name}
 doc.beans.LuceneUUIDEventQuery.queryLogics.ErrorEventQuery.reverseIndexTableName: ${error.rindex.table.name}
 doc.beans.LuceneUUIDEventQuery.queryLogics.ErrorEventQuery.tableName: ${error.shard.table.name}
-doc.beans.QueryLogicFactoryConfiguration.maxPageSize: ${query.max.page.size}
-doc.beans.QueryLogicFactoryConfiguration.pageByteTrigger: ${query.page.byte.trigger}
+doc.beans.QueryLogicFactoryProperties.maxPageSize: ${query.max.page.size}
+doc.beans.QueryLogicFactoryProperties.pageByteTrigger: ${query.page.byte.trigger}
 doc.beans.QueryMetricsQuery.dateIndexTableName: ${querymetrics.dateindex.table.name}
 doc.beans.QueryMetricsQuery.indexTableName: ${querymetrics.index.table.name}
 doc.beans.QueryMetricsQuery.metadataTableName: ${querymetrics.metadata.table.name}
@@ -115,28 +120,34 @@ doc.beans.QueryMetricsQuery.tableName: ${querymetrics.shard.table.name}
 doc.beans.RemoteEventQuery.maxResults: ${event.query.max.results}
 doc.beans.RemoteEventQuery.tableName: ${shard.table.name}
 doc.beans.TermFrequencyQuery.tableName: ${shard.table.name}
+doc.beans.TranslateIdProperties.beginDate: ${lookup.uuid.beginDate}
 
 Values (key: value)
 ----------------------------------------
+doc.beans.AmbiguousNotRule.name: "Check for Ambiguous Usage of NOT"
+doc.beans.AmbiguousOrPhrasesRule.name: "Check for Unfielded Terms That Could Be Wrapped"
+doc.beans.AmbiguousUnquotedPhrasesRule.name: "Check for Unfielded Terms That Could Be Quoted"
 doc.beans.AstValidator.validateFlatten: true
 doc.beans.AstValidator.validateJunctions: true
 doc.beans.AstValidator.validateLineage: true
 doc.beans.AstValidator.validateQueryPropertyMarkers: true
 doc.beans.AstValidator.validateReferenceExpressions: true
-doc.beans.BaseEventQuery.accumuloPassword: "${accumulo.user.password}"
+doc.beans.BaseEventQuery.accumuloPassword: "secret"
 doc.beans.BaseEventQuery.auditType: "NONE"
 doc.beans.BaseEventQuery.baseIteratorPriority: 100
 doc.beans.BaseEventQuery.collapseUids: false
 doc.beans.BaseEventQuery.collapseUidsThreshold: -1
 doc.beans.BaseEventQuery.collectQueryMetrics: true
+doc.beans.BaseEventQuery.collectTimingDetails: true
 doc.beans.BaseEventQuery.contentFieldNames: "CONTENT"
-doc.beans.BaseEventQuery.dateIndexTableName: "${table.name.dateIndex}"
+doc.beans.BaseEventQuery.dateIndexTableName: "datawave.dateIndex"
 doc.beans.BaseEventQuery.dateIndexThreads: 20
 doc.beans.BaseEventQuery.defaultDateTypeName: "EVENT"
 doc.beans.BaseEventQuery.disableIndexOnlyDocuments: false
 doc.beans.BaseEventQuery.docAggregationThresholdMs: -1
 doc.beans.BaseEventQuery.enricherClassNames: "datawave.query.enrich.DatawaveTermFrequencyEnricher"
 doc.beans.BaseEventQuery.evaluationOnlyFields: ""
+doc.beans.BaseEventQuery.fieldRuleClassName: ""
 doc.beans.BaseEventQuery.finalMaxTermThreshold: 2000
 doc.beans.BaseEventQuery.fullTableScanEnabled: false
 doc.beans.BaseEventQuery.hdfsSiteConfigURLs: "file:///etc/hadoop/conf/core-site.xml,file:///etc/hadoop/conf/hdfs-site.xml"
@@ -144,12 +155,12 @@ doc.beans.BaseEventQuery.includeDataTypeAsField: false
 doc.beans.BaseEventQuery.includeHierarchyFields: false
 doc.beans.BaseEventQuery.indexLookupThreads: 100
 doc.beans.BaseEventQuery.indexOnlyFilterFunctionsEnabled: false
-doc.beans.BaseEventQuery.indexTableName: "${table.name.shardIndex}"
+doc.beans.BaseEventQuery.indexTableName: "datawave.shardIndex"
 doc.beans.BaseEventQuery.initialMaxTermThreshold: 2000
 doc.beans.BaseEventQuery.ivaratorCacheBufferSize: 10000
 doc.beans.BaseEventQuery.ivaratorCacheScanPersistThreshold: 100000
 doc.beans.BaseEventQuery.ivaratorCacheScanTimeoutMinutes: 60
-doc.beans.BaseEventQuery.ivaratorFstHdfsBaseURIs: "hdfs:///IvaratorCache"
+doc.beans.BaseEventQuery.ivaratorFstHdfsBaseURIs: "hdfs://localhost:9000/IvaratorCache"
 doc.beans.BaseEventQuery.ivaratorMaxOpenFiles: 100
 doc.beans.BaseEventQuery.logTimingDetails: false
 doc.beans.BaseEventQuery.logicDescription: "Retrieve sharded events/documents, leveraging the global index tables as needed"
@@ -157,6 +168,7 @@ doc.beans.BaseEventQuery.maxDepthThreshold: 2000
 doc.beans.BaseEventQuery.maxEvaluationPipelines: 16
 doc.beans.BaseEventQuery.maxFieldIndexRangeSplit: 16
 doc.beans.BaseEventQuery.maxIndexScanTimeMillis: 3.1536E10
+doc.beans.BaseEventQuery.maxIvaratorSourceWait: 1800000
 doc.beans.BaseEventQuery.maxIvaratorSources: 20
 doc.beans.BaseEventQuery.maxOrExpansionFstThreshold: 750
 doc.beans.BaseEventQuery.maxOrExpansionThreshold: 500
@@ -165,29 +177,32 @@ doc.beans.BaseEventQuery.maxPipelineCachedResults: 16
 doc.beans.BaseEventQuery.maxResults: -1
 doc.beans.BaseEventQuery.maxUnfieldedExpansionThreshold: 50
 doc.beans.BaseEventQuery.maxValueExpansionThreshold: 50
-doc.beans.BaseEventQuery.metadataTableName: "${table.name.metadata}"
+doc.beans.BaseEventQuery.maxYields: 20
+doc.beans.BaseEventQuery.metadataTableName: "datawave.metadata"
 doc.beans.BaseEventQuery.minimumSelectivity: 0.2
 doc.beans.BaseEventQuery.modelName: "DATAWAVE"
-doc.beans.BaseEventQuery.modelTableName: "${table.name.metadata}"
+doc.beans.BaseEventQuery.modelTableName: "datawave.metadata"
 doc.beans.BaseEventQuery.querySyntaxParsers.JEXL: null
 doc.beans.BaseEventQuery.queryThreads: 100
 doc.beans.BaseEventQuery.realmSuffixExclusionPatterns: "<.*>$"
-doc.beans.BaseEventQuery.reverseIndexTableName: "${table.name.shardReverseIndex}"
+doc.beans.BaseEventQuery.reverseIndexTableName: "datawave.shardReverseIndex"
 doc.beans.BaseEventQuery.sendTimingToStatsd: false
 doc.beans.BaseEventQuery.statsdHost: "localhost"
 doc.beans.BaseEventQuery.statsdPort: 8125
-doc.beans.BaseEventQuery.tableName: "${table.name.shard}"
+doc.beans.BaseEventQuery.summaryFieldName: "SUMMARY"
+doc.beans.BaseEventQuery.tableName: "datawave.shard"
 doc.beans.BaseEventQuery.tfAggregationThresholdMs: -1
 doc.beans.BaseEventQuery.useEnrichers: true
 doc.beans.BaseEventQuery.useFilters: false
-doc.beans.BaseEventQuery.zookeeperConfig: ""
+doc.beans.BaseEventQuery.yieldThresholdMs: 188400
+doc.beans.BaseEventQuery.zookeeperConfig: "localhost:2181"
 doc.beans.BaseModelEventQuery.modelName: "DATAWAVE"
-doc.beans.BaseModelEventQuery.modelTableName: "${table.name.metadata}"
+doc.beans.BaseModelEventQuery.modelTableName: "datawave.metadata"
 doc.beans.ContentQuery.auditType: "NONE"
 doc.beans.ContentQuery.logicDescription: "Query that returns a document given the document identifier"
 doc.beans.ContentQuery.maxResults: -1
 doc.beans.ContentQuery.maxWork: -1
-doc.beans.ContentQuery.tableName: "${table.name.shard}"
+doc.beans.ContentQuery.tableName: "datawave.shard"
 doc.beans.CountQuery.logicDescription: "Retrieve event/document counts based on your search criteria"
 doc.beans.DefaultQueryPlanner.compressOptionMappings: true
 doc.beans.DefaultQueryPlanner[0]: 2611
@@ -195,54 +210,54 @@ doc.beans.DefaultQueryPlanner[1]: true
 doc.beans.DiscoveryQuery.allowLeadingWildcard: true
 doc.beans.DiscoveryQuery.auditType: "NONE"
 doc.beans.DiscoveryQuery.fullTableScanEnabled: false
-doc.beans.DiscoveryQuery.indexTableName: "${table.name.shardIndex}"
+doc.beans.DiscoveryQuery.indexTableName: "datawave.shardIndex"
 doc.beans.DiscoveryQuery.logicDescription: "Discovery query that returns information from the index about the supplied term(s)"
 doc.beans.DiscoveryQuery.maxResults: -1
 doc.beans.DiscoveryQuery.maxWork: -1
-doc.beans.DiscoveryQuery.metadataTableName: "${table.name.metadata}"
+doc.beans.DiscoveryQuery.metadataTableName: "datawave.metadata"
 doc.beans.DiscoveryQuery.modelName: "DATAWAVE"
-doc.beans.DiscoveryQuery.modelTableName: "${table.name.metadata}"
-doc.beans.DiscoveryQuery.reverseIndexTableName: "${table.name.shardReverseIndex}"
-doc.beans.DiscoveryQuery.tableName: "${table.name.shardIndex}"
+doc.beans.DiscoveryQuery.modelTableName: "datawave.metadata"
+doc.beans.DiscoveryQuery.reverseIndexTableName: "datawave.shardReverseIndex"
+doc.beans.DiscoveryQuery.tableName: "datawave.shardIndex"
 doc.beans.EdgeEventQuery.edgeModelName: "DATAWAVE_EDGE"
 doc.beans.EdgeEventQuery.logicDescription: "Use results of an EdgeQuery to obtain events/documents that created the given edge"
-doc.beans.EdgeEventQuery.modelTableName: "${table.name.metadata}"
-doc.beans.ErrorCountQuery.indexTableName: "${table.name.errors.shardIndex}"
+doc.beans.EdgeEventQuery.modelTableName: "datawave.metadata"
+doc.beans.ErrorCountQuery.indexTableName: "datawave.error_i"
 doc.beans.ErrorCountQuery.logicDescription: "Retrieve counts of errored events based on your search criteria"
-doc.beans.ErrorCountQuery.metadataTableName: "${table.name.errors.metadata}"
-doc.beans.ErrorCountQuery.reverseIndexTableName: "${table.name.errors.shardReverseIndex}"
-doc.beans.ErrorCountQuery.tableName: "${table.name.errors.shard}"
+doc.beans.ErrorCountQuery.metadataTableName: "datawave.error_m"
+doc.beans.ErrorCountQuery.reverseIndexTableName: "datawave.error_r"
+doc.beans.ErrorCountQuery.tableName: "datawave.error_s"
 doc.beans.ErrorDiscoveryQuery.allowLeadingWildcard: true
 doc.beans.ErrorDiscoveryQuery.auditType: "NONE"
 doc.beans.ErrorDiscoveryQuery.fullTableScanEnabled: false
-doc.beans.ErrorDiscoveryQuery.indexTableName: "${table.name.errors.shardIndex}"
+doc.beans.ErrorDiscoveryQuery.indexTableName: "datawave.error_i"
 doc.beans.ErrorDiscoveryQuery.logicDescription: "Discovery query that returns information from the ingest errors index about the supplied term(s)"
 doc.beans.ErrorDiscoveryQuery.maxResults: -1
 doc.beans.ErrorDiscoveryQuery.maxWork: -1
-doc.beans.ErrorDiscoveryQuery.metadataTableName: "${table.name.errors.metadata}"
+doc.beans.ErrorDiscoveryQuery.metadataTableName: "datawave.error_m"
 doc.beans.ErrorDiscoveryQuery.modelName: "DATAWAVE"
-doc.beans.ErrorDiscoveryQuery.modelTableName: "${table.name.metadata}"
-doc.beans.ErrorDiscoveryQuery.reverseIndexTableName: "${table.name.errors.shardReverseIndex}"
-doc.beans.ErrorDiscoveryQuery.tableName: "${table.name.errors.shardIndex}"
+doc.beans.ErrorDiscoveryQuery.modelTableName: "datawave.metadata"
+doc.beans.ErrorDiscoveryQuery.reverseIndexTableName: "datawave.error_r"
+doc.beans.ErrorDiscoveryQuery.tableName: "datawave.error_i"
 doc.beans.ErrorEventQuery.dateIndexTableName: ""
 doc.beans.ErrorEventQuery.includeHierarchyFields: false
-doc.beans.ErrorEventQuery.indexTableName: "${table.name.errors.shardIndex}"
+doc.beans.ErrorEventQuery.indexTableName: "datawave.error_i"
 doc.beans.ErrorEventQuery.logicDescription: "Retrieve events/documents that encountered one or more errors during ingest"
-doc.beans.ErrorEventQuery.metadataTableName: "${table.name.errors.metadata}"
-doc.beans.ErrorEventQuery.reverseIndexTableName: "${table.name.errors.shardReverseIndex}"
-doc.beans.ErrorEventQuery.tableName: "${table.name.errors.shard}"
+doc.beans.ErrorEventQuery.metadataTableName: "datawave.error_m"
+doc.beans.ErrorEventQuery.reverseIndexTableName: "datawave.error_r"
+doc.beans.ErrorEventQuery.tableName: "datawave.error_s"
 doc.beans.ErrorFieldIndexCountQuery.auditType: "NONE"
-doc.beans.ErrorFieldIndexCountQuery.indexTableName: "${table.name.errors.shardIndex}"
+doc.beans.ErrorFieldIndexCountQuery.indexTableName: "datawave.error_i"
 doc.beans.ErrorFieldIndexCountQuery.logicDescription: "FieldIndex count query (experimental)"
 doc.beans.ErrorFieldIndexCountQuery.maxResults: -1
 doc.beans.ErrorFieldIndexCountQuery.maxUniqueValues: 20000
 doc.beans.ErrorFieldIndexCountQuery.maxWork: -1
-doc.beans.ErrorFieldIndexCountQuery.metadataTableName: "${table.name.errors.metadata}"
+doc.beans.ErrorFieldIndexCountQuery.metadataTableName: "datawave.error_m"
 doc.beans.ErrorFieldIndexCountQuery.modelName: "DATAWAVE"
-doc.beans.ErrorFieldIndexCountQuery.modelTableName: "${table.name.metadata}"
+doc.beans.ErrorFieldIndexCountQuery.modelTableName: "datawave.metadata"
 doc.beans.ErrorFieldIndexCountQuery.queryThreads: 100
-doc.beans.ErrorFieldIndexCountQuery.reverseIndexTableName: "${table.name.errors.shardReverseIndex}"
-doc.beans.ErrorFieldIndexCountQuery.tableName: "${table.name.errors.shard}"
+doc.beans.ErrorFieldIndexCountQuery.reverseIndexTableName: "datawave.error_r"
+doc.beans.ErrorFieldIndexCountQuery.tableName: "datawave.error_s"
 doc.beans.EventQuery.logicDescription: "Query the sharded event/document schema, leveraging the global index tables as needed"
 doc.beans.FacetedQuery.auditType: "NONE"
 doc.beans.FacetedQuery.facetHashTableName: "datawave.facetHashes"
@@ -255,30 +270,35 @@ doc.beans.FacetedQuery.maximumFacetGrouping: 200
 doc.beans.FacetedQuery.minimumFacet: 1
 doc.beans.FacetedQuery.querySyntaxParsers.JEXL: null
 doc.beans.FacetedQuery.streaming: true
+doc.beans.FieldExistenceRule.name: "Check Field Existence"
+doc.beans.FieldExistenceRule.specialFields: "_NOFIELD_"
 doc.beans.FieldIndexCountQuery.auditType: "NONE"
-doc.beans.FieldIndexCountQuery.indexTableName: "${table.name.shardIndex}"
+doc.beans.FieldIndexCountQuery.indexTableName: "datawave.shardIndex"
 doc.beans.FieldIndexCountQuery.logicDescription: "Indexed Fields Only:  Given FIELDNAME returns counts for each unique value. Given FIELDNAME:FIELDVALUE returns count for only that value."
 doc.beans.FieldIndexCountQuery.maxResults: -1
 doc.beans.FieldIndexCountQuery.maxUniqueValues: 20000
 doc.beans.FieldIndexCountQuery.maxWork: -1
-doc.beans.FieldIndexCountQuery.metadataTableName: "${table.name.metadata}"
+doc.beans.FieldIndexCountQuery.metadataTableName: "datawave.metadata"
 doc.beans.FieldIndexCountQuery.modelName: "DATAWAVE"
-doc.beans.FieldIndexCountQuery.modelTableName: "${table.name.metadata}"
+doc.beans.FieldIndexCountQuery.modelTableName: "datawave.metadata"
 doc.beans.FieldIndexCountQuery.queryThreads: 100
-doc.beans.FieldIndexCountQuery.reverseIndexTableName: "${table.name.shardReverseIndex}"
-doc.beans.FieldIndexCountQuery.tableName: "${table.name.shard}"
+doc.beans.FieldIndexCountQuery.reverseIndexTableName: "datawave.shardReverseIndex"
+doc.beans.FieldIndexCountQuery.tableName: "datawave.shard"
+doc.beans.FieldPatternPresenceRule.name: "Check Presence of Field or Pattern"
+doc.beans.GroupedInterpretationRule.name: "Interpret Grouped Phrases"
 doc.beans.HitHighlights.auditType: "NONE"
+doc.beans.HitHighlights.dateIndexTableName: "datawave.dateIndex"
 doc.beans.HitHighlights.finalMaxTermThreshold: 2000
 doc.beans.HitHighlights.fullTableScanEnabled: false
 doc.beans.HitHighlights.hdfsSiteConfigURLs: "file:///etc/hadoop/conf/core-site.xml,file:///etc/hadoop/conf/hdfs-site.xml"
 doc.beans.HitHighlights.includeDataTypeAsField: false
 doc.beans.HitHighlights.includeGroupingContext: false
-doc.beans.HitHighlights.indexTableName: "${table.name.shardIndex}"
+doc.beans.HitHighlights.indexTableName: "datawave.shardIndex"
 doc.beans.HitHighlights.initialMaxTermThreshold: 2000
 doc.beans.HitHighlights.ivaratorCacheBufferSize: 10000
 doc.beans.HitHighlights.ivaratorCacheScanPersistThreshold: 100000
 doc.beans.HitHighlights.ivaratorCacheScanTimeoutMinutes: 60
-doc.beans.HitHighlights.ivaratorFstHdfsBaseURIs: "hdfs:///IvaratorCache"
+doc.beans.HitHighlights.ivaratorFstHdfsBaseURIs: "hdfs://localhost:9000/IvaratorCache"
 doc.beans.HitHighlights.ivaratorMaxOpenFiles: 100
 doc.beans.HitHighlights.logicDescription: "Fast boolean query over indexed fields, only returning fields queried on"
 doc.beans.HitHighlights.maxDepthThreshold: 2000
@@ -292,58 +312,60 @@ doc.beans.HitHighlights.maxPipelineCachedResults: 16
 doc.beans.HitHighlights.maxRangesPerRangeIvarator: 5
 doc.beans.HitHighlights.maxUnfieldedExpansionThreshold: 50
 doc.beans.HitHighlights.maxValueExpansionThreshold: 50
-doc.beans.HitHighlights.metadataTableName: "${table.name.metadata}"
+doc.beans.HitHighlights.metadataTableName: "datawave.metadata"
 doc.beans.HitHighlights.minimumSelectivity: 0.2
 doc.beans.HitHighlights.querySyntaxParsers.JEXL: null
 doc.beans.HitHighlights.queryThreads: 100
-doc.beans.HitHighlights.reverseIndexTableName: "${table.name.shardReverseIndex}"
-doc.beans.HitHighlights.tableName: "${table.name.shard}"
+doc.beans.HitHighlights.reverseIndexTableName: "datawave.shardReverseIndex"
+doc.beans.HitHighlights.tableName: "datawave.shard"
 doc.beans.HitHighlights.useEnrichers: false
-doc.beans.HitHighlights.zookeeperConfig: ""
-doc.beans.IdTranslatorConfiguration.beginDate: 20100101
-doc.beans.IdTranslatorConfiguration.columnVisibility: ""
+doc.beans.HitHighlights.zookeeperConfig: "localhost:2181"
+doc.beans.IncludeExcludeArgsRule.name: "Validate Args of #INCLUDE and #EXCLUDE"
+doc.beans.IncludeExcludeIndexOnlyFieldsRule.name: "Check #INCLUDE and #EXCLUDE for Index Only Fields"
 doc.beans.IndexStatsQuery.auditType: "NONE"
 doc.beans.IndexStatsQuery.selectorExtractor: null
-doc.beans.LookupUUIDConfiguration.beginDate: 20100101
-doc.beans.LookupUUIDConfiguration.columnVisibility: ""
+doc.beans.InvalidQuoteRule.name: "Check for Invalid Quote"
+doc.beans.LookupProperties.beginDate: 19700101
+doc.beans.LookupProperties.columnVisibility: ""
 doc.beans.LuceneUUIDEventQuery.auditType: "NONE"
-doc.beans.LuceneUUIDEventQuery.logicDescription: "Composite query logic that retrieves records from the event and error tables, based on known UUID fields, ie, those configured via UUIDTypeList in QueryLogicFactory.xml"
+doc.beans.LuceneUUIDEventQuery.logicDescription: "Composite query logic that retrieves records from the event and error tables, based on known UUID fields, ie, those configured via UUIDTypes in QueryLogicFactory.xml"
 doc.beans.LuceneUUIDEventQuery.queryLogics.ErrorEventQuery.auditType: "NONE"
 doc.beans.LuceneUUIDEventQuery.queryLogics.ErrorEventQuery.connPoolName: "UUID"
 doc.beans.LuceneUUIDEventQuery.queryLogics.ErrorEventQuery.dateIndexTableName: ""
-doc.beans.LuceneUUIDEventQuery.queryLogics.ErrorEventQuery.indexTableName: "${table.name.errors.shardIndex}"
+doc.beans.LuceneUUIDEventQuery.queryLogics.ErrorEventQuery.indexTableName: "datawave.error_i"
 doc.beans.LuceneUUIDEventQuery.queryLogics.ErrorEventQuery.logicDescription: "Lucene query for event/document UUIDs for events that encountered errors at ingest time"
 doc.beans.LuceneUUIDEventQuery.queryLogics.ErrorEventQuery.mandatoryQuerySyntax: "LUCENE-UUID"
-doc.beans.LuceneUUIDEventQuery.queryLogics.ErrorEventQuery.metadataTableName: "${table.name.errors.metadata}"
-doc.beans.LuceneUUIDEventQuery.queryLogics.ErrorEventQuery.reverseIndexTableName: "${table.name.errors.shardReverseIndex}"
-doc.beans.LuceneUUIDEventQuery.queryLogics.ErrorEventQuery.tableName: "${table.name.errors.shard}"
+doc.beans.LuceneUUIDEventQuery.queryLogics.ErrorEventQuery.metadataTableName: "datawave.error_m"
+doc.beans.LuceneUUIDEventQuery.queryLogics.ErrorEventQuery.reverseIndexTableName: "datawave.error_r"
+doc.beans.LuceneUUIDEventQuery.queryLogics.ErrorEventQuery.tableName: "datawave.error_s"
 doc.beans.LuceneUUIDEventQuery.queryLogics.EventQuery.auditType: "NONE"
 doc.beans.LuceneUUIDEventQuery.queryLogics.EventQuery.connPoolName: "UUID"
 doc.beans.LuceneUUIDEventQuery.queryLogics.EventQuery.logicDescription: "Lucene query for event/document UUIDs"
 doc.beans.LuceneUUIDEventQuery.queryLogics.EventQuery.mandatoryQuerySyntax: "LUCENE-UUID"
 doc.beans.LuceneUUIDEventQuery.selectorExtractor: null
+doc.beans.MinimumSlopProximityRule.name: "Validate Slop Proximity"
 doc.beans.MyRemoteUserOps.queryServiceHost: "localhost"
 doc.beans.MyRemoteUserOps.queryServicePort: 8443
 doc.beans.MyRemoteUserOps.queryServiceScheme: "https"
 doc.beans.MyRemoteUserOps.queryServiceURI: "/DataWave/Security/User/"
-doc.beans.QueryLogicFactoryConfiguration.maxPageSize: 10000
-doc.beans.QueryLogicFactoryConfiguration.pageByteTrigger: 0
+doc.beans.NumericValueRule.name: "Validate Numeric Values Only Given for Numeric Fields"
+doc.beans.QueryLogicFactoryProperties.maxPageSize: 10000
+doc.beans.QueryLogicFactoryProperties.pageByteTrigger: 0
 doc.beans.QueryMetricsQuery.auditType: "NONE"
-doc.beans.QueryMetricsQuery.dateIndexTableName: "${table.name.queryMetrics.dateIndex}"
+doc.beans.QueryMetricsQuery.dateIndexTableName: "datawave.queryMetrics_di"
 doc.beans.QueryMetricsQuery.includeHierarchyFields: false
-doc.beans.QueryMetricsQuery.indexTableName: "${table.name.queryMetrics.shardIndex}"
+doc.beans.QueryMetricsQuery.indexTableName: "datawave.queryMetrics_i"
 doc.beans.QueryMetricsQuery.logicDescription: "Retrieve query metrics based on the given search term(s)"
-doc.beans.QueryMetricsQuery.metadataTableName: "${table.name.queryMetrics.metadata}"
+doc.beans.QueryMetricsQuery.metadataTableName: "datawave.queryMetrics_m"
 doc.beans.QueryMetricsQuery.modelName: "NONE"
-doc.beans.QueryMetricsQuery.modelTableName: "${table.name.queryMetrics.metadata}"
-doc.beans.QueryMetricsQuery.reverseIndexTableName: "${table.name.queryMetrics.shardReverseIndex}"
-doc.beans.QueryMetricsQuery.tableName: "${table.name.queryMetrics.shard}"
+doc.beans.QueryMetricsQuery.modelTableName: "datawave.queryMetrics_m"
+doc.beans.QueryMetricsQuery.reverseIndexTableName: "datawave.queryMetrics_r"
+doc.beans.QueryMetricsQuery.tableName: "datawave.queryMetrics_s"
 doc.beans.RemoteEventQuery.auditType: "NONE"
-doc.beans.RemoteEventQuery.checkpointable: false
 doc.beans.RemoteEventQuery.logicDescription: "Retrieve sharded events/documents, leveraging the global index tables as needed"
 doc.beans.RemoteEventQuery.maxResults: -1
 doc.beans.RemoteEventQuery.remoteQueryLogic: "EventQuery"
-doc.beans.RemoteEventQuery.tableName: "${table.name.shard}"
+doc.beans.RemoteEventQuery.tableName: "datawave.shard"
 doc.beans.RemoteQueryService.queryServiceHost: "query"
 doc.beans.RemoteQueryService.queryServicePort: 8443
 doc.beans.RemoteQueryService.queryServiceScheme: "https"
@@ -354,10 +376,18 @@ doc.beans.TermFrequencyQuery.auditType: "NONE"
 doc.beans.TermFrequencyQuery.logicDescription: "Query that returns data from the term frequency query table"
 doc.beans.TermFrequencyQuery.maxResults: -1
 doc.beans.TermFrequencyQuery.maxWork: -1
-doc.beans.TermFrequencyQuery.tableName: "${table.name.shard}"
+doc.beans.TermFrequencyQuery.tableName: "datawave.shard"
+doc.beans.TimeFunctionRule.name: "Validate #TIME_FUNCTION has Date Fields"
 doc.beans.TimedVisitorManager.debugEnabled: false
 doc.beans.TimedVisitorManager.validateAst: false
 doc.beans.TokenizedLuceneToJexlQueryParser.tokenizeUnfieldedQueries: true
+doc.beans.TranslateIdProperties.beginDate: 19700101
+doc.beans.TranslateIdProperties.columnVisibility: ""
+doc.beans.UnescapedSpecialCharsRule.escapedWhitespaceRequiredForLiterals: false
+doc.beans.UnescapedSpecialCharsRule.escapedWhitespaceRequiredForPatterns: false
+doc.beans.UnescapedSpecialCharsRule.name: "Check for Unescaped Special Characters"
+doc.beans.UnescapedWildcardsInPhrasesRule.name: "Check Quoted Phrases for Unescaped Wildcard"
+doc.beans.UnfieldedTermsRule.name: "Check for Unfielded Terms"
 doc.beans.skipTokenizeFields: "DOMETA"
 doc.beans.tokenizeFields: "CONTENT"
 
@@ -385,15 +415,16 @@ doc.beans.ErrorFieldIndexCountQuery.metadataHelperFactory: metadataHelperFactory
 doc.beans.ErrorFieldIndexCountQuery.selectorExtractor: DatawaveSelectorExtractor
 doc.beans.FieldIndexCountQuery.metadataHelperFactory: metadataHelperFactory
 doc.beans.FieldIndexCountQuery.selectorExtractor: DatawaveSelectorExtractor
+doc.beans.HitHighlights.dateIndexHelperFactory: dateIndexHelperFactory
 doc.beans.HitHighlights.ivaratorCacheDirConfigs: IvaratorCacheDirConfigs
 doc.beans.HitHighlights.metadataHelperFactory: metadataHelperFactory
 doc.beans.HitHighlights.selectorExtractor: DatawaveSelectorExtractor
-doc.beans.IdTranslatorConfiguration.uuidTypes: UUIDTypeList
-doc.beans.LookupUUIDConfiguration.uuidTypes: UUIDTypeList
+doc.beans.LookupProperties.contentLookupTypes: contentLookupTypes
+doc.beans.LookupProperties.uuidTypes: UUIDTypes
 doc.beans.LuceneToJexlQueryParser.allowedFunctions: allowedQueryFunctions
 doc.beans.LuceneToJexlQueryParser.skipTokenizeUnfieldedFields: skipTokenizeFields
 doc.beans.LuceneToJexlUUIDQueryParser.allowedFunctions: allowedQueryFunctions
-doc.beans.LuceneToJexlUUIDQueryParser.uuidTypes: UUIDTypeList
+doc.beans.LuceneToJexlUUIDQueryParser.uuidTypeMap: UUIDTypes
 doc.beans.MyRemoteUserOps.responseObjectFactory: responseObjectFactory
 doc.beans.QueryMetricsQuery.metadataHelperFactory: metadataHelperFactory
 doc.beans.RemoteEventQuery.remoteQueryService: RemoteQueryService
@@ -404,24 +435,28 @@ doc.beans.TimedVisitorManager.validator: AstValidator
 doc.beans.TokenizedLuceneToJexlQueryParser.allowedFunctions: allowedQueryFunctions
 doc.beans.TokenizedLuceneToJexlQueryParser.skipTokenizeUnfieldedFields: skipTokenizeFields
 doc.beans.TokenizedLuceneToJexlQueryParser.tokenizedFields: tokenizeFields
+doc.beans.TranslateIdProperties.uuidTypes: UUIDTypes
 doc.beans.allowedQueryFunctions.parser: LuceneToJexlQueryParser
 doc.beans.baseQueryLogic.markingFunctions: markingFunctions
 doc.beans.baseQueryLogic.responseObjectFactory: responseObjectFactory
-doc.beans.queryLogicFactory.queryLogicFactoryConfiguration: QueryLogicFactoryConfiguration
+doc.beans.queryLogicFactory.queryLogicFactoryProperties: QueryLogicFactoryProperties
 
 Effective Properties (name=value)
 ----------------------------------------
-shard.table.name=${table.name.shard}
+shard.table.name=datawave.shard
 event.query.max.results=-1
-accumulo.user.password=${accumulo.user.password}
-shard.table.name=${table.name.shard}
-date.index.table.name=${table.name.dateIndex}
+accumulo.user.password=secret
+shard.table.name=datawave.shard
+date.index.table.name=datawave.dateIndex
 default.date.type.name=EVENT
-metadata.table.name=${table.name.metadata}
-index.table.name=${table.name.shardIndex}
-rindex.table.name=${table.name.shardReverseIndex}
+metadata.table.name=datawave.metadata
+index.table.name=datawave.shardIndex
+rindex.table.name=datawave.shardReverseIndex
 event.query.max.results=-1
 shard.query.threads=100
+query.iterator.yield.threshold.ms=188400
+query.iterator.max.yields=20
+beq.collectTimingDetails=true
 index.query.threads=100
 date.index.threads=20
 beq.fullTableScanEnabled=false
@@ -433,6 +468,7 @@ query.max.index.scan.ms=31536000000
 query.collapse.uids=false
 query.collapse.uids.threshold=-1
 event.query.filters.enabled=false
+event.query.field.rule.class.name=
 beq.initialMaxTermThreshold=2000
 beq.finalMaxTermThreshold=2000
 beq.maxDepthThreshold=2000
@@ -443,69 +479,71 @@ beq.orRangeThreshold=10
 beq.orExpansionFstThreshold=750
 beq.fieldIndexRangeSplit=16
 beq.maxIvaratorSources=20
+beq.maxIvaratorSourceWait=1800000
 beq.evaluationPipelines=16
 beq.pipelineCachedResults=16
 hdfs.site.config.urls=file\:///etc/hadoop/conf/core-site.xml,file\:///etc/hadoop/conf/hdfs-site.xml
-ivarator.zookeeper.hosts=
-ivarator.fst.hdfs.base.uris=hdfs\:///IvaratorCache
+ivarator.zookeeper.hosts=localhost\:2181
+ivarator.fst.hdfs.base.uris=hdfs\://localhost\:9000/IvaratorCache
 beq.maxIvaratorOpenFiles=100
 query.max.call.time.minutes=60
-metadata.table.name=${table.name.metadata}
+metadata.table.name=datawave.metadata
 evaluation.only.fields=
-metadata.table.name=${table.name.metadata}
-lookup.uuid.beginDate=20100101
-lookup.uuid.beginDate=20100101
+metadata.table.name=datawave.metadata
+lookup.uuid.beginDate=19700101
+lookup.uuid.beginDate=19700101
 query.max.page.size=10000
 query.page.byte.trigger=0
-shard.table.name=${table.name.shard}
-index.table.name=${table.name.shardIndex}
-rindex.table.name=${table.name.shardReverseIndex}
-metadata.table.name=${table.name.metadata}
+shard.table.name=datawave.shard
+index.table.name=datawave.shardIndex
+rindex.table.name=datawave.shardReverseIndex
+metadata.table.name=datawave.metadata
 shard.query.threads=100
-metadata.table.name=${table.name.metadata}
-shard.table.name=${table.name.shard}
-shard.table.name=${table.name.shard}
-error.shard.table.name=${table.name.errors.shard}
-error.index.table.name=${table.name.errors.shardIndex}
-error.rindex.table.name=${table.name.errors.shardReverseIndex}
-error.metadata.table.name=${table.name.errors.metadata}
+metadata.table.name=datawave.metadata
+shard.table.name=datawave.shard
+shard.table.name=datawave.shard
+error.shard.table.name=datawave.error_s
+error.index.table.name=datawave.error_i
+error.rindex.table.name=datawave.error_r
+error.metadata.table.name=datawave.error_m
 shard.query.threads=100
-metadata.table.name=${table.name.metadata}
-error.shard.table.name=${table.name.errors.shard}
-error.metadata.table.name=${table.name.errors.metadata}
-error.index.table.name=${table.name.errors.shardIndex}
-error.rindex.table.name=${table.name.errors.shardReverseIndex}
-error.shard.table.name=${table.name.errors.shard}
-error.metadata.table.name=${table.name.errors.metadata}
-error.index.table.name=${table.name.errors.shardIndex}
-error.rindex.table.name=${table.name.errors.shardReverseIndex}
-querymetrics.metadata.table.name=${table.name.queryMetrics.metadata}
-querymetrics.shard.table.name=${table.name.queryMetrics.shard}
-querymetrics.dateindex.table.name=${table.name.queryMetrics.dateIndex}
-querymetrics.metadata.table.name=${table.name.queryMetrics.metadata}
-querymetrics.index.table.name=${table.name.queryMetrics.shardIndex}
-querymetrics.rindex.table.name=${table.name.queryMetrics.shardReverseIndex}
-index.table.name=${table.name.shardIndex}
-index.table.name=${table.name.shardIndex}
-rindex.table.name=${table.name.shardReverseIndex}
-metadata.table.name=${table.name.metadata}
-metadata.table.name=${table.name.metadata}
-error.index.table.name=${table.name.errors.shardIndex}
-error.index.table.name=${table.name.errors.shardIndex}
-error.rindex.table.name=${table.name.errors.shardReverseIndex}
-metadata.table.name=${table.name.metadata}
-error.metadata.table.name=${table.name.errors.metadata}
-error.shard.table.name=${table.name.errors.shard}
-error.metadata.table.name=${table.name.errors.metadata}
-error.index.table.name=${table.name.errors.shardIndex}
-error.rindex.table.name=${table.name.errors.shardReverseIndex}
+metadata.table.name=datawave.metadata
+error.shard.table.name=datawave.error_s
+error.metadata.table.name=datawave.error_m
+error.index.table.name=datawave.error_i
+error.rindex.table.name=datawave.error_r
+error.shard.table.name=datawave.error_s
+error.metadata.table.name=datawave.error_m
+error.index.table.name=datawave.error_i
+error.rindex.table.name=datawave.error_r
+querymetrics.metadata.table.name=datawave.queryMetrics_m
+querymetrics.shard.table.name=datawave.queryMetrics_s
+querymetrics.dateindex.table.name=datawave.queryMetrics_di
+querymetrics.metadata.table.name=datawave.queryMetrics_m
+querymetrics.index.table.name=datawave.queryMetrics_i
+querymetrics.rindex.table.name=datawave.queryMetrics_r
+index.table.name=datawave.shardIndex
+index.table.name=datawave.shardIndex
+rindex.table.name=datawave.shardReverseIndex
+metadata.table.name=datawave.metadata
+metadata.table.name=datawave.metadata
+error.index.table.name=datawave.error_i
+error.index.table.name=datawave.error_i
+error.rindex.table.name=datawave.error_r
+metadata.table.name=datawave.metadata
+error.metadata.table.name=datawave.error_m
+error.shard.table.name=datawave.error_s
+error.metadata.table.name=datawave.error_m
+error.index.table.name=datawave.error_i
+error.rindex.table.name=datawave.error_r
 table.name.facet=datawave.facets
 table.name.facet.metadata=datawave.facetMetadata
 table.name.facet.hashes=datawave.facetHashes
-shard.table.name=${table.name.shard}
-metadata.table.name=${table.name.metadata}
-index.table.name=${table.name.shardIndex}
-rindex.table.name=${table.name.shardReverseIndex}
+shard.table.name=datawave.shard
+date.index.table.name=datawave.dateIndex
+metadata.table.name=datawave.metadata
+index.table.name=datawave.shardIndex
+rindex.table.name=datawave.shardReverseIndex
 index.query.threads=100
 beq.initialMaxTermThreshold=2000
 beq.finalMaxTermThreshold=2000
@@ -521,17 +559,17 @@ beq.fieldIndexRangeSplit=16
 beq.evaluationPipelines=16
 beq.pipelineCachedResults=16
 hdfs.site.config.urls=file\:///etc/hadoop/conf/core-site.xml,file\:///etc/hadoop/conf/hdfs-site.xml
-ivarator.zookeeper.hosts=
-ivarator.fst.hdfs.base.uris=hdfs\:///IvaratorCache
+ivarator.zookeeper.hosts=localhost\:2181
+ivarator.fst.hdfs.base.uris=hdfs\://localhost\:9000/IvaratorCache
 beq.maxIvaratorOpenFiles=100
 query.max.call.time.minutes=60
-metadata.table.name=${table.name.metadata}
+metadata.table.name=datawave.metadata
 
 Effective Yml
 ----------------------------------------
 shard:
   table:
-    name: "${table.name.shard}"
+    name: "datawave.shard"
   query:
     threads: "100"
 event:
@@ -540,13 +578,17 @@ event:
       results: "-1"
     filters:
       enabled: "false"
+    field:
+      rule:
+        class:
+          name: ""
 accumulo:
   user:
-    password: "${accumulo.user.password}"
+    password: "secret"
 date:
   index:
     table:
-      name: "${table.name.dateIndex}"
+      name: "datawave.dateIndex"
     threads: "20"
 default:
   date:
@@ -554,16 +596,40 @@ default:
       name: "EVENT"
 metadata:
   table:
-    name: "${table.name.metadata}"
+    name: "datawave.metadata"
 index:
   table:
-    name: "${table.name.shardIndex}"
+    name: "datawave.shardIndex"
   query:
     threads: "100"
 rindex:
   table:
-    name: "${table.name.shardReverseIndex}"
+    name: "datawave.shardReverseIndex"
+query:
+  iterator:
+    yield:
+      threshold:
+        ms: "188400"
+    max:
+      yields: "20"
+  max:
+    index:
+      scan:
+        ms: "31536000000"
+    call:
+      time:
+        minutes: "60"
+    page:
+      size: "10000"
+  collapse:
+    uids: "false"
+    '[uids.threshold]': "-1"
+    threshold: "-1"
+  page:
+    byte:
+      trigger: "0"
 beq:
+  collectTimingDetails: "true"
   fullTableScanEnabled: "false"
   baseIteratorPriority: "100"
   initialMaxTermThreshold: "2000"
@@ -576,6 +642,7 @@ beq:
   orExpansionFstThreshold: "750"
   fieldIndexRangeSplit: "16"
   maxIvaratorSources: "20"
+  maxIvaratorSourceWait: "1800000"
   evaluationPipelines: "16"
   pipelineCachedResults: "16"
   maxIvaratorOpenFiles: "100"
@@ -593,69 +660,52 @@ enable:
 include:
   hierarchy:
     fields: "false"
-query:
-  max:
-    index:
-      scan:
-        ms: "31536000000"
-    call:
-      time:
-        minutes: "60"
-    page:
-      size: "10000"
-  collapse:
-    uids: "false"
-    '[uids.threshold]': "-1"
-    threshold: "-1"
-  page:
-    byte:
-      trigger: "0"
 hdfs:
   site:
     config:
       urls: "file:///etc/hadoop/conf/core-site.xml,file:///etc/hadoop/conf/hdfs-site.xml"
 ivarator:
   zookeeper:
-    hosts: ""
+    hosts: "localhost:2181"
   fst:
     hdfs:
       base:
-        uris: "hdfs:///IvaratorCache"
+        uris: "hdfs://localhost:9000/IvaratorCache"
 evaluation:
   only:
     fields: ""
 lookup:
   uuid:
-    beginDate: "20100101"
+    beginDate: "19700101"
 error:
   shard:
     table:
-      name: "${table.name.errors.shard}"
+      name: "datawave.error_s"
   index:
     table:
-      name: "${table.name.errors.shardIndex}"
+      name: "datawave.error_i"
   rindex:
     table:
-      name: "${table.name.errors.shardReverseIndex}"
+      name: "datawave.error_r"
   metadata:
     table:
-      name: "${table.name.errors.metadata}"
+      name: "datawave.error_m"
 querymetrics:
   metadata:
     table:
-      name: "${table.name.queryMetrics.metadata}"
+      name: "datawave.queryMetrics_m"
   shard:
     table:
-      name: "${table.name.queryMetrics.shard}"
+      name: "datawave.queryMetrics_s"
   dateindex:
     table:
-      name: "${table.name.queryMetrics.dateIndex}"
+      name: "datawave.queryMetrics_di"
   index:
     table:
-      name: "${table.name.queryMetrics.shardIndex}"
+      name: "datawave.queryMetrics_i"
   rindex:
     table:
-      name: "${table.name.queryMetrics.shardReverseIndex}"
+      name: "datawave.queryMetrics_r"
 table:
   name:
     facet: "datawave.facets"

@@ -46,7 +46,7 @@ import datawave.webservice.result.keyword.DefaultTagCloudResponse;
 import datawave.webservice.result.keyword.TagCloudBase;
 
 @ExtendWith(SpringExtension.class)
-@ComponentScan(basePackages = "datawave.query")
+@ComponentScan(basePackages = {"datawave.configuration.spring", "datawave.query"})
 // @formatter:off
 @ContextConfiguration(locations = {
         "classpath:datawave/query/QueryLogicFactory.xml",

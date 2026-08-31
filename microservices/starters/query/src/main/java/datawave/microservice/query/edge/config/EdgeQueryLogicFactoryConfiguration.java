@@ -5,7 +5,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.ImportResource;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import datawave.core.common.edgedictionary.EdgeDictionaryProvider;
@@ -21,7 +20,6 @@ import datawave.webservice.dictionary.edge.DefaultEdgeDictionary;
 @Configuration
 @ConditionalOnProperty(name = "datawave.query.logic.factory.enabled", havingValue = "true", matchIfMissing = true)
 @EnableConfigurationProperties({EdgeDictionaryProviderProperties.class, EdgeModelProperties.class})
-@ImportResource(locations = {"${datawave.query.edge.xmlBeansPath:classpath:EdgeQueryLogicFactory.xml}"})
 public class EdgeQueryLogicFactoryConfiguration {
 
     @Bean

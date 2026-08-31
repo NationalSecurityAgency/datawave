@@ -21,7 +21,7 @@ import datawave.webservice.query.exception.QueryException;
 
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
-@ActiveProfiles({"QueryStarterDefaults", "QueryLogicFactoryTest"})
+@ActiveProfiles({"QueryStarterDefaults", "federation", "QueryLogicFactoryTest"})
 public class QueryLogicFactoryTest {
 
     @Autowired

@@ -1,11 +1,11 @@
 package datawave.webservice.query.configuration;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import javax.ws.rs.core.MultivaluedMap;
-
-import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 
 import datawave.microservice.query.QueryParameters;
 import datawave.query.data.UUIDType;
@@ -96,10 +96,10 @@ public class LookupUUIDConfiguration {
         this.contentLookupTypes = contentLookupTypes;
     }
 
-    public MultivaluedMap<String,String> optionalParamsToMap() {
-        MultivaluedMap<String,String> p = new MultivaluedMapImpl<>();
+    public MultiValueMap<String,String> optionalParamsToMap() {
+        MultiValueMap<String,String> p = new LinkedMultiValueMap<>();
         if (this.columnVisibility != null) {
-            p.putSingle(QueryParameters.QUERY_VISIBILITY, this.columnVisibility);
+            p.put(QueryParameters.QUERY_VISIBILITY, Collections.singletonList(this.columnVisibility));
         }
         return p;
     }

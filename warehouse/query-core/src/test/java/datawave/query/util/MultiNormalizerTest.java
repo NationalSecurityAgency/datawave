@@ -39,7 +39,7 @@ import datawave.query.tables.ShardQueryLogic;
  * Test that simulates normalizer changes over time where some events have one normalizer applied but later a different normalizer is configured
  */
 @ExtendWith(SpringExtension.class)
-@ComponentScan(basePackages = "datawave.query")
+@ComponentScan(basePackages = {"datawave.configuration.spring", "datawave.query"})
 // @formatter:off
 @ContextConfiguration(locations = {
         "classpath:datawave/query/QueryLogicFactory.xml",

@@ -5,20 +5,32 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans
     http://www.springframework.org/schema/beans/spring-beans-4.0.xsd" default-autowire="no">
 
-    <bean class="org.springframework.context.support.ClassPathXmlApplicationContext" autowire="no">
-        <constructor-arg>
+    <bean class="datawave.configuration.spring.SpringContextProperties" autowire="no">
+        <property name="scanBasePackages">
+            <list>
+                <value>datawave.microservice.config.marking</value>
+                <value>datawave.microservice.query.edge.config</value>
+                <value>datawave.microservice.query.logic.config</value>
+                <value>datawave.webservice.config</value>
+            </list>
+        </property>
+        <property name="sources">
             <list>
                 <value>classpath*:datawave/configuration/spring/CDIBeanPostProcessor.xml</value>
-                <value>classpath*:NoOpMarkingFunctionsContext.xml</value>
-                <value>classpath*:MetadataHelperContext.xml</value>
-                <value>classpath*:CacheContext.xml</value>
-                <value>classpath*:datawave/security/PrincipalFactory.xml</value>
+                <value>classpath*:datawave/marking/MarkingFunctionsContext.xml</value>
+                <value>classpath*:datawave/metadata/MetadataHelperContext.xml</value>
                 <value>classpath*:datawave/query/QueryExpiration.xml</value>
-                <value>classpath*:datawave/query/*QueryLogicFactory.xml</value>
                 <value>classpath*:datawave/query/QueryLimiterFactory.xml</value>
                 <value>classpath*:datawave/query/CachedResults*.xml</value>
-                <value>classpath*:datawave/mapreduce/MapReduceJobs.xml</value>
+                <value>classpath*:datawave/security/PrincipalFactory.xml</value>
+                <value>classpath*:datawave/security/TestDatawaveUserServiceConfiguration.xml</value>
+                <value>classpath*:org/apache/accumulo/operations/LookupBean.xml</value>
+                <value>classpath*:CacheContext.xml</value>
+                <value>classpath*:QueryLogicFactory.xml</value>
+                <value>classpath*:EdgeQueryLogicFactory.xml</value>
+                <value>classpath*:KeywordExtractionQueryLogicFactory.xml</value>
+                <value>classpath*:SSDeepQueryLogicFactory.xml</value>
             </list>
-        </constructor-arg>
+        </property>
     </bean>
 </beans>

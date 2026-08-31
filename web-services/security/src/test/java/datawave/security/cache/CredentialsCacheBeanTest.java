@@ -56,6 +56,7 @@ public class CredentialsCacheBeanTest {
 
     @Deployment
     public static JavaArchive createDeployment() {
+        System.setProperty("datawave.configuration.spring.useBootstrapContext", "false");
         System.setProperty("cdi.bean.context", "springFrameworkBeanRefContext.xml");
         // @formatter:off
         return ShrinkWrap

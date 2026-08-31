@@ -148,7 +148,7 @@
 
     <!-- Configuration for the QueryLimiter. -->
     <bean id="queryLimiter" class="datawave.webservice.query.limit.QueryLimiter" init-method="setup" destroy-method="shutdown">
-        <property name="zookeeperConfig" value="${zookeeper.hosts}"/>
+        <property name="zookeeperConfig" value="${accumulo.zookeepers}"/>
         <property name="configuration" ref="queryLimitConfiguration"/>
         <property name="heartbeatCache" ref="queryHeartbeatCache"/>
     </bean>

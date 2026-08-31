@@ -394,7 +394,7 @@ public class LookupService {
         String queryLogicName = null;
 
         // make sure there aren't too many terms to lookup
-        if (lookupProperties.getBatchLookupLimit() > 0 && lookupUUIDPairs.size() <= lookupProperties.getBatchLookupLimit()) {
+        if (lookupProperties.getBatchLookupUpperLimit() > 0 && lookupUUIDPairs.size() <= lookupProperties.getBatchLookupUpperLimit()) {
 
             // validate each of the uuid pairs
             for (String uuidPair : lookupUUIDPairs) {
@@ -409,7 +409,7 @@ public class LookupService {
                     if (!field.isEmpty() && !value.isEmpty()) {
 
                         // is this a supported uuid type/field?
-                        UUIDType uuidType = lookupProperties.getTypes().get(field.toUpperCase());
+                        UUIDType uuidType = lookupProperties.getUuidTypes().get(field.toUpperCase());
                         if (uuidType != null) {
                             if (queryLogicName == null) {
                                 queryLogicName = uuidType.getQueryLogic(uuidTypeContext);
@@ -451,7 +451,7 @@ public class LookupService {
         }
         // too many terms to lookup
         else {
-            String message = "The " + lookupUUIDPairs.size() + " specified UUIDs exceed the maximum number of " + lookupProperties.getBatchLookupLimit()
+            String message = "The " + lookupUUIDPairs.size() + " specified UUIDs exceed the maximum number of " + lookupProperties.getBatchLookupUpperLimit()
                             + " allowed for a given lookup request";
             log.error(message);
             throw new BadRequestQueryException(new IllegalArgumentException(message), HttpStatus.SC_BAD_REQUEST + "-1");
@@ -657,7 +657,7 @@ public class LookupService {
     private List<String> createContentQueries(Set<String> contentLookupTerms) {
         List<String> contentQueries = new ArrayList<>();
 
-        Iterables.partition(contentLookupTerms, lookupProperties.getBatchLookupLimit())
+        Iterables.partition(contentLookupTerms, lookupProperties.getBatchLookupUpperLimit())
                         .forEach(termBatch -> contentQueries.add(String.join(CONTENT_QUERY_TERM_SEPARATOR, termBatch)));
 
         return contentQueries;

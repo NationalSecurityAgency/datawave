@@ -13,6 +13,7 @@
         <!-- jkube kubernetes-maven-plugin only has access to project properties so we redefine them to properly render the Dockerfile-->
         <project.build.finalName>${project.build.finalName}</project.build.finalName>
         <version.slf4j-jboss-logmanager>2.0.2.Final</version.slf4j-jboss-logmanager>
+        <version.spring-cloud-starter-bootstrap>3.1.9</version.spring-cloud-starter-bootstrap>
     </properties>
     <dependencies>
         <dependency>
@@ -64,6 +65,16 @@
                     <artifactId>datawave-core-connection-pool</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.microservice</groupId>
+            <artifactId>spring-boot-starter-datawave-query</artifactId>
+            <version>${version.datawave.starter-query}</version>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.microservice</groupId>
+            <artifactId>spring-boot-starter-datawave-webservice</artifactId>
+            <version>${version.datawave.starter-webservice}</version>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.webservices</groupId>
@@ -129,6 +140,10 @@
                 <exclusion>
                     <groupId>gov.nsa.datawave.core</groupId>
                     <artifactId>datawave-core-connection-pool</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>ch.qos.logback</groupId>
+                    <artifactId>*</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -264,6 +279,41 @@
             <artifactId>spring-expression</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot</artifactId>
+            <version>${version.spring-boot}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-autoconfigure</artifactId>
+            <version>${version.spring-boot}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter</artifactId>
+            <version>${version.spring-boot}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>ch.qos.logback</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-starter-logging</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-config-client</artifactId>
+            <version>${version.spring-cloud-config-client}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-bootstrap</artifactId>
+            <version>${version.spring-cloud-starter-bootstrap}</version>
+        </dependency>
+        <dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-hdfs</artifactId>
             <scope>runtime</scope>
@@ -272,6 +322,9 @@
     <build>
         <finalName>${project.artifactId}-${project.version}</finalName>
         <plugins>
+            <plugin>
+                <artifactId>maven-compiler-plugin</artifactId>
+            </plugin>
             <plugin>
                 <artifactId>maven-ear-plugin</artifactId>
                 <configuration>
