@@ -466,6 +466,8 @@ services:
     depends_on:
       configuration:
         condition: service_healthy
+      quickstart:
+        condition: service_healthy
 
   query-cache:
     profiles:
@@ -606,6 +608,8 @@ services:
     depends_on:
       authorization:
         condition: service_healthy
+      quickstart:
+        condition: service_healthy
 
   audit:
     image: nationalsecurityagency/datawave/audit-service:${VERSION:-latest}
@@ -638,6 +642,8 @@ services:
       retries: 3
     depends_on:
       authorization:
+        condition: service_healthy
+      quickstart:
         condition: service_healthy
 
   metrics:
@@ -707,6 +713,8 @@ services:
       test: curl -f http://localhost:8080/dictionary/mgmt/health
     depends_on:
       authorization:
+        condition: service_healthy
+      quickstart:
         condition: service_healthy
 
   file-provider:
@@ -791,6 +799,8 @@ services:
         condition: service_healthy
       executor-pool1:
         condition: service_started
+      quickstart:
+        condition: service_healthy
 
   mapreduce-query:
     profiles:
@@ -830,6 +840,8 @@ services:
         condition: service_healthy
       executor-pool1:
         condition: service_started
+      quickstart:
+        condition: service_healthy
 
   executor-pool1:
     entrypoint: ["java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5006","-jar","app.jar"]
@@ -876,6 +888,8 @@ services:
       authorization:
         condition: service_healthy
       metrics:
+        condition: service_healthy
+      quickstart:
         condition: service_healthy
 
   executor-pool2:
@@ -925,6 +939,8 @@ services:
         condition: service_healthy
       metrics:
         condition: service_healthy
+      quickstart:
+        condition: service_healthy
 
   modification:
     entrypoint: ["java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5010","-jar","app.jar"]
@@ -958,6 +974,8 @@ services:
       test: curl -f http://localhost:8080/dictionary/mgmt/health
     depends_on:
       authorization:
+        condition: service_healthy
+      quickstart:
         condition: service_healthy
 
   # If you use the management center, you can connect to the hazelcast cache as follows:
