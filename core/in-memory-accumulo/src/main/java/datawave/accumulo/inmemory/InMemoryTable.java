@@ -16,10 +16,12 @@
  */
 package datawave.accumulo.inmemory;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -35,6 +37,7 @@ import org.apache.accumulo.core.conf.Property;
 import org.apache.accumulo.core.data.ColumnUpdate;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
+import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.data.constraints.DefaultKeySizeConstraint;
 import org.apache.accumulo.core.iteratorsImpl.IteratorConfigUtil;
@@ -172,6 +175,35 @@ public class InMemoryTable {
 
     public Collection<Text> getSplits() {
         return splits;
+    }
+
+    /**
+     * Clips a scan range to each tablet it touches, in tablet order.
+     * <p>
+     * A scan never reaches a tablet server as one range spanning the whole table. ThriftScanner walks the tablets the range touches and opens an independent
+     * scan session against each, and the server side clips the range to the tablet before use - TabletBase.createScanner and TabletBase.lookup both call
+     * {@code extent.toDataRange().clip(range)}. A tablet covers {@code (previousSplit, split]}, matching
+     * {@link org.apache.accumulo.core.dataImpl.KeyExtent#toDataRange()}.
+     * <p>
+     * With no splits configured this returns the range unchanged, so the common case is a single unclipped range.
+     */
+    public List<Range> splitRangeByTablets(Range range) {
+        List<Range> ranges = new ArrayList<>();
+        Text previousSplit = null;
+        for (Text split : splits) {
+            addIfOverlapping(ranges, new Range(previousSplit, false, split, true), range);
+            previousSplit = split;
+        }
+        // The last tablet runs from the final split to the end of the table.
+        addIfOverlapping(ranges, new Range(previousSplit, false, null, true), range);
+        return ranges;
+    }
+
+    private static void addIfOverlapping(List<Range> ranges, Range tablet, Range range) {
+        Range clipped = tablet.clip(range, true);
+        if (clipped != null) {
+            ranges.add(clipped);
+        }
     }
 
     public void setLocalityGroups(Map<String,Set<Text>> groups) {

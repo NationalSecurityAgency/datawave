@@ -25,6 +25,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.ConcurrentModificationException;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -274,7 +275,40 @@ public class InMemoryTableOperations extends TableOperationsHelper {
                     throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
         if (!exists(tableName))
             throw new TableNotFoundException(tableName, tableName, "");
-        return Collections.singleton(range);
+
+        if (range == null) {
+            throw new IllegalArgumentException("range is null");
+        }
+        if (maxSplits < 1) {
+            throw new IllegalArgumentException("maximum splits must be >= 1");
+        }
+        if (maxSplits == 1) {
+            return Collections.singleton(range);
+        }
+
+        // Previously this always claimed the table was a single tablet, so callers that plan work per tablet saw one unit of work no matter how the table
+        // was split.
+        List<Range> tablets = acu.tables.get(tableName).splitRangeByTablets(range);
+
+        // maxSplits caps how many ranges the caller is willing to handle. Group adjacent tablets down to that cap the way TableOperationsImpl does: merge
+        // the leading pair onto a second list, and once fewer than two unmerged tablets remain, move the merged ones back and keep going. Merging in place
+        // instead would let the leading range absorb every tablet while the rest were left untouched.
+        LinkedList<Range> unmerged = new LinkedList<>(tablets);
+        List<Range> merged = new ArrayList<>();
+        while (unmerged.size() + merged.size() > maxSplits) {
+            if (unmerged.size() >= 2) {
+                Range first = unmerged.removeFirst();
+                Range second = unmerged.removeFirst();
+                merged.add(new Range(first.getStartKey(), first.isStartKeyInclusive(), second.getEndKey(), second.isEndKeyInclusive()));
+            } else {
+                merged.addAll(unmerged);
+                unmerged.clear();
+                unmerged.addAll(merged);
+                merged.clear();
+            }
+        }
+        merged.addAll(unmerged);
+        return new TreeSet<>(merged);
     }
 
     @Override

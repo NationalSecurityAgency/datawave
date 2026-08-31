@@ -19,9 +19,13 @@ package datawave.accumulo.inmemory;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map.Entry;
+import java.util.NoSuchElementException;
+import java.util.function.Function;
 
 import org.apache.accumulo.core.client.PluginEnvironment;
 import org.apache.accumulo.core.client.SampleNotPresentException;
@@ -33,6 +37,7 @@ import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Column;
 import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.TableId;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
@@ -44,6 +49,7 @@ import org.apache.accumulo.core.iteratorsImpl.system.ColumnFamilySkippingIterato
 import org.apache.accumulo.core.iteratorsImpl.system.ColumnQualifierFilter;
 import org.apache.accumulo.core.iteratorsImpl.system.DeletingIterator;
 import org.apache.accumulo.core.iteratorsImpl.system.MultiIterator;
+import org.apache.accumulo.core.iteratorsImpl.system.SortedMapIterator;
 import org.apache.accumulo.core.iteratorsImpl.system.VisibilityFilter;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.spi.common.ServiceEnvironment;
@@ -148,6 +154,75 @@ public class InMemoryScannerBase extends ScannerOptions {
         @Override
         public IteratorEnvironment cloneWithSamplingEnabled() {
             throw new SampleNotPresentException();
+        }
+    }
+
+    /**
+     * Gives each tablet the range touches its own slice, so every tablet gets its own iterator stack seeked with only that slice, as a real client does.
+     * Scanning one unclipped range against a single stack hid the tablet boundaries entirely, which matters because DataWave's iterators are built around a
+     * tablet at a time.
+     */
+    protected List<Range> splitRangeByTablets(Range range) {
+        return table.splitRangeByTablets(range);
+    }
+
+    /**
+     * Builds the iterator stack for one slice of a scan and seeks it with only that slice.
+     *
+     * @param range
+     *            the slice to seek, already clipped to a single tablet
+     * @return the stack's output, which may be empty
+     */
+    protected Iterator<Entry<Key,Value>> stackFor(Range range) {
+        SortedKeyValueIterator<Key,Value> i = new SortedMapIterator(table.table);
+        try {
+            i = createFilter(i);
+            i.seek(range, createColumnBSS(fetchedColumns), !fetchedColumns.isEmpty());
+            return new IteratorAdapter(i);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Chains one iterator stack per range, building each only once the one before it is exhausted.
+     * <p>
+     * A real client is lazy in exactly this way: ThriftScanner opens a scan session against the next tablet only after draining the current one, so a caller
+     * that stops early never pays for the tablets it did not reach. Laziness also keeps the stacks from coexisting, and they cannot: {@link #createFilter} runs
+     * {@code init} over the shared injected iterator instances every time it is called, so a stack built earlier would silently end up reading whichever source
+     * was wired in last.
+     */
+    protected static class TabletChain implements Iterator<Entry<Key,Value>> {
+
+        private final Iterator<Range> ranges;
+        private final Function<Range,Iterator<Entry<Key,Value>>> stackFactory;
+        private Iterator<Entry<Key,Value>> current = Collections.emptyIterator();
+
+        /**
+         * @param ranges
+         *            the slices to scan, in the order they should be returned
+         * @param stackFactory
+         *            builds and seeks the stack for one slice
+         */
+        protected TabletChain(List<Range> ranges, Function<Range,Iterator<Entry<Key,Value>>> stackFactory) {
+            this.ranges = ranges.iterator();
+            this.stackFactory = stackFactory;
+        }
+
+        @Override
+        public boolean hasNext() {
+            while (!current.hasNext() && ranges.hasNext()) {
+                current = stackFactory.apply(ranges.next());
+            }
+            return current.hasNext();
+        }
+
+        @Override
+        public Entry<Key,Value> next() {
+            if (!hasNext()) {
+                throw new NoSuchElementException();
+            }
+            return current.next();
         }
     }
 

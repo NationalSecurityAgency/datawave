@@ -16,7 +16,6 @@
  */
 package datawave.accumulo.inmemory;
 
-import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map.Entry;
 
@@ -25,8 +24,6 @@ import org.apache.accumulo.core.clientImpl.ScannerOptions;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.accumulo.core.iteratorsImpl.system.SortedMapIterator;
 import org.apache.accumulo.core.security.Authorizations;
 
 public class InMemoryScanner extends InMemoryScannerBase implements Scanner, ScannerRebuilder, Cloneable {
@@ -75,21 +72,15 @@ public class InMemoryScanner extends InMemoryScannerBase implements Scanner, Sca
     public void disableIsolation() {}
 
     /**
-     * Returns every key the stack emits, including any a user iterator produces outside the seek range
+     * Returns every key the stacks emit, including any a user iterator produces outside the seek range
      * <p>
      * A tablet server does not bound its stack's output, so neither does this
      */
     @Override
     public Iterator<Entry<Key,Value>> iterator() {
-        SortedKeyValueIterator<Key,Value> i = new SortedMapIterator(table.table);
-        try {
-            i = createFilter(i);
-            i.seek(range, createColumnBSS(fetchedColumns), !fetchedColumns.isEmpty());
-            return new IteratorAdapter(i);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-
+        // One independent iterator stack per tablet the range touches, each seeked with only that tablet's slice and built only once the tablet before it is
+        // exhausted, as a real client does. With no splits configured this is a single stack over the whole range, exactly as before.
+        return new TabletChain(splitRangeByTablets(range), this::stackFor);
     }
 
     @Override

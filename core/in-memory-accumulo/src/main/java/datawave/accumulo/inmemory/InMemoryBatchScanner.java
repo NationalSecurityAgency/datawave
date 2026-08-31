@@ -16,7 +16,6 @@
  */
 package datawave.accumulo.inmemory;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -28,10 +27,7 @@ import org.apache.accumulo.core.clientImpl.ScannerOptions;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.accumulo.core.iteratorsImpl.system.SortedMapIterator;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.commons.collections.iterators.IteratorChain;
 
 public class InMemoryBatchScanner extends InMemoryScannerBase implements BatchScanner, ScannerRebuilder, Cloneable {
 
@@ -60,27 +56,18 @@ public class InMemoryBatchScanner extends InMemoryScannerBase implements BatchSc
         this.ranges = Range.mergeOverlapping(ranges);
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public Iterator<Entry<Key,Value>> iterator() {
         if (ranges == null) {
             throw new IllegalStateException("ranges not set");
         }
 
-        IteratorChain chain = new IteratorChain();
+        // As with InMemoryScanner, each tablet a range touches gets its own stack seeked with its own slice, built only when the scan reaches it.
+        List<Range> tabletRanges = new ArrayList<>();
         for (Range range : ranges) {
-            SortedKeyValueIterator<Key,Value> i = new SortedMapIterator(table.table);
-            try {
-                i = createFilter(i);
-                i.seek(range, createColumnBSS(fetchedColumns), !fetchedColumns.isEmpty());
-                if (i.hasTop()) {
-                    chain.addIterator(new IteratorAdapter(i));
-                }
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+            tabletRanges.addAll(splitRangeByTablets(range));
         }
-        return chain;
+        return new TabletChain(tabletRanges, this::stackFor);
     }
 
     @Override
@@ -88,7 +75,7 @@ public class InMemoryBatchScanner extends InMemoryScannerBase implements BatchSc
         // Rebuild the set of ranges. We should drop all ranges up until the range that includes
         // the specified lastKey. The one that includes it will be modified to start at lastKey,
         // non-inclusive. All subsequent ranges will remain in the list.
-        // Note the key assumption here is that the ranges are processed in order (see IteratorChain
+        // Note the key assumption here is that the ranges are processed in order (see TabletChain
         // used above) and that the ranges are non-overlapping (see Range.mergeOverlapping() used
         // above).
         if (lastKey != null) {
