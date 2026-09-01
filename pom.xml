@@ -123,6 +123,7 @@
         <version.jaxb-api>2.3.1</version.jaxb-api>
         <version.jaxb-impl>2.3.3</version.jaxb-impl>
         <version.jboss-ejb-api>1.0.2.Final</version.jboss-ejb-api>
+        <version.jboss-jaxrs-api>1.0.2.Final</version.jboss-jaxrs-api>
         <version.jcommander>1.82</version.jcommander>
         <version.jetty>6.1.26</version.jetty>
         <version.jgroups>4.0.19.Final</version.jgroups>
@@ -750,6 +751,12 @@
                 <groupId>javax.annotation</groupId>
                 <artifactId>javax.annotation-api</artifactId>
                 <version>${version.javax-annotation}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.spec.javax.ws.rs</groupId>
+                <artifactId>jboss-jaxrs-api_2.1_spec</artifactId>
+                <version>${version.jboss-jaxrs-api}</version>
+                <scope>provided</scope>
             </dependency>
             <dependency>
                 <groupId>net.sf.saxon</groupId>
