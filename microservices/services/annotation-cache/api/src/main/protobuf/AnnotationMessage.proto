@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package datawave.microservice.annotationCache.api;
+
+option java_package = "datawave.microservice.annotationCache.api";
+option java_outer_classname = "AnnotationMessageProto";
+
+message AnnotationMessage {
+    string visibility = 1;
+    string user = 2;
+    string region = 3;
+    bytes annotation_bytes = 4;
+}

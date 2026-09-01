@@ -2,6 +2,7 @@ package datawave.microservice.annotationCache;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
@@ -23,7 +24,8 @@ import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.map.MapLoaderLifecycleSupport;
 import com.hazelcast.map.MapStore;
 
-import datawave.annotation.protobuf.v1.Annotation;
+import datawave.microservice.annotationCache.api.AnnotationMessageProto.AnnotationMessage;
+import datawave.microservice.annotationCache.api.AnnotationStorageException;
 
 @Component
 public class AnnotationMapStore implements MapStore<String,Object>, HazelcastInstanceAware, MapLoaderLifecycleSupport {
@@ -51,17 +53,29 @@ public class AnnotationMapStore implements MapStore<String,Object>, HazelcastIns
         log.info("set instance: " + hazelcastInstance);
     }
 
+    /**
+     *
+     * @param s
+     *            key of the entry to store
+     * @param o
+     *            value of the entry to store
+     * @throws AnnotationStorageException
+     *             if a problem is encountered
+     */
     @Override
     public void store(String s, Object o) {
-        if (!(o instanceof Annotation)) {
+        if (!(o instanceof AnnotationMessage)) {
             // not storing an annotation, bypass anything that might be on the queue
             log.trace("ignoring non-annotation object of type: " + o.getClass() + " value: " + o);
             return;
         }
+
+        // TODO verify the object is new, may have put an existing object
+
         String correlationId = UUID.randomUUID().toString();
         CorrelationData correlationData = new CorrelationData(correlationId);
 
-        Message<Annotation> message = MessageBuilder.withPayload((Annotation) o).setHeader("amqp_correlationData", correlationData)
+        Message<AnnotationMessage> message = MessageBuilder.withPayload((AnnotationMessage) o).setHeader("amqp_correlationData", correlationData)
                         .setHeader("amqp_publishConfirmCorrelation", correlationData).build();
 
         log.info("Sending message synchronously, ID: {}", correlationId);
@@ -71,7 +85,7 @@ public class AnnotationMapStore implements MapStore<String,Object>, HazelcastIns
             boolean sent = streamBridge.send("persisted-out-0", message);
 
             if (!sent) {
-                throw new RuntimeException("StreamBridge failed to hand off the message to the internal channel.");
+                throw new AnnotationStorageException("StreamBridge failed to hand off the message to the internal channel.");
             }
 
             // 2. BLOCK the current thread until RabbitMQ responds with an ACK/NACK (or times out)
@@ -80,26 +94,33 @@ public class AnnotationMapStore implements MapStore<String,Object>, HazelcastIns
 
             if (correlationData.getReturned() != null) {
                 String replyText = correlationData.getReturned().getReplyText();
-                throw new RuntimeException("Message was RETURNED by broker (No queue bound to exchange!). Reason: " + replyText);
+                throw new AnnotationStorageException("Message was RETURNED by broker (No queue bound to exchange!). Reason: " + replyText);
             }
 
             if (confirm.isAck()) {
                 log.info("Successfully delivered and ACKed by broker for ID: {}", correlationId);
             } else {
                 // This covers Nack scenarios (e.g., broker disk full, internal rabbit errors)
-                throw new RuntimeException("Broker rejected message (NACK). Reason: " + confirm.getReason());
+                throw new AnnotationStorageException("Broker rejected message (NACK). Reason: " + confirm.getReason());
             }
         } catch (MessagingException | AmqpException e) {
             log.info("caught messaging exception", e);
-            throw new RuntimeException(e);
+            throw new AnnotationStorageException("Problem sending message", e);
         } catch (ExecutionException | InterruptedException | TimeoutException e) {
-            throw new RuntimeException(e);
+            throw new AnnotationStorageException("Failed to send message", e);
         }
     }
 
+    /**
+     * Hazelcast may call either this or the single entry method depending on locality and threading
+     * @see #store(String, Object) 
+     * @param map map of entries to store
+     */
     @Override
     public void storeAll(Map<String,Object> map) {
-
+        for(Entry<String,Object> entry : map.entrySet()) {
+            store(entry.getKey(), entry.getValue());
+        }
     }
 
     @Override

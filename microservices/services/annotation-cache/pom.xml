@@ -11,6 +11,10 @@
     <version>1.0.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
+    <properties>
+        <version.hazelcast.service>4.0.5-SNAPSHOT</version.hazelcast.service>
+    </properties>
+
     <modules>
         <module>api</module>
     </modules>
