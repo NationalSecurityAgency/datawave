@@ -6,10 +6,10 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.converter.AbstractMessageConverter;
 import org.springframework.util.MimeType;
 
-import datawave.annotation.protobuf.v1.Annotation;
+import datawave.microservice.annotationCache.api.AnnotationMessageProto.AnnotationMessage;
 
 /**
- * a message converter for Annotation class messages. Spring was having trouble serializing and deserializing Annotation objects without this
+ * a message converter for AnnotationMessage class messages. Spring was having trouble serializing and deserializing Annotation objects without this
  */
 @Configuration
 public class SpecificProtobufConverterConfig {
@@ -19,8 +19,8 @@ public class SpecificProtobufConverterConfig {
 
             @Override
             protected boolean supports(Class<?> clazz) {
-                // Explicitly declare that this converter owns the Annotation class target
-                return Annotation.class.isAssignableFrom(clazz);
+                // Explicitly declare that this converter owns the AnnotationMessage class target
+                return AnnotationMessage.class.isAssignableFrom(clazz);
             }
 
             @Override
@@ -29,18 +29,18 @@ public class SpecificProtobufConverterConfig {
                     Object payload = message.getPayload();
                     if (payload instanceof byte[]) {
                         // Natively parse the pristine bytes sent by StreamBridge
-                        return Annotation.parseFrom((byte[]) payload);
+                        return AnnotationMessage.parseFrom((byte[]) payload);
                     }
                 } catch (Exception e) {
-                    logger.error("Failed to parse bytes natively into Annotation target within converter: " + e.getMessage());
+                    logger.error("Failed to parse bytes natively into AnnotationMessage target within converter: " + e.getMessage());
                 }
                 return null;
             }
 
             @Override
             protected Object convertToInternal(Object payload, org.springframework.messaging.MessageHeaders headers, Object conversionHint) {
-                if (payload instanceof Annotation) {
-                    return ((Annotation) payload).toByteArray();
+                if (payload instanceof AnnotationMessage) {
+                    return ((AnnotationMessage) payload).toByteArray();
                 }
                 return null;
             }
