@@ -9,10 +9,12 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import com.beust.jcommander.Strings;
+import com.google.protobuf.InvalidProtocolBufferException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 
 import datawave.annotation.protobuf.v1.Annotation;
+import datawave.microservice.annotationCache.api.AnnotationMessageProto.AnnotationMessage;
 
 /**
  * This is used by application.yml to subscribe to loadCache for incoming messages. They should add annotations to the cache if not already present
@@ -29,8 +31,14 @@ public class LoadCacheConsumer {
     }
 
     @Bean
-    public Consumer<Annotation> loadCache() {
-        return annotation -> {
+    public Consumer<AnnotationMessage> loadCache() {
+        return annotationMessage -> {
+            Annotation annotation = null;
+            try {
+                annotation = Annotation.parseFrom(annotationMessage.getAnnotationBytes());
+            } catch (InvalidProtocolBufferException e) {
+                throw new RuntimeException(e);
+            }
             log.info("got annotation off queue: " + annotation.getAnnotationId());
             if (hazelcastInstance != null) {
                 IMap<String,Annotation> annotationMap = hazelcastInstance.getMap("annotations");

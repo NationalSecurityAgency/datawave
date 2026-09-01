@@ -26,7 +26,7 @@ public class AnnotationCacheConfiguration {
     public HazelcastInstance hazelcastInstance(Config config, AnnotationMapStore annotationMapStore, AnnotationSyncListener annotationMapListener) {
 
         // TODO make this configurable from yml
-        MapConfig mapConfig = config.getMapConfig("annotations");
+        MapConfig mapConfig = config.getMapConfig("annotations:*");
 
         MapStoreConfig storeConfig = mapConfig.getMapStoreConfig();
         storeConfig.setEnabled(true);

@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+import com.google.protobuf.InvalidProtocolBufferException;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
@@ -15,6 +16,7 @@ import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.EntryUpdatedListener;
 
 import datawave.annotation.protobuf.v1.Annotation;
+import datawave.microservice.annotationCache.api.AnnotationMessageProto.AnnotationMessage;
 
 /**
  * Listener on all updates to the instance maps
@@ -34,11 +36,17 @@ public class AnnotationSyncListener implements EntryAddedListener<String,Object>
     @Override
     public void entryAdded(EntryEvent<String,Object> event) {
         if (event.getName().equals("annotations")) {
-            if (!(event.getValue() instanceof Annotation)) {
+            if (!(event.getValue() instanceof AnnotationMessage)) {
                 log.trace("unexpected value: " + event.getValue().getClass() + " " + event.getValue());
                 return;
             }
-            Annotation annotation = (Annotation) event.getValue();
+            AnnotationMessage annotationMessage = (AnnotationMessage) event.getValue();
+            Annotation annotation = null;
+            try {
+                annotation = Annotation.parseFrom(annotationMessage.getAnnotationBytes());
+            } catch (InvalidProtocolBufferException e) {
+                throw new RuntimeException(e);
+            }
             log.info("syncing to docAnnotations");
             if (instance != null) {
                 log.info("pushing to alt map");
