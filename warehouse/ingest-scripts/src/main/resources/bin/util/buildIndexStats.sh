@@ -119,8 +119,8 @@ function setMapperJVMParameters() {
     # enable GC logging if requested - typically for debug purposes
     # NOTE: there should only be one mapper; same file is used for all mappers
     if [[ -n "${_GCLog}" || -n "${_GCMapperLog}" ]]; then
-        local -r _logFile="-Xloggc:${_GCLogDir}/gcMap-$$-${_dateStr}.log"
-        local -r _gcLog="${_GCLogOpts} ${_logFile}"
+        local -r _logFile="${_GCLogDir}/gcMap-$$-${_dateStr}.log"
+        local -r _gcLog="${_GCLogOpts}:file=${_logFile}:time,uptime"
     fi
 
     _ChildMapOpts="\
@@ -136,8 +136,8 @@ function setReducerJVMParameters() {
 
     # enable GC logging if requested - typically for debug purposes
     if [[ -n "${_GCLog}" || -n "${_GCMapperLog}" ]]; then
-        local -r _logFile="-Xloggc:${_GCLogDir}/gcReduce-$$-${_dateStr}.log"
-        local -r _gcLog="${_GCLogOpts} ${_logFile}"
+        local -r _logFile="${_GCLogDir}/gcReduce-$$-${_dateStr}.log"
+        local -r _gcLog="${_GCLogOpts}:file=${_logFile}:time,uptime"
     fi
 
     _ChildReduceOpts="\
@@ -265,10 +265,11 @@ declare -r _DefaultJVMArgs="-XX:+UseConcMarkSweepGC \
 ${_heap} \
 -XX:NewRatio=2"
 declare -r _dateStr=$(date "+%Y_%m_%d-%H_%M_%S")
-declare -r _GCLogOpts="-XX:+PrintGC \
--XX:+PrintGCTimeStamps \
--XX:+PrintGCDateStamps \
--XX:+PrintGCDetails"
+# Unified JVM logging. The -XX:+PrintGC* flags this used to set were removed in
+# JDK 10, and -Xloggc in JDK 13; a JVM that gets them refuses to start. gc*
+# covers PrintGC and PrintGCDetails, and the time/uptime decorators at the call
+# sites cover PrintGCDateStamps and PrintGCTimeStamps.
+declare -r _GCLogOpts="-Xlog:gc*"
 # set mapper/reducer log directory
 _GCLogDir="${_GCLogDir:-/tmp}"
 
