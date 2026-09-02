@@ -4,11 +4,10 @@
     <parent>
         <groupId>gov.nsa.datawave.microservice</groupId>
         <artifactId>datawave-microservice-parent</artifactId>
-        <version>4.0.13-3508-RC6</version>
+        <version>4.0.14-3508-RC1</version>
         <relativePath>../microservice-parent</relativePath>
     </parent>
     <artifactId>datawave-microservice-service-parent</artifactId>
-    <!--version>5.0.14-3508-RC5</version-->
     <version>5.0.15-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>DataWave Microservices Spring Boot Service Parent</name>
