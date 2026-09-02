@@ -71,8 +71,8 @@ IFS="$OLD_IFS"
 
 TYPES=${BULK_INGEST_DATA_TYPES},${LIVE_INGEST_DATA_TYPES},${COMPOSITE_DATA_TYPES}
 
-ADDJARS=$THIS_DIR/$DATAWAVE_INGEST_CORE_JAR:$THIS_DIR/$COMMON_UTIL_JAR:$THIS_DIR/$DATAWAVE_CORE_JAR:$THIS_DIR/$DATAWAVE_COMMON_UTILS_JAR:$THIS_DIR/$COMMONS_LANG_JAR
+export CLASSPATH
 
 for table in "${TABLES[@]}" ; do
-   CLASSPATH=$ADDJARS $WAREHOUSE_ACCUMULO_BIN/accumulo datawave.ingest.util.GenerateShardSplits $date $count ${NUM_SHARDS} $shardsPerSplit -balancerDelay $balancerDelayMS -maxBalancerDelay $balancerDelayMS -addShardMarkers $USERNAME $PASSWORD ${table} $WAREHOUSE_INSTANCE_NAME $WAREHOUSE_ZOOKEEPERS
+   $WAREHOUSE_ACCUMULO_BIN/accumulo datawave.ingest.util.GenerateShardSplits $date $count ${NUM_SHARDS} $shardsPerSplit -balancerDelay $balancerDelayMS -maxBalancerDelay $balancerDelayMS -addShardMarkers $USERNAME $PASSWORD ${table} $WAREHOUSE_INSTANCE_NAME $WAREHOUSE_ZOOKEEPERS
 done

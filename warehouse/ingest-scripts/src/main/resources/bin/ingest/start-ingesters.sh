@@ -33,10 +33,18 @@ fi
 if [[ "$@" =~ .*-skipCache.* || "$@" =~ "-skipCache" ]]; then
     echo "Skipping job cache check and load"
 else
+    # A non-zero status here means the cache must be rebuilt, not that the check failed.
     ../ingest/check-job-cache.sh
     if [[ $? != 0 ]]; then
         echo "Job cache does not appear to be consistent.  Recreating..."
         ../ingest/load-job-cache.sh
+        load_status=$?
+        if [[ $load_status == 2 ]]; then
+            echo "A job cache load is already running.  Continuing with the current cache."
+        elif [[ $load_status != 0 ]]; then
+            echo "Failed to load the job cache. Not starting ingest." >&2
+            exit 1
+        fi
     fi
 fi
 
@@ -49,7 +57,10 @@ MAPFILE_LOADER_CMD=$THIS_DIR/start-loader.sh
 FLAG_MAKER_CMD=$THIS_DIR/start-flag-maker.sh
 GENERATE_CONFIG_CACHE=$THIS_DIR/generate-accumulo-config-cache.sh
 
-$GENERATE_CONFIG_CACHE
+# Best effort: ingest falls back to reading table configuration directly from Accumulo.
+if ! $GENERATE_CONFIG_CACHE; then
+    echo "Failed to generate the Accumulo configuration cache. Continuing without it." >&2
+fi
 
 $START_INGEST_SERVERS_CMD -type all
 
@@ -72,3 +83,6 @@ echo "starting flag makers ..."
 $FLAG_MAKER_CMD
 
 echo "done"
+
+# Zero means setup completed; the daemons are backgrounded, so this is not a health check.
+exit 0
