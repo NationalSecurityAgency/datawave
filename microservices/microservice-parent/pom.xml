@@ -55,6 +55,7 @@
         <surefire.forkCount>1C</surefire.forkCount>
         <surefire.maxMemory>1024m</surefire.maxMemory>
         <surefire.reuseForks>false</surefire.reuseForks>
+        <version.datawave-commons-security>7.47.0-3508-RC1</version.datawave-commons-security>
         <version.hadoop>3.3.4</version.hadoop>
         <!-- 2.14.X is the maximum version of jackson without snakeyaml version 2 causing spring-boot 2.7.1 conflict -->
         <version.jackson>2.14.3</version.jackson>
@@ -67,6 +68,11 @@
     </properties>
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>gov.nsa.datawave.commons</groupId>
+                <artifactId>datawave-commons-security</artifactId>
+                <version>${version.datawave-commons-security}</version>
+            </dependency>
             <!-- Don't sort the import scope dependencies. The first declared version of a dependency in dependencyManagement will prevail. -->
             <?SORTPOM IGNORE?>
             <dependency>

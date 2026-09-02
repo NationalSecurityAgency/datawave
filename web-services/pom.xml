@@ -13,7 +13,6 @@
     <modules>
         <module>accumulo</module>
         <module>common-util</module>
-        <module>security</module>
         <module>common</module>
         <module>query</module>
         <module>client</module>
@@ -27,6 +26,7 @@
         <module>model</module>
         <module>dictionary</module>
         <module>annotations</module>
+        <module>security-parent</module>
     </modules>
     <properties>
         <build.properties.0>default</build.properties.0>
@@ -42,6 +42,7 @@
         <version.commons-compress>1.26.0</version.commons-compress>
         <version.commons-dbutils>1.7</version.commons-dbutils>
         <version.commons-digester>3.2</version.commons-digester>
+        <version.commons-lang3>3.20.0</version.commons-lang3>
         <version.commons-net>3.9.0</version.commons-net>
         <version.dnsjava>3.6.3</version.dnsjava>
         <version.geronimo-activation>1.1</version.geronimo-activation>
@@ -116,6 +117,11 @@
                 <groupId>dnsjava</groupId>
                 <artifactId>dnsjava</artifactId>
                 <version>${version.dnsjava}</version>
+            </dependency>
+            <dependency>
+                <groupId>gov.nsa.datawave</groupId>
+                <artifactId>datawave-common-test</artifactId>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave</groupId>
@@ -491,6 +497,67 @@
                 </exclusions>
             </dependency>
             <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-annotations</artifactId>
+                <version>${version.jackson}</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-core</artifactId>
+                <version>${version.jackson}</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-databind</artifactId>
+                <version>${version.jackson}</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.datatype</groupId>
+                <artifactId>jackson-datatype-guava</artifactId>
+                <version>${version.jackson}</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.module</groupId>
+                <artifactId>jackson-module-jaxb-annotations</artifactId>
+                <version>${version.jackson}</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.google.guava</groupId>
+                <artifactId>guava</artifactId>
+                <version>${version.google-guava}</version>
+                <scope>provided</scope>
+            </dependency>
+            <!-- This dependency will be provided via a Wildfly module for the webservices. -->
+            <dependency>
+                <groupId>gov.nsa.datawave.commons</groupId>
+                <artifactId>datawave-commons-security</artifactId>
+                <version>${project.version}</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>gov.nsa.datawave.webservices</groupId>
+                <artifactId>datawave-ws-security-elytron</artifactId>
+                <version>${project.version}</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-api</artifactId>
+                <version>${version.jjwt}</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-impl</artifactId>
+                <version>${version.jjwt}</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
                 <groupId>javax.jms</groupId>
                 <artifactId>jms</artifactId>
                 <version>${version.jms}</version>
@@ -501,6 +568,26 @@
                         <artifactId>*</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-lang3</artifactId>
+                <version>${version.commons-lang3}</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-text</artifactId>
+                <version>${version.commons-text}</version>
+                <!-- This dependency will be provided through the Wildfly module org.commons.text that is configured to
+                 be deployed to Wildfly via the webservices/deploy/application project. -->
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-api</artifactId>
+                <version>${version.slf4j}</version>
+                <scope>provided</scope>
             </dependency>
             <dependency>
                 <groupId>org.apache.mrunit</groupId>
@@ -519,12 +606,6 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
-    <dependencies>
-        <dependency>
-            <groupId>gov.nsa.datawave</groupId>
-            <artifactId>datawave-common-test</artifactId>
-        </dependency>
-    </dependencies>
     <build>
         <pluginManagement>
             <plugins>

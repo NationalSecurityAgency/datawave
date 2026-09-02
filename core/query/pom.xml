@@ -11,6 +11,10 @@
     <properties />
     <dependencies>
         <dependency>
+            <groupId>gov.nsa.datawave.commons</groupId>
+            <artifactId>datawave-commons-security</artifactId>
+        </dependency>
+        <dependency>
             <groupId>gov.nsa.datawave.core</groupId>
             <artifactId>base-rest-responses</artifactId>
         </dependency>

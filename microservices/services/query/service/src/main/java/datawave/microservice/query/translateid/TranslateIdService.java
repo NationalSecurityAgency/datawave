@@ -28,7 +28,7 @@ import datawave.microservice.authorization.util.AuthorizationsUtil;
 import datawave.microservice.query.DefaultQueryParameters;
 import datawave.microservice.query.QueryManagementService;
 import datawave.microservice.query.QueryParameters;
-import datawave.security.util.ProxiedEntityUtils;
+import datawave.security.util.DnUtils;
 import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.NoResultsQueryException;
@@ -168,7 +168,7 @@ public class TranslateIdService {
             }
         }
 
-        String user = ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName());
+        String user = DnUtils.getShortName(currentUser.getPrimaryUser().getName());
         String queryName = user + "-" + UUID.randomUUID().toString();
 
         String queryLogic;
