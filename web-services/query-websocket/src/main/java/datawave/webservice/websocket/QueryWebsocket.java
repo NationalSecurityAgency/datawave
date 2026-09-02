@@ -1,12 +1,13 @@
 package datawave.webservice.websocket;
 
-import static datawave.webservice.metrics.Constants.REQUEST_LOGIN_TIME_HEADER;
+import static datawave.security.util.SecurityConstants.REQUEST_LOGIN_TIME_HEADER;
+import static datawave.security.websocket.WebsocketSecurityConfigurator.SESSION_SECURITY_IDENTITY;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.concurrent.Future;
 
 import javax.inject.Inject;
-import javax.interceptor.Interceptors;
 import javax.websocket.OnClose;
 import javax.websocket.OnMessage;
 import javax.websocket.OnOpen;
@@ -16,9 +17,9 @@ import javax.websocket.server.ServerEndpoint;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.wildfly.security.auth.server.SecurityIdentity;
 
 import datawave.security.websocket.WebsocketSecurityConfigurator;
-import datawave.security.websocket.WebsocketSecurityInterceptor;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.runner.AsyncQueryStatusObserver;
 import datawave.webservice.query.runner.QueryExecutorBean;
@@ -43,67 +44,135 @@ import datawave.webservice.websocket.messages.QueryResponseMessage.ResponseType;
  * Per the JSR-356 specification (section 2.1.1), since we have not configured the endpoint otherwise, there shall be one instance of this class per endpoint,
  * per peer.
  * <p>
- * <strong>NOTE: </strong> This uses vendor-specific security extensions to work around a websocket specification hole. See
- * <a href="https://java.net/jira/browse/WEBSOCKET_SPEC-238">WEBSOCKET_SPEC-238</a> for more details.
+ * <strong>NOTE: </strong> This uses the vendor-specific security extension {@link WebsocketSecurityConfigurator} to work around a websocket specification hole.
+ * See <a href="https://github.com/jakartaee/websocket/issues/238">Jakarta EE #238</a> for more details.
  */
 @ServerEndpoint(value = "/{logic-name}", encoders = {QueryResponseMessageJsonEncoder.class}, decoders = {JsonQueryMessageDecoder.class},
-                configurator = WebsocketSecurityConfigurator.class // required to propagate security along to individual websocket notification calls
-)
-@Interceptors({WebsocketSecurityInterceptor.class})
-// required to propagate security along to individual websocket notification calls
+                configurator = WebsocketSecurityConfigurator.class)
 public class QueryWebsocket {
+
     private static final String LOGIC_NAME = "logicName";
     private static final String ACTIVE_QUERY_FUTURE = "activeQueryFuture";
     private static final String ACTIVE_QUERY_ID = "activeQueryId";
 
-    private Logger log = LoggerFactory.getLogger(getClass());
+    private final Logger log = LoggerFactory.getLogger(getClass());
 
     @Inject
     private QueryExecutorBean queryExecutorBean;
 
+    /**
+     * Runs when a new websocket connection is opened. The logic name will be extracted from the URL path and stored into the session.
+     *
+     * @param logicName
+     *            the logic name
+     * @param session
+     *            the session
+     */
     @OnOpen
-    public void openConnection(@PathParam("logic-name") String logicName, Session session) throws IOException {
+    public void openConnection(@PathParam("logic-name") String logicName, Session session) {
         session.getUserProperties().put(LOGIC_NAME, logicName);
     }
 
+    /**
+     * Runs when the websocket connection is closed. If a query is currently active for the session, it will be canceled.
+     */
     @OnClose
     public void closeConnection(Session session) throws IOException {
-        cancelActiveQuery(session);
+        // Ensure the operation is executed using the permissions of the calling user.
+        runAsSessionUser(session, () -> cancelActiveQuery(session));
     }
 
+    /**
+     * Runs when an incoming websocket message is received. The message is expected to be either a {@link CreateQueryMessage} or a {@link CancelMessage}.
+     *
+     * @param session
+     *            the session
+     * @param message
+     *            the message
+     */
     @OnMessage
-    public void handleMessage(final Session session, QueryMessage message) {
+    public void handleMessage(final Session session, QueryMessage message) throws IOException {
         switch (message.getType()) {
-            case CREATE: {
-                if (session.getUserProperties().get(ACTIVE_QUERY_FUTURE) != null) {
-                    session.getAsyncRemote().sendObject(
-                                    new QueryResponseMessage(ResponseType.CREATION_FAILURE, "Query already active. Only one query per websocket is allowed."));
-                } else {
-                    CreateQueryMessage cqm = (CreateQueryMessage) message;
-                    String logicName = (String) session.getUserProperties().get(LOGIC_NAME);
-                    QueryObserver observer = new QueryObserver(log, session);
-
-                    Long startTime = System.nanoTime();
-                    Long loginTime = null;
-                    try {
-                        loginTime = Long.valueOf((String) session.getUserProperties().get(REQUEST_LOGIN_TIME_HEADER));
-                    } catch (Exception e) {
-                        // Ignore -- login time won't be available
-                    }
-
-                    Future<?> activeQuery = queryExecutorBean.executeAsync(logicName, cqm.getParameters(), startTime, loginTime, observer);
-                    session.getUserProperties().put(ACTIVE_QUERY_FUTURE, activeQuery);
-                }
-            }
+            case CREATE:
+                // Ensure the operation is executed using the permissions of the calling user.
+                runAsSessionUser(session, () -> createQuery(session, message));
                 break;
-            case CANCEL: {
-                cancelActiveQuery(session);
-            }
+            case CANCEL:
+                // Ensure the operation is executed using the permissions of the calling user.
+                runAsSessionUser(session, () -> cancelActiveQuery(session));
                 break;
         }
     }
 
-    protected void cancelActiveQuery(Session session) {
+    /**
+     * Executes the given runnable with the permissions of the calling user for the websocket session. We expected to find a {@link SecurityIdentity} stored in
+     * the {@value WebsocketSecurityConfigurator#SESSION_SECURITY_IDENTITY} user property.
+     *
+     * @param session
+     *            the session
+     * @param runnable
+     *            the operation to execute
+     */
+    private void runAsSessionUser(Session session, Runnable runnable) throws IOException {
+        // Fetch the calling user's security identity from the session.
+        Map<String,Object> userProperties = session.getUserProperties();
+        final SecurityIdentity identity = (SecurityIdentity) userProperties.get(SESSION_SECURITY_IDENTITY);
+
+        // If no identity was found, return an error message and close the session.
+        if (identity == null) {
+            if (log.isErrorEnabled()) {
+                log.error("No SecurityIdentity found in session user property {}", SESSION_SECURITY_IDENTITY);
+            }
+            session.getAsyncRemote().sendObject(new QueryResponseMessage(ResponseType.ERROR, "Failed to load authenticated user"));
+            session.close();
+            return;
+        }
+
+        // Execute the runnable with the permissions of the calling user.
+        identity.runAs(runnable);
+    }
+
+    /**
+     * Creates a new active query for the session.
+     *
+     * @param session
+     *            the session
+     * @param message
+     *            the message
+     */
+    private void createQuery(Session session, QueryMessage message) {
+        // If the session already has an active query, do not allow another one to be created.
+        if (session.getUserProperties().get(ACTIVE_QUERY_FUTURE) != null) {
+            session.getAsyncRemote().sendObject(
+                            new QueryResponseMessage(ResponseType.CREATION_FAILURE, "Query already active. Only one query per websocket is allowed."));
+        } else {
+            CreateQueryMessage cqm = (CreateQueryMessage) message;
+            String logicName = (String) session.getUserProperties().get(LOGIC_NAME);
+            QueryObserver observer = new QueryObserver(log, session);
+
+            Long startTime = System.nanoTime();
+            // Extract the login time from the session.
+            Long loginTime = null;
+            try {
+                loginTime = Long.valueOf((String) session.getUserProperties().get(REQUEST_LOGIN_TIME_HEADER));
+            } catch (Exception e) {
+                // Ignore -- login time won't be available
+            }
+
+            // Create the query.
+            Future<?> activeQuery = queryExecutorBean.executeAsync(logicName, cqm.getParameters(), startTime, loginTime, observer);
+            // Add a property to track that there is now an active query associated with the session.
+            session.getUserProperties().put(ACTIVE_QUERY_FUTURE, activeQuery);
+        }
+    }
+
+    /**
+     * Cancels any active query running in the session.
+     *
+     * @param session
+     *            the session
+     */
+    private void cancelActiveQuery(Session session) {
         Future<?> activeQuery = (Future<?>) session.getUserProperties().get(ACTIVE_QUERY_FUTURE);
         if (activeQuery != null && !activeQuery.isDone()) {
             // Attempt to cancel the async query call. This will cause the async call to return when it is between next calls.
@@ -114,15 +183,15 @@ public class QueryWebsocket {
                 try {
                     queryExecutorBean.cancel(activeQueryId);
                 } catch (Exception e) {
-                    log.warn("Failed to cancel query " + activeQueryId, e);
+                    log.warn("Failed to cancel query {}", activeQueryId, e);
                 }
             }
         }
     }
 
     private static class QueryObserver implements AsyncQueryStatusObserver {
-        private Logger log;
-        private Session session;
+        private final Logger log;
+        private final Session session;
 
         public QueryObserver(Logger log, Session session) {
             this.log = log;
@@ -172,7 +241,7 @@ public class QueryWebsocket {
             try {
                 session.close();
             } catch (IOException e) {
-                log.error("Unable to close peer connection after query " + queryId + " completed.", e);
+                log.error("Unable to close peer connection after query {} completed.", queryId, e);
                 throw new RuntimeException(e);
             }
         }

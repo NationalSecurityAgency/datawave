@@ -1,5 +1,13 @@
 # Ignore any ide and repo dirs/files
 
+.git/**
+.idea/**
+.mvn/**
+.github/**
+githooks/**
+.gitignore
+.gitmodules
+target/**
 **/.m2/**
 .git
 .git/**

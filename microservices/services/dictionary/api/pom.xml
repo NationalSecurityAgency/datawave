@@ -4,11 +4,11 @@
     <parent>
         <groupId>gov.nsa.datawave.microservice</groupId>
         <artifactId>datawave-microservice-parent</artifactId>
-        <version>4.0.12</version>
+        <version>4.0.13</version>
         <relativePath>../../../microservice-parent/pom.xml</relativePath>
     </parent>
     <artifactId>dictionary-api</artifactId>
-    <version>4.0.11-SNAPSHOT</version>
+    <version>4.0.12-SNAPSHOT</version>
     <url>https://code.nsa.gov/datawave-dictionary-service</url>
     <scm>
         <connection>scm:git:${project.scm.url}</connection>

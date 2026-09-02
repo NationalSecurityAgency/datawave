@@ -8,7 +8,7 @@ import javax.ws.rs.ext.ParamConverter;
 import javax.ws.rs.ext.ParamConverterProvider;
 import javax.ws.rs.ext.Provider;
 
-import org.jboss.resteasy.util.FindAnnotation;
+import org.jboss.resteasy.spi.util.FindAnnotation;
 
 import datawave.annotation.DateFormat;
 

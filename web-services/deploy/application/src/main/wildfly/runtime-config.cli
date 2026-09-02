@@ -5,12 +5,30 @@ batch
 embed-server --server-config=standalone-full.xml
 
 
-/system-property=dw.warehouse.accumulo.password:add(value=${env.ACCUMULO_PASSWORD})
-/system-property=dw.metrics.accumulo.password:add(value=${env.ACCUMULO_PASSWORD})
-/system-property=dw.uuid.accumulo.password:add(value=${env.ACCUMULO_PASSWORD})
-/core-service=management/security-realm=SSLRealm/server-identity=ssl/:add(enabled-protocols=["TLSv1.1","TLSv1.2"],keystore-path=${env.KEYSTORE},keystore-provider=${env.KEYSTORE_TYPE},keystore-password="${env.KEYSTORE_PASSWORD}")
-/core-service=management/security-realm=SSLRealm/authentication=truststore/:add(keystore-path=${env.TRUSTSTORE},keystore-provider=${env.TRUSTSTORE_TYPE},keystore-password="${env.TRUSTSTORE_PASSWORD}")
-/subsystem=security/security-domain=datawave/jsse=classic:add(keystore={type="${env.KEYSTORE_TYPE}",password="${env.KEYSTORE_PASSWORD}",url="file://${env.KEYSTORE}"},truststore={type="${env.TRUSTSTORE_TYPE}",password="${env.TRUSTSTORE_PASSWORD}",url="file://${env.TRUSTSTORE}"})
+/system-property=dw.warehouse.accumulo.password:write-attribute(name="value", value=${env.ACCUMULO_PASSWORD})
+/system-property=dw.metrics.accumulo.password:write-attribute(name="value", value=${env.ACCUMULO_PASSWORD})
+/system-property=dw.uuid.accumulo.password:write-attribute(name="value", value=${env.ACCUMULO_PASSWORD})
+
+/system-property=dw.ssl.context.info.keyStoreURL:write-attribute(name="value", value=file://${env.KEYSTORE})
+/system-property=dw.ssl.context.info.keyStoreType:write-attribute(name="value", value="${env.KEYSTORE_TYPE}")
+/system-property=dw.ssl.context.info.keyStorePassword:write-attribute(name="value", value="${env.KEYSTORE_PASSWORD}")
+/system-property=dw.ssl.context.info.trustStoreURL:write-attribute(name="value", value=file://${env.TRUSTSTORE})
+/system-property=dw.ssl.context.info.trustStoreType:write-attribute(name="value", value="${env.TRUSTSTORE_TYPE}")
+/system-property=dw.ssl.context.info.trustStorePassword:write-attribute(name="value", value="${env.TRUSTSTORE_PASSWORD}")
+
+#
+# Security configuration via the Elytron framework
+#
+/subsystem=elytron/key-store=serverKeyStore:remove
+/subsystem=elytron/key-store=serverKeyStore:add(path=${KEYSTORE},credential-reference={clear-text="${env.KEYSTORE_PASSWORD}"},type=${env.KEYSTORE_TYPE})
+/subsystem=elytron/key-manager=serverKeyManager:remove
+/subsystem=elytron/key-manager=serverKeyManager:add(key-store=serverKeyStore,credential-reference={clear-text=${env.KEYSTORE_PASSWORD}})
+/subsystem=elytron/key-store=serverTrustStore:remove
+/subsystem=elytron/key-store=serverTrustStore:add(path=${TRUSTSTORE},credential-reference={clear-text="${env.TRUSTSTORE_PASSWORD}"},type=${env.TRUSTSTORE_TYPE})
+/subsystem=elytron/trust-manager=serverTrustManager:remove
+/subsystem=elytron/trust-manager=serverTrustManager:add(key-store=serverTrustStore)
+/subsystem=elytron/server-ssl-context=serverSSLContext:remove
+/subsystem=elytron/server-ssl-context=serverSSLContext:add(key-manager=serverKeyManager,trust-manager=serverTrustManager,protocols=["TLSv1.1","TLSv1.2","TLSv1.3"],want-client-auth=true)
 
 # Run the batch commands (MUST BE LAST)
 run-batch

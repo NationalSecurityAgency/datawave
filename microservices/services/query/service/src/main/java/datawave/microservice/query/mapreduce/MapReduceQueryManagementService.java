@@ -65,7 +65,7 @@ import datawave.microservice.query.mapreduce.remote.MapReduceQueryRequestHandler
 import datawave.microservice.query.mapreduce.status.MapReduceQueryCache;
 import datawave.microservice.query.mapreduce.status.MapReduceQueryStatus;
 import datawave.microservice.query.storage.QueryStatus;
-import datawave.security.util.ProxiedEntityUtils;
+import datawave.security.util.DnUtils;
 import datawave.webservice.common.audit.AuditParameters;
 import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
@@ -125,7 +125,7 @@ public class MapReduceQueryManagementService implements MapReduceQueryRequestHan
     }
 
     public MapReduceJobDescriptionList listConfigurations(String jobType, DatawaveUserDetails currentUser) {
-        log.info("Request: listConfigurations from {} for {}", ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName()), jobType);
+        log.info("Request: listConfigurations from {} for {}", DnUtils.getShortName(currentUser.getPrimaryUser().getName()), jobType);
 
         MapReduceJobDescriptionList response = new MapReduceJobDescriptionList();
         List<MapReduceJobDescription> jobs = new ArrayList<>();
@@ -156,7 +156,7 @@ public class MapReduceQueryManagementService implements MapReduceQueryRequestHan
 
     public GenericResponse<String> oozieSubmit(MultiValueMap<String,String> parameters, DatawaveUserDetails currentUser) throws QueryException {
 
-        String user = ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName());
+        String user = DnUtils.getShortName(currentUser.getPrimaryUser().getName());
         if (log.isDebugEnabled()) {
             log.info("Request: submit from {} with params: {}", user, parameters);
         } else {
@@ -181,7 +181,7 @@ public class MapReduceQueryManagementService implements MapReduceQueryRequestHan
     }
 
     public GenericResponse<String> submit(MultiValueMap<String,String> parameters, DatawaveUserDetails currentUser) throws QueryException {
-        String user = ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName());
+        String user = DnUtils.getShortName(currentUser.getPrimaryUser().getName());
         if (log.isDebugEnabled()) {
             log.info("Request: submit from {} with params: {}", user, parameters);
         } else {
@@ -410,13 +410,13 @@ public class MapReduceQueryManagementService implements MapReduceQueryRequestHan
     }
 
     public GenericResponse<Boolean> cancel(String id, DatawaveUserDetails currentUser) throws QueryException {
-        log.info("Request: cancel from {} for {}", ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName()), id);
+        log.info("Request: cancel from {} for {}", DnUtils.getShortName(currentUser.getPrimaryUser().getName()), id);
 
         return cancel(id, currentUser, false);
     }
 
     public GenericResponse<Boolean> adminCancel(String id, DatawaveUserDetails currentUser) throws QueryException {
-        log.info("Request: adminCancel from {} for {}", ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName()), id);
+        log.info("Request: adminCancel from {} for {}", DnUtils.getShortName(currentUser.getPrimaryUser().getName()), id);
 
         return cancel(id, currentUser, true);
     }
@@ -477,7 +477,7 @@ public class MapReduceQueryManagementService implements MapReduceQueryRequestHan
     }
 
     public GenericResponse<String> restart(String id, DatawaveUserDetails currentUser) throws QueryException {
-        log.info("Request: restart from {} for {}", ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName()), id);
+        log.info("Request: restart from {} for {}", DnUtils.getShortName(currentUser.getPrimaryUser().getName()), id);
 
         try {
             // make sure the map reduce query is valid, and the user can act on it
@@ -506,7 +506,7 @@ public class MapReduceQueryManagementService implements MapReduceQueryRequestHan
     }
 
     public MapReduceInfoResponseList list(String id, DatawaveUserDetails currentUser) throws QueryException {
-        log.info("Request: list from {} for {}", ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName()), id);
+        log.info("Request: list from {} for {}", DnUtils.getShortName(currentUser.getPrimaryUser().getName()), id);
 
         try {
             // make sure the query is valid, and the user can act on it
@@ -540,7 +540,7 @@ public class MapReduceQueryManagementService implements MapReduceQueryRequestHan
     }
 
     public MapReduceInfoResponseList list(DatawaveUserDetails currentUser) throws QueryException {
-        log.info("Request: list for {}", ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName()));
+        log.info("Request: list for {}", DnUtils.getShortName(currentUser.getPrimaryUser().getName()));
 
         try {
             Set<String> ids = mapReduceQueryCache.lookupQueryIdsByUsername(currentUser.getUsername());
@@ -578,7 +578,7 @@ public class MapReduceQueryManagementService implements MapReduceQueryRequestHan
         // admin requests can operate on any job, regardless of ownership
         if (!adminOverride) {
             // does the current user own this job?
-            String userId = ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getDn().subjectDN());
+            String userId = DnUtils.getShortName(currentUser.getPrimaryUser().getDn().subjectDN());
             Query query = mapReduceQueryStatus.getQuery();
             if (!query.getOwner().equals(userId)) {
                 throw new UnauthorizedQueryException(DatawaveErrorCode.QUERY_OWNER_MISMATCH, MessageFormat.format("{0} != {1}", userId, query.getOwner()));
@@ -589,7 +589,7 @@ public class MapReduceQueryManagementService implements MapReduceQueryRequestHan
     }
 
     public Map.Entry<FileStatus,FSDataInputStream> getFile(String id, String fileName, DatawaveUserDetails currentUser) throws QueryException {
-        log.info("Request: getFile from {} for {}, {}", ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName()), id, fileName);
+        log.info("Request: getFile from {} for {}, {}", DnUtils.getShortName(currentUser.getPrimaryUser().getName()), id, fileName);
 
         try {
             // make sure the query is valid, and the user can act on it
@@ -632,7 +632,7 @@ public class MapReduceQueryManagementService implements MapReduceQueryRequestHan
     }
 
     public Map<FileStatus,FSDataInputStream> getAllFiles(String id, DatawaveUserDetails currentUser) throws QueryException {
-        log.info("Request: getAllFiles from {} for {}", ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName()), id);
+        log.info("Request: getAllFiles from {} for {}", DnUtils.getShortName(currentUser.getPrimaryUser().getName()), id);
 
         Map<FileStatus,FSDataInputStream> resultFiles = new HashMap<>();
         try {
@@ -686,13 +686,13 @@ public class MapReduceQueryManagementService implements MapReduceQueryRequestHan
     }
 
     public VoidResponse remove(String id, DatawaveUserDetails currentUser) throws QueryException {
-        log.info("Request: remove from {} for {}", ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName()), id);
+        log.info("Request: remove from {} for {}", DnUtils.getShortName(currentUser.getPrimaryUser().getName()), id);
 
         return remove(id, currentUser, false);
     }
 
     public VoidResponse adminRemove(String id, DatawaveUserDetails currentUser) throws QueryException {
-        log.info("Request: adminRemove from {} for {}", ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName()), id);
+        log.info("Request: adminRemove from {} for {}", DnUtils.getShortName(currentUser.getPrimaryUser().getName()), id);
 
         return remove(id, currentUser, true);
     }

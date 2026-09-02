@@ -53,7 +53,7 @@ import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUser.UserType;
 import datawave.security.authorization.SubjectIssuerDNPair;
-import datawave.security.util.DnUtils;
+import datawave.security.util.DnProperties;
 import datawave.webservice.query.logic.TestQueryLogic;
 import datawave.webservice.query.logic.composite.CompositeQueryLogicTest;
 import datawave.webservice.result.BaseQueryResponse;
@@ -78,7 +78,7 @@ public class RunningQueryTest {
     @Before
     public void setup() throws MalformedURLException, IllegalArgumentException, IllegalAccessException {
 
-        System.setProperty(DnUtils.NPE_OU_PROPERTY, "iamnotaperson");
+        System.setProperty(DnProperties.NPE_OU_PROPERTY, "iamnotaperson");
         System.setProperty("dw.metadatahelper.all.auths", "A,B,C,D");
 
         settings.setQueryLogicName("testQueryLogic");

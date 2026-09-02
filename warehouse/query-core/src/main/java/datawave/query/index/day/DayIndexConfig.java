@@ -31,6 +31,7 @@ public class DayIndexConfig {
 
     private String dayIndexTableName;
     private String yearIndexTableName;
+    private String metadataTableName;
     private Set<Authorizations> auths;
     private AccumuloClient client;
     private final Map<String,ScannerBase.ConsistencyLevel> consistencyLevels;
@@ -53,6 +54,7 @@ public class DayIndexConfig {
         this.dayIndexThreshold = config.getDayIndexThreshold();
         this.dayIndexTableName = config.getDayIndexTableName();
         this.yearIndexTableName = config.getYearIndexTableName();
+        this.metadataTableName = config.getMetadataTableName();
         this.auths = config.getAuthorizations();
         this.client = config.getClient();
         this.consistencyLevels = config.getTableConsistencyLevels();
@@ -145,6 +147,14 @@ public class DayIndexConfig {
 
     public void setYearIndexTableName(String yearIndexTableName) {
         this.yearIndexTableName = yearIndexTableName;
+    }
+
+    public String getMetadataTableName() {
+        return metadataTableName;
+    }
+
+    public void setMetadataTableName(String metadataTableName) {
+        this.metadataTableName = metadataTableName;
     }
 
     public Map<String,ScannerBase.ConsistencyLevel> getConsistencyLevels() {

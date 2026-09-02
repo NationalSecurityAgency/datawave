@@ -20,7 +20,7 @@ import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUser.UserType;
 import datawave.security.authorization.ProxiedUserDetails;
 import datawave.security.authorization.SubjectIssuerDNPair;
-import datawave.security.util.ProxiedEntityUtils;
+import datawave.security.util.DnUtils;
 
 /**
  * A {@link UserDetails} that represents a set of proxied users. For example, this proxied user could represent a GUI server acting on behalf of a user. The GUI
@@ -77,7 +77,7 @@ public class DatawaveUserDetails implements ProxiedUserDetails, UserDetails {
     @Override
     @JsonIgnore
     public String getShortName() {
-        return ProxiedEntityUtils.getShortName(getPrimaryUser().getName());
+        return DnUtils.getShortName(getPrimaryUser().getName());
     }
 
     /**

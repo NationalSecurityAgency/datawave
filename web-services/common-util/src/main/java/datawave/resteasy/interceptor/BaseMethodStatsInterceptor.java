@@ -1,7 +1,7 @@
 package datawave.resteasy.interceptor;
 
-import static datawave.webservice.metrics.Constants.REQUEST_LOGIN_TIME_HEADER;
-import static datawave.webservice.metrics.Constants.REQUEST_START_TIME_HEADER;
+import static datawave.security.util.SecurityConstants.REQUEST_LOGIN_TIME_HEADER;
+import static datawave.security.util.SecurityConstants.REQUEST_START_TIME_HEADER;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -22,7 +22,7 @@ import javax.ws.rs.ext.WriterInterceptor;
 import javax.ws.rs.ext.WriterInterceptorContext;
 
 import org.apache.log4j.Logger;
-import org.jboss.resteasy.core.interception.PreMatchContainerRequestContext;
+import org.jboss.resteasy.core.interception.jaxrs.PreMatchContainerRequestContext;
 import org.jboss.resteasy.specimpl.MultivaluedTreeMap;
 import org.jboss.resteasy.spi.Failure;
 import org.jboss.resteasy.util.CaseInsensitiveMap;

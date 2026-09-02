@@ -13,9 +13,9 @@ import javax.ws.rs.ext.Provider;
 import javax.ws.rs.ext.WriterInterceptorContext;
 
 import org.apache.log4j.Logger;
-import org.jboss.resteasy.core.interception.ContainerResponseContextImpl;
-import org.jboss.resteasy.core.interception.PreMatchContainerRequestContext;
-import org.jboss.resteasy.util.FindAnnotation;
+import org.jboss.resteasy.core.interception.jaxrs.ContainerResponseContextImpl;
+import org.jboss.resteasy.core.interception.jaxrs.PreMatchContainerRequestContext;
+import org.jboss.resteasy.spi.util.FindAnnotation;
 
 import datawave.core.query.logic.BaseQueryLogic;
 import datawave.core.query.logic.QueryLogic;
