@@ -54,6 +54,7 @@
         <surefire.forkCount>1C</surefire.forkCount>
         <surefire.maxMemory>1024m</surefire.maxMemory>
         <surefire.reuseForks>false</surefire.reuseForks>
+        <version.accumulo>4.0.0-SNAPSHOT</version.accumulo>
         <version.datawave-commons-security>9.0.0-SNAPSHOT</version.datawave-commons-security>
         <version.hadoop>3.5.0</version.hadoop>
         <!-- 2.14.X is the maximum version of jackson without snakeyaml version 2 causing spring-boot 2.7.1 conflict -->

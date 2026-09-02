@@ -2,6 +2,7 @@ package datawave.query.index.lookup;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
@@ -12,7 +13,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.ingest.mapreduce.handler.shard.NumShards;
 import datawave.query.index.lookup.RangeStream.NumShardFinder;
 import datawave.table.constants.TableName;
@@ -33,7 +33,7 @@ public class NumShardFinderTest {
     @BeforeEach
     public void setup() throws Exception {
         // An instance is shared by name, so an unnamed one keeps each test from seeing the last one's tables and authorizations.
-        client = new InMemoryAccumuloClient("", new InMemoryInstance());
+        client = new InMemoryAccumuloClient("", new InMemoryAccumulo());
         client.namespaceOperations().create(NAMESPACE);
         client.tableOperations().create(METADATA_TABLE);
 
