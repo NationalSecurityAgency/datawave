@@ -237,8 +237,7 @@ public class ListIvaratorUnionQueryTest extends AbstractQueryTest {
         givenQuery(query());
         // the pushdown happens in the visitor function, so the planned query is still the union
         expectPlan(plannedQuery());
-        // BUG: every document is dropped. this should be MATCHING, with the uuids and hit terms asserted above
-        expectResultCount(0);
+        expectResultCount(MATCHING);
 
         expectListIvarator = true;
         planAndExecuteQuery();
