@@ -16,7 +16,6 @@ import java.lang.reflect.Field;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -84,10 +83,10 @@ public class TestAnnotationControllerV1Delivery {
         annotationProperties.getRetry().setFailTimeoutMillis(TimeUnit.SECONDS.toMillis(10));
 
         annotationController = new AnnotationControllerV1(connectionFactory, lookupService, annotationProperties, timestampTransformer, visibilityTransformer,
-                        annotationSink, Executors.newCachedThreadPool());
+                        annotationSink, Executors.newCachedThreadPool(), new AnnotationAckTracker());
 
-        // ensure no latches leak between tests, since correlationLatchMap is static
-        getCorrelationLatchMap().clear();
+        // ensure no latches leak between tests
+        getAnnotationAckTracker().clear();
     }
 
     /**
@@ -107,13 +106,12 @@ public class TestAnnotationControllerV1Delivery {
         });
     }
 
-    // Use reflection to assert that no latches leak between test invocations.
-    @SuppressWarnings("unchecked")
-    private Map<String,CountDownLatch> getCorrelationLatchMap() {
+    // Use reflection to access the AnnotationAckTracker and assert that no latches leak between test invocations.
+    private AnnotationAckTracker getAnnotationAckTracker() {
         try {
-            Field field = AnnotationControllerV1.class.getDeclaredField("correlationLatchMap");
+            Field field = AnnotationControllerV1.class.getDeclaredField("annotationAckTracker");
             field.setAccessible(true);
-            return (Map<String,CountDownLatch>) field.get(null);
+            return (AnnotationAckTracker) field.get(annotationController);
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }
@@ -197,7 +195,7 @@ public class TestAnnotationControllerV1Delivery {
         assertNotEquals(idOne, idTwo, "distinct annotation messages must not share a correlation id");
 
         // and the map should be clean afterward -- no leaked latches
-        assertTrue(getCorrelationLatchMap().isEmpty());
+        assertTrue(getAnnotationAckTracker().isEmpty());
     }
 
     @Test
@@ -233,7 +231,7 @@ public class TestAnnotationControllerV1Delivery {
             assertTrue(resultOne.isPresent(), "the original sender must be satisfied by the single ack");
             assertTrue(resultTwo.isPresent(), "the duplicate sender must also be satisfied by the same ack rather than timing out");
             assertEquals(1, sendCount.get(), "only the original sender should have actually sent a message; the duplicate should reuse its latch");
-            assertTrue(getCorrelationLatchMap().isEmpty(), "no latch should remain once both duplicate callers complete");
+            assertTrue(getAnnotationAckTracker().isEmpty(), "no latch should remain once both duplicate callers complete");
         } finally {
             executor.shutdownNow();
         }
@@ -251,7 +249,7 @@ public class TestAnnotationControllerV1Delivery {
         assertTrue(result.isEmpty());
         // failed sends should short-circuit rather than waiting out the ack timeout
         assertTrue(elapsed < annotationProperties.getAnnotationAckTimeoutMillis(), "send failure should not wait for the ack timeout");
-        assertTrue(getCorrelationLatchMap().isEmpty(), "latch should be cleaned up even when send fails");
+        assertTrue(getAnnotationAckTracker().isEmpty(), "latch should be cleaned up even when send fails");
     }
 
     @Test
@@ -266,7 +264,7 @@ public class TestAnnotationControllerV1Delivery {
 
         assertTrue(result.isEmpty());
         assertTrue(elapsed >= annotationProperties.getAnnotationAckTimeoutMillis(), "should have waited for the full ack timeout");
-        assertTrue(getCorrelationLatchMap().isEmpty(), "latch should be removed after timeout");
+        assertTrue(getAnnotationAckTracker().isEmpty(), "latch should be removed after timeout");
     }
 
     @Test
@@ -278,7 +276,7 @@ public class TestAnnotationControllerV1Delivery {
         Optional<AnnotationMessage> result = annotationController.sendAnnotationMessage(buildMessage(annotation));
 
         assertTrue(result.isPresent());
-        assertTrue(getCorrelationLatchMap().isEmpty(), "no latch should be registered when acks are disabled");
+        assertTrue(getAnnotationAckTracker().isEmpty(), "no latch should be registered when acks are disabled");
     }
 
     @Test
@@ -382,7 +380,7 @@ public class TestAnnotationControllerV1Delivery {
         Optional<Annotation> result = annotationController.writeAnnotation(annotation);
 
         assertTrue(result.isEmpty());
-        assertTrue(getCorrelationLatchMap().isEmpty(), "no latches should remain after exhausting retries");
+        assertTrue(getAnnotationAckTracker().isEmpty(), "no latches should remain after exhausting retries");
     }
 
     @Test
@@ -430,7 +428,7 @@ public class TestAnnotationControllerV1Delivery {
             assertTrue(resultOne.isPresent());
             assertTrue(resultTwo.isPresent());
             assertNotEquals(resultOne.get().getAnnotationId(), resultTwo.get().getAnnotationId());
-            assertTrue(getCorrelationLatchMap().isEmpty(), "no latches should remain once both concurrent writes complete");
+            assertTrue(getAnnotationAckTracker().isEmpty(), "no latches should remain once both concurrent writes complete");
 
             // each write should have used its own distinct correlation id, and been sent exactly once (no unnecessary retries,
             // and no cross-talk where one write's ack satisfies the other's latch)

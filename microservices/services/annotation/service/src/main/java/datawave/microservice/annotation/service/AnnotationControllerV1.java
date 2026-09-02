@@ -11,7 +11,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -105,7 +104,7 @@ public class AnnotationControllerV1 {
     private final TimestampTransformer timestampTransformer;
     private final VisibilityTransformer visibilityTransformer;
 
-    private static final Map<String,CountDownLatch> correlationLatchMap = new ConcurrentHashMap<>();
+    private final AnnotationAckTracker annotationAckTracker;
 
     /** used as a 'sink' for annotation writes */
     private final AnnotationSupplier annotationSource;
@@ -118,7 +117,7 @@ public class AnnotationControllerV1 {
     @Autowired
     public AnnotationControllerV1(AccumuloConnectionFactory factory, LookupService lookupService, AnnotationProperties annotationProperties,
                     TimestampTransformer timestampTransformer, VisibilityTransformer visibilityTransformer, AnnotationSupplier annotationSource,
-                    ExecutorService federatedReadExecutorService) {
+                    ExecutorService federatedReadExecutorService, AnnotationAckTracker annotationAckTracker) {
         this.connectionFactory = factory;
         this.lookupService = lookupService;
         this.annotationProperties = annotationProperties;
@@ -126,6 +125,7 @@ public class AnnotationControllerV1 {
         this.visibilityTransformer = visibilityTransformer;
         this.annotationSource = annotationSource;
         this.federatedReadExecutorService = federatedReadExecutorService;
+        this.annotationAckTracker = annotationAckTracker;
     }
 
     @GetMapping("/source/{analyticHash}")
@@ -575,7 +575,7 @@ public class AnnotationControllerV1 {
             final CountDownLatch newLatch = new CountDownLatch(1);
             // if a send for this exact annotationMessageId is already in flight, reuse its latch instead of overwriting it -- overwriting
             // would orphan the earlier caller's latch so that it never gets counted down and always times out.
-            final CountDownLatch existingLatch = correlationLatchMap.putIfAbsent(annotationMessageId, newLatch);
+            final CountDownLatch existingLatch = annotationAckTracker.putIfAbsent(annotationMessageId, newLatch);
             final boolean isOriginalSender = existingLatch == null;
             final CountDownLatch latch = isOriginalSender ? newLatch : existingLatch;
 
@@ -589,7 +589,7 @@ public class AnnotationControllerV1 {
                 // only the original sender owns this latch entry and should remove it; a duplicate caller must leave it alone
                 // so the original sender's await(...) above can still be satisfied by the eventual ack.
                 if (isOriginalSender) {
-                    correlationLatchMap.remove(annotationMessageId, latch);
+                    annotationAckTracker.remove(annotationMessageId, latch);
                 }
             }
         } else {
@@ -612,9 +612,7 @@ public class AnnotationControllerV1 {
 
         if (headerObj != null) {
             String correlationId = headerObj.toString();
-            if (correlationLatchMap.containsKey(correlationId)) {
-                correlationLatchMap.get(correlationId).countDown();
-            } else {
+            if (annotationAckTracker.countdown(correlationId)) {} else {
                 log.warn("Unable to decrement latch for audit ID [{}]", correlationId);
             }
         } else {

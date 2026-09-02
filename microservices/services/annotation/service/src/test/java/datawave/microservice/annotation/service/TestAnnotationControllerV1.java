@@ -184,7 +184,7 @@ public class TestAnnotationControllerV1 {
 
         ExecutorService executorService = Executors.newCachedThreadPool();
         annotationController = new AnnotationControllerV1(connectionFactory, lookupService, annotationProperties, timestampTransformer, visibilityTransformer,
-                        annotationSink, executorService);
+                        annotationSink, executorService, new AnnotationAckTracker());
         lenient().when(connectionFactory.getClient(any(), any(), any(), any(), any())).thenReturn(client);
     }
 
