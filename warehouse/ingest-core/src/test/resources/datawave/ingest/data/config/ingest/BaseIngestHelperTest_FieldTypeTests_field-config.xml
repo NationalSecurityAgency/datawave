@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<fieldConfig>
+    <default stored="true" indexed="true" reverseIndexed="false" tokenized="false" reverseTokenized="false" indexType="datawave.data.type.LcNoDiacriticsType"/>
+    <nomatch stored="true" indexed="false" reverseIndexed="false" tokenized="false" reverseTokenized="false" indexType="datawave.data.type.NumberType"/>
+    <fieldPattern pattern="*_DATE" indexType="datawave.data.type.DateType"/>
+    <field name="FOO" indexType="datawave.data.type.HexStringType"/>
+    <!-- no indexType, so the type declared by the default tag applies -->
+    <field name="BAR"/>
+</fieldConfig>
