@@ -19,7 +19,7 @@
     <properties>
         <datawave.webservice.namespace>http://webservice.datawave.nsa/v1</datawave.webservice.namespace>
         <version.commons-codec>1.17.1</version.commons-codec>
-        <version.datawave>7.41.1</version.datawave>
+        <version.datawave>8.0.0</version.datawave>
         <!-- 2.14.X is the maximum version of jackson without snakeyaml version 2 causing spring-boot 2.7.1 conflict -->
         <version.jackson>2.14.3</version.jackson>
         <version.jakarta>2.3.3</version.jakarta>

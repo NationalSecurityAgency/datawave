@@ -22,7 +22,7 @@
         <image.prefix>datawave/</image.prefix>
         <registry.namespace>nationalsecurityagency/</registry.namespace>
         <start-class>datawave.microservice.query.mapreduce.MapReduceQueryService</start-class>
-        <version.datawave>7.44.1</version.datawave>
+        <version.datawave>8.0.0</version.datawave>
         <version.datawave.authorization-api>4.0.5</version.datawave.authorization-api>
         <version.datawave.mapreduce-query-core-job>1.0.7</version.datawave.mapreduce-query-core-job>
         <version.datawave.starter>4.0.12</version.datawave.starter>

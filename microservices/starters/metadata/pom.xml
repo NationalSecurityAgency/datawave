@@ -24,7 +24,7 @@
     </scm>
     <properties>
         <version.accumulo>2.1.5</version.accumulo>
-        <version.datawave>7.44.1</version.datawave>
+        <version.datawave>8.0.0</version.datawave>
         <version.datawave.starter>4.0.12</version.datawave.starter>
         <version.datawave.starter-cache>4.0.5</version.datawave.starter-cache>
         <version.swagger>2.2.42</version.swagger>

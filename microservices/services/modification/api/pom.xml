@@ -18,7 +18,7 @@
     </scm>
     <properties>
         <version.accumulo>2.1.5</version.accumulo>
-        <version.datawave>7.44.1</version.datawave>
+        <version.datawave>8.0.0</version.datawave>
         <version.guava>31.1-jre</version.guava>
     </properties>
     <dependencyManagement>

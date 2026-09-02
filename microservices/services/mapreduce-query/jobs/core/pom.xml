@@ -18,7 +18,7 @@
         <url>https://github.com/NationalSecurityAgency/datawave</url>
     </scm>
     <properties>
-        <version.datawave>7.44.1</version.datawave>
+        <version.datawave>8.0.0</version.datawave>
         <version.datawave.mapreduce-layout-factory>1.0.3</version.datawave.mapreduce-layout-factory>
         <version.datawave.starter-query>1.0.14</version.datawave.starter-query>
         <!-- dependency declared in datawave-microservice-parent, but the version can be overridden here -->
