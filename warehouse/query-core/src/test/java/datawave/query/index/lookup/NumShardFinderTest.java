@@ -2,7 +2,6 @@ package datawave.query.index.lookup;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import datawave.accumulo.inmemory.InMemoryAccumulo;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
@@ -12,6 +11,7 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.ingest.mapreduce.handler.shard.NumShards;
 import datawave.query.index.lookup.RangeStream.NumShardFinder;
