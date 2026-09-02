@@ -25,6 +25,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.integration.IntegrationMessageHeaderAccessor;
@@ -265,6 +266,37 @@ public class TestAnnotationControllerV1Delivery {
         assertTrue(result.isEmpty());
         assertTrue(elapsed >= annotationProperties.getAnnotationAckTimeoutMillis(), "should have waited for the full ack timeout");
         assertTrue(getAnnotationAckTracker().isEmpty(), "latch should be removed after timeout");
+    }
+
+    @Test
+    public void testSendAnnotationMessage_LateAckAfterTimeoutIsNoop() {
+        // send succeeds, no ack arrives for the duration of the timeout window,
+        // then a late ack arrives. The late ack must be safely ignored (no NPE,
+        // no exception) because the sender's finally block has already removed the latch.
+        when(annotationSink.send(any())).thenReturn(true);
+        Annotation annotation = AnnotationUtils.injectAllHashes(generateTestAnnotation());
+
+        // Send the message — this will register a latch, wait for the ack timeout,
+        // receive no ack, and remove the latch in the finally block
+        long start = System.currentTimeMillis();
+        Optional<AnnotationMessage> result = annotationController.sendAnnotationMessage(buildMessage(annotation));
+        long elapsed = System.currentTimeMillis() - start;
+
+        assertTrue(result.isEmpty());
+        assertTrue(elapsed >= annotationProperties.getAnnotationAckTimeoutMillis(), "should have waited for the full ack timeout");
+
+        // Capture the correlation ID from what was sent
+        ArgumentCaptor<Message<AnnotationMessage>> captor = ArgumentCaptor.forClass(Message.class);
+        verify(annotationSink, times(1)).send(captor.capture());
+        Object correlationId = captor.getValue().getHeaders().get(IntegrationMessageHeaderAccessor.CORRELATION_ID);
+        assertNotNull(correlationId);
+        String correlationIdString = correlationId.toString();
+
+        // Now simulate the late ack arriving after the latch was already removed
+        annotationController.processConfirmAck(MessageBuilder.withPayload("late-ack").setCorrelationId(correlationIdString).build());
+
+        // Verify no exceptions were thrown and the tracker is clean
+        assertTrue(getAnnotationAckTracker().isEmpty(), "no latch should remain after late ack");
     }
 
     @Test

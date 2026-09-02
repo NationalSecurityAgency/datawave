@@ -41,21 +41,19 @@ public class AnnotationAckTracker {
     }
 
     /**
-     * Count down the latch associated with the given correlation ID, if one exists.
+     * Count down the latch associated with the given correlation ID, if one exists. Uses {@link ConcurrentHashMap#computeIfPresent} to atomically fetch and
+     * count down the latch, eliminating the {@code containsKey()} → {@code get()} race that could occur if another thread removes the latch between the check
+     * and the count-down.
      *
      * @param correlationId
      *            the correlation ID whose latch should be counted down
      * @return {@code true} if a latch was found and counted down, {@code false} otherwise
      */
     public boolean countdown(String correlationId) {
-        if (correlationLatchMap.containsKey(correlationId)) {
-            CountDownLatch latch = correlationLatchMap.get(correlationId);
-            if (latch != null) {
-                latch.countDown();
-                return true;
-            }
-        }
-        return false;
+        return correlationLatchMap.computeIfPresent(correlationId, (key, latch) -> {
+            latch.countDown();
+            return latch;
+        }) != null;
     }
 
     /**
