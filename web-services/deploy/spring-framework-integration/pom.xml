@@ -232,7 +232,7 @@
                 <configuration>
                     <skipTests>${skipUTs}</skipTests>
                     <argLine>@{argLine}</argLine>
-                    <reuseForks>false</reuseForks>
+                    <reuseForks>${surefire.reuseForks}</reuseForks>
                     <additionalClasspathElements>
                         <additionalClasspathElement>${project.build.directory}/conf</additionalClasspathElement>
                         <additionalClasspathElement>${project.parent.basedir}/web-service/properties</additionalClasspathElement>
