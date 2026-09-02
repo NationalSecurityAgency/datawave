@@ -31,8 +31,8 @@
     </distributionManagement>
     <properties>
         <container.registry>ghcr.io</container.registry>
-        <image.prefix>datawave/</image.prefix>
         <datawave.build.jdk.version.range>[11,12)</datawave.build.jdk.version.range>
+        <image.prefix>datawave/</image.prefix>
         <java.version>11</java.version>
         <maven.compiler.release>11</maven.compiler.release>
         <maven.release.arguments>-Ddist</maven.release.arguments>

@@ -366,14 +366,14 @@ public class IngestHotPathBenchmark {
         long flattenPerPass = handler.flattenCalls.get();
 
         long[] samples = new long[measuredIterations];
-        long allocStart = THREAD_BEAN.getCurrentThreadAllocatedBytes();
+        long allocStart = getCurrentThreadAllocatedBytes();
         for (int i = 0; i < measuredIterations; i++) {
             int p = i % poolSize;
             long t0 = System.nanoTime();
             handler.processBulk(null, pool.get(p), fieldSets.get(p), null);
             samples[i] = System.nanoTime() - t0;
         }
-        long allocEnd = THREAD_BEAN.getCurrentThreadAllocatedBytes();
+        long allocEnd = getCurrentThreadAllocatedBytes();
 
         long sum = 0;
         for (long sample : samples) {
@@ -576,13 +576,13 @@ public class IngestHotPathBenchmark {
         long normalizes = NORMALIZE_CALLS.get();
 
         long[] samples = new long[MEASURED_ITERATIONS];
-        long allocStart = THREAD_BEAN.getCurrentThreadAllocatedBytes();
+        long allocStart = getCurrentThreadAllocatedBytes();
         for (int i = 0; i < MEASURED_ITERATIONS; i++) {
             long t0 = System.nanoTime();
             helper.getEventFields(pool.get(i % pool.size()));
             samples[i] = System.nanoTime() - t0;
         }
-        long allocEnd = THREAD_BEAN.getCurrentThreadAllocatedBytes();
+        long allocEnd = getCurrentThreadAllocatedBytes();
 
         Arrays.sort(samples);
         // the counter only fires for the counting types; the all-types arm uses the real ones
@@ -676,6 +676,10 @@ public class IngestHotPathBenchmark {
         if (expected != actual) {
             throw new IllegalStateException(message + ": expected " + expected + ", got " + actual);
         }
+    }
+
+    private static long getCurrentThreadAllocatedBytes() {
+        return THREAD_BEAN.getThreadAllocatedBytes(Thread.currentThread().getId());
     }
 
     private void printTable() {
