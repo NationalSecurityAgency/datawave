@@ -27,6 +27,34 @@ management:
         RABBITMQ_UNHEALTHY: 200
 
 annotation:
+  # Database connection settings
+  max-connections: 40
+  conn-pool-name: "default"
+
+  # Table names - annotation for reads, truthmark for writes.
+  annotation-table-name: "annotation"
+  annotation-source-table-name: "annotationSource"
+  truthmark-table-name: "truthmark"
+  truthmark-source-table-name: "truthmarkSource"
+
+  # Internal ID lookup uses a shard table
+  shard-table-name: "shard"
+  enable-internal-id-lookup: false
+
+  # Source metadata masking - removes listed keys from sources when injecting
+  # into annotations (not in getAnnotationSource endpoint)
+  mask-source-metadata:
+    - "visibility"
+
+  # Ack/retry protocol for async writes
+  annotation-ack-enabled: true
+  annotation-ack-timeout-millis: 500
+
+  retry:
+    max-attempts: 10
+    fail-timeout-millis: 300000
+    backoff-interval-millis: 5000
+
   writers:
     accumulo:
       concurrency: "${spring.cloud.stream.bindings.accumuloAnnotationWriterSink.consumer.concurrency:1}"

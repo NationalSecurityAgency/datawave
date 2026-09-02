@@ -45,13 +45,34 @@ management:
 annotation:
   # The maximum amount of queries we support before reporting Unready
   max-connections: 40
+
   # By default, query content cloud - set cluster specific config overrides
   datawave-query-host: "localhost:9443"
+
+  # Table names - annotation for reads, truthmark for writes. 
+  annotation-table-name: "annotation"
+  annotation-source-table-name: "annotationSource"
+  truthmark-table-name: "truthmark"
+  truthmark-source-table-name: "truthmarkSource"
+
+  shard-table-name: "shard"
+  enable-internal-id-lookup: false
+
+  # Source metadata masking - removes listed keys from sources when injecting
+  # into annotations (not in getAnnotationSource endpoint)
+  mask-source-metadata:
+    - "visibility"
+
+  # Ack/retry protocol for async writes
+  annotation-ack-enabled: true
+  annotation-ack-timeout-millis: 500
+
   # These are all possible Datawave Response classes that we can parse and pass to the client
   datawave-response-classes:
     - "datawave.webservice.result.GenericResponse"
     - "datawave.webservice.result.VoidResponse"
     - "datawave.webservice.result.DefaultEventQueryResponse"
+
   annotationUnknownFieldsIgnored: false
 
 swagger:
@@ -100,8 +121,6 @@ annotation:
   writers:
     accumulo:
       enabled: true
-      annotationTableName: "annotation"
-      annotationSourceTableName: "annotationSource"
       accumuloConfig:
         zookeepers: "test"
         instanceName: "test"
@@ -181,8 +200,8 @@ spring.config.activate.on-profile: replay-config
 
 annotation:
   retry:
-    maxAttempts: 1
+    max-attempts: 1
   replay:
     enabled: true
-    publishEvents: false
-    idleTimeoutMillis: 1000
+    publish-events: false
+    idle-timeout-millis: 1000
