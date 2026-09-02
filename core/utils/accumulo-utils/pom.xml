@@ -57,6 +57,7 @@
         <dependency>
             <groupId>gov.nsa.datawave.commons</groupId>
             <artifactId>datawave-commons-security</artifactId>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.dropwizard.metrics</groupId>

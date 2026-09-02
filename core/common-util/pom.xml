@@ -8,6 +8,9 @@
     </parent>
     <artifactId>datawave-core-common-util</artifactId>
     <name>${project.artifactId}</name>
+    <properties>
+        <version.commons-lang3>3.17.0</version.commons-lang3>
+    </properties>
     <dependencyManagement>
         <dependencies />
     </dependencyManagement>

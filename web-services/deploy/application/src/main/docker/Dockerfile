@@ -52,6 +52,11 @@ RUN cp /opt/jboss/.bash* $WILDFLY_HOME && \
 
 USER datawave
 
+# The messaging subsystem authenticates against the application realm, and nothing else creates this
+# user in the image: without it every in-VM connection fails AMQ229031 and is retried forever, which
+# eventually exhausts the heap. The standalone install does the same thing in setup-wildfly.sh.
+RUN $WILDFLY_HOME/bin/add-user.sh -a -u '${hornetq.system.username}' -p '${hornetq.system.password}' -g admin,InternalUser
+
 RUN touch $WILDFLY_HOME/standalone/deployments/${project.build.finalName}-${build.env}.ear.skipdeploy && \
     $WILDFLY_HOME/bin/jboss-cli.sh --file=$WILDFLY_HOME/tools/add-datawave-configuration.cli && \
     rm -rf $WILDFLY_HOME/standalone/configuration/standalone_xml_history && \

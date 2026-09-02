@@ -8,7 +8,6 @@
         <relativePath>../../../microservice-service-parent/pom.xml</relativePath>
     </parent>
     <artifactId>accumulo-service</artifactId>
-    <version>4.0.8-SNAPSHOT</version>
     <description>DATAWAVE Accumulo Microservice</description>
     <url>https://code.nsa.gov/datawave-accumulo-service</url>
     <scm>

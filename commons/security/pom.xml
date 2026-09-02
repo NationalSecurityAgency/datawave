@@ -66,5 +66,34 @@
                 <directory>src/main/resources</directory>
             </resource>
         </resources>
+
+        <plugins>
+            <plugin>
+                <!-- The file src/main/resources/dnutils.properties requires that the value of the build property security.subject.dn.pattern be filtered into
+                it. The value of the property is a regex pattern that may contain backslashes. Backslashes are automatically collapsed by Maven filtering,
+                which will affect the matching behavior of the pattern. Create a new property escaped.security.subject.dn.pattern that is the original value
+                with backslashes escaped. This will be filtered into dnutils.properties.
+                 -->
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <version>3.6.1</version>
+                <executions>
+                    <execution>
+                        <id>escape-dnutils-properties</id>
+                        <goals>
+                            <goal>regex-property</goal>
+                        </goals>
+                        <phase>validate</phase>
+                        <configuration>
+                            <name>escaped.security.subject.dn.pattern</name>
+                            <value>${security.subject.dn.pattern}</value>
+                            <regex>\\</regex>
+                            <replacement>\\\\</replacement>
+                            <failIfNoMatch>false</failIfNoMatch>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
     </build>
 </project>

@@ -18,7 +18,7 @@ import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.NumberListType;
 import datawave.data.type.NumberType;
 import datawave.data.type.Type;
-import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
+import datawave.ingest.mapreduce.handler.dateindex.DateIndexUtil;
 import datawave.ingest.protobuf.Uid;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.index.day.IndexIngestUtil;
@@ -57,14 +57,14 @@ public class CommonalityTokenTestDataIngest {
         String myUID2 = UID.builder().newId("MyUid2".getBytes(), (Date) null).toString();
         String myUID3 = UID.builder().newId("MyUid3".getBytes(), (Date) null).toString();
 
-        long indexTS = ShardedDataTypeHandler.getIndexTimestamp(timeStamp);
+        long indexTS = DateIndexUtil.getIndexTimestamp(timeStamp);
 
         long ageOffTimestamp = 1699041441288l;
         long timeStamp2 = CompositeTimestamp.getCompositeTimeStamp(timeStamp, ageOffTimestamp);
-        long indexTS2 = ShardedDataTypeHandler.getIndexTimestamp(timeStamp2);
+        long indexTS2 = DateIndexUtil.getIndexTimestamp(timeStamp2);
 
         long timeStamp3 = CompositeTimestamp.getCompositeTimeStamp(ageOffTimestamp, ageOffTimestamp);
-        long indexTS3 = ShardedDataTypeHandler.getIndexTimestamp(timeStamp3);
+        long indexTS3 = DateIndexUtil.getIndexTimestamp(timeStamp3);
 
         try {
             // write the shard table :

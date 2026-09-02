@@ -40,6 +40,10 @@
         <build.env>dev</build.env>
         <container.registry>ghcr.io</container.registry>
         <env>dev</env>
+        <!-- Integration-test fork settings. Default to the surefire values so a module only has to set
+             the surefire property to move both plugins; override these to split unit and integration tests. -->
+        <failsafe.maxMemory>${surefire.maxMemory}</failsafe.maxMemory>
+        <failsafe.reuseForks>${surefire.reuseForks}</failsafe.reuseForks>
         <image.prefix>datawave/</image.prefix>
         <java.version>17</java.version>
         <maven.compiler.release>17</maven.compiler.release>
@@ -52,6 +56,12 @@
         <sonar.exclusions>**/StandardLexer.java,**/*.js,**/*.css,**/*.html</sonar.exclusions>
         <sonar.sourceEncoding>UTF-8</sonar.sourceEncoding>
         <surefire.forkCount>1C</surefire.forkCount>
+        <!-- Test JVM heap. Override in a module that needs more or less than the inherited default. -->
+        <surefire.maxMemory>1024m</surefire.maxMemory>
+        <!-- Fork per test class. A module whose tests do not leak static state can set this to true in its
+             own properties to reuse forks and skip the per-class JVM startup. Verify the module's tests
+             still pass before enabling: shared static caches and registries are the usual blocker. -->
+        <surefire.reuseForks>false</surefire.reuseForks>
         <version.accumulo>4.0.0-SNAPSHOT</version.accumulo>
         <version.arquillian>1.4.1.Final</version.arquillian>
         <version.arquillian-weld-embedded>2.1.0.Final</version.arquillian-weld-embedded>
@@ -1926,7 +1936,7 @@
                     <configuration>
                         <skipTests>${skipTests}</skipTests>
                         <skipITs>${skipITs}</skipITs>
-                        <reuseForks>false</reuseForks>
+                        <reuseForks>${failsafe.reuseForks}</reuseForks>
                         <forkCount>${surefire.forkCount}</forkCount>
                         <threadCount>1</threadCount>
                         <threadCountClasses>1</threadCountClasses>

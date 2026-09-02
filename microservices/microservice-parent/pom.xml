@@ -52,7 +52,8 @@
         <sonar.sourceEncoding>UTF-8</sonar.sourceEncoding>
         <spotbugs.excludes.file />
         <surefire.forkCount>1C</surefire.forkCount>
-        <version.accumulo>4.0.0-SNAPSHOT</version.accumulo>
+        <surefire.maxMemory>1024m</surefire.maxMemory>
+        <surefire.reuseForks>false</surefire.reuseForks>
         <version.datawave-commons-security>9.0.0-SNAPSHOT</version.datawave-commons-security>
         <version.hadoop>3.5.0</version.hadoop>
         <!-- 2.14.X is the maximum version of jackson without snakeyaml version 2 causing spring-boot 2.7.1 conflict -->
@@ -474,13 +475,13 @@
                     <version>3.5.2</version>
                     <configuration>
                         <skipTests>${skipUTs}</skipTests>
-                        <reuseForks>false</reuseForks>
+                        <reuseForks>${surefire.reuseForks}</reuseForks>
                         <forkCount>${surefire.forkCount}</forkCount>
                         <threadCount>1</threadCount>
                         <threadCountClasses>1</threadCountClasses>
                         <threadCountMethods>0</threadCountMethods>
                         <threadCountSuites>0</threadCountSuites>
-                        <argLine>-XX:+TieredCompilation -XX:TieredStopAtLevel=1  -Dfile.encoding=UTF8 -Duser.timezone=GMT -Xmx1024m -Dapple.awt.UIElement=true -Djava.security.krb5.realm= -Djava.security.krb5.kdc= -Dcom.google.protobuf.use_unsafe_pre22_gencode</argLine>
+                        <argLine>-XX:+TieredCompilation -XX:TieredStopAtLevel=1  -Dfile.encoding=UTF8 -Duser.timezone=GMT -Xmx${surefire.maxMemory} -Dapple.awt.UIElement=true -Djava.security.krb5.realm= -Djava.security.krb5.kdc= -Dcom.google.protobuf.use_unsafe_pre22_gencode</argLine>
                         <redirectTestOutputToFile>true</redirectTestOutputToFile>
                         <runOrder>random</runOrder>
                     </configuration>

@@ -907,7 +907,7 @@ public class RangeStream extends BaseVisitor implements QueryPlanStream {
 
     protected synchronized NumShardFinder getNumShardFinder() {
         if (numShardFinder == null) {
-            numShardFinder = new NumShardFinder(config.getClient(), config.getTableHints(), config.getTableConsistencyLevels());
+            numShardFinder = new NumShardFinder(config.getClient(), config.getMetadataTableName(), config.getTableHints(), config.getTableConsistencyLevels());
         }
         return numShardFinder;
     }
@@ -918,17 +918,29 @@ public class RangeStream extends BaseVisitor implements QueryPlanStream {
     public static class NumShardFinder {
 
         protected final AccumuloClient client;
+        protected final String metadataTableName;
         protected final Map<String,ConsistencyLevel> consistencyLevels;
         protected final Map<String,Map<String,String>> tableHints;
         protected final TreeMap<String,Integer> cache = new TreeMap<>();
 
         @Deprecated(forRemoval = true, since = "")
         public NumShardFinder(AccumuloClient client) {
-            this(client, null, null);
+            this(client, TableName.METADATA, null, null);
         }
 
+        @Deprecated(forRemoval = true, since = "")
         public NumShardFinder(AccumuloClient client, Map<String,Map<String,String>> tableHints, Map<String,ConsistencyLevel> consistencyLevels) {
+            this(client, TableName.METADATA, tableHints, consistencyLevels);
+        }
+
+        /**
+         * @param metadataTableName
+         *            the metadata table this deployment configured, which is free to name it anything; {@link TableName#METADATA} is the default
+         */
+        public NumShardFinder(AccumuloClient client, String metadataTableName, Map<String,Map<String,String>> tableHints,
+                        Map<String,ConsistencyLevel> consistencyLevels) {
             this.client = client;
+            this.metadataTableName = metadataTableName;
             this.tableHints = tableHints;
             this.consistencyLevels = consistencyLevels;
             // prepopulate the cache
@@ -957,15 +969,15 @@ public class RangeStream extends BaseVisitor implements QueryPlanStream {
                 Authorizations auths = client.securityOperations().getUserAuthorizations(client.whoami());
 
                 // @formatter:off
-                ScannerBuilder builder = ScannerBuilder.create(client).setTableName(TableName.METADATA).setAuthorizations(auths);
+                ScannerBuilder builder = ScannerBuilder.create(client).setTableName(metadataTableName).setAuthorizations(auths);
                 //  @formatter:on
 
-                ConsistencyLevel consistencyLevel = ExecutionHintHelper.getConsistencyLevel(TableName.METADATA, consistencyLevels);
+                ConsistencyLevel consistencyLevel = ExecutionHintHelper.getConsistencyLevel(metadataTableName, consistencyLevels);
                 if (consistencyLevel != null) {
                     builder.setConsistencyLevel(consistencyLevel);
                 }
 
-                Map<String,String> hints = ExecutionHintHelper.getExecutionHints(TableName.METADATA, tableHints);
+                Map<String,String> hints = ExecutionHintHelper.getExecutionHints(metadataTableName, tableHints);
                 if (hints != null) {
                     builder.setScanType(ExecutionHintHelper.getScanType(hints));
                     builder.setScanPriority(ExecutionHintHelper.getPriority(hints));

@@ -171,7 +171,8 @@ public class ScannerSessionUncaughtExceptionHandlerTest {
 
         awaitFailed(session);
 
-        Throwable handlerFailure = query.getUncaughtExceptionHandler().getThrowable();
+        QueryUncaughtExceptionHandler handler = query.getUncaughtExceptionHandler();
+        Throwable handlerFailure = handler.hasUncaughtException() ? handler.getUncaughtException().getLeft() : null;
         Throwable serviceFailure = session.failureCause();
 
         assertNotNull(handlerFailure, "the handler channel did not record the failure");

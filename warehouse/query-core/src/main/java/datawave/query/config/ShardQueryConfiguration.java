@@ -104,6 +104,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private boolean allTermsIndexOnly;
     private long maxIndexScanTimeMillis = Long.MAX_VALUE;
     private long maxAnyFieldScanTimeMillis = Long.MAX_VALUE;
+
+    @Deprecated
     private boolean useNewIndexLookups = false;
 
     // Allows this query to parse the root uids from TLD uids found in the global shard index. This effectively ignores hits in child documents.
@@ -3590,10 +3592,12 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.originalJexlQuery = originalJexlQuery;
     }
 
+    @Deprecated
     public boolean isUseNewIndexLookups() {
         return useNewIndexLookups;
     }
 
+    @Deprecated
     public void setUseNewIndexLookups(boolean useNewIndexLookups) {
         this.useNewIndexLookups = useNewIndexLookups;
     }
