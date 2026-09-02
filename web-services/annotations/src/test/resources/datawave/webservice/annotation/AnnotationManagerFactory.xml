@@ -10,6 +10,9 @@
          because it will get discovered by CDI -->
     <bean id="AnnotationManager" scope="prototype"  class="datawave.webservice.annotation.AnnotationManagerBean"/>
 
+    <!-- Default response rewriter is a no-op that returns responses unchanged. -->
+    <bean id="AnnotationResponseRewriter" class="datawave.webservice.common.rest.NoOpResponseRewriter" />
+
     <bean id="AnnotationConfig" scope="prototype" class="datawave.query.config.annotation.AnnotationConfig">
         <property name="annotationTableName" value="annotation"/>
         <property name="annotationSourceTableName" value="annotationSource"/>
