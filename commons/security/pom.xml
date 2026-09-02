@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.commons</groupId>
         <artifactId>datawave-commons-parent</artifactId>
-        <version>8.0.0</version>
+        <version>8.0.1-SNAPSHOT</version>
     </parent>
 
     <artifactId>datawave-commons-security</artifactId>
