@@ -89,7 +89,7 @@
                             <value>${security.subject.dn.pattern}</value>
                             <regex>\\</regex>
                             <replacement>\\\\</replacement>
-                            <failIfNoMatch>true</failIfNoMatch>
+                            <failIfNoMatch>false</failIfNoMatch>
                         </configuration>
                     </execution>
                 </executions>
