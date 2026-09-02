@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.microservice</groupId>
         <artifactId>datawave-microservice-service-parent</artifactId>
-        <version>8.0.0-SNAPSHOT</version>
+        <version>9.0.0-SNAPSHOT</version>
         <relativePath>../../microservice-service-parent/pom.xml</relativePath>
     </parent>
     <artifactId>spring-boot-starter-datawave-metadata</artifactId>
@@ -22,9 +22,9 @@
         <url>https://github.com/NationalSecurityAgency/datawave</url>
     </scm>
     <properties>
-        <version.datawave>8.0.0-SNAPSHOT</version.datawave>
-        <version.datawave.starter>8.0.0-SNAPSHOT</version.datawave.starter>
-        <version.datawave.starter-cache>8.0.0-SNAPSHOT</version.datawave.starter-cache>
+        <version.datawave>9.0.0-SNAPSHOT</version.datawave>
+        <version.datawave.starter>9.0.0-SNAPSHOT</version.datawave.starter>
+        <version.datawave.starter-cache>9.0.0-SNAPSHOT</version.datawave.starter-cache>
         <version.swagger>2.2.42</version.swagger>
     </properties>
     <dependencyManagement>

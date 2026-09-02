@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.microservice</groupId>
         <artifactId>datawave-microservice-service-parent</artifactId>
-        <version>8.0.0-SNAPSHOT</version>
+        <version>9.0.0-SNAPSHOT</version>
         <relativePath>../../../microservice-service-parent/pom.xml</relativePath>
     </parent>
     <artifactId>accumulo-service</artifactId>
@@ -23,14 +23,14 @@
         <version.commons-lang3>3.20.0</version.commons-lang3>
         <version.curator>5.9.0</version.curator>
         <version.curator.test>5.9.0</version.curator.test>
-        <version.datawave>8.0.0-SNAPSHOT</version.datawave>
-        <version.datawave.accumulo-api>8.0.0-SNAPSHOT</version.datawave.accumulo-api>
-        <version.datawave.audit-api>8.0.0-SNAPSHOT</version.datawave.audit-api>
-        <version.datawave.authorization-api>8.0.0-SNAPSHOT</version.datawave.authorization-api>
-        <version.datawave.starter>8.0.0-SNAPSHOT</version.datawave.starter>
-        <version.datawave.starter-audit>8.0.0-SNAPSHOT</version.datawave.starter-audit>
+        <version.datawave>9.0.0-SNAPSHOT</version.datawave>
+        <version.datawave.accumulo-api>9.0.0-SNAPSHOT</version.datawave.accumulo-api>
+        <version.datawave.audit-api>9.0.0-SNAPSHOT</version.datawave.audit-api>
+        <version.datawave.authorization-api>9.0.0-SNAPSHOT</version.datawave.authorization-api>
+        <version.datawave.starter>9.0.0-SNAPSHOT</version.datawave.starter>
+        <version.datawave.starter-audit>9.0.0-SNAPSHOT</version.datawave.starter-audit>
         <version.guava>31.1-jre</version.guava>
-        <version.in-memory-accumulo>8.0.0-SNAPSHOT</version.in-memory-accumulo>
+        <version.in-memory-accumulo>9.0.0-SNAPSHOT</version.in-memory-accumulo>
         <version.jakarta>2.3.3</version.jakarta>
         <!-- dependency declared in datawave-microservice-parent, but the version can be overridden here -->
         <version.log4j>2.26.1</version.log4j>

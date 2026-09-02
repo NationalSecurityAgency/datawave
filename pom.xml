@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>gov.nsa.datawave</groupId>
     <artifactId>datawave-parent</artifactId>
-    <version>8.0.0-SNAPSHOT</version>
+    <version>9.0.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>DataWave</name>
     <description>DataWave is a Java-based ingest and query framework that leverages Apache Accumulo to provide fast, secure access to your data.</description>
@@ -77,14 +77,14 @@
         <version.commons-text>1.11.0</version.commons-text>
         <version.curator>5.9.0</version.curator>
         <version.curator.test>5.9.0</version.curator.test>
-        <version.datawave.accumulo-api>8.0.0-SNAPSHOT</version.datawave.accumulo-api>
-        <version.datawave.audit-api>8.0.0-SNAPSHOT</version.datawave.audit-api>
-        <version.datawave.authorization-api>8.0.0-SNAPSHOT</version.datawave.authorization-api>
-        <version.datawave.dictionary-api>8.0.0-SNAPSHOT</version.datawave.dictionary-api>
-        <version.datawave.mapreduce-query-api>8.0.0-SNAPSHOT</version.datawave.mapreduce-query-api>
-        <version.datawave.metrics-reporter>8.0.0-SNAPSHOT</version.datawave.metrics-reporter>
-        <version.datawave.query-api>8.0.0-SNAPSHOT</version.datawave.query-api>
-        <version.datawave.query-metric-api>8.0.0-SNAPSHOT</version.datawave.query-metric-api>
+        <version.datawave.accumulo-api>9.0.0-SNAPSHOT</version.datawave.accumulo-api>
+        <version.datawave.audit-api>9.0.0-SNAPSHOT</version.datawave.audit-api>
+        <version.datawave.authorization-api>9.0.0-SNAPSHOT</version.datawave.authorization-api>
+        <version.datawave.dictionary-api>9.0.0-SNAPSHOT</version.datawave.dictionary-api>
+        <version.datawave.mapreduce-query-api>9.0.0-SNAPSHOT</version.datawave.mapreduce-query-api>
+        <version.datawave.metrics-reporter>9.0.0-SNAPSHOT</version.datawave.metrics-reporter>
+        <version.datawave.query-api>9.0.0-SNAPSHOT</version.datawave.query-api>
+        <version.datawave.query-metric-api>9.0.0-SNAPSHOT</version.datawave.query-metric-api>
         <version.deltaspike>1.9.0</version.deltaspike>
         <version.dnsjava>3.6.3</version.dnsjava>
         <version.easymock>5.2.0</version.easymock>
@@ -101,7 +101,7 @@
         <version.hamcrest>1.3</version.hamcrest>
         <version.httpcomponents-httpclient>4.5.13</version.httpcomponents-httpclient>
         <version.httpcomponents-httpcore>4.4.8</version.httpcomponents-httpcore>
-        <version.in-memory-accumulo>8.0.0-SNAPSHOT</version.in-memory-accumulo>
+        <version.in-memory-accumulo>9.0.0-SNAPSHOT</version.in-memory-accumulo>
         <version.infinispan>9.4.21.Final</version.infinispan>
         <version.jackson>2.12.7</version.jackson>
         <version.jackson-mapper-asl>1.9.13</version.jackson-mapper-asl>

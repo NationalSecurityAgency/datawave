@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.microservice</groupId>
         <artifactId>datawave-microservice-service-parent</artifactId>
-        <version>8.0.0-SNAPSHOT</version>
+        <version>9.0.0-SNAPSHOT</version>
         <relativePath>../../../microservice-service-parent/pom.xml</relativePath>
     </parent>
     <artifactId>query-metric-service</artifactId>
@@ -22,19 +22,19 @@
         <version.cache-api>1.1.1</version.cache-api>
         <version.commons-jexl3>3.3</version.commons-jexl3>
         <version.commons-lang3>3.20.0</version.commons-lang3>
-        <version.datawave>8.0.0-SNAPSHOT</version.datawave>
-        <version.datawave.accumulo-api>8.0.0-SNAPSHOT</version.datawave.accumulo-api>
-        <version.datawave.audit-api>8.0.0-SNAPSHOT</version.datawave.audit-api>
-        <version.datawave.authorization-api>8.0.0-SNAPSHOT</version.datawave.authorization-api>
-        <version.datawave.hazelcast-common>8.0.0-SNAPSHOT</version.datawave.hazelcast-common>
-        <version.datawave.query-api>8.0.0-SNAPSHOT</version.datawave.query-api>
-        <version.datawave.query-metric-api>8.0.0-SNAPSHOT</version.datawave.query-metric-api>
-        <version.datawave.starter>8.0.0-SNAPSHOT</version.datawave.starter>
-        <version.datawave.starter-metadata>8.0.0-SNAPSHOT</version.datawave.starter-metadata>
-        <version.datawave.starter-query-metric>8.0.0-SNAPSHOT</version.datawave.starter-query-metric>
+        <version.datawave>9.0.0-SNAPSHOT</version.datawave>
+        <version.datawave.accumulo-api>9.0.0-SNAPSHOT</version.datawave.accumulo-api>
+        <version.datawave.audit-api>9.0.0-SNAPSHOT</version.datawave.audit-api>
+        <version.datawave.authorization-api>9.0.0-SNAPSHOT</version.datawave.authorization-api>
+        <version.datawave.hazelcast-common>9.0.0-SNAPSHOT</version.datawave.hazelcast-common>
+        <version.datawave.query-api>9.0.0-SNAPSHOT</version.datawave.query-api>
+        <version.datawave.query-metric-api>9.0.0-SNAPSHOT</version.datawave.query-metric-api>
+        <version.datawave.starter>9.0.0-SNAPSHOT</version.datawave.starter>
+        <version.datawave.starter-metadata>9.0.0-SNAPSHOT</version.datawave.starter-metadata>
+        <version.datawave.starter-query-metric>9.0.0-SNAPSHOT</version.datawave.starter-query-metric>
         <version.guava>31.1-jre</version.guava>
         <version.hazelcast-kubernetes>2.2.3</version.hazelcast-kubernetes>
-        <version.in-memory-accumulo>8.0.0-SNAPSHOT</version.in-memory-accumulo>
+        <version.in-memory-accumulo>9.0.0-SNAPSHOT</version.in-memory-accumulo>
         <!-- version set in datawave-microservice-parent, but can be overridden here -->
         <!-- 2.14.X is the maximum version of jackson without snakeyaml version 2 causing spring-boot 2.7.1 conflict -->
         <version.jackson>2.14.3</version.jackson>
