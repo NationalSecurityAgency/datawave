@@ -93,10 +93,15 @@ fi
 
 assertCreateDir "${DW_ACCUMULO_JVM_HEAPDUMP_DIR}" || exit 1
 
-# Update tserver and other options in accumulo-env.sh
-sed -i'' -e "s~\(ACCUMULO_TSERVER_OPTS=\).*$~\1\"${DW_ACCUMULO_TSERVER_OPTS}\"~g" "${DW_ACCUMULO_CONF_DIR}/accumulo-env.sh"
-sed -i'' -e "s~\(export JAVA_HOME=\).*$~\1\"${JAVA_HOME}\"~g" "${DW_ACCUMULO_CONF_DIR}/accumulo-env.sh"
-sed -i'' -e "s~\(export ACCUMULO_MONITOR_OPTS=\).*$~\1\"\${POLICY} -Xmx2g -Xms512m\"~g" "${DW_ACCUMULO_CONF_DIR}/accumulo-env.sh"
+# The Accumulo 4 accumulo-env.sh template no longer has the ACCUMULO_*_OPTS and
+# JAVA_HOME lines the old seds edited, so those substitutions silently did nothing
+# and the servers came up on the template's placeholder paths. Point it at our
+# Hadoop and ZooKeeper installs, and append JAVA_HOME, since accumulo-cluster
+# starts the servers over ssh where exports from this shell do not reach them.
+sed -i'' -e "s~/path/to/hadoop~${HADOOP_HOME}~" "${DW_ACCUMULO_CONF_DIR}/accumulo-env.sh"
+sed -i'' -e "s~/path/to/zookeeper~${ZOOKEEPER_HOME}~" "${DW_ACCUMULO_CONF_DIR}/accumulo-env.sh"
+echo "export JAVA_HOME=\"${JAVA_HOME}\"" >> "${DW_ACCUMULO_CONF_DIR}/accumulo-env.sh"
+echo "export PATH=\"\${JAVA_HOME}/bin:\${PATH}\"" >> "${DW_ACCUMULO_CONF_DIR}/accumulo-env.sh"
 # The scan server validates the configured cache sizes against its heap, and the
 # template's 512m is too small for them, so give it the same heap as the tserver
 sed -i'' -e "s~sserver) JAVA_OPTS=('-Xmx512m' '-Xms512m'~sserver) JAVA_OPTS=('-Xmx768m' '-Xms768m'~" "${DW_ACCUMULO_CONF_DIR}/accumulo-env.sh"
