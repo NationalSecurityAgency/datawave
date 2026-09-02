@@ -16,6 +16,8 @@ public class AccumuloAnnotationWriterProperties {
 
     private String annotationTableName = "annotation";
     private String annotationSourceTableName = "annotationSource";
+    private String truthmarkTableName = "truthmark";
+    private String truthmarkSourceTableName = "truthmarkSource";
     private int concurrency = 1;
 
     private Accumulo accumuloConfig = new Accumulo();

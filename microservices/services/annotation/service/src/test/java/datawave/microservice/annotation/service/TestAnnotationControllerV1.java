@@ -10,6 +10,7 @@ import static datawave.security.authorization.DatawaveUser.UserType.USER;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
@@ -27,6 +28,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.admin.TableOperations;
@@ -133,8 +136,16 @@ public class TestAnnotationControllerV1 {
         PrintUtility.printTable(client, auths, annotationTableName);
         PrintUtility.printTable(client, auths, annotationSourceTableName);
 
+        String truthmarkTableName = "truthmark";
+        String truthmarkSourceTableName = "truthmarkSource";
+
+        tops.create(truthmarkTableName);
+        tops.create(truthmarkSourceTableName);
+
         annotationProperties.setAnnotationTableName(annotationTableName);
         annotationProperties.setAnnotationSourceTableName(annotationSourceTableName);
+        annotationProperties.setTruthmarkTableName(truthmarkTableName);
+        annotationProperties.setTruthmarkSourceTableName(truthmarkSourceTableName);
         annotationProperties.setEnableInternalIdLookup(true);
         annotationProperties.setSystemFrom("annotation");
     }
@@ -171,8 +182,9 @@ public class TestAnnotationControllerV1 {
         DatawaveUser dwUser = new DatawaveUser(DEFAULT_USER_DN, USER, DEFAULT_AUTHS, DEFAULT_ROLES, null, System.currentTimeMillis());
         defaultUserDetails = new DatawaveUserDetails(Collections.singleton(dwUser), dwUser.getCreationTime());
 
+        ExecutorService executorService = Executors.newCachedThreadPool();
         annotationController = new AnnotationControllerV1(connectionFactory, lookupService, annotationProperties, timestampTransformer, visibilityTransformer,
-                        annotationSink);
+                        annotationSink, executorService);
         lenient().when(connectionFactory.getClient(any(), any(), any(), any(), any())).thenReturn(client);
     }
 
@@ -551,6 +563,108 @@ public class TestAnnotationControllerV1 {
         assertContains("No segments found for identifier", errorResponse);
         assertContains("20250704_249/testDataType/abcde.fghij.klmno", errorResponse);
         assertContains("bbbbbbbb", errorResponse);
+    }
+
+    // ----------------------------------------------------------------------------------------------------------------
+    // write target tests
+    // ----------------------------------------------------------------------------------------------------------------
+
+    @Test
+    public void testUpdateAnnotationTargetNotFoundOnTruthmarkTable() throws Exception {
+        // Per Q4, updates target truthmark tables. The FederatedAnnotationReader (which reads both
+        // annotation + truthmark tables) will not find "UPDATE_TEST_ID" in any table pair, so the
+        // controller should return 404 before reaching the write path.
+        AnnotationSource testSource = AnnotationUtils.injectAnnotationSourceHashes(generateTestAnnotationSource());
+
+        Annotation updateAnnotation = generateTestAnnotation().toBuilder().setAnnotationId("UPDATE_TEST_ID").setSource(testSource)
+                        .setAnalyticSourceHash(testSource.getAnalyticSourceHash()).build();
+
+        ResponseEntity<?> response = annotationController.updateAnnotation("DOCUMENT", "20250704_249/testDataType/abcde.fghij.klmno", "UPDATE_TEST_ID",
+                        AnnotationJsonUtils.annotationToJsonWithoutIds(updateAnnotation), EMPTY_HTTP_HEADERS, defaultUserDetails);
+        assertResponseStatus(404, response);
+        String errorResponse = assertExpectedEntity(String.class, response);
+        assertContains("annotations", errorResponse);
+        assertContains("UPDATE_TEST_ID", errorResponse);
+        verify(annotationSink, times(0)).send(any());
+    }
+
+    // ----------------------------------------------------------------------------------------------------------------
+    // maskSourceMetadata tests
+    // ----------------------------------------------------------------------------------------------------------------
+
+    private static AnnotationSource source(String... metadataPairs) {
+        AnnotationSource.Builder builder = generateTestAnnotationSource().toBuilder();
+        for (int i = 0; i < metadataPairs.length; i += 2) {
+            builder.putMetadata(metadataPairs[i], metadataPairs[i + 1]);
+        }
+        return builder.build();
+    }
+
+    @Test
+    public void testMaskSourceMetadata_RemovesVisibilityByDefault() throws Exception {
+        AnnotationSource source = source("visibility", "ALL", "engine", "foo");
+        AnnotationSource masked = invokeMaskSourceMetadata(source);
+        assertFalse(masked.containsMetadata("visibility"), "visibility metadata should be masked by default");
+        assertTrue(masked.containsMetadata("engine"), "other metadata should be preserved");
+        assertEquals("foo", masked.getMetadataOrDefault("engine", ""));
+    }
+
+    @Test
+    public void testMaskSourceMetadata_NoopWhenNoMatchingKeys() throws Exception {
+        // source with only non-masked metadata keys ("visibility" is the default mask target, so exclude it)
+        AnnotationSource.Builder builder = generateTestAnnotationSource().toBuilder();
+        builder.clearMetadata();
+        builder.putMetadata("engine", "foo");
+        builder.putMetadata("created_date", "2025-01-01");
+        AnnotationSource source = builder.build();
+        AnnotationSource masked = invokeMaskSourceMetadata(source);
+        assertSame(source, masked, "should return original when no fields are masked");
+    }
+
+    @Test
+    public void testMaskSourceMetadata_RespectsCustomMaskList() throws Exception {
+        AnnotationSource source = source("visibility", "ALL", "created_date", "2025-01-01");
+        annotationProperties.setMaskSourceMetadata(List.of("created_date"));
+        try {
+            AnnotationSource masked = invokeMaskSourceMetadata(source);
+            assertFalse(masked.containsMetadata("created_date"), "created_date should be masked when configured");
+            assertTrue(masked.containsMetadata("visibility"), "visibility should be preserved when not in mask list");
+        } finally {
+            annotationProperties.setMaskSourceMetadata(List.of("visibility"));
+        }
+    }
+
+    @Test
+    public void testMaskSourceMetadata_HandlesEmptyMaskList() throws Exception {
+        annotationProperties.setMaskSourceMetadata(List.of());
+        try {
+            AnnotationSource source = generateTestAnnotationSource();
+            AnnotationSource masked = invokeMaskSourceMetadata(source);
+            assertSame(source, masked, "should return original when mask list is empty");
+        } finally {
+            annotationProperties.setMaskSourceMetadata(List.of("visibility"));
+        }
+    }
+
+    @Test
+    public void testMaskSourceMetadata_HandlesNullMaskList() throws Exception {
+        annotationProperties.setMaskSourceMetadata(null);
+        try {
+            AnnotationSource source = generateTestAnnotationSource();
+            AnnotationSource masked = invokeMaskSourceMetadata(source);
+            assertSame(source, masked, "should return original when mask list is null");
+        } finally {
+            annotationProperties.setMaskSourceMetadata(List.of("visibility"));
+        }
+    }
+
+    /**
+     * Invoke the controller's maskSourceMetadata method via reflection (it is private).
+     */
+    private AnnotationSource invokeMaskSourceMetadata(AnnotationSource source) throws Exception {
+        java.lang.reflect.Method method = AnnotationControllerV1.class.getDeclaredMethod("maskSourceMetadata", AnnotationSource.class);
+        method.setAccessible(true);
+        return (AnnotationSource) method.invoke(annotationController, source);
     }
 
     /**

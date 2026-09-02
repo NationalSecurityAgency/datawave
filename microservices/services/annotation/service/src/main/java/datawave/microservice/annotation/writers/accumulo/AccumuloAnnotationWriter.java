@@ -54,14 +54,14 @@ public class AccumuloAnnotationWriter implements AnnotationWriter {
             log.info("Writing annotations as {}, with authorizations {}", accumuloUser, authorizations);
             final Set<Authorizations> authoriationsSet = Set.of(authorizations);
 
-            if (!accumuloClient.tableOperations().exists(properties.getAnnotationTableName()))
-                accumuloClient.tableOperations().create(properties.getAnnotationTableName());
+            if (!accumuloClient.tableOperations().exists(properties.getTruthmarkTableName()))
+                accumuloClient.tableOperations().create(properties.getTruthmarkTableName());
 
-            if (!accumuloClient.tableOperations().exists(properties.getAnnotationSourceTableName()))
-                accumuloClient.tableOperations().create(properties.getAnnotationSourceTableName());
+            if (!accumuloClient.tableOperations().exists(properties.getTruthmarkSourceTableName()))
+                accumuloClient.tableOperations().create(properties.getTruthmarkSourceTableName());
 
-            this.annotationDataAccess = new AnnotationDataAccess(accumuloClient, authoriationsSet, properties.getAnnotationTableName(),
-                            properties.getAnnotationSourceTableName(), annotationSerializer, annotationSourceSerializer);
+            this.annotationDataAccess = new AnnotationDataAccess(accumuloClient, authoriationsSet, properties.getTruthmarkTableName(),
+                            properties.getTruthmarkSourceTableName(), annotationSerializer, annotationSourceSerializer);
         } catch (Exception e) {
             throw new RuntimeException(e.getMessage(), e);
         }

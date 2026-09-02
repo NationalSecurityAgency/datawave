@@ -13,6 +13,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import javax.annotation.security.DeclareRoles;
@@ -49,6 +50,8 @@ import datawave.annotation.data.transform.VisibilityTransformer;
 import datawave.annotation.data.v1.AccumuloAnnotationSerializer;
 import datawave.annotation.data.v1.AccumuloAnnotationSourceSerializer;
 import datawave.annotation.data.v1.AnnotationDataAccess;
+import datawave.annotation.data.v1.AnnotationReader;
+import datawave.annotation.data.v1.FederatedAnnotationReader;
 import datawave.annotation.protobuf.v1.Annotation;
 import datawave.annotation.protobuf.v1.AnnotationMessage;
 import datawave.annotation.protobuf.v1.AnnotationSource;
@@ -82,7 +85,6 @@ public class AnnotationControllerV1 {
     // Note: This must match 'annotationAckChannel' in the service configuration. Default set in bootstrap.yml.
     public static final String ANNOTATION_ACK_CHANNEL = "annotationAckChannel";
 
-    private static final String SHARD_TABLE_NAME = "shard";
     public static final String ANNOTATION_SERVICE_SYSTEM_FROM = "annotation";
 
     private final AnnotationProperties annotationProperties;
@@ -95,6 +97,9 @@ public class AnnotationControllerV1 {
 
     /** used to transform external identifiers into internal identifiers */
     private final LookupService lookupService;
+
+    /** executor service for federated annotation reads (fan-out across annotation + truthmark tables) */
+    private final ExecutorService federatedReadExecutorService;
 
     // Configuration for the data access object
     private final TimestampTransformer timestampTransformer;
@@ -112,13 +117,15 @@ public class AnnotationControllerV1 {
 
     @Autowired
     public AnnotationControllerV1(AccumuloConnectionFactory factory, LookupService lookupService, AnnotationProperties annotationProperties,
-                    TimestampTransformer timestampTransformer, VisibilityTransformer visibilityTransformer, AnnotationSupplier annotationSource) {
+                    TimestampTransformer timestampTransformer, VisibilityTransformer visibilityTransformer, AnnotationSupplier annotationSource,
+                    ExecutorService federatedReadExecutorService) {
         this.connectionFactory = factory;
         this.lookupService = lookupService;
         this.annotationProperties = annotationProperties;
         this.timestampTransformer = timestampTransformer;
         this.visibilityTransformer = visibilityTransformer;
         this.annotationSource = annotationSource;
+        this.federatedReadExecutorService = federatedReadExecutorService;
     }
 
     @GetMapping("/source/{analyticHash}")
@@ -126,10 +133,10 @@ public class AnnotationControllerV1 {
                     @AuthenticationPrincipal DatawaveUserDetails currentUser) {
 
         final RequestContext context = new RequestContext(queryParameters, currentUser, annotationProperties, connectionFactory, accumuloConnectionRequestMap,
-                        visibilityTransformer, timestampTransformer);
+                        visibilityTransformer, timestampTransformer, federatedReadExecutorService);
 
         try {
-            final AnnotationDataAccess annotationDataAccess = context.initializeAnnotationService();
+            final AnnotationReader annotationDataAccess = context.initializeAnnotationService();
             Optional<AnnotationSource> results = annotationDataAccess.getAnnotationSource(analyticHash);
             if (results.isEmpty()) {
                 return jsonNotFound("No annotation source found for analyticHash: " + analyticHash);
@@ -151,14 +158,14 @@ public class AnnotationControllerV1 {
                     @RequestParam MultiValueMap<String,String> queryParameters, @AuthenticationPrincipal DatawaveUserDetails currentUser) {
         // TODO sanitize input to make sure it contains nothing weird like nulls.
         final RequestContext context = new RequestContext(queryParameters, currentUser, annotationProperties, connectionFactory, accumuloConnectionRequestMap,
-                        visibilityTransformer, timestampTransformer);
+                        visibilityTransformer, timestampTransformer, federatedReadExecutorService);
 
         try {
             final List<Metadata> metadata = lookupDocumentIdentifier(idType, id, queryParameters, currentUser);
             if (metadata.isEmpty()) {
                 return jsonNotFound(String.format("No internal identifier found for '%s:%s'", idType, id));
             }
-            final AnnotationDataAccess annotationDataAccess = context.initializeAnnotationService();
+            final AnnotationReader annotationDataAccess = context.initializeAnnotationService();
             final Map<Metadata,Collection<String>> results = new HashMap<>();
             for (Metadata md : metadata) {
                 final Collection<String> types = annotationDataAccess.getAnnotationTypes(md.getRow(), md.getDataType(), md.getInternalId());
@@ -183,7 +190,7 @@ public class AnnotationControllerV1 {
     public ResponseEntity<?> getAnnotationsFor(@PathVariable String idType, @PathVariable String id, @RequestParam MultiValueMap<String,String> queryParameters,
                     @AuthenticationPrincipal DatawaveUserDetails currentUser) {
         final RequestContext context = new RequestContext(queryParameters, currentUser, annotationProperties, connectionFactory, accumuloConnectionRequestMap,
-                        visibilityTransformer, timestampTransformer);
+                        visibilityTransformer, timestampTransformer, federatedReadExecutorService);
 
         // TODO sanitize input to make sure it contains nothing weird like nulls.
         try {
@@ -191,7 +198,7 @@ public class AnnotationControllerV1 {
             if (metadata.isEmpty()) {
                 return jsonNotFound(String.format("No internal identifier found for '%s:%s'", idType, id));
             }
-            final AnnotationDataAccess annotationDataAccess = context.initializeAnnotationService();
+            final AnnotationReader annotationDataAccess = context.initializeAnnotationService();
 
             final List<Annotation> results = new ArrayList<>();
             for (Metadata md : metadata) {
@@ -218,7 +225,7 @@ public class AnnotationControllerV1 {
     public ResponseEntity<?> getAnnotationsByType(@PathVariable String idType, @PathVariable String id, @PathVariable String annotationType,
                     @RequestParam MultiValueMap<String,String> queryParameters, @AuthenticationPrincipal DatawaveUserDetails currentUser) {
         final RequestContext context = new RequestContext(queryParameters, currentUser, annotationProperties, connectionFactory, accumuloConnectionRequestMap,
-                        visibilityTransformer, timestampTransformer);
+                        visibilityTransformer, timestampTransformer, federatedReadExecutorService);
 
         // TODO sanitize input to make sure it contains nothing weird like nulls.
         try {
@@ -226,7 +233,7 @@ public class AnnotationControllerV1 {
             if (metadata.isEmpty()) {
                 return jsonNotFound(String.format("No internal identifier found for '%s:%s'", idType, id));
             }
-            final AnnotationDataAccess annotationDataAccess = context.initializeAnnotationService();
+            final AnnotationReader annotationDataAccess = context.initializeAnnotationService();
 
             final List<Annotation> results = new ArrayList<>();
             for (Metadata md : metadata) {
@@ -254,14 +261,14 @@ public class AnnotationControllerV1 {
     public ResponseEntity<?> getAnnotation(@PathVariable String idType, @PathVariable String id, @PathVariable String annotationId,
                     @RequestParam MultiValueMap<String,String> queryParameters, @AuthenticationPrincipal DatawaveUserDetails currentUser) {
         final RequestContext context = new RequestContext(queryParameters, currentUser, annotationProperties, connectionFactory, accumuloConnectionRequestMap,
-                        visibilityTransformer, timestampTransformer);
+                        visibilityTransformer, timestampTransformer, federatedReadExecutorService);
 
         try {
             final List<Metadata> metadata = lookupDocumentIdentifier(idType, id, queryParameters, currentUser);
             if (metadata.isEmpty()) {
                 return jsonNotFound(String.format("No internal identifier found for '%s:%s'", idType, id));
             }
-            final AnnotationDataAccess annotationDataAccess = context.initializeAnnotationService();
+            final AnnotationReader annotationDataAccess = context.initializeAnnotationService();
 
             final List<Annotation> results = new ArrayList<>();
             for (Metadata md : metadata) {
@@ -289,7 +296,7 @@ public class AnnotationControllerV1 {
     public ResponseEntity<?> addAnnotation(@PathVariable String idType, @PathVariable String id, @RequestBody String body,
                     @RequestParam MultiValueMap<String,String> queryParameters, @AuthenticationPrincipal DatawaveUserDetails currentUser) {
         final RequestContext context = new RequestContext(queryParameters, currentUser, annotationProperties, connectionFactory, accumuloConnectionRequestMap,
-                        visibilityTransformer, timestampTransformer);
+                        visibilityTransformer, timestampTransformer, federatedReadExecutorService);
 
         try {
             final Annotation rawAnnotation = AnnotationJsonUtils.annotationFromJson(body);
@@ -352,7 +359,7 @@ public class AnnotationControllerV1 {
     public ResponseEntity<?> updateAnnotation(@PathVariable String idType, @PathVariable String id, @PathVariable String annotationId, @RequestBody String body,
                     @RequestParam MultiValueMap<String,String> queryParameters, @AuthenticationPrincipal DatawaveUserDetails currentUser) {
         final RequestContext context = new RequestContext(queryParameters, currentUser, annotationProperties, connectionFactory, accumuloConnectionRequestMap,
-                        visibilityTransformer, timestampTransformer);
+                        visibilityTransformer, timestampTransformer, federatedReadExecutorService);
 
         try {
             final Annotation rawAnnotation = AnnotationJsonUtils.annotationFromJson(body);
@@ -377,7 +384,7 @@ public class AnnotationControllerV1 {
 
             final Metadata metadata = metadataList.get(0);
 
-            final AnnotationDataAccess annotationDataAccess = context.initializeAnnotationService();
+            final AnnotationReader annotationDataAccess = context.initializeAnnotationService();
             final Optional<Annotation> targetAnnotation = annotationDataAccess.getAnnotation(metadata.getRow(), metadata.getDataType(),
                             metadata.getInternalId(), annotationId);
             if (targetAnnotation.isEmpty()) {
@@ -424,14 +431,14 @@ public class AnnotationControllerV1 {
                     @PathVariable String segmentHash, @RequestParam MultiValueMap<String,String> queryParameters,
                     @AuthenticationPrincipal DatawaveUserDetails currentUser) {
         final RequestContext context = new RequestContext(queryParameters, currentUser, annotationProperties, connectionFactory, accumuloConnectionRequestMap,
-                        visibilityTransformer, timestampTransformer);
+                        visibilityTransformer, timestampTransformer, federatedReadExecutorService);
 
         try {
             final List<Metadata> metadata = lookupDocumentIdentifier(idType, id, queryParameters, currentUser);
             if (metadata.isEmpty()) {
                 return jsonNotFound(String.format("No internal identifier found for '%s:%s'", idType, id));
             }
-            final AnnotationDataAccess annotationDataAccess = context.initializeAnnotationService();
+            final AnnotationReader annotationDataAccess = context.initializeAnnotationService();
 
             final Map<Metadata,Annotation> annotationResults = new HashMap<>();
             for (Metadata md : metadata) {
@@ -662,6 +669,34 @@ public class AnnotationControllerV1 {
      *            the annotations to inject sources into
      * @return return annotations with sources injected where possible.
      */
+    /**
+     * When returning the source in the context of an annotation, mask/remove certain metadata from the source (e.g., visibility) because the metadata on the
+     * annotation itself takes precedence. Mirrors the legacy {@code AnnotationManagerBean.maskSourceMetadata(AnnotationSource)} behavior.
+     *
+     * @param annotationSource
+     *            the annotation source with metadata fields to mask
+     * @return a new source with masked fields removed, or the original source if nothing was masked
+     */
+    private AnnotationSource maskSourceMetadata(AnnotationSource annotationSource) {
+        final List<String> fieldsToMask = annotationProperties.getMaskSourceMetadata();
+        if (fieldsToMask == null || fieldsToMask.isEmpty()) {
+            // no fields to mask, make no changes.
+            return annotationSource;
+        }
+
+        AnnotationSource.Builder builder = null;
+        for (String key : fieldsToMask) {
+            if (annotationSource.containsMetadata(key)) {
+                if (builder == null) {
+                    builder = annotationSource.toBuilder();
+                }
+                builder.removeMetadata(key);
+            }
+        }
+
+        return (builder == null) ? annotationSource : builder.build();
+    }
+
     private List<Annotation> lookupAndInjectAnnotationSources(RequestContext context, Collection<Annotation> annotations) {
         final List<Annotation> results = new ArrayList<>();
         for (Annotation a : annotations) {
@@ -698,7 +733,7 @@ public class AnnotationControllerV1 {
         final String analyticHash = a.getAnalyticSourceHash();
         final Optional<AnnotationSource> result = context.getAnnotationSource(analyticHash);
         if (result.isPresent()) {
-            return injectAnnotationSource(a, result.get());
+            return injectAnnotationSource(a, maskSourceMetadata(result.get()));
         } else {
             log.debug("No analytic source found for annotation {}/{}/{} {}, using analyticHash {}", a.getShard(), a.getDataType(), a.getUid(),
                             a.getAnnotationId(), a.getAnalyticSourceHash());
@@ -722,7 +757,7 @@ public class AnnotationControllerV1 {
                             "Identifier does not specify all needed 3 parts. Identifier must be in the form 'shardId/datatype/eventUID' or 'shardId:datatype:eventUID'.");
         }
 
-        final Metadata md = new Metadata(SHARD_TABLE_NAME, parts[0], parts[1], parts[2]);
+        final Metadata md = new Metadata(annotationProperties.getShardTableName(), parts[0], parts[1], parts[2]);
         return Collections.singletonList(md);
     }
 
@@ -782,6 +817,7 @@ public class AnnotationControllerV1 {
 
         private final VisibilityTransformer visibilityTransformer;
         private final TimestampTransformer timestampTransformer;
+        private final ExecutorService federatedReadExecutorService;
 
         /** the final set of merged query and user authorizations. */
         Set<Authorizations> authorizations;
@@ -790,7 +826,7 @@ public class AnnotationControllerV1 {
         AccumuloClient client;
 
         /** used to _read_ annotations directly from accumulo, scoped to the caller's authorizations */
-        AnnotationDataAccess annotationDataAccess;
+        AnnotationReader annotationDataAccess;
 
         /** Cache lookups for unique analytic source hashes so we don't perform lookups more than once. TODO: make this a proper cross-request cache? */
         private final Map<String,Optional<AnnotationSource>> retrievedSourcesCache = new HashMap<>();
@@ -817,7 +853,7 @@ public class AnnotationControllerV1 {
          */
         protected RequestContext(MultiValueMap<String,String> queryParameters, DatawaveUserDetails currentUser, AnnotationProperties config,
                         AccumuloConnectionFactory connectionFactory, AccumuloConnectionRequestMap accumuloConnectionRequestBean,
-                        VisibilityTransformer visibilityTransformer, TimestampTransformer timestampTransformer) {
+                        VisibilityTransformer visibilityTransformer, TimestampTransformer timestampTransformer, ExecutorService federatedReadExecutorService) {
 
             this.currentUser = currentUser;
 
@@ -826,6 +862,7 @@ public class AnnotationControllerV1 {
             this.accumuloConnectionRequestBean = accumuloConnectionRequestBean;
             this.visibilityTransformer = visibilityTransformer;
             this.timestampTransformer = timestampTransformer;
+            this.federatedReadExecutorService = federatedReadExecutorService;
 
             this.userDn = currentUser.getName();
             this.proxyServers = currentUser.getProxyServers();
@@ -915,7 +952,7 @@ public class AnnotationControllerV1 {
          * @throws QueryException
          *             if the annotation data access object can't be initialized.
          */
-        protected AnnotationDataAccess initializeAnnotationService() throws QueryException {
+        protected AnnotationReader initializeAnnotationService() throws QueryException {
             if (annotationDataAccess == null) {
                 log.trace("Initializing annotation data access layer");
                 final Set<Authorizations> authorizations = initializeAuthorizations();
@@ -923,9 +960,20 @@ public class AnnotationControllerV1 {
                 final AccumuloAnnotationSerializer annotationSerializer = new AccumuloAnnotationSerializer(visibilityTransformer, timestampTransformer);
                 final AccumuloAnnotationSourceSerializer annotationSourceSerializer = new AccumuloAnnotationSourceSerializer(visibilityTransformer,
                                 timestampTransformer);
-                annotationDataAccess = new AnnotationDataAccess(client, authorizations, config.getAnnotationTableName(), config.getAnnotationSourceTableName(),
-                                annotationSerializer, annotationSourceSerializer);
-                log.debug("Annotation data access layer initialized successfully");
+
+                // Construct DAOs for both the annotation table pair and the truthmark table pair
+                final AnnotationDataAccess annotationDao = new AnnotationDataAccess(client, authorizations, config.getAnnotationTableName(),
+                                config.getAnnotationSourceTableName(), annotationSerializer, annotationSourceSerializer);
+                final AnnotationDataAccess truthmarkDao = new AnnotationDataAccess(client, authorizations, config.getTruthmarkTableName(),
+                                config.getTruthmarkSourceTableName(), annotationSerializer, annotationSourceSerializer);
+
+                // Fan out reads across both table pairs (matching the legacy FederatedAnnotationReader behavior)
+                final Map<String,AnnotationReader> readers = new HashMap<>();
+                readers.put("annotation", annotationDao);
+                readers.put("truthmark", truthmarkDao);
+
+                annotationDataAccess = new FederatedAnnotationReader(readers, federatedReadExecutorService);
+                log.debug("Annotation data access layer initialized successfully with federated reads (annotation + truthmark)");
             }
             return annotationDataAccess;
         }

@@ -1,5 +1,8 @@
 package datawave.microservice.annotation.service.config;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -48,5 +51,10 @@ public class AnnotationServiceConfig {
         simpleModule.addSerializer(Segment.class, new JacksonSegmentSerializer());
 
         return simpleModule;
+    }
+
+    @Bean
+    public ExecutorService federatedReadExecutorService() {
+        return Executors.newCachedThreadPool();
     }
 }

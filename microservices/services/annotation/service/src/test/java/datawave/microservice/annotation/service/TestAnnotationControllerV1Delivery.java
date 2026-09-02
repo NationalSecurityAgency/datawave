@@ -84,7 +84,7 @@ public class TestAnnotationControllerV1Delivery {
         annotationProperties.getRetry().setFailTimeoutMillis(TimeUnit.SECONDS.toMillis(10));
 
         annotationController = new AnnotationControllerV1(connectionFactory, lookupService, annotationProperties, timestampTransformer, visibilityTransformer,
-                        annotationSink);
+                        annotationSink, Executors.newCachedThreadPool());
 
         // ensure no latches leak between tests, since correlationLatchMap is static
         getCorrelationLatchMap().clear();

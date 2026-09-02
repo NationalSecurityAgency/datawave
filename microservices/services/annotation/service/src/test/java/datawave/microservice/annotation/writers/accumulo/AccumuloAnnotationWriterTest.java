@@ -55,8 +55,8 @@ import lombok.extern.slf4j.Slf4j;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = "spring.main.allow-bean-definition-overriding=true")
 @ActiveProfiles({"AccumuloAnnotationWriterTest", "accumulo-enabled"})
 public class AccumuloAnnotationWriterTest {
-    private static final String annotationTableName = "annotation";
-    private static final String annotationSourceTableName = "annotationSource";
+    private static final String annotationTableName = "truthmark";
+    private static final String annotationSourceTableName = "truthmarkSource";
 
     @Autowired
     private AccumuloAnnotationWriter accumuloAnnotationWriter;
@@ -217,6 +217,52 @@ public class AccumuloAnnotationWriterTest {
 
             assertThrows(AnnotationUpdateException.class, () -> accumuloAnnotationWriter.write(update),
                             "expected an update referencing a nonexistent target annotation id to fail");
+        } finally {
+            accumuloConnectionFactory.returnClient(accumuloClient);
+        }
+    }
+
+    // ---------------------------------------------------------------------------------------
+    // Write target verification tests to validate that the service writes truthmark tables
+    // ---------------------------------------------------------------------------------------
+
+    @Test
+    public void testWriteTargetsTruthmarkTables() throws Exception {
+        AccumuloClient accumuloClient = accumuloConnectionFactory.getClient(AccumuloAnnotationWriter.USER_DN, AccumuloAnnotationWriter.EMPTY_PROXY_SERVERS,
+                        AccumuloConnectionFactory.Priority.NORMAL, trackingMap);
+        try {
+            accumuloClient.tableOperations().deleteRows(annotationTableName, null, null);
+            accumuloClient.tableOperations().deleteRows(annotationSourceTableName, null, null);
+
+            // write an annotation
+            Annotation partialAnnotation = AnnotationTestDataUtil.generateTestAnnotation();
+            Annotation testAnnotation = AnnotationUtils.injectAllHashes(partialAnnotation);
+            Optional<Annotation> result = accumuloAnnotationWriter.write(testAnnotation);
+            assertFalse(result.isEmpty());
+
+            // verify the data landed in the truthmark/truthmarkSource tables
+            Set<String> tables = accumuloClient.tableOperations().list();
+            assertTrue(tables.contains(annotationTableName), "expected data to be written to truthmark table: " + annotationTableName);
+            assertTrue(tables.contains(annotationSourceTableName), "expected data to be written to truthmarkSource table: " + annotationSourceTableName);
+        } finally {
+            accumuloConnectionFactory.returnClient(accumuloClient);
+        }
+    }
+
+    @Test
+    public void testWriteDoesNotCreateAnnotationTables() throws Exception {
+        AccumuloClient accumuloClient = accumuloConnectionFactory.getClient(AccumuloAnnotationWriter.USER_DN, AccumuloAnnotationWriter.EMPTY_PROXY_SERVERS,
+                        AccumuloConnectionFactory.Priority.NORMAL, trackingMap);
+        try {
+            // clean up any pre-existing annotation/annotationSource tables (from other tests)
+            if (accumuloClient.tableOperations().exists("annotation"))
+                accumuloClient.tableOperations().delete("annotation");
+            if (accumuloClient.tableOperations().exists("annotationSource"))
+                accumuloClient.tableOperations().delete("annotationSource");
+
+            Set<String> tables = accumuloClient.tableOperations().list();
+            assertFalse(tables.contains("annotation"), "service should NOT create the annotation table");
+            assertFalse(tables.contains("annotationSource"), "service should NOT create the annotationSource table");
         } finally {
             accumuloConnectionFactory.returnClient(accumuloClient);
         }

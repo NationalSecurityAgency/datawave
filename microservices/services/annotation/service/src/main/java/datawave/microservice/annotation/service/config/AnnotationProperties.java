@@ -21,13 +21,28 @@ import lombok.Setter;
 public class AnnotationProperties {
     private int maxConnections;
 
-    private String annotationTableName;
+    private String annotationTableName = "annotation";
 
-    private String annotationSourceTableName;
+    private String annotationSourceTableName = "annotationSource";
+
+    private String truthmarkTableName = "truthmark";
+
+    private String truthmarkSourceTableName = "truthmarkSource";
 
     private String connPoolName;
 
     private boolean enableInternalIdLookup;
+
+    /**
+     * Metadata keys to mask (remove) from annotation sources when injecting them into annotations. Mirrors the legacy
+     * {@code AnnotationConfig.getMaskSourceMetadata()} default of {@code ["visibility"]}.
+     */
+    private List<String> maskSourceMetadata = List.of("visibility");
+
+    /**
+     * The name of the shard table used for internal document identifier lookups.
+     */
+    private String shardTableName = "shard";
 
     private AccumuloConnectionFactory.Priority priority;
 
