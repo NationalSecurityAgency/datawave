@@ -2,8 +2,8 @@ package datawave.webservice.annotation;
 
 import javax.ws.rs.core.Response;
 
-import datawave.core.query.logic.ResponseRewriter;
-import datawave.core.query.logic.ResponseRewriterContext;
+import datawave.webservice.common.rest.ResponseRewriter;
+import datawave.webservice.common.rest.ResponseRewriterContext;
 
 /**
  * A test implementation of {@link ResponseRewriter} that adds a marker header to verify that the rewriter was invoked. This is used in unit tests to verify

@@ -1,4 +1,4 @@
-package datawave.core.query.logic;
+package datawave.webservice.common.rest;
 
 import java.util.Collection;
 
