@@ -143,6 +143,7 @@ services:
       - ACCUMULO_INSTANCE_NAME=my-instance-01
       - ACCUMULO_ROOT_PASSWORD=secret
       - HADOOP_CONF_DIR=/stack
+      - ACCUMULO_LIB_EXT=/opt/accumulo/lib/ext
     volumes:
       - ./stack:/stack:ro
       - datawave_accumulo_ext:/opt/accumulo/lib/ext:ro
@@ -170,6 +171,7 @@ services:
     command: [tserver]
     environment:
       - HADOOP_CONF_DIR=/stack
+      - ACCUMULO_LIB_EXT=/opt/accumulo/lib/ext
     volumes:
       - ./stack:/stack:ro
       - datawave_accumulo_ext:/opt/accumulo/lib/ext:ro
@@ -192,6 +194,7 @@ services:
     command: [gc]
     environment:
       - HADOOP_CONF_DIR=/stack
+      - ACCUMULO_LIB_EXT=/opt/accumulo/lib/ext
     volumes:
       - ./stack:/stack:ro
       - datawave_accumulo_ext:/opt/accumulo/lib/ext:ro
@@ -209,6 +212,7 @@ services:
     command: [monitor]
     environment:
       - HADOOP_CONF_DIR=/stack
+      - ACCUMULO_LIB_EXT=/opt/accumulo/lib/ext
     ports:
       - "9995:9995"
     volumes:
