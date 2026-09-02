@@ -3,6 +3,7 @@ package datawave.webservice.annotation;
 import java.security.Principal;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -23,9 +24,9 @@ import datawave.annotation.data.v1.AnnotationReader;
 import datawave.annotation.data.v1.FederatedAnnotationReader;
 import datawave.annotation.protobuf.v1.AnnotationSource;
 import datawave.core.common.connection.AccumuloConnectionFactory;
-import datawave.core.query.logic.ResponseRewriterContext;
 import datawave.microservice.authorization.util.AuthorizationsUtil;
 import datawave.security.authorization.DatawavePrincipal;
+import datawave.webservice.common.rest.ResponseRewriterContext;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.query.runner.AccumuloConnectionRequestBean;
@@ -34,7 +35,7 @@ import datawave.webservice.query.runner.AccumuloConnectionRequestBean;
  * Per-request context for the {@link AnnotationManagerBean}, holding the state and resources needed to process annotation requests. This class also implements
  * {@link ResponseRewriterContext} to provide request-level information to response rewriters.
  */
-public class AnnotationManagerRequestContext implements ResponseRewriterContext {
+public final class AnnotationManagerRequestContext implements ResponseRewriterContext {
 
     private static final Logger log = LoggerFactory.getLogger(AnnotationManagerRequestContext.class);
 
@@ -69,7 +70,7 @@ public class AnnotationManagerRequestContext implements ResponseRewriterContext 
     private AnnotationReader annotationDataAccess;
 
     /** Cache lookups for unique analytic source hashes so we don't perform lookups more than once. TODO: make this a proper cross-request cache? */
-    private final Map<String,Optional<AnnotationSource>> retrievedSourcesCache = new java.util.HashMap<>();
+    private final Map<String,Optional<AnnotationSource>> retrievedSourcesCache = new HashMap<>();
 
     /** Lookup an annotation source or retrieve it from the cache */
     public Optional<AnnotationSource> getAnnotationSource(String analyticHash) {
@@ -83,11 +84,11 @@ public class AnnotationManagerRequestContext implements ResponseRewriterContext 
      * @param config
      *            the annotation manager configuration
      * @param ctx
-     *            the ejb context - used for retrieving the principal for he qrequest
+     *            the ejb context - used for retrieving the principal for the request
      * @param connectionFactory
      *            the accumulo connection factory - used for getting accumulo clients
      * @param accumuloConnectionRequestBean
-     *            the accumulo connection request bean - used for tracking accumulo clients rerquests
+     *            the accumulo connection request bean - used for tracking accumulo clients requests
      * @param responseObjectFactory
      *            the response object factory used for creating LookupUUID responses.
      * @param annotationFederatedReadExecutor
@@ -148,11 +149,11 @@ public class AnnotationManagerRequestContext implements ResponseRewriterContext 
     /**
      * Initialize the accumulo client
      *
-     * @return a valid client, will throw an exception if this isn't possibly
+     * @return a valid client, will throw an exception if this isn't possible
      * @throws QueryException
      *             if the client can't be initialized.
      */
-    protected AccumuloClient initializeAccumuloClient() throws QueryException {
+    private AccumuloClient initializeAccumuloClient() throws QueryException {
         if (client == null) {
             log.trace("Initializing accumulo client");
             UUID transactionUUID = java.util.UUID.randomUUID();
@@ -195,7 +196,7 @@ public class AnnotationManagerRequestContext implements ResponseRewriterContext 
      * @throws QueryException
      *             if the lookup uuid service can't be initialized.
      */
-    protected LookupUUIDService initializeLookupUUIDService() throws QueryException {
+    public LookupUUIDService initializeLookupUUIDService() throws QueryException {
         if (lookupUUIDService == null) {
 
             if (config == null) {
@@ -223,7 +224,7 @@ public class AnnotationManagerRequestContext implements ResponseRewriterContext 
      * @throws QueryException
      *             if the annotation data access object can't be initialized.
      */
-    protected AnnotationReader initializeAnnotationService() throws QueryException {
+    public AnnotationReader initializeAnnotationService() throws QueryException {
         if (annotationDataAccess == null) {
             log.trace("Initializing annotation data access layer");
             final Set<Authorizations> authorizations = initializeAuthorizations();
@@ -249,7 +250,7 @@ public class AnnotationManagerRequestContext implements ResponseRewriterContext 
      * Return the accumulo client currently held by this class. If there's a problem returning the client, logs a warning. Sets the internal client state to
      * null.
      */
-    protected void returnAccumuloClient() {
+    public void returnAccumuloClient() {
         try {
             log.trace("Returning accumulo client");
             connectionFactory.returnClient(client);

@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import javax.annotation.security.DeclareRoles;
 import javax.annotation.security.RolesAllowed;
@@ -41,7 +42,7 @@ import datawave.annotation.protobuf.v1.AnnotationSource;
 import datawave.annotation.protobuf.v1.Segment;
 import datawave.configuration.spring.SpringBean;
 import datawave.core.common.connection.AccumuloConnectionFactory;
-import datawave.core.query.logic.ResponseRewriter;
+import datawave.webservice.common.rest.ResponseRewriter;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.query.runner.AccumuloConnectionRequestBean;
@@ -75,7 +76,7 @@ public class AnnotationManagerBean implements AnnotationManager {
     private AnnotationManagerConfig config;
 
     @Inject
-    @SpringBean(name = "AnnotationResponseRewriter", required = false)
+    @SpringBean(name = "AnnotationResponseRewriter")
     private ResponseRewriter responseRewriter;
 
     @Resource
@@ -92,20 +93,24 @@ public class AnnotationManagerBean implements AnnotationManager {
     @Override
     public Response getAnnotationSource(@PathParam("analyticHash") String analyticHash) {
         final AnnotationManagerRequestContext context = newRequestContext();
+        Response response;
         try {
             context.initializeAnnotationService();
             Optional<AnnotationSource> results = context.getAnnotationSource(analyticHash);
             if (results.isEmpty()) {
-                return jsonNotFound("No annotation source found for analyticHash: " + analyticHash);
+                response = jsonNotFound("No annotation source found for analyticHash: " + analyticHash);
+            } else {
+                response = jsonOk(results.get());
             }
-            return jsonOk(results.get(), context);
         } catch (Exception e) {
             final String message = String.format("Internal error fetching annotation source: %s", e.getMessage());
             log.error(message, e);
-            return jsonError(message);
+            response = jsonError(message);
         } finally {
             context.returnAccumuloClient();
         }
+        // Apply rewriter after client is returned to avoid holding the client during remote work
+        return rewriteResponse(response, context);
     }
 
     @GET
@@ -115,30 +120,35 @@ public class AnnotationManagerBean implements AnnotationManager {
     public Response getAnnotationTypes(@PathParam("idType") String idType, @PathParam("id") String id) {
         // TODO sanitize input to make sure it contains nothing weird like nulls.
         final AnnotationManagerRequestContext context = newRequestContext();
+        Response response;
         try {
             final List<Metadata> metadata = lookupDocumentIdentifier(context, idType, id);
             if (metadata.isEmpty()) {
-                return jsonNotFound(String.format("No internal identifier found for '%s:%s'", idType, id));
-            }
-            final AnnotationReader annotationDataAccess = context.initializeAnnotationService();
-            final Map<Metadata,Collection<String>> results = new HashMap<>();
-            for (Metadata md : metadata) {
-                final Collection<String> types = annotationDataAccess.getAnnotationTypes(md.getRow(), md.getDataType(), md.getInternalId());
-                if (!types.isEmpty()) {
-                    results.put(md, types);
+                response = jsonNotFound(String.format("No internal identifier found for '%s:%s'", idType, id));
+            } else {
+                final AnnotationReader annotationDataAccess = context.initializeAnnotationService();
+                final Map<Metadata,Collection<String>> results = new HashMap<>();
+                for (Metadata md : metadata) {
+                    final Collection<String> types = annotationDataAccess.getAnnotationTypes(md.getRow(), md.getDataType(), md.getInternalId());
+                    if (!types.isEmpty()) {
+                        results.put(md, types);
+                    }
+                }
+                if (results.isEmpty()) {
+                    response = jsonNotFound("annotation types", idType, id, metadata.toString(), null, null, null);
+                } else {
+                    response = jsonOk(results);
                 }
             }
-            if (results.isEmpty()) {
-                return jsonNotFound("annotation types", idType, id, metadata.toString(), null, null, null);
-            }
-            return jsonOk(results, context);
         } catch (Exception e) {
             final String message = String.format("Internal error fetching annotation: %s", e.getMessage());
             log.error(message, e);
-            return jsonError(message);
+            response = jsonError(message);
         } finally {
             context.returnAccumuloClient();
         }
+        // Apply rewriter after client is returned to avoid holding the client during remote work
+        return rewriteResponse(response, context);
     }
 
     @GET
@@ -148,32 +158,37 @@ public class AnnotationManagerBean implements AnnotationManager {
     public Response getAnnotationsFor(@PathParam("idType") String idType, @PathParam("id") String id) {
         // TODO sanitize input to make sure it contains nothing weird like nulls.
         final AnnotationManagerRequestContext context = newRequestContext();
+        Response response;
         try {
             final List<Metadata> metadata = lookupDocumentIdentifier(context, idType, id);
             if (metadata.isEmpty()) {
-                return jsonNotFound(String.format("No internal identifier found for '%s:%s'", idType, id));
-            }
-            final AnnotationReader annotationDataAccess = context.initializeAnnotationService();
+                response = jsonNotFound(String.format("No internal identifier found for '%s:%s'", idType, id));
+            } else {
+                final AnnotationReader annotationDataAccess = context.initializeAnnotationService();
 
-            final List<Annotation> results = new ArrayList<>();
-            for (Metadata md : metadata) {
-                final Collection<Annotation> annotations = annotationDataAccess.getAnnotations(md.getRow(), md.getDataType(), md.getInternalId());
-                if (!annotations.isEmpty()) {
-                    List<Annotation> annotationsWithSources = lookupAndInjectAnnotationSources(context, annotations);
-                    results.addAll(annotationsWithSources);
+                final List<Annotation> results = new ArrayList<>();
+                for (Metadata md : metadata) {
+                    final Collection<Annotation> annotations = annotationDataAccess.getAnnotations(md.getRow(), md.getDataType(), md.getInternalId());
+                    if (!annotations.isEmpty()) {
+                        List<Annotation> annotationsWithSources = lookupAndInjectAnnotationSources(context, annotations);
+                        results.addAll(annotationsWithSources);
+                    }
+                }
+                if (results.isEmpty()) {
+                    response = jsonNotFound("annotations", idType, id, metadata.toString(), null, null, null);
+                } else {
+                    response = jsonOk(results);
                 }
             }
-            if (results.isEmpty()) {
-                return jsonNotFound("annotations", idType, id, metadata.toString(), null, null, null);
-            }
-            return jsonOk(results, context);
         } catch (Exception e) {
             final String message = String.format("Internal error fetching annotation: %s", e.getMessage());
             log.error(message, e);
-            return jsonError(message);
+            response = jsonError(message);
         } finally {
             context.returnAccumuloClient();
         }
+        // Apply rewriter after client is returned to avoid holding the client during remote work
+        return rewriteResponse(response, context);
     }
 
     @GET
@@ -183,33 +198,38 @@ public class AnnotationManagerBean implements AnnotationManager {
     public Response getAnnotationsByType(@PathParam("idType") String idType, @PathParam("id") String id, @PathParam("annotationType") String annotationType) {
         // TODO sanitize input to make sure it contains nothing weird like nulls.
         final AnnotationManagerRequestContext context = newRequestContext();
+        Response response;
         try {
             final List<Metadata> metadata = lookupDocumentIdentifier(context, idType, id);
             if (metadata.isEmpty()) {
-                return jsonNotFound(String.format("No internal identifier found for '%s:%s'", idType, id));
-            }
-            final AnnotationReader annotationDataAccess = context.initializeAnnotationService();
+                response = jsonNotFound(String.format("No internal identifier found for '%s:%s'", idType, id));
+            } else {
+                final AnnotationReader annotationDataAccess = context.initializeAnnotationService();
 
-            final List<Annotation> results = new ArrayList<>();
-            for (Metadata md : metadata) {
-                final Collection<Annotation> annotations = annotationDataAccess.getAnnotationsForType(md.getRow(), md.getDataType(), md.getInternalId(),
-                                annotationType);
-                if (!annotations.isEmpty()) {
-                    List<Annotation> annotationsWithSources = lookupAndInjectAnnotationSources(context, annotations);
-                    results.addAll(annotationsWithSources);
+                final List<Annotation> results = new ArrayList<>();
+                for (Metadata md : metadata) {
+                    final Collection<Annotation> annotations = annotationDataAccess.getAnnotationsForType(md.getRow(), md.getDataType(), md.getInternalId(),
+                                    annotationType);
+                    if (!annotations.isEmpty()) {
+                        List<Annotation> annotationsWithSources = lookupAndInjectAnnotationSources(context, annotations);
+                        results.addAll(annotationsWithSources);
+                    }
+                }
+                if (results.isEmpty()) {
+                    response = jsonNotFound("annotations of type", idType, id, metadata.toString(), annotationType, null, null);
+                } else {
+                    response = jsonOk(results);
                 }
             }
-            if (results.isEmpty()) {
-                return jsonNotFound("annotations of type", idType, id, metadata.toString(), annotationType, null, null);
-            }
-            return jsonOk(results, context);
         } catch (Exception e) {
             final String message = String.format("Internal error fetching annotation: %s", e.getMessage());
             log.error(message, e);
-            return jsonError(message);
+            response = jsonError(message);
         } finally {
             context.returnAccumuloClient();
         }
+        // Apply rewriter after client is returned to avoid holding the client during remote work
+        return rewriteResponse(response, context);
     }
 
     @GET
@@ -218,32 +238,38 @@ public class AnnotationManagerBean implements AnnotationManager {
     @Override
     public Response getAnnotation(@PathParam("idType") String idType, @PathParam("id") String id, @PathParam("annotationId") String annotationId) {
         final AnnotationManagerRequestContext context = newRequestContext();
+        Response response;
         try {
             final List<Metadata> metadata = lookupDocumentIdentifier(context, idType, id);
             if (metadata.isEmpty()) {
-                return jsonNotFound(String.format("No internal identifier found for '%s:%s'", idType, id));
-            }
-            final AnnotationReader annotationDataAccess = context.initializeAnnotationService();
+                response = jsonNotFound(String.format("No internal identifier found for '%s:%s'", idType, id));
+            } else {
+                final AnnotationReader annotationDataAccess = context.initializeAnnotationService();
 
-            final List<Annotation> results = new ArrayList<>();
-            for (Metadata md : metadata) {
-                final Optional<Annotation> annotations = annotationDataAccess.getAnnotation(md.getRow(), md.getDataType(), md.getInternalId(), annotationId);
-                if (annotations.isPresent()) {
-                    Annotation annotationWithSource = lookupAndInjectAnnotationSource(context, annotations.get());
-                    results.add(annotationWithSource);
+                final List<Annotation> results = new ArrayList<>();
+                for (Metadata md : metadata) {
+                    final Optional<Annotation> annotations = annotationDataAccess.getAnnotation(md.getRow(), md.getDataType(), md.getInternalId(),
+                                    annotationId);
+                    if (annotations.isPresent()) {
+                        Annotation annotationWithSource = lookupAndInjectAnnotationSource(context, annotations.get());
+                        results.add(annotationWithSource);
+                    }
+                }
+                if (results.isEmpty()) {
+                    response = jsonNotFound("annotations", idType, id, metadata.toString(), null, annotationId, null);
+                } else {
+                    response = jsonOk(results);
                 }
             }
-            if (results.isEmpty()) {
-                return jsonNotFound("annotations", idType, id, metadata.toString(), null, annotationId, null);
-            }
-            return jsonOk(results, context);
         } catch (Exception e) {
             final String message = String.format("Internal error fetching annotation: %s", e.getMessage());
             log.error(message, e);
-            return jsonError(message);
+            response = jsonError(message);
         } finally {
             context.returnAccumuloClient();
         }
+        // Apply rewriter after client is returned to avoid holding the client during remote work
+        return rewriteResponse(response, context);
     }
 
     @GET
@@ -253,48 +279,53 @@ public class AnnotationManagerBean implements AnnotationManager {
     public Response getAnnotationSegment(@PathParam("idType") String idType, @PathParam("id") String id, @PathParam("annotationId") String annotationId,
                     @PathParam("segmentHash") String segmentHash) {
         final AnnotationManagerRequestContext context = newRequestContext();
+        Response response;
         try {
             final List<Metadata> metadata = lookupDocumentIdentifier(context, idType, id);
             if (metadata.isEmpty()) {
-                return jsonNotFound(String.format("No internal identifier found for '%s:%s'", idType, id));
-            }
-            final AnnotationReader annotationDataAccess = context.initializeAnnotationService();
+                response = jsonNotFound(String.format("No internal identifier found for '%s:%s'", idType, id));
+            } else {
+                final AnnotationReader annotationDataAccess = context.initializeAnnotationService();
 
-            final Map<Metadata,Annotation> annotationResults = new HashMap<>();
-            for (Metadata md : metadata) {
-                final Optional<Annotation> annotation = annotationDataAccess.getAnnotation(md.getRow(), md.getDataType(), md.getInternalId(), annotationId);
-                annotation.ifPresent(value -> annotationResults.put(md, value));
-            }
+                final Map<Metadata,Annotation> annotationResults = new HashMap<>();
+                for (Metadata md : metadata) {
+                    final Optional<Annotation> annotation = annotationDataAccess.getAnnotation(md.getRow(), md.getDataType(), md.getInternalId(), annotationId);
+                    annotation.ifPresent(value -> annotationResults.put(md, value));
+                }
 
-            if (annotationResults.isEmpty()) {
-                return jsonNotFound("annotations", idType, id, metadata.toString(), null, annotationId, segmentHash);
-            }
+                if (annotationResults.isEmpty()) {
+                    response = jsonNotFound("annotations", idType, id, metadata.toString(), null, annotationId, segmentHash);
+                } else {
+                    final Map<Metadata,Collection<Segment>> results = new HashMap<>();
+                    for (Map.Entry<Metadata,Annotation> entry : annotationResults.entrySet()) {
+                        // now select only the segments that were requested.
+                        List<Segment> matchingSegments = new ArrayList<>();
+                        for (Segment s : entry.getValue().getSegmentsList()) {
+                            if (s.getSegmentHash().equals(segmentHash)) {
+                                matchingSegments.add(s);
+                            }
+                        }
+                        if (!matchingSegments.isEmpty()) {
+                            results.put(entry.getKey(), matchingSegments);
+                        }
+                    }
 
-            final Map<Metadata,Collection<Segment>> results = new HashMap<>();
-            for (Map.Entry<Metadata,Annotation> entry : annotationResults.entrySet()) {
-                // now select only the segments that were requested.
-                List<Segment> matchingSegments = new ArrayList<>();
-                for (Segment s : entry.getValue().getSegmentsList()) {
-                    if (s.getSegmentHash().equals(segmentHash)) {
-                        matchingSegments.add(s);
+                    if (results.isEmpty()) {
+                        response = jsonNotFound("segments", idType, id, metadata.toString(), null, annotationId, segmentHash);
+                    } else {
+                        response = jsonOk(results);
                     }
                 }
-                if (!matchingSegments.isEmpty()) {
-                    results.put(entry.getKey(), matchingSegments);
-                }
             }
-
-            if (results.isEmpty()) {
-                return jsonNotFound("segments", idType, id, metadata.toString(), null, annotationId, segmentHash);
-            }
-            return jsonOk(results, context);
         } catch (QueryException e) {
             final String message = String.format("Internal error fetching segment: %s", e.getMessage());
             log.error(message, e);
-            return jsonError(message);
+            response = jsonError(message);
         } finally {
             context.returnAccumuloClient();
         }
+        // Apply rewriter after client is returned to avoid holding the client during remote work
+        return rewriteResponse(response, context);
     }
 
     /**
@@ -455,27 +486,47 @@ public class AnnotationManagerBean implements AnnotationManager {
     }
 
     /**
-     * Apply the response rewriter (if configured) to transform the response before returning it to the client. Only applies to successful (200 OK) responses.
-     * Error responses are returned as-is.
+     * Apply the response rewriter to transform the response before returning it to the client. This should be called after the Accumulo client has been
+     * returned to the pool to avoid holding the client during potentially expensive rewriter work.
      *
-     * @param responseObject
-     *            the response object
+     * @param response
+     *            the response to potentially rewrite
      * @param context
      *            the request context for the rewriter
-     * @return the rewritten response, or the original if no rewriter is configured
+     * @return the rewritten response, or an error if an error occurs during rewriting
      */
-    Response jsonOk(Object responseObject, AnnotationManagerRequestContext context) {
-        Response response = jsonOk(responseObject);
-        if (responseRewriter != null) {
-            try {
-                return responseRewriter.rewriteResponse(response, context);
-            } catch (Exception e) {
-                final String message = String.format("Error applying response rewriter: %s", e.getMessage());
-                log.error(message, e);
+    @VisibleForTesting
+    Response rewriteResponse(Response response, AnnotationManagerRequestContext context) {
+        if (response.getStatus() != Response.Status.OK.getStatusCode()) {
+            // Don't rewrite error responses
+            return response;
+        }
+        if (responseRewriter == null) {
+            log.warn("No ResponseRewriter configured, returning response without rewriting");
+            return response;
+        }
+        try {
+            Response rewritten = responseRewriter.rewriteResponse(response, context);
+            if (rewritten == null) {
+                final String message = "ResponseRewriter returned null";
+                log.error(message);
                 return jsonError(message);
             }
+            return rewritten;
+        } catch (Exception e) {
+            final String message = String.format("Error applying response rewriter: %s", e.getMessage());
+            log.error(message, e);
+            return jsonError(message);
         }
-        return response;
+    }
+
+    @PostConstruct
+    private void logRewriterConfig() {
+        if (responseRewriter != null) {
+            log.info("ResponseRewriter configured: {}", responseRewriter.getClass().getName());
+        } else {
+            log.warn("No ResponseRewriter configured, responses will not be rewritten");
+        }
     }
 
     @VisibleForTesting
