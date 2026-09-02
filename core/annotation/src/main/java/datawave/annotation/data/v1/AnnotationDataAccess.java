@@ -49,7 +49,7 @@ import datawave.security.util.ScannerHelper;
  * {@code uid}, and annotation type, separated by {@link #NULL}. Column qualifiers begin with the annotation id, which allows scans to target either a known
  * annotation type or all types for a document. Annotation sources are stored separately and addressed by analytic hash.
  */
-public class AnnotationDataAccess implements AnnotationReader, AnnotationWriter, AnnotationSourceReader, AnnotationSourceWriter {
+public class AnnotationDataAccess implements AnnotationReader, AnnotationWriter {
 
     public static final char NULL = '\u0000';
     public static final char MAX = '\uFFFF';
@@ -313,7 +313,7 @@ public class AnnotationDataAccess implements AnnotationReader, AnnotationWriter,
      *             if the annotation table is missing or any grouped annotation cannot be deserialized
      */
     @Override
-    public List<Annotation> getAnnotations(String shard, String datatype, String uid) {
+    public Collection<Annotation> getAnnotations(String shard, String datatype, String uid) {
         try (Scanner scanner = ScannerHelper.createScanner(accumuloClient, annotationTableName, authorizations)) {
             final String columnFamilyPrefix = datatype + NULL + uid + NULL;
             final String columnFamilyRegex = columnFamilyPrefix + ".*";
@@ -353,7 +353,7 @@ public class AnnotationDataAccess implements AnnotationReader, AnnotationWriter,
      *             if the annotation table is missing or any grouped annotation cannot be deserialized
      */
     @Override
-    public List<Annotation> getAnnotationsForType(String shard, String datatype, String uid, String annotationType) {
+    public Collection<Annotation> getAnnotationsForType(String shard, String datatype, String uid, String annotationType) {
         try (Scanner scanner = ScannerHelper.createScanner(accumuloClient, annotationTableName, authorizations)) {
             final String columnFamily = datatype + NULL + uid + NULL + annotationType;
 

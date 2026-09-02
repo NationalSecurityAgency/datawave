@@ -157,15 +157,18 @@ public class DatePartitionedQueryIterable implements CloseableIterable<QueryData
                 } catch (Exception e) {
                     String msg = "Exception occurred when processing sub-plan against date range (" + subBeginDate + "-" + subEndDate + ")";
                     log.warn(msg, e);
-                    exceptions.add(new DatawaveQueryException(msg, e.getCause()));
+                    exceptions.add(new DatawaveQueryException(msg, e.getCause() != null ? e.getCause() : e));
                 } finally {
+                    // The sub-plan config is null if the callable failed before it could build one. There are no timers or plan to collect in that case,
+                    // but the listeners must still be notified so the planned script stays in sync.
                     ShardQueryConfiguration subPlanConfig = callable.getSubPlanConfig();
+                    if (subPlanConfig != null) {
+                        // append the new timers for logging at the end
+                        shardQueryConfig.appendTimers(subPlanConfig.getTimers());
 
-                    // append the new timers for logging at the end
-                    shardQueryConfig.appendTimers(subPlanConfig.getTimers());
-
-                    // Add to the set of plans
-                    plans.add(subPlanConfig.getQueryString());
+                        // Add to the set of plans
+                        plans.add(subPlanConfig.getQueryString());
+                    }
 
                     // notify the listeners that the plan has changed
                     String plan = getPlannedScript();

@@ -30,12 +30,12 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimaps;
 import com.google.common.collect.SetMultimap;
 
-import datawave.data.ColumnFamilyConstants;
 import datawave.marking.MarkingFunctions;
 import datawave.marking.Markings;
 import datawave.microservice.dictionary.config.ResponseObjectFactory;
 import datawave.query.util.MetadataEntry;
 import datawave.security.util.ScannerHelper;
+import datawave.table.constants.MetadataColumnFamilyConstants;
 import datawave.webservice.dictionary.data.DescriptionBase;
 
 /**
@@ -130,7 +130,7 @@ public class MetadataDescriptionsHelper<DESC extends DescriptionBase<DESC>> {
                 if (null == cv || cv.getExpression().length == 0) {
                     throw new IllegalArgumentException("ColumnVisibility was null or empty, unable to create Accumulo mutation");
                 }
-                m.put(ColumnFamilyConstants.COLF_DESC, new Text(entry.getDatatype()), cv, new Value(desc.getDescription().getBytes(UTF_8)));
+                m.put(MetadataColumnFamilyConstants.COLF_DESC, new Text(entry.getDatatype()), cv, new Value(desc.getDescription().getBytes(UTF_8)));
             }
             bw.addMutation(m);
         } finally {
@@ -169,7 +169,7 @@ public class MetadataDescriptionsHelper<DESC extends DescriptionBase<DESC>> {
             if (null == cv || cv.getExpression().length == 0) {
                 throw new IllegalArgumentException("ColumnVisibility was null or empty, unable to create Accumulo mutation");
             }
-            m.putDelete(ColumnFamilyConstants.COLF_DESC, new Text(entry.getDatatype()), cv);
+            m.putDelete(MetadataColumnFamilyConstants.COLF_DESC, new Text(entry.getDatatype()), cv);
             bw.addMutation(m);
         } finally {
             if (null != bw) {
@@ -193,7 +193,7 @@ public class MetadataDescriptionsHelper<DESC extends DescriptionBase<DESC>> {
         SetMultimap<MetadataEntry,DESC> descriptions = HashMultimap.create();
 
         scanner.setRange(new Range());
-        scanner.fetchColumnFamily(ColumnFamilyConstants.COLF_DESC);
+        scanner.fetchColumnFamily(MetadataColumnFamilyConstants.COLF_DESC);
         for (Entry<Key,Value> entry : scanner) {
             MetadataEntry mentry = new MetadataEntry(entry.getKey());
             log.trace("{}", entry.getKey());

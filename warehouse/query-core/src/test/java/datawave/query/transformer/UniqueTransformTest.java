@@ -2,6 +2,7 @@ package datawave.query.transformer;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
@@ -9,6 +10,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -61,6 +65,10 @@ public class UniqueTransformTest {
 
     protected static final List<String> randomValues = new ArrayList<>();
 
+    /** Per-page timeout used by the intermediate-result tests, paired with {@link #PAGE_START} to drive the transform's clock. */
+    protected static final long PAGE_TIMEOUT_MS = 1000L;
+    protected static final Instant PAGE_START = Instant.parse("2026-01-01T00:00:00Z");
+
     protected final List<Document> inputDocuments = new ArrayList<>();
     protected final List<Document> expectedUniqueDocuments = new ArrayList<>();
     protected byte[] expectedOrderedFieldValues = null;
@@ -89,6 +97,104 @@ public class UniqueTransformTest {
         UniqueTransform uniqueTransform = getUniqueTransform();
 
         assertNull(uniqueTransform.apply(null));
+    }
+
+    /**
+     * Once the per-page timeout is exceeded, apply() must reset the page timer when it emits an intermediate result, so intermediate results are paced (one per
+     * timeout window) instead of being emitted on every subsequent call.
+     */
+    @Test
+    public void testIntermediateResultsArePaced_afterPageTimerReset() throws IOException {
+        givenValueTransformerForFields(TemporalGranularity.ALL, "ATTR0");
+
+        givenInputDocument().withKeyValue("ATTR0", randomValues.get(0)).isExpectedToBeUnique();
+        for (int i = 1; i <= 4; i++) {
+            givenInputDocument().withKeyValue("ATTR0", randomValues.get(0));
+        }
+
+        UniqueTransform uniqueTransform = givenPageTimedTransform();
+
+        // The first document is unique and is returned as a real result (not an intermediate).
+        Map.Entry<Key,Document> firstResult = uniqueTransform.apply(entryFor(inputDocuments.get(0)));
+        assertNotNull(firstResult);
+        assertFalse(firstResult.getValue().isIntermediateResult());
+
+        // Only the first duplicate after the timeout emits an intermediate result; emitting it resets the page timer so the remaining duplicates (the clock
+        // does not advance again) return null instead of flooding.
+        int intermediate = 0;
+        for (int i = 1; i <= 4; i++) {
+            Map.Entry<Key,Document> result = uniqueTransform.apply(entryFor(inputDocuments.get(i)));
+            if (result != null && result.getValue().isIntermediateResult()) {
+                intermediate++;
+            }
+        }
+        assertEquals(1, intermediate);
+    }
+
+    /**
+     * After an intermediate result resets the page timer, the transform must recover rather than latching off: unique documents still come back as real
+     * results, and once the timeout elapses again a further intermediate result is emitted.
+     */
+    @Test
+    public void testRealAndIntermediateResultsResumeAfterPageTimerReset() throws IOException {
+        givenValueTransformerForFields(TemporalGranularity.ALL, "ATTR0");
+
+        givenInputDocument().withKeyValue("ATTR0", randomValues.get(0)).isExpectedToBeUnique();
+        givenInputDocument().withKeyValue("ATTR0", randomValues.get(0));
+        givenInputDocument().withKeyValue("ATTR0", randomValues.get(0));
+        givenInputDocument().withKeyValue("ATTR0", randomValues.get(1)).isExpectedToBeUnique();
+        givenInputDocument().withKeyValue("ATTR0", randomValues.get(1));
+
+        UniqueTransform uniqueTransform = givenPageTimedTransform();
+
+        // A unique document is returned as a real result, and does not itself reset the page timer.
+        Map.Entry<Key,Document> result = uniqueTransform.apply(entryFor(inputDocuments.get(0)));
+        assertNotNull(result);
+        assertFalse(result.getValue().isIntermediateResult());
+
+        // The timeout has elapsed, so the first duplicate emits an intermediate result and resets the page timer.
+        result = uniqueTransform.apply(entryFor(inputDocuments.get(1)));
+        assertNotNull(result);
+        assertTrue(result.getValue().isIntermediateResult());
+
+        // The timer has been reset, so the next duplicate is paced out.
+        assertNull(uniqueTransform.apply(entryFor(inputDocuments.get(2))));
+
+        // Pacing suppresses only the intermediate results: a real page is still emitted for the next unique document.
+        result = uniqueTransform.apply(entryFor(inputDocuments.get(3)));
+        assertNotNull(result);
+        assertFalse(result.getValue().isIntermediateResult());
+
+        // Once the timeout elapses a second time, a further intermediate result is emitted.
+        setClockTo(uniqueTransform, PAGE_START.plusMillis((2 * PAGE_TIMEOUT_MS) + 2));
+        result = uniqueTransform.apply(entryFor(inputDocuments.get(4)));
+        assertNotNull(result);
+        assertTrue(result.getValue().isIntermediateResult());
+    }
+
+    /**
+     * Builds a transform whose page timer has already run past {@link #PAGE_TIMEOUT_MS}, so the very next {@code apply()} is eligible to emit an intermediate
+     * result. Timing is driven by a fixed {@link Clock} rather than wall time so the test never sleeps or races.
+     *
+     * @return a transform ready to emit an intermediate result
+     * @throws IOException
+     *             if the transform cannot be built
+     */
+    private UniqueTransform givenPageTimedTransform() throws IOException {
+        UniqueTransform uniqueTransform = new UniqueTransform.Builder().withUniqueFields(uniqueFields).withQueryExecutionForPageTimeout(PAGE_TIMEOUT_MS)
+                        .build();
+        setClockTo(uniqueTransform, PAGE_START);
+        uniqueTransform.setQueryExecutionForPageStartTime(uniqueTransform.clock.millis());
+        setClockTo(uniqueTransform, PAGE_START.plusMillis(PAGE_TIMEOUT_MS + 1));
+        return uniqueTransform;
+    }
+
+    protected static void setClockTo(DocumentTransform.DefaultDocumentTransform transform, Instant instant) {
+        transform.clock = Clock.fixed(instant, ZoneOffset.UTC);
+    }
+
+    protected static Map.Entry<Key,Document> entryFor(Document document) {
+        return Maps.immutableEntry(document.getMetadata(), document);
     }
 
     @Test
@@ -513,6 +619,28 @@ public class UniqueTransformTest {
         }
     }
 
+    /**
+     * The tserver-side iterator path must not emit intermediate results, even once the page timeout has elapsed. Nothing on the tserver sets a page start time,
+     * and {@link Document#isIntermediateResult()} is not carried across serialization, so an intermediate result emitted there would reach the web server as an
+     * ordinary empty document and be mistaken for a real one.
+     */
+    @Test
+    public void testIntermediateResultsAreNotEmittedOnTheIteratorPath() {
+        givenInputDocument(1).withKeyValue("ATTR0", randomValues.get(0));
+        givenInputDocument(2).withKeyValue("ATTR0", randomValues.get(1));
+        givenInputDocument(3).withKeyValue("ATTR0", randomValues.get(0));
+
+        givenValueTransformerForFields(TemporalGranularity.ALL, "ATTR0");
+
+        // the tserver never sets a page start time, so any elapsed time exceeds this timeout
+        List<Document> documents = getUniqueDocuments(inputDocuments, getUniqueTransform(1L));
+
+        for (Document document : documents) {
+            assertFalse("The iterator path must not emit intermediate results", document.isIntermediateResult());
+        }
+        assertEquals("Unexpected number of unique documents", 2, documents.size());
+    }
+
     protected void assertUniqueDocuments() {
         List<Document> actual = getUniqueDocumentsWithUpdateConfigCalls(inputDocuments);
         Collections.sort(expectedUniqueDocuments);
@@ -529,12 +657,19 @@ public class UniqueTransformTest {
     }
 
     protected List<Document> getUniqueDocuments(List<Document> documents) {
+        return getUniqueDocuments(documents, getUniqueTransform());
+    }
+
+    protected List<Document> getUniqueDocuments(List<Document> documents, UniqueTransform uniqueTransform) {
         Transformer<Document,Map.Entry<Key,Document>> docToEntry = document -> Maps.immutableEntry(document.getMetadata(), document);
         TransformIterator<Document,Map.Entry<Key,Document>> inputIterator = new TransformIterator<>(documents.iterator(), docToEntry);
-        UniqueTransform uniqueTransform = getUniqueTransform();
         Iterator<Map.Entry<Key,Document>> resultIterator = uniqueTransform.getIterator(inputIterator, null);
-        return StreamSupport.stream(Spliterators.spliteratorUnknownSize(resultIterator, Spliterator.ORDERED), false).filter(Objects::nonNull)
-                        .map(Map.Entry::getValue).collect(Collectors.toList());
+        // @formatter:off
+        return StreamSupport.stream(Spliterators.spliteratorUnknownSize(resultIterator, Spliterator.ORDERED), false)
+                .filter(Objects::nonNull)
+                .map(Map.Entry::getValue)
+                .collect(Collectors.toList());
+        // @formatter:on
     }
 
     protected List<Document> getUniqueDocumentsWithUpdateConfigCalls(List<Document> documents) {
@@ -574,8 +709,12 @@ public class UniqueTransformTest {
     }
 
     protected UniqueTransform getUniqueTransform() {
+        return getUniqueTransform(Long.MAX_VALUE);
+    }
+
+    protected UniqueTransform getUniqueTransform(long queryExecutionForPageTimeout) {
         try {
-            return new UniqueTransform.Builder().withUniqueFields(uniqueFields).withQueryExecutionForPageTimeout(Long.MAX_VALUE).build();
+            return new UniqueTransform.Builder().withUniqueFields(uniqueFields).withQueryExecutionForPageTimeout(queryExecutionForPageTimeout).build();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

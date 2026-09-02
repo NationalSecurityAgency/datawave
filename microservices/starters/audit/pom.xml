@@ -4,11 +4,11 @@
     <parent>
         <groupId>gov.nsa.datawave.microservice</groupId>
         <artifactId>datawave-microservice-service-parent</artifactId>
-        <version>5.0.13</version>
+        <version>5.0.14</version>
         <relativePath>../../microservice-service-parent/pom.xml</relativePath>
     </parent>
     <artifactId>spring-boot-starter-datawave-audit</artifactId>
-    <version>4.0.10-SNAPSHOT</version>
+    <version>4.0.11-SNAPSHOT</version>
     <url>https://code.nsa.gov/datawave-spring-boot-starter-audit</url>
     <licenses>
         <license>
@@ -26,9 +26,9 @@
         <version.aspectj>1.9.25.1</version.aspectj>
         <version.commons-lang3>3.20.0</version.commons-lang3>
         <version.datawave>7.41.1</version.datawave>
-        <version.datawave.audit-api>4.0.4</version.datawave.audit-api>
-        <version.datawave.authorization-api>4.0.4</version.datawave.authorization-api>
-        <version.datawave.starter>4.0.9</version.datawave.starter>
+        <version.datawave.audit-api>4.0.5</version.datawave.audit-api>
+        <version.datawave.authorization-api>4.0.5</version.datawave.authorization-api>
+        <version.datawave.starter>4.0.12</version.datawave.starter>
         <version.guava>31.1-jre</version.guava>
         <version.hamcrest>2.2</version.hamcrest>
     </properties>

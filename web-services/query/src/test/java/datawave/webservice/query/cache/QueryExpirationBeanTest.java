@@ -307,7 +307,7 @@ public class QueryExpirationBeanTest {
         assertThat(queryCache.get(queryId)).isNull();
 
         // Verify that a timeout exception was recorded in the exception handler.
-        Throwable throwable = query.getSettings().getUncaughtExceptionHandler().getThrowable();
+        Throwable throwable = query.getSettings().getUncaughtExceptionHandler().getUncaughtException().getLeft();
         assertThat(throwable).isInstanceOf(QueryException.class);
         assertThat(throwable.getMessage()).isEqualTo(errorCode.toString());
     }

@@ -22,11 +22,11 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Maps;
 
-import datawave.data.ColumnFamilyConstants;
 import datawave.marking.MarkingFunctions;
 import datawave.microservice.Connection;
 import datawave.microservice.dictionary.config.ResponseObjectFactory;
 import datawave.security.util.ScannerHelper;
+import datawave.table.constants.MetadataColumnFamilyConstants;
 import datawave.webservice.dictionary.data.DefaultDataDictionary;
 import datawave.webservice.dictionary.data.DefaultDescription;
 import datawave.webservice.dictionary.data.DefaultDictionaryField;
@@ -75,13 +75,13 @@ public class DefaultMetadataFieldScanner {
                         connectionConfig.getAuths(), numThreads);
         // Do not limit the scanner based on ranges.
         scanner.setRanges(Collections.singletonList(new Range()));
-        scanner.fetchColumnFamily(ColumnFamilyConstants.COLF_E);
-        scanner.fetchColumnFamily(ColumnFamilyConstants.COLF_I);
-        scanner.fetchColumnFamily(ColumnFamilyConstants.COLF_RI);
-        scanner.fetchColumnFamily(ColumnFamilyConstants.COLF_DESC);
-        scanner.fetchColumnFamily(ColumnFamilyConstants.COLF_H);
-        scanner.fetchColumnFamily(ColumnFamilyConstants.COLF_T);
-        scanner.fetchColumnFamily(ColumnFamilyConstants.COLF_TF);
+        scanner.fetchColumnFamily(MetadataColumnFamilyConstants.COLF_E);
+        scanner.fetchColumnFamily(MetadataColumnFamilyConstants.COLF_I);
+        scanner.fetchColumnFamily(MetadataColumnFamilyConstants.COLF_RI);
+        scanner.fetchColumnFamily(MetadataColumnFamilyConstants.COLF_DESC);
+        scanner.fetchColumnFamily(MetadataColumnFamilyConstants.COLF_H);
+        scanner.fetchColumnFamily(MetadataColumnFamilyConstants.COLF_T);
+        scanner.fetchColumnFamily(MetadataColumnFamilyConstants.COLF_TF);
         return scanner;
     }
 
@@ -155,7 +155,7 @@ public class DefaultMetadataFieldScanner {
 
         private Value getValue(Map.Entry<Key,Value> entry) {
             // only keep values for the DESC family
-            if (entry.getKey().getColumnFamily().equals(ColumnFamilyConstants.COLF_DESC)) {
+            if (entry.getKey().getColumnFamily().equals(MetadataColumnFamilyConstants.COLF_DESC)) {
                 return entry.getValue();
             } else {
                 return EMPTY_VALUE;
@@ -168,7 +168,7 @@ public class DefaultMetadataFieldScanner {
 
                 // If this row is a hidden event, do not continue transforming it and ensure any
                 // previously transformed entries for this row are not in the final results.
-                if (isColumnFamly(ColumnFamilyConstants.COLF_H)) {
+                if (isColumnFamly(MetadataColumnFamilyConstants.COLF_H)) {
                     currField = null;
                     fields.remove(currRow.toString());
                     break;
@@ -182,24 +182,24 @@ public class DefaultMetadataFieldScanner {
                     setCurrentField(dataType);
 
                     // If this an event field, then this is not an indexed field. Use the field name and timestamp of this entry.
-                    if (isColumnFamly(ColumnFamilyConstants.COLF_E)) {
+                    if (isColumnFamly(MetadataColumnFamilyConstants.COLF_E)) {
                         currField.setIndexOnly(false);
                         setFieldNameAndAlias();
                         setLastUpdated();
                         // Check if this is a forward-indexed field.
-                    } else if (isColumnFamly(ColumnFamilyConstants.COLF_I)) {
+                    } else if (isColumnFamly(MetadataColumnFamilyConstants.COLF_I)) {
                         currField.setForwardIndexed(true);
                         // Check if this is a reversed-indexed field
-                    } else if (isColumnFamly(ColumnFamilyConstants.COLF_RI)) {
+                    } else if (isColumnFamly(MetadataColumnFamilyConstants.COLF_RI)) {
                         currField.setReverseIndexed(true);
                         // If this is an description entry, extract the description and add it to the transformed field.
-                    } else if (isColumnFamly(ColumnFamilyConstants.COLF_DESC)) {
+                    } else if (isColumnFamly(MetadataColumnFamilyConstants.COLF_DESC)) {
                         setDescriptions();
                         // If this is a type entry, add it to the field.
-                    } else if (isColumnFamly(ColumnFamilyConstants.COLF_T)) {
+                    } else if (isColumnFamly(MetadataColumnFamilyConstants.COLF_T)) {
                         setType();
                         // Check if the field is tokenized.
-                    } else if (isColumnFamly(ColumnFamilyConstants.COLF_TF)) {
+                    } else if (isColumnFamly(MetadataColumnFamilyConstants.COLF_TF)) {
                         currField.setTokenized(true);
                     } else {
                         log.warn("Unknown entry with key={}, value={}", currKey, currValue);
@@ -211,7 +211,7 @@ public class DefaultMetadataFieldScanner {
                         setFieldNameAndAlias();
                     }
                     // Determine the lastUpdated value for index-only fields without including timestamps from description rows.
-                    if (currField.isIndexOnly() && !isColumnFamly(ColumnFamilyConstants.COLF_DESC)) {
+                    if (currField.isIndexOnly() && !isColumnFamly(MetadataColumnFamilyConstants.COLF_DESC)) {
                         setLastUpdated();
                     }
                 }

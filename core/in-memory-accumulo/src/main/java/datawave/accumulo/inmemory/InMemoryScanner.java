@@ -25,7 +25,6 @@ import org.apache.accumulo.core.clientImpl.ScannerOptions;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iterators.Filter;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iteratorsImpl.system.SortedMapIterator;
 import org.apache.accumulo.core.security.Authorizations;
@@ -75,31 +74,16 @@ public class InMemoryScanner extends InMemoryScannerBase implements Scanner, Sca
     @Override
     public void disableIsolation() {}
 
-    static class RangeFilter extends Filter {
-        Range range;
-
-        RangeFilter(SortedKeyValueIterator<Key,Value> i, Range range) {
-            setSource(i);
-            this.range = range;
-        }
-
-        @Override
-        public boolean accept(Key k, Value v) {
-            if (k == null) {
-                // when using a TimeoutExceptionIterator with a Filter and a timeout of zero no top key is ever set
-                // this leads to an unfortunate series of events where a null pointer exception is thrown instead
-                // of gracefully returning false
-                return false;
-            }
-            return range.contains(k);
-        }
-    }
-
+    /**
+     * Returns every key the stack emits, including any a user iterator produces outside the seek range
+     * <p>
+     * A tablet server does not bound its stack's output, so neither does this
+     */
     @Override
     public Iterator<Entry<Key,Value>> iterator() {
         SortedKeyValueIterator<Key,Value> i = new SortedMapIterator(table.table);
         try {
-            i = new RangeFilter(createFilter(i), range);
+            i = createFilter(i);
             i.seek(range, createColumnBSS(fetchedColumns), !fetchedColumns.isEmpty());
             return new IteratorAdapter(i);
         } catch (IOException e) {

@@ -1,9 +1,12 @@
 package datawave.ingest.data.config;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -12,8 +15,10 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -59,8 +64,10 @@ public class XMLFieldConfigHelperTest {
 
         try {
             FieldConfigHelper helper = XMLFieldConfigHelper.load(requestUrl, ingestHelper);
+
             assertTrue(helper.isIndexedField("A"));
             assertFalse(helper.isIndexedField("B"));
+
         } finally {
             server.stop(0);
 
@@ -394,5 +401,71 @@ public class XMLFieldConfigHelperTest {
         assertType(LcNoDiacriticsType.class, ingestHelper.getDataTypes("F"));
         assertType(HexStringType.class, ingestHelper.getDataTypes("G"));
         assertType(DateType.class, ingestHelper.getDataTypes("H"));
+    }
+
+    @Test
+    void testCachingBehaviorWillCallBaseMethods() throws Exception {
+        // test intent is to verify each is*Field accessor dispatches to the matching FieldInfo attribute
+        // (i.e. no copy/paste error) and that a single lookup memoizes the fully-resolved FieldInfo
+
+        String input = "<?xml version=\"1.0\"?>\n" + "<fieldConfig>\n"
+                        + "    <default stored=\"true\" indexed=\"false\" reverseIndexed=\"false\" tokenized=\"false\" reverseTokenized=\"false\" indexType=\"datawave.data.type.LcNoDiacriticsType\"/>\n"
+                        + "    <nomatch stored=\"true\" indexed=\"true\" reverseIndexed=\"true\" tokenized=\"true\"  reverseTokenized=\"true\" indexType=\"datawave.data.type.HexStringType\"/>\n"
+                        + "    <field name=\"A\" stored=\"true\" indexed=\"true\" reverseIndexed=\"false\" tokenized=\"true\" reverseTokenized=\"false\"/>\n"
+                        + "    <field name=\"B\" stored=\"true\" indexed=\"false\" reverseIndexed=\"true\" tokenized=\"true\" reverseTokenized=\"false\"/>\n"
+                        + "    <field name=\"C\" stored=\"false\" indexed=\"true\" reverseIndexed=\"true\" tokenized=\"true\" reverseTokenized=\"false\"/>\n"
+                        + "</fieldConfig>";
+
+        String field = "A";
+        XMLFieldConfigHelper helper = new XMLFieldConfigHelper(IOUtils.toInputStream(input, UTF_8), ingestHelper);
+        Map<String,XMLFieldConfigHelper.FieldInfo> cache = helper.getResolvedFields();
+
+        // a single lookup resolves and memoizes the whole FieldInfo for the field
+        assertTrue(cache.isEmpty());
+        helper.isStoredField(field);
+        assertEquals(1, cache.size());
+
+        XMLFieldConfigHelper.FieldInfo info = cache.get(field);
+        assertNotNull(info);
+        assertTrue(info.stored);
+        assertTrue(info.indexed);
+        assertFalse(info.reverseIndexed);
+        assertTrue(info.tokenized);
+        assertFalse(info.reverseTokenized);
+
+        // each accessor returns the matching flag on the resolved FieldInfo
+        assertEquals(info.stored, helper.isStoredField(field));
+        assertEquals(info.indexed, helper.isIndexedField(field));
+        assertEquals(info.reverseIndexed, helper.isReverseIndexedField(field));
+        assertEquals(info.tokenized, helper.isTokenizedField(field));
+        assertEquals(info.reverseTokenized, helper.isReverseTokenizedField(field));
+        assertEquals(info.indexed && !info.stored, helper.isIndexOnlyField(field));
+
+        // flags across A/B/C give every attribute a distinct value signature, so an accessor
+        // dispatching to the wrong attribute fails on at least one of the three fields
+        assertTrue(helper.isStoredField("B"));
+        assertFalse(helper.isIndexedField("B"));
+        assertTrue(helper.isReverseIndexedField("B"));
+        assertTrue(helper.isTokenizedField("B"));
+        assertFalse(helper.isReverseTokenizedField("B"));
+        assertFalse(helper.isIndexOnlyField("B"));
+
+        assertFalse(helper.isStoredField("C"));
+        assertTrue(helper.isIndexedField("C"));
+        assertTrue(helper.isReverseIndexedField("C"));
+        assertTrue(helper.isTokenizedField("C"));
+        assertFalse(helper.isReverseTokenizedField("C"));
+        assertTrue(helper.isIndexOnlyField("C"));
+
+        // repeated lookups of a known field return the same cached FieldInfo instance
+        assertSame(info, cache.get(field));
+
+        // two different unknown fields resolve to the same shared no-match FieldInfo instance
+        helper.isStoredField("UNKNOWNONE");
+        helper.isStoredField("UNKNOWNTWO");
+        XMLFieldConfigHelper.FieldInfo noMatchOne = cache.get("UNKNOWNONE");
+        XMLFieldConfigHelper.FieldInfo noMatchTwo = cache.get("UNKNOWNTWO");
+        assertNotNull(noMatchOne);
+        assertSame(noMatchOne, noMatchTwo);
     }
 }

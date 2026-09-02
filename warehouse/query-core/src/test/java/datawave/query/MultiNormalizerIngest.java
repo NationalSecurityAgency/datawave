@@ -17,7 +17,6 @@ import org.apache.hadoop.io.Text;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
-import datawave.data.ColumnFamilyConstants;
 import datawave.data.hash.UID;
 import datawave.data.normalizer.LcNoDiacriticsNormalizer;
 import datawave.data.normalizer.Normalizer;
@@ -25,6 +24,7 @@ import datawave.data.normalizer.NumberNormalizer;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.NumberType;
 import datawave.ingest.protobuf.Uid;
+import datawave.table.constants.MetadataColumnFamilyConstants;
 import datawave.table.constants.TableName;
 import datawave.util.time.DateHelper;
 
@@ -81,19 +81,19 @@ public class MultiNormalizerIngest {
         try (BatchWriter bw = client.createBatchWriter(TableName.METADATA)) {
             // write metadata for indexed fields
             Mutation m = new Mutation("SIZE");
-            m.put(ColumnFamilyConstants.COLF_E, new Text(datatype), EMPTY_VALUE);
+            m.put(MetadataColumnFamilyConstants.COLF_E, new Text(datatype), EMPTY_VALUE);
             // skip F column for now
-            m.put(ColumnFamilyConstants.COLF_I, new Text(datatype), EMPTY_VALUE);
-            m.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\0" + normalizerNameForField("SIZE", OLD_ROW)), EMPTY_VALUE);
-            m.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\0" + normalizerNameForField("SIZE", NEW_ROW)), EMPTY_VALUE);
+            m.put(MetadataColumnFamilyConstants.COLF_I, new Text(datatype), EMPTY_VALUE);
+            m.put(MetadataColumnFamilyConstants.COLF_T, new Text(datatype + "\0" + normalizerNameForField("SIZE", OLD_ROW)), EMPTY_VALUE);
+            m.put(MetadataColumnFamilyConstants.COLF_T, new Text(datatype + "\0" + normalizerNameForField("SIZE", NEW_ROW)), EMPTY_VALUE);
             bw.addMutation(m);
 
             m = new Mutation("COLOR");
-            m.put(ColumnFamilyConstants.COLF_E, new Text(datatype), EMPTY_VALUE);
+            m.put(MetadataColumnFamilyConstants.COLF_E, new Text(datatype), EMPTY_VALUE);
             // skip F column for now
-            m.put(ColumnFamilyConstants.COLF_I, new Text(datatype), EMPTY_VALUE);
-            m.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\0" + normalizerNameForField("COLOR", OLD_ROW)), EMPTY_VALUE);
-            m.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\0" + normalizerNameForField("COLOR", NEW_ROW)), EMPTY_VALUE);
+            m.put(MetadataColumnFamilyConstants.COLF_I, new Text(datatype), EMPTY_VALUE);
+            m.put(MetadataColumnFamilyConstants.COLF_T, new Text(datatype + "\0" + normalizerNameForField("COLOR", OLD_ROW)), EMPTY_VALUE);
+            m.put(MetadataColumnFamilyConstants.COLF_T, new Text(datatype + "\0" + normalizerNameForField("COLOR", NEW_ROW)), EMPTY_VALUE);
             bw.addMutation(m);
         }
     }
@@ -135,8 +135,8 @@ public class MultiNormalizerIngest {
         try (BatchWriter bw = client.createBatchWriter(TableName.METADATA)) {
             // write metadata for indexed fields
             Mutation m = new Mutation("SIZE");
-            m.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\0" + LcNoDiacriticsType.class.getName()), EMPTY_VALUE);
-            m.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\0" + NumberType.class.getName()), EMPTY_VALUE);
+            m.put(MetadataColumnFamilyConstants.COLF_T, new Text(datatype + "\0" + LcNoDiacriticsType.class.getName()), EMPTY_VALUE);
+            m.put(MetadataColumnFamilyConstants.COLF_T, new Text(datatype + "\0" + NumberType.class.getName()), EMPTY_VALUE);
             bw.addMutation(m);
         }
 

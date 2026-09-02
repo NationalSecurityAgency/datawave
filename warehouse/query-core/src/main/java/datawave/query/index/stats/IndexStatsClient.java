@@ -32,6 +32,7 @@ import com.google.common.collect.ImmutableMap;
 import datawave.core.iterators.filter.CsvKeyFilter;
 import datawave.iterators.IteratorSettingHelper;
 import datawave.query.Constants;
+import datawave.scan.ScannerBuilder;
 import datawave.table.constants.TableName;
 
 /**
@@ -108,7 +109,7 @@ public class IndexStatsClient {
         try {
             Authorizations auths = client.securityOperations().getUserAuthorizations(client.whoami());
             if (fields.isEmpty()) {
-                scanner = client.createScanner(table, auths);
+                scanner = ScannerBuilder.create(client).setTableName(table).setAuthorizations(auths).build();
             } else {
                 BatchScanner bScanner = client.createBatchScanner(table, auths, fields.size());
                 bScanner.setRanges(buildRanges(fields));

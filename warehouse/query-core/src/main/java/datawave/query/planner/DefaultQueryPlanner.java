@@ -196,6 +196,7 @@ import datawave.query.util.QueryStopwatch;
 import datawave.query.util.ShardQueryUtils;
 import datawave.query.util.Tuple2;
 import datawave.query.util.TypeMetadata;
+import datawave.query.util.TypeMetadataSerializer;
 import datawave.util.time.TraceStopwatch;
 import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
@@ -316,6 +317,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
     protected CompositeMetadata compositeMetadata;
     protected TypeMetadata typeMetadata;
+    // reused across calls to configureTypeMappings; not thread-safe, so each DefaultQueryPlanner (and clone) gets its own instance
+    private final transient TypeMetadataSerializer typeMetadataSerializer = new TypeMetadataSerializer();
     protected String contentExpansionFields;
     protected String serializedIvaratorDirs;
     protected Set<String> indexedFields;
@@ -591,6 +594,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         if (!config.isGeneratePlanOnly()) {
             while (null == cfg) {
                 cfg = getQueryIterator(metadataHelper, config, "", false, false);
+                if (null == cfg) {
+                    awaitSettingFuture();
+                }
             }
             configureIterator(config, cfg, newQueryString, isFullTable);
         }
@@ -772,9 +778,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 log.warn("Config object must be an instance of ShardQueryConfiguration to properly close the DefaultQueryPlanner. You gave me a "
                                 + genericConfig);
             }
-            if (null != executor) {
-                executor.shutdown();
-            }
+            shutdownExecutor();
             return;
         }
 
@@ -787,6 +791,14 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             log.error("Failed to close query " + settings.getId(), e);
         }
 
+        shutdownExecutor();
+    }
+
+    /**
+     * Shut down this planner's internal thread pool, if one was ever started. Unlike {@link #close(GenericQueryConfiguration, Query)} this performs no
+     * query-level cleanup, so it is safe to call on planner clones that share a query with the planner they were cloned from.
+     */
+    public void shutdownExecutor() {
         if (null != executor) {
             executor.shutdown();
         }
@@ -2391,6 +2403,24 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         // no-op
     }
 
+    /**
+     * Blocks until the iterator setting future completes, so that polling {@link #getQueryIterator} is not a hot spin. A failed future is left for the next
+     * getQueryIterator call to surface.
+     */
+    private void awaitSettingFuture() {
+        if (null == settingFuture) {
+            return;
+        }
+        try {
+            settingFuture.get();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new DatawaveAsyncOperationException("Interrupted while building the query iterator", e);
+        } catch (ExecutionException e) {
+            // getQueryIterator will rethrow the cause
+        }
+    }
+
     protected Future<IteratorSetting> loadQueryIterator(final MetadataHelper metadataHelper, final ShardQueryConfiguration config, final Boolean isFullTable,
                     boolean isPreload) {
 
@@ -2675,12 +2705,19 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                     typeMetadata = typeMetadata.reduce(fieldsToRetain);
                 }
 
-                // only compress if enabled AND not reducing per shard
-                // type metadata will be serialized in the VisitorFunction
-                String serializedTypeMetadata = typeMetadata.toString();
-                if (compressMappings && !config.getReduceTypeMetadataPerShard()) {
-                    serializedTypeMetadata = QueryOptions.compressOption(serializedTypeMetadata, QueryOptions.UTF8);
+                // only compress/Kryo-encode if enabled AND not reducing per shard, since in that case
+                // type metadata is re-serialized via toString() in the VisitorFunction instead
+                boolean kryoTypeMetadata = config.isKryoTypeMetadata() && !config.getReduceTypeMetadataPerShard();
+                String serializedTypeMetadata;
+                if (kryoTypeMetadata) {
+                    serializedTypeMetadata = typeMetadataSerializer.serialize(typeMetadata);
+                } else {
+                    serializedTypeMetadata = typeMetadata.toString();
+                    if (compressMappings && !config.getReduceTypeMetadataPerShard()) {
+                        serializedTypeMetadata = QueryOptions.compressOption(serializedTypeMetadata, QueryOptions.UTF8);
+                    }
                 }
+                addOption(cfg, QueryOptions.TYPE_METADATA_KRYO, Boolean.toString(kryoTypeMetadata), false);
 
                 addOption(cfg, QueryOptions.TYPE_METADATA, serializedTypeMetadata, false);
             }
@@ -3500,8 +3537,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         if (compositeMetadata == null && compositeMetadataCallable != null) {
             TraceStopwatch stopwatch = stageStopWatch.newStartedStopwatch(compositeMetadataCallable.stageName());
             try {
-                while (compositeMetadata == null) {
-                    compositeMetadata = compositeMetadataFuture.get(concurrentTimeoutMillis, TimeUnit.MILLISECONDS);
+                compositeMetadata = compositeMetadataFuture.get(concurrentTimeoutMillis, TimeUnit.MILLISECONDS);
+                if (compositeMetadata == null) {
+                    throw new ExecutionException(new IllegalStateException("CompositeMetadata was null"));
                 }
             } catch (InterruptedException | ExecutionException | TimeoutException e) {
                 log.error("Failed to fetch CompositeMetadata", e);
@@ -3521,8 +3559,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         if (typeMetadata == null && typeMetadataCallable != null) {
             TraceStopwatch stopwatch = stageStopWatch.newStartedStopwatch(typeMetadataCallable.stageName());
             try {
-                while (typeMetadata == null) {
-                    typeMetadata = typeMetadataFuture.get(concurrentTimeoutMillis, TimeUnit.MILLISECONDS);
+                typeMetadata = typeMetadataFuture.get(concurrentTimeoutMillis, TimeUnit.MILLISECONDS);
+                if (typeMetadata == null) {
+                    throw new ExecutionException(new IllegalStateException("TypeMetadata was null"));
                 }
             } catch (InterruptedException | ExecutionException | TimeoutException e) {
                 log.error("Failed to fetch TypeMetadata", e);
@@ -3538,8 +3577,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         if (contentExpansionFields == null && contentExpansionFieldsCallable != null) {
             TraceStopwatch stopwatch = stageStopWatch.newStartedStopwatch(contentExpansionFieldsCallable.stageName());
             try {
-                while (contentExpansionFields == null) {
-                    contentExpansionFields = contentExpansionFieldsFuture.get(concurrentTimeoutMillis, TimeUnit.MILLISECONDS);
+                contentExpansionFields = contentExpansionFieldsFuture.get(concurrentTimeoutMillis, TimeUnit.MILLISECONDS);
+                if (contentExpansionFields == null) {
+                    throw new ExecutionException(new IllegalStateException("Content expansion fields were null"));
                 }
             } catch (InterruptedException | ExecutionException | TimeoutException e) {
                 log.error("Failed to fetch Content Expansion fields", e);
@@ -3555,8 +3595,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         if (serializedIvaratorDirs == null && ivaratorCacheDirCallable != null) {
             TraceStopwatch stopwatch = stageStopWatch.newStartedStopwatch(ivaratorCacheDirCallable.stageName());
             try {
-                while (serializedIvaratorDirs == null) {
-                    serializedIvaratorDirs = ivaratorCacheDirFuture.get(concurrentTimeoutMillis, TimeUnit.MILLISECONDS);
+                serializedIvaratorDirs = ivaratorCacheDirFuture.get(concurrentTimeoutMillis, TimeUnit.MILLISECONDS);
+                if (serializedIvaratorDirs == null) {
+                    throw new ExecutionException(new IllegalStateException("Serialized ivarator cache dirs were null"));
                 }
             } catch (InterruptedException | ExecutionException | TimeoutException e) {
                 log.error("Failed to serialize ivarator cache dirs", e);
@@ -3612,9 +3653,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     protected Set<String> getFieldSet(String stageName, Future<Set<String>> future) {
         TraceStopwatch stopwatch = stageStopWatch.newStartedStopwatch(stageName);
         try {
-            Set<String> fields = null;
-            while (fields == null) {
-                fields = future.get(concurrentTimeoutMillis, TimeUnit.MILLISECONDS);
+            Set<String> fields = future.get(concurrentTimeoutMillis, TimeUnit.MILLISECONDS);
+            if (fields == null) {
+                throw new ExecutionException(new IllegalStateException("Stage[" + stageName + "] returned a null field set"));
             }
             return fields;
         } catch (ExecutionException | InterruptedException | TimeoutException e) {

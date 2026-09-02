@@ -67,7 +67,7 @@ public class EdgeMetadataCQStripperCombiner extends WrappingIterator {
         // check if aggregation is needed
         if (super.hasTop()) {
             workKey.set(super.getTopKey());
-            if (workKey.getColumnFamily().equals(datawave.data.ColumnFamilyConstants.COLF_EDGE)) {
+            if (workKey.getColumnFamily().equals(datawave.table.constants.MetadataColumnFamilyConstants.COLF_EDGE)) {
                 if (workKey.isDeleted()) {
                     return;
                 }

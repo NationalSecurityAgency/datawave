@@ -92,6 +92,10 @@ public class CountResultPostprocessor implements ResultPostprocessor {
 
     private FieldBase<?> getCountField(List<FieldBase<?>> fields) {
         FieldBase<?> countField = null;
+        if (fields == null) {
+            // an intermediate result carries no fields at all
+            return null;
+        }
         for (FieldBase<?> field : fields) {
             if (field.getName().equals(COUNT_CELL)) {
                 countField = field;
