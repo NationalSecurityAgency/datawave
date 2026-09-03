@@ -449,6 +449,15 @@
                         <goals>
                             <goal>test-jar</goal>
                         </goals>
+                        <configuration>
+                            <!-- These two register MetadataHelperCacheEvictor for every test class in this module. Modules that
+                                 consume the test-jar have no junit-platform.properties of their own, so shipping them would turn
+                                 on extension autodetection in those modules as well. -->
+                            <excludes>
+                                <exclude>junit-platform.properties</exclude>
+                                <exclude>META-INF/services/org.junit.jupiter.api.extension.Extension</exclude>
+                            </excludes>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
