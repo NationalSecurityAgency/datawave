@@ -1,0 +1,107 @@
+spring:
+  application:
+    name: annotation
+  cloud:
+    config:
+      # Disable consul-first config by default. We'll turn it back on in the consul profile if that profile is enabled.
+      discovery:
+        enabled: false
+      # Always fail fast so we can retry if the config server is not up yet
+      failFast: true
+      # Give the config server time to start up if it hasn't already
+      retry:
+        max-attempts: 60
+      uri: '${CONFIG_SERVER_URL:http://configuration:8888/configserver}'
+    stream:
+      rabbit:
+        bindings:
+          annotationSource-out-0:
+            producer:
+              # Note: This must match ANNOTATION_ACK_CHANNEL in AnnotationController.java or producer confirms will not work.
+              confirmAckChannel: 'annotationAckChannel'
+management:
+  health:
+    status:
+      order: DOWN, OUT_OF_SERVICE, UNKNOWN, RABBITMQ_UNHEALTHY, UP
+      http-mapping:
+        RABBITMQ_UNHEALTHY: 200
+
+annotation:
+  # Database connection settings
+  max-connections: 40
+  conn-pool-name: "default"
+
+  # Table names - annotation for reads, truthmark for writes.
+  annotation-table-name: "annotation"
+  annotation-source-table-name: "annotationSource"
+  truthmark-table-name: "truthmark"
+  truthmark-source-table-name: "truthmarkSource"
+
+  # Internal ID lookup uses a shard table
+  shard-table-name: "shard"
+  enable-internal-id-lookup: false
+
+  # Source metadata masking - removes listed keys from sources when injecting
+  # into annotations (not in getAnnotationSource endpoint)
+  mask-source-metadata:
+    - "visibility"
+
+  # Ack/retry protocol for async writes
+  annotation-ack-enabled: true
+  annotation-ack-timeout-millis: 500
+
+  retry:
+    max-attempts: 10
+    fail-timeout-millis: 300000
+    backoff-interval-millis: 5000
+
+  writers:
+    accumulo:
+      concurrency: "${spring.cloud.stream.bindings.accumuloAnnotationWriterSink.consumer.concurrency:1}"
+
+datawave:
+  table:
+    cache:
+      enabled: false
+
+---
+
+# For the dev profile, check localhost for the config server by default
+spring:
+  config.activate.on-profile: 'dev'
+  cloud:
+    config:
+      uri: '${CONFIG_SERVER_URL:http://localhost:8888/configserver}'
+
+---
+
+spring:
+  config.activate.on-profile: 'consul'
+  cloud:
+    config:
+      # Use Consul to locate the configuration server and bootstrap app config.
+      discovery:
+        enabled: true
+      # Give the config server a long time to come up and register itself in Consul
+      retry:
+        max-attempts: 120
+    # Allow the default Consul host to be overridden via an environment variable
+    consul:
+      host: ${CONSUL_HOST:localhost}
+
+---
+
+# For the "No Messaging" profile, we need to disable the AMQP bus, our custom RabbitMQ discovery, and the RabbitMQ health indicator.
+spring:
+  config.activate.on-profile: 'nomessaging'
+  cloud:
+    bus:
+      enabled: false
+  rabbitmq:
+    discovery:
+      enabled: false
+
+management:
+  health:
+    rabbit:
+      enabled: false

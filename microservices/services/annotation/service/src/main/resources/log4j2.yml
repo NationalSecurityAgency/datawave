@@ -1,0 +1,66 @@
+Configuration:
+  status: debug
+  monitorInterval: 60
+
+  Properties:
+    Property:
+      - name: logDir
+        value: "logs/"
+      - name: PID
+        value: "????"
+      - name: LOG_PATTERN
+        value: "%clr{%d{yyyy-MM-dd HH:mm:ss.SSS}}{faint} %clr{%p} %clr{${sys:PID}}{magenta} %clr{---}{faint} %clr{[%t]}{faint} %clr{%C}{cyan} %clr{:}{faint} %m%n%wEx"
+
+  Appenders:
+    Console:
+      name: Console
+      target: SYSTEM_OUT
+      follow: true
+      PatternLayout:
+        pattern: "${LOG_PATTERN}"
+    RollingFile:
+      - name: File
+        fileName: "${sys:logDir}/annotation-service.log"
+        filePattern: "${sys:logDir}/annotation-service.log.%d{yyyy-MM-dd}-%i.gz"
+        append: true
+        bufferedIO: true
+        bufferSize: 8192
+        Policies:
+          TimeBasedTriggeringPolicy:
+            interval: 1
+          SizeBasedTriggeringPolicy:
+            size: 250MB
+        DefaultRolloverStrategy:
+          max: 10
+        PatternLayout:
+          pattern: "${LOG_PATTERN}"
+      - name: AnnotationData
+        fileName: "${sys:logDir}/annotation-data.log"
+        filePattern: "${sys:logDir}/annotation-data.log.%d{yyyy-MM-dd}-%i.gz"
+        append: true
+        bufferedIO: true
+        bufferSize: 8192
+        Policies:
+          TimeBasedTriggeringPolicy:
+            interval: 1
+          SizeBasedTriggeringPolicy:
+            size: 250MB
+        DefaultRolloverStrategy:
+          max: 10
+        PatternLayout:
+          pattern: "${LOG_PATTERN}"
+
+  Loggers:
+    Root:
+      level: info
+      AppenderRef:
+        - ref: Console
+          level: debug
+        - ref: File
+          level: debug
+    Logger:
+      - name: datawave.microservice.annotation.writers.log.LogAnnotationWriter
+        level: info
+        AppenderRef:
+          - ref: AnnotationData
+            level: info
