@@ -18,6 +18,7 @@ services:
         cp /opt/datawave-ingest/current/accumulo-warehouse/lib/*.jar "$${target}/"
         cp /opt/datawave-ingest/current/accumulo-warehouse/lib/ext/*.jar "$${target}/"
         cp /opt/datawave-ingest/current/lib/accumulo-access-core-*.jar "$${target}/"
+        cp /opt/datawave-ingest/current/lib/netty-handler*.jar "$${target}/"
         chmod 0644 "$${target}/"*.jar
     volumes:
       - datawave_accumulo_ext:/opt/accumulo/lib/ext
