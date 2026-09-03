@@ -3,6 +3,11 @@ set -euo pipefail
 
 role="${1:?A Hadoop role is required}"
 
+export JDK_JAVA_OPTIONS="--add-opens java.base/java.lang=ALL-UNNAMED \
+--add-opens java.base/java.lang.reflect=ALL-UNNAMED \
+--add-opens java.base/java.util=ALL-UNNAMED \
+--add-opens java.base/java.text=ALL-UNNAMED"
+
 case "${role}" in
     namenode)
         if [[ ! -d /var/lib/hadoop-hdfs/name/current ]]; then
