@@ -39,14 +39,14 @@
         <!-- build.env and env should get overridden if any other read-properties profile is specified (e.g. comnpose)compose -->
         <build.env>dev</build.env>
         <container.registry>ghcr.io</container.registry>
+        <datawave.build.jdk.version.range>[11,12)</datawave.build.jdk.version.range>
         <env>dev</env>
         <!-- Integration-test fork settings. Default to the surefire values so a module only has to set
              the surefire property to move both plugins; override these to split unit and integration tests. -->
         <failsafe.maxMemory>${surefire.maxMemory}</failsafe.maxMemory>
         <failsafe.reuseForks>${surefire.reuseForks}</failsafe.reuseForks>
         <image.prefix>datawave/</image.prefix>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
+        <maven.compiler.release>11</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <registry.namespace>nationalsecurityagency/</registry.namespace>
         <skipITs>${skipTests}</skipITs>
@@ -1754,9 +1754,9 @@
                         <configFile>eclipse/Eclipse-Datawave-Codestyle.xml</configFile>
                         <lineEnding>LF</lineEnding>
                         <removeTrailingWhitespace>true</removeTrailingWhitespace>
-                        <compilerSource>${maven.compiler.source}</compilerSource>
-                        <compilerCompliance>${maven.compiler.source}</compilerCompliance>
-                        <compilerTargetPlatform>${maven.compiler.target}</compilerTargetPlatform>
+                        <compilerSource>${maven.compiler.release}</compilerSource>
+                        <compilerCompliance>${maven.compiler.release}</compilerCompliance>
+                        <compilerTargetPlatform>${maven.compiler.release}</compilerTargetPlatform>
                     </configuration>
                     <dependencies>
                         <dependency>
@@ -1833,8 +1833,7 @@
                         <encoding>UTF-8</encoding>
                         <showDeprecation>true</showDeprecation>
                         <showWarnings>true</showWarnings>
-                        <source>${maven.compiler.source}</source>
-                        <target>${maven.compiler.target}</target>
+                        <release>${maven.compiler.release}</release>
                         <compilerArgs>
                             <arg>-Xlint:all</arg>
                             <arg>-Xlint:-processing</arg>
@@ -1875,6 +1874,9 @@
                                     <requireMavenVersion>
                                         <version>3.6.3</version>
                                     </requireMavenVersion>
+                                    <requireJavaVersion>
+                                        <version>${datawave.build.jdk.version.range}</version>
+                                    </requireJavaVersion>
                                 </rules>
                                 <fail>true</fail>
                             </configuration>
@@ -2105,9 +2107,19 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+            </plugin>
         </plugins>
     </build>
     <profiles>
+        <profile>
+            <id>java17</id>
+            <properties>
+                <datawave.build.jdk.version.range>[17,18)</datawave.build.jdk.version.range>
+            </properties>
+        </profile>
         <profile>
             <id>coverage</id>
             <modules>

@@ -31,10 +31,10 @@
     </distributionManagement>
     <properties>
         <container.registry>ghcr.io</container.registry>
+        <datawave.build.jdk.version.range>[11,12)</datawave.build.jdk.version.range>
         <image.prefix>datawave/</image.prefix>
         <java.version>11</java.version>
-        <maven.compiler.source>${java.version}</maven.compiler.source>
-        <maven.compiler.target>${java.version}</maven.compiler.target>
+        <maven.compiler.release>11</maven.compiler.release>
         <maven.release.arguments>-Ddist</maven.release.arguments>
         <maven.release.profiles>dist</maven.release.profiles>
         <project.artifactId>${project.artifactId}</project.artifactId>
@@ -378,9 +378,9 @@
                         <configFile>eclipse/Eclipse-Datawave-Codestyle.xml</configFile>
                         <lineEnding>LF</lineEnding>
                         <removeTrailingWhitespace>true</removeTrailingWhitespace>
-                        <compilerSource>${maven.compiler.source}</compilerSource>
-                        <compilerCompliance>${maven.compiler.source}</compilerCompliance>
-                        <compilerTargetPlatform>${maven.compiler.target}</compilerTargetPlatform>
+                        <compilerSource>${maven.compiler.release}</compilerSource>
+                        <compilerCompliance>${maven.compiler.release}</compilerCompliance>
+                        <compilerTargetPlatform>${maven.compiler.release}</compilerTargetPlatform>
                     </configuration>
                     <dependencies>
                         <dependency>
@@ -598,7 +598,7 @@
                                     <onlyWhenRelease>true</onlyWhenRelease>
                                 </requireReleaseDeps>
                                 <requireJavaVersion>
-                                    <version>${java.version}</version>
+                                    <version>${datawave.build.jdk.version.range}</version>
                                 </requireJavaVersion>
                             </rules>
                             <fail>true</fail>
@@ -648,6 +648,12 @@
         </plugins>
     </build>
     <profiles>
+        <profile>
+            <id>java17</id>
+            <properties>
+                <datawave.build.jdk.version.range>[17,18)</datawave.build.jdk.version.range>
+            </properties>
+        </profile>
         <profile>
             <id>autoformat</id>
             <activation>
