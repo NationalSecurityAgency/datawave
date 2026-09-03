@@ -288,7 +288,7 @@
                 <version>${version.hadoop}</version>
                 <exclusions>
                     <exclusion>
-                        <groupId>com.sun.jersey</groupId>
+                        <groupId>org.glassfish.jersey.core</groupId>
                         <artifactId>*</artifactId>
                     </exclusion>
                     <exclusion>
