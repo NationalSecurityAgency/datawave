@@ -24,7 +24,7 @@ JAVA_OPTS=(
 )
 
 case "${cmd}" in
-    manager | master) JAVA_OPTS=('-Xmx512m' '-Xms512m' "${JAVA_OPTS[@]}") ;;
+    manager | sserver) JAVA_OPTS=('-Xmx512m' '-Xms512m' "${JAVA_OPTS[@]}") ;;
     monitor) JAVA_OPTS=('-Xmx1g' '-Xms1g' "${JAVA_OPTS[@]}") ;;
     gc) JAVA_OPTS=('-Xmx256m' '-Xms256m' "${JAVA_OPTS[@]}") ;;
     tserver) JAVA_OPTS=('-Xmx1536m' '-Xms1536m' "${JAVA_OPTS[@]}") ;;
@@ -40,7 +40,7 @@ JAVA_OPTS=(
 )
 
 case "${cmd}" in
-    monitor | gc | manager | master | tserver)
+    monitor | gc | manager | tserver | compactor | sserver)
         JAVA_OPTS=('-Dlog4j.configurationFile=log4j2-service.properties' "${JAVA_OPTS[@]}")
         ;;
 esac
