@@ -1,234 +1,95 @@
 package datawave.query;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TimeZone;
-import java.util.UUID;
-
-import javax.inject.Inject;
 
 import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.junit.Arquillian;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.asset.StringAsset;
-import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import com.google.common.collect.Sets;
 
-import datawave.configuration.spring.SpringBean;
-import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
-import datawave.microservice.query.QueryImpl;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Document;
 import datawave.query.function.JexlEvaluation;
-import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.tables.ShardQueryLogic;
-import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
+import datawave.query.util.AbstractQueryTest;
 import datawave.query.util.CommonalityTokenTestDataIngest;
 import datawave.table.constants.TableName;
 import datawave.test.HitTermAssertions;
-import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 
 /**
  * Tests the 'limit.fields' feature to ensure that hit terms are always included and that associated fields at the same grouping context are included along with
  * the field that hit on the query. This test uses a dot delimited token in the event field name as a 'commonality token'. This test also validates that no
  * unexpected fields are returned.
  */
-public abstract class TestLimitReturnedGroupsToHitTermGroups {
-
-    @RunWith(Arquillian.class)
-    public static class ShardRange extends TestLimitReturnedGroupsToHitTermGroups {
-        protected static AccumuloClient connector = null;
-
-        @BeforeClass
-        public static void setUp() throws Exception {
-
-            QueryTestTableHelper qtth = new QueryTestTableHelper(ShardRange.class.toString(), log);
-            connector = qtth.client;
-
-            MockAccumuloRecordWriter recordWriter = new MockAccumuloRecordWriter();
-            qtth.configureTables(recordWriter);
-
-            CommonalityTokenTestDataIngest.writeItAll(connector, CommonalityTokenTestDataIngest.WhatKindaRange.SHARD);
-            Authorizations auths = new Authorizations("ALL");
-
-            // set to DEBUG if you want table output
-            Logger.getLogger(PrintUtility.class).setLevel(Level.INFO);
-            PrintUtility.printTable(connector, auths, TableName.SHARD);
-            PrintUtility.printTable(connector, auths, TableName.SHARD_INDEX);
-            PrintUtility.printTable(connector, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
-
-        }
-
-        @Before
-        public void setup() {
-            super.setup();
-            logic.setCollapseUids(true);
-        }
-
-        @Override
-        protected void runTestQuery(Collection<String> goodResults) throws Exception {
-            super.runTestQuery(connector, goodResults);
-        }
-    }
-
-    @RunWith(Arquillian.class)
-    public static class DocumentRange extends TestLimitReturnedGroupsToHitTermGroups {
-        protected static AccumuloClient connector = null;
-
-        @BeforeClass
-        public static void setUp() throws Exception {
-
-            QueryTestTableHelper qtth = new QueryTestTableHelper(DocumentRange.class.toString(), log);
-            connector = qtth.client;
-            MockAccumuloRecordWriter recordWriter = new MockAccumuloRecordWriter();
-            qtth.configureTables(recordWriter);
-
-            CommonalityTokenTestDataIngest.writeItAll(connector, CommonalityTokenTestDataIngest.WhatKindaRange.DOCUMENT);
-            Authorizations auths = new Authorizations("ALL");
-            // set to DEBUG if you want table output
-            Logger.getLogger(PrintUtility.class).setLevel(Level.INFO);
-            PrintUtility.printTable(connector, auths, TableName.SHARD);
-            PrintUtility.printTable(connector, auths, TableName.SHARD_INDEX);
-            PrintUtility.printTable(connector, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
-
-        }
-
-        @Before
-        public void setup() {
-            super.setup();
-            logic.setCollapseUids(false);
-        }
-
-        @Override
-        protected void runTestQuery(Collection<String> goodResults) throws Exception {
-            super.runTestQuery(connector, goodResults);
-        }
-    }
+@ExtendWith(SpringExtension.class)
+@ComponentScan(basePackages = "datawave.query")
+// @formatter:off
+@ContextConfiguration(locations = {
+        "classpath:datawave/query/QueryLogicFactory.xml",
+        "classpath:beanRefContext.xml",
+        "classpath:MarkingFunctionsContext.xml",
+        "classpath:MetadataHelperContext.xml",
+        "classpath:CacheContext.xml"})
+// @formatter:on
+public class TestLimitReturnedGroupsToHitTermGroups extends AbstractQueryTest {
 
     private static final Logger log = Logger.getLogger(TestLimitReturnedGroupsToHitTermGroups.class);
+    private static final Authorizations auths = new Authorizations("ALL");
 
-    protected Authorizations auths = new Authorizations("ALL");
+    private static AccumuloClient clientForTest;
 
-    protected Set<Authorizations> authSet = Collections.singleton(auths);
-
-    @Inject
-    @SpringBean(name = "EventQuery")
+    @Autowired
+    @Qualifier("EventQuery")
     protected ShardQueryLogic logic;
 
-    protected final KryoDocumentDeserializer deserializer = new KryoDocumentDeserializer();
-
-    private final DateFormat format = new SimpleDateFormat("yyyyMMdd");
-
-    private final Map<String,String> extraParameters = new HashMap<>();
-
-    private String query;
-
-    private final Set<Document> results = new HashSet<>();
-
     private final HitTermAssertions hitTermAssertions = new HitTermAssertions();
+    private Set<String> expectedResults = new HashSet<>();
 
-    @Deployment
-    public static JavaArchive createDeployment() throws Exception {
-
-        return ShrinkWrap.create(JavaArchive.class)
-                        .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.query", "org.jboss.logging",
-                                        "datawave.webservice.query.result.event", "datawave.core.query.result.event")
-                        .deleteClass(DefaultEdgeEventQueryLogic.class).deleteClass(RemoteEdgeDictionary.class)
-                        .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class)
-                        .addAsManifestResource(new StringAsset(
-                                        "<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>" + "</alternatives>"),
-                                        "beans.xml");
+    @Override
+    public ShardQueryLogic getLogic() {
+        return logic;
     }
 
-    @Before
-    public void setup() {
-        TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
-        log.setLevel(Level.DEBUG);
-        logic.setFullTableScanEnabled(true);
-
-        query = null;
-        extraParameters.clear();
-        results.clear();
-        hitTermAssertions.resetState();
-
-        // every query requires hit list arithmetic, so set that once here
-        withParameter("hit.list", "true");
+    @Override
+    public Authorizations getAuths() {
+        return auths;
     }
 
-    @AfterClass
-    public static void teardown() {
-        TypeRegistry.reset();
+    @Override
+    protected void extraConfigurations() {
+        disableQueryPlanAssertion();
     }
 
-    protected void withQuery(String query) {
-        this.query = query;
-    }
-
-    protected void withParameter(String key, String value) {
-        extraParameters.put(key, value);
-    }
-
-    protected abstract void runTestQuery(Collection<String> goodResults) throws Exception;
-
-    protected void runTestQuery(AccumuloClient connector, Collection<String> goodResults) throws Exception {
-
-        QueryImpl settings = new QueryImpl();
-        settings.setBeginDate(format.parse("20091231"));
-        settings.setEndDate(format.parse("20150101"));
-        settings.setPagesize(Integer.MAX_VALUE);
-        settings.setQueryAuthorizations(auths.serialize());
-        settings.setQuery(query);
-        settings.setParameters(extraParameters);
-        settings.setId(UUID.randomUUID());
-
-        log.debug("query: " + settings.getQuery());
-        log.debug("logic: " + settings.getQueryLogicName());
-
-        GenericQueryConfiguration config = logic.initialize(connector, settings, authSet);
-        logic.setupQuery(config);
-
-        // execute the query and aggregate documents
-        driveQuery();
-        assertResults(goodResults);
-        assertHitTerms();
-    }
-
-    protected void driveQuery() {
-        for (Entry<Key,Value> entry : logic) {
-            Document d = deserializer.apply(entry).getValue();
-            log.trace(entry.getKey() + " => " + d);
-            results.add(d);
-        }
-    }
-
-    protected void assertResults(Collection<String> goodResults) {
-        Set<Document> docs = new HashSet<>();
+    @Override
+    protected void extraAssertions() {
+        // planAndExecuteQuery() invokes extraAssertions() once per index table variant, so match against a
+        // local copy rather than destructively consuming the shared expectedResults set.
+        Set<String> remaining = new HashSet<>(expectedResults);
         Set<String> unexpectedFields = new HashSet<>();
+
         for (Document result : results) {
-            docs.add(result);
             Map<String,Attribute<? extends Comparable<?>>> dictionary = result.getDictionary();
 
             log.debug("dictionary:" + dictionary);
@@ -244,46 +105,87 @@ public abstract class TestLimitReturnedGroupsToHitTermGroups {
                 if (attribute instanceof Attributes) {
                     for (Attribute<?> attr : ((Attributes) attribute).getAttributes()) {
                         String toFind = dictionaryEntry.getKey() + ":" + attr;
-                        boolean found = goodResults.remove(toFind);
-                        if (found)
-                            log.debug("removed " + toFind);
-                        else {
+                        if (!remaining.remove(toFind)) {
                             unexpectedFields.add(toFind);
                         }
                     }
                 } else {
-
                     String toFind = dictionaryEntry.getKey() + ":" + dictionaryEntry.getValue();
-
-                    boolean found = goodResults.remove(toFind);
-                    if (found)
-                        log.debug("removed " + toFind);
-                    else {
+                    if (!remaining.remove(toFind)) {
                         unexpectedFields.add(toFind);
                     }
                 }
             }
         }
 
-        Assert.assertTrue(goodResults + " was not empty", goodResults.isEmpty());
-        Assert.assertTrue("unexpected fields returned: " + unexpectedFields, unexpectedFields.isEmpty());
-        Assert.assertFalse("No docs were returned!", docs.isEmpty());
+        assertTrue(remaining.isEmpty(), remaining + " was not empty");
+        assertTrue(unexpectedFields.isEmpty(), "unexpected fields returned: " + unexpectedFields);
+        assertFalse(results.isEmpty(), "No docs were returned!");
+
+        boolean valid = hitTermAssertions.assertHitTerms(results);
+        assertTrue(valid);
     }
 
-    protected void assertHitTerms() {
-        boolean valid = hitTermAssertions.assertHitTerms(results);
-        Assert.assertTrue(valid);
+    @BeforeAll
+    public static void beforeAll() throws Exception {
+        TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
+
+        QueryTestTableHelper qtth = new QueryTestTableHelper(TestLimitReturnedGroupsToHitTermGroups.class.toString(), log);
+        clientForTest = qtth.client;
+
+        // ingest with the document range only; CommonalityTokenTestDataIngest already uses IndexIngestUtil
+        // internally to derive the other shard index table variants that AbstractQueryTest iterates over.
+        CommonalityTokenTestDataIngest.writeItAll(clientForTest, CommonalityTokenTestDataIngest.WhatKindaRange.DOCUMENT);
+
+        // set to DEBUG if you want table output
+        Logger.getLogger(PrintUtility.class).setLevel(Level.INFO);
+        PrintUtility.printTable(clientForTest, auths, TableName.SHARD);
+        PrintUtility.printTable(clientForTest, auths, TableName.SHARD_INDEX);
+        PrintUtility.printTable(clientForTest, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
+    }
+
+    @AfterAll
+    public static void afterAll() {
+        TypeRegistry.reset();
+    }
+
+    @BeforeEach
+    public void setup() {
+        setClientForTest(clientForTest);
+        log.setLevel(Level.DEBUG);
+        logic.setFullTableScanEnabled(true);
+        logic.setCollapseUids(false);
+
+        hitTermAssertions.resetState();
+        expectedResults = new HashSet<>();
+
+        givenDate("20091231", "20150101");
+        // every query requires hit list arithmetic, so set that once here
+        givenParameter("hit.list", "true");
+    }
+
+    protected void withQuery(String query) {
+        givenQuery(query);
+    }
+
+    protected void withParameter(String key, String value) {
+        givenParameter(key, value);
+    }
+
+    protected void runTestQuery(Set<String> goodResults) throws Exception {
+        this.expectedResults = goodResults;
+        planAndExecuteQuery();
     }
 
     protected void assertFieldExists(String field) {
         for (Document result : results) {
-            Assert.assertTrue(result.containsKey(field));
+            assertTrue(result.containsKey(field));
         }
     }
 
     protected void assertFieldDoesNotExist(String field) {
         for (Document result : results) {
-            Assert.assertFalse(result.containsKey(field));
+            assertFalse(result.containsKey(field));
         }
     }
 

@@ -10,7 +10,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.Scanner;
-import org.apache.accumulo.core.client.ScannerBase.ConsistencyLevel;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -25,6 +24,7 @@ import datawave.core.query.configuration.QueryData;
 import datawave.next.DocIdQueryIterator;
 import datawave.next.async.RunnableWithContext;
 import datawave.query.iterator.QueryOptions;
+import datawave.scan.ScannerBuilder;
 
 /**
  * A runnable that handles async scanning of a tablet to find document candidates.
@@ -96,7 +96,17 @@ public class DocumentIdProducer implements RunnableWithContext {
         }
     }
 
-    private Scanner createScanner() throws TableNotFoundException {
+    /**
+     * Create a scanner for the field index and configure it with an execution hint and consistency level.
+     * <p>
+     * This is a search scan, so it is governed by the search hint rather than the retrieval hint. Both are required, because the document scheduler relies on
+     * its scans being routed to a dedicated executor pool.
+     *
+     * @return a configured scanner
+     * @throws TableNotFoundException
+     *             if the table does not exist
+     */
+    protected Scanner createScanner() throws TableNotFoundException {
         // this check exists because datawave can produce day ranges for certain unit tests. The document scheduler is optimized for shard-specific plans and
         // thus is not compatible with day ranges.
         Range scanRange = Range.exact(range.getStartKey().getRow());
@@ -106,18 +116,26 @@ public class DocumentIdProducer implements RunnableWithContext {
             throw new RuntimeException("Scan range differed from input range");
         }
 
-        Scanner scanner = config.getClient().createScanner(context.getTableName(), config.getAuthorizations());
+        String tableName = context.getTableName();
+
+        Preconditions.checkNotNull(tableName);
+        Preconditions.checkNotNull(config.getSearchScanHintTable(), "SearchScanHintTable cannot be null");
+        Preconditions.checkNotNull(config.getSearchExecutorPool(), "SearchExecutorPool cannot be null");
+        Preconditions.checkArgument(tableName.equals(config.getSearchScanHintTable()), "Table name did not match execution hint");
+        Preconditions.checkNotNull(config.getSearchConsistencyLevel(), "SearchConsistencyLevel cannot be null");
+
+        //  @formatter:off
+        ScannerBuilder builder = ScannerBuilder.create(config.getClient())
+                .setTableName(tableName)
+                .setAuthorizations(config.getAuthorizations())
+                .setConsistencyLevel(config.getSearchConsistencyLevel())
+                .setScanType(config.getSearchScanHintPool())
+                .setScanPriority(1);
+        //  @formatter:on
+
+        Scanner scanner = builder.build();
         scanner.setRange(range);
         scanner.addScanIterator(createIteratorSetting());
-
-        if (config.getSearchScanHintTable() != null && config.getSearchScanHintPool() != null) {
-            Preconditions.checkArgument(context.getTableName().equals(config.getRetrievalScanHintTable()), "Table name did not match execution hint");
-            scanner.setExecutionHints(Map.of("scan_type", config.getSearchScanHintPool()));
-        }
-
-        if (config.getSearchConsistencyLevel() != null) {
-            scanner.setConsistencyLevel(ConsistencyLevel.valueOf(config.getSearchConsistencyLevel()));
-        }
         return scanner;
     }
 

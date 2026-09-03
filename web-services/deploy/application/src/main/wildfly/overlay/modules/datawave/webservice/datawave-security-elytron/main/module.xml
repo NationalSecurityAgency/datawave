@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module xmlns="urn:jboss:module:1.3" name="datawave.webservice.datawave-security-elytron">
+    <resources>
+        <resource-root path="datawave-ws-security-elytron-${project.version}.jar"/>
+    </resources>
+
+    <dependencies>
+        <module name="datawave.commons.datawave-commons-security"/>
+        <module name="io.jsonwebtoken.jjwt-api"/>
+        <module name="io.jsonwebtoken.jjwt-impl" services="import"/>
+        <module name="org.apache.commons.lang3" />
+        <module name="org.slf4j"/>
+        <module name="com.google.guava"/>
+        <module name="javax.xml.bind.api"/>
+        <module name="com.fasterxml.jackson.core.jackson-core"/>
+        <module name="com.fasterxml.jackson.core.jackson-databind"/>
+        <module name="com.fasterxml.jackson.core.jackson-annotations"/>
+        <module name="com.fasterxml.jackson.datatype.jackson-datatype-guava"/>
+        <module name="com.fasterxml.jackson.module.jackson-module-jaxb-annotations"/>
+        <module name="javax.annotation.api"/>
+        <module name="org.wildfly.security.elytron"/>
+        <module name="org.wildfly.extension.elytron"/>
+    </dependencies>
+</module>

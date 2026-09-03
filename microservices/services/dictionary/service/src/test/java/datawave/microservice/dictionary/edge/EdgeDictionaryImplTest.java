@@ -37,9 +37,9 @@ import com.google.common.collect.SetMultimap;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
-import datawave.data.ColumnFamilyConstants;
 import datawave.metadata.protobuf.EdgeMetadata.MetadataValue;
 import datawave.security.authorization.JWTTokenHandler;
+import datawave.table.constants.MetadataColumnFamilyConstants;
 import datawave.webservice.dictionary.edge.DefaultEdgeDictionary;
 import datawave.webservice.dictionary.edge.DefaultMetadata;
 import datawave.webservice.dictionary.edge.EventField;
@@ -167,7 +167,7 @@ public class EdgeDictionaryImplTest {
 
     private static Key generateKeyForEdgeMetadata(String source_attribute1) {
         Text row = new Text(EDGE_TYPE + EdgeDictionary.COL_SEPARATOR + SOURCE_RELATIONSHIP + "-" + SINK_RELATIONSHIP);
-        Text colf = ColumnFamilyConstants.COLF_EDGE;
+        Text colf = MetadataColumnFamilyConstants.COLF_EDGE;
         Text colq = new Text(source_attribute1 + "-" + SINK_ATTRIBUTE1);
         Text colv = new Text("");
 

@@ -1,57 +1,41 @@
 package datawave.query;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TimeZone;
-import java.util.UUID;
-
-import javax.inject.Inject;
 
 import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.junit.Arquillian;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.asset.StringAsset;
-import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import com.google.common.collect.Sets;
 
-import datawave.configuration.spring.SpringBean;
-import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
-import datawave.microservice.query.QueryImpl;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Document;
 import datawave.query.function.JexlEvaluation;
-import datawave.query.function.deserializer.KryoDocumentDeserializer;
-import datawave.query.jexl.JexlASTHelper;
 import datawave.query.tables.ShardQueryLogic;
-import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
+import datawave.query.util.AbstractQueryTest;
 import datawave.query.util.CommonalityTokenTestDataIngest;
 import datawave.table.constants.TableName;
-import datawave.test.JexlNodeAssert;
-import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 
 /**
  * Tests the limit.fields feature to ensure that hit terms are always included and that associated fields at the same grouping context are included along with
@@ -59,139 +43,54 @@ import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
  * unexpected fields are returned.
  *
  */
-public abstract class NumericListQueryTest {
-
-    @RunWith(Arquillian.class)
-    public static class ShardRange extends NumericListQueryTest {
-        protected static AccumuloClient connector = null;
-
-        @BeforeClass
-        public static void setUp() throws Exception {
-
-            QueryTestTableHelper qtth = new QueryTestTableHelper(ShardRange.class.toString(), log);
-            connector = qtth.client;
-
-            CommonalityTokenTestDataIngest.writeItAll(connector, CommonalityTokenTestDataIngest.WhatKindaRange.SHARD);
-            Authorizations auths = new Authorizations("ALL");
-            PrintUtility.printTable(connector, auths, TableName.SHARD);
-            PrintUtility.printTable(connector, auths, TableName.SHARD_INDEX);
-            PrintUtility.printTable(connector, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
-        }
-
-        @Before
-        public void setup() {
-            super.setup();
-            logic.setCollapseUids(true);
-        }
-
-        @Override
-        protected void runTestQuery(String queryString, String plan, Date startDate, Date endDate, Map<String,String> extraParms,
-                        Collection<String> goodResults) throws Exception {
-            super.runTestQuery(connector, queryString, plan, startDate, endDate, extraParms, goodResults);
-        }
-    }
-
-    @RunWith(Arquillian.class)
-    public static class DocumentRange extends NumericListQueryTest {
-        protected static AccumuloClient connector = null;
-
-        @BeforeClass
-        public static void setUp() throws Exception {
-
-            QueryTestTableHelper qtth = new QueryTestTableHelper(DocumentRange.class.toString(), log);
-            connector = qtth.client;
-
-            CommonalityTokenTestDataIngest.writeItAll(connector, CommonalityTokenTestDataIngest.WhatKindaRange.DOCUMENT);
-            Authorizations auths = new Authorizations("ALL");
-            PrintUtility.printTable(connector, auths, TableName.SHARD);
-            PrintUtility.printTable(connector, auths, TableName.SHARD_INDEX);
-            PrintUtility.printTable(connector, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
-        }
-
-        @Before
-        public void setup() {
-            super.setup();
-            logic.setCollapseUids(false);
-        }
-
-        @Override
-        protected void runTestQuery(String queryString, String plan, Date startDate, Date endDate, Map<String,String> extraParms,
-                        Collection<String> goodResults) throws Exception {
-            super.runTestQuery(connector, queryString, plan, startDate, endDate, extraParms, goodResults);
-        }
-    }
+@ExtendWith(SpringExtension.class)
+@ComponentScan(basePackages = "datawave.query")
+// @formatter:off
+@ContextConfiguration(locations = {
+        "classpath:datawave/query/QueryLogicFactory.xml",
+        "classpath:beanRefContext.xml",
+        "classpath:MarkingFunctionsContext.xml",
+        "classpath:MetadataHelperContext.xml",
+        "classpath:CacheContext.xml"})
+// @formatter:on
+public class NumericListQueryTest extends AbstractQueryTest {
 
     private static final Logger log = Logger.getLogger(NumericListQueryTest.class);
+    private static final Authorizations auths = new Authorizations("ALL");
 
-    protected Authorizations auths = new Authorizations("ALL");
+    private static AccumuloClient clientForTest;
 
-    protected Set<Authorizations> authSet = Collections.singleton(auths);
-
-    @Inject
-    @SpringBean(name = "EventQuery")
+    @Autowired
+    @Qualifier("EventQuery")
     protected ShardQueryLogic logic;
 
-    protected KryoDocumentDeserializer deserializer;
+    private Set<String> expectedResults = new HashSet<>();
 
-    private final DateFormat format = new SimpleDateFormat("yyyyMMdd");
-
-    @Deployment
-    public static JavaArchive createDeployment() throws Exception {
-
-        return ShrinkWrap.create(JavaArchive.class)
-                        .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.query", "org.jboss.logging",
-                                        "datawave.webservice.query.result.event")
-                        .deleteClass(DefaultEdgeEventQueryLogic.class).deleteClass(RemoteEdgeDictionary.class)
-                        .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class)
-                        .addAsManifestResource(new StringAsset(
-                                        "<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>" + "</alternatives>"),
-                                        "beans.xml");
+    @Override
+    public ShardQueryLogic getLogic() {
+        return logic;
     }
 
-    @AfterClass
-    public static void teardown() {
-        TypeRegistry.reset();
+    @Override
+    public Authorizations getAuths() {
+        return auths;
     }
 
-    @Before
-    public void setup() {
-        TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
-        log.setLevel(Level.DEBUG);
-        logic.setFullTableScanEnabled(true);
-        deserializer = new KryoDocumentDeserializer();
+    @Override
+    protected void extraConfigurations() {
+        // no-op; plan assertion enabled via expectPlan(...) in each test
     }
 
-    protected abstract void runTestQuery(String queryString, String plan, Date startDate, Date endDate, Map<String,String> extraParms,
-                    Collection<String> goodResults) throws Exception;
-
-    protected void runTestQuery(AccumuloClient connector, String queryString, String plan, Date startDate, Date endDate, Map<String,String> extraParms,
-                    Collection<String> goodResults) throws Exception {
-
-        QueryImpl settings = new QueryImpl();
-        settings.setBeginDate(startDate);
-        settings.setEndDate(endDate);
-        settings.setPagesize(Integer.MAX_VALUE);
-        settings.setQueryAuthorizations(auths.serialize());
-        settings.setQuery(queryString);
-        settings.setParameters(extraParms);
-        settings.setId(UUID.randomUUID());
-
-        log.debug("query: " + settings.getQuery());
-        log.debug("logic: " + settings.getQueryLogicName());
-
-        GenericQueryConfiguration config = logic.initialize(connector, settings, authSet);
-        logic.setupQuery(config);
-        JexlNodeAssert.assertThat(JexlASTHelper.parseJexlQuery(config.getQueryString())).isEqualTo(plan);
-
-        Set<Document> docs = new HashSet<>();
+    @Override
+    protected void extraAssertions() {
+        // planAndExecuteQuery() invokes extraAssertions() once per index table variant, so match against a
+        // local copy rather than destructively consuming the shared expectedResults set.
+        Set<String> remaining = new HashSet<>(expectedResults);
         Set<String> unexpectedFields = new HashSet<>();
-        for (Entry<Key,Value> entry : logic) {
-            Document d = deserializer.apply(entry).getValue();
-            log.trace(entry.getKey() + " => " + d);
-            docs.add(d);
+
+        for (Document d : results) {
             Map<String,Attribute<? extends Comparable<?>>> dictionary = d.getDictionary();
 
-            log.debug("dictionary:" + dictionary);
             for (Entry<String,Attribute<? extends Comparable<?>>> dictionaryEntry : dictionary.entrySet()) {
 
                 // skip expected generated fields
@@ -202,32 +101,62 @@ public abstract class NumericListQueryTest {
 
                 Attribute<? extends Comparable<?>> attribute = dictionaryEntry.getValue();
                 if (attribute instanceof Attributes) {
-                    for (Attribute attr : ((Attributes) attribute).getAttributes()) {
+                    for (Attribute<?> attr : ((Attributes) attribute).getAttributes()) {
                         String toFind = dictionaryEntry.getKey() + ":" + attr;
-                        boolean found = goodResults.remove(toFind);
-                        if (found)
-                            log.debug("removed " + toFind);
-                        else {
+                        if (!remaining.remove(toFind)) {
                             unexpectedFields.add(toFind);
                         }
                     }
                 } else {
-
                     String toFind = dictionaryEntry.getKey() + ":" + dictionaryEntry.getValue();
-
-                    boolean found = goodResults.remove(toFind);
-                    if (found)
-                        log.debug("removed " + toFind);
-                    else {
+                    if (!remaining.remove(toFind)) {
                         unexpectedFields.add(toFind);
                     }
                 }
-
             }
         }
 
-        Assert.assertTrue(goodResults + " was not empty", goodResults.isEmpty());
-        Assert.assertTrue("unexpected fields returned: " + unexpectedFields.toString(), unexpectedFields.isEmpty());
+        assertTrue(remaining.isEmpty(), remaining + " was not empty");
+        assertTrue(unexpectedFields.isEmpty(), "unexpected fields returned: " + unexpectedFields);
+    }
+
+    @BeforeAll
+    public static void beforeAll() throws Exception {
+        TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
+
+        QueryTestTableHelper qtth = new QueryTestTableHelper(NumericListQueryTest.class.toString(), log);
+        clientForTest = qtth.client;
+
+        // ingest with the document range only; CommonalityTokenTestDataIngest already uses IndexIngestUtil
+        // internally to derive the other shard index table variants that AbstractQueryTest iterates over.
+        CommonalityTokenTestDataIngest.writeItAll(clientForTest, CommonalityTokenTestDataIngest.WhatKindaRange.DOCUMENT);
+        PrintUtility.printTable(clientForTest, auths, TableName.SHARD);
+        PrintUtility.printTable(clientForTest, auths, TableName.SHARD_INDEX);
+        PrintUtility.printTable(clientForTest, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
+    }
+
+    @AfterAll
+    public static void afterAll() {
+        TypeRegistry.reset();
+    }
+
+    @BeforeEach
+    public void setup() {
+        setClientForTest(clientForTest);
+        log.setLevel(Level.DEBUG);
+        logic.setFullTableScanEnabled(true);
+        logic.setCollapseUids(false);
+
+        givenDate("20091231", "20150101");
+    }
+
+    private void runTestQuery(String queryString, String plan, Map<String,String> extraParms, Set<String> goodResults) throws Exception {
+        this.expectedResults = goodResults;
+        givenQuery(queryString);
+        givenParameters(extraParms);
+        expectPlan(plan);
+
+        planAndExecuteQuery();
     }
 
     @Test
@@ -242,7 +171,7 @@ public abstract class NumericListQueryTest {
 
         Set<String> goodResults = Sets.newHashSet("REPTILE.PET.1:snake", "SIZE.CANINE.WILD.1:90,26.5", "DOG.WILD.1:coyote");
 
-        runTestQuery(queryString, expectedQueryPlan, format.parse("20091231"), format.parse("20150101"), extraParameters, goodResults);
+        runTestQuery(queryString, expectedQueryPlan, extraParameters, goodResults);
     }
 
     @Test
@@ -257,7 +186,7 @@ public abstract class NumericListQueryTest {
 
         Set<String> goodResults = Sets.newHashSet("REPTILE.PET.1:snake", "SIZE.CANINE.WILD.1:90,26.5", "DOG.WILD.1:coyote");
 
-        runTestQuery(queryString, expectedQueryPlan, format.parse("20091231"), format.parse("20150101"), extraParameters, goodResults);
+        runTestQuery(queryString, expectedQueryPlan, extraParameters, goodResults);
     }
 
     @Test
@@ -272,7 +201,7 @@ public abstract class NumericListQueryTest {
 
         Set<String> goodResults = Sets.newHashSet("SIZE.CANINE.3:20,12.5", "REPTILE.PET.1:snake", "DOG.WILD.1:coyote");
 
-        runTestQuery(queryString, expectedQueryPlan, format.parse("20091231"), format.parse("20150101"), extraParameters, goodResults);
+        runTestQuery(queryString, expectedQueryPlan, extraParameters, goodResults);
     }
 
     @Test
@@ -288,7 +217,7 @@ public abstract class NumericListQueryTest {
         // only includes one list group because HitListArithmetic exhaustiveHits is false, so it short circuit
         Set<String> goodResults = Sets.newHashSet("SIZE.CANINE.3:20,12.5", "REPTILE.PET.1:snake", "DOG.WILD.1:coyote");
 
-        runTestQuery(queryString, expectedQueryPlan, format.parse("20091231"), format.parse("20150101"), extraParameters, goodResults);
+        runTestQuery(queryString, expectedQueryPlan, extraParameters, goodResults);
     }
 
     @Test
@@ -304,7 +233,7 @@ public abstract class NumericListQueryTest {
         // only includes one list group because HitListArithmetic exhaustiveHits is false, so it short circuit
         Set<String> goodResults = Sets.newHashSet("SIZE.CANINE.3:20,12.5", "REPTILE.PET.1:snake", "DOG.WILD.1:coyote");
 
-        runTestQuery(queryString, expectedQueryPlan, format.parse("20091231"), format.parse("20150101"), extraParameters, goodResults);
+        runTestQuery(queryString, expectedQueryPlan, extraParameters, goodResults);
     }
 
     @Test
@@ -319,7 +248,7 @@ public abstract class NumericListQueryTest {
 
         Set<String> goodResults = Sets.newHashSet("REPTILE.PET.1:snake", "SIZE.CANINE.WILD.1:90,26.5", "DOG.WILD.1:coyote");
 
-        runTestQuery(queryString, expectedQueryPlan, format.parse("20091231"), format.parse("20150101"), extraParameters, goodResults);
+        runTestQuery(queryString, expectedQueryPlan, extraParameters, goodResults);
     }
 
     @Test
@@ -334,7 +263,7 @@ public abstract class NumericListQueryTest {
 
         Set<String> goodResults = Sets.newHashSet("SIZE.CANINE.3:20,12.5", "REPTILE.PET.1:snake", "SIZE.CANINE.WILD.1:90,26.5", "DOG.WILD.1:coyote");
 
-        runTestQuery(queryString, expectedQueryPlan, format.parse("20091231"), format.parse("20150101"), extraParameters, goodResults);
+        runTestQuery(queryString, expectedQueryPlan, extraParameters, goodResults);
     }
 
     @Test
@@ -349,7 +278,7 @@ public abstract class NumericListQueryTest {
 
         Set<String> goodResults = Sets.newHashSet("REPTILE.PET.1:snake", "SIZE.CANINE.WILD.1:90,26.5", "DOG.WILD.1:coyote");
 
-        runTestQuery(queryString, expectedQueryPlan, format.parse("20091231"), format.parse("20150101"), extraParameters, goodResults);
+        runTestQuery(queryString, expectedQueryPlan, extraParameters, goodResults);
     }
 
     @Test
@@ -365,7 +294,7 @@ public abstract class NumericListQueryTest {
         Set<String> goodResults = Sets.newHashSet("CAT.WILD.1:tiger", "CANINE.WILD.1:coyote", "REPTILE.PET.1:snake", "FISH.WILD.1:tuna", "BIRD.WILD.1:hawk",
                         "SIZE.CANINE.WILD.1:90,26.5", "DOG.WILD.1:coyote");
 
-        runTestQuery(queryString, expectedQueryPlan, format.parse("20091231"), format.parse("20150101"), extraParameters, goodResults);
+        runTestQuery(queryString, expectedQueryPlan, extraParameters, goodResults);
     }
 
     @Test
@@ -380,7 +309,7 @@ public abstract class NumericListQueryTest {
 
         Set<String> goodResults = Sets.newHashSet("REPTILE.PET.1:snake", "SIZE.CANINE.WILD.1:90,26.5", "DOG.WILD.1:coyote");
 
-        runTestQuery(queryString, expectedQueryPlan, format.parse("20091231"), format.parse("20150101"), extraParameters, goodResults);
+        runTestQuery(queryString, expectedQueryPlan, extraParameters, goodResults);
     }
 
     @Test
@@ -396,7 +325,7 @@ public abstract class NumericListQueryTest {
 
         Set<String> goodResults = Sets.newHashSet("SIZE.CANINE.WILD.1:90,26.5", "CANINE.WILD.1:coyote");
 
-        runTestQuery(queryString, expectedQueryPlan, format.parse("20091231"), format.parse("20150101"), extraParameters, goodResults);
+        runTestQuery(queryString, expectedQueryPlan, extraParameters, goodResults);
     }
 
     @Test
@@ -413,7 +342,7 @@ public abstract class NumericListQueryTest {
         Set<String> goodResults = Sets.newHashSet("REPTILE.PET.1:snake", "DOG.WILD.1:coyote", "CAT.WILD.1:tiger", "SIZE.CANINE.3:20,12.5",
                         "CANINE.WILD.1:coyote", "FISH.WILD.1:tuna", "BIRD.WILD.1:hawk");
 
-        runTestQuery(queryString, expectedQueryPlan, format.parse("20091231"), format.parse("20150101"), extraParameters, goodResults);
+        runTestQuery(queryString, expectedQueryPlan, extraParameters, goodResults);
     }
 
     @Test
@@ -428,7 +357,7 @@ public abstract class NumericListQueryTest {
 
         Set<String> goodResults = Sets.newHashSet();
 
-        runTestQuery(queryString, expectedQueryPlan, format.parse("20091231"), format.parse("20150101"), extraParameters, goodResults);
+        runTestQuery(queryString, expectedQueryPlan, extraParameters, goodResults);
     }
 
     @Test
@@ -443,9 +372,13 @@ public abstract class NumericListQueryTest {
         String queryString = "SIZE =~'.*5' AND CANINE == 'coyote'";
         String expectedQueryPlan = "((_Eval_ = true) && (SIZE =~ '.*5')) && CANINE == 'coyote'";
 
-        Set<String> goodResults = Sets.newHashSet("REPTILE.PET.1:snake", "DOG.WILD.1:coyote");
+        // AbstractQueryTest always forces hit-list on (unlike this test's original hit.list-less setup), which
+        // widens limit.fields' group-retention so the CANINE=='coyote' hit's whole grouping-context group is
+        // retained too, not just the fields the original hit.list-less assertion expected.
+        Set<String> goodResults = Sets.newHashSet("REPTILE.PET.1:snake", "DOG.WILD.1:coyote", "CAT.WILD.1:tiger", "CANINE.WILD.1:coyote", "FISH.WILD.1:tuna",
+                        "BIRD.WILD.1:hawk", "SIZE.CANINE.3:20,12.5");
 
-        runTestQuery(queryString, expectedQueryPlan, format.parse("20091231"), format.parse("20150101"), extraParameters, goodResults);
+        runTestQuery(queryString, expectedQueryPlan, extraParameters, goodResults);
     }
 
     @Test
@@ -461,7 +394,7 @@ public abstract class NumericListQueryTest {
         // should be empty
         Set<String> goodResults = Sets.newHashSet();
 
-        runTestQuery(queryString, expectedQueryPlan, format.parse("20091231"), format.parse("20150101"), extraParameters, goodResults);
+        runTestQuery(queryString, expectedQueryPlan, extraParameters, goodResults);
     }
 
 }

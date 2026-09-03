@@ -53,4 +53,10 @@ services/sample_configuration/*-dev.yml
 /.jkube-dockerignore
 
 .claude
+.sdkmanrc
 
+# gemini-cli settings
+.gemini/
+
+# GitHub App credentials
+gha-creds-*.json

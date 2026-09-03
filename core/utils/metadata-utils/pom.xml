@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.core</groupId>
         <artifactId>datawave-utils-parent</artifactId>
-        <version>7.42.0-SNAPSHOT</version>
+        <version>8.1.0-SNAPSHOT</version>
     </parent>
     <artifactId>metadata-utils</artifactId>
     <name>${project.artifactId}</name>
@@ -58,6 +58,11 @@
         <dependency>
             <groupId>gov.nsa.datawave.core</groupId>
             <artifactId>common-utils</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.core</groupId>
+            <artifactId>datawave-core-tables</artifactId>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.core</groupId>

@@ -45,7 +45,7 @@ import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUser.UserType;
 import datawave.security.authorization.SubjectIssuerDNPair;
-import datawave.security.util.DnUtils;
+import datawave.security.util.DnProperties;
 import datawave.webservice.query.cache.RunningQueryTimingImpl;
 import datawave.webservice.query.metric.QueryMetricsBean;
 import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
@@ -68,7 +68,7 @@ public class ExtendedRunningQueryTest {
 
     @BeforeEach
     public void beforeEach() {
-        System.setProperty(DnUtils.NPE_OU_PROPERTY, "iamnotaperson");
+        System.setProperty(DnProperties.NPE_OU_PROPERTY, "iamnotaperson");
         System.setProperty("dw.metadatahelper.all.auths", "A,B,C,D");
         executor = Executors.newSingleThreadExecutor();
     }
@@ -135,7 +135,7 @@ public class ExtendedRunningQueryTest {
         // Set expectations
         when(this.queryLogic.getCollectQueryMetrics()).thenReturn(true);
         when(this.query.getUncaughtExceptionHandler()).thenReturn(exceptionHandler);
-        when(this.exceptionHandler.getThrowable()).thenReturn(null);
+        when(this.exceptionHandler.getUncaughtException()).thenReturn(null);
         when(this.query.getId()).thenReturn(queryId);
         when(this.query.getOwner()).thenReturn(userSid);
         when(this.query.getQuery()).thenReturn(query);
@@ -218,7 +218,7 @@ public class ExtendedRunningQueryTest {
         // Set expectations
         when(this.queryLogic.getCollectQueryMetrics()).thenReturn(true);
         when(this.query.getUncaughtExceptionHandler()).thenReturn(exceptionHandler);
-        when(this.exceptionHandler.getThrowable()).thenReturn(null);
+        when(this.exceptionHandler.getUncaughtException()).thenReturn(null);
         when(this.query.getId()).thenReturn(queryId);
         when(this.query.getOwner()).thenReturn(userSid);
         when(this.query.getQuery()).thenReturn(query);
@@ -300,7 +300,7 @@ public class ExtendedRunningQueryTest {
         // Set expectations
         when(this.queryLogic.getCollectQueryMetrics()).thenReturn(true);
         when(this.query.getUncaughtExceptionHandler()).thenReturn(exceptionHandler);
-        when(this.exceptionHandler.getThrowable()).thenReturn(null);
+        when(this.exceptionHandler.getUncaughtException()).thenReturn(null);
         when(this.query.getId()).thenReturn(queryId);
         when(this.query.getOwner()).thenReturn(userSid);
         when(this.query.getQuery()).thenReturn(query);
@@ -378,7 +378,7 @@ public class ExtendedRunningQueryTest {
         // Set expectations
         when(this.queryLogic.getCollectQueryMetrics()).thenReturn(true);
         when(this.query.getUncaughtExceptionHandler()).thenReturn(exceptionHandler);
-        when(this.exceptionHandler.getThrowable()).thenReturn(null);
+        when(this.exceptionHandler.getUncaughtException()).thenReturn(null);
         when(this.query.getId()).thenReturn(queryId);
         when(this.query.getUserDN()).thenReturn(userDN);
         when(this.query.getOwner()).thenReturn(userSid);
@@ -437,7 +437,7 @@ public class ExtendedRunningQueryTest {
         when(this.transformIterator.getTransformer()).thenReturn(transformer);
         when(this.queryLogic.getCollectQueryMetrics()).thenReturn(true);
         when(this.query.getUncaughtExceptionHandler()).thenReturn(exceptionHandler);
-        when(this.exceptionHandler.getThrowable()).thenReturn(null);
+        when(this.exceptionHandler.getUncaughtException()).thenReturn(null);
         when(this.query.getId()).thenReturn(queryId);
         when(this.query.getUserDN()).thenReturn(userDN);
         when(this.query.getOwner()).thenReturn(null);
@@ -503,7 +503,7 @@ public class ExtendedRunningQueryTest {
         // Set expectations
         when(this.queryLogic.getCollectQueryMetrics()).thenReturn(true);
         when(this.query.getUncaughtExceptionHandler()).thenReturn(exceptionHandler);
-        when(this.exceptionHandler.getThrowable()).thenReturn(null);
+        when(this.exceptionHandler.getUncaughtException()).thenReturn(null);
         when(this.query.getId()).thenReturn(queryId);
         when(this.query.getOwner()).thenReturn(userSid);
         when(this.query.getQuery()).thenReturn(query);

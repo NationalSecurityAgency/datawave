@@ -61,24 +61,21 @@ public class QueryDataConsumer implements Runnable {
             }
             while (iterator.hasNext()) {
                 QueryData queryData = iterator.next();
-                if (log.isDebugEnabled()) {
-                    log.debug("got query data: {}", queryData.getRanges().iterator().next().getStartKey().toStringNoTime());
-                }
                 if (queryData == null) {
                     stats.incrementNullDataSeen();
                     log.info("query data was null");
                     continue;
                 }
-                if (queryData.getSettings() == null) {
-                    log.info("query data settings was null");
-                }
-                if (queryData.getRanges() == null) {
-                    log.info("query data ranges was null");
-                }
                 stats.incrementQueryDataSeen();
 
-                Preconditions.checkArgument(queryData.getSettings().size() == 1);
-                Preconditions.checkArgument(queryData.getRanges().size() == 1);
+                Preconditions.checkNotNull(queryData.getSettings(), "query data settings must not be null");
+                Preconditions.checkArgument(queryData.getSettings().size() == 1, "expected exactly one settings entry");
+                Preconditions.checkNotNull(queryData.getRanges(), "query data ranges must not be null");
+                Preconditions.checkArgument(queryData.getRanges().size() == 1, "expected exactly one range");
+
+                if (log.isDebugEnabled()) {
+                    log.debug("got query data: {}", queryData.getRanges().iterator().next().getStartKey().toStringNoTime());
+                }
 
                 Range range = queryData.getRanges().iterator().next();
                 if (isDocumentRange(range)) {

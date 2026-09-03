@@ -37,6 +37,8 @@ import datawave.query.function.Equality;
 import datawave.query.function.PrefixEquality;
 import datawave.query.iterator.filter.EntryKeyIdentity;
 import datawave.query.iterator.filter.FieldIndexKeyDataTypeFilter;
+import datawave.query.util.TypeMetadata;
+import datawave.query.util.TypeMetadataSerializer;
 
 public class QueryOptionsTest {
 
@@ -235,6 +237,39 @@ public class QueryOptionsTest {
         QueryOptions qopts = new QueryOptions();
         qopts.validateOptions(opts);
         Assert.assertTrue(qopts.getFieldIndexKeyDataTypeFilter() instanceof FieldIndexKeyDataTypeFilter);
+    }
+
+    @Test
+    public void testTypeMetadataFromNativeStringFormat() {
+        TypeMetadata expected = new TypeMetadata();
+        expected.put("FIELD1", "ingestA", "LcNoDiacriticsType");
+        expected.put("FIELD2", "ingestA", "NumberType");
+
+        Map<String,String> optionsMap = new HashMap<>();
+        optionsMap.put(QUERY, "set to avoid early return");
+        optionsMap.put(QueryOptions.TYPE_METADATA, expected.toString());
+
+        QueryOptions options = new QueryOptions();
+        options.validateOptions(optionsMap);
+
+        assertEquals(expected, options.getTypeMetadata());
+    }
+
+    @Test
+    public void testTypeMetadataFromKryoFormat() {
+        TypeMetadata expected = new TypeMetadata();
+        expected.put("FIELD1", "ingestA", "LcNoDiacriticsType");
+        expected.put("FIELD2", "ingestA", "NumberType");
+
+        Map<String,String> optionsMap = new HashMap<>();
+        optionsMap.put(QUERY, "set to avoid early return");
+        optionsMap.put(QueryOptions.TYPE_METADATA, new TypeMetadataSerializer().serialize(expected));
+        optionsMap.put(QueryOptions.TYPE_METADATA_KRYO, "true");
+
+        QueryOptions options = new QueryOptions();
+        options.validateOptions(optionsMap);
+
+        assertEquals(expected, options.getTypeMetadata());
     }
 
     @Test

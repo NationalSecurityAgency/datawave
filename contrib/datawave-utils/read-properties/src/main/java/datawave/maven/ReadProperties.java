@@ -2,6 +2,9 @@ package datawave.maven;
 
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugins.annotations.LifecyclePhase;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.springframework.util.PropertyPlaceholderHelper;
 
@@ -15,41 +18,23 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-/**
- * @goal read-properties
- * @phase validate
- * @threadSafe true
- */
+@Mojo(name = "read-properties", defaultPhase = LifecyclePhase.VALIDATE, threadSafe=true)
 @SuppressWarnings("unused")
 public class ReadProperties extends AbstractMojo {
-    /**
-     * @parameter default-value="${project}"
-     * @required
-     * @readonly
-     */
+
+    @Parameter(defaultValue = "{project}", required = true, readonly = true)
     private MavenProject project;
 
-    /**
-     * The properties files that will be used when reading properties.
-     *
-     * @parameter
-     * @required
-     */
+    @Parameter(required = true)
     private File[] directories;
 
-    /**
-     * The properties files that will be used when reading properties.
-     *
-     * @parameter
-     * @required
-     */
+    @Parameter(required = true)
     private File[] files;
 
     /**
-     * If the plugin should be quiet if any of the files was nor found
-     *
-     * @parameter default-value="false"
+     * If the plugin should be quiet if any of the files was not found
      */
+    @Parameter(defaultValue = "false")
     private boolean quiet;
 
     @Override
@@ -86,7 +71,7 @@ public class ReadProperties extends AbstractMojo {
                 String filename = d.getAbsolutePath() + File.separator + f.getName();
                 File file = new File(filename);
                 if (file.exists()) {
-                    maxFilenameLength = (filename.length() > maxFilenameLength) ? filename.length() : maxFilenameLength;
+                    maxFilenameLength = Math.max(filename.length(), maxFilenameLength);
                     try {
                         getLog().info("Loading property file: " + file.getAbsolutePath());
 
@@ -142,11 +127,11 @@ public class ReadProperties extends AbstractMojo {
         project.getProperties().putAll(mergedProperties);
     }
 
-    private class PlaceholderResolver implements PropertyPlaceholderHelper.PlaceholderResolver {
+    private static class PlaceholderResolver implements PropertyPlaceholderHelper.PlaceholderResolver {
 
-        private Properties properties;
-        private Properties systemProperties;
-        private Map<String, String> environment;
+        private final Properties properties;
+        private final Properties systemProperties;
+        private final Map<String, String> environment;
 
         private PlaceholderResolver(Properties properties) {
             this.properties = properties;

@@ -4,11 +4,11 @@
     <parent>
         <groupId>gov.nsa.datawave.microservice</groupId>
         <artifactId>datawave-microservice-service-parent</artifactId>
-        <version>5.0.13</version>
+        <version>5.0.15</version>
         <relativePath>../../../microservice-service-parent/pom.xml</relativePath>
     </parent>
     <artifactId>mapreduce-query-service</artifactId>
-    <version>1.0.7-SNAPSHOT</version>
+    <version>1.0.8-SNAPSHOT</version>
     <description>DATAWAVE MapReduce Query Microservice</description>
     <url>https://github.com/NationalSecurityAgency/datawave-mapreduce-query-service</url>
     <scm>
@@ -22,11 +22,11 @@
         <image.prefix>datawave/</image.prefix>
         <registry.namespace>nationalsecurityagency/</registry.namespace>
         <start-class>datawave.microservice.query.mapreduce.MapReduceQueryService</start-class>
-        <version.datawave>7.37.3</version.datawave>
-        <version.datawave.authorization-api>4.0.4</version.datawave.authorization-api>
-        <version.datawave.mapreduce-query-core-job>1.0.6</version.datawave.mapreduce-query-core-job>
-        <version.datawave.starter>4.0.9</version.datawave.starter>
-        <version.datawave.starter-query>1.0.12</version.datawave.starter-query>
+        <version.datawave>8.0.0</version.datawave>
+        <version.datawave.authorization-api>4.0.5</version.datawave.authorization-api>
+        <version.datawave.mapreduce-query-core-job>1.0.7</version.datawave.mapreduce-query-core-job>
+        <version.datawave.starter>4.0.12</version.datawave.starter>
+        <version.datawave.starter-query>1.0.14</version.datawave.starter-query>
         <version.hadoop>3.3.4</version.hadoop>
         <!-- dependency declared in datawave-microservice-parent, but the version can be overridden here -->
         <version.log4j>2.26.1</version.log4j>
@@ -37,6 +37,11 @@
     </properties>
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>gov.nsa.datawave.commons</groupId>
+                <artifactId>datawave-commons-security</artifactId>
+                <version>${version.datawave-commons-security}</version>
+            </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.core</groupId>
                 <artifactId>base-rest-responses</artifactId>
@@ -186,6 +191,10 @@
         </dependencies>
     </dependencyManagement>
     <dependencies>
+        <dependency>
+            <groupId>gov.nsa.datawave.commons</groupId>
+            <artifactId>datawave-commons-security</artifactId>
+        </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.core</groupId>
             <artifactId>base-rest-responses</artifactId>

@@ -85,7 +85,6 @@ public class FieldRuleTest extends AbstractQueryTest {
 
     @BeforeEach
     public void setup() throws ParseException {
-        this.logic.setFullTableScanEnabled(true);
         this.logic.setMaxEvaluationPipelines(1);
         this.logic.setQueryExecutionForPageTimeout(300000000000000L);
         setClientForTest(clientForTest);

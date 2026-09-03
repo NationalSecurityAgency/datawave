@@ -42,7 +42,7 @@ import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUser.UserType;
 import datawave.security.authorization.SubjectIssuerDNPair;
-import datawave.security.util.DnUtils;
+import datawave.security.util.DnProperties;
 import datawave.security.util.ScannerHelper;
 import datawave.webservice.common.exception.DatawaveWebApplicationException;
 import datawave.webservice.model.ModelList;
@@ -67,7 +67,7 @@ public class ModelBeanTest {
 
     @BeforeEach
     public void beforeEach() throws Exception {
-        System.setProperty(DnUtils.NPE_OU_PROPERTY, "iamnotaperson");
+        System.setProperty(DnProperties.NPE_OU_PROPERTY, "iamnotaperson");
         System.setProperty("dw.metadatahelper.all.auths", "A,B,C,D");
         bean = new ModelBean();
         connectionFactory = mock(AccumuloConnectionFactory.class);

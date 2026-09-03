@@ -16,7 +16,6 @@ import org.slf4j.Logger;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
-import datawave.data.ColumnFamilyConstants;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.Type;
 import datawave.ingest.data.config.NormalizedContentInterface;
@@ -29,6 +28,7 @@ import datawave.ingest.mapreduce.handler.DataTypeHandler;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.iterators.FrequencyMetadataAggregator;
 import datawave.query.model.DateFrequencyMap;
+import datawave.table.constants.MetadataColumnFamilyConstants;
 import datawave.util.TextUtil;
 import datawave.util.time.DateHelper;
 
@@ -95,21 +95,21 @@ public class EventMetadata implements RawRecordMetadata {
     private final Text metadataTableName;
     private final Text loadDatesTableName;
 
-    private final MetadataWithMostRecentDate compositeFieldsInfo = new MetadataWithMostRecentDate(ColumnFamilyConstants.COLF_CI);
-    private final MetadataWithMostRecentDate compositeSeparators = new MetadataWithMostRecentDate(ColumnFamilyConstants.COLF_CISEP);
-    private final MetadataWithMostRecentDate dataTypeFieldsInfo = new MetadataWithMostRecentDate(ColumnFamilyConstants.COLF_T);
-    private final MetadataWithMostRecentDate normalizedFieldsInfo = new MetadataWithMostRecentDate(ColumnFamilyConstants.COLF_N);
+    private final MetadataWithMostRecentDate compositeFieldsInfo = new MetadataWithMostRecentDate(MetadataColumnFamilyConstants.COLF_CI);
+    private final MetadataWithMostRecentDate compositeSeparators = new MetadataWithMostRecentDate(MetadataColumnFamilyConstants.COLF_CISEP);
+    private final MetadataWithMostRecentDate dataTypeFieldsInfo = new MetadataWithMostRecentDate(MetadataColumnFamilyConstants.COLF_T);
+    private final MetadataWithMostRecentDate normalizedFieldsInfo = new MetadataWithMostRecentDate(MetadataColumnFamilyConstants.COLF_N);
 
     // stores field name, data type, and most recent event date
-    private final MetadataWithMostRecentDate eventFieldsInfo = new MetadataWithMostRecentDate(ColumnFamilyConstants.COLF_E);
-    private final MetadataWithMostRecentDate termFrequencyFieldsInfo = new MetadataWithMostRecentDate(ColumnFamilyConstants.COLF_TF);
+    private final MetadataWithMostRecentDate eventFieldsInfo = new MetadataWithMostRecentDate(MetadataColumnFamilyConstants.COLF_E);
+    private final MetadataWithMostRecentDate termFrequencyFieldsInfo = new MetadataWithMostRecentDate(MetadataColumnFamilyConstants.COLF_TF);
 
     // stores counts
-    private final MetadataCounterGroup frequencyCounts = new MetadataCounterGroup(ColumnFamilyConstants.COLF_F); // by event date
+    private final MetadataCounterGroup frequencyCounts = new MetadataCounterGroup(MetadataColumnFamilyConstants.COLF_F); // by event date
     private final MetadataCounterGroup indexedFieldsLoadDateCounts;
     private final MetadataCounterGroup reverseIndexedFieldsLoadDateCounts;
-    private final MetadataCounterGroup indexedCounts = new MetadataCounterGroup(ColumnFamilyConstants.COLF_I);
-    private final MetadataCounterGroup reverseIndexedCounts = new MetadataCounterGroup(ColumnFamilyConstants.COLF_RI);
+    private final MetadataCounterGroup indexedCounts = new MetadataCounterGroup(MetadataColumnFamilyConstants.COLF_I);
+    private final MetadataCounterGroup reverseIndexedCounts = new MetadataCounterGroup(MetadataColumnFamilyConstants.COLF_RI);
 
     private boolean writeFrequencyCounts = false;
 
@@ -437,7 +437,7 @@ public class EventMetadata implements RawRecordMetadata {
 
     protected void addCountsToMetadata(Multimap<BulkIngestKey,Value> results, MetadataCounterGroup frequencies) {
         // Do not write the counts if these are for "f" rows and writeFrequencyCounts is false.
-        if (!frequencies.getColumnFamily().equals(ColumnFamilyConstants.COLF_F) || writeFrequencyCounts) {
+        if (!frequencies.getColumnFamily().equals(MetadataColumnFamilyConstants.COLF_F) || writeFrequencyCounts) {
             for (MetadataCounterGroup.Components entry : frequencies.getEntries()) {
                 Long count = entry.getCount();
                 String date = entry.getDate();

@@ -4,11 +4,11 @@
     <parent>
         <groupId>gov.nsa.datawave.microservice</groupId>
         <artifactId>datawave-microservice-service-parent</artifactId>
-        <version>5.0.13</version>
+        <version>5.0.15</version>
         <relativePath>../../../microservice-service-parent/pom.xml</relativePath>
     </parent>
     <artifactId>hazelcast-client</artifactId>
-    <version>4.0.7-SNAPSHOT</version>
+    <version>4.0.8-SNAPSHOT</version>
     <url>https://code.nsa.gov/datawave-hazelcast-service</url>
     <scm>
         <connection>scm:git:${project.scm.url}</connection>
@@ -17,7 +17,7 @@
         <url>https://github.com/NationalSecurityAgency/datawave</url>
     </scm>
     <properties>
-        <version.datawave.hazelcast-common>4.0.6</version.datawave.hazelcast-common>
+        <version.datawave.hazelcast-common>4.0.7</version.datawave.hazelcast-common>
         <version.hazelcast-kubernetes>2.2.3</version.hazelcast-kubernetes>
     </properties>
     <dependencyManagement>

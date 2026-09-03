@@ -50,7 +50,7 @@ import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUser.UserType;
 import datawave.security.authorization.SubjectIssuerDNPair;
-import datawave.security.util.DnUtils;
+import datawave.security.util.DnProperties;
 import datawave.webservice.query.runner.RunningQuery;
 import datawave.webservice.result.EventQueryResponseBase;
 
@@ -93,7 +93,7 @@ public class TestCardinalityWithQuery {
 
     @Before
     public void setup() throws Exception {
-        System.setProperty(DnUtils.NPE_OU_PROPERTY, "iamnotaperson");
+        System.setProperty(DnProperties.NPE_OU_PROPERTY, "iamnotaperson");
         temporaryFolder = tempDir.newFolder().toPath();
 
         logic = new ShardQueryLogic();

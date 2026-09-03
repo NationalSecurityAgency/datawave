@@ -7,7 +7,7 @@ import org.apache.hadoop.io.Text;
 
 import com.google.common.collect.Maps;
 
-import datawave.data.ColumnFamilyConstants;
+import datawave.table.constants.MetadataColumnFamilyConstants;
 
 /**
  * A unique entry in the DatawaveMetadata is defined by the combination of fieldname and datatype
@@ -25,7 +25,7 @@ public class MetadataEntry {
             throw new IllegalArgumentException("Key is null");
         }
 
-        if (!ColumnFamilyConstants.COLF_DESC.equals(k.getColumnFamily())) {
+        if (!MetadataColumnFamilyConstants.COLF_DESC.equals(k.getColumnFamily())) {
             throw new IllegalArgumentException("Key was not a 'description'.");
         }
 

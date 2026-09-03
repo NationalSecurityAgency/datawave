@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave</groupId>
         <artifactId>datawave-parent</artifactId>
-        <version>7.42.0-SNAPSHOT</version>
+        <version>8.1.0-SNAPSHOT</version>
     </parent>
     <artifactId>datawave-warehouse-parent</artifactId>
     <packaging>pom</packaging>
@@ -43,6 +43,7 @@
         <!-- Unless a version is duplicated multiple times, just place the version on the dependency in dependencyManagement. -->
         <!-- <runOrder>random</runOrder> -->
         <runOrder>filesystem</runOrder>
+        <surefire.maxMemory>2g</surefire.maxMemory>
         <!-- default value -->
         <tests.to.skip />
         <!-- default value - override on command-line to skip tests -->
@@ -523,14 +524,14 @@
                     <artifactId>maven-surefire-plugin</artifactId>
                     <configuration>
                         <skipTests>${skipUTs}</skipTests>
-                        <reuseForks>false</reuseForks>
+                        <reuseForks>${surefire.reuseForks}</reuseForks>
                         <forkCount>${surefire.forkCount}</forkCount>
                         <threadCount>1</threadCount>
                         <threadCountClasses>1</threadCountClasses>
                         <threadCountMethods>0</threadCountMethods>
                         <threadCountSuites>0</threadCountSuites>
                         <!-- BT_ROOT is for the tests that use basis tokenization -->
-                        <argLine>@{argLine} -XX:+TieredCompilation -XX:TieredStopAtLevel=1  -DBT_ROOT=${env.BT_ROOT} -Dfile.encoding=UTF8 -Duser.timezone=GMT -Xmx2g -Djava.library.path=${env.HADOOP_HOME}/lib/native -Dapple.awt.UIElement=true -Djava.security.krb5.realm= -Djava.security.krb5.kdc=
+                        <argLine>@{argLine} -XX:+TieredCompilation -XX:TieredStopAtLevel=1  -DBT_ROOT=${env.BT_ROOT} -Dfile.encoding=UTF8 -Duser.timezone=GMT -Xmx${surefire.maxMemory} -Djava.library.path=${env.HADOOP_HOME}/lib/native -Dapple.awt.UIElement=true -Djava.security.krb5.realm= -Djava.security.krb5.kdc=
                             --add-opens java.xml/jdk.xml.internal=ALL-UNNAMED</argLine>
                         <redirectTestOutputToFile>true</redirectTestOutputToFile>
                         <runOrder>${runOrder}</runOrder>
@@ -595,8 +596,8 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <configuration combine.children="append">
-                    <reuseForks>false</reuseForks>
-                    <argLine>-XX:+TieredCompilation -XX:TieredStopAtLevel=1  -DBT_ROOT=${env.BT_ROOT} -Dfile.encoding=UTF8 -Duser.timezone=GMT -Xmx2g -Djava.library.path=${env.HADOOP_HOME}/lib/native -Dapple.awt.UIElement=true -Djava.security.krb5.realm= -Djava.security.krb5.kdc=
+                    <reuseForks>${failsafe.reuseForks}</reuseForks>
+                    <argLine>-XX:+TieredCompilation -XX:TieredStopAtLevel=1  -DBT_ROOT=${env.BT_ROOT} -Dfile.encoding=UTF8 -Duser.timezone=GMT -Xmx${failsafe.maxMemory} -Djava.library.path=${env.HADOOP_HOME}/lib/native -Dapple.awt.UIElement=true -Djava.security.krb5.realm= -Djava.security.krb5.kdc=
                         --add-opens java.xml/jdk.xml.internal=ALL-UNNAMED</argLine>
                     <groups>datawave.common.test.integration.IntegrationTest</groups>
                     <redirectTestOutputToFile>true</redirectTestOutputToFile>

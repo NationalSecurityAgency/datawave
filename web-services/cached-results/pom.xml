@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.webservices</groupId>
         <artifactId>datawave-ws-parent</artifactId>
-        <version>7.42.0-SNAPSHOT</version>
+        <version>8.1.0-SNAPSHOT</version>
     </parent>
     <artifactId>datawave-ws-cached-results</artifactId>
     <packaging>ejb</packaging>
@@ -27,6 +27,10 @@
             <artifactId>datawave-core</artifactId>
         </dependency>
         <dependency>
+            <groupId>gov.nsa.datawave.commons</groupId>
+            <artifactId>datawave-commons-security</artifactId>
+        </dependency>
+        <dependency>
             <groupId>gov.nsa.datawave.core</groupId>
             <artifactId>datawave-core-cached-results</artifactId>
             <version>${project.version}</version>
@@ -46,8 +50,8 @@
             <artifactId>query-metric-api</artifactId>
         </dependency>
         <dependency>
-            <groupId>javax.enterprise</groupId>
-            <artifactId>cdi-api</artifactId>
+            <groupId>jakarta.enterprise</groupId>
+            <artifactId>jakarta.enterprise.cdi-api</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
@@ -93,7 +97,12 @@
         </dependency>
         <dependency>
             <groupId>org.jboss.resteasy</groupId>
-            <artifactId>resteasy-jaxrs</artifactId>
+            <artifactId>resteasy-core</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.resteasy</groupId>
+            <artifactId>resteasy-core-spi</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>

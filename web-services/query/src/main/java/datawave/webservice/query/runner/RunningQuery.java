@@ -20,6 +20,7 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.log4j.Logger;
 import org.jboss.logging.NDC;
 
@@ -886,19 +887,20 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
     private void testForUncaughtException(int numResults) throws QueryException {
         QueryUncaughtExceptionHandler handler = settings.getUncaughtExceptionHandler();
         if (handler != null) {
-            if (handler.getThrowable() != null) {
+            ImmutablePair<Throwable,Thread> uncaughtException = handler.getUncaughtException();
+            if (uncaughtException != null) {
                 if (numResults > 0) {
                     log.warn("Exception with Partial Results: resultList.getResults().size() is " + numResults + ", and there was an UncaughtException:"
-                                    + handler.getThrowable() + " in thread " + handler.getThread());
+                                    + uncaughtException.getLeft() + " in thread " + uncaughtException.getRight());
                 } else {
                     if (log.isDebugEnabled()) {
-                        log.debug("Throwing:" + handler.getThrowable() + " for query with no results");
+                        log.debug("Throwing:" + uncaughtException.getLeft() + " for query with no results");
                     }
                 }
-                if (handler.getThrowable() instanceof QueryException) {
-                    throw ((QueryException) handler.getThrowable());
+                if (uncaughtException.getLeft() instanceof QueryException) {
+                    throw ((QueryException) uncaughtException.getLeft());
                 }
-                throw new QueryException(handler.getThrowable());
+                throw new QueryException(uncaughtException.getLeft());
             }
         }
     }

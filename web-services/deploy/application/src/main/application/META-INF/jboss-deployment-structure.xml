@@ -1,14 +1,30 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <jboss-deployment-structure xmlns="urn:jboss:deployment-structure:1.2">
-    <!-- share classpath across all sub-deployments -->
+    <!-- Share classpath across all sub-deployments -->
     <ear-subdeployments-isolated>false</ear-subdeployments-isolated>
 
     <deployment>
         <dependencies>
             <module name="datawave.webservice.configuration" export="true" />
+            <module name="datawave.commons.datawave-commons-security" export="true"/>
+            <module name="datawave.webservice.datawave-security-elytron" export="true"/>
             <module name="org.apache.hadoop.common" export="true" />
             <!-- Fixes Spring context loading issues on Java 11 -->
             <module name="jdk.unsupported" export="true" />
+            <module name="org.slf4j" export="true"/>
+            <module name="com.google.guava" export="true"/>
+            <module name="com.fasterxml.jackson.core.jackson-core" export="true"/>
+            <module name="com.fasterxml.jackson.core.jackson-databind" export="true"/>
+            <module name="com.fasterxml.jackson.core.jackson-annotations" export="true"/>
+            <module name="org.apache.commons.lang3" export="true"/>
+            <module name="org.apache.commons.commons-text" export="true"/>
+            <module name="io.jsonwebtoken.jjwt-api" export="true"/>
+            <!-- Import the services so that the service loader is able to see the bundled serializers/deserializers. -->
+            <module name="io.jsonwebtoken.jjwt-impl" export="true" services="import"/>
+            <module name="com.fasterxml.jackson.datatype.jackson-datatype-guava" export="true"/>
+            <module name="com.fasterxml.jackson.module.jackson-module-jaxb-annotations" export="true"/>
+            <module name="org.wildfly.security.elytron" export="true"/>
+            <module name="org.wildfly.extension.elytron" export="true"/>
         </dependencies>
     </deployment>
 </jboss-deployment-structure>

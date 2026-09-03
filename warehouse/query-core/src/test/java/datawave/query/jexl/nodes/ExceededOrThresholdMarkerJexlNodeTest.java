@@ -2,28 +2,21 @@ package datawave.query.jexl.nodes;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import static datawave.microservice.query.QueryParameters.QUERY_AUTHORIZATIONS;
-import static datawave.microservice.query.QueryParameters.QUERY_BEGIN;
-import static datawave.microservice.query.QueryParameters.QUERY_END;
-import static datawave.microservice.query.QueryParameters.QUERY_EXPIRATION;
-import static datawave.microservice.query.QueryParameters.QUERY_LOGIC_NAME;
-import static datawave.microservice.query.QueryParameters.QUERY_NAME;
-import static datawave.microservice.query.QueryParameters.QUERY_PERSISTENCE;
-import static datawave.microservice.query.QueryParameters.QUERY_STRING;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-
-import javax.inject.Inject;
-import javax.ws.rs.core.MultivaluedMap;
+import java.util.UUID;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriter;
@@ -38,18 +31,15 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
-import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.junit.Arquillian;
-import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.asset.StringAsset;
-import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.io.TempDir;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Iterators;
@@ -57,7 +47,6 @@ import com.google.common.collect.Multimap;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
-import datawave.configuration.spring.SpringBean;
 import datawave.data.type.GeometryType;
 import datawave.ingest.config.RawRecordContainerImpl;
 import datawave.ingest.data.RawRecordContainer;
@@ -74,10 +63,7 @@ import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.partition.BalancedShardPartitioner;
 import datawave.ingest.table.config.ShardTableConfigHelper;
 import datawave.ingest.table.config.TableConfigHelper;
-import datawave.microservice.query.DefaultQueryParameters;
-import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
-import datawave.microservice.query.QueryParameters;
 import datawave.policy.IngestPolicyEnforcer;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.index.day.IndexIngestUtil;
@@ -87,18 +73,23 @@ import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.visitors.PushdownLargeFieldedListsVisitor;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.tables.ShardQueryLogic;
-import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.testframework.MockStatusReporter;
+import datawave.query.util.AbstractQueryTest;
 import datawave.table.constants.TableName;
-import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.webservice.query.result.event.DefaultEvent;
 import datawave.webservice.query.result.event.DefaultField;
 
-@RunWith(Arquillian.class)
-public class ExceededOrThresholdMarkerJexlNodeTest {
-
-    @ClassRule
-    public static TemporaryFolder temporaryFolder = new TemporaryFolder();
+@ExtendWith(SpringExtension.class)
+@ComponentScan(basePackages = "datawave.query")
+// @formatter:off
+@ContextConfiguration(locations = {
+        "classpath:datawave/query/QueryLogicFactory.xml",
+        "classpath:beanRefContext.xml",
+        "classpath:MarkingFunctionsContext.xml",
+        "classpath:MetadataHelperContext.xml",
+        "classpath:CacheContext.xml"})
+// @formatter:on
+public class ExceededOrThresholdMarkerJexlNodeTest extends AbstractQueryTest {
 
     private static final int NUM_SHARDS = 1;
     private static final String DATA_TYPE_NAME = "wkt";
@@ -107,21 +98,14 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
     private static final String GEO_FIELD = "0GEO";
     private static final String GEO_QUERY_FIELD = JexlASTHelper.rebuildIdentifier(GEO_FIELD);
 
-    private static final String PASSWORD = "";
     private static final String AUTHS = "ALL";
+    private static final Authorizations auths = new Authorizations(AUTHS);
 
     private static final String formatPattern = "yyyyMMdd HHmmss.SSS";
     private static final SimpleDateFormat formatter = new SimpleDateFormat(formatPattern);
 
     private static final String BEGIN_DATE = "20000101 000000.000";
     private static final String END_DATE = "20000101 000001.000";
-
-    private static final String USER = "testcorp";
-    private static final String USER_DN = "cn=test.testcorp.com, ou=datawave, ou=development, o=testcorp, c=us";
-
-    private static String fstUri;
-
-    private static List<IvaratorCacheDirConfig> ivaratorCacheDirConfigs;
 
     private static final Configuration conf = new Configuration();
 
@@ -178,32 +162,95 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
     private int maxRangesPerRangeIvarator = 1;
     private boolean collapseUids = true;
 
-    @Inject
-    @SpringBean(name = "EventQuery")
-    ShardQueryLogic logic;
+    @Autowired
+    @Qualifier("EventQuery")
+    protected ShardQueryLogic logic;
 
-    private static InMemoryInstance instance;
-
+    private static AccumuloClient clientForTest;
+    private static String fstUri;
+    private static List<IvaratorCacheDirConfig> ivaratorCacheDirConfigs;
     private static final IndexIngestUtil ingestUtil = new IndexIngestUtil();
 
-    @Deployment
-    public static JavaArchive createDeployment() throws Exception {
-        return ShrinkWrap.create(JavaArchive.class)
-                        .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.query", "datawave.webservice.query.result.event",
-                                        "datawave.core.query.result.event")
-                        .deleteClass(DefaultEdgeEventQueryLogic.class).deleteClass(RemoteEdgeDictionary.class)
-                        .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class)
-                        .addAsManifestResource(new StringAsset(
-                                        "<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>" + "</alternatives>"),
-                                        "beans.xml");
+    private ShardQueryLogic currentLogic;
+    private List<DefaultEvent> events = new ArrayList<>();
+    private int expectedEventCount = -1;
+    private List<String> expectedPoints = new ArrayList<>();
+
+    @Override
+    public ShardQueryLogic getLogic() {
+        return currentLogic;
     }
 
-    @BeforeClass
-    public static void setupClass() throws Exception {
+    @Override
+    public Authorizations getAuths() {
+        return auths;
+    }
+
+    @Override
+    protected void extraConfigurations() {
+        disableQueryPlanAssertion();
+    }
+
+    @Override
+    protected QueryImpl getSettings() throws Exception {
+        QueryImpl settings = new QueryImpl();
+        settings.setBeginDate(formatter.parse(BEGIN_DATE));
+        settings.setEndDate(formatter.parse(END_DATE));
+        settings.setPagesize(Integer.MAX_VALUE);
+        settings.setQueryAuthorizations(getAuths().serialize());
+        settings.setQuery(getQuery());
+        settings.setParameters(getParameters());
+        settings.setId(UUID.randomUUID());
+        return settings;
+    }
+
+    @Override
+    protected void executeQuery(ShardQueryLogic logic) throws Exception {
+        try {
+            Iterator<?> iter = logic.getTransformIterator(logic.getConfig().getQuery());
+            events = new ArrayList<>();
+            while (iter.hasNext()) {
+                events.add((DefaultEvent) iter.next());
+            }
+        } finally {
+            logic.close();
+        }
+    }
+
+    @Override
+    protected void extraAssertions() {
+        assertEquals(expectedEventCount, events.size());
+
+        // planAndExecuteQuery() invokes extraAssertions() once per index table variant, so match against a
+        // local copy rather than destructively consuming the shared expectedPoints list.
+        List<String> remaining = new ArrayList<>(expectedPoints);
+
+        for (DefaultEvent event : events) {
+            List<String> wkt = new ArrayList<>();
+
+            for (DefaultField field : event.getFields()) {
+                if (field.getName().equals(GEO_FIELD))
+                    wkt.add(field.getValueString());
+            }
+
+            // ensure that this is one of the ingested events
+            assertTrue(remaining.removeAll(wkt));
+        }
+
+        assertEquals(0, remaining.size());
+    }
+
+    @BeforeAll
+    public static void setupClass(@TempDir Path tempDir) throws Exception {
         System.setProperty("subject.dn.pattern", "(?:^|,)\\s*OU\\s*=\\s*My Department\\s*(?:,|$)");
 
-        fstUri = temporaryFolder.newFolder().toURI().toString();
-        ivaratorCacheDirConfigs = Collections.singletonList(new IvaratorCacheDirConfig(temporaryFolder.newFolder().toURI().toString()));
+        Path fstDir = tempDir.resolve("fst");
+        Files.createDirectories(fstDir);
+        fstUri = fstDir.toUri().toString();
+
+        Path ivaratorDir = tempDir.resolve("ivarator");
+        Files.createDirectories(ivaratorDir);
+        ivaratorCacheDirConfigs = Collections.singletonList(new IvaratorCacheDirConfig(ivaratorDir.toUri().toString()));
 
         setupConfiguration(conf);
 
@@ -217,18 +264,13 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
         RawRecordContainer record = new RawRecordContainerImpl();
         Multimap<BulkIngestKey,Value> keyValues = HashMultimap.create();
         int recNum = 1;
-        String beginDate;
-        String[] wktData;
-
-        beginDate = BEGIN_DATE;
-        wktData = ExceededOrThresholdMarkerJexlNodeTest.wktData;
 
         for (int i = 0; i < wktData.length; i++) {
             record.clear();
             record.setDataType(new Type(DATA_TYPE_NAME, TestIngestHelper.class, (Class) null, (String[]) null, 1, (String[]) null));
             record.setRawFileName("geodata_" + recNum + ".dat");
             record.setRawRecordNumber(recNum++);
-            record.setTimestamp(formatter.parse(beginDate).getTime());
+            record.setTimestamp(formatter.parse(BEGIN_DATE).getTime());
             record.setRawData((wktData[i]).getBytes(UTF_8));
             record.generateId(null);
             record.setVisibility(new ColumnVisibility(AUTHS));
@@ -244,11 +286,12 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
         keyValues.putAll(dataTypeHandler.getMetadata().getBulkMetadata());
 
         // write these values to their respective tables
-        instance = new InMemoryInstance();
+        InMemoryInstance instance = new InMemoryInstance();
         AccumuloClient client = new InMemoryAccumuloClient("root", instance);
         client.securityOperations().changeUserAuthorizations("root", new Authorizations(AUTHS));
 
         writeKeyValues(client, keyValues);
+        clientForTest = client;
     }
 
     public static void setupConfiguration(Configuration conf) {
@@ -303,7 +346,18 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
             bw.addMutation(m);
         }
 
+        // write with the document range only; IndexIngestUtil derives the other shard index table variants
+        // that AbstractQueryTest iterates over.
         ingestUtil.write(client, new Authorizations(AUTHS));
+    }
+
+    private void runGeoQuery(String query, int expectedCount, List<String> expectedPoints) throws Exception {
+        setClientForTest(clientForTest);
+        currentLogic = getShardQueryLogic();
+        this.expectedEventCount = expectedCount;
+        this.expectedPoints = expectedPoints;
+        givenQuery(query);
+        planAndExecuteQuery();
     }
 
     @Test
@@ -324,34 +378,19 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
             // this call is not compatible with the document scheduler
             List<String> queryRanges = getQueryRanges(query);
 
-            Assert.assertEquals(1, queryRanges.size());
+            assertEquals(1, queryRanges.size());
             String id = queryRanges.get(0).substring(queryRanges.get(0).indexOf("id = '") + 6,
                             queryRanges.get(0).indexOf("') && (field = '" + GEO_QUERY_FIELD + "')"));
-            Assert.assertEquals("((_List_ = true) && ((id = '" + id + "') && (field = '" + GEO_QUERY_FIELD
+            assertEquals("((_List_ = true) && ((id = '" + id + "') && (field = '" + GEO_QUERY_FIELD
                             + "') && (params = '{\"ranges\":[[\"[1f0aaaaaaaaaaaaaaa\",\"1f1fffb0ebff104155]\"],[\"[1f2000228a00228a00\",\"1f20008a28008a2800]\"],[\"[1f200364bda9c63d03\",\"1f35553ac3ffb0ebff]\"]]}')))",
                             queryRanges.get(0));
         }
-
-        List<DefaultEvent> events = getQueryResults(query);
-        Assert.assertEquals(10, events.size());
 
         List<String> pointList = new ArrayList<>();
         pointList.addAll(Arrays.asList(POINT_1, POINT_2, POINT_3, POINT_5, POINT_6, POINT_7, POINT_9, POINT_10, POINT_11));
         pointList.addAll(Arrays.asList(POINT_13.split(";")));
 
-        for (DefaultEvent event : events) {
-            List<String> wkt = new ArrayList<>();
-
-            for (DefaultField field : event.getFields()) {
-                if (field.getName().equals(GEO_FIELD))
-                    wkt.add(field.getValueString());
-            }
-
-            // ensure that this is one of the ingested events
-            Assert.assertTrue(pointList.removeAll(wkt));
-        }
-
-        Assert.assertEquals(0, pointList.size());
+        runGeoQuery(query, 10, pointList);
     }
 
     @Test
@@ -372,35 +411,20 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
             // this call is not compatible with the document scheduler
             List<String> queryRanges = getQueryRanges(query);
 
-            Assert.assertEquals(1, queryRanges.size());
+            assertEquals(1, queryRanges.size());
             String id = queryRanges.get(0).substring(queryRanges.get(0).indexOf("id = '") + 6,
                             queryRanges.get(0).indexOf("') && (field = '" + GEO_QUERY_FIELD + "')"));
-            Assert.assertEquals("((_Value_ = true) && ((_Bounded_ = true) && (" + GEO_QUERY_FIELD + " >= '1f200364bda9c63d03' && " + GEO_QUERY_FIELD
+            assertEquals("((_Value_ = true) && ((_Bounded_ = true) && (" + GEO_QUERY_FIELD + " >= '1f200364bda9c63d03' && " + GEO_QUERY_FIELD
                             + " <= '1f35553ac3ffb0ebff'))) || ((_List_ = true) && ((id = '" + id + "') && (field = '" + GEO_QUERY_FIELD
                             + "') && (params = '{\"ranges\":[[\"[1f0aaaaaaaaaaaaaaa\",\"1f1fffb0ebff104155]\"],[\"[1f2000228a00228a00\",\"1f20008a28008a2800]\"]]}')))",
                             queryRanges.get(0));
         }
 
-        List<DefaultEvent> events = getQueryResults(query);
-        Assert.assertEquals(10, events.size());
-
         List<String> pointList = new ArrayList<>();
         pointList.addAll(Arrays.asList(POINT_1, POINT_2, POINT_3, POINT_5, POINT_6, POINT_7, POINT_9, POINT_10, POINT_11));
         pointList.addAll(Arrays.asList(POINT_13.split(";")));
 
-        for (DefaultEvent event : events) {
-            List<String> wkt = new ArrayList<>();
-
-            for (DefaultField field : event.getFields()) {
-                if (field.getName().equals(GEO_FIELD))
-                    wkt.add(field.getValueString());
-            }
-
-            // ensure that this is one of the ingested events
-            Assert.assertTrue(pointList.removeAll(wkt));
-        }
-
-        Assert.assertEquals(0, pointList.size());
+        runGeoQuery(query, 10, pointList);
     }
 
     @Test
@@ -418,25 +442,9 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
         maxOrRangeIvarators = 10;
         maxRangesPerRangeIvarator = 1;
 
-        List<DefaultEvent> events = getQueryResults(query);
-        Assert.assertEquals(3, events.size());
+        List<String> pointList = new ArrayList<>(Arrays.asList(POINT_4, POINT_8, POINT_12));
 
-        List<String> pointList = new ArrayList<>();
-        pointList.addAll(Arrays.asList(POINT_4, POINT_8, POINT_12));
-
-        for (DefaultEvent event : events) {
-            List<String> wkt = new ArrayList<>();
-
-            for (DefaultField field : event.getFields()) {
-                if (field.getName().equals(GEO_FIELD))
-                    wkt.add(field.getValueString());
-            }
-
-            // ensure that this is one of the ingested events
-            Assert.assertTrue(pointList.removeAll(wkt));
-        }
-
-        Assert.assertEquals(0, pointList.size());
+        runGeoQuery(query, 3, pointList);
     }
 
     @Test
@@ -453,24 +461,9 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
         maxOrRangeIvarators = 1;
         maxRangesPerRangeIvarator = 1;
 
-        List<DefaultEvent> events = getQueryResults(query);
-        Assert.assertEquals(9, events.size());
-
         List<String> pointList = new ArrayList<>(Arrays.asList(POINT_1, POINT_2, POINT_3, POINT_5, POINT_6, POINT_7, POINT_9, POINT_10, POINT_11));
 
-        for (DefaultEvent event : events) {
-            List<String> wkt = new ArrayList<>();
-
-            for (DefaultField field : event.getFields()) {
-                if (field.getName().equals(GEO_FIELD))
-                    wkt.add(field.getValueString());
-            }
-
-            // ensure that this is one of the ingested events
-            Assert.assertTrue(pointList.removeAll(wkt));
-        }
-
-        Assert.assertEquals(0, pointList.size());
+        runGeoQuery(query, 9, pointList);
     }
 
     @Test
@@ -486,24 +479,9 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
         maxRangesPerRangeIvarator = 1;
         collapseUids = false;
 
-        List<DefaultEvent> events = getQueryResults(query);
-        Assert.assertEquals(1, events.size());
-
         List<String> pointList = new ArrayList<>(Arrays.asList(POINT_13.split(";")));
 
-        for (DefaultEvent event : events) {
-            List<String> wkt = new ArrayList<>();
-
-            for (DefaultField field : event.getFields()) {
-                if (field.getName().equals(GEO_FIELD))
-                    wkt.add(field.getValueString());
-            }
-
-            // ensure that this is one of the ingested events
-            Assert.assertTrue(pointList.removeAll(wkt));
-        }
-
-        Assert.assertEquals(0, pointList.size());
+        runGeoQuery(query, 1, pointList);
     }
 
     @Test
@@ -521,26 +499,11 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
         maxOrRangeIvarators = 1;
         maxRangesPerRangeIvarator = 1;
 
-        List<DefaultEvent> events = getQueryResults(query);
-        Assert.assertEquals(4, events.size());
-
         List<String> pointList = new ArrayList<>();
         pointList.addAll(Arrays.asList(POINT_4, POINT_8, POINT_12));
         pointList.addAll(Arrays.asList(POINT_13.split(";")));
 
-        for (DefaultEvent event : events) {
-            List<String> wkt = new ArrayList<>();
-
-            for (DefaultField field : event.getFields()) {
-                if (field.getName().equals(GEO_FIELD))
-                    wkt.add(field.getValueString());
-            }
-
-            // ensure that this is one of the ingested events
-            Assert.assertTrue(pointList.removeAll(wkt));
-        }
-
-        Assert.assertEquals(0, pointList.size());
+        runGeoQuery(query, 4, pointList);
     }
 
     @Test
@@ -557,25 +520,9 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
         maxOrRangeIvarators = 1;
         maxRangesPerRangeIvarator = 1;
 
-        List<DefaultEvent> events = getQueryResults(query);
-        Assert.assertEquals(9, events.size());
+        List<String> pointList = new ArrayList<>(Arrays.asList(POINT_1, POINT_2, POINT_3, POINT_5, POINT_6, POINT_7, POINT_9, POINT_10, POINT_11));
 
-        List<String> pointList = new ArrayList<>();
-        pointList.addAll(Arrays.asList(POINT_1, POINT_2, POINT_3, POINT_5, POINT_6, POINT_7, POINT_9, POINT_10, POINT_11));
-
-        for (DefaultEvent event : events) {
-            List<String> wkt = new ArrayList<>();
-
-            for (DefaultField field : event.getFields()) {
-                if (field.getName().equals(GEO_FIELD))
-                    wkt.add(field.getValueString());
-            }
-
-            // ensure that this is one of the ingested events
-            Assert.assertTrue(pointList.removeAll(wkt));
-        }
-
-        Assert.assertEquals(0, pointList.size());
+        runGeoQuery(query, 9, pointList);
     }
 
     @Test
@@ -593,75 +540,30 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
         maxOrRangeIvarators = 1;
         maxRangesPerRangeIvarator = 1;
 
-        List<DefaultEvent> events = getQueryResults(query);
-        Assert.assertEquals(4, events.size());
-
         List<String> pointList = new ArrayList<>();
         pointList.addAll(Arrays.asList(POINT_4, POINT_8, POINT_12));
         pointList.addAll(Arrays.asList(POINT_13.split(";")));
 
-        for (DefaultEvent event : events) {
-            List<String> wkt = new ArrayList<>();
-
-            for (DefaultField field : event.getFields()) {
-                if (field.getName().equals(GEO_FIELD))
-                    wkt.add(field.getValueString());
-            }
-
-            // ensure that this is one of the ingested events
-            Assert.assertTrue(pointList.removeAll(wkt));
-        }
-
-        Assert.assertEquals(0, pointList.size());
+        runGeoQuery(query, 4, pointList);
     }
 
     private List<String> getQueryRanges(String queryString) throws Exception {
-        ShardQueryLogic logic = getShardQueryLogic();
+        ShardQueryLogic rangeLogic = getShardQueryLogic();
 
-        Iterator iter = getQueryRangesIterator(queryString, logic);
-        List<String> queryData = new ArrayList<>();
-        while (iter.hasNext())
-            queryData.add((String) iter.next());
-        return queryData;
-    }
+        QueryImpl query = new QueryImpl();
+        query.setBeginDate(formatter.parse(BEGIN_DATE));
+        query.setEndDate(formatter.parse(END_DATE));
+        query.setPagesize(Integer.MAX_VALUE);
+        query.setQueryAuthorizations(auths.serialize());
+        query.setQuery(queryString);
+        query.setId(UUID.randomUUID());
 
-    private List<DefaultEvent> getQueryResults(String queryString) throws Exception {
-        ShardQueryLogic logic = getShardQueryLogic();
+        ShardQueryConfiguration config = ShardQueryConfiguration.create(rangeLogic, query);
 
-        Iterator iter = getResultsIterator(queryString, logic);
-        List<DefaultEvent> events = new ArrayList<>();
-        while (iter.hasNext())
-            events.add((DefaultEvent) iter.next());
-        return events;
-    }
+        rangeLogic.initialize(config, clientForTest, query, Collections.singleton(auths));
+        rangeLogic.setupQuery(config);
 
-    private Iterator getQueryRangesIterator(String queryString, ShardQueryLogic logic) throws Exception {
-        MultivaluedMap<String,String> params = new MultivaluedMapImpl<>();
-        params.putSingle(QUERY_LOGIC_NAME, "EventQuery");
-        params.putSingle(QUERY_STRING, queryString);
-        params.putSingle(QUERY_NAME, "geoQuery");
-        params.putSingle(QUERY_PERSISTENCE, "PERSISTENT");
-        params.putSingle(QUERY_AUTHORIZATIONS, AUTHS);
-        params.putSingle(QUERY_EXPIRATION, "20200101 000000.000");
-        params.putSingle(QUERY_BEGIN, BEGIN_DATE);
-        params.putSingle(QUERY_END, END_DATE);
-
-        QueryParameters queryParams = new DefaultQueryParameters();
-        queryParams.validate(params);
-
-        Set<Authorizations> auths = new HashSet<>();
-        auths.add(new Authorizations(AUTHS));
-
-        Query query = new QueryImpl();
-        query.initialize(USER, Arrays.asList(USER_DN), null, queryParams, null);
-
-        ShardQueryConfiguration config = ShardQueryConfiguration.create(logic, query);
-
-        logic.initialize(config, new InMemoryAccumuloClient("root", instance), query, auths);
-
-        logic.setupQuery(config);
-
-        return Iterators.transform(config.getQueriesIter(), queryData -> {
+        Iterator<String> iter = Iterators.transform(config.getQueriesIter(), queryData -> {
             try {
                 return JexlStringBuildingVisitor
                                 .buildQuery(PushdownLargeFieldedListsVisitor.pushdown(config, JexlASTHelper.parseJexlQuery(queryData.getQuery()), null, null));
@@ -669,55 +571,31 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
                 return null;
             }
         });
-    }
 
-    private Iterator getResultsIterator(String queryString, ShardQueryLogic logic) throws Exception {
-        MultivaluedMap<String,String> params = new MultivaluedMapImpl<>();
-        params.putSingle(QUERY_LOGIC_NAME, "EventQuery");
-        params.putSingle(QUERY_STRING, queryString);
-        params.putSingle(QUERY_NAME, "geoQuery");
-        params.putSingle(QUERY_PERSISTENCE, "PERSISTENT");
-        params.putSingle(QUERY_AUTHORIZATIONS, AUTHS);
-        params.putSingle(QUERY_EXPIRATION, "20200101 000000.000");
-        params.putSingle(QUERY_BEGIN, BEGIN_DATE);
-        params.putSingle(QUERY_END, END_DATE);
-
-        QueryParameters queryParams = new DefaultQueryParameters();
-        queryParams.validate(params);
-
-        Set<Authorizations> auths = new HashSet<>();
-        auths.add(new Authorizations(AUTHS));
-
-        Query query = new QueryImpl();
-        query.initialize(USER, Arrays.asList(USER_DN), null, queryParams, null);
-
-        ShardQueryConfiguration config = ShardQueryConfiguration.create(logic, query);
-
-        logic.initialize(config, new InMemoryAccumuloClient("root", instance), query, auths);
-
-        logic.setupQuery(config);
-
-        return logic.getTransformIterator(query);
+        List<String> queryData = new ArrayList<>();
+        while (iter.hasNext())
+            queryData.add(iter.next());
+        return queryData;
     }
 
     private ShardQueryLogic getShardQueryLogic() throws IOException {
-        ShardQueryLogic logic = new ShardQueryLogic(this.logic);
+        ShardQueryLogic clonedLogic = new ShardQueryLogic(this.logic);
 
         // increase the depth threshold
-        logic.setMaxDepthThreshold(20);
+        clonedLogic.setMaxDepthThreshold(20);
 
         // set the pushdown threshold really high to avoid collapsing uids into shards (overrides setCollapseUids if #terms is greater than this threshold)
-        ((DefaultQueryPlanner) (logic.getQueryPlanner())).setPushdownThreshold(1000000);
+        ((DefaultQueryPlanner) (clonedLogic.getQueryPlanner())).setPushdownThreshold(1000000);
 
         URL hdfsSiteConfig = this.getClass().getResource("/testhadoop.config");
-        logic.setHdfsSiteConfigURLs(hdfsSiteConfig.toExternalForm());
+        clonedLogic.setHdfsSiteConfigURLs(hdfsSiteConfig.toExternalForm());
 
-        setupIvarator(logic);
+        setupIvarator(clonedLogic);
 
-        return logic;
+        return clonedLogic;
     }
 
-    private void setupIvarator(ShardQueryLogic logic) throws IOException {
+    private void setupIvarator(ShardQueryLogic logic) {
         // Set these to ensure ivarator runs
         logic.setMaxUnfieldedExpansionThreshold(1);
         logic.setMaxValueExpansionThreshold(1);

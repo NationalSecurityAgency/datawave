@@ -73,6 +73,7 @@ import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.Transformer;
 import org.apache.commons.jexl3.parser.TokenMgrException;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.log4j.Logger;
 import org.jboss.resteasy.annotations.GZIP;
@@ -3961,23 +3962,24 @@ public class QueryExecutorBean implements QueryExecutor {
     private void testForUncaughtException(QueryLogic logic, Query settings, ResultsPage resultList) throws QueryException {
         QueryUncaughtExceptionHandler handler = settings.getUncaughtExceptionHandler();
         if (handler != null) {
-            if (handler.getThrowable() != null) {
+            ImmutablePair<Throwable,Thread> uncaughtException = handler.getUncaughtException();
+            if (uncaughtException != null) {
                 if (resultList.getResults() != null && !resultList.getResults().isEmpty()) {
                     log.warn("Exception with Partial Results: resultList.getResults().size() is " + resultList.getResults().size()
-                                    + ", and there was an UncaughtException:" + handler.getThrowable() + " in thread " + handler.getThread());
+                                    + ", and there was an UncaughtException:" + uncaughtException.getLeft() + " in thread " + uncaughtException.getRight());
                 } else {
                     if (log.isDebugEnabled()) {
-                        log.debug("Throwing:" + handler.getThrowable() + " for query with no results");
+                        log.debug("Throwing:" + uncaughtException.getLeft() + " for query with no results");
                     }
                 }
 
                 // If an exception occurred, do not consider the query active anymore when limiting queries.
                 markQueryAsInactive(logic, settings.getId().toString());
 
-                if (handler.getThrowable() instanceof QueryException) {
-                    throw ((QueryException) handler.getThrowable());
+                if (uncaughtException.getLeft() instanceof QueryException) {
+                    throw ((QueryException) uncaughtException.getLeft());
                 }
-                throw new QueryException(handler.getThrowable());
+                throw new QueryException(uncaughtException.getLeft());
             }
         }
     }

@@ -7,6 +7,8 @@ import static datawave.query.transformer.annotation.AnnotationHitsTransformer.MI
 import static datawave.query.transformer.annotation.AnnotationHitsTransformer.TIMEUNIT_PARAMETER;
 import static datawave.query.util.WiseGuysIngest.caponeUID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -67,10 +69,13 @@ import datawave.annotation.protobuf.v1.BoundaryType;
 import datawave.annotation.protobuf.v1.Segment;
 import datawave.annotation.protobuf.v1.SegmentBoundary;
 import datawave.annotation.protobuf.v1.SegmentValue;
+import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.iterator.DatawaveTransformIterator;
+import datawave.core.query.logic.QueryLogicTransformer;
 import datawave.data.normalizer.LcNoDiacriticsNormalizer;
 import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
+import datawave.microservice.query.QueryImpl;
 import datawave.query.QueryParameters;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.RebuildingScannerTestHelper;
@@ -78,6 +83,7 @@ import datawave.query.config.annotation.AllHitsQueryConfig;
 import datawave.query.config.annotation.AnnotationConfig;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.planner.TimedVisitorManager;
+import datawave.query.transformer.DocumentTransform;
 import datawave.query.transformer.DocumentTransformer;
 import datawave.query.transformer.annotation.AllHitsException;
 import datawave.query.transformer.annotation.AllHitsFactory;
@@ -483,6 +489,49 @@ public class ShardQueryLogicTest extends AbstractQueryTest {
         Set<Set<String>> expected = new HashSet<>();
         expected.add(Sets.newHashSet("UID:" + caponeUID));
         runTestQuery(expected);
+    }
+
+    @Test
+    public void annotationHitsTransformerReusedAndUpdatedAcrossGetTransformerCallsTest() throws Exception {
+        // ShardQueryLogic follows an initialize()/updateConfig() lifecycle contract for its config-based
+        // transforms (UniqueTransform, GroupingTransform, FieldRenameTransform, AnnotationHitsTransformer):
+        // the first getTransformer() call constructs the transform (calling initialize()), and any subsequent
+        // getTransformer() call (e.g. on a later page/next()) must reuse that same instance rather than
+        // reconstructing it, updating its configuration in place via updateConfig() instead. Verify that
+        // contract holds for AnnotationHitsTransformer specifically, since it was only recently migrated to
+        // this pattern (previously it was unconditionally rebuilt on every call).
+        withAnnotationHits();
+        // min score high enough to filter out the S1 hit below on the first call
+        givenParameter(MIN_SCORE_PARAMETER, "0.99");
+
+        givenAnnotation(buildAnnotation(S1));
+        givenQuery("UUID=='CAPONE'");
+        givenDate("20091231", "20150101");
+
+        setClientForTest(this.client);
+        this.logic.setFullTableScanEnabled(true);
+        QueryImpl settings = getSettings();
+        logic.setMaxEvaluationPipelines(1);
+        logic.setHitList(true);
+
+        GenericQueryConfiguration config = logic.initialize(client, settings, Collections.singleton(getAuths()));
+        logic.setupQuery(config);
+
+        QueryLogicTransformer firstTransformer = logic.getTransformer(settings);
+        DocumentTransform firstAnnotationHitsTransform = ((DocumentTransformer) firstTransformer).containsTransform(AnnotationHitsTransformer.class);
+        assertNotNull(firstAnnotationHitsTransform, "AnnotationHitsTransformer should have been constructed on the first getTransformer() call");
+
+        // simulate a later page/next() call lowering the min score, as could legitimately happen across pages
+        settings.addParameter(MIN_SCORE_PARAMETER, "0");
+
+        QueryLogicTransformer secondTransformer = logic.getTransformer(settings);
+        DocumentTransform secondAnnotationHitsTransform = ((DocumentTransformer) secondTransformer).containsTransform(AnnotationHitsTransformer.class);
+
+        assertSame(firstTransformer, secondTransformer, "the same DocumentTransformer instance should be reused across getTransformer() calls");
+        assertSame(firstAnnotationHitsTransform, secondAnnotationHitsTransform,
+                        "the same AnnotationHitsTransformer instance should be reused (via updateConfig()) rather than reconstructed");
+
+        logic.close();
     }
 
     @Test

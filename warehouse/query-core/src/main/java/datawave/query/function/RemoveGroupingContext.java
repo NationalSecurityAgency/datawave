@@ -21,6 +21,10 @@ public class RemoveGroupingContext implements Function<Entry<Key,Document>,Entry
 
     @Override
     public Entry<Key,Document> apply(Entry<Key,Document> entry) {
+        if (entry == null || entry.getValue() == null) {
+            return entry;
+        }
+
         Set<Tuple2<String,Attribute<? extends Comparable<?>>>> toRemove = Sets.newHashSet();
         for (Entry<String,Attribute<? extends Comparable<?>>> attribute : entry.getValue().entrySet()) {
             String fieldName = attribute.getKey();

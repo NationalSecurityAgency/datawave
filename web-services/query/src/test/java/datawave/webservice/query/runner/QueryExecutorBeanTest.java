@@ -18,6 +18,7 @@ import java.net.URISyntaxException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -37,15 +38,14 @@ import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.log4j.Logger;
-import org.jboss.resteasy.core.Dispatcher;
 import org.jboss.resteasy.mock.MockDispatcherFactory;
 import org.jboss.resteasy.mock.MockHttpRequest;
 import org.jboss.resteasy.mock.MockHttpResponse;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
+import org.jboss.resteasy.spi.Dispatcher;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
@@ -81,12 +81,13 @@ import datawave.microservice.query.config.QueryExpirationProperties;
 import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.microservice.querymetric.BaseQueryMetric.Prediction;
 import datawave.microservice.querymetric.QueryMetric;
+import datawave.microservice.querymetric.QueryMetricFactory;
 import datawave.microservice.querymetric.QueryMetricFactoryImpl;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUser.UserType;
 import datawave.security.authorization.SubjectIssuerDNPair;
-import datawave.security.util.DnUtils;
+import datawave.security.util.DnProperties;
 import datawave.webservice.common.audit.AuditBean;
 import datawave.webservice.common.audit.AuditParameters;
 import datawave.webservice.common.audit.AuditService;
@@ -154,7 +155,7 @@ public class QueryExecutorBeanTest {
 
     @BeforeEach
     public void setup() throws Exception {
-        System.setProperty(DnUtils.NPE_OU_PROPERTY, "iamnotaperson");
+        System.setProperty(DnProperties.NPE_OU_PROPERTY, "iamnotaperson");
         System.setProperty("dw.metadatahelper.all.auths", "A,B,C,D");
         QueryTraceCache traceCache = new QueryTraceCache();
         ReflectionTestUtils.invokeMethod(traceCache, "init");
@@ -418,52 +419,31 @@ public class QueryExecutorBeanTest {
         when(logic.containsDNWithAccess(dnList)).thenReturn(true);
         when(logic.getMaxPageSize()).thenReturn(0);
 
-        BaseQueryMetric metric = new QueryMetricFactoryImpl().createMetric();
-        metric.populate(q);
-        metric.setQueryType(RunningQuery.class.getSimpleName());
-
-        QueryMetric testMetric = new QueryMetric((QueryMetric) metric) {
-            public static final long serialVersionUID = 7210890100446871775L;
-
-            @Override
-            public boolean equals(Object o) {
-                // test for equality except for the create date
-                if (null == o) {
-                    return false;
-                }
-                if (this == o) {
-                    return true;
-                }
-                if (o instanceof QueryMetric) {
-                    QueryMetric other = (QueryMetric) o;
-                    return new EqualsBuilder().append(this.getQueryId(), other.getQueryId()).append(this.getQueryType(), other.getQueryType())
-                                    .append(this.getQueryAuthorizations(), other.getQueryAuthorizations())
-                                    .append(this.getColumnVisibility(), other.getColumnVisibility()).append(this.getBeginDate(), other.getBeginDate())
-                                    .append(this.getEndDate(), other.getEndDate()).append(this.getCreateDate(), other.getCreateDate())
-                                    .append(this.getSetupTime(), other.getSetupTime()).append(this.getUser(), other.getUser())
-                                    .append(this.getUserDN(), other.getUserDN()).append(this.getQuery(), other.getQuery())
-                                    .append(this.getQueryLogic(), other.getQueryLogic()).append(this.getQueryName(), other.getQueryName())
-                                    .append(this.getParameters(), other.getParameters()).append(this.getHost(), other.getHost())
-                                    .append(this.getPageTimes(), other.getPageTimes()).append(this.getProxyServers(), other.getProxyServers())
-                                    .append(this.getLifecycle(), other.getLifecycle()).append(this.getErrorMessage(), other.getErrorMessage())
-                                    .append(this.getErrorCode(), other.getErrorCode()).append(this.getSourceCount(), other.getSourceCount())
-                                    .append(this.getNextCount(), other.getNextCount()).append(this.getSeekCount(), other.getSeekCount())
-                                    .append(this.getYieldCount(), other.getYieldCount()).append(this.getDocRanges(), other.getDocRanges())
-                                    .append(this.getFiRanges(), other.getFiRanges()).append(this.getPlan(), other.getPlan())
-                                    .append(this.getVersionMap(), other.getVersionMap()).append(this.getLoginTime(), other.getLoginTime())
-                                    .append(this.getPredictions(), other.getPredictions()).isEquals();
-                } else {
-                    return false;
-                }
-
-            }
-        };
-
         Set<Prediction> predictions = new HashSet<>();
         predictions.add(new Prediction("source", 1));
         when(responseObjectFactory.getQueryImpl()).thenReturn(new QueryImpl());
         when(logic.getResultLimit(any())).thenReturn(-1L);
-        when(predictor.predict(eq(testMetric))).thenReturn(predictions);
+
+        // The bean builds its own BaseQueryMetric via metricFactory + populate(q). QueryMetric's no-arg
+        // constructor stamps createDate from new Date() (truncated to the second), and createDate is part of
+        // equals()/hashCode(). Comparing that internally-built metric against an independently hand-built one
+        // via strict eq() is a real race: if the two constructions straddle a second boundary, the truncated
+        // createDate values differ and eq() stops matching, intermittently. Pinning both sides' createDate to
+        // the same value via reflection removes that race so eq() can be used safely.
+        Date createDate = DateUtils.truncate(new Date(), Calendar.SECOND);
+        QueryMetricFactory metricFactory = mock(QueryMetricFactory.class);
+        when(metricFactory.createMetric()).thenAnswer(invocation -> {
+            BaseQueryMetric m = new QueryMetric();
+            ReflectionTestUtils.setField(m, "createDate", createDate);
+            return m;
+        });
+        ReflectionTestUtils.setField(bean, "metricFactory", metricFactory);
+
+        BaseQueryMetric expectedMetric = new QueryMetric();
+        ReflectionTestUtils.setField(expectedMetric, "createDate", createDate);
+        expectedMetric.populate(q);
+        expectedMetric.setQueryType(RunningQuery.class.getSimpleName());
+        when(predictor.predict(eq(expectedMetric))).thenReturn(predictions);
 
         GenericResponse<String> response = bean.predictQuery(queryLogicName, p);
 

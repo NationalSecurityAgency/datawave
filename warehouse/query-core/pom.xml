@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave</groupId>
         <artifactId>datawave-warehouse-parent</artifactId>
-        <version>7.42.0-SNAPSHOT</version>
+        <version>8.1.0-SNAPSHOT</version>
     </parent>
     <artifactId>datawave-query-core</artifactId>
     <packaging>jar</packaging>
@@ -25,6 +25,10 @@
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-guava</artifactId>
         </dependency>
         <dependency>
             <groupId>com.google.code.findbugs</groupId>
@@ -74,6 +78,10 @@
             <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-ssdeep-common</artifactId>
             <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.commons</groupId>
+            <artifactId>datawave-commons-security</artifactId>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.core</groupId>
@@ -139,8 +147,8 @@
             </exclusions>
         </dependency>
         <dependency>
-            <groupId>javax.enterprise</groupId>
-            <artifactId>cdi-api</artifactId>
+            <groupId>jakarta.enterprise</groupId>
+            <artifactId>jakarta.enterprise.cdi-api</artifactId>
         </dependency>
         <!-- MultivaluedMap source for Spring Boot deployment -->
         <dependency>
@@ -206,7 +214,12 @@
         <!-- MultivaluedMap source for JBOSS deployment -->
         <dependency>
             <groupId>org.jboss.resteasy</groupId>
-            <artifactId>resteasy-jaxrs</artifactId>
+            <artifactId>resteasy-core</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.resteasy</groupId>
+            <artifactId>resteasy-core-spi</artifactId>
             <optional>true</optional>
         </dependency>
         <dependency>
@@ -344,7 +357,7 @@
         </dependency>
         <dependency>
             <groupId>org.jboss.arquillian.container</groupId>
-            <artifactId>arquillian-weld-ee-embedded-1.1</artifactId>
+            <artifactId>arquillian-weld-embedded</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -380,12 +393,7 @@
         </dependency>
         <dependency>
             <groupId>org.jboss.spec.javax.transaction</groupId>
-            <artifactId>jboss-transaction-api_1.2_spec</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.weld</groupId>
-            <artifactId>weld-core</artifactId>
+            <artifactId>jboss-transaction-api_1.3_spec</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -407,11 +415,6 @@
             <groupId>org.mockito</groupId>
             <artifactId>mockito-junit-jupiter</artifactId>
             <version>${version.mockito}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.picketbox</groupId>
-            <artifactId>picketbox</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -446,6 +449,15 @@
                         <goals>
                             <goal>test-jar</goal>
                         </goals>
+                        <configuration>
+                            <!-- These two register MetadataHelperCacheEvictor for every test class in this module. Modules that
+                                 consume the test-jar have no junit-platform.properties of their own, so shipping them would turn
+                                 on extension autodetection in those modules as well. -->
+                            <excludes>
+                                <exclude>junit-platform.properties</exclude>
+                                <exclude>META-INF/services/org.junit.jupiter.api.extension.Extension</exclude>
+                            </excludes>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>

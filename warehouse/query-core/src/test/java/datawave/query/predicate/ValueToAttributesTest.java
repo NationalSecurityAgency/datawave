@@ -1,228 +1,145 @@
 package datawave.query.predicate;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.TimeZone;
-import java.util.UUID;
-
-import javax.inject.Inject;
 
 import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
-import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.junit.Arquillian;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.asset.StringAsset;
-import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import datawave.configuration.spring.SpringBean;
-import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
 import datawave.marking.AccessExpressionMarkings;
 import datawave.marking.MarkingFunctions;
-import datawave.microservice.query.QueryImpl;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.PreNormalizedAttribute;
 import datawave.query.attributes.TypeAttribute;
 import datawave.query.composite.CompositeMetadata;
-import datawave.query.function.deserializer.KryoDocumentDeserializer;
-import datawave.query.language.parser.ParseException;
 import datawave.query.tables.ShardQueryLogic;
-import datawave.query.tables.edge.BaseEdgeQueryTest;
-import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
+import datawave.query.util.AbstractQueryTest;
 import datawave.query.util.CompositeTestingIngest;
 import datawave.query.util.TypeMetadata;
 import datawave.table.constants.TableName;
-import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 
-/**
-  */
-public abstract class ValueToAttributesTest {
-
-    @RunWith(Arquillian.class)
-    public static class ShardRange extends ValueToAttributesTest {
-        protected static AccumuloClient client = null;
-
-        @BeforeClass
-        public static void setUp() throws Exception {
-
-            QueryTestTableHelper qtth = new QueryTestTableHelper(ShardRange.class.toString(), log);
-            client = qtth.client;
-
-            CompositeTestingIngest.writeItAll(client, CompositeTestingIngest.WhatKindaRange.SHARD);
-            Authorizations auths = new Authorizations("ALL");
-            PrintUtility.printTable(client, auths, TableName.SHARD);
-            PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
-            PrintUtility.printTable(client, auths, BaseEdgeQueryTest.MODEL_TABLE_NAME);
-        }
-
-        @Before
-        public void setup() {
-            super.setup();
-            logic.setCollapseUids(true);
-        }
-
-        @Override
-        protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms) throws Exception {
-            super.runTestQuery(expected, querystr, startDate, endDate, extraParms, client);
-        }
-    }
-
-    @RunWith(Arquillian.class)
-    public static class DocumentRange extends ValueToAttributesTest {
-        protected static AccumuloClient client = null;
-
-        @BeforeClass
-        public static void setUp() throws Exception {
-
-            QueryTestTableHelper qtth = new QueryTestTableHelper(DocumentRange.class.toString(), log);
-            client = qtth.client;
-
-            CompositeTestingIngest.writeItAll(client, CompositeTestingIngest.WhatKindaRange.DOCUMENT);
-            Authorizations auths = new Authorizations("ALL");
-            PrintUtility.printTable(client, auths, TableName.SHARD);
-            PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
-            PrintUtility.printTable(client, auths, BaseEdgeQueryTest.MODEL_TABLE_NAME);
-        }
-
-        @Before
-        public void setup() {
-            super.setup();
-            logic.setCollapseUids(false);
-        }
-
-        @Override
-        protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms)
-                        throws ParseException, Exception {
-            super.runTestQuery(expected, querystr, startDate, endDate, extraParms, client);
-        }
-    }
+@ExtendWith(SpringExtension.class)
+@ComponentScan(basePackages = "datawave.query")
+// @formatter:off
+@ContextConfiguration(locations = {
+        "classpath:datawave/query/QueryLogicFactory.xml",
+        "classpath:beanRefContext.xml",
+        "classpath:MarkingFunctionsContext.xml",
+        "classpath:MetadataHelperContext.xml",
+        "classpath:CacheContext.xml"})
+// @formatter:on
+public class ValueToAttributesTest extends AbstractQueryTest {
 
     private static final Logger log = Logger.getLogger(ValueToAttributesTest.class);
+    private static final Authorizations auths = new Authorizations("ALL");
 
-    protected Authorizations auths = new Authorizations("ALL");
+    private static AccumuloClient clientForTest;
 
-    protected Set<Authorizations> authSet = Collections.singleton(auths);
-
-    @Inject
-    @SpringBean(name = "EventQuery")
+    @Autowired
+    @Qualifier("EventQuery")
     protected ShardQueryLogic logic;
 
-    protected KryoDocumentDeserializer deserializer;
+    private List<String> expectedList;
 
-    private final DateFormat format = new SimpleDateFormat("yyyyMMdd");
-
-    @Deployment
-    public static JavaArchive createDeployment() throws Exception {
-        System.setProperty("cdi.bean.context", "queryBeanRefContext.xml");
-
-        return ShrinkWrap.create(JavaArchive.class)
-                        .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.query", "org.jboss.logging",
-                                        "datawave.webservice.query.result.event", "datawave.core.query.result.event")
-                        .deleteClass(DefaultEdgeEventQueryLogic.class).deleteClass(RemoteEdgeDictionary.class)
-                        .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class)
-                        .addAsManifestResource(new StringAsset(
-                                        "<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>" + "</alternatives>"),
-                                        "beans.xml");
+    @Override
+    public ShardQueryLogic getLogic() {
+        return logic;
     }
 
-    @AfterClass
-    public static void teardown() {
-        TypeRegistry.reset();
+    @Override
+    public Authorizations getAuths() {
+        return auths;
     }
 
-    @Before
-    public void setup() {
-        TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
-
-        logic.setFullTableScanEnabled(true);
-        deserializer = new KryoDocumentDeserializer();
+    @Override
+    protected void extraConfigurations() {
+        disableQueryPlanAssertion();
     }
 
-    protected abstract void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms) throws Exception;
-
-    protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms, AccumuloClient client)
-                    throws Exception {
-        log.debug("runTestQuery");
-        log.trace("Creating QueryImpl");
-        QueryImpl settings = new QueryImpl();
-        settings.setBeginDate(startDate);
-        settings.setEndDate(endDate);
-        settings.setPagesize(Integer.MAX_VALUE);
-        settings.setQueryAuthorizations(auths.serialize());
-        settings.setQuery(querystr);
-        settings.setParameters(extraParms);
-        settings.setId(UUID.randomUUID());
-
-        log.debug("query: " + settings.getQuery());
-        log.debug("logic: " + settings.getQueryLogicName());
-
-        GenericQueryConfiguration config = logic.initialize(client, settings, authSet);
-        logic.setupQuery(config);
-
+    @Override
+    protected void extraAssertions() {
         String plannedScript = logic.getQueryPlanner().getPlannedScript();
-        Assert.assertTrue("CompositeTerm was not substituted into query:" + plannedScript, plannedScript.contains("MAKE_COLOR"));
+        assertTrue(plannedScript.contains("MAKE_COLOR"), "CompositeTerm was not substituted into query:" + plannedScript);
 
-        HashSet<String> expectedSet = new HashSet<>(expected);
-        HashSet<String> resultSet;
-        resultSet = new HashSet<>();
-        Set<Document> docs = new HashSet<>();
-        for (Map.Entry<Key,Value> entry : logic) {
-            Document d = deserializer.apply(entry).getValue();
-
-            log.trace(entry.getKey() + " => " + d);
-
+        HashSet<String> resultSet = new HashSet<>();
+        for (Document d : results) {
             Attribute<?> attr = d.get("UUID");
             if (attr == null)
                 attr = d.get("UUID.0");
 
-            Assert.assertNotNull("Result Document did not contain a 'UUID'", attr);
-            Assert.assertTrue("Expected result to be an instance of DatwawaveTypeAttribute, was: " + attr.getClass().getName(),
-                            attr instanceof TypeAttribute || attr instanceof PreNormalizedAttribute);
+            assertNotNull(attr, "Result Document did not contain a 'UUID'");
+            assertTrue(attr instanceof TypeAttribute || attr instanceof PreNormalizedAttribute,
+                            "Expected result to be an instance of DatwawaveTypeAttribute, was: " + attr.getClass().getName());
 
             TypeAttribute<?> uuidAttr = (TypeAttribute<?>) attr;
 
             String uuid = uuidAttr.getType().getDelegate().toString();
-            Assert.assertTrue("Received unexpected UUID: " + uuid, expected.contains(uuid));
+            assertTrue(expectedList.contains(uuid), "Received unexpected UUID: " + uuid);
 
             resultSet.add(uuid);
-            docs.add(d);
         }
 
-        if (expected.size() > resultSet.size()) {
-            expectedSet.addAll(expected);
-            expectedSet.removeAll(resultSet);
+        assertTrue(expectedList.containsAll(resultSet), "Expected results " + expectedList + " differ form actual results " + resultSet);
+        assertEquals(expectedList.size(), resultSet.size(), "Unexpected number of records");
+    }
 
-            for (String s : expectedSet) {
-                log.warn("Missing: " + s);
-            }
-        }
+    @BeforeAll
+    public static void beforeAll() throws Exception {
+        TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
 
-        if (!expected.containsAll(resultSet)) {
-            log.error("Expected results " + expected + " differ form actual results " + resultSet);
-        }
-        Assert.assertTrue("Expected results " + expected + " differ form actual results " + resultSet, expected.containsAll(resultSet));
-        Assert.assertEquals("Unexpected number of records", expected.size(), resultSet.size());
+        QueryTestTableHelper qtth = new QueryTestTableHelper(ValueToAttributesTest.class.toString(), log);
+        clientForTest = qtth.client;
+
+        // ingest with the document range only; CompositeTestingIngest already uses IndexIngestUtil
+        // internally to derive the other shard index table variants that AbstractQueryTest iterates over.
+        CompositeTestingIngest.writeItAll(clientForTest, CompositeTestingIngest.WhatKindaRange.DOCUMENT);
+        PrintUtility.printTable(clientForTest, auths, TableName.SHARD);
+        PrintUtility.printTable(clientForTest, auths, TableName.SHARD_INDEX);
+        PrintUtility.printTable(clientForTest, auths, TableName.METADATA);
+    }
+
+    @AfterAll
+    public static void afterAll() {
+        TypeRegistry.reset();
+    }
+
+    @BeforeEach
+    public void setup() {
+        setClientForTest(clientForTest);
+        logic.setCollapseUids(false);
+
+        givenDate("20091231", "20150101");
+    }
+
+    private void runTestQuery(List<String> expected, String querystr, Map<String,String> extraParms) throws Exception {
+        this.expectedList = expected;
+        givenQuery(querystr);
+        givenParameters(extraParms);
+
+        planAndExecuteQuery();
     }
 
     @Test
@@ -247,7 +164,7 @@ public abstract class ValueToAttributesTest {
                 Arrays.asList("One")//
         };
         for (int i = 0; i < queryStrings.length; i++) {
-            runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
+            runTestQuery(expectedLists[i], queryStrings[i], extraParameters);
         }
     }
 
