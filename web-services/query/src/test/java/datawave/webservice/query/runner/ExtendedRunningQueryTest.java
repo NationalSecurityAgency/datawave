@@ -165,7 +165,7 @@ public class ExtendedRunningQueryTest {
         when(this.queryLogic.getMaxWork()).thenReturn(maxWork);
         when(this.queryLogic.getMaxResults()).thenReturn(maxResults);
         when(this.genericConfiguration.getQueryString()).thenReturn(query);
-        when(this.queryLogic.isLongRunningQuery()).thenReturn(false);
+        when(this.queryLogic.isIntermediateEmptyPagesEnabled()).thenReturn(false);
         when(this.queryLogic.getResultLimit(eq(this.query))).thenReturn(maxResults);
         this.queryLogic.preInitialize(this.query, AuthorizationsUtil.buildAuthorizations(Collections.singleton(Collections.singleton("AUTH_1"))));
         when(this.queryLogic.getUserOperations()).thenReturn(null);
@@ -247,7 +247,7 @@ public class ExtendedRunningQueryTest {
         when(this.queryLogic.getMaxWork()).thenReturn(maxWork);
         when(this.queryLogic.getMaxResults()).thenReturn(maxResults);
         when(this.genericConfiguration.getQueryString()).thenReturn(query);
-        when(this.queryLogic.isLongRunningQuery()).thenReturn(false);
+        when(this.queryLogic.isIntermediateEmptyPagesEnabled()).thenReturn(false);
         when(this.queryLogic.getResultLimit(eq(this.query))).thenReturn(maxResults);
         this.queryLogic.preInitialize(this.query, AuthorizationsUtil.buildAuthorizations(Collections.singleton(Collections.singleton("AUTH_1"))));
         when(this.queryLogic.getUserOperations()).thenReturn(null);
@@ -317,7 +317,7 @@ public class ExtendedRunningQueryTest {
         when(this.queryLogic.initialize(eq(this.client), eq(this.query), isA(Set.class))).thenReturn(this.genericConfiguration);
         this.queryLogic.setupQuery(this.genericConfiguration);
         when(this.queryLogic.getTransformIterator(this.query)).thenReturn(this.transformIterator);
-        when(this.queryLogic.isLongRunningQuery()).thenReturn(false);
+        when(this.queryLogic.isIntermediateEmptyPagesEnabled()).thenReturn(false);
         when(this.queryLogic.getResultLimit(eq(this.query))).thenReturn(maxResults);
 
         List<Object> resultObjects = Arrays.asList(new Object(), "resultObject1", "resultObject2", "resultObject3", "resultObject4", "resultObject5");
@@ -397,7 +397,7 @@ public class ExtendedRunningQueryTest {
         when(this.queryLogic.getTransformIterator(this.query)).thenReturn(this.transformIterator);
         when(this.transformIterator.hasNext()).thenReturn(true);
         when(this.genericConfiguration.getQueryString()).thenReturn("query");
-        when(this.queryLogic.isLongRunningQuery()).thenReturn(false);
+        when(this.queryLogic.isIntermediateEmptyPagesEnabled()).thenReturn(false);
         when(this.queryLogic.getResultLimit(eq(this.query))).thenReturn(maxResults);
         when(this.queryLogic.getMaxResults()).thenReturn(maxResults);
         when(this.query.getPagesize()).thenReturn(pageSize);
@@ -451,7 +451,7 @@ public class ExtendedRunningQueryTest {
         when(this.query.getColumnVisibility()).thenReturn(null);
         when(this.queryLogic.initialize(eq(this.client), eq(this.query), isA(Set.class))).thenReturn(this.genericConfiguration);
         when(this.genericConfiguration.getQueryString()).thenReturn("query");
-        when(this.queryLogic.isLongRunningQuery()).thenReturn(false);
+        when(this.queryLogic.isIntermediateEmptyPagesEnabled()).thenReturn(false);
         when(this.queryLogic.getResultLimit(eq(this.query))).thenReturn(maxResults);
         when(this.queryLogic.getMaxResults()).thenReturn(maxResults);
         this.queryLogic.preInitialize(this.query, AuthorizationsUtil.buildAuthorizations(Collections.singleton(Collections.singleton("AUTH_1"))));
@@ -520,7 +520,7 @@ public class ExtendedRunningQueryTest {
         when(this.queryLogic.initialize(eq(this.client), eq(this.query), isA(Set.class))).thenReturn(this.genericConfiguration);
         this.queryLogic.setupQuery(this.genericConfiguration);
         when(this.queryLogic.getTransformIterator(this.query)).thenReturn(this.transformIterator);
-        when(this.queryLogic.isLongRunningQuery()).thenReturn(false);
+        when(this.queryLogic.isIntermediateEmptyPagesEnabled()).thenReturn(false);
         when(this.queryLogic.getResultLimit(eq(this.query))).thenReturn(dnResultLimit);
 
         Iterator<Object> iterator = resultObjects.iterator();

@@ -91,6 +91,12 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private static final long serialVersionUID = 2321985989282659247L;
     private static final Logger log = Logger.getLogger(ShardQueryConfiguration.class);
 
+    // is this a short running query (e.g. UUID lookup maybe)
+    private boolean isShortRunningQuery = false;
+
+    // can this query logic bypass the query limiter mechanism (probably for performance purposes)
+    private boolean queryLimiterEnabled = true;
+
     // is this a tld query, explicitly default to false
     private boolean tldQuery = false;
     private final Map<String,String> filterOptions = new HashMap<>();
@@ -619,6 +625,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         super.copyFrom(other);
 
         // ShardQueryConfiguration copy
+        this.setShortRunningQuery(other.isShortRunningQuery());
+        this.setQueryLimiterEnabled(other.isQueryLimiterEnabled());
         this.setCheckpointable(other.isCheckpointable());
         this.setTldQuery(other.isTldQuery());
         this.putFilterOptions(other.getFilterOptions());
@@ -2988,6 +2996,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         // @formatter:off
         ShardQueryConfiguration that = (ShardQueryConfiguration) o;
         return isTldQuery() == that.isTldQuery() &&
+                isShortRunningQuery() == that.isShortRunningQuery() &&
+                isQueryLimiterEnabled() == that.isQueryLimiterEnabled() &&
                 isDisableIndexOnlyDocuments() == that.isDisableIndexOnlyDocuments() &&
                 getMaxScannerBatchSize() == that.getMaxScannerBatchSize() &&
                 getMaxIndexBatchSize() == that.getMaxIndexBatchSize() &&
@@ -3224,6 +3234,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         // @formatter:off
         return Objects.hash(
                 super.hashCode(),
+                isShortRunningQuery(),
+                isQueryLimiterEnabled(),
                 isTldQuery(),
                 getFilterOptions(),
                 isDisableIndexOnlyDocuments(),
@@ -3600,5 +3612,21 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     @Deprecated
     public void setUseNewIndexLookups(boolean useNewIndexLookups) {
         this.useNewIndexLookups = useNewIndexLookups;
+    }
+
+    public boolean isShortRunningQuery() {
+        return isShortRunningQuery;
+    }
+
+    public void setShortRunningQuery(boolean shortRunningQuery) {
+        isShortRunningQuery = shortRunningQuery;
+    }
+
+    public boolean isQueryLimiterEnabled() {
+        return queryLimiterEnabled;
+    }
+
+    public void setQueryLimiterEnabled(boolean queryLimiterEnabled) {
+        this.queryLimiterEnabled = queryLimiterEnabled;
     }
 }

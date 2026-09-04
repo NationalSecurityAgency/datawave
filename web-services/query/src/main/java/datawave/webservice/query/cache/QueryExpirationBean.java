@@ -108,8 +108,8 @@ public class QueryExpirationBean {
         // Examine each query in the cache.
         for (RunningQuery query : queryCache) {
             // Check if the query is considered idle for too long or if the next call has been running for too long.
-            boolean idleTooLong = !clearAll && !query.hasActiveCall() && isIdleTooLong(query, now);
-            boolean nextTooLong = !clearAll && query.hasActiveCall() && isNextTooLong(query, now);
+            boolean idleTooLong = !clearAll && isIdleTooLong(query, now);
+            boolean nextTooLong = !clearAll && isNextTooLong(query, now);
             Query settings = query.getSettings();
             // If we are shutting down this bean, or the query is considered idle for too long or its next call has been running for too long, time out the
             // query and remove it from the cache.
@@ -157,12 +157,15 @@ public class QueryExpirationBean {
                     log.error("Error returning connection to factory", e);
                 }
 
-                // Stop counting the query towards query limits.
                 String queryId = settings.getId().toString();
-                try {
-                    queryLimiter.stopCountingQueryTowardsLimits(queryId);
-                } catch (Exception e) {
-                    log.error("Error stopping heartbeat and removing from cache: " + queryId, e);
+
+                // Stop counting the query towards query limits.
+                if (query.getLogic().isQueryLimiterEnabled()) {
+                    try {
+                        queryLimiter.stopCountingQueryTowardsLimits(queryId);
+                    } catch (Exception e) {
+                        log.error("Error stopping heartbeat and removing from cache: " + queryId, e);
+                    }
                 }
 
                 // Remove the query from the query cache.
@@ -189,6 +192,11 @@ public class QueryExpirationBean {
      * @return true if query has been idle too long, false otherwise
      */
     private boolean isIdleTooLong(RunningQuery query, long currentTime) {
+        // not idle if in active call
+        if (query.hasActiveCall()) {
+            return false;
+        }
+
         long difference = currentTime - query.getLastUsed();
         if (log.isDebugEnabled()) {
             long countDown = (config.getIdleTimeoutMillis() / 1000) - (difference / 1000);
@@ -208,13 +216,52 @@ public class QueryExpirationBean {
      * @return true if query next has been running too long, false otherwise
      */
     private boolean isNextTooLong(RunningQuery query, long currentTime) {
-        if (query.getTimeOfCurrentCall() == 0) {
+        // not in active call then no problem
+        if (!query.hasActiveCall()) {
+            return false;
+        }
+
+        long timeOfCurrentCall = query.getTimeOfCurrentCall();
+        int pageCount = query.getCurrentPageCount();
+
+        // if the current call time is 0 but active, then no worries
+        if (timeOfCurrentCall == 0) {
             log.warn("Query has active call set but a call time of 0ms.");
             return false;
         }
 
         query.touch(); // Since we know we're still in a call, go ahead and reset the idle time.
-        long difference = currentTime - query.getTimeOfCurrentCall();
+        long difference = currentTime - timeOfCurrentCall;
+
+        // if we are past the short circuit time for page (should be a bit less than the call timeout) and we have results
+        // then we need to log where we are potentially stuck, and attempt to trigger a page return
+        if ((difference > config.getShortCircuitTimeoutMillis() || difference > query.getTiming().getPageShortCircuitTimeoutMs()) && (pageCount > 0)) {
+
+            // adding quick checks for a potential issue with the page timeout override mechanism
+            if (query.getTiming().getPageShortCircuitTimeoutMs() > config.getShortCircuitTimeoutMillis()) {
+                log.error("Detected that the running query short circuit timing is configured incorrectly: " + query.getTiming().getPageShortCircuitTimeoutMs()
+                                + " > " + config.getShortCircuitTimeoutMillis());
+            }
+            if (config.getShortCircuitTimeoutMillis() > config.getCallTimeoutMillis()) {
+                log.error("Detected that the query short timing is configured incorrectly: " + config.getShortCircuitTimeoutMillis() + " > "
+                                + config.getCallTimeoutMillis());
+            }
+
+            // log where the next call is currently
+            try {
+                Exception exception = new Exception("RunningQuery may have been stuck here");
+                if (query.getCurrentThread() != null) {
+                    exception.setStackTrace(query.getCurrentThread().getStackTrace());
+                }
+                log.error("Query " + query.getSettings().getOwner() + " - " + query.getSettings().getId() + " has been in a call for " + (difference / 1000)
+                                + "s and has " + pageCount + " pending results.", exception);
+            } catch (Exception e) {
+                log.error("Query " + query.getSettings().getOwner() + " - " + query.getSettings().getId() + " has been in a call for " + (difference / 1000)
+                                + "s and has " + pageCount + " pending results.", e);
+            }
+
+            query.attemptForcedPageReturn();
+        }
 
         if (difference > config.getCallTimeoutMillis()) {
             log.warn("Query " + query.getSettings().getOwner() + " - " + query.getSettings().getId() + " has been in a call for " + (difference / 1000)

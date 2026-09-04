@@ -130,11 +130,29 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
     TransformIterator getTransformIterator(Query settings);
 
     /**
-     * Whether the query is a type that should be allowed to be run long (exceed the short circuit timeout)
+     * Whether the query is a type that should be allowed to return intermediate empty pages instead of terminating when no results are found within the page
+     * timeout. NOTE: If this is selected, then an asynchronous results thread will be used despite what isSynchronousRunningQuery returns.
      *
-     * @return Return whether the query is a type that should be allowed to be run long (exceed the short circuit timeout)
+     * @return Return whether the query is a type that should be allowed to return intermediate empty pages
      */
-    boolean isLongRunningQuery();
+    boolean isIntermediateEmptyPagesEnabled();
+
+    /**
+     * Whether the query should be run synchronously. This can be used when it is expected the query will run very quickly, returns only one page, and should
+     * not incur the overhead of an asynchronous results thread. NOTE: This will be overridden to be true if is this logic is allowed to return intermediate
+     * empty pages.
+     *
+     * @return Return whether the query should gather results synchronously in the RunningQuery
+     */
+    boolean isUseSynchronousRunningQuery();
+
+    /**
+     * Check whether this query logic can bypass the query limiter mechanism. For example UUID queries which must remain as fast as possible may avoid the
+     * zookeeper overhead incurred by the query limit mechanism.
+     *
+     * @return Return false if we can bypass the query limiter
+     */
+    boolean isQueryLimiterEnabled();
 
     /**
      * release resources
