@@ -91,6 +91,7 @@ run_case absent absent '' ubuntu-latest 'self-hosted-v1' ubuntu-latest repositor
 run_case valid-allowlisted present 'self-hosted-v2' ubuntu-latest $' self-hosted-v1,\tself-hosted-v2,, ' self-hosted-v2 branch-local '' true
 run_case valid-terminal-lf present $'self-hosted-v2\n' ubuntu-latest 'self-hosted-v2' self-hosted-v2 branch-local '' true
 run_case valid-terminal-crlf present $'self-hosted-v2\r\n' ubuntu-latest 'self-hosted-v2' self-hosted-v2 branch-local '' true
+run_case valid-packer present 'runner-version-packer-v1' ubuntu-latest 'runner-version-packer-v1' runner-version-packer-v1 branch-local '' true
 run_case empty present '' self-hosted 'self-hosted-v2' self-hosted repository-wide 'invalid branch-local override' true
 run_case whitespace-only present $' \t\n' ubuntu-latest 'self-hosted-v2' ubuntu-latest repository-wide 'invalid branch-local override' false
 run_case padded present $' self-hosted-v2\n' ubuntu-latest 'self-hosted-v2' ubuntu-latest repository-wide 'invalid branch-local override' false

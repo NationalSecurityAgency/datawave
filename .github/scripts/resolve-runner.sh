@@ -67,7 +67,7 @@ if [[ -e "$override_file" || -L "$override_file" ]]; then
             candidate="${candidate%$'\n'}"
         fi
 
-        if [[ ! "$candidate" =~ ^self-hosted-v[0-9]+$ ]] || ! is_supported "$candidate"; then
+        if [[ ! "$candidate" =~ ^(self-hosted|runner-version-packer)-v[0-9]+$ ]] || ! is_supported "$candidate"; then
             invalid_file=true
         fi
     fi
@@ -80,7 +80,7 @@ if [[ -e "$override_file" || -L "$override_file" ]]; then
     fi
 fi
 
-if [[ "$runner" == 'self-hosted' || "$runner" =~ ^self-hosted-v[0-9]+$ ]]; then
+if [[ "$runner" == 'self-hosted' || "$runner" =~ ^(self-hosted|runner-version-packer)-v[0-9]+$ ]]; then
     is_self_hosted=true
 else
     is_self_hosted=false
