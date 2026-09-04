@@ -14,6 +14,9 @@ import datawave.test.framework.util.MetadataColumn;
  */
 public class IngestMetadataBuilder {
 
+    // safe to share, as SecureRandom is thread-safe, and cheaper than a per-builder instance re-seeding from the entropy source on every build
+    private static final SecureRandom SEED_GENERATOR = new SecureRandom();
+
     private boolean alphabeticFieldsEnabled = false;
     private boolean numericFieldsEnabled = false;
     private int numShards = IngestMetadata.DEFAULT_NUM_SHARDS;
@@ -21,7 +24,7 @@ public class IngestMetadataBuilder {
     private final List<Type<?>> normalizers = new ArrayList<>();
 
     // a fresh seed per build keeps the suite exploring new data; IngestMetadata logs it so any run can be replayed via setSeed
-    private long seed = new SecureRandom().nextLong();
+    private long seed = SEED_GENERATOR.nextLong();
 
     private boolean built = false;
 

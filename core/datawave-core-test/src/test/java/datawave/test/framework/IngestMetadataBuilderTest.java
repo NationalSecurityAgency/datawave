@@ -3,6 +3,7 @@ package datawave.test.framework;
 import static datawave.test.framework.util.MetadataColumn.E;
 import static datawave.test.framework.util.MetadataColumn.I;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.Collections;
@@ -173,5 +174,18 @@ public class IngestMetadataBuilderTest {
 
         // 3 metadata column combinations x 1 normalizer x 2 offsets x 1 field name type, plus the synthetic ID field
         assertEquals(7, builder.enableAlphabeticFields().build().plan());
+    }
+
+    /**
+     * Each builder draws its own seed. The generator behind them is shared, and were the seed shared along with it, every instance would generate identical
+     * data.
+     */
+    @Test
+    public void testEachBuilderDrawsItsOwnSeed() {
+        assertNotEquals(unseededBuilder().build().getSeed(), unseededBuilder().build().getSeed());
+    }
+
+    private IngestMetadataBuilder unseededBuilder() {
+        return IngestMetadataBuilder.builder().setMetadataColumns(List.of(I, E)).addNormalizer(new LcNoDiacriticsType()).enableAlphabeticFields();
     }
 }
