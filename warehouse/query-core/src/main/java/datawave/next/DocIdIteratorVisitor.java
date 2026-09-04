@@ -44,6 +44,7 @@ import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
  * <li>range</li>
  * <li>list marker</li>
  * <li>negations that are part of an intersection</li>
+ * <li>a union of negated terms, or a union mixing positive and negated terms, nested in an intersection</li>
  * </ul>
  * <p>
  * Operators that are NOT supported
@@ -136,14 +137,8 @@ public class DocIdIteratorVisitor extends BaseVisitor {
             }
         }
 
-        if (!positive.isEmpty() && !negative.isEmpty()) {
-            log.trace("union of negated and positive terms will not be executed");
-            return null;
-        }
-
-        if (positive.isEmpty() && !negative.isEmpty()) {
-            log.trace("union of negated terms will not be executed");
-            return null;
+        if (!negative.isEmpty()) {
+            return handleUnionWithNegations(positive, negative, data);
         }
 
         ScanResult result = null;
@@ -165,17 +160,113 @@ public class DocIdIteratorVisitor extends BaseVisitor {
         }
 
         if (result == null) {
-            // no term was executable
+            // Must return null, not `data`: if this union is a negated term's operand (e.g. "A && !(B1 || B2)"), `data` is the
+            // caller's own running ScanResult, and echoing it back would make the caller subtract its own result from itself.
             if (log.isTraceEnabled()) {
                 log.trace("union: [{}] found 0 hits", JexlStringBuildingVisitor.buildQuery(node));
             }
-            return data;
+            return null;
         }
 
         if (log.isTraceEnabled()) {
             log.trace("union: [{}] found {} hits", JexlStringBuildingVisitor.buildQuery(node), result.getResults().size());
         }
         return result;
+    }
+
+    /**
+     * Handles a union containing at least one negated child, fully negated (e.g. {@code !B || !C}) or mixed with positive terms (e.g. {@code B || !C}), by
+     * executing it via De Morgan's law against an existing candidate set. Only executable when nested in an intersection, since this visitor can compute only
+     * matches, never "everything that doesn't match". A non-executable term is presumed to never match, same as elsewhere in this visitor.
+     *
+     * @param positive
+     *            the (already dereferenced) non-negated children of the union, possibly empty
+     * @param negative
+     *            the (already dereferenced) {@link ASTNotNode} children of the union, never empty
+     * @param data
+     *            the incoming context, expected to be the enclosing intersection's running {@link ScanResult}
+     * @return the candidate set with the documents for which every disjunct is false removed, or null if not executable
+     */
+    private Object handleUnionWithNegations(List<JexlNode> positive, List<JexlNode> negative, Object data) {
+        if (!(data instanceof ScanResult)) {
+            // no existing candidate set to restrict -- there is no way to compute "every id that doesn't match"
+            log.trace("union with negated terms cannot be executed without an existing candidate set");
+            return null;
+        }
+
+        ScanResult context = (ScanResult) data;
+
+        // the complement is the candidate subset for which every positive disjunct is false; a non-executable
+        // positive disjunct is presumed to never match, so it's skipped rather than contributing to the union
+        ScanResult positiveUnion = null;
+        for (JexlNode child : positive) {
+            Object o = child.jjtAccept(this, context);
+            if (!(o instanceof ScanResult)) {
+                if (log.isTraceEnabled()) {
+                    log.trace("positive union term not executable, contributes nothing: {}", JexlStringBuildingVisitor.buildQuery(child));
+                }
+                continue;
+            }
+
+            ScanResult scanResult = (ScanResult) o;
+            if (positiveUnion == null) {
+                positiveUnion = scanResult;
+            } else {
+                positiveUnion.union(scanResult);
+            }
+        }
+
+        ScanResult complement = copyOf(context);
+        if (positiveUnion != null) {
+            complement.getResults().removeAll(positiveUnion.getResults());
+            if (complement.getResults().isEmpty()) {
+                // every candidate already satisfies a positive disjunct, so the union is true everywhere
+                return copyOf(context);
+            }
+        }
+
+        // intersect the complement with every de-negated term: whatever survives matches every negated disjunct,
+        // meaning every disjunct is false for that document. A non-executable de-negated term is presumed to
+        // never match, so its negation is presumed always true, making the union true for every candidate.
+        for (JexlNode child : negative) {
+            JexlNode positiveChild = JexlASTHelper.dereference(child.jjtGetChild(0));
+            Object o = positiveChild.jjtAccept(this, complement);
+            if (!(o instanceof ScanResult)) {
+                if (log.isTraceEnabled()) {
+                    log.trace("negated union term not executable, union is true everywhere: {}", JexlStringBuildingVisitor.buildQuery(positiveChild));
+                }
+                return copyOf(context);
+            }
+
+            ScanResult scanResult = (ScanResult) o;
+            if (scanResult.getResults().isEmpty()) {
+                // nothing remains that could match every disjunct's false condition, so the union removes nothing
+                return copyOf(context);
+            }
+
+            complement.intersect(scanResult);
+            if (complement.getResults().isEmpty()) {
+                return copyOf(context);
+            }
+        }
+
+        ScanResult result = copyOf(context);
+        result.getResults().removeAll(complement.getResults());
+        return result;
+    }
+
+    /**
+     * Copies a {@link ScanResult}'s keys and timeout state into a new, independent instance, to avoid mutating or aliasing one owned by a caller.
+     *
+     * @param source
+     *            the ScanResult to copy
+     * @return a new ScanResult with the same keys
+     */
+    private ScanResult copyOf(ScanResult source) {
+        ScanResult copy = new ScanResult(allowPartialIntersections);
+        copy.addKeys(source.getResults());
+        copy.setTimeout(source.isTimeout());
+        return copy;
     }
 
     /*
