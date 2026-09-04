@@ -14,7 +14,7 @@
     <modules>
         <module>api</module>
     </modules>
-        <!-- Adding solely so it will require a build-->
+    <!-- Adding solely so it will require a build-->
 
     <scm>
         <connection>scm:git:${project.scm.url}</connection>
