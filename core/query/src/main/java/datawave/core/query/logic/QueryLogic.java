@@ -131,8 +131,7 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
 
     /**
      * Whether the query is a type that should be allowed to return intermediate empty pages instead of terminating when no results are found within the page
-     * timeout.
-     * NOTE: If this is selected, then an asynchronous results thread will be used despite what isSynchronousRunningQuery returns.
+     * timeout. NOTE: If this is selected, then an asynchronous results thread will be used despite what isSynchronousRunningQuery returns.
      *
      * @return Return whether the query is a type that should be allowed to return intermediate empty pages
      */
@@ -140,8 +139,8 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
 
     /**
      * Whether the query should be run synchronously. This can be used when it is expected the query will run very quickly, returns only one page, and should
-     * not incur the overhead of an asynchronous results thread.
-     * NOTE: This will be overridden to be true if is this logic is allowed to return intermediate empty pages.
+     * not incur the overhead of an asynchronous results thread. NOTE: This will be overridden to be true if is this logic is allowed to return intermediate
+     * empty pages.
      *
      * @return Return whether the query should gather results synchronously in the RunningQuery
      */

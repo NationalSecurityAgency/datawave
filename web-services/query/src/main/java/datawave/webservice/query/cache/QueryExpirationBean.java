@@ -250,7 +250,9 @@ public class QueryExpirationBean {
             // log where the next call is currently
             try {
                 Exception exception = new Exception("RunningQuery may have been stuck here");
-                exception.setStackTrace(query.getCurrentThread().getStackTrace());
+                if (query.getCurrentThread() != null) {
+                    exception.setStackTrace(query.getCurrentThread().getStackTrace());
+                }
                 log.error("Query " + query.getSettings().getOwner() + " - " + query.getSettings().getId() + " has been in a call for " + (difference / 1000)
                                 + "s and has " + pageCount + " pending results.", exception);
             } catch (Exception e) {

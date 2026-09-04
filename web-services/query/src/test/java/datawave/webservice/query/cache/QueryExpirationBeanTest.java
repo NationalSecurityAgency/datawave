@@ -65,6 +65,24 @@ public class QueryExpirationBeanTest {
      * no effect on the cache.
      */
     @Test
+    public void testRemoveQueryWithHungNextCall() throws Exception {
+        RunningQuery query = createHungNextCallQuery();
+
+        // Do not return any active queries from the query limiter for this test.
+        when(queryLimiter.getActiveQueries()).thenReturn(Set.of());
+
+        // Remove all idle/expired queries.
+        bean.removeIdleOrExpired();
+
+        // Verify the query is removed.
+        verifyQueryNextAborted(query);
+    }
+
+    /**
+     * Given a cache which contains a single query that is not considered active or expired, verify that {@link QueryExpirationBean#removeIdleOrExpired()} has
+     * no effect on the cache.
+     */
+    @Test
     public void testRemoveIdleOrExpiredGivenNonIdleOrExpired() throws Exception {
         RunningQuery query = createNonIdleOrExpiredQuery();
 
@@ -204,6 +222,35 @@ public class QueryExpirationBeanTest {
         assertThat(captor.getValue()).containsExactlyInAnyOrder("otherQuery1", "otherQuery2", "otherQuery3");
     }
 
+    private RunningQuery createHungNextCallQuery() {
+        RunningQuery query = createBaseQuery();
+
+        // Make the query return a time of current call that will not trigger a timeout.
+        when(query.getTiming()).thenReturn(new RunningQuery.RunningQueryTiming() {
+
+            @Override
+            public boolean shouldReturnPartialResults(int pageSize, int maxPageSize, long timeInCall) {
+                return false;
+            }
+
+            @Override
+            public int getMaxLongRunningTimeoutRetries() {
+                return 0;
+            }
+
+            @Override
+            public long getPageShortCircuitTimeoutMs() {
+                return 100;
+            }
+        });
+        when(query.hasActiveCall()).thenReturn(true);
+        when(query.getTimeOfCurrentCall()).thenReturn(System.currentTimeMillis() - 999999);
+        when(query.getCurrentPageCount()).thenReturn(1);
+        when(query.getCurrentThread()).thenReturn(Thread.currentThread());
+
+        return query;
+    }
+
     private RunningQuery createNonIdleOrExpiredQuery() {
         RunningQuery query = createBaseQuery();
 
@@ -311,5 +358,9 @@ public class QueryExpirationBeanTest {
         Throwable throwable = query.getSettings().getUncaughtExceptionHandler().getUncaughtException().getLeft();
         assertThat(throwable).isInstanceOf(QueryException.class);
         assertThat(throwable.getMessage()).isEqualTo(errorCode.toString());
+    }
+
+    private void verifyQueryNextAborted(RunningQuery query) throws Exception {
+        verify(query).attemptForcedPageReturn();
     }
 }
