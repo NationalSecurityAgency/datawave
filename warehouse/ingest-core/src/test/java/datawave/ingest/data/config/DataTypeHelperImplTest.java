@@ -51,7 +51,8 @@ public class DataTypeHelperImplTest {
     }
 
     @Test
-    public void testDowncaseFields() {
+    public void testSetupRebuildsDowncaseFields() {
+        // Verify repeated setup replaces inherited downcase fields with the current configuration.
         InputStream configStream = getClass().getResourceAsStream("/fake-datatype-config.xml");
         assertNotNull(configStream);
         conf.addResource(configStream);
@@ -67,5 +68,11 @@ public class DataTypeHelperImplTest {
 
         assertEquals("abcde", helper.clean("THREE", "ABCDE"));
         assertEquals("abcde", helper.clean("FOUR", "ABCDE"));
+
+        conf.set("fake" + DataTypeHelper.Properties.DOWNCASE_FIELDS, "five");
+        helper.setup(conf);
+
+        assertEquals("ABCDE", helper.clean("THREE", "ABCDE"));
+        assertEquals("abcde", helper.clean("FIVE", "ABCDE"));
     }
 }

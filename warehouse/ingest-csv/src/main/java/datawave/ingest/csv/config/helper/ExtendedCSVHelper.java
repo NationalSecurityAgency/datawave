@@ -78,6 +78,11 @@ public class ExtendedCSVHelper extends CSVHelper {
 
     @Override
     public void setup(Configuration config) throws IllegalArgumentException {
+        eventIdDowncase = false;
+        eventSecurityMarkingFieldDomainMap.clear();
+        ignoredFields = EMPTY_VALUES;
+        parsers.clear();
+
         super.setup(config);
 
         // If the event id is specified, then we will get the visibilities from it.
