@@ -10,7 +10,7 @@ import datawave.data.type.Type;
 import datawave.test.framework.util.MetadataColumn;
 
 /**
- * A builder for {@link IngestMetadata}
+ * A builder for {@link IngestMetadata}. Single-use: {@link #build()} may be called once.
  */
 public class IngestMetadataBuilder {
 
@@ -22,6 +22,8 @@ public class IngestMetadataBuilder {
 
     // a fresh seed per build keeps the suite exploring new data; IngestMetadata logs it so any run can be replayed via setSeed
     private long seed = new SecureRandom().nextLong();
+
+    private boolean built = false;
 
     private IngestMetadataBuilder() {
         // enforce static access
@@ -106,14 +108,20 @@ public class IngestMetadataBuilder {
     }
 
     /**
-     * Build the ingest metadata, rejecting a configuration that would generate no fields
+     * Build the ingest metadata, rejecting a configuration that would generate no fields.
+     * <p>
+     * Reuse is rejected rather than supported: the seed is drawn once per builder, so a second build would quietly repeat the first instance's data unless
+     * {@link #setSeed(long)} intervened.
      *
      * @return the configured ingest metadata
      */
     public IngestMetadata build() {
+        Preconditions.checkState(!built, "build() has already been called on this builder");
         Preconditions.checkState(!metadataColumns.isEmpty(), "metadataColumns must be set");
         Preconditions.checkState(!normalizers.isEmpty(), "normalizers must be set");
         Preconditions.checkState(alphabeticFieldsEnabled || numericFieldsEnabled, "alphabetic or numeric fields must be enabled");
-        return new IngestMetadata(metadataColumns, normalizers, alphabeticFieldsEnabled, numericFieldsEnabled, numShards, seed);
+        IngestMetadata metadata = new IngestMetadata(metadataColumns, normalizers, alphabeticFieldsEnabled, numericFieldsEnabled, numShards, seed);
+        built = true;
+        return metadata;
     }
 }

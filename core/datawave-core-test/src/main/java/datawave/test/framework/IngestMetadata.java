@@ -5,6 +5,7 @@ import static datawave.test.framework.util.MetadataColumn.I;
 import static datawave.test.framework.util.MetadataColumn.TF;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
@@ -73,9 +74,9 @@ public class IngestMetadata {
      * Default constructor for IngestMetadata
      *
      * @param baseMetadataColumns
-     *            the metadata columns used
+     *            the metadata columns used, copied so later changes to the list cannot alter this instance
      * @param baseNormalizers
-     *            the normalizers used
+     *            the normalizers used, copied so later changes to the list cannot alter this instance
      * @param alphabeticFieldsEnabled
      *            flag that enables alphabetic fields
      * @param numericFieldsEnabled
@@ -92,8 +93,8 @@ public class IngestMetadata {
         for (Type<?> normalizer : baseNormalizers) {
             Preconditions.checkArgument(isSupportedNormalizer(normalizer), "normalizer not supported: %s", normalizer.getClass().getName());
         }
-        this.baseMetadataColumns = baseMetadataColumns;
-        this.baseNormalizers = baseNormalizers;
+        this.baseMetadataColumns = List.copyOf(baseMetadataColumns);
+        this.baseNormalizers = List.copyOf(baseNormalizers);
         this.alphabeticFieldsEnabled = alphabeticFieldsEnabled;
         this.numericFieldsEnabled = numericFieldsEnabled;
         this.numShards = numShards;
@@ -354,8 +355,14 @@ public class IngestMetadata {
         return numericFieldsEnabled;
     }
 
+    /**
+     * The generated field space, empty until {@link #createEvents(int, int)} runs. Returned as a read-only view, since adding to it would leave {@link #plan()}
+     * disagreeing with the fields a query is built against.
+     *
+     * @return the field metadata
+     */
     public List<FieldMetadata> getFieldMetadata() {
-        return fieldMetadata;
+        return Collections.unmodifiableList(fieldMetadata);
     }
 
     public int getEventCount() {

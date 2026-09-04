@@ -183,4 +183,48 @@ public class IngestMetadataTest {
         }
         return values;
     }
+
+    /**
+     * {@link IngestMetadata} is reachable without the builder, so it must copy what it is handed. A retained list that shifted afterwards would silently change
+     * the field space a query was built against.
+     */
+    @Test
+    public void testConstructorCopiesItsLists() {
+        List<MetadataColumn> metadataColumns = new ArrayList<>(List.of(I, E));
+        List<Type<?>> normalizers = new ArrayList<>(List.of(new LcNoDiacriticsType()));
+
+        IngestMetadata metadata = new IngestMetadata(metadataColumns, normalizers, true, false, 10, 0L);
+        int planned = metadata.plan();
+
+        metadataColumns.add(TF);
+        normalizers.add(new NumberType());
+
+        assertEquals(planned, metadata.plan(), "plan() changed after the source lists were mutated");
+        assertEquals(List.of(I, E), metadata.getBaseMetadataColumns());
+        assertEquals(1, metadata.getBaseNormalizers().size());
+    }
+
+    /**
+     * The copies are handed back as-is, so a caller cannot reach in and alter the plan through an accessor either.
+     */
+    @Test
+    public void testAccessorsAreImmutable() {
+        //  @formatter:off
+        IngestMetadata metadata = IngestMetadataBuilder.builder()
+                .setMetadataColumns(List.of(I, E))
+                .addNormalizer(new LcNoDiacriticsType())
+                .enableAlphabeticFields()
+                .build();
+        //  @formatter:on
+
+        assertThrows(UnsupportedOperationException.class, () -> metadata.getBaseMetadataColumns().add(TF));
+        assertThrows(UnsupportedOperationException.class, () -> metadata.getBaseNormalizers().add(new NumberType()));
+        assertThrows(UnsupportedOperationException.class, () -> metadata.getFieldMetadata().add(new FieldMetadata("FIELD")));
+
+        metadata.createEvents();
+
+        // the accessor is a view, so it reflects generation, and stays read-only afterwards
+        assertEquals(metadata.plan(), metadata.getFieldMetadata().size());
+        assertThrows(UnsupportedOperationException.class, () -> metadata.getFieldMetadata().add(new FieldMetadata("FIELD")));
+    }
 }

@@ -142,4 +142,36 @@ public class IngestMetadataBuilderTest {
         assertEquals(metadataColumns, metadata.getBaseMetadataColumns());
         assertEquals(normalizers, metadata.getBaseNormalizers());
     }
+
+    /**
+     * A builder yields one instance. Were reuse allowed, the seed drawn at builder construction would carry over and the second build would generate data
+     * identical to the first.
+     */
+    @Test
+    public void testBuilderIsSingleUse() {
+        //  @formatter:off
+        IngestMetadataBuilder builder = IngestMetadataBuilder.builder()
+                .setMetadataColumns(List.of(I, E))
+                .addNormalizer(new LcNoDiacriticsType())
+                .enableAlphabeticFields();
+        //  @formatter:on
+
+        builder.build();
+
+        Exception e = assertThrows(IllegalStateException.class, builder::build);
+        assertEquals("build() has already been called on this builder", e.getMessage());
+    }
+
+    /**
+     * A failed build leaves the builder usable, so a caller can correct the configuration and try again.
+     */
+    @Test
+    public void testFailedBuildDoesNotConsumeTheBuilder() {
+        IngestMetadataBuilder builder = IngestMetadataBuilder.builder().setMetadataColumns(List.of(I, E)).addNormalizer(new LcNoDiacriticsType());
+
+        assertThrows(IllegalStateException.class, builder::build);
+
+        // 3 metadata column combinations x 1 normalizer x 2 offsets x 1 field name type, plus the synthetic ID field
+        assertEquals(7, builder.enableAlphabeticFields().build().plan());
+    }
 }
