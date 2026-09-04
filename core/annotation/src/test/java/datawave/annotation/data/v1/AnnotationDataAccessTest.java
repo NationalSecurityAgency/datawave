@@ -134,6 +134,54 @@ public class AnnotationDataAccessTest {
     }
 
     @Test
+    public void testAddGetAnnotationSegmentOrderMatchesInjectedHashOrder() {
+        String day = "20250723";
+        String shard = "001";
+        String row = day + "_" + shard;
+        String dataType = "news";
+        String annotationType = "tokens";
+        String uidSeed = row + "_" + dataType + "_segment_order";
+        String documentUid = HashUID.builder().newId(uidSeed.getBytes(StandardCharsets.UTF_8)).toString();
+        List<Segment> createdSegments = new ArrayList<>(AnnotationTestDataUtil.generateTextSegments(day, shard));
+
+        Annotation sourceAnnotation = Annotation.newBuilder().setShard(row).setDataType(dataType).setUid(documentUid).setDocumentId("segment-order-test")
+                        .setAnalyticSourceHash("abcdefg").addAllSegments(createdSegments)
+                        .putAllMetadata(AnnotationTestDataUtil.generateTestMetadata(day, shard, dataType)).setAnnotationType(annotationType).build();
+
+        List<Integer> createdSegmentStarts = segmentStarts(sourceAnnotation.getSegmentsList());
+
+        Annotation expectedAnnotation = AnnotationUtils.injectAllHashes(sourceAnnotation);
+        List<Integer> injectedSegmentStarts = segmentStarts(expectedAnnotation.getSegmentsList());
+        List<String> injectedSegmentHashes = segmentHashes(expectedAnnotation.getSegmentsList());
+        List<String> sortedInjectedSegmentHashes = new ArrayList<>(injectedSegmentHashes);
+        sortedInjectedSegmentHashes.sort(String::compareTo);
+
+        assertNotEquals(createdSegmentStarts, injectedSegmentStarts, "Injected annotation should be reordered to match segment hash order");
+        assertEquals(sortedInjectedSegmentHashes, injectedSegmentHashes, "Injected annotation segments should be sorted by segment hash");
+        assertEquals(injectedSegmentHashes.size(), new TreeSet<>(injectedSegmentHashes).size(),
+                        "Injected annotation segments should have unique segment hashes");
+
+        Optional<Annotation> addedOptional = dao.addAnnotation(sourceAnnotation);
+        assertFalse(addedOptional.isEmpty());
+        assertAnnotationsEqual(expectedAnnotation, addedOptional.get());
+
+        Optional<Annotation> retrievedOptional = dao.getAnnotation(row, dataType, documentUid, annotationType, expectedAnnotation.getAnnotationId());
+
+        assertFalse(retrievedOptional.isEmpty());
+
+        Annotation retrievedAnnotation = retrievedOptional.get();
+        assertAnnotationsEqual(expectedAnnotation, retrievedAnnotation);
+        assertAnnotationsEqual(AnnotationUtils.injectAllHashes(expectedAnnotation), AnnotationUtils.injectAllHashes(retrievedAnnotation));
+        assertEquals(expectedAnnotation.hashCode(), retrievedAnnotation.hashCode());
+        assertEquals(expectedAnnotation, retrievedAnnotation);
+        assertEquals(injectedSegmentStarts, segmentStarts(retrievedAnnotation.getSegmentsList()));
+        assertEquals(injectedSegmentHashes, segmentHashes(retrievedAnnotation.getSegmentsList()));
+        assertNotEquals(createdSegmentStarts, segmentStarts(retrievedAnnotation.getSegmentsList()),
+                        "Round-tripped annotation will most likely not preserve the original segment creation order");
+
+    }
+
+    @Test
     public void testGetAnnotationAll() {
         String day = "20250406";
         String shard = "456";
@@ -237,7 +285,7 @@ public class AnnotationDataAccessTest {
         String uidSeed = row + "_" + dataType;
         String annotationType = "tokens";
         String documentUid = HashUID.builder().newId(uidSeed.getBytes(StandardCharsets.UTF_8)).toString();
-        String annotationUid = "989FC696";
+        String annotationUid = "4BAEDE54";
 
         Optional<Annotation> annotationOptional = dao.getAnnotation(row, dataType, documentUid, annotationType, annotationUid);
         assertFalse(annotationOptional.isEmpty());
@@ -541,5 +589,21 @@ public class AnnotationDataAccessTest {
                             observedStart, expectedStart);
             errorMessages.add(message);
         }
+    }
+
+    private static List<Integer> segmentStarts(List<Segment> segments) {
+        List<Integer> starts = new ArrayList<>(segments.size());
+        for (Segment segment : segments) {
+            starts.add(segment.getBoundary().getStart());
+        }
+        return starts;
+    }
+
+    private static List<String> segmentHashes(List<Segment> segments) {
+        List<String> hashes = new ArrayList<>(segments.size());
+        for (Segment segment : segments) {
+            hashes.add(segment.getSegmentHash());
+        }
+        return hashes;
     }
 }

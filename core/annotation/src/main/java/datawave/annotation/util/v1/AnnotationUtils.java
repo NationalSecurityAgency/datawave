@@ -2,6 +2,7 @@ package datawave.annotation.util.v1;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedSet;
@@ -51,24 +52,26 @@ public class AnnotationUtils {
      * @return the modified annotation with identifiers injected.
      */
     public static Annotation injectAllHashes(Annotation annotation) {
-        // first assign segment ids and collect the updated segments
-        final List<Segment> updatedSegments = new ArrayList<>();
-        for (Segment segment : annotation.getSegmentsList()) {
-            Segment hashedSegment = injectAllHashes(segment);
-            updatedSegments.add(hashedSegment);
-        }
-        // next, add the updated segments to a new annotation
-        Annotation updatedAnnotation = annotation.toBuilder().clearSegments().addAllSegments(updatedSegments).build();
+        // Clear segments to make way for normalized segment list
+        Annotation.Builder updatedAnnotationBuilder = annotation.toBuilder().clearSegments();
+
+        // Sorts segments in same order produced by the Accumulo segment column qualifier natural sort order.
+        // @formatter:off
+        annotation.getSegmentsList().stream()
+                .map(AnnotationUtils::injectAllHashes)
+                .sorted(Comparator.comparing(Segment::getSegmentHash))
+                .forEach(updatedAnnotationBuilder::addSegments);
+        // @formatter:on
 
         // if an annotation source is present, assign the hashes and ids and update the annotation.
-        if (updatedAnnotation.hasSource()) {
-            AnnotationSource baseSource = updatedAnnotation.getSource();
+        if (updatedAnnotationBuilder.hasSource()) {
+            AnnotationSource baseSource = updatedAnnotationBuilder.getSource();
             AnnotationSource updatedSource = AnnotationUtils.injectAllHashes(baseSource);
-            updatedAnnotation = updatedAnnotation.toBuilder().clearSource().setSource(updatedSource).build();
+            updatedAnnotationBuilder.clearSource().setSource(updatedSource);
         }
 
         // finally, generate the annotation id for the updated annotation
-        return AnnotationUtils.injectAnnotationHash(updatedAnnotation);
+        return AnnotationUtils.injectAnnotationHash(updatedAnnotationBuilder.build());
     }
 
     /**
