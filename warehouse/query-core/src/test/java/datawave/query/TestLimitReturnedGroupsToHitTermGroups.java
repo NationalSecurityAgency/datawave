@@ -205,6 +205,48 @@ public class TestLimitReturnedGroupsToHitTermGroups extends AbstractQueryTest {
         runTestQuery(goodResults);
     }
 
+    /**
+     * {@link #testOneGroup()} driven through the webservice transform chain, which must leave the hit term alone by default. This is the control for
+     * {@link #testOneGroupWithHitTermGroupingContextStripped()}.
+     */
+    @Test
+    public void testOneGroupThroughTransformChain() throws Exception {
+        withParameter("include.grouping.context", "true");
+        withParameter("limit.fields", "BIRD=-1,CAT=-1,CANINE=-1,FISH=-1");
+        applyDocumentTransforms();
+
+        // group 13
+        withQuery("CANINE == 'shepherd'");
+        hitTermAssertions.withRequiredAllOf("CANINE.PET.13:shepherd");
+
+        // definitely should NOT include group 3
+        Set<String> goodResults = Sets.newHashSet("CANINE.PET.13:shepherd", "CAT.PET.13:ragdoll", "FISH.PET.13:tetra", "BIRD.PET.13:lovebird",
+                        "REPTILE.PET.1:snake", "DOG.WILD.1:coyote", "SIZE.CANINE.3:20,12.5", "SIZE.CANINE.WILD.1:90,26.5");
+
+        runTestQuery(goodResults);
+    }
+
+    /**
+     * {@link #testOneGroup()} with the strip parameter set: the hit term loses its grouping context while the returned fields keep theirs.
+     */
+    @Test
+    public void testOneGroupWithHitTermGroupingContextStripped() throws Exception {
+        withParameter("include.grouping.context", "true");
+        withParameter("limit.fields", "BIRD=-1,CAT=-1,CANINE=-1,FISH=-1");
+        withParameter(QueryParameters.STRIP_HIT_TERM_GROUPING_CONTEXT, "true");
+        applyDocumentTransforms();
+
+        // group 13
+        withQuery("CANINE == 'shepherd'");
+        hitTermAssertions.withRequiredAllOf("CANINE:shepherd");
+
+        // definitely should NOT include group 3
+        Set<String> goodResults = Sets.newHashSet("CANINE.PET.13:shepherd", "CAT.PET.13:ragdoll", "FISH.PET.13:tetra", "BIRD.PET.13:lovebird",
+                        "REPTILE.PET.1:snake", "DOG.WILD.1:coyote", "SIZE.CANINE.3:20,12.5", "SIZE.CANINE.WILD.1:90,26.5");
+
+        runTestQuery(goodResults);
+    }
+
     @Test
     public void testMultipleGroups() throws Exception {
         withParameter("include.grouping.context", "true");

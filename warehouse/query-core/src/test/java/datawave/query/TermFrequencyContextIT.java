@@ -161,6 +161,35 @@ public class TermFrequencyContextIT extends AbstractQueryTest {
         planAndExecuteQuery();
     }
 
+    /**
+     * The token context is part of the hit term by default. This is the control for {@link #testToTheParkWithHitTermTokenContextStripped()}.
+     */
+    @Test
+    public void testToTheParkHitTerm() throws Exception {
+        givenDate(ingest.getDate());
+        givenQuery("content:phrase(TF, termOffsetMap, 'to', 'the', 'park')");
+        applyDocumentTransforms();
+        expectPlan("content:phrase(TF, termOffsetMap, 'to', 'the', 'park') && TF == 'to' && TF == 'the' && TF == 'park'");
+        expectResultCount(1);
+        expectHitTermsRequiredAllOf("TF.123:to the park", "TF:to", "TF:the", "TF:park");
+        planAndExecuteQuery();
+    }
+
+    /**
+     * The phrase matched TF.123, but with the strip parameter set the hit term names the field the document actually carries.
+     */
+    @Test
+    public void testToTheParkWithHitTermTokenContextStripped() throws Exception {
+        givenDate(ingest.getDate());
+        givenQuery("content:phrase(TF, termOffsetMap, 'to', 'the', 'park')");
+        givenParameter(QueryParameters.STRIP_HIT_TERM_GROUPING_CONTEXT, "true");
+        applyDocumentTransforms();
+        expectPlan("content:phrase(TF, termOffsetMap, 'to', 'the', 'park') && TF == 'to' && TF == 'the' && TF == 'park'");
+        expectResultCount(1);
+        expectHitTermsRequiredAllOf("TF:to the park", "TF:to", "TF:the", "TF:park");
+        planAndExecuteQuery();
+    }
+
     @Test
     public void testToTheOcean() throws Exception {
         givenDate(ingest.getDate());
