@@ -209,13 +209,13 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             this.lastPageNumber.set(0);
             this.logic.setupQuery(configuration);
             this.iter = this.logic.getTransformIterator(this.settings);
-            this.allowIntermediateEmptyPages = logic.isLongRunningQuery();
+            this.allowIntermediateEmptyPages = logic.isIntermediateEmptyPagesEnabled();
             // force us to use asynchronous results thread to allow intermediate empty pages
             if (this.allowIntermediateEmptyPages) {
                 this.useResultsThread = true;
             } else {
-                // force us to not use asynchronous results thread is a short running query
-                if (logic.isShortRunningQuery()) {
+                // force us to not use asynchronous results thread if synchronous is requested
+                if (logic.isUseSynchronousRunningQuery()) {
                     this.useResultsThread = false;
                 }
             }

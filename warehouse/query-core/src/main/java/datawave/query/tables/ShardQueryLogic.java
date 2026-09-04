@@ -752,7 +752,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         return new DocumentTransformer(logic, settings, markingFunctions, responseObjectFactory, reducedResponse);
     }
 
-    public boolean isLongRunningQuery() {
+    public boolean isIntermediateEmptyPagesEnabled() {
         return getConfig().getGroupFields().hasGroupByFields() || !getUniqueFields().isEmpty();
     }
 
@@ -3647,7 +3647,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
     }
 
     @Override
-    public boolean isShortRunningQuery() {
+    public boolean isUseSynchronousRunningQuery() {
         return getConfig().isShortRunningQuery();
     }
 }

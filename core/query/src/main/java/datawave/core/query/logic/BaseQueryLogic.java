@@ -416,7 +416,7 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
      * @return Return whether the query is a type that should be allowed to be run long (exceed the short circuit timeout)
      */
     @Override
-    public boolean isLongRunningQuery() {
+    public boolean isIntermediateEmptyPagesEnabled() {
         return false;
     }
 
@@ -427,7 +427,7 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
      * @return Return whether the query is a type that is expected to run very quickly
      */
     @Override
-    public boolean isShortRunningQuery() {
+    public boolean isUseSynchronousRunningQuery() {
         return false;
     }
 
