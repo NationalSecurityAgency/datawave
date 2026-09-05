@@ -1,6 +1,7 @@
 package datawave.ingest.data.config;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -264,6 +265,10 @@ public class CSVHelper extends DataTypeHelperImpl {
      */
     public boolean isFieldRequired(final String fieldName) {
         return _hasReqFields && _requiredFields.contains(fieldName);
+    }
+
+    public Set<String> getRequiredFields() {
+        return _hasReqFields ? Collections.unmodifiableSet(_requiredFields) : Collections.emptySet();
     }
 
     /**
