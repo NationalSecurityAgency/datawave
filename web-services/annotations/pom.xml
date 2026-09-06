@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.webservices</groupId>
         <artifactId>datawave-ws-parent</artifactId>
-        <version>7.45.0-SNAPSHOT</version>
+        <version>8.1.0-SNAPSHOT</version>
     </parent>
     <artifactId>datawave-ws-annotations</artifactId>
     <packaging>ejb</packaging>
@@ -42,6 +42,10 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>gov.nsa.datawave.commons</groupId>
+            <artifactId>datawave-commons-security</artifactId>
+        </dependency>
+        <dependency>
             <groupId>gov.nsa.datawave.core</groupId>
             <artifactId>datawave-core-annotation</artifactId>
         </dependency>
@@ -69,7 +73,12 @@
         </dependency>
         <dependency>
             <groupId>org.jboss.resteasy</groupId>
-            <artifactId>resteasy-jaxrs</artifactId>
+            <artifactId>resteasy-core</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.resteasy</groupId>
+            <artifactId>resteasy-core-spi</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -136,8 +145,8 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>javax.enterprise</groupId>
-            <artifactId>cdi-api</artifactId>
+            <groupId>jakarta.enterprise</groupId>
+            <artifactId>jakarta.enterprise.cdi-api</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -162,7 +171,7 @@
         </dependency>
         <dependency>
             <groupId>org.jboss.arquillian.container</groupId>
-            <artifactId>arquillian-weld-ee-embedded-1.1</artifactId>
+            <artifactId>arquillian-weld-embedded</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -182,11 +191,6 @@
         </dependency>
         <dependency>
             <groupId>org.jboss.weld</groupId>
-            <artifactId>weld-core</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.weld</groupId>
             <artifactId>weld-core-impl</artifactId>
             <scope>test</scope>
         </dependency>
@@ -198,6 +202,7 @@
         <dependency>
             <groupId>org.picketbox</groupId>
             <artifactId>picketbox</artifactId>
+            <version>${version.picketbox}</version>
             <scope>test</scope>
         </dependency>
         <dependency>

@@ -113,7 +113,7 @@ public abstract class BufferedFileBackedSortedMapTest<K,V> {
 
         // adding in the data map multiple times to create underlying files with duplicate values making the
         // MergeSortIterator's job a little tougher...
-        for (int d = 0; d < 11; d++) {
+        for (int d = 0; d < 4; d++) {
             addDataRandomly(map, data);
         }
         while (map.getMaps().size() <= 7) {

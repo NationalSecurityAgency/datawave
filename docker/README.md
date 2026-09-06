@@ -293,6 +293,23 @@ Start all services:
 
 ```docker compose --profile datawave-stack --profile full up -d```
 
+### Shard table splits
+
+`stack/shard-splits.txt` holds the split points for `datawave.shard`, one full `yyyyMMdd_num` shard id
+per line. `stack/initialize-datawave.sh` applies them with `addsplits` before any data is written, so
+the sharded schema starts out spread over one tablet per shard row instead of sitting in a single
+tablet. It also writes the `num_shards` entry the query side reads out of `datawave.metadata` to
+expand a day from the global index into that day's shards.
+
+The dates are those of the fixture data, and the shard numbers must cover `0` through
+`table.shard.numShardsPerDay - 1` from `properties/compose.properties`. Changing that property means
+regenerating the file and rebuilding the ingest image, since the count is baked into the image's
+ingest configuration.
+
+To check a running stack:
+
+```docker/scripts/verifySplits.sh```
+
 ### View logs
 
 For everything:

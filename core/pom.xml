@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave</groupId>
         <artifactId>datawave-parent</artifactId>
-        <version>7.45.0-SNAPSHOT</version>
+        <version>8.1.0-SNAPSHOT</version>
     </parent>
     <groupId>gov.nsa.datawave.core</groupId>
     <artifactId>datawave-core-parent</artifactId>
@@ -22,6 +22,7 @@
         <module>utils</module>
         <module>base-rest-responses</module>
         <module>tables</module>
+        <module>datawave-core-test</module>
     </modules>
     <dependencies>
         <dependency>
@@ -37,13 +38,13 @@
                     <artifactId>maven-surefire-plugin</artifactId>
                     <configuration>
                         <skipTests>${skipUTs}</skipTests>
-                        <reuseForks>false</reuseForks>
+                        <reuseForks>${surefire.reuseForks}</reuseForks>
                         <forkCount>${surefire.forkCount}</forkCount>
                         <threadCount>1</threadCount>
                         <threadCountClasses>1</threadCountClasses>
                         <threadCountMethods>0</threadCountMethods>
                         <threadCountSuites>0</threadCountSuites>
-                        <argLine>@{argLine} -XX:+TieredCompilation -XX:TieredStopAtLevel=1  -Dfile.encoding=UTF8 -Duser.timezone=GMT -Xmx1024m -Dapple.awt.UIElement=true -Djava.security.krb5.realm= -Djava.security.krb5.kdc=</argLine>
+                        <argLine>@{argLine} -XX:+TieredCompilation -XX:TieredStopAtLevel=1  -Dfile.encoding=UTF8 -Duser.timezone=GMT -Xmx${surefire.maxMemory} -Dapple.awt.UIElement=true -Djava.security.krb5.realm= -Djava.security.krb5.kdc=</argLine>
                         <redirectTestOutputToFile>true</redirectTestOutputToFile>
                         <runOrder>random</runOrder>
                     </configuration>

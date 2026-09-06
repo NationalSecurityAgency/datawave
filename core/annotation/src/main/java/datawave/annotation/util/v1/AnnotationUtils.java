@@ -17,6 +17,7 @@ import com.google.common.hash.Hasher;
 import com.google.common.hash.Hashing;
 
 import datawave.annotation.protobuf.v1.Annotation;
+import datawave.annotation.protobuf.v1.AnnotationMessage;
 import datawave.annotation.protobuf.v1.AnnotationSource;
 import datawave.annotation.protobuf.v1.Point;
 import datawave.annotation.protobuf.v1.Segment;
@@ -85,6 +86,18 @@ public class AnnotationUtils {
         }
         Segment segmentHashedValues = segment.toBuilder().clearValues().addAllValues(updatedSegmentValues).build();
         return AnnotationUtils.injectSegmentHash(segmentHashedValues);
+    }
+
+    /**
+     * Utility method to generate and ingest annotation message hashes into the annotation message.
+     *
+     * @param annotationMessage
+     *            the annotation message to assign identifiers to.
+     * @return the modified annotation message with identifiers injected.
+     */
+    public static AnnotationMessage injectAnnotationMessageHash(AnnotationMessage annotationMessage) {
+        final String annotationMessageHash = calculateAnnotationMessageHash(annotationMessage);
+        return annotationMessage.toBuilder().setAnnotationMessageId(annotationMessageHash).build();
     }
 
     /**
@@ -175,6 +188,37 @@ public class AnnotationUtils {
      */
     public static String calculateSourceAnalyticSourceHash(AnnotationSource annotationSource) {
         return calculateSourceHash(Hashing.murmur3_128(), annotationSource);
+    }
+
+    /**
+     * Calculate the 128-bit murmur3 hash used to identify an annotation message, this includes the following attributes:
+     * <ul>
+     * <li>the annotation message source</li>
+     * <li>the hash for each annotation</li>
+     * <li>each key and value in the parameter map</li>
+     * </ul>
+     *
+     * @param annotationMessage
+     *            the annotation message to hash.
+     * @return the calculated hash.
+     */
+    @SuppressWarnings("UnstableApiUsage")
+    public static String calculateAnnotationMessageHash(AnnotationMessage annotationMessage) {
+        Hasher hasher = Hashing.murmur3_128().newHasher();
+        hasher.putString(annotationMessage.getSource(), StandardCharsets.UTF_8);
+        for (Annotation a : annotationMessage.getAnnotationsList()) {
+            // if the annotations have id's assigned, use them instead of recalculating.
+            String idHash = a.getAnnotationId().isBlank() ? calculateAnnotationHash(a) : a.getAnnotationId();
+            hasher.putString(idHash, StandardCharsets.UTF_8);
+        }
+        // maps must be hashed in a consistent order (by key)
+        final Map<String,String> parametersMap = annotationMessage.getParametersMap();
+        final SortedSet<String> sortedKeySet = new TreeSet<>(parametersMap.keySet());
+        for (String key : sortedKeySet) {
+            hasher.putString(key, StandardCharsets.UTF_8);
+            hasher.putString(parametersMap.get(key), StandardCharsets.UTF_8);
+        }
+        return hasher.hash().toString().toUpperCase();
     }
 
     /**

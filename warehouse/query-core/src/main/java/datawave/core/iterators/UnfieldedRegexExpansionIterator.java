@@ -2,6 +2,7 @@ package datawave.core.iterators;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -10,8 +11,10 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
+import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.OptionDescriber;
@@ -192,5 +195,40 @@ public class UnfieldedRegexExpansionIterator extends SeekingFilter implements Op
                 options.containsKey(END_DATE) &&
                 options.containsKey(PATTERN);
         //  @formatter:on
+    }
+
+    /**
+     * Resumes a torn down scan past the column family it already reported a value for.
+     * <p>
+     * A rebuilt stack is re-seeked at {@code Range(lastReturnedKey, exclusive)}, which lands inside the column family the previous stack skipped when it
+     * accepted that key. Ranges from {@code ShardIndexQueryTableStaticMethods#getRegexRange} are exclusive too, but their start key is a bare row with no
+     * column family, so only a complete index key marks a resume.
+     */
+    @Override
+    public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
+        if (!range.isStartKeyInclusive() && isCompleteIndexKey(range.getStartKey())) {
+            Key skip = range.getStartKey().followingKey(PartialKey.ROW_COLFAM);
+            // a null end key means the scan is unbounded, as happens for a pattern with wildcards on both sides
+            Key endKey = range.getEndKey();
+            if (endKey != null && skip.compareTo(endKey) > 0) {
+                // handles the case where appending a null byte would cause the start key to be greater than the end key
+                super.seek(new Range(endKey, true, endKey, range.isEndKeyInclusive()), columnFamilies, inclusive);
+            } else {
+                super.seek(new Range(skip, true, endKey, range.isEndKeyInclusive()), columnFamilies, inclusive);
+            }
+        } else {
+            super.seek(range, columnFamilies, inclusive);
+        }
+    }
+
+    /**
+     * A complete shard index key carries a column family, meaning it identifies a specific field rather than a bare row boundary.
+     *
+     * @param key
+     *            the start key of a seek range
+     * @return true if the key could be one this iterator previously returned
+     */
+    private static boolean isCompleteIndexKey(Key key) {
+        return key != null && key.getColumnFamily().getLength() > 0;
     }
 }
