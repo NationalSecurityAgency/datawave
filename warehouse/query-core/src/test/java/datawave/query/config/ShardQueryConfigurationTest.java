@@ -515,6 +515,8 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("visitorFunctionMaxWeight", 1000000L);
         defaultValues.put("docAggregationThresholdMs", -1);
         updatedValues.put("docAggregationThresholdMs", 30000);
+        defaultValues.put("docAggregationMaxEntries", -1);
+        updatedValues.put("docAggregationMaxEntries", 100000);
         defaultValues.put("tfAggregationThresholdMs", -1);
         updatedValues.put("tfAggregationThresholdMs", 10000);
         defaultValues.put("pruneQueryOptions", false);

@@ -2576,6 +2576,10 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             addOption(cfg, QueryOptions.TF_NEXT_SEEK, String.valueOf(config.getTfNextSeek()), false);
         }
 
+        if (config.getDocAggregationMaxEntries() > 0) {
+            addOption(cfg, QueryOptions.DOC_AGGREGATION_MAX_ENTRIES, String.valueOf(config.getDocAggregationMaxEntries()), false);
+        }
+
         if (config.isSeekingEventAggregation()) {
             addOption(cfg, QueryOptions.SEEKING_EVENT_AGGREGATION, String.valueOf(config.isSeekingEventAggregation()), false);
         }
