@@ -11,7 +11,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.accumulo.core.client.IteratorSetting;
-import org.apache.accumulo.core.clientImpl.ThriftScanner.ScanTimedOutException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
@@ -29,6 +28,7 @@ import datawave.query.tables.BatchResource;
 import datawave.query.tables.ResourceQueue;
 import datawave.query.tables.stats.ScanSessionStats;
 import datawave.query.tables.stats.ScanSessionStats.TIMERS;
+import datawave.query.util.AccumuloExceptionChecker;
 
 public class Scan implements Callable<Scan> {
 
@@ -289,16 +289,19 @@ public class Scan implements Callable<Scan> {
                 if (log.isTraceEnabled())
                     log.trace("not finished?" + !finished());
             } while (!finished());
-        } catch (ScanTimedOutException e) {
-            // this is okay. This means that we are being timesliced.
-            myScan.addRange(currentRange);
         } catch (Exception e) {
-            if (isInterruptedException(e)) {
-                log.info("Scan interrupted");
+            // Check for ScanTimedOutException by class name to avoid non-public API import
+            if (isScanTimedOutException(e)) {
+                // this is okay. This means that we are being timesliced.
+                myScan.addRange(currentRange);
             } else {
-                log.error("Scan failed", e);
+                if (isInterruptedException(e)) {
+                    log.info("Scan interrupted");
+                } else {
+                    log.error("Scan failed", e);
+                }
+                throw e;
             }
-            throw e;
         } finally {
             if (null != delegatedResource) {
                 delegatorReference.close(delegatedResource);
@@ -306,6 +309,10 @@ public class Scan implements Callable<Scan> {
         }
         return this;
 
+    }
+
+    private boolean isScanTimedOutException(Throwable t) {
+        return AccumuloExceptionChecker.isScanTimedOutException(t);
     }
 
     private boolean isInterruptedException(Throwable t) {

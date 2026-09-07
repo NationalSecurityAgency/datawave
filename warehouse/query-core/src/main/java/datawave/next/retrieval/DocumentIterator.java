@@ -17,7 +17,6 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iteratorsImpl.system.IterationInterruptedException;
-import org.apache.accumulo.tserver.tablet.TabletClosedException;
 import org.apache.hadoop.io.Text;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,6 +37,7 @@ import datawave.query.function.serializer.KryoDocumentSerializer;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.TermFrequencyList;
 import datawave.query.postprocessing.tf.TermOffsetMap;
+import datawave.query.util.AccumuloExceptionChecker;
 import datawave.query.util.Tuple3;
 
 /**
@@ -339,6 +339,10 @@ public class DocumentIterator extends DocumentIteratorOptions implements SortedK
         return source.deepCopy(env);
     }
 
+    private static boolean isTabletClosedException(Throwable t) {
+        return AccumuloExceptionChecker.isTabletClosedException(t);
+    }
+
     /**
      * Handle an exception returned from seek or next. This will silently ignore IterationInterruptedException as that happens when the underlying iterator was
      * interrupted because the client is no longer listening.
@@ -355,15 +359,15 @@ public class DocumentIterator extends DocumentIteratorOptions implements SortedK
         // handled specially to ensure that the client will retry the scan elsewhere
         IOException ioe = null;
         IterationInterruptedException iie = null;
-        TabletClosedException tce = null;
+        RuntimeException tce = null;
         if (reason instanceof IOException) {
             ioe = (IOException) reason;
         }
         if (reason instanceof IterationInterruptedException) {
             iie = (IterationInterruptedException) reason;
         }
-        if (reason instanceof TabletClosedException) {
-            tce = (TabletClosedException) reason;
+        if (isTabletClosedException(reason)) {
+            tce = (RuntimeException) reason;
         }
 
         int depth = 1;
@@ -375,8 +379,8 @@ public class DocumentIterator extends DocumentIteratorOptions implements SortedK
             if (reason instanceof IterationInterruptedException) {
                 iie = (IterationInterruptedException) reason;
             }
-            if (reason instanceof TabletClosedException) {
-                tce = (TabletClosedException) reason;
+            if (isTabletClosedException(reason)) {
+                tce = (RuntimeException) reason;
             }
             depth++;
         }
