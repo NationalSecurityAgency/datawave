@@ -10,6 +10,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
 
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
+import datawave.ingest.table.filter.WhindexCreationDateFilter;
 import datawave.iterators.FrequencyMetadataAggregator;
 import datawave.table.constants.MetadataColumnFamilyConstants;
 
@@ -28,6 +29,7 @@ public class MetadataTableConfigHelper extends AbstractTableConfigHelper {
                 setReverseIndexCombiner(tops, scope.name());
                 setCombinerForCountMetadata(tops, scope.name());
                 setCombinerForEdgeMetadata(tops, scope.name());
+                setWhindexCreationDateFilter(tops, scope.name());
             }
         }
 
@@ -72,6 +74,14 @@ public class MetadataTableConfigHelper extends AbstractTableConfigHelper {
         String stem = String.format("%s%s.%s", Property.TABLE_ITERATOR_PREFIX, scopeName, "ReverseIndexCombiner");
         setPropertyIfNecessary(tableName, stem, "12," + FrequencyMetadataAggregator.class.getName(), tops, log);
         setPropertyIfNecessary(tableName, stem + ".opt.columns", MetadataColumnFamilyConstants.COLF_RI.toString(), tops, log);
+        return stem;
+    }
+
+    // Add the WhindexCreationDateFilter.
+    private String setWhindexCreationDateFilter(TableOperations tops, String scopeName)
+                    throws AccumuloException, TableNotFoundException, AccumuloSecurityException {
+        String stem = String.format("%s%s.%s", Property.TABLE_ITERATOR_PREFIX, scopeName, "WhindexCreationDateFilter");
+        setPropertyIfNecessary(tableName, stem, "13," + WhindexCreationDateFilter.class.getName(), tops, log);
         return stem;
     }
 
