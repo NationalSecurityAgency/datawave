@@ -67,7 +67,6 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.accumulo.core.spi.crypto.CryptoEnvironment;
 import org.apache.accumulo.core.spi.crypto.CryptoService;
-import org.apache.accumulo.core.util.Validators;
 import org.apache.accumulo.core.util.tables.TableNameUtil;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileStatus;
@@ -125,7 +124,7 @@ public class InMemoryTableOperations extends TableOperationsHelper {
     @Override
     public void create(String tableName, NewTableConfiguration ntc) throws AccumuloException, AccumuloSecurityException, TableExistsException {
         String namespace = TableNameUtil.qualify(tableName).getFirst();
-        Validators.NEW_TABLE_NAME.validate(tableName);
+        AccumuloValidators.NEW_TABLE_NAME.validate(tableName);
         if (exists(tableName))
             throw new TableExistsException(tableName, tableName, "");
         checkArgument(namespaceExists(namespace), "Namespace (" + namespace + ") does not exist, create it first");
