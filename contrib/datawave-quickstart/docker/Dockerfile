@@ -123,6 +123,11 @@ RUN /bin/bash -c "/usr/bin/nohup /usr/sbin/sshd -D &" && \
     rm -rf contrib/datawave-quickstart/accumulo/logs/* && \
     rm -rf contrib/datawave-quickstart/wildfly/standalone/log/*
 
+# Accumulo TabletServer-side datawave iterators load Hadoop config from /etc/hadoop/conf;
+# without this symlink, event-table scans error with FileNotFoundException server-side.
+RUN mkdir -p /etc/hadoop && \
+    ln -sfn /opt/datawave/contrib/datawave-quickstart/hadoop/etc/hadoop /etc/hadoop/conf
+
 # Lastly, establish volumes for data, logs & other directories, wire up
 # the entrypoint & bootstrap scripts, expose ports, and set default CMD...
 
