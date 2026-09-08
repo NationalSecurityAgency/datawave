@@ -1,9 +1,11 @@
 package datawave.query.index.day;
 
 import java.util.Date;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.accumulo.core.client.AccumuloClient;
+import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.jexl3.parser.JexlNode;
 
@@ -29,8 +31,11 @@ public class DayIndexConfig {
 
     private String dayIndexTableName;
     private String yearIndexTableName;
+    private String metadataTableName;
     private Set<Authorizations> auths;
     private AccumuloClient client;
+    private final Map<String,ScannerBase.ConsistencyLevel> consistencyLevels;
+    private final Map<String,Map<String,String>> tableHints;
 
     private Multimap<String,String> valuesAndFields;
 
@@ -49,8 +54,11 @@ public class DayIndexConfig {
         this.dayIndexThreshold = config.getDayIndexThreshold();
         this.dayIndexTableName = config.getDayIndexTableName();
         this.yearIndexTableName = config.getYearIndexTableName();
+        this.metadataTableName = config.getMetadataTableName();
         this.auths = config.getAuthorizations();
         this.client = config.getClient();
+        this.consistencyLevels = config.getTableConsistencyLevels();
+        this.tableHints = config.getTableHints();
     }
 
     public JexlNode getNode() {
@@ -139,5 +147,21 @@ public class DayIndexConfig {
 
     public void setYearIndexTableName(String yearIndexTableName) {
         this.yearIndexTableName = yearIndexTableName;
+    }
+
+    public String getMetadataTableName() {
+        return metadataTableName;
+    }
+
+    public void setMetadataTableName(String metadataTableName) {
+        this.metadataTableName = metadataTableName;
+    }
+
+    public Map<String,ScannerBase.ConsistencyLevel> getConsistencyLevels() {
+        return consistencyLevels;
+    }
+
+    public Map<String,Map<String,String>> getTableHints() {
+        return tableHints;
     }
 }

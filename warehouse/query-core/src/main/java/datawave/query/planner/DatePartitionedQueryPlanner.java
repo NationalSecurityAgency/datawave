@@ -53,6 +53,15 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
     private String initialPlan;
     private String plannedScript;
 
+    // The planner clones created by the latest call to process(): the one used for initial planning, and one per sub-plan. Each allocates its own thread
+    // pool, so they must be shut down when this planner is closed. All of the state below is guarded by plannerCloneLock because process() and close() can
+    // run on different threads: a query may be cancelled or expired while it is still being planned, or while its pages are still being fetched.
+    private final Object plannerCloneLock = new Object();
+    private boolean closed;
+    private DefaultQueryPlanner initialPlanner;
+    private boolean initialPlanning;
+    private List<SubPlanCallable> subPlans = Collections.emptyList();
+
     // handles boilerplate operations that surround a visitor's execution (e.g., timers, logging, validating)
     private final TimedVisitorManager visitorManager = new TimedVisitorManager();
 
@@ -136,7 +145,11 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
     }
 
     /**
-     * Calls {@link DefaultQueryPlanner#close(GenericQueryConfiguration, Query)} on the inner query planner instance with the given config and settings.
+     * Calls {@link DefaultQueryPlanner#close(GenericQueryConfiguration, Query)} on the inner query planner instance with the given config and settings, and
+     * releases the resources held by every planner clone created by the latest call to
+     * {@link #process(GenericQueryConfiguration, String, Query, ScannerFactory)}. A clone that is still planning when this is called is released as soon as it
+     * finishes, rather than having its thread pool shut down out from under it. Once closed, a concurrent call to
+     * {@link #process(GenericQueryConfiguration, String, Query, ScannerFactory)} aborts instead of creating further clones.
      *
      * @param config
      *            the config
@@ -145,7 +158,108 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
      */
     @Override
     public void close(GenericQueryConfiguration config, Query settings) {
+        releaseClonedPlanners(true);
         this.queryPlanner.close(config, settings);
+    }
+
+    /**
+     * Shut down the thread pool of each planner clone created during {@link #process(GenericQueryConfiguration, String, Query, ScannerFactory)}. The clones
+     * share their query with the inner planner, so only their thread pools are released here; the query-level cleanup is left to the inner planner's
+     * {@link DefaultQueryPlanner#close(GenericQueryConfiguration, Query)}.
+     *
+     * @param markClosed
+     *            whether to mark this planner closed, so that a concurrent {@link #process(GenericQueryConfiguration, String, Query, ScannerFactory)} refuses
+     *            to register any further clone rather than leaving one behind with nothing left to release it. False when starting a new round of planning,
+     *            which reopens this planner.
+     */
+    private void releaseClonedPlanners(boolean markClosed) {
+        DefaultQueryPlanner planner = null;
+        List<SubPlanCallable> plans;
+
+        // Claim the clones under the lock so that concurrent callers cannot both release the same set, then shut them down outside of it: releasing a
+        // sub-plan acquires that sub-plan's own monitor, and this lock is never held while doing so.
+        synchronized (plannerCloneLock) {
+            this.closed = markClosed;
+
+            // An initial planner that is still planning keeps submitting work to its own thread pool, so shutting that pool down here would reject the work
+            // it has yet to submit. It stays registered, and initialPlanningComplete() releases it as soon as planning ends.
+            if (!this.initialPlanning) {
+                planner = this.initialPlanner;
+                this.initialPlanner = null;
+            }
+
+            plans = this.subPlans;
+            this.subPlans = Collections.emptyList();
+        }
+
+        if (planner != null) {
+            planner.shutdownExecutor();
+        }
+        for (SubPlanCallable subPlan : plans) {
+            subPlan.releasePlanner();
+        }
+    }
+
+    /**
+     * Take ownership of the planner clone that is about to perform the initial planning pass.
+     *
+     * @param planner
+     *            the planner clone that will perform the initial planning pass
+     * @return true if the clone was registered, or false if this planner was closed first, in which case planning must not start: it would allocate a thread
+     *         pool that nothing is left to shut down. A clone that has not planned yet holds no thread pool, so a refused one can simply be discarded.
+     */
+    private boolean registerInitialPlanner(DefaultQueryPlanner planner) {
+        synchronized (plannerCloneLock) {
+            if (closed) {
+                return false;
+            }
+            this.initialPlanner = planner;
+            this.initialPlanning = true;
+            return true;
+        }
+    }
+
+    /**
+     * Mark the initial planning pass complete, releasing its planner clone if {@link #close(GenericQueryConfiguration, Query)} arrived while that pass was
+     * still in progress.
+     */
+    private void initialPlanningComplete() {
+        DefaultQueryPlanner planner = null;
+
+        synchronized (plannerCloneLock) {
+            this.initialPlanning = false;
+            if (closed) {
+                planner = this.initialPlanner;
+                this.initialPlanner = null;
+            }
+        }
+
+        if (planner != null) {
+            planner.shutdownExecutor();
+        }
+    }
+
+    /**
+     * Take ownership of the sub-plans created for this round of planning.
+     *
+     * @param plans
+     *            the sub-plans created for this round of planning
+     * @return true if the sub-plans were registered, or false if this planner was closed first, in which case they are released instead so that none of them
+     *         can start planning
+     */
+    private boolean registerSubPlans(List<SubPlanCallable> plans) {
+        synchronized (plannerCloneLock) {
+            if (!closed) {
+                this.subPlans = plans;
+                return true;
+            }
+        }
+
+        // Released outside the lock: releasing a sub-plan acquires that sub-plan's own monitor.
+        for (SubPlanCallable subPlan : plans) {
+            subPlan.releasePlanner();
+        }
+        return false;
     }
 
     /**
@@ -270,7 +384,7 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
      *            the scanner factory
      * @return the query data
      * @throws DatawaveQueryException
-     *             if an exception occurs
+     *             if an exception occurs, or if this planner is closed while the query is being planned
      */
     @Override
     public CloseableIterable<QueryData> process(GenericQueryConfiguration genericConfig, String query, Query settings, ScannerFactory scannerFactory)
@@ -285,6 +399,10 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
         // Reset the initial and planned script.
         this.initialPlan = null;
         this.plannedScript = null;
+
+        // Release any planner clones left over from a previous call before creating a new set, reopening this planner so that the clones created below are
+        // tracked again.
+        releaseClonedPlanners(false);
 
         if (log.isDebugEnabled()) {
             log.debug("Federated query: " + query);
@@ -307,17 +425,28 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
         boolean deferPushdownPullup = shardQueryConfig.isDeferPushdownPullup();
         shardQueryConfig.setDeferPushdownPullup(true);
 
-        // now let's do the initial planning
-        DefaultQueryPlanner initialPlanner = this.queryPlanner.clone();
-        initialPlanner.process(shardQueryConfig, query, settings, scannerFactory);
+        try {
+            // now let's do the initial planning, tracking the clone before it is used so that a concurrent close() cannot miss it
+            DefaultQueryPlanner planner = this.queryPlanner.clone();
+            if (!registerInitialPlanner(planner)) {
+                throw new DatawaveQueryException("Query planner was closed before the initial plan could be created");
+            }
 
-        // Our initial plan and planned script will both be the initial planned script
-        this.initialPlan = this.plannedScript = initialPlanner.getPlannedScript();
+            try {
+                planner.process(shardQueryConfig, query, settings, scannerFactory);
 
-        // and reset the expansion flags to what we had previously
-        shardQueryConfig.setGeneratePlanOnly(generatePlanOnly);
-        shardQueryConfig.setExpandValues(expandValues);
-        shardQueryConfig.setDeferPushdownPullup(deferPushdownPullup);
+                // Our initial plan and planned script will both be the initial planned script
+                this.initialPlan = this.plannedScript = planner.getPlannedScript();
+            } finally {
+                initialPlanningComplete();
+            }
+        } finally {
+            // and reset the expansion flags to what we had previously, whether or not the initial planning succeeded: the caller's config outlives a failed
+            // plan, and must not be left in the temporary initial-planning mode set above
+            shardQueryConfig.setGeneratePlanOnly(generatePlanOnly);
+            shardQueryConfig.setExpandValues(expandValues);
+            shardQueryConfig.setDeferPushdownPullup(deferPushdownPullup);
+        }
 
         // Get the relevant date ranges and the sets of fields that have gaps in those ranges
         SortedMap<Pair<Date,Date>,Set<String>> dateRanges = getSubQueryDateRanges(shardQueryConfig);
@@ -330,6 +459,9 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
         for (Map.Entry<Pair<Date,Date>,Set<String>> dateRange : dateRanges.entrySet()) {
             SubPlanCallable subPlan = new SubPlanCallable(this.queryPlanner, planningConfig, dateRange, scannerFactory);
             futures.add(subPlan);
+        }
+        if (!registerSubPlans(futures)) {
+            throw new DatawaveQueryException("Query planner was closed before its sub-plans could be created");
         }
 
         // create a listener for plan updates and update the configuration

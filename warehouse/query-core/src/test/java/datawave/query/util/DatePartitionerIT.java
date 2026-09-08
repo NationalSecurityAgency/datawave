@@ -1,7 +1,6 @@
 package datawave.query.util;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
@@ -11,7 +10,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.SortedSet;
@@ -21,7 +19,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.model.IndexFieldHole;
 import datawave.util.time.DateHelper;
 
@@ -247,6 +244,49 @@ class DatePartitionerIT {
         // @formatter:on
     }
 
+    /**
+     * Adjacent holes for <em>different</em> fields must stay separate - only same-field holes are merged. The resulting back-to-back ranges are legal because
+     * their unindexed-field sets differ.
+     */
+    @Test
+    void adjacentHolesForDifferentFields() {
+        Date begin = startOfDay("20130101");
+        Date end = endOfDay("20130105");
+        Map<String,Map<String,IndexFieldHole>> holes = new HashMap<>();
+        holes.putAll(holesFor("F", "dt", "20130101", "20130102"));
+        Map<String,IndexFieldHole> gByDatatype = new HashMap<>();
+        gByDatatype.put("dt", hole("G", "dt", "20130103", "20130104"));
+        holes.put("G", gByDatatype);
+
+        SortedMap<Pair<Date,Date>,Set<String>> result = DatePartitioner.partition(holes, begin, end);
+
+        // @formatter:off
+        assertPartition(result,
+                        range(begin, endOfDay("20130102"), "F"),
+                        range(startOfDay("20130103"), endOfDay("20130104"), "G"),
+                        range(new Date(endOfDay("20130104").getTime() + 1), end));
+        // @formatter:on
+    }
+
+    /**
+     * Two adjacent date ranges within a single field/datatype's own hole set are merged, just as they are across datatypes.
+     */
+    @Test
+    void adjacentRangesWithinOneDatatype() {
+        Date begin = startOfDay("20130101");
+        Date end = endOfDay("20130106");
+        Map<String,Map<String,IndexFieldHole>> holes = holesFor("F", "dt", "20130102", "20130103", "20130104", "20130105");
+
+        SortedMap<Pair<Date,Date>,Set<String>> result = DatePartitioner.partition(holes, begin, end);
+
+        // @formatter:off
+        assertPartition(result,
+                        range(begin, new Date(startOfDay("20130102").getTime() - 1)),
+                        range(startOfDay("20130102"), endOfDay("20130105"), "F"),
+                        range(new Date(endOfDay("20130105").getTime() + 1), end));
+        // @formatter:on
+    }
+
     @Test
     void threeFieldsInterleavedHoles() {
         Date begin = startOfDay("20130101");
@@ -274,8 +314,7 @@ class DatePartitionerIT {
 
     @Test
     void emptyDateRangesInIndexFieldHole() {
-        // BUG: IndexFieldHole.getDateRanges() is empty here, and getHolesOverlappingOriginalQueryDateRange calls holes.first()/holes.last() without an
-        // isEmpty() guard, so this throws a raw NoSuchElementException instead of a controlled query exception.
+        // A hole entry with no date ranges contributes no boundaries, so the query range is returned whole with nothing unindexed.
         Date begin = startOfDay("20130101");
         Date end = endOfDay("20130105");
         Map<String,IndexFieldHole> byDatatype = new HashMap<>();
@@ -283,7 +322,30 @@ class DatePartitionerIT {
         Map<String,Map<String,IndexFieldHole>> holes = new HashMap<>();
         holes.put("F", byDatatype);
 
-        assertThrows(NoSuchElementException.class, () -> DatePartitioner.partition(holes, begin, end));
+        SortedMap<Pair<Date,Date>,Set<String>> result = DatePartitioner.partition(holes, begin, end);
+
+        assertPartition(result, range(begin, end));
+    }
+
+    @Test
+    void emptyDateRangesAlongsideRealHole() {
+        // The empty hole entry is ignored, but a second field's real hole still partitions the range.
+        Date begin = startOfDay("20130101");
+        Date end = endOfDay("20130105");
+        Map<String,IndexFieldHole> emptyByDatatype = new HashMap<>();
+        emptyByDatatype.put("dt", new IndexFieldHole("F", "dt", Collections.emptySortedSet()));
+        Map<String,Map<String,IndexFieldHole>> holes = new HashMap<>();
+        holes.put("F", emptyByDatatype);
+        holes.putAll(holesFor("G", "dt", "20130102", "20130103"));
+
+        SortedMap<Pair<Date,Date>,Set<String>> result = DatePartitioner.partition(holes, begin, end);
+
+        // @formatter:off
+        assertPartition(result,
+                        range(begin, new Date(startOfDay("20130102").getTime() - 1)),
+                        range(startOfDay("20130102"), endOfDay("20130103"), "G"),
+                        range(new Date(endOfDay("20130103").getTime() + 1), end));
+        // @formatter:on
     }
 
     @Test
@@ -395,6 +457,76 @@ class DatePartitionerIT {
             // @formatter:on
         }
 
+        /**
+         * An enclosing hole in one datatype spans two separated holes in others. The union is the enclosing hole, so the days between the inner holes must
+         * remain unindexed: ending the merged range at an inner hole's end would report those days as indexed for a datatype that has no index covering them,
+         * silently dropping its documents from the results.
+         */
+        @Test
+        void holesNestedWithSeparatedInnerHoles() {
+            Date begin = startOfDay("20130101");
+            Date end = endOfDay("20130110");
+            Map<String,IndexFieldHole> byDatatype = new HashMap<>();
+            byDatatype.put("datatype-a", hole("F", "datatype-a", "20130101", "20130110"));
+            byDatatype.put("datatype-b", hole("F", "datatype-b", "20130102", "20130103"));
+            byDatatype.put("datatype-c", hole("F", "datatype-c", "20130105", "20130106"));
+            Map<String,Map<String,IndexFieldHole>> holes = new HashMap<>();
+            holes.put("F", byDatatype);
+
+            SortedMap<Pair<Date,Date>,Set<String>> result = DatePartitioner.partition(holes, begin, end);
+
+            assertPartition(result, range(begin, end, "F"));
+        }
+
+        /**
+         * The same nesting, but with the enclosing hole ending before the query range does. The merged range must still cover the enclosing hole in full, and
+         * must not swallow the trailing indexed portion of the query range.
+         */
+        @Test
+        void holesNestedWithSeparatedInnerHolesFollowedByIndexedRange() {
+            Date begin = startOfDay("20130101");
+            Date end = endOfDay("20130110");
+            Map<String,IndexFieldHole> byDatatype = new HashMap<>();
+            byDatatype.put("datatype-a", hole("F", "datatype-a", "20130101", "20130108"));
+            byDatatype.put("datatype-b", hole("F", "datatype-b", "20130102", "20130103"));
+            byDatatype.put("datatype-c", hole("F", "datatype-c", "20130105", "20130106"));
+            Map<String,Map<String,IndexFieldHole>> holes = new HashMap<>();
+            holes.put("F", byDatatype);
+
+            SortedMap<Pair<Date,Date>,Set<String>> result = DatePartitioner.partition(holes, begin, end);
+
+            // @formatter:off
+            assertPartition(result,
+                            range(begin, endOfDay("20130108"), "F"),
+                            range(startOfDay("20130109"), end));
+            // @formatter:on
+        }
+
+        /**
+         * Nesting must not merge holes that are genuinely disjoint from the enclosing one: a hole starting more than a day after the enclosing hole ends still
+         * gets its own range.
+         */
+        @Test
+        void holesNestedThenDisjointAcrossDatatypes() {
+            Date begin = startOfDay("20130101");
+            Date end = endOfDay("20130112");
+            Map<String,IndexFieldHole> byDatatype = new HashMap<>();
+            byDatatype.put("datatype-a", hole("F", "datatype-a", "20130101", "20130108"));
+            byDatatype.put("datatype-b", hole("F", "datatype-b", "20130103", "20130104"));
+            byDatatype.put("datatype-c", hole("F", "datatype-c", "20130111", "20130112"));
+            Map<String,Map<String,IndexFieldHole>> holes = new HashMap<>();
+            holes.put("F", byDatatype);
+
+            SortedMap<Pair<Date,Date>,Set<String>> result = DatePartitioner.partition(holes, begin, end);
+
+            // @formatter:off
+            assertPartition(result,
+                            range(begin, endOfDay("20130108"), "F"),
+                            range(startOfDay("20130109"), new Date(startOfDay("20130111").getTime() - 1)),
+                            range(startOfDay("20130111"), end, "F"));
+            // @formatter:on
+        }
+
         @Test
         void holesDisjointAcrossDatatypes() {
             Date begin = startOfDay("20130101");
@@ -413,10 +545,8 @@ class DatePartitionerIT {
         }
 
         /**
-         * BUG: adjacent cross-datatype holes for the same field should merge into one range; collapseDatatypes only merges *overlapping* ranges (a start
-         * boundary must fall on or before a preceding end boundary), so an adjacent-but-not-overlapping pair leaves two separate hole ranges. Because they are
-         * adjacent, the gap between them is zero-length and gets skipped by the zero-length guard in the boundary reduction loop, so the two remaining ranges
-         * end up back-to-back with an identical unindexed-field set {F}. ensureConsistency's matchingFieldSetsFound check then throws.
+         * Adjacent cross-datatype holes for the same field merge into one range. They are contiguous - the second starts 1ms after the first ends - so leaving
+         * them separate would produce two back-to-back sub-ranges with the identical unindexed-field set {F}, which ensureConsistency rejects as fatal.
          */
         @Test
         void holesAdjacentAcrossDatatypes() {
@@ -425,7 +555,73 @@ class DatePartitionerIT {
             Map<String,Map<String,IndexFieldHole>> holes = twoDatatypeHoles("F", "datatype-a", new String[] {"20130101", "20130102"}, "datatype-b",
                             new String[] {"20130103", "20130105"});
 
-            assertThrows(DatawaveFatalQueryException.class, () -> DatePartitioner.partition(holes, begin, end));
+            SortedMap<Pair<Date,Date>,Set<String>> result = DatePartitioner.partition(holes, begin, end);
+
+            assertPartition(result, range(begin, end, "F"));
+        }
+
+        /**
+         * The merge of adjacent holes must not swallow the trailing indexed portion of the query range.
+         */
+        @Test
+        void holesAdjacentAcrossDatatypesFollowedByIndexedRange() {
+            Date begin = startOfDay("20130101");
+            Date end = endOfDay("20130107");
+            Map<String,Map<String,IndexFieldHole>> holes = twoDatatypeHoles("F", "datatype-a", new String[] {"20130101", "20130102"}, "datatype-b",
+                            new String[] {"20130103", "20130105"});
+
+            SortedMap<Pair<Date,Date>,Set<String>> result = DatePartitioner.partition(holes, begin, end);
+
+            // @formatter:off
+            assertPartition(result,
+                            range(begin, endOfDay("20130105"), "F"),
+                            range(new Date(endOfDay("20130105").getTime() + 1), end));
+            // @formatter:on
+        }
+
+        /**
+         * Three chained adjacent holes across three datatypes collapse into a single range.
+         */
+        @Test
+        void holesChainAdjacentAcrossThreeDatatypes() {
+            Date begin = startOfDay("20130101");
+            Date end = endOfDay("20130107");
+            Map<String,IndexFieldHole> byDatatype = new HashMap<>();
+            byDatatype.put("datatype-a", hole("F", "datatype-a", "20130102", "20130103"));
+            byDatatype.put("datatype-b", hole("F", "datatype-b", "20130104", "20130104"));
+            byDatatype.put("datatype-c", hole("F", "datatype-c", "20130105", "20130106"));
+            Map<String,Map<String,IndexFieldHole>> holes = new HashMap<>();
+            holes.put("F", byDatatype);
+
+            SortedMap<Pair<Date,Date>,Set<String>> result = DatePartitioner.partition(holes, begin, end);
+
+            // @formatter:off
+            assertPartition(result,
+                            range(begin, new Date(startOfDay("20130102").getTime() - 1)),
+                            range(startOfDay("20130102"), endOfDay("20130106"), "F"),
+                            range(new Date(endOfDay("20130106").getTime() + 1), end));
+            // @formatter:on
+        }
+
+        /**
+         * Holes one full day apart are not adjacent, so they must stay separate with an indexed gap between them.
+         */
+        @Test
+        void holesOneDayApartAcrossDatatypesStaySeparate() {
+            Date begin = startOfDay("20130101");
+            Date end = endOfDay("20130106");
+            Map<String,Map<String,IndexFieldHole>> holes = twoDatatypeHoles("F", "datatype-a", new String[] {"20130101", "20130102"}, "datatype-b",
+                            new String[] {"20130104", "20130105"});
+
+            SortedMap<Pair<Date,Date>,Set<String>> result = DatePartitioner.partition(holes, begin, end);
+
+            // @formatter:off
+            assertPartition(result,
+                            range(begin, endOfDay("20130102"), "F"),
+                            range(startOfDay("20130103"), new Date(startOfDay("20130104").getTime() - 1)),
+                            range(startOfDay("20130104"), endOfDay("20130105"), "F"),
+                            range(new Date(endOfDay("20130105").getTime() + 1), end));
+            // @formatter:on
         }
 
         @Test

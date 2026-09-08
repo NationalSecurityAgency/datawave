@@ -45,11 +45,6 @@
 </property>
 
 <property>
-   <name>shard.table.index.bloom.enable</name>
-   <value>false</value>
-</property>
-
-<property>
   <name>ingest.fatal.errors</name>
   <value>EVENT_DATE_MISSING,ERROR_METRIC,UPSTREAM_ERROR</value>
   <description>This is the list of comma delimited RawDataError enumerations that we consider fatal.
