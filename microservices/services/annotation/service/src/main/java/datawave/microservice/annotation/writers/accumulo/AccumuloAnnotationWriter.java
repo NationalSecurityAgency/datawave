@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.accumulo.core.client.AccumuloClient;
@@ -91,6 +92,15 @@ public class AccumuloAnnotationWriter implements AnnotationWriter, AutoCloseable
         }
     }
 
+    /**
+     * Builds a unique key for {@link #writeTimers}, guaranteeing distinct entries even for concurrent/duplicate writes of the same (content-hashed) annotation
+     * id, so one write's completion cannot clear another still-in-flight write's timer entry.
+     */
+    @VisibleForTesting
+    static String buildWriteTimerKey(String annotationId) {
+        return annotationId + ":" + UUID.randomUUID();
+    }
+
     private static void returnClientQuietly(AccumuloConnectionFactory connectionFactory, AccumuloClient client) {
         try {
             connectionFactory.returnClient(client);
@@ -112,8 +122,14 @@ public class AccumuloAnnotationWriter implements AnnotationWriter, AutoCloseable
     @Override
     public Optional<Annotation> write(Annotation annotation) {
         String annotationId = annotation.getAnnotationId();
+        // annotationId is a deterministic hash of the annotation's content, so concurrent/duplicate deliveries of the same
+        // annotation (e.g. a redelivered message following a broker-side nack/retry) would collide on the same map key if
+        // annotationId were used directly, letting one write's completion clear another still-in-flight write's timer and
+        // silently hide a hung write from AccumuloHealthChecker. Suffix with a per-invocation UUID to guarantee a unique key
+        // while keeping the annotation id visible for debugging.
+        String timerKey = buildWriteTimerKey(annotationId);
         // save the start time of the write call
-        writeTimers.put(annotationId, System.currentTimeMillis());
+        writeTimers.put(timerKey, System.currentTimeMillis());
         try {
             AnnotationSource annotationSource = annotation.getSource();
 
@@ -151,7 +167,7 @@ public class AccumuloAnnotationWriter implements AnnotationWriter, AutoCloseable
                             .setAnalyticSourceHash(writtenSource.getAnalyticSourceHash()).setSource(writtenSource).build();
             return Optional.of(updatedAnnotation);
         } finally {
-            writeTimers.remove(annotationId);
+            writeTimers.remove(timerKey);
         }
     }
 

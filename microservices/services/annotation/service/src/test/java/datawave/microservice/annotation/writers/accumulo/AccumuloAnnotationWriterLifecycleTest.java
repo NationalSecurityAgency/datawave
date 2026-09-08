@@ -115,4 +115,24 @@ class AccumuloAnnotationWriterLifecycleTest {
         // construction succeeded despite the race, so the client was retained (not returned)
         verify(connectionFactory, never()).returnClient(any());
     }
+
+    /**
+     * Regression test: {@code write()}'s {@code writeTimers} map was previously keyed directly by the annotation's (content-derived, deterministic)
+     * {@code annotationId}, so concurrent/duplicate deliveries of identical annotation content (e.g. a redelivered message following a broker-side nack/retry)
+     * would collide on the same map key -- letting one write's completion clear another still-in-flight write's timer entry and silently hide a hung write from
+     * {@code AccumuloHealthChecker}. Verifies that the key-building helper now produces distinct keys even for the same annotation id.
+     */
+    @Test
+    void testWriteTimerKeysAreUniqueEvenForIdenticalAnnotationId() {
+        String annotationId = "same-content-hash";
+
+        String key1 = AccumuloAnnotationWriter.buildWriteTimerKey(annotationId);
+        String key2 = AccumuloAnnotationWriter.buildWriteTimerKey(annotationId);
+
+        org.junit.jupiter.api.Assertions.assertNotEquals(key1, key2, "two writes of the same annotation id must not collide on the same write-timer key");
+        org.junit.jupiter.api.Assertions.assertTrue(key1.startsWith(annotationId + ":"),
+                        "expected the annotation id to remain visible in the key for debugging");
+        org.junit.jupiter.api.Assertions.assertTrue(key2.startsWith(annotationId + ":"),
+                        "expected the annotation id to remain visible in the key for debugging");
+    }
 }
