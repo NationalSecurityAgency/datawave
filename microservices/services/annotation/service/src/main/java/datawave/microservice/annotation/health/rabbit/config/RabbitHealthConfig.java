@@ -65,14 +65,16 @@ public class RabbitHealthConfig implements SchedulingConfigurer {
         };
     }
 
+    // Named specifically (rather than the generic 'taskExecutor') so this small, dedicated poller pool isn't
+    // mistaken for -- or silently reused as -- the application's general-purpose async/scheduling executor.
     @Bean(destroyMethod = "shutdown")
-    public Executor taskExecutor() {
+    public Executor rabbitHealthTaskExecutor() {
         return Executors.newScheduledThreadPool(2);
     }
 
     @Override
     public void configureTasks(ScheduledTaskRegistrar taskRegistrar) {
-        taskRegistrar.setScheduler(taskExecutor());
+        taskRegistrar.setScheduler(rabbitHealthTaskExecutor());
         taskRegistrar.addTriggerTask(triggerTask(), trigger());
     }
 }

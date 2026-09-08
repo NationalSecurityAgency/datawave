@@ -46,6 +46,7 @@ import datawave.annotation.protobuf.v1.AnnotationMessage;
 import datawave.annotation.util.v1.AnnotationUtils;
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.microservice.annotation.common.AnnotationSupplier;
+import datawave.microservice.annotation.health.HealthChecker;
 import datawave.microservice.annotation.service.config.AnnotationProperties;
 import datawave.microservice.annotation.util.lookup.service.LookupService;
 import datawave.microservice.annotation.writers.AnnotationWriter;
@@ -129,6 +130,17 @@ public class TestAnnotationControllerV1Delivery {
             Field field = AnnotationControllerV1.class.getDeclaredField("fileAnnotationWriter");
             field.setAccessible(true);
             field.set(annotationController, writer);
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    // healthChecker is normally populated via @Autowired(required = false); inject a mock directly with reflection
+    private void setHealthChecker(HealthChecker checker) {
+        try {
+            Field field = AnnotationControllerV1.class.getDeclaredField("healthChecker");
+            field.setAccessible(true);
+            field.set(annotationController, checker);
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }
@@ -399,6 +411,66 @@ public class TestAnnotationControllerV1Delivery {
         Optional<AnnotationMessage> result = annotationController.sendAnnotationMessage(buildMessage(annotation));
 
         assertTrue(result.isEmpty());
+    }
+
+    @Test
+    public void testSendAnnotationMessage_UnhealthyMessagingInfrastructureSkipsSendEntirely() {
+        HealthChecker healthChecker = mock(HealthChecker.class);
+        when(healthChecker.isHealthy()).thenReturn(false);
+        setHealthChecker(healthChecker);
+
+        Annotation annotation = AnnotationUtils.injectAllHashes(generateTestAnnotation());
+
+        Optional<AnnotationMessage> result = annotationController.sendAnnotationMessage(buildMessage(annotation));
+
+        assertTrue(result.isEmpty(), "an unhealthy messaging infrastructure should short-circuit to failure");
+        verify(annotationSink, times(0)).send(any());
+        assertTrue(getAnnotationAckTracker().isEmpty(), "no latch should be registered when the send is skipped due to health");
+    }
+
+    @Test
+    public void testSendAnnotationMessage_HealthyMessagingInfrastructureSendsNormally() {
+        HealthChecker healthChecker = mock(HealthChecker.class);
+        when(healthChecker.isHealthy()).thenReturn(true);
+        setHealthChecker(healthChecker);
+        configureImmediateAck();
+
+        Annotation annotation = AnnotationUtils.injectAllHashes(generateTestAnnotation());
+
+        Optional<AnnotationMessage> result = annotationController.sendAnnotationMessage(buildMessage(annotation));
+
+        assertTrue(result.isPresent());
+        verify(annotationSink, times(1)).send(any());
+    }
+
+    @Test
+    public void testSendAnnotationMessage_NoHealthCheckerConfiguredSendsNormally() {
+        // healthChecker is left unset (null), mirroring production when 'annotation.health.rabbit.enabled' is false
+        configureImmediateAck();
+        Annotation annotation = AnnotationUtils.injectAllHashes(generateTestAnnotation());
+
+        Optional<AnnotationMessage> result = annotationController.sendAnnotationMessage(buildMessage(annotation));
+
+        assertTrue(result.isPresent());
+        verify(annotationSink, times(1)).send(any());
+    }
+
+    @Test
+    public void testWriteAnnotation_UnhealthyMessagingInfrastructureRetriesThenFallsBackToFileWriter() throws Exception {
+        HealthChecker healthChecker = mock(HealthChecker.class);
+        when(healthChecker.isHealthy()).thenReturn(false);
+        setHealthChecker(healthChecker);
+
+        AnnotationWriter fileWriter = mock(AnnotationWriter.class);
+        setFileAnnotationWriter(fileWriter);
+
+        Annotation annotation = generateTestAnnotation();
+
+        Optional<Annotation> result = annotationController.writeAnnotation(annotation);
+
+        assertTrue(result.isPresent(), "the file-writer fallback should still report success");
+        verify(annotationSink, times(0)).send(any());
+        verify(fileWriter, times(1)).write(any());
     }
 
     // ----------------------------------------------------------------------------------------------------------------

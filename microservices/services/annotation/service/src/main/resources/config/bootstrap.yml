@@ -27,6 +27,14 @@ management:
         RABBITMQ_UNHEALTHY: 200
 
 annotation:
+  writers:
+    accumulo:
+      # Bind the health checker's concurrency source to the actual accumuloAnnotationSink-in-0 consumer concurrency (see annotation.yml)
+      # so the "percent hung" calculation always reflects the real number of concurrent writer consumers, rather than drifting out of
+      # sync with a separately-configured value.
+      concurrency: "${spring.cloud.stream.bindings.accumuloAnnotationSink-in-0.consumer.concurrency:1}"
+
+annotation:
   system-from: "datawave-annotation-service"
 
   # Database connection settings

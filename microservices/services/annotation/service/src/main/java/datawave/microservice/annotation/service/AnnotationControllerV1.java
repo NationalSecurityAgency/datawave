@@ -60,6 +60,7 @@ import datawave.annotation.util.v1.AnnotationValidators;
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.core.query.runner.AccumuloConnectionRequestMap;
 import datawave.microservice.annotation.common.AnnotationSupplier;
+import datawave.microservice.annotation.health.HealthChecker;
 import datawave.microservice.annotation.service.config.AnnotationProperties;
 import datawave.microservice.annotation.util.Metadata;
 import datawave.microservice.annotation.util.lookup.service.LookupService;
@@ -112,6 +113,10 @@ public class AnnotationControllerV1 {
     @Autowired(required = false)
     @Qualifier("fileAnnotationWriter")
     private AnnotationWriter fileAnnotationWriter;
+
+    /** gates message publishing on messaging-infrastructure health, when the rabbit health checker is enabled */
+    @Autowired(required = false)
+    private HealthChecker healthChecker;
 
     @Autowired
     public AnnotationControllerV1(AccumuloConnectionFactory factory, LookupService lookupService, AnnotationProperties annotationProperties,
@@ -605,6 +610,13 @@ public class AnnotationControllerV1 {
 
     /* package-private for unit testing */
     Optional<AnnotationMessage> sendAnnotationMessage(AnnotationMessage annotationMessage) {
+        // If a rabbit health checker is configured and reports the messaging infrastructure as unhealthy, skip attempting to send
+        // entirely -- the caller's retry/backoff loop in writeAnnotation will keep re-checking on subsequent attempts, and will
+        // eventually fall back to the file writer once its retry budget is exhausted.
+        if (healthChecker != null && !healthChecker.isHealthy()) {
+            return Optional.empty();
+        }
+
         AnnotationMessage identifiedMessage = annotationMessage.getAnnotationMessageId().isBlank()
                         ? AnnotationUtils.injectAnnotationMessageHash(annotationMessage)
                         : annotationMessage;

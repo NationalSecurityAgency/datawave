@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
@@ -51,6 +52,7 @@ import datawave.microservice.annotation.common.config.AccumuloConfiguration;
 import datawave.microservice.annotation.common.config.AnnotationSerializerConfiguration;
 import datawave.microservice.annotation.writers.accumulo.config.AccumuloAnnotationWriterConfig;
 import datawave.microservice.annotation.writers.accumulo.config.AccumuloAnnotationWriterProperties;
+import datawave.microservice.annotation.writers.accumulo.health.AccumuloHealthChecker;
 import lombok.extern.slf4j.Slf4j;
 
 @ExtendWith(SpringExtension.class)
@@ -86,6 +88,39 @@ public class AccumuloAnnotationWriterTest {
     public void testBeansPresent() {
         assertTrue(context.containsBean("accumuloAnnotationSink"), "expected accumuloAnnotationSink to be present");
         assertTrue(context.containsBean("accumuloAnnotationWriter"), "expected accumuloAnnotationWriter to be present");
+        assertTrue(context.containsBean("accumuloHealthChecker"), "expected accumuloHealthChecker to be present when health checking is enabled");
+    }
+
+    @Test
+    public void testHealthCheckerReflectsWriterConcurrencyAndHungWrites() throws Exception {
+        AccumuloHealthChecker healthChecker = context.getBean(AccumuloHealthChecker.class);
+
+        // with no writes in flight, the checker should report up
+        assertTrue(healthChecker.health().getStatus().equals(org.springframework.boot.actuate.health.Status.UP), "expected UP with no writes in flight");
+
+        // the concurrency source should reflect the actual accumuloAnnotationSink-in-0 consumer concurrency, not an unrelated/unbound default
+        assertEquals(5, accumuloAnnotationWriterProperties.getConcurrency(),
+                        "expected the health checker's concurrency to be bound to the real consumer concurrency");
+
+        // simulate 3 of the 5 configured consumers being hung on a write started well past the hung timeout; 3/5 = 60% exceeds
+        // the 50% failure threshold, so the checker should report the service as down.
+        long staleStartTime = System.currentTimeMillis()
+                        - (accumuloAnnotationWriterProperties.getHealth().getHungAnnotationWriterTimeoutMillis() + TimeUnit.SECONDS.toMillis(1));
+        Map<String,Long> writeTimers = accumuloAnnotationWriter.getWriteTimers();
+        try {
+            writeTimers.put("hung-annotation-1", staleStartTime);
+            writeTimers.put("hung-annotation-2", staleStartTime);
+            writeTimers.put("hung-annotation-3", staleStartTime);
+
+            assertTrue(healthChecker.health().getStatus().equals(org.springframework.boot.actuate.health.Status.DOWN),
+                            "expected DOWN once the percent-hung threshold is exceeded");
+        } finally {
+            writeTimers.remove("hung-annotation-1");
+            writeTimers.remove("hung-annotation-2");
+            writeTimers.remove("hung-annotation-3");
+        }
+
+        assertTrue(healthChecker.health().getStatus().equals(org.springframework.boot.actuate.health.Status.UP), "expected UP again once writes complete");
     }
 
     @Test

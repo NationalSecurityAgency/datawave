@@ -117,4 +117,14 @@ public class AccumuloAnnotationWriter implements AnnotationWriter {
     public AnnotationDataAccess getDataAccess() {
         return annotationDataAccess;
     }
+
+    /**
+     * Returns the map of annotation IDs to the timestamp at which their write began, for any writes currently in flight. Used by
+     * {@link datawave.microservice.annotation.writers.accumulo.health.AccumuloHealthChecker} to detect hung consumers.
+     *
+     * @return the in-flight write timers, keyed by annotation ID
+     */
+    public ConcurrentHashMap<String,Long> getWriteTimers() {
+        return writeTimers;
+    }
 }

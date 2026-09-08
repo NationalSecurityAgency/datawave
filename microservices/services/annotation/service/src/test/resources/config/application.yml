@@ -117,10 +117,23 @@ annotation:
 
 spring.config.activate.on-profile: accumulo-enabled
 
+spring:
+  cloud:
+    stream:
+      bindings:
+        # mirrors the real accumuloAnnotationSink-in-0 binding concurrency configured in production (annotation.yml); used to
+        # verify that annotation.writers.accumulo.concurrency (bound via placeholder in bootstrap.yml) stays in sync with it.
+        accumuloAnnotationSink-in-0:
+          consumer:
+            concurrency: 5
+
 annotation:
   writers:
     accumulo:
       enabled: true
+      health:
+        enabled: true
+      concurrency: "${spring.cloud.stream.bindings.accumuloAnnotationSink-in-0.consumer.concurrency:1}"
       accumuloConfig:
         zookeepers: "test"
         instanceName: "test"

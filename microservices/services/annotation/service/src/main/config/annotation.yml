@@ -109,6 +109,8 @@ annotation:
       enabled: false
     accumulo:
       enabled: true
+      health:
+        enabled: true
       accumuloConfig:
         zookeepers: "${accumulo.zookeepers}"
         instanceName: '${accumulo.instanceName}'

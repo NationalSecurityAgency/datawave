@@ -14,6 +14,7 @@ import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.microservice.annotation.common.AnnotationConsumer;
 import datawave.microservice.annotation.writers.AnnotationWriter;
 import datawave.microservice.annotation.writers.accumulo.AccumuloAnnotationWriter;
+import datawave.microservice.annotation.writers.accumulo.health.AccumuloHealthChecker;
 
 /**
  * Configures the AccumuloAnnotationWriter to process messages received by the annotation service. This configuration is activated via the
@@ -41,5 +42,12 @@ public class AccumuloAnnotationWriterConfig {
                     AccumuloConnectionFactory accumuloPool, AccumuloAnnotationSerializer annotationSerializer,
                     AccumuloAnnotationSourceSerializer annotationSourceSerializer) {
         return new AccumuloAnnotationWriter(accumuloPool, accumuloAnnotationWriterProperties, annotationSerializer, annotationSourceSerializer);
+    }
+
+    @Bean
+    @ConditionalOnProperty(name = "annotation.writers.accumulo.health.enabled", havingValue = "true")
+    public AccumuloHealthChecker accumuloHealthChecker(AccumuloAnnotationWriterProperties accumuloAnnotationWriterProperties,
+                    @Qualifier("accumuloAnnotationWriter") AnnotationWriter accumuloAnnotationWriter) {
+        return new AccumuloHealthChecker(accumuloAnnotationWriterProperties, (AccumuloAnnotationWriter) accumuloAnnotationWriter);
     }
 }
