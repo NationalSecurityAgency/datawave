@@ -24,7 +24,7 @@ import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.map.MapLoaderLifecycleSupport;
 import com.hazelcast.map.MapStore;
 
-import datawave.microservice.annotationCache.api.AnnotationMessageProto.AnnotationMessage;
+import datawave.annotation.protobuf.v1.AnnotationMessage;
 import datawave.microservice.annotationCache.api.AnnotationStorageException;
 
 @Component
@@ -113,12 +113,14 @@ public class AnnotationMapStore implements MapStore<String,Object>, HazelcastIns
 
     /**
      * Hazelcast may call either this or the single entry method depending on locality and threading
-     * @see #store(String, Object) 
-     * @param map map of entries to store
+     *
+     * @see #store(String, Object)
+     * @param map
+     *            map of entries to store
      */
     @Override
     public void storeAll(Map<String,Object> map) {
-        for(Entry<String,Object> entry : map.entrySet()) {
+        for (Entry<String,Object> entry : map.entrySet()) {
             store(entry.getKey(), entry.getValue());
         }
     }

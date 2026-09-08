@@ -6,7 +6,7 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.converter.AbstractMessageConverter;
 import org.springframework.util.MimeType;
 
-import datawave.microservice.annotationCache.api.AnnotationMessageProto.AnnotationMessage;
+import datawave.annotation.protobuf.v1.AnnotationMessage;
 
 /**
  * a message converter for AnnotationMessage class messages. Spring was having trouble serializing and deserializing Annotation objects without this

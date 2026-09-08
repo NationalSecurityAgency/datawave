@@ -4,8 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.microservice</groupId>
         <artifactId>datawave-microservice-service-parent</artifactId>
-        <!--TODO check this version against integration-->
-        <version>5.0.11</version>
+        <version>5.0.15</version>
         <relativePath>../../../microservice-service-parent/pom.xml</relativePath>
     </parent>
 
@@ -16,10 +15,9 @@
 
     <properties>
         <start-class>datawave.microservice.annotationCache.AnnotationCacheService</start-class>
-        <!--TODO check these versions against integration-->
-        <version.datawave>7.38.1</version.datawave>
+        <version.datawave>8.0.0</version.datawave>
         <version.datawave.annotation-cache-api>1.0.0-SNAPSHOT</version.datawave.annotation-cache-api>
-        <version.datawave.starter>4.0.7</version.datawave.starter>
+        <version.datawave.starter>4.0.9</version.datawave.starter>
         <version.hazelcast.service>4.0.5-SNAPSHOT</version.hazelcast.service>
     </properties>
 
@@ -67,6 +65,10 @@
         <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>
             <artifactId>hazelcast-service</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.microservice</groupId>
+            <artifactId>spring-boot-starter-datawave</artifactId>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>

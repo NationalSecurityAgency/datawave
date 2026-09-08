@@ -7,7 +7,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-import com.google.protobuf.InvalidProtocolBufferException;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
@@ -16,7 +15,7 @@ import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.EntryUpdatedListener;
 
 import datawave.annotation.protobuf.v1.Annotation;
-import datawave.microservice.annotationCache.api.AnnotationMessageProto.AnnotationMessage;
+import datawave.annotation.protobuf.v1.AnnotationMessage;
 
 /**
  * Listener on all updates to the instance maps
@@ -41,23 +40,19 @@ public class AnnotationSyncListener implements EntryAddedListener<String,Object>
                 return;
             }
             AnnotationMessage annotationMessage = (AnnotationMessage) event.getValue();
-            Annotation annotation = null;
-            try {
-                annotation = Annotation.parseFrom(annotationMessage.getAnnotationBytes());
-            } catch (InvalidProtocolBufferException e) {
-                throw new RuntimeException(e);
-            }
-            log.info("syncing to docAnnotations");
-            if (instance != null) {
-                log.info("pushing to alt map");
-                IMap<String,List<String>> annotationsMap = instance.getMap("docAnnotations");
-                String docId = annotation.getDocumentId();
-                List<String> annotationIds = annotationsMap.get(annotation.getDocumentId());
-                if (annotationIds == null) {
-                    annotationIds = new ArrayList<>();
+            for (Annotation annotation : annotationMessage.getAnnotationsList()) {
+                log.info("syncing to docAnnotations");
+                if (instance != null) {
+                    log.info("pushing to alt map");
+                    IMap<String, List<String>> annotationsMap = instance.getMap("docAnnotations");
+                    String docId = annotation.getDocumentId();
+                    List<String> annotationIds = annotationsMap.get(annotation.getDocumentId());
+                    if (annotationIds == null) {
+                        annotationIds = new ArrayList<>();
+                    }
+                    annotationIds.add(event.getKey());
+                    annotationsMap.set(docId, annotationIds);
                 }
-                annotationIds.add(event.getKey());
-                annotationsMap.set(docId, annotationIds);
             }
         }
     }
