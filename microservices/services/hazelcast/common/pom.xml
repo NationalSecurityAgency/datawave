@@ -4,11 +4,11 @@
     <parent>
         <groupId>gov.nsa.datawave.microservice</groupId>
         <artifactId>datawave-microservice-service-parent</artifactId>
-        <version>5.0.13</version>
+        <version>5.0.15</version>
         <relativePath>../../../microservice-service-parent/pom.xml</relativePath>
     </parent>
     <artifactId>hazelcast-common</artifactId>
-    <version>4.0.7-SNAPSHOT</version>
+    <version>4.0.8-SNAPSHOT</version>
     <url>https://code.nsa.gov/datawave-hazelcast-service</url>
     <scm>
         <connection>scm:git:${project.scm.url}</connection>
@@ -17,8 +17,8 @@
         <url>https://github.com/NationalSecurityAgency/datawave</url>
     </scm>
     <properties>
-        <version.datawave.starter>4.0.9</version.datawave.starter>
-        <version.datawave.starter-cache>4.0.4</version.datawave.starter-cache>
+        <version.datawave.starter>4.0.12</version.datawave.starter>
+        <version.datawave.starter-cache>4.0.5</version.datawave.starter-cache>
         <!-- dependency declared in datawave-microservice-parent, but the version can be overridden here -->
         <version.log4j>2.26.1</version.log4j>
         <!-- dependency declared in datawave-microservice-parent, but the version can be overridden here -->

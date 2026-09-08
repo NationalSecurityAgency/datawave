@@ -49,7 +49,6 @@ import datawave.ingest.test.StandaloneStatusReporter;
 import datawave.query.MockAccumuloRecordWriter;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.RebuildingScannerTestHelper;
-import datawave.table.constants.TableName;
 
 public class AccumuloSetup extends ExternalResource {
 
@@ -227,7 +226,9 @@ public class AccumuloSetup extends ExternalResource {
             }
         }
 
-        try (BatchWriter bw = client.createBatchWriter(TableName.METADATA)) {
+        // The metadata table the query logic is configured with, not the model table that happens to
+        // carry TableName.METADATA's name here. Shards per day matches ShardedDataTypeHandler.NUM_SHARDS.
+        try (BatchWriter bw = client.createBatchWriter(QueryTestTableHelper.METADATA_TABLE_NAME)) {
             Mutation m = new Mutation("num_shards");
             m.put("ns", "20000101_1", new Value());
             bw.addMutation(m);

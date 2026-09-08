@@ -1,6 +1,7 @@
 package datawave.query.config.annotation;
 
 import java.io.Serializable;
+import java.util.List;
 import java.util.Objects;
 
 import datawave.annotation.data.transform.TimestampTransformer;
@@ -13,6 +14,7 @@ public class AnnotationConfig implements Serializable {
     private String truthmarkSourceTableName = "truthmarkSource";
     private VisibilityTransformer visibilityTransformer;
     private TimestampTransformer timestampTransformer;
+    private List<String> maskSourceMetadata = List.of("visibility");
 
     public AnnotationConfig() {
 
@@ -25,6 +27,7 @@ public class AnnotationConfig implements Serializable {
         setTruthmarkSourceTableName(other.getTruthmarkSourceTableName());
         setVisibilityTransformer(other.getVisibilityTransformer());
         setTimestampTransformer(other.getTimestampTransformer());
+        setMaskSourceMetadata(other.getMaskSourceMetadata());
     }
 
     @Override
@@ -39,7 +42,8 @@ public class AnnotationConfig implements Serializable {
                 Objects.equals(getTruthmarkTableName(), ((AnnotationConfig) other).getTruthmarkTableName()) &&
                 Objects.equals(getTruthmarkSourceTableName(), ((AnnotationConfig) other).getTruthmarkSourceTableName()) &&
                 Objects.equals(getVisibilityTransformer(), ((AnnotationConfig) other).getVisibilityTransformer()) &&
-                Objects.equals(getTimestampTransformer(), ((AnnotationConfig) other).getTimestampTransformer());
+                Objects.equals(getTimestampTransformer(), ((AnnotationConfig) other).getTimestampTransformer()) &&
+                Objects.equals(getMaskSourceMetadata(), ((AnnotationConfig) other).getMaskSourceMetadata());
         // @formatter:on
     }
 
@@ -47,7 +51,7 @@ public class AnnotationConfig implements Serializable {
     public int hashCode() {
         // formatter:off
         return Objects.hash(getAnnotationTableName(), getAnnotationSourceTableName(), getTruthmarkTableName(), getTruthmarkSourceTableName(),
-                        getVisibilityTransformer(), getTimestampTransformer());
+                        getVisibilityTransformer(), getTimestampTransformer(), getMaskSourceMetadata());
         // formatter:on
     }
 
@@ -97,5 +101,13 @@ public class AnnotationConfig implements Serializable {
 
     public void setTimestampTransformer(TimestampTransformer timestampTransformer) {
         this.timestampTransformer = timestampTransformer;
+    }
+
+    public List<String> getMaskSourceMetadata() {
+        return maskSourceMetadata;
+    }
+
+    public void setMaskSourceMetadata(List<String> maskSourceMetadata) {
+        this.maskSourceMetadata = maskSourceMetadata;
     }
 }

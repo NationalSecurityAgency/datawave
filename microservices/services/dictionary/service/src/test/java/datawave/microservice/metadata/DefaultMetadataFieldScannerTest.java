@@ -30,11 +30,11 @@ import org.junit.jupiter.api.Test;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
-import datawave.data.ColumnFamilyConstants;
 import datawave.marking.AccessExpressionMarkings;
 import datawave.marking.MarkingFunctions;
 import datawave.microservice.Connection;
 import datawave.microservice.dictionary.config.ResponseObjectFactory;
+import datawave.table.constants.MetadataColumnFamilyConstants;
 import datawave.webservice.dictionary.data.DefaultDataDictionary;
 import datawave.webservice.dictionary.data.DefaultDescription;
 import datawave.webservice.dictionary.data.DefaultDictionaryField;
@@ -229,39 +229,40 @@ public class DefaultMetadataFieldScannerTest {
 
     private void populateMetadataTable() throws TableNotFoundException, MutationsRejectedException {
         Mutation barField = new Mutation(new Text("BAR_FIELD"));
-        barField.put(new Text(ColumnFamilyConstants.COLF_E), new Text("csv"), TIMESTAMP, new Value());
-        barField.put(new Text(ColumnFamilyConstants.COLF_I), new Text("csv"), TIMESTAMP, new Value());
-        barField.put(new Text(ColumnFamilyConstants.COLF_RI), new Text("csv"), TIMESTAMP, new Value());
-        barField.put(new Text(ColumnFamilyConstants.COLF_TF), new Text("csv"), TIMESTAMP, new Value());
-        barField.put(new Text(ColumnFamilyConstants.COLF_T), new Text("csv\0datawave.data.type.LcNoDiacriticsType"), TIMESTAMP, new Value());
-        barField.put(new Text(ColumnFamilyConstants.COLF_DESC), new Text("csv"), new ColumnVisibility("PRIVATE"), TIMESTAMP, new Value("Barfield Description"));
+        barField.put(new Text(MetadataColumnFamilyConstants.COLF_E), new Text("csv"), TIMESTAMP, new Value());
+        barField.put(new Text(MetadataColumnFamilyConstants.COLF_I), new Text("csv"), TIMESTAMP, new Value());
+        barField.put(new Text(MetadataColumnFamilyConstants.COLF_RI), new Text("csv"), TIMESTAMP, new Value());
+        barField.put(new Text(MetadataColumnFamilyConstants.COLF_TF), new Text("csv"), TIMESTAMP, new Value());
+        barField.put(new Text(MetadataColumnFamilyConstants.COLF_T), new Text("csv\0datawave.data.type.LcNoDiacriticsType"), TIMESTAMP, new Value());
+        barField.put(new Text(MetadataColumnFamilyConstants.COLF_DESC), new Text("csv"), new ColumnVisibility("PRIVATE"), TIMESTAMP,
+                        new Value("Barfield Description"));
         expectedTimestamps.put("BAR_FIELD", formatTimestamp(TIMESTAMP));
 
         Mutation contributorId = new Mutation(new Text("CONTRIBUTOR_ID"));
-        contributorId.put(new Text(ColumnFamilyConstants.COLF_E), new Text("enwiki"), TIMESTAMP, new Value());
-        contributorId.put(new Text(ColumnFamilyConstants.COLF_I), new Text("enwiki"), TIMESTAMP, new Value());
-        contributorId.put(new Text(ColumnFamilyConstants.COLF_T), new Text("enwiki\0datawave.data.type.NumberType"), TIMESTAMP, new Value());
-        contributorId.put(new Text(ColumnFamilyConstants.COLF_DESC), new Text("enwiki"), new ColumnVisibility("PRIVATE"), TIMESTAMP,
+        contributorId.put(new Text(MetadataColumnFamilyConstants.COLF_E), new Text("enwiki"), TIMESTAMP, new Value());
+        contributorId.put(new Text(MetadataColumnFamilyConstants.COLF_I), new Text("enwiki"), TIMESTAMP, new Value());
+        contributorId.put(new Text(MetadataColumnFamilyConstants.COLF_T), new Text("enwiki\0datawave.data.type.NumberType"), TIMESTAMP, new Value());
+        contributorId.put(new Text(MetadataColumnFamilyConstants.COLF_DESC), new Text("enwiki"), new ColumnVisibility("PRIVATE"), TIMESTAMP,
                         new Value("ContributorId Description"));
         expectedTimestamps.put("CONTRIBUTOR_ID", formatTimestamp(TIMESTAMP));
 
         Mutation name = new Mutation(new Text("NAME"));
-        name.put(new Text(ColumnFamilyConstants.COLF_E), new Text("tvmaze"), TIMESTAMP, new Value());
-        name.put(new Text(ColumnFamilyConstants.COLF_I), new Text("tvmaze"), TIMESTAMP, new Value());
-        name.put(new Text(ColumnFamilyConstants.COLF_RI), new Text("tvmaze"), TIMESTAMP, new Value());
-        name.put(new Text(ColumnFamilyConstants.COLF_T), new Text("tvmaze\0not.a.known.type"), TIMESTAMP, new Value());
+        name.put(new Text(MetadataColumnFamilyConstants.COLF_E), new Text("tvmaze"), TIMESTAMP, new Value());
+        name.put(new Text(MetadataColumnFamilyConstants.COLF_I), new Text("tvmaze"), TIMESTAMP, new Value());
+        name.put(new Text(MetadataColumnFamilyConstants.COLF_RI), new Text("tvmaze"), TIMESTAMP, new Value());
+        name.put(new Text(MetadataColumnFamilyConstants.COLF_T), new Text("tvmaze\0not.a.known.type"), TIMESTAMP, new Value());
         expectedTimestamps.put("NAME", formatTimestamp(TIMESTAMP));
 
         Mutation fooToken = new Mutation(new Text("FOO_TOKEN"));
-        fooToken.put(new Text(ColumnFamilyConstants.COLF_I), new Text("tvmaze"), TIMESTAMP, new Value());
-        fooToken.put(new Text(ColumnFamilyConstants.COLF_I), new Text("tvmaze"), TIMESTAMP + (DAY_AS_MILLISECONDS * 2), new Value());
-        fooToken.put(new Text(ColumnFamilyConstants.COLF_I), new Text("tvmaze"), TIMESTAMP + (DAY_AS_MILLISECONDS * 3), new Value());
-        fooToken.put(new Text(ColumnFamilyConstants.COLF_I), new Text("tvmaze"), TIMESTAMP - (DAY_AS_MILLISECONDS * 2), new Value());
-        fooToken.put(new Text(ColumnFamilyConstants.COLF_I), new Text("tvmaze"), TIMESTAMP - (DAY_AS_MILLISECONDS * 3), new Value());
-        fooToken.put(new Text(ColumnFamilyConstants.COLF_I), new Text("tvmaze"), TIMESTAMP + (DAY_AS_MILLISECONDS * 4), new Value());
-        fooToken.put(new Text(ColumnFamilyConstants.COLF_I), new Text("tvmaze"), TIMESTAMP + (DAY_AS_MILLISECONDS * 5), new Value());
-        fooToken.put(new Text(ColumnFamilyConstants.COLF_TF), new Text("tvmaze"), TIMESTAMP, new Value());
-        fooToken.put(new Text(ColumnFamilyConstants.COLF_T), new Text("tvmaze\0datawave.data.type.LcNoDiacriticsType"), TIMESTAMP, new Value());
+        fooToken.put(new Text(MetadataColumnFamilyConstants.COLF_I), new Text("tvmaze"), TIMESTAMP, new Value());
+        fooToken.put(new Text(MetadataColumnFamilyConstants.COLF_I), new Text("tvmaze"), TIMESTAMP + (DAY_AS_MILLISECONDS * 2), new Value());
+        fooToken.put(new Text(MetadataColumnFamilyConstants.COLF_I), new Text("tvmaze"), TIMESTAMP + (DAY_AS_MILLISECONDS * 3), new Value());
+        fooToken.put(new Text(MetadataColumnFamilyConstants.COLF_I), new Text("tvmaze"), TIMESTAMP - (DAY_AS_MILLISECONDS * 2), new Value());
+        fooToken.put(new Text(MetadataColumnFamilyConstants.COLF_I), new Text("tvmaze"), TIMESTAMP - (DAY_AS_MILLISECONDS * 3), new Value());
+        fooToken.put(new Text(MetadataColumnFamilyConstants.COLF_I), new Text("tvmaze"), TIMESTAMP + (DAY_AS_MILLISECONDS * 4), new Value());
+        fooToken.put(new Text(MetadataColumnFamilyConstants.COLF_I), new Text("tvmaze"), TIMESTAMP + (DAY_AS_MILLISECONDS * 5), new Value());
+        fooToken.put(new Text(MetadataColumnFamilyConstants.COLF_TF), new Text("tvmaze"), TIMESTAMP, new Value());
+        fooToken.put(new Text(MetadataColumnFamilyConstants.COLF_T), new Text("tvmaze\0datawave.data.type.LcNoDiacriticsType"), TIMESTAMP, new Value());
         expectedTimestamps.put("FOO_TOKEN", formatTimestamp(TIMESTAMP + (DAY_AS_MILLISECONDS * 5)));
 
         BatchWriterConfig bwConfig = new BatchWriterConfig().setMaxMemory(10L).setMaxLatency(1, TimeUnit.SECONDS).setMaxWriteThreads(1);
