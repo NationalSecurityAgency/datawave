@@ -57,6 +57,10 @@ jobs:
     - uses: ./.github/actions/free-space
       with:
         tool-cache: false
+        # Self-hosted runners are persistent, so `docker image prune --all` deletes
+        # the layer cache every build depends on and can remove images a co-tenant
+        # job is still using. Hosted runners are disposable, so let it run there.
+        docker-images: ${{ needs.configure-runner.outputs.runner != 'self-hosted' }}
     - name: Configure Maven Settings
       run: |
         mkdir -p ~/.m2

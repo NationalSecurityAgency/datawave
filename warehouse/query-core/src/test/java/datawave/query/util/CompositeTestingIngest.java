@@ -15,7 +15,6 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
 
-import datawave.data.ColumnFamilyConstants;
 import datawave.data.hash.UID;
 import datawave.data.normalizer.AbstractNormalizer;
 import datawave.data.type.BaseType;
@@ -29,6 +28,7 @@ import datawave.ingest.protobuf.Uid;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.index.day.IndexIngestUtil;
 import datawave.query.parser.JavaRegexAnalyzer;
+import datawave.table.constants.MetadataColumnFamilyConstants;
 import datawave.table.constants.TableName;
 
 public class CompositeTestingIngest {
@@ -334,34 +334,34 @@ public class CompositeTestingIngest {
             bw = client.createBatchWriter(QueryTestTableHelper.MODEL_TABLE_NAME, bwConfig);
 
             mutation = new Mutation("UUID");
-            mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
-            mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
-            mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype), emptyValue);
-            mutation.put(ColumnFamilyConstants.COLF_RI, new Text(datatype), emptyValue);
-            mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + normalizerForColumn("UUID")), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
+            mutation.put(MetadataColumnFamilyConstants.COLF_I, new Text(datatype), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_RI, new Text(datatype), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + normalizerForColumn("UUID")), emptyValue);
             bw.addMutation(mutation);
 
             mutation = new Mutation("COLOR");
-            mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
-            mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(10L)));
-            mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype), emptyValue);
-            mutation.put(ColumnFamilyConstants.COLF_RI, new Text(datatype), emptyValue);
-            mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + UcType.class.getName()), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(10L)));
+            mutation.put(MetadataColumnFamilyConstants.COLF_I, new Text(datatype), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_RI, new Text(datatype), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + UcType.class.getName()), emptyValue);
             bw.addMutation(mutation);
 
             mutation = new Mutation("MAKE");
-            mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
-            mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(19L)));
-            mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype), emptyValue);
-            mutation.put(ColumnFamilyConstants.COLF_RI, new Text(datatype), emptyValue);
-            mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + UcType.class.getName()), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(19L)));
+            mutation.put(MetadataColumnFamilyConstants.COLF_I, new Text(datatype), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_RI, new Text(datatype), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + UcType.class.getName()), emptyValue);
             bw.addMutation(mutation);
 
             mutation = new Mutation("MAKE_COLOR");
-            mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype), emptyValue);
-            mutation.put(ColumnFamilyConstants.COLF_CI, new Text(datatype + "\u0000" + "MAKE,COLOR"), emptyValue);
-            mutation.put(ColumnFamilyConstants.COLF_CITD, new Text(datatype + "\u0000" + "20010101 000000.000"), emptyValue);
-            mutation.put(ColumnFamilyConstants.COLF_CISEP, new Text(datatype + "\u0000" + CompositeIngest.DEFAULT_SEPARATOR), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_I, new Text(datatype), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_CI, new Text(datatype + "\u0000" + "MAKE,COLOR"), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_CITD, new Text(datatype + "\u0000" + "20010101 000000.000"), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_CISEP, new Text(datatype + "\u0000" + CompositeIngest.DEFAULT_SEPARATOR), emptyValue);
             bw.addMutation(mutation);
 
         } finally {

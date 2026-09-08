@@ -33,7 +33,7 @@ import com.google.common.base.Joiner;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
-import datawave.data.ColumnFamilyConstants;
+import datawave.table.constants.MetadataColumnFamilyConstants;
 import datawave.util.time.DateHelper;
 
 /**
@@ -295,7 +295,7 @@ class MetadataFColumnSeekingFilterTest {
     private void scanRanges(Collection<Range> ranges) throws Exception {
         try (BatchScanner scanner = client.createBatchScanner(METADATA_TABLE_NAME)) {
             scanner.setRanges(ranges);
-            scanner.fetchColumnFamily(ColumnFamilyConstants.COLF_F);
+            scanner.fetchColumnFamily(MetadataColumnFamilyConstants.COLF_F);
 
             IteratorSetting setting = new IteratorSetting(50, "MetadataFColumnSeekingFilter", MetadataFColumnSeekingFilter.class);
             setting.addOption(MetadataFColumnSeekingFilter.DATATYPES_OPT, Joiner.on(',').join(datatypes));
