@@ -7,7 +7,9 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -16,11 +18,14 @@ import java.lang.reflect.Field;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -206,10 +211,33 @@ public class TestAnnotationControllerV1Delivery {
         // Both callers must be satisfied by that single ack -- the second call must not silently overwrite/orphan
         // the first caller's latch, which would otherwise leave the first caller waiting out the full ack timeout
         // and incorrectly reporting failure.
+        //
+        // This is made deterministic (rather than depending on thread-scheduling timing, which previously made this
+        // test intermittently flaky: if the original sender's entire send-ack-remove cycle completed before the
+        // "duplicate" caller's putIfAbsent even ran, the duplicate would legitimately see no in-flight latch and
+        // become a second original sender). A spy around AnnotationAckTracker signals exactly when the duplicate
+        // caller has observed the original sender's in-flight latch, and the mocked send(...) is held open until
+        // that has been confirmed before delivering the single ack.
         AnnotationMessage annotationMessage = buildMessage(AnnotationUtils.injectAllHashes(generateTestAnnotation())).toBuilder()
                         .setAnnotationMessageId("DUPLICATE-ID").build();
 
+        AnnotationAckTracker spyTracker = spy(new AnnotationAckTracker());
+        CountDownLatch duplicateObservedExistingLatch = new CountDownLatch(1);
+        doAnswer(invocation -> {
+            CountDownLatch existing = (CountDownLatch) invocation.callRealMethod();
+            if (existing != null) {
+                // this call found an already-registered latch, i.e. it is the "duplicate" caller
+                duplicateObservedExistingLatch.countDown();
+            }
+            return existing;
+        }).when(spyTracker).putIfAbsent(any(), any());
+
+        AnnotationControllerV1 controller = new AnnotationControllerV1(connectionFactory, lookupService, annotationProperties, timestampTransformer,
+                        visibilityTransformer, annotationSink, Executors.newCachedThreadPool(), spyTracker);
+
         AtomicInteger sendCount = new AtomicInteger(0);
+        CountDownLatch originalSenderReachedSend = new CountDownLatch(1);
+        CountDownLatch releaseAck = new CountDownLatch(1);
         when(annotationSink.send(any())).thenAnswer(invocation -> {
             // only the original sender should ever reach annotationSink.send(...); a duplicate should observe the
             // existing latch and skip sending entirely.
@@ -217,14 +245,28 @@ public class TestAnnotationControllerV1Delivery {
             Message<AnnotationMessage> sent = invocation.getArgument(0);
             Object correlationId = sent.getHeaders().get(IntegrationMessageHeaderAccessor.CORRELATION_ID);
             assertNotNull(correlationId);
-            annotationController.processConfirmAck(MessageBuilder.withPayload("ack").setCorrelationId(correlationId).build());
+
+            // Let the test know the original sender's latch is registered and it has reached send(...), then hold
+            // the ack back until the test confirms the duplicate caller has observed that latch -- this removes any
+            // dependency on thread-scheduling timing for reliably reproducing the race being tested.
+            originalSenderReachedSend.countDown();
+            assertTrue(releaseAck.await(10, TimeUnit.SECONDS), "test did not release the ack in time");
+
+            controller.processConfirmAck(MessageBuilder.withPayload("ack").setCorrelationId(correlationId).build());
             return true;
         });
 
         ExecutorService executor = Executors.newFixedThreadPool(2);
         try {
-            Future<Optional<AnnotationMessage>> futureOne = executor.submit(() -> annotationController.sendAnnotationMessage(annotationMessage));
-            Future<Optional<AnnotationMessage>> futureTwo = executor.submit(() -> annotationController.sendAnnotationMessage(annotationMessage));
+            Future<Optional<AnnotationMessage>> futureOne = executor.submit(() -> controller.sendAnnotationMessage(annotationMessage));
+
+            assertTrue(originalSenderReachedSend.await(10, TimeUnit.SECONDS), "original sender did not reach send(...) in time");
+
+            Future<Optional<AnnotationMessage>> futureTwo = executor.submit(() -> controller.sendAnnotationMessage(annotationMessage));
+
+            assertTrue(duplicateObservedExistingLatch.await(10, TimeUnit.SECONDS),
+                            "duplicate caller did not observe the original sender's in-flight latch in time");
+            releaseAck.countDown();
 
             Optional<AnnotationMessage> resultOne = futureOne.get(10, TimeUnit.SECONDS);
             Optional<AnnotationMessage> resultTwo = futureTwo.get(10, TimeUnit.SECONDS);
@@ -232,7 +274,7 @@ public class TestAnnotationControllerV1Delivery {
             assertTrue(resultOne.isPresent(), "the original sender must be satisfied by the single ack");
             assertTrue(resultTwo.isPresent(), "the duplicate sender must also be satisfied by the same ack rather than timing out");
             assertEquals(1, sendCount.get(), "only the original sender should have actually sent a message; the duplicate should reuse its latch");
-            assertTrue(getAnnotationAckTracker().isEmpty(), "no latch should remain once both duplicate callers complete");
+            assertTrue(spyTracker.isEmpty(), "no latch should remain once both duplicate callers complete");
         } finally {
             executor.shutdownNow();
         }
@@ -266,6 +308,43 @@ public class TestAnnotationControllerV1Delivery {
         assertTrue(result.isEmpty());
         assertTrue(elapsed >= annotationProperties.getAnnotationAckTimeoutMillis(), "should have waited for the full ack timeout");
         assertTrue(getAnnotationAckTracker().isEmpty(), "latch should be removed after timeout");
+    }
+
+    @Test
+    public void testSendAnnotationMessage_InterruptedWhileAwaitingAckReturnsEmptyRestoresInterruptStatusAndCleansUpLatch() throws Exception {
+        // send succeeds, but no ack ever arrives -- the calling thread is interrupted while awaiting the latch instead.
+        annotationProperties.setAnnotationAckTimeoutMillis(TimeUnit.SECONDS.toMillis(30));
+        when(annotationSink.send(any())).thenReturn(true);
+        Annotation annotation = AnnotationUtils.injectAllHashes(generateTestAnnotation());
+
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        try {
+            AtomicReference<Optional<AnnotationMessage>> resultRef = new AtomicReference<>();
+            AtomicBoolean interruptedStatusObservedAfterReturn = new AtomicBoolean(false);
+            CountDownLatch threadStarted = new CountDownLatch(1);
+
+            Future<?> future = executor.submit(() -> {
+                threadStarted.countDown();
+                resultRef.set(annotationController.sendAnnotationMessage(buildMessage(annotation)));
+                // the interrupt status must be restored by the time sendAnnotationMessage returns, so that the executing
+                // thread/pool can still observe that this task was asked to stop.
+                interruptedStatusObservedAfterReturn.set(Thread.currentThread().isInterrupted());
+            });
+
+            assertTrue(threadStarted.await(5, TimeUnit.SECONDS));
+            // give the worker thread a moment to actually enter latch.await(...) before interrupting it
+            Thread.sleep(50);
+            executor.shutdownNow();
+
+            future.get(5, TimeUnit.SECONDS);
+
+            assertNotNull(resultRef.get());
+            assertTrue(resultRef.get().isEmpty(), "an interrupted wait for the ack must be treated as a failed send");
+            assertTrue(interruptedStatusObservedAfterReturn.get(), "the thread's interrupt status must be restored, not swallowed, by sendAnnotationMessage");
+            assertTrue(getAnnotationAckTracker().isEmpty(), "latch should still be cleaned up when the wait is interrupted");
+        } finally {
+            executor.shutdownNow();
+        }
     }
 
     @Test
@@ -442,6 +521,60 @@ public class TestAnnotationControllerV1Delivery {
         Optional<Annotation> result = annotationController.writeAnnotation(annotation);
 
         assertTrue(result.isEmpty());
+    }
+
+    @Test
+    public void testWriteAnnotation_InterruptedDuringRetryBackoffStopsRetryingAndRestoresInterruptStatus() throws Exception {
+        // Use a long backoff interval so there's a comfortable window to interrupt the thread while it's sleeping between
+        // retry attempts, and a send that always fails so the loop actually reaches that backoff sleep.
+        AnnotationProperties longBackoffProperties = new AnnotationProperties();
+        longBackoffProperties.setSystemFrom("annotation");
+        longBackoffProperties.setAnnotationAckEnabled(true);
+        longBackoffProperties.setAnnotationAckTimeoutMillis(150L);
+        longBackoffProperties.getRetry().setMaxAttempts(5);
+        longBackoffProperties.getRetry().setBackoffIntervalMillis(TimeUnit.SECONDS.toMillis(30));
+        longBackoffProperties.getRetry().setFailTimeoutMillis(TimeUnit.SECONDS.toMillis(60));
+
+        AnnotationControllerV1 controller = new AnnotationControllerV1(connectionFactory, lookupService, longBackoffProperties, timestampTransformer,
+                        visibilityTransformer, annotationSink, Executors.newCachedThreadPool(), new AnnotationAckTracker());
+
+        CountDownLatch firstSendAttempted = new CountDownLatch(1);
+        when(annotationSink.send(any())).thenAnswer(invocation -> {
+            firstSendAttempted.countDown();
+            return false;
+        });
+
+        Annotation annotation = generateTestAnnotation();
+
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        try {
+            AtomicReference<Optional<Annotation>> resultRef = new AtomicReference<>();
+            AtomicBoolean interruptedStatusObservedAfterReturn = new AtomicBoolean(false);
+
+            long start = System.currentTimeMillis();
+            Future<?> future = executor.submit(() -> {
+                resultRef.set(controller.writeAnnotation(annotation));
+                // the interrupt status must be restored by the time writeAnnotation returns.
+                interruptedStatusObservedAfterReturn.set(Thread.currentThread().isInterrupted());
+            });
+
+            assertTrue(firstSendAttempted.await(5, TimeUnit.SECONDS), "the first send attempt should occur promptly");
+            // give the worker thread a moment to enter the backoff Thread.sleep(...) after its first failed attempt
+            Thread.sleep(50);
+            executor.shutdownNow();
+
+            future.get(5, TimeUnit.SECONDS);
+            long elapsed = System.currentTimeMillis() - start;
+
+            assertNotNull(resultRef.get());
+            assertTrue(resultRef.get().isEmpty(), "an interrupted retry backoff must be treated as a failed write (no file writer configured here)");
+            assertTrue(interruptedStatusObservedAfterReturn.get(), "the thread's interrupt status must be restored, not swallowed, by writeAnnotation");
+            assertTrue(elapsed < longBackoffProperties.getRetry().getBackoffIntervalMillis(),
+                            "interrupting the backoff sleep should abandon retrying promptly rather than waiting out the full backoff interval");
+            verify(annotationSink, times(1)).send(any());
+        } finally {
+            executor.shutdownNow();
+        }
     }
 
     // ----------------------------------------------------------------------------------------------------------------

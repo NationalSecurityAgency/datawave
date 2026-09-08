@@ -67,7 +67,9 @@ import datawave.microservice.annotation.writers.AnnotationWriter;
 import datawave.microservice.authorization.user.DatawaveUserDetails;
 import datawave.microservice.authorization.util.AuthorizationsUtil;
 import datawave.webservice.query.exception.QueryException;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 
@@ -288,6 +290,24 @@ public class AnnotationControllerV1 {
         }
     }
 
+    /**
+     * Adds an annotation for the document identified by {@code idType}/{@code id}.
+     * <p>
+     * <b>HTTP response contract:</b> a {@code 200} response means the annotation write was durably accepted, either because the message broker
+     * producer-confirmed receipt of the annotation message, or because the configured file-fallback writer successfully persisted it after the broker was
+     * unavailable/unresponsive. A {@code 200} response does <i>not</i> mean the annotation has been committed to Accumulo; downstream consumer persistence (and
+     * its own retry/DLQ handling) happens independently and asynchronously after this call returns. This mirrors the audit microservice's established
+     * acknowledgement contract: producer-confirmed ingress or successful fallback, not end-to-end persistence.
+     */
+    // @formatter:off
+    @Operation(
+            summary = "Adds an annotation for the identified document.",
+            description = "A 200 response means the write was durably accepted (message broker producer confirmation, or successful file-fallback write), "
+                            + "not that the annotation has been committed to Accumulo; Accumulo persistence happens independently, asynchronously.")
+    @ApiResponse(
+            description = "the annotation that was accepted for durable write (ingress-accepted, not yet necessarily persisted to Accumulo)",
+            responseCode = "200")
+    // @formatter:on
     @PostMapping(path = "/{idType}/{id}/annotation", consumes = MediaType.APPLICATION_JSON_VALUE)
     @Secured("AnnotationWriter")
     public ResponseEntity<?> addAnnotation(@PathVariable String idType, @PathVariable String id, @RequestBody String body,
@@ -351,6 +371,24 @@ public class AnnotationControllerV1 {
         }
     }
 
+    /**
+     * Updates an existing annotation for the document identified by {@code idType}/{@code id}.
+     * <p>
+     * <b>HTTP response contract:</b> a {@code 200} response means the annotation write was durably accepted, either because the message broker
+     * producer-confirmed receipt of the annotation message, or because the configured file-fallback writer successfully persisted it after the broker was
+     * unavailable/unresponsive. A {@code 200} response does <i>not</i> mean the annotation has been committed to Accumulo; downstream consumer persistence (and
+     * its own retry/DLQ handling) happens independently and asynchronously after this call returns. This mirrors the audit microservice's established
+     * acknowledgement contract: producer-confirmed ingress or successful fallback, not end-to-end persistence.
+     */
+    // @formatter:off
+    @Operation(
+            summary = "Updates an existing annotation for the identified document.",
+            description = "A 200 response means the write was durably accepted (message broker producer confirmation, or successful file-fallback write), "
+                            + "not that the annotation has been committed to Accumulo; Accumulo persistence happens independently, asynchronously.")
+    @ApiResponse(
+            description = "the annotation that was accepted for durable write (ingress-accepted, not yet necessarily persisted to Accumulo)",
+            responseCode = "200")
+    // @formatter:on
     @PutMapping(path = "/{idType}/{id}/annotation/{annotationId}", consumes = MediaType.APPLICATION_JSON_VALUE)
     @Secured("AnnotationWriter")
     public ResponseEntity<?> updateAnnotation(@PathVariable String idType, @PathVariable String id, @PathVariable String annotationId, @RequestBody String body,
@@ -480,7 +518,7 @@ public class AnnotationControllerV1 {
         Optional<Annotation> result;
 
         final long writeStartTime = System.currentTimeMillis();
-        long currentTime;
+        long currentTime = writeStartTime;
         int attempts = 0;
 
         AnnotationProperties.Retry retry = annotationProperties.getRetry();
@@ -491,7 +529,12 @@ public class AnnotationControllerV1 {
                     // noinspection BusyWait
                     Thread.sleep(retry.getBackoffIntervalMillis());
                 } catch (InterruptedException e) {
-                    // Ignore -- we'll just end up retrying a little too fast
+                    // Restore the interrupt status so callers/executors (e.g. a pool shutting down) can observe that this
+                    // thread was asked to stop, then abandon retrying rather than continuing to loop on an interrupted thread.
+                    // The file-writer fallback below is still attempted, matching how any other retry exhaustion is handled.
+                    Thread.currentThread().interrupt();
+                    result = Optional.empty();
+                    break;
                 }
             }
 
@@ -581,6 +624,8 @@ public class AnnotationControllerV1 {
             try {
                 success = success && latch.await(annotationProperties.getAnnotationAckTimeoutMillis(), TimeUnit.MILLISECONDS);
             } catch (InterruptedException e) {
+                // Restore the interrupt status so callers/executors can observe that this thread was asked to stop.
+                Thread.currentThread().interrupt();
                 success = false;
             } finally {
                 // only the original sender owns this latch entry and should remove it; a duplicate caller must leave it alone
