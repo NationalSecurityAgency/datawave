@@ -6,12 +6,22 @@ import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
 
+import java.text.DateFormat;
 import java.text.ParseException;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
@@ -1287,6 +1297,91 @@ public class EvaluationPhaseFilterFunctionsTest {
 
         private long nextTime(Object value) throws ParseException {
             return EvaluationPhaseFilterFunctions.getTime(value, true);
+        }
+    }
+
+    /**
+     * Tests that verify the {@link DateFormat} instances backing {@link EvaluationPhaseFilterFunctions#getTime(Object, boolean)} are confined to the calling
+     * thread, and may therefore be used by concurrent scans without any locking.
+     */
+    public static class GetTimeConcurrencyTests {
+
+        private static final int THREADS = 8;
+        private static final int ITERATIONS = 250;
+        private static final long TIMEOUT_MINUTES = 1L;
+
+        // A sampling of the supported date formats, paired with the epoch millis each must parse to.
+        // @formatter:off
+        private static final Map<String,Long> DATES_TO_EPOCH_MILLIS = Map.of(
+                        "2021-Oct", 1633046400000L,
+                        "2021-10-06", 1633478400000L,
+                        "10/06/2021", 1633478400000L,
+                        "2021100616", 1633536000000L,
+                        "202110061651", 1633539060000L,
+                        "2021-10-06 16:51:34", 1633539094000L,
+                        "6 Oct 2021 16:51:34 GMT", 1633539094000L,
+                        "2021-10-06 16:51:34 -0500", 1633557094000L,
+                        "20211006:16:51:34:215", 1633539094215L,
+                        "2021-10-06T16:51:34.215Z", 1633539094215L);
+        // @formatter:on
+
+        // Verify that many threads can parse the supported formats at the same time and all see the correct time. When the formats were shared statics this
+        // was a genuine race: interleaved SimpleDateFormat.parse() calls corrupt the formatter's Calendar, yielding wrong times or spurious ParseExceptions.
+        // It passed previously only because every parse serialized on a global lock. It now passes because each thread has its own formats.
+        @Test
+        public void testConcurrentParsing() throws Exception {
+            ExecutorService executor = Executors.newFixedThreadPool(THREADS);
+            CountDownLatch startGate = new CountDownLatch(1);
+            List<Future<?>> futures = new ArrayList<>();
+            try {
+                for (int thread = 0; thread < THREADS; thread++) {
+                    futures.add(executor.submit(() -> {
+                        // Do not start parsing until every thread is ready, so that the parsing actually overlaps.
+                        assertTrue(startGate.await(TIMEOUT_MINUTES, TimeUnit.MINUTES));
+                        for (int iteration = 0; iteration < ITERATIONS; iteration++) {
+                            for (Map.Entry<String,Long> date : DATES_TO_EPOCH_MILLIS.entrySet()) {
+                                assertEquals(date.getKey(), date.getValue().longValue(), EvaluationPhaseFilterFunctions.getTime(date.getKey()));
+                                assertEquals(date.getKey(), date.getValue().longValue(), EvaluationPhaseFilterFunctions.getTime(date.getKey(), false));
+                            }
+                        }
+                        return null;
+                    }));
+                }
+                startGate.countDown();
+                // Any assertion failure or exception thrown by a worker is rethrown here.
+                for (Future<?> future : futures) {
+                    future.get(TIMEOUT_MINUTES, TimeUnit.MINUTES);
+                }
+            } finally {
+                executor.shutdownNow();
+            }
+        }
+
+        // Verify that the confinement actually holds, i.e. that no two threads see the same DateFormat instance.
+        @Test
+        public void testEachThreadHasItsOwnFormats() throws Exception {
+            ExecutorService executor = Executors.newFixedThreadPool(2);
+            CountDownLatch bothStarted = new CountDownLatch(2);
+            try {
+                Callable<List<DateFormat>> task = () -> {
+                    // Keep both tasks in flight so that they are guaranteed to run on different threads.
+                    bothStarted.countDown();
+                    assertTrue(bothStarted.await(TIMEOUT_MINUTES, TimeUnit.MINUTES));
+                    return EvaluationPhaseFilterFunctions.DATE_FORMATS.get();
+                };
+                Future<List<DateFormat>> firstFuture = executor.submit(task);
+                Future<List<DateFormat>> secondFuture = executor.submit(task);
+                List<DateFormat> first = firstFuture.get(TIMEOUT_MINUTES, TimeUnit.MINUTES);
+                List<DateFormat> second = secondFuture.get(TIMEOUT_MINUTES, TimeUnit.MINUTES);
+
+                assertEquals(EvaluationPhaseFilterFunctions.DATE_FORMAT_STRINGS.length, first.size());
+                assertEquals(first.size(), second.size());
+                for (int i = 0; i < first.size(); i++) {
+                    assertNotSame("Threads shared the format for " + EvaluationPhaseFilterFunctions.DATE_FORMAT_STRINGS[i], first.get(i), second.get(i));
+                }
+            } finally {
+                executor.shutdownNow();
+            }
         }
     }
 

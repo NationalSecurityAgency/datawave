@@ -16,9 +16,9 @@ import org.apache.log4j.Logger;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
 
-import datawave.data.ColumnFamilyConstants;
 import datawave.data.type.Type;
 import datawave.query.Constants;
+import datawave.table.constants.MetadataColumnFamilyConstants;
 
 /**
  *
@@ -105,7 +105,7 @@ public class IndexedFieldLoader extends AccumuloLoader<String,Set<String>> {
             String colq = key.getColumnQualifier().toString();
             int idx = colq.indexOf(Constants.NULL);
 
-            if (key.getColumnFamily().equals(ColumnFamilyConstants.COLF_RI)) {
+            if (key.getColumnFamily().equals(MetadataColumnFamilyConstants.COLF_RI)) {
                 reverse = true;
             }
 

@@ -47,11 +47,11 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
+import org.apache.commons.net.util.Base64;
 import org.apache.deltaspike.core.api.config.ConfigProperty;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 import org.jboss.resteasy.annotations.GZIP;
-import org.jboss.resteasy.util.Base64;
 
 import datawave.annotation.Required;
 import datawave.core.common.connection.AccumuloConnectionFactory;
@@ -346,7 +346,7 @@ public class AtomServiceBean {
 
     private Key deserializeKey(String k) throws Exception {
         String key64 = URLDecoder.decode(k, "UTF-8");
-        byte[] bKey = Base64.decode(key64);
+        byte[] bKey = Base64.decodeBase64(key64);
         ByteArrayInputStream bais = new ByteArrayInputStream(bKey);
         DataInputStream in = new DataInputStream(bais);
         Key key = new Key();
@@ -359,7 +359,7 @@ public class AtomServiceBean {
         DataOutputStream out = new DataOutputStream(baos);
         key.write(out);
         out.close();
-        String key64 = Base64.encodeBytes(baos.toByteArray());
+        String key64 = Base64.encodeBase64String(baos.toByteArray());
         return URLEncoder.encode(key64, "UTF-8");
     }
 
