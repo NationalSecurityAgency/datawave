@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -59,7 +60,6 @@ public class AnnotationUtils {
         // @formatter:off
         annotation.getSegmentsList().stream()
                 .map(AnnotationUtils::injectAllHashes)
-                .sorted(Comparator.comparing(Segment::getSegmentHash))
                 .forEach(updatedAnnotationBuilder::addSegments);
         // @formatter:on
 
@@ -70,7 +70,8 @@ public class AnnotationUtils {
             updatedAnnotationBuilder.clearSource().setSource(updatedSource);
         }
 
-        // finally, generate the annotation id for the updated annotation
+        // Before computing the annotation id, injectAnnotationHash sorts the segment list into segment hash order
+        // to matches the order used in Accumulo to store segments.
         return AnnotationUtils.injectAnnotationHash(updatedAnnotationBuilder.build());
     }
 
@@ -118,15 +119,42 @@ public class AnnotationUtils {
     }
 
     /**
-     * Utility method to generate and inject the annotation hash into the annotation.
+     * Utility method to generate and inject the annotation hash into the annotation. As a side effect, this also sorts the annotation's segment list into
+     * segment hash order (see {@link #sortSegments(List)}). This is the same order used to sort segments in Accumulo. The returned annotation's segment order,
+     * its computed hash, and its {@code equals()}/{@code hashCode()} behavior are all consistent regardless of how the annotation was assembled. This method is
+     * the single choke point relied on for that guarantee, so it is safe to call directly rather than only via {@link #injectAllHashes(Annotation)}.
      *
      * @param annotation
      *            the annotation to inject.
-     * @return the annotation with boundary type injected.
+     * @return the annotation with its segments sorted in segment hash order and its annotation id injected.
      */
     public static Annotation injectAnnotationHash(Annotation annotation) {
-        final String hash = calculateAnnotationHash(annotation);
-        return annotation.toBuilder().setAnnotationId(hash).build();
+        Annotation sortedAnnotation = annotation.toBuilder().clearSegments().addAllSegments(sortSegments(annotation.getSegmentsList())).build();
+        final String hash = calculateAnnotationHash(sortedAnnotation);
+        return sortedAnnotation.toBuilder().setAnnotationId(hash).build();
+    }
+
+    /**
+     * Sort a list of segments into ascending segment hash order. This is the same natural order Accumulo uses when storing segments, since the segment hash is
+     * the variable portion of the segment column qualifier (see {@code AccumuloAnnotationSerializer#serializeSegment}).
+     * <p>
+     * If a segment's hash has not yet been calculated (i.e. {@link Segment#getSegmentHash()} is blank), it is calculated as part of sorting; segments that
+     * already have a hash assigned are left as-is and are not redundantly recalculated.
+     * <p>
+     * This is used both when computing an annotation's hash ({@link #calculateAnnotationHash(Annotation)}) and when materializing the segment list on a built
+     * annotation ({@link #injectAnnotationHash(Annotation)}), so segment order is always consistent regardless of caller.
+     *
+     * @param segments
+     *            the segments to sort.
+     * @return a new list containing the segments sorted in ascending segment hash order.
+     */
+    public static List<Segment> sortSegments(List<Segment> segments) {
+        // @formatter:off
+        return segments.stream()
+                .map(s -> s.getSegmentHash().isEmpty() ? injectSegmentHash(s) : s)
+                .sorted(Comparator.comparing(Segment::getSegmentHash))
+                .collect(Collectors.toList());
+        // @formatter:on
     }
 
     /**
@@ -269,8 +297,12 @@ public class AnnotationUtils {
     public static String calculateAnnotationHash(Annotation annotation) {
         Hasher hasher = Hashing.murmur3_32_fixed().newHasher();
         hasher.putString(annotation.getAnnotationType(), StandardCharsets.UTF_8);
-        for (Segment s : annotation.getSegmentsList()) {
-            hasher.putString(calculateSegmentHash(s), StandardCharsets.UTF_8);
+        // Segments must be hashed in a consistent order regardless of the order they appear in
+        // the annotation, so the calculated hash doesn't depend on how the caller assembled the segment list.
+        // sortSegments reuses each segment's already-computed hash where available, so this does not redundantly
+        // recompute a segment's hash if it was already injected (e.g. via injectAllHashes(Segment)).
+        for (Segment s : sortSegments(annotation.getSegmentsList())) {
+            hasher.putString(s.getSegmentHash(), StandardCharsets.UTF_8);
         }
         // maps must be hashed in a consistent order (by key)
         final Map<String,String> metadataMap = annotation.getMetadataMap();
