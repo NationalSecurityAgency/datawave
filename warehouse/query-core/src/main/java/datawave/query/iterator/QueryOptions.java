@@ -98,6 +98,7 @@ import datawave.query.statsd.QueryStatsDClient;
 import datawave.query.tables.async.Scan;
 import datawave.query.tracking.ActiveQueryLog;
 import datawave.query.util.TypeMetadata;
+import datawave.query.util.TypeMetadataSerializer;
 import datawave.query.util.count.CountMap;
 import datawave.query.util.count.CountMapSerDe;
 import datawave.query.util.sortedset.FileSortedSet;
@@ -124,6 +125,7 @@ public class QueryOptions implements OptionDescriber {
     public static final String QUERY_ID = "query.id";
     public static final String TYPE_METADATA = "type.metadata";
     public static final String TYPE_METADATA_AUTHS = "type.metadata.auths";
+    public static final String TYPE_METADATA_KRYO = "type.metadata.kryo";
     public static final String METADATA_TABLE_NAME = "model.table.name";
 
     public static final String REDUCED_RESPONSE = "reduced.response";
@@ -301,6 +303,9 @@ public class QueryOptions implements OptionDescriber {
     protected long sourceLimit = -1;
     protected boolean disableIndexOnlyDocuments = false;
     protected TypeMetadata typeMetadata = new TypeMetadata();
+    // reused across calls to validateTypeMetadata; not thread-safe, so deliberately not copied by deepCopy() -
+    // each QueryOptions (and each deep copy of it) gets its own instance via this field initializer
+    private final transient TypeMetadataSerializer typeMetadataSerializer = new TypeMetadataSerializer();
     protected Set<String> typeMetadataAuthsKey = Sets.newHashSet();
     protected CompositeMetadata compositeMetadata = null;
     protected int compositeSeekThreshold = 10;
@@ -1342,6 +1347,7 @@ public class QueryOptions implements OptionDescriber {
         options.put(QUERY, "The JEXL query to evaluate documents against");
         options.put(QUERY_ID, "The UUID of the query");
         options.put(TYPE_METADATA, "A mapping of field name to a set of DataType class names");
+        options.put(TYPE_METADATA_KRYO, "Boolean value to indicate TYPE_METADATA is a Base64-encoded Kryo stream rather than the native toString() format");
         options.put(QUERY_MAPPING_COMPRESS, "Boolean value to indicate Normalizer mapping is compressed");
         options.put(REDUCED_RESPONSE, "Whether or not to return visibility markings on each attribute. Default: " + reducedResponse);
         options.put(Constants.RETURN_TYPE, "The method to use to serialize data for return to the client");
@@ -1997,10 +2003,14 @@ public class QueryOptions implements OptionDescriber {
         if (options.containsKey(TYPE_METADATA)) {
             String typeMetadataString = options.get(TYPE_METADATA);
             try {
-                if (compressedMappings) {
-                    typeMetadataString = decompressOption(typeMetadataString, QueryOptions.UTF8);
+                if (Boolean.parseBoolean(options.get(TYPE_METADATA_KRYO))) {
+                    this.typeMetadata = typeMetadataSerializer.deserialize(typeMetadataString);
+                } else {
+                    if (compressedMappings) {
+                        typeMetadataString = decompressOption(typeMetadataString, QueryOptions.UTF8);
+                    }
+                    this.typeMetadata = buildTypeMetadata(typeMetadataString);
                 }
-                this.typeMetadata = buildTypeMetadata(typeMetadataString);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }

@@ -4,11 +4,11 @@
     <parent>
         <groupId>gov.nsa.datawave.microservice</groupId>
         <artifactId>datawave-microservice-service-parent</artifactId>
-        <version>5.0.13</version>
+        <version>5.0.15</version>
         <relativePath>../../../../microservice-service-parent/pom.xml</relativePath>
     </parent>
     <artifactId>mapreduce-query-core-job</artifactId>
-    <version>1.0.7-SNAPSHOT</version>
+    <version>1.0.8-SNAPSHOT</version>
     <description>DATAWAVE MapReduce Query Core Job</description>
     <url>https://github.com/NationalSecurityAgency/datawave-mapreduce-query-service</url>
     <scm>
@@ -18,9 +18,9 @@
         <url>https://github.com/NationalSecurityAgency/datawave</url>
     </scm>
     <properties>
-        <version.datawave>7.37.3</version.datawave>
-        <version.datawave.mapreduce-layout-factory>1.0.2</version.datawave.mapreduce-layout-factory>
-        <version.datawave.starter-query>1.0.12</version.datawave.starter-query>
+        <version.datawave>8.0.0</version.datawave>
+        <version.datawave.mapreduce-layout-factory>1.0.3</version.datawave.mapreduce-layout-factory>
+        <version.datawave.starter-query>1.0.14</version.datawave.starter-query>
         <!-- dependency declared in datawave-microservice-parent, but the version can be overridden here -->
         <version.log4j>2.26.1</version.log4j>
         <version.zookeeper>3.9.2</version.zookeeper>

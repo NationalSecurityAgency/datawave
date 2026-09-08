@@ -127,7 +127,7 @@ public class IvaratorInterruptTest extends AbstractQueryTest {
 
     @Test
     public void testIvaratorInterruptedUnsorted() throws Exception {
-        givenDate("20091231", "20150101");
+        givenDate("20121231", "20130102");
         givenQuery("UUID =~ '^[CS].*'");
         expectUUIDs(Set.of("CORLEONE", "SOPRANO", "CAPONE"));
 
@@ -141,7 +141,7 @@ public class IvaratorInterruptTest extends AbstractQueryTest {
         params.put(QueryOptions.SORTED_UIDS, "true");
         logic.getConfig().setUnsortedUIDsEnabled(false);
 
-        givenDate("20091231", "20150101");
+        givenDate("20121231", "20130102");
         givenQuery("UUID =~ '^[CS].*'");
         givenParameters(params);
         expectUUIDs(Set.of("CORLEONE", "SOPRANO", "CAPONE"));

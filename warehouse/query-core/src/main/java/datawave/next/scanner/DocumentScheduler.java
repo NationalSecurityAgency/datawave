@@ -22,7 +22,6 @@ import datawave.query.scheduler.Scheduler;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.tables.async.event.VisitorFunction;
 import datawave.query.tables.stats.ScanSessionStats;
-import datawave.security.util.AuthorizationsMinimizer;
 
 /**
  * An alternate to the {@link PushdownScheduler} that splits query execution into two stages, finding documents and aggregating documents.
@@ -42,7 +41,9 @@ public class DocumentScheduler extends Scheduler {
     public DocumentScheduler(ShardQueryConfiguration config) {
         this.config = config.getDocumentScannerConfig();
         this.config.setClient(config.getClient());
-        this.config.setAuthorizations(AuthorizationsMinimizer.minimize(config.getAuthorizations()).iterator().next());
+        // the full set is required. ScannerHelper applies the first set to the scanner and installs a visibility
+        // filter for each remaining set, which is how data is restricted to what the whole entity chain may see
+        this.config.setAuthorizations(config.getAuthorizations());
         this.config.setQueryId(config.getQuery().getId().toString());
 
         this.queryDataIterator = config.getQueriesIter();

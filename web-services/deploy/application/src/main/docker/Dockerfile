@@ -1,4 +1,4 @@
-FROM jboss/wildfly:17.0.1.Final AS wildfly
+FROM quay.io/wildfly/wildfly:26.1.3.Final-jdk11 AS wildfly
 FROM rockylinux/rockylinux:8
 
 RUN dnf -y install dnf-plugins-core epel-release java-11-openjdk-devel && \
@@ -19,7 +19,7 @@ LABEL version="11"
 RUN dnf update -y && \
     dnf install -y which less bind-utils net-tools lsof nethogs dstat strace htop iperf iperf3 socat iftop xmlstarlet augeas bsdtar unzip
 
-ENV WILDFLY_VERSION 17.0.1.Final \
+ENV WILDFLY_VERSION 26.1.3.Final \
     JBOSS_HOME /opt/jboss/wildfly \
     LAUNCH_JOBS_IN_BACKGROUND true
 
@@ -51,6 +51,11 @@ RUN cp /opt/jboss/.bash* $WILDFLY_HOME && \
     chmod u+x /docker-entrypoint.sh  $WILDFLY_HOME/bin/*  $WILDFLY_HOME/tools/*.sh  $WILDFLY_HOME/tools/*.py
 
 USER datawave
+
+# The messaging subsystem authenticates against the application realm, and nothing else creates this
+# user in the image: without it every in-VM connection fails AMQ229031 and is retried forever, which
+# eventually exhausts the heap. The standalone install does the same thing in setup-wildfly.sh.
+RUN $WILDFLY_HOME/bin/add-user.sh -a -u '${hornetq.system.username}' -p '${hornetq.system.password}' -g admin,InternalUser
 
 RUN touch $WILDFLY_HOME/standalone/deployments/${project.build.finalName}-${build.env}.ear.skipdeploy && \
     $WILDFLY_HOME/bin/jboss-cli.sh --file=$WILDFLY_HOME/tools/add-datawave-configuration.cli && \

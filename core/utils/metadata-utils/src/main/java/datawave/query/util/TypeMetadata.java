@@ -3,6 +3,7 @@ package datawave.query.util;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -16,9 +17,12 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.KryoSerializable;
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
 import com.google.common.base.Splitter;
 import com.google.common.collect.HashMultimap;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -26,7 +30,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
-public class TypeMetadata implements Serializable {
+public class TypeMetadata implements Serializable, KryoSerializable {
 
     private Set<String> ingestTypes = new TreeSet<>();
 
@@ -224,6 +228,8 @@ public class TypeMetadata implements Serializable {
      *
      * @param ingestTypeFilter
      * @return
+     * @throws IllegalStateException
+     *             if an ingest type is absent, rather than fold it away and normalize its values wrong
      */
     public Multimap<String,String> fold(Set<String> ingestTypeFilter) {
         if (ingestTypeFilter == null || ingestTypeFilter.isEmpty()) {
@@ -232,8 +238,13 @@ public class TypeMetadata implements Serializable {
         Multimap<String,String> map = HashMultimap.create();
 
         for (String type : ingestTypeFilter) {
+            Multimap<String,String> types = this.typeMetadata.get(type);
+            if (types == null) {
+                throw new IllegalStateException("No TypeMetadata for ingest type '" + type + "'. Known ingest types: " + this.typeMetadata.keySet()
+                                + ". The metadata table cache is likely incomplete; proceeding would normalize values against the wrong types and silently drop valid results.");
+            }
             // defensive copy
-            map.putAll(HashMultimap.create(this.typeMetadata.get(type)));
+            map.putAll(HashMultimap.create(types));
         }
         return map;
     }
@@ -289,26 +300,59 @@ public class TypeMetadata implements Serializable {
         return Iterables.toArray(list, String.class);
     }
 
+    /**
+     * Parses one of the index to name mini-maps.
+     *
+     * @param typeEntry
+     *            a {@code dts:[...]} or {@code types:[...]} entry
+     * @return the mini-map, empty only when the entry holds no types
+     * @throws IllegalStateException
+     *             if the entry is malformed, rather than return a mini-map that would resolve field entries to the wrong types
+     */
     private static Map<String,Integer> parseTypes(String typeEntry) {
         // dts:[0:ingest1,1:ingest2]
         // types:[0:DateType,1:IntegerType,2:LcType]
 
         // remove type designation and leading/trailing brackets
-        String types = typeEntry.split(":\\[")[1];
+        String[] split = typeEntry.split(":\\[");
+        if (split.length < 2) {
+            throw new IllegalStateException("Malformed TypeMetadata mini-map, expected a bracketed list: '" + typeEntry + "'");
+        }
+
+        String types = split[1];
+        if (!types.endsWith("]")) {
+            throw new IllegalStateException("Malformed TypeMetadata mini-map, expected a closing bracket: '" + typeEntry + "'");
+        }
+
         String typeEntries = types.substring(0, types.length() - 1);
 
         Map<String,Integer> typeMap = new TreeMap<>();
+        if (typeEntries.isEmpty()) {
+            // a legitimately empty list, not a malformed one
+            return typeMap;
+        }
 
         for (String entry : typeEntries.split(",")) {
             String[] entryParts = entry.split(":");
+            if (entryParts.length < 2) {
+                throw new IllegalStateException("Malformed TypeMetadata mini-map entry, expected 'index:name': '" + entry + "' in '" + typeEntry + "'");
+            }
             typeMap.put(entryParts[1], Integer.valueOf(entryParts[0]));
         }
 
         return typeMap;
     }
 
+    /**
+     * Renders this instance in the form described by {@link #fromString(String)}. The ingest type and normalizer type mini-maps are built locally and published
+     * at the end, because a cached instance is serialized concurrently by every query sharing its auths and datatype filter.
+     *
+     * @return a serialized TypeMetadata
+     */
     public String toString() {
         StringBuilder sb = new StringBuilder();
+        Map<String,Integer> ingestTypesMini = new TreeMap<>();
+        Map<String,Integer> dataTypesMini = new TreeMap<>();
 
         // create and append ingestTypes mini-map
         sb.append("dts:[");
@@ -317,9 +361,14 @@ public class TypeMetadata implements Serializable {
             String ingestType = ingestIter.next();
             sb.append(i).append(":");
             sb.append(ingestType);
-            sb.append(ingestIter.hasNext() ? "," : "];");
-            getIngestTypesMiniMap().put(ingestType, i);
+            sb.append(ingestIter.hasNext() ? "," : "]");
+            ingestTypesMini.put(ingestType, i);
         }
+        // an empty TypeMetadata still has to close the bracket, or the result cannot be parsed back
+        if (ingestTypes.isEmpty()) {
+            sb.append("]");
+        }
+        sb.append(";");
 
         // create and append dataTypes mini-map
         sb.append("types:[");
@@ -334,8 +383,11 @@ public class TypeMetadata implements Serializable {
             String dataType = dataIter.next();
             sb.append(i).append(":");
             sb.append(dataType);
-            sb.append(dataIter.hasNext() ? "," : "];");
-            getDataTypesMiniMap().put(dataType, i);
+            sb.append(dataIter.hasNext() ? "," : "]");
+            dataTypesMini.put(dataType, i);
+        }
+        if (dataTypes.isEmpty()) {
+            sb.append("]");
         }
 
         // append fieldNames and their associated ingestTypes and Normalizers
@@ -347,6 +399,9 @@ public class TypeMetadata implements Serializable {
         }
 
         Iterator<String> fieldIter = fieldNames.iterator();
+        if (fieldIter.hasNext()) {
+            sb.append(";");
+        }
         while (fieldIter.hasNext()) {
             String fieldName = fieldIter.next();
             sb.append(fieldName).append(":[");
@@ -359,8 +414,8 @@ public class TypeMetadata implements Serializable {
                 Iterator<String> dataTypeIter = typeMetadata.get(ingestType).get(fieldName).iterator();
                 while (dataTypeIter.hasNext()) {
                     String dataType = dataTypeIter.next();
-                    sb.append(getIngestTypesMiniMap().get(ingestType)).append(':');
-                    sb.append(getDataTypesMiniMap().get(dataType));
+                    sb.append(ingestTypesMini.get(ingestType)).append(':');
+                    sb.append(dataTypesMini.get(dataType));
                     sb.append(dataTypeIter.hasNext() ? "," : "");
                 }
                 sb.append(iIter.hasNext() ? "," : "");
@@ -368,48 +423,80 @@ public class TypeMetadata implements Serializable {
             sb.append(fieldIter.hasNext() ? "];" : "]");
         }
 
+        // publish the completed maps as a single reference store, so a concurrent reader never observes a half-built map
+        setIngestTypesMiniMap(ingestTypesMini);
+        setDataTypesMiniMap(dataTypesMini);
+
         return sb.toString();
     }
 
+    /**
+     * Populates this instance from the semicolon delimited form produced by {@link #toString()}: a {@code dts} mini-map assigning an index to each ingest type,
+     * a {@code types} mini-map assigning an index to each normalizer type held against a field, then one entry per field name whose bracketed list holds
+     * {@code ingestTypeIndex:normalizerTypeIndex} pairs.
+     *
+     * <pre>
+     * dts:[0:ingestA,1:ingestB];types:[0:LcNoDiacriticsType,1:NumberType];FIELD1:[0:0,1:0];FIELD2:[0:0,0:1,1:1]
+     * </pre>
+     *
+     * The example above gives FIELD1 an LcNoDiacriticsType in both ingest types, and FIELD2 both types in ingestA and a NumberType in ingestB. Parsing is
+     * lenient about what {@link #toString()} emits: input with fewer than three entries is discarded, empty entries and values are skipped (a field absent from
+     * a trailing ingest type emits a trailing comma), and an index with no mini-map entry yields an empty type name. A malformed entry throws instead of
+     * resolving field entries to the wrong types.
+     *
+     * @param data
+     *            a serialized TypeMetadata
+     * @throws IllegalStateException
+     *             if a mini-map or field entry is malformed
+     */
     private void fromString(String data) {
         String[] entries = parse(data, ';');
 
         if (entries.length > 2) {
+            // invert each index -> name mini-map once, as its prefix entry is parsed, so that every field entry below
+            // is an O(1) lookup instead of a linear scan per value. These start empty rather than inverting the
+            // current mini-maps: those are unpopulated for a freshly parsed instance, and are still null when called
+            // from readObject, which does not run a constructor.
+            Map<Integer,String> ingestTypesByIndex = Collections.emptyMap();
+            Map<Integer,String> dataTypesByIndex = Collections.emptyMap();
+
             for (String entry : entries) {
                 if (entry.startsWith(INGESTTYPE_PREFIX)) {
                     setIngestTypesMiniMap(parseTypes(entry));
+                    ingestTypesByIndex = invert(getIngestTypesMiniMap());
                 } else if (entry.startsWith(DATATYPES_PREFIX)) {
                     setDataTypesMiniMap(parseTypes(entry));
-                } else {
+                    dataTypesByIndex = invert(getDataTypesMiniMap());
+                } else if (!entry.isEmpty()) {
+                    // a field entry, FIELD_NAME:[ingestTypeIndex:normalizerTypeIndex,...], splitting into the field
+                    // name and the bracketed list of index pairs. An empty entry is a trailing delimiter, not a field.
                     String[] entrySplits = parse(entry, ':');
+                    if (entrySplits.length < 2) {
+                        throw new IllegalStateException("Malformed TypeMetadata field entry, expected 'FIELD:[...]': '" + entry + "'");
+                    }
 
                     // get rid of the leading and trailing brackets:
-                    entrySplits[1] = entrySplits[1].substring(1, entrySplits[1].length() - 1);
+                    String indexPairs = entrySplits[1];
+                    if (!indexPairs.startsWith("[") || !indexPairs.endsWith("]")) {
+                        throw new IllegalStateException("Malformed TypeMetadata field entry, expected a bracketed list: '" + entry + "'");
+                    }
+
+                    entrySplits[1] = indexPairs.substring(1, indexPairs.length() - 1);
                     String[] values = parse(entrySplits[1], ',');
 
                     for (String aValue : values) {
                         if (!aValue.isEmpty()) { // ignore last entry for trailing comma
-                            // @formatter:off
-                        String[] vs = Iterables
-                                .toArray(Splitter.on(':')
-                                        .omitEmptyStrings()
-                                        .trimResults()
-                                        .split(aValue), String.class);
+                            // an index pair, vs[0] into the ingest type mini-map and vs[1] into the normalizer type
+                            // mini-map. An index the corresponding mini-map does not hold, including any index seen
+                            // before its mini-map entry was parsed, resolves to "".
+                            String[] vs = Iterables.toArray(Splitter.on(':').omitEmptyStrings().trimResults().split(aValue), String.class);
+                            if (vs.length < 2) {
+                                throw new IllegalStateException("Malformed TypeMetadata index pair, expected 'ingestTypeIndex:normalizerTypeIndex': '" + aValue
+                                                + "' in '" + entry + "'");
+                            }
 
-                        String ingestType = ImmutableMap.copyOf(getIngestTypesMiniMap())
-                                .entrySet()
-                                .stream()
-                                .filter(e -> e.getValue().equals(Integer.valueOf(vs[0])))
-                                .map(Entry::getKey)
-                                .findFirst().orElse("");
-
-                        String dataType = ImmutableMap.copyOf(getDataTypesMiniMap())
-                                .entrySet()
-                                .stream()
-                                .filter(e -> e.getValue().equals(Integer.valueOf(vs[1])))
-                                .map(Entry::getKey)
-                                .findFirst().orElse("");
-                        // @formatter:on
+                            String ingestType = ingestTypesByIndex.getOrDefault(Integer.valueOf(vs[0]), "");
+                            String dataType = dataTypesByIndex.getOrDefault(Integer.valueOf(vs[1]), "");
 
                             this.addTypeMetadata(entrySplits[0], ingestType, dataType);
                         }
@@ -418,6 +505,14 @@ public class TypeMetadata implements Serializable {
                 }
             }
         }
+    }
+
+    private static Map<Integer,String> invert(Map<String,Integer> nameToIndex) {
+        Map<Integer,String> byIndex = Maps.newHashMapWithExpectedSize(nameToIndex.size());
+        for (Entry<String,Integer> entry : nameToIndex.entrySet()) {
+            byIndex.put(entry.getValue(), entry.getKey());
+        }
+        return byIndex;
     }
 
     @Override
@@ -451,7 +546,116 @@ public class TypeMetadata implements Serializable {
         this.ingestTypes = Sets.newTreeSet();
         this.fieldNames = Sets.newTreeSet();
         this.typeMetadata = Maps.newHashMap();
+        // deserialization does not run a constructor, so the mini-maps must be initialized here too
+        this.ingestTypesMiniMap = new TreeMap<>();
+        this.dataTypesMiniMap = new TreeMap<>();
         this.fromString((String) in.readObject());
+    }
+
+    /**
+     * Writes this instance in the binary equivalent of the form described by {@link #fromString(String)}: an ingest type mini-map, a normalizer type mini-map,
+     * then one entry per field name holding its {@code ingestTypeIndex:normalizerTypeIndex} pairs as variable length ints. Each name is written exactly once,
+     * which matters because a normalizer type name is otherwise repeated for every field it is held against. The mini-maps are populated as a side effect, as
+     * they are by {@link #toString()}.
+     * <p>
+     * Unlike {@link #writeObject(ObjectOutputStream)} this bypasses {@link #toString()}, building the mini-maps against the underlying {@code typeMetadata} map
+     * rather than through a {@link StringBuilder}.
+     *
+     * @param kryo
+     *            the kryo instance
+     * @param output
+     *            the kryo output
+     */
+    @Override
+    public void write(Kryo kryo, Output output) {
+        // the ingest types actually referenced below, sorted so the assigned indices are stable across instances
+        Set<String> ingestTypes = new TreeSet<>(typeMetadata.keySet());
+        Map<String,Integer> ingestTypeIndices = new TreeMap<>();
+        output.writeInt(ingestTypes.size(), true);
+        for (String ingestType : ingestTypes) {
+            output.writeString(ingestType);
+            ingestTypeIndices.put(ingestType, ingestTypeIndices.size());
+        }
+        setIngestTypesMiniMap(ingestTypeIndices);
+
+        Set<String> dataTypes = new TreeSet<>();
+        for (Multimap<String,String> fieldMap : typeMetadata.values()) {
+            dataTypes.addAll(fieldMap.values());
+        }
+        Map<String,Integer> dataTypeIndices = new TreeMap<>();
+        output.writeInt(dataTypes.size(), true);
+        for (String dataType : dataTypes) {
+            output.writeString(dataType);
+            dataTypeIndices.put(dataType, dataTypeIndices.size());
+        }
+        setDataTypesMiniMap(dataTypeIndices);
+
+        // invert the ingest type major typeMetadata into the field major order written below, in a single pass over
+        // its entries rather than a lookup per field per ingest type. Field names come from typeMetadata rather than
+        // the fieldNames member because filter() populates the former without the latter.
+        Map<String,List<Integer>> pairsByField = new TreeMap<>();
+        for (Entry<String,Multimap<String,String>> ingestEntry : typeMetadata.entrySet()) {
+            Integer ingestTypeIndex = ingestTypeIndices.get(ingestEntry.getKey());
+            for (Entry<String,Collection<String>> fieldEntry : ingestEntry.getValue().asMap().entrySet()) {
+                List<Integer> pairs = pairsByField.computeIfAbsent(fieldEntry.getKey(), field -> new ArrayList<>());
+                for (String dataType : fieldEntry.getValue()) {
+                    pairs.add(ingestTypeIndex);
+                    pairs.add(dataTypeIndices.get(dataType));
+                }
+            }
+        }
+
+        output.writeInt(pairsByField.size(), true);
+        for (Entry<String,List<Integer>> fieldEntry : pairsByField.entrySet()) {
+            output.writeString(fieldEntry.getKey());
+            List<Integer> pairs = fieldEntry.getValue();
+            output.writeInt(pairs.size() / 2, true);
+            for (Integer index : pairs) {
+                output.writeInt(index, true);
+            }
+        }
+    }
+
+    /**
+     * Reads this instance from the form written by {@link #write(Kryo, Output)}, resolving each index pair against the two mini-maps held as arrays, so that
+     * every field entry is an O(1) lookup rather than the repeated map lookups {@link #fromString(String)} performs.
+     *
+     * @param kryo
+     *            the kryo instance
+     * @param input
+     *            the kryo input
+     */
+    @Override
+    public void read(Kryo kryo, Input input) {
+        this.ingestTypes = Sets.newTreeSet();
+        this.fieldNames = Sets.newTreeSet();
+        this.typeMetadata = Maps.newHashMap();
+        this.ingestTypesMiniMap = new TreeMap<>();
+        this.dataTypesMiniMap = new TreeMap<>();
+
+        String[] ingestTypesByIndex = new String[input.readInt(true)];
+        for (int i = 0; i < ingestTypesByIndex.length; i++) {
+            ingestTypesByIndex[i] = input.readString();
+            this.ingestTypesMiniMap.put(ingestTypesByIndex[i], i);
+        }
+
+        String[] dataTypesByIndex = new String[input.readInt(true)];
+        for (int i = 0; i < dataTypesByIndex.length; i++) {
+            dataTypesByIndex[i] = input.readString();
+            this.dataTypesMiniMap.put(dataTypesByIndex[i], i);
+        }
+
+        int numFields = input.readInt(true);
+        for (int i = 0; i < numFields; i++) {
+            String fieldName = input.readString();
+            int pairs = input.readInt(true);
+            for (int j = 0; j < pairs; j++) {
+                String ingestType = ingestTypesByIndex[input.readInt(true)];
+                String dataType = dataTypesByIndex[input.readInt(true)];
+                this.addTypeMetadata(fieldName, ingestType, dataType);
+            }
+            this.fieldNames.add(fieldName);
+        }
     }
 
     public static final TypeMetadata EMPTY_TYPE_METADATA = new EmptyTypeMetadata();
