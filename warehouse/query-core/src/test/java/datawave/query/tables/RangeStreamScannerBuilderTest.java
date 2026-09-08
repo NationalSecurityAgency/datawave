@@ -121,6 +121,21 @@ public class RangeStreamScannerBuilderTest implements BaseScannerSessionTest<Ran
     }
 
     @Test
+    public void testResultQueueSizeSizesTheResultQueue() {
+        //  @formatter:off
+        RangeStreamScanner scanner = RangeStreamScannerBuilder.create(client)
+                .setTableName(tableName)
+                .setAuthorizations(authorizations)
+                .setQuery(query)
+                .setResultQueueSize(37)
+                .setConfig(getConfig())
+                .build();
+        //  @formatter:on
+
+        assertEquals(37, scanner.resultQueue.remainingCapacity());
+    }
+
+    @Test
     @Override
     public void testQueryNotSet() {
         //  @formatter:off

@@ -83,7 +83,6 @@ datawave:
         recordWriterMaxMemory: 10
         recordWriterMaxLatency: 16
         recordWriterNumThreads: 4
-        enableBloomFilter: false
         queryVisibility: PUBLIC
         defaultMetricVisibility: PUBLIC
         baseMaps: "{}"
