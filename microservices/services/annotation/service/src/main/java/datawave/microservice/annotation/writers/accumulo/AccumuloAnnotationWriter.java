@@ -11,6 +11,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.accumulo.core.client.AccumuloClient;
+import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.lang3.StringUtils;
 
@@ -30,7 +31,7 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class AccumuloAnnotationWriter implements AnnotationWriter {
+public class AccumuloAnnotationWriter implements AnnotationWriter, AutoCloseable {
     // TODO: consider making these configurable
     static final String USER_DN = "AccumuloAnnotationWriter";
     static final String DEFAULT_POOL = "WAREHOUSE";
@@ -41,30 +42,71 @@ public class AccumuloAnnotationWriter implements AnnotationWriter {
 
     private final AnnotationDataAccess annotationDataAccess;
 
+    /** the connection factory the accumuloClient below was borrowed from; retained solely so it can be returned on close() */
+    private final AccumuloConnectionFactory connectionFactory;
+
+    /** the client borrowed from connectionFactory for the lifetime of this writer; returned via close() */
+    private final AccumuloClient accumuloClient;
+
     public AccumuloAnnotationWriter(AccumuloConnectionFactory connectionFactory, AccumuloAnnotationWriterProperties properties,
                     AccumuloAnnotationSerializer annotationSerializer, AccumuloAnnotationSourceSerializer annotationSourceSerializer) {
-        // TODO: figure out connection management (e.g, configuration lifecycle..)
+        this.connectionFactory = connectionFactory;
         Map<String,String> trackingMap = new HashMap<>();
 
+        AccumuloClient borrowedClient = null;
         try {
-            AccumuloClient accumuloClient = connectionFactory.getClient(USER_DN, EMPTY_PROXY_SERVERS, DEFAULT_POOL, AccumuloConnectionFactory.Priority.NORMAL,
-                            trackingMap);
-            String accumuloUser = accumuloClient.whoami();
-            final Authorizations authorizations = accumuloClient.securityOperations().getUserAuthorizations(accumuloUser);
+            borrowedClient = connectionFactory.getClient(USER_DN, EMPTY_PROXY_SERVERS, DEFAULT_POOL, AccumuloConnectionFactory.Priority.NORMAL, trackingMap);
+            String accumuloUser = borrowedClient.whoami();
+            final Authorizations authorizations = borrowedClient.securityOperations().getUserAuthorizations(accumuloUser);
             log.info("Writing annotations as {}, with authorizations {}", accumuloUser, authorizations);
             final Set<Authorizations> authoriationsSet = Set.of(authorizations);
 
-            if (!accumuloClient.tableOperations().exists(properties.getTruthmarkTableName()))
-                accumuloClient.tableOperations().create(properties.getTruthmarkTableName());
+            createTableIfNotExists(borrowedClient, properties.getTruthmarkTableName());
+            createTableIfNotExists(borrowedClient, properties.getTruthmarkSourceTableName());
 
-            if (!accumuloClient.tableOperations().exists(properties.getTruthmarkSourceTableName()))
-                accumuloClient.tableOperations().create(properties.getTruthmarkSourceTableName());
-
+            this.accumuloClient = borrowedClient;
             this.annotationDataAccess = new AnnotationDataAccess(accumuloClient, authoriationsSet, properties.getTruthmarkTableName(),
                             properties.getTruthmarkSourceTableName(), annotationSerializer, annotationSourceSerializer);
         } catch (Exception e) {
+            // if the client was successfully borrowed before the failure, return it -- otherwise it is orphaned forever, since no
+            // surviving object would hold a reference to hand back to the pool.
+            if (borrowedClient != null) {
+                returnClientQuietly(connectionFactory, borrowedClient);
+            }
             throw new RuntimeException(e.getMessage(), e);
         }
+    }
+
+    /**
+     * Creates the given table if it does not already exist. Tolerates a concurrent create from another service instance racing against this one (the
+     * exists()/create() check is inherently TOCTOU), treating an intervening {@link TableExistsException} as success rather than failing writer initialization.
+     */
+    private static void createTableIfNotExists(AccumuloClient client, String tableName) throws Exception {
+        try {
+            if (!client.tableOperations().exists(tableName)) {
+                client.tableOperations().create(tableName);
+            }
+        } catch (TableExistsException e) {
+            log.info("Table [{}] already exists (likely created concurrently by another service instance); continuing.", tableName);
+        }
+    }
+
+    private static void returnClientQuietly(AccumuloConnectionFactory connectionFactory, AccumuloClient client) {
+        try {
+            connectionFactory.returnClient(client);
+        } catch (Exception returnException) {
+            log.warn("Unable to return borrowed Accumulo client to the connection pool", returnException);
+        }
+    }
+
+    /**
+     * Returns the Accumulo client borrowed at construction time back to the connection pool. Invoked by Spring at bean destruction (see
+     * {@code AccumuloAnnotationWriterConfig}) so that the connection this writer holds for its entire lifetime is not permanently lost from the shared pool on
+     * graceful shutdown.
+     */
+    @Override
+    public void close() {
+        returnClientQuietly(connectionFactory, accumuloClient);
     }
 
     @Override

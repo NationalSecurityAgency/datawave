@@ -40,6 +40,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.protobuf.InvalidProtocolBufferException;
 
 import datawave.annotation.data.transform.TimestampTransformer;
@@ -85,6 +88,9 @@ public class AnnotationControllerV1 {
     public static final String ANNOTATION_ACK_CHANNEL = "annotationAckChannel";
 
     public static final String ANNOTATION_SERVICE_SYSTEM_FROM = "annotation";
+
+    /** used to serialize error response bodies (see {@link #jsonError(String)}/{@link #jsonNotFound(String)}) */
+    private static final ObjectMapper JSON_ERROR_MAPPER = new ObjectMapper();
 
     private final AnnotationProperties annotationProperties;
 
@@ -861,14 +867,30 @@ public class AnnotationControllerV1 {
         return jsonNotFound(message);
     }
 
-    private static ResponseEntity<String> jsonNotFound(String message) {
-        String response = "{\"message\":\"" + message + "\"}";
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+    @VisibleForTesting
+    static ResponseEntity<String> jsonNotFound(String message) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).contentType(MediaType.APPLICATION_JSON).body(toJsonMessage(message));
     }
 
-    private static ResponseEntity<String> jsonError(String message) {
-        String response = "{\"message\":\"" + message + "\"}";
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+    @VisibleForTesting
+    static ResponseEntity<String> jsonError(String message) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).contentType(MediaType.APPLICATION_JSON).body(toJsonMessage(message));
+    }
+
+    /**
+     * Serializes a simple {@code {"message": "..."}} error body via Jackson, rather than hand-building the JSON via string concatenation, which would produce
+     * malformed or injectable output whenever {@code message} itself contains a quote, backslash, or control character (e.g. from an exception message or
+     * user-supplied identifier).
+     */
+    @VisibleForTesting
+    static String toJsonMessage(String message) {
+        try {
+            return JSON_ERROR_MAPPER.writeValueAsString(Collections.singletonMap("message", message));
+        } catch (JsonProcessingException e) {
+            // extremely unlikely for a single string value, but fall back to a safely-escaped literal rather than propagating
+            log.error("Unable to serialize error message to JSON", e);
+            return "{\"message\":\"Internal error\"}";
+        }
     }
 
     private static <T> ResponseEntity<T> jsonOk(T body) {

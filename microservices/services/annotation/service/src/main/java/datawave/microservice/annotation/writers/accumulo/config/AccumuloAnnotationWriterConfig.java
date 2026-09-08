@@ -37,7 +37,7 @@ public class AccumuloAnnotationWriterConfig {
         return new AnnotationConsumer(accumuloAnnotationWriter);
     }
 
-    @Bean
+    @Bean(destroyMethod = "close")
     public AnnotationWriter accumuloAnnotationWriter(AccumuloAnnotationWriterProperties accumuloAnnotationWriterProperties,
                     AccumuloConnectionFactory accumuloPool, AccumuloAnnotationSerializer annotationSerializer,
                     AccumuloAnnotationSourceSerializer annotationSourceSerializer) {

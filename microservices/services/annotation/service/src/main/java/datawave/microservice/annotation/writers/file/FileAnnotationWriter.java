@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
+import java.security.PrivilegedExceptionAction;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
@@ -59,10 +60,16 @@ public class FileAnnotationWriter implements AnnotationWriter {
             path = new Path(path, builder.subPath);
         }
 
+        // Scope the impersonated user to just this FileSystem.get(...) call via doAs(...), rather than mutating the JVM-global
+        // login user via UserGroupInformation.setLoginUser(...), which would clobber process-wide Hadoop identity state shared
+        // with any other component (e.g. a concurrently-constructed dump writer, or Accumulo's own connection factory) running
+        // in the same JVM.
         UserGroupInformation ugi = UserGroupInformation.createRemoteUser(builder.user);
-        UserGroupInformation.setLoginUser(ugi);
-
-        fileSystem = FileSystem.get(path.toUri(), config);
+        try {
+            fileSystem = ugi.doAs((PrivilegedExceptionAction<FileSystem>) () -> FileSystem.get(path.toUri(), config));
+        } catch (Exception e) {
+            throw new IOException("Unable to obtain a FileSystem as user " + builder.user, e);
+        }
 
         String sdfString = "yyyyMMdd_HHmmss.SSS'.json'";
         if (builder.prefix != null && !builder.prefix.isEmpty()) {
@@ -100,18 +107,19 @@ public class FileAnnotationWriter implements AnnotationWriter {
     }
 
     protected void writeAnnotation(String annotationJson) throws Exception {
-        OutputStream appendStream = (fileSystem instanceof LocalFileSystem) ? new FileOutputStream(new File(currentFile.toUri()), true)
-                        : fileSystem.append(currentFile);
-        appendStream.write(annotationJson.getBytes(StandardCharsets.UTF_8));
-        appendStream.close();
+        try (OutputStream appendStream = (fileSystem instanceof LocalFileSystem) ? new FileOutputStream(new File(currentFile.toUri()), true)
+                        : fileSystem.append(currentFile)) {
+            appendStream.write(annotationJson.getBytes(StandardCharsets.UTF_8));
+        }
     }
 
     protected void createNewFile() throws IOException {
         // create a new file and output stream
         Date currentDate = new Date();
         currentFile = new Path(path, sdf.format(currentDate));
-        FSDataOutputStream outStream = fileSystem.create(currentFile);
-        outStream.close();
+        try (FSDataOutputStream outStream = fileSystem.create(currentFile)) {
+            // no content to write; creating and immediately closing the stream is sufficient to create the empty file
+        }
         creationDate = currentDate;
     }
 
@@ -136,7 +144,7 @@ public class FileAnnotationWriter implements AnnotationWriter {
 
         public Builder() {
             user = "datawave";
-            prefix = "audit";
+            prefix = "annotation";
             maxFileLengthMB = 8192L;
             maxFileAgeSeconds = TimeUnit.HOURS.toSeconds(6);
         }
