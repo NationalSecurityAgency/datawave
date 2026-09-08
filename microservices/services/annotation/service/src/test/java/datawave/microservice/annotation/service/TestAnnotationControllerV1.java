@@ -14,6 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.matches;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.times;
@@ -38,6 +39,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpHeaders;
@@ -323,6 +325,78 @@ public class TestAnnotationControllerV1 {
         ArrayList<Annotation> annotationList = assertExpectedEntity(ArrayList.class, response);
         assertEquals(1, annotationList.size());
         assertAnnotationsEqual(expectedAnnotation, annotationList.get(0));
+    }
+
+    /*
+     * T13 (Q07, Option B): only an explicit allowlist of caller-supplied query parameters (currently just 'auths') is ever forwarded to the remote lookup
+     * service. These tests exercise the real lookupDocumentIdentifier/prepareLookupParameters code path (invoked indirectly via getAnnotationsFor, which is an
+     * external, UUID-style lookup) and capture the exact "params" string that lookupService.executeLookupUUIDQuery is called with.
+     */
+
+    @Test
+    public void testLookupParametersOmitAuthsWhenNoneRequested() {
+        when(lookupService.executeLookupUUIDQuery(matches("UUID"), matches("CORLEONE"), any(), any(), any())).thenReturn(Collections.emptyList());
+
+        annotationController.getAnnotationsFor("UUID", "CORLEONE", EMPTY_HTTP_HEADERS, defaultUserDetails);
+
+        ArgumentCaptor<String> queryParamsCaptor = ArgumentCaptor.forClass(String.class);
+        verify(lookupService).executeLookupUUIDQuery(eq("UUID"), eq("CORLEONE"), queryParamsCaptor.capture(), any(), eq(defaultUserDetails));
+        assertEquals("", queryParamsCaptor.getValue(),
+                        "no auths override was requested, so nothing should be forwarded -- the remote lookup then defaults to the caller's full "
+                                        + "authorization set, matching the no-override branch used for local reads");
+    }
+
+    @Test
+    public void testLookupParametersForwardOnlyAllowlistedAuths() throws Exception {
+        org.springframework.util.LinkedMultiValueMap<String,String> queryParameters = new org.springframework.util.LinkedMultiValueMap<>();
+        queryParameters.add(AnnotationControllerV1.RequestContext.QUERY_AUTHORIZATIONS, "B,A");
+        // 'foo' is not on the allowlist and must never reach the remote lookup, regardless of what it contains.
+        queryParameters.add("foo", "bar");
+
+        when(lookupService.executeLookupUUIDQuery(matches("UUID"), matches("CORLEONE"), any(), any(), any())).thenReturn(Collections.emptyList());
+
+        annotationController.getAnnotationsFor("UUID", "CORLEONE", queryParameters, defaultUserDetails);
+
+        ArgumentCaptor<String> queryParamsCaptor = ArgumentCaptor.forClass(String.class);
+        verify(lookupService).executeLookupUUIDQuery(eq("UUID"), eq("CORLEONE"), queryParamsCaptor.capture(), any(), eq(defaultUserDetails));
+        String forwardedParams = queryParamsCaptor.getValue();
+
+        assertFalse(forwardedParams.contains("foo"), "non-allowlisted parameters must never be forwarded to the remote lookup");
+        assertFalse(forwardedParams.contains("bar"), "non-allowlisted parameter values must never be forwarded to the remote lookup");
+
+        String expectedDowngradedAuths = datawave.microservice.authorization.util.AuthorizationsUtil.downgradeUserAuths("B,A", defaultUserDetails,
+                        defaultUserDetails);
+        assertEquals(AnnotationControllerV1.RequestContext.QUERY_AUTHORIZATIONS + ":" + expectedDowngradedAuths, forwardedParams,
+                        "the only allowlisted parameter, 'auths', must be forwarded downgraded exactly as a local read would downgrade it");
+    }
+
+    @Test
+    public void testLookupParametersDowngradeToRequestedSubsetOfAuths() throws Exception {
+        // defaultUserDetails holds A,B,C,D,E,F,G,H,I,ALL,PUBLIC -- request a narrower subset than the caller's full grant.
+        org.springframework.util.LinkedMultiValueMap<String,String> queryParameters = new org.springframework.util.LinkedMultiValueMap<>();
+        queryParameters.add(AnnotationControllerV1.RequestContext.QUERY_AUTHORIZATIONS, "A");
+
+        when(lookupService.executeLookupUUIDQuery(matches("UUID"), matches("CORLEONE"), any(), any(), any())).thenReturn(Collections.emptyList());
+
+        annotationController.getAnnotationsFor("UUID", "CORLEONE", queryParameters, defaultUserDetails);
+
+        ArgumentCaptor<String> queryParamsCaptor = ArgumentCaptor.forClass(String.class);
+        verify(lookupService).executeLookupUUIDQuery(eq("UUID"), eq("CORLEONE"), queryParamsCaptor.capture(), any(), eq(defaultUserDetails));
+
+        assertEquals(AnnotationControllerV1.RequestContext.QUERY_AUTHORIZATIONS + ":A", queryParamsCaptor.getValue(),
+                        "a caller-requested narrower auths subset must be honored and forwarded downgraded, not silently widened back to the full grant");
+    }
+
+    @Test
+    public void testLookupParametersRejectAuthsNotHeldByCaller() {
+        org.springframework.util.LinkedMultiValueMap<String,String> queryParameters = new org.springframework.util.LinkedMultiValueMap<>();
+        // "NOPE" is not among defaultUserDetails' granted auths.
+        queryParameters.add(AnnotationControllerV1.RequestContext.QUERY_AUTHORIZATIONS, "A,NOPE");
+
+        ResponseEntity<?> response = annotationController.getAnnotationsFor("UUID", "CORLEONE", queryParameters, defaultUserDetails);
+
+        assertResponseStatus(500, response);
+        org.mockito.Mockito.verifyNoInteractions(lookupService);
     }
 
     @Test

@@ -27,6 +27,8 @@ management:
         RABBITMQ_UNHEALTHY: 200
 
 annotation:
+  system-from: "datawave-annotation-service"
+
   # Database connection settings
   max-connections: 40
   conn-pool-name: "default"

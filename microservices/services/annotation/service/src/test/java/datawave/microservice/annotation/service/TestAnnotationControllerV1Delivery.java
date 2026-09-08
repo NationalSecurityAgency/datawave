@@ -339,6 +339,22 @@ public class TestAnnotationControllerV1Delivery {
     }
 
     @Test
+    public void testSendAnnotation_UsesDefaultSystemFrom() {
+        AnnotationProperties defaultProperties = new AnnotationProperties();
+        defaultProperties.setAnnotationAckEnabled(false);
+        AnnotationControllerV1 defaultController = new AnnotationControllerV1(connectionFactory, lookupService, defaultProperties, timestampTransformer,
+                        visibilityTransformer, annotationSink, mock(ExecutorService.class), new AnnotationAckTracker());
+        when(annotationSink.send(any())).thenReturn(true);
+
+        Optional<Annotation> result = defaultController.sendAnnotation(AnnotationUtils.injectAllHashes(generateTestAnnotation()));
+
+        assertTrue(result.isPresent());
+        ArgumentCaptor<Message<AnnotationMessage>> captor = ArgumentCaptor.forClass(Message.class);
+        verify(annotationSink).send(captor.capture());
+        assertEquals("datawave-annotation-service", captor.getValue().getPayload().getSource());
+    }
+
+    @Test
     public void testSendAnnotation_FailurePropagatesEmpty() {
         when(annotationSink.send(any())).thenReturn(false);
         Annotation annotation = AnnotationUtils.injectAllHashes(generateTestAnnotation());

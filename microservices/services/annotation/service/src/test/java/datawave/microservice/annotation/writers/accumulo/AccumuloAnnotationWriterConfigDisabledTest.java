@@ -7,16 +7,17 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Profile;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
+import datawave.microservice.annotation.common.config.AccumuloConfiguration;
+import datawave.microservice.annotation.common.config.AnnotationSerializerConfiguration;
+import datawave.microservice.annotation.writers.accumulo.config.AccumuloAnnotationWriterConfig;
+
 @ExtendWith(SpringExtension.class)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@ContextConfiguration(classes = AccumuloAnnotationWriterConfigDisabledTest.AccumuloAnnotationWriterTestConfiguration.class)
+@ContextConfiguration(classes = {AccumuloAnnotationWriterConfig.class, AccumuloConfiguration.class, AnnotationSerializerConfiguration.class})
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @ActiveProfiles({"AccumuloAnnotationWriterConfigDisabledTest", "accumulo-disabled"})
 public class AccumuloAnnotationWriterConfigDisabledTest {
 
@@ -28,12 +29,5 @@ public class AccumuloAnnotationWriterConfigDisabledTest {
         assertFalse(context.containsBean("accumuloAnnotationSink"));
         assertFalse(context.containsBean("accumuloAnnotationWriter"));
         assertFalse(context.containsBean("connector"));
-    }
-
-    @Configuration
-    @Profile("AccumuloAnnotationWriterConfigDisabledTest")
-    @ComponentScan(basePackages = "datawave.microservice")
-    public static class AccumuloAnnotationWriterTestConfiguration {
-
     }
 }

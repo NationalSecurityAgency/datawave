@@ -51,7 +51,7 @@ public class AnnotationProperties {
 
     private List<String> fsConfigResources;
 
-    private String systemFrom;
+    private String systemFrom = "datawave-annotation-service";
 
     @Valid
     private Retry retry = new Retry();

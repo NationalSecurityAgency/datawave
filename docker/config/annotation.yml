@@ -36,6 +36,8 @@ spring:
     deserialization:
       fail-on-unknown-properties: false
 annotation:
+  system-from: "datawave-annotation-service"
+
   health:
     rabbit:
       enabled: true

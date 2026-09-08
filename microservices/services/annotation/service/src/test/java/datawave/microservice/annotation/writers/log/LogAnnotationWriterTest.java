@@ -20,9 +20,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Profile;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
@@ -32,11 +29,12 @@ import datawave.annotation.test.v1.AnnotationTestDataUtil;
 import datawave.annotation.util.v1.AnnotationJsonUtils;
 import datawave.annotation.util.v1.AnnotationUtils;
 import datawave.microservice.annotation.writers.AnnotationWriter;
+import datawave.microservice.annotation.writers.log.config.LogAnnotationWriterProperties;
 import lombok.Getter;
 
 @ExtendWith(SpringExtension.class)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@ContextConfiguration(classes = {LogAnnotationWriterTest.LogAnnotationWriterTestConfiguration.class})
+@ContextConfiguration(classes = LogAnnotationWriterProperties.class)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @ActiveProfiles({"LogAnnotationWriterTest", "log-enabled"})
 public class LogAnnotationWriterTest {
 
@@ -88,11 +86,6 @@ public class LogAnnotationWriterTest {
         assertEquals(writtenAnnotationJson, logEvent.getMessage().getFormattedMessage(), "expected testAppender to contain the correct log message");
         assertEquals(Level.INFO, logEvent.getLevel(), "expected the log level to be INFO");
     }
-
-    @Configuration
-    @Profile("LogAnnotationWriterTest")
-    @ComponentScan(basePackages = "datawave.microservice")
-    public static class LogAnnotationWriterTestConfiguration {}
 
     @Getter
     static class TestAppender extends AbstractAppender {

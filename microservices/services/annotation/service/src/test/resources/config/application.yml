@@ -138,6 +138,44 @@ annotation:
 
 ---
 
+spring.config.activate.on-profile: file-enabled
+
+annotation:
+  writers:
+    file:
+      enabled: true
+      pathUri: "file:///tmp/annotation-test-file-writer"
+
+---
+
+spring.config.activate.on-profile: file-disabled
+
+annotation:
+  writers:
+    file:
+      enabled: false
+
+---
+
+spring.config.activate.on-profile: dump-enabled
+
+annotation:
+  writers:
+    dump:
+      enabled: true
+      pathUri: "file:///tmp/annotation-test-dump-writer"
+
+---
+
+spring.config.activate.on-profile: dump-disabled
+
+annotation:
+  writers:
+    dump:
+      enabled: false
+
+---
+
 spring.config.activate.on-profile: missing
 
 ---

@@ -5,12 +5,14 @@ import java.util.List;
 import javax.validation.constraints.DecimalMin;
 import javax.validation.constraints.NotEmpty;
 
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
 
 import lombok.Getter;
 import lombok.Setter;
 
 @Validated
+@ConfigurationProperties(prefix = "annotation.writers.file")
 @Getter
 @Setter
 public class FileAnnotationWriterProperties {

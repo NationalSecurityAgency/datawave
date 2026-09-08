@@ -2,6 +2,7 @@ package datawave.microservice.annotation.writers.accumulo.config;
 
 import javax.validation.Valid;
 
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -31,7 +32,7 @@ public class AccumuloAnnotationWriterConfig {
     }
 
     @Bean
-    public AnnotationConsumer accumuloAnnotationSink(AnnotationWriter accumuloAnnotationWriter) {
+    public AnnotationConsumer accumuloAnnotationSink(@Qualifier("accumuloAnnotationWriter") AnnotationWriter accumuloAnnotationWriter) {
         return new AnnotationConsumer(accumuloAnnotationWriter);
     }
 

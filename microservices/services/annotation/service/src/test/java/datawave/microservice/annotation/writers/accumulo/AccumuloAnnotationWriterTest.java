@@ -30,10 +30,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Profile;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
@@ -48,11 +47,16 @@ import datawave.annotation.test.v1.AnnotationTestDataUtil;
 import datawave.annotation.util.v1.AnnotationUtils;
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.core.common.result.ConnectionPool;
+import datawave.microservice.annotation.common.config.AccumuloConfiguration;
+import datawave.microservice.annotation.common.config.AnnotationSerializerConfiguration;
+import datawave.microservice.annotation.writers.accumulo.config.AccumuloAnnotationWriterConfig;
 import datawave.microservice.annotation.writers.accumulo.config.AccumuloAnnotationWriterProperties;
 import lombok.extern.slf4j.Slf4j;
 
 @ExtendWith(SpringExtension.class)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = "spring.main.allow-bean-definition-overriding=true")
+@ContextConfiguration(classes = {AccumuloAnnotationWriterConfig.class, AccumuloConfiguration.class, AnnotationSerializerConfiguration.class,
+        AccumuloAnnotationWriterTest.AccumuloAnnotationWriterTestConfiguration.class})
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE, properties = "spring.main.allow-bean-definition-overriding=true")
 @ActiveProfiles({"AccumuloAnnotationWriterTest", "accumulo-enabled"})
 public class AccumuloAnnotationWriterTest {
     private static final String annotationTableName = "truthmark";
@@ -269,8 +273,6 @@ public class AccumuloAnnotationWriterTest {
     }
 
     @Configuration
-    @Profile("AccumuloAnnotationWriterTest")
-    @ComponentScan(basePackages = "datawave.microservice")
     public static class AccumuloAnnotationWriterTestConfiguration {
         @Bean
         public AccumuloConnectionFactory accumuloConnectionFactory(AccumuloAnnotationWriterProperties accumuloAnnotationWriterProperties) throws Exception {

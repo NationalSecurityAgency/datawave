@@ -15,9 +15,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import javax.annotation.security.DeclareRoles;
-import javax.annotation.security.RolesAllowed;
-
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.lang3.StringUtils;
@@ -31,6 +28,7 @@ import org.springframework.integration.IntegrationMessageHeaderAccessor;
 import org.springframework.integration.annotation.ServiceActivator;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
+import org.springframework.security.access.annotation.Secured;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -77,8 +75,7 @@ import lombok.extern.slf4j.Slf4j;
 @Tag(name = "Annotation Controller /v1", description = "Operations related to annotations")
 @Slf4j
 @RestController
-@RolesAllowed({"AuthorizedUser", "AuthorizedQueryServer", "InternalUser", "Administrator"})
-@DeclareRoles({"AuthorizedUser", "AuthorizedQueryServer", "InternalUser", "Administrator", "AnnotationWriter"})
+@Secured({"AuthorizedUser", "AuthorizedQueryServer", "InternalUser", "Administrator"})
 @RequestMapping(path = "/v1", produces = {MediaType.APPLICATION_JSON_VALUE})
 public class AnnotationControllerV1 {
     // Note: This must match 'annotationAckChannel' in the service configuration. Default set in bootstrap.yml.
@@ -292,7 +289,7 @@ public class AnnotationControllerV1 {
     }
 
     @PostMapping(path = "/{idType}/{id}/annotation", consumes = MediaType.APPLICATION_JSON_VALUE)
-    @RolesAllowed({"AnnotationWriter"})
+    @Secured("AnnotationWriter")
     public ResponseEntity<?> addAnnotation(@PathVariable String idType, @PathVariable String id, @RequestBody String body,
                     @RequestParam MultiValueMap<String,String> queryParameters, @AuthenticationPrincipal DatawaveUserDetails currentUser) {
         final RequestContext context = new RequestContext(queryParameters, currentUser, annotationProperties, connectionFactory, accumuloConnectionRequestMap,
@@ -355,7 +352,7 @@ public class AnnotationControllerV1 {
     }
 
     @PutMapping(path = "/{idType}/{id}/annotation/{annotationId}", consumes = MediaType.APPLICATION_JSON_VALUE)
-    @RolesAllowed({"AnnotationWriter"})
+    @Secured("AnnotationWriter")
     public ResponseEntity<?> updateAnnotation(@PathVariable String idType, @PathVariable String id, @PathVariable String annotationId, @RequestBody String body,
                     @RequestParam MultiValueMap<String,String> queryParameters, @AuthenticationPrincipal DatawaveUserDetails currentUser) {
         final RequestContext context = new RequestContext(queryParameters, currentUser, annotationProperties, connectionFactory, accumuloConnectionRequestMap,
@@ -649,12 +646,42 @@ public class AnnotationControllerV1 {
             return parseDocumentIdentifier(id);
         }
 
-        return lookupService.executeLookupUUIDQuery(idType, id, prepareLookupParameters(queryParameters), annotationProperties.getSystemFrom(), currentUser);
+        return lookupService.executeLookupUUIDQuery(idType, id, prepareLookupParameters(queryParameters, currentUser), annotationProperties.getSystemFrom(),
+                        currentUser);
     }
 
-    private String prepareLookupParameters(MultiValueMap<String,String> queryParameters) {
-        // TODO: implement this;
-        return "";
+    /**
+     * Build the "legacy params" wrapper (semicolon-separated {@code name:value} pairs, e.g. {@code "auths:A,B,C"}) sent as the single {@code params} query
+     * parameter on the remote lookup request, per the Q07 (Option B) decision.
+     * <p>
+     * Only an explicit allowlist of caller-supplied query parameters is ever forwarded to the remote lookup service; every other caller-supplied parameter is
+     * discarded, since blindly forwarding arbitrary parameters could change the downstream lookup query's behavior or introduce an injection surface. Currently
+     * the allowlist contains exactly one entry: {@code auths}. If a caller did not supply {@code auths}, nothing is forwarded and the downstream lookup
+     * defaults to the caller's full authorization set - exactly mirroring the no-override branch of {@link RequestContext#initializeAuthorizations()} used for
+     * local reads. If a caller did supply {@code auths}, it is downgraded against that same caller's own authorizations using the identical
+     * {@link AuthorizationsUtil#downgradeUserAuths(String, ProxiedUserDetails, ProxiedUserDetails)} call used by {@code RequestContext}, so that a remote
+     * lookup and a local read triggered by the same request are guaranteed to operate under the same authorization scope.
+     *
+     * @param queryParameters
+     *            the incoming request's query parameters
+     * @param currentUser
+     *            the caller whose authorizations bound any requested downgrade
+     * @return the encoded legacy params string, or an empty string if no allowlisted parameter was supplied
+     * @throws QueryException
+     *             if the requested auths could not be downgraded against the caller's own authorizations
+     */
+    private String prepareLookupParameters(MultiValueMap<String,String> queryParameters, DatawaveUserDetails currentUser) throws QueryException {
+        String queryAuthorizations = queryParameters.getFirst(RequestContext.QUERY_AUTHORIZATIONS);
+        if (queryAuthorizations == null || queryAuthorizations.isBlank()) {
+            return "";
+        }
+
+        try {
+            final String downgradedAuths = AuthorizationsUtil.downgradeUserAuths(queryAuthorizations, currentUser, currentUser);
+            return RequestContext.QUERY_AUTHORIZATIONS + ":" + downgradedAuths;
+        } catch (Exception e) {
+            throw new QueryException("Failed to downgrade user query authorizations for remote lookup", e);
+        }
     }
 
     /**

@@ -55,7 +55,6 @@ import lombok.extern.slf4j.Slf4j;
 public class LookupRequest {
     private final CloseableHttpClient httpClient;
     private final LookupProperties lookupProperties;
-    private final BasicCookieStore cookieStore;
     private static final String PROTOCOL = "https";
     private static final String PARAM_KEY = "params";
     private static final String METADATA_URI = "DataWave/Query/lookupUUID/";
@@ -66,7 +65,6 @@ public class LookupRequest {
     public LookupRequest(CloseableHttpClient httpClient, LookupProperties lookupProperties) {
         this.httpClient = httpClient;
         this.lookupProperties = lookupProperties;
-        cookieStore = new BasicCookieStore();
     }
 
     public ParsedResponse lookupId(Lookup lookup, String lookupPath, Map<String,String> headers, String queryParams, String systemFrom) {
@@ -133,7 +131,11 @@ public class LookupRequest {
 
     private HttpContext getHttpContext() {
         HttpContext context = new BasicHttpContext();
-        context.setAttribute(HttpClientContext.COOKIE_STORE, cookieStore);
+        // A fresh, request-scoped cookie store is used for every lookup so that a cookie set by one caller's
+        // response (e.g. a session cookie from the downstream DataWave query service) is never retained and
+        // resent on a different caller's subsequent lookup. LookupRequest is a shared singleton bean, so a
+        // field-level cookie store here would leak session state across principals/requests.
+        context.setAttribute(HttpClientContext.COOKIE_STORE, new BasicCookieStore());
         context.setAttribute("X-Start-Time", String.valueOf(System.currentTimeMillis()));
         return context;
     }

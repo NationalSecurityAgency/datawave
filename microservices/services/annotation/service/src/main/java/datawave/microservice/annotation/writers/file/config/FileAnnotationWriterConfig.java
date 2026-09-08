@@ -6,7 +6,7 @@ import javax.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -19,12 +19,12 @@ import datawave.microservice.annotation.writers.file.FileAnnotationWriter;
  *
  */
 @Configuration
-@ConditionalOnProperty(name = "annotation.writer.file.enabled", havingValue = "true")
+@EnableConfigurationProperties(FileAnnotationWriterProperties.class)
+@ConditionalOnProperty(name = "annotation.writers.file.enabled", havingValue = "true")
 public class FileAnnotationWriterConfig {
 
     @Bean("fileAnnotationWriterProperties")
     @Valid
-    @ConfigurationProperties("annotation.writer.file")
     public FileAnnotationWriterProperties fileAnnotationWriterProperties() {
         return new FileAnnotationWriterProperties();
     }
