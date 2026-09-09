@@ -36,7 +36,7 @@ services:
       - "9000:9000"
       - "9870:9870"
     volumes:
-      - ./stack:/stack:ro
+      - ./stack:/stack:ro,z
       - hdfs_name:/var/lib/hadoop-hdfs
     networks: [demo]
     healthcheck:
@@ -57,7 +57,7 @@ services:
     ports:
       - "9864:9864"
     volumes:
-      - ./stack:/stack:ro
+      - ./stack:/stack:ro,z
       - hdfs_data:/var/lib/hadoop-hdfs
     networks: [demo]
     depends_on:
@@ -81,7 +81,7 @@ services:
       - "8032:8032"
       - "8088:8088"
     volumes:
-      - ./stack:/stack:ro
+      - ./stack:/stack:ro,z
     networks: [demo]
     depends_on:
       hdfs-dn:
@@ -103,7 +103,7 @@ services:
     ports:
       - "8042:8042"
     volumes:
-      - ./stack:/stack:ro
+      - ./stack:/stack:ro,z
     networks: [demo]
     depends_on:
       yarn-rm:
@@ -144,7 +144,7 @@ services:
       - ACCUMULO_ROOT_PASSWORD=secret
       - HADOOP_CONF_DIR=/stack
     volumes:
-      - ./stack:/stack:ro
+      - ./stack:/stack:ro,z
       - datawave_accumulo_ext:/opt/accumulo/lib/ext:ro
       - ./stack/accumulo.properties:/opt/accumulo/conf/accumulo.properties:ro
       - ./stack/accumulo-client.properties:/opt/accumulo/conf/accumulo-client.properties:ro
@@ -171,7 +171,7 @@ services:
     environment:
       - HADOOP_CONF_DIR=/stack
     volumes:
-      - ./stack:/stack:ro
+      - ./stack:/stack:ro,z
       - datawave_accumulo_ext:/opt/accumulo/lib/ext:ro
       - ./stack/accumulo.properties:/opt/accumulo/conf/accumulo.properties:ro
       - ./stack/accumulo-client.properties:/opt/accumulo/conf/accumulo-client.properties:ro
@@ -193,7 +193,7 @@ services:
     environment:
       - HADOOP_CONF_DIR=/stack
     volumes:
-      - ./stack:/stack:ro
+      - ./stack:/stack:ro,z
       - datawave_accumulo_ext:/opt/accumulo/lib/ext:ro
       - ./stack/accumulo.properties:/opt/accumulo/conf/accumulo.properties:ro
       - ./stack/accumulo-client.properties:/opt/accumulo/conf/accumulo-client.properties:ro
@@ -212,7 +212,7 @@ services:
     ports:
       - "9995:9995"
     volumes:
-      - ./stack:/stack:ro
+      - ./stack:/stack:ro,z
       - datawave_accumulo_ext:/opt/accumulo/lib/ext:ro
       - ./stack/accumulo.properties:/opt/accumulo/conf/accumulo.properties:ro
       - ./stack/accumulo-client.properties:/opt/accumulo/conf/accumulo-client.properties:ro
@@ -230,7 +230,7 @@ services:
     environment:
       - HADOOP_CONF_DIR=/stack
     volumes:
-      - ./stack:/stack:ro
+      - ./stack:/stack:ro,z
       - ./stack/accumulo.properties:/opt/accumulo/conf/accumulo.properties:ro
       - ./stack/accumulo-client.properties:/opt/accumulo/conf/accumulo-client.properties:ro
       - ./stack/accumulo-env.sh:/opt/accumulo/conf/accumulo-env.sh:ro
@@ -267,7 +267,7 @@ services:
       - "9443:8443" # web server
       - "9990:9990" # wildfly admin
     volumes:
-      - ./stack:/stack:ro
+      - ./stack:/stack:ro,z
       - ./logs:/logs
     networks: [demo]
     depends_on:
