@@ -138,6 +138,16 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
     boolean isIntermediateEmptyPagesEnabled();
 
     /**
+     * This is the original method that has been renamed to isIntermediateEmptyPagesEnabled
+     *
+     * @return isIntermediateEmptyPagesEnabled
+     */
+    @Deprecated
+    default boolean isLongRunningQuery() {
+        return isIntermediateEmptyPagesEnabled();
+    }
+
+    /**
      * Whether the query should be run synchronously. This can be used when it is expected the query will run very quickly, returns only one page, and should
      * not incur the overhead of an asynchronous results thread. NOTE: This will be overridden to be true if is this logic is allowed to return intermediate
      * empty pages.
@@ -145,6 +155,16 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
      * @return Return whether the query should gather results synchronously in the RunningQuery
      */
     boolean isUseSynchronousRunningQuery();
+
+    /**
+     * This is the original method that has been renamed to isUseSynchronousRunningQuery
+     *
+     * @return isUseSynchronouseRunningQuery
+     */
+    @Deprecated
+    default boolean isShortRunningQuery() {
+        return isUseSynchronousRunningQuery();
+    }
 
     /**
      * Check whether this query logic can bypass the query limiter mechanism. For example UUID queries which must remain as fast as possible may avoid the
