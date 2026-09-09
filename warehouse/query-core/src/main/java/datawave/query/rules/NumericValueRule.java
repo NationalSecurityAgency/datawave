@@ -13,6 +13,9 @@ import datawave.data.type.NumberType;
 import datawave.query.jexl.visitors.FieldsWithNumericRangeValuesVisitor;
 import datawave.query.util.TypeMetadata;
 
+/**
+ * A {@link QueryRule} implementation that checks a JEXL query for the usage of numeric values for non-numeric fields.
+ */
 public class NumericValueRule extends ShardQueryRule {
 
     private static final Logger log = Logger.getLogger(NumericValueRule.class);

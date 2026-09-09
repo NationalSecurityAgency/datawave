@@ -107,7 +107,7 @@ public class Persister {
                     MultivaluedMap<String,String> optionalQueryParameters) {
         Query q = responseObjectFactory.getQueryImpl();
         q.initialize(userDN, dnList, queryLogicName, qp, MapUtils.toMultiValueMap(optionalQueryParameters));
-        q.setColumnVisibility(marking.toColumnVisibilityString());
+        q.setColumnVisibility(marking.toAccessExpressionString());
         q.setUncaughtExceptionHandler(new QueryUncaughtExceptionHandler());
         Thread.currentThread().setUncaughtExceptionHandler(q.getUncaughtExceptionHandler());
         // Persist the query object if required

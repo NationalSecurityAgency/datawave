@@ -21,7 +21,6 @@ import datawave.ingest.data.config.ingest.BaseIngestHelper;
 import datawave.ingest.input.reader.EventRecordReader;
 import datawave.ingest.mapreduce.handler.shard.AbstractColumnBasedHandler;
 import datawave.ingest.mapreduce.handler.ssdeep.SSDeepIndexHandler;
-import datawave.marking.MarkingFunctions;
 import datawave.query.testframework.AbstractDataTypeConfig;
 import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.RawMetaData;
@@ -247,7 +246,7 @@ public class SSDeepDataType extends AbstractDataTypeConfig {
 
     @Override
     public String getSecurityMarkingFieldDomains() {
-        return MarkingFunctions.Default.COLUMN_VISIBILITY;
+        return "columnVisibility";
     }
 
     @Override

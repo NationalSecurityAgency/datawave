@@ -51,3 +51,12 @@ web-services/geoserver/geoserver-application/overlays/
 services/sample_configuration/*-dev.yml
 /.metadata/
 /.jkube-dockerignore
+
+.claude
+.sdkmanrc
+
+# gemini-cli settings
+.gemini/
+
+# GitHub App credentials
+gha-creds-*.json

@@ -36,7 +36,7 @@ public class MultiMapBackedKeyValueSortedMapTest extends MultiMapBackedRewritabl
 
     @Override
     public Value createValue(byte[] values) {
-        return new Value(values);
+        return new Value(values, true);
     }
 
     @Override

@@ -50,7 +50,7 @@ import datawave.ingest.table.config.ShardTableConfigHelper;
 import datawave.ingest.table.config.TableConfigHelper;
 import datawave.iterator.ReducingIterator;
 import datawave.iterators.PropogatingIterator;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 
 /**
  * This class serves as the liaison between datawave job configuration and accumulo tables. Most of this was ripped out of IngestJob for more convenient reuse

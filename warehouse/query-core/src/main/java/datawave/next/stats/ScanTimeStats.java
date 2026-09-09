@@ -1,5 +1,7 @@
 package datawave.next.stats;
 
+import java.time.Clock;
+
 /**
  * Timing stats for document retrievals
  */
@@ -7,9 +9,11 @@ public class ScanTimeStats {
 
     private String context;
 
-    private long scanSubmitNanos = 0L;
-    private long scanStartNanos = 0L;
-    private long scanStopNanos = 0L;
+    private long scanSubmitMS = 0L;
+    private long scanStartMS = 0L;
+    private long scanStopMS = 0L;
+
+    private final Clock clock = Clock.systemUTC();
 
     public void setContext(String context) {
         this.context = context;
@@ -21,26 +25,26 @@ public class ScanTimeStats {
     }
 
     public void markSubmit() {
-        this.scanSubmitNanos = System.nanoTime();
+        this.scanSubmitMS = clock.millis();
     }
 
     public void markStart() {
-        this.scanStartNanos = System.nanoTime();
+        this.scanStartMS = clock.millis();
     }
 
     public void markStop() {
-        this.scanStopNanos = System.nanoTime();
+        this.scanStopMS = clock.millis();
     }
 
     public long getElapsedTime() {
-        return scanStopNanos - scanSubmitNanos;
+        return scanStopMS - scanSubmitMS;
     }
 
     public long getScanTime() {
-        return scanStopNanos - scanStartNanos;
+        return scanStopMS - scanStartMS;
     }
 
     public long getSubmitTime() {
-        return scanStartNanos - scanSubmitNanos;
+        return scanStartMS - scanSubmitMS;
     }
 }

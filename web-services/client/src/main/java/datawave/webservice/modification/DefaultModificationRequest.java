@@ -84,7 +84,7 @@ public class DefaultModificationRequest extends ModificationRequestBase implemen
     }
 
     public void setFieldMarkings(Map<String,String> fieldMarkings) {
-        this.fieldMarkings = (fieldMarkings == null ? new HashMap<String,String>() : new HashMap<String,String>(fieldMarkings));
+        this.fieldMarkings = (fieldMarkings == null ? new HashMap<>() : new HashMap<>(fieldMarkings));
     }
 
     public Map<String,String> getOldFieldMarkings() {
@@ -94,7 +94,7 @@ public class DefaultModificationRequest extends ModificationRequestBase implemen
     }
 
     public void setOldFieldMarkings(Map<String,String> oldFieldMarkings) {
-        this.oldFieldMarkings = (oldFieldMarkings == null ? new HashMap<String,String>() : new HashMap<String,String>(oldFieldMarkings));
+        this.oldFieldMarkings = (oldFieldMarkings == null ? new HashMap<>() : new HashMap<>(oldFieldMarkings));
     }
 
     public String getOldFieldValue() {

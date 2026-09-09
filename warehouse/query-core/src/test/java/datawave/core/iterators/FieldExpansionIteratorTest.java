@@ -27,7 +27,7 @@ import com.google.common.base.Preconditions;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 
 public class FieldExpansionIteratorTest {
 

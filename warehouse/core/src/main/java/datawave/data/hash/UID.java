@@ -22,6 +22,8 @@ import org.slf4j.LoggerFactory;
 import datawave.util.StringUtils;
 
 /**
+ * Deprecated, use {@link datawave.table.hash.UID}
+ * <p>
  * Internal, DATAWAVE-specific, unique identifier. Instead of using a UUID which consumes 128 bits, we are using:
  *
  * originally: two concatenated int values that are results of computing a Murmur hash on the raw bytes using two different seeds. The resulting UID has the
@@ -39,7 +41,7 @@ import datawave.util.StringUtils;
  * Hash0.Hash1.Hash2.Stuff
  *
  */
-
+@Deprecated(forRemoval = true, since = "7.40.0")
 public abstract class UID implements Comparable<UID>, Comparator<UID>, Writable, Serializable {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(UID.class);

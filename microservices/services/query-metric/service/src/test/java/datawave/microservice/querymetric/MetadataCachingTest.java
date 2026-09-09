@@ -11,8 +11,8 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import org.apache.accumulo.core.security.Authorizations;
-import org.junit.Assert;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -79,7 +79,9 @@ public class MetadataCachingTest extends QueryMetricTestBase {
         metadataHelper.getDatatypes(Collections.singleton("querymetrics"));
         metadataHelper.getFieldsForDatatype(LcNoDiacriticsType.class);
         metadataHelper.getFieldsToDatatypes(Collections.singleton("querymetrics"));
+        metadataHelper.getHiddenFields(Collections.singleton("querymetrics"));
         metadataHelper.getContentFields(Collections.singleton("querymetrics"));
+        metadataHelper.getHiddenFields(Collections.singleton("querymetrics"));
         metadataHelper.getExpansionFields(Collections.singleton("querymetrics"));
         metadataHelper.getQueryModel(queryMetricHandlerProperties.getMetadataTableName(), "querymetrics");
         metadataHelper.getQueryModelNames(queryMetricHandlerProperties.getMetadataTableName());
@@ -110,7 +112,7 @@ public class MetadataCachingTest extends QueryMetricTestBase {
         expectedCacheNames.addAll(getCacheNamesForCacheableMethods(AllFieldMetadataHelper.class));
         expectedCacheNames.addAll(getCacheNamesForCacheableMethods(DateIndexHelper.class));
 
-        Assert.assertEquals(expectedCacheNames, cacheNames);
+        Assertions.assertEquals(expectedCacheNames, cacheNames);
     }
 
     private List<String> getCacheNamesForCacheableMethods(Class clazz) {

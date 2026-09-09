@@ -1,9 +1,11 @@
 package datawave.maven;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugins.annotations.LifecyclePhase;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 
 import java.io.BufferedReader;
@@ -18,31 +20,18 @@ import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
 
-/**
- * @goal assert-properties
- * @phase validate
- * @threadSafe true
- */
+@Mojo(name = "assert-properties", defaultPhase = LifecyclePhase.VALIDATE, threadSafe=true)
 @SuppressWarnings("unused")
 public class AssertProperties extends AbstractMojo {
     private static final Character COMMENT = '#', COMMA = ',';
 
-    /**
-     * @parameter default-value="${project}"
-     * @required
-     * @readonly
-     */
+    @Parameter(defaultValue = "{project}", required = true, readonly = true)
     private MavenProject project;
 
-    /**
-     * @parameter
-     * @required
-     */
+    @Parameter(required = true)
     private File expectedPropertyNames;
 
-    /**
-     * @parameter
-     */
+    @Parameter
     private File configuredPropertyNames;
 
     @Override
@@ -67,11 +56,12 @@ public class AssertProperties extends AbstractMojo {
         Set<String> expectedProperties = getExpectedPropertyMap.keySet();
         expectedProperties.removeAll(propertyNames);
 
-        if (expectedProperties.size() > 0) {
+        if (!expectedProperties.isEmpty()) {
             StringBuilder errorMessage = new StringBuilder();
-            errorMessage.append(expectedProperties.size() + " properties were not provided:\n");
+            errorMessage.append(expectedProperties.size()).append(" properties were not provided:\n");
             for (Entry<String,String> entry : getExpectedPropertyMap.entrySet()) {
-                errorMessage.append("Missing property: " + entry.getKey() + ", Description: " + entry.getValue()).append("\n");
+                errorMessage.append("Missing property: ").append(entry.getKey()).append(", Description: ")
+                        .append(entry.getValue()).append("\n");
             }
 
             throw new MojoFailureException(errorMessage.toString());
@@ -96,58 +86,32 @@ public class AssertProperties extends AbstractMojo {
         if (null == this.configuredPropertyNames) {
             envProps = buildProps;
         } else {
-            FileReader propReader = null;
             envProps = new Properties();
-            try {
-                propReader = new FileReader(configuredPropertyNames);
+            try (FileReader propReader = new FileReader(configuredPropertyNames)) {
                 envProps.load(propReader);
             } catch (IOException e) {
                 throw new MojoExecutionException("Could not load configuredPropertyNames", e);
-            } finally {
-                // Make sure we don't leave any open file handles laying around
-                if (null != propReader) {
-                    try {
-                        propReader.close();
-                    } catch (IOException e) {
-                        throw new MojoExecutionException("Could not load configuredPropertyNames", e);
-                    }
-                }
             }
         }
-
-        for (Entry<Object,Object> entry : buildProps.entrySet()) {
-            envProps.put(entry.getKey(), entry.getValue());
-        }
-
+        envProps.putAll(buildProps);
         return envProps;
     }
 
     /**
      * Fetch the set of strings from the configured filename
-     * @return
-     * @throws MojoExecutionException
-     * @throws IOException
+     * @return a Map of strings
+     * @throws MojoExecutionException if the file cannot be found or read
      */
     protected Map<String,String> getExpectedPropertyMap() throws MojoExecutionException {
-        BufferedReader reader ;
-        try {
-            reader = new BufferedReader(new FileReader(this.expectedPropertyNames));
-        } catch (FileNotFoundException e) {
-            getLog().warn("Could not read exepcted properties files");
-
-            throw new MojoExecutionException("Could not read expected properties file", e);
-        }
-
         HashMap<String, String> expectedProperties = new HashMap<>();
-
-        String line = null;
-        try {
+        String line;
+        try (BufferedReader reader = new BufferedReader(new FileReader(this.expectedPropertyNames))) {
             while ((line = reader.readLine()) != null) {
                 // Remove leading/trailing whitespace
                 line = line.trim();
 
                 // Ignore empty lines or those starting with a '#'
-                if (StringUtils.isBlank(line) || line.charAt(0) == COMMENT) {
+                if (line.isBlank() || line.charAt(0) == COMMENT) {
                     continue;
                 }
 
@@ -166,19 +130,15 @@ public class AssertProperties extends AbstractMojo {
                 }
 
                 // Add it to the expected set i the line still isn't blank
-                if (StringUtils.isNotBlank(candidateName)) {
+                if (candidateName.isBlank()) {
                     expectedProperties.put(candidateName, candidateDescription);
                 }
             }
+        } catch (FileNotFoundException e) {
+            getLog().warn("Could not read expected properties files");
+            throw new MojoExecutionException("Could not read expected properties file", e);
         } catch (IOException e) {
             throw new MojoExecutionException("Could not read expected properties file", e);
-        } finally {
-            // Make sure we don't leave any open file handles laying around
-            try {
-                reader.close();
-            } catch (IOException e) {
-                throw new MojoExecutionException("Could not close reader to expected properties", e);
-            }
         }
 
         if (expectedProperties.isEmpty()) {

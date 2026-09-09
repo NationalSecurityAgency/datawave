@@ -13,7 +13,7 @@ import datawave.query.lucene.visitors.BaseVisitor;
 import datawave.query.lucene.visitors.LuceneQueryStringBuildingVisitor;
 
 /**
- * An implementation of {@link QueryRule} that checks a LUCENE query for any fielded terms with unfielded terms directly ORed with it afterwards. For example:
+ * An implementation of {@link QueryRule} that checks a LUCENE query for any fielded terms with unfielded terms directly ORed with it afterward. For example:
  * <ul>
  * <li>{@code FOO:abc OR def} should be {@code FOO:(abc OR def)}</li>
  * <li>{@code (FOO:abc OR def)} should be {@code FOO:(abc OR def)}</li>

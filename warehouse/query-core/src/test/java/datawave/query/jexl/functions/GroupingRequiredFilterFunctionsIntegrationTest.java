@@ -1,202 +1,146 @@
 package datawave.query.jexl.functions;
 
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TimeZone;
-import java.util.UUID;
+import static org.assertj.core.api.Assertions.assertThat;
 
-import javax.inject.Inject;
+import java.util.List;
+import java.util.TimeZone;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
-import org.assertj.core.api.Assertions;
-import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.junit.Arquillian;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.asset.StringAsset;
-import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import com.google.common.collect.Lists;
 
-import datawave.configuration.spring.SpringBean;
-import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.iterator.DatawaveTransformIterator;
 import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
-import datawave.microservice.query.QueryImpl;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.RebuildingScannerTestHelper;
-import datawave.query.index.day.IndexIngestUtil;
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.query.tables.ShardQueryLogic;
-import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.transformer.DocumentTransformer;
-import datawave.util.TableName;
-import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
+import datawave.query.util.AbstractQueryTest;
+import datawave.table.constants.TableName;
 import datawave.webservice.result.DefaultEventQueryResponse;
 
 /**
  * Base test set up for functions in {@link GroupingRequiredFilterFunctions}.
  */
-public abstract class GroupingRequiredFilterFunctionsIntegrationTest {
-
-    @RunWith(Arquillian.class)
-    public static class ShardRangeTest extends GroupingRequiredFilterFunctionsIntegrationTest {
-
-        @Before
-        public void setup() throws ParseException {
-            super.setup();
-            logic.setCollapseUids(true);
-        }
-
-        @Override
-        protected String getRange() {
-            return "SHARD";
-        }
-    }
-
-    @RunWith(Arquillian.class)
-    public static class DocumentRangeTest extends GroupingRequiredFilterFunctionsIntegrationTest {
-
-        @Before
-        public void setup() throws ParseException {
-            super.setup();
-            logic.setCollapseUids(true);
-        }
-
-        @Override
-        protected String getRange() {
-            return "DOCUMENT";
-        }
-    }
+@ExtendWith(SpringExtension.class)
+@ComponentScan(basePackages = "datawave.query")
+// @formatter:off
+@ContextConfiguration(locations = {
+        "classpath:datawave/query/QueryLogicFactory.xml",
+        "classpath:beanRefContext.xml",
+        "classpath:MarkingFunctionsContext.xml",
+        "classpath:MetadataHelperContext.xml",
+        "classpath:CacheContext.xml"})
+// @formatter:on
+public class GroupingRequiredFilterFunctionsIntegrationTest extends AbstractQueryTest {
 
     private static final Logger log = Logger.getLogger(GroupingRequiredFilterFunctionsIntegrationTest.class);
     private static final Authorizations auths = new Authorizations("ALL", "E", "I");
-    private static final Set<Authorizations> authSet = Collections.singleton(auths);
-    private static final IndexIngestUtil ingestUtil = new IndexIngestUtil();
 
-    @Inject
-    @SpringBean(name = "EventQuery")
+    private static AccumuloClient clientForTest;
+
+    @Autowired
+    @Qualifier("EventQuery")
     protected ShardQueryLogic logic;
 
-    private final DateFormat format = new SimpleDateFormat("yyyyMMdd");
-    private final Map<String,String> queryParameters = new HashMap<>();
+    private DefaultEventQueryResponse response;
+    private boolean expectNoResults;
+    private int expectedEventCount;
 
-    private String query;
-    private Date startDate;
-    private Date endDate;
-
-    @Deployment
-    public static JavaArchive createDeployment() {
-        return ShrinkWrap.create(JavaArchive.class)
-                        .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.query", "org.jboss.logging",
-                                        "datawave.webservice.query.result.event")
-                        .deleteClass(DefaultEdgeEventQueryLogic.class).deleteClass(RemoteEdgeDictionary.class)
-                        .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class)
-                        .addAsManifestResource(new StringAsset(
-                                        "<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>" + "</alternatives>"),
-                                        "beans.xml");
+    @Override
+    public ShardQueryLogic getLogic() {
+        return logic;
     }
 
-    @BeforeClass
-    public static void beforeClass() {
+    @Override
+    public Authorizations getAuths() {
+        return auths;
+    }
+
+    @Override
+    protected void extraConfigurations() {
+        disableQueryPlanAssertion();
+    }
+
+    @Override
+    protected void executeQuery(ShardQueryLogic logic) throws Exception {
+        try {
+            DocumentTransformer transformer = (DocumentTransformer) (logic.getTransformer(logic.getConfig().getQuery()));
+            List<Object> eventList = Lists.newArrayList(new DatawaveTransformIterator<>(logic.iterator(), transformer));
+            response = (DefaultEventQueryResponse) transformer.createResponse(eventList);
+        } finally {
+            logic.close();
+        }
+    }
+
+    @Override
+    protected void extraAssertions() {
+        if (expectNoResults) {
+            assertThat(response.getEvents()).isNull();
+        } else {
+            assertThat(response.getEvents()).hasSize(expectedEventCount);
+        }
+    }
+
+    @BeforeAll
+    public static void beforeAll() throws Exception {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
+
+        QueryTestTableHelper qtth = new QueryTestTableHelper(GroupingRequiredFilterFunctionsIntegrationTest.class.toString(), log,
+                        RebuildingScannerTestHelper.TEARDOWN.NEVER, RebuildingScannerTestHelper.INTERRUPT.NEVER);
+        clientForTest = qtth.client;
+
+        // ingest with the document range only; GroupingFiltersIngest already calls IndexIngestUtil
+        // internally to derive the other shard index table variants that AbstractQueryTest iterates over.
+        GroupingFiltersIngest.writeItAll(clientForTest, GroupingFiltersIngest.Range.DOCUMENT);
+        PrintUtility.printTable(clientForTest, auths, TableName.SHARD);
+        PrintUtility.printTable(clientForTest, auths, TableName.SHARD_INDEX);
+        PrintUtility.printTable(clientForTest, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
     }
 
-    @Before
-    public void setup() throws ParseException {
-        this.logic.setFullTableScanEnabled(true);
-        this.logic.setMaxEvaluationPipelines(1);
-        this.logic.setQueryExecutionForPageTimeout(300000000000000L);
-        this.startDate = format.parse("20091231");
-        this.endDate = format.parse("20150101");
-    }
-
-    @After
-    public void tearDown() {
-        this.queryParameters.clear();
-        this.query = null;
-        this.startDate = null;
-        this.endDate = null;
-    }
-
-    @AfterClass
-    public static void teardown() {
+    @AfterAll
+    public static void afterAll() {
         TypeRegistry.reset();
     }
 
-    protected abstract String getRange();
+    @BeforeEach
+    public void setup() {
+        setClientForTest(clientForTest);
+        logic.setFullTableScanEnabled(true);
+        logic.setMaxEvaluationPipelines(1);
+        logic.setQueryExecutionForPageTimeout(300000000000000L);
+        logic.setCollapseUids(true);
 
-    private void givenQuery(String query) {
-        this.query = query;
+        givenDate("20091231", "20150101");
     }
 
     private void givenLuceneParserForLogic() {
         logic.setParser(new LuceneToJexlQueryParser());
     }
 
-    private DefaultEventQueryResponse getQueryResponse(RebuildingScannerTestHelper.TEARDOWN teardown, RebuildingScannerTestHelper.INTERRUPT interrupt)
-                    throws Exception {
-        // Initialize the query settings.
-        QueryImpl settings = new QueryImpl();
-        settings.setBeginDate(this.startDate);
-        settings.setEndDate(this.endDate);
-        settings.setPagesize(Integer.MAX_VALUE);
-        settings.setQueryAuthorizations(auths.serialize());
-        settings.setQuery(this.query);
-        settings.setParameters(this.queryParameters);
-        settings.setId(UUID.randomUUID());
-
-        log.debug("query: " + settings.getQuery());
-        log.debug("queryLogicName: " + settings.getQueryLogicName());
-        log.debug("teardown: " + teardown);
-        log.debug("interrupt: " + interrupt);
-
-        // Initialize the query logic.
-        AccumuloClient client = createClient(teardown, interrupt);
-        GenericQueryConfiguration config = logic.initialize(client, settings, authSet);
-        logic.setupQuery(config);
-
-        // Run the query and retrieve the response.
-        DocumentTransformer transformer = (DocumentTransformer) (logic.getTransformer(settings));
-        List<Object> eventList = Lists.newArrayList(new DatawaveTransformIterator<>(logic.iterator(), transformer));
-        return ((DefaultEventQueryResponse) transformer.createResponse(eventList));
-    }
-
     private void assertNoResults() throws Exception {
-        DefaultEventQueryResponse response = getQueryResponse(RebuildingScannerTestHelper.TEARDOWN.NEVER, RebuildingScannerTestHelper.INTERRUPT.NEVER);
-        Assertions.assertThat(response.getEvents()).isNull();
+        this.expectNoResults = true;
+        planAndExecuteQuery();
     }
 
     private void assertTotalEvents(int expected) throws Exception {
-        DefaultEventQueryResponse response = getQueryResponse(RebuildingScannerTestHelper.TEARDOWN.NEVER, RebuildingScannerTestHelper.INTERRUPT.NEVER);
-        Assertions.assertThat(response.getEvents()).hasSize(expected);
-    }
-
-    private AccumuloClient createClient(RebuildingScannerTestHelper.TEARDOWN teardown, RebuildingScannerTestHelper.INTERRUPT interrupt) throws Exception {
-        AccumuloClient client = new QueryTestTableHelper(getClass().toString(), log, teardown, interrupt).client;
-        GroupingFiltersIngest.writeItAll(client, getRange());
-
-        ingestUtil.write(client, auths);
-
-        PrintUtility.printTable(client, auths, TableName.SHARD);
-        PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
-        PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
-        return client;
+        this.expectNoResults = false;
+        this.expectedEventCount = expected;
+        planAndExecuteQuery();
     }
 
     @Test

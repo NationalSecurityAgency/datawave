@@ -37,6 +37,7 @@ import com.google.common.collect.Iterators;
 import com.google.common.collect.Sets;
 
 import datawave.marking.MarkingFunctions;
+import datawave.marking.Markings;
 import datawave.query.Constants;
 import datawave.query.collections.FunctionalSet;
 import datawave.query.composite.CompositeMetadata;
@@ -89,16 +90,13 @@ public class Document implements Serializable, AttributeBagMetadata.AttributesGe
 
     private static final long ONE_DAY_MS = 1000L * 60 * 60 * 24;
 
-    public MarkingFunctions getMarkingFunctions() {
-        return MarkingFunctions.Factory.createMarkingFunctions();
-    }
-
-    public Map<String,String> getMarkings() {
+    public Markings<?> getMarkings() {
         try {
-            MarkingFunctions markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
+            markingFunctions = getMarkingFunctions();
             return markingFunctions.translateFromColumnVisibility(getColumnVisibility());
-        } catch (MarkingFunctions.Exception e) {}
-        return Collections.emptyMap();
+        } catch (MarkingFunctions.Exception ignored) {
+            return null;
+        }
     }
 
     public Document() {

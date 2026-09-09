@@ -2,30 +2,36 @@ package datawave.query.attributes;
 
 import java.io.Serializable;
 import java.util.Collection;
+import java.util.stream.Collectors;
 
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.lang.mutable.MutableLong;
 import org.apache.log4j.Logger;
 
-import com.google.common.collect.Sets;
-
 import datawave.marking.MarkingFunctions;
 import datawave.marking.MarkingFunctionsFactory;
 
 public class AttributeBagMetadata extends AttributeMetadata implements Serializable {
-    private static final long serialVersionUID = -1;
+    private static final long serialVersionUID = -5961455715747661898L;
+    private static final Logger log = Logger.getLogger(AttributeBag.class);
+    protected long shardTimestamp = Long.MAX_VALUE;
+    protected boolean validMetadata = false;
+    protected MarkingFunctions<?> markingFunctions;
 
     private static final Logger log = Logger.getLogger(AttributeBagMetadata.class);
     private static final long ONE_DAY_MS = 1000l * 60 * 60 * 24;
-
-    private static final MarkingFunctions markingFunctions = MarkingFunctionsFactory.createMarkingFunctions();
-
-    private long shardTimestamp = Long.MAX_VALUE;
 
     public interface AttributesGetter {
         Collection<Attribute<? extends Comparable<?>>> getAttributes();
 
         Collection<Attribute<? extends Comparable<?>>> getRawAttributes();
+    }
+
+    public MarkingFunctions<?> getMarkingFunctions() {
+        if (null == markingFunctions) {
+            markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
+        }
+        return markingFunctions;
     }
 
     private final AttributesGetter attributes;
@@ -36,8 +42,8 @@ public class AttributeBagMetadata extends AttributeMetadata implements Serializa
         this.attributes = attributes;
     }
 
-    public boolean isValidMetadata() {
-        return (this.validMetadata && isMetadataSet());
+    public boolean isNotValidMetadata() {
+        return (!this.validMetadata || !isMetadataSet());
     }
 
     public void invalidateMetadata() {
@@ -59,13 +65,13 @@ public class AttributeBagMetadata extends AttributeMetadata implements Serializa
     @Override
     public long getTimestamp() {
         // calling isMetadataSet first to update the metadata as needed
-        if (isValidMetadata() == false)
+        if (isNotValidMetadata())
             this.updateMetadata();
         return super.getTimestamp();
     }
 
     public ColumnVisibility getColumnVisibility() {
-        if (isValidMetadata() == false)
+        if (isNotValidMetadata())
             this.updateMetadata();
         return super.getColumnVisibility();
     }
@@ -82,12 +88,9 @@ public class AttributeBagMetadata extends AttributeMetadata implements Serializa
         setValidMetadata(true);
     }
 
-    protected ColumnVisibility combineAndSetColumnVisibilities(Collection<Attribute<? extends Comparable<?>>> attributes) throws MarkingFunctions.Exception {
-        Collection<ColumnVisibility> columnVisibilities = Sets.newHashSet();
-        for (Attribute<?> attr : attributes) {
-            columnVisibilities.add(attr.getColumnVisibility());
-        }
-        return markingFunctions.combine(columnVisibilities);
+    protected ColumnVisibility combineAndSetColumnVisibilities(Collection<Attribute<? extends Comparable<?>>> attributes) throws Exception {
+        Collection<ColumnVisibility> visibilities = attributes.stream().map(Attribute::getColumnVisibility).collect(Collectors.toList());
+        return getMarkingFunctions().combineVisibilities(visibilities);
     }
 
     private long updateTimestamps() {

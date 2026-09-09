@@ -1,7 +1,8 @@
 package datawave.microservice.authorization.config;
 
 import java.io.IOException;
-import java.util.regex.Pattern;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
@@ -13,7 +14,16 @@ import org.springframework.security.web.AuthenticationEntryPoint;
 import datawave.microservice.config.security.AllowedCallersFilter;
 
 public class AuthorizationAllowedCallersFilter extends AllowedCallersFilter {
-    private static final Pattern oauthPattern = Pattern.compile("/v\\d*/oauth/.*");
+    private static final Set<String> allowAllUsersPaths = new LinkedHashSet<>();
+
+    static {
+        allowAllUsersPaths.add("/oauth");
+        allowAllUsersPaths.add("/listEffectiveAuthorizations");
+    }
+
+    public static void addAllowAllUsersPath(String path) {
+        allowAllUsersPaths.add(path);
+    }
 
     public AuthorizationAllowedCallersFilter(DatawaveSecurityProperties securityProperties, AuthenticationEntryPoint authenticationEntryPoint) {
         super(securityProperties, authenticationEntryPoint);
@@ -32,6 +42,17 @@ public class AuthorizationAllowedCallersFilter extends AllowedCallersFilter {
     }
 
     public static boolean enforceAllowedCallersForRequest(HttpServletRequest httpServletRequest) {
-        return !oauthPattern.matcher(httpServletRequest.getServletPath()).matches();
+        String requestPath = httpServletRequest.getServletPath();
+        if (requestPath.matches("/v\\d*/.*")) {
+            // find second / to remove the /v1, /v2, etc. from the start of the path
+            int x = requestPath.indexOf("/", 1);
+            requestPath = requestPath.substring(x);
+        }
+        for (String allowedPath : allowAllUsersPaths) {
+            if (requestPath.startsWith(allowedPath)) {
+                return false;
+            }
+        }
+        return true;
     }
 }

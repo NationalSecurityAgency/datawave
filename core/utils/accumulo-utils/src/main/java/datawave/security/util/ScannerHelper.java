@@ -56,7 +56,7 @@ public class ScannerHelper {
         return batchDeleter;
     }
 
-    protected static void addVisibilityFilters(Iterator<Authorizations> iter, ScannerBase scanner) {
+    public static void addVisibilityFilters(Iterator<Authorizations> iter, ScannerBase scanner) {
         for (int priority = 10; iter.hasNext(); priority++) {
             IteratorSetting cfg = new IteratorSetting(priority, ConfigurableVisibilityFilter.class);
             cfg.setName("visibilityFilter" + priority);

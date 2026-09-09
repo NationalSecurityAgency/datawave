@@ -14,11 +14,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
+ * Deprecated, use {@link datawave.table.hash.AbstractUIDBuilder}
+ * <p>
  * Abstract implementation of the UIDBuilder
  *
  * @param <UID_TYPE>
  *            - type of the AbstractUIDBuilder
  */
+@Deprecated(forRemoval = true, since = "7.40.0")
 public abstract class AbstractUIDBuilder<UID_TYPE extends UID> implements UIDBuilder<UID_TYPE> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractUIDBuilder.class);

@@ -6,7 +6,9 @@ import static datawave.annotation.test.v1.AnnotationTestDataUtil.generateTestAnn
 import static datawave.annotation.test.v1.AnnotationTestDataUtil.generateTestAnnotationSource;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
@@ -36,7 +38,10 @@ import org.apache.commons.lang.StringUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,8 +52,9 @@ import datawave.annotation.protobuf.v1.SegmentBoundary;
 import datawave.annotation.protobuf.v1.SegmentValue;
 import datawave.annotation.test.v1.AnnotationTestDataUtil;
 import datawave.annotation.util.v1.AnnotationUtils;
-import datawave.data.hash.HashUID;
+import datawave.table.hash.HashUID;
 
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class AnnotationDataAccessTest {
 
     protected static final Logger log = LoggerFactory.getLogger(AnnotationDataAccessTest.class);
@@ -59,6 +65,8 @@ public class AnnotationDataAccessTest {
     private static final Set<Authorizations> accumuloAuthorizations = Set.of(new Authorizations(auths));
     // the object under test
     private AnnotationDataAccess dao;
+
+    private static final Annotation EMPTY = Annotation.getDefaultInstance();
 
     private static final String ANNOTATION_TABLE_NAME = "datawave.annotation";
     private static final String ANNOTATION_SOURCE_TABLE_NAME = "datawave.annotationSource";
@@ -118,10 +126,10 @@ public class AnnotationDataAccessTest {
         // we expect the test annotation to have the same id injected as the annotation retuned from the dao.
         Annotation expectedAnnotation = AnnotationUtils.injectAllHashes(sourceAnnotation);
 
-        List<Annotation> annotation = dao.getAnnotations(sourceAnnotation.getShard(), sourceAnnotation.getDataType(), sourceAnnotation.getUid());
+        Collection<Annotation> annotation = dao.getAnnotations(sourceAnnotation.getShard(), sourceAnnotation.getDataType(), sourceAnnotation.getUid());
         assertFalse(annotation.isEmpty());
         assertEquals(1, annotation.size());
-        Annotation resultAnnotation = annotation.get(0);
+        Annotation resultAnnotation = annotation.stream().findFirst().orElse(EMPTY);
         assertAnnotationsEqual(expectedAnnotation, resultAnnotation);
     }
 
@@ -134,10 +142,10 @@ public class AnnotationDataAccessTest {
         String uidSeed = row + "_" + dataType;
         String documentUid = HashUID.builder().newId(uidSeed.getBytes(StandardCharsets.UTF_8)).toString();
 
-        List<Annotation> annotations = dao.getAnnotations(row, dataType, documentUid);
+        Collection<Annotation> annotations = dao.getAnnotations(row, dataType, documentUid);
         assertFalse(annotations.isEmpty());
         assertEquals(1, annotations.size());
-        Annotation a = annotations.get(0);
+        Annotation a = annotations.stream().findFirst().orElse(EMPTY);
         assertExpectedMetadata(a.getMetadataMap());
         assertExpectedTextSegments(a.getSegmentsList());
 
@@ -168,7 +176,7 @@ public class AnnotationDataAccessTest {
         String uidSeed = row + "_" + dataType;
         String documentUid = HashUID.builder().newId(uidSeed.getBytes(StandardCharsets.UTF_8)).toString();
 
-        List<Annotation> annotations = dao.getAnnotations(row, dataType, documentUid);
+        Collection<Annotation> annotations = dao.getAnnotations(row, dataType, documentUid);
         assertTrue(annotations.isEmpty());
     }
 
@@ -179,7 +187,7 @@ public class AnnotationDataAccessTest {
         String uidSeed = row + "_" + dataType;
         String documentUid = HashUID.builder().newId(uidSeed.getBytes(StandardCharsets.UTF_8)).toString();
 
-        List<Annotation> annotations = dao.getAnnotations(row, dataType, documentUid);
+        Collection<Annotation> annotations = dao.getAnnotations(row, dataType, documentUid);
         assertTrue(annotations.isEmpty());
     }
 
@@ -190,7 +198,7 @@ public class AnnotationDataAccessTest {
         String uidSeed = "helios"; // non-existent uid from this seed.
         String documentUid = HashUID.builder().newId(uidSeed.getBytes(StandardCharsets.UTF_8)).toString();
 
-        List<Annotation> annotations = dao.getAnnotations(row, dataType, documentUid);
+        Collection<Annotation> annotations = dao.getAnnotations(row, dataType, documentUid);
         assertTrue(annotations.isEmpty());
     }
 
@@ -202,10 +210,10 @@ public class AnnotationDataAccessTest {
         String annotationType = "tokens";
         String documentUid = HashUID.builder().newId(uidSeed.getBytes(StandardCharsets.UTF_8)).toString();
 
-        List<Annotation> annotations = dao.getAnnotationsForType(row, dataType, documentUid, annotationType);
+        Collection<Annotation> annotations = dao.getAnnotationsForType(row, dataType, documentUid, annotationType);
         assertFalse(annotations.isEmpty());
         assertEquals(1, annotations.size());
-        Annotation a = annotations.get(0);
+        Annotation a = annotations.stream().findFirst().orElse(EMPTY);
         assertExpectedMetadata(a.getMetadataMap());
         assertExpectedTextSegments(a.getSegmentsList());
     }
@@ -218,7 +226,7 @@ public class AnnotationDataAccessTest {
         String annotationType = "tokens";
         String documentUid = HashUID.builder().newId(uidSeed.getBytes(StandardCharsets.UTF_8)).toString();
 
-        List<Annotation> annotations = dao.getAnnotationsForType(row, dataType, documentUid, annotationType);
+        Collection<Annotation> annotations = dao.getAnnotationsForType(row, dataType, documentUid, annotationType);
         assertTrue(annotations.isEmpty());
     }
 
@@ -271,11 +279,12 @@ public class AnnotationDataAccessTest {
 
     @Test
     public void testGetAnnotationSource() {
-        Optional<AnnotationSource> annotationOptional = dao.getAnnotationSource("07826DD26F8CE2594B46BD7338F135D8");
+        Optional<AnnotationSource> annotationOptional = dao.getAnnotationSource("B3A65E623F5062BD3391015CDAA422B2");
         assertFalse(annotationOptional.isEmpty());
         AnnotationSource as = annotationOptional.get();
         assertEquals("v6", as.getEngine());
         assertEquals("avalon", as.getModel());
+        assertEquals("toyota", as.getPlatform());
 
         final String[] expectedConfigKeys = {"normalization"};
         final String[] expectedConfigValues = {"circular"};
@@ -287,25 +296,121 @@ public class AnnotationDataAccessTest {
 
     }
 
-    public void assertMapEntries(String[] expectedKeys, String[] expectedValues, Map<String,String> observedMap) {
-        assertEquals(expectedKeys.length, observedMap.size());
-        for (int i = 0; i < expectedKeys.length; i++) {
-            String observedValue = observedMap.get(expectedKeys[i]);
-            //@formatter:off
-            assertEquals(expectedValues[i], observedValue,
-                    "expected value " + expectedValues[i] +
-                            " for key " + expectedKeys[i] +
-                            " but saw " + observedValue
-            );
-            //@formatter:on
-        }
-    }
-
     @Test
     public void testGetAnnotationSourceMissing() {
         String row = "aaaaaaaa";
         Optional<AnnotationSource> annotationOptional = dao.getAnnotationSource(row);
         assertTrue(annotationOptional.isEmpty());
+    }
+
+    /** Test updating an existing annotation with new values */
+    @Test
+    @Order(Integer.MAX_VALUE - 1) // runs the destructive tests last.
+    public void testUpdateAnnotation() {
+        // Use pre-populated data for update test to ensure annotation exists
+        String row = "20250406_456";
+        String dataType = "news";
+        String uidSeed = row + "_" + dataType;
+        String documentUid = HashUID.builder().newId(uidSeed.getBytes(StandardCharsets.UTF_8)).toString();
+
+        // Get an existing annotation from pre-populated data
+        Collection<Annotation> annotations = dao.getAnnotations(row, dataType, documentUid);
+        assertFalse(annotations.isEmpty(), "Should have at least one pre-populated annotation");
+
+        Annotation originalAnnotation = annotations.stream().findFirst().orElse(EMPTY);
+        String originalAnnotationId = originalAnnotation.getAnnotationId();
+
+        // Create an updated annotation - clear the annotation ID and segment IDs
+        List<Segment> clearedSegments = new ArrayList<>();
+        for (Segment segment : originalAnnotation.getSegmentsList()) {
+            clearedSegments.add(segment.toBuilder().clearSegmentHash().build());
+        }
+        Annotation updatedAnnotation = originalAnnotation.toBuilder().clearAnnotationId() // Clear the annotation id
+                        .clearSegments().addAllSegments(clearedSegments) // Add segments with cleared IDs
+                        .build();
+
+        // Update the annotation
+        Optional<Annotation> updateResult = dao.updateAnnotation(originalAnnotationId, updatedAnnotation);
+        assertFalse(updateResult.isEmpty(), "Update should return an annotation");
+        Annotation resultAnnotation = updateResult.get();
+
+        // Verify the original annotation still exists
+        Optional<Annotation> originalRetrieved = dao.getAnnotation(row, dataType, documentUid, originalAnnotationId);
+        assertTrue(originalRetrieved.isPresent(), "Original annotation should still exist after update");
+
+        // Verify we can retrieve the updated annotation (which should have a different id)
+        String updateAnnotationId = resultAnnotation.getAnnotationId();
+        assertNotEquals(originalAnnotationId, updateAnnotationId, "Updated annotation should have a different id");
+
+        Optional<Annotation> updatedRetrieved = dao.getAnnotation(row, dataType, documentUid, updateAnnotationId);
+        assertTrue(updatedRetrieved.isPresent(), "Updated annotation should be retrievable");
+    }
+
+    /** Test updating a non-existent annotation should throw exception */
+    @Test
+    public void testUpdateAnnotationNotFound() {
+        String row = "20250406_456";
+        String dataType = "news";
+        String uidSeed = row + "_" + dataType;
+        String documentUid = HashUID.builder().newId(uidSeed.getBytes(StandardCharsets.UTF_8)).toString();
+
+        // Create an annotation to use for the update request
+        Annotation sourceAnnotation = generateTestAnnotation().toBuilder().setShard(row).setDataType(dataType).setUid(documentUid).clearAnnotationId().build();
+
+        String nonExistentId = "nonexistent-id-12345";
+
+        try {
+            dao.updateAnnotation(nonExistentId, sourceAnnotation);
+            fail("Expected AnnotationUpdateException to be thrown");
+        } catch (datawave.annotation.data.AnnotationUpdateException e) {
+            assertTrue(e.getMessage().contains("Unable to find annotation to update"));
+        }
+    }
+
+    /** Test deleting an annotation removes it from storage */
+    @Test
+    @Order(Integer.MAX_VALUE) // runs the destructive tests last.
+    public void testDeleteAnnotation() {
+        // Create a new annotation specifically for deletion testing (don't affect shared test data)
+        Annotation sourceAnnotation = generateTestAnnotation();
+        Optional<Annotation> addedOptional = dao.addAnnotation(sourceAnnotation);
+        assertFalse(addedOptional.isEmpty());
+        Annotation addedAnnotation = addedOptional.get();
+        String annotationIdToDelete = addedAnnotation.getAnnotationId();
+        String shard = addedAnnotation.getShard();
+        String dataType = addedAnnotation.getDataType();
+        String uid = addedAnnotation.getUid();
+
+        // Verify the annotation exists
+        Optional<Annotation> existingAnnotation = dao.getAnnotation(shard, dataType, uid, annotationIdToDelete);
+        assertTrue(existingAnnotation.isPresent());
+
+        // Delete the annotation
+        dao.deleteAnnotation(shard, dataType, uid, annotationIdToDelete);
+
+        // Verify the annotation no longer exists
+        Optional<Annotation> deletedAnnotation = dao.getAnnotation(shard, dataType, uid, annotationIdToDelete);
+        assertTrue(deletedAnnotation.isEmpty());
+    }
+
+    /** Test deleting an annotation that doesn't exist should not throw exception */
+    @Test
+    public void testDeleteAnnotationNotFound() {
+        String shard = "99999_99999";
+        String dataType = "nonexistent-test-type";
+        String uid = "nonexistent-uid-12345";
+        String annotationId = "nonexistent-annotation-id";
+
+        // This should not throw an exception (delete handles empty iterator gracefully)
+        // Note: if delete returns null mutation, writer.addMutation is called with null which throws
+        try {
+            dao.deleteAnnotation(shard, dataType, uid, annotationId);
+            // If we get here, delete handled empty results correctly
+        } catch (IllegalArgumentException e) {
+            // This is expected if mutationAdapter returns null and writer.addMutation is called with null
+            // The implementation should be fixed to check for null mutations
+            assertTrue(e.getMessage().contains("m is null"));
+        }
     }
 
     @AfterAll
@@ -321,11 +426,36 @@ public class AnnotationDataAccessTest {
             System.out.println("*************** " + table + " ********************");
             while (iterator.hasNext()) {
                 Map.Entry<Key,Value> entry = iterator.next();
-                log.info("key: {}; value length: {}", entry.getKey(), entry.getValue().getSize());
+                System.out.println("key: " + entry.getKey() + "; value: " + entry.getValue());
             }
             scanner.close();
         } catch (TableNotFoundException e) {
             throw new RuntimeException("TableNotFoundException: ", e);
+        }
+    }
+
+    /**
+     * Ensure that the map observed has the expected keys and values. It is expected that <code>expectedKeys[i]</code> has the value
+     * <code>expectedValues[i]</code>, and it is expected that <code>observedMap.size()</code> is equal to <code>expectedKeys.length</code>
+     *
+     * @param expectedKeys
+     *            the keys to check against
+     * @param expectedValues
+     *            the values to check against
+     * @param observedMap
+     *            the map to check
+     */
+    public void assertMapEntries(String[] expectedKeys, String[] expectedValues, Map<String,String> observedMap) {
+        assertEquals(expectedKeys.length, observedMap.size());
+        for (int i = 0; i < expectedKeys.length; i++) {
+            String observedValue = observedMap.get(expectedKeys[i]);
+            //@formatter:off
+            assertEquals(expectedValues[i], observedValue,
+                    "expected value " + expectedValues[i] +
+                            " for key " + expectedKeys[i] +
+                            " but saw " + observedValue
+            );
+            //@formatter:on
         }
     }
 

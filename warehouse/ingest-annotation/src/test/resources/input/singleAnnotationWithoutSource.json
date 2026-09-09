@@ -14,6 +14,7 @@
       "segmentHash": "testSegmentId1",
       "values": [
         {
+          "valueHash": "test1aHash",
           "value": "test1a",
           "score": -83737019.1792235,
           "extension": {
@@ -22,18 +23,22 @@
           }
         },
         {
+          "valueHash": "test1bHash",
           "value": "test1b",
           "score": 47053589.7620008
         },
         {
+          "valueHash": "test1cHash",
           "value": "test1c",
           "score": 32235234.64713955
         },
         {
+          "valueHash": "test1dHash",
           "value": "test1d",
           "score": 77675558.93612546
         },
         {
+          "valueHash": "test1eHash",
           "value": "test1e",
           "score": 7012998.240006313
         }

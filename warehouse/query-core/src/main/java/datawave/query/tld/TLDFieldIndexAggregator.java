@@ -1,7 +1,7 @@
 package datawave.query.tld;
 
-import static datawave.query.tld.TLD.parseDatatypeUidFromFI;
-import static datawave.query.tld.TLD.parseRootPointerFromFI;
+import static datawave.table.util.TLD.parseDatatypeUidFromFI;
+import static datawave.table.util.TLD.parseRootPointerFromFI;
 
 import java.io.IOException;
 import java.util.Set;
@@ -22,6 +22,7 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.FieldIndexAggregator;
 import datawave.query.jexl.functions.SeekingAggregator;
 import datawave.query.predicate.EventDataQueryFilter;
+import datawave.table.util.TLD;
 
 public class TLDFieldIndexAggregator extends SeekingAggregator implements FieldIndexAggregator {
     private final Set<String> fieldsToAggregate;

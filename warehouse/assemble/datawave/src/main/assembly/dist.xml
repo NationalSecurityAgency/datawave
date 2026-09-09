@@ -114,6 +114,7 @@
                 <include>gov.nsa.datawave.core:datawave-core-common</include>
                 <include>gov.nsa.datawave.core:datawave-core-common-util</include>
                 <include>gov.nsa.datawave.core:datawave-core-query</include>
+                <include>gov.nsa.datawave.core:datawave-core-tables</include>
                 <include>gov.nsa.datawave.core:accumulo-utils</include>
                 <include>gov.nsa.datawave.core:metadata-utils</include>
                 <include>gov.nsa.datawave.core:type-utils</include>
@@ -167,6 +168,7 @@
                   <include>gov.nsa.datawave.core:datawave-core-connection-pool</include>
                   <include>gov.nsa.datawave.core:datawave-core-common</include>
                   <include>gov.nsa.datawave.core:datawave-core-common-util</include>
+                  <include>gov.nsa.datawave.core:datawave-core-tables</include>
                   <include>gov.nsa.datawave.core:accumulo-utils</include>
                   <include>gov.nsa.datawave.core:metadata-utils</include>
                   <include>gov.nsa.datawave.core:type-utils</include>

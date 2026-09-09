@@ -91,7 +91,7 @@ public class FacetHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataTypeHand
 
     /* Instance variables */
 
-    protected MarkingFunctions markingFunctions;
+    protected MarkingFunctions<?> markingFunctions;
     protected ShardIdFactory shardIdFactory;
     protected TaskAttemptContext taskAttemptContext;
 

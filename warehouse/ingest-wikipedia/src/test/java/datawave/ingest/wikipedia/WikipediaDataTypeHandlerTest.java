@@ -21,7 +21,7 @@ import datawave.ingest.mapreduce.StandaloneStatusReporter;
 import datawave.ingest.mapreduce.StandaloneTaskAttemptContext;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.writer.AbstractContextWriter;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 
 /**
  *

@@ -25,7 +25,7 @@ import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
 import datawave.query.config.ShardQueryConfiguration;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 
 class ScannerFactoryTest {
 

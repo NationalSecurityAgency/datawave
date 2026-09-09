@@ -20,7 +20,6 @@ import datawave.ingest.csv.config.helper.ExtendedCSVHelper;
 import datawave.ingest.data.config.CSVHelper;
 import datawave.ingest.data.config.ingest.BaseIngestHelper;
 import datawave.ingest.input.reader.EventRecordReader;
-import datawave.marking.MarkingFunctions;
 import datawave.query.testframework.AbstractDataTypeConfig;
 import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.RawMetaData;
@@ -130,7 +129,7 @@ public class CarsDataType extends AbstractDataTypeConfig {
         }
 
         public static List<String> eventSecurityFieldDomains() {
-            return Collections.singletonList(MarkingFunctions.Default.COLUMN_VISIBILITY);
+            return Collections.singletonList("columnVisibility");
         }
 
         /**

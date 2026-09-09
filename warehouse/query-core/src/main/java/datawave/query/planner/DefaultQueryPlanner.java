@@ -196,6 +196,7 @@ import datawave.query.util.QueryStopwatch;
 import datawave.query.util.ShardQueryUtils;
 import datawave.query.util.Tuple2;
 import datawave.query.util.TypeMetadata;
+import datawave.query.util.TypeMetadataSerializer;
 import datawave.util.time.TraceStopwatch;
 import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
@@ -316,6 +317,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
     protected CompositeMetadata compositeMetadata;
     protected TypeMetadata typeMetadata;
+    // reused across calls to configureTypeMappings; not thread-safe, so each DefaultQueryPlanner (and clone) gets its own instance
+    private final transient TypeMetadataSerializer typeMetadataSerializer = new TypeMetadataSerializer();
     protected String contentExpansionFields;
     protected String serializedIvaratorDirs;
     protected Set<String> indexedFields;
@@ -591,6 +594,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         if (!config.isGeneratePlanOnly()) {
             while (null == cfg) {
                 cfg = getQueryIterator(metadataHelper, config, "", false, false);
+                if (null == cfg) {
+                    awaitSettingFuture();
+                }
             }
             configureIterator(config, cfg, newQueryString, isFullTable);
         }
@@ -707,16 +713,23 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
         addOption(cfg, QueryOptions.LIMIT_FIELDS, config.getLimitFieldsAsString(), false);
         addOption(cfg, QueryOptions.MATCHING_FIELD_SETS, config.getMatchingFieldSetsAsString(), false);
-        addOption(cfg, QueryOptions.GROUP_FIELDS, config.getGroupFields().toString(), true);
-        addOption(cfg, QueryOptions.GROUP_FIELDS_BATCH_SIZE, config.getGroupFieldsBatchSizeAsString(), true);
-        if (!config.isDisableIteratorUniqueFields() && !(config.isDisableIteratorMostRecentUniqueFields() && config.getUniqueFields().isMostRecent())) {
-            addOption(cfg, QueryOptions.UNIQUE_FIELDS, config.getUniqueFields().toString(), true);
-            if (config.getUniqueFields().isMostRecent()) {
-                // this may be redundant with the uniqueFields.toString(), but other code relies on this explicitly being set
-                addOption(cfg, QueryOptions.MOST_RECENT_UNIQUE, Boolean.toString(true), false);
-                addOption(cfg, QueryOptions.UNIQUE_CACHE_BUFFER_SIZE, Integer.toString(config.getUniqueCacheBufferSize()), false);
+
+        if (!config.getUniqueFields().isEmpty()) {
+            if (!config.isDisableIteratorUniqueFields() && !(config.isDisableIteratorMostRecentUniqueFields() && config.getUniqueFields().isMostRecent())) {
+                addOption(cfg, QueryOptions.UNIQUE_FIELDS, config.getUniqueFields().toString(), true);
+                if (config.getUniqueFields().isMostRecent()) {
+                    // this may be redundant with the uniqueFields.toString(), but other code relies on this explicitly being set
+                    addOption(cfg, QueryOptions.MOST_RECENT_UNIQUE, Boolean.toString(true), false);
+                    addOption(cfg, QueryOptions.UNIQUE_CACHE_BUFFER_SIZE, Integer.toString(config.getUniqueCacheBufferSize()), false);
+                }
             }
         }
+        // if we are doing any uniqueness, then we need to have all fields get back to the webservers. Hence we cannot do grouping server side in that case.
+        else if (config.getGroupFields().hasGroupByFields()) {
+            addOption(cfg, QueryOptions.GROUP_FIELDS, config.getGroupFields().toString(), true);
+            addOption(cfg, QueryOptions.GROUP_FIELDS_BATCH_SIZE, config.getGroupFieldsBatchSizeAsString(), true);
+        }
+
         addOption(cfg, QueryOptions.HIT_LIST, Boolean.toString(config.isHitList()), false);
         addOption(cfg, QueryOptions.TERM_FREQUENCY_FIELDS, Joiner.on(',').join(config.getQueryTermFrequencyFields()), false);
         addOption(cfg, QueryOptions.TERM_FREQUENCIES_REQUIRED, Boolean.toString(config.isTermFrequenciesRequired()), false);
@@ -765,9 +778,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 log.warn("Config object must be an instance of ShardQueryConfiguration to properly close the DefaultQueryPlanner. You gave me a "
                                 + genericConfig);
             }
-            if (null != executor) {
-                executor.shutdown();
-            }
+            shutdownExecutor();
             return;
         }
 
@@ -780,6 +791,14 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             log.error("Failed to close query " + settings.getId(), e);
         }
 
+        shutdownExecutor();
+    }
+
+    /**
+     * Shut down this planner's internal thread pool, if one was ever started. Unlike {@link #close(GenericQueryConfiguration, Query)} this performs no
+     * query-level cleanup, so it is safe to call on planner clones that share a query with the planner they were cloned from.
+     */
+    public void shutdownExecutor() {
         if (null != executor) {
             executor.shutdown();
         }
@@ -1393,8 +1412,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         // if we have to force it down the field-index path with event-specific
         // ranges
         if (!compositeFields.isEmpty()) {
-            boolean functionsEnabled = config.isCompositeFilterFunctionsEnabled();
-            containsComposites = !SetMembershipVisitor.getMembers(compositeFields.keySet(), config, config.getQueryTree(), functionsEnabled).isEmpty();
+            containsComposites = !SetMembershipVisitor.getMembers(compositeFields.keySet(), config.getQueryTree()).isEmpty();
         }
 
         // Print the nice log message
@@ -1489,7 +1507,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         Set<String> termFrequencyFields = getTermFrequencyFields();
 
         if (!termFrequencyFields.isEmpty()) {
-            queryTfFields = SetMembershipVisitor.getMembers(termFrequencyFields, config, config.getQueryTree());
+            queryTfFields = SetMembershipVisitor.getMembers(termFrequencyFields, config.getQueryTree());
 
             // Print the nice log message
             if (log.isDebugEnabled()) {
@@ -1857,8 +1875,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         boolean containsIndexOnlyFields;
         TraceStopwatch stopwatch = timers.newStartedStopwatch(stage);
         try {
-            boolean functionsEnabled = config.isIndexOnlyFilterFunctionsEnabled();
-            containsIndexOnlyFields = !SetMembershipVisitor.getMembers(indexOnlyFields, config, script, functionsEnabled).isEmpty();
+            containsIndexOnlyFields = !SetMembershipVisitor.getMembers(indexOnlyFields, script).isEmpty();
 
             // Print the nice log message
             if (log.isDebugEnabled()) {
@@ -2088,7 +2105,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 allFields = allFieldTypeMap.getIfPresent(dataTypeHash);
             }
             if (null == allFields) {
-                allFields = metadataHelper.getAllFields(dataTypes);
+                allFields = metadataHelper.getModelExpansionFields(dataTypes);
                 if (cacheDataTypes) {
                     allFieldTypeMap.put(dataTypeHash, allFields);
                 }
@@ -2281,13 +2298,18 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             if (config.getNoExpansionIfCurrentDateTypes().contains(dateType)) {
                 // only remap the end date if the user did not specify today's date
                 if (!DateUtils.isSameDay(new Date(), config.getEndDate())) {
+                    Date remappedEndDate = dateIndexData.getEndDate();
+                    if (remappedEndDate.before(config.getBeginDate())) {
+                        throw new NoResultsException("Remapped end date " + remappedEndDate + " is before begin date " + config.getBeginDate()
+                                        + " for date type " + dateType);
+                    }
                     // now lets update the query parameters with the correct end date
                     log.info("Remapped " + dateType + " dates [" + config.getBeginDate() + "," + config.getEndDate() + "] to EVENT dates "
-                                    + config.getBeginDate() + "," + dateIndexData.getEndDate());
+                                    + config.getBeginDate() + "," + remappedEndDate);
 
                     // reset the dates in the configuration, no need to reset them in
                     // the Query settings object
-                    config.setEndDate(dateIndexData.getEndDate());
+                    config.setEndDate(remappedEndDate);
                 } else {
                     log.info("No Remapped dates for " + dateType + " because " + config.getEndDate() + " is today");
                 }
@@ -2319,18 +2341,14 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         if (config.getBeginDateCap() > 0) {
             long minStartTime = System.currentTimeMillis() - config.getBeginDateCap();
             if (config.getBeginDate().getTime() < minStartTime) {
-                if (config.isFailOutsideValidDateRange() && config.getEndDate().getTime() < minStartTime) {
-                    throw new DatawaveQueryException("This requested date range is outside of range of data on this system");
-                } else {
-                    config.setBeginDate(new Date(minStartTime));
-                    log.info("Resetting begin date to the beginDateCap: " + config.getBeginDate());
-                    if (config.getEndDate().getTime() < minStartTime) {
-                        // setting the end date to the same as the begin date will result in no ranges being created (@see
-                        // GenericQueryConfiguration.canRunQuery())
-                        config.setEndDate(new Date(minStartTime - 1));
-                        log.info("Resetting end date to the beginDateCap: " + config.getEndDate());
+                if (config.getEndDate().getTime() < minStartTime) {
+                    if (config.isFailOutsideValidDateRange()) {
+                        throw new DatawaveQueryException("This requested date range is outside of range of data on this system");
                     }
+                    throw new NoResultsException("Both begin and end dates are outside the valid date range cap");
                 }
+                config.setBeginDate(new Date(minStartTime));
+                log.info("Resetting begin date to the beginDateCap: " + config.getBeginDate());
             }
         }
     }
@@ -2383,6 +2401,24 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      */
     protected void configureAdditionalOptions(ShardQueryConfiguration config, IteratorSetting cfg) {
         // no-op
+    }
+
+    /**
+     * Blocks until the iterator setting future completes, so that polling {@link #getQueryIterator} is not a hot spin. A failed future is left for the next
+     * getQueryIterator call to surface.
+     */
+    private void awaitSettingFuture() {
+        if (null == settingFuture) {
+            return;
+        }
+        try {
+            settingFuture.get();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new DatawaveAsyncOperationException("Interrupted while building the query iterator", e);
+        } catch (ExecutionException e) {
+            // getQueryIterator will rethrow the cause
+        }
     }
 
     protected Future<IteratorSetting> loadQueryIterator(final MetadataHelper metadataHelper, final ShardQueryConfiguration config, final Boolean isFullTable,
@@ -2655,7 +2691,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                         fieldsToRetain.addAll(ReduceFields.getQueryFields(config.getQueryTree()));
                         fieldsToRetain.addAll(config.getProjectFields());
                         fieldsToRetain.addAll(config.getCompositeToFieldMap().keySet());
-                        // GroupBy fields already added to projection at this point in planning
+                        // GroupBy and unique fields already added to projection at this point in planning
                         // Unique and Excerpt fields do not affect returned fields
                     } else {
                         // sum all fields, remove exclude fields
@@ -2669,12 +2705,19 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                     typeMetadata = typeMetadata.reduce(fieldsToRetain);
                 }
 
-                // only compress if enabled AND not reducing per shard
-                // type metadata will be serialized in the VisitorFunction
-                String serializedTypeMetadata = typeMetadata.toString();
-                if (compressMappings && !config.getReduceTypeMetadataPerShard()) {
-                    serializedTypeMetadata = QueryOptions.compressOption(serializedTypeMetadata, QueryOptions.UTF8);
+                // only compress/Kryo-encode if enabled AND not reducing per shard, since in that case
+                // type metadata is re-serialized via toString() in the VisitorFunction instead
+                boolean kryoTypeMetadata = config.isKryoTypeMetadata() && !config.getReduceTypeMetadataPerShard();
+                String serializedTypeMetadata;
+                if (kryoTypeMetadata) {
+                    serializedTypeMetadata = typeMetadataSerializer.serialize(typeMetadata);
+                } else {
+                    serializedTypeMetadata = typeMetadata.toString();
+                    if (compressMappings && !config.getReduceTypeMetadataPerShard()) {
+                        serializedTypeMetadata = QueryOptions.compressOption(serializedTypeMetadata, QueryOptions.UTF8);
+                    }
                 }
+                addOption(cfg, QueryOptions.TYPE_METADATA_KRYO, Boolean.toString(kryoTypeMetadata), false);
 
                 addOption(cfg, QueryOptions.TYPE_METADATA, serializedTypeMetadata, false);
             }
@@ -2737,7 +2780,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
         // Allowlist and disallowlist projection are mutually exclusive. You can't
         // have both.
-        if (null != config.getProjectFields() && !config.getProjectFields().isEmpty()) {
+        if (!config.getProjectFields().isEmpty()) {
             if (log.isDebugEnabled()) {
                 final int maxLen = 100;
                 String projectFields = config.getProjectFieldsAsString();
@@ -3029,7 +3072,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             }
             TraceStopwatch stopwatch = config.getTimers().newStartedStopwatch("DefaultQueryPlanner - Begin stream of ranges from inverted index");
 
-            QueryPlanStream stream = getQueryPlanStream(config, scannerFactory, metadataHelper);
+            QueryPlanStream stream = getQueryPlanStream(config, metadataHelper);
             ranges = stream.streamPlans(queryTree);
 
             if (stream instanceof RangeStream) {
@@ -3100,16 +3143,16 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         });
     }
 
-    protected QueryPlanStream getQueryPlanStream(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper metadataHelper) {
+    protected QueryPlanStream getQueryPlanStream(ShardQueryConfiguration config, MetadataHelper metadataHelper) {
 
         if (config.isUseShardedIndex()) {
             return getDayIndexStream(config);
         } else if (config.isUseTruncatedIndex()) {
             this.rangeStreamClass = TruncatedRangeStream.class.getCanonicalName();
             this.createUidsIteratorClass = TruncatedIndexIterator.class;
-            return initializeRangeStream(config, scannerFactory, metadataHelper);
+            return initializeRangeStream(config, metadataHelper);
         } else {
-            return initializeRangeStream(config, scannerFactory, metadataHelper);
+            return initializeRangeStream(config, metadataHelper);
         }
     }
 
@@ -3118,19 +3161,16 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      *
      * @param config
      *            the shard configuration
-     * @param scannerFactory
-     *            the scanner factory
      * @param metadataHelper
      *            the metadata helper
      * @return the range stream
      */
-    private RangeStream initializeRangeStream(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper metadataHelper) {
+    private RangeStream initializeRangeStream(ShardQueryConfiguration config, MetadataHelper metadataHelper) {
         Class<? extends RangeStream> rstream;
         try {
             rstream = Class.forName(rangeStreamClass).asSubclass(RangeStream.class);
 
-            RangeStream stream = rstream.getConstructor(ShardQueryConfiguration.class, ScannerFactory.class, MetadataHelper.class).newInstance(config,
-                            scannerFactory, metadataHelper);
+            RangeStream stream = rstream.getConstructor(ShardQueryConfiguration.class, MetadataHelper.class).newInstance(config, metadataHelper);
 
             //  @formatter:off
             return stream.setUidIntersector(uidIntersector)
@@ -3497,8 +3537,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         if (compositeMetadata == null && compositeMetadataCallable != null) {
             TraceStopwatch stopwatch = stageStopWatch.newStartedStopwatch(compositeMetadataCallable.stageName());
             try {
-                while (compositeMetadata == null) {
-                    compositeMetadata = compositeMetadataFuture.get(concurrentTimeoutMillis, TimeUnit.MILLISECONDS);
+                compositeMetadata = compositeMetadataFuture.get(concurrentTimeoutMillis, TimeUnit.MILLISECONDS);
+                if (compositeMetadata == null) {
+                    throw new ExecutionException(new IllegalStateException("CompositeMetadata was null"));
                 }
             } catch (InterruptedException | ExecutionException | TimeoutException e) {
                 log.error("Failed to fetch CompositeMetadata", e);
@@ -3518,8 +3559,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         if (typeMetadata == null && typeMetadataCallable != null) {
             TraceStopwatch stopwatch = stageStopWatch.newStartedStopwatch(typeMetadataCallable.stageName());
             try {
-                while (typeMetadata == null) {
-                    typeMetadata = typeMetadataFuture.get(concurrentTimeoutMillis, TimeUnit.MILLISECONDS);
+                typeMetadata = typeMetadataFuture.get(concurrentTimeoutMillis, TimeUnit.MILLISECONDS);
+                if (typeMetadata == null) {
+                    throw new ExecutionException(new IllegalStateException("TypeMetadata was null"));
                 }
             } catch (InterruptedException | ExecutionException | TimeoutException e) {
                 log.error("Failed to fetch TypeMetadata", e);
@@ -3535,8 +3577,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         if (contentExpansionFields == null && contentExpansionFieldsCallable != null) {
             TraceStopwatch stopwatch = stageStopWatch.newStartedStopwatch(contentExpansionFieldsCallable.stageName());
             try {
-                while (contentExpansionFields == null) {
-                    contentExpansionFields = contentExpansionFieldsFuture.get(concurrentTimeoutMillis, TimeUnit.MILLISECONDS);
+                contentExpansionFields = contentExpansionFieldsFuture.get(concurrentTimeoutMillis, TimeUnit.MILLISECONDS);
+                if (contentExpansionFields == null) {
+                    throw new ExecutionException(new IllegalStateException("Content expansion fields were null"));
                 }
             } catch (InterruptedException | ExecutionException | TimeoutException e) {
                 log.error("Failed to fetch Content Expansion fields", e);
@@ -3552,8 +3595,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         if (serializedIvaratorDirs == null && ivaratorCacheDirCallable != null) {
             TraceStopwatch stopwatch = stageStopWatch.newStartedStopwatch(ivaratorCacheDirCallable.stageName());
             try {
-                while (serializedIvaratorDirs == null) {
-                    serializedIvaratorDirs = ivaratorCacheDirFuture.get(concurrentTimeoutMillis, TimeUnit.MILLISECONDS);
+                serializedIvaratorDirs = ivaratorCacheDirFuture.get(concurrentTimeoutMillis, TimeUnit.MILLISECONDS);
+                if (serializedIvaratorDirs == null) {
+                    throw new ExecutionException(new IllegalStateException("Serialized ivarator cache dirs were null"));
                 }
             } catch (InterruptedException | ExecutionException | TimeoutException e) {
                 log.error("Failed to serialize ivarator cache dirs", e);
@@ -3609,9 +3653,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     protected Set<String> getFieldSet(String stageName, Future<Set<String>> future) {
         TraceStopwatch stopwatch = stageStopWatch.newStartedStopwatch(stageName);
         try {
-            Set<String> fields = null;
-            while (fields == null) {
-                fields = future.get(concurrentTimeoutMillis, TimeUnit.MILLISECONDS);
+            Set<String> fields = future.get(concurrentTimeoutMillis, TimeUnit.MILLISECONDS);
+            if (fields == null) {
+                throw new ExecutionException(new IllegalStateException("Stage[" + stageName + "] returned a null field set"));
             }
             return fields;
         } catch (ExecutionException | InterruptedException | TimeoutException e) {

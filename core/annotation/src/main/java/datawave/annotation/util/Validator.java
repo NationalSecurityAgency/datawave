@@ -7,6 +7,8 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+import org.apache.commons.lang3.StringUtils;
+
 /**
  * A class for defining logic for the object validator pattern, rules are added by passing predicates to {@link #addCheck(Predicate, String)} and object
  * instances are validated using {@link #check(Object)}. Variants of {@code check} are provided that test the checks exhaustively or fail fast as soon as a
@@ -78,14 +80,14 @@ public class Validator<T> {
      * @param <U>
      *            the type of member object we'll be validating
      */
-    public <U> Validator<T> addMemberValidator(Function<T,List<U>> memberSupplier, Validator<U> validator) {
-        return addMemberValidator(memberSupplier, u -> validator);
+    public <U> Validator<T> addMemberValidator(Function<T,List<U>> memberSupplier, Validator<U> validator, String messageContext) {
+        return addMemberValidator(memberSupplier, u -> validator, "");
     }
 
     /**
-     * adds a 'dynamic' validator for one of T's fields / members. Instead of a concrete validator, we provie a function that can generate a validator pased on
+     * adds a 'dynamic' validator for one of T's fields / members. Instead of a concrete validator, we provie a function that can generate a validator passed on
      * a provided instance of U. This allows us to change validation rules based on properties of U. Practically, this is used to validate U differently based
-     * on it's type and allows us to work around the need for polymorphism in protobuf.
+     * on its type and allows us to work around the need for polymorphism in protobuf.
      *
      * @param memberSupplier
      *            the function to supply the member to validate from T.
@@ -95,8 +97,23 @@ public class Validator<T> {
      * @param <U>
      *            the type of member object we'll be validating
      */
-    public <U> Validator<T> addMemberValidator(Function<T,List<U>> memberSupplier, Function<U,Validator<U>> validatorSupplier) {
-        memberValidators.add(new MemberValidation<T,U>(memberSupplier, validatorSupplier));
+    public <U> Validator<T> addMemberValidator(Function<T,List<U>> memberSupplier, Function<U,Validator<U>> validatorSupplier, String messageContext) {
+        memberValidators.add(new MemberValidation<T,U>(memberSupplier, validatorSupplier, messageContext));
+        return this;
+    }
+
+    /**
+     * extend this validator by adding all the checks and member validators from another validator. This is useful for reusing validation logic across multiple
+     * validators, for example we may have a base set of validation rules for all Annotations and then more specific rules for different types of annotations,
+     * we can put the common rules in a base validator and then extend it for the specific annotation validators.
+     *
+     * @param other
+     *            the validator to extend
+     * @return this validator.
+     */
+    public Validator<T> extend(Validator<T> other) {
+        this.predicates.putAll(other.predicates);
+        this.memberValidators.addAll(other.memberValidators);
         return this;
     }
 
@@ -116,7 +133,7 @@ public class Validator<T> {
      *
      * @param target
      *            the item to check
-     * @return the validation state of the target includin gthe first error encountered.
+     * @return the validation state of the target including the first error encountered.
      */
     public ValidationState<T> check(T target) {
         return this.check(target, true);
@@ -208,16 +225,20 @@ public class Validator<T> {
     static class MemberValidation<T,U> {
         final Function<T,List<U>> memberSupplier;
         final Function<U,Validator<U>> validatorSupplier;
+        final String errorSuffix;
 
         /**
          * @param memberSupplier
          *            a function that provides one or more members from part T as a list of the same time.
          * @param validatorSupplier
          *            a function that provides a validator for the member's type U.
+         * @param messageContext
+         *            a message context to add to the end of any error messages produced by the member validator, can be blank or null if not needed.
          */
-        MemberValidation(Function<T,List<U>> memberSupplier, Function<U,Validator<U>> validatorSupplier) {
+        MemberValidation(Function<T,List<U>> memberSupplier, Function<U,Validator<U>> validatorSupplier, String messageContext) {
             this.memberSupplier = memberSupplier;
             this.validatorSupplier = validatorSupplier;
+            this.errorSuffix = StringUtils.isBlank(messageContext) ? "" : " " + messageContext;
         }
 
         /**
@@ -238,7 +259,7 @@ public class Validator<T> {
                     continue;
                 }
                 for (String error : memberState.getErrors()) {
-                    state.addError(error);
+                    state.addError(error + errorSuffix);
                 }
             }
         }

@@ -1,6 +1,8 @@
 package datawave.query;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
@@ -43,7 +45,7 @@ import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.util.AbstractQueryTest;
 import datawave.query.util.ColorsIngest;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 
 /**
  * A set of tests that exercises multi-shard, multi-day queries
@@ -127,6 +129,9 @@ public class ColorsTest extends AbstractQueryTest {
         // every test also exercises hit terms
         givenParameter(QueryParameters.HIT_LIST, "true");
         logic.setHitList(true);
+
+        // every test also exercises the Kryo TypeMetadata serialization path
+        logic.setKryoTypeMetadata(true);
 
         // default to full date range
         givenDate(ColorsIngest.getStartDay(), ColorsIngest.getEndDay());
@@ -303,6 +308,20 @@ public class ColorsTest extends AbstractQueryTest {
         expectShards("20250326", ColorsIngest.getNumShards());
         expectShards("20250327", ColorsIngest.getNewShards());
         planAndExecuteQuery();
+    }
+
+    @Test
+    public void testEnableDocumentSchedulerViaQueryParameter() throws Exception {
+        givenQuery("COLOR == 'blue'");
+        givenParameter(QueryParameters.DS_ENABLED, "true");
+        expectPlan("COLOR == 'blue'");
+        expectResultCount(getTotalEventCount());
+        expectHitTermsRequiredAllOf("COLOR:blue");
+
+        logic.setUseDocumentScheduler(false);
+        assertFalse(logic.isUseDocumentScheduler());
+        planAndExecuteQuery();
+        assertTrue(logic.isUseDocumentScheduler());
     }
 
     // TODO: unique

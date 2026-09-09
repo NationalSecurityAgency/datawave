@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="com.fasterxml.jackson.datatype.jackson-datatype-guava" xmlns="urn:jboss:module:1.9">
+    <resources>
+        <resource-root path="jackson-datatype-guava-${version.jackson}.jar"/>
+    </resources>
+
+    <dependencies>
+        <module name="com.google.guava"/>
+        <module name="com.fasterxml.jackson.core.jackson-core"/>
+        <module name="com.fasterxml.jackson.core.jackson-databind"/>
+        <module name="com.fasterxml.jackson.core.jackson-annotations"/>
+    </dependencies>
+</module>

@@ -11,9 +11,9 @@ import com.google.common.collect.Maps;
 import datawave.query.attributes.Document;
 import datawave.query.function.Aggregation;
 import datawave.query.function.KeyToDocumentData;
-import datawave.query.tld.TLD;
 import datawave.query.util.EntryToTuple;
 import datawave.query.util.Tuple2;
+import datawave.table.util.TLD;
 
 public class GetParentDocument implements Function<Entry<Key,Document>,Tuple2<Key,Document>> {
     private final KeyToDocumentData fetchDocData;

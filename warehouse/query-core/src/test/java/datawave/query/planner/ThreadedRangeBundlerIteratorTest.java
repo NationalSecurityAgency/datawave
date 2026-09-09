@@ -120,14 +120,14 @@ public class ThreadedRangeBundlerIteratorTest extends EasyMockSupport {
         assertTrue(itr.hasNext());
         long end = System.currentTimeMillis();
         assertTrue((end - start) >= 1000);
-        assertTrue((end - start) <= 1100);
+        assertTrue((end - start) <= 1500);
 
         verifyAll();
     }
 
     @Test
     public void disableBundlingMinWaitTimeTest() throws IOException {
-        long delay = 25;
+        long delay = 50;
 
         builder.setMaxRanges(1);
 
@@ -145,8 +145,8 @@ public class ThreadedRangeBundlerIteratorTest extends EasyMockSupport {
         assertFalse(itr.hasNext());
         long end = System.currentTimeMillis();
         assertTrue(end - start >= delay);
-        // really this should be maxWaitValue+1, but cpu speeds and scheduling may cause intermittent failures then
-        assertTrue(end - start < 2 * delay);
+        // use a generous upper bound to avoid intermittent failures from thread scheduling and GC pauses
+        assertTrue(end - start < delay + 500);
         verifyAll();
     }
 

@@ -27,8 +27,8 @@ import datawave.query.util.DateIndexHelperFactory;
 import datawave.query.util.DateIndexTestIngest;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.MetadataHelperFactory;
+import datawave.table.constants.TableName;
 import datawave.test.JexlNodeAssert;
-import datawave.util.TableName;
 import datawave.util.time.DateHelper;
 
 /**

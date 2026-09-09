@@ -28,6 +28,13 @@ public abstract class AbstractTableConfigHelper implements TableConfigHelper {
     public static final String DISABLE_VERSIONING_ITERATOR = ".disable.versioning.iterator";
     protected Configuration config;
 
+    private static final String VERS_ITER_NAME = "vers";
+    private static final int VERS_ITER_PRI = 20;
+
+    // Aggregate must go before versioning
+    private static final String AGG_ITER_NAME = "agg";
+    private static final int AGG_ITER_PRI = VERS_ITER_PRI - 1;
+
     protected AbstractTableConfigHelper() {}
 
     @Override
@@ -125,8 +132,8 @@ public abstract class AbstractTableConfigHelper implements TableConfigHelper {
         boolean disableVersioning = config != null && config.getBoolean(tableName + DISABLE_VERSIONING_ITERATOR, false);
         if (!disableVersioning) {
             for (IteratorScope iterScope : IteratorScope.values()) {
-                props.put(Property.TABLE_ITERATOR_PREFIX + iterScope.name() + ".vers", "20," + VersioningIterator.class.getName());
-                props.put(Property.TABLE_ITERATOR_PREFIX + iterScope.name() + ".vers.opt.maxVersions", "1");
+                props.put(Property.TABLE_ITERATOR_PREFIX + iterScope.name() + "." + VERS_ITER_NAME, VERS_ITER_PRI + "," + VersioningIterator.class.getName());
+                props.put(Property.TABLE_ITERATOR_PREFIX + iterScope.name() + "." + VERS_ITER_NAME + ".opt.maxVersions", "1");
             }
         }
 
@@ -264,15 +271,15 @@ public abstract class AbstractTableConfigHelper implements TableConfigHelper {
 
         for (IteratorScope iterScope : IteratorScope.values()) {
             if (!aggregators.isEmpty()) {
-                props.put(Property.TABLE_ITERATOR_PREFIX + iterScope.name() + ".agg", "10," + PropogatingIterator.class.getName());
+                props.put(Property.TABLE_ITERATOR_PREFIX + iterScope.name() + "." + AGG_ITER_NAME, AGG_ITER_PRI + "," + PropogatingIterator.class.getName());
             }
         }
 
         for (CombinerConfiguration ac : aggregators) {
             for (IteratorSetting.Column column : ac.getColumns()) {
                 for (IteratorScope iterScope : IteratorScope.values()) {
-
-                    props.put(Property.TABLE_ITERATOR_PREFIX + iterScope.name() + ".agg.opt." + column.getColumnFamily(), ac.getSettings().getIteratorClass());
+                    props.put(Property.TABLE_ITERATOR_PREFIX + iterScope.name() + "." + AGG_ITER_NAME + ".opt." + column.getColumnFamily(),
+                                    ac.getSettings().getIteratorClass());
                 }
             }
         }
