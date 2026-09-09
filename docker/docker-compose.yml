@@ -138,7 +138,7 @@ services:
   accumulo-manager:
     profiles: [datawave-stack]
     image: *stack-image
-    command: [manager]
+    command: [proc, manager]   # Accumulo 4 moved server processes under `accumulo proc`
     environment:
       - ACCUMULO_INSTANCE_NAME=my-instance-01
       - ACCUMULO_ROOT_PASSWORD=secret
@@ -168,7 +168,7 @@ services:
   accumulo-tserver:
     profiles: [datawave-stack]
     image: *stack-image
-    command: [tserver]
+    command: [proc, tserver]   # Accumulo 4 moved server processes under `accumulo proc`
     environment:
       - HADOOP_CONF_DIR=/stack
       - ACCUMULO_LIB_EXT=/opt/accumulo/lib/ext
@@ -191,7 +191,7 @@ services:
   accumulo-gc:
     profiles: [datawave-stack]
     image: *stack-image
-    command: [gc]
+    command: [proc, gc]   # Accumulo 4 moved server processes under `accumulo proc`
     environment:
       - HADOOP_CONF_DIR=/stack
       - ACCUMULO_LIB_EXT=/opt/accumulo/lib/ext
@@ -209,7 +209,7 @@ services:
   accumulo-monitor:
     profiles: [datawave-stack]
     image: *stack-image
-    command: [monitor]
+    command: [proc, monitor]   # Accumulo 4 moved server processes under `accumulo proc`
     environment:
       - HADOOP_CONF_DIR=/stack
       - ACCUMULO_LIB_EXT=/opt/accumulo/lib/ext
