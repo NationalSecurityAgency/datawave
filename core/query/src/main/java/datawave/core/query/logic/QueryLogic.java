@@ -157,16 +157,6 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
     boolean isUseSynchronousRunningQuery();
 
     /**
-     * This is the original method that has been renamed to isUseSynchronousRunningQuery
-     *
-     * @return isUseSynchronouseRunningQuery
-     */
-    @Deprecated
-    default boolean isShortRunningQuery() {
-        return isUseSynchronousRunningQuery();
-    }
-
-    /**
      * Check whether this query logic can bypass the query limiter mechanism. For example UUID queries which must remain as fast as possible may avoid the
      * zookeeper overhead incurred by the query limit mechanism.
      *

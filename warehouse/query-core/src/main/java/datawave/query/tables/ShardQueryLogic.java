@@ -3642,12 +3642,12 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         return getConfig().isQueryLimiterEnabled();
     }
 
-    public void setShortRunningQuery(boolean shortRunningQuery) {
-        getConfig().setShortRunningQuery(shortRunningQuery);
+    public void setUseSynchronousRunningQuery(boolean synchronous) {
+        getConfig().setUseSynchronousRunningQuery(synchronous);
     }
 
     @Override
     public boolean isUseSynchronousRunningQuery() {
-        return getConfig().isShortRunningQuery();
+        return getConfig().isUseSynchronousRunningQuery();
     }
 }

@@ -91,8 +91,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private static final long serialVersionUID = 2321985989282659247L;
     private static final Logger log = Logger.getLogger(ShardQueryConfiguration.class);
 
-    // is this a short running query (e.g. UUID lookup maybe)
-    private boolean isShortRunningQuery = false;
+    // Should we force a synchronous running query (e.g. UUID lookup maybe)
+    private boolean isUseSynchronousRunningQuery = false;
 
     // can this query logic bypass the query limiter mechanism (probably for performance purposes)
     private boolean queryLimiterEnabled = true;
@@ -625,7 +625,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         super.copyFrom(other);
 
         // ShardQueryConfiguration copy
-        this.setShortRunningQuery(other.isShortRunningQuery());
+        this.setUseSynchronousRunningQuery(other.isUseSynchronousRunningQuery());
         this.setQueryLimiterEnabled(other.isQueryLimiterEnabled());
         this.setCheckpointable(other.isCheckpointable());
         this.setTldQuery(other.isTldQuery());
@@ -2996,7 +2996,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         // @formatter:off
         ShardQueryConfiguration that = (ShardQueryConfiguration) o;
         return isTldQuery() == that.isTldQuery() &&
-                isShortRunningQuery() == that.isShortRunningQuery() &&
+                isUseSynchronousRunningQuery() == that.isUseSynchronousRunningQuery() &&
                 isQueryLimiterEnabled() == that.isQueryLimiterEnabled() &&
                 isDisableIndexOnlyDocuments() == that.isDisableIndexOnlyDocuments() &&
                 getMaxScannerBatchSize() == that.getMaxScannerBatchSize() &&
@@ -3234,7 +3234,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         // @formatter:off
         return Objects.hash(
                 super.hashCode(),
-                isShortRunningQuery(),
+                isUseSynchronousRunningQuery(),
                 isQueryLimiterEnabled(),
                 isTldQuery(),
                 getFilterOptions(),
@@ -3614,12 +3614,12 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.useNewIndexLookups = useNewIndexLookups;
     }
 
-    public boolean isShortRunningQuery() {
-        return isShortRunningQuery;
+    public boolean isUseSynchronousRunningQuery() {
+        return isUseSynchronousRunningQuery;
     }
 
-    public void setShortRunningQuery(boolean shortRunningQuery) {
-        isShortRunningQuery = shortRunningQuery;
+    public void setUseSynchronousRunningQuery(boolean useSynchronousRunningQuery) {
+        isUseSynchronousRunningQuery = useSynchronousRunningQuery;
     }
 
     public boolean isQueryLimiterEnabled() {
