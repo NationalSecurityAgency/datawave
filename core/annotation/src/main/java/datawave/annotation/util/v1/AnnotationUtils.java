@@ -120,16 +120,22 @@ public class AnnotationUtils {
 
     /**
      * Utility method to generate and inject the annotation hash into the annotation. As a side effect, this also sorts the annotation's segment list into
-     * segment hash order (see {@link #sortSegments(List)}). This is the same order used to sort segments in Accumulo. The returned annotation's segment order,
-     * its computed hash, and its {@code equals()}/{@code hashCode()} behavior are all consistent regardless of how the annotation was assembled. This method is
-     * the single choke point relied on for that guarantee, so it is safe to call directly rather than only via {@link #injectAllHashes(Annotation)}.
+     * segment hash order (see {@link #injectSegmentHashAndSort(List)}). This is the same order used to sort segments in Accumulo. The returned annotation's
+     * segment order, its computed hash, and its {@code equals()}/{@code hashCode()} behavior are all consistent regardless of how the annotation was assembled.
+     * This method is the single choke point relied on for that guarantee, so it is safe to call directly rather than only via
+     * {@link #injectAllHashes(Annotation)}.
      *
      * @param annotation
      *            the annotation to inject.
      * @return the annotation with its segments sorted in segment hash order and its annotation id injected.
      */
     public static Annotation injectAnnotationHash(Annotation annotation) {
-        Annotation sortedAnnotation = annotation.toBuilder().clearSegments().addAllSegments(sortSegments(annotation.getSegmentsList())).build();
+        //@formatter:off
+        Annotation sortedAnnotation = annotation.toBuilder()
+                .clearSegments()
+                .addAllSegments(injectSegmentHashAndSort(annotation.getSegmentsList()))
+                .build();
+        //@formatter:on
         final String hash = calculateAnnotationHash(sortedAnnotation);
         return sortedAnnotation.toBuilder().setAnnotationId(hash).build();
     }
@@ -148,7 +154,7 @@ public class AnnotationUtils {
      *            the segments to sort.
      * @return a new list containing the segments sorted in ascending segment hash order.
      */
-    public static List<Segment> sortSegments(List<Segment> segments) {
+    public static List<Segment> injectSegmentHashAndSort(List<Segment> segments) {
         // @formatter:off
         return segments.stream()
                 .map(s -> s.getSegmentHash().isEmpty() ? injectSegmentHash(s) : s)
@@ -288,22 +294,23 @@ public class AnnotationUtils {
      * <li>the hash for each segment</li>
      * <li>each key and value in the metadata</li>
      * </ul>
+     * This requires that segments have already been hashed and the segment list is ordered by hash, see {@link #injectSegmentHashAndSort(List)} for the proper
+     * order.
      *
      * @param annotation
      *            the annotation to hash.
      * @return the calculated hash.
+     * @throws IllegalStateException
+     *             if we encounter segments whose hashes are not assigned or the segments aren't sorted
      */
     @SuppressWarnings("UnstableApiUsage")
     public static String calculateAnnotationHash(Annotation annotation) {
         Hasher hasher = Hashing.murmur3_32_fixed().newHasher();
         hasher.putString(annotation.getAnnotationType(), StandardCharsets.UTF_8);
-        // Segments must be hashed in a consistent order regardless of the order they appear in
-        // the annotation, so the calculated hash doesn't depend on how the caller assembled the segment list.
-        // sortSegments reuses each segment's already-computed hash where available, so this does not redundantly
-        // recompute a segment's hash if it was already injected (e.g. via injectAllHashes(Segment)).
-        for (Segment s : sortSegments(annotation.getSegmentsList())) {
-            hasher.putString(s.getSegmentHash(), StandardCharsets.UTF_8);
-        }
+
+        // segments must have hashes assigned and be ordered correctly.
+        hashAnnotationSegments(annotation, hasher);
+
         // maps must be hashed in a consistent order (by key)
         final Map<String,String> metadataMap = annotation.getMetadataMap();
         final SortedSet<String> sortedKeySet = new TreeSet<>(metadataMap.keySet());
@@ -315,11 +322,36 @@ public class AnnotationUtils {
     }
 
     /**
-     * Calculate the 32-bit murmur3 hash used to identify a segment, this includes the following attributes:
-     * <ul>
-     * <li>each of the segment values in string form (via {@code toString()})</li>
-     * <li>the string form of the boundary (via {@code toString()})</li>
-     * </ul>
+     * Calculate the hash for an Annotation's segments, using the specified hasher. The segments must have non-empty hashes assigned, and must be sorted in
+     * lexical hash order, matching the order they are stored in Accumulo otherwise and IllegalStateException will be thrown. See
+     * {@link #injectSegmentHashAndSort(List)} for the expected input state.
+     *
+     * @param annotation
+     *            the annotation whose segments to hash
+     * @param hasher
+     *            the hasher to use.
+     * @throws IllegalStateException
+     *             if the segments are missing hashes or in the incorrect order.
+     */
+    @SuppressWarnings("UnstableApiUsage")
+    private static void hashAnnotationSegments(Annotation annotation, Hasher hasher) {
+        String currentHash, lastHash = null;
+        for (Segment s : annotation.getSegmentsList()) {
+            currentHash = s.getSegmentHash();
+            if (StringUtils.isEmpty(currentHash)) {
+                throw new IllegalStateException("Encountered an empty segment hash in annotation for document '" + annotation.getDocumentId() + "'");
+            }
+            if (lastHash != null && lastHash.compareTo(currentHash) > 0) {
+                throw new IllegalStateException("Segments are not sorted: last: " + lastHash + ", current: " + currentHash);
+            }
+            hasher.putString(s.getSegmentHash(), StandardCharsets.UTF_8);
+            lastHash = currentHash;
+        }
+    }
+
+    /**
+     * Calculate the 32-bit murmur3 hash used to identify a segment uniquely within the enclosing annotation. This is solely derived from the hash code of the
+     * segment boundary.
      *
      * @param segment
      *            the segment to hash.
