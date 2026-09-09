@@ -118,10 +118,14 @@ services:
     profiles: [datawave-stack]
     image: *stack-image
     user: zookeeper
-    entrypoint: ["/usr/lib/zookeeper/bin/zkServer.sh"]
-    command: ["--config", "/etc/zookeeper/conf.dist", "start-foreground"]
+    # Accumulo 4 needs a ZooKeeper server that understands addWatch (opcode 106,
+    # ZooKeeper 3.6+). /usr/lib/zookeeper is bigtop's 3.5.9, which answers ruok
+    # but rejects addWatch, so Accumulo's Initialize loops on ConnectionLoss.
+    # /opt/zookeeper is the 3.9.5 distribution the stack image downloads.
+    entrypoint: ["/opt/zookeeper/bin/zkServer.sh"]
+    command: ["--config", "/opt/zookeeper/conf", "start-foreground"]
     environment:
-      - ZOOBINDIR=/usr/lib/zookeeper/bin
+      - ZOOBINDIR=/opt/zookeeper/bin
       - ZOO_LOG_DIR=/var/log/zookeeper
     ports:
       - "2181:2181"
