@@ -44,7 +44,7 @@ public class AnnotationSyncListener implements EntryAddedListener<String,Object>
                 log.info("syncing to docAnnotations");
                 if (instance != null) {
                     log.info("pushing to alt map");
-                    IMap<String, List<String>> annotationsMap = instance.getMap("docAnnotations");
+                    IMap<String,List<String>> annotationsMap = instance.getMap("docAnnotations");
                     String docId = annotation.getDocumentId();
                     List<String> annotationIds = annotationsMap.get(annotation.getDocumentId());
                     if (annotationIds == null) {
