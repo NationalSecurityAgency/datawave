@@ -35,7 +35,7 @@ public class LoadCacheConsumer {
             for (Annotation annotation : annotationMessage.getAnnotationsList()) {
                 log.info("got annotation off queue: " + annotation.getAnnotationId());
                 if (hazelcastInstance != null) {
-                    IMap<String, Annotation> annotationMap = hazelcastInstance.getMap("annotations");
+                    IMap<String,Annotation> annotationMap = hazelcastInstance.getMap("annotations");
 
                     String docId = docKey(annotation);
                     if (annotationMap.putIfAbsent(docId, annotation).equals(annotation)) {
