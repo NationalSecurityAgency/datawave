@@ -1,5 +1,8 @@
 package datawave.next;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.util.Set;
 
 import org.apache.accumulo.core.data.Key;
@@ -10,12 +13,17 @@ import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import datawave.query.exceptions.DatawaveFatalQueryException;
+
 public class DocIdIteratorVisitorTest extends FieldIndexDataTestUtil {
+
+    /** more hits than the visitor's result check interval, so a scan with a time limit reports a partial result */
+    private static final int HITS_PAST_TIMEOUT_CHECK = 600;
 
     private String query;
     private final Range range = new Range(row);
 
-    private final Set<String> indexedFields = Set.of("FIELD_A", "FIELD_B", "FIELD_C");
+    private final Set<String> indexedFields = Set.of("FIELD_A", "FIELD_B", "FIELD_C", "FIELD_D");
 
     @BeforeEach
     public void setup() {
@@ -185,8 +193,8 @@ public class DocIdIteratorVisitorTest extends FieldIndexDataTestUtil {
     }
 
     /**
-     * A non-executable de-negated term (e.g. a non-indexed field) is presumed to never match, so its negation is presumed always true and the candidate set is
-     * left unrestricted.
+     * A non-executable de-negated term (e.g. a non-indexed field) leaves its disjunct undecided, so the union could be true for any candidate and the candidate
+     * set is left unrestricted.
      */
     @Test
     public void testAnchorWithUnionOfFullyNegatedTermsOneNonExecutable() {
@@ -242,8 +250,8 @@ public class DocIdIteratorVisitorTest extends FieldIndexDataTestUtil {
     }
 
     /**
-     * A non-executable positive disjunct contributes nothing to the union, same as a non-executable member of any other union, so the remaining negated
-     * disjunct still restricts the candidate set.
+     * A non-executable positive disjunct is undecided rather than false, so the union could be true for any candidate and the candidate set is left
+     * unrestricted. Removing the candidates matching FIELD_C would drop any document that satisfies only the disjunct the field index cannot see.
      */
     @Test
     public void testAnchorWithMixedUnionNonExecutablePositiveTerm() {
@@ -253,7 +261,38 @@ public class DocIdIteratorVisitorTest extends FieldIndexDataTestUtil {
 
         withQuery("FIELD_A == 'value-a' && (NON_INDEXED == 'value-z' || !(FIELD_C == 'value-c'))");
         drive();
-        assertResultSize(7);
+        assertResultSize(10);
+    }
+
+    /**
+     * A positive disjunct whose scan times out leaves the union undecided. Its missing hits would otherwise enlarge the complement, removing candidates the
+     * query can match: here FIELD_B covers every candidate, so nothing should be removed at all.
+     */
+    @Test
+    public void testAnchorWithMixedUnionPositiveTermTimesOut() {
+        writeRange("FIELD_A", "value-a", 1, HITS_PAST_TIMEOUT_CHECK);
+        writeRange("FIELD_B", "value-b", 1, HITS_PAST_TIMEOUT_CHECK);
+        writeRange("FIELD_C", "value-c", 550, 560);
+
+        withQuery("FIELD_A == 'value-a' && (FIELD_B == 'value-b' || !(FIELD_C == 'value-c'))");
+        driveWithScanTimeout(0L);
+        assertResultSize(HITS_PAST_TIMEOUT_CHECK);
+    }
+
+    /**
+     * A de-negated disjunct whose scan times out leaves the union undecided. A partial scan cannot narrow the complement -- {@link ScanResult#intersect} skips
+     * the intersection entirely -- so the complement stays too large and the remaining term removes candidates that match no disjunct's false condition.
+     */
+    @Test
+    public void testAnchorWithUnionOfFullyNegatedTermsFirstTermTimesOut() {
+        writeRange("FIELD_A", "value-a", 1, HITS_PAST_TIMEOUT_CHECK);
+        writeRange("FIELD_C", "value-c", 1, 520);
+        writeRange("FIELD_B", "value-b", 550, 560);
+
+        // no candidate matches both FIELD_C and FIELD_B, so no candidate has every disjunct false
+        withQuery("FIELD_A == 'value-a' && (!(FIELD_C == 'value-c') || !(FIELD_B == 'value-b'))");
+        driveWithScanTimeout(0L);
+        assertResultSize(HITS_PAST_TIMEOUT_CHECK);
     }
 
     /**
@@ -370,6 +409,286 @@ public class DocIdIteratorVisitorTest extends FieldIndexDataTestUtil {
         assertResultSize(10);
     }
 
+    /**
+     * A negated intersection whose terms are all non-executable restricts nothing. Returning the incoming context instead of null previously had the enclosing
+     * intersection subtract its own result from itself and find nothing.
+     */
+    @Test
+    public void testNegatedNonExecutableIntersectionLeavesIntersectionIntact() {
+        writeData("FIELD_A", "value-a", 10);
+        // NON_INDEXED_1 / NON_INDEXED_2 are deliberately absent from indexedFields
+        withQuery("FIELD_A == 'value-a' && !(NON_INDEXED_1 == 'value-b' && NON_INDEXED_2 == 'value-c')");
+        drive();
+        assertResultSize(10);
+    }
+
+    /**
+     * Companion to {@link #testNegatedNonExecutableIntersectionLeavesIntersectionIntact()} for a negated union carrying a negation of its own, which reaches
+     * the De Morgan path and used to hand back the candidate set as the matches to remove.
+     */
+    @Test
+    public void testNegatedMixedUnionLeavesIntersectionIntact() {
+        writeRange("FIELD_A", "value-a", 1, 10);
+        writeRange("FIELD_B", "value-b", 3, 5);
+        // NON_INDEXED is deliberately absent from indexedFields, leaving the negated disjunct undecided
+
+        withQuery("FIELD_A == 'value-a' && !(FIELD_B == 'value-b' || !(NON_INDEXED == 'value-z'))");
+        drive();
+        assertResultSize(10);
+    }
+
+    /**
+     * An undecided disjunct leaves a union unable to restrict anything, so the anchor's candidates all survive. Skipping the disjunct instead would intersect
+     * the anchor with the one union branch the field index can see, dropping any document that matches only the branch it cannot.
+     */
+    @Test
+    public void testAnchorWithUnionOfNonExecutableIntersection() {
+        writeRange("FIELD_A", "value-a", 1, 10);
+        writeRange("FIELD_B", "value-b", 3, 5);
+        // NON_INDEXED_1 / NON_INDEXED_2 are deliberately absent from indexedFields
+
+        withQuery("FIELD_A == 'value-a' && (FIELD_B == 'value-b' || (NON_INDEXED_1 == 'x' && NON_INDEXED_2 == 'y'))");
+        drive();
+        assertResultSize(10);
+    }
+
+    /**
+     * Companion to {@link #testAnchorWithUnionOfNonExecutableIntersection()} with the undecided disjunct first, which used to make the union adopt the anchor's
+     * own ScanResult and then union the second disjunct into it, adding uids the anchor never matched.
+     */
+    @Test
+    public void testAnchorWithUnionLeadingWithNonExecutableIntersection() {
+        // uid 5 is deliberately absent from the anchor but present in FIELD_B, and falls inside the anchor's key range
+        // so that the second disjunct's scan actually reaches it
+        writeIndices("FIELD_A", "value-a", 1, 2, 3, 4, 6, 7, 8, 9, 10);
+        writeIndices("FIELD_B", "value-b", 5);
+        // NON_INDEXED_1 / NON_INDEXED_2 are deliberately absent from indexedFields
+
+        withQuery("FIELD_A == 'value-a' && ((NON_INDEXED_1 == 'x' && NON_INDEXED_2 == 'y') || FIELD_B == 'value-b')");
+        drive();
+        assertResultSize(9);
+    }
+
+    /**
+     * A negated intersection nested in a union, which the visitor previously could not execute at all. {@code B || (!C && !D)} is false exactly where
+     * {@code !B && (C || D)} holds, so those documents come out of the anchor.
+     */
+    @Test
+    public void testAnchorWithUnionOfNegatedIntersection() {
+        writeRange("FIELD_A", "value-a", 1, 10);
+        writeRange("FIELD_B", "value-b", 1, 2);
+        writeRange("FIELD_C", "value-c", 3, 5);
+        writeRange("FIELD_D", "value-d", 5, 7);
+
+        withQuery("FIELD_A == 'value-a' && (FIELD_B == 'value-b' || (!(FIELD_C == 'value-c') && !(FIELD_D == 'value-d')))");
+        drive();
+        assertResultSize(5);
+    }
+
+    /**
+     * A union holding a term the field index cannot decide bounds nothing, wherever it sits. Both of these leave the anchor whole, where the union used to
+     * narrow the anchor to the one disjunct it could see when it appeared first, and not when it appeared second.
+     */
+    @Test
+    public void testUndecidedUnionBoundsNothingInEitherPosition() {
+        writeRange("FIELD_A", "value-a", 1, 10);
+        writeRange("FIELD_B", "value-b", 3, 5);
+        // NON_INDEXED is deliberately absent from indexedFields
+
+        withQuery("(FIELD_B == 'value-b' || NON_INDEXED == 'value-z') && FIELD_A == 'value-a'");
+        drive();
+        assertResultSize(10);
+
+        withQuery("FIELD_A == 'value-a' && (FIELD_B == 'value-b' || NON_INDEXED == 'value-z')");
+        drive();
+        assertResultSize(10);
+    }
+
+    /**
+     * A marker makes its source non-executable, so negating one restricts nothing and the anchor's candidates all survive. Returning the incoming context
+     * instead of null previously had the intersection subtract its own result from itself and find nothing.
+     */
+    @Test
+    public void testNegatedDelayedMarkerLeavesIntersectionIntact() {
+        writeData("FIELD_A", "value-a", 10);
+        withQuery("FIELD_A == 'value-a' && !(((_Delayed_ = true) && (NON_INDEXED == 'value-b')))");
+        drive();
+        assertResultSize(10);
+    }
+
+    /**
+     * Companion to {@link #testNegatedDelayedMarkerLeavesIntersectionIntact()} where the collapse would take a whole branch of a union with it.
+     */
+    @Test
+    public void testNegatedEvaluationOnlyMarkerLeavesNestedIntersectionIntact() {
+        writeData("FIELD_A", "value-a", 5);
+        writeData("FIELD_B", "value-b", 15);
+        withQuery("FIELD_A == 'value-a' || (FIELD_B == 'value-b' && !(((_Eval_ = true) && (NON_INDEXED =~ 'a.*'))))");
+        drive();
+        assertResultSize(15);
+    }
+
+    /**
+     * A union holding a term the field index cannot decide has no candidate set to report. Counting it as zero documents would be a silently wrong answer, so
+     * the scan fails instead.
+     */
+    @Test
+    public void testUndecidedTopLevelUnionIsRefused() {
+        writeData("FIELD_A", "value-a", 10);
+        // NON_INDEXED is deliberately absent from indexedFields
+        withQuery("FIELD_A == 'value-a' || NON_INDEXED == 'value-z'");
+        assertUnbounded();
+    }
+
+    /**
+     * Companion to {@link #testUndecidedTopLevelUnionIsRefused()}: the field index can find the documents a term matches, never the documents it does not, so a
+     * negation with nothing to be subtracted from is refused.
+     */
+    @Test
+    public void testBareNegationIsRefused() {
+        writeData("FIELD_A", "value-a", 10);
+        withQuery("!(FIELD_A == 'value-a')");
+        assertUnbounded();
+    }
+
+    /**
+     * The planner rewrites a negated equality before the query reaches the field index, so finding one here means the tree was never planned.
+     */
+    @Test
+    public void testNotEqualsIsRejected() {
+        writeData("FIELD_A", "value-a", 10);
+        withQuery("FIELD_A == 'value-a' && FIELD_B != 'value-b'");
+        assertUnrewrittenNegation();
+    }
+
+    /**
+     * Companion to {@link #testNotEqualsIsRejected()} for a negated regex.
+     */
+    @Test
+    public void testNotRegexIsRejected() {
+        writeData("FIELD_A", "value-a", 10);
+        withQuery("FIELD_A == 'value-a' && FIELD_B !~ 'value.*'");
+        assertUnrewrittenNegation();
+    }
+
+    /**
+     * A range operator only reaches the field index unwrapped when it is open ended, and an open ended range cannot be scanned. Deciding it anyway previously
+     * had the intersection subtract its own result from itself and return nothing.
+     */
+    @Test
+    public void testNegatedOpenEndedRangeLeavesIntersectionIntact() {
+        writeData("FIELD_A", "value-a", 10);
+        writeData("FIELD_B", "value-b", 15);
+        withQuery("FIELD_A == 'value-a' && !(FIELD_B >= 'value-b')");
+        drive();
+        assertResultSize(10);
+    }
+
+    /**
+     * Companion to {@link #testNegatedOpenEndedRangeLeavesIntersectionIntact()} covering the remaining range operators.
+     */
+    @Test
+    public void testEveryNegatedOpenEndedRangeLeavesIntersectionIntact() {
+        writeData("FIELD_A", "value-a", 10);
+        writeData("FIELD_B", "value-b", 15);
+
+        for (String operator : Set.of(">", ">=", "<", "<=")) {
+            withQuery("FIELD_A == 'value-a' && !(FIELD_B " + operator + " 'value-b')");
+            drive();
+            assertResultSize(10);
+        }
+    }
+
+    /**
+     * An undecided term narrows nothing, so the anchor's candidates all survive and the extra documents are discarded by evaluating them.
+     */
+    @Test
+    public void testOpenEndedRangeInIntersectionDoesNotNarrow() {
+        writeData("FIELD_A", "value-a", 10);
+        writeData("FIELD_B", "value-b", 5);
+        withQuery("FIELD_A == 'value-a' && FIELD_B >= 'value-b'");
+        drive();
+        assertResultSize(10);
+    }
+
+    /**
+     * An open ended range is undecided, and a union holding an undecided term bounds nothing.
+     */
+    @Test
+    public void testOpenEndedRangeInUnionIsRefused() {
+        writeData("FIELD_A", "value-a", 10);
+        writeData("FIELD_B", "value-b", 15);
+        withQuery("FIELD_A == 'value-a' || FIELD_B >= 'value-b'");
+        assertUnbounded();
+    }
+
+    /**
+     * A leniency marker only says how a missing field is evaluated, so unlike a delayed marker its source is still scanned and still narrows an intersection.
+     */
+    @Test
+    public void testLenientMarkerIsScanned() {
+        writeData("FIELD_A", "value-a", 10);
+        writeData("FIELD_B", "value-b", 5);
+        withQuery("FIELD_A == 'value-a' && ((_Lenient_ = true) && (FIELD_B == 'value-b'))");
+        drive();
+        assertResultSize(5);
+    }
+
+    /**
+     * Companion to {@link #testLenientMarkerIsScanned()} for the strict marker.
+     */
+    @Test
+    public void testStrictMarkerIsScanned() {
+        writeData("FIELD_A", "value-a", 10);
+        writeData("FIELD_B", "value-b", 5);
+        withQuery("FIELD_A == 'value-a' && ((_Strict_ = true) && (FIELD_B == 'value-b'))");
+        drive();
+        assertResultSize(5);
+    }
+
+    /**
+     * The query model wraps an expanded union in a leniency marker, so refusing the marker would fail a query the planner accepted.
+     */
+    @Test
+    public void testLenientModelExpansionIsBounded() {
+        writeData("FIELD_A", "value-a", 10);
+        writeData("FIELD_B", "value-a", 15);
+        withQuery("((_Lenient_ = true) && (FIELD_A == 'value-a' || FIELD_B == 'value-a'))");
+        drive();
+        assertResultSize(15);
+    }
+
+    /**
+     * Scanning a leniency marker's source does not make an unscannable source decidable, so the anchor's candidates all survive.
+     */
+    @Test
+    public void testLenientMarkerWithNonIndexedSourceStaysUndecided() {
+        writeData("FIELD_A", "value-a", 10);
+        withQuery("FIELD_A == 'value-a' && ((_Lenient_ = true) && (NON_INDEXED == 'value-b'))");
+        drive();
+        assertResultSize(10);
+    }
+
+    /**
+     * Companion to {@link #testLenientMarkerWithNonIndexedSourceStaysUndecided()}, negated, where deciding the marker would collapse the intersection.
+     */
+    @Test
+    public void testNegatedLenientMarkerLeavesIntersectionIntact() {
+        writeData("FIELD_A", "value-a", 10);
+        withQuery("FIELD_A == 'value-a' && !(((_Lenient_ = true) && (NON_INDEXED == 'value-b')))");
+        drive();
+        assertResultSize(10);
+    }
+
+    private void assertUnrewrittenNegation() {
+        ASTJexlScript script = parse(query);
+        SortedKeyValueIterator<Key,Value> source = createSource();
+
+        DocIdIteratorVisitor visitor = new DocIdIteratorVisitor(source, range, datatypes, null, indexedFields);
+        DatawaveFatalQueryException e = assertThrows(DatawaveFatalQueryException.class, () -> visitor.getDocIds(script));
+        assertTrue(e.getMessage().contains("RewriteNegationsVisitor"), e.getMessage());
+    }
+
     public void withQuery(String query) {
         this.query = query;
     }
@@ -381,8 +700,38 @@ public class DocIdIteratorVisitorTest extends FieldIndexDataTestUtil {
         ASTJexlScript script = parse(query);
         SortedKeyValueIterator<Key,Value> source = createSource();
 
-        Set<Key> ids = DocIdIteratorVisitor.getDocIds(script, range, source, datatypes, null, indexedFields);
-        results.addAll(ids);
+        DocIdIteratorVisitor visitor = new DocIdIteratorVisitor(source, range, datatypes, null, indexedFields);
+        results.addAll(visitor.getDocIds(script));
+    }
+
+    /**
+     * Asserts that the field index cannot bound the query, which is a failure rather than an empty result
+     */
+    protected void assertUnbounded() {
+        ASTJexlScript script = parse(query);
+        SortedKeyValueIterator<Key,Value> source = createSource();
+
+        DocIdIteratorVisitor visitor = new DocIdIteratorVisitor(source, range, datatypes, null, indexedFields);
+        DatawaveFatalQueryException e = assertThrows(DatawaveFatalQueryException.class, () -> visitor.getDocIds(script));
+        assertTrue(e.getMessage().contains("full table scan"), e.getMessage());
+    }
+
+    /**
+     * Drives the visitor with a scan time limit. Terms must be written with more hits than the visitor's result check interval for the limit to be reached, and
+     * a term scanned without an existing candidate set is never timed out, so only a term nested under an anchor reports a partial scan.
+     *
+     * @param maxScanTimeMillis
+     *            the scan time limit
+     */
+    protected void driveWithScanTimeout(long maxScanTimeMillis) {
+        results.clear();
+
+        ASTJexlScript script = parse(query);
+        SortedKeyValueIterator<Key,Value> source = createSource();
+
+        DocIdIteratorVisitor visitor = new DocIdIteratorVisitor(source, range, datatypes, null, indexedFields);
+        visitor.setMaxScanTimeMillis(maxScanTimeMillis);
+        results.addAll(visitor.getDocIds(script));
     }
 
     @Override
