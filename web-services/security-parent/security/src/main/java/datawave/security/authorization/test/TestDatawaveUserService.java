@@ -25,6 +25,8 @@ import javax.interceptor.Interceptor;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.deltaspike.core.api.exclude.Exclude;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
@@ -54,6 +56,8 @@ import datawave.webservice.util.NotEqualPropertyExpressionInterpreter;
 // Exclude this bean if the system property dw.security.use.testuserservice isn't defined to be true
 @Exclude(onExpression = "dw.security.use.testuserservice!=true", interpretedBy = NotEqualPropertyExpressionInterpreter.class)
 public class TestDatawaveUserService implements CachedDatawaveUserService {
+    private static final Logger log = LoggerFactory.getLogger(TestDatawaveUserService.class);
+
     private Map<SubjectIssuerDNPair,DatawaveUser> cannedUsers = new HashMap<>();
     private DatawaveUserService delegateService;
     private CachedDatawaveUserService delegateCachedService;
@@ -179,7 +183,16 @@ public class TestDatawaveUserService implements CachedDatawaveUserService {
             return;
 
         // Read in the Accumulo authorizations so we can trim what was supplied in the test file.
-        List<String> accumuloAuthorizations = readAccumuloAuthorizations();
+        // This bean is built during authentication, before a caller identity exists, so the secured
+        // connection factory can refuse the call. Trimming only applies to test users, so warn and
+        // carry on rather than failing every authentication attempt.
+        List<String> readAuths = null;
+        try {
+            readAuths = readAccumuloAuthorizations();
+        } catch (Exception e) {
+            log.warn("Unable to read Accumulo authorizations ({}); test user auths will not be trimmed", e.getMessage());
+        }
+        final List<String> accumuloAuthorizations = readAuths;
 
         // Use Jackson to de-serialize te JSON provided for each test user.
         ObjectMapper objectMapper = new ObjectMapper();
@@ -191,8 +204,10 @@ public class TestDatawaveUserService implements CachedDatawaveUserService {
                 // Strip off any authorizations not held by the designated Accumulo user.
                 ArrayList<String> auths = new ArrayList<>(user.getAuths());
                 HashMultimap<String,String> authMapping = HashMultimap.create(user.getRoleToAuthMapping());
-                auths.removeIf(a -> !accumuloAuthorizations.contains(a));
-                authMapping.entries().removeIf(e -> !accumuloAuthorizations.contains(e.getValue()));
+                if (accumuloAuthorizations != null) {
+                    auths.removeIf(a -> !accumuloAuthorizations.contains(a));
+                    authMapping.entries().removeIf(e -> !accumuloAuthorizations.contains(e.getValue()));
+                }
 
                 user = new DatawaveUser(user.getDn(), user.getUserType(), user.getEmail(), auths, user.getRoles(), authMapping, user.getCreationTime(),
                                 user.getExpirationTime());
