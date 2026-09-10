@@ -45,25 +45,6 @@ services:
       start_period: 15s
       retries: 30
 
-  file-lister:
-    profiles: [datawave-stack]
-    image: *stack-image
-    user: root
-    entrypoint: [ "/bin/bash", "-c" ]
-    command:
-      - |
-        hdfs version
-        java --version
-        echo "---- usr/local"
-        ls -L /usr/local
-        echo "---- usr/local/hadoop"
-        ls -RL /usr/local/hadoop
-        echo "---- /usr/lib/hadoop"
-        ls -RL /usr/lib/hadoop
-        echo "---- /usr/lib/zookeeper"
-        ls -RL /usr/lib/zookeeper
-    networks: [demo]
-
   hdfs-dn:
     profiles: [datawave-stack]
     image: *stack-image
