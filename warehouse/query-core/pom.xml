@@ -450,11 +450,14 @@
                             <goal>test-jar</goal>
                         </goals>
                         <configuration>
-                            <!-- These two register MetadataHelperCacheEvictor for every test class in this module. Modules that
-                                 consume the test-jar have no junit-platform.properties of their own, so shipping them would turn
-                                 on extension autodetection in those modules as well. -->
+                            <!-- Test resources at the root of the jar land at the root of a consumer's classpath,
+                                 where beanRefContext.xml, log4j.properties and the Spring context files silently
+                                 override the consumer's own, and junit-platform.properties turns on JUnit extension
+                                 autodetection in modules that never asked for it. Package-scoped fixtures, the test
+                                 framework's data files and testhadoop.config still ship. -->
                             <excludes>
-                                <exclude>junit-platform.properties</exclude>
+                                <exclude>*.xml</exclude>
+                                <exclude>*.properties</exclude>
                                 <exclude>META-INF/services/org.junit.jupiter.api.extension.Extension</exclude>
                             </excludes>
                         </configuration>
