@@ -80,7 +80,7 @@ fi
 # reader to the init script when the stack is simply down or the table is missing.
 GETSPLITS_ERR=$(mktemp)
 GETSPLITS_OUT=$(compose exec -T "${ACCUMULO_SERVICE}" \
-    accumulo shell -u "${ACCUMULO_USER}" -p "${ACCUMULO_PASSWORD}" -e "getsplits -t ${SHARD_TABLE}" 2>"${GETSPLITS_ERR}")
+    accumulo shell -c /opt/accumulo/conf/accumulo-client.properties -e "getsplits -t ${SHARD_TABLE}" 2>"${GETSPLITS_ERR}")
 GETSPLITS_STATUS=$?
 
 if [ "${GETSPLITS_STATUS}" -ne 0 ] ; then
