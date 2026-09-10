@@ -182,7 +182,11 @@ services:
       accumulo-manager:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "bash -c '</dev/tcp/localhost/9997'"]
+      # Accumulo 4 changed tserver.port.client from 9997 to the range 9800-9899
+      # (core Property.java: TSERV_CLIENTPORT default "9800-9899"). Probing 9997
+      # fails forever against a perfectly healthy tserver, which then blocks
+      # ingest/query/webservice/metrics from ever starting.
+      test: ["CMD-SHELL", "for p in $$(seq 9800 9810); do bash -c \"</dev/tcp/localhost/$$p\" 2>/dev/null && exit 0; done; exit 1"]
       interval: 3s
       timeout: 3s
       retries: 30
