@@ -65,7 +65,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
     private AccumuloConnectionFactory.Priority connectionPriority = null;
     private transient QueryLogic<?> logic = null;
     private Query settings = null;
-    private int currentPageCount = 0;
+    private volatile int currentPageCount = 0;
     private long numResults = 0;
     private volatile AtomicLong lastPageNumber = new AtomicLong(0);
     private volatile transient TransformIterator iter = null;
@@ -507,6 +507,8 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         long currentPageBytes = 0;
         int maxPageSize = Math.min(this.settings.getPagesize(), this.logic.getMaxPageSize());
 
+        int returnPageCount = 0;
+
         try {
             addNDC();
 
@@ -657,6 +659,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             throw e;
         } finally {
             synchronized (forcedReturn) {
+                returnPageCount = currentPageCount;
                 currentPageCount = 0;
                 forcedReturn.set(false);
             }
@@ -679,7 +682,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             // we have results!
 
             // we also indicate whether we returned less than the requested page size in the response
-            ResultsPage resultsPage = new ResultsPage(resultList, ((hasNext.get() > 0 && numResults < this.maxResults && currentPageCount < maxPageSize)
+            ResultsPage resultsPage = new ResultsPage(resultList, ((hasNext.get() > 0 && numResults < this.maxResults && returnPageCount < maxPageSize)
                             || hitIntermediateResult || hitShortCircuitForLongRunningQuery) ? ResultsPage.Status.PARTIAL : ResultsPage.Status.COMPLETE);
 
             return resultsPage;
