@@ -17,6 +17,7 @@ import java.util.TreeMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.accumulo.access.AccessExpression;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
@@ -36,6 +37,7 @@ import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Sets;
 
+import datawave.marking.AccessExpressionUtil;
 import datawave.marking.MarkingFunctions;
 import datawave.marking.Markings;
 import datawave.query.Constants;
@@ -77,6 +79,7 @@ public class Document implements Serializable, AttributeBagMetadata.AttributesGe
     private AttributeBagMetadata metadata;
     private boolean toKeep;
     private TimingMetadata timingMetadata;
+    protected MarkingFunctions<?> markingFunctions;
 
     /**
      * should sizes of the documents be tracked
@@ -89,6 +92,13 @@ public class Document implements Serializable, AttributeBagMetadata.AttributesGe
     private boolean intermediateResult;
 
     private static final long ONE_DAY_MS = 1000L * 60 * 60 * 24;
+
+    public MarkingFunctions<?> getMarkingFunctions() {
+        if (null == markingFunctions) {
+            markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
+        }
+        return markingFunctions;
+    }
 
     public Markings<?> getMarkings() {
         try {
@@ -159,6 +169,15 @@ public class Document implements Serializable, AttributeBagMetadata.AttributesGe
 
     public void setTimestamp(long ts) {
         metadata.setTimestamp(ts);
+    }
+
+    /**
+     * Get the access expression for this attribute, converted from the column visibility.
+     *
+     * @return the access expression
+     */
+    public AccessExpression getAccessExpression() {
+        return AccessExpressionUtil.toAccessExpression(getColumnVisibility());
     }
 
     @Override
@@ -932,6 +951,21 @@ public class Document implements Serializable, AttributeBagMetadata.AttributesGe
         return attr;
     }
 
+    public Document copy() {
+        Document d = new Document(this.getMetadata(), this.isToKeep(), trackSizes);
+
+        // _count will be set via put operations
+        Set<Entry<String,Attribute<? extends Comparable<?>>>> entries = this._getDictionary().entrySet();
+        for (Entry<String,Attribute<? extends Comparable<?>>> entry : entries) {
+            d.put(entry.getKey(), (Attribute<?>) entry.getValue().copy());
+        }
+
+        d.setIntermediateResult(isIntermediateResult());
+        d.setTimingMetadata(getTimingMetadata());
+
+        return d;
+    }
+
     public void setIntermediateResult(boolean intermediateResult) {
         this.intermediateResult = intermediateResult;
     }
@@ -955,4 +989,5 @@ public class Document implements Serializable, AttributeBagMetadata.AttributesGe
     public boolean hasTimingMetadata() {
         return this.timingMetadata != null;
     }
+
 }

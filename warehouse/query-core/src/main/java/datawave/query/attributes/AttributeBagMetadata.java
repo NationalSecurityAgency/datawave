@@ -9,16 +9,14 @@ import org.apache.commons.lang.mutable.MutableLong;
 import org.apache.log4j.Logger;
 
 import datawave.marking.MarkingFunctions;
-import datawave.marking.MarkingFunctionsFactory;
 
 public class AttributeBagMetadata extends AttributeMetadata implements Serializable {
     private static final long serialVersionUID = -5961455715747661898L;
-    private static final Logger log = Logger.getLogger(AttributeBag.class);
+    private static final Logger log = Logger.getLogger(AttributeBagMetadata.class);
     protected long shardTimestamp = Long.MAX_VALUE;
     protected boolean validMetadata = false;
     protected MarkingFunctions<?> markingFunctions;
 
-    private static final Logger log = Logger.getLogger(AttributeBagMetadata.class);
     private static final long ONE_DAY_MS = 1000l * 60 * 60 * 24;
 
     public interface AttributesGetter {
@@ -36,14 +34,16 @@ public class AttributeBagMetadata extends AttributeMetadata implements Serializa
 
     private final AttributesGetter attributes;
 
-    private boolean validMetadata = false;
-
     public AttributeBagMetadata(AttributesGetter attributes) {
         this.attributes = attributes;
     }
 
     public boolean isNotValidMetadata() {
         return (!this.validMetadata || !isMetadataSet());
+    }
+
+    public boolean isValidMetadata() {
+        return !isNotValidMetadata();
     }
 
     public void invalidateMetadata() {
@@ -88,7 +88,7 @@ public class AttributeBagMetadata extends AttributeMetadata implements Serializa
         setValidMetadata(true);
     }
 
-    protected ColumnVisibility combineAndSetColumnVisibilities(Collection<Attribute<? extends Comparable<?>>> attributes) throws Exception {
+    protected ColumnVisibility combineAndSetColumnVisibilities(Collection<Attribute<? extends Comparable<?>>> attributes) throws MarkingFunctions.Exception {
         Collection<ColumnVisibility> visibilities = attributes.stream().map(Attribute::getColumnVisibility).collect(Collectors.toList());
         return getMarkingFunctions().combineVisibilities(visibilities);
     }
