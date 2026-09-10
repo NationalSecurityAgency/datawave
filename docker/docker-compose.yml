@@ -118,7 +118,7 @@ services:
     image: *stack-image
     user: zookeeper
     entrypoint: ["/opt/zookeeper/bin/zkServer.sh"]
-    command: ["--config", "/etc/zookeeper/conf.dist", "start-foreground"]
+    command: ["--config", "/opt/zookeeper/conf", "start-foreground"]
     environment:
       - ZOOBINDIR=/opt/zookeeper/bin
       - ZOO_LOG_DIR=/var/log/zookeeper
