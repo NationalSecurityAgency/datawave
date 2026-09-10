@@ -1,9 +1,11 @@
 package datawave.ingest.mapreduce.partition;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -18,17 +20,17 @@ import org.apache.commons.lang.time.DateUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Partitioner;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import datawave.ingest.mapreduce.handler.shard.ShardIdFactory;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
+import datawave.ingest.mapreduce.job.SplitsCacheFactory;
+import datawave.ingest.mapreduce.job.SplitsConstants;
 import datawave.ingest.mapreduce.job.TableSplitsCache;
 import datawave.table.constants.TableName;
 import datawave.util.time.DateHelper;
@@ -40,36 +42,39 @@ public class BalancedShardPartitionerTest {
     private static final int NUM_REDUCE_TASKS = 270;
     private static Configuration conf;
 
-    @Rule
-    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @TempDir
+    public Path temporaryFolder;
 
     private BalancedShardPartitioner partitioner = null;
 
     private ShardIdFactory shardIdFactory = new ShardIdFactory(conf);
 
-    @BeforeClass
+    @BeforeAll
     public static void defineShardLocationsFile() throws IOException {
         conf = new Configuration();
         conf.setInt(ShardIdFactory.NUM_SHARDS, SHARDS_PER_DAY);
     }
 
-    @Before
+    @BeforeEach
     public void setUp() throws IOException {
         conf = new Configuration();
-        TableSplitsCache.getCurrentCache(conf).clear();
+        TableSplitsCache.clear();
+        SplitsCacheFactory.clearInstance();
 
         conf.setInt(ShardIdFactory.NUM_SHARDS, SHARDS_PER_DAY);
         partitioner = new BalancedShardPartitioner();
         // gotta load this every test, or using different values bleeds into other tests
-        new TestShardGenerator(conf, temporaryFolder.newFolder(), NUM_DAYS, SHARDS_PER_DAY, TOTAL_TSERVERS, TableName.SHARD);
+        new TestShardGenerator(conf, Files.createDirectory(temporaryFolder.resolve("root")).toFile(), NUM_DAYS, SHARDS_PER_DAY, TOTAL_TSERVERS,
+                        TableName.SHARD);
         conf.setBoolean(TableSplitsCache.REFRESH_SPLITS, false);
         conf.set(ShardedDataTypeHandler.SHARDED_TNAMES, "shard");
+
         shardIdFactory = new ShardIdFactory(conf);
         partitioner.setConf(conf);
 
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         partitioner = null;
         conf.unset(BalancedShardPartitioner.MISSING_SHARD_STRATEGY_PROP);
@@ -85,11 +90,17 @@ public class BalancedShardPartitionerTest {
     @Test
     public void testTwoTablesAreOffsetted() throws Exception {
         // create another split files for this test that contains two tables. register the tables names for both shard and error shard
-        new TestShardGenerator(conf, temporaryFolder.newFolder(), NUM_DAYS, SHARDS_PER_DAY, TOTAL_TSERVERS, TableName.ERROR_SHARD, TableName.SHARD);
+        Path twoTablesDir = Files.createDirectory(temporaryFolder.resolve("test-two-tables"));
+        new TestShardGenerator(conf, twoTablesDir.toFile(), NUM_DAYS, SHARDS_PER_DAY, TOTAL_TSERVERS, TableName.SHARD, TableName.ERROR_SHARD);
         conf.set(ShardedDataTypeHandler.SHARDED_TNAMES, "errorShard,shard");
+        conf.set("datawave.ingest.splits.cache.dir", twoTablesDir.toString());
+        conf.set(SplitsConstants.SPLITS_CACHE_FILE, "all-splits.txt");
+
+        TableSplitsCache.clear();
+        SplitsCacheFactory.clearInstance();
+        conf.setBoolean(TableSplitsCache.REFRESH_SPLITS, true);
 
         partitioner.setConf(conf);
-
         // For a shard from today, we can assume that they're well balanced.
         // If offsetting is working, they will not go to the same partitions
         String today = formatDay(0);
@@ -103,8 +114,8 @@ public class BalancedShardPartitionerTest {
     private void verifyOffsetGroup(int group, int partitionId, String date) {
         int numShards = shardIdFactory.getNumShards(date);
 
-        Assert.assertTrue("partitionId " + partitionId + " is not >= " + (numShards * group), partitionId >= numShards * group);
-        Assert.assertTrue("partitionId " + partitionId + " is not < " + (numShards * (group + 1)), partitionId < numShards * (group + 1));
+        assertTrue(partitionId >= numShards * group, "partitionId " + partitionId + " is not >= " + (numShards * group));
+        assertTrue(partitionId < numShards * (group + 1), "partitionId " + partitionId + " is not < " + (numShards * (group + 1)));
     }
 
     @Test
@@ -145,7 +156,7 @@ public class BalancedShardPartitionerTest {
         // See issues #45
         String tableName = "shard2";
 
-        simulateDifferentNumberShardsPerDay("collapse", tableName);
+        simulateDifferentNumberShardsPerDay(BalancedShardPartitioner.MissingShardStrategy.COLLAPSE.name(), tableName);
 
         // 1 day ago should get SHARDS_PER_DAY partitions
         assertPartitionsForDay(partitioner, tableName, 1, SHARDS_PER_DAY);
@@ -184,7 +195,7 @@ public class BalancedShardPartitionerTest {
         // hashing is the default implementation, so null is passed in
         String tableName = "shard3";
 
-        simulateDifferentNumberShardsPerDay(null, tableName);
+        simulateDifferentNumberShardsPerDay(BalancedShardPartitioner.MissingShardStrategy.HASH.name(), tableName);
 
         // 1 day ago should get SHARDS_PER_DAY partitions
         assertPartitionsForDay(partitioner, tableName, 1, SHARDS_PER_DAY);
@@ -198,7 +209,7 @@ public class BalancedShardPartitionerTest {
     public void testDifferentNumberShardsPerDayCollapseButOutsideRange() throws IOException {
         String tableName = "shard4";
 
-        simulateDifferentNumberShardsPerDay("collapse", tableName);
+        simulateDifferentNumberShardsPerDay(BalancedShardPartitioner.MissingShardStrategy.COLLAPSE.name(), tableName);
 
         String formattedDay = formatDay(3);
         String shardId = formattedDay + ("_" + (99999999)); // should go to first partition for 2 days ago
@@ -210,13 +221,9 @@ public class BalancedShardPartitionerTest {
     }
 
     private void simulateDifferentNumberShardsPerDay(String missingShardStrategy, String tableName) throws IOException {
-        // This emulates today, yesterday and the day before have SHARDS_PER_DAY splits and
-        // 3 days ago and 4 days ago only have 2 splits, _0 and _1.
-
         SortedMap<Text,String> locations = new TreeMap<>();
         long now = System.currentTimeMillis();
         int tserverId = 1;
-        Text prevEndRow = new Text();
         for (int daysAgo = 0; daysAgo <= 2; daysAgo++) {
             String day = DateHelper.format(now - (daysAgo * DateUtils.MILLIS_PER_DAY));
             for (int currShard = 0; currShard < SHARDS_PER_DAY; currShard++) {
@@ -229,8 +236,19 @@ public class BalancedShardPartitionerTest {
                 locations.put(new Text(day + "_" + currShard), Integer.toString(tserverId++));
             }
         }
-        new TestShardGenerator(conf, temporaryFolder.newFolder(), locations, tableName);
+
+        Path simulatedDiffDir = Files.createDirectory(temporaryFolder.resolve("simulated-diff"));
+        new TestShardGenerator(conf, simulatedDiffDir.toFile(), locations, tableName);
         conf.set(ShardedDataTypeHandler.SHARDED_TNAMES, tableName);
+        conf.set("datawave.ingest.splits.cache.dir", simulatedDiffDir.toString());
+        conf.set(SplitsConstants.SPLITS_CACHE_FILE, "all-splits.txt");
+        conf.set(BalancedShardPartitioner.MISSING_SHARD_STRATEGY_PROP, missingShardStrategy);
+
+        // Clear stale cache and force a reload
+        TableSplitsCache.clear();
+        SplitsCacheFactory.clearInstance();
+        conf.setBoolean(TableSplitsCache.REFRESH_SPLITS, true);
+
         partitioner.setConf(conf);
         if (missingShardStrategy != null) {
             conf.set(BalancedShardPartitioner.MISSING_SHARD_STRATEGY_PROP, missingShardStrategy);
@@ -271,7 +289,7 @@ public class BalancedShardPartitionerTest {
             partitionsUsed.add(partition);
         }
         // 9 is what we get by hashing the shardId
-        Assert.assertTrue("For " + daysBack + " days ago, we had a different number of collisions: " + collisions, expectedCollisions >= collisions);
+        assertTrue(expectedCollisions >= collisions, "For " + daysBack + " days ago, we had a different number of collisions: " + collisions);
         // this
         // has
         // more to

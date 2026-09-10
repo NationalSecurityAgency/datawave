@@ -21,6 +21,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import datawave.ingest.mapreduce.job.BulkIngestKey;
+import datawave.ingest.mapreduce.job.SplitsCache;
+import datawave.ingest.mapreduce.job.SplitsConstants;
 import datawave.ingest.mapreduce.job.TableSplitsCache;
 
 public class SortedTabletLocationPartitionerTest {
@@ -37,10 +39,11 @@ public class SortedTabletLocationPartitionerTest {
         configuration = mockJob.getConfiguration();
         configuration.set("job.table.names", TABLE_NAME);
         configuration.setBoolean(TableSplitsCache.REFRESH_SPLITS, false);
-        configuration.set(TableSplitsCache.SPLITS_CACHE_DIR,
+        configuration.set(SplitsConstants.SPLITS_CACHE_DIR,
                         createUrl(splitsFileName).getPath().substring(0, createUrl(splitsFileName).getPath().lastIndexOf('/')));
-        configuration.set(TableSplitsCache.SPLITS_CACHE_FILE, splitsFileName);
+        configuration.set(SplitsConstants.SPLITS_CACHE_FILE, splitsFileName);
 
+        SplitsCache cache = SplitsCache.getInstance(configuration);
         TableSplitsCache.getCurrentCache(configuration);
 
     }
@@ -72,7 +75,7 @@ public class SortedTabletLocationPartitionerTest {
         int numPartitions = 581;
 
         SortedTabletLocationPartitioner partitioner = new SortedTabletLocationPartitioner();
-        partitioner.setConf(new Configuration());
+        partitioner.setConf(configuration);
 
         // first split is a, last is z
         for (int i = 0; i < 26; i++) {
@@ -93,7 +96,7 @@ public class SortedTabletLocationPartitionerTest {
         int numPartitions = 8;
 
         SortedTabletLocationPartitioner partitioner = new SortedTabletLocationPartitioner();
-        partitioner.setConf(new Configuration());
+        partitioner.setConf(configuration);
 
         Map<Integer,Integer> numberTimesPartitionSeen = new TreeMap<>();
 
@@ -118,7 +121,7 @@ public class SortedTabletLocationPartitionerTest {
         int numPartitions = 4;
 
         SortedTabletLocationPartitioner partitioner = new SortedTabletLocationPartitioner();
-        partitioner.setConf(new Configuration());
+        partitioner.setConf(configuration);
 
         Map<Integer,Integer> numberTimesPartitionSeen = new TreeMap<>();
 
@@ -151,7 +154,7 @@ public class SortedTabletLocationPartitionerTest {
         int numPartitions = 10;
 
         SortedTabletLocationPartitioner partitioner = new SortedTabletLocationPartitioner();
-        partitioner.setConf(new Configuration());
+        partitioner.setConf(configuration);
 
         Map<Integer,Integer> numberTimesPartitionSeen = new TreeMap<>();
 
