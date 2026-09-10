@@ -53,26 +53,24 @@ public class AnnotationUtils {
      * @return the modified annotation with identifiers injected.
      */
     public static Annotation injectAllHashes(Annotation annotation) {
-        // Clear segments to make way for normalized segment list
-        Annotation.Builder updatedAnnotationBuilder = annotation.toBuilder().clearSegments();
-
-        // Sorts segments in same order produced by the Accumulo segment column qualifier natural sort order.
+        // Clear the existing segments, inject all hashes into each segment, and update the annotation with the new segments.
+        // instances back to the list.
         // @formatter:off
+        Annotation.Builder updatedAnnotationBuilder = annotation.toBuilder().clearSegments();
         annotation.getSegmentsList().stream()
                 .map(AnnotationUtils::injectAllHashes)
                 .forEach(updatedAnnotationBuilder::addSegments);
         // @formatter:on
 
-        // if an annotation source is present, assign the hashes and ids and update the annotation.
+        // If an annotation source is present, assign the hashes and ids and update the annotation.
         if (updatedAnnotationBuilder.hasSource()) {
             AnnotationSource baseSource = updatedAnnotationBuilder.getSource();
-            AnnotationSource updatedSource = AnnotationUtils.injectAllHashes(baseSource);
+            AnnotationSource updatedSource = injectAllHashes(baseSource);
             updatedAnnotationBuilder.clearSource().setSource(updatedSource);
         }
 
-        // Before computing the annotation id, injectAnnotationHash sorts the segment list into segment hash order
-        // to matches the order used in Accumulo to store segments.
-        return AnnotationUtils.injectAnnotationHash(updatedAnnotationBuilder.build());
+        // Before calculating and injecting the annotation id, injectAnnotationHash sorts the segment list so that hashes are consistent.
+        return injectAnnotationHash(updatedAnnotationBuilder.build());
     }
 
     /**
@@ -89,7 +87,7 @@ public class AnnotationUtils {
             updatedSegmentValues.add(hashedValue);
         }
         Segment segmentHashedValues = segment.toBuilder().clearValues().addAllValues(updatedSegmentValues).build();
-        return AnnotationUtils.injectSegmentHash(segmentHashedValues);
+        return injectSegmentHash(segmentHashedValues);
     }
 
     /**
@@ -122,14 +120,15 @@ public class AnnotationUtils {
      * Utility method to generate and inject the annotation hash into the annotation. As a side effect, this also sorts the annotation's segment list into
      * segment hash order (see {@link #injectSegmentHashAndSort(List)}). This is the same order used to sort segments in Accumulo. The returned annotation's
      * segment order, its computed hash, and its {@code equals()}/{@code hashCode()} behavior are all consistent regardless of how the annotation was assembled.
-     * This method is the single choke point relied on for that guarantee, so it is safe to call directly rather than only via
-     * {@link #injectAllHashes(Annotation)}.
+     * This method is the enforcement point relied on for that guarantee, but in general it is safer to call via {@link #injectAllHashes(Annotation)} to fully
+     * populate an annotation with fully hashed objects.
      *
      * @param annotation
      *            the annotation to inject.
      * @return the annotation with its segments sorted in segment hash order and its annotation id injected.
      */
     public static Annotation injectAnnotationHash(Annotation annotation) {
+        // Clear the existing segments, inject hashes into each segment, and sort the segments appropriately for annotation hashing.
         //@formatter:off
         Annotation sortedAnnotation = annotation.toBuilder()
                 .clearSegments()
@@ -145,7 +144,8 @@ public class AnnotationUtils {
      * the variable portion of the segment column qualifier (see {@code AccumuloAnnotationSerializer#serializeSegment}).
      * <p>
      * If a segment's hash has not yet been calculated (i.e. {@link Segment#getSegmentHash()} is blank), it is calculated as part of sorting; segments that
-     * already have a hash assigned are left as-is and are not redundantly recalculated.
+     * already have a hash assigned are left as-is and are not redundantly recalculated. Note that this only calculates the segment's hash used in sorting and
+     * does not compute hashes for independently managed child objects in the way that {@link #injectAllHashes(Segment)} does.
      * <p>
      * This is used both when computing an annotation's hash ({@link #calculateAnnotationHash(Annotation)}) and when materializing the segment list on a built
      * annotation ({@link #injectAnnotationHash(Annotation)}), so segment order is always consistent regardless of caller.
