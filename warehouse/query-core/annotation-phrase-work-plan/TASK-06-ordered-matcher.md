@@ -66,3 +66,10 @@ mvn -pl warehouse/query-core -am -DskipITs \
   -Dtest=OrderedAnnotationMatcherTest,StandaloneAnnotationMatcherTest,AnnotationHitsTransformerTest \
   -Dsurefire.failIfNoSpecifiedTests=false test
 ```
+
+## Completion notes
+
+- Added `OrderedAnnotationMatcher` with bounded, adjacent-boundary backtracking, whole-value regex matching, score filtering, flatten-boundary transitions, distinct value identity enforcement, and occurrence deduplication.
+- Added immutable `AnnotationPhraseOccurrence` containing the selected `ValuePosition` constituents; no response/factory integration was added.
+- Added focused tests covering order, ordinal distance versus timestamp gaps, alternatives, flattening and stored-order independence, score thresholds, repeated terms, overlap, identity deduplication, and existing standalone/transformer compatibility.
+- Validation passed: `mvn -pl warehouse/query-core -am -DskipITs -Dtest=OrderedAnnotationMatcherTest,StandaloneAnnotationMatcherTest,AnnotationHitsTransformerTest -Dsurefire.failIfNoSpecifiedTests=false test` (90 tests, 0 failures, 0 errors), followed by the same validation including `AllHitsFactoryTest` (107 tests, 0 failures, 0 errors). Checkstyle passed with only pre-existing repository import-control warnings.
