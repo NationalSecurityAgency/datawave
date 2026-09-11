@@ -54,7 +54,7 @@ public class JexlFunctionNamespaceRegistry {
             // from the application context
             Map<String,String> functionDefs = context.getBean(JEXL_FUNCTION_NAMESPACE_BEAN_REF, java.util.Map.class); // setRegisteredFunctions gets called with
                                                                                                                       // String,String map
-            Map<String,Object> funcs = new HashMap<>();
+            Map<String,Object> funcs = new HashMap<>(registeredFunctions);
             for (Map.Entry<String,String> entry : functionDefs.entrySet()) {
                 try {
 
