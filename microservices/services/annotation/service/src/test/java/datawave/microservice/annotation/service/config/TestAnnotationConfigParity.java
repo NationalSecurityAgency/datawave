@@ -2,10 +2,15 @@ package datawave.microservice.annotation.service.config;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
+import java.nio.file.Path;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.boot.env.YamlPropertySourceLoader;
+import org.springframework.core.env.PropertySource;
+import org.springframework.core.io.FileSystemResource;
 
 import datawave.query.config.annotation.AnnotationConfig;
 
@@ -19,6 +24,28 @@ import datawave.query.config.annotation.AnnotationConfig;
  * excluded from this parity check.
  */
 public class TestAnnotationConfigParity {
+
+    @Test
+    public void testPackagedBootstrapConfigurationLoads() throws Exception {
+        var propertySources = loadYaml("bootstrap", projectDirectory().resolve("src/main/resources/config/bootstrap.yml"));
+        assertEquals(4, propertySources.size(), "bootstrap.yml should contain its base, dev, consul, and nomessaging documents");
+    }
+
+    @Test
+    public void testExternalConfigurationParity() throws Exception {
+        PropertySource<?> serviceConfig = loadYaml("service-config", projectDirectory().resolve("src/main/config/annotation.yml")).get(0);
+        PropertySource<?> dockerConfig = loadYaml("docker-config", projectDirectory().resolve("../../../../docker/config/annotation.yml")).get(0);
+
+        assertEquals(serviceConfig.getProperty("spring.cloud.function.definition"), dockerConfig.getProperty("spring.cloud.function.definition"));
+        assertEquals(serviceConfig.getProperty("annotation.system-from"), dockerConfig.getProperty("annotation.system-from"));
+        assertEquals(serviceConfig.getProperty("annotation.writers.accumulo.enabled"), dockerConfig.getProperty("annotation.writers.accumulo.enabled"));
+        assertEquals(serviceConfig.getProperty("annotation.writers.accumulo.health.enabled"),
+                        dockerConfig.getProperty("annotation.writers.accumulo.health.enabled"));
+        assertNull(dockerConfig.getProperty("annotation.writers.accumulo.annotationTableName"),
+                        "the Accumulo writer uses truthmark table properties, not annotation read-table properties");
+        assertNull(dockerConfig.getProperty("annotation.writers.accumulo.annotationSourceTableName"),
+                        "the Accumulo writer uses truthmark source-table properties, not annotation read-table properties");
+    }
 
     @Test
     public void testAnnotationTableNameDefaultParity() {
@@ -66,5 +93,13 @@ public class TestAnnotationConfigParity {
         assertEquals(legacy.getMaskSourceMetadata(), microservice.getMaskSourceMetadata(),
                         "maskSourceMetadata default must match between legacy and microservice configs");
         assertEquals(List.of("visibility"), microservice.getMaskSourceMetadata(), "maskSourceMetadata should default to ['visibility']");
+    }
+
+    private static Path projectDirectory() {
+        return Path.of(System.getProperty("basedir")).toAbsolutePath().normalize();
+    }
+
+    private static List<PropertySource<?>> loadYaml(String name, Path path) throws Exception {
+        return new YamlPropertySourceLoader().load(name, new FileSystemResource(path));
     }
 }
