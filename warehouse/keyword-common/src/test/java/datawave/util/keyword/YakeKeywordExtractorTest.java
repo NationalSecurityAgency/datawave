@@ -5,6 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -142,6 +145,46 @@ public class YakeKeywordExtractorTest {
         keywords.entrySet().forEach(i -> log.info(i.toString()));
         assertEquals(3, keywords.size());
         assertEquals(EXPECTED_DEDUPED_NEWS_OUTPUT, keywords);
+    }
+
+    @Test
+    public void testDeduplicationStopsAtKeywordCount() {
+        AtomicInteger visited = new AtomicInteger();
+        Stream<TokenScore> candidates = Stream
+                        .of(new TokenScore("first keyword", 0.1), new TokenScore("second keyword", 0.2), new TokenScore("unexpected keyword", 0.3))
+                        .peek(candidate -> {
+                            if (visited.incrementAndGet() > 2) {
+                                throw new AssertionError("Consumed a candidate after reaching the keyword count");
+                            }
+                        });
+
+        List<TokenScore> selected = YakeKeywordExtractor.deduplicateCandidateTokens(candidates, 0.9, 2).collect(Collectors.toList());
+
+        assertEquals(2, selected.size());
+        assertEquals(2, visited.get());
+    }
+
+    @Test
+    public void testDeduplicationProcessesAllCandidatesWhenUnlimited() {
+        AtomicInteger visited = new AtomicInteger();
+        Stream<TokenScore> candidates = Stream
+                        .of(new TokenScore("first keyword", 0.1), new TokenScore("second keyword", 0.2), new TokenScore("third keyword", 0.3))
+                        .peek(candidate -> visited.incrementAndGet());
+
+        List<TokenScore> selected = YakeKeywordExtractor.deduplicateCandidateTokens(candidates, 0.9, 0).collect(Collectors.toList());
+
+        assertEquals(3, selected.size());
+        assertEquals(3, visited.get());
+    }
+
+    @Test
+    public void testDisabledDeduplicationStillHonorsKeywordCount() {
+        Stream<TokenScore> candidates = Stream.of(new TokenScore("first keyword", 0.1), new TokenScore("second keyword", 0.2),
+                        new TokenScore("third keyword", 0.3));
+
+        List<TokenScore> selected = YakeKeywordExtractor.deduplicateCandidateTokens(candidates, 0.0, 2).collect(Collectors.toList());
+
+        assertEquals(2, selected.size());
     }
 
     @Test

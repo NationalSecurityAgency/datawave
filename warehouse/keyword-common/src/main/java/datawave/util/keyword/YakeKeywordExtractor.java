@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -688,12 +689,9 @@ public class YakeKeywordExtractor {
 
         final Stream<TokenScore> sortedByScoreAscending = filteredStream.sorted(Comparator.comparing(TokenScore::getScore));
 
-        final Stream<TokenScore> deduplicated = deduplicateCandidateTokens(sortedByScoreAscending, maxSimilarityThreshold);
+        final Stream<TokenScore> selected = deduplicateCandidateTokens(sortedByScoreAscending, maxSimilarityThreshold, this.getKeywordCount());
 
-        // limit the number of keywords if a limit is set.
-        final Stream<TokenScore> limitedStream = this.getKeywordCount() > 0 ? deduplicated.limit(this.getKeywordCount()) : deduplicated;
-
-        return limitedStream.sorted(Comparator.comparing(TokenScore::getToken)) // by keyword ascending
+        return selected.sorted(Comparator.comparing(TokenScore::getToken)) // by keyword ascending
                         .collect(Collectors.toMap(TokenScore::getToken, TokenScore::getScore, Double::sum, LinkedHashMap::new));
     }
 
@@ -704,28 +702,25 @@ public class YakeKeywordExtractor {
      *            a stream of candidate keywords ordered by score ascending.
      * @param similarityThreshold
      *            items that have a larger similarity than this to an existing item in the collection will be dropped
+     * @param keywordCount
+     *            the maximum number of keywords to return. A value less than or equal to zero means unlimited.
      * @return a filtered stream of keywords.
      */
-    protected static Stream<TokenScore> deduplicateCandidateTokens(Stream<TokenScore> kwStream, double similarityThreshold) {
+    protected static Stream<TokenScore> deduplicateCandidateTokens(Stream<TokenScore> kwStream, double similarityThreshold, int keywordCount) {
         if (similarityThreshold <= 0.0) {
-            return kwStream;
-        }
-
-        final List<TokenScore> kwList = kwStream.collect(Collectors.toList());
-        if (kwList.size() <= 1) {
-            return kwList.stream();
+            return keywordCount > 0 ? kwStream.limit(keywordCount) : kwStream;
         }
 
         final SequenceMatcher sequenceMatcher = new SequenceMatcher();
         final List<TokenScore> keywords = new ArrayList<>();
-        keywords.add(kwList.get(0));
+        final Iterator<TokenScore> candidates = kwStream.iterator();
 
         boolean skip;
         TokenScore candidate;
         double ratio;
-        for (int i = 1; i < kwList.size(); i++) {
+        while ((keywordCount <= 0 || keywords.size() < keywordCount) && candidates.hasNext()) {
             skip = false;
-            candidate = kwList.get(i);
+            candidate = candidates.next();
             sequenceMatcher.setSequenceA(candidate.getToken());
 
             for (TokenScore keyword : keywords) {
