@@ -98,7 +98,7 @@ annotation:
   priority: 'NORMAL'
   enableInternalIdLookup: 'true'
   lookup:
-    datawave-query-host: "webservice:8443"
+    datawave-query-host: "quickstart:8443"
     datawave-response-classes:
       - "datawave.webservice.result.GenericResponse"
       - "datawave.webservice.result.VoidResponse"
@@ -112,7 +112,7 @@ annotation:
       health:
         enabled: true
       accumuloConfig:
-        zookeepers: '${accumulo.zookeepers}'
+        zookeepers: "${accumulo.zookeepers}"
         instanceName: '${accumulo.instanceName}'
         username: '${accumulo.username}'
         password: '${accumulo.password}'
@@ -191,7 +191,7 @@ logging:
     root: INFO
     datawave.microservice.annotation: DEBUG
     datawave.microservice.annotation.health.rabbit: TRACE
-    org.apache.zookeeper: INFO
+    org.apache.zookeeper: ERROR
     org.apache.accumulo: ERROR
-    org.springframework.messaging: INFO
-    org.springframework.amqp: INFO
+    org.springframework.messaging: DEBUG
+    org.springframework.amqp: DEBUG
