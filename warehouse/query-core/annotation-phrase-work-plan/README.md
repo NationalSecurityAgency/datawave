@@ -35,7 +35,7 @@ Extend `AnnotationHitsTransformer` from standalone keyword matching to structure
 - [x] [Task 02 — Explicit keyword parser](TASK-02-keyword-parser.md)
 - [x] [Task 03 — JEXL structured extraction](TASK-03-jexl-extractor.md)
 - [x] [Task 04 — Lucene extraction and alternative merging](TASK-04-lucene-extractor.md)
-- [ ] [Task 05 — Annotation position model and standalone matcher](TASK-05-position-model.md)
+- [x] [Task 05 — Annotation position model and standalone matcher](TASK-05-position-model.md)
 - [ ] [Task 06 — Ordered phrase matcher](TASK-06-ordered-matcher.md)
 - [ ] [Task 07 — Unordered adjacent/within matcher](TASK-07-unordered-matcher.md)
 - [ ] [Task 08 — PhraseHit and compatible AllHitsFactory extension](TASK-08-hit-factory.md)

@@ -5,13 +5,10 @@ import static datawave.query.QueryParameters.RETURN_FIELDS;
 
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -20,7 +17,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.annotation.Nullable;
@@ -347,7 +343,8 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
                 if (validTypes.contains(annotationType)) {
                     // this annotation supports allHits
                     TreeMap<SegmentBoundary,List<SegmentValue>> sortedSegments = sort(annotation.getSegmentsList());
-                    List<SegmentHit> orderedHits = search(sortedSegments, contextSize, minScore);
+                    AnnotationPositionView positionView = AnnotationPositionView.of(sortedSegments, termNormalizer);
+                    List<SegmentHit> orderedHits = search(positionView, contextSize, minScore);
                     try {
                         AllHits results = null;
                         if (!orderedHits.isEmpty()) {
@@ -564,80 +561,8 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
      * @return non-null List of hits ordered by the segmentBoundary they hit on. Hit order guaranteed to be ascending SegmentBoundary, no second order sort is
      *         applied. Hits for the same SegmentBoundary will appear in the order they were found.
      */
-    private List<SegmentHit> search(TreeMap<SegmentBoundary,List<SegmentValue>> sortedSegments, int contextSize, float minScore) {
-        // keep a list of recent boundaries for context
-        // window has to include context + 1 so that on the hit it still has the full window available
-        int maxWindow = contextSize + 1;
-        ArrayDeque<SegmentBoundary> window = new ArrayDeque<>(maxWindow);
-
-        final Iterator<SegmentBoundary> itr = sortedSegments.navigableKeySet().iterator();
-        // a list of SegmentHits which have their end context set
-        List<SegmentHit> finishedHits = new ArrayList<>();
-        // a map from the segmentIndex associated SegmentHits will have their end context set
-        Map<Integer,List<SegmentHit>> partialHits = new HashMap<>();
-        // track which segment index is currently being processed
-        int segmentIndex = 0;
-        // track the last segment boundary for end conditions
-        SegmentBoundary last = null;
-        while (itr.hasNext()) {
-            SegmentBoundary boundary = itr.next();
-
-            // update context window
-            if (window.size() == maxWindow) {
-                window.removeFirst();
-            }
-            window.add(boundary);
-
-            List<SegmentValue> values = sortedSegments.get(boundary);
-            for (int i = 0; i < values.size(); i++) {
-                SegmentValue segmentValue = values.get(i);
-                if (segmentValue.getScore() >= minScore && matchesSearchTerm(segmentValue.getValue())) {
-                    // partial hits index is the location in the window where the hit is complete
-                    List<SegmentHit> hits = partialHits.computeIfAbsent(segmentIndex + contextSize, ArrayList::new);
-                    hits.add(new SegmentHit(window.getFirst(), boundary, i));
-                }
-            }
-
-            // check partial hits for the end of their context window
-            if (partialHits.containsKey(segmentIndex)) {
-                List<SegmentHit> hits = partialHits.get(segmentIndex);
-                for (SegmentHit hit : hits) {
-                    hit.setContextEnd(boundary);
-                }
-                partialHits.remove(segmentIndex);
-                finishedHits.addAll(hits);
-            }
-
-            segmentIndex++;
-            last = boundary;
-        }
-
-        // close out any remaining hits with the last
-        for (List<SegmentHit> hits : partialHits.values()) {
-            for (SegmentHit hit : hits) {
-                hit.setContextEnd(last);
-            }
-            finishedHits.addAll(hits);
-        }
-
-        // clean up
-        partialHits.clear();
-        window.clear();
-
-        // finished hits now should include hits and boundaries
-        return finishedHits;
-    }
-
-    private boolean matchesSearchTerm(String term) {
-        for (Pattern searchPattern : searchHitTerms) {
-            String normalized = termNormalizer.normalize(term);
-            Matcher matcher = searchPattern.matcher(normalized);
-            if (matcher.matches()) {
-                return true;
-            }
-        }
-
-        return false;
+    private List<SegmentHit> search(AnnotationPositionView positionView, int contextSize, float minScore) {
+        return new StandaloneAnnotationMatcher(searchHitTerms).match(positionView, contextSize, minScore);
     }
 
     /**
