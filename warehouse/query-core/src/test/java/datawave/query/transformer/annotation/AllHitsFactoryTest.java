@@ -19,7 +19,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import datawave.annotation.protobuf.v1.BoundaryType;
 import datawave.annotation.protobuf.v1.SegmentBoundary;
 import datawave.annotation.protobuf.v1.SegmentValue;
-import datawave.query.transformer.annotation.AnnotationHitsTransformer.SegmentHit;
 import datawave.query.transformer.annotation.model.AllHit;
 import datawave.query.transformer.annotation.model.AllHits;
 import datawave.query.transformer.annotation.model.Term;

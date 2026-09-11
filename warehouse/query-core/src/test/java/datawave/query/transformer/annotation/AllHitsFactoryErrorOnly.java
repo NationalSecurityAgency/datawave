@@ -14,14 +14,14 @@ import datawave.query.transformer.annotation.model.AllHits;
 public class AllHitsFactoryErrorOnly extends AllHitsFactory {
 
     @Override
-    public AllHits create(String annotationId, List<AnnotationHitsTransformer.SegmentHit> orderedHits,
-                    TreeMap<SegmentBoundary,List<SegmentValue>> sortedSegments, TimeUnit timeUNit) throws AllHitsException {
+    public AllHits create(String annotationId, List<SegmentHit> orderedHits, TreeMap<SegmentBoundary,List<SegmentValue>> sortedSegments, TimeUnit timeUNit)
+                    throws AllHitsException {
         throw new AllHitsException("test failure");
     }
 
     @Override
-    public AllHits create(String annotationId, List<AnnotationHitsTransformer.SegmentHit> orderedHits,
-                    TreeMap<SegmentBoundary,List<SegmentValue>> sortedSegments) throws AllHitsException {
+    public AllHits create(String annotationId, List<SegmentHit> orderedHits, TreeMap<SegmentBoundary,List<SegmentValue>> sortedSegments)
+                    throws AllHitsException {
         throw new AllHitsException("test failure");
     }
 }

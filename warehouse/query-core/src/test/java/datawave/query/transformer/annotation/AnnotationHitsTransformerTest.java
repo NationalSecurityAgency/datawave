@@ -330,7 +330,7 @@ public class AnnotationHitsTransformerTest {
         when(annotationDao.getAnnotations("20260112_0", "test", "123.345.456")).thenReturn(annotations);
         withNormalizers();
 
-        AnnotationHitsTransformer.SegmentHit hit = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), S1.getBoundary(), 1);
+        SegmentHit hit = new SegmentHit(S1.getBoundary(), S1.getBoundary(), 1);
         hit.setContextEnd(S1.getBoundary());
         withHits("my-annotation", List.of(hit));
 
@@ -355,7 +355,7 @@ public class AnnotationHitsTransformerTest {
         when(annotationDao.getAnnotations("20260112_0", "test", "123.345.456")).thenReturn(annotations);
         withNormalizers();
 
-        AnnotationHitsTransformer.SegmentHit hit = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), S1.getBoundary(), 1);
+        SegmentHit hit = new SegmentHit(S1.getBoundary(), S1.getBoundary(), 1);
         hit.setContextEnd(S1.getBoundary());
         withHits("my-annotation", List.of(hit));
 
@@ -380,9 +380,9 @@ public class AnnotationHitsTransformerTest {
         when(annotationDao.getAnnotations("20260112_0", "test", "123.345.456")).thenReturn(annotations);
         withNormalizers();
 
-        AnnotationHitsTransformer.SegmentHit hit1 = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), S1.getBoundary(), 0);
+        SegmentHit hit1 = new SegmentHit(S1.getBoundary(), S1.getBoundary(), 0);
         hit1.setContextEnd(S1.getBoundary());
-        AnnotationHitsTransformer.SegmentHit hit2 = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), S1.getBoundary(), 1);
+        SegmentHit hit2 = new SegmentHit(S1.getBoundary(), S1.getBoundary(), 1);
         hit2.setContextEnd(S1.getBoundary());
         withHits("my-annotation", List.of(hit1, hit2));
 
@@ -407,9 +407,9 @@ public class AnnotationHitsTransformerTest {
         when(annotationDao.getAnnotations("20260112_0", "test", "123.345.456")).thenReturn(annotations);
         withNormalizers();
 
-        AnnotationHitsTransformer.SegmentHit hit1 = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), S1.getBoundary(), 0);
+        SegmentHit hit1 = new SegmentHit(S1.getBoundary(), S1.getBoundary(), 0);
         hit1.setContextEnd(S1.getBoundary());
-        AnnotationHitsTransformer.SegmentHit hit2 = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), S1.getBoundary(), 1);
+        SegmentHit hit2 = new SegmentHit(S1.getBoundary(), S1.getBoundary(), 1);
         hit2.setContextEnd(S1.getBoundary());
         withHits("my-annotation", List.of(hit1, hit2));
 
@@ -435,9 +435,9 @@ public class AnnotationHitsTransformerTest {
         when(annotationDao.getAnnotations("20260112_0", "test", "123.345.456")).thenReturn(annotations);
         withNormalizers();
 
-        AnnotationHitsTransformer.SegmentHit hit1 = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), S1.getBoundary(), 0);
+        SegmentHit hit1 = new SegmentHit(S1.getBoundary(), S1.getBoundary(), 0);
         hit1.setContextEnd(S1.getBoundary());
-        AnnotationHitsTransformer.SegmentHit hit2 = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), S1.getBoundary(), 1);
+        SegmentHit hit2 = new SegmentHit(S1.getBoundary(), S1.getBoundary(), 1);
         hit2.setContextEnd(S1.getBoundary());
         withHits("my-annotation", List.of(hit1, hit2));
 
@@ -524,7 +524,7 @@ public class AnnotationHitsTransformerTest {
         when(annotationDao.getAnnotations("20260112_0", "test", "123.345.456")).thenReturn(annotations);
         withNormalizers();
 
-        AnnotationHitsTransformer.SegmentHit hit1 = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), S1.getBoundary(), 1);
+        SegmentHit hit1 = new SegmentHit(S1.getBoundary(), S1.getBoundary(), 1);
         hit1.setContextEnd(S1.getBoundary());
         withHits("my-annotation", List.of(hit1));
 
@@ -552,7 +552,7 @@ public class AnnotationHitsTransformerTest {
         when(annotationDao.getAnnotations("20260112_0", "test", "123.345.456")).thenReturn(annotations);
         withNormalizers();
 
-        AnnotationHitsTransformer.SegmentHit hit1 = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), S1.getBoundary(), 0);
+        SegmentHit hit1 = new SegmentHit(S1.getBoundary(), S1.getBoundary(), 0);
         hit1.setContextEnd(S1.getBoundary());
         withHits("my-annotation", List.of(hit1));
 
@@ -579,7 +579,7 @@ public class AnnotationHitsTransformerTest {
         when(annotationDao.getAnnotations("20260112_0", "test", "123.345.456")).thenReturn(annotations);
         withNormalizers();
 
-        AnnotationHitsTransformer.SegmentHit hit1 = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), S1.getBoundary(), 0);
+        SegmentHit hit1 = new SegmentHit(S1.getBoundary(), S1.getBoundary(), 0);
         hit1.setContextEnd(S2.getBoundary());
         withHits("my-annotation", List.of(hit1));
 
@@ -605,7 +605,7 @@ public class AnnotationHitsTransformerTest {
         when(termExtractor.extract(query, normalizer)).thenReturn(queryTerms);
         when(annotationDao.getAnnotations("20260112_0", "test", "123.345.456")).thenReturn(annotations);
         withNormalizers();
-        AnnotationHitsTransformer.SegmentHit hit1 = new AnnotationHitsTransformer.SegmentHit(S6.getBoundary(), S7.getBoundary(), 0);
+        SegmentHit hit1 = new SegmentHit(S6.getBoundary(), S7.getBoundary(), 0);
         hit1.setContextEnd(S7.getBoundary());
         withHits("my-annotation", List.of(hit1));
 
@@ -632,7 +632,7 @@ public class AnnotationHitsTransformerTest {
         when(annotationDao.getAnnotations("20260112_0", "test", "123.345.456")).thenReturn(annotations);
         withNormalizers();
 
-        AnnotationHitsTransformer.SegmentHit hit1 = new AnnotationHitsTransformer.SegmentHit(S3.getBoundary(), S4.getBoundary(), 1);
+        SegmentHit hit1 = new SegmentHit(S3.getBoundary(), S4.getBoundary(), 1);
         hit1.setContextEnd(S5.getBoundary());
         withHits("my-annotation", List.of(hit1));
 
@@ -659,7 +659,7 @@ public class AnnotationHitsTransformerTest {
         when(annotationDao.getAnnotations("20260112_0", "test", "123.345.456")).thenReturn(annotations);
         withNormalizers();
 
-        AnnotationHitsTransformer.SegmentHit hit1 = new AnnotationHitsTransformer.SegmentHit(S3.getBoundary(), S6.getBoundary(), 0);
+        SegmentHit hit1 = new SegmentHit(S3.getBoundary(), S6.getBoundary(), 0);
         hit1.setContextEnd(S7.getBoundary());
         withHits("my-annotation", List.of(hit1));
 
@@ -686,7 +686,7 @@ public class AnnotationHitsTransformerTest {
         when(annotationDao.getAnnotations("20260112_0", "test", "123.345.456")).thenReturn(annotations);
         withNormalizers();
 
-        AnnotationHitsTransformer.SegmentHit hit1 = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), S7.getBoundary(), 0);
+        SegmentHit hit1 = new SegmentHit(S1.getBoundary(), S7.getBoundary(), 0);
         hit1.setContextEnd(S7.getBoundary());
         withHits("my-annotation", List.of(hit1));
 
@@ -715,7 +715,7 @@ public class AnnotationHitsTransformerTest {
         when(annotationDao.getAnnotations("20260112_0", "test", "123.345.456")).thenReturn(annotations);
         withNormalizers();
 
-        AnnotationHitsTransformer.SegmentHit hit1 = new AnnotationHitsTransformer.SegmentHit(S6.getBoundary(), S6.getBoundary(), 0);
+        SegmentHit hit1 = new SegmentHit(S6.getBoundary(), S6.getBoundary(), 0);
         hit1.setContextEnd(S6.getBoundary());
         withHits("my-annotation", List.of(hit1));
 
@@ -743,7 +743,7 @@ public class AnnotationHitsTransformerTest {
         when(annotationDao.getAnnotations("20260112_0", "test", "123.345.456")).thenReturn(annotations);
         withNormalizers();
 
-        AnnotationHitsTransformer.SegmentHit hit1 = new AnnotationHitsTransformer.SegmentHit(S6.getBoundary(), S6.getBoundary(), 0);
+        SegmentHit hit1 = new SegmentHit(S6.getBoundary(), S6.getBoundary(), 0);
         hit1.setContextEnd(S6.getBoundary());
         withHits("my-annotation", List.of(hit1));
 
@@ -769,9 +769,9 @@ public class AnnotationHitsTransformerTest {
         lenient().when(normalizer.normalize("bBb.*")).thenReturn("bbb.*");
         withNormalizers();
 
-        AnnotationHitsTransformer.SegmentHit hit1 = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), S1.getBoundary(), 0);
+        SegmentHit hit1 = new SegmentHit(S1.getBoundary(), S1.getBoundary(), 0);
         hit1.setContextEnd(S1.getBoundary());
-        AnnotationHitsTransformer.SegmentHit hit2 = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), S1.getBoundary(), 1);
+        SegmentHit hit2 = new SegmentHit(S1.getBoundary(), S1.getBoundary(), 1);
         hit2.setContextEnd(S1.getBoundary());
         withHits("my-annotation", List.of(hit1, hit2));
 
@@ -797,9 +797,9 @@ public class AnnotationHitsTransformerTest {
         lenient().when(normalizer.normalize("bBb.*")).thenReturn("bbb.*");
         withNormalizers();
 
-        AnnotationHitsTransformer.SegmentHit hit1 = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), S1.getBoundary(), 0);
+        SegmentHit hit1 = new SegmentHit(S1.getBoundary(), S1.getBoundary(), 0);
         hit1.setContextEnd(S1.getBoundary());
-        AnnotationHitsTransformer.SegmentHit hit2 = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), S1.getBoundary(), 1);
+        SegmentHit hit2 = new SegmentHit(S1.getBoundary(), S1.getBoundary(), 1);
         hit2.setContextEnd(S1.getBoundary());
         withHits("my-annotation", List.of(hit1, hit2));
 
@@ -825,9 +825,9 @@ public class AnnotationHitsTransformerTest {
         lenient().when(normalizer.normalize("bBb.*")).thenReturn("bbb.*");
         withNormalizers();
 
-        AnnotationHitsTransformer.SegmentHit hit1 = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), S1.getBoundary(), 0);
+        SegmentHit hit1 = new SegmentHit(S1.getBoundary(), S1.getBoundary(), 0);
         hit1.setContextEnd(S1.getBoundary());
-        AnnotationHitsTransformer.SegmentHit hit2 = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), S1.getBoundary(), 1);
+        SegmentHit hit2 = new SegmentHit(S1.getBoundary(), S1.getBoundary(), 1);
         hit2.setContextEnd(S1.getBoundary());
         withHits("my-annotation", List.of(hit1, hit2));
 
@@ -1371,7 +1371,7 @@ public class AnnotationHitsTransformerTest {
         when(annotationDao.getAnnotations("20260112_0", "test", "123.345.456")).thenReturn(annotations);
         withNormalizers();
 
-        AnnotationHitsTransformer.SegmentHit hit1 = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), S1.getBoundary(), 0);
+        SegmentHit hit1 = new SegmentHit(S1.getBoundary(), S1.getBoundary(), 0);
         hit1.setContextEnd(S1.getBoundary());
         withHits("my-annotation", List.of(hit1));
 
@@ -1411,7 +1411,7 @@ public class AnnotationHitsTransformerTest {
         shardQueryConfiguration.setOriginalJexlQuery(liveJexlQuery);
         when(termExtractor.extract(liveJexlQuery, normalizer)).thenReturn(queryTerms);
 
-        AnnotationHitsTransformer.SegmentHit hit1 = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), S1.getBoundary(), 1);
+        SegmentHit hit1 = new SegmentHit(S1.getBoundary(), S1.getBoundary(), 1);
         hit1.setContextEnd(S1.getBoundary());
         withHits("my-annotation", List.of(hit1));
 
@@ -1507,7 +1507,7 @@ public class AnnotationHitsTransformerTest {
         when(annotationDao.getAnnotations("20260112_0", "test", "123.345.456")).thenReturn(annotations);
         withNormalizers();
 
-        AnnotationHitsTransformer.SegmentHit hit = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), S1.getBoundary(), 1);
+        SegmentHit hit = new SegmentHit(S1.getBoundary(), S1.getBoundary(), 1);
         hit.setContextEnd(S1.getBoundary());
         withHits("my-annotation", List.of(hit));
 
@@ -1518,14 +1518,14 @@ public class AnnotationHitsTransformerTest {
         return objectMapper.writeValueAsString(allHits);
     }
 
-    private void withHits(String id, List<AnnotationHitsTransformer.SegmentHit> expectedHits) throws AllHitsException {
+    private void withHits(String id, List<SegmentHit> expectedHits) throws AllHitsException {
         when(allHitsFactory.create(any(), any(), any(), any())).thenAnswer(invocation -> {
-            List<AnnotationHitsTransformer.SegmentHit> hits = invocation.getArgument(1);
+            List<SegmentHit> hits = invocation.getArgument(1);
             assertEquals(expectedHits.size(), hits.size());
 
-            for (AnnotationHitsTransformer.SegmentHit hit : hits) {
+            for (SegmentHit hit : hits) {
                 boolean found = false;
-                for (AnnotationHitsTransformer.SegmentHit expectedHit : expectedHits) {
+                for (SegmentHit expectedHit : expectedHits) {
                     if (expectedHit.equals(hit)) {
                         found = true;
                         break;

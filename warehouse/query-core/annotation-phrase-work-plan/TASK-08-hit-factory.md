@@ -35,10 +35,8 @@ Tasks 01–07 validation gates passed.
    ```
 6. Preserve both existing `create(... List<SegmentHit> ...)` signatures.
 7. `createFromHits` should expand phrase constituents with phrase-wide context and delegate through the existing virtual `create` method so subclasses overriding it still intercept calls.
-8. Preserve response model and confidence/one-best behavior.
 9. Collapse identical output hits once, consistent with the existing `TreeSet<TermHit>`, even if a value is both standalone and a phrase constituent.
-
-Do not change `AllHits` JSON fields.
+10. Do not change `AllHits` JSON fields.
 
 ## Tests
 
@@ -63,8 +61,11 @@ Before Task 09:
 
 Suggested command:
 
-```bash
-mvn -pl warehouse/query-core -am -DskipITs \
-  -Dtest=AllHitsFactoryTest,AnnotationHitFactoryTest,OrderedAnnotationMatcherTest,UnorderedAnnotationMatcherTest \
-  -Dsurefire.failIfNoSpecifiedTests=false test
-```
+
+## Completion notes
+
+- Added the internal `AnnotationHit` contract, made `AnnotationHitsTransformer.SegmentHit` implement it, and added non-serialized `PhraseHit` with constituent hits, complete phrase span, mode/distance metadata, and boundary-counted phrase-wide context.
+- Added `AllHitsFactory.createFromHits` overloads using a distinct method name. They expand phrase constituents and delegate through the existing virtual four-argument `create` method, preserving configurable factory interception and the legacy `create(... List<SegmentHit> ...)` APIs.
+- Added focused `AnnotationHitFactoryTest` coverage for complete-phrase context bounds and subclass interception. Existing response model classes were not changed; existing TreeSet hit handling continues to collapse identical serialized term hits.
+- Validation passed: `mvn -q -pl warehouse/query-core -DskipITs -Dtest=AllHitsFactoryTest,AnnotationHitFactoryTest,OrderedAnnotationMatcherTest,UnorderedAnnotationMatcherTest -Dsurefire.failIfNoSpecifiedTests=false test`.
+- Checkstyle passed with the repository's pre-existing import-control warnings. No transformer/query wiring was added.

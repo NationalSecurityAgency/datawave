@@ -9,7 +9,6 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 import datawave.annotation.protobuf.v1.SegmentBoundary;
-import datawave.query.transformer.annotation.AnnotationHitsTransformer.SegmentHit;
 
 /** Matches standalone patterns against a normalized annotation position view. */
 public final class StandaloneAnnotationMatcher {

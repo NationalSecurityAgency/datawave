@@ -14,7 +14,6 @@ import java.util.concurrent.TimeUnit;
 
 import datawave.annotation.protobuf.v1.SegmentBoundary;
 import datawave.annotation.protobuf.v1.SegmentValue;
-import datawave.query.transformer.annotation.AnnotationHitsTransformer.SegmentHit;
 import datawave.query.transformer.annotation.model.AllHit;
 import datawave.query.transformer.annotation.model.AllHits;
 import datawave.query.transformer.annotation.model.Term;
@@ -29,17 +28,61 @@ public class AllHitsFactory {
     public static final TermHitComparator TERM_HIT_COMPARATOR = new TermHitComparator();
 
     /**
+     * Creates results from standalone and phrase hits. The distinct name deliberately preserves the source and binary contract of the old create methods.
+     * Phrase constituents are expanded with their phrase-wide context and then passed through the virtual legacy create method.
+     */
+    public AllHits createFromHits(String annotationId, List<? extends AnnotationHit> hits, TreeMap<SegmentBoundary,List<SegmentValue>> sortedSegments)
+                    throws AllHitsException {
+        return createFromHits(annotationId, hits, sortedSegments, TimeUnit.MILLISECONDS);
+    }
+
+    public AllHits createFromHits(String annotationId, List<? extends AnnotationHit> hits, TreeMap<SegmentBoundary,List<SegmentValue>> sortedSegments,
+                    TimeUnit timeUnit) throws AllHitsException {
+        List<SegmentHit> expanded = expandHits(hits);
+        return create(annotationId, expanded, sortedSegments, timeUnit);
+    }
+
+    /** Variant useful to callers which have raw phrase occurrences and need the context calculated here. */
+    public AllHits createFromHits(String annotationId, List<? extends AnnotationHit> hits, TreeMap<SegmentBoundary,List<SegmentValue>> sortedSegments,
+                    int contextSize, TimeUnit timeUnit) throws AllHitsException {
+        List<SegmentHit> expanded = new ArrayList<>();
+        for (AnnotationHit hit : hits) {
+            AnnotationHit effective = hit;
+            if (hit instanceof PhraseHit) {
+                effective = PhraseHit.fromConstituents(hit.getConstituentHits(), sortedSegments, contextSize);
+            }
+            addExpanded(expanded, effective);
+        }
+        return create(annotationId, expanded, sortedSegments, timeUnit);
+    }
+
+    private List<SegmentHit> expandHits(List<? extends AnnotationHit> hits) {
+        List<SegmentHit> expanded = new ArrayList<>();
+        for (AnnotationHit hit : hits)
+            addExpanded(expanded, hit);
+        return expanded;
+    }
+
+    private void addExpanded(List<SegmentHit> expanded, AnnotationHit hit) {
+        for (SegmentHit constituent : hit.getConstituentHits()) {
+            SegmentHit copy = new SegmentHit(hit.getContextStart(), constituent.getHitBoundary(), constituent.getValueHitIndex());
+            copy.setContextEnd(hit.getContextEnd());
+            expanded.add(copy);
+        }
+    }
+
+    /**
      * Convenience method for MILLIS
      *
      * @param annotationId
-     *            the annotation id to attribute the hits to
+     *            the annotation id
      * @param orderedHits
-     *            hits ordered by the SegmentBoundary they occur in
+     *            hits ordered by boundary
      * @param sortedSegments
-     *            a non-null sorted map of segments to produce hits with context from. sortedSegments must be sorted by SegmentBoundary. The values must be
-     *            sorted in ascending order as well
-     * @return
+     *            sorted annotation segments
+     * @return generated hits
      * @throws AllHitsException
+     *             on invalid hit data
      */
     public AllHits create(String annotationId, List<SegmentHit> orderedHits, TreeMap<SegmentBoundary,List<SegmentValue>> sortedSegments)
                     throws AllHitsException {

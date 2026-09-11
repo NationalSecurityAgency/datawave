@@ -90,6 +90,7 @@ import datawave.query.transformer.annotation.AllHitsFactory;
 import datawave.query.transformer.annotation.AllHitsFactoryErrorOnly;
 import datawave.query.transformer.annotation.AnnotationHitsTransformer;
 import datawave.query.transformer.annotation.BoundaryComparator;
+import datawave.query.transformer.annotation.SegmentHit;
 import datawave.query.transformer.annotation.SegmentValueByScoreComparator;
 import datawave.query.transformer.annotation.TermExtractor;
 import datawave.query.transformer.annotation.model.AllHits;
@@ -542,7 +543,7 @@ public class ShardQueryLogicTest extends AbstractQueryTest {
 
         givenQuery("UUID=='CAPONE'");
 
-        AnnotationHitsTransformer.SegmentHit hit = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), S1.getBoundary(), 0);
+        SegmentHit hit = new SegmentHit(S1.getBoundary(), S1.getBoundary(), 0);
         hit.setContextEnd(S1.getBoundary());
         TreeMap<SegmentBoundary,List<SegmentValue>> context = buildSortedContext(S1, S2, S3, S4, S5, S6, S7, S8, S9);
         AllHits hits = getExpectedAnnotationHits("03AE6355", List.of(hit), context);
@@ -616,7 +617,7 @@ public class ShardQueryLogicTest extends AbstractQueryTest {
 
         givenQuery("UUID=='CAPONE'");
 
-        AnnotationHitsTransformer.SegmentHit hit = new AnnotationHitsTransformer.SegmentHit(S6.getBoundary(), S1.getBoundary(), 0);
+        SegmentHit hit = new SegmentHit(S6.getBoundary(), S1.getBoundary(), 0);
         hit.setContextEnd(S2.getBoundary());
         TreeMap<SegmentBoundary,List<SegmentValue>> context = buildSortedContext(S1, S2, S6);
         AllHits hits = getExpectedAnnotationHits("565A3AED", List.of(hit), context);
@@ -636,7 +637,7 @@ public class ShardQueryLogicTest extends AbstractQueryTest {
 
         givenQuery("UUID=='CAPONE'");
 
-        AnnotationHitsTransformer.SegmentHit hit = new AnnotationHitsTransformer.SegmentHit(S6.getBoundary(), S1.getBoundary(), 0);
+        SegmentHit hit = new SegmentHit(S6.getBoundary(), S1.getBoundary(), 0);
         hit.setContextEnd(S3.getBoundary());
         TreeMap<SegmentBoundary,List<SegmentValue>> context = buildSortedContext(S1, S2, S3, S6, S7);
         AllHits hits = getExpectedAnnotationHits("1D6AAA19", List.of(hit), context);
@@ -657,7 +658,7 @@ public class ShardQueryLogicTest extends AbstractQueryTest {
 
         givenQuery("UUID=='CAPONE'");
 
-        AnnotationHitsTransformer.SegmentHit hit = new AnnotationHitsTransformer.SegmentHit(S6.getBoundary(), S1.getBoundary(), 0);
+        SegmentHit hit = new SegmentHit(S6.getBoundary(), S1.getBoundary(), 0);
         hit.setContextEnd(S4.getBoundary());
         TreeMap<SegmentBoundary,List<SegmentValue>> context = buildSortedContext(S1, S2, S3, S4, S6, S7, S8);
         AllHits hits = getExpectedAnnotationHits("816EDD11", List.of(hit), context);
@@ -678,7 +679,7 @@ public class ShardQueryLogicTest extends AbstractQueryTest {
 
         givenQuery("UUID=='CAPONE'");
 
-        AnnotationHitsTransformer.SegmentHit hit = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), S1.getBoundary(), 0);
+        SegmentHit hit = new SegmentHit(S1.getBoundary(), S1.getBoundary(), 0);
         hit.setContextEnd(S4.getBoundary());
         TreeMap<SegmentBoundary,List<SegmentValue>> context = buildSortedContext(S1, S2, S3, S4, S5, S6, S7, S8, S9);
         AllHits hits = getExpectedAnnotationHits("8382B062", List.of(hit), context);
@@ -699,7 +700,7 @@ public class ShardQueryLogicTest extends AbstractQueryTest {
 
         givenQuery("UUID=='CAPONE'");
 
-        AnnotationHitsTransformer.SegmentHit hit = new AnnotationHitsTransformer.SegmentHit(S7.getBoundary(), S1.getBoundary(), 0);
+        SegmentHit hit = new SegmentHit(S7.getBoundary(), S1.getBoundary(), 0);
         hit.setContextEnd(S4.getBoundary());
         TreeMap<SegmentBoundary,List<SegmentValue>> context = buildSortedContext(S1, S2, S3, S4, S5, S6, S7, S8, S9);
         AllHits hits = getExpectedAnnotationHits("40AD77A3", List.of(hit), context);
@@ -720,9 +721,9 @@ public class ShardQueryLogicTest extends AbstractQueryTest {
 
         givenQuery("UUID=='CAPONE' || UUID=='CARL'");
 
-        AnnotationHitsTransformer.SegmentHit hit1 = new AnnotationHitsTransformer.SegmentHit(S7.getBoundary(), S1.getBoundary(), 0);
+        SegmentHit hit1 = new SegmentHit(S7.getBoundary(), S1.getBoundary(), 0);
         hit1.setContextEnd(S4.getBoundary());
-        AnnotationHitsTransformer.SegmentHit hit2 = new AnnotationHitsTransformer.SegmentHit(S7.getBoundary(), S1.getBoundary(), 1);
+        SegmentHit hit2 = new SegmentHit(S7.getBoundary(), S1.getBoundary(), 1);
         hit2.setContextEnd(S4.getBoundary());
         TreeMap<SegmentBoundary,List<SegmentValue>> context = buildSortedContext(S2, S3, S4, S1, S5, S8, S6, S7, S9);
         AllHits hits = getExpectedAnnotationHits("40AD77A3", List.of(hit1, hit2), context);
@@ -742,11 +743,11 @@ public class ShardQueryLogicTest extends AbstractQueryTest {
 
         givenQuery("UUID=='CAPONE' || UUID=='w1' || UUID=='d1'");
 
-        AnnotationHitsTransformer.SegmentHit hit1 = new AnnotationHitsTransformer.SegmentHit(S7.getBoundary(), S1.getBoundary(), 0);
+        SegmentHit hit1 = new SegmentHit(S7.getBoundary(), S1.getBoundary(), 0);
         hit1.setContextEnd(S4.getBoundary());
-        AnnotationHitsTransformer.SegmentHit hit2 = new AnnotationHitsTransformer.SegmentHit(S6.getBoundary(), S6.getBoundary(), 0);
+        SegmentHit hit2 = new SegmentHit(S6.getBoundary(), S6.getBoundary(), 0);
         hit2.setContextEnd(S9.getBoundary());
-        AnnotationHitsTransformer.SegmentHit hit3 = new AnnotationHitsTransformer.SegmentHit(S2.getBoundary(), S5.getBoundary(), 0);
+        SegmentHit hit3 = new SegmentHit(S2.getBoundary(), S5.getBoundary(), 0);
         hit3.setContextEnd(S5.getBoundary());
         TreeMap<SegmentBoundary,List<SegmentValue>> context = buildSortedContext(S2, S3, S4, S1, S5, S8, S6, S7, S9);
         AllHits hits = getExpectedAnnotationHits("40AD77A3", List.of(hit2, hit1, hit3), context);
@@ -767,9 +768,9 @@ public class ShardQueryLogicTest extends AbstractQueryTest {
 
         givenQuery("UUID=='CAPONE'");
 
-        AnnotationHitsTransformer.SegmentHit hit2 = new AnnotationHitsTransformer.SegmentHit(S6.getBoundary(), S6.getBoundary(), 0);
+        SegmentHit hit2 = new SegmentHit(S6.getBoundary(), S6.getBoundary(), 0);
         hit2.setContextEnd(S9.getBoundary());
-        AnnotationHitsTransformer.SegmentHit hit3 = new AnnotationHitsTransformer.SegmentHit(S2.getBoundary(), S5.getBoundary(), 0);
+        SegmentHit hit3 = new SegmentHit(S2.getBoundary(), S5.getBoundary(), 0);
         hit3.setContextEnd(S5.getBoundary());
         TreeMap<SegmentBoundary,List<SegmentValue>> context = buildSortedContext(S2, S3, S4, S1, S5, S8, S6, S7, S9);
         AllHits hits = getExpectedAnnotationHits("40AD77A3", List.of(hit2, hit3), context);
@@ -790,9 +791,9 @@ public class ShardQueryLogicTest extends AbstractQueryTest {
 
         givenQuery("UUID=='CAPONE'");
 
-        AnnotationHitsTransformer.SegmentHit hit2 = new AnnotationHitsTransformer.SegmentHit(S6.getBoundary(), S6.getBoundary(), 0);
+        SegmentHit hit2 = new SegmentHit(S6.getBoundary(), S6.getBoundary(), 0);
         hit2.setContextEnd(S9.getBoundary());
-        AnnotationHitsTransformer.SegmentHit hit3 = new AnnotationHitsTransformer.SegmentHit(S2.getBoundary(), S5.getBoundary(), 0);
+        SegmentHit hit3 = new SegmentHit(S2.getBoundary(), S5.getBoundary(), 0);
         hit3.setContextEnd(S5.getBoundary());
         TreeMap<SegmentBoundary,List<SegmentValue>> context = buildSortedContext(S2, S3, S4, S1, S5, S8, S6, S7, S9);
         AllHits hits = getExpectedAnnotationHits("40AD77A3", List.of(hit2, hit3), context);
@@ -814,9 +815,9 @@ public class ShardQueryLogicTest extends AbstractQueryTest {
 
         givenQuery("UUID=='CAPONE'");
 
-        AnnotationHitsTransformer.SegmentHit hit2 = new AnnotationHitsTransformer.SegmentHit(S6.getBoundary(), S6.getBoundary(), 0);
+        SegmentHit hit2 = new SegmentHit(S6.getBoundary(), S6.getBoundary(), 0);
         hit2.setContextEnd(S9.getBoundary());
-        AnnotationHitsTransformer.SegmentHit hit3 = new AnnotationHitsTransformer.SegmentHit(S2.getBoundary(), S5.getBoundary(), 0);
+        SegmentHit hit3 = new SegmentHit(S2.getBoundary(), S5.getBoundary(), 0);
         hit3.setContextEnd(S5.getBoundary());
         TreeMap<SegmentBoundary,List<SegmentValue>> context = buildSortedContext(S2, S3, S4, S1, S5, S8, S6, S7, S9);
         AllHits hits = getExpectedAnnotationHits("40AD77A3", List.of(hit2, hit3), context);
@@ -839,10 +840,10 @@ public class ShardQueryLogicTest extends AbstractQueryTest {
 
         // eliminates hit 1 because it is lower than .6
         // .9 > .6
-        AnnotationHitsTransformer.SegmentHit hit2 = new AnnotationHitsTransformer.SegmentHit(S6.getBoundary(), S6.getBoundary(), 0);
+        SegmentHit hit2 = new SegmentHit(S6.getBoundary(), S6.getBoundary(), 0);
         hit2.setContextEnd(S9.getBoundary());
         // .6 == .6
-        AnnotationHitsTransformer.SegmentHit hit3 = new AnnotationHitsTransformer.SegmentHit(S2.getBoundary(), S5.getBoundary(), 0);
+        SegmentHit hit3 = new SegmentHit(S2.getBoundary(), S5.getBoundary(), 0);
         hit3.setContextEnd(S5.getBoundary());
         TreeMap<SegmentBoundary,List<SegmentValue>> context = buildSortedContext(S2, S3, S4, S1, S5, S8, S6, S7, S9);
         AllHits hits = getExpectedAnnotationHits("40AD77A3", List.of(hit2, hit3), context);
@@ -865,7 +866,7 @@ public class ShardQueryLogicTest extends AbstractQueryTest {
 
         // eliminates hit 1 because it is lower than .6
         // eliminates hit 3 because it is lower than .61
-        AnnotationHitsTransformer.SegmentHit hit2 = new AnnotationHitsTransformer.SegmentHit(S6.getBoundary(), S6.getBoundary(), 0);
+        SegmentHit hit2 = new SegmentHit(S6.getBoundary(), S6.getBoundary(), 0);
         hit2.setContextEnd(S9.getBoundary());
         TreeMap<SegmentBoundary,List<SegmentValue>> context = buildSortedContext(S2, S3, S4, S1, S5, S8, S6, S7, S9);
         AllHits hits = getExpectedAnnotationHits("40AD77A3", List.of(hit2), context);
@@ -887,7 +888,7 @@ public class ShardQueryLogicTest extends AbstractQueryTest {
         givenQuery("UUID=='CAPONE'");
         givenParameter(CONTEXT_SIZE_PARAMETER, "1");
 
-        AnnotationHitsTransformer.SegmentHit hit = new AnnotationHitsTransformer.SegmentHit(S9.getBoundary(), S1.getBoundary(), 0);
+        SegmentHit hit = new SegmentHit(S9.getBoundary(), S1.getBoundary(), 0);
         hit.setContextEnd(S2.getBoundary());
         TreeMap<SegmentBoundary,List<SegmentValue>> context = buildSortedContext(S1, S2, S3, S4, S5, S6, S7, S8, S9);
         AllHits hits = getExpectedAnnotationHits("71D4C8BE", List.of(hit), context);
@@ -909,7 +910,7 @@ public class ShardQueryLogicTest extends AbstractQueryTest {
         givenQuery("UUID=='CAPONE'");
         givenParameter(CONTEXT_SIZE_PARAMETER, "-1");
 
-        AnnotationHitsTransformer.SegmentHit hit = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), S1.getBoundary(), 0);
+        SegmentHit hit = new SegmentHit(S1.getBoundary(), S1.getBoundary(), 0);
         hit.setContextEnd(S1.getBoundary());
         TreeMap<SegmentBoundary,List<SegmentValue>> context = buildSortedContext(S1, S2, S3, S4, S5, S6, S7, S8, S9);
         AllHits hits = getExpectedAnnotationHits("71D4C8BE", List.of(hit), context);
@@ -931,7 +932,7 @@ public class ShardQueryLogicTest extends AbstractQueryTest {
         givenQuery("UUID=='CAPONE'");
         givenParameter(CONTEXT_SIZE_PARAMETER, "4");
 
-        AnnotationHitsTransformer.SegmentHit hit = new AnnotationHitsTransformer.SegmentHit(S7.getBoundary(), S1.getBoundary(), 0);
+        SegmentHit hit = new SegmentHit(S7.getBoundary(), S1.getBoundary(), 0);
         hit.setContextEnd(S4.getBoundary());
         TreeMap<SegmentBoundary,List<SegmentValue>> context = buildSortedContext(S1, S2, S3, S4, S5, S6, S7, S8, S9);
         AllHits hits = getExpectedAnnotationHits("71D4C8BE", List.of(hit), context);
@@ -983,9 +984,9 @@ public class ShardQueryLogicTest extends AbstractQueryTest {
 
         givenQuery("UUID=='CAPONE'");
 
-        AnnotationHitsTransformer.SegmentHit hit1 = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), S1.getBoundary(), 0);
+        SegmentHit hit1 = new SegmentHit(S1.getBoundary(), S1.getBoundary(), 0);
         hit1.setContextEnd(S1.getBoundary());
-        AnnotationHitsTransformer.SegmentHit hit2 = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), S1.getBoundary(), 0);
+        SegmentHit hit2 = new SegmentHit(S1.getBoundary(), S1.getBoundary(), 0);
         hit2.setContextEnd(S2.getBoundary());
 
         TreeMap<SegmentBoundary,List<SegmentValue>> context = buildSortedContext(S1);
@@ -1010,7 +1011,7 @@ public class ShardQueryLogicTest extends AbstractQueryTest {
         // capo.* is expanded in query planning to capone
         givenQuery("UUID =~ 'CAPO.*'");
 
-        AnnotationHitsTransformer.SegmentHit hit1 = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), S1.getBoundary(), 0);
+        SegmentHit hit1 = new SegmentHit(S1.getBoundary(), S1.getBoundary(), 0);
         hit1.setContextEnd(S1.getBoundary());
 
         TreeMap<SegmentBoundary,List<SegmentValue>> context = buildSortedContext(S1);
@@ -1036,10 +1037,10 @@ public class ShardQueryLogicTest extends AbstractQueryTest {
 
         givenQuery("UUID =~ 'CAP.*'");
 
-        AnnotationHitsTransformer.SegmentHit hit1 = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), S1.getBoundary(), 0);
+        SegmentHit hit1 = new SegmentHit(S1.getBoundary(), S1.getBoundary(), 0);
         hit1.setContextEnd(wildcard.getBoundary());
 
-        AnnotationHitsTransformer.SegmentHit hit2 = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), wildcard.getBoundary(), 0);
+        SegmentHit hit2 = new SegmentHit(S1.getBoundary(), wildcard.getBoundary(), 0);
         hit2.setContextEnd(wildcard.getBoundary());
 
         TreeMap<SegmentBoundary,List<SegmentValue>> context = buildSortedContext(S1, wildcard);
@@ -1063,7 +1064,7 @@ public class ShardQueryLogicTest extends AbstractQueryTest {
 
         givenQuery("UUID=='CAPONE'");
 
-        AnnotationHitsTransformer.SegmentHit hit1 = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), S1.getBoundary(), 0);
+        SegmentHit hit1 = new SegmentHit(S1.getBoundary(), S1.getBoundary(), 0);
         hit1.setContextEnd(S1.getBoundary());
 
         TreeMap<SegmentBoundary,List<SegmentValue>> context = buildSortedContext(S1);
@@ -1089,7 +1090,7 @@ public class ShardQueryLogicTest extends AbstractQueryTest {
 
         givenQuery("UUID=='CAPONE'");
 
-        AnnotationHitsTransformer.SegmentHit hit1 = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), S1.getBoundary(), 0);
+        SegmentHit hit1 = new SegmentHit(S1.getBoundary(), S1.getBoundary(), 0);
         hit1.setContextEnd(S1.getBoundary());
 
         TreeMap<SegmentBoundary,List<SegmentValue>> context = buildSortedContext(S1);
@@ -1117,7 +1118,7 @@ public class ShardQueryLogicTest extends AbstractQueryTest {
         givenParameter(QueryParameters.QUERY_SYNTAX, "LUCENE");
         givenQuery("CAPONE");
 
-        AnnotationHitsTransformer.SegmentHit hit1 = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), S1.getBoundary(), 0);
+        SegmentHit hit1 = new SegmentHit(S1.getBoundary(), S1.getBoundary(), 0);
         hit1.setContextEnd(S1.getBoundary());
 
         TreeMap<SegmentBoundary,List<SegmentValue>> context = buildSortedContext(S1);
@@ -1145,7 +1146,7 @@ public class ShardQueryLogicTest extends AbstractQueryTest {
         givenParameter(QueryParameters.QUERY_SYNTAX, "LUCENE");
         givenQuery("UUID:CAPONE");
 
-        AnnotationHitsTransformer.SegmentHit hit1 = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), S1.getBoundary(), 0);
+        SegmentHit hit1 = new SegmentHit(S1.getBoundary(), S1.getBoundary(), 0);
         hit1.setContextEnd(S1.getBoundary());
 
         TreeMap<SegmentBoundary,List<SegmentValue>> context = buildSortedContext(S1);
@@ -1193,7 +1194,7 @@ public class ShardQueryLogicTest extends AbstractQueryTest {
 
         givenQuery("UUID=='CAPONE'");
 
-        AnnotationHitsTransformer.SegmentHit hit = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), S1.getBoundary(), 0);
+        SegmentHit hit = new SegmentHit(S1.getBoundary(), S1.getBoundary(), 0);
         hit.setContextEnd(S4.getBoundary());
         TreeMap<SegmentBoundary,List<SegmentValue>> context = buildSortedContext(S1, S2, S3, S4, S5, S6, S7, S8, S9);
         AllHits hits = getExpectedAnnotationHits("8382B062", List.of(hit), context);
@@ -1282,8 +1283,8 @@ public class ShardQueryLogicTest extends AbstractQueryTest {
         givenParameter(ENABLED_PARAMETER, "true");
     }
 
-    private AllHits getExpectedAnnotationHits(String annotationId, List<AnnotationHitsTransformer.SegmentHit> sortedHits,
-                    TreeMap<SegmentBoundary,List<SegmentValue>> context) throws AllHitsException {
+    private AllHits getExpectedAnnotationHits(String annotationId, List<SegmentHit> sortedHits, TreeMap<SegmentBoundary,List<SegmentValue>> context)
+                    throws AllHitsException {
         AllHitsFactory factory = new AllHitsFactory();
         return factory.create(annotationId, sortedHits, context, TimeUnit.MILLISECONDS);
     }

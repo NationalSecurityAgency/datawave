@@ -12,7 +12,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
@@ -565,92 +564,4 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
         return new StandaloneAnnotationMatcher(searchHitTerms).match(positionView, contextSize, minScore);
     }
 
-    /**
-     * Used to track a keyword hit and its beginning and ending context SegmentBoundary
-     */
-    public static class SegmentHit {
-        private final SegmentBoundary contextStart;
-        private final SegmentBoundary hitBoundary;
-        private final int valueHitIndex;
-
-        private SegmentBoundary contextEnd;
-
-        /**
-         * Create a new partial SegmentHit
-         *
-         * @param contextStart
-         *            the SegmentBoundary which marks the beginning of this hits context
-         * @param hitBoundary
-         *            the SegmentBoundary containing the hit
-         * @param valueHitIndex
-         *            the index into the SegmentValue which the hit is from
-         */
-        public SegmentHit(SegmentBoundary contextStart, SegmentBoundary hitBoundary, int valueHitIndex) {
-            this.contextStart = contextStart;
-            this.hitBoundary = hitBoundary;
-            this.valueHitIndex = valueHitIndex;
-        }
-
-        public SegmentBoundary getContextStart() {
-            return contextStart;
-        }
-
-        public SegmentBoundary getHitBoundary() {
-            return hitBoundary;
-        }
-
-        public int getValueHitIndex() {
-            return valueHitIndex;
-        }
-
-        /**
-         * This should be called with the SegmentBoundary which marks the end of the hits context
-         *
-         * @param contextEnd
-         */
-        public void setContextEnd(SegmentBoundary contextEnd) {
-            this.contextEnd = contextEnd;
-        }
-
-        public SegmentBoundary getContextEnd() {
-            return contextEnd;
-        }
-
-        @Override
-        public boolean equals(Object other) {
-            if (!(other instanceof SegmentHit)) {
-                return false;
-            }
-
-            SegmentHit otherHit = (SegmentHit) other;
-            // @formatter:off
-            return Objects.equals(contextStart.getBoundaryType(), otherHit.contextStart.getBoundaryType()) &&
-                    Objects.equals(contextStart.getStart(), otherHit.contextStart.getStart()) &&
-                    Objects.equals(contextStart.getEnd(), otherHit.contextStart.getEnd()) &&
-                    Objects.equals(contextEnd.getBoundaryType(), otherHit.contextEnd.getBoundaryType()) &&
-                    Objects.equals(contextEnd.getStart(), otherHit.contextEnd.getStart()) &&
-                    Objects.equals(contextEnd.getEnd(), otherHit.contextEnd.getEnd()) &&
-                    Objects.equals(hitBoundary.getBoundaryType(), otherHit.hitBoundary.getBoundaryType()) &&
-                    Objects.equals(hitBoundary.getStart(), otherHit.hitBoundary.getStart()) &&
-                    Objects.equals(hitBoundary.getEnd(), otherHit.hitBoundary.getEnd()) &&
-                    Objects.equals(valueHitIndex, otherHit.valueHitIndex);
-            // @formatter:on
-        }
-
-        @Override
-        public int hashCode() {
-            // @formatter:off
-            return Objects.hash(contextStart.getBoundaryTypeValue(),
-                    contextStart.getStart(),
-                    contextStart.getEnd(),
-                    hitBoundary.getBoundaryTypeValue(),
-                    hitBoundary.getStart(),
-                    hitBoundary.getEnd(),
-                    contextEnd.getBoundaryTypeValue(),
-                    contextEnd.getStart(),
-                    contextEnd.getEnd(),
-                    valueHitIndex);
-            // @formatter:on
-        }
-    }
 }
