@@ -177,6 +177,10 @@ public class TagCloud {
 
         /**
          * Indicate that we should use a specific utilities instance.
+         *
+         * @param utils
+         *            the tag cloud utils implementation to sue for this builder.
+         * @return the builder.
          */
         public Builder withTagCloudUtilities(TagCloudUtils utils) {
             this.utils = utils;
