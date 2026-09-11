@@ -43,7 +43,7 @@ public class WSAuthorizationsUtilTest {
 
     @Before
     public void initialize() {
-        System.setProperty(DnUtils.NPE_OU_PROPERTY, "iamnotaperson");
+        System.setProperty(DnProperties.NPE_OU_PROPERTY, "iamnotaperson");
         methodAuths = "A,C";
         userAuths = new HashSet<>();
         userAuths.add(Sets.newHashSet("A", "C", "D"));

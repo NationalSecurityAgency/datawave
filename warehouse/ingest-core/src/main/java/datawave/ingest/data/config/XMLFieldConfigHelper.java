@@ -8,12 +8,14 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
+import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.Attributes;
@@ -39,10 +41,12 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
     private final String configSource;
     private final Map<String,FieldInfo> knownFields = new HashMap<>();
     /**
-     * Memoizes the fully resolved FieldInfo per field name, including pattern matches and no-match results. Not thread-safe: instances are confined to a single
-     * thread.
+     * Memoizes the fully resolved FieldInfo per field name, including pattern matches and no-match results. The cache's bound and overflow policy are described
+     * by {@link FieldConfigHelperConstants#FIELD_CONFIG_CACHE}. Not thread-safe: instances are confined to a single thread.
      */
-    private final Map<String,FieldInfo> resolvedFields = new HashMap<>();
+    private final FieldLookupCache<String,FieldInfo> resolvedFields;
+    /** the mapping function passed to {@code computeIfAbsent} on every lookup, held so the capturing method reference is allocated once */
+    private final Function<String,FieldInfo> resolveFieldInfoFunction = this::resolveFieldInfo;
     /**
      * Single-entry "last field looked up" cache in front of {@link #resolvedFields}. Ingest call sites query the same field name several times in a row (once
      * per {@code is*Field} accessor), so checking these two fields first skips the hash probe on repeat lookups. Relies on the same thread confinement as
@@ -73,7 +77,27 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
     }
 
     /**
-     * Attempt to load the field config fieldHelper from the specified file, which is expected to be found on the classpath.
+     * Attempt to load the field config fieldHelper from the specified file, which is expected to be found on the classpath, with the field lookup cache
+     * described for this datatype.
+     *
+     * @param fieldConfigFile
+     *            the field configuration file name
+     * @param baseIngestHelper
+     *            the ingest helper
+     * @param conf
+     *            the configuration to read the cache settings from
+     * @throws IllegalArgumentException
+     *             if the file can't be found or an exception occurs when reading the file.
+     * @return null if no a null value was specified for fieldConfigFile - or a populated FieldConfigHelper.
+     */
+    public static XMLFieldConfigHelper load(String fieldConfigFile, BaseIngestHelper baseIngestHelper, Configuration conf) {
+        String typeName = baseIngestHelper.getType().typeName();
+        return load(fieldConfigFile, baseIngestHelper, FieldLookupCache.parse(conf, typeName, FieldConfigHelperConstants.FIELD_CONFIG_CACHE));
+    }
+
+    /**
+     * Attempt to load the field config fieldHelper from the specified file, which is expected to be found on the classpath, with an unbounded field lookup
+     * cache.
      *
      * @param fieldConfigFile
      *            the field configuration file name
@@ -84,6 +108,23 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
      * @return null if no a null value was specified for fieldConfigFile - or a populated FieldConfigHelper.
      */
     public static XMLFieldConfigHelper load(String fieldConfigFile, BaseIngestHelper baseIngestHelper) {
+        return load(fieldConfigFile, baseIngestHelper, new FieldLookupCache<>());
+    }
+
+    /**
+     * Attempt to load the field config fieldHelper from the specified file, which is expected to be found on the classpath.
+     *
+     * @param fieldConfigFile
+     *            the field configuration file name
+     * @param baseIngestHelper
+     *            the ingest helper
+     * @param resolvedFieldCache
+     *            the field lookup cache backing the loaded helper
+     * @throws IllegalArgumentException
+     *             if the file can't be found or an exception occurs when reading the file.
+     * @return null if no a null value was specified for fieldConfigFile - or a populated FieldConfigHelper.
+     */
+    private static XMLFieldConfigHelper load(String fieldConfigFile, BaseIngestHelper baseIngestHelper, FieldLookupCache<String,FieldInfo> resolvedFieldCache) {
         if (fieldConfigFile == null) {
             return null;
         }
@@ -91,7 +132,7 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
         try (InputStream in = getAsStream(fieldConfigFile)) {
             if (in != null) {
                 log.info("Loading field configuration from configuration file: {}", fieldConfigFile);
-                return new XMLFieldConfigHelper(in, baseIngestHelper, fieldConfigFile);
+                return new XMLFieldConfigHelper(in, baseIngestHelper, fieldConfigFile, resolvedFieldCache);
             } else {
                 throw new IllegalArgumentException("Field config file '" + fieldConfigFile + "' not found!");
             }
@@ -131,7 +172,13 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
     }
 
     public XMLFieldConfigHelper(InputStream in, BaseIngestHelper helper, String source) throws ParserConfigurationException, SAXException, IOException {
+        this(in, helper, source, new FieldLookupCache<>());
+    }
+
+    XMLFieldConfigHelper(InputStream in, BaseIngestHelper helper, String source, FieldLookupCache<String,FieldInfo> resolvedFields)
+                    throws ParserConfigurationException, SAXException, IOException {
         this.configSource = source;
+        this.resolvedFields = resolvedFields;
 
         final FieldConfigHandler handler = new FieldConfigHandler(this, helper);
         SAXParser parser = parserFactory.newSAXParser();
@@ -194,7 +241,7 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
         if (fieldName.equals(previousFieldName)) {
             return previousFieldInfo;
         }
-        FieldInfo info = resolvedFields.computeIfAbsent(fieldName, this::resolveFieldInfo);
+        FieldInfo info = resolvedFields.computeIfAbsent(fieldName, resolveFieldInfoFunction);
         previousFieldName = fieldName;
         previousFieldInfo = info;
         return info;
@@ -254,7 +301,7 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
         this.noMatchFieldInfo.reverseTokenized = noMatchReverseTokenized;
     }
 
-    Map<String,FieldInfo> getResolvedFields() {
+    FieldLookupCache<String,FieldInfo> getResolvedFields() {
         return this.resolvedFields;
     }
 

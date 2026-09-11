@@ -45,7 +45,7 @@ import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUser.UserType;
 import datawave.security.authorization.SubjectIssuerDNPair;
-import datawave.security.util.DnUtils;
+import datawave.security.util.DnProperties;
 import datawave.webservice.query.cache.RunningQueryTimingImpl;
 import datawave.webservice.query.metric.QueryMetricsBean;
 import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
@@ -68,7 +68,7 @@ public class ExtendedRunningQueryTest {
 
     @BeforeEach
     public void beforeEach() {
-        System.setProperty(DnUtils.NPE_OU_PROPERTY, "iamnotaperson");
+        System.setProperty(DnProperties.NPE_OU_PROPERTY, "iamnotaperson");
         System.setProperty("dw.metadatahelper.all.auths", "A,B,C,D");
         executor = Executors.newSingleThreadExecutor();
     }

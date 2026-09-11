@@ -26,13 +26,13 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.WriterInterceptorContext;
 
-import org.jboss.resteasy.core.interception.ContainerResponseContextImpl;
-import org.jboss.resteasy.core.interception.PreMatchContainerRequestContext;
+import org.jboss.resteasy.core.interception.jaxrs.ContainerResponseContextImpl;
+import org.jboss.resteasy.core.interception.jaxrs.PreMatchContainerRequestContext;
 import org.jboss.resteasy.specimpl.BuiltResponse;
+import org.jboss.resteasy.specimpl.ResteasyUriInfo;
 import org.jboss.resteasy.spi.HttpRequest;
-import org.jboss.resteasy.spi.ResteasyUriInfo;
-import org.jboss.resteasy.util.FindAnnotation;
-import org.jboss.resteasy.util.HttpResponseCodes;
+import org.jboss.resteasy.spi.HttpResponseCodes;
+import org.jboss.resteasy.spi.util.FindAnnotation;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -44,7 +44,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import datawave.core.query.logic.BaseQueryLogic;
 import datawave.microservice.querymetric.BaseQueryMetric.PageMetric;
 import datawave.microservice.querymetric.QueryMetric;
-import datawave.security.util.DnUtils;
+import datawave.security.util.DnProperties;
 import datawave.webservice.query.annotation.EnrichQueryMetrics;
 import datawave.webservice.query.cache.QueryCache;
 import datawave.webservice.query.interceptor.QueryMetricsEnrichmentInterceptor.QueryCall;
@@ -114,7 +114,7 @@ public class QueryMetricsEnrichmentInterceptorTest {
 
     @BeforeEach
     public void setup() {
-        System.setProperty(DnUtils.NPE_OU_PROPERTY, "iamnotaperson");
+        System.setProperty(DnProperties.NPE_OU_PROPERTY, "iamnotaperson");
         System.setProperty("dw.metadatahelper.all.auths", "A,B,C,D");
     }
 
