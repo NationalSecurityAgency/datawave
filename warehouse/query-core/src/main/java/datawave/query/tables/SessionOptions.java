@@ -50,7 +50,7 @@ public class SessionOptions implements ScannerBase {
     public SessionOptions() {}
 
     public SessionOptions(SessionOptions other) {
-        this.queryConfig = other.queryConfig;
+        setOptions(this, other);
     }
 
     protected static void setOptions(SessionOptions dst, SessionOptions src) {
