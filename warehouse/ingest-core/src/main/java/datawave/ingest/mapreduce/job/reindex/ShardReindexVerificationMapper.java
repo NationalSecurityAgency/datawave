@@ -220,6 +220,12 @@ public class ShardReindexVerificationMapper extends Mapper<Range,String,Key,Valu
 
     @Override
     protected void cleanup(Context context) {
+        if (scanner1 != null) {
+            scanner1.close();
+        }
+        if (scanner2 != null) {
+            scanner2.close();
+        }
         if (accumuloClient != null) {
             accumuloClient.close();
         }

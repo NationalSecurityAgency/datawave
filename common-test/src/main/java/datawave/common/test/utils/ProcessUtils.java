@@ -11,8 +11,11 @@ import java.util.Map;
 
 public class ProcessUtils {
 
-    public static final int SYSTEM_EXIT_MINUS_ONE = 255;
-    public static final int SYSTEM_EXIT_MINUS_TWO = 254;
+    private static final boolean WINDOWS = System.getProperty("os.name", "").startsWith("Windows");
+
+    // Windows exposes an exit status byte as a signed value through Process.waitFor().
+    public static final int SYSTEM_EXIT_MINUS_ONE = WINDOWS ? -1 : 255;
+    public static final int SYSTEM_EXIT_MINUS_TWO = WINDOWS ? -2 : 254;
     public static final int SYSTEM_EXIT_ONE = 1;
 
     public static final String JAVA_PATH = getJavaPath();

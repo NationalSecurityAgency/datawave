@@ -20,6 +20,7 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.mapred.Counters;
 import org.apache.hadoop.mapreduce.Counter;
 import org.apache.hadoop.mapreduce.Mapper;
@@ -73,6 +74,11 @@ public class ShardReindexVerificationMapperTest extends EasyMockSupport {
 
     @After
     public void cleanup() throws IOException {
+        mapper.cleanup(context);
+        if (accumuloClient != null) {
+            accumuloClient.close();
+        }
+        FileSystem.closeAll();
         if (sourceDir1 != null) {
             FileUtils.deleteDirectory(sourceDir1);
         }
@@ -385,12 +391,18 @@ public class ShardReindexVerificationMapperTest extends EasyMockSupport {
         File shardDir = new File(sourceDir1, "shard");
         FileUtils.copyDirectory(shardDir, sourceDir2);
 
+        // import copies so the generated fixture files remain available for deterministic cleanup on Windows
+        File importDir1 = folder.newFolder("import1");
+        FileUtils.copyDirectory(shardDir, importDir1);
+        File importDir2 = folder.newFolder("import2");
+        FileUtils.copyDirectory(sourceDir2, importDir2);
+
         accumuloClient.tableOperations().create("myTable1");
         File tmp1 = folder.newFolder("tmp1");
-        accumuloClient.tableOperations().importDirectory("myTable1", sourceDir1.getAbsolutePath() + "/shard", tmp1.getAbsolutePath(), false);
+        accumuloClient.tableOperations().importDirectory("myTable1", importDir1.getAbsolutePath(), tmp1.getAbsolutePath(), false);
         accumuloClient.tableOperations().create("myTable2");
         File tmp2 = folder.newFolder("tmp2");
-        accumuloClient.tableOperations().importDirectory("myTable2", sourceDir2.getAbsolutePath(), tmp2.getAbsolutePath(), false);
+        accumuloClient.tableOperations().importDirectory("myTable2", importDir2.getAbsolutePath(), tmp2.getAbsolutePath(), false);
 
         replayAll();
 

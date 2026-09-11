@@ -11,7 +11,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -30,10 +33,10 @@ import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.conf.Property;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.minicluster.MiniAccumuloCluster;
 import org.apache.accumulo.minicluster.MiniAccumuloConfig;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -73,12 +76,10 @@ public class AnnotationDataAccessTest {
 
     @BeforeAll
     public static void startCluster() throws Exception {
-        File macDir = new File(System.getProperty("user.dir") + "/target/mac/" + AnnotationDataAccessTest.class.getName());
-        if (macDir.exists())
-            FileUtils.deleteDirectory(macDir);
-        // noinspection ResultOfMethodCallIgnored
-        macDir.mkdirs();
-        mac = new MiniAccumuloCluster(new MiniAccumuloConfig(macDir, "pass"));
+        File macDir = createMacDir();
+        MiniAccumuloConfig config = new MiniAccumuloConfig(macDir, "pass");
+        config.setSiteConfig(Map.of(Property.INSTANCE_VOLUMES.getKey(), new File(macDir, "accumulo").toURI().toString()));
+        mac = new MiniAccumuloCluster(config);
         mac.start();
         client = mac.createAccumuloClient("root", new PasswordToken("pass"));
 
@@ -107,6 +108,13 @@ public class AnnotationDataAccessTest {
         }
         dumpTable(ANNOTATION_TABLE_NAME);
         dumpTable(ANNOTATION_SOURCE_TABLE_NAME);
+    }
+
+    private static File createMacDir() throws IOException {
+        Path macRoot = Files.createTempDirectory("AnnotationDataAccessTest-");
+        File macDir = macRoot.toFile();
+        macDir.deleteOnExit();
+        return macDir;
     }
 
     @BeforeEach

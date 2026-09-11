@@ -323,25 +323,26 @@ public class InMemoryTableOperations extends TableOperationsHelper {
         for (FileStatus importStatus : fs.listStatus(importPath)) {
             try {
                 CryptoService cs = CryptoFactoryLoader.getServiceForClient(CryptoEnvironment.Scope.TABLE, table.settings);
-                FileSKVIterator importIterator = FileOperations.getInstance().newReaderBuilder()
+                try (FileSKVIterator importIterator = FileOperations.getInstance().newReaderBuilder()
                                 .forFile(importStatus.getPath().toString(), fs, fs.getConf(), cs).withTableConfiguration(DefaultConfiguration.getInstance())
-                                .seekToBeginning().build();
-                while (importIterator.hasTop()) {
-                    Key key = importIterator.getTopKey();
-                    Value value = importIterator.getTopValue();
-                    if (setTime) {
-                        key.setTimestamp(time);
+                                .seekToBeginning().build()) {
+                    while (importIterator.hasTop()) {
+                        Key key = importIterator.getTopKey();
+                        Value value = importIterator.getTopValue();
+                        if (setTime) {
+                            key.setTimestamp(time);
+                        }
+                        Mutation mutation = new Mutation(key.getRow());
+                        if (!key.isDeleted()) {
+                            mutation.put(key.getColumnFamily(), key.getColumnQualifier(), new ColumnVisibility(key.getColumnVisibilityData().toArray()),
+                                            key.getTimestamp(), value);
+                        } else {
+                            mutation.putDelete(key.getColumnFamily(), key.getColumnQualifier(), new ColumnVisibility(key.getColumnVisibilityData().toArray()),
+                                            key.getTimestamp());
+                        }
+                        table.addMutation(mutation);
+                        importIterator.next();
                     }
-                    Mutation mutation = new Mutation(key.getRow());
-                    if (!key.isDeleted()) {
-                        mutation.put(key.getColumnFamily(), key.getColumnQualifier(), new ColumnVisibility(key.getColumnVisibilityData().toArray()),
-                                        key.getTimestamp(), value);
-                    } else {
-                        mutation.putDelete(key.getColumnFamily(), key.getColumnQualifier(), new ColumnVisibility(key.getColumnVisibilityData().toArray()),
-                                        key.getTimestamp());
-                    }
-                    table.addMutation(mutation);
-                    importIterator.next();
                 }
             } catch (Exception e) {
                 FSDataOutputStream failureWriter = null;
