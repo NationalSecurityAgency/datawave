@@ -51,7 +51,6 @@ import com.google.common.collect.Multimap;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.core.query.configuration.QueryData;
-import datawave.data.ColumnFamilyConstants;
 import datawave.data.type.GeometryType;
 import datawave.data.type.NumberType;
 import datawave.ingest.config.RawRecordContainerImpl;
@@ -79,6 +78,7 @@ import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.testframework.MockStatusReporter;
 import datawave.query.util.AbstractQueryTest;
+import datawave.table.constants.MetadataColumnFamilyConstants;
 import datawave.table.constants.TableName;
 import datawave.webservice.query.result.event.DefaultEvent;
 import datawave.webservice.query.result.event.DefaultField;
@@ -108,11 +108,13 @@ public class CompositeIndexTest extends AbstractQueryTest {
     private static final String formatPattern = "yyyyMMdd HHmmss.SSS";
     private static final SimpleDateFormat formatter = new SimpleDateFormat(formatPattern);
 
-    private static final String LEGACY_BEGIN_DATE = "20000101 000000.000";
+    // the legacy data sits on the three days immediately before the composite transition date, and the composite data on the three days from it, so that a
+    // query spanning the transition covers only six shard days rather than two years' worth
+    private static final String LEGACY_BEGIN_DATE = "20001229 000000.000";
     private static final String COMPOSITE_BEGIN_DATE = "20010101 000000.000";
 
-    private static final String BEGIN_DATE = "20000101 000000.000";
-    private static final String END_DATE = "20020101 000000.000";
+    private static final String BEGIN_DATE = "20001229 000000.000";
+    private static final String END_DATE = "20010103 235959.999";
 
     private static final Configuration conf = new Configuration();
 
@@ -134,8 +136,8 @@ public class CompositeIndexTest extends AbstractQueryTest {
 
     private static final long[] legacyDates = {
             0,
-            TimeUnit.DAYS.toMillis(90),
-            TimeUnit.DAYS.toMillis(180),
+            TimeUnit.DAYS.toMillis(1),
+            TimeUnit.DAYS.toMillis(2),
             0};
 
     private static final String[] wktCompositeData = {
@@ -166,16 +168,16 @@ public class CompositeIndexTest extends AbstractQueryTest {
 
     private static final long[] compositeDates = {
             0,
-            TimeUnit.DAYS.toMillis(90),
+            TimeUnit.DAYS.toMillis(1),
 
-            TimeUnit.DAYS.toMillis(180),
+            TimeUnit.DAYS.toMillis(2),
             0,
 
-            TimeUnit.DAYS.toMillis(90),
-            TimeUnit.DAYS.toMillis(180),
+            TimeUnit.DAYS.toMillis(1),
+            TimeUnit.DAYS.toMillis(2),
 
             0,
-            TimeUnit.DAYS.toMillis(90)};
+            TimeUnit.DAYS.toMillis(1)};
     // @formatter:on
 
     @Autowired
@@ -336,8 +338,8 @@ public class CompositeIndexTest extends AbstractQueryTest {
         keyValues.putAll(dataTypeHandler.getMetadata().getBulkMetadata());
 
         // Write the composite transition date manually
-        Key tdKey = new Key(new Text(GEO_FIELD), new Text(ColumnFamilyConstants.COLF_CITD), new Text(DATA_TYPE_NAME + "\0" + COMPOSITE_BEGIN_DATE), new Text(),
-                        new SimpleDateFormat(CompositeMetadataHelper.transitionDateFormat).parse(COMPOSITE_BEGIN_DATE).getTime());
+        Key tdKey = new Key(new Text(GEO_FIELD), new Text(MetadataColumnFamilyConstants.COLF_CITD), new Text(DATA_TYPE_NAME + "\0" + COMPOSITE_BEGIN_DATE),
+                        new Text(), new SimpleDateFormat(CompositeMetadataHelper.transitionDateFormat).parse(COMPOSITE_BEGIN_DATE).getTime());
         keyValues.put(new BulkIngestKey(new Text(TableName.METADATA), tdKey), new Value());
 
         // write these values to their respective tables
@@ -476,8 +478,9 @@ public class CompositeIndexTest extends AbstractQueryTest {
 
         ShardQueryLogic rangeLogic = getShardQueryLogic(true);
         if (!rangeLogic.isUseDocumentScheduler()) {
+            // the ivarator forces a full scan of the query's date range: six shard days at NUM_SHARDS shards apiece
             List<QueryData> queries = getQueryRanges(rangeLogic, query);
-            assertEquals(2196, queries.size());
+            assertEquals(6 * NUM_SHARDS, queries.size());
         }
 
         runGeoQuery(rangeLogic, query, 9);

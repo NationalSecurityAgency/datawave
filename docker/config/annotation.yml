@@ -96,7 +96,7 @@ annotation:
   priority: 'NORMAL'
   enableInternalIdLookup: 'true'
   lookup:
-    datawave-query-host: "quickstart:8443"
+    datawave-query-host: "webservice:8443"
     datawave-response-classes:
       - "datawave.webservice.result.GenericResponse"
       - "datawave.webservice.result.VoidResponse"
