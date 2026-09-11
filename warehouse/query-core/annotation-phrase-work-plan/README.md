@@ -37,7 +37,7 @@ Extend `AnnotationHitsTransformer` from standalone keyword matching to structure
 - [x] [Task 04 — Lucene extraction and alternative merging](TASK-04-lucene-extractor.md)
 - [x] [Task 05 — Annotation position model and standalone matcher](TASK-05-position-model.md)
 - [x] [Task 06 — Ordered phrase matcher](TASK-06-ordered-matcher.md)
-- [ ] [Task 07 — Unordered adjacent/within matcher](TASK-07-unordered-matcher.md)
+- [x] [Task 07 — Unordered adjacent/within matcher](TASK-07-unordered-matcher.md)
 - [ ] [Task 08 — PhraseHit and compatible AllHitsFactory extension](TASK-08-hit-factory.md)
 - [ ] [Task 09 — Transformer and ShardQueryLogic integration](TASK-09-integration.md)
 - [ ] [Task 10 — End-to-end validation and cleanup](TASK-10-final-validation.md)
