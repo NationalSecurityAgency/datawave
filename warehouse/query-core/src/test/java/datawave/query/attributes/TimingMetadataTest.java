@@ -66,8 +66,6 @@ public class TimingMetadataTest {
 
     private TimingMetadata createTimingMetadata() {
         TimingMetadata metadata = new TimingMetadata();
-        metadata.setMetadata(docKey);
-        metadata.setToKeep(true);
         metadata.setNextCount(1234);
         metadata.setSourceCount(23);
         metadata.setSeekCount(34);
@@ -78,8 +76,6 @@ public class TimingMetadataTest {
 
     private TimingMetadata createRandomTimingMetadata() {
         TimingMetadata metadata = new TimingMetadata();
-        metadata.setMetadata(docKey);
-        metadata.setToKeep(true);
         metadata.setNextCount(random.nextInt(max));
         metadata.setSourceCount(random.nextInt(max));
         metadata.setSeekCount(random.nextInt(max));
