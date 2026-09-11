@@ -35,7 +35,8 @@ public interface JexlArgumentDescriptor {
      *            the datatype filter
      * @param settings
      *            the config settings
-     * @return The query which will be used against the global index
+     * @return the query which will be used against the global index, or {@link datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory#TRUE_NODE}
+     *         if index searching should be skipped for this function
      */
     JexlNode getIndexQuery(ShardQueryConfiguration settings, MetadataHelper metadataHelper, DateIndexHelper dateIndexHelper, Set<String> datatypeFilter);
 
