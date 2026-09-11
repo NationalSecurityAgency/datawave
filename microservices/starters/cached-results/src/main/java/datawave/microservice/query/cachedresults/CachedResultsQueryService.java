@@ -8,6 +8,7 @@ import static datawave.microservice.query.cachedresults.status.CachedResultsQuer
 import static datawave.microservice.query.cachedresults.status.CachedResultsQueryStatus.CACHED_RESULTS_STATE.LOADED;
 import static datawave.microservice.query.cachedresults.status.CachedResultsQueryStatus.CACHED_RESULTS_STATE.LOADING;
 import static datawave.microservice.query.cachedresults.status.CachedResultsQueryStatus.CACHED_RESULTS_STATE.NONE;
+import static datawave.util.StringUtils.EMPTY_STRING;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -21,7 +22,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -30,6 +30,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import org.apache.accumulo.access.AccessExpression;
 import org.apache.commons.collections4.Transformer;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
@@ -61,7 +62,7 @@ import datawave.microservice.query.cachedresults.status.cache.CachedResultsQuery
 import datawave.microservice.query.storage.QueryStatus;
 import datawave.microservice.query.storage.QueryStorageCache;
 import datawave.security.authorization.ProxiedUserDetails;
-import datawave.security.util.ProxiedEntityUtils;
+import datawave.security.util.DnUtils;
 import datawave.webservice.common.audit.AuditParameters;
 import datawave.webservice.common.audit.Auditor;
 import datawave.webservice.query.cachedresults.CacheableQueryRow;
@@ -171,7 +172,7 @@ public class CachedResultsQueryService {
      *             if the operation fails
      */
     public GenericResponse<String> load(String definedQueryId, String alias, ProxiedUserDetails currentUser) throws QueryException {
-        log.info("Request: {}/load from {} with alias: {}", definedQueryId, ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName()), alias);
+        log.info("Request: {}/load from {} with alias: {}", definedQueryId, DnUtils.getShortName(currentUser.getPrimaryUser().getName()), alias);
 
         CachedResultsQueryStatus cachedResultsQueryStatus = null;
         try {
@@ -428,7 +429,16 @@ public class CachedResultsQueryService {
                         ps.setString(5, cacheableQueryRow.getEventId());
                         ps.setString(6, cacheableQueryRow.getRow());
                         ps.setString(7, cacheableQueryRow.getColFam());
-                        ps.setString(8, MarkingFunctions.Encoding.toString(new TreeMap<>(cacheableQueryRow.getMarkings())));
+
+                        String visibility = EMPTY_STRING;
+                        if (cacheableQueryRow.getMarkings() != null) {
+                            AccessExpression ae = cacheableQueryRow.getMarkings().toAccessExpression();
+                            if (ae != null) {
+                                visibility = ae.getExpression();
+                            }
+                        }
+
+                        ps.setString(8, visibility);
 
                         // keep track of the populated columns
                         Set<Integer> populatedColumns = new HashSet<>();
@@ -558,7 +568,7 @@ public class CachedResultsQueryService {
     }
 
     public CachedResultsResponse create(String key, MultiValueMap<String,String> parameters, ProxiedUserDetails currentUser) throws QueryException {
-        String user = ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName());
+        String user = DnUtils.getShortName(currentUser.getPrimaryUser().getName());
         if (log.isDebugEnabled()) {
             log.info("Request: {}/create from {} with params: {}", key, user, parameters);
         } else {
@@ -679,7 +689,7 @@ public class CachedResultsQueryService {
 
     public CachedResultsResponse loadAndCreate(String definedQueryId, MultiValueMap<String,String> parameters, ProxiedUserDetails currentUser)
                     throws QueryException {
-        String user = ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName());
+        String user = DnUtils.getShortName(currentUser.getPrimaryUser().getName());
         if (log.isDebugEnabled()) {
             log.info("Request: {}/loadAndCreate from {} with params: {}", definedQueryId, user, parameters);
         } else {
@@ -769,7 +779,7 @@ public class CachedResultsQueryService {
 
         // if we haven't already, validate the markings
         SecurityMarking securityMarking = scopedSecurityMarking.get();
-        if (securityMarking.toColumnVisibilityString() == null) {
+        if (securityMarking.toAccessExpressionString() == null) {
             validateSecurityMarkings(parameters);
         }
 
@@ -817,7 +827,7 @@ public class CachedResultsQueryService {
         // These are parameters that aren't passed in by the user, but rather are computed from other sources.
         PrivateAuditConstants.stripPrivateParameters(parameters);
         parameters.add(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
-        parameters.set(PrivateAuditConstants.COLUMN_VISIBILITY, scopedSecurityMarking.get().toColumnVisibilityString());
+        parameters.set(PrivateAuditConstants.COLUMN_VISIBILITY, scopedSecurityMarking.get().toAccessExpressionString());
         parameters.add(PrivateAuditConstants.USER_DN, userDn);
     }
 
@@ -1076,7 +1086,7 @@ public class CachedResultsQueryService {
 
     public BaseQueryResponse getRows(String key, Integer rowBegin, Integer rowEnd, ProxiedUserDetails currentUser) throws QueryException {
         try {
-            String user = ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName());
+            String user = DnUtils.getShortName(currentUser.getPrimaryUser().getName());
             if (log.isDebugEnabled()) {
                 log.info("Request: {}/getRows from {} with rowBegin: {} rowEnd: {}", key, user, rowBegin, rowEnd);
             } else {
@@ -1187,7 +1197,7 @@ public class CachedResultsQueryService {
     }
 
     public GenericResponse<String> status(String key, ProxiedUserDetails currentUser) throws QueryException {
-        log.info("Request: {}/status from {}", key, ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName()));
+        log.info("Request: {}/status from {}", key, DnUtils.getShortName(currentUser.getPrimaryUser().getName()));
 
         CachedResultsQueryStatus cachedResultsQueryStatus = validateRequest(key, currentUser);
 
@@ -1197,7 +1207,7 @@ public class CachedResultsQueryService {
     }
 
     public CachedResultsDescribeResponse describe(String key, ProxiedUserDetails currentUser) throws QueryException {
-        log.info("Request: {}/describe from {}", key, ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName()));
+        log.info("Request: {}/describe from {}", key, DnUtils.getShortName(currentUser.getPrimaryUser().getName()));
 
         CachedResultsQueryStatus cachedResultsQueryStatus = validateRequest(key, currentUser);
 
@@ -1209,12 +1219,12 @@ public class CachedResultsQueryService {
     }
 
     public VoidResponse cancel(String key, ProxiedUserDetails currentUser) throws QueryException {
-        log.info("Request: {}/cancel from {}", key, ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName()));
+        log.info("Request: {}/cancel from {}", key, DnUtils.getShortName(currentUser.getPrimaryUser().getName()));
         return cancel(key, currentUser, false);
     }
 
     public VoidResponse adminCancel(String key, ProxiedUserDetails currentUser) throws QueryException {
-        log.info("Request: {}/adminCancel from {}", key, ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName()));
+        log.info("Request: {}/adminCancel from {}", key, DnUtils.getShortName(currentUser.getPrimaryUser().getName()));
         return cancel(key, currentUser, true);
     }
 
@@ -1241,12 +1251,12 @@ public class CachedResultsQueryService {
     }
 
     public VoidResponse close(String key, ProxiedUserDetails currentUser) throws QueryException {
-        log.info("Request: {}/close from {}", key, ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName()));
+        log.info("Request: {}/close from {}", key, DnUtils.getShortName(currentUser.getPrimaryUser().getName()));
         return close(key, currentUser, false);
     }
 
     public VoidResponse adminClose(String key, ProxiedUserDetails currentUser) throws QueryException {
-        log.info("Request: {}/adminClose from {}", key, ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName()));
+        log.info("Request: {}/adminClose from {}", key, DnUtils.getShortName(currentUser.getPrimaryUser().getName()));
         return close(key, currentUser, true);
     }
 
@@ -1286,7 +1296,7 @@ public class CachedResultsQueryService {
 
     public CachedResultsResponse setAlias(String key, String alias, ProxiedUserDetails currentUser) throws QueryException {
         try {
-            log.info("Request: {}/setAlias from {} with alias {}", key, ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName()), alias);
+            log.info("Request: {}/setAlias from {} with alias {}", key, DnUtils.getShortName(currentUser.getPrimaryUser().getName()), alias);
 
             CachedResultsQueryStatus cachedResultsQueryStatus = validateRequest(key, currentUser);
 
@@ -1317,7 +1327,7 @@ public class CachedResultsQueryService {
     public CachedResultsResponse update(String key, String fields, String conditions, String grouping, String order, Integer pagesize,
                     ProxiedUserDetails currentUser) throws QueryException {
         try {
-            String user = ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName());
+            String user = DnUtils.getShortName(currentUser.getPrimaryUser().getName());
             if (log.isDebugEnabled()) {
                 log.info("Request: {}/udpate from {} with fields: {}, contitions: {}, groupind: {}, order: {}, pagesize: {}", key, user, fields, conditions,
                                 grouping, order, pagesize);
@@ -1421,8 +1431,8 @@ public class CachedResultsQueryService {
         // admin requests can operate on any query, regardless of ownership
         if (!adminOverride) {
             // does the current user own this query?
-            String currentUserId = ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getDn().subjectDN());
-            String ownerUserId = ProxiedEntityUtils.getShortName(cachedResultsQueryStatus.getCurrentUser().getPrimaryUser().getDn().subjectDN());
+            String currentUserId = DnUtils.getShortName(currentUser.getPrimaryUser().getDn().subjectDN());
+            String ownerUserId = DnUtils.getShortName(cachedResultsQueryStatus.getCurrentUser().getPrimaryUser().getDn().subjectDN());
             if (!ownerUserId.equals(currentUserId)) {
                 throw new UnauthorizedQueryException(DatawaveErrorCode.QUERY_OWNER_MISMATCH, MessageFormat.format("{0} != {1}", currentUserId, ownerUserId));
             }

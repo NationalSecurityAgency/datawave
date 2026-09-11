@@ -1,10 +1,11 @@
 package datawave.webservice.query.configuration;
 
-import static org.easymock.EasyMock.expect;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -16,11 +17,7 @@ import java.util.Set;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.iterators.TransformIterator;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.api.easymock.PowerMock;
-import org.powermock.api.easymock.annotation.Mock;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.Sets;
 
@@ -34,70 +31,63 @@ import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.ProxiedUserDetails;
 import datawave.webservice.common.audit.Auditor;
 
-@RunWith(PowerMockRunner.class)
 public class TestBaseQueryLogic {
 
-    @Mock
-    BaseQueryLogic<Object> copy;
+    private final BaseQueryLogic<Object> copy = mock(BaseQueryLogic.class);
+    private final Query query = mock(Query.class);
+    private final GenericQueryConfiguration config = mock(GenericQueryConfiguration.class);
 
-    @Mock
-    Query query;
-
-    @Mock
-    GenericQueryConfiguration config;
+    private final String SYSTEM_FROM = "SystemFrom";
 
     @Test
-    public void testConstructor_Copy() throws Exception {
+    public void testConstructor_Copy() {
         // Set expectations
-        expect(this.copy.getMarkingFunctions()).andReturn(null);
-        expect(this.copy.getResponseObjectFactory()).andReturn(null);
-        expect(this.copy.getLogicName()).andReturn("logicName");
-        expect(this.copy.getLogicDescription()).andReturn("logicDescription");
-        expect(this.copy.getAuditType(null)).andReturn(Auditor.AuditType.ACTIVE);
-        expect(this.copy.getMaxPageSize()).andReturn(25);
-        expect(this.copy.getPageByteTrigger()).andReturn(1024L);
-        expect(this.copy.getCollectQueryMetrics()).andReturn(false);
-        expect(this.copy.getRequiredRoles()).andReturn(null);
-        expect(this.copy.getSelectorExtractor()).andReturn(null);
-        expect(this.copy.getCurrentUser()).andReturn(null);
-        expect(this.copy.getServerUser()).andReturn(null);
-        expect(this.copy.getResponseEnricherBuilder()).andReturn(null);
+        when(this.copy.getMarkingFunctions()).thenReturn(null);
+        when(this.copy.getResponseObjectFactory()).thenReturn(null);
+        when(this.copy.getLogicName()).thenReturn("logicName");
+        when(this.copy.getLogicDescription()).thenReturn("logicDescription");
+        when(this.copy.getAuditType(null)).thenReturn(Auditor.AuditType.ACTIVE);
+        when(this.copy.getMaxPageSize()).thenReturn(25);
+        when(this.copy.getPageByteTrigger()).thenReturn(1024L);
+        when(this.copy.getCollectQueryMetrics()).thenReturn(false);
+        when(this.copy.getRequiredRoles()).thenReturn(null);
+        when(this.copy.getSelectorExtractor()).thenReturn(null);
+        when(this.copy.getCurrentUser()).thenReturn(null);
+        when(this.copy.getServerUser()).thenReturn(null);
+        when(this.copy.getResponseEnricherBuilder()).thenReturn(null);
         ProxiedUserDetails principal = new DatawavePrincipal();
-        expect(this.copy.getCurrentUser()).andReturn(principal).anyTimes();
+        when(this.copy.getCurrentUser()).thenReturn(principal);
 
         // setup expectations for GenericQueryConfig
-        expect(config.getQuery()).andReturn(new QueryImpl());
-        expect(config.isCheckpointable()).andReturn(false);
-        expect(config.getAuthorizations()).andReturn(null).anyTimes();
-        expect(config.getQueryString()).andReturn("FOO == 'bar'").anyTimes();
-        expect(config.getBeginDate()).andReturn(null).anyTimes();
-        expect(config.getEndDate()).andReturn(null).anyTimes();
-        expect(config.getMaxWork()).andReturn(1L).anyTimes();
-        expect(config.getBaseIteratorPriority()).andReturn(100).anyTimes();
-        expect(config.getTableName()).andReturn("tableName").anyTimes();
-        expect(config.getBypassAccumulo()).andReturn(false).anyTimes();
-        expect(config.getAccumuloPassword()).andReturn("env:PASS").anyTimes();
-        expect(config.isReduceResults()).andReturn(false).anyTimes();
-        expect(config.getClient()).andReturn(null).anyTimes();
-        expect(config.getQueries()).andReturn(Collections.emptyList()).anyTimes();
-        expect(config.getQueriesIter()).andReturn(Collections.emptyIterator()).anyTimes();
-        expect(config.getTableConsistencyLevels()).andReturn(Collections.emptyMap()).anyTimes();
-        expect(config.getTableHints()).andReturn(Collections.emptyMap()).anyTimes();
-        expect(config.getConnPoolName()).andReturn("connPool1");
-        expect(this.copy.getConfig()).andReturn(config).anyTimes();
+        when(config.getQuery()).thenReturn(new QueryImpl());
+        when(config.isCheckpointable()).thenReturn(false);
+        when(config.getAuthorizations()).thenReturn(null);
+        when(config.getQueryString()).thenReturn("FOO == 'bar'");
+        when(config.getBeginDate()).thenReturn(null);
+        when(config.getEndDate()).thenReturn(null);
+        when(config.getMaxWork()).thenReturn(1L);
+        when(config.getBaseIteratorPriority()).thenReturn(100);
+        when(config.getTableName()).thenReturn("tableName");
+        when(config.getBypassAccumulo()).thenReturn(false);
+        when(config.getAccumuloPassword()).thenReturn("env:PASS");
+        when(config.isReduceResults()).thenReturn(false);
+        when(config.getClient()).thenReturn(null);
+        when(config.getQueries()).thenReturn(Collections.emptyList());
+        when(config.getQueriesIter()).thenReturn(Collections.emptyIterator());
+        when(config.getTableConsistencyLevels()).thenReturn(Collections.emptyMap());
+        when(config.getTableHints()).thenReturn(Collections.emptyMap());
+        when(config.getConnPoolName()).thenReturn("connPool1");
+        when(this.copy.getConfig()).thenReturn(config);
 
-        // Run the test
-        PowerMock.replayAll();
         BaseQueryLogic<Object> subject = new TestQueryLogic<>(this.copy);
         int result1 = subject.getMaxPageSize();
         long result2 = subject.getPageByteTrigger();
         TransformIterator result3 = subject.getTransformIterator(this.query);
-        PowerMock.verifyAll();
 
         // Verify results
-        assertEquals("Incorrect max page size", 25, result1);
-        assertEquals("Incorrect page byte trigger", 1024L, result2);
-        assertNotNull("Iterator should not be null", result3);
+        assertEquals(25, result1, "Incorrect max page size");
+        assertEquals(1024L, result2, "Incorrect page byte trigger");
+        assertNotNull(result3, "Iterator should not be null");
     }
 
     @Test
@@ -140,16 +130,20 @@ public class TestBaseQueryLogic {
      *            the expected limits to be returned in each case
      */
     public void assertGetResultsLimitsDn(List<String> dns, BaseQueryLogic<Object> logic, long... limits) {
-        PowerMock.resetAll();
-        expect(query.getDnList()).andReturn(dns);
-        expect(query.getDnList()).andReturn(null);
-        expect(query.getDnList()).andReturn(Collections.emptyList());
-        expect(query.getSystemFrom()).andReturn(null).anyTimes();
-        PowerMock.replayAll();
-        for (long limit : limits) {
-            assertEquals(limit, logic.getResultLimit(query));
-        }
-        PowerMock.verifyAll();
+        //  SystemFrom is always null
+        when(query.getSystemFrom()).thenReturn(null);
+
+        long[] expected = Arrays.copyOf(limits, limits.length);
+        assertEquals(3, expected.length);
+
+        when(query.getDnList()).thenReturn(dns);
+        assertEquals(expected[0], logic.getResultLimit(query));
+
+        when(query.getDnList()).thenReturn(null);
+        assertEquals(expected[1], logic.getResultLimit(query));
+
+        when(query.getDnList()).thenReturn(Collections.emptyList());
+        assertEquals(expected[2], logic.getResultLimit(query));
     }
 
     /**
@@ -161,16 +155,20 @@ public class TestBaseQueryLogic {
      *            the expected limits to be returned in each case
      */
     public void assertGetResultsLimitsSystemFrom(BaseQueryLogic<Object> logic, long... limits) {
-        PowerMock.resetAll();
-        expect(query.getSystemFrom()).andReturn("hoplark");
-        expect(query.getSystemFrom()).andReturn(null);
-        expect(query.getSystemFrom()).andReturn("");
-        expect(query.getDnList()).andReturn(null).anyTimes();
-        PowerMock.replayAll();
-        for (long limit : limits) {
-            assertEquals(limit, logic.getResultLimit(query));
-        }
-        PowerMock.verifyAll();
+        //  DN list is always null
+        when(query.getDnList()).thenReturn(null);
+
+        long[] expected = Arrays.copyOf(limits, limits.length);
+        assertEquals(3, expected.length);
+
+        when(query.getSystemFrom()).thenReturn(SYSTEM_FROM);
+        assertEquals(expected[0], logic.getResultLimit(query));
+
+        when(query.getSystemFrom()).thenReturn(null);
+        assertEquals(expected[1], logic.getResultLimit(query));
+
+        when(query.getSystemFrom()).thenReturn("");
+        assertEquals(expected[2], logic.getResultLimit(query));
     }
 
     /**
@@ -183,25 +181,24 @@ public class TestBaseQueryLogic {
      *            the expected limits to be returned in each case
      */
     public void assertGetResultsLimitsDnPrecedence(List<String> dns, BaseQueryLogic<Object> logic, long... limits) {
-        PowerMock.resetAll();
+
+        long[] expected = Arrays.copyOf(limits, limits.length);
+        assertEquals(3, expected.length);
 
         // first call, populated dn list and populated system from
-        expect(query.getDnList()).andReturn(dns);
-        expect(query.getSystemFrom()).andReturn("hoplark");
+        when(query.getDnList()).thenReturn(dns);
+        when(query.getSystemFrom()).thenReturn(SYSTEM_FROM);
+        assertEquals(expected[0], logic.getResultLimit(query));
 
         // second call, populated dn list and empty system from
-        expect(query.getDnList()).andReturn(dns);
-        expect(query.getSystemFrom()).andReturn(null);
+        when(query.getDnList()).thenReturn(dns);
+        when(query.getSystemFrom()).thenReturn(null);
+        assertEquals(expected[1], logic.getResultLimit(query));
 
         // third call, null dn list and populated system from
-        expect(query.getDnList()).andReturn(null);
-        expect(query.getSystemFrom()).andReturn("hoplark");
-
-        PowerMock.replayAll();
-        for (long limit : limits) {
-            assertEquals(limit, logic.getResultLimit(query));
-        }
-        PowerMock.verifyAll();
+        when(query.getDnList()).thenReturn(null);
+        when(query.getSystemFrom()).thenReturn(SYSTEM_FROM);
+        assertEquals(expected[2], logic.getResultLimit(query));
     }
 
     @Test
@@ -262,13 +259,13 @@ public class TestBaseQueryLogic {
         // Assert cases given systemFromResultLimits == non-empty map with single match of a smaller limit. The matching limit should be returned when
         // applicable.
         systemFromResultLimits.clear();
-        systemFromResultLimits.put("hoplark", 25L);
+        systemFromResultLimits.put(SYSTEM_FROM, 25L);
         assertGetResultsLimitsSystemFrom(logic, 25L, 1000L, 1000L);
 
         // Assert cases given systemFromResultLimits == non-empty map with single match of a larger limit. The matching limit should be returned when
         // applicable.
         systemFromResultLimits.clear();
-        systemFromResultLimits.put("hoplark", 5000L);
+        systemFromResultLimits.put(SYSTEM_FROM, 5000L);
         assertGetResultsLimitsSystemFrom(logic, 5000L, 1000L, 1000L);
     }
 
@@ -286,7 +283,7 @@ public class TestBaseQueryLogic {
         logic.setSystemFromResultLimits(Collections.emptyMap());
         assertGetResultsLimitsDnPrecedence(dns, logic, 1000L, 1000L, 1000L);
 
-        // Assert cases given dnResultLimits == non-empty map with no matches and a systemFromResults as a non empty map with no matches. The maxResults should
+        // Assert cases given dnResultLimits == non-empty map with no matches and a systemFromResults as a non-empty map with no matches. The maxResults should
         // be returned.
         Map<String,Long> dnResultLimits = new HashMap<>();
         Map<String,Long> systemFromResultLimits = new HashMap<>();
@@ -305,7 +302,7 @@ public class TestBaseQueryLogic {
         dnResultLimits.put("dn=user", 25L);
 
         systemFromResultLimits.clear();
-        systemFromResultLimits.put("hoplark", 50L);
+        systemFromResultLimits.put(SYSTEM_FROM, 50L);
 
         assertGetResultsLimitsDnPrecedence(dns, logic, 25L, 25L, 50L);
 
@@ -315,7 +312,7 @@ public class TestBaseQueryLogic {
         dnResultLimits.put("dn=user", 5000L);
 
         systemFromResultLimits.clear();
-        systemFromResultLimits.put("hoplark", 50L);
+        systemFromResultLimits.put(SYSTEM_FROM, 50L);
         assertGetResultsLimitsDnPrecedence(dns, logic, 5000L, 5000L, 50L);
 
         // Assert cases given dnResultLimits == non-empty map with multiple matches and a systemFromResults with a matching limit. The smallest matching limit
@@ -326,7 +323,7 @@ public class TestBaseQueryLogic {
         dnResultLimits.put("dn=user chain 2", 1L);
 
         systemFromResultLimits.clear();
-        systemFromResultLimits.put("hoplark", 75L);
+        systemFromResultLimits.put(SYSTEM_FROM, 75L);
 
         assertGetResultsLimitsDnPrecedence(dns, logic, 1L, 1L, 75L);
 
@@ -336,12 +333,12 @@ public class TestBaseQueryLogic {
         dnResultLimits.put("dn=other user", 25L);
 
         systemFromResultLimits.clear();
-        systemFromResultLimits.put("hoplark", 75L);
+        systemFromResultLimits.put(SYSTEM_FROM, 75L);
 
         assertGetResultsLimitsDnPrecedence(dns, logic, 75L, 1000L, 75L);
     }
 
-    private class TestQueryLogic<T> extends BaseQueryLogic<T> {
+    private static class TestQueryLogic<T> extends BaseQueryLogic<T> {
 
         public TestQueryLogic() {
             super();
@@ -353,18 +350,18 @@ public class TestBaseQueryLogic {
 
         @SuppressWarnings("rawtypes")
         @Override
-        public GenericQueryConfiguration initialize(AccumuloClient client, Query settings, Set runtimeQueryAuthorizations) throws Exception {
+        public GenericQueryConfiguration initialize(AccumuloClient client, Query settings, Set runtimeQueryAuthorizations) {
             return null;
         }
 
         @Override
-        public void setupQuery(GenericQueryConfiguration configuration) throws Exception {
+        public void setupQuery(GenericQueryConfiguration configuration) {
             // No op
         }
 
         @Override
-        public String getPlan(AccumuloClient client, Query settings, Set<Authorizations> runtimeQueryAuthorizations, boolean expandFields, boolean expandValues)
-                        throws Exception {
+        public String getPlan(AccumuloClient client, Query settings, Set<Authorizations> runtimeQueryAuthorizations, boolean expandFields,
+                        boolean expandValues) {
             return "";
         }
 
@@ -379,7 +376,7 @@ public class TestBaseQueryLogic {
         }
 
         @Override
-        public Object clone() throws CloneNotSupportedException {
+        public Object clone() {
             return null;
         }
 

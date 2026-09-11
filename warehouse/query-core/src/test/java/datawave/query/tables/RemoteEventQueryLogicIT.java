@@ -220,7 +220,10 @@ public class RemoteEventQueryLogicIT {
         remoteConfig.setConnectionPoolTimeout(1);
 
         // patch in the forever handler which will block until its unlocked
-        HttpHandler foreverHandler = new ForeverHandler(handlerInterrupt);
+        // use an arrival latch to ensure the first request occupies the connection before the second thread starts
+        CountDownLatch arrivalLatch = new CountDownLatch(1);
+        ForeverHandler foreverHandler = new ForeverHandler(handlerInterrupt);
+        foreverHandler.setArrivalLatch(arrivalLatch);
 
         testUtil.updateRoute("/DataWave/Query/" + DEFAULT_REMOTE_LOGIC + "/create", foreverHandler);
 
@@ -232,9 +235,17 @@ public class RemoteEventQueryLogicIT {
         RemoteQueryServiceTestUtil.QueryRunnable r2 = new RemoteQueryServiceTestUtil.QueryRunnable(logic);
         r2.setExceptionLatch(exceptionLatch);
 
-        // start both threads
+        // start the first thread and wait for it to acquire the single connection
         Thread t1 = new Thread(r1);
         t1.start();
+
+        try {
+            assertTrue("Timed out waiting for first request to arrive", arrivalLatch.await(35, TimeUnit.SECONDS));
+        } catch (InterruptedException e) {
+            throw new AssertionError("Interrupted while waiting for first request to arrive", e);
+        }
+
+        // now start the second thread which will find the pool exhausted
         Thread t2 = new Thread(r2);
         t2.start();
 
@@ -248,11 +259,10 @@ public class RemoteEventQueryLogicIT {
         assertFalse(r1.isSetup().get());
         assertFalse(r2.isSetup().get());
 
-        // only one thread had an exception
-        assertFalse(r1.isCaught().get() && r2.isCaught().get());
-        assertTrue(r1.getException() != null || r2.getException() != null);
-        assertTrue(r1.getException() == null || r1.getException() instanceof RemoteTimeoutQueryException);
-        assertTrue(r2.getException() == null || r2.getException() instanceof RemoteTimeoutQueryException);
+        // only the second thread should have an exception
+        assertFalse(r1.isCaught().get());
+        assertTrue(r2.isCaught().get());
+        assertTrue(r2.getException() instanceof RemoteTimeoutQueryException);
     }
 
     @Test

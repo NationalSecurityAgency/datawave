@@ -60,9 +60,9 @@ import datawave.microservice.querymetric.factory.QueryMetricResponseFactory;
 import datawave.microservice.querymetric.handler.QueryGeometryHandler;
 import datawave.microservice.querymetric.handler.ShardTableQueryMetricHandler;
 import datawave.microservice.querymetric.handler.SimpleQueryGeometryHandler;
-import datawave.microservice.security.util.DnUtils;
 import datawave.query.jexl.visitors.JexlFormattedStringBuildingVisitor;
 import datawave.security.authorization.DatawaveUser;
+import datawave.security.util.DnUtils;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.result.VoidResponse;
@@ -87,7 +87,7 @@ public class QueryMetricOperations {
     private QueryGeometryHandler geometryHandler;
     private CacheManager cacheManager;
     private Cache incomingQueryMetricsCache;
-    private MarkingFunctions markingFunctions;
+    private MarkingFunctions<?> markingFunctions;
     private QueryMetricResponseFactory queryMetricResponseFactory;
     private MergeLockLifecycleListener mergeLock;
     private Correlator correlator;
@@ -97,7 +97,6 @@ public class QueryMetricOperations {
     private static Set<String> inProcess = Collections.synchronizedSet(new HashSet<>());
 
     private final QueryMetricClient queryMetricClient;
-    private final DnUtils dnUtils;
 
     /**
      * The enum Default datetime.
@@ -136,14 +135,12 @@ public class QueryMetricOperations {
      *            the stats
      * @param queryMetricClient
      *            the QueryMetricClient
-     * @param dnUtils
-     *            the dnUtils
      */
     @Autowired
     public QueryMetricOperations(@Qualifier("queryMetricCacheManager") CacheManager cacheManager, ShardTableQueryMetricHandler handler,
-                    QueryGeometryHandler geometryHandler, MarkingFunctions markingFunctions, QueryMetricResponseFactory queryMetricResponseFactory,
+                    QueryGeometryHandler geometryHandler, MarkingFunctions<?> markingFunctions, QueryMetricResponseFactory queryMetricResponseFactory,
                     MergeLockLifecycleListener mergeLock, Correlator correlator, MetricUpdateEntryProcessorFactory entryProcessorFactory,
-                    QueryMetricOperationsStats stats, QueryMetricClient queryMetricClient, DnUtils dnUtils) {
+                    QueryMetricOperationsStats stats, QueryMetricClient queryMetricClient) {
         this.handler = handler;
         this.geometryHandler = geometryHandler;
         this.cacheManager = cacheManager;
@@ -155,7 +152,6 @@ public class QueryMetricOperations {
         this.entryProcessorFactory = entryProcessorFactory;
         this.stats = stats;
         this.queryMetricClient = queryMetricClient;
-        this.dnUtils = dnUtils;
     }
 
     @PreDestroy
@@ -462,7 +458,7 @@ public class QueryMetricOperations {
         boolean sameUser = false;
         if (currentUser != null) {
             String metricUser = metric.getUser();
-            String requestingUser = dnUtils.getShortName(currentUser.getPrimaryUser().getName());
+            String requestingUser = DnUtils.getShortName(currentUser.getPrimaryUser().getName());
             sameUser = metricUser != null && metricUser.equals(requestingUser);
         }
         return sameUser;
@@ -478,11 +474,14 @@ public class QueryMetricOperations {
 
     private boolean canViewMetric(DatawaveUserDetails currentUser, BaseQueryMetric metric) throws Exception {
         boolean userCanViewMetric = true;
-        ColumnVisibility columnVisibility = this.markingFunctions.translateToColumnVisibility(metric.getMarkings());
+        ColumnVisibility columnVisibility = null;
+        if (null != metric.getMarkings()) {
+            columnVisibility = metric.getMarkings().toColumnVisibility();
+        }
         for (DatawaveUser user : currentUser.getProxiedUsers()) {
             Authorizations authorizations = new Authorizations(user.getAuths().toArray(new String[0]));
             VisibilityEvaluator visibilityEvaluator = new VisibilityEvaluator(authorizations);
-            if (visibilityEvaluator.evaluate(columnVisibility) == false) {
+            if (!visibilityEvaluator.evaluate(columnVisibility)) {
                 userCanViewMetric = false;
                 break;
             }

@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>gov.nsa.datawave</groupId>
     <artifactId>datawave-parent</artifactId>
-    <version>7.38.0-SNAPSHOT</version>
+    <version>8.1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>DataWave</name>
     <description>DataWave is a Java-based ingest and query framework that leverages Apache Accumulo to provide fast, secure access to your data.</description>
@@ -19,6 +19,7 @@
         <module>core</module>
         <module>web-services</module>
         <module>warehouse</module>
+        <module>commons</module>
     </modules>
     <scm>
         <connection>scm:git:https://github.com/NationalSecurityAgency/datawave.git</connection>
@@ -39,6 +40,10 @@
         <build.env>dev</build.env>
         <container.registry>ghcr.io</container.registry>
         <env>dev</env>
+        <!-- Integration-test fork settings. Default to the surefire values so a module only has to set
+             the surefire property to move both plugins; override these to split unit and integration tests. -->
+        <failsafe.maxMemory>${surefire.maxMemory}</failsafe.maxMemory>
+        <failsafe.reuseForks>${surefire.reuseForks}</failsafe.reuseForks>
         <image.prefix>datawave/</image.prefix>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
@@ -51,9 +56,15 @@
         <sonar.exclusions>**/StandardLexer.java,**/*.js,**/*.css,**/*.html</sonar.exclusions>
         <sonar.sourceEncoding>UTF-8</sonar.sourceEncoding>
         <surefire.forkCount>1C</surefire.forkCount>
-        <version.accumulo>2.1.4</version.accumulo>
+        <!-- Test JVM heap. Override in a module that needs more or less than the inherited default. -->
+        <surefire.maxMemory>1024m</surefire.maxMemory>
+        <!-- Fork per test class. A module whose tests do not leak static state can set this to true in its
+             own properties to reuse forks and skip the per-class JVM startup. Verify the module's tests
+             still pass before enabling: shared static caches and registries are the usual blocker. -->
+        <surefire.reuseForks>false</surefire.reuseForks>
+        <version.accumulo>2.1.5</version.accumulo>
         <version.arquillian>1.4.1.Final</version.arquillian>
-        <version.arquillian-weld-ee-embedded>1.0.0.Final</version.arquillian-weld-ee-embedded>
+        <version.arquillian-weld-embedded>2.1.0.Final</version.arquillian-weld-embedded>
         <version.assertj>3.20.2</version.assertj>
         <version.avro>1.11.4</version.avro>
         <version.byte-buddy>1.14.11</version.byte-buddy>
@@ -68,21 +79,22 @@
         <version.commons-io>2.18.0</version.commons-io>
         <version.commons-jexl3>3.3</version.commons-jexl3>
         <version.commons-lang>2.6</version.commons-lang>
+        <version.commons-lang3>3.20.0</version.commons-lang3>
         <version.commons-logging>1.2</version.commons-logging>
         <version.commons-net>3.9.0</version.commons-net>
         <version.commons-pool>1.6</version.commons-pool>
         <version.commons-pool2>2.6.1</version.commons-pool2>
         <version.commons-text>1.11.0</version.commons-text>
-        <version.curator>5.7.1</version.curator>
-        <version.curator.test>5.7.1</version.curator.test>
-        <version.datawave.accumulo-api>4.0.0</version.datawave.accumulo-api>
+        <version.curator>5.9.0</version.curator>
+        <version.curator.test>5.9.0</version.curator.test>
+        <version.datawave.accumulo-api>4.0.5</version.datawave.accumulo-api>
         <version.datawave.audit-api>4.0.0</version.datawave.audit-api>
         <version.datawave.authorization-api>4.0.0</version.datawave.authorization-api>
-        <version.datawave.dictionary-api>4.0.5</version.datawave.dictionary-api>
+        <version.datawave.dictionary-api>4.0.10</version.datawave.dictionary-api>
         <version.datawave.mapreduce-query-api>1.0.0</version.datawave.mapreduce-query-api>
         <version.datawave.metrics-reporter>3.0.0</version.datawave.metrics-reporter>
         <version.datawave.query-api>1.0.0</version.datawave.query-api>
-        <version.datawave.query-metric-api>4.0.7</version.datawave.query-metric-api>
+        <version.datawave.query-metric-api>4.1.7</version.datawave.query-metric-api>
         <version.deltaspike>1.9.0</version.deltaspike>
         <version.dnsjava>3.6.3</version.dnsjava>
         <version.easymock>5.2.0</version.easymock>
@@ -99,9 +111,9 @@
         <version.hamcrest>1.3</version.hamcrest>
         <version.httpcomponents-httpclient>4.5.13</version.httpcomponents-httpclient>
         <version.httpcomponents-httpcore>4.4.8</version.httpcomponents-httpcore>
-        <version.in-memory-accumulo>4.0.4</version.in-memory-accumulo>
+        <version.in-memory-accumulo>4.0.6</version.in-memory-accumulo>
         <version.infinispan>9.4.21.Final</version.infinispan>
-        <version.jackson>2.13.5</version.jackson>
+        <version.jackson>2.12.7</version.jackson>
         <version.jackson-mapper-asl>1.9.13</version.jackson-mapper-asl>
         <version.jakarta>2.3.3</version.jakarta>
         <version.javassist>3.24.0-GA</version.javassist>
@@ -111,19 +123,21 @@
         <version.jaxb-api>2.3.1</version.jaxb-api>
         <version.jaxb-impl>2.3.3</version.jaxb-impl>
         <version.jboss-ejb-api>1.0.2.Final</version.jboss-ejb-api>
-        <version.jcommander>1.72</version.jcommander>
+        <version.jcommander>1.82</version.jcommander>
         <version.jetty>6.1.26</version.jetty>
         <version.jgroups>4.0.19.Final</version.jgroups>
         <version.jjwt>0.11.2</version.jjwt>
         <version.json>20231013</version.json>
         <version.jts>1.19.0</version.jts>
+        <version.junit-pioneer>2.3.0</version.junit-pioneer>
         <version.junit4>4.13.2</version.junit4>
         <version.junit5>5.12.0</version.junit5>
         <version.junit5.platform>1.12.0</version.junit5.platform>
         <version.jython>2.7.2b2</version.jython>
         <version.kryo>2.20</version.kryo>
         <version.kryonet>2.20</version.kryonet>
-        <version.log4j>2.25.3</version.log4j>
+        <version.log4j>2.26.1</version.log4j>
+        <version.lombok>1.18.36</version.lombok>
         <version.lucene>7.5.0</version.lucene>
         <version.metrics-cdi>1.6.0</version.metrics-cdi>
         <version.minlog>1.2</version.minlog>
@@ -132,11 +146,10 @@
         <version.netty>4.1.42.Final</version.netty>
         <version.objenesis>3.3</version.objenesis>
         <version.picketbox>5.0.3.Final</version.picketbox>
-        <version.powermock>2.0.9</version.powermock>
         <version.proto-google-common-protos>2.61.0</version.proto-google-common-protos>
         <version.protobuf>3.16.3</version.protobuf>
         <version.protobuf-java-util>3.16.3</version.protobuf-java-util>
-        <version.protostuff>1.6.2</version.protostuff>
+        <version.protostuff>1.7.4</version.protostuff>
         <version.saxon-he>12.4</version.saxon-he>
         <version.slf4j>2.0.17</version.slf4j>
         <version.spotify-dns>3.1.5</version.spotify-dns>
@@ -144,13 +157,13 @@
         <version.springframework>${version.spring}</version.springframework>
         <version.stream>2.9.6</version.stream>
         <version.thrift>0.17.0</version.thrift>
-        <version.weld>3.1.1.Final</version.weld>
-        <version.weld-se>3.1.1.Final</version.weld-se>
+        <version.weld>3.1.9.Final</version.weld>
+        <version.weld-se>3.1.9.Final</version.weld-se>
         <!-- Different version of weld for tests since the Arquillian embedded EE container needs an older version. -->
         <version.weld-test>2.3.5.Final</version.weld-test>
-        <version.wildfly>17.0.1.Final</version.wildfly>
+        <version.wildfly>26.1.3.Final</version.wildfly>
         <version.woodstox-core>5.4.0</version.woodstox-core>
-        <version.woodstox-stax2>3.1.4</version.woodstox-stax2>
+        <version.woodstox-stax2>4.2.2</version.woodstox-stax2>
         <version.xerces>2.12.2</version.xerces>
         <version.zookeeper>3.8.4</version.zookeeper>
         <!-- Unless a version is duplicated multiple times, just place the version on the dependency in dependencyManagement. -->
@@ -175,7 +188,7 @@
             </dependency>
             <dependency>
                 <groupId>org.wildfly.bom</groupId>
-                <artifactId>wildfly-javaee8-with-tools</artifactId>
+                <artifactId>wildfly-jakartaee8-with-tools</artifactId>
                 <version>${version.wildfly}</version>
                 <type>pom</type>
                 <scope>import</scope>
@@ -397,6 +410,11 @@
                         <artifactId>*</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>gov.nsa.datawave.commons</groupId>
+                <artifactId>datawave-commons-security</artifactId>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.core</groupId>
@@ -673,6 +691,11 @@
                 <groupId>io.astefanutti.metrics.cdi</groupId>
                 <artifactId>metrics-cdi</artifactId>
                 <version>${version.metrics-cdi}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-api</artifactId>
+                <version>${version.jjwt}</version>
             </dependency>
             <dependency>
                 <groupId>io.jsonwebtoken</groupId>
@@ -1358,22 +1381,10 @@
                 <scope>provided</scope>
             </dependency>
             <dependency>
-                <groupId>org.picketbox</groupId>
-                <artifactId>picketbox</artifactId>
-                <version>${version.picketbox}</version>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok</artifactId>
+                <version>${version.lombok}</version>
                 <scope>provided</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.picketbox</groupId>
-                <artifactId>picketbox-infinispan</artifactId>
-                <version>${version.picketbox}</version>
-                <scope>provided</scope>
-                <exclusions>
-                    <exclusion>
-                        <groupId>dom4j</groupId>
-                        <artifactId>dom4j</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.wildfly</groupId>
@@ -1459,14 +1470,14 @@
             </dependency>
             <dependency>
                 <groupId>org.jboss.arquillian.container</groupId>
-                <artifactId>arquillian-weld-ee-embedded-1.1</artifactId>
-                <version>${version.arquillian-weld-ee-embedded}</version>
+                <artifactId>arquillian-weld-embedded</artifactId>
+                <version>${version.arquillian-weld-embedded}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <groupId>org.jboss.weld</groupId>
-                <artifactId>weld-core</artifactId>
-                <version>${version.weld-test}</version>
+                <groupId>org.junit-pioneer</groupId>
+                <artifactId>junit-pioneer</artifactId>
+                <version>${version.junit-pioneer}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
@@ -1533,36 +1544,6 @@
                 <groupId>org.mockito</groupId>
                 <artifactId>mockito-junit-jupiter</artifactId>
                 <version>${version.mockito}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.powermock</groupId>
-                <artifactId>powermock-api-easymock</artifactId>
-                <version>${version.powermock}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.powermock</groupId>
-                <artifactId>powermock-api-mockito2</artifactId>
-                <version>${version.powermock}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.powermock</groupId>
-                <artifactId>powermock-module-junit4</artifactId>
-                <version>${version.powermock}</version>
-                <scope>test</scope>
-                <exclusions>
-                    <exclusion>
-                        <groupId>junit</groupId>
-                        <artifactId>junit</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.powermock</groupId>
-                <artifactId>powermock-reflect</artifactId>
-                <version>${version.powermock}</version>
                 <scope>test</scope>
             </dependency>
         </dependencies>
@@ -1688,6 +1669,11 @@
                     </configuration>
                     <dependencies>
                         <dependency>
+                            <groupId>org.apache.logging.log4j</groupId>
+                            <artifactId>log4j-to-slf4j</artifactId>
+                            <version>${version.log4j}</version>
+                        </dependency>
+                        <dependency>
                             <groupId>org.apache.maven.doxia</groupId>
                             <artifactId>doxia-sink-api</artifactId>
                             <version>2.0.0</version>
@@ -1741,8 +1727,9 @@
                 <plugin>
                     <groupId>io.github.git-commit-id</groupId>
                     <artifactId>git-commit-id-maven-plugin</artifactId>
-                    <version>9.0.1</version>
+                    <version>9.2.0</version>
                     <configuration>
+                        <useNativeGit>true</useNativeGit>
                         <dotGitDirectory>${maven.multiModuleProjectDirectory}/.git</dotGitDirectory>
                         <dateFormat>yyyy-MM-dd'T'HH:mm:ssZ</dateFormat>
                         <generateGitPropertiesFile>true</generateGitPropertiesFile>
@@ -1802,7 +1789,8 @@
                     <artifactId>maven-checkstyle-plugin</artifactId>
                     <version>3.6.0</version>
                     <configuration>
-                        <configLocation>checkstyle.xml</configLocation>
+                        <!-- Use multiModuleProjectDirectory to prevent child modules form looking inside their own sub-folders for checkstyle.xml. -->
+                        <configLocation>${maven.multiModuleProjectDirectory}/checkstyle.xml</configLocation>
                         <failsOnError>true</failsOnError>
                         <failOnViolation>false</failOnViolation>
                         <consoleOutput>true</consoleOutput>
@@ -1903,9 +1891,14 @@
                                             <exclude>log4j:log4j</exclude>
                                             <exclude>ch.qos.reload4j:reload4j</exclude>
                                             <exclude>ch.qos.logback:logback-classic</exclude>
+                                            <!-- exclude all versions of log4j before version.log4j -->
+                                            <exclude>org.apache.logging.log4j:*:(,${version.log4j})</exclude>
                                             <exclude>org.slf4j:slf4j-reload4j</exclude>
                                             <exclude>org.slf4j:slf4j-log4j12</exclude>
                                             <exclude>joda-time:joda-time</exclude>
+                                            <!-- exclude all versions of log4j before version.log4j -->
+                                            <exclude>org.apache.logging.log4j:*:(,${version.log4j})</exclude>
+                                            <exclude>org.powermock:*</exclude>
                                         </excludes>
                                     </bannedDependencies>
                                 </rules>
@@ -1930,6 +1923,10 @@
                                         <reason>Use JUnit5 instead of hamcrest</reason>
                                         <bannedImport>org.hamcrest.**</bannedImport>
                                     </restrictImports>
+                                    <restrictImports>
+                                        <reason>Use Mockito instead of PowerMock</reason>
+                                        <bannedImport>org.powermock.**</bannedImport>
+                                    </restrictImports>
                                 </rules>
                             </configuration>
                         </execution>
@@ -1942,7 +1939,7 @@
                     <configuration>
                         <skipTests>${skipTests}</skipTests>
                         <skipITs>${skipITs}</skipITs>
-                        <reuseForks>false</reuseForks>
+                        <reuseForks>${failsafe.reuseForks}</reuseForks>
                         <forkCount>${surefire.forkCount}</forkCount>
                         <threadCount>1</threadCount>
                         <threadCountClasses>1</threadCountClasses>
@@ -2063,11 +2060,6 @@
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>exec-maven-plugin</artifactId>
                     <version>3.5.0</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.codehaus.mojo</groupId>
-                    <artifactId>findbugs-maven-plugin</artifactId>
-                    <version>3.0.5</version>
                 </plugin>
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>

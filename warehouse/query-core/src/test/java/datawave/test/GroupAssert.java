@@ -36,8 +36,8 @@ public class GroupAssert extends AbstractAssert<GroupAssert,Group> {
 
     public GroupAssert hasVisibilitiesForKey(GroupingAttribute<?> key, ColumnVisibility... visibilities) {
         isNotNull();
-        Collection<ColumnVisibility> actualVisibilities = actual.getVisibilitiesForAttribute(key);
-        Assertions.assertThat(actualVisibilities).isNotNull().withFailMessage("Expected column visibilties for %s to contain exactly %s but was %s", key,
+        Collection<ColumnVisibility> actualVisibilities = actual.getColumnVisibilitiesForAttribute(key);
+        Assertions.assertThat(actualVisibilities).isNotNull().withFailMessage("Expected access expressions for %s to contain exactly %s but was %s", key,
                         Arrays.toString(visibilities), actualVisibilities).containsExactlyInAnyOrder(visibilities);
         return this;
     }
@@ -46,7 +46,7 @@ public class GroupAssert extends AbstractAssert<GroupAssert,Group> {
         isNotNull();
         Collection<ColumnVisibility> actualVisibilities = actual.getDocumentVisibilities();
         Assertions.assertThat(actualVisibilities).isNotNull()
-                        .withFailMessage("Expected document visibilities to contain exactly %s but was %s", Arrays.toString(visibilities), actualVisibilities)
+                        .withFailMessage("Expected document expressions to contain exactly %s but was %s", Arrays.toString(visibilities), actualVisibilities)
                         .containsExactlyInAnyOrder(visibilities);
         return this;
     }

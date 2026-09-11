@@ -21,6 +21,7 @@ public final class AnnotationSource extends com.google.protobuf.GeneratedMessage
         analyticSourceHash_ = "";
         engine_ = "";
         model_ = "";
+        platform_ = "";
     }
 
     @java.lang.Override
@@ -58,6 +59,7 @@ public final class AnnotationSource extends com.google.protobuf.GeneratedMessage
                                         datawave.annotation.protobuf.v1.AnnotationSource.Builder.class);
     }
 
+    private int bitField0_;
     public static final int ANALYTICHASH_FIELD_NUMBER = 1;
     private volatile java.lang.Object analyticHash_;
 
@@ -338,6 +340,66 @@ public final class AnnotationSource extends com.google.protobuf.GeneratedMessage
         return map.get(key);
     }
 
+    public static final int PLATFORM_FIELD_NUMBER = 6;
+    private volatile java.lang.Object platform_;
+
+    /**
+     * <pre>
+     * an optional string identifying the platform that produced the annotation.
+     * </pre>
+     *
+     * <code>string platform = 6;</code>
+     *
+     * @return Whether the platform field is set.
+     */
+    @java.lang.Override
+    public boolean hasPlatform() {
+        return ((bitField0_ & 0x00000001) != 0);
+    }
+
+    /**
+     * <pre>
+     * an optional string identifying the platform that produced the annotation.
+     * </pre>
+     *
+     * <code>string platform = 6;</code>
+     *
+     * @return The platform.
+     */
+    @java.lang.Override
+    public java.lang.String getPlatform() {
+        java.lang.Object ref = platform_;
+        if (ref instanceof java.lang.String) {
+            return (java.lang.String) ref;
+        } else {
+            com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
+            java.lang.String s = bs.toStringUtf8();
+            platform_ = s;
+            return s;
+        }
+    }
+
+    /**
+     * <pre>
+     * an optional string identifying the platform that produced the annotation.
+     * </pre>
+     *
+     * <code>string platform = 6;</code>
+     *
+     * @return The bytes for platform.
+     */
+    @java.lang.Override
+    public com.google.protobuf.ByteString getPlatformBytes() {
+        java.lang.Object ref = platform_;
+        if (ref instanceof java.lang.String) {
+            com.google.protobuf.ByteString b = com.google.protobuf.ByteString.copyFromUtf8((java.lang.String) ref);
+            platform_ = b;
+            return b;
+        } else {
+            return (com.google.protobuf.ByteString) ref;
+        }
+    }
+
     public static final int METADATA_FIELD_NUMBER = 50;
 
     private static final class MetadataDefaultEntryHolder {
@@ -447,6 +509,9 @@ public final class AnnotationSource extends com.google.protobuf.GeneratedMessage
             com.google.protobuf.GeneratedMessageV3.writeString(output, 4, model_);
         }
         com.google.protobuf.GeneratedMessageV3.serializeStringMapTo(output, internalGetConfiguration(), ConfigurationDefaultEntryHolder.defaultEntry, 5);
+        if (((bitField0_ & 0x00000001) != 0)) {
+            com.google.protobuf.GeneratedMessageV3.writeString(output, 6, platform_);
+        }
         com.google.protobuf.GeneratedMessageV3.serializeStringMapTo(output, internalGetMetadata(), MetadataDefaultEntryHolder.defaultEntry, 50);
         getUnknownFields().writeTo(output);
     }
@@ -474,6 +539,9 @@ public final class AnnotationSource extends com.google.protobuf.GeneratedMessage
             com.google.protobuf.MapEntry<java.lang.String,java.lang.String> configuration__ = ConfigurationDefaultEntryHolder.defaultEntry.newBuilderForType()
                             .setKey(entry.getKey()).setValue(entry.getValue()).build();
             size += com.google.protobuf.CodedOutputStream.computeMessageSize(5, configuration__);
+        }
+        if (((bitField0_ & 0x00000001) != 0)) {
+            size += com.google.protobuf.GeneratedMessageV3.computeStringSize(6, platform_);
         }
         for (java.util.Map.Entry<java.lang.String,java.lang.String> entry : internalGetMetadata().getMap().entrySet()) {
             com.google.protobuf.MapEntry<java.lang.String,java.lang.String> metadata__ = MetadataDefaultEntryHolder.defaultEntry.newBuilderForType()
@@ -505,6 +573,12 @@ public final class AnnotationSource extends com.google.protobuf.GeneratedMessage
             return false;
         if (!internalGetConfiguration().equals(other.internalGetConfiguration()))
             return false;
+        if (hasPlatform() != other.hasPlatform())
+            return false;
+        if (hasPlatform()) {
+            if (!getPlatform().equals(other.getPlatform()))
+                return false;
+        }
         if (!internalGetMetadata().equals(other.internalGetMetadata()))
             return false;
         if (!getUnknownFields().equals(other.getUnknownFields()))
@@ -530,6 +604,10 @@ public final class AnnotationSource extends com.google.protobuf.GeneratedMessage
         if (!internalGetConfiguration().getMap().isEmpty()) {
             hash = (37 * hash) + CONFIGURATION_FIELD_NUMBER;
             hash = (53 * hash) + internalGetConfiguration().hashCode();
+        }
+        if (hasPlatform()) {
+            hash = (37 * hash) + PLATFORM_FIELD_NUMBER;
+            hash = (53 * hash) + getPlatform().hashCode();
         }
         if (!internalGetMetadata().getMap().isEmpty()) {
             hash = (37 * hash) + METADATA_FIELD_NUMBER;
@@ -683,6 +761,8 @@ public final class AnnotationSource extends com.google.protobuf.GeneratedMessage
             model_ = "";
 
             internalGetMutableConfiguration().clear();
+            platform_ = "";
+            bitField0_ = (bitField0_ & ~0x00000002);
             internalGetMutableMetadata().clear();
             return this;
         }
@@ -710,14 +790,20 @@ public final class AnnotationSource extends com.google.protobuf.GeneratedMessage
         public datawave.annotation.protobuf.v1.AnnotationSource buildPartial() {
             datawave.annotation.protobuf.v1.AnnotationSource result = new datawave.annotation.protobuf.v1.AnnotationSource(this);
             int from_bitField0_ = bitField0_;
+            int to_bitField0_ = 0;
             result.analyticHash_ = analyticHash_;
             result.analyticSourceHash_ = analyticSourceHash_;
             result.engine_ = engine_;
             result.model_ = model_;
             result.configuration_ = internalGetConfiguration();
             result.configuration_.makeImmutable();
+            if (((from_bitField0_ & 0x00000002) != 0)) {
+                to_bitField0_ |= 0x00000001;
+            }
+            result.platform_ = platform_;
             result.metadata_ = internalGetMetadata();
             result.metadata_.makeImmutable();
+            result.bitField0_ = to_bitField0_;
             onBuilt();
             return result;
         }
@@ -782,6 +868,11 @@ public final class AnnotationSource extends com.google.protobuf.GeneratedMessage
                 onChanged();
             }
             internalGetMutableConfiguration().mergeFrom(other.internalGetConfiguration());
+            if (other.hasPlatform()) {
+                bitField0_ |= 0x00000002;
+                platform_ = other.platform_;
+                onChanged();
+            }
             internalGetMutableMetadata().mergeFrom(other.internalGetMetadata());
             this.mergeUnknownFields(other.getUnknownFields());
             onChanged();
@@ -833,6 +924,11 @@ public final class AnnotationSource extends com.google.protobuf.GeneratedMessage
                             internalGetMutableConfiguration().getMutableMap().put(configuration__.getKey(), configuration__.getValue());
                             break;
                         } // case 42
+                        case 50: {
+                            platform_ = input.readStringRequireUtf8();
+                            bitField0_ |= 0x00000002;
+                            break;
+                        } // case 50
                         case 402: {
                             com.google.protobuf.MapEntry<java.lang.String,java.lang.String> metadata__ = input
                                             .readMessage(MetadataDefaultEntryHolder.defaultEntry.getParserForType(), extensionRegistry);
@@ -1422,6 +1518,121 @@ public final class AnnotationSource extends com.google.protobuf.GeneratedMessage
 
         public Builder putAllConfiguration(java.util.Map<java.lang.String,java.lang.String> values) {
             internalGetMutableConfiguration().getMutableMap().putAll(values);
+            return this;
+        }
+
+        private java.lang.Object platform_ = "";
+
+        /**
+         * <pre>
+         * an optional string identifying the platform that produced the annotation.
+         * </pre>
+         *
+         * <code>string platform = 6;</code>
+         *
+         * @return Whether the platform field is set.
+         */
+        public boolean hasPlatform() {
+            return ((bitField0_ & 0x00000002) != 0);
+        }
+
+        /**
+         * <pre>
+         * an optional string identifying the platform that produced the annotation.
+         * </pre>
+         *
+         * <code>string platform = 6;</code>
+         *
+         * @return The platform.
+         */
+        public java.lang.String getPlatform() {
+            java.lang.Object ref = platform_;
+            if (!(ref instanceof java.lang.String)) {
+                com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
+                java.lang.String s = bs.toStringUtf8();
+                platform_ = s;
+                return s;
+            } else {
+                return (java.lang.String) ref;
+            }
+        }
+
+        /**
+         * <pre>
+         * an optional string identifying the platform that produced the annotation.
+         * </pre>
+         *
+         * <code>string platform = 6;</code>
+         *
+         * @return The bytes for platform.
+         */
+        public com.google.protobuf.ByteString getPlatformBytes() {
+            java.lang.Object ref = platform_;
+            if (ref instanceof String) {
+                com.google.protobuf.ByteString b = com.google.protobuf.ByteString.copyFromUtf8((java.lang.String) ref);
+                platform_ = b;
+                return b;
+            } else {
+                return (com.google.protobuf.ByteString) ref;
+            }
+        }
+
+        /**
+         * <pre>
+         * an optional string identifying the platform that produced the annotation.
+         * </pre>
+         *
+         * <code>string platform = 6;</code>
+         *
+         * @param value
+         *            The platform to set.
+         * @return This builder for chaining.
+         */
+        public Builder setPlatform(java.lang.String value) {
+            if (value == null) {
+                throw new NullPointerException();
+            }
+            bitField0_ |= 0x00000002;
+            platform_ = value;
+            onChanged();
+            return this;
+        }
+
+        /**
+         * <pre>
+         * an optional string identifying the platform that produced the annotation.
+         * </pre>
+         *
+         * <code>string platform = 6;</code>
+         *
+         * @return This builder for chaining.
+         */
+        public Builder clearPlatform() {
+            bitField0_ = (bitField0_ & ~0x00000002);
+            platform_ = getDefaultInstance().getPlatform();
+            onChanged();
+            return this;
+        }
+
+        /**
+         * <pre>
+         * an optional string identifying the platform that produced the annotation.
+         * </pre>
+         *
+         * <code>string platform = 6;</code>
+         *
+         * @param value
+         *            The bytes for platform to set.
+         * @return This builder for chaining.
+         */
+        public Builder setPlatformBytes(com.google.protobuf.ByteString value) {
+            if (value == null) {
+                throw new NullPointerException();
+            }
+            checkByteStringIsUtf8(value);
+            bitField0_ |= 0x00000002;
+            platform_ = value;
+            onChanged();
             return this;
         }
 

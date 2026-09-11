@@ -116,10 +116,12 @@ public class AccumuloConnectionFactoryBean implements AccumuloConnectionFactory 
      * @throws Exception
      *             if there are issues
      */
+    @PermitAll
     public AccumuloClient getClient(Priority priority, Map<String,String> trackingMap) throws Exception {
         return getClient(getCurrentUserDN(), getCurrentProxyServers(), priority, trackingMap);
     }
 
+    @PermitAll
     @Override
     public AccumuloClient getClient(String userDN, Collection<String> proxyServers, Priority priority, Map<String,String> trackingMap) throws Exception {
         return factory.getClient(userDN, proxyServers, priority, trackingMap);
@@ -138,10 +140,12 @@ public class AccumuloConnectionFactoryBean implements AccumuloConnectionFactory 
      * @throws Exception
      *             if there are issues
      */
+    @PermitAll
     public AccumuloClient getClient(final String cpn, final Priority priority, final Map<String,String> trackingMap) throws Exception {
         return getClient(getCurrentUserDN(), getCurrentProxyServers(), cpn, priority, trackingMap);
     }
 
+    @PermitAll
     @Override
     public AccumuloClient getClient(String userDN, Collection<String> proxyServers, String cpn, Priority priority, Map<String,String> trackingMap)
                     throws Exception {

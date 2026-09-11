@@ -59,8 +59,8 @@ import datawave.query.tables.ShardQueryLogic;
 import datawave.query.util.AbstractQueryTest;
 import datawave.query.util.ShapesIngest;
 import datawave.query.util.TestIndexTableNames;
+import datawave.table.constants.TableName;
 import datawave.test.MacTestUtil;
-import datawave.util.TableName;
 
 /**
  * A set of tests that emphasize the influence of datatypes on query planning and execution
@@ -1389,6 +1389,29 @@ public class ShapesTest extends AbstractQueryTest {
         } finally {
             logic.setDisableEvaluation(false);
         }
+    }
+
+    @Test
+    public void testIndexOnlyField() {
+        givenQuery("DESCRIPTION == 'six'");
+        expectPlan("DESCRIPTION == 'six'");
+        expectUUIDs(Set.of(ShapesIngest.hexagonUid));
+        expectHitTermsRequiredAllOf("DESCRIPTION:six");
+    }
+
+    @Test
+    public void testIndexOnlyFieldInFilterFunction_hit() {
+        givenQuery("ONLY_HEX == 'hexa' && f:includeText(DESCRIPTION, 'six')");
+        expectPlan("ONLY_HEX == 'hexa' && f:includeText(DESCRIPTION, 'six')");
+        expectUUIDs(Set.of(ShapesIngest.hexagonUid));
+        expectHitTermsRequiredAllOf("ONLY_HEX:hexa", "DESCRIPTION:six");
+    }
+
+    @Test
+    public void testIndexOnlyFieldInFilterFunction_miss() {
+        givenQuery("ONLY_HEX == 'hexa' && f:includeText(DESCRIPTION, 'eight')");
+        expectPlan("ONLY_HEX == 'hexa' && f:includeText(DESCRIPTION, 'eight')");
+        expectResultCount(0);
     }
 
     @Test

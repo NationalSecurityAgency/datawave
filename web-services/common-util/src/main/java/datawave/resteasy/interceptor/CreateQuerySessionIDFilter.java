@@ -12,7 +12,7 @@ import javax.ws.rs.ext.Provider;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.jboss.resteasy.core.ResourceMethodInvoker;
-import org.jboss.resteasy.util.FindAnnotation;
+import org.jboss.resteasy.spi.util.FindAnnotation;
 import org.jboss.resteasy.util.HttpHeaderNames;
 
 import datawave.Constants;

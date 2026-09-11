@@ -23,6 +23,7 @@ import datawave.annotation.data.transform.DefaultVisibilityTransformer;
 import datawave.annotation.data.transform.TimestampTransformer;
 import datawave.annotation.data.transform.VisibilityTransformer;
 import datawave.annotation.protobuf.v1.Annotation;
+import datawave.annotation.protobuf.v1.AnnotationSource;
 import datawave.annotation.protobuf.v1.Segment;
 import datawave.annotation.util.Validator;
 import datawave.annotation.util.v1.AnnotationValidators;
@@ -81,6 +82,23 @@ public class AccumuloAnnotationSerializer implements AnnotationSerializer<Iterat
         Validator.ValidationState<Annotation> validationState = AnnotationValidators.checkAnnotation(annotation);
         if (!validationState.isValid()) {
             throw new AnnotationWriteException("Annotation is not valid: " + validationState.getErrors());
+        }
+
+        Validator.ValidationState<Annotation> idValidationState = AnnotationValidators.checkAnnotationIds(annotation);
+        if (!idValidationState.isValid()) {
+            throw new AnnotationWriteException("Annotation identifiers are not valid: " + idValidationState.getErrors());
+        }
+
+        if (annotation.hasSource()) {
+            Validator.ValidationState<AnnotationSource> sourceValidationState = AnnotationValidators.checkAnnotationSource(annotation.getSource());
+            if (!sourceValidationState.isValid()) {
+                throw new AnnotationWriteException("Annotation Source is not valid: " + sourceValidationState.getErrors());
+            }
+
+            Validator.ValidationState<AnnotationSource> sourceIdValidationState = AnnotationValidators.checkAnnotationSource(annotation.getSource());
+            if (!sourceIdValidationState.isValid()) {
+                throw new AnnotationWriteException("Annotation Source identifiers are not valid: " + sourceIdValidationState.getErrors());
+            }
         }
 
         Key baseKey = generateBaseKey(annotation);

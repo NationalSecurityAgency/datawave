@@ -24,7 +24,7 @@ public class MarkingConfig {
     @Bean
     @ConditionalOnMissingBean
     @ConditionalOnProperty(name = "datawave.defaults.MarkingFunctions.enabled", havingValue = "true", matchIfMissing = true)
-    public MarkingFunctions markingFunctions() {
+    public MarkingFunctions<?> markingFunctions() {
         return new MarkingFunctions.Default();
     }
 

@@ -58,7 +58,7 @@ public class RemoteEdgeQueryLogic extends BaseRemoteQueryLogic<EdgeBase> impleme
     }
 
     @Override
-    public QueryLogicTransformer<EdgeBase,EdgeBase> createTransformer(Query settings, MarkingFunctions markingFunctions,
+    public QueryLogicTransformer<EdgeBase,EdgeBase> createTransformer(Query settings, MarkingFunctions<?> markingFunctions,
                     ResponseObjectFactory responseObjectFactory) {
         return new EdgeBaseTransformer(settings, markingFunctions, responseObjectFactory, edgeFields);
     }
@@ -134,7 +134,7 @@ public class RemoteEdgeQueryLogic extends BaseRemoteQueryLogic<EdgeBase> impleme
 
     private class EdgeBaseTransformer extends EdgeQueryTransformerSupport<EdgeBase,EdgeBase> {
 
-        public EdgeBaseTransformer(Query settings, MarkingFunctions markingFunctions, ResponseObjectFactory responseObjectFactory, EdgeModelFields fields) {
+        public EdgeBaseTransformer(Query settings, MarkingFunctions<?> markingFunctions, ResponseObjectFactory responseObjectFactory, EdgeModelFields fields) {
             super(settings, markingFunctions, responseObjectFactory, fields);
         }
 

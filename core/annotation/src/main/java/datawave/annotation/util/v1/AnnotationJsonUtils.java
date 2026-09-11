@@ -41,7 +41,20 @@ public class AnnotationJsonUtils {
     }
 
     /**
-     * Convert the annotation to json.
+     * Convert the annotation to json but do not add identifiers beforehand.
+     *
+     * @param a
+     *            the segment to convert
+     * @return json representing the segment.
+     * @throws InvalidProtocolBufferException
+     *             if there's a problem with serialization.
+     */
+    public static String annotationToJsonWithoutIds(Annotation a) throws InvalidProtocolBufferException {
+        return PRINTER.print(a);
+    }
+
+    /**
+     * Convert the annotation to json and add identifiers
      *
      * @param a
      *            the segment to convert

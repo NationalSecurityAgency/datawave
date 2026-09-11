@@ -12,9 +12,9 @@ import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 
 import com.google.common.collect.Multimap;
 
-import datawave.data.ColumnFamilyConstants;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.writer.ContextWriter;
+import datawave.table.constants.MetadataColumnFamilyConstants;
 
 public class DatawaveMetadataOnlyContext implements ContextWriter<BulkIngestKey,Value> {
     private final ContextWriter<BulkIngestKey,Value> delegate;
@@ -38,7 +38,7 @@ public class DatawaveMetadataOnlyContext implements ContextWriter<BulkIngestKey,
 
         if (metadataTableName.equals(key.getTableName())) {
             // test for exclusion of a frequency
-            if (excludeFrequency && key.getKey().getColumnFamily().equals(ColumnFamilyConstants.COLF_F)) {
+            if (excludeFrequency && key.getKey().getColumnFamily().equals(MetadataColumnFamilyConstants.COLF_F)) {
                 return false;
             }
 

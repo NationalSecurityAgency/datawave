@@ -123,10 +123,6 @@ public interface ImmutableShardQueryConfiguration extends ImmutableGenericQueryC
 
     Set<String> getUnevaluatedFields();
 
-    int getEventPerDayThreshold();
-
-    int getShardsPerDayThreshold();
-
     int getInitialMaxTermThreshold();
 
     int getIntermediateMaxTermThreshold();
@@ -353,6 +349,8 @@ public interface ImmutableShardQueryConfiguration extends ImmutableGenericQueryC
 
     boolean getReduceTypeMetadataPerShard();
 
+    boolean isKryoTypeMetadata();
+
     boolean getLimitAnyFieldLookups();
 
     boolean getAllowShortcutEvaluation();
@@ -454,8 +452,6 @@ public interface ImmutableShardQueryConfiguration extends ImmutableGenericQueryC
     long getVisitorFunctionMaxWeight();
 
     long getQueryExecutionForPageTimeout();
-
-    boolean isLazySetMechanismEnabled();
 
     int getDocAggregationThresholdMs();
 

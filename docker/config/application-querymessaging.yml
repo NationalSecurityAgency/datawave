@@ -16,6 +16,17 @@ datawave:
           # Note - spring doesn't like it when you enable publisherConfirms for the SIMPLE confirm type...
           publisherConfirms: false
           publisherReturns: true
+      qr-rabbitmq:
+        maxMessageSizeBytes: ${messaging.maxMessageSizeBytes}
+        useDedicatedInstance: ${USE_DEDICATED_INSTANCE:false}
+        instanceSettings:
+          host: ${QUERY_RABBIT_HOST:query-rabbitmq}
+          port: ${QUERY_RABBIT_PORT:5673}
+          publisherConfirmType: SIMPLE
+          # Note - spring doesn't like it when you enable publisherConfirms for the SIMPLE confirm type...
+          publisherConfirms: false
+          publisherReturns: true
+
       kafka:
         partitions: 2
         # enable the following configuration if you want to use an independent, dedicated kafka cluster for query (i.e. not the default spring one)

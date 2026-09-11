@@ -36,6 +36,11 @@ public class ShardQueryUtils {
      * @return the updated query
      */
     public static ASTJexlScript upperCaseIdentifiers(MetadataHelper metadataHelper, ShardQueryConfiguration config, ASTJexlScript script) {
+        Set<String> projectFields = config.getProjectFields();
+        if (projectFields != null && !projectFields.isEmpty()) {
+            config.setProjectFields(toUpperCase(projectFields));
+        }
+
         GroupFields groupFields = config.getGroupFields();
         if (groupFields != null && groupFields.hasGroupByFields()) {
             Sets.newHashSet(groupFields.getGroupByFields()).forEach(field -> groupFields.replaceGroupByField(field, field.toUpperCase()));
@@ -46,18 +51,13 @@ public class ShardQueryUtils {
             groupFields.setMinFields(toUpperCase(groupFields.getMinFields()));
 
             // If grouping is set, we must make the projection fields match all the group-by fields and aggregation fields.
-            config.setProjectFields(groupFields.getProjectionFields());
-        } else {
-            Set<String> projectFields = config.getProjectFields();
-
-            if (projectFields != null && !projectFields.isEmpty()) {
-                config.setProjectFields(toUpperCase(projectFields));
-            }
+            config.addProjectFields(groupFields.getProjectionFields());
         }
 
         UniqueFields uniqueFields = config.getUniqueFields();
         if (uniqueFields != null && !uniqueFields.isEmpty()) {
             Sets.newHashSet(uniqueFields.getFields()).stream().forEach(s -> uniqueFields.replace(s, s.toUpperCase()));
+            config.addProjectFields(uniqueFields.getFields());
         }
 
         ExcerptFields excerptFields = config.getExcerptFields();
@@ -126,7 +126,7 @@ public class ShardQueryUtils {
             config.setGroupFields(groupFields);
 
             // If grouping is set, we must make the projection fields match all the group-by fields and aggregation fields.
-            config.setProjectFields(groupFields.getProjectionFields());
+            config.addProjectFields(groupFields.getProjectionFields());
         }
 
         // Update the unique fields.
@@ -137,6 +137,7 @@ public class ShardQueryUtils {
                 log.trace("Updated unique set using query model to: " + uniqueFields.getFields());
             }
             config.setUniqueFields(uniqueFields);
+            config.addProjectFields(uniqueFields.getFields());
         }
 
         // Update the excerpt fields.

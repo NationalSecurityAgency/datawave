@@ -33,7 +33,8 @@ import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.writer.AbstractContextWriter;
 import datawave.ingest.test.StandaloneStatusReporter;
 import datawave.ingest.test.StandaloneTaskAttemptContext;
-import datawave.util.TableName;
+import datawave.table.constants.ColumnFamilyConstants;
+import datawave.table.constants.TableName;
 
 /**
  * Utility Class for common static methods used in ColumnBasedHandler tests
@@ -50,7 +51,7 @@ public class ColumnBasedHandlerTestUtil {
     private static Logger log = Logger.getLogger(ColumnBasedHandlerTestUtil.class);
 
     public static boolean isDocumentKey(Key k) {
-        return isShardKey(k) && k.getColumnFamily().toString().equals(ExtendedDataTypeHandler.FULL_CONTENT_COLUMN_FAMILY);
+        return isShardKey(k) && k.getColumnFamily().toString().equals(ColumnFamilyConstants.FULL_CONTENT);
     }
 
     public static boolean isShardKey(Key k) {

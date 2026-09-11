@@ -54,7 +54,7 @@ import datawave.query.iterator.logic.TermFrequencyIndexIterator;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.model.QueryModel;
 import datawave.query.planner.scanhints.IvaratorScanHint;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 
 public class ShardQueryConfigurationTest {
 
@@ -187,6 +187,8 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("reduceTypeMetadata", true);
         defaultValues.put("reduceTypeMetadataPerShard", false);
         updatedValues.put("reduceTypeMetadataPerShard", true);
+        defaultValues.put("kryoTypeMetadata", false);
+        updatedValues.put("kryoTypeMetadata", true);
         defaultValues.put("collectTimingDetails", false);
         updatedValues.put("collectTimingDetails", true);
         defaultValues.put("logTimingDetails", false);
@@ -365,10 +367,6 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("expandUnfieldedNegations", false);
         defaultValues.put("returnType", DocumentSerialization.DEFAULT_RETURN_TYPE);
         updatedValues.put("returnType", DocumentSerialization.ReturnType.writable);
-        defaultValues.put("eventPerDayThreshold", 10000);
-        updatedValues.put("eventPerDayThreshold", 10340);
-        defaultValues.put("shardsPerDayThreshold", 10);
-        updatedValues.put("shardsPerDayThreshold", 18);
         defaultValues.put("initialMaxTermThreshold", 2500);
         updatedValues.put("initialMaxTermThreshold", 2540);
         defaultValues.put("intermediateMaxTermThreshold", 2500);
@@ -516,8 +514,6 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("seekingEventAggregation", true);
         defaultValues.put("visitorFunctionMaxWeight", 5000000L);
         updatedValues.put("visitorFunctionMaxWeight", 1000000L);
-        defaultValues.put("lazySetMechanismEnabled", false);
-        updatedValues.put("lazySetMechanismEnabled", true);
         defaultValues.put("docAggregationThresholdMs", -1);
         updatedValues.put("docAggregationThresholdMs", 30000);
         defaultValues.put("tfAggregationThresholdMs", -1);

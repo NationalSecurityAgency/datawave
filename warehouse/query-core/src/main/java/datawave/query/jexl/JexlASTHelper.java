@@ -768,6 +768,11 @@ public class JexlASTHelper {
         return fieldName.indexOf(GROUPING_CHARACTER_SEPARATOR) != -1;
     }
 
+    public static boolean isGroupedFieldMatch(String queryField, String candidateField) {
+        return candidateField.startsWith(queryField) && candidateField.length() > queryField.length()
+                        && candidateField.charAt(queryField.length()) == GROUPING_CHARACTER_SEPARATOR;
+    }
+
     public static Set<String> getFieldNames(ASTFunctionNode function, MetadataHelper metadata, Set<String> datatypeFilter) {
         JexlArgumentDescriptor desc = JexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor(function);
 

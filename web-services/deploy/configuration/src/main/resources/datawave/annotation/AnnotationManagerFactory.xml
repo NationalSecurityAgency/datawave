@@ -21,6 +21,8 @@
     <bean id="AnnotationManagerConfig" scope="prototype" class="datawave.webservice.annotation.AnnotationManagerConfig">
         <property name="annotationTableName" value="${annotation.table.name}"/>
         <property name="annotationSourceTableName" value="${annotation.source.table.name}"/>
+        <property name="truthmarkTableName" value="${truthmark.table.name}"/>
+        <property name="truthmarkSourceTableName" value="${truthmark.source.table.name}"/>
         <property name="connPoolName" value="WAREHOUSE" />
         <property name="enableInternalIdLookup" value="true" />
         <property name="lookupUUIDQueryLogic">

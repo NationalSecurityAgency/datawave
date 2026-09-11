@@ -65,8 +65,8 @@ public class AuthorizeHttpsAllowedCallerTest {
         // X509 certificate used for identity
         // passes AllowedCallersFilter because configured certificate is in allowedCallers list
         // passes AuthorizationProxiedEntityX509Filter because configured certificate is in allowedCallers list
-        testUtils.testAuthorizeMethodSuccess(null, "/authorization/v1/authorize", false, false);
-        testUtils.testAuthorizeMethodSuccess(null, "/authorization/v2/authorize", false, false);
+        testUtils.testAllowedMethodSuccess(null, "/authorization/v1/authorize", false, false);
+        testUtils.testAllowedMethodSuccess(null, "/authorization/v2/authorize", false, false);
     }
 
     @ImportAutoConfiguration({RefreshAutoConfiguration.class})

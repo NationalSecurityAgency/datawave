@@ -27,6 +27,9 @@ public interface ClassCache {
      * @param name
      *            the class name
      * @return a {@link Class}
+     *
+     * @throws ClassNotFoundException
+     *             if class not found
      */
     Class<?> get(String name) throws ClassNotFoundException;
 }

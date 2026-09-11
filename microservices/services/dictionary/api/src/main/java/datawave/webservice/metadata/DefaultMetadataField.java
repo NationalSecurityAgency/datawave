@@ -7,7 +7,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import javax.xml.bind.annotation.XmlAccessType;
@@ -21,9 +20,9 @@ import javax.xml.bind.annotation.XmlType;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
+import datawave.marking.AccessExpressionMarkings;
 import datawave.webservice.dictionary.data.DefaultDescription;
 import datawave.webservice.dictionary.data.DescriptionBase;
-import datawave.webservice.query.result.event.MapSchema;
 import io.protostuff.Input;
 import io.protostuff.Message;
 import io.protostuff.Output;
@@ -73,7 +72,7 @@ public class DefaultMetadataField extends MetadataFieldBase<DefaultMetadataField
     private String lastUpdated;
 
     public Boolean isIndexOnly() {
-        return indexOnly == null ? false : indexOnly;
+        return indexOnly != null && indexOnly;
     }
 
     public Boolean isForwardIndexed() {
@@ -137,7 +136,7 @@ public class DefaultMetadataField extends MetadataFieldBase<DefaultMetadataField
     }
 
     @XmlTransient
-    private static final Schema<DefaultMetadataField> SCHEMA = new Schema<DefaultMetadataField>() {
+    private static final Schema<DefaultMetadataField> SCHEMA = new Schema<>() {
         private final HashMap<String,Integer> fieldMap = new HashMap<>();
         {
             fieldMap.put("fieldName", 1);
@@ -250,8 +249,8 @@ public class DefaultMetadataField extends MetadataFieldBase<DefaultMetadataField
                         int size = input.readInt32();
                         message.descriptions = new HashSet<>(size);
                         for (int i = 0; i < size; i++) {
-                            Map<String,String> markings = new HashMap<>();
-                            input.mergeObject(markings, MapSchema.SCHEMA);
+                            AccessExpressionMarkings markings = AccessExpressionMarkings.builder().build();
+                            input.mergeObject(markings, AccessExpressionMarkings.SCHEMA);
                             message.descriptions.add(new DefaultDescription(input.readString(), markings));
                         }
                         break;
@@ -295,7 +294,7 @@ public class DefaultMetadataField extends MetadataFieldBase<DefaultMetadataField
             output.writeInt32(9, message.getDescriptions().size(), false);
             for (DescriptionBase desc : message.getDescriptions()) {
                 output.writeString(9, desc.getDescription(), true);
-                output.writeObject(9, desc.getMarkings(), MapSchema.SCHEMA, false);
+                output.writeObject(9, (AccessExpressionMarkings) desc.getMarkings(), AccessExpressionMarkings.SCHEMA, false);
             }
             output.writeString(10, message.lastUpdated, false);
             output.writeBool(11, message.tokenized, false);

@@ -319,7 +319,7 @@ public class ProtobufEdgeDirectionTest {
 
     private RawRecordContainer getEvent(Type type) {
         RawRecordContainerImpl myEvent = new RawRecordContainerImpl();
-        myEvent.addSecurityMarking("columnVisibility", "PRIVATE");
+        myEvent.setVisibility("PRIVATE");
         myEvent.setDataType(type);
         myEvent.setId(UID.builder().newId());
         myEvent.setAltIds(Collections.singleton("0016dd72-0000-827d-dd4d-001b2163ba09"));

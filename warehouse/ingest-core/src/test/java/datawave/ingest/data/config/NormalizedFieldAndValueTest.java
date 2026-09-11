@@ -1,11 +1,10 @@
 package datawave.ingest.data.config;
 
-import java.util.Map;
-
 import org.junit.Assert;
 import org.junit.Test;
 
 import datawave.data.type.Type;
+import datawave.marking.Markings;
 
 public class NormalizedFieldAndValueTest {
 
@@ -19,7 +18,7 @@ public class NormalizedFieldAndValueTest {
         private String _eventFieldName;
         private String _eventFieldValue;
 
-        private Map<String,String> _markings;
+        private Markings<?> _markings;
         private Throwable _error;
 
         protected NonGroupedInstance() {
@@ -84,7 +83,7 @@ public class NormalizedFieldAndValueTest {
         }
 
         @Override
-        public void setMarkings(Map<String,String> markings) {
+        public void setMarkings(Markings<?> markings) {
             _markings = markings;
         }
 
@@ -95,7 +94,7 @@ public class NormalizedFieldAndValueTest {
         }
 
         @Override
-        public Map<String,String> getMarkings() {
+        public Markings<?> getMarkings() {
             return _markings;
         }
 
@@ -135,7 +134,7 @@ public class NormalizedFieldAndValueTest {
         private String _eventFieldName;
         private String _eventFieldValue;
 
-        private Map<String,String> _markings;
+        private Markings<?> _markings;
         private Throwable _error;
         private boolean _grouped;
 
@@ -208,7 +207,7 @@ public class NormalizedFieldAndValueTest {
         }
 
         @Override
-        public void setMarkings(Map<String,String> markings) {
+        public void setMarkings(Markings<?> markings) {
             _markings = markings;
         }
 
@@ -219,7 +218,7 @@ public class NormalizedFieldAndValueTest {
         }
 
         @Override
-        public Map<String,String> getMarkings() {
+        public Markings<?> getMarkings() {
             return _markings;
         }
 

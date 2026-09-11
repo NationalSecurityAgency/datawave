@@ -45,7 +45,7 @@ import org.mockito.Mockito;
 
 import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.ingest.mapreduce.job.BulkIngestMapFileLoader.ImportMode;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 
 public class MultiRFileOutputFormatterTest {
 

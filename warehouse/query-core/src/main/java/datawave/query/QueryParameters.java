@@ -231,4 +231,9 @@ public class QueryParameters {
      * Used to specify model or DB fields that must be treated as strict (cannot be skipped if normalization fails)
      */
     public static final String STRICT_FIELDS = "strict.fields";
+
+    /**
+     * Enables the {@link datawave.next.scanner.DocumentScheduler} for query execution
+     */
+    public static final String DS_ENABLED = "ds.enabled";
 }

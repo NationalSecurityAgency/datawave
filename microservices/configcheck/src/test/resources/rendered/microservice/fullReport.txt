@@ -12,7 +12,6 @@ doc.beans.BaseEventQuery.dateIndexThreads: ${datawave.query.logic.logics.BaseEve
 doc.beans.BaseEventQuery.defaultDateTypeName: ${datawave.query.logic.logics.BaseEventQuery.defaultDateTypeName}
 doc.beans.BaseEventQuery.disableIndexOnlyDocuments: ${datawave.query.logic.logics.BaseEventQuery.disableIndexOnlyDocuments}
 doc.beans.BaseEventQuery.evaluationOnlyFields: ${datawave.query.logic.logics.BaseEventQuery.evaluationOnlyFields}
-doc.beans.BaseEventQuery.eventPerDayThreshold: ${datawave.query.logic.logics.BaseEventQuery.eventPerDayThreshold}
 doc.beans.BaseEventQuery.finalMaxTermThreshold: ${datawave.query.logic.logics.BaseEventQuery.finalMaxTermThreshold}
 doc.beans.BaseEventQuery.fullTableScanEnabled: ${datawave.query.logic.logics.BaseEventQuery.fullTableScanEnabled}
 doc.beans.BaseEventQuery.hdfsSiteConfigURLs: ${datawave.query.logic.logics.BaseEventQuery.hdfsSiteConfigURLs}
@@ -49,7 +48,6 @@ doc.beans.BaseEventQuery.modelTableName: ${datawave.query.logic.logics.BaseEvent
 doc.beans.BaseEventQuery.queryThreads: ${datawave.query.logic.logics.BaseEventQuery.queryThreads}
 doc.beans.BaseEventQuery.reverseIndexTableName: ${datawave.query.logic.logics.BaseEventQuery.reverseIndexTableName}
 doc.beans.BaseEventQuery.sendTimingToStatsd: ${datawave.query.logic.logics.BaseEventQuery.sendTimingToStatsd}
-doc.beans.BaseEventQuery.shardsPerDayThreshold: ${datawave.query.logic.logics.BaseEventQuery.shardsPerDayThreshold}
 doc.beans.BaseEventQuery.statsdHost: ${datawave.query.logic.logics.BaseEventQuery.statsdHost}
 doc.beans.BaseEventQuery.statsdPort: ${datawave.query.logic.logics.BaseEventQuery.statsdPort}
 doc.beans.BaseEventQuery.tableName: ${datawave.query.logic.logics.BaseEventQuery.tableName}
@@ -151,7 +149,6 @@ doc.beans.HitHighlights.auditType: ${datawave.query.logic.logics.HitHighlights.a
 doc.beans.HitHighlights.checkpointable: ${datawave.query.logic.logics.HitHighlights.checkpointable}
 doc.beans.HitHighlights.dateIndexTableName: ${datawave.query.logic.logics.HitHighlights.dateIndexTableName}
 doc.beans.HitHighlights.defaultDateTypeName: ${datawave.query.logic.logics.HitHighlights.defaultDateTypeName}
-doc.beans.HitHighlights.eventPerDayThreshold: ${datawave.query.logic.logics.HitHighlights.eventPerDayThreshold}
 doc.beans.HitHighlights.finalMaxTermThreshold: ${datawave.query.logic.logics.BaseEventQuery.finalMaxTermThreshold}
 doc.beans.HitHighlights.fullTableScanEnabled: ${datawave.query.logic.logics.HitHighlights.fullTableScanEnabled}
 doc.beans.HitHighlights.hdfsSiteConfigURLs: ${datawave.query.logic.logics.HitHighlights.hdfsSiteConfigURLs}
@@ -180,7 +177,6 @@ doc.beans.HitHighlights.metadataTableName: ${datawave.query.logic.logics.HitHigh
 doc.beans.HitHighlights.minimumSelectivity: ${datawave.query.logic.logics.HitHighlights.minimumSelectivity}
 doc.beans.HitHighlights.queryThreads: ${datawave.query.logic.logics.HitHighlights.queryThreads}
 doc.beans.HitHighlights.reverseIndexTableName: ${datawave.query.logic.logics.HitHighlights.reverseIndexTableName}
-doc.beans.HitHighlights.shardsPerDayThreshold: ${datawave.query.logic.logics.HitHighlights.shardsPerDayThreshold}
 doc.beans.HitHighlights.tableName: ${datawave.query.logic.logics.HitHighlights.tableName}
 doc.beans.HitHighlights.useEnrichers: ${datawave.query.logic.logics.HitHighlights.useEnrichers}
 doc.beans.HitHighlights.zookeeperConfig: ${datawave.query.logic.logics.HitHighlights.zookeeperConfig}
@@ -232,7 +228,6 @@ doc.beans.BaseEventQuery.dateIndexThreads: "${warehouse.defaults.dateIndexThread
 doc.beans.BaseEventQuery.defaultDateTypeName: "EVENT"
 doc.beans.BaseEventQuery.disableIndexOnlyDocuments: false
 doc.beans.BaseEventQuery.evaluationOnlyFields: ""
-doc.beans.BaseEventQuery.eventPerDayThreshold: "${warehouse.defaults.eventPerDayThreshold}"
 doc.beans.BaseEventQuery.finalMaxTermThreshold: "${warehouse.defaults.finalMaxTermThreshold}"
 doc.beans.BaseEventQuery.fullTableScanEnabled: "${warehouse.defaults.fullTableScanEnabled}"
 doc.beans.BaseEventQuery.hdfsSiteConfigURLs: "${warehouse.defaults.hdfsSiteConfigURLs}"
@@ -269,7 +264,6 @@ doc.beans.BaseEventQuery.modelTableName: "${warehouse.tables.model.name}"
 doc.beans.BaseEventQuery.queryThreads: "${warehouse.defaults.queryThreads}"
 doc.beans.BaseEventQuery.reverseIndexTableName: "${warehouse.tables.reverseIndex.name}"
 doc.beans.BaseEventQuery.sendTimingToStatsd: false
-doc.beans.BaseEventQuery.shardsPerDayThreshold: "${warehouse.defaults.shardsPerDayThreshold}"
 doc.beans.BaseEventQuery.statsdHost: "${warehouse.statsd.host}"
 doc.beans.BaseEventQuery.statsdPort: "${warehouse.statsd.port}"
 doc.beans.BaseEventQuery.tableName: "${warehouse.tables.shard.name}"
@@ -374,7 +368,6 @@ doc.beans.HitHighlights.auditType: "NONE"
 doc.beans.HitHighlights.checkpointable: "${warehouse.defaults.checkpointable}"
 doc.beans.HitHighlights.dateIndexTableName: "${warehouse.tables.dateIndex.name}"
 doc.beans.HitHighlights.defaultDateTypeName: "EVENT"
-doc.beans.HitHighlights.eventPerDayThreshold: 40000
 doc.beans.HitHighlights.finalMaxTermThreshold: "${warehouse.defaults.finalMaxTermThreshold}"
 doc.beans.HitHighlights.fullTableScanEnabled: "${warehouse.defaults.fullTableScanEnabled}"
 doc.beans.HitHighlights.hdfsSiteConfigURLs: "${warehouse.defaults.hdfsSiteConfigURLs}"
@@ -403,7 +396,6 @@ doc.beans.HitHighlights.metadataTableName: "${warehouse.tables.metadata.name}"
 doc.beans.HitHighlights.minimumSelectivity: 0.2
 doc.beans.HitHighlights.queryThreads: "${warehouse.defaults.indexLookupThreads}"
 doc.beans.HitHighlights.reverseIndexTableName: "${warehouse.tables.reverseIndex.name}"
-doc.beans.HitHighlights.shardsPerDayThreshold: "${warehouse.defaults.shardsPerDayThreshold}"
 doc.beans.HitHighlights.tableName: "${warehouse.tables.shard.name}"
 doc.beans.HitHighlights.useEnrichers: false
 doc.beans.HitHighlights.zookeeperConfig: "${warehouse.accumulo.zookeepers}"
@@ -522,8 +514,6 @@ datawave.query.logic.logics.BaseEventQuery.minimumSelectivity=0.2
 datawave.query.logic.logics.BaseEventQuery.useFilters=false
 datawave.query.logic.logics.BaseEventQuery.auditType=ACTIVE
 datawave.query.logic.logics.BaseEventQuery.logicDescription=Retrieve sharded events/documents, leveraging the global index tables as needed
-datawave.query.logic.logics.BaseEventQuery.eventPerDayThreshold=${warehouse.defaults.eventPerDayThreshold}
-datawave.query.logic.logics.BaseEventQuery.shardsPerDayThreshold=${warehouse.defaults.shardsPerDayThreshold}
 datawave.query.logic.logics.BaseEventQuery.initialMaxTermThreshold=${warehouse.defaults.initialMaxTermThreshold}
 datawave.query.logic.logics.BaseEventQuery.finalMaxTermThreshold=${warehouse.defaults.finalMaxTermThreshold}
 datawave.query.logic.logics.BaseEventQuery.maxDepthThreshold=${warehouse.defaults.maxDepthThreshold}
@@ -687,8 +677,6 @@ datawave.query.logic.logics.HitHighlights.includeGroupingContext=false
 datawave.query.logic.logics.HitHighlights.useEnrichers=false
 datawave.query.logic.logics.HitHighlights.auditType=NONE
 datawave.query.logic.logics.HitHighlights.logicDescription=Fast boolean query over indexed fields, only returning fields queried on
-datawave.query.logic.logics.HitHighlights.eventPerDayThreshold=40000
-datawave.query.logic.logics.HitHighlights.shardsPerDayThreshold=${warehouse.defaults.shardsPerDayThreshold}
 datawave.query.logic.logics.BaseEventQuery.initialMaxTermThreshold=${warehouse.defaults.initialMaxTermThreshold}
 datawave.query.logic.logics.BaseEventQuery.finalMaxTermThreshold=${warehouse.defaults.finalMaxTermThreshold}
 datawave.query.logic.logics.HitHighlights.maxDepthThreshold=${warehouse.defaults.maxDepthThreshold}
@@ -747,8 +735,6 @@ datawave:
           useFilters: false
           auditType: "ACTIVE"
           logicDescription: "Retrieve sharded events/documents, leveraging the global index tables as needed"
-          eventPerDayThreshold: "${warehouse.defaults.eventPerDayThreshold}"
-          shardsPerDayThreshold: "${warehouse.defaults.shardsPerDayThreshold}"
           initialMaxTermThreshold: "${warehouse.defaults.initialMaxTermThreshold}"
           finalMaxTermThreshold: "${warehouse.defaults.finalMaxTermThreshold}"
           maxDepthThreshold: "${warehouse.defaults.maxDepthThreshold}"
@@ -929,8 +915,6 @@ datawave:
           useEnrichers: false
           auditType: "NONE"
           logicDescription: "Fast boolean query over indexed fields, only returning fields queried on"
-          eventPerDayThreshold: 40000
-          shardsPerDayThreshold: "${warehouse.defaults.shardsPerDayThreshold}"
           maxDepthThreshold: "${warehouse.defaults.maxDepthThreshold}"
           maxUnfieldedExpansionThreshold: "${warehouse.defaults.maxUnfieldedExpansionThreshold}"
           maxValueExpansionThreshold: "${warehouse.defaults.maxValueExpansionThreshold}"

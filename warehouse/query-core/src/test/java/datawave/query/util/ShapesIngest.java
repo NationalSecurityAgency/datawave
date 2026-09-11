@@ -1,9 +1,9 @@
 package datawave.query.util;
 
-import static datawave.util.TableName.METADATA;
-import static datawave.util.TableName.SHARD;
-import static datawave.util.TableName.SHARD_INDEX;
-import static datawave.util.TableName.SHARD_RINDEX;
+import static datawave.table.constants.TableName.METADATA;
+import static datawave.table.constants.TableName.SHARD;
+import static datawave.table.constants.TableName.SHARD_INDEX;
+import static datawave.table.constants.TableName.SHARD_RINDEX;
 
 import java.util.Date;
 import java.util.HashMap;
@@ -23,7 +23,6 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
 
-import datawave.data.ColumnFamilyConstants;
 import datawave.data.hash.UID;
 import datawave.data.type.LcNoDiacriticsListType;
 import datawave.data.type.LcNoDiacriticsType;
@@ -31,8 +30,9 @@ import datawave.data.type.ListType;
 import datawave.data.type.NumberType;
 import datawave.ingest.protobuf.Uid;
 import datawave.query.index.day.IndexIngestUtil;
+import datawave.table.constants.MetadataColumnFamilyConstants;
+import datawave.table.constants.TableName;
 import datawave.test.MacTestUtil;
-import datawave.util.TableName;
 
 /**
  * Data for complex testing of ingest types, normalizers, query models, visibilities and more.
@@ -510,115 +510,133 @@ public class ShapesIngest {
         tokenize(client, bwConfig, "PROPERTIES", "convex,cyclic,equilateral,isogonal,isotoxal", type, hexagon, hexagonUid);
         tokenize(client, bwConfig, "PROPERTIES", "convex,cyclic,equilateral,isogonal,isotoxal", type, octagon, octagonUid);
 
+        tokenize(client, bwConfig, "DESCRIPTION", "all three angles are less than ninety degrees", type, triangle, acuteUid);
+        tokenize(client, bwConfig, "DESCRIPTION", "all three angles are sixty degrees", type, triangle, equilateralUid);
+        tokenize(client, bwConfig, "DESCRIPTION", "two angles are equal", type, triangle, isoscelesUid);
+
+        tokenize(client, bwConfig, "DESCRIPTION", "a parallelogram with four sides of equal length and four ninety degree angles", type, quadrilateral,
+                        squareUid);
+        tokenize(client, bwConfig, "DESCRIPTION", "a parallelogram with four ninety degree angles", type, quadrilateral, rectangleUid);
+        tokenize(client, bwConfig, "DESCRIPTION", "a parallelogram with four sides of equal length", type, quadrilateral, rhombusUid);
+        tokenize(client, bwConfig, "DESCRIPTION", "a parallelogram with adjacent sides that are not equal and angles are not ninety degrees", type,
+                        quadrilateral, rhomboidUid);
+        tokenize(client, bwConfig, "DESCRIPTION", "a quadrilateral with at least one pair of parallel sides", type, quadrilateral, trapezoidUid);
+        tokenize(client, bwConfig, "DESCRIPTION", "a quadrilateral with two pairs of equal length sides that are adjacent to each other", type, quadrilateral,
+                        kiteUid);
+
+        tokenize(client, bwConfig, "DESCRIPTION", "a shape with five straight sides and five interior angles", type, pentagon, pentagonUid);
+        tokenize(client, bwConfig, "DESCRIPTION", "a shape with six straight sides and six interior angles", type, hexagon, hexagonUid);
+        tokenize(client, bwConfig, "DESCRIPTION", "a shape with eight straight sides and eight interior angles", type, octagon, octagonUid);
+
         // metadata table
         try (BatchWriter bw = client.createBatchWriter(TableName.METADATA, bwConfig)) {
 
             // SHAPE has events (e), frequency (f), is indexed (i), and is reverse indexed (ri)
             m = new Mutation("SHAPE");
-            m.put(ColumnFamilyConstants.COLF_E, new Text(triangle), value);
-            m.put(ColumnFamilyConstants.COLF_E, new Text(quadrilateral), value);
-            m.put(ColumnFamilyConstants.COLF_E, new Text(pentagon), value);
-            m.put(ColumnFamilyConstants.COLF_E, new Text(hexagon), value);
-            m.put(ColumnFamilyConstants.COLF_E, new Text(octagon), value);
+            m.put(MetadataColumnFamilyConstants.COLF_E, new Text(triangle), value);
+            m.put(MetadataColumnFamilyConstants.COLF_E, new Text(quadrilateral), value);
+            m.put(MetadataColumnFamilyConstants.COLF_E, new Text(pentagon), value);
+            m.put(MetadataColumnFamilyConstants.COLF_E, new Text(hexagon), value);
+            m.put(MetadataColumnFamilyConstants.COLF_E, new Text(octagon), value);
 
-            m.put(ColumnFamilyConstants.COLF_F, new Text(triangle + '\u0000' + shard), createValue(12L));
-            m.put(ColumnFamilyConstants.COLF_F, new Text(quadrilateral + '\u0000' + shard), createValue(13L));
-            m.put(ColumnFamilyConstants.COLF_F, new Text(pentagon + '\u0000' + shard), createValue(11L));
-            m.put(ColumnFamilyConstants.COLF_F, new Text(hexagon + '\u0000' + shard), createValue(10L));
-            m.put(ColumnFamilyConstants.COLF_F, new Text(octagon + '\u0000' + shard), createValue(14L));
+            m.put(MetadataColumnFamilyConstants.COLF_F, new Text(triangle + '\u0000' + shard), createValue(12L));
+            m.put(MetadataColumnFamilyConstants.COLF_F, new Text(quadrilateral + '\u0000' + shard), createValue(13L));
+            m.put(MetadataColumnFamilyConstants.COLF_F, new Text(pentagon + '\u0000' + shard), createValue(11L));
+            m.put(MetadataColumnFamilyConstants.COLF_F, new Text(hexagon + '\u0000' + shard), createValue(10L));
+            m.put(MetadataColumnFamilyConstants.COLF_F, new Text(octagon + '\u0000' + shard), createValue(14L));
 
-            m.put(ColumnFamilyConstants.COLF_I, new Text(triangle), value);
-            m.put(ColumnFamilyConstants.COLF_I, new Text(quadrilateral), value);
-            m.put(ColumnFamilyConstants.COLF_I, new Text(pentagon), value);
-            m.put(ColumnFamilyConstants.COLF_I, new Text(hexagon), value);
-            m.put(ColumnFamilyConstants.COLF_I, new Text(octagon), value);
+            m.put(MetadataColumnFamilyConstants.COLF_I, new Text(triangle), value);
+            m.put(MetadataColumnFamilyConstants.COLF_I, new Text(quadrilateral), value);
+            m.put(MetadataColumnFamilyConstants.COLF_I, new Text(pentagon), value);
+            m.put(MetadataColumnFamilyConstants.COLF_I, new Text(hexagon), value);
+            m.put(MetadataColumnFamilyConstants.COLF_I, new Text(octagon), value);
 
-            m.put(ColumnFamilyConstants.COLF_RI, new Text(triangle), value);
-            m.put(ColumnFamilyConstants.COLF_RI, new Text(quadrilateral), value);
-            m.put(ColumnFamilyConstants.COLF_RI, new Text(pentagon), value);
-            m.put(ColumnFamilyConstants.COLF_RI, new Text(hexagon), value);
-            m.put(ColumnFamilyConstants.COLF_RI, new Text(octagon), value);
+            m.put(MetadataColumnFamilyConstants.COLF_RI, new Text(triangle), value);
+            m.put(MetadataColumnFamilyConstants.COLF_RI, new Text(quadrilateral), value);
+            m.put(MetadataColumnFamilyConstants.COLF_RI, new Text(pentagon), value);
+            m.put(MetadataColumnFamilyConstants.COLF_RI, new Text(hexagon), value);
+            m.put(MetadataColumnFamilyConstants.COLF_RI, new Text(octagon), value);
 
-            m.put(ColumnFamilyConstants.COLF_T, new Text(triangle + "\0" + normalizerForField("SHAPE")), value);
-            m.put(ColumnFamilyConstants.COLF_T, new Text(quadrilateral + "\0" + normalizerForField("SHAPE")), value);
-            m.put(ColumnFamilyConstants.COLF_T, new Text(pentagon + "\0" + normalizerForField("SHAPE")), value);
-            m.put(ColumnFamilyConstants.COLF_T, new Text(hexagon + "\0" + normalizerForField("SHAPE")), value);
-            m.put(ColumnFamilyConstants.COLF_T, new Text(octagon + "\0" + normalizerForField("SHAPE")), value);
+            m.put(MetadataColumnFamilyConstants.COLF_T, new Text(triangle + "\0" + normalizerForField("SHAPE")), value);
+            m.put(MetadataColumnFamilyConstants.COLF_T, new Text(quadrilateral + "\0" + normalizerForField("SHAPE")), value);
+            m.put(MetadataColumnFamilyConstants.COLF_T, new Text(pentagon + "\0" + normalizerForField("SHAPE")), value);
+            m.put(MetadataColumnFamilyConstants.COLF_T, new Text(hexagon + "\0" + normalizerForField("SHAPE")), value);
+            m.put(MetadataColumnFamilyConstants.COLF_T, new Text(octagon + "\0" + normalizerForField("SHAPE")), value);
             bw.addMutation(m);
 
             // TYPE has events (e), frequency (f), is indexed (i), and is reverse indexed (ri)
             m = new Mutation("TYPE");
-            m.put(ColumnFamilyConstants.COLF_E, new Text(triangle), value);
-            m.put(ColumnFamilyConstants.COLF_E, new Text(quadrilateral), value);
-            m.put(ColumnFamilyConstants.COLF_E, new Text(pentagon), value);
-            m.put(ColumnFamilyConstants.COLF_E, new Text(hexagon), value);
-            m.put(ColumnFamilyConstants.COLF_E, new Text(octagon), value);
+            m.put(MetadataColumnFamilyConstants.COLF_E, new Text(triangle), value);
+            m.put(MetadataColumnFamilyConstants.COLF_E, new Text(quadrilateral), value);
+            m.put(MetadataColumnFamilyConstants.COLF_E, new Text(pentagon), value);
+            m.put(MetadataColumnFamilyConstants.COLF_E, new Text(hexagon), value);
+            m.put(MetadataColumnFamilyConstants.COLF_E, new Text(octagon), value);
 
-            m.put(ColumnFamilyConstants.COLF_F, new Text(triangle + '\u0000' + shard), createValue(10L));
-            m.put(ColumnFamilyConstants.COLF_F, new Text(quadrilateral + '\u0000' + shard), createValue(14L));
-            m.put(ColumnFamilyConstants.COLF_F, new Text(pentagon + '\u0000' + shard), createValue(11L));
-            m.put(ColumnFamilyConstants.COLF_F, new Text(hexagon + '\u0000' + shard), createValue(13L));
-            m.put(ColumnFamilyConstants.COLF_F, new Text(octagon + '\u0000' + shard), createValue(12L));
+            m.put(MetadataColumnFamilyConstants.COLF_F, new Text(triangle + '\u0000' + shard), createValue(10L));
+            m.put(MetadataColumnFamilyConstants.COLF_F, new Text(quadrilateral + '\u0000' + shard), createValue(14L));
+            m.put(MetadataColumnFamilyConstants.COLF_F, new Text(pentagon + '\u0000' + shard), createValue(11L));
+            m.put(MetadataColumnFamilyConstants.COLF_F, new Text(hexagon + '\u0000' + shard), createValue(13L));
+            m.put(MetadataColumnFamilyConstants.COLF_F, new Text(octagon + '\u0000' + shard), createValue(12L));
 
-            m.put(ColumnFamilyConstants.COLF_I, new Text(triangle), value);
-            m.put(ColumnFamilyConstants.COLF_I, new Text(quadrilateral), value);
-            m.put(ColumnFamilyConstants.COLF_I, new Text(pentagon), value);
-            m.put(ColumnFamilyConstants.COLF_I, new Text(hexagon), value);
-            m.put(ColumnFamilyConstants.COLF_I, new Text(octagon), value);
+            m.put(MetadataColumnFamilyConstants.COLF_I, new Text(triangle), value);
+            m.put(MetadataColumnFamilyConstants.COLF_I, new Text(quadrilateral), value);
+            m.put(MetadataColumnFamilyConstants.COLF_I, new Text(pentagon), value);
+            m.put(MetadataColumnFamilyConstants.COLF_I, new Text(hexagon), value);
+            m.put(MetadataColumnFamilyConstants.COLF_I, new Text(octagon), value);
 
-            m.put(ColumnFamilyConstants.COLF_RI, new Text(triangle), value);
-            m.put(ColumnFamilyConstants.COLF_RI, new Text(quadrilateral), value);
-            m.put(ColumnFamilyConstants.COLF_RI, new Text(pentagon), value);
-            m.put(ColumnFamilyConstants.COLF_RI, new Text(hexagon), value);
-            m.put(ColumnFamilyConstants.COLF_RI, new Text(octagon), value);
+            m.put(MetadataColumnFamilyConstants.COLF_RI, new Text(triangle), value);
+            m.put(MetadataColumnFamilyConstants.COLF_RI, new Text(quadrilateral), value);
+            m.put(MetadataColumnFamilyConstants.COLF_RI, new Text(pentagon), value);
+            m.put(MetadataColumnFamilyConstants.COLF_RI, new Text(hexagon), value);
+            m.put(MetadataColumnFamilyConstants.COLF_RI, new Text(octagon), value);
 
-            m.put(ColumnFamilyConstants.COLF_T, new Text(triangle + "\0" + normalizerForField("TYPE")), value);
-            m.put(ColumnFamilyConstants.COLF_T, new Text(quadrilateral + "\0" + normalizerForField("TYPE")), value);
-            m.put(ColumnFamilyConstants.COLF_T, new Text(pentagon + "\0" + normalizerForField("TYPE")), value);
-            m.put(ColumnFamilyConstants.COLF_T, new Text(hexagon + "\0" + normalizerForField("TYPE")), value);
-            m.put(ColumnFamilyConstants.COLF_T, new Text(octagon + "\0" + normalizerForField("TYPE")), value);
+            m.put(MetadataColumnFamilyConstants.COLF_T, new Text(triangle + "\0" + normalizerForField("TYPE")), value);
+            m.put(MetadataColumnFamilyConstants.COLF_T, new Text(quadrilateral + "\0" + normalizerForField("TYPE")), value);
+            m.put(MetadataColumnFamilyConstants.COLF_T, new Text(pentagon + "\0" + normalizerForField("TYPE")), value);
+            m.put(MetadataColumnFamilyConstants.COLF_T, new Text(hexagon + "\0" + normalizerForField("TYPE")), value);
+            m.put(MetadataColumnFamilyConstants.COLF_T, new Text(octagon + "\0" + normalizerForField("TYPE")), value);
             bw.addMutation(m);
 
             m = new Mutation("EDGES");
-            m.put(ColumnFamilyConstants.COLF_E, new Text(triangle), value);
-            m.put(ColumnFamilyConstants.COLF_E, new Text(quadrilateral), value);
-            m.put(ColumnFamilyConstants.COLF_E, new Text(pentagon), value);
-            m.put(ColumnFamilyConstants.COLF_E, new Text(hexagon), value);
-            m.put(ColumnFamilyConstants.COLF_E, new Text(octagon), value);
+            m.put(MetadataColumnFamilyConstants.COLF_E, new Text(triangle), value);
+            m.put(MetadataColumnFamilyConstants.COLF_E, new Text(quadrilateral), value);
+            m.put(MetadataColumnFamilyConstants.COLF_E, new Text(pentagon), value);
+            m.put(MetadataColumnFamilyConstants.COLF_E, new Text(hexagon), value);
+            m.put(MetadataColumnFamilyConstants.COLF_E, new Text(octagon), value);
 
-            m.put(ColumnFamilyConstants.COLF_I, new Text(triangle), value);
-            m.put(ColumnFamilyConstants.COLF_I, new Text(quadrilateral), value);
-            m.put(ColumnFamilyConstants.COLF_I, new Text(pentagon), value);
-            m.put(ColumnFamilyConstants.COLF_I, new Text(hexagon), value);
-            m.put(ColumnFamilyConstants.COLF_I, new Text(octagon), value);
+            m.put(MetadataColumnFamilyConstants.COLF_I, new Text(triangle), value);
+            m.put(MetadataColumnFamilyConstants.COLF_I, new Text(quadrilateral), value);
+            m.put(MetadataColumnFamilyConstants.COLF_I, new Text(pentagon), value);
+            m.put(MetadataColumnFamilyConstants.COLF_I, new Text(hexagon), value);
+            m.put(MetadataColumnFamilyConstants.COLF_I, new Text(octagon), value);
 
-            m.put(ColumnFamilyConstants.COLF_T, new Text(triangle + "\0" + normalizerForField("EDGES")), value);
-            m.put(ColumnFamilyConstants.COLF_T, new Text(quadrilateral + "\0" + normalizerForField("EDGES")), value);
-            m.put(ColumnFamilyConstants.COLF_T, new Text(pentagon + "\0" + normalizerForField("EDGES")), value);
-            m.put(ColumnFamilyConstants.COLF_T, new Text(hexagon + "\0" + normalizerForField("EDGES")), value);
-            m.put(ColumnFamilyConstants.COLF_T, new Text(octagon + "\0" + normalizerForField("EDGES")), value);
+            m.put(MetadataColumnFamilyConstants.COLF_T, new Text(triangle + "\0" + normalizerForField("EDGES")), value);
+            m.put(MetadataColumnFamilyConstants.COLF_T, new Text(quadrilateral + "\0" + normalizerForField("EDGES")), value);
+            m.put(MetadataColumnFamilyConstants.COLF_T, new Text(pentagon + "\0" + normalizerForField("EDGES")), value);
+            m.put(MetadataColumnFamilyConstants.COLF_T, new Text(hexagon + "\0" + normalizerForField("EDGES")), value);
+            m.put(MetadataColumnFamilyConstants.COLF_T, new Text(octagon + "\0" + normalizerForField("EDGES")), value);
             bw.addMutation(m);
 
             // ONLY_*
             m = new Mutation("ONLY_TRI");
-            m.put(ColumnFamilyConstants.COLF_I, new Text(triangle), value);
-            m.put(ColumnFamilyConstants.COLF_T, new Text(triangle + "\0" + normalizerForField("ONLY_TRI")), value);
+            m.put(MetadataColumnFamilyConstants.COLF_I, new Text(triangle), value);
+            m.put(MetadataColumnFamilyConstants.COLF_T, new Text(triangle + "\0" + normalizerForField("ONLY_TRI")), value);
             bw.addMutation(m);
             m = new Mutation("ONLY_QUAD");
-            m.put(ColumnFamilyConstants.COLF_I, new Text(quadrilateral), value);
-            m.put(ColumnFamilyConstants.COLF_T, new Text(quadrilateral + "\0" + normalizerForField("ONLY_QUAD")), value);
+            m.put(MetadataColumnFamilyConstants.COLF_I, new Text(quadrilateral), value);
+            m.put(MetadataColumnFamilyConstants.COLF_T, new Text(quadrilateral + "\0" + normalizerForField("ONLY_QUAD")), value);
             bw.addMutation(m);
             m = new Mutation("ONLY_PENTA");
-            m.put(ColumnFamilyConstants.COLF_I, new Text(pentagon), value);
-            m.put(ColumnFamilyConstants.COLF_T, new Text(pentagon + "\0" + normalizerForField("ONLY_PENTA")), value);
+            m.put(MetadataColumnFamilyConstants.COLF_I, new Text(pentagon), value);
+            m.put(MetadataColumnFamilyConstants.COLF_T, new Text(pentagon + "\0" + normalizerForField("ONLY_PENTA")), value);
             bw.addMutation(m);
             m = new Mutation("ONLY_HEX");
-            m.put(ColumnFamilyConstants.COLF_I, new Text(hexagon), value);
-            m.put(ColumnFamilyConstants.COLF_T, new Text(hexagon + "\0" + normalizerForField("ONLY_HEX")), value);
+            m.put(MetadataColumnFamilyConstants.COLF_I, new Text(hexagon), value);
+            m.put(MetadataColumnFamilyConstants.COLF_T, new Text(hexagon + "\0" + normalizerForField("ONLY_HEX")), value);
             bw.addMutation(m);
             m = new Mutation("ONLY_OCT");
-            m.put(ColumnFamilyConstants.COLF_I, new Text(octagon), value);
-            m.put(ColumnFamilyConstants.COLF_T, new Text(octagon + "\0" + normalizerForField("ONLY_OCT")), value);
+            m.put(MetadataColumnFamilyConstants.COLF_I, new Text(octagon), value);
+            m.put(MetadataColumnFamilyConstants.COLF_T, new Text(octagon + "\0" + normalizerForField("ONLY_OCT")), value);
             bw.addMutation(m);
         }
 

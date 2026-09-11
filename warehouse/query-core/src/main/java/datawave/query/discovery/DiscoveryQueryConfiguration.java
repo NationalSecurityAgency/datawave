@@ -22,6 +22,7 @@ public class DiscoveryQueryConfiguration extends ShardIndexQueryConfiguration im
     private boolean separateCountsByColVis = false;
     private boolean showReferenceCount = false;
     private boolean sumCounts = false;
+    private boolean valuesOnly = false;
 
     public DiscoveryQueryConfiguration() {}
 
@@ -131,6 +132,10 @@ public class DiscoveryQueryConfiguration extends ShardIndexQueryConfiguration im
         return sumCounts;
     }
 
+    public boolean getValuesOnly() {
+        return valuesOnly;
+    }
+
     public void setSeparateCountsByColVis(boolean separateCountsByColVis) {
         this.separateCountsByColVis = separateCountsByColVis;
     }
@@ -142,6 +147,10 @@ public class DiscoveryQueryConfiguration extends ShardIndexQueryConfiguration im
 
     public void setSumCounts(boolean sumCounts) {
         this.sumCounts = sumCounts;
+    }
+
+    public void setValuesOnly(boolean valuesOnly) {
+        this.valuesOnly = valuesOnly;
     }
 
     @Override
@@ -172,6 +181,6 @@ public class DiscoveryQueryConfiguration extends ShardIndexQueryConfiguration im
     public String toString() {
         return new StringJoiner(", ", DiscoveryQueryConfiguration.class.getSimpleName() + "[", "]").add("literals=" + literals).add("patterns=" + patterns)
                         .add("ranges=" + ranges).add("separateCountsByColVis=" + separateCountsByColVis).add("showReferenceCount=" + showReferenceCount)
-                        .add("sumCounts=" + sumCounts).toString();
+                        .add("sumCounts=" + sumCounts).add("valuesOnly=" + valuesOnly).toString();
     }
 }

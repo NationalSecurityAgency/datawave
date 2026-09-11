@@ -22,7 +22,7 @@ import com.google.common.collect.Iterators;
 import datawave.core.common.util.EnvProvider;
 import datawave.core.query.logic.BaseQueryLogic;
 import datawave.microservice.query.Query;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 
 /**
  * <p>

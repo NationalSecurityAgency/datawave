@@ -13,7 +13,6 @@ import org.apache.log4j.Logger;
 
 import datawave.core.query.logic.BaseQueryLogicTransformer;
 import datawave.marking.MarkingFunctions;
-import datawave.marking.MarkingFunctions.Exception;
 import datawave.microservice.query.Query;
 import datawave.query.table.parser.ContentKeyValueFactory;
 import datawave.query.table.parser.ContentKeyValueFactory.ContentKeyValue;
@@ -34,11 +33,11 @@ public class ContentQueryTransformer extends BaseQueryLogicTransformer<Entry<Key
     protected final Map<Metadata,String> metadataIdMap;
     protected final boolean decodeView;
 
-    public ContentQueryTransformer(Query query, MarkingFunctions markingFunctions, ResponseObjectFactory responseObjectFactory) {
+    public ContentQueryTransformer(Query query, MarkingFunctions<?> markingFunctions, ResponseObjectFactory responseObjectFactory) {
         this(query, markingFunctions, responseObjectFactory, false);
     }
 
-    public ContentQueryTransformer(Query query, MarkingFunctions markingFunctions, ResponseObjectFactory responseObjectFactory, boolean decodeView) {
+    public ContentQueryTransformer(Query query, MarkingFunctions<?> markingFunctions, ResponseObjectFactory responseObjectFactory, boolean decodeView) {
         super(markingFunctions);
         this.auths = new Authorizations(query.getQueryAuthorizations().split(","));
         this.responseObjectFactory = responseObjectFactory;
@@ -124,7 +123,7 @@ public class ContentQueryTransformer extends BaseQueryLogicTransformer<Entry<Key
         ContentKeyValue ckv;
         try {
             ckv = ContentKeyValueFactory.parse(entry.getKey(), entry.getValue(), auths, markingFunctions);
-        } catch (Exception e1) {
+        } catch (MarkingFunctions.Exception e1) {
             throw new IllegalArgumentException("Unable to parse visibility", e1);
         }
 

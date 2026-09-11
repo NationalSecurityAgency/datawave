@@ -45,7 +45,6 @@ import com.google.common.collect.Maps;
 
 import datawave.core.iterators.DatawaveFieldIndexListIteratorJexl;
 import datawave.marking.MarkingFunctions;
-import datawave.marking.MarkingFunctionsFactory;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.ValueTuple;
@@ -71,6 +70,7 @@ import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 public class DatawaveInterpreter extends Interpreter {
 
     protected Map<String,Object> resultMap;
+    private MarkingFunctions<?> markingFunctions;
 
     private static final Logger log = Logger.getLogger(DatawaveInterpreter.class);
 
@@ -452,7 +452,7 @@ public class DatawaveInterpreter extends Interpreter {
     private void addHitsForFunction(String field, ASTFunctionNode node, HitListArithmetic hitListArithmetic) {
         ColumnVisibility cv;
         // aggregate individual hits for the content function
-        Collection<ColumnVisibility> cvs = new HashSet<>();
+        Collection<ColumnVisibility> columnVisibilities = new HashSet<>();
         Attributes source = new Attributes(true);
         ContentFunctionsDescriptor.ContentJexlArgumentDescriptor jexlArgDescriptor = new ContentFunctionsDescriptor().getArgumentDescriptor(node);
 
@@ -463,19 +463,24 @@ public class DatawaveInterpreter extends Interpreter {
                 if (values.contains(tuple.getNormalizedValue())) {
                     Attribute<?> attr = tuple.getSource();
                     source.add(attr);
-                    cvs.add(attr.getColumnVisibility());
+                    columnVisibilities.add(attr.getColumnVisibility());
                 }
             }
         }
 
+        if (null == markingFunctions) {
+            markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
+        }
+        ColumnVisibility columnVisibility;
         try {
-            cv = MarkingFunctionsFactory.createMarkingFunctions().combine(cvs);
+            columnVisibility = markingFunctions.combineVisibilities(columnVisibilities);
         } catch (MarkingFunctions.Exception e) {
             log.error("Failed to combine column visibilities while generating HIT_TERM for phrase function for field [" + field + "]");
             log.error("msg: ", e);
             return;
         }
-        source.setColumnVisibility(cv);
+
+        source.setColumnVisibility(columnVisibility);
 
         // create an Attributes<?> backed ValueTuple
         String phrase = jexlArgDescriptor.getHitTermValue();

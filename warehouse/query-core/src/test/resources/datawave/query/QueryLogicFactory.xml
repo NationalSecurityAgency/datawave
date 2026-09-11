@@ -182,8 +182,8 @@
     </bean>
 
     <bean id="baseQueryLogic" class="datawave.core.query.logic.BaseQueryLogic" abstract="true" >
-	<property name="markingFunctions" ref="markingFunctions" />
-	<property name="responseObjectFactory" ref="responseObjectFactory" />
+        <property name="markingFunctions" ref="markingFunctions" />
+        <property name="responseObjectFactory" ref="responseObjectFactory" />
     </bean>
 
     <bean id="AmbiguousNotRule" scope="prototype" class="datawave.query.rules.AmbiguousNotRule">
@@ -362,21 +362,8 @@
             </map>
         </property>
 
-        <property name="tableHints">
-            <map key-type="java.lang.String" value-type="java.util.Map">
-                <entry key="shard">
-                    <map><entry key="scan_type" value="shard-table-executor-event"/></map>
-                </entry>
-                <entry key="shardIndex">
-                    <map><entry key="scan_type" value="index-table-executor-event"/></map>
-                </entry>
-                <!-- NOTE: this execution hint is reserved by datawave -->
-                <entry key="expansion">
-                    <map><entry key="scan_type" value="index-expansion-executor"/></map>
-                </entry>
-            </map>
-        </property>
-
+        <property name="tableHints" ref="DefaultTableHints"/>
+        <property name="tableConsistencyLevels" ref="DefaultConsistencyLevels"/>
         <property name="useQueryTreeScanHintRules" value="true"/>
         <property name="queryTreeScanHintRules" ref="IvaratorScanHintRule"/>
 
@@ -410,6 +397,8 @@
         <property name="reduceQueryFieldsPerShard" value="false" />
         <property name="reduceTypeMetadata" value="false" />
         <property name="reduceTypeMetadataPerShard" value="false" />
+        <!--   should TypeMetadata be serialized to iterator options via Kryo instead of its native toString() format    -->
+        <property name="kryoTypeMetadata" value="false" />
         <!--    should the query prune fields by ingest type    -->
         <property name="pruneQueryByIngestTypes" value="false" />
         <!--   should the range stream also generate field and term counts    -->
@@ -452,16 +441,7 @@
                 <value>datawave.query.function.NormalizedVersionPredicate</value>
             </list>
         </property>
-        <property name="tableHints">
-            <map key-type="java.lang.String" value-type="java.util.Map">
-                <entry key="shard">
-                    <map><entry key="scan_type" value="shard-table-executor-tld"/></map>
-                </entry>
-                <entry key="shardIndex">
-                    <map><entry key="scan_type" value="index-table-executor-tld"/></map>
-                </entry>
-            </map>
-        </property>
+        <property name="tableHints" ref="TLDTableHints"/>
     </bean>
 
     <bean id="FacetedQuery" parent="BaseEventQuery" scope="prototype" class="datawave.query.tables.facets.FacetedQueryLogic">
@@ -718,4 +698,58 @@
         <!-- default timeout of one hour -->
         <property name="pageWaitTimeMillis" value="3600000"/>
     </bean>
+
+    <util:map id="DefaultTableHints" scope="prototype" key-type="java.lang.String" value-type="java.util.Map">
+        <entry key="shard">
+            <map>
+                <entry key="scan_type" value="shard-table-executor-event"/>
+                <entry key="priority" value="1"/>
+            </map>
+        </entry>
+        <entry key="shardIndex">
+            <map>
+                <entry key="scan_type" value="index-table-executor-event"/>
+                <entry key="priority" value="1"/>
+            </map>
+        </entry>
+        <!-- NOTE: this execution hint is reserved by datawave -->
+        <entry key="expansion">
+            <map>
+                <entry key="scan_type" value="index-expansion-executor"/>
+                <entry key="priority" value="1"/>
+            </map>
+        </entry>
+    </util:map>
+
+    <util:map id="TLDTableHints" scope="prototype" key-type="java.lang.String" value-type="java.util.Map">
+        <entry key="shard">
+            <map>
+                <entry key="scan_type" value="shard-table-executor-tld"/>
+                <entry key="priority" value="1"/>
+            </map>
+        </entry>
+        <entry key="shardIndex">
+            <map>
+                <entry key="scan_type" value="index-table-executor-tld"/>
+                <entry key="priority" value="1"/>
+            </map>
+        </entry>
+        <!-- NOTE: this execution hint is reserved by datawave -->
+        <entry key="expansion">
+            <map>
+                <entry key="scan_type" value="index-expansion-executor"/>
+                <entry key="priority" value="1"/>
+            </map>
+        </entry>
+    </util:map>
+
+    <util:constant id="IMMEDIATE" static-field="org.apache.accumulo.core.client.ScannerBase.ConsistencyLevel.IMMEDIATE" />
+    <util:constant id="EVENTUAL" static-field="org.apache.accumulo.core.client.ScannerBase.ConsistencyLevel.EVENTUAL" />
+
+    <util:map id="DefaultConsistencyLevels" scope="prototype" key-type="java.lang.String">
+        <entry key="shard" value-ref="IMMEDIATE" />
+        <entry key="shardIndex" value-ref="IMMEDIATE" />
+        <entry key="shardReverseIndex" value-ref="IMMEDIATE" />
+        <entry key="DatawaveMetadata" value-ref="IMMEDIATE" />
+    </util:map>
 </beans>

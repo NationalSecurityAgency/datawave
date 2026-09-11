@@ -97,8 +97,9 @@ public class ValidatorTest {
 
         Validator<Container> validator = Validator.<Container> create().addCheck(o -> o.type != null && !o.type.isBlank(), "Type is required")
                         .addCheck(o -> o.children != null, "Children must not be null").addCheck(o -> !o.children.isEmpty(), "Children must not be empty")
-                        .addCheck(o -> o.favoriteChild != null, "Favorite child must not be null").addMemberValidator(o -> o.children, childValidator)
-                        .addMemberValidator(o -> Collections.singletonList(o.favoriteChild), u -> this.validator);
+                        .addCheck(o -> o.favoriteChild != null, "Favorite child must not be null")
+                        .addMemberValidator(o -> o.children, childValidator, "in children validation")
+                        .addMemberValidator(o -> Collections.singletonList(o.favoriteChild), u -> this.validator, "in favorite child validation");
 
         assertTrue(validator.check(container).isValid());
     }
@@ -114,8 +115,9 @@ public class ValidatorTest {
 
         Validator<Container> validator = Validator.<Container> create().addCheck(o -> o.type != null && !o.type.isBlank(), "Type is required")
                         .addCheck(o -> o.children != null, "Children must not be null").addCheck(o -> !o.children.isEmpty(), "Children must not be empty")
-                        .addCheck(o -> o.favoriteChild != null, "Favorite child must not be null").addMemberValidator(o -> o.children, childValidator)
-                        .addMemberValidator(o -> Collections.singletonList(o.favoriteChild), u -> this.validator);
+                        .addCheck(o -> o.favoriteChild != null, "Favorite child must not be null")
+                        .addMemberValidator(o -> o.children, childValidator, "in children validation")
+                        .addMemberValidator(o -> Collections.singletonList(o.favoriteChild), u -> this.validator, "in favorite child validation");
 
         Validator.ValidationState<Container> validationState = validator.check(container, true);
         assertFalse(validationState.isValid());

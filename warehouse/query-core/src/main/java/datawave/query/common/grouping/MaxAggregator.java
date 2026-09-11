@@ -3,7 +3,7 @@ package datawave.query.common.grouping;
 import java.util.Collections;
 import java.util.Set;
 
-import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.accumulo.access.AccessExpression;
 import org.apache.commons.lang.builder.ToStringBuilder;
 
 import datawave.query.attributes.Attribute;
@@ -40,14 +40,14 @@ public class MaxAggregator extends AbstractAggregator<Attribute<?>> {
     }
 
     /**
-     * Returns a singleton set containing the column visibility of the max attribute found. Possible empty, but never null.
+     * Returns a singleton set containing the access expression of the max attribute found. Possibly empty, but never null.
      *
-     * @return a set containing the column visibility
+     * @return a set containing the access expression
      */
     @Override
-    public Set<ColumnVisibility> getColumnVisibilities() {
+    public Set<AccessExpression> getAccessExpressions() {
         if (max != null) {
-            return Collections.singleton(max.getColumnVisibility());
+            return Collections.singleton(max.getAccessExpression());
         }
         return Collections.emptySet();
     }

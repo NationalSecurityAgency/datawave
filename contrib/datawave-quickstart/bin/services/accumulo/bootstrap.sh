@@ -13,10 +13,10 @@
 DW_ACCUMULO_SERVICE_DIR="$( dirname "${BASH_SOURCE[0]}" )"
 
 # Get these vars from the pom so users not building the container image can stay up to date
-DW_ZOOKEEPER_VERSION="${DW_ZOOKEEPER_VERSION:-$(mvn -q -f ${DW_CLOUD_HOME}/docker/pom.xml help:evaluate -DforceStdout -Dexpression=version.quickstart.zookeeper | tail -1)}"
-DW_ZOOKEEPER_DIST_SHA512_CHECKSUM="${DW_ZOOKEEPER_DIST_SHA512_CHECKSUM:-$(mvn -q -f ${DW_CLOUD_HOME}/docker/pom.xml help:evaluate -DforceStdout -Dexpression=sha512.checksum.zookeeper | tail -1)}"
-DW_ACCUMULO_VERSION="${DW_ACCUMULO_VERSION:-$(mvn -q -f ${DW_CLOUD_HOME}/docker/pom.xml help:evaluate -DforceStdout -Dexpression=version.quickstart.accumulo | tail -1)}"
-DW_ACCUMULO_DIST_SHA512_CHECKSUM="${DW_ACCUMULO_DIST_SHA512_CHECKSUM:-$(mvn -q -f ${DW_CLOUD_HOME}/docker/pom.xml help:evaluate -DforceStdout -Dexpression=sha512.checksum.accumulo | tail -1)}"
+DW_ZOOKEEPER_VERSION="${DW_ZOOKEEPER_VERSION:-$(mvn -o -q -f ${DW_CLOUD_HOME}/docker/pom.xml help:evaluate -DforceStdout -Dexpression=version.quickstart.zookeeper | tail -1)}"
+DW_ZOOKEEPER_DIST_SHA512_CHECKSUM="${DW_ZOOKEEPER_DIST_SHA512_CHECKSUM:-$(mvn -o -q -f ${DW_CLOUD_HOME}/docker/pom.xml help:evaluate -DforceStdout -Dexpression=sha512.checksum.zookeeper | tail -1)}"
+DW_ACCUMULO_VERSION="${DW_ACCUMULO_VERSION:-$(mvn -o -q -f ${DW_CLOUD_HOME}/docker/pom.xml help:evaluate -DforceStdout -Dexpression=version.quickstart.accumulo | tail -1)}"
+DW_ACCUMULO_DIST_SHA512_CHECKSUM="${DW_ACCUMULO_DIST_SHA512_CHECKSUM:-$(mvn -o -q -f ${DW_CLOUD_HOME}/docker/pom.xml help:evaluate -DforceStdout -Dexpression=sha512.checksum.accumulo | tail -1)}"
 
 # Zookeeper config
 DW_ZOOKEEPER_DIST_URI="${DW_ZOOKEEPER_DIST_URI:-https://dlcdn.apache.org/zookeeper/zookeeper-${DW_ZOOKEEPER_VERSION}/apache-zookeeper-${DW_ZOOKEEPER_VERSION}-bin.tar.gz}"

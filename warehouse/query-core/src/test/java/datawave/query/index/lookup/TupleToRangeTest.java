@@ -25,7 +25,7 @@ import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.planner.QueryPlan;
 import datawave.query.util.Tuple2;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 
 public class TupleToRangeTest {
 

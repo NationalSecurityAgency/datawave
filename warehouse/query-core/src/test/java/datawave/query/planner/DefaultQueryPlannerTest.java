@@ -1,17 +1,22 @@
 package datawave.query.planner;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Map;
 import java.util.Set;
 
+import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 import datawave.data.type.DateType;
 import datawave.data.type.LcNoDiacriticsListType;
@@ -25,12 +30,15 @@ import datawave.query.common.grouping.GroupFields;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.DatawaveQueryException;
+import datawave.query.exceptions.NoResultsException;
+import datawave.query.iterator.QueryOptions;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.MockDateIndexHelper;
 import datawave.query.util.TypeMetadata;
+import datawave.query.util.TypeMetadataSerializer;
 import datawave.test.JexlNodeAssert;
 import datawave.util.time.DateHelper;
 
@@ -211,6 +219,27 @@ class DefaultQueryPlannerTest {
             assertEquals(DateIndexUtil.getEndDate("20241010"), config.getEndDate());
         }
 
+        /**
+         * Verify that when the date type is in noExpansionIfCurrentDateTypes and the query end date is not today, but the remapped shard end date falls before
+         * the query begin date, a NoResultsException is thrown rather than creating an invalid date range.
+         */
+        @Test
+        void testParamDateTypeMarkedForNoExpansionRemappedEndDateBeforeBeginDate() throws Exception {
+            queryTree = JexlASTHelper.parseJexlQuery("FOO == 'bar'");
+            config.setDefaultDateTypeName("EVENT");
+            config.setNoExpansionIfCurrentDateTypes(Set.of("SPECIAL_EVENT"));
+            // Query begin date is 2024-01-01; end date is not today
+            Date beginDate = DateHelper.parse("20240101");
+            config.setBeginDate(beginDate);
+            config.setEndDate(DateHelper.parse("20240131"));
+            settings.addParameter(QueryParameters.DATE_RANGE_TYPE, "SPECIAL_EVENT");
+            // Date index shard dates are all in December 2023 — entirely before the query begin date
+            dateIndexHelper.addEntry("20231201", "SPECIAL_EVENT", "wiki", "FOO", "20231201_shard");
+            dateIndexHelper.addEntry("20231215", "SPECIAL_EVENT", "wiki", "FOO", "20231215_shard");
+
+            assertThrows(NoResultsException.class, this::addDateFilters);
+        }
+
         private ASTJexlScript addDateFilters() throws TableNotFoundException, DatawaveQueryException {
             return planner.addDateFilters(queryTree, null, null, dateIndexHelper, config, settings);
         }
@@ -285,6 +314,165 @@ class DefaultQueryPlannerTest {
 
             assertThrows(DatawaveFatalQueryException.class, () -> planner.validateGroupFields(groupFields),
                             "The following group-by fields are not date fields and cannot be used with temporal truncation: ROLE");
+        }
+    }
+
+    /**
+     * Contains tests for {@link DefaultQueryPlanner#capDateRange(ShardQueryConfiguration)}
+     */
+    @Nested
+    class CapDateRangeTests {
+
+        private static final long THIRTY_DAYS_MS = 30L * 24 * 60 * 60 * 1000;
+
+        private DefaultQueryPlanner planner;
+        private ShardQueryConfiguration config;
+
+        @BeforeEach
+        void setUp() {
+            planner = new DefaultQueryPlanner();
+            config = new ShardQueryConfiguration();
+        }
+
+        /**
+         * Verify that when both begin and end dates are before the cap and failOutsideValidDateRange is false, a NoResultsException is thrown rather than
+         * setting endDate before beginDate.
+         */
+        @Test
+        void testBothDatesBeforeCapSoftFailThrowsNoResults() {
+            config.setBeginDateCap(THIRTY_DAYS_MS);
+            config.setFailOutsideValidDateRange(false);
+            config.setBeginDate(new Date(System.currentTimeMillis() - 60 * 24 * 60 * 60 * 1000L)); // 60 days ago
+            config.setEndDate(new Date(System.currentTimeMillis() - 45 * 24 * 60 * 60 * 1000L)); // 45 days ago
+
+            assertThrows(NoResultsException.class, () -> planner.capDateRange(config));
+        }
+
+        /**
+         * Verify that when both begin and end dates are before the cap and failOutsideValidDateRange is true, a DatawaveQueryException is thrown.
+         */
+        @Test
+        void testBothDatesBeforeCapHardFailThrowsQueryException() {
+            config.setBeginDateCap(THIRTY_DAYS_MS);
+            config.setFailOutsideValidDateRange(true);
+            config.setBeginDate(new Date(System.currentTimeMillis() - 60 * 24 * 60 * 60 * 1000L));
+            config.setEndDate(new Date(System.currentTimeMillis() - 45 * 24 * 60 * 60 * 1000L));
+
+            assertThrows(DatawaveQueryException.class, () -> planner.capDateRange(config));
+        }
+
+        /**
+         * Verify that when only the begin date is before the cap (end date is within range), beginDate is capped and endDate is unchanged.
+         */
+        @Test
+        void testOnlyBeginDateBeforeCapUpdatesBeginDate() throws DatawaveQueryException {
+            config.setBeginDateCap(THIRTY_DAYS_MS);
+            config.setFailOutsideValidDateRange(false);
+            long minStartTime = System.currentTimeMillis() - THIRTY_DAYS_MS;
+            config.setBeginDate(new Date(minStartTime - 1000)); // just before cap
+            Date endDate = new Date(); // now — well within cap
+            config.setEndDate(endDate);
+
+            planner.capDateRange(config);
+
+            assertTrue(!config.getEndDate().before(config.getBeginDate()), "endDate must not be before beginDate after cap");
+            assertEquals(endDate, config.getEndDate(), "endDate should be unchanged");
+        }
+
+        /**
+         * Verify that when both dates are within the cap, neither date is modified.
+         */
+        @Test
+        void testDatesWithinCapAreUnchanged() throws DatawaveQueryException {
+            config.setBeginDateCap(THIRTY_DAYS_MS);
+            Date beginDate = new Date(System.currentTimeMillis() - 10 * 24 * 60 * 60 * 1000L); // 10 days ago
+            Date endDate = new Date();
+            config.setBeginDate(beginDate);
+            config.setEndDate(endDate);
+
+            planner.capDateRange(config);
+
+            assertEquals(beginDate, config.getBeginDate());
+            assertEquals(endDate, config.getEndDate());
+        }
+    }
+
+    /**
+     * Contains tests for {@link DefaultQueryPlanner#configureTypeMappings(ShardQueryConfiguration, IteratorSetting, MetadataHelper, boolean, boolean)}
+     */
+    @Nested
+    class ConfigureTypeMappingsTests {
+
+        private DefaultQueryPlanner planner;
+        private ShardQueryConfiguration config;
+        private MetadataHelper metadataHelper;
+        private TypeMetadata typeMetadata;
+
+        @BeforeEach
+        void setUp() {
+            planner = new DefaultQueryPlanner();
+            config = new ShardQueryConfiguration();
+            metadataHelper = Mockito.mock(MetadataHelper.class);
+            Mockito.when(metadataHelper.getUsersMetadataAuthorizationSubset()).thenReturn("");
+
+            typeMetadata = new TypeMetadata();
+            typeMetadata.put("FIELD1", "ingestA", "LcNoDiacriticsType");
+            typeMetadata.put("FIELD2", "ingestA", "NumberType");
+            planner.setTypeMetadata(typeMetadata);
+        }
+
+        /**
+         * Verify that when {@code kryoTypeMetadata} is disabled (the default), TYPE_METADATA is serialized via {@link TypeMetadata#toString()} and the
+         * TYPE_METADATA_KRYO marker option is false.
+         */
+        @Test
+        void testKryoTypeMetadataDisabledUsesNativeStringFormat() throws Exception {
+            IteratorSetting cfg = new IteratorSetting(100, "test", "test");
+
+            planner.configureTypeMappings(config, cfg, metadataHelper, false);
+
+            Map<String,String> options = cfg.getOptions();
+            assertFalse(Boolean.parseBoolean(options.get(QueryOptions.TYPE_METADATA_KRYO)));
+            assertEquals(typeMetadata.toString(), options.get(QueryOptions.TYPE_METADATA));
+        }
+
+        /**
+         * Verify that when {@code kryoTypeMetadata} is enabled, TYPE_METADATA is serialized via {@link TypeMetadataSerializer} and the TYPE_METADATA_KRYO
+         * marker option is true, and that the result decodes back to the original TypeMetadata.
+         */
+        @Test
+        void testKryoTypeMetadataEnabledUsesKryoFormat() throws Exception {
+            config.setKryoTypeMetadata(true);
+            IteratorSetting cfg = new IteratorSetting(100, "test", "test");
+
+            planner.configureTypeMappings(config, cfg, metadataHelper, false);
+
+            Map<String,String> options = cfg.getOptions();
+            assertTrue(Boolean.parseBoolean(options.get(QueryOptions.TYPE_METADATA_KRYO)));
+            assertEquals(typeMetadata, new TypeMetadataSerializer().deserialize(options.get(QueryOptions.TYPE_METADATA)));
+        }
+
+        /**
+         * Verify that {@code kryoTypeMetadata} is ignored (falls back to the native string format) when per-shard type metadata reduction is enabled, since
+         * VisitorFunction re-serializes TypeMetadata via toString() after reducing it per shard and does not understand the Kryo format.
+         */
+        @Test
+        void testKryoTypeMetadataIgnoredWhenReducingPerShard() throws Exception {
+            config.setKryoTypeMetadata(true);
+            // canReduceTypeMetadata requires a non-empty project/disallowlist field set, otherwise configureTypeMappings
+            // forces reduceTypeMetadataPerShard back to false before it ever reaches the serialization branch below
+            config.setProjectFields(Set.of("FIELD1"));
+            config.setQueryTree(JexlASTHelper.parseJexlQuery("FIELD1 == 'bar'"));
+            config.setReduceTypeMetadataPerShard(true);
+            IteratorSetting cfg = new IteratorSetting(100, "test", "test");
+
+            planner.configureTypeMappings(config, cfg, metadataHelper, false);
+
+            // the planner still performs a first-pass reduction to FIELD1 regardless of the kryo flag; only the
+            // serialization format (native toString(), not Kryo) is under test here
+            Map<String,String> options = cfg.getOptions();
+            assertFalse(Boolean.parseBoolean(options.get(QueryOptions.TYPE_METADATA_KRYO)));
+            assertEquals(typeMetadata.reduce(Set.of("FIELD1")).toString(), options.get(QueryOptions.TYPE_METADATA));
         }
     }
 }

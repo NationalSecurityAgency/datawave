@@ -1,5 +1,6 @@
 package datawave.ingest.annotation.mapreduce.handler;
 
+import static org.junit.Assert.fail;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -9,7 +10,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Collection;
 import java.util.Map;
+import java.util.Optional;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -68,19 +71,54 @@ public class AnnotationHelperTest {
 
     @Test
     public void testGetTableNamesAndPriorities() {
-        String[] expectedTableNames = new String[] {conf.get(AnnotationHelper.ANNOTATION_TNAME), conf.get(AnnotationHelper.ANNOTATION_SOURCE_TNAME)};
+
+        //@formatter:off
+        String[] expectedTableNames = new String[] {
+                conf.get(AnnotationHelper.ANNOTATION_TNAME),
+                conf.get(AnnotationHelper.ANNOTATION_SOURCE_TNAME),
+                conf.get(AnnotationHelper.TRUTHMARK_TNAME),
+                conf.get(AnnotationHelper.TRUTHMARK_SOURCE_TNAME)
+        };
+        //@formatter:on
 
         assertArrayEquals(expectedTableNames, annotationHelper.getAnnotationTableNames(null));
         assertArrayEquals(expectedTableNames, annotationHelper.getAnnotationTableNames(new String[] {}));
-        assertArrayEquals(new String[] {"test", expectedTableNames[0], expectedTableNames[1]}, annotationHelper.getAnnotationTableNames(new String[] {"test"}));
 
-        int[] expectedTablePriorities = new int[] {conf.getInt(AnnotationHelper.ANNOTATION_TABLE_LOAD_PRIORITY, -10),
-                conf.getInt(AnnotationHelper.ANNOTATION_SOURCE_TABLE_LOAD_PRIORITY, -10)};
+        //@formatter:off
+        String[] expectedTableNamesWithTest = new String[] {
+                "test",
+                expectedTableNames[0],
+                expectedTableNames[1],
+                expectedTableNames[2],
+                expectedTableNames[3]
+        };
+        //@formatter:on
+
+        assertArrayEquals(expectedTableNamesWithTest, annotationHelper.getAnnotationTableNames(new String[] {"test"}));
+
+        //@formatter:off
+        int[] expectedTablePriorities = new int[] {
+                conf.getInt(AnnotationHelper.ANNOTATION_TABLE_LOAD_PRIORITY, -10),
+                conf.getInt(AnnotationHelper.ANNOTATION_SOURCE_TABLE_LOAD_PRIORITY, -10),
+                conf.getInt(AnnotationHelper.TRUTHMARK_TABLE_LOAD_PRIORITY, -10),
+                conf.getInt(AnnotationHelper.TRUTHMARK_SOURCE_TABLE_LOAD_PRIORITY, -10)
+        };
+        //@formatter:on
 
         assertArrayEquals(expectedTablePriorities, annotationHelper.getAnnotationTableLoaderPriorities(null));
         assertArrayEquals(expectedTablePriorities, annotationHelper.getAnnotationTableLoaderPriorities(new int[] {}));
-        assertArrayEquals(new int[] {1, expectedTablePriorities[0], expectedTablePriorities[1]},
-                        annotationHelper.getAnnotationTableLoaderPriorities(new int[] {1}));
+
+        //@formatter:off
+        int[] expectedTablePrioritiesWithTest = new int[] {
+                1,
+                expectedTablePriorities[0],
+                expectedTablePriorities[1],
+                expectedTablePriorities[2],
+                expectedTablePriorities[3]
+        };
+        //@formatter:on
+
+        assertArrayEquals(expectedTablePrioritiesWithTest, annotationHelper.getAnnotationTableLoaderPriorities(new int[] {1}));
     }
 
     @Test
@@ -93,6 +131,7 @@ public class AnnotationHelperTest {
         event.setTimestamp(time);
         event.setVisibility(new ColumnVisibility("TEST_VISIBILITY"));
         event.setId(UID.parse("a.b.c"));
+        event.setRawData(new byte[0]);
 
         // no fields are required
         HashMultimap<String,NormalizedContentInterface> fields = HashMultimap.create();
@@ -110,8 +149,18 @@ public class AnnotationHelperTest {
         assertFalse(contextWriter.getCache().get(expectedSourceKey).isEmpty());
 
         // the first segment value should be protobuf that can be parsed by Segment class
-        Segment segment = Segment.parseFrom(contextWriter.getCache().get(expectedKey).stream().findFirst().get().get());
-        assertEquals("testSegmentId1", segment.getSegmentHash(), "BulkIngestKey structure could potentially change as annotation-core library gets updated.");
+        Collection<Value> result = contextWriter.getCache().get(expectedKey);
+        Optional<Value> firstValue = result.stream().findFirst();
+        if (firstValue.isPresent()) {
+            Value firstNestedValue = firstValue.get();
+            byte[] segmentBytes = firstNestedValue.get();
+            Segment segment = Segment.parseFrom(segmentBytes);
+            assertEquals("testSegmentId1", segment.getSegmentHash(),
+                            "BulkIngestKey structure could potentially change as annotation-core library gets updated.");
+        } else {
+            fail("BulkIngestKey does not have the expected value");
+        }
+
     }
 
     @Test
