@@ -2,7 +2,7 @@
   "shard": "20250405_123",
   "dataType": "audio",
   "uid": "l46b0b.l9xx93.-jsda4n",
-  "annotationId": "A7699117",
+  "annotationId": "4993786C",
   "documentId": "000000000001",
   "annotationType": "tts",
   "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
@@ -22,6 +22,54 @@
     }
   },
   "segments": [{
+    "segmentHash": "0B2095B4",
+    "boundary": {
+      "boundaryType": "TIME_MILLI",
+      "start": 90000,
+      "end": 95000
+    },
+    "values": [{
+      "valueHash": "8E4C5C70",
+      "value": "sat",
+      "score": 0.235
+    }, {
+      "valueHash": "6B4F46BE",
+      "value": "ate",
+      "score": 0.21
+    }]
+  }, {
+    "segmentHash": "2EB66E6D",
+    "boundary": {
+      "boundaryType": "TIME_MILLI",
+      "start": 50000,
+      "end": 55000
+    },
+    "values": [{
+      "valueHash": "76BEE44F",
+      "value": "mat",
+      "score": 0.235
+    }, {
+      "valueHash": "84962936",
+      "value": "gnat",
+      "score": 0.21
+    }]
+  }, {
+    "segmentHash": "4FBF9992",
+    "boundary": {
+      "boundaryType": "TIME_MILLI",
+      "start": 70000,
+      "end": 75000
+    },
+    "values": [{
+      "valueHash": "B578A0BB",
+      "value": "the",
+      "score": 0.235
+    }, {
+      "valueHash": "B578A0BB",
+      "value": "the",
+      "score": 0.21
+    }]
+  }, {
     "segmentHash": "6BD6F28F",
     "boundary": {
       "boundaryType": "TIME_MILLI",
@@ -35,6 +83,22 @@
     }, {
       "valueHash": "B578A0BB",
       "value": "the",
+      "score": 0.21
+    }]
+  }, {
+    "segmentHash": "6DCE0993",
+    "boundary": {
+      "boundaryType": "TIME_MILLI",
+      "start": 80000,
+      "end": 85000
+    },
+    "values": [{
+      "valueHash": "2CE5103A",
+      "value": "cat",
+      "score": 0.235
+    }, {
+      "valueHash": "102EA958",
+      "value": "bat",
       "score": 0.21
     }]
   }, {
@@ -86,38 +150,6 @@
       "score": 0.21
     }]
   }, {
-    "segmentHash": "FA0FE295",
-    "boundary": {
-      "boundaryType": "TIME_MILLI",
-      "start": 40000,
-      "end": 45000
-    },
-    "values": [{
-      "valueHash": "B578A0BB",
-      "value": "the",
-      "score": 0.235
-    }, {
-      "valueHash": "B578A0BB",
-      "value": "the",
-      "score": 0.21
-    }]
-  }, {
-    "segmentHash": "2EB66E6D",
-    "boundary": {
-      "boundaryType": "TIME_MILLI",
-      "start": 50000,
-      "end": 55000
-    },
-    "values": [{
-      "valueHash": "76BEE44F",
-      "value": "mat",
-      "score": 0.235
-    }, {
-      "valueHash": "84962936",
-      "value": "gnat",
-      "score": 0.21
-    }]
-  }, {
     "segmentHash": "E103E6C3",
     "boundary": {
       "boundaryType": "TIME_MILLI",
@@ -134,11 +166,11 @@
       "score": 0.21
     }]
   }, {
-    "segmentHash": "4FBF9992",
+    "segmentHash": "FA0FE295",
     "boundary": {
       "boundaryType": "TIME_MILLI",
-      "start": 70000,
-      "end": 75000
+      "start": 40000,
+      "end": 45000
     },
     "values": [{
       "valueHash": "B578A0BB",
@@ -147,38 +179,6 @@
     }, {
       "valueHash": "B578A0BB",
       "value": "the",
-      "score": 0.21
-    }]
-  }, {
-    "segmentHash": "6DCE0993",
-    "boundary": {
-      "boundaryType": "TIME_MILLI",
-      "start": 80000,
-      "end": 85000
-    },
-    "values": [{
-      "valueHash": "2CE5103A",
-      "value": "cat",
-      "score": 0.235
-    }, {
-      "valueHash": "102EA958",
-      "value": "bat",
-      "score": 0.21
-    }]
-  }, {
-    "segmentHash": "0B2095B4",
-    "boundary": {
-      "boundaryType": "TIME_MILLI",
-      "start": 90000,
-      "end": 95000
-    },
-    "values": [{
-      "valueHash": "8E4C5C70",
-      "value": "sat",
-      "score": 0.235
-    }, {
-      "valueHash": "6B4F46BE",
-      "value": "ate",
       "score": 0.21
     }]
   }],
@@ -195,7 +195,7 @@
   "shard": "20250405_123",
   "dataType": "news",
   "uid": "6tzt7u.-hm7g23.i1ueb4",
-  "annotationId": "175BF2E8",
+  "annotationId": "42E43BAC",
   "documentId": "000000000002",
   "annotationType": "tokens",
   "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
@@ -215,15 +215,15 @@
     }
   },
   "segments": [{
-    "segmentHash": "C7B766B9",
+    "segmentHash": "32443188",
     "boundary": {
       "boundaryType": "TEXT_CHAR",
-      "start": 0,
-      "end": 3
+      "start": 31,
+      "end": 37
     },
     "values": [{
-      "valueHash": "B578A0BB",
-      "value": "the",
+      "valueHash": "CB78DACF",
+      "value": "rabbit",
       "score": 1.0
     }]
   }, {
@@ -263,6 +263,18 @@
       "score": 1.0
     }]
   }, {
+    "segmentHash": "7EBDA0EF",
+    "boundary": {
+      "boundaryType": "TEXT_CHAR",
+      "start": 38,
+      "end": 43
+    },
+    "values": [{
+      "valueHash": "80529ABB",
+      "value": "\u003ceos\u003e",
+      "score": 1.0
+    }]
+  }, {
     "segmentHash": "BBE2E40F",
     "boundary": {
       "boundaryType": "TEXT_CHAR",
@@ -275,6 +287,18 @@
       "score": 1.0
     }]
   }, {
+    "segmentHash": "C7B766B9",
+    "boundary": {
+      "boundaryType": "TEXT_CHAR",
+      "start": 0,
+      "end": 3
+    },
+    "values": [{
+      "valueHash": "B578A0BB",
+      "value": "the",
+      "score": 1.0
+    }]
+  }, {
     "segmentHash": "FA48289B",
     "boundary": {
       "boundaryType": "TEXT_CHAR",
@@ -284,30 +308,6 @@
     "values": [{
       "valueHash": "B578A0BB",
       "value": "the",
-      "score": 1.0
-    }]
-  }, {
-    "segmentHash": "32443188",
-    "boundary": {
-      "boundaryType": "TEXT_CHAR",
-      "start": 31,
-      "end": 37
-    },
-    "values": [{
-      "valueHash": "CB78DACF",
-      "value": "rabbit",
-      "score": 1.0
-    }]
-  }, {
-    "segmentHash": "7EBDA0EF",
-    "boundary": {
-      "boundaryType": "TEXT_CHAR",
-      "start": 38,
-      "end": 43
-    },
-    "values": [{
-      "valueHash": "80529ABB",
-      "value": "\u003ceos\u003e",
       "score": 1.0
     }]
   }],
@@ -324,7 +324,7 @@
   "shard": "20250405_123",
   "dataType": "cars",
   "uid": "-pp0vkp.3rzqnz.5q54vx",
-  "annotationId": "3D3AFEA0",
+  "annotationId": "4375D2AD",
   "documentId": "000000000003",
   "annotationType": "object",
   "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
@@ -344,83 +344,25 @@
     }
   },
   "segments": [{
-    "segmentHash": "A95669D7",
+    "segmentHash": "A458EEBE",
     "boundary": {
       "boundaryType": "POINTS",
       "points": [{
-        "x": 0,
-        "y": 0,
+        "x": 60,
+        "y": 70,
         "label": "topLeft"
       }, {
-        "x": 5,
-        "y": 12,
+        "x": 70,
+        "y": 78,
         "label": "bottomRight"
       }]
     },
     "values": [{
-      "valueHash": "A9D3B0A4",
-      "value": "bird",
-      "score": 0.97,
-      "extension": {
-        "version": "alpha"
-      }
-    }, {
-      "valueHash": "B29CBAE1",
-      "value": "crow",
-      "score": 0.86,
-      "extension": {
-        "version": "alpha"
-      }
-    }]
-  }, {
-    "segmentHash": "FFF3BAA1",
-    "boundary": {
-      "boundaryType": "POINTS",
-      "points": [{
-        "x": 10,
-        "y": 15,
-        "label": "topLeft"
-      }, {
-        "x": 15,
-        "y": 18,
-        "label": "bottomRight"
-      }]
-    },
-    "values": [{
-      "valueHash": "C21AF472",
-      "value": "car",
+      "valueHash": "E5A4D3D7",
+      "value": "flashlight",
       "score": 0.97,
       "extension": {
         "version": "beta"
-      }
-    }, {
-      "valueHash": "A1AECAE0",
-      "value": "truck",
-      "score": 0.86,
-      "extension": {
-        "version": "beta"
-      }
-    }]
-  }, {
-    "segmentHash": "EB77E18D",
-    "boundary": {
-      "boundaryType": "POINTS",
-      "points": [{
-        "x": 20,
-        "y": 20,
-        "label": "topLeft"
-      }, {
-        "x": 28,
-        "y": 47,
-        "label": "bottomRight"
-      }]
-    },
-    "values": [{
-      "valueHash": "6A06AA42",
-      "value": "stairs",
-      "score": 0.97,
-      "extension": {
-        "version": "delta"
       }
     }]
   }, {
@@ -453,25 +395,32 @@
       }
     }]
   }, {
-    "segmentHash": "A458EEBE",
+    "segmentHash": "A95669D7",
     "boundary": {
       "boundaryType": "POINTS",
       "points": [{
-        "x": 60,
-        "y": 70,
+        "x": 0,
+        "y": 0,
         "label": "topLeft"
       }, {
-        "x": 70,
-        "y": 78,
+        "x": 5,
+        "y": 12,
         "label": "bottomRight"
       }]
     },
     "values": [{
-      "valueHash": "E5A4D3D7",
-      "value": "flashlight",
+      "valueHash": "A9D3B0A4",
+      "value": "bird",
       "score": 0.97,
       "extension": {
-        "version": "beta"
+        "version": "alpha"
+      }
+    }, {
+      "valueHash": "B29CBAE1",
+      "value": "crow",
+      "score": 0.86,
+      "extension": {
+        "version": "alpha"
       }
     }]
   }, {
@@ -501,6 +450,57 @@
       "score": 0.86,
       "extension": {
         "version": "alpha"
+      }
+    }]
+  }, {
+    "segmentHash": "EB77E18D",
+    "boundary": {
+      "boundaryType": "POINTS",
+      "points": [{
+        "x": 20,
+        "y": 20,
+        "label": "topLeft"
+      }, {
+        "x": 28,
+        "y": 47,
+        "label": "bottomRight"
+      }]
+    },
+    "values": [{
+      "valueHash": "6A06AA42",
+      "value": "stairs",
+      "score": 0.97,
+      "extension": {
+        "version": "delta"
+      }
+    }]
+  }, {
+    "segmentHash": "FFF3BAA1",
+    "boundary": {
+      "boundaryType": "POINTS",
+      "points": [{
+        "x": 10,
+        "y": 15,
+        "label": "topLeft"
+      }, {
+        "x": 15,
+        "y": 18,
+        "label": "bottomRight"
+      }]
+    },
+    "values": [{
+      "valueHash": "C21AF472",
+      "value": "car",
+      "score": 0.97,
+      "extension": {
+        "version": "beta"
+      }
+    }, {
+      "valueHash": "A1AECAE0",
+      "value": "truck",
+      "score": 0.86,
+      "extension": {
+        "version": "beta"
       }
     }]
   }],
@@ -633,7 +633,7 @@
   "shard": "20250405_456",
   "dataType": "audio",
   "uid": "ayu73v.3cwl0r.-4ptvm7",
-  "annotationId": "327C292F",
+  "annotationId": "48B702FE",
   "documentId": "000000000005",
   "annotationType": "tts",
   "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
@@ -653,6 +653,54 @@
     }
   },
   "segments": [{
+    "segmentHash": "0B2095B4",
+    "boundary": {
+      "boundaryType": "TIME_MILLI",
+      "start": 90000,
+      "end": 95000
+    },
+    "values": [{
+      "valueHash": "8E4C5C70",
+      "value": "sat",
+      "score": 0.235
+    }, {
+      "valueHash": "6B4F46BE",
+      "value": "ate",
+      "score": 0.21
+    }]
+  }, {
+    "segmentHash": "2EB66E6D",
+    "boundary": {
+      "boundaryType": "TIME_MILLI",
+      "start": 50000,
+      "end": 55000
+    },
+    "values": [{
+      "valueHash": "76BEE44F",
+      "value": "mat",
+      "score": 0.235
+    }, {
+      "valueHash": "84962936",
+      "value": "gnat",
+      "score": 0.21
+    }]
+  }, {
+    "segmentHash": "4FBF9992",
+    "boundary": {
+      "boundaryType": "TIME_MILLI",
+      "start": 70000,
+      "end": 75000
+    },
+    "values": [{
+      "valueHash": "B578A0BB",
+      "value": "the",
+      "score": 0.235
+    }, {
+      "valueHash": "B578A0BB",
+      "value": "the",
+      "score": 0.21
+    }]
+  }, {
     "segmentHash": "6BD6F28F",
     "boundary": {
       "boundaryType": "TIME_MILLI",
@@ -666,6 +714,22 @@
     }, {
       "valueHash": "B578A0BB",
       "value": "the",
+      "score": 0.21
+    }]
+  }, {
+    "segmentHash": "6DCE0993",
+    "boundary": {
+      "boundaryType": "TIME_MILLI",
+      "start": 80000,
+      "end": 85000
+    },
+    "values": [{
+      "valueHash": "2CE5103A",
+      "value": "cat",
+      "score": 0.235
+    }, {
+      "valueHash": "102EA958",
+      "value": "bat",
       "score": 0.21
     }]
   }, {
@@ -717,38 +781,6 @@
       "score": 0.21
     }]
   }, {
-    "segmentHash": "FA0FE295",
-    "boundary": {
-      "boundaryType": "TIME_MILLI",
-      "start": 40000,
-      "end": 45000
-    },
-    "values": [{
-      "valueHash": "B578A0BB",
-      "value": "the",
-      "score": 0.235
-    }, {
-      "valueHash": "B578A0BB",
-      "value": "the",
-      "score": 0.21
-    }]
-  }, {
-    "segmentHash": "2EB66E6D",
-    "boundary": {
-      "boundaryType": "TIME_MILLI",
-      "start": 50000,
-      "end": 55000
-    },
-    "values": [{
-      "valueHash": "76BEE44F",
-      "value": "mat",
-      "score": 0.235
-    }, {
-      "valueHash": "84962936",
-      "value": "gnat",
-      "score": 0.21
-    }]
-  }, {
     "segmentHash": "E103E6C3",
     "boundary": {
       "boundaryType": "TIME_MILLI",
@@ -765,11 +797,11 @@
       "score": 0.21
     }]
   }, {
-    "segmentHash": "4FBF9992",
+    "segmentHash": "FA0FE295",
     "boundary": {
       "boundaryType": "TIME_MILLI",
-      "start": 70000,
-      "end": 75000
+      "start": 40000,
+      "end": 45000
     },
     "values": [{
       "valueHash": "B578A0BB",
@@ -778,38 +810,6 @@
     }, {
       "valueHash": "B578A0BB",
       "value": "the",
-      "score": 0.21
-    }]
-  }, {
-    "segmentHash": "6DCE0993",
-    "boundary": {
-      "boundaryType": "TIME_MILLI",
-      "start": 80000,
-      "end": 85000
-    },
-    "values": [{
-      "valueHash": "2CE5103A",
-      "value": "cat",
-      "score": 0.235
-    }, {
-      "valueHash": "102EA958",
-      "value": "bat",
-      "score": 0.21
-    }]
-  }, {
-    "segmentHash": "0B2095B4",
-    "boundary": {
-      "boundaryType": "TIME_MILLI",
-      "start": 90000,
-      "end": 95000
-    },
-    "values": [{
-      "valueHash": "8E4C5C70",
-      "value": "sat",
-      "score": 0.235
-    }, {
-      "valueHash": "6B4F46BE",
-      "value": "ate",
       "score": 0.21
     }]
   }],
@@ -826,7 +826,7 @@
   "shard": "20250405_456",
   "dataType": "news",
   "uid": "-6j7k0l.u7xkz5.-x8hpes",
-  "annotationId": "19C96CBC",
+  "annotationId": "D01FC42C",
   "documentId": "000000000006",
   "annotationType": "tokens",
   "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
@@ -846,15 +846,15 @@
     }
   },
   "segments": [{
-    "segmentHash": "C7B766B9",
+    "segmentHash": "32443188",
     "boundary": {
       "boundaryType": "TEXT_CHAR",
-      "start": 0,
-      "end": 3
+      "start": 31,
+      "end": 37
     },
     "values": [{
-      "valueHash": "B578A0BB",
-      "value": "the",
+      "valueHash": "CB78DACF",
+      "value": "rabbit",
       "score": 1.0
     }]
   }, {
@@ -894,6 +894,18 @@
       "score": 1.0
     }]
   }, {
+    "segmentHash": "7EBDA0EF",
+    "boundary": {
+      "boundaryType": "TEXT_CHAR",
+      "start": 38,
+      "end": 43
+    },
+    "values": [{
+      "valueHash": "80529ABB",
+      "value": "\u003ceos\u003e",
+      "score": 1.0
+    }]
+  }, {
     "segmentHash": "BBE2E40F",
     "boundary": {
       "boundaryType": "TEXT_CHAR",
@@ -906,6 +918,18 @@
       "score": 1.0
     }]
   }, {
+    "segmentHash": "C7B766B9",
+    "boundary": {
+      "boundaryType": "TEXT_CHAR",
+      "start": 0,
+      "end": 3
+    },
+    "values": [{
+      "valueHash": "B578A0BB",
+      "value": "the",
+      "score": 1.0
+    }]
+  }, {
     "segmentHash": "FA48289B",
     "boundary": {
       "boundaryType": "TEXT_CHAR",
@@ -915,30 +939,6 @@
     "values": [{
       "valueHash": "B578A0BB",
       "value": "the",
-      "score": 1.0
-    }]
-  }, {
-    "segmentHash": "32443188",
-    "boundary": {
-      "boundaryType": "TEXT_CHAR",
-      "start": 31,
-      "end": 37
-    },
-    "values": [{
-      "valueHash": "CB78DACF",
-      "value": "rabbit",
-      "score": 1.0
-    }]
-  }, {
-    "segmentHash": "7EBDA0EF",
-    "boundary": {
-      "boundaryType": "TEXT_CHAR",
-      "start": 38,
-      "end": 43
-    },
-    "values": [{
-      "valueHash": "80529ABB",
-      "value": "\u003ceos\u003e",
       "score": 1.0
     }]
   }],
@@ -955,7 +955,7 @@
   "shard": "20250405_456",
   "dataType": "cars",
   "uid": "sr2ace.-4lv4w6.-begkwn",
-  "annotationId": "32F7C24E",
+  "annotationId": "1FC94612",
   "documentId": "000000000007",
   "annotationType": "object",
   "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
@@ -975,83 +975,25 @@
     }
   },
   "segments": [{
-    "segmentHash": "A95669D7",
+    "segmentHash": "A458EEBE",
     "boundary": {
       "boundaryType": "POINTS",
       "points": [{
-        "x": 0,
-        "y": 0,
+        "x": 60,
+        "y": 70,
         "label": "topLeft"
       }, {
-        "x": 5,
-        "y": 12,
+        "x": 70,
+        "y": 78,
         "label": "bottomRight"
       }]
     },
     "values": [{
-      "valueHash": "A9D3B0A4",
-      "value": "bird",
-      "score": 0.97,
-      "extension": {
-        "version": "alpha"
-      }
-    }, {
-      "valueHash": "B29CBAE1",
-      "value": "crow",
-      "score": 0.86,
-      "extension": {
-        "version": "alpha"
-      }
-    }]
-  }, {
-    "segmentHash": "FFF3BAA1",
-    "boundary": {
-      "boundaryType": "POINTS",
-      "points": [{
-        "x": 10,
-        "y": 15,
-        "label": "topLeft"
-      }, {
-        "x": 15,
-        "y": 18,
-        "label": "bottomRight"
-      }]
-    },
-    "values": [{
-      "valueHash": "C21AF472",
-      "value": "car",
+      "valueHash": "E5A4D3D7",
+      "value": "flashlight",
       "score": 0.97,
       "extension": {
         "version": "beta"
-      }
-    }, {
-      "valueHash": "A1AECAE0",
-      "value": "truck",
-      "score": 0.86,
-      "extension": {
-        "version": "beta"
-      }
-    }]
-  }, {
-    "segmentHash": "EB77E18D",
-    "boundary": {
-      "boundaryType": "POINTS",
-      "points": [{
-        "x": 20,
-        "y": 20,
-        "label": "topLeft"
-      }, {
-        "x": 28,
-        "y": 47,
-        "label": "bottomRight"
-      }]
-    },
-    "values": [{
-      "valueHash": "6A06AA42",
-      "value": "stairs",
-      "score": 0.97,
-      "extension": {
-        "version": "delta"
       }
     }]
   }, {
@@ -1084,25 +1026,32 @@
       }
     }]
   }, {
-    "segmentHash": "A458EEBE",
+    "segmentHash": "A95669D7",
     "boundary": {
       "boundaryType": "POINTS",
       "points": [{
-        "x": 60,
-        "y": 70,
+        "x": 0,
+        "y": 0,
         "label": "topLeft"
       }, {
-        "x": 70,
-        "y": 78,
+        "x": 5,
+        "y": 12,
         "label": "bottomRight"
       }]
     },
     "values": [{
-      "valueHash": "E5A4D3D7",
-      "value": "flashlight",
+      "valueHash": "A9D3B0A4",
+      "value": "bird",
       "score": 0.97,
       "extension": {
-        "version": "beta"
+        "version": "alpha"
+      }
+    }, {
+      "valueHash": "B29CBAE1",
+      "value": "crow",
+      "score": 0.86,
+      "extension": {
+        "version": "alpha"
       }
     }]
   }, {
@@ -1132,6 +1081,57 @@
       "score": 0.86,
       "extension": {
         "version": "alpha"
+      }
+    }]
+  }, {
+    "segmentHash": "EB77E18D",
+    "boundary": {
+      "boundaryType": "POINTS",
+      "points": [{
+        "x": 20,
+        "y": 20,
+        "label": "topLeft"
+      }, {
+        "x": 28,
+        "y": 47,
+        "label": "bottomRight"
+      }]
+    },
+    "values": [{
+      "valueHash": "6A06AA42",
+      "value": "stairs",
+      "score": 0.97,
+      "extension": {
+        "version": "delta"
+      }
+    }]
+  }, {
+    "segmentHash": "FFF3BAA1",
+    "boundary": {
+      "boundaryType": "POINTS",
+      "points": [{
+        "x": 10,
+        "y": 15,
+        "label": "topLeft"
+      }, {
+        "x": 15,
+        "y": 18,
+        "label": "bottomRight"
+      }]
+    },
+    "values": [{
+      "valueHash": "C21AF472",
+      "value": "car",
+      "score": 0.97,
+      "extension": {
+        "version": "beta"
+      }
+    }, {
+      "valueHash": "A1AECAE0",
+      "value": "truck",
+      "score": 0.86,
+      "extension": {
+        "version": "beta"
       }
     }]
   }],
@@ -1264,7 +1264,7 @@
   "shard": "20250405_789",
   "dataType": "audio",
   "uid": "j0cfzn.-4j53im.-d2w0tz",
-  "annotationId": "3FE49853",
+  "annotationId": "DC657EBA",
   "documentId": "000000000009",
   "annotationType": "tts",
   "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
@@ -1284,6 +1284,54 @@
     }
   },
   "segments": [{
+    "segmentHash": "0B2095B4",
+    "boundary": {
+      "boundaryType": "TIME_MILLI",
+      "start": 90000,
+      "end": 95000
+    },
+    "values": [{
+      "valueHash": "8E4C5C70",
+      "value": "sat",
+      "score": 0.235
+    }, {
+      "valueHash": "6B4F46BE",
+      "value": "ate",
+      "score": 0.21
+    }]
+  }, {
+    "segmentHash": "2EB66E6D",
+    "boundary": {
+      "boundaryType": "TIME_MILLI",
+      "start": 50000,
+      "end": 55000
+    },
+    "values": [{
+      "valueHash": "76BEE44F",
+      "value": "mat",
+      "score": 0.235
+    }, {
+      "valueHash": "84962936",
+      "value": "gnat",
+      "score": 0.21
+    }]
+  }, {
+    "segmentHash": "4FBF9992",
+    "boundary": {
+      "boundaryType": "TIME_MILLI",
+      "start": 70000,
+      "end": 75000
+    },
+    "values": [{
+      "valueHash": "B578A0BB",
+      "value": "the",
+      "score": 0.235
+    }, {
+      "valueHash": "B578A0BB",
+      "value": "the",
+      "score": 0.21
+    }]
+  }, {
     "segmentHash": "6BD6F28F",
     "boundary": {
       "boundaryType": "TIME_MILLI",
@@ -1297,6 +1345,22 @@
     }, {
       "valueHash": "B578A0BB",
       "value": "the",
+      "score": 0.21
+    }]
+  }, {
+    "segmentHash": "6DCE0993",
+    "boundary": {
+      "boundaryType": "TIME_MILLI",
+      "start": 80000,
+      "end": 85000
+    },
+    "values": [{
+      "valueHash": "2CE5103A",
+      "value": "cat",
+      "score": 0.235
+    }, {
+      "valueHash": "102EA958",
+      "value": "bat",
       "score": 0.21
     }]
   }, {
@@ -1348,38 +1412,6 @@
       "score": 0.21
     }]
   }, {
-    "segmentHash": "FA0FE295",
-    "boundary": {
-      "boundaryType": "TIME_MILLI",
-      "start": 40000,
-      "end": 45000
-    },
-    "values": [{
-      "valueHash": "B578A0BB",
-      "value": "the",
-      "score": 0.235
-    }, {
-      "valueHash": "B578A0BB",
-      "value": "the",
-      "score": 0.21
-    }]
-  }, {
-    "segmentHash": "2EB66E6D",
-    "boundary": {
-      "boundaryType": "TIME_MILLI",
-      "start": 50000,
-      "end": 55000
-    },
-    "values": [{
-      "valueHash": "76BEE44F",
-      "value": "mat",
-      "score": 0.235
-    }, {
-      "valueHash": "84962936",
-      "value": "gnat",
-      "score": 0.21
-    }]
-  }, {
     "segmentHash": "E103E6C3",
     "boundary": {
       "boundaryType": "TIME_MILLI",
@@ -1396,11 +1428,11 @@
       "score": 0.21
     }]
   }, {
-    "segmentHash": "4FBF9992",
+    "segmentHash": "FA0FE295",
     "boundary": {
       "boundaryType": "TIME_MILLI",
-      "start": 70000,
-      "end": 75000
+      "start": 40000,
+      "end": 45000
     },
     "values": [{
       "valueHash": "B578A0BB",
@@ -1409,38 +1441,6 @@
     }, {
       "valueHash": "B578A0BB",
       "value": "the",
-      "score": 0.21
-    }]
-  }, {
-    "segmentHash": "6DCE0993",
-    "boundary": {
-      "boundaryType": "TIME_MILLI",
-      "start": 80000,
-      "end": 85000
-    },
-    "values": [{
-      "valueHash": "2CE5103A",
-      "value": "cat",
-      "score": 0.235
-    }, {
-      "valueHash": "102EA958",
-      "value": "bat",
-      "score": 0.21
-    }]
-  }, {
-    "segmentHash": "0B2095B4",
-    "boundary": {
-      "boundaryType": "TIME_MILLI",
-      "start": 90000,
-      "end": 95000
-    },
-    "values": [{
-      "valueHash": "8E4C5C70",
-      "value": "sat",
-      "score": 0.235
-    }, {
-      "valueHash": "6B4F46BE",
-      "value": "ate",
       "score": 0.21
     }]
   }],
@@ -1457,7 +1457,7 @@
   "shard": "20250405_789",
   "dataType": "news",
   "uid": "-ngbobu.-c94tvj.8y2p8a",
-  "annotationId": "CD27BF6E",
+  "annotationId": "B3B10095",
   "documentId": "000000000010",
   "annotationType": "tokens",
   "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
@@ -1477,15 +1477,15 @@
     }
   },
   "segments": [{
-    "segmentHash": "C7B766B9",
+    "segmentHash": "32443188",
     "boundary": {
       "boundaryType": "TEXT_CHAR",
-      "start": 0,
-      "end": 3
+      "start": 31,
+      "end": 37
     },
     "values": [{
-      "valueHash": "B578A0BB",
-      "value": "the",
+      "valueHash": "CB78DACF",
+      "value": "rabbit",
       "score": 1.0
     }]
   }, {
@@ -1525,6 +1525,18 @@
       "score": 1.0
     }]
   }, {
+    "segmentHash": "7EBDA0EF",
+    "boundary": {
+      "boundaryType": "TEXT_CHAR",
+      "start": 38,
+      "end": 43
+    },
+    "values": [{
+      "valueHash": "80529ABB",
+      "value": "\u003ceos\u003e",
+      "score": 1.0
+    }]
+  }, {
     "segmentHash": "BBE2E40F",
     "boundary": {
       "boundaryType": "TEXT_CHAR",
@@ -1537,6 +1549,18 @@
       "score": 1.0
     }]
   }, {
+    "segmentHash": "C7B766B9",
+    "boundary": {
+      "boundaryType": "TEXT_CHAR",
+      "start": 0,
+      "end": 3
+    },
+    "values": [{
+      "valueHash": "B578A0BB",
+      "value": "the",
+      "score": 1.0
+    }]
+  }, {
     "segmentHash": "FA48289B",
     "boundary": {
       "boundaryType": "TEXT_CHAR",
@@ -1546,30 +1570,6 @@
     "values": [{
       "valueHash": "B578A0BB",
       "value": "the",
-      "score": 1.0
-    }]
-  }, {
-    "segmentHash": "32443188",
-    "boundary": {
-      "boundaryType": "TEXT_CHAR",
-      "start": 31,
-      "end": 37
-    },
-    "values": [{
-      "valueHash": "CB78DACF",
-      "value": "rabbit",
-      "score": 1.0
-    }]
-  }, {
-    "segmentHash": "7EBDA0EF",
-    "boundary": {
-      "boundaryType": "TEXT_CHAR",
-      "start": 38,
-      "end": 43
-    },
-    "values": [{
-      "valueHash": "80529ABB",
-      "value": "\u003ceos\u003e",
       "score": 1.0
     }]
   }],
@@ -1586,7 +1586,7 @@
   "shard": "20250405_789",
   "dataType": "cars",
   "uid": "pz3x7s.o7mcqn.-kj0cpa",
-  "annotationId": "53F057A7",
+  "annotationId": "FF5803F5",
   "documentId": "000000000011",
   "annotationType": "object",
   "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
@@ -1606,83 +1606,25 @@
     }
   },
   "segments": [{
-    "segmentHash": "A95669D7",
+    "segmentHash": "A458EEBE",
     "boundary": {
       "boundaryType": "POINTS",
       "points": [{
-        "x": 0,
-        "y": 0,
+        "x": 60,
+        "y": 70,
         "label": "topLeft"
       }, {
-        "x": 5,
-        "y": 12,
+        "x": 70,
+        "y": 78,
         "label": "bottomRight"
       }]
     },
     "values": [{
-      "valueHash": "A9D3B0A4",
-      "value": "bird",
-      "score": 0.97,
-      "extension": {
-        "version": "alpha"
-      }
-    }, {
-      "valueHash": "B29CBAE1",
-      "value": "crow",
-      "score": 0.86,
-      "extension": {
-        "version": "alpha"
-      }
-    }]
-  }, {
-    "segmentHash": "FFF3BAA1",
-    "boundary": {
-      "boundaryType": "POINTS",
-      "points": [{
-        "x": 10,
-        "y": 15,
-        "label": "topLeft"
-      }, {
-        "x": 15,
-        "y": 18,
-        "label": "bottomRight"
-      }]
-    },
-    "values": [{
-      "valueHash": "C21AF472",
-      "value": "car",
+      "valueHash": "E5A4D3D7",
+      "value": "flashlight",
       "score": 0.97,
       "extension": {
         "version": "beta"
-      }
-    }, {
-      "valueHash": "A1AECAE0",
-      "value": "truck",
-      "score": 0.86,
-      "extension": {
-        "version": "beta"
-      }
-    }]
-  }, {
-    "segmentHash": "EB77E18D",
-    "boundary": {
-      "boundaryType": "POINTS",
-      "points": [{
-        "x": 20,
-        "y": 20,
-        "label": "topLeft"
-      }, {
-        "x": 28,
-        "y": 47,
-        "label": "bottomRight"
-      }]
-    },
-    "values": [{
-      "valueHash": "6A06AA42",
-      "value": "stairs",
-      "score": 0.97,
-      "extension": {
-        "version": "delta"
       }
     }]
   }, {
@@ -1715,25 +1657,32 @@
       }
     }]
   }, {
-    "segmentHash": "A458EEBE",
+    "segmentHash": "A95669D7",
     "boundary": {
       "boundaryType": "POINTS",
       "points": [{
-        "x": 60,
-        "y": 70,
+        "x": 0,
+        "y": 0,
         "label": "topLeft"
       }, {
-        "x": 70,
-        "y": 78,
+        "x": 5,
+        "y": 12,
         "label": "bottomRight"
       }]
     },
     "values": [{
-      "valueHash": "E5A4D3D7",
-      "value": "flashlight",
+      "valueHash": "A9D3B0A4",
+      "value": "bird",
       "score": 0.97,
       "extension": {
-        "version": "beta"
+        "version": "alpha"
+      }
+    }, {
+      "valueHash": "B29CBAE1",
+      "value": "crow",
+      "score": 0.86,
+      "extension": {
+        "version": "alpha"
       }
     }]
   }, {
@@ -1763,6 +1712,57 @@
       "score": 0.86,
       "extension": {
         "version": "alpha"
+      }
+    }]
+  }, {
+    "segmentHash": "EB77E18D",
+    "boundary": {
+      "boundaryType": "POINTS",
+      "points": [{
+        "x": 20,
+        "y": 20,
+        "label": "topLeft"
+      }, {
+        "x": 28,
+        "y": 47,
+        "label": "bottomRight"
+      }]
+    },
+    "values": [{
+      "valueHash": "6A06AA42",
+      "value": "stairs",
+      "score": 0.97,
+      "extension": {
+        "version": "delta"
+      }
+    }]
+  }, {
+    "segmentHash": "FFF3BAA1",
+    "boundary": {
+      "boundaryType": "POINTS",
+      "points": [{
+        "x": 10,
+        "y": 15,
+        "label": "topLeft"
+      }, {
+        "x": 15,
+        "y": 18,
+        "label": "bottomRight"
+      }]
+    },
+    "values": [{
+      "valueHash": "C21AF472",
+      "value": "car",
+      "score": 0.97,
+      "extension": {
+        "version": "beta"
+      }
+    }, {
+      "valueHash": "A1AECAE0",
+      "value": "truck",
+      "score": 0.86,
+      "extension": {
+        "version": "beta"
       }
     }]
   }],
@@ -1895,7 +1895,7 @@
   "shard": "20250406_123",
   "dataType": "audio",
   "uid": "-hyi367.-mgypqf.-fg916b",
-  "annotationId": "8C315CC7",
+  "annotationId": "D56573AA",
   "documentId": "000000000013",
   "annotationType": "tts",
   "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
@@ -1915,6 +1915,54 @@
     }
   },
   "segments": [{
+    "segmentHash": "0B2095B4",
+    "boundary": {
+      "boundaryType": "TIME_MILLI",
+      "start": 90000,
+      "end": 95000
+    },
+    "values": [{
+      "valueHash": "8E4C5C70",
+      "value": "sat",
+      "score": 0.235
+    }, {
+      "valueHash": "6B4F46BE",
+      "value": "ate",
+      "score": 0.21
+    }]
+  }, {
+    "segmentHash": "2EB66E6D",
+    "boundary": {
+      "boundaryType": "TIME_MILLI",
+      "start": 50000,
+      "end": 55000
+    },
+    "values": [{
+      "valueHash": "76BEE44F",
+      "value": "mat",
+      "score": 0.235
+    }, {
+      "valueHash": "84962936",
+      "value": "gnat",
+      "score": 0.21
+    }]
+  }, {
+    "segmentHash": "4FBF9992",
+    "boundary": {
+      "boundaryType": "TIME_MILLI",
+      "start": 70000,
+      "end": 75000
+    },
+    "values": [{
+      "valueHash": "B578A0BB",
+      "value": "the",
+      "score": 0.235
+    }, {
+      "valueHash": "B578A0BB",
+      "value": "the",
+      "score": 0.21
+    }]
+  }, {
     "segmentHash": "6BD6F28F",
     "boundary": {
       "boundaryType": "TIME_MILLI",
@@ -1928,6 +1976,22 @@
     }, {
       "valueHash": "B578A0BB",
       "value": "the",
+      "score": 0.21
+    }]
+  }, {
+    "segmentHash": "6DCE0993",
+    "boundary": {
+      "boundaryType": "TIME_MILLI",
+      "start": 80000,
+      "end": 85000
+    },
+    "values": [{
+      "valueHash": "2CE5103A",
+      "value": "cat",
+      "score": 0.235
+    }, {
+      "valueHash": "102EA958",
+      "value": "bat",
       "score": 0.21
     }]
   }, {
@@ -1979,38 +2043,6 @@
       "score": 0.21
     }]
   }, {
-    "segmentHash": "FA0FE295",
-    "boundary": {
-      "boundaryType": "TIME_MILLI",
-      "start": 40000,
-      "end": 45000
-    },
-    "values": [{
-      "valueHash": "B578A0BB",
-      "value": "the",
-      "score": 0.235
-    }, {
-      "valueHash": "B578A0BB",
-      "value": "the",
-      "score": 0.21
-    }]
-  }, {
-    "segmentHash": "2EB66E6D",
-    "boundary": {
-      "boundaryType": "TIME_MILLI",
-      "start": 50000,
-      "end": 55000
-    },
-    "values": [{
-      "valueHash": "76BEE44F",
-      "value": "mat",
-      "score": 0.235
-    }, {
-      "valueHash": "84962936",
-      "value": "gnat",
-      "score": 0.21
-    }]
-  }, {
     "segmentHash": "E103E6C3",
     "boundary": {
       "boundaryType": "TIME_MILLI",
@@ -2027,11 +2059,11 @@
       "score": 0.21
     }]
   }, {
-    "segmentHash": "4FBF9992",
+    "segmentHash": "FA0FE295",
     "boundary": {
       "boundaryType": "TIME_MILLI",
-      "start": 70000,
-      "end": 75000
+      "start": 40000,
+      "end": 45000
     },
     "values": [{
       "valueHash": "B578A0BB",
@@ -2040,38 +2072,6 @@
     }, {
       "valueHash": "B578A0BB",
       "value": "the",
-      "score": 0.21
-    }]
-  }, {
-    "segmentHash": "6DCE0993",
-    "boundary": {
-      "boundaryType": "TIME_MILLI",
-      "start": 80000,
-      "end": 85000
-    },
-    "values": [{
-      "valueHash": "2CE5103A",
-      "value": "cat",
-      "score": 0.235
-    }, {
-      "valueHash": "102EA958",
-      "value": "bat",
-      "score": 0.21
-    }]
-  }, {
-    "segmentHash": "0B2095B4",
-    "boundary": {
-      "boundaryType": "TIME_MILLI",
-      "start": 90000,
-      "end": 95000
-    },
-    "values": [{
-      "valueHash": "8E4C5C70",
-      "value": "sat",
-      "score": 0.235
-    }, {
-      "valueHash": "6B4F46BE",
-      "value": "ate",
       "score": 0.21
     }]
   }],
@@ -2088,7 +2088,7 @@
   "shard": "20250406_123",
   "dataType": "news",
   "uid": "wb1pp4.-wwcije.7resun",
-  "annotationId": "227FDA0F",
+  "annotationId": "E32B681A",
   "documentId": "000000000014",
   "annotationType": "tokens",
   "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
@@ -2108,15 +2108,15 @@
     }
   },
   "segments": [{
-    "segmentHash": "C7B766B9",
+    "segmentHash": "32443188",
     "boundary": {
       "boundaryType": "TEXT_CHAR",
-      "start": 0,
-      "end": 3
+      "start": 31,
+      "end": 37
     },
     "values": [{
-      "valueHash": "B578A0BB",
-      "value": "the",
+      "valueHash": "CB78DACF",
+      "value": "rabbit",
       "score": 1.0
     }]
   }, {
@@ -2156,6 +2156,18 @@
       "score": 1.0
     }]
   }, {
+    "segmentHash": "7EBDA0EF",
+    "boundary": {
+      "boundaryType": "TEXT_CHAR",
+      "start": 38,
+      "end": 43
+    },
+    "values": [{
+      "valueHash": "80529ABB",
+      "value": "\u003ceos\u003e",
+      "score": 1.0
+    }]
+  }, {
     "segmentHash": "BBE2E40F",
     "boundary": {
       "boundaryType": "TEXT_CHAR",
@@ -2168,6 +2180,18 @@
       "score": 1.0
     }]
   }, {
+    "segmentHash": "C7B766B9",
+    "boundary": {
+      "boundaryType": "TEXT_CHAR",
+      "start": 0,
+      "end": 3
+    },
+    "values": [{
+      "valueHash": "B578A0BB",
+      "value": "the",
+      "score": 1.0
+    }]
+  }, {
     "segmentHash": "FA48289B",
     "boundary": {
       "boundaryType": "TEXT_CHAR",
@@ -2177,30 +2201,6 @@
     "values": [{
       "valueHash": "B578A0BB",
       "value": "the",
-      "score": 1.0
-    }]
-  }, {
-    "segmentHash": "32443188",
-    "boundary": {
-      "boundaryType": "TEXT_CHAR",
-      "start": 31,
-      "end": 37
-    },
-    "values": [{
-      "valueHash": "CB78DACF",
-      "value": "rabbit",
-      "score": 1.0
-    }]
-  }, {
-    "segmentHash": "7EBDA0EF",
-    "boundary": {
-      "boundaryType": "TEXT_CHAR",
-      "start": 38,
-      "end": 43
-    },
-    "values": [{
-      "valueHash": "80529ABB",
-      "value": "\u003ceos\u003e",
       "score": 1.0
     }]
   }],
@@ -2217,7 +2217,7 @@
   "shard": "20250406_123",
   "dataType": "cars",
   "uid": "-ihvcwi.-y2d5ue.-wce8xi",
-  "annotationId": "C4416601",
+  "annotationId": "E78E4A99",
   "documentId": "000000000015",
   "annotationType": "object",
   "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
@@ -2237,83 +2237,25 @@
     }
   },
   "segments": [{
-    "segmentHash": "A95669D7",
+    "segmentHash": "A458EEBE",
     "boundary": {
       "boundaryType": "POINTS",
       "points": [{
-        "x": 0,
-        "y": 0,
+        "x": 60,
+        "y": 70,
         "label": "topLeft"
       }, {
-        "x": 5,
-        "y": 12,
+        "x": 70,
+        "y": 78,
         "label": "bottomRight"
       }]
     },
     "values": [{
-      "valueHash": "A9D3B0A4",
-      "value": "bird",
-      "score": 0.97,
-      "extension": {
-        "version": "alpha"
-      }
-    }, {
-      "valueHash": "B29CBAE1",
-      "value": "crow",
-      "score": 0.86,
-      "extension": {
-        "version": "alpha"
-      }
-    }]
-  }, {
-    "segmentHash": "FFF3BAA1",
-    "boundary": {
-      "boundaryType": "POINTS",
-      "points": [{
-        "x": 10,
-        "y": 15,
-        "label": "topLeft"
-      }, {
-        "x": 15,
-        "y": 18,
-        "label": "bottomRight"
-      }]
-    },
-    "values": [{
-      "valueHash": "C21AF472",
-      "value": "car",
+      "valueHash": "E5A4D3D7",
+      "value": "flashlight",
       "score": 0.97,
       "extension": {
         "version": "beta"
-      }
-    }, {
-      "valueHash": "A1AECAE0",
-      "value": "truck",
-      "score": 0.86,
-      "extension": {
-        "version": "beta"
-      }
-    }]
-  }, {
-    "segmentHash": "EB77E18D",
-    "boundary": {
-      "boundaryType": "POINTS",
-      "points": [{
-        "x": 20,
-        "y": 20,
-        "label": "topLeft"
-      }, {
-        "x": 28,
-        "y": 47,
-        "label": "bottomRight"
-      }]
-    },
-    "values": [{
-      "valueHash": "6A06AA42",
-      "value": "stairs",
-      "score": 0.97,
-      "extension": {
-        "version": "delta"
       }
     }]
   }, {
@@ -2346,25 +2288,32 @@
       }
     }]
   }, {
-    "segmentHash": "A458EEBE",
+    "segmentHash": "A95669D7",
     "boundary": {
       "boundaryType": "POINTS",
       "points": [{
-        "x": 60,
-        "y": 70,
+        "x": 0,
+        "y": 0,
         "label": "topLeft"
       }, {
-        "x": 70,
-        "y": 78,
+        "x": 5,
+        "y": 12,
         "label": "bottomRight"
       }]
     },
     "values": [{
-      "valueHash": "E5A4D3D7",
-      "value": "flashlight",
+      "valueHash": "A9D3B0A4",
+      "value": "bird",
       "score": 0.97,
       "extension": {
-        "version": "beta"
+        "version": "alpha"
+      }
+    }, {
+      "valueHash": "B29CBAE1",
+      "value": "crow",
+      "score": 0.86,
+      "extension": {
+        "version": "alpha"
       }
     }]
   }, {
@@ -2394,6 +2343,57 @@
       "score": 0.86,
       "extension": {
         "version": "alpha"
+      }
+    }]
+  }, {
+    "segmentHash": "EB77E18D",
+    "boundary": {
+      "boundaryType": "POINTS",
+      "points": [{
+        "x": 20,
+        "y": 20,
+        "label": "topLeft"
+      }, {
+        "x": 28,
+        "y": 47,
+        "label": "bottomRight"
+      }]
+    },
+    "values": [{
+      "valueHash": "6A06AA42",
+      "value": "stairs",
+      "score": 0.97,
+      "extension": {
+        "version": "delta"
+      }
+    }]
+  }, {
+    "segmentHash": "FFF3BAA1",
+    "boundary": {
+      "boundaryType": "POINTS",
+      "points": [{
+        "x": 10,
+        "y": 15,
+        "label": "topLeft"
+      }, {
+        "x": 15,
+        "y": 18,
+        "label": "bottomRight"
+      }]
+    },
+    "values": [{
+      "valueHash": "C21AF472",
+      "value": "car",
+      "score": 0.97,
+      "extension": {
+        "version": "beta"
+      }
+    }, {
+      "valueHash": "A1AECAE0",
+      "value": "truck",
+      "score": 0.86,
+      "extension": {
+        "version": "beta"
       }
     }]
   }],
@@ -2526,7 +2526,7 @@
   "shard": "20250406_456",
   "dataType": "audio",
   "uid": "-j9ketf.npng62.u4mw0y",
-  "annotationId": "05EB49D4",
+  "annotationId": "12227ED1",
   "documentId": "000000000017",
   "annotationType": "tts",
   "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
@@ -2546,6 +2546,54 @@
     }
   },
   "segments": [{
+    "segmentHash": "0B2095B4",
+    "boundary": {
+      "boundaryType": "TIME_MILLI",
+      "start": 90000,
+      "end": 95000
+    },
+    "values": [{
+      "valueHash": "8E4C5C70",
+      "value": "sat",
+      "score": 0.235
+    }, {
+      "valueHash": "6B4F46BE",
+      "value": "ate",
+      "score": 0.21
+    }]
+  }, {
+    "segmentHash": "2EB66E6D",
+    "boundary": {
+      "boundaryType": "TIME_MILLI",
+      "start": 50000,
+      "end": 55000
+    },
+    "values": [{
+      "valueHash": "76BEE44F",
+      "value": "mat",
+      "score": 0.235
+    }, {
+      "valueHash": "84962936",
+      "value": "gnat",
+      "score": 0.21
+    }]
+  }, {
+    "segmentHash": "4FBF9992",
+    "boundary": {
+      "boundaryType": "TIME_MILLI",
+      "start": 70000,
+      "end": 75000
+    },
+    "values": [{
+      "valueHash": "B578A0BB",
+      "value": "the",
+      "score": 0.235
+    }, {
+      "valueHash": "B578A0BB",
+      "value": "the",
+      "score": 0.21
+    }]
+  }, {
     "segmentHash": "6BD6F28F",
     "boundary": {
       "boundaryType": "TIME_MILLI",
@@ -2559,6 +2607,22 @@
     }, {
       "valueHash": "B578A0BB",
       "value": "the",
+      "score": 0.21
+    }]
+  }, {
+    "segmentHash": "6DCE0993",
+    "boundary": {
+      "boundaryType": "TIME_MILLI",
+      "start": 80000,
+      "end": 85000
+    },
+    "values": [{
+      "valueHash": "2CE5103A",
+      "value": "cat",
+      "score": 0.235
+    }, {
+      "valueHash": "102EA958",
+      "value": "bat",
       "score": 0.21
     }]
   }, {
@@ -2610,38 +2674,6 @@
       "score": 0.21
     }]
   }, {
-    "segmentHash": "FA0FE295",
-    "boundary": {
-      "boundaryType": "TIME_MILLI",
-      "start": 40000,
-      "end": 45000
-    },
-    "values": [{
-      "valueHash": "B578A0BB",
-      "value": "the",
-      "score": 0.235
-    }, {
-      "valueHash": "B578A0BB",
-      "value": "the",
-      "score": 0.21
-    }]
-  }, {
-    "segmentHash": "2EB66E6D",
-    "boundary": {
-      "boundaryType": "TIME_MILLI",
-      "start": 50000,
-      "end": 55000
-    },
-    "values": [{
-      "valueHash": "76BEE44F",
-      "value": "mat",
-      "score": 0.235
-    }, {
-      "valueHash": "84962936",
-      "value": "gnat",
-      "score": 0.21
-    }]
-  }, {
     "segmentHash": "E103E6C3",
     "boundary": {
       "boundaryType": "TIME_MILLI",
@@ -2658,11 +2690,11 @@
       "score": 0.21
     }]
   }, {
-    "segmentHash": "4FBF9992",
+    "segmentHash": "FA0FE295",
     "boundary": {
       "boundaryType": "TIME_MILLI",
-      "start": 70000,
-      "end": 75000
+      "start": 40000,
+      "end": 45000
     },
     "values": [{
       "valueHash": "B578A0BB",
@@ -2671,38 +2703,6 @@
     }, {
       "valueHash": "B578A0BB",
       "value": "the",
-      "score": 0.21
-    }]
-  }, {
-    "segmentHash": "6DCE0993",
-    "boundary": {
-      "boundaryType": "TIME_MILLI",
-      "start": 80000,
-      "end": 85000
-    },
-    "values": [{
-      "valueHash": "2CE5103A",
-      "value": "cat",
-      "score": 0.235
-    }, {
-      "valueHash": "102EA958",
-      "value": "bat",
-      "score": 0.21
-    }]
-  }, {
-    "segmentHash": "0B2095B4",
-    "boundary": {
-      "boundaryType": "TIME_MILLI",
-      "start": 90000,
-      "end": 95000
-    },
-    "values": [{
-      "valueHash": "8E4C5C70",
-      "value": "sat",
-      "score": 0.235
-    }, {
-      "valueHash": "6B4F46BE",
-      "value": "ate",
       "score": 0.21
     }]
   }],
@@ -2719,7 +2719,7 @@
   "shard": "20250406_456",
   "dataType": "news",
   "uid": "aiddza.kdn85e.-wnbwkq",
-  "annotationId": "989FC696",
+  "annotationId": "4BAEDE54",
   "documentId": "000000000018",
   "annotationType": "tokens",
   "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
@@ -2739,15 +2739,15 @@
     }
   },
   "segments": [{
-    "segmentHash": "C7B766B9",
+    "segmentHash": "32443188",
     "boundary": {
       "boundaryType": "TEXT_CHAR",
-      "start": 0,
-      "end": 3
+      "start": 31,
+      "end": 37
     },
     "values": [{
-      "valueHash": "B578A0BB",
-      "value": "the",
+      "valueHash": "CB78DACF",
+      "value": "rabbit",
       "score": 1.0
     }]
   }, {
@@ -2787,6 +2787,18 @@
       "score": 1.0
     }]
   }, {
+    "segmentHash": "7EBDA0EF",
+    "boundary": {
+      "boundaryType": "TEXT_CHAR",
+      "start": 38,
+      "end": 43
+    },
+    "values": [{
+      "valueHash": "80529ABB",
+      "value": "\u003ceos\u003e",
+      "score": 1.0
+    }]
+  }, {
     "segmentHash": "BBE2E40F",
     "boundary": {
       "boundaryType": "TEXT_CHAR",
@@ -2799,6 +2811,18 @@
       "score": 1.0
     }]
   }, {
+    "segmentHash": "C7B766B9",
+    "boundary": {
+      "boundaryType": "TEXT_CHAR",
+      "start": 0,
+      "end": 3
+    },
+    "values": [{
+      "valueHash": "B578A0BB",
+      "value": "the",
+      "score": 1.0
+    }]
+  }, {
     "segmentHash": "FA48289B",
     "boundary": {
       "boundaryType": "TEXT_CHAR",
@@ -2808,30 +2832,6 @@
     "values": [{
       "valueHash": "B578A0BB",
       "value": "the",
-      "score": 1.0
-    }]
-  }, {
-    "segmentHash": "32443188",
-    "boundary": {
-      "boundaryType": "TEXT_CHAR",
-      "start": 31,
-      "end": 37
-    },
-    "values": [{
-      "valueHash": "CB78DACF",
-      "value": "rabbit",
-      "score": 1.0
-    }]
-  }, {
-    "segmentHash": "7EBDA0EF",
-    "boundary": {
-      "boundaryType": "TEXT_CHAR",
-      "start": 38,
-      "end": 43
-    },
-    "values": [{
-      "valueHash": "80529ABB",
-      "value": "\u003ceos\u003e",
       "score": 1.0
     }]
   }],
@@ -2848,7 +2848,7 @@
   "shard": "20250406_456",
   "dataType": "cars",
   "uid": "-dwa987.-nmx1jx.g2brsm",
-  "annotationId": "5353CC53",
+  "annotationId": "67649DD2",
   "documentId": "000000000019",
   "annotationType": "object",
   "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
@@ -2868,83 +2868,25 @@
     }
   },
   "segments": [{
-    "segmentHash": "A95669D7",
+    "segmentHash": "A458EEBE",
     "boundary": {
       "boundaryType": "POINTS",
       "points": [{
-        "x": 0,
-        "y": 0,
+        "x": 60,
+        "y": 70,
         "label": "topLeft"
       }, {
-        "x": 5,
-        "y": 12,
+        "x": 70,
+        "y": 78,
         "label": "bottomRight"
       }]
     },
     "values": [{
-      "valueHash": "A9D3B0A4",
-      "value": "bird",
-      "score": 0.97,
-      "extension": {
-        "version": "alpha"
-      }
-    }, {
-      "valueHash": "B29CBAE1",
-      "value": "crow",
-      "score": 0.86,
-      "extension": {
-        "version": "alpha"
-      }
-    }]
-  }, {
-    "segmentHash": "FFF3BAA1",
-    "boundary": {
-      "boundaryType": "POINTS",
-      "points": [{
-        "x": 10,
-        "y": 15,
-        "label": "topLeft"
-      }, {
-        "x": 15,
-        "y": 18,
-        "label": "bottomRight"
-      }]
-    },
-    "values": [{
-      "valueHash": "C21AF472",
-      "value": "car",
+      "valueHash": "E5A4D3D7",
+      "value": "flashlight",
       "score": 0.97,
       "extension": {
         "version": "beta"
-      }
-    }, {
-      "valueHash": "A1AECAE0",
-      "value": "truck",
-      "score": 0.86,
-      "extension": {
-        "version": "beta"
-      }
-    }]
-  }, {
-    "segmentHash": "EB77E18D",
-    "boundary": {
-      "boundaryType": "POINTS",
-      "points": [{
-        "x": 20,
-        "y": 20,
-        "label": "topLeft"
-      }, {
-        "x": 28,
-        "y": 47,
-        "label": "bottomRight"
-      }]
-    },
-    "values": [{
-      "valueHash": "6A06AA42",
-      "value": "stairs",
-      "score": 0.97,
-      "extension": {
-        "version": "delta"
       }
     }]
   }, {
@@ -2977,25 +2919,32 @@
       }
     }]
   }, {
-    "segmentHash": "A458EEBE",
+    "segmentHash": "A95669D7",
     "boundary": {
       "boundaryType": "POINTS",
       "points": [{
-        "x": 60,
-        "y": 70,
+        "x": 0,
+        "y": 0,
         "label": "topLeft"
       }, {
-        "x": 70,
-        "y": 78,
+        "x": 5,
+        "y": 12,
         "label": "bottomRight"
       }]
     },
     "values": [{
-      "valueHash": "E5A4D3D7",
-      "value": "flashlight",
+      "valueHash": "A9D3B0A4",
+      "value": "bird",
       "score": 0.97,
       "extension": {
-        "version": "beta"
+        "version": "alpha"
+      }
+    }, {
+      "valueHash": "B29CBAE1",
+      "value": "crow",
+      "score": 0.86,
+      "extension": {
+        "version": "alpha"
       }
     }]
   }, {
@@ -3025,6 +2974,57 @@
       "score": 0.86,
       "extension": {
         "version": "alpha"
+      }
+    }]
+  }, {
+    "segmentHash": "EB77E18D",
+    "boundary": {
+      "boundaryType": "POINTS",
+      "points": [{
+        "x": 20,
+        "y": 20,
+        "label": "topLeft"
+      }, {
+        "x": 28,
+        "y": 47,
+        "label": "bottomRight"
+      }]
+    },
+    "values": [{
+      "valueHash": "6A06AA42",
+      "value": "stairs",
+      "score": 0.97,
+      "extension": {
+        "version": "delta"
+      }
+    }]
+  }, {
+    "segmentHash": "FFF3BAA1",
+    "boundary": {
+      "boundaryType": "POINTS",
+      "points": [{
+        "x": 10,
+        "y": 15,
+        "label": "topLeft"
+      }, {
+        "x": 15,
+        "y": 18,
+        "label": "bottomRight"
+      }]
+    },
+    "values": [{
+      "valueHash": "C21AF472",
+      "value": "car",
+      "score": 0.97,
+      "extension": {
+        "version": "beta"
+      }
+    }, {
+      "valueHash": "A1AECAE0",
+      "value": "truck",
+      "score": 0.86,
+      "extension": {
+        "version": "beta"
       }
     }]
   }],
@@ -3157,7 +3157,7 @@
   "shard": "20250406_789",
   "dataType": "audio",
   "uid": "-29vx6c.-lwa23c.isbedx",
-  "annotationId": "B852D3DA",
+  "annotationId": "FE78AD01",
   "documentId": "000000000021",
   "annotationType": "tts",
   "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
@@ -3177,6 +3177,54 @@
     }
   },
   "segments": [{
+    "segmentHash": "0B2095B4",
+    "boundary": {
+      "boundaryType": "TIME_MILLI",
+      "start": 90000,
+      "end": 95000
+    },
+    "values": [{
+      "valueHash": "8E4C5C70",
+      "value": "sat",
+      "score": 0.235
+    }, {
+      "valueHash": "6B4F46BE",
+      "value": "ate",
+      "score": 0.21
+    }]
+  }, {
+    "segmentHash": "2EB66E6D",
+    "boundary": {
+      "boundaryType": "TIME_MILLI",
+      "start": 50000,
+      "end": 55000
+    },
+    "values": [{
+      "valueHash": "76BEE44F",
+      "value": "mat",
+      "score": 0.235
+    }, {
+      "valueHash": "84962936",
+      "value": "gnat",
+      "score": 0.21
+    }]
+  }, {
+    "segmentHash": "4FBF9992",
+    "boundary": {
+      "boundaryType": "TIME_MILLI",
+      "start": 70000,
+      "end": 75000
+    },
+    "values": [{
+      "valueHash": "B578A0BB",
+      "value": "the",
+      "score": 0.235
+    }, {
+      "valueHash": "B578A0BB",
+      "value": "the",
+      "score": 0.21
+    }]
+  }, {
     "segmentHash": "6BD6F28F",
     "boundary": {
       "boundaryType": "TIME_MILLI",
@@ -3190,6 +3238,22 @@
     }, {
       "valueHash": "B578A0BB",
       "value": "the",
+      "score": 0.21
+    }]
+  }, {
+    "segmentHash": "6DCE0993",
+    "boundary": {
+      "boundaryType": "TIME_MILLI",
+      "start": 80000,
+      "end": 85000
+    },
+    "values": [{
+      "valueHash": "2CE5103A",
+      "value": "cat",
+      "score": 0.235
+    }, {
+      "valueHash": "102EA958",
+      "value": "bat",
       "score": 0.21
     }]
   }, {
@@ -3241,38 +3305,6 @@
       "score": 0.21
     }]
   }, {
-    "segmentHash": "FA0FE295",
-    "boundary": {
-      "boundaryType": "TIME_MILLI",
-      "start": 40000,
-      "end": 45000
-    },
-    "values": [{
-      "valueHash": "B578A0BB",
-      "value": "the",
-      "score": 0.235
-    }, {
-      "valueHash": "B578A0BB",
-      "value": "the",
-      "score": 0.21
-    }]
-  }, {
-    "segmentHash": "2EB66E6D",
-    "boundary": {
-      "boundaryType": "TIME_MILLI",
-      "start": 50000,
-      "end": 55000
-    },
-    "values": [{
-      "valueHash": "76BEE44F",
-      "value": "mat",
-      "score": 0.235
-    }, {
-      "valueHash": "84962936",
-      "value": "gnat",
-      "score": 0.21
-    }]
-  }, {
     "segmentHash": "E103E6C3",
     "boundary": {
       "boundaryType": "TIME_MILLI",
@@ -3289,11 +3321,11 @@
       "score": 0.21
     }]
   }, {
-    "segmentHash": "4FBF9992",
+    "segmentHash": "FA0FE295",
     "boundary": {
       "boundaryType": "TIME_MILLI",
-      "start": 70000,
-      "end": 75000
+      "start": 40000,
+      "end": 45000
     },
     "values": [{
       "valueHash": "B578A0BB",
@@ -3302,38 +3334,6 @@
     }, {
       "valueHash": "B578A0BB",
       "value": "the",
-      "score": 0.21
-    }]
-  }, {
-    "segmentHash": "6DCE0993",
-    "boundary": {
-      "boundaryType": "TIME_MILLI",
-      "start": 80000,
-      "end": 85000
-    },
-    "values": [{
-      "valueHash": "2CE5103A",
-      "value": "cat",
-      "score": 0.235
-    }, {
-      "valueHash": "102EA958",
-      "value": "bat",
-      "score": 0.21
-    }]
-  }, {
-    "segmentHash": "0B2095B4",
-    "boundary": {
-      "boundaryType": "TIME_MILLI",
-      "start": 90000,
-      "end": 95000
-    },
-    "values": [{
-      "valueHash": "8E4C5C70",
-      "value": "sat",
-      "score": 0.235
-    }, {
-      "valueHash": "6B4F46BE",
-      "value": "ate",
       "score": 0.21
     }]
   }],
@@ -3350,7 +3350,7 @@
   "shard": "20250406_789",
   "dataType": "news",
   "uid": "ofv6g7.-cb3p6d.-ivgfo9",
-  "annotationId": "30587053",
+  "annotationId": "5EFA7AC9",
   "documentId": "000000000022",
   "annotationType": "tokens",
   "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
@@ -3370,15 +3370,15 @@
     }
   },
   "segments": [{
-    "segmentHash": "C7B766B9",
+    "segmentHash": "32443188",
     "boundary": {
       "boundaryType": "TEXT_CHAR",
-      "start": 0,
-      "end": 3
+      "start": 31,
+      "end": 37
     },
     "values": [{
-      "valueHash": "B578A0BB",
-      "value": "the",
+      "valueHash": "CB78DACF",
+      "value": "rabbit",
       "score": 1.0
     }]
   }, {
@@ -3418,6 +3418,18 @@
       "score": 1.0
     }]
   }, {
+    "segmentHash": "7EBDA0EF",
+    "boundary": {
+      "boundaryType": "TEXT_CHAR",
+      "start": 38,
+      "end": 43
+    },
+    "values": [{
+      "valueHash": "80529ABB",
+      "value": "\u003ceos\u003e",
+      "score": 1.0
+    }]
+  }, {
     "segmentHash": "BBE2E40F",
     "boundary": {
       "boundaryType": "TEXT_CHAR",
@@ -3430,6 +3442,18 @@
       "score": 1.0
     }]
   }, {
+    "segmentHash": "C7B766B9",
+    "boundary": {
+      "boundaryType": "TEXT_CHAR",
+      "start": 0,
+      "end": 3
+    },
+    "values": [{
+      "valueHash": "B578A0BB",
+      "value": "the",
+      "score": 1.0
+    }]
+  }, {
     "segmentHash": "FA48289B",
     "boundary": {
       "boundaryType": "TEXT_CHAR",
@@ -3439,30 +3463,6 @@
     "values": [{
       "valueHash": "B578A0BB",
       "value": "the",
-      "score": 1.0
-    }]
-  }, {
-    "segmentHash": "32443188",
-    "boundary": {
-      "boundaryType": "TEXT_CHAR",
-      "start": 31,
-      "end": 37
-    },
-    "values": [{
-      "valueHash": "CB78DACF",
-      "value": "rabbit",
-      "score": 1.0
-    }]
-  }, {
-    "segmentHash": "7EBDA0EF",
-    "boundary": {
-      "boundaryType": "TEXT_CHAR",
-      "start": 38,
-      "end": 43
-    },
-    "values": [{
-      "valueHash": "80529ABB",
-      "value": "\u003ceos\u003e",
       "score": 1.0
     }]
   }],
@@ -3479,7 +3479,7 @@
   "shard": "20250406_789",
   "dataType": "cars",
   "uid": "va8jna.-hil636.-9lwvxz",
-  "annotationId": "A2CEF983",
+  "annotationId": "143E5138",
   "documentId": "000000000023",
   "annotationType": "object",
   "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
@@ -3499,83 +3499,25 @@
     }
   },
   "segments": [{
-    "segmentHash": "A95669D7",
+    "segmentHash": "A458EEBE",
     "boundary": {
       "boundaryType": "POINTS",
       "points": [{
-        "x": 0,
-        "y": 0,
+        "x": 60,
+        "y": 70,
         "label": "topLeft"
       }, {
-        "x": 5,
-        "y": 12,
+        "x": 70,
+        "y": 78,
         "label": "bottomRight"
       }]
     },
     "values": [{
-      "valueHash": "A9D3B0A4",
-      "value": "bird",
-      "score": 0.97,
-      "extension": {
-        "version": "alpha"
-      }
-    }, {
-      "valueHash": "B29CBAE1",
-      "value": "crow",
-      "score": 0.86,
-      "extension": {
-        "version": "alpha"
-      }
-    }]
-  }, {
-    "segmentHash": "FFF3BAA1",
-    "boundary": {
-      "boundaryType": "POINTS",
-      "points": [{
-        "x": 10,
-        "y": 15,
-        "label": "topLeft"
-      }, {
-        "x": 15,
-        "y": 18,
-        "label": "bottomRight"
-      }]
-    },
-    "values": [{
-      "valueHash": "C21AF472",
-      "value": "car",
+      "valueHash": "E5A4D3D7",
+      "value": "flashlight",
       "score": 0.97,
       "extension": {
         "version": "beta"
-      }
-    }, {
-      "valueHash": "A1AECAE0",
-      "value": "truck",
-      "score": 0.86,
-      "extension": {
-        "version": "beta"
-      }
-    }]
-  }, {
-    "segmentHash": "EB77E18D",
-    "boundary": {
-      "boundaryType": "POINTS",
-      "points": [{
-        "x": 20,
-        "y": 20,
-        "label": "topLeft"
-      }, {
-        "x": 28,
-        "y": 47,
-        "label": "bottomRight"
-      }]
-    },
-    "values": [{
-      "valueHash": "6A06AA42",
-      "value": "stairs",
-      "score": 0.97,
-      "extension": {
-        "version": "delta"
       }
     }]
   }, {
@@ -3608,25 +3550,32 @@
       }
     }]
   }, {
-    "segmentHash": "A458EEBE",
+    "segmentHash": "A95669D7",
     "boundary": {
       "boundaryType": "POINTS",
       "points": [{
-        "x": 60,
-        "y": 70,
+        "x": 0,
+        "y": 0,
         "label": "topLeft"
       }, {
-        "x": 70,
-        "y": 78,
+        "x": 5,
+        "y": 12,
         "label": "bottomRight"
       }]
     },
     "values": [{
-      "valueHash": "E5A4D3D7",
-      "value": "flashlight",
+      "valueHash": "A9D3B0A4",
+      "value": "bird",
       "score": 0.97,
       "extension": {
-        "version": "beta"
+        "version": "alpha"
+      }
+    }, {
+      "valueHash": "B29CBAE1",
+      "value": "crow",
+      "score": 0.86,
+      "extension": {
+        "version": "alpha"
       }
     }]
   }, {
@@ -3656,6 +3605,57 @@
       "score": 0.86,
       "extension": {
         "version": "alpha"
+      }
+    }]
+  }, {
+    "segmentHash": "EB77E18D",
+    "boundary": {
+      "boundaryType": "POINTS",
+      "points": [{
+        "x": 20,
+        "y": 20,
+        "label": "topLeft"
+      }, {
+        "x": 28,
+        "y": 47,
+        "label": "bottomRight"
+      }]
+    },
+    "values": [{
+      "valueHash": "6A06AA42",
+      "value": "stairs",
+      "score": 0.97,
+      "extension": {
+        "version": "delta"
+      }
+    }]
+  }, {
+    "segmentHash": "FFF3BAA1",
+    "boundary": {
+      "boundaryType": "POINTS",
+      "points": [{
+        "x": 10,
+        "y": 15,
+        "label": "topLeft"
+      }, {
+        "x": 15,
+        "y": 18,
+        "label": "bottomRight"
+      }]
+    },
+    "values": [{
+      "valueHash": "C21AF472",
+      "value": "car",
+      "score": 0.97,
+      "extension": {
+        "version": "beta"
+      }
+    }, {
+      "valueHash": "A1AECAE0",
+      "value": "truck",
+      "score": 0.86,
+      "extension": {
+        "version": "beta"
       }
     }]
   }],
@@ -3788,7 +3788,7 @@
   "shard": "20250407_123",
   "dataType": "audio",
   "uid": "16end8.-vn8vng.-khm2w8",
-  "annotationId": "1574E0B4",
+  "annotationId": "A266AE00",
   "documentId": "000000000025",
   "annotationType": "tts",
   "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
@@ -3808,6 +3808,54 @@
     }
   },
   "segments": [{
+    "segmentHash": "0B2095B4",
+    "boundary": {
+      "boundaryType": "TIME_MILLI",
+      "start": 90000,
+      "end": 95000
+    },
+    "values": [{
+      "valueHash": "8E4C5C70",
+      "value": "sat",
+      "score": 0.235
+    }, {
+      "valueHash": "6B4F46BE",
+      "value": "ate",
+      "score": 0.21
+    }]
+  }, {
+    "segmentHash": "2EB66E6D",
+    "boundary": {
+      "boundaryType": "TIME_MILLI",
+      "start": 50000,
+      "end": 55000
+    },
+    "values": [{
+      "valueHash": "76BEE44F",
+      "value": "mat",
+      "score": 0.235
+    }, {
+      "valueHash": "84962936",
+      "value": "gnat",
+      "score": 0.21
+    }]
+  }, {
+    "segmentHash": "4FBF9992",
+    "boundary": {
+      "boundaryType": "TIME_MILLI",
+      "start": 70000,
+      "end": 75000
+    },
+    "values": [{
+      "valueHash": "B578A0BB",
+      "value": "the",
+      "score": 0.235
+    }, {
+      "valueHash": "B578A0BB",
+      "value": "the",
+      "score": 0.21
+    }]
+  }, {
     "segmentHash": "6BD6F28F",
     "boundary": {
       "boundaryType": "TIME_MILLI",
@@ -3821,6 +3869,22 @@
     }, {
       "valueHash": "B578A0BB",
       "value": "the",
+      "score": 0.21
+    }]
+  }, {
+    "segmentHash": "6DCE0993",
+    "boundary": {
+      "boundaryType": "TIME_MILLI",
+      "start": 80000,
+      "end": 85000
+    },
+    "values": [{
+      "valueHash": "2CE5103A",
+      "value": "cat",
+      "score": 0.235
+    }, {
+      "valueHash": "102EA958",
+      "value": "bat",
       "score": 0.21
     }]
   }, {
@@ -3872,38 +3936,6 @@
       "score": 0.21
     }]
   }, {
-    "segmentHash": "FA0FE295",
-    "boundary": {
-      "boundaryType": "TIME_MILLI",
-      "start": 40000,
-      "end": 45000
-    },
-    "values": [{
-      "valueHash": "B578A0BB",
-      "value": "the",
-      "score": 0.235
-    }, {
-      "valueHash": "B578A0BB",
-      "value": "the",
-      "score": 0.21
-    }]
-  }, {
-    "segmentHash": "2EB66E6D",
-    "boundary": {
-      "boundaryType": "TIME_MILLI",
-      "start": 50000,
-      "end": 55000
-    },
-    "values": [{
-      "valueHash": "76BEE44F",
-      "value": "mat",
-      "score": 0.235
-    }, {
-      "valueHash": "84962936",
-      "value": "gnat",
-      "score": 0.21
-    }]
-  }, {
     "segmentHash": "E103E6C3",
     "boundary": {
       "boundaryType": "TIME_MILLI",
@@ -3920,11 +3952,11 @@
       "score": 0.21
     }]
   }, {
-    "segmentHash": "4FBF9992",
+    "segmentHash": "FA0FE295",
     "boundary": {
       "boundaryType": "TIME_MILLI",
-      "start": 70000,
-      "end": 75000
+      "start": 40000,
+      "end": 45000
     },
     "values": [{
       "valueHash": "B578A0BB",
@@ -3933,38 +3965,6 @@
     }, {
       "valueHash": "B578A0BB",
       "value": "the",
-      "score": 0.21
-    }]
-  }, {
-    "segmentHash": "6DCE0993",
-    "boundary": {
-      "boundaryType": "TIME_MILLI",
-      "start": 80000,
-      "end": 85000
-    },
-    "values": [{
-      "valueHash": "2CE5103A",
-      "value": "cat",
-      "score": 0.235
-    }, {
-      "valueHash": "102EA958",
-      "value": "bat",
-      "score": 0.21
-    }]
-  }, {
-    "segmentHash": "0B2095B4",
-    "boundary": {
-      "boundaryType": "TIME_MILLI",
-      "start": 90000,
-      "end": 95000
-    },
-    "values": [{
-      "valueHash": "8E4C5C70",
-      "value": "sat",
-      "score": 0.235
-    }, {
-      "valueHash": "6B4F46BE",
-      "value": "ate",
       "score": 0.21
     }]
   }],
@@ -3981,7 +3981,7 @@
   "shard": "20250407_123",
   "dataType": "news",
   "uid": "-6g8vi5.-m6euyr.cc6sho",
-  "annotationId": "46B19D5A",
+  "annotationId": "4C4CFE8F",
   "documentId": "000000000026",
   "annotationType": "tokens",
   "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
@@ -4001,15 +4001,15 @@
     }
   },
   "segments": [{
-    "segmentHash": "C7B766B9",
+    "segmentHash": "32443188",
     "boundary": {
       "boundaryType": "TEXT_CHAR",
-      "start": 0,
-      "end": 3
+      "start": 31,
+      "end": 37
     },
     "values": [{
-      "valueHash": "B578A0BB",
-      "value": "the",
+      "valueHash": "CB78DACF",
+      "value": "rabbit",
       "score": 1.0
     }]
   }, {
@@ -4049,6 +4049,18 @@
       "score": 1.0
     }]
   }, {
+    "segmentHash": "7EBDA0EF",
+    "boundary": {
+      "boundaryType": "TEXT_CHAR",
+      "start": 38,
+      "end": 43
+    },
+    "values": [{
+      "valueHash": "80529ABB",
+      "value": "\u003ceos\u003e",
+      "score": 1.0
+    }]
+  }, {
     "segmentHash": "BBE2E40F",
     "boundary": {
       "boundaryType": "TEXT_CHAR",
@@ -4061,6 +4073,18 @@
       "score": 1.0
     }]
   }, {
+    "segmentHash": "C7B766B9",
+    "boundary": {
+      "boundaryType": "TEXT_CHAR",
+      "start": 0,
+      "end": 3
+    },
+    "values": [{
+      "valueHash": "B578A0BB",
+      "value": "the",
+      "score": 1.0
+    }]
+  }, {
     "segmentHash": "FA48289B",
     "boundary": {
       "boundaryType": "TEXT_CHAR",
@@ -4070,30 +4094,6 @@
     "values": [{
       "valueHash": "B578A0BB",
       "value": "the",
-      "score": 1.0
-    }]
-  }, {
-    "segmentHash": "32443188",
-    "boundary": {
-      "boundaryType": "TEXT_CHAR",
-      "start": 31,
-      "end": 37
-    },
-    "values": [{
-      "valueHash": "CB78DACF",
-      "value": "rabbit",
-      "score": 1.0
-    }]
-  }, {
-    "segmentHash": "7EBDA0EF",
-    "boundary": {
-      "boundaryType": "TEXT_CHAR",
-      "start": 38,
-      "end": 43
-    },
-    "values": [{
-      "valueHash": "80529ABB",
-      "value": "\u003ceos\u003e",
       "score": 1.0
     }]
   }],
@@ -4110,7 +4110,7 @@
   "shard": "20250407_123",
   "dataType": "cars",
   "uid": "-hytjod.-nov8f8.-g5zapt",
-  "annotationId": "937738CC",
+  "annotationId": "804B3537",
   "documentId": "000000000027",
   "annotationType": "object",
   "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
@@ -4130,83 +4130,25 @@
     }
   },
   "segments": [{
-    "segmentHash": "A95669D7",
+    "segmentHash": "A458EEBE",
     "boundary": {
       "boundaryType": "POINTS",
       "points": [{
-        "x": 0,
-        "y": 0,
+        "x": 60,
+        "y": 70,
         "label": "topLeft"
       }, {
-        "x": 5,
-        "y": 12,
+        "x": 70,
+        "y": 78,
         "label": "bottomRight"
       }]
     },
     "values": [{
-      "valueHash": "A9D3B0A4",
-      "value": "bird",
-      "score": 0.97,
-      "extension": {
-        "version": "alpha"
-      }
-    }, {
-      "valueHash": "B29CBAE1",
-      "value": "crow",
-      "score": 0.86,
-      "extension": {
-        "version": "alpha"
-      }
-    }]
-  }, {
-    "segmentHash": "FFF3BAA1",
-    "boundary": {
-      "boundaryType": "POINTS",
-      "points": [{
-        "x": 10,
-        "y": 15,
-        "label": "topLeft"
-      }, {
-        "x": 15,
-        "y": 18,
-        "label": "bottomRight"
-      }]
-    },
-    "values": [{
-      "valueHash": "C21AF472",
-      "value": "car",
+      "valueHash": "E5A4D3D7",
+      "value": "flashlight",
       "score": 0.97,
       "extension": {
         "version": "beta"
-      }
-    }, {
-      "valueHash": "A1AECAE0",
-      "value": "truck",
-      "score": 0.86,
-      "extension": {
-        "version": "beta"
-      }
-    }]
-  }, {
-    "segmentHash": "EB77E18D",
-    "boundary": {
-      "boundaryType": "POINTS",
-      "points": [{
-        "x": 20,
-        "y": 20,
-        "label": "topLeft"
-      }, {
-        "x": 28,
-        "y": 47,
-        "label": "bottomRight"
-      }]
-    },
-    "values": [{
-      "valueHash": "6A06AA42",
-      "value": "stairs",
-      "score": 0.97,
-      "extension": {
-        "version": "delta"
       }
     }]
   }, {
@@ -4239,25 +4181,32 @@
       }
     }]
   }, {
-    "segmentHash": "A458EEBE",
+    "segmentHash": "A95669D7",
     "boundary": {
       "boundaryType": "POINTS",
       "points": [{
-        "x": 60,
-        "y": 70,
+        "x": 0,
+        "y": 0,
         "label": "topLeft"
       }, {
-        "x": 70,
-        "y": 78,
+        "x": 5,
+        "y": 12,
         "label": "bottomRight"
       }]
     },
     "values": [{
-      "valueHash": "E5A4D3D7",
-      "value": "flashlight",
+      "valueHash": "A9D3B0A4",
+      "value": "bird",
       "score": 0.97,
       "extension": {
-        "version": "beta"
+        "version": "alpha"
+      }
+    }, {
+      "valueHash": "B29CBAE1",
+      "value": "crow",
+      "score": 0.86,
+      "extension": {
+        "version": "alpha"
       }
     }]
   }, {
@@ -4287,6 +4236,57 @@
       "score": 0.86,
       "extension": {
         "version": "alpha"
+      }
+    }]
+  }, {
+    "segmentHash": "EB77E18D",
+    "boundary": {
+      "boundaryType": "POINTS",
+      "points": [{
+        "x": 20,
+        "y": 20,
+        "label": "topLeft"
+      }, {
+        "x": 28,
+        "y": 47,
+        "label": "bottomRight"
+      }]
+    },
+    "values": [{
+      "valueHash": "6A06AA42",
+      "value": "stairs",
+      "score": 0.97,
+      "extension": {
+        "version": "delta"
+      }
+    }]
+  }, {
+    "segmentHash": "FFF3BAA1",
+    "boundary": {
+      "boundaryType": "POINTS",
+      "points": [{
+        "x": 10,
+        "y": 15,
+        "label": "topLeft"
+      }, {
+        "x": 15,
+        "y": 18,
+        "label": "bottomRight"
+      }]
+    },
+    "values": [{
+      "valueHash": "C21AF472",
+      "value": "car",
+      "score": 0.97,
+      "extension": {
+        "version": "beta"
+      }
+    }, {
+      "valueHash": "A1AECAE0",
+      "value": "truck",
+      "score": 0.86,
+      "extension": {
+        "version": "beta"
       }
     }]
   }],
@@ -4419,7 +4419,7 @@
   "shard": "20250407_456",
   "dataType": "audio",
   "uid": "pa5nh.-njbvvg.-82pk6f",
-  "annotationId": "91F84ECA",
+  "annotationId": "B57E4771",
   "documentId": "000000000029",
   "annotationType": "tts",
   "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
@@ -4439,6 +4439,54 @@
     }
   },
   "segments": [{
+    "segmentHash": "0B2095B4",
+    "boundary": {
+      "boundaryType": "TIME_MILLI",
+      "start": 90000,
+      "end": 95000
+    },
+    "values": [{
+      "valueHash": "8E4C5C70",
+      "value": "sat",
+      "score": 0.235
+    }, {
+      "valueHash": "6B4F46BE",
+      "value": "ate",
+      "score": 0.21
+    }]
+  }, {
+    "segmentHash": "2EB66E6D",
+    "boundary": {
+      "boundaryType": "TIME_MILLI",
+      "start": 50000,
+      "end": 55000
+    },
+    "values": [{
+      "valueHash": "76BEE44F",
+      "value": "mat",
+      "score": 0.235
+    }, {
+      "valueHash": "84962936",
+      "value": "gnat",
+      "score": 0.21
+    }]
+  }, {
+    "segmentHash": "4FBF9992",
+    "boundary": {
+      "boundaryType": "TIME_MILLI",
+      "start": 70000,
+      "end": 75000
+    },
+    "values": [{
+      "valueHash": "B578A0BB",
+      "value": "the",
+      "score": 0.235
+    }, {
+      "valueHash": "B578A0BB",
+      "value": "the",
+      "score": 0.21
+    }]
+  }, {
     "segmentHash": "6BD6F28F",
     "boundary": {
       "boundaryType": "TIME_MILLI",
@@ -4452,6 +4500,22 @@
     }, {
       "valueHash": "B578A0BB",
       "value": "the",
+      "score": 0.21
+    }]
+  }, {
+    "segmentHash": "6DCE0993",
+    "boundary": {
+      "boundaryType": "TIME_MILLI",
+      "start": 80000,
+      "end": 85000
+    },
+    "values": [{
+      "valueHash": "2CE5103A",
+      "value": "cat",
+      "score": 0.235
+    }, {
+      "valueHash": "102EA958",
+      "value": "bat",
       "score": 0.21
     }]
   }, {
@@ -4503,38 +4567,6 @@
       "score": 0.21
     }]
   }, {
-    "segmentHash": "FA0FE295",
-    "boundary": {
-      "boundaryType": "TIME_MILLI",
-      "start": 40000,
-      "end": 45000
-    },
-    "values": [{
-      "valueHash": "B578A0BB",
-      "value": "the",
-      "score": 0.235
-    }, {
-      "valueHash": "B578A0BB",
-      "value": "the",
-      "score": 0.21
-    }]
-  }, {
-    "segmentHash": "2EB66E6D",
-    "boundary": {
-      "boundaryType": "TIME_MILLI",
-      "start": 50000,
-      "end": 55000
-    },
-    "values": [{
-      "valueHash": "76BEE44F",
-      "value": "mat",
-      "score": 0.235
-    }, {
-      "valueHash": "84962936",
-      "value": "gnat",
-      "score": 0.21
-    }]
-  }, {
     "segmentHash": "E103E6C3",
     "boundary": {
       "boundaryType": "TIME_MILLI",
@@ -4551,11 +4583,11 @@
       "score": 0.21
     }]
   }, {
-    "segmentHash": "4FBF9992",
+    "segmentHash": "FA0FE295",
     "boundary": {
       "boundaryType": "TIME_MILLI",
-      "start": 70000,
-      "end": 75000
+      "start": 40000,
+      "end": 45000
     },
     "values": [{
       "valueHash": "B578A0BB",
@@ -4564,38 +4596,6 @@
     }, {
       "valueHash": "B578A0BB",
       "value": "the",
-      "score": 0.21
-    }]
-  }, {
-    "segmentHash": "6DCE0993",
-    "boundary": {
-      "boundaryType": "TIME_MILLI",
-      "start": 80000,
-      "end": 85000
-    },
-    "values": [{
-      "valueHash": "2CE5103A",
-      "value": "cat",
-      "score": 0.235
-    }, {
-      "valueHash": "102EA958",
-      "value": "bat",
-      "score": 0.21
-    }]
-  }, {
-    "segmentHash": "0B2095B4",
-    "boundary": {
-      "boundaryType": "TIME_MILLI",
-      "start": 90000,
-      "end": 95000
-    },
-    "values": [{
-      "valueHash": "8E4C5C70",
-      "value": "sat",
-      "score": 0.235
-    }, {
-      "valueHash": "6B4F46BE",
-      "value": "ate",
       "score": 0.21
     }]
   }],
@@ -4612,7 +4612,7 @@
   "shard": "20250407_456",
   "dataType": "news",
   "uid": "-rjrn67.fih94d.-w0pe6m",
-  "annotationId": "224923C3",
+  "annotationId": "A901DCD3",
   "documentId": "000000000030",
   "annotationType": "tokens",
   "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
@@ -4632,15 +4632,15 @@
     }
   },
   "segments": [{
-    "segmentHash": "C7B766B9",
+    "segmentHash": "32443188",
     "boundary": {
       "boundaryType": "TEXT_CHAR",
-      "start": 0,
-      "end": 3
+      "start": 31,
+      "end": 37
     },
     "values": [{
-      "valueHash": "B578A0BB",
-      "value": "the",
+      "valueHash": "CB78DACF",
+      "value": "rabbit",
       "score": 1.0
     }]
   }, {
@@ -4680,6 +4680,18 @@
       "score": 1.0
     }]
   }, {
+    "segmentHash": "7EBDA0EF",
+    "boundary": {
+      "boundaryType": "TEXT_CHAR",
+      "start": 38,
+      "end": 43
+    },
+    "values": [{
+      "valueHash": "80529ABB",
+      "value": "\u003ceos\u003e",
+      "score": 1.0
+    }]
+  }, {
     "segmentHash": "BBE2E40F",
     "boundary": {
       "boundaryType": "TEXT_CHAR",
@@ -4692,6 +4704,18 @@
       "score": 1.0
     }]
   }, {
+    "segmentHash": "C7B766B9",
+    "boundary": {
+      "boundaryType": "TEXT_CHAR",
+      "start": 0,
+      "end": 3
+    },
+    "values": [{
+      "valueHash": "B578A0BB",
+      "value": "the",
+      "score": 1.0
+    }]
+  }, {
     "segmentHash": "FA48289B",
     "boundary": {
       "boundaryType": "TEXT_CHAR",
@@ -4701,30 +4725,6 @@
     "values": [{
       "valueHash": "B578A0BB",
       "value": "the",
-      "score": 1.0
-    }]
-  }, {
-    "segmentHash": "32443188",
-    "boundary": {
-      "boundaryType": "TEXT_CHAR",
-      "start": 31,
-      "end": 37
-    },
-    "values": [{
-      "valueHash": "CB78DACF",
-      "value": "rabbit",
-      "score": 1.0
-    }]
-  }, {
-    "segmentHash": "7EBDA0EF",
-    "boundary": {
-      "boundaryType": "TEXT_CHAR",
-      "start": 38,
-      "end": 43
-    },
-    "values": [{
-      "valueHash": "80529ABB",
-      "value": "\u003ceos\u003e",
       "score": 1.0
     }]
   }],
@@ -4741,7 +4741,7 @@
   "shard": "20250407_456",
   "dataType": "cars",
   "uid": "-kzyodx.s0n5gw.xn56uj",
-  "annotationId": "B113E121",
+  "annotationId": "0680797A",
   "documentId": "000000000031",
   "annotationType": "object",
   "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
@@ -4761,83 +4761,25 @@
     }
   },
   "segments": [{
-    "segmentHash": "A95669D7",
+    "segmentHash": "A458EEBE",
     "boundary": {
       "boundaryType": "POINTS",
       "points": [{
-        "x": 0,
-        "y": 0,
+        "x": 60,
+        "y": 70,
         "label": "topLeft"
       }, {
-        "x": 5,
-        "y": 12,
+        "x": 70,
+        "y": 78,
         "label": "bottomRight"
       }]
     },
     "values": [{
-      "valueHash": "A9D3B0A4",
-      "value": "bird",
-      "score": 0.97,
-      "extension": {
-        "version": "alpha"
-      }
-    }, {
-      "valueHash": "B29CBAE1",
-      "value": "crow",
-      "score": 0.86,
-      "extension": {
-        "version": "alpha"
-      }
-    }]
-  }, {
-    "segmentHash": "FFF3BAA1",
-    "boundary": {
-      "boundaryType": "POINTS",
-      "points": [{
-        "x": 10,
-        "y": 15,
-        "label": "topLeft"
-      }, {
-        "x": 15,
-        "y": 18,
-        "label": "bottomRight"
-      }]
-    },
-    "values": [{
-      "valueHash": "C21AF472",
-      "value": "car",
+      "valueHash": "E5A4D3D7",
+      "value": "flashlight",
       "score": 0.97,
       "extension": {
         "version": "beta"
-      }
-    }, {
-      "valueHash": "A1AECAE0",
-      "value": "truck",
-      "score": 0.86,
-      "extension": {
-        "version": "beta"
-      }
-    }]
-  }, {
-    "segmentHash": "EB77E18D",
-    "boundary": {
-      "boundaryType": "POINTS",
-      "points": [{
-        "x": 20,
-        "y": 20,
-        "label": "topLeft"
-      }, {
-        "x": 28,
-        "y": 47,
-        "label": "bottomRight"
-      }]
-    },
-    "values": [{
-      "valueHash": "6A06AA42",
-      "value": "stairs",
-      "score": 0.97,
-      "extension": {
-        "version": "delta"
       }
     }]
   }, {
@@ -4870,25 +4812,32 @@
       }
     }]
   }, {
-    "segmentHash": "A458EEBE",
+    "segmentHash": "A95669D7",
     "boundary": {
       "boundaryType": "POINTS",
       "points": [{
-        "x": 60,
-        "y": 70,
+        "x": 0,
+        "y": 0,
         "label": "topLeft"
       }, {
-        "x": 70,
-        "y": 78,
+        "x": 5,
+        "y": 12,
         "label": "bottomRight"
       }]
     },
     "values": [{
-      "valueHash": "E5A4D3D7",
-      "value": "flashlight",
+      "valueHash": "A9D3B0A4",
+      "value": "bird",
       "score": 0.97,
       "extension": {
-        "version": "beta"
+        "version": "alpha"
+      }
+    }, {
+      "valueHash": "B29CBAE1",
+      "value": "crow",
+      "score": 0.86,
+      "extension": {
+        "version": "alpha"
       }
     }]
   }, {
@@ -4918,6 +4867,57 @@
       "score": 0.86,
       "extension": {
         "version": "alpha"
+      }
+    }]
+  }, {
+    "segmentHash": "EB77E18D",
+    "boundary": {
+      "boundaryType": "POINTS",
+      "points": [{
+        "x": 20,
+        "y": 20,
+        "label": "topLeft"
+      }, {
+        "x": 28,
+        "y": 47,
+        "label": "bottomRight"
+      }]
+    },
+    "values": [{
+      "valueHash": "6A06AA42",
+      "value": "stairs",
+      "score": 0.97,
+      "extension": {
+        "version": "delta"
+      }
+    }]
+  }, {
+    "segmentHash": "FFF3BAA1",
+    "boundary": {
+      "boundaryType": "POINTS",
+      "points": [{
+        "x": 10,
+        "y": 15,
+        "label": "topLeft"
+      }, {
+        "x": 15,
+        "y": 18,
+        "label": "bottomRight"
+      }]
+    },
+    "values": [{
+      "valueHash": "C21AF472",
+      "value": "car",
+      "score": 0.97,
+      "extension": {
+        "version": "beta"
+      }
+    }, {
+      "valueHash": "A1AECAE0",
+      "value": "truck",
+      "score": 0.86,
+      "extension": {
+        "version": "beta"
       }
     }]
   }],
@@ -5050,7 +5050,7 @@
   "shard": "20250407_789",
   "dataType": "audio",
   "uid": "-h8gcvv.2ngwd5.7bbswm",
-  "annotationId": "E997916D",
+  "annotationId": "EF04B290",
   "documentId": "000000000033",
   "annotationType": "tts",
   "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
@@ -5070,6 +5070,54 @@
     }
   },
   "segments": [{
+    "segmentHash": "0B2095B4",
+    "boundary": {
+      "boundaryType": "TIME_MILLI",
+      "start": 90000,
+      "end": 95000
+    },
+    "values": [{
+      "valueHash": "8E4C5C70",
+      "value": "sat",
+      "score": 0.235
+    }, {
+      "valueHash": "6B4F46BE",
+      "value": "ate",
+      "score": 0.21
+    }]
+  }, {
+    "segmentHash": "2EB66E6D",
+    "boundary": {
+      "boundaryType": "TIME_MILLI",
+      "start": 50000,
+      "end": 55000
+    },
+    "values": [{
+      "valueHash": "76BEE44F",
+      "value": "mat",
+      "score": 0.235
+    }, {
+      "valueHash": "84962936",
+      "value": "gnat",
+      "score": 0.21
+    }]
+  }, {
+    "segmentHash": "4FBF9992",
+    "boundary": {
+      "boundaryType": "TIME_MILLI",
+      "start": 70000,
+      "end": 75000
+    },
+    "values": [{
+      "valueHash": "B578A0BB",
+      "value": "the",
+      "score": 0.235
+    }, {
+      "valueHash": "B578A0BB",
+      "value": "the",
+      "score": 0.21
+    }]
+  }, {
     "segmentHash": "6BD6F28F",
     "boundary": {
       "boundaryType": "TIME_MILLI",
@@ -5083,6 +5131,22 @@
     }, {
       "valueHash": "B578A0BB",
       "value": "the",
+      "score": 0.21
+    }]
+  }, {
+    "segmentHash": "6DCE0993",
+    "boundary": {
+      "boundaryType": "TIME_MILLI",
+      "start": 80000,
+      "end": 85000
+    },
+    "values": [{
+      "valueHash": "2CE5103A",
+      "value": "cat",
+      "score": 0.235
+    }, {
+      "valueHash": "102EA958",
+      "value": "bat",
       "score": 0.21
     }]
   }, {
@@ -5134,38 +5198,6 @@
       "score": 0.21
     }]
   }, {
-    "segmentHash": "FA0FE295",
-    "boundary": {
-      "boundaryType": "TIME_MILLI",
-      "start": 40000,
-      "end": 45000
-    },
-    "values": [{
-      "valueHash": "B578A0BB",
-      "value": "the",
-      "score": 0.235
-    }, {
-      "valueHash": "B578A0BB",
-      "value": "the",
-      "score": 0.21
-    }]
-  }, {
-    "segmentHash": "2EB66E6D",
-    "boundary": {
-      "boundaryType": "TIME_MILLI",
-      "start": 50000,
-      "end": 55000
-    },
-    "values": [{
-      "valueHash": "76BEE44F",
-      "value": "mat",
-      "score": 0.235
-    }, {
-      "valueHash": "84962936",
-      "value": "gnat",
-      "score": 0.21
-    }]
-  }, {
     "segmentHash": "E103E6C3",
     "boundary": {
       "boundaryType": "TIME_MILLI",
@@ -5182,11 +5214,11 @@
       "score": 0.21
     }]
   }, {
-    "segmentHash": "4FBF9992",
+    "segmentHash": "FA0FE295",
     "boundary": {
       "boundaryType": "TIME_MILLI",
-      "start": 70000,
-      "end": 75000
+      "start": 40000,
+      "end": 45000
     },
     "values": [{
       "valueHash": "B578A0BB",
@@ -5195,38 +5227,6 @@
     }, {
       "valueHash": "B578A0BB",
       "value": "the",
-      "score": 0.21
-    }]
-  }, {
-    "segmentHash": "6DCE0993",
-    "boundary": {
-      "boundaryType": "TIME_MILLI",
-      "start": 80000,
-      "end": 85000
-    },
-    "values": [{
-      "valueHash": "2CE5103A",
-      "value": "cat",
-      "score": 0.235
-    }, {
-      "valueHash": "102EA958",
-      "value": "bat",
-      "score": 0.21
-    }]
-  }, {
-    "segmentHash": "0B2095B4",
-    "boundary": {
-      "boundaryType": "TIME_MILLI",
-      "start": 90000,
-      "end": 95000
-    },
-    "values": [{
-      "valueHash": "8E4C5C70",
-      "value": "sat",
-      "score": 0.235
-    }, {
-      "valueHash": "6B4F46BE",
-      "value": "ate",
       "score": 0.21
     }]
   }],
@@ -5243,7 +5243,7 @@
   "shard": "20250407_789",
   "dataType": "news",
   "uid": "cvf0v4.-ncjfen.-69rc5w",
-  "annotationId": "FA6A536F",
+  "annotationId": "A97EA6CC",
   "documentId": "000000000034",
   "annotationType": "tokens",
   "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
@@ -5263,15 +5263,15 @@
     }
   },
   "segments": [{
-    "segmentHash": "C7B766B9",
+    "segmentHash": "32443188",
     "boundary": {
       "boundaryType": "TEXT_CHAR",
-      "start": 0,
-      "end": 3
+      "start": 31,
+      "end": 37
     },
     "values": [{
-      "valueHash": "B578A0BB",
-      "value": "the",
+      "valueHash": "CB78DACF",
+      "value": "rabbit",
       "score": 1.0
     }]
   }, {
@@ -5311,6 +5311,18 @@
       "score": 1.0
     }]
   }, {
+    "segmentHash": "7EBDA0EF",
+    "boundary": {
+      "boundaryType": "TEXT_CHAR",
+      "start": 38,
+      "end": 43
+    },
+    "values": [{
+      "valueHash": "80529ABB",
+      "value": "\u003ceos\u003e",
+      "score": 1.0
+    }]
+  }, {
     "segmentHash": "BBE2E40F",
     "boundary": {
       "boundaryType": "TEXT_CHAR",
@@ -5323,6 +5335,18 @@
       "score": 1.0
     }]
   }, {
+    "segmentHash": "C7B766B9",
+    "boundary": {
+      "boundaryType": "TEXT_CHAR",
+      "start": 0,
+      "end": 3
+    },
+    "values": [{
+      "valueHash": "B578A0BB",
+      "value": "the",
+      "score": 1.0
+    }]
+  }, {
     "segmentHash": "FA48289B",
     "boundary": {
       "boundaryType": "TEXT_CHAR",
@@ -5332,30 +5356,6 @@
     "values": [{
       "valueHash": "B578A0BB",
       "value": "the",
-      "score": 1.0
-    }]
-  }, {
-    "segmentHash": "32443188",
-    "boundary": {
-      "boundaryType": "TEXT_CHAR",
-      "start": 31,
-      "end": 37
-    },
-    "values": [{
-      "valueHash": "CB78DACF",
-      "value": "rabbit",
-      "score": 1.0
-    }]
-  }, {
-    "segmentHash": "7EBDA0EF",
-    "boundary": {
-      "boundaryType": "TEXT_CHAR",
-      "start": 38,
-      "end": 43
-    },
-    "values": [{
-      "valueHash": "80529ABB",
-      "value": "\u003ceos\u003e",
       "score": 1.0
     }]
   }],
@@ -5372,7 +5372,7 @@
   "shard": "20250407_789",
   "dataType": "cars",
   "uid": "-diuujx.-vthisr.-z7h545",
-  "annotationId": "947C4B3F",
+  "annotationId": "A9F287BF",
   "documentId": "000000000035",
   "annotationType": "object",
   "analyticSourceHash": "52EF0E07742AC65873C6DF80759AF192",
@@ -5392,83 +5392,25 @@
     }
   },
   "segments": [{
-    "segmentHash": "A95669D7",
+    "segmentHash": "A458EEBE",
     "boundary": {
       "boundaryType": "POINTS",
       "points": [{
-        "x": 0,
-        "y": 0,
+        "x": 60,
+        "y": 70,
         "label": "topLeft"
       }, {
-        "x": 5,
-        "y": 12,
+        "x": 70,
+        "y": 78,
         "label": "bottomRight"
       }]
     },
     "values": [{
-      "valueHash": "A9D3B0A4",
-      "value": "bird",
-      "score": 0.97,
-      "extension": {
-        "version": "alpha"
-      }
-    }, {
-      "valueHash": "B29CBAE1",
-      "value": "crow",
-      "score": 0.86,
-      "extension": {
-        "version": "alpha"
-      }
-    }]
-  }, {
-    "segmentHash": "FFF3BAA1",
-    "boundary": {
-      "boundaryType": "POINTS",
-      "points": [{
-        "x": 10,
-        "y": 15,
-        "label": "topLeft"
-      }, {
-        "x": 15,
-        "y": 18,
-        "label": "bottomRight"
-      }]
-    },
-    "values": [{
-      "valueHash": "C21AF472",
-      "value": "car",
+      "valueHash": "E5A4D3D7",
+      "value": "flashlight",
       "score": 0.97,
       "extension": {
         "version": "beta"
-      }
-    }, {
-      "valueHash": "A1AECAE0",
-      "value": "truck",
-      "score": 0.86,
-      "extension": {
-        "version": "beta"
-      }
-    }]
-  }, {
-    "segmentHash": "EB77E18D",
-    "boundary": {
-      "boundaryType": "POINTS",
-      "points": [{
-        "x": 20,
-        "y": 20,
-        "label": "topLeft"
-      }, {
-        "x": 28,
-        "y": 47,
-        "label": "bottomRight"
-      }]
-    },
-    "values": [{
-      "valueHash": "6A06AA42",
-      "value": "stairs",
-      "score": 0.97,
-      "extension": {
-        "version": "delta"
       }
     }]
   }, {
@@ -5501,25 +5443,32 @@
       }
     }]
   }, {
-    "segmentHash": "A458EEBE",
+    "segmentHash": "A95669D7",
     "boundary": {
       "boundaryType": "POINTS",
       "points": [{
-        "x": 60,
-        "y": 70,
+        "x": 0,
+        "y": 0,
         "label": "topLeft"
       }, {
-        "x": 70,
-        "y": 78,
+        "x": 5,
+        "y": 12,
         "label": "bottomRight"
       }]
     },
     "values": [{
-      "valueHash": "E5A4D3D7",
-      "value": "flashlight",
+      "valueHash": "A9D3B0A4",
+      "value": "bird",
       "score": 0.97,
       "extension": {
-        "version": "beta"
+        "version": "alpha"
+      }
+    }, {
+      "valueHash": "B29CBAE1",
+      "value": "crow",
+      "score": 0.86,
+      "extension": {
+        "version": "alpha"
       }
     }]
   }, {
@@ -5549,6 +5498,57 @@
       "score": 0.86,
       "extension": {
         "version": "alpha"
+      }
+    }]
+  }, {
+    "segmentHash": "EB77E18D",
+    "boundary": {
+      "boundaryType": "POINTS",
+      "points": [{
+        "x": 20,
+        "y": 20,
+        "label": "topLeft"
+      }, {
+        "x": 28,
+        "y": 47,
+        "label": "bottomRight"
+      }]
+    },
+    "values": [{
+      "valueHash": "6A06AA42",
+      "value": "stairs",
+      "score": 0.97,
+      "extension": {
+        "version": "delta"
+      }
+    }]
+  }, {
+    "segmentHash": "FFF3BAA1",
+    "boundary": {
+      "boundaryType": "POINTS",
+      "points": [{
+        "x": 10,
+        "y": 15,
+        "label": "topLeft"
+      }, {
+        "x": 15,
+        "y": 18,
+        "label": "bottomRight"
+      }]
+    },
+    "values": [{
+      "valueHash": "C21AF472",
+      "value": "car",
+      "score": 0.97,
+      "extension": {
+        "version": "beta"
+      }
+    }, {
+      "valueHash": "A1AECAE0",
+      "value": "truck",
+      "score": 0.86,
+      "extension": {
+        "version": "beta"
       }
     }]
   }],

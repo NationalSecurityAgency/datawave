@@ -18,3 +18,8 @@ your commit so that a record of the change is maintained.
 This approach will allow us to track all prior versions of the serialized annotation objects and ensure that we do not
 unintentionally break compatibility with previous versions.  If we do need to make a change that breaks compatibility, 
 we will have a record of all prior versions and the change that caused the break in compatibility.
+
+Change History
+ * 2026-07-24
+   * The Annotation protobuf schema did not change but the order the segments were normalized to match the ordering
+        Accumulo naturally orders keys. This was updated to maintain consistent hash values throughout the Annotation lifecycle.
