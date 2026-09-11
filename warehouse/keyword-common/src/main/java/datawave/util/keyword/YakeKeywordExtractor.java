@@ -136,6 +136,12 @@ public class YakeKeywordExtractor {
         return maxSimilarityThreshold;
     }
 
+    public static void validateMaxSimilarityThreshold(double maxSimilarityThreshold) {
+        if (!Double.isFinite(maxSimilarityThreshold) || maxSimilarityThreshold < 0.0 || maxSimilarityThreshold > 1.0) {
+            throw new IllegalArgumentException("Maximum similarity threshold must be finite and in the range [0.0, 1.0]: " + maxSimilarityThreshold);
+        }
+    }
+
     /**
      * Main entrypoint. Extract keywords from the string provided.
      *
@@ -853,6 +859,7 @@ public class YakeKeywordExtractor {
         }
 
         public Builder withMaxSimilarityThreshold(double similarityThreshold) {
+            validateMaxSimilarityThreshold(similarityThreshold);
             this.maxSimilarityThreshold = similarityThreshold;
             return this;
         }

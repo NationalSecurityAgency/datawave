@@ -235,12 +235,15 @@ public class KeywordQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
         setResponseVersion(responseVersion);
 
         // tag cloud similarity max is set from configuration and then overridden by the query param, no limit is 0.
+        state.setMaxSimilarityThreshold(config.getMaxSimilarityThreshold());
         String maxCloudTagSimString = settings.findParameter(TAG_CLOUD_SIM_MAX).getParameterValue().trim();
-        try {
-            double tagCloudSimMax = maxCloudTagSimString.isEmpty() ? config.getMaxSimilarityThreshold() : Double.parseDouble(maxCloudTagSimString);
-            state.setMaxSimilarityThreshold(tagCloudSimMax);
-        } catch (NumberFormatException e) {
-            log.warn("Could not parse parameter " + TAG_CLOUD_SIM_MAX + " (value: " + maxCloudTagSimString + " as double, ignoring.");
+        if (!maxCloudTagSimString.isEmpty()) {
+            try {
+                state.setMaxSimilarityThreshold(Double.parseDouble(maxCloudTagSimString));
+            } catch (IllegalArgumentException e) {
+                log.warn("Invalid parameter " + TAG_CLOUD_SIM_MAX + " (value: " + maxCloudTagSimString + "), using configured value "
+                                + config.getMaxSimilarityThreshold() + '.', e);
+            }
         }
 
         if (settings.getQuery() != null && !settings.getQuery().isEmpty()) {

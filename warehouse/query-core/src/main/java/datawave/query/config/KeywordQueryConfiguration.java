@@ -143,6 +143,7 @@ public class KeywordQueryConfiguration extends GenericQueryConfiguration impleme
     }
 
     public void setMaxSimilarityThreshold(double maxSimilarityThreshold) {
+        YakeKeywordExtractor.validateMaxSimilarityThreshold(maxSimilarityThreshold);
         this.maxSimilarityThreshold = maxSimilarityThreshold;
     }
 

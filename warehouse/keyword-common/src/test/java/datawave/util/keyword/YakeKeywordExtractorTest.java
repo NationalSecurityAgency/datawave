@@ -1,6 +1,7 @@
 package datawave.util.keyword;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -185,6 +186,18 @@ public class YakeKeywordExtractorTest {
         List<TokenScore> selected = YakeKeywordExtractor.deduplicateCandidateTokens(candidates, 0.0, 2).collect(Collectors.toList());
 
         assertEquals(2, selected.size());
+    }
+
+    @Test
+    public void testSimilarityThresholdValidation() {
+        assertEquals(0.0, new YakeKeywordExtractor.Builder().withMaxSimilarityThreshold(0.0).build().getMaxSimilarityThreshold());
+        assertEquals(1.0, new YakeKeywordExtractor.Builder().withMaxSimilarityThreshold(1.0).build().getMaxSimilarityThreshold());
+
+        assertThrows(IllegalArgumentException.class, () -> new YakeKeywordExtractor.Builder().withMaxSimilarityThreshold(-0.1));
+        assertThrows(IllegalArgumentException.class, () -> new YakeKeywordExtractor.Builder().withMaxSimilarityThreshold(1.1));
+        assertThrows(IllegalArgumentException.class, () -> new YakeKeywordExtractor.Builder().withMaxSimilarityThreshold(Double.NaN));
+        assertThrows(IllegalArgumentException.class, () -> new YakeKeywordExtractor.Builder().withMaxSimilarityThreshold(Double.POSITIVE_INFINITY));
+        assertThrows(IllegalArgumentException.class, () -> new YakeKeywordExtractor.Builder().withMaxSimilarityThreshold(Double.NEGATIVE_INFINITY));
     }
 
     @Test

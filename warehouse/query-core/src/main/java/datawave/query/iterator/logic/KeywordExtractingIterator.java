@@ -38,6 +38,7 @@ import datawave.query.table.parser.ContentKeyValueFactory;
 import datawave.util.keyword.KeywordExtractor;
 import datawave.util.keyword.KeywordResults;
 import datawave.util.keyword.VisibleContent;
+import datawave.util.keyword.YakeKeywordExtractor;
 
 /** An iterator that will execute the keyword extractor when given 'd' column ranges to scan for specific documents */
 public class KeywordExtractingIterator implements SortedKeyValueIterator<Key,Value>, OptionDescriber {
@@ -404,6 +405,7 @@ public class KeywordExtractingIterator implements SortedKeyValueIterator<Key,Val
 
     public static void setOptions(IteratorSetting si, int minNgrams, int maxNgrams, int maxKeywords, float maxScore, int maxContentChars,
                     double maxSimilarityThreshold, List<String> viewNames, Map<String,String> documentLanguageMap) {
+        YakeKeywordExtractor.validateMaxSimilarityThreshold(maxSimilarityThreshold);
 
         if (minNgrams > 0) {
             si.addOption(KeywordExtractor.MIN_NGRAMS, String.valueOf(minNgrams));
@@ -425,9 +427,7 @@ public class KeywordExtractingIterator implements SortedKeyValueIterator<Key,Val
             si.addOption(KeywordExtractor.MAX_CONTENT_CHARS, String.valueOf(maxContentChars));
         }
 
-        if (maxSimilarityThreshold > -1) {
-            si.addOption(KeywordExtractor.MAX_SIMILARITY_THRESHOLD, String.valueOf(maxSimilarityThreshold));
-        }
+        si.addOption(KeywordExtractor.MAX_SIMILARITY_THRESHOLD, String.valueOf(maxSimilarityThreshold));
 
         si.addOption(VIEW_NAMES, String.join(",", viewNames));
         si.addOption(DOCUMENT_LANGUAGES, serializeMap(documentLanguageMap));
@@ -462,6 +462,9 @@ public class KeywordExtractingIterator implements SortedKeyValueIterator<Key,Val
     private static void validateDoubleOption(String name, Map<String,String> options) {
         if (options.containsKey(name)) {
             double d = Double.parseDouble(options.get(name));
+            if (KeywordExtractor.MAX_SIMILARITY_THRESHOLD.equals(name)) {
+                YakeKeywordExtractor.validateMaxSimilarityThreshold(d);
+            }
         }
     }
 

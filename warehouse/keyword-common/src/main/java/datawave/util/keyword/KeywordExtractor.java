@@ -124,6 +124,7 @@ public class KeywordExtractor {
 
         if (iteratorOptions.containsKey(KeywordExtractor.MAX_SIMILARITY_THRESHOLD)) {
             maxSimilarityThreshold = Double.parseDouble(iteratorOptions.get(KeywordExtractor.MAX_SIMILARITY_THRESHOLD));
+            YakeKeywordExtractor.validateMaxSimilarityThreshold(maxSimilarityThreshold);
         }
     }
 
