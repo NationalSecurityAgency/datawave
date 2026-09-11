@@ -94,9 +94,8 @@ fi
 assertCreateDir "${DW_ACCUMULO_JVM_HEAPDUMP_DIR}" || exit 1
 
 # Update tserver and other options in accumulo-env.sh
-sed -i'' -e "s~\(ACCUMULO_TSERVER_OPTS=\).*$~\1\"${DW_ACCUMULO_TSERVER_OPTS}\"~g" "${DW_ACCUMULO_CONF_DIR}/accumulo-env.sh"
-sed -i'' -e "s~\(export JAVA_HOME=\).*$~\1\"${JAVA_HOME}\"~g" "${DW_ACCUMULO_CONF_DIR}/accumulo-env.sh"
-sed -i'' -e "s~\(export ACCUMULO_MONITOR_OPTS=\).*$~\1\"\${POLICY} -Xmx2g -Xms512m\"~g" "${DW_ACCUMULO_CONF_DIR}/accumulo-env.sh"
+sed -i'' -e "s~/path/to/hadoop~${HADOOP_HOME}~" "${DW_ACCUMULO_CONF_DIR}/accumulo-env.sh"
+sed -i'' -e "s~/path/to/zookeeper~${ZOOKEEPER_HOME}~" "${DW_ACCUMULO_CONF_DIR}/accumulo-env.sh"
 echo 'JAVA_OPTS=('-Dcom.google.protobuf.use_unsafe_pre22_gencode' "${JAVA_OPTS[@]}")' >> "${DW_ACCUMULO_CONF_DIR}/accumulo-env.sh"
 cat "${DW_ACCUMULO_CONF_DIR}/accumulo-env.sh"
 # Update Accumulo bind host if it's not set to localhost
