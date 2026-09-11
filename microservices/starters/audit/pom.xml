@@ -179,4 +179,14 @@
             <url>https://maven.pkg.github.com/NationalSecurityAgency/datawave</url>
         </repository>
     </repositories>
+    <build>
+        <plugins>
+            <plugin>
+                <!-- This was added to ensure project only uses public API -->
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+                <version>3.6.0</version>
+            </plugin>
+        </plugins>
+    </build>
 </project>
