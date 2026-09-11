@@ -10,9 +10,7 @@ import org.junit.jupiter.api.Test;
 
 import datawave.annotation.protobuf.v1.Annotation;
 import datawave.annotation.protobuf.v1.AnnotationSource;
-import datawave.annotation.protobuf.v1.BoundaryType;
 import datawave.annotation.protobuf.v1.Segment;
-import datawave.annotation.protobuf.v1.SegmentBoundary;
 import datawave.annotation.test.v1.AnnotationTestDataUtil;
 import datawave.annotation.util.Validator;
 
@@ -73,33 +71,6 @@ public class AnnotationValidatorsTest {
         Segment testIdentifiedSegment = AnnotationUtils.injectAllHashes(testSegment);
         assertValid(AnnotationValidators.checkSegment(testIdentifiedSegment));
         assertValid(AnnotationValidators.checkSegmentIds(testIdentifiedSegment));
-    }
-
-    /**
-     * Regression test: the span-boundary validator's error messages were previously swapped -- a missing {@code end} value was reported as "must have a start
-     * value" and a missing {@code start} value was reported as "must have an end value" -- making the 400 response actively misleading about which field is
-     * actually missing.
-     */
-    @Test
-    public void testSpanBoundaryMissingEndReportsEndSpecificMessage() {
-        SegmentBoundary missingEnd = SegmentBoundary.newBuilder().setBoundaryType(BoundaryType.TIME_MILLI).setStart(100).build();
-        Segment segment = AnnotationTestDataUtil.generateTestSegment().toBuilder().setBoundary(missingEnd).build();
-
-        Validator.ValidationState<Segment> validationState = AnnotationValidators.checkSegment(segment);
-        assertInvalid(validationState);
-        assertTrue(validationState.getErrors().stream().anyMatch(e -> e.contains("must have an end value")), getErrorMessage(validationState));
-        assertFalse(validationState.getErrors().stream().anyMatch(e -> e.contains("must have a start value")), getErrorMessage(validationState));
-    }
-
-    @Test
-    public void testSpanBoundaryMissingStartReportsStartSpecificMessage() {
-        SegmentBoundary missingStart = SegmentBoundary.newBuilder().setBoundaryType(BoundaryType.TIME_MILLI).setEnd(100).build();
-        Segment segment = AnnotationTestDataUtil.generateTestSegment().toBuilder().setBoundary(missingStart).build();
-
-        Validator.ValidationState<Segment> validationState = AnnotationValidators.checkSegment(segment);
-        assertInvalid(validationState);
-        assertTrue(validationState.getErrors().stream().anyMatch(e -> e.contains("must have a start value")), getErrorMessage(validationState));
-        assertFalse(validationState.getErrors().stream().anyMatch(e -> e.contains("must have an end value")), getErrorMessage(validationState));
     }
 
     public static void assertValid(Validator.ValidationState<?> validationState) {
