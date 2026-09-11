@@ -24,7 +24,7 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 
 import datawave.core.iterators.FieldExpansionIterator;
-import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.config.ImmutableShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.tables.ScannerFactory;
 import datawave.scan.ExecutionHintHelper;
@@ -43,7 +43,7 @@ public class UnfieldedLiteralIndexLookup extends AsyncIndexLookup {
 
     private Future<?> future;
 
-    public UnfieldedLiteralIndexLookup(ShardQueryConfiguration config, ScannerFactory scannerFactory, String term, Set<String> fields,
+    public UnfieldedLiteralIndexLookup(ImmutableShardQueryConfiguration config, ScannerFactory scannerFactory, String term, Set<String> fields,
                     ExecutorService execService) {
         super(config, scannerFactory, true, execService);
         this.term = term;

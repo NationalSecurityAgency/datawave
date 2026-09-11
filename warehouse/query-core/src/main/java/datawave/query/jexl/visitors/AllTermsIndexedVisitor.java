@@ -25,7 +25,7 @@ import org.apache.log4j.Logger;
 import com.google.common.base.Preconditions;
 
 import datawave.query.Constants;
-import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.config.ImmutableShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.EmptyUnfieldedTermExpansionException;
 import datawave.query.exceptions.InvalidFieldIndexQueryFatalQueryException;
@@ -50,12 +50,12 @@ public class AllTermsIndexedVisitor extends RebuildingVisitor {
 
     private static final Logger log = Logger.getLogger(AllTermsIndexedVisitor.class);
 
-    private final ShardQueryConfiguration config;
+    private final ImmutableShardQueryConfiguration config;
     private final MetadataHelper helper;
 
     private static final String NODE_PATTERN = "Node: {0}";
 
-    public AllTermsIndexedVisitor(ShardQueryConfiguration config, MetadataHelper helper) {
+    public AllTermsIndexedVisitor(ImmutableShardQueryConfiguration config, MetadataHelper helper) {
         Preconditions.checkNotNull(config, "ShardQueryConfiguration must not be null");
         Preconditions.checkNotNull(helper, "MetadataHelper must not be null");
 
@@ -64,7 +64,7 @@ public class AllTermsIndexedVisitor extends RebuildingVisitor {
     }
 
     @SuppressWarnings("unchecked")
-    public static <T extends JexlNode> T isIndexed(T script, ShardQueryConfiguration config, MetadataHelper helper) {
+    public static <T extends JexlNode> T isIndexed(T script, ImmutableShardQueryConfiguration config, MetadataHelper helper) {
         Preconditions.checkNotNull(script, "JEXL script must not be null");
 
         AllTermsIndexedVisitor visitor = new AllTermsIndexedVisitor(config, helper);

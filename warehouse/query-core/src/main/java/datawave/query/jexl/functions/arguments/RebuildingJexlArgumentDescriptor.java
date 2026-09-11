@@ -5,7 +5,7 @@ import java.util.Set;
 import org.apache.commons.jexl3.parser.ASTFunctionNode;
 import org.apache.commons.jexl3.parser.JexlNode;
 
-import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.config.ImmutableShardQueryConfiguration;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
 
@@ -32,6 +32,6 @@ public interface RebuildingJexlArgumentDescriptor extends JexlArgumentDescriptor
      *            the function node
      * @return A new JexlNode representing the rebuilt ASTFunctionNode, or if no change is required, returns the original ASTFunctionNode
      */
-    JexlNode rebuildNode(ShardQueryConfiguration settings, MetadataHelper metadataHelper, DateIndexHelper dateIndexHelper, Set<String> datatypeFilter,
+    JexlNode rebuildNode(ImmutableShardQueryConfiguration settings, MetadataHelper metadataHelper, DateIndexHelper dateIndexHelper, Set<String> datatypeFilter,
                     ASTFunctionNode node);
 }

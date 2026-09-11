@@ -84,6 +84,7 @@ import datawave.query.attributes.UniqueFields;
 import datawave.query.common.grouping.GroupFields;
 import datawave.query.composite.CompositeMetadata;
 import datawave.query.composite.CompositeUtils;
+import datawave.query.config.ImmutableShardQueryConfiguration;
 import datawave.query.config.ScanHintRule;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.CannotExpandUnfieldedTermFatalException;
@@ -3170,7 +3171,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         try {
             rstream = Class.forName(rangeStreamClass).asSubclass(RangeStream.class);
 
-            RangeStream stream = rstream.getConstructor(ShardQueryConfiguration.class, MetadataHelper.class).newInstance(config, metadataHelper);
+            RangeStream stream = rstream.getConstructor(ImmutableShardQueryConfiguration.class, MetadataHelper.class).newInstance(config, metadataHelper);
 
             //  @formatter:off
             return stream.setUidIntersector(uidIntersector)

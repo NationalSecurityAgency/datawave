@@ -3,7 +3,7 @@ package datawave.query.ancestor;
 import org.apache.commons.jexl3.parser.ASTAndNode;
 import org.apache.commons.jexl3.parser.ASTOrNode;
 
-import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.config.ImmutableShardQueryConfiguration;
 import datawave.query.index.lookup.AncestorIndexStream;
 import datawave.query.index.lookup.IndexStream;
 import datawave.query.index.lookup.RangeStream;
@@ -15,12 +15,12 @@ import datawave.query.util.MetadataHelper;
  */
 public class AncestorRangeStream extends RangeStream {
 
-    public AncestorRangeStream(ShardQueryConfiguration config, MetadataHelper metadataHelper) {
+    public AncestorRangeStream(ImmutableShardQueryConfiguration config, MetadataHelper metadataHelper) {
         super(config, metadataHelper);
     }
 
     @Deprecated(forRemoval = true, since = "7.41.0")
-    public AncestorRangeStream(ShardQueryConfiguration config, ScannerFactory scanners, MetadataHelper metadataHelper) {
+    public AncestorRangeStream(ImmutableShardQueryConfiguration config, ScannerFactory scanners, MetadataHelper metadataHelper) {
         super(config, scanners, metadataHelper);
     }
 

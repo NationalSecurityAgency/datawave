@@ -27,7 +27,7 @@ import datawave.query.Constants;
 import datawave.query.attributes.AttributeFactory;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.common.grouping.GroupFields;
-import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.config.ImmutableShardQueryConfiguration;
 import datawave.query.jexl.ArithmeticJexlEngines;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
@@ -63,7 +63,8 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
         }
 
         @Override
-        public JexlNode getIndexQuery(ShardQueryConfiguration config, MetadataHelper helper, DateIndexHelper dateIndexHelper, Set<String> datatypeFilter) {
+        public JexlNode getIndexQuery(ImmutableShardQueryConfiguration config, MetadataHelper helper, DateIndexHelper dateIndexHelper,
+                        Set<String> datatypeFilter) {
             switch (name) {
                 case BETWEEN:
                     JexlNode geNode = JexlNodeFactory.buildNode(new ASTGENode(ParserTreeConstants.JJTGENODE), args.get(0),

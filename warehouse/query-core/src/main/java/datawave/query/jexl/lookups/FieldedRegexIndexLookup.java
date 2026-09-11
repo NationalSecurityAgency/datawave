@@ -19,7 +19,7 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 
 import datawave.core.iterators.FieldedRegexExpansionIterator;
-import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.config.ImmutableShardQueryConfiguration;
 import datawave.query.tables.ScannerFactory;
 import datawave.scan.ExecutionHintHelper;
 import datawave.scan.ScannerBuilder;
@@ -36,8 +36,8 @@ public class FieldedRegexIndexLookup extends BaseRegexIndexLookup {
 
     private final String field;
 
-    public FieldedRegexIndexLookup(ShardQueryConfiguration config, ScannerFactory scannerFactory, ExecutorService execService, String field, String pattern,
-                    Range range, boolean reverse) {
+    public FieldedRegexIndexLookup(ImmutableShardQueryConfiguration config, ScannerFactory scannerFactory, ExecutorService execService, String field,
+                    String pattern, Range range, boolean reverse) {
         super(config, scannerFactory, false, execService, pattern, range, reverse);
         this.field = field;
 

@@ -32,7 +32,7 @@ import datawave.microservice.query.Query;
 import datawave.mr.bulk.BulkInputFormat;
 import datawave.mr.bulk.MultiRfileInputformat;
 import datawave.mr.bulk.RfileScanner;
-import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.config.ImmutableShardQueryConfiguration;
 import datawave.query.tables.stats.ScanSessionStats;
 import datawave.query.util.QueryScannerHelper;
 import datawave.webservice.common.connection.WrappedAccumuloClient;
@@ -51,7 +51,7 @@ public class ScannerFactory {
     protected boolean accrueStats = false;
     protected Query settings = null;
     protected ResourceQueue scanQueue = null;
-    protected ShardQueryConfiguration config = null;
+    protected ImmutableShardQueryConfiguration config = null;
 
     // consistency and execution hints can be mapped to table names or functional names
     // for example, 'shardIndex' might map to a default executor pool for the shard index table
@@ -120,8 +120,8 @@ public class ScannerFactory {
         }
 
         int numThreads = DEFAULT_MAX_THREADS;
-        if (genericConfig instanceof ShardQueryConfiguration) {
-            ShardQueryConfiguration config = (ShardQueryConfiguration) genericConfig;
+        if (genericConfig instanceof ImmutableShardQueryConfiguration) {
+            ImmutableShardQueryConfiguration config = (ImmutableShardQueryConfiguration) genericConfig;
 
             this.settings = config.getQuery();
             this.accrueStats = config.getAccrueStats();
@@ -519,7 +519,7 @@ public class ScannerFactory {
         }
     }
 
-    public BatchScanner newScanner(ShardQueryConfiguration config, QueryData qd, String tableName) throws TableNotFoundException {
+    public BatchScanner newScanner(ImmutableShardQueryConfiguration config, QueryData qd, String tableName) throws TableNotFoundException {
         final BatchScanner bs = this.newScanner(tableName, config.getAuthorizations(), config.getNumQueryThreads(), config.getQuery());
 
         if (log.isTraceEnabled()) {

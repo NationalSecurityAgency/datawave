@@ -10,7 +10,7 @@ import org.apache.commons.jexl3.parser.JexlNode;
 
 import datawave.core.iterators.DatawaveFieldIndexFilterIteratorJexl;
 import datawave.query.attributes.AttributeFactory;
-import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.config.ImmutableShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor;
 import datawave.query.util.DateIndexHelper;
@@ -37,7 +37,8 @@ public interface JexlArgumentDescriptor {
      *            the config settings
      * @return The query which will be used against the global index
      */
-    JexlNode getIndexQuery(ShardQueryConfiguration settings, MetadataHelper metadataHelper, DateIndexHelper dateIndexHelper, Set<String> datatypeFilter);
+    JexlNode getIndexQuery(ImmutableShardQueryConfiguration settings, MetadataHelper metadataHelper, DateIndexHelper dateIndexHelper,
+                    Set<String> datatypeFilter);
 
     /**
      * Get the expression filters for this function. NOTE NOTE NOTE: This only needs to add expression filters IFF the getIndexQuery does not add appropriate

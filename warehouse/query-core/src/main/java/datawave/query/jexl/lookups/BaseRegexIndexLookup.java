@@ -10,7 +10,7 @@ import org.apache.accumulo.core.data.Range;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.config.ImmutableShardQueryConfiguration;
 import datawave.query.tables.ScannerFactory;
 
 /**
@@ -29,7 +29,7 @@ public abstract class BaseRegexIndexLookup extends AsyncIndexLookup {
     // used when scanning the shard reverse index
     private final StringBuilder sb = new StringBuilder();
 
-    public BaseRegexIndexLookup(ShardQueryConfiguration config, ScannerFactory scannerFactory, boolean unfieldedLookup, ExecutorService execService,
+    public BaseRegexIndexLookup(ImmutableShardQueryConfiguration config, ScannerFactory scannerFactory, boolean unfieldedLookup, ExecutorService execService,
                     String pattern, Range range, boolean reverse) {
         super(config, scannerFactory, unfieldedLookup, execService);
         this.pattern = pattern;

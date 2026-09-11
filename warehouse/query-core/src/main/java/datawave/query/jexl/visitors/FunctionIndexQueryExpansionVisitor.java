@@ -18,7 +18,7 @@ import org.apache.commons.jexl3.parser.ASTReference;
 import org.apache.commons.jexl3.parser.ASTTrueNode;
 import org.apache.commons.jexl3.parser.JexlNode;
 
-import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.config.ImmutableShardQueryConfiguration;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.functions.ContentFunctionsDescriptor;
 import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
@@ -35,11 +35,11 @@ import datawave.query.util.MetadataHelper;
  */
 public class FunctionIndexQueryExpansionVisitor extends RebuildingVisitor {
 
-    protected ShardQueryConfiguration config;
+    protected ImmutableShardQueryConfiguration config;
     protected MetadataHelper metadataHelper;
     protected DateIndexHelper dateIndexHelper;
 
-    public FunctionIndexQueryExpansionVisitor(ShardQueryConfiguration config, MetadataHelper metadataHelper, DateIndexHelper dateIndexHelper) {
+    public FunctionIndexQueryExpansionVisitor(ImmutableShardQueryConfiguration config, MetadataHelper metadataHelper, DateIndexHelper dateIndexHelper) {
         this.config = config;
         this.metadataHelper = metadataHelper;
         this.dateIndexHelper = dateIndexHelper;
@@ -61,8 +61,8 @@ public class FunctionIndexQueryExpansionVisitor extends RebuildingVisitor {
      * @return The tree with additional index query portions
      */
     @SuppressWarnings("unchecked")
-    public static <T extends JexlNode> T expandFunctions(ShardQueryConfiguration config, MetadataHelper metadataHelper, DateIndexHelper dateIndexHelper,
-                    T script) {
+    public static <T extends JexlNode> T expandFunctions(ImmutableShardQueryConfiguration config, MetadataHelper metadataHelper,
+                    DateIndexHelper dateIndexHelper, T script) {
         JexlNode copy = copy(script);
 
         FunctionIndexQueryExpansionVisitor visitor = new FunctionIndexQueryExpansionVisitor(config, metadataHelper, dateIndexHelper);

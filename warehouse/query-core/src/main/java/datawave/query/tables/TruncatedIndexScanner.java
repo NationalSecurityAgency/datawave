@@ -19,7 +19,7 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Joiner;
 
-import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.config.ImmutableShardQueryConfiguration;
 import datawave.query.index.lookup.DataTypeFilter;
 import datawave.query.index.lookup.IndexInfo;
 import datawave.query.index.lookup.TruncatedIndexIterator;
@@ -56,7 +56,7 @@ public class TruncatedIndexScanner implements Iterator<Tuple2<String,IndexInfo>>
     private final DateIterator dateIterator;
     private final BitSetIterator bitsetIterator;
 
-    public TruncatedIndexScanner(ShardQueryConfiguration config) {
+    public TruncatedIndexScanner(ImmutableShardQueryConfiguration config) {
         this(config.getClient(), DateHelper.format(config.getBeginDate()), DateHelper.format(config.getEndDate()), config.getTableConsistencyLevels(),
                         config.getTableHints());
     }

@@ -30,7 +30,7 @@ import datawave.core.iterators.filter.GlobalIndexDataTypeFilter;
 import datawave.core.iterators.filter.GlobalIndexDateRangeFilter;
 import datawave.core.iterators.filter.GlobalIndexTermMatchingFilter;
 import datawave.query.Constants;
-import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.config.ImmutableShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.DoNotPerformOptimizedQueryException;
 import datawave.query.exceptions.IllegalRangeArgumentException;
@@ -130,7 +130,7 @@ public class ShardIndexQueryTableStaticMethods {
      * @throws IOException
      *             dates can't be formatted
      */
-    public static ScannerSession configureTermMatchOnly(ShardQueryConfiguration config, ScannerFactory scannerFactory, String tableName,
+    public static ScannerSession configureTermMatchOnly(ImmutableShardQueryConfiguration config, ScannerFactory scannerFactory, String tableName,
                     Collection<Range> ranges, Collection<String> literals, Collection<String> patterns, boolean reverseIndex, boolean limitToUniqueTerms)
                     throws InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException, IOException {
 
@@ -162,7 +162,7 @@ public class ShardIndexQueryTableStaticMethods {
         return bs;
     }
 
-    public static ScannerSession configureLimitedDiscovery(ShardQueryConfiguration config, ScannerFactory scannerFactory, String tableName,
+    public static ScannerSession configureLimitedDiscovery(ImmutableShardQueryConfiguration config, ScannerFactory scannerFactory, String tableName,
                     Collection<Range> ranges, Collection<String> literals, Collection<String> patterns, boolean reverseIndex, boolean limitToUniqueTerms)
                     throws InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException, IOException {
 
@@ -194,7 +194,7 @@ public class ShardIndexQueryTableStaticMethods {
         return bs;
     }
 
-    public static final void configureGlobalIndexDateRangeFilter(ShardQueryConfiguration config, ScannerBase bs, LongRange dateRange) {
+    public static final void configureGlobalIndexDateRangeFilter(ImmutableShardQueryConfiguration config, ScannerBase bs, LongRange dateRange) {
         // Setup the GlobalIndexDateRangeFilter
 
         if (log.isTraceEnabled()) {
@@ -211,7 +211,7 @@ public class ShardIndexQueryTableStaticMethods {
         }
     }
 
-    public static final IteratorSetting configureGlobalIndexDateRangeFilter(ShardQueryConfiguration config, LongRange dateRange) {
+    public static final IteratorSetting configureGlobalIndexDateRangeFilter(ImmutableShardQueryConfiguration config, LongRange dateRange) {
         // Setup the GlobalIndexDateRangeFilter
         if (log.isTraceEnabled()) {
             log.trace("Configuring GlobalIndexDateRangeFilter with " + dateRange);
@@ -222,7 +222,7 @@ public class ShardIndexQueryTableStaticMethods {
         return cfg;
     }
 
-    public static final IteratorSetting configureDateRangeIterator(ShardQueryConfiguration config) throws IOException {
+    public static final IteratorSetting configureDateRangeIterator(ImmutableShardQueryConfiguration config) throws IOException {
         // Setup the GlobalIndexDateRangeFilter
         if (log.isTraceEnabled()) {
             log.trace("Configuring configureDateRangeIterator ");
@@ -234,7 +234,7 @@ public class ShardIndexQueryTableStaticMethods {
         return cfg;
     }
 
-    public static final void configureGlobalIndexDataTypeFilter(ShardQueryConfiguration config, ScannerBase bs, Collection<String> dataTypes) {
+    public static final void configureGlobalIndexDataTypeFilter(ImmutableShardQueryConfiguration config, ScannerBase bs, Collection<String> dataTypes) {
         if (dataTypes == null || dataTypes.isEmpty()) {
             return;
         }
@@ -247,7 +247,7 @@ public class ShardIndexQueryTableStaticMethods {
         bs.addScanIterator(cfg);
     }
 
-    public static IteratorSetting configureGlobalIndexDataTypeFilter(ShardQueryConfiguration config, Collection<String> dataTypes) {
+    public static IteratorSetting configureGlobalIndexDataTypeFilter(ImmutableShardQueryConfiguration config, Collection<String> dataTypes) {
 
         if (log.isTraceEnabled()) {
             log.trace("Configuring GlobalIndexDataTypeFilter with " + dataTypes);
@@ -262,7 +262,7 @@ public class ShardIndexQueryTableStaticMethods {
         return cfg;
     }
 
-    public static final void configureGlobalIndexTermMatchingIterator(ShardQueryConfiguration config, ScannerBase bs, Collection<String> literals,
+    public static final void configureGlobalIndexTermMatchingIterator(ImmutableShardQueryConfiguration config, ScannerBase bs, Collection<String> literals,
                     Collection<String> patterns, boolean reverseIndex, boolean limitToUniqueTerms, Collection<String> expansionFields) {
         if (CollectionUtils.isEmpty(literals) && CollectionUtils.isEmpty(patterns)) {
             return;
@@ -288,13 +288,14 @@ public class ShardIndexQueryTableStaticMethods {
         setExpansionFields(config, bs, reverseIndex, expansionFields);
     }
 
-    public static final void setExpansionFields(ShardQueryConfiguration config, ScannerBase bs, boolean reverseIndex, Collection<String> expansionFields) {
+    public static final void setExpansionFields(ImmutableShardQueryConfiguration config, ScannerBase bs, boolean reverseIndex,
+                    Collection<String> expansionFields) {
         for (String field : getColumnFamilies(config, reverseIndex, expansionFields)) {
             bs.fetchColumnFamily(new Text(field));
         }
     }
 
-    public static final List<String> getColumnFamilies(ShardQueryConfiguration config, boolean reverseIndex, Collection<String> expansionFields) {
+    public static final List<String> getColumnFamilies(ImmutableShardQueryConfiguration config, boolean reverseIndex, Collection<String> expansionFields) {
         List<String> cfs = Lists.newLinkedList();
         // Now restrict the fields returned to those that are specified and then only those that are indexed or reverse indexed
         if (expansionFields == null || expansionFields.isEmpty()) {
@@ -311,7 +312,7 @@ public class ShardIndexQueryTableStaticMethods {
         return cfs;
     }
 
-    public static final IteratorSetting configureGlobalIndexTermMatchingIterator(ShardQueryConfiguration config, Collection<String> literals,
+    public static final IteratorSetting configureGlobalIndexTermMatchingIterator(ImmutableShardQueryConfiguration config, Collection<String> literals,
                     Collection<String> patterns, boolean reverseIndex, boolean limitToUniqueTerms) {
         if (CollectionUtils.isEmpty(literals) && CollectionUtils.isEmpty(patterns)) {
             return null;
@@ -367,7 +368,7 @@ public class ShardIndexQueryTableStaticMethods {
      *             for problems with threading execution
      */
     public static RefactoredRangeDescription getRegexRange(String fieldName, String normalizedQueryTerm, boolean fullTableScanEnabled,
-                    MetadataHelper metadataHelper, ShardQueryConfiguration config)
+                    MetadataHelper metadataHelper, ImmutableShardQueryConfiguration config)
                     throws JavaRegexAnalyzer.JavaRegexParseException, TableNotFoundException, ExecutionException {
         if (log.isDebugEnabled()) {
             log.debug("getRegexRange: " + normalizedQueryTerm);
@@ -470,7 +471,7 @@ public class ShardIndexQueryTableStaticMethods {
     }
 
     public static RefactoredRangeDescription getRegexRange(Map.Entry<String,String> entry, boolean fullTableScanEnabled, MetadataHelper metadataHelper,
-                    ShardQueryConfiguration config) throws JavaRegexAnalyzer.JavaRegexParseException, TableNotFoundException, ExecutionException {
+                    ImmutableShardQueryConfiguration config) throws JavaRegexAnalyzer.JavaRegexParseException, TableNotFoundException, ExecutionException {
         return getRegexRange(entry.getKey(), entry.getValue(), fullTableScanEnabled, metadataHelper, config);
     }
 
@@ -491,8 +492,8 @@ public class ShardIndexQueryTableStaticMethods {
      * @throws ExecutionException
      *             for issues with execution
      */
-    public static boolean shouldUseReverseIndex(JavaRegexAnalyzer analyzer, String fieldName, MetadataHelper metadataHelper, ShardQueryConfiguration config)
-                    throws TableNotFoundException, ExecutionException {
+    public static boolean shouldUseReverseIndex(JavaRegexAnalyzer analyzer, String fieldName, MetadataHelper metadataHelper,
+                    ImmutableShardQueryConfiguration config) throws TableNotFoundException, ExecutionException {
 
         String leadingLiteral = analyzer.getLeadingLiteral();
         String trailingLiteral = analyzer.getTrailingLiteral();
@@ -583,7 +584,7 @@ public class ShardIndexQueryTableStaticMethods {
      *            the query configuration
      * @return A literal with the realm information removed.
      */
-    private static String trimRealmFromLiteral(String literal, ShardQueryConfiguration config) {
+    private static String trimRealmFromLiteral(String literal, ImmutableShardQueryConfiguration config) {
         String retVal = null;
 
         List<String> exclusions = config.getRealmSuffixExclusionPatterns();

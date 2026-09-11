@@ -24,7 +24,7 @@ import com.google.common.collect.Sets;
 
 import datawave.query.Constants;
 import datawave.query.attributes.AttributeFactory;
-import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.config.ImmutableShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
@@ -75,7 +75,8 @@ public class EvaluationPhaseFilterFunctionsDescriptor implements JexlFunctionArg
          * indexed values
          */
         @Override
-        public JexlNode getIndexQuery(ShardQueryConfiguration config, MetadataHelper helper, DateIndexHelper dateIndexHelper, Set<String> datatypeFilter) {
+        public JexlNode getIndexQuery(ImmutableShardQueryConfiguration config, MetadataHelper helper, DateIndexHelper dateIndexHelper,
+                        Set<String> datatypeFilter) {
             FunctionJexlNodeVisitor functionMetadata = new FunctionJexlNodeVisitor();
             node.jjtAccept(functionMetadata, null);
             // in the special case of date functions and then only with the between methods,
@@ -88,7 +89,7 @@ public class EvaluationPhaseFilterFunctionsDescriptor implements JexlFunctionArg
             return TRUE_NODE;
         }
 
-        private JexlNode getShardsAndDaysQuery(FunctionJexlNodeVisitor functionMetadata, ShardQueryConfiguration config, MetadataHelper helper,
+        private JexlNode getShardsAndDaysQuery(FunctionJexlNodeVisitor functionMetadata, ImmutableShardQueryConfiguration config, MetadataHelper helper,
                         DateIndexHelper dateIndexHelper, Set<String> datatypeFilter) {
             try {
                 List<JexlNode> arguments = functionMetadata.args();

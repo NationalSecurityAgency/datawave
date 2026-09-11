@@ -10,7 +10,7 @@ import org.apache.commons.jexl3.parser.ParserTreeConstants;
 import org.apache.log4j.Logger;
 
 import datawave.query.Constants;
-import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.config.ImmutableShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.parser.JavaRegexAnalyzer;
 import datawave.query.parser.JavaRegexAnalyzer.JavaRegexParseException;
@@ -23,7 +23,7 @@ import datawave.query.util.MetadataHelper;
 public class CostEstimator {
 
     private static final Logger log = Logger.getLogger(CostEstimator.class);
-    protected ShardQueryConfiguration config;
+    protected ImmutableShardQueryConfiguration config;
     protected MetadataHelper helper;
     protected ScannerFactory scannerFactory;
 
@@ -33,7 +33,7 @@ public class CostEstimator {
         this.scannerFactory = visitor.getScannerFactory();
     }
 
-    public CostEstimator(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper) {
+    public CostEstimator(ImmutableShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper) {
         this.config = config;
         this.helper = helper;
         this.scannerFactory = scannerFactory;
