@@ -33,7 +33,6 @@ Tasks 01–03 validation gates passed.
 9. Do not instantiate a default parser internally when a configured parser is required.
 
 Be careful with `ModifierQueryNode`, `NotBooleanQueryNode`, grouped nodes, smart quotes, and processor-generated alternatives. Reuse existing Lucene visitor conventions.
-
 ## Tests
 
 Cover:
@@ -66,3 +65,12 @@ mvn -pl warehouse/query-core -am -DskipITs \
   -Dtest=LuceneSearchExpressionExtractorTest,TestLuceneToJexlQueryParser \
   -Dsurefire.failIfNoSpecifiedTests=false test
 ```
+
+
+## Completion notes
+
+- Added `LuceneSearchExpressionExtractor`, which consumes the injected `LuceneSyntaxQueryParser` tree, preserves positive/negative and phrase/standalone provenance, applies configured field eligibility, and emits ordered phrase criteria.
+- Added generated-JEXL merging that imports only `ProximityExpression` alternatives (not analyzer-generated equality predicates), with structural de-duplication through `SearchExpressions`; generated proximity distance is preferred for slop phrases.
+- Added focused coverage for fielded phrase provenance, explicit standalone terms, parser injection, and generated-expression filtering in `LuceneSearchExpressionExtractorTest`.
+- Validation passed: `mvn -pl warehouse/query-core -am -DskipITs -Dtest=LuceneSearchExpressionExtractorTest,TestLuceneToJexlQueryParser -Dsurefire.failIfNoSpecifiedTests=false test`.
+- Deliberate scope boundary: no `ShardQueryLogic` or query initialization/macro flow was changed; generated-JEXL input remains an explicit extractor method argument.
