@@ -109,8 +109,18 @@ public abstract class DelegatingQueryLogic implements QueryLogic<Object> {
     }
 
     @Override
-    public boolean isLongRunningQuery() {
-        return delegate.isLongRunningQuery();
+    public boolean isIntermediateEmptyPagesEnabled() {
+        return delegate.isIntermediateEmptyPagesEnabled();
+    }
+
+    @Override
+    public boolean isUseSynchronousRunningQuery() {
+        return delegate.isUseSynchronousRunningQuery();
+    }
+
+    @Override
+    public boolean isQueryLimiterEnabled() {
+        return delegate.isQueryLimiterEnabled();
     }
 
     @Override
