@@ -69,16 +69,42 @@ git subrepo pull <dir>
 ```
 ### Building
 
-It is recommended to build the project using multiple threads.  This will not build the starters, utilities, and services.
+The root build remains Java 11 by default. Builds run on Java 17 are supported through the `java17`
+profile and remain backward compatible by compiling with `--release 11`.
+
+When using `-Pjava17`, make sure Maven itself is running on a full JDK 17, not a JRE-only runtime.
+`mvn -version` should report a Java 17 runtime that includes `javac`. If Maven is launched with a
+trimmed runtime, compilation can fail with `error: release version 11 not supported`.
+
+It is recommended to build the project using multiple threads. This will not build the starters,
+utilities, and services.
+
+Build with Java 11:
 ```
 mvn -Ddocker-release -Ddist clean install -T 1C
 ```
 
-If you want to build the starters, util modules, and services as well then try this
+Build with Java 17:
+```
+mvn -Pjava17 -Ddocker-release -Ddist clean install -T 1C
+```
+
+If you want to build the starters, util modules, and services as well then try this:
+
+Java 11:
 ```
 mvn -Ddocker-release -Dmicroservice-docker -Ddist -Dutils -Dservices -Dstarters clean install -T 1C
 ```
-If you want to build the service apis but not the services themselves then add -DonlyServiceApis
+
+Java 17:
+```
+mvn -Pjava17 -Ddocker-release -Dmicroservice-docker -Ddist -Dutils -Dservices -Dstarters clean install -T 1C
+```
+
+If you want to build the service APIs but not the services themselves then add `-DonlyServiceApis`.
+
+When building microservices on Java 17, invoke Maven from the `microservices/` reactor (or another
+parent that defines the `java17` profile), not from an individual leaf module.
 
 NOTE: The util modules, starters, and services are actually tagged and deployed separately.
   Hence the snapshot versions within those sub repos are not connected together.

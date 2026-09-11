@@ -23,10 +23,23 @@ The id of the server matters, and should match what is used in the datawave pare
 
 ## Building Datawave
 
+The root build remains Java 11 by default. Builds run on Java 17 are supported through the
+`java17` profile and remain backward compatible by compiling with `--release 11`.
+
+When using `-Pjava17`, make sure Maven itself is running on a full JDK 17, not a JRE-only runtime.
+`mvn -version` should report a Java 17 runtime that includes `javac`. If Maven is launched with a
+trimmed runtime, compilation can fail with `error: release version 11 not supported`.
+
 To perform a full (non-release) 'dev' build  without unit tests:
 
 ```bash
 mvn -Ddeploy -Dtar -DskipTests -DskipITs clean install
+```
+
+To run the same build on Java 17:
+
+```bash
+mvn -Pjava17 -Ddeploy -Dtar -DskipTests -DskipITs clean install
 ```
 
 This command will produce the following deployment archives:
@@ -42,12 +55,24 @@ In order to build a release, you must also define the dist variable by adding `-
 mvn -Pexamples -Ddeploy -Dtar -Ddist -DskipTests -DskipITs clean install
 ```
 
+On Java 17:
+
+```bash
+mvn -Pjava17 -Pexamples -Ddeploy -Dtar -Ddist -DskipTests -DskipITs clean install
+```
+
 ### Building a Docker web image
 
 In order to build a Docker container for the web services, you can run with the following maven profiles: `-Pdeploy-ws,docker`
 
 ```bash
 mvn clean package -Passemble,deploy-ws -Pdocker -DskipTests -DskipITs
+```
+
+On Java 17:
+
+```bash
+mvn -Pjava17 clean package -Passemble,deploy-ws -Pdocker -DskipTests -DskipITs
 ```
 
 Note that this will build javadocs and source jars.
@@ -60,12 +85,35 @@ To build the RPM specify both the assemble and rpm profiles should be specified,
 mvn -Passemble,rpm -Ddeploy -Dtar -Ddist -DskipTests -DskipITs clean install
 ```
 
+On Java 17:
+
+```bash
+mvn -Pjava17 -Passemble,rpm -Ddeploy -Dtar -Ddist -DskipTests -DskipITs clean install
+```
+
 # Building Microservices
 
 Datawave web services utilize several microservices at runtime (currently authorization and auditing, although that
 list will expand soon). Datawave depends on api modules for some of these services, and the dependencies are set in
 the parent pom (see `version.datawave.*` properties) to released versions. If you wish to build the microservices
 for some reason, you can simply add `-Dservices` to your maven build command.  If you wish to build the starters you can add `-Dstarters` and for the utility modules add `-Dutils`.
+
+Examples:
+
+Java 11:
+
+```bash
+mvn -Dservices -Dstarters -Dutils -DskipTests -DskipITs clean install
+```
+
+Java 17:
+
+```bash
+mvn -Pjava17 -Dservices -Dstarters -Dutils -DskipTests -DskipITs clean install
+```
+
+If you are building from within the `microservices/` tree on Java 17, invoke Maven from the
+`microservices/` reactor so the `java17` profile is available to child modules.
 
 ### Releasing Microservices
 
