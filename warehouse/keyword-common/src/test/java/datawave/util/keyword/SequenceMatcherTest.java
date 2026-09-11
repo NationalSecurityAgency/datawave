@@ -105,15 +105,15 @@ public class SequenceMatcherTest {
 
             // Test with junk characters
             sm = new SequenceMatcher(ch -> ch == ' ', "a".repeat(40) + "b".repeat(40), "a".repeat(44) + "b".repeat(40) + " ".repeat(20), true);
-            Set<Character> expectedJunk = new HashSet<>();
-            expectedJunk.add(' ');
+            Set<Integer> expectedJunk = new HashSet<>();
+            expectedJunk.add((int) ' ');
             assertEquals(expectedJunk, sm.getBJunk());
 
             // Test with multiple junk characters
             sm = new SequenceMatcher(ch -> ch == ' ' || ch == 'b', "a".repeat(40) + "b".repeat(40), "a".repeat(44) + "b".repeat(40) + " ".repeat(20), true);
             expectedJunk = new HashSet<>();
-            expectedJunk.add(' ');
-            expectedJunk.add('b');
+            expectedJunk.add((int) ' ');
+            expectedJunk.add((int) 'b');
             assertEquals(expectedJunk, sm.getBJunk());
         }
     }
@@ -283,6 +283,23 @@ public class SequenceMatcherTest {
         // Test with single character
         sm = new SequenceMatcher(null, "a", "a", true);
         assertEquals(1.0, sm.ratio(), 0.001);
+    }
+
+    @Test
+    public void testSupplementaryUnicodeCharactersAreComparedAsCodePoints() {
+        SequenceMatcher sm = new SequenceMatcher("😀", "😁");
+        assertEquals(0.0, sm.ratio());
+        assertEquals(0.0, sm.quickRatio());
+
+        sm.setSequences("a😀b", "x😀y");
+        SequenceMatcher.Match match = sm.findLongestMatch(0, 3, 0, 3);
+        assertEquals(1, match.aOffset);
+        assertEquals(1, match.bOffset);
+        assertEquals(1, match.size);
+
+        int grinningFace = "😀".codePointAt(0);
+        sm = new SequenceMatcher(codePoint -> codePoint == grinningFace, "a😀b", "a😀b", true);
+        assertEquals(Set.of(grinningFace), sm.getBJunk());
     }
 
     /**

@@ -1,6 +1,7 @@
 package datawave.util.keyword;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -52,16 +53,16 @@ import java.util.Set;
 public class SequenceMatcher {
 
     /** first sequence */
-    private String a;
+    private int[] a;
 
     /** second sequence; differences are computed as "what do we need to do to 'a' to change it into 'b'" */
-    private String b;
+    private int[] b;
 
     /** <code>for x in b, b2j[x]</code> is a list of the indices (into b) at which x appears; junk and popular elements do not appear */
-    private Map<Character,List<Integer>> b2j;
+    private Map<Integer,List<Integer>> b2j;
 
     /** the items in b for which {@link #junkFilter} is True. */
-    private Set<Character> bJunk;
+    private Set<Integer> bJunk;
 
     /** autoJunk should be set to <code>false</code> to disable the "automatic junk heuristic" that treats popular elements as junk. */
     private final boolean autoJunk;
@@ -102,7 +103,7 @@ public class SequenceMatcher {
      * <code>for x in b</code>, <code>fullBCount[x]</code> equals the number of times x appears in b; only materialized if really needed (used only for
      * computing {@link #quickRatio()})
      */
-    private Map<Character,Integer> fullBCount;
+    private Map<Integer,Integer> fullBCount;
 
     /**
      * a user-supplied function taking a sequence element and returning true iff the element is "junk". Only {@link #chainB()} uses this. Use
@@ -196,10 +197,11 @@ public class SequenceMatcher {
      */
 
     public void setSequenceA(String a) {
-        if (a.equals(this.a)) {
+        int[] codePoints = a.codePoints().toArray();
+        if (Arrays.equals(codePoints, this.a)) {
             return;
         }
-        this.a = a;
+        this.a = codePoints;
         this.matchingBlocks = null;
         this.opcodes = null;
         this.fullBCount = null;
@@ -215,10 +217,11 @@ public class SequenceMatcher {
      *            the second sequence to be compared
      */
     public void setSequenceB(String b) {
-        if (b.equals(this.b)) {
+        int[] codePoints = b.codePoints().toArray();
+        if (Arrays.equals(codePoints, this.b)) {
             return;
         }
-        this.b = b;
+        this.b = codePoints;
         this.matchingBlocks = null;
         this.opcodes = null;
         this.fullBCount = null;
@@ -251,34 +254,34 @@ public class SequenceMatcher {
     private void chainB() {
 
         this.b2j = new HashMap<>();
-        for (int i = 0; i < b.length(); i++) {
-            char elt = b.charAt(i);
+        for (int i = 0; i < b.length; i++) {
+            int elt = b[i];
             b2j.computeIfAbsent(elt, k -> new ArrayList<>()).add(i);
         }
 
         this.bJunk = new HashSet<>();
         if (junkFilter != null) {
-            for (char elt : b2j.keySet()) {
+            for (int elt : b2j.keySet()) {
                 if (junkFilter.isJunk(elt)) {
                     bJunk.add(elt);
                 }
             }
-            for (char elt : bJunk) {
+            for (int elt : bJunk) {
                 b2j.remove(elt);
             }
         }
 
         /* nonjunk items in b treated as junk by the heuristic (if used). */
-        Set<Character> bPopular = new HashSet<>();
-        int n = b.length();
+        Set<Integer> bPopular = new HashSet<>();
+        int n = b.length;
         if (autoJunk && n >= 200) {
             int nTest = n / 100 + 1;
-            for (Map.Entry<Character,List<Integer>> entry : b2j.entrySet()) {
+            for (Map.Entry<Integer,List<Integer>> entry : b2j.entrySet()) {
                 if (entry.getValue().size() > nTest) {
                     bPopular.add(entry.getKey());
                 }
             }
-            for (char elt : bPopular) {
+            for (int elt : bPopular) {
                 b2j.remove(elt);
             }
         }
@@ -346,7 +349,7 @@ public class SequenceMatcher {
 
         for (int i = alo; i < ahi; i++) {
             newj2len.clear();
-            for (int j : b2j.getOrDefault(a.charAt(i), EMPTY_INT_LIST)) {
+            for (int j : b2j.getOrDefault(a[i], EMPTY_INT_LIST)) {
                 if (j < blo)
                     continue;
                 if (j >= bhi)
@@ -365,23 +368,21 @@ public class SequenceMatcher {
             newj2len = temp;
         }
 
-        while (besti > alo && bestj > blo && !bJunk.contains(b.charAt(bestj - 1)) && a.charAt(besti - 1) == b.charAt(bestj - 1)) {
+        while (besti > alo && bestj > blo && !bJunk.contains(b[bestj - 1]) && a[besti - 1] == b[bestj - 1]) {
             besti--;
             bestj--;
             bestSize++;
         }
-        while (besti + bestSize < ahi && bestj + bestSize < bhi && !bJunk.contains(b.charAt(bestj + bestSize))
-                        && a.charAt(besti + bestSize) == b.charAt(bestj + bestSize)) {
+        while (besti + bestSize < ahi && bestj + bestSize < bhi && !bJunk.contains(b[bestj + bestSize]) && a[besti + bestSize] == b[bestj + bestSize]) {
             bestSize++;
         }
 
-        while (besti > alo && bestj > blo && bJunk.contains(b.charAt(bestj - 1)) && a.charAt(besti - 1) == b.charAt(bestj - 1)) {
+        while (besti > alo && bestj > blo && bJunk.contains(b[bestj - 1]) && a[besti - 1] == b[bestj - 1]) {
             besti--;
             bestj--;
             bestSize++;
         }
-        while (besti + bestSize < ahi && bestj + bestSize < bhi && bJunk.contains(b.charAt(bestj + bestSize))
-                        && a.charAt(besti + bestSize) == b.charAt(bestj + bestSize)) {
+        while (besti + bestSize < ahi && bestj + bestSize < bhi && bJunk.contains(b[bestj + bestSize]) && a[besti + bestSize] == b[bestj + bestSize]) {
             bestSize++;
         }
 
@@ -409,8 +410,8 @@ public class SequenceMatcher {
         if (matchingBlocks != null) {
             return matchingBlocks;
         }
-        int la = a.length();
-        int lb = b.length();
+        int la = a.length;
+        int lb = b.length;
 
         // This is most naturally expressed as a recursive algorithm, but
         // at least one user bumped into extreme use cases that exceeded
@@ -549,7 +550,7 @@ public class SequenceMatcher {
      */
     public double ratio() {
         int matches = getMatchingBlocks().stream().mapToInt(m -> m.size).sum();
-        return calculateRatio(matches, a.length() + b.length());
+        return calculateRatio(matches, a.length + b.length);
     }
 
     /**
@@ -563,24 +564,20 @@ public class SequenceMatcher {
     public double quickRatio() {
         if (fullBCount == null) {
             fullBCount = new HashMap<>();
-            // Use charAt() instead of toCharArray() to avoid array creation
-            for (int i = 0; i < b.length(); i++) {
-                char elt = b.charAt(i);
+            for (int elt : b) {
                 fullBCount.put(elt, fullBCount.getOrDefault(elt, 0) + 1);
             }
         }
-        Map<Character,Integer> avail = new HashMap<>();
+        Map<Integer,Integer> avail = new HashMap<>();
         int matches = 0;
-        // Use charAt() instead of toCharArray() to avoid array creation
-        for (int i = 0; i < a.length(); i++) {
-            char elt = a.charAt(i);
+        for (int elt : a) {
             int numb = avail.getOrDefault(elt, fullBCount.getOrDefault(elt, 0));
             avail.put(elt, numb - 1);
             if (numb > 0) {
                 matches++;
             }
         }
-        return calculateRatio(matches, a.length() + b.length());
+        return calculateRatio(matches, a.length + b.length);
     }
 
     /**
@@ -592,8 +589,8 @@ public class SequenceMatcher {
      * @return an upper bound on measure of the sequences' similarity, a float in <code>[0,1]</code>
      */
     public double realQuickRatio() {
-        int la = a.length();
-        int lb = b.length();
+        int la = a.length;
+        int lb = b.length;
         return calculateRatio(Math.min(la, lb), la + lb);
     }
 
@@ -602,7 +599,7 @@ public class SequenceMatcher {
      *
      * @return the set of characters in b that are considered junk
      */
-    public Set<Character> getBJunk() {
+    public Set<Integer> getBJunk() {
         return new HashSet<>(bJunk);
     }
 
@@ -696,7 +693,7 @@ public class SequenceMatcher {
          *            the character to evaluate.
          * @return true of the input character should be considered junk.
          */
-        boolean isJunk(char ch);
+        boolean isJunk(int codePoint);
     }
 
     public static final class Match {
