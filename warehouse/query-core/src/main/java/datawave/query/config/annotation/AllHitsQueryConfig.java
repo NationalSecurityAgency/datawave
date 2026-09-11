@@ -8,6 +8,8 @@ import java.util.Set;
 
 import datawave.data.normalizer.Normalizer;
 import datawave.query.transformer.annotation.AllHitsFactory;
+import datawave.query.transformer.annotation.KeywordParser;
+import datawave.query.transformer.annotation.QueryExpressionExtractor;
 import datawave.query.transformer.annotation.TermExtractor;
 
 public class AllHitsQueryConfig implements Serializable {
@@ -36,6 +38,13 @@ public class AllHitsQueryConfig implements Serializable {
 
     private TermExtractor queryTermExtractor;
 
+    /** Whether values from one annotation boundary may satisfy successive components. */
+    private boolean flattenBoundary = false;
+
+    private KeywordParser keywordParser;
+
+    private QueryExpressionExtractor queryExpressionExtractor;
+
     private Normalizer<String> termNormalizer;
 
     /**
@@ -56,6 +65,9 @@ public class AllHitsQueryConfig implements Serializable {
         setAllHitsFactoryClass(other.getAllHitsFactoryClass());
         setTargetField(other.getTargetField());
         setQueryTermExtractor(other.getQueryTermExtractor());
+        setFlattenBoundary(other.isFlattenBoundary());
+        setKeywordParser(other.getKeywordParser());
+        setQueryExpressionExtractor(other.getQueryExpressionExtractor());
         setTermNormalizer(other.getTermNormalizer());
         setAnnotationEnrichmentFieldMap(other.getAnnotationEnrichmentFieldMap());
         setAnnotationConfig(other.getAnnotationConfig());
@@ -76,6 +88,9 @@ public class AllHitsQueryConfig implements Serializable {
                 Objects.equals(getAllHitsFactoryClass(), that.getAllHitsFactoryClass()) &&
                 Objects.equals(getTargetField(), that.getTargetField()) &&
                 Objects.equals(getQueryTermExtractor(), that.getQueryTermExtractor()) &&
+                Objects.equals(isFlattenBoundary(), that.isFlattenBoundary()) &&
+                Objects.equals(getKeywordParser(), that.getKeywordParser()) &&
+                Objects.equals(getQueryExpressionExtractor(), that.getQueryExpressionExtractor()) &&
                 Objects.equals(getTermNormalizer(), that.getTermNormalizer()) &&
                 Objects.equals(getAnnotationEnrichmentFieldMap(), that.getAnnotationEnrichmentFieldMap()) &&
                 Objects.equals(getAnnotationConfig(), that.getAnnotationConfig());
@@ -92,6 +107,9 @@ public class AllHitsQueryConfig implements Serializable {
                 getAllHitsFactoryClass(),
                 getTargetField(),
                 getQueryTermExtractor(),
+                isFlattenBoundary(),
+                getKeywordParser(),
+                getQueryExpressionExtractor(),
                 getTermNormalizer(),
                 getAnnotationEnrichmentFieldMap(),
                 getAnnotationConfig()
@@ -153,6 +171,30 @@ public class AllHitsQueryConfig implements Serializable {
 
     public void setQueryTermExtractor(TermExtractor queryTermExtractor) {
         this.queryTermExtractor = queryTermExtractor;
+    }
+
+    public boolean isFlattenBoundary() {
+        return flattenBoundary;
+    }
+
+    public void setFlattenBoundary(boolean flattenBoundary) {
+        this.flattenBoundary = flattenBoundary;
+    }
+
+    public KeywordParser getKeywordParser() {
+        return keywordParser;
+    }
+
+    public void setKeywordParser(KeywordParser keywordParser) {
+        this.keywordParser = keywordParser;
+    }
+
+    public QueryExpressionExtractor getQueryExpressionExtractor() {
+        return queryExpressionExtractor;
+    }
+
+    public void setQueryExpressionExtractor(QueryExpressionExtractor queryExpressionExtractor) {
+        this.queryExpressionExtractor = queryExpressionExtractor;
     }
 
     public Normalizer<String> getTermNormalizer() {

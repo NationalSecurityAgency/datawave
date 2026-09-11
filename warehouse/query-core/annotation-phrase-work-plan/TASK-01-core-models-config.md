@@ -62,3 +62,11 @@ mvn -pl warehouse/query-core -am -DskipITs \
   -Dtest=TermExtractorTest,ShardQueryConfigurationTest,SearchExpressionsTest,AllHitsQueryConfigTest \
   -Dsurefire.failIfNoSpecifiedTests=false test
 ```
+
+## Completion notes
+
+- Added immutable serializable `SearchExpression`, `StandalonePatternExpression`, `ProximityExpression`, and `SearchExpressions` models. Equality uses pattern source/flags, ordered component sequences, and multiplicity-preserving canonical unordered sequences; compiled `Pattern` instances are not used.
+- Added serializable `KeywordParser` and `QueryExpressionExtractor` interfaces.
+- Added `flattenBoundary`, parser, and query extractor configuration properties to `AllHitsQueryConfig`, including copy/equality/hash support. Existing `TermExtractor` remains unchanged for compatibility and `AnnotationHitsTransformer` was not integrated.
+- Added focused tests in `SearchExpressionsTest` and `AllHitsQueryConfigTest`.
+- Validation passed with the command above: 58 tests, 0 failures, 0 errors. Existing checkstyle output contained only pre-existing repository import-control warnings.

@@ -31,7 +31,7 @@ Extend `AnnotationHitsTransformer` from standalone keyword matching to structure
 
 ## Tracking
 
-- [ ] [Task 01 — Core models and configuration](TASK-01-core-models-config.md)
+- [x] [Task 01 — Core models and configuration](TASK-01-core-models-config.md)
 - [ ] [Task 02 — Explicit keyword parser](TASK-02-keyword-parser.md)
 - [ ] [Task 03 — JEXL structured extraction](TASK-03-jexl-extractor.md)
 - [ ] [Task 04 — Lucene extraction and alternative merging](TASK-04-lucene-extractor.md)
