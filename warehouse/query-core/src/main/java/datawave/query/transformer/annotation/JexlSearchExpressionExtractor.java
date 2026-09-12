@@ -11,6 +11,7 @@ import org.apache.commons.jexl3.parser.ASTArguments;
 import org.apache.commons.jexl3.parser.ASTEQNode;
 import org.apache.commons.jexl3.parser.ASTERNode;
 import org.apache.commons.jexl3.parser.ASTFunctionNode;
+import org.apache.commons.jexl3.parser.ASTIdentifier;
 import org.apache.commons.jexl3.parser.ASTNamespaceIdentifier;
 import org.apache.commons.jexl3.parser.ASTNotNode;
 import org.apache.commons.jexl3.parser.JexlNode;
@@ -151,7 +152,8 @@ public class JexlSearchExpressionExtractor implements QueryExpressionExtractor, 
         }
         if (termStart > args.size() || (termStart > 0 && !isMap(args, termStart - 1)))
             throw new IllegalArgumentException("Malformed content function: " + name);
-        if (termStart == 2 && !eligibleZone(args.get(0)))
+        boolean fielded = termStart == 3 || (!ContentFunctions.CONTENT_WITHIN_FUNCTION_NAME.equals(name) && termStart == 2 && !isMap(args, 0));
+        if (fielded && !eligibleZone(args.get(0)))
             return null;
         List<StandalonePatternExpression> terms = new ArrayList<>();
         for (int i = termStart; i < args.size(); i++) {
@@ -183,7 +185,9 @@ public class JexlSearchExpressionExtractor implements QueryExpressionExtractor, 
     }
 
     private static boolean isMap(List<JexlNode> args, int index) {
-        return index < args.size() && "termOffsetMap".equals(JexlASTHelper.getIdentifier(args.get(index)));
+        if (index >= args.size() || !(args.get(index) instanceof ASTIdentifier))
+            return false;
+        return "termOffsetMap".equals(JexlASTHelper.getIdentifier(args.get(index)));
     }
 
     private static boolean isNumber(List<JexlNode> args, int index) {

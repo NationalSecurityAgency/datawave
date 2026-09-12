@@ -43,6 +43,31 @@ class JexlSearchExpressionExtractorTest {
     }
 
     @Test
+    void coversFieldedAndUnfieldedSignaturesForEachSupportedFunction() {
+        assertEquals(1, new JexlSearchExpressionExtractor(Set.of("FIELD")).extract("content:adjacent(termOffsetMap, 'a', 'b')").size());
+        assertEquals(1, new JexlSearchExpressionExtractor(Set.of("FIELD")).extract("content:adjacent('FIELD', termOffsetMap, 'c', 'd')").size());
+        assertEquals(1, new JexlSearchExpressionExtractor(Set.of("FIELD")).extract("content:within(3, termOffsetMap, 'e', 'f')").size());
+        assertEquals(1, new JexlSearchExpressionExtractor(Set.of("FIELD")).extract("content:within('FIELD', 4, termOffsetMap, 'g', 'h')").size());
+        assertEquals(1, new JexlSearchExpressionExtractor(Set.of("FIELD")).extract("content:phrase(FIELD, termOffsetMap, 'i', 'j')").size());
+
+    }
+
+    @Test
+    void retainsPhraseAndExplicitStandaloneWithSameLiteral() {
+        SearchExpressions expressions = new JexlSearchExpressionExtractor(null).extract("A == 'same' && content:phrase(termOffsetMap, 'same', 'other')");
+        assertEquals(2, expressions.size());
+        assertTrue(expressions.getExpressions().stream().anyMatch(StandalonePatternExpression.class::isInstance));
+        assertTrue(expressions.getExpressions().stream().anyMatch(ProximityExpression.class::isInstance));
+    }
+
+    @Test
+    void malformedSupportedFunctionsFailLikeContentFunctionValidation() {
+        assertThrows(IllegalArgumentException.class,
+                        () -> new JexlSearchExpressionExtractor(null).extract("content:within('not-a-distance', termOffsetMap, 'a', 'b')"));
+        assertThrows(IllegalArgumentException.class, () -> new JexlSearchExpressionExtractor(null).extract("content:phrase(termOffsetMap, FIELD)"));
+    }
+
+    @Test
     void regexStandaloneAndUnaryMinusDistanceIsRejectedByTheModel() {
         assertThrows(IllegalArgumentException.class,
                         () -> new JexlSearchExpressionExtractor(null).extract("A =~ 'Ab.*' && content:within(-2, termOffsetMap, 'x', 'y')"));
