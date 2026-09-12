@@ -52,7 +52,7 @@
                     <artifactId>*</artifactId>
                 </exclusion>
                 <exclusion>
-                    <groupId>com.sun.jersey</groupId>
+                    <groupId>org.glassfish.jersey.core</groupId>
                     <artifactId>*</artifactId>
                 </exclusion>
                 <exclusion>
@@ -74,7 +74,7 @@
             <artifactId>hadoop-mapreduce-client-core</artifactId>
             <exclusions>
                 <exclusion>
-                    <groupId>com.sun.jersey</groupId>
+                    <groupId>org.glassfish.jersey.core</groupId>
                     <artifactId>*</artifactId>
                 </exclusion>
                 <exclusion>
