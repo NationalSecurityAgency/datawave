@@ -69,6 +69,6 @@ mvn -pl warehouse/query-core -am -DskipITs \
 
 - Added `DefaultKeywordSearchExpressionParser`, with constructor injection for a configured normalizer and a default constructor using the standard lower-case/no-diacritics normalizer.
 - Added deterministic scanner parsing for unescaped whitespace, escaped whitespace/backslashes, preserved regex backslashes, and literal trailing backslashes. Components are normalized independently and emitted as standalone or ordered distance-1 expressions; empty results are skipped and model equality deduplicates criteria.
-- Added focused tests covering standalone/phrase parsing, whitespace, regex components, escaped whitespace/backslashes, trailing escaping, empty values, normalization, and duplicate criteria.
+- Added focused tests covering standalone/phrase parsing, whitespace, regex components and backslashes, escaped whitespace/backslashes, trailing escaping, empty values, normalization to one surviving component, result immutability, and duplicate criteria.
 - The parser accepts one already-decoded logical value and does not parse URL/JSON/semicolon outer formats; no transformer or JEXL integration was started.
-- Validation passed: `mvn -pl warehouse/query-core -am -DskipITs -Dtest=DefaultKeywordSearchExpressionParserTest,AnnotationHitsTransformerTest -Dsurefire.failIfNoSpecifiedTests=false test` (87 tests, 0 failures, 0 errors).
+- Validation passed: `mvn -pl warehouse/query-core -am -DskipITs -Dtest=DefaultKeywordSearchExpressionParserTest,AnnotationHitsTransformerTest -Dsurefire.failIfNoSpecifiedTests=false test` (92 tests, 0 failures, 0 errors).

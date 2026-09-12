@@ -2,6 +2,8 @@ package datawave.query.transformer.annotation;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.util.List;
 
@@ -60,6 +62,36 @@ public class DefaultKeywordSearchExpressionParserTest {
     public void componentsAreNormalizedIndependently() {
         ProximityExpression phrase = (ProximityExpression) parser.parse("Néw YORK").getExpressions().get(0);
         assertEquals(List.of("new", "york"), sources(phrase.getComponents()));
+    }
+
+    @Test
+    public void oneSurvivingComponentBecomesStandalone() {
+        Normalizer<String> normalizer = mock(Normalizer.class);
+        when(normalizer.normalize("discarded")).thenReturn("");
+        when(normalizer.normalize("CITY")).thenReturn("city");
+
+        SearchExpressions expressions = new DefaultKeywordSearchExpressionParser(normalizer).parse("discarded CITY");
+        assertEquals(1, expressions.size());
+        assertTrue(expressions.getExpressions().get(0) instanceof StandalonePatternExpression);
+        assertEquals("city", ((StandalonePatternExpression) expressions.getExpressions().get(0)).getSource());
+    }
+
+    @Test
+    public void regexBackslashesArePreserved() {
+        SearchExpression expression = parser.parse("foo\\.bar").getExpressions().get(0);
+        assertTrue(expression instanceof StandalonePatternExpression);
+        assertEquals("foo\\.bar", ((StandalonePatternExpression) expression).getSource());
+    }
+
+    @Test
+    public void returnedExpressionCollectionIsImmutable() {
+        SearchExpressions expressions = parser.parse("city");
+        try {
+            expressions.getExpressions().add(expressions.getExpressions().get(0));
+        } catch (UnsupportedOperationException e) {
+            return;
+        }
+        throw new AssertionError("parser result must not expose a mutable expression collection");
     }
 
     private List<String> sources(List<StandalonePatternExpression> expressions) {
