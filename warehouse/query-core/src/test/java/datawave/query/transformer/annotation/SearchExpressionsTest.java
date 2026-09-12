@@ -30,6 +30,7 @@ public class SearchExpressionsTest {
         assertEquals(first, equivalent);
         assertNotEquals(first, missingRepeat);
         assertEquals(3, first.getComponents().size());
+        assertThrows(UnsupportedOperationException.class, () -> first.getComponents().add(pattern("c")));
     }
 
     @Test

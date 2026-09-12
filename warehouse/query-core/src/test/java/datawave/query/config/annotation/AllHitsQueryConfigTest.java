@@ -18,6 +18,10 @@ public class AllHitsQueryConfigTest {
         AllHitsQueryConfig copy = new AllHitsQueryConfig(config);
         assertEquals(config, copy);
         assertEquals(config.hashCode(), copy.hashCode());
+
+        AllHitsQueryConfig defaultConfig = new AllHitsQueryConfig();
+        assertNotEquals(defaultConfig, config);
+        assertNotEquals(defaultConfig.hashCode(), config.hashCode());
     }
 
     @Test
