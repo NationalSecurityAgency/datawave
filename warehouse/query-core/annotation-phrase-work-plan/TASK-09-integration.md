@@ -87,9 +87,19 @@ Extend transformer and logic tests for:
 - paging/updateConfig cache transitions;
 - custom factory error path still works.
 
-## Validation gate
+## Completion notes
 
-Before Task 10:
+- Prepared structured annotation criteria in `ShardQueryLogic` from the single macro-expanded source, using the configured Lucene parser and preserving original pre-planning JEXL semantics. Passed prepared criteria, keyword parser, and flatten configuration into `AnnotationHitsTransformer`.
+- Integrated standalone, ordered, and unordered matching with phrase-aware factory adaptation, explicit keyword overrides, flatten-boundary query overrides, and legacy factory compatibility. Existing enrichment/cleanup and response models remain unchanged.
+- Added `TermExtractor.getFields()` for field-aware structured preparation.
+- Added `Task09IntegrationCoverageTest` covering direct JEXL provenance/negation, macro-expanded Lucene source and generated-alternative filtering, keyword escaping/phrase parsing, flatten-boundary behavior, unordered distance/score handling, and mixed phrase factory expansion.
+- Validation passed without `ShardQueryLogicTest`:
+  `mvn -q -pl warehouse/query-core -am -DskipITs -Dtest=AnnotationHitsTransformerTest,AllHitsFactoryTest,TermExtractorTest,DefaultKeywordSearchExpressionParserTest,JexlSearchExpressionExtractorTest,LuceneSearchExpressionExtractorTest,OrderedAnnotationMatcherTest,UnorderedAnnotationMatcherTest,Task09IntegrationCoverageTest -Dsurefire.failIfNoSpecifiedTests=false test`.
+- Removed the remaining annotation fixtures, annotation-table setup, and annotation-only helper methods from `ShardQueryLogicTest`; its remaining protected support is limited to the generic query test harness. The focused annotation test class owns the all-hits setup and helpers.
+- Validation: `mvn -q -pl warehouse/query-core -DskipITs -Dtest=AnnotationHitsTransformerTest -Dsurefire.failIfNoSpecifiedTests=false test` passed after the added tests.
+- Deliberate compatibility behavior: standalone-only results continue through the legacy virtual factory method so existing custom factory subclasses and mocks remain intercepted; mixed phrase results use `createFromHits`.
+
+## Validation gate
 
 - Full `AnnotationHitsTransformerTest`, `AllHitsFactoryTest`, `TermExtractorTest`, extractor/parser/matcher tests, and annotation sections of `ShardQueryLogicTest` pass.
 - Existing standalone behavior is unchanged without phrases.

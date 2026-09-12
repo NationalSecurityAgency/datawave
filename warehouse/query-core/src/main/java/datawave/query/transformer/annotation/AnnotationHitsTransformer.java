@@ -63,6 +63,7 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
     public static final String MIN_SCORE_PARAMETER = "annotation.all.hits.minScore";
     public static final String KEYWORDS_PARAMETER = "annotation.all.hits.keywords";
     public static final String TIMEUNIT_PARAMETER = "annotation.all.hits.timeunit";
+    public static final String FLATTEN_BOUNDARY_PARAMETER = "annotation.all.hits.flattenBoundary";
     public static final String KEYWORD_DELIMITER = ";";
 
     private static final boolean DEFAULT_ENABLED = false;
@@ -85,6 +86,8 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
     private final String targetField;
     private final TermExtractor queryTermExtractor;
     private final Normalizer<String> termNormalizer;
+    private final SearchExpressions preparedExpressions;
+    private final KeywordParser keywordParser;
     /**
      * A snapshot of the jexl query string, taken at construction time. This transformer may be constructed before
      * {@link ShardQueryConfiguration#getOriginalJexlQuery()} has been populated (e.g. {@code ShardQueryLogic.loadQueryParameters()} fetches the transformer,
@@ -105,13 +108,23 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
     private TimeUnit timeUnit = DEFAULT_TIMEUNIT;
     private List<String> forcedReturnFields = new ArrayList<>();
     private boolean forcedGroupingNotation = false;
+    private boolean flattenBoundary;
 
+    private SearchExpressions searchExpressions;
     private Set<Pattern> searchHitTerms;
     private ObjectMapper objectMapper;
 
     public AnnotationHitsTransformer(ShardQueryConfiguration shardQueryConfig, @Nullable String jexlQueryString, TermExtractor queryTermExtractor,
                     Normalizer<String> termNormalizer, AnnotationDataAccess annotationDataAccess, AllHitsFactory allHitsFactory, int maxContextBoundary,
                     Set<String> validTypes, String targetField, Map<String,String> enrichmentFieldMap) {
+        this(shardQueryConfig, jexlQueryString, queryTermExtractor, termNormalizer, annotationDataAccess, allHitsFactory, maxContextBoundary, validTypes,
+                        targetField, enrichmentFieldMap, null, null, false);
+    }
+
+    public AnnotationHitsTransformer(ShardQueryConfiguration shardQueryConfig, @Nullable String jexlQueryString, TermExtractor queryTermExtractor,
+                    Normalizer<String> termNormalizer, AnnotationDataAccess annotationDataAccess, AllHitsFactory allHitsFactory, int maxContextBoundary,
+                    Set<String> validTypes, String targetField, Map<String,String> enrichmentFieldMap, SearchExpressions preparedExpressions,
+                    KeywordParser keywordParser, boolean flattenBoundary) {
         this.shardQueryConfig = shardQueryConfig;
         this.jexlQueryString = jexlQueryString;
         this.queryTermExtractor = queryTermExtractor;
@@ -122,6 +135,9 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
         this.validTypes = validTypes;
         this.targetField = targetField;
         this.enrichmentFieldMap = enrichmentFieldMap;
+        this.preparedExpressions = preparedExpressions;
+        this.keywordParser = keywordParser;
+        this.flattenBoundary = flattenBoundary;
     }
 
     @Override
@@ -148,6 +164,8 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
         }
         // go no further if not enabled, searchHitTerms will be null so the transformer will never do anything
         if (!enabled) {
+            searchHitTerms = new HashSet<>();
+            searchExpressions = new SearchExpressions();
             return;
         }
 
@@ -188,6 +206,10 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
             log.info("all hits timeUnit: " + timeUnit);
         }
 
+        String flattenStr = settings.findParameter(FLATTEN_BOUNDARY_PARAMETER).getParameterValue();
+        if (!flattenStr.isBlank())
+            flattenBoundary = Boolean.parseBoolean(flattenStr);
+
         objectMapper = new ObjectMapper();
 
         String keywordStr = settings.findParameter(KEYWORDS_PARAMETER).getParameterValue();
@@ -206,8 +228,19 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
             }
             searchHitTerms = new HashSet<>();
             for (String keyword : keywords) {
+                if (keywordParser != null) {
+                    if (searchExpressions == null)
+                        searchExpressions = new SearchExpressions(keywordParser.parse(keyword).getExpressions());
+                    else {
+                        List<SearchExpression> values = new ArrayList<>(searchExpressions.getExpressions());
+                        values.addAll(keywordParser.parse(keyword).getExpressions());
+                        searchExpressions = new SearchExpressions(values);
+                    }
+                }
                 searchHitTerms.add(compileNormalized(termNormalizer.normalize(keyword)));
             }
+        } else {
+            searchExpressions = preparedExpressions;
         }
 
         // test for changes that need to be made to the query to support field enrichment from the event
@@ -291,26 +324,34 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
         }
 
         try {
-            // extract terms to lookup hits on if they haven't been extracted yet
             if (searchHitTerms == null) {
+                searchExpressions = preparedExpressions;
+
                 try {
                     // prefer the live value from the shared config: this transformer may have been constructed
                     // before the config's original jexl query was populated (see field javadoc above)
                     String currentJexlQueryString = shardQueryConfig.getOriginalJexlQuery();
-                    if (currentJexlQueryString == null) {
+                    if (currentJexlQueryString == null || currentJexlQueryString.isBlank())
                         currentJexlQueryString = jexlQueryString;
-                    }
                     searchHitTerms = new HashSet<>();
                     for (String normalized : queryTermExtractor.extract(currentJexlQueryString, termNormalizer)) {
                         searchHitTerms.add(compileNormalized(normalized));
                     }
+                    if (searchExpressions == null) {
+                        List<SearchExpression> expressions = new ArrayList<>();
+                        for (Pattern normalized : searchHitTerms)
+                            expressions.add(new StandalonePatternExpression(normalized.pattern()));
+                        searchExpressions = new SearchExpressions(expressions);
+                    }
                 } catch (ParseException | JavaRegexAnalyzer.JavaRegexParseException e) {
                     log.debug("no valid search terms detected for query, skipping all hits", e);
+                    searchHitTerms = new HashSet<>();
                 }
             }
 
-            if (searchHitTerms.isEmpty()) {
-                // no search terms, no-op
+            if (searchHitTerms == null)
+                searchHitTerms = new HashSet<>();
+            if (searchHitTerms.isEmpty() && (searchExpressions == null || searchExpressions.isEmpty())) {
                 return keyDocumentEntry;
             }
 
@@ -343,11 +384,19 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
                     // this annotation supports allHits
                     TreeMap<SegmentBoundary,List<SegmentValue>> sortedSegments = sort(annotation.getSegmentsList());
                     AnnotationPositionView positionView = AnnotationPositionView.of(sortedSegments, termNormalizer);
-                    List<SegmentHit> orderedHits = search(positionView, contextSize, minScore);
+                    List<AnnotationHit> orderedHits = search(positionView, sortedSegments, contextSize, minScore);
                     try {
                         AllHits results = null;
                         if (!orderedHits.isEmpty()) {
-                            results = allHitsFactory.create(annotation.getAnnotationId(), orderedHits, sortedSegments, timeUnit);
+                            boolean phrase = orderedHits.stream().anyMatch(hit -> hit instanceof PhraseHit);
+                            if (phrase)
+                                results = allHitsFactory.createFromHits(annotation.getAnnotationId(), orderedHits, sortedSegments, contextSize, timeUnit);
+                            else {
+                                List<SegmentHit> legacyHits = new ArrayList<>();
+                                for (AnnotationHit hit : orderedHits)
+                                    legacyHits.addAll(hit.getConstituentHits());
+                                results = allHitsFactory.create(annotation.getAnnotationId(), legacyHits, sortedSegments, timeUnit);
+                            }
                         }
                         enrichAllHitsFromDocument(annotation, results, document);
                         updateDocument(keyDocumentEntry, results);
@@ -560,8 +609,27 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
      * @return non-null List of hits ordered by the segmentBoundary they hit on. Hit order guaranteed to be ascending SegmentBoundary, no second order sort is
      *         applied. Hits for the same SegmentBoundary will appear in the order they were found.
      */
-    private List<SegmentHit> search(AnnotationPositionView positionView, int contextSize, float minScore) {
-        return new StandaloneAnnotationMatcher(searchHitTerms).match(positionView, contextSize, minScore);
+    private List<AnnotationHit> search(AnnotationPositionView positionView, TreeMap<SegmentBoundary,List<SegmentValue>> sortedSegments, int contextSize,
+                    float minScore) {
+        List<AnnotationHit> hits = new ArrayList<>();
+        if (searchHitTerms != null && !searchHitTerms.isEmpty())
+            hits.addAll(new StandaloneAnnotationMatcher(searchHitTerms).match(positionView, contextSize, minScore));
+        if (searchExpressions != null)
+            for (SearchExpression expression : searchExpressions.getExpressions()) {
+                if (!(expression instanceof ProximityExpression))
+                    continue;
+                ProximityExpression proximity = (ProximityExpression) expression;
+                List<AnnotationPhraseOccurrence> occurrences = proximity.isOrdered()
+                                ? new OrderedAnnotationMatcher(proximity).match(positionView, minScore, flattenBoundary)
+                                : new UnorderedAnnotationMatcher(proximity).match(positionView, minScore, flattenBoundary);
+                for (AnnotationPhraseOccurrence occurrence : occurrences) {
+                    List<SegmentHit> constituents = new ArrayList<>();
+                    for (ValuePosition position : occurrence.getConstituents())
+                        constituents.add(new SegmentHit(position.getBoundary(), position.getBoundary(), position.getValueIndex()));
+                    hits.add(PhraseHit.fromConstituents(constituents, sortedSegments, contextSize));
+                }
+            }
+        return hits;
     }
 
 }

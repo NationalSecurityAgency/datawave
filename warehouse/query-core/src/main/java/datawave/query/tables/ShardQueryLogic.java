@@ -126,6 +126,9 @@ import datawave.query.transformer.QueryValidationResultTransformer;
 import datawave.query.transformer.UniqueTransform;
 import datawave.query.transformer.annotation.AllHitsFactory;
 import datawave.query.transformer.annotation.AnnotationHitsTransformer;
+import datawave.query.transformer.annotation.JexlSearchExpressionExtractor;
+import datawave.query.transformer.annotation.LuceneSearchExpressionExtractor;
+import datawave.query.transformer.annotation.SearchExpressions;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.DateIndexHelperFactory;
 import datawave.query.util.MetadataHelper;
@@ -229,6 +232,8 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
     protected Map<String,List<String>> primaryToSecondaryFieldMap = Collections.emptyMap();
     protected Transformer<Object,QueryValidationResponse> validationResponseTransformer = null;
     // Map of syntax names to QueryParser classes
+    private SearchExpressions annotationSearchExpressions;
+
     private Map<String,QueryParser> querySyntaxParsers = new HashMap<>();
     private Set<String> mandatoryQuerySyntax = null;
     private QueryPlanner planner = null;
@@ -431,7 +436,28 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         // load params before parsing jexl string so these can be injected
         loadQueryParameters(config, settings);
 
-        String jexlQueryString = getJexlQueryString(settings);
+        String expandedQuery = expandQueryMacros(settings.getQuery());
+        String querySyntax = getValidQuerySyntax(settings);
+        QueryParser configuredParser = Constants.JEXL.equals(querySyntax) ? null : getQueryParser(querySyntax);
+        String jexlQueryString;
+        if (Constants.JEXL.equals(querySyntax)) {
+            jexlQueryString = expandedQuery;
+            AllHitsQueryConfig annotationConfig = getAllHitsQueryConfig();
+            annotationSearchExpressions = annotationConfig.getQueryExpressionExtractor() != null
+                            ? annotationConfig.getQueryExpressionExtractor().extract(jexlQueryString)
+                            : new JexlSearchExpressionExtractor(
+                                            annotationConfig.getQueryTermExtractor() == null ? null : annotationConfig.getQueryTermExtractor().getFields(),
+                                            annotationConfig.getTermNormalizer()).extract(jexlQueryString);
+        } else {
+            jexlQueryString = configuredParser.parse(expandedQuery).getOriginalQuery();
+            if (configuredParser instanceof LuceneSyntaxQueryParser) {
+                AllHitsQueryConfig annotationConfig = getAllHitsQueryConfig();
+                LuceneSearchExpressionExtractor extractor = new LuceneSearchExpressionExtractor((LuceneSyntaxQueryParser) configuredParser,
+                                annotationConfig.getQueryTermExtractor() == null ? null : annotationConfig.getQueryTermExtractor().getFields(),
+                                annotationConfig.getTermNormalizer());
+                annotationSearchExpressions = extractor.extract(expandedQuery, jexlQueryString);
+            }
+        }
 
         if (null == jexlQueryString) {
             throw new IllegalArgumentException("Query cannot be null");
@@ -828,7 +854,8 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
                             allHitsQueryConfig.getMaxContextLength(),
                             allHitsQueryConfig.getValidAnnotationTypes(),
                             allHitsQueryConfig.getTargetField(),
-                            allHitsQueryConfig.getAnnotationEnrichmentFieldMap()));
+                            allHitsQueryConfig.getAnnotationEnrichmentFieldMap(), annotationSearchExpressions,
+                            allHitsQueryConfig.getKeywordParser(), allHitsQueryConfig.isFlattenBoundary()));
                     // @formatter:on
                 }
             }

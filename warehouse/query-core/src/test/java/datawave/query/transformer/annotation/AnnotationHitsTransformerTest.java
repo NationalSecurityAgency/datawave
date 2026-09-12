@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -1512,6 +1513,49 @@ public class AnnotationHitsTransformerTest {
         withHits("my-annotation", List.of(hit));
 
         test(Map.entry(HIT_KEY, input), Map.entry(HIT_KEY, output));
+    }
+
+    @Test
+    public void preparedOrderedPhraseUsesPhraseFactoryPath() throws Exception {
+        withParameter(AnnotationHitsTransformer.ENABLED_PARAMETER, "true");
+        query = "ignored";
+        validTypes = Set.of("ANNO1");
+        targetField = "TARGET_FIELD";
+        givenAnnotation(buildAnnotation("ANNO1", "20260112_0", "test", "123.345.456", "hash", S1, S2));
+        when(annotationDao.getAnnotations("20260112_0", "test", "123.345.456")).thenReturn(annotations);
+        withNormalizers();
+        SearchExpressions prepared = new SearchExpressions(List
+                        .of(new ProximityExpression(true, List.of(new StandalonePatternExpression("aaaaaaa"), new StandalonePatternExpression("ccccccc")), 1)));
+        when(allHitsFactory.createFromHits(any(), any(), any(), anyInt(), any())).thenReturn(allHitsResult);
+
+        transformer = new AnnotationHitsTransformer(shardQueryConfiguration, query, termExtractor, normalizer, annotationDao, allHitsFactory,
+                        maxContextBoundary, validTypes, targetField, enrichmentFieldMap, prepared, null, false);
+        transformer.initialize(settings, markingFunctions);
+        transformer.apply(Map.entry(HIT_KEY, new Document()));
+
+        org.mockito.Mockito.verify(allHitsFactory).createFromHits(any(), any(), any(), anyInt(), any());
+    }
+
+    @Test
+    public void flattenBoundaryParameterOverridesPreparedPhraseMode() throws Exception {
+        withParameter(AnnotationHitsTransformer.ENABLED_PARAMETER, "true");
+        withParameter(AnnotationHitsTransformer.FLATTEN_BOUNDARY_PARAMETER, "true");
+        query = "ignored";
+        validTypes = Set.of("ANNO1");
+        targetField = "TARGET_FIELD";
+        givenAnnotation(buildAnnotation("ANNO1", "20260112_0", "test", "123.345.456", "hash", S1));
+        when(annotationDao.getAnnotations("20260112_0", "test", "123.345.456")).thenReturn(annotations);
+        withNormalizers();
+        SearchExpressions prepared = new SearchExpressions(List
+                        .of(new ProximityExpression(true, List.of(new StandalonePatternExpression("aaaaaaa"), new StandalonePatternExpression("bbb.*")), 1)));
+        when(allHitsFactory.createFromHits(any(), any(), any(), anyInt(), any())).thenReturn(allHitsResult);
+
+        transformer = new AnnotationHitsTransformer(shardQueryConfiguration, query, termExtractor, normalizer, annotationDao, allHitsFactory,
+                        maxContextBoundary, validTypes, targetField, enrichmentFieldMap, prepared, null, false);
+        transformer.initialize(settings, markingFunctions);
+        transformer.apply(Map.entry(HIT_KEY, new Document()));
+
+        org.mockito.Mockito.verify(allHitsFactory).createFromHits(any(), any(), any(), anyInt(), any());
     }
 
     private String allHitsToString(AllHits... allHits) throws JsonProcessingException {

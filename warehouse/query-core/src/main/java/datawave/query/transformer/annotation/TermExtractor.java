@@ -16,6 +16,10 @@ import datawave.query.parser.JavaRegexAnalyzer;
 public class TermExtractor implements Serializable {
     final private Set<String> fields;
 
+    public Set<String> getFields() {
+        return fields;
+    }
+
     public TermExtractor(Set<String> fields) {
         if (fields == null) {
             this.fields = null;
