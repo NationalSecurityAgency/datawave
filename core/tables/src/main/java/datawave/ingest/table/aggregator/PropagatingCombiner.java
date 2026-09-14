@@ -12,21 +12,19 @@ import datawave.iterators.ValueCombiner;
 
 /**
  *
- * Aids in determining if a value and the corresponding keys should propogate
+ * Aids in determining if a value and the corresponding keys should propagate
  *
- * @deprecated for replacement by {@link PropagatingCombiner} with the correct spelling of propagate
  */
-@Deprecated
-public abstract class PropogatingCombiner extends Combiner {
+public abstract class PropagatingCombiner extends Combiner {
 
     private static final Value EMPTY_VALUE = new Value(new byte[0]);
 
-    private static final Logger log = Logger.getLogger(PropogatingCombiner.class);
+    private static final Logger log = Logger.getLogger(PropagatingCombiner.class);
 
     /**
-     * Flag to determine if we propogate the removals
+     * Flag to determine if we propagate the removals
      */
-    protected boolean propogate = true;
+    protected boolean propagate = true;
 
     /**
      * Get the iterator of values to be combined
@@ -39,7 +37,7 @@ public abstract class PropogatingCombiner extends Combiner {
     }
 
     /**
-     * Shpuld return a thread safe value.
+     * Should return a thread safe value.
      *
      * @return a value
      */
@@ -58,26 +56,26 @@ public abstract class PropogatingCombiner extends Combiner {
     }
 
     /**
-     * Sets the propogating factor in the aggregator.
+     * Sets the propagating factor in the aggregator.
      *
-     * @param propogate
+     * @param propagate
      *            the boolean to set
      */
-    public void setPropogate(boolean propogate) {
-        this.propogate = propogate;
+    public void setPropagate(boolean propagate) {
+        this.propagate = propagate;
     }
 
     /**
-     * Determines whether or not to propogate the key depending on the result of the value
+     * Determines whether or not to propagate the key depending on the result of the value
      *
-     * @return a boolean on whether to propogate
+     * @return a boolean on whether to propagate
      */
-    public boolean propogateKey() {
-        return this.propogate;
+    public boolean propagateKey() {
+        return this.propagate;
     }
 
     /**
-     * Method to reset the state within the propogating aggregator.
+     * Method to reset the state within the propagating aggregator.
      */
     public void reset() {
         // empty method

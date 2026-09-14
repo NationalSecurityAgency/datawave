@@ -1,4 +1,4 @@
-package datawave.ingest.table.aggregator;
+package datawave.iterators;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -16,15 +16,17 @@ import org.slf4j.LoggerFactory;
 import com.google.protobuf.InvalidProtocolBufferException;
 
 import datawave.ingest.protobuf.Uid;
-import datawave.ingest.protobuf.Uid.List.Builder;
-import datawave.iterators.ValueCombiner;
+import datawave.ingest.table.aggregator.PropogatingCombiner;
+import datawave.ingest.table.aggregator.TruncatingTimestampIterator;
 
 /**
  * Implementation of an Aggregator that aggregates objects of the type Uid.List. This is an optimization for the shardIndex and shardReverseIndex, where the
  * list of UIDs for events will be maintained in the global index for low cardinality terms.
+ *
+ * This class exists as a {@link PropogatingCombiner} implementation for use in {@link PropogatingIteratorTest}.
  */
-public class GlobalIndexUidAggregator extends PropagatingCombiner {
-    private static final Logger log = LoggerFactory.getLogger(GlobalIndexUidAggregator.class);
+public class LegacyGlobalIndexUidAggregator extends PropogatingCombiner {
+    private static final Logger log = LoggerFactory.getLogger(LegacyGlobalIndexUidAggregator.class);
 
     /**
      * Using a set instead of a list so that duplicate UIDs are filtered out of the list. This might happen in the case of rows with masked fields that share a
@@ -57,11 +59,11 @@ public class GlobalIndexUidAggregator extends PropagatingCombiner {
      */
     private long count = 0;
 
-    public GlobalIndexUidAggregator(int max) {
+    public LegacyGlobalIndexUidAggregator(int max) {
         this.maxUids = max;
     }
 
-    public GlobalIndexUidAggregator() {
+    public LegacyGlobalIndexUidAggregator() {
         this.maxUids = MAX;
     }
 
@@ -98,7 +100,7 @@ public class GlobalIndexUidAggregator extends PropagatingCombiner {
     @Override
     public Value aggregate() {
 
-        Builder builder = Uid.List.newBuilder();
+        Uid.List.Builder builder = Uid.List.newBuilder();
         builder.setIGNORE(seenIgnore);
         if (seenIgnore) {
             // If we're over the max UID size, then the count is simply the sum of counts
@@ -127,12 +129,12 @@ public class GlobalIndexUidAggregator extends PropagatingCombiner {
             // include all possible values for a key. In that case, it's possible the adds
             // to which these removes apply are in a different file that wasn't involved in
             // this operation.
-            if (propagate) {
+            if (propogate) {
                 builder.addAllREMOVEDUID(uidsToRemove);
             }
         }
 
-        log.trace("Building aggregate. propagate={}, count={}, uids.size()={}, uidsToRemove.size()={}, builder UIDCount={} REMOVEDUIDCount={}", propagate,
+        log.trace("Building aggregate. propogate={}, count={}, uids.size()={}, uidsToRemove.size()={}, builder UIDCount={} REMOVEDUIDCount={}", propogate,
                         count, uids.size(), uidsToRemove.size(), builder.getUIDCount(), builder.getREMOVEDUIDCount());
         return new Value(builder.build().toByteArray());
     }
@@ -142,7 +144,7 @@ public class GlobalIndexUidAggregator extends PropagatingCombiner {
      * can store up to a certain number of UIDs and after that, the lists are no longer tracked (the ignore flag will be set) and only counts are tracked.
      * REMOVEDUIDs are tracked to handle minor and partial major compactions where this reduce method won't necessarily see all possible values for a given key
      * (e.g., the UIDs that are being removed might be in a different RFile that isn't involved in the current compaction).
-     *
+     * <p>
      * Aggregation operates in one of two modes depending on whether or not timestamps are ignored. By default, timestamps are ignored since DataWave uses date
      * to the day as the timestamp in the global term index. When timestamps are ignored, we cannot infer anything about the order of values under aggregation.
      * Therefore, a decision must be made about how to handle removed UIDs vs added UIDs. In that case, removed UIDs take priority. This means that adding a
@@ -227,13 +229,13 @@ public class GlobalIndexUidAggregator extends PropagatingCombiner {
         }
         // When the ignore flag is NOT set, the count is equal to the size of the uid list.
         // When the ignore flag is set, the count could represent either:
-        // - a partial answer (propagate = true)
-        // - a final answer (propagate = false)
+        // - a partial answer (propogate = true)
+        // - a final answer (propogate = false)
         // As a final answer, a negative count is nonsensical because the count represents
         // the number of records that are estimated to exist.
         // A partial answer doesn't have all of the counts available, so to be as accurate
         // as possible it's worth propagating negative counts.
-        if (seenIgnore && !propagate) {
+        if (seenIgnore && !propogate) {
             count = Math.max(0, count);
         }
         return aggregate();
@@ -252,7 +254,7 @@ public class GlobalIndexUidAggregator extends PropagatingCombiner {
             // we give precedence to a removal over an add and mark this UID as removed even
             // if it was in the UID list.
             uids.remove(uid);
-            // Even if propagate is false, the removal UID should persist until all PB lists
+            // Even if propogate is false, the removal UID should persist until all PB lists
             // in the current iteration have been seen, in case a subsequent PB has the UID
             // marked for removal.
             uidsToRemove.add(uid);
@@ -310,7 +312,7 @@ public class GlobalIndexUidAggregator extends PropagatingCombiner {
     }
 
     public void reset() {
-        log.debug("Resetting GlobalIndexUidAggregator");
+        log.debug("Resetting LegacyGlobalIndexUidAggregator");
         count = 0;
         seenIgnore = false;
         uids.clear();
@@ -318,15 +320,15 @@ public class GlobalIndexUidAggregator extends PropagatingCombiner {
     }
 
     @Override
-    public boolean propagateKey() {
+    public boolean propogateKey() {
 
         // This method is called after reduce and then aggregate, so all of the work to combine has been done.
-        // If the propagate flag is true, then this might have been a partial major compaction, scan, or minor
-        // compaction and we want to keep all keys no matter what. When propagate is false, that means it's a scan or
+        // If the propogate flag is true, then this might have been a partial major compaction, scan, or minor
+        // compaction and we want to keep all keys no matter what. When propogate is false, that means it's a scan or
         // full major compaction and therefore we can be certain that the aggregated result has combined all possible
         // values for a given key. In that case, we only need to keep the resulting key/value pair if it has any UIDs
         // (which means either UIDs in the uid list, or a positive uid count).
-        return propagate || !uids.isEmpty() || count > 0;
+        return propogate || !uids.isEmpty() || count > 0;
     }
 
     @Override
@@ -337,8 +339,8 @@ public class GlobalIndexUidAggregator extends PropagatingCombiner {
 
     @Override
     public SortedKeyValueIterator<Key,Value> deepCopy(IteratorEnvironment env) {
-        GlobalIndexUidAggregator copy = (GlobalIndexUidAggregator) super.deepCopy(env);
-        copy.propagate = propagate;
+        LegacyGlobalIndexUidAggregator copy = (LegacyGlobalIndexUidAggregator) super.deepCopy(env);
+        copy.propogate = propogate;
         // Not copying other fields that are all cleared in the reset() method.
         return copy;
     }
