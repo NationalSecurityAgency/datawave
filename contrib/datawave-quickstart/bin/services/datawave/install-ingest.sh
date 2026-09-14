@@ -143,9 +143,14 @@ else
    error "Unable to write ingest-passwd.sh, missing ${DW_DATAWAVE_INGEST_CONFIG_HOME} directory"
 fi
 
-[ ! -d "${DW_DATAWAVE_INGEST_LOG_DIR}" ] && assertCreateDir "${DW_DATAWAVE_INGEST_LOG_DIR}" || exit 1
-[ ! -d "${DW_DATAWAVE_INGEST_FLAGFILE_DIR}" ] && assertCreateDir "${DW_DATAWAVE_INGEST_FLAGFILE_DIR}" || exit 1
-[ ! -d "${DW_DATAWAVE_INGEST_LOCKFILE_DIR}" ] && assertCreateDir "${DW_DATAWAVE_INGEST_LOCKFILE_DIR}" || exit 1
+# Note: '[ ! -d X ] && create || exit' exits whenever the directory already
+# exists, since the && chain is then false. That kills any re-install against a
+# data directory that is already there.
+for _dwDir in "${DW_DATAWAVE_INGEST_LOG_DIR}" "${DW_DATAWAVE_INGEST_FLAGFILE_DIR}" "${DW_DATAWAVE_INGEST_LOCKFILE_DIR}" ; do
+   if [ ! -d "${_dwDir}" ] ; then
+      assertCreateDir "${_dwDir}" || exit 1
+   fi
+done
 
 OK_TO_LOAD_JOB_CACHE=true
 if [ "${DW_REDEPLOY_IN_PROGRESS}" == true ] ; then
