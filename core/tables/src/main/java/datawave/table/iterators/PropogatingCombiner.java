@@ -1,4 +1,4 @@
-package datawave.ingest.table.aggregator;
+package datawave.table.iterators;
 
 import java.util.Iterator;
 
@@ -7,8 +7,6 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.Combiner;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.log4j.Logger;
-
-import datawave.iterators.ValueCombiner;
 
 /**
  *
