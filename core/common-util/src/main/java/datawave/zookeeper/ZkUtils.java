@@ -45,43 +45,50 @@ public final class ZkUtils {
         Preconditions.checkArgument(config != null && !config.isBlank(), "config must not be null or blank");
         String connectString = zkConfigCache.getIfPresent(config);
         if (connectString == null) {
+            Path path;
             try {
-                connectString = parseQuorumPeerConfig(config);
-            } catch (QuorumPeerConfig.ConfigException e) {
-                throw new IllegalArgumentException("Unable to parse quorum peer config: " + config, e);
+                path = getPath(config);
+            } catch (Exception e) {
+                // Try the config as is.
+                return config;
             }
-            if (connectString != null) {
+            try {
+                connectString = parseQuorumPeerConfig(path);
                 zkConfigCache.put(config, connectString);
+            } catch (QuorumPeerConfig.ConfigException e) {
+                throw new IllegalArgumentException("Unable to parse quorum peer config from file: " + config, e);
             }
         }
         return connectString;
     }
+    
+    /**
+     * Return a {@link Path} for the given filepath if it points to a valid file.
+     * @param filepath the filepath
+     * @return the {@link Path}
+     * @throws Exception if the filepath cannot be parsed as a URI or does not point to a regular file
+     */
+    private static Path getPath(String filepath) throws Exception {
+        URI uri = new URI(filepath);
+        // Create the path differently depending on whether the config is a filepath with a URI scheme or not. This is important to avoid errors when trying
+        // to determine if the config points to a file.
+        Path path = uri.getScheme() != null ? Paths.get(uri) : Paths.get(filepath);
+        if (!Files.isRegularFile(path)) {
+            throw new IllegalArgumentException(filepath + " does not point to a file");
+        }
+        return path;
+    }
 
     /**
-     * Return a formatted Zookeeper connect string that can be used to connect to a running Zookeeper server. The config string can be a list of servers or a
-     * path to a Zookeeper config file.
+     * Return a formatted Zookeeper connect string that can be used to connect to a running Zookeeper server.
      *
-     * @param configStr
-     *            the configuration file/string
+     * @param path
+     *            the path to the configuration file
      * @return the configuration
      * @throws QuorumPeerConfig.ConfigException
      *             if the argument is a file that cannot be parsed as a zookeeper config file
      */
-    private static String parseQuorumPeerConfig(String configStr) throws QuorumPeerConfig.ConfigException {
-        Path path;
-        try {
-            URI uri = new URI(configStr);
-            // Create the path differently depending on whether the config is a filepath with a URI scheme or not. This is important to avoid errors when trying
-            // to determine if the config points to a file.
-            path = uri.getScheme() != null ? Paths.get(uri) : Paths.get(configStr);
-            if (!Files.isRegularFile(path)) {
-                return configStr;
-            }
-        } catch (Exception e) {
-            // The config argument does not point to an existing file. Try it as is.
-            return configStr;
-        }
-
+    private static String parseQuorumPeerConfig(Path path) throws QuorumPeerConfig.ConfigException {
         // If the config points to an existing file, attempt to parse it as a zookeeper config file.
         QuorumPeerConfig config = new QuorumPeerConfig();
         config.parse(path.toString());
