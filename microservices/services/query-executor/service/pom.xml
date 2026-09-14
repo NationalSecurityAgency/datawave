@@ -4,11 +4,11 @@
     <parent>
         <groupId>gov.nsa.datawave.microservice</groupId>
         <artifactId>datawave-microservice-service-parent</artifactId>
-        <version>5.0.13</version>
+        <version>5.0.15</version>
         <relativePath>../../../microservice-service-parent/pom.xml</relativePath>
     </parent>
     <artifactId>query-executor-service</artifactId>
-    <version>1.0.14-SNAPSHOT</version>
+    <version>1.0.15-SNAPSHOT</version>
     <description>DATAWAVE Query Executor Service</description>
     <url>https://github.com/NationalSecurityAgency/datawave-query-executor-service</url>
     <scm>
@@ -19,21 +19,21 @@
     </scm>
     <properties>
         <start-class>datawave.microservice.query.executor.QueryExecutorService</start-class>
-        <version.accumulo>2.1.4-5792fed3-bulkv2</version.accumulo>
+        <version.accumulo>2.1.5</version.accumulo>
         <version.commons-collections4>4.3</version.commons-collections4>
         <version.commons-lang3>3.20.0</version.commons-lang3>
         <version.curator>5.2.0</version.curator>
-        <version.datawave>7.37.3</version.datawave>
-        <version.datawave.authorization-api>4.0.4</version.datawave.authorization-api>
-        <version.datawave.query-api>1.0.3</version.datawave.query-api>
-        <version.datawave.query-executor-api>1.0.11</version.datawave.query-executor-api>
-        <version.datawave.query-metric-api>4.1.5</version.datawave.query-metric-api>
-        <version.datawave.starter>4.0.9</version.datawave.starter>
-        <version.datawave.starter-query>1.0.12</version.datawave.starter-query>
-        <version.datawave.starter-query-metric>3.0.7</version.datawave.starter-query-metric>
+        <version.datawave>8.0.0</version.datawave>
+        <version.datawave.authorization-api>4.0.5</version.datawave.authorization-api>
+        <version.datawave.query-api>1.0.4</version.datawave.query-api>
+        <version.datawave.query-executor-api>1.0.12</version.datawave.query-executor-api>
+        <version.datawave.query-metric-api>4.1.8</version.datawave.query-metric-api>
+        <version.datawave.starter>4.0.12</version.datawave.starter>
+        <version.datawave.starter-query>1.0.14</version.datawave.starter-query>
+        <version.datawave.starter-query-metric>3.0.8</version.datawave.starter-query-metric>
         <version.guava>31.1-jre</version.guava>
         <version.hadoop>3.3.4</version.hadoop>
-        <version.in-memory-accumulo>4.0.4</version.in-memory-accumulo>
+        <version.in-memory-accumulo>4.0.6</version.in-memory-accumulo>
         <!-- version set in datawave-microservice-parent, but can be overridden here -->
         <!-- 2.14.X is the maximum version of jackson without snakeyaml version 2 causing spring-boot 2.7.1 conflict -->
         <version.jackson>2.14.3</version.jackson>
@@ -51,6 +51,15 @@
                 <artifactId>guava</artifactId>
                 <version>${version.guava}</version>
             </dependency>
+            <!-- The released starters this service consumes still pin the datawave artifacts to an older
+                 version.datawave. Manage every one of them here so the tree resolves to a single version;
+                 without this Maven's nearest-wins takes the starter's older copy, and classes that have
+                 since moved between modules go missing at runtime. -->
+            <dependency>
+                <groupId>gov.nsa.datawave</groupId>
+                <artifactId>datawave-core</artifactId>
+                <version>${version.datawave}</version>
+            </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave</groupId>
                 <artifactId>datawave-in-memory-accumulo</artifactId>
@@ -66,6 +75,11 @@
                 </exclusions>
             </dependency>
             <dependency>
+                <groupId>gov.nsa.datawave</groupId>
+                <artifactId>datawave-query-core</artifactId>
+                <version>${version.datawave}</version>
+            </dependency>
+            <dependency>
                 <groupId>gov.nsa.datawave.core</groupId>
                 <artifactId>accumulo-utils</artifactId>
                 <version>${version.datawave}</version>
@@ -77,7 +91,22 @@
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.core</groupId>
+                <artifactId>common-utils</artifactId>
+                <version>${version.datawave}</version>
+            </dependency>
+            <dependency>
+                <groupId>gov.nsa.datawave.core</groupId>
+                <artifactId>datawave-core-common</artifactId>
+                <version>${version.datawave}</version>
+            </dependency>
+            <dependency>
+                <groupId>gov.nsa.datawave.core</groupId>
                 <artifactId>datawave-core-connection-pool</artifactId>
+                <version>${version.datawave}</version>
+            </dependency>
+            <dependency>
+                <groupId>gov.nsa.datawave.core</groupId>
+                <artifactId>datawave-core-map-reduce</artifactId>
                 <version>${version.datawave}</version>
             </dependency>
             <dependency>
@@ -90,6 +119,16 @@
                         <artifactId>query-api</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>gov.nsa.datawave.core</groupId>
+                <artifactId>metadata-utils</artifactId>
+                <version>${version.datawave}</version>
+            </dependency>
+            <dependency>
+                <groupId>gov.nsa.datawave.core</groupId>
+                <artifactId>type-utils</artifactId>
+                <version>${version.datawave}</version>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
@@ -125,6 +164,11 @@
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>spring-boot-starter-datawave-query-metric</artifactId>
                 <version>${version.datawave.starter-query-metric}</version>
+            </dependency>
+            <dependency>
+                <groupId>gov.nsa.datawave.webservices</groupId>
+                <artifactId>datawave-ws-client</artifactId>
+                <version>${version.datawave}</version>
             </dependency>
             <dependency>
                 <groupId>io.swagger.core.v3</groupId>
