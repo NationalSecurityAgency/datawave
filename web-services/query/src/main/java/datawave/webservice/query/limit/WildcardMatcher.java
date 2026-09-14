@@ -2,6 +2,7 @@ package datawave.webservice.query.limit;
 
 import java.util.Collection;
 import java.util.Set;
+import java.util.StringJoiner;
 
 /**
  * {@link Matcher} implementation that represents a pattern that was determined to be wildcard-only. The matching type for this {@link Matcher} will always be
@@ -35,4 +36,8 @@ public class WildcardMatcher implements Matcher {
         return Set.copyOf(values);
     }
 
+    @Override
+    public String toString() {
+        return new StringJoiner(", ", WildcardMatcher.class.getSimpleName() + "[", "]").toString();
+    }
 }

@@ -146,7 +146,20 @@
         <property name="cleanupUnit" value="MINUTES"/>
     </bean>
 
-    <!-- Configuration for the QueryLimiter. -->
+    <!-- Configuration for the QueryLimiter.
+        - zookeeperConfig: The zookeeper connection string
+        - configuration: The QueryLimitConfiguration bean to use.
+        - heartbeatCache: The QueryHeartbeatCache bean to use.
+        - zookeeperClientTimeoutMs: The time in milliseconds to wait for the Zookeeper client to successfully connect to
+            Zookeeper. A failure to connect within the timeout will result in a logged warning, but not an exception.
+            Defaults to 3 minutes.
+        - queryLogicCacheTimeoutMs: The time in milliseconds to wait for the query logic cache to reach a healthy state.
+            A failure to complete within the timeout will result in a logged warning, but not an exception. Defaults to
+            3 minutes.
+        - queryCountsCacheTimeoutMs: The time in milliseconds to wait for the query counts cache to reach a healthy
+            state. A failure to complete within the timeout will result in a logged warning, but not an exception.
+            Defaults to 3 minutes.
+    -->
     <bean id="queryLimiter" class="datawave.webservice.query.limit.QueryLimiter" init-method="setup" destroy-method="shutdown">
         <property name="zookeeperConfig" value="${zookeeper.hosts}"/>
         <property name="configuration" ref="queryLimitConfiguration"/>
