@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.core</groupId>
         <artifactId>datawave-core-parent</artifactId>
-        <version>7.45.0-SNAPSHOT</version>
+        <version>8.1.0-SNAPSHOT</version>
     </parent>
     <artifactId>base-rest-responses</artifactId>
     <name>${project.artifactId}</name>
@@ -58,6 +58,10 @@
         <dependency>
             <groupId>com.sun.xml.bind</groupId>
             <artifactId>jaxb-impl</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.commons</groupId>
+            <artifactId>datawave-commons-security</artifactId>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.core</groupId>
