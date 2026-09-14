@@ -37,7 +37,7 @@ public final class ZkUtils {
      *            the configuration file/string
      * @return the configuration
      * @throws NullPointerException
-     *             if the configuration s
+     *             if the configuration string is null
      * @throws IllegalArgumentException
      *             if config is null or blank, or is a path to a Zookeeper configuration file that could not be parsed with {@link QuorumPeerConfig}
      */
