@@ -10,6 +10,9 @@ import org.apache.curator.framework.CuratorFrameworkFactory;
 
 import com.google.common.base.Preconditions;
 
+import static org.apache.commons.lang.StringUtils.lowerCase;
+import static org.apache.commons.lang.StringUtils.trim;
+
 /**
  * A configurable Zookeeper client builder that can provide instances {@link CuratorFrameworkFactory} and {@link CuratorFramework}.
  */
@@ -226,10 +229,14 @@ public class ZkClientBuilder {
                 throw new TimeoutException("Failed to connect to zookeeper within timeout of " + maxWaitTime + " " + timeUnit);
             }
             return client;
-        } catch (Exception e) {
-            // If an exception occurs after starting the client, ensure any connection to Zookeeper is closed.
-            client.close();
-            throw e;
+        } catch (Exception e1) {
+            try {
+                // If an exception occurs after starting the client, ensure any connection to Zookeeper is closed.
+                client.close();
+            } catch (Exception e2) {
+                e1.addSuppressed(new RuntimeException("Failed to close Zookeeper client", e2));
+            }
+            throw e1;
         }
 
     }
