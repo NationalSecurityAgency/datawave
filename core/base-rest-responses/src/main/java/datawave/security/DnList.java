@@ -16,8 +16,8 @@ import javax.xml.bind.annotation.XmlTransient;
 
 import org.apache.commons.text.StringEscapeUtils;
 
-import datawave.microservice.security.util.DnUtils;
 import datawave.security.authorization.DatawaveUserInfo;
+import datawave.security.util.DnUtils;
 import datawave.webservice.HtmlProvider;
 
 @XmlRootElement

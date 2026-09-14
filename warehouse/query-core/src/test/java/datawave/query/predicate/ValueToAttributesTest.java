@@ -129,7 +129,6 @@ public class ValueToAttributesTest extends AbstractQueryTest {
     @BeforeEach
     public void setup() {
         setClientForTest(clientForTest);
-        logic.setFullTableScanEnabled(true);
         logic.setCollapseUids(false);
 
         givenDate("20091231", "20150101");
