@@ -15,7 +15,7 @@ import datawave.query.attributes.Document;
 import datawave.query.composite.CompositeMetadata;
 import datawave.query.predicate.EventDataQueryFieldFilter;
 import datawave.query.util.TypeMetadata;
-import datawave.query.util.sortedmap.rfile.KeyValueByteDocumenTransformsTest;
+import datawave.query.util.sortedmap.rfile.KeyValueByteDocumentTransformsTest;
 import datawave.query.util.sortedset.ByteArrayComparator;
 
 public class BufferedFileBackedByteDocumentSortedMapTest extends BufferedFileBackedRewritableSortedMapTest<byte[],Document> {
@@ -34,7 +34,7 @@ public class BufferedFileBackedByteDocumentSortedMapTest extends BufferedFileBac
     @Override
     protected void testEquality(Map.Entry<byte[],Document> expected, Map.Entry<byte[],Document> value) {
         testEquality(expected.getKey(), value.getKey());
-        KeyValueByteDocumenTransformsTest.assertDocumentEquals(expected.getValue(), value.getValue());
+        KeyValueByteDocumentTransformsTest.assertDocumentEquals(expected.getValue(), value.getValue());
     }
 
     @Override

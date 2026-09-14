@@ -70,6 +70,8 @@ public class QueryOptionsSwitch {
                     log.info("Setting unique fields to be most recent");
                     config.getUniqueFields().setMostRecent(Boolean.parseBoolean(value));
                     break;
+                case QueryParameters.MAX_UNIQUE_COUNT:
+                    config.getUniqueFields().setMaxCount(Integer.parseInt(value));
                 case QueryParameters.EXCERPT_FIELDS:
                     ExcerptFields excerptFields = ExcerptFields.from(value);
                     config.setExcerptFields(excerptFields);

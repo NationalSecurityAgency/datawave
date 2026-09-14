@@ -3166,7 +3166,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 Objects.equals(getModelName(), that.getModelName()) &&
                 Objects.equals(getModelTableName(), that.getModelTableName()) &&
                 Objects.equals(getGroupFields(), that.getGroupFields()) &&
-                Objects.equals(getUniqueFields(), that.getUniqueFields()) &&
                 Objects.equals(getContentFieldNames(), that.getContentFieldNames()) &&
                 Objects.equals(getActiveQueryLogNameSource(), that.getActiveQueryLogNameSource()) &&
                 Objects.equals(getBloom(), that.getBloom()) &&

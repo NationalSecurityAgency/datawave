@@ -1,6 +1,6 @@
 package datawave.query.util.sortedmap.rfile;
 
-import static datawave.query.util.sortedmap.rfile.KeyValueByteDocumentTransforms.keyValueToKeyDocument;
+import static datawave.query.util.sortedmap.rfile.KeyValueTransformUtils.keyValueToKeyDocument;
 
 import java.io.IOException;
 import java.io.InputStream;
