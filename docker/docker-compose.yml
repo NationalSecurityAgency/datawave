@@ -18,7 +18,6 @@ services:
         cp /opt/datawave-ingest/current/accumulo-warehouse/lib/*.jar "$${target}/"
         cp /opt/datawave-ingest/current/accumulo-warehouse/lib/ext/*.jar "$${target}/"
         cp /opt/datawave-ingest/current/lib/accumulo-access-core-*.jar "$${target}/"
-        cp /opt/datawave-ingest/current/lib/jaxb-api-*.jar "$${target}/"
         chmod 0644 "$${target}/"*.jar
     volumes:
       - datawave_accumulo_ext:/opt/accumulo/lib/ext
@@ -118,10 +117,10 @@ services:
     profiles: [datawave-stack]
     image: *stack-image
     user: zookeeper
-    entrypoint: ["/usr/lib/zookeeper/bin/zkServer.sh"]
-    command: ["--config", "/etc/zookeeper/conf.dist", "start-foreground"]
+    entrypoint: ["/opt/zookeeper/bin/zkServer.sh"]
+    command: ["--config", "/opt/zookeeper/conf", "start-foreground"]
     environment:
-      - ZOOBINDIR=/usr/lib/zookeeper/bin
+      - ZOOBINDIR=/opt/zookeeper/bin
       - ZOO_LOG_DIR=/var/log/zookeeper
     ports:
       - "2181:2181"
@@ -138,7 +137,7 @@ services:
   accumulo-manager:
     profiles: [datawave-stack]
     image: *stack-image
-    command: [manager]
+    command: ["proc", "manager"]
     environment:
       - ACCUMULO_INSTANCE_NAME=my-instance-01
       - ACCUMULO_ROOT_PASSWORD=secret
@@ -168,7 +167,7 @@ services:
   accumulo-tserver:
     profiles: [datawave-stack]
     image: *stack-image
-    command: [tserver]
+    command: ["proc", "tserver"]
     environment:
       - HADOOP_CONF_DIR=/stack
       - ACCUMULO_LIB_EXT=/opt/accumulo/lib/ext
@@ -183,7 +182,11 @@ services:
       accumulo-manager:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "bash -c '</dev/tcp/localhost/9997'"]
+      # Accumulo 4 changed tserver.port.client from 9997 to the range 9800-9899
+      # (core Property.java: TSERV_CLIENTPORT default "9800-9899"). Probing 9997
+      # fails forever against a perfectly healthy tserver, which then blocks
+      # ingest/query/webservice/metrics from ever starting.
+      test: ["CMD-SHELL", "for p in $$(seq 9800 9810); do bash -c \"</dev/tcp/localhost/$$p\" 2>/dev/null && exit 0; done; exit 1"]
       interval: 3s
       timeout: 3s
       retries: 30
@@ -191,7 +194,7 @@ services:
   accumulo-gc:
     profiles: [datawave-stack]
     image: *stack-image
-    command: [gc]
+    command: ["proc", "gc"]
     environment:
       - HADOOP_CONF_DIR=/stack
       - ACCUMULO_LIB_EXT=/opt/accumulo/lib/ext
@@ -209,7 +212,7 @@ services:
   accumulo-monitor:
     profiles: [datawave-stack]
     image: *stack-image
-    command: [monitor]
+    command: ["proc", "monitor"]
     environment:
       - HADOOP_CONF_DIR=/stack
       - ACCUMULO_LIB_EXT=/opt/accumulo/lib/ext
