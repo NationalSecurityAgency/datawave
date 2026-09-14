@@ -71,6 +71,15 @@ mvn -pl warehouse/query-core -am -DskipITs \
 
 - Added `LuceneSearchExpressionExtractor`, which consumes the injected `LuceneSyntaxQueryParser` tree, preserves positive/negative and phrase/standalone provenance, applies configured field eligibility, and emits ordered phrase criteria.
 - Added generated-JEXL merging that imports only `ProximityExpression` alternatives (not analyzer-generated equality predicates), with structural de-duplication through `SearchExpressions`; generated proximity distance is preferred for slop phrases.
-- Added focused coverage for fielded phrase provenance, explicit standalone terms, parser injection, and generated-expression filtering in `LuceneSearchExpressionExtractorTest`.
-- Validation passed: `mvn -pl warehouse/query-core -am -DskipITs -Dtest=LuceneSearchExpressionExtractorTest,TestLuceneToJexlQueryParser -Dsurefire.failIfNoSpecifiedTests=false test`.
+- Corrected Boolean negation handling so `NotBooleanQueryNode` is treated as a container and nested `ModifierQueryNode` values determine effective negation. This preserves positive siblings and double-negated expressions.
+- Expanded `LuceneSearchExpressionExtractorTest` coverage for:
+  - fielded/unfielded phrases and accepted, rejected, and `_ANYFIELD_` fields;
+  - explicit standalone terms versus phrase components;
+  - positive, negated, and double-negated expressions;
+  - smart quotes and wildcard phrase components;
+  - generated proximity/slop distances and tokenized analyzer alternatives;
+  - generated equality filtering and raw/generated proximity deduplication;
+  - injected parser usage.
+- Validation passed:
+  `mvn -pl warehouse/query-core -am -DskipITs -Dtest=LuceneSearchExpressionExtractorTest,TestLuceneToJexlQueryParser -Dsurefire.failIfNoSpecifiedTests=false test`.
 - Deliberate scope boundary: no `ShardQueryLogic` or query initialization/macro flow was changed; generated-JEXL input remains an explicit extractor method argument.

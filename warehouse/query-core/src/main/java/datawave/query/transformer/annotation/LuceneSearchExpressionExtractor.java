@@ -10,7 +10,6 @@ import java.util.Set;
 import org.apache.lucene.queryparser.flexible.core.QueryNodeParseException;
 import org.apache.lucene.queryparser.flexible.core.nodes.FieldQueryNode;
 import org.apache.lucene.queryparser.flexible.core.nodes.ModifierQueryNode;
-import org.apache.lucene.queryparser.flexible.core.nodes.NotBooleanQueryNode;
 import org.apache.lucene.queryparser.flexible.core.nodes.PhraseSlopQueryNode;
 import org.apache.lucene.queryparser.flexible.core.nodes.ProximityQueryNode;
 import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
@@ -81,36 +80,33 @@ public class LuceneSearchExpressionExtractor implements Serializable {
         boolean negative = negated;
         if (node instanceof ModifierQueryNode && ((ModifierQueryNode) node).getModifier() == ModifierQueryNode.Modifier.MOD_NOT)
             negative = !negative;
-        if (node instanceof NotBooleanQueryNode)
-            negative = !negative;
-        if (negative)
-            return;
 
         if (node instanceof PhraseSlopQueryNode || node instanceof SlopQueryNode) {
             QueryNode child = node instanceof PhraseSlopQueryNode ? ((PhraseSlopQueryNode) node).getChild() : ((SlopQueryNode) node).getChild();
-            if (child != null)
+            if (!negative && child != null)
                 addPhrase(child, node instanceof PhraseSlopQueryNode ? ((PhraseSlopQueryNode) node).getValue() : ((SlopQueryNode) node).getValue(), out,
                                 generated);
             return;
         }
         if (node instanceof QuotedFieldQueryNode) {
-            addPhrase(node, 1, out, generated);
+            if (!negative)
+                addPhrase(node, 1, out, generated);
             return;
         }
         if (node instanceof TokenizedPhraseQueryNode || node instanceof ProximityQueryNode) {
-            if (node instanceof ProximityQueryNode) {
+            if (!negative && node instanceof ProximityQueryNode) {
                 ProximityQueryNode proximity = (ProximityQueryNode) node;
                 List<StandalonePatternExpression> terms = terms(node.getChildren());
                 if (!terms.isEmpty() && eligible(proximity.getFieldAsString()))
                     out.add(new ProximityExpression(proximity.isInOrder(), terms, proximity.getDistance() < 0 ? terms.size() - 1 : proximity.getDistance()));
-            } else {
+            } else if (!negative) {
                 List<StandalonePatternExpression> terms = terms(node.getChildren());
                 if (!terms.isEmpty())
                     out.add(new ProximityExpression(true, terms, 1));
             }
             return;
         }
-        if (node instanceof FieldQueryNode) {
+        if (!negative && node instanceof FieldQueryNode) {
             FieldQueryNode fieldNode = (FieldQueryNode) node;
             if (eligible(fieldNode.getFieldAsString()))
                 out.add(new StandalonePatternExpression(normalize(fieldNode.getTextAsString(), fieldNode instanceof WildcardQueryNode)));
