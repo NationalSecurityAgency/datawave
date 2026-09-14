@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.core</groupId>
         <artifactId>datawave-utils-parent</artifactId>
-        <version>7.45.0-SNAPSHOT</version>
+        <version>8.1.0-SNAPSHOT</version>
     </parent>
     <artifactId>accumulo-utils</artifactId>
     <name>${project.artifactId}</name>
@@ -55,8 +55,9 @@
             <artifactId>commons-collections</artifactId>
         </dependency>
         <dependency>
-            <groupId>gov.nsa.datawave.microservice</groupId>
-            <artifactId>authorization-api</artifactId>
+            <groupId>gov.nsa.datawave.commons</groupId>
+            <artifactId>datawave-commons-security</artifactId>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.dropwizard.metrics</groupId>
@@ -76,6 +77,10 @@
             <groupId>org.apache.accumulo</groupId>
             <artifactId>accumulo-access-core</artifactId>
             <version>1.0.0-beta3</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.accumulo</groupId>
+            <artifactId>accumulo-core</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>

@@ -13,8 +13,9 @@ import datawave.query.jexl.visitors.BaseVisitor;
 /**
  * Visitor that collects the index only and tokenized field-value pairs required for document evaluation
  * <p>
- * Note: it is possible and even likely that some tokenized fields are also index only. However, in this context the sets of index only and tokenized fields are
- * fully exclusive, i.e., there is no duplication between sets.
+ * Note: a field can be both index only and tokenized at the same time (e.g. an index-only field that is also tokenized for {@code content:phrase} support). A
+ * term against such a field must be collected into both sets, since {@link DocumentIterator#collectIndexOnlyFragments} and
+ * {@link DocumentIterator#collectTermFrequencyFragments} each populate a different part of the document required for evaluation.
  */
 public class IndexOnlyFragmentVisitor extends BaseVisitor {
 
@@ -46,7 +47,8 @@ public class IndexOnlyFragmentVisitor extends BaseVisitor {
 
         if (tokenizedFields != null && tokenizedFields.contains(field)) {
             tokenizedFieldValues.put(field, String.valueOf(literal));
-        } else if (indexOnlyFields != null && indexOnlyFields.contains(field)) {
+        }
+        if (indexOnlyFields != null && indexOnlyFields.contains(field)) {
             indexOnlyFieldValues.put(field, String.valueOf(literal));
         }
 

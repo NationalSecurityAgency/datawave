@@ -40,6 +40,10 @@ public class FieldedRegexExpansionIteratorRebuildTest {
         data.put(new Key(value, "FIELD_A", COLUMN_QUALIFIER), EMPTY_VALUE);
     }
 
+    private void withData(String value, String shard) {
+        data.put(new Key(value, "FIELD_A", shard + "\0" + "datatype-a"), EMPTY_VALUE);
+    }
+
     private void withOptions(String pattern) {
         options.put(FieldedRegexExpansionIterator.FIELD, "FIELD_A");
         options.put(FieldedRegexExpansionIterator.PATTERN, pattern);
@@ -159,5 +163,40 @@ public class FieldedRegexExpansionIteratorRebuildTest {
         }
 
         assertEquals(List.of("abc", "abcd"), emitted);
+    }
+
+    /**
+     * A value is only worth reporting once, so an accepted key advances to the next row and the remaining shards for that value are never visited. A rebuilt
+     * stack is seeked at the last returned key, which lands inside the row the previous stack skipped, so it has to skip that row as well rather than report
+     * the value a second time.
+     */
+    @Test
+    public void testRebuiltStackSkipsTheRowItAlreadyReportedOn() throws Exception {
+        withData("aa", "20250804_0");
+        withData("aa", "20250804_1");
+        withData("ab", "20250804_0");
+        withOptions("a.*");
+
+        FieldedRegexExpansionIterator iterator = rebuild(new Range());
+        assertTrue(iterator.hasTop());
+        Key lastKey = iterator.getTopKey();
+        assertEquals("aa", lastKey.getRow().toString());
+
+        FieldedRegexExpansionIterator rebuilt = rebuild(new Range(lastKey, false, null, false));
+        assertTrue(rebuilt.hasTop());
+        assertEquals("ab", rebuilt.getTopKey().getRow().toString());
+    }
+
+    /**
+     * The invariant the tablet server relies on: tearing the stack down between every key produces exactly the scan that was never torn down.
+     */
+    @Test
+    public void testRebuildingAfterEveryKeyMatchesAnUninterruptedScan() throws Exception {
+        withData("aa", "20250804_0");
+        withData("aa", "20250804_1");
+        withData("ab", "20250804_0");
+        withOptions("a.*");
+
+        assertEquals(List.of("aa", "ab"), scanRebuildingAfterEveryKey(data.size() * 4));
     }
 }

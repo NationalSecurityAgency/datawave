@@ -28,7 +28,7 @@ import org.springframework.security.web.authentication.preauth.AbstractPreAuthen
 import org.springframework.util.StringUtils;
 
 import datawave.security.authorization.SubjectIssuerDNPair;
-import datawave.security.util.ProxiedEntityUtils;
+import datawave.security.util.DnUtils;
 
 /**
  * Allows authorization based on a supplied X.509 client certificate (or information from trusted headers) and proxied entities/issuers named in headers.
@@ -131,11 +131,11 @@ public class ProxiedEntityX509Filter extends AbstractPreAuthenticatedProcessingF
             return null;
         } else {
             List<SubjectIssuerDNPair> proxiedEntities;
-            Collection<String> entities = Arrays.asList(ProxiedEntityUtils.splitProxiedDNs(proxiedSubjects, true));
+            Collection<String> entities = Arrays.asList(DnUtils.splitProxiedDNs(proxiedSubjects, true));
             if (!requireIssuers) {
                 proxiedEntities = entities.stream().map(SubjectIssuerDNPair::of).collect(Collectors.toCollection(ArrayList::new));
             } else {
-                Collection<String> issuers = Arrays.asList(ProxiedEntityUtils.splitProxiedDNs(proxiedIssuers, true));
+                Collection<String> issuers = Arrays.asList(DnUtils.splitProxiedDNs(proxiedIssuers, true));
                 if (issuers.size() != entities.size()) {
                     logger.warn("Failing authorization since issuers list (" + proxiedIssuers + ") and entities list (" + proxiedSubjects
                                     + ") don't match up.");
