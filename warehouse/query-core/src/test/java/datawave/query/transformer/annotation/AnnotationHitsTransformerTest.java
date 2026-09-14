@@ -12,6 +12,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
@@ -1383,6 +1384,48 @@ public class AnnotationHitsTransformerTest {
         // pass now that updateConfig() lowered min.score to 0
         Entry<Key,Document> result = transformer.apply(Map.entry(HIT_KEY, new Document()));
         assertEquals(expected, result.getValue());
+    }
+
+    @Test
+    public void structuredKeywordOverrideReplacesAndCanRestorePreparedCriteria() throws Exception {
+        withParameter(AnnotationHitsTransformer.ENABLED_PARAMETER, "true");
+        query = "ignored";
+        validTypes = Set.of("ANNO1");
+        targetField = "TARGET_FIELD";
+        givenAnnotation(buildAnnotation("ANNO1", "20260112_0", "test", "123.345.456", "hash", S1));
+        when(annotationDao.getAnnotations("20260112_0", "test", "123.345.456")).thenReturn(annotations);
+        when(termExtractor.extract(query, normalizer)).thenReturn(Set.of("bbbbbbb"));
+        withNormalizers();
+        when(normalizer.normalize("aaaAAAA")).thenReturn("aaaaaaa");
+
+        SearchExpressions prepared = new SearchExpressions(List.of(new StandalonePatternExpression("bbbbbbb")));
+        transformer = new AnnotationHitsTransformer(shardQueryConfiguration, query, termExtractor, normalizer, annotationDao, allHitsFactory,
+                        maxContextBoundary, validTypes, targetField, enrichmentFieldMap, prepared, new DefaultKeywordSearchExpressionParser(normalizer), false);
+        transformer.initialize(settings, markingFunctions);
+
+        SegmentHit bbb = new SegmentHit(S1.getBoundary(), S1.getBoundary(), 0);
+        bbb.setContextEnd(S1.getBoundary());
+        withHits("prepared", List.of(bbb));
+        transformer.apply(Map.entry(HIT_KEY, new Document()));
+
+        // A structured keyword override must replace, rather than augment, the prepared query criteria.
+        Query overrideSettings = new QueryImpl();
+        overrideSettings.addParameter(AnnotationHitsTransformer.ENABLED_PARAMETER, "true");
+        overrideSettings.addParameter(AnnotationHitsTransformer.KEYWORDS_PARAMETER, "aaaAAAA");
+        transformer.updateConfig(overrideSettings);
+        reset(allHitsFactory);
+        SegmentHit aaa = new SegmentHit(S1.getBoundary(), S1.getBoundary(), 1);
+        aaa.setContextEnd(S1.getBoundary());
+        withHits("override", List.of(aaa));
+        transformer.apply(Map.entry(HIT_KEY, new Document()));
+
+        // Removing the override must restore the prepared criteria and must not retain the old keyword.
+        Query restoredSettings = new QueryImpl();
+        restoredSettings.addParameter(AnnotationHitsTransformer.ENABLED_PARAMETER, "true");
+        transformer.updateConfig(restoredSettings);
+        reset(allHitsFactory);
+        withHits("restored", List.of(bbb));
+        transformer.apply(Map.entry(HIT_KEY, new Document()));
     }
 
     @Test

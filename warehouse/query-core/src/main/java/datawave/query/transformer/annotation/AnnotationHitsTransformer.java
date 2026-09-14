@@ -162,6 +162,10 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
         if (!enabledStr.isBlank()) {
             enabled = Boolean.parseBoolean(enabledStr);
         }
+        // Reset per-query state on every lifecycle update so keyword overrides and paging/config changes cannot retain stale criteria.
+        searchHitTerms = null;
+        searchExpressions = preparedExpressions;
+
         // go no further if not enabled, searchHitTerms will be null so the transformer will never do anything
         if (!enabled) {
             searchHitTerms = new HashSet<>();
@@ -226,18 +230,19 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
                 // basic parsing
                 keywords = keywordStr.split(KEYWORD_DELIMITER);
             }
-            searchHitTerms = new HashSet<>();
-            for (String keyword : keywords) {
-                if (keywordParser != null) {
-                    if (searchExpressions == null)
-                        searchExpressions = new SearchExpressions(keywordParser.parse(keyword).getExpressions());
-                    else {
-                        List<SearchExpression> values = new ArrayList<>(searchExpressions.getExpressions());
-                        values.addAll(keywordParser.parse(keyword).getExpressions());
-                        searchExpressions = new SearchExpressions(values);
-                    }
-                }
-                searchHitTerms.add(compileNormalized(termNormalizer.normalize(keyword)));
+            if (keywordParser != null) {
+                // A nonblank keyword parameter is a complete override, not an addition to query-derived criteria.
+                List<SearchExpression> overrideExpressions = new ArrayList<>();
+                for (String keyword : keywords)
+                    overrideExpressions.addAll(keywordParser.parse(keyword).getExpressions());
+                searchExpressions = new SearchExpressions(overrideExpressions);
+                searchHitTerms = new HashSet<>();
+            } else {
+                // Retain the legacy keyword path for callers that do not provide the structured parser.
+                searchHitTerms = new HashSet<>();
+                for (String keyword : keywords)
+                    searchHitTerms.add(compileNormalized(termNormalizer.normalize(keyword)));
+                searchExpressions = new SearchExpressions();
             }
         } else {
             searchExpressions = preparedExpressions;
