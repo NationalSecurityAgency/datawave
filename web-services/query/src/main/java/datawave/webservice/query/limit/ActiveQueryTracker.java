@@ -1,7 +1,5 @@
 package datawave.webservice.query.limit;
 
-import java.io.File;
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -12,25 +10,21 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 
 import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.framework.recipes.nodes.PersistentNode;
-import org.apache.curator.retry.RetryNTimes;
-import org.apache.hadoop.fs.Path;
-import org.apache.log4j.Logger;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.data.Stat;
-import org.apache.zookeeper.server.quorum.QuorumPeer;
-import org.apache.zookeeper.server.quorum.QuorumPeerConfig;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.google.common.base.Preconditions;
 
 /**
  * This class provides methods for leveraging Zookeeper to track queries and their active status.
  */
-public class ActiveQueryTracker implements AutoCloseable {
+public class ActiveQueryTracker {
 
-    public static final String ZOOKEEPER_NAMESPACE = "ActiveQueries";
-
-    private static final Logger log = Logger.getLogger(ActiveQueryTracker.class);
+    private static final Logger log = LoggerFactory.getLogger(ActiveQueryTracker.class);
 
     private static final byte[] EMPTY_DATA = new byte[0];
 
@@ -40,58 +34,18 @@ public class ActiveQueryTracker implements AutoCloseable {
 
     private final Lock clientLock = new ReentrantLock();
 
-    private CuratorFramework client;
+    private final CuratorFramework client;
 
     /**
      * Create and return a new {@link ActiveQueryTracker} instance
-     *
-     * @param zookeeperConfig
-     *            the zookeeper config
-     * @throws QuorumPeerConfig.ConfigException
-     *             if an error occurs when verifying the zookeeper configuration
      */
-    public ActiveQueryTracker(String zookeeperConfig) throws QuorumPeerConfig.ConfigException {
-        // @formatter:off
-        this.client = CuratorFrameworkFactory.builder()
-                        .namespace(ZOOKEEPER_NAMESPACE)
-                        .connectString(getQuorumPeerConfig(zookeeperConfig))
-                        .sessionTimeoutMs(60000)
-                        .connectionTimeoutMs(60000)
-                        .retryPolicy(new RetryNTimes(10, 1000))
-                        .build();
-
-        // @formatter:on
-        client.start();
-    }
-
-    private static String getQuorumPeerConfig(String zookeeperConfig) throws QuorumPeerConfig.ConfigException {
-        URI zookeeperConfigFile;
-        try {
-            zookeeperConfigFile = new Path(zookeeperConfig).toUri();
-            if (new File(zookeeperConfigFile).exists()) {
-                QuorumPeerConfig zooConfig = new QuorumPeerConfig();
-                zooConfig.parse(zookeeperConfigFile.getPath());
-                StringBuilder sb = new StringBuilder();
-                for (QuorumPeer.QuorumServer server : zooConfig.getServers().values()) {
-                    if (sb.length() > 0) {
-                        sb.append(',');
-                    }
-                    sb.append(server.addr.getReachableOrOne().getHostName()).append(':').append(zooConfig.getClientPortAddress().getPort());
-                }
-                if (sb.length() == 0) {
-                    sb.append(zooConfig.getClientPortAddress().getHostName()).append(':').append(zooConfig.getClientPortAddress().getPort());
-                }
-                return sb.toString();
-            }
-        } catch (IllegalArgumentException e) {
-            // Try the zookeeper config as is.
-        }
-        return zookeeperConfig;
+    public ActiveQueryTracker(CuratorFramework client) {
+        Preconditions.checkNotNull(client, "zookeeper client cannot be null");
+        this.client = client;
     }
 
     /**
-     * Begin tracking an active query. All nodes will be created under the namespace {@value ZOOKEEPER_NAMESPACE}. The following nodes will be created as
-     * containers.
+     * Begin tracking an active query. The following nodes will be created as containers.
      *
      * <pre>
      * /users/&lt;userDn&gt;/&lt;queryLogic&gt; (Created only if systemCountsAgainstUserLimit is true)
@@ -133,7 +87,7 @@ public class ActiveQueryTracker implements AutoCloseable {
         QueryHeartbeat heartbeat;
 
         if (log.isTraceEnabled()) {
-            log.trace("Tracking query: queryId=" + queryId + ", user='" + userDn + "', system='" + system + "', queryLogic='" + queryLogic + "'");
+            log.trace("Tracking query: queryId={}, user='{}', system='{}', queryLogic='{}'", queryId, userDn, system, queryLogic);
         }
 
         clientLock.lock();
@@ -185,7 +139,7 @@ public class ActiveQueryTracker implements AutoCloseable {
                 heartbeat = new QueryHeartbeat(queryId, nodes);
 
             } catch (Exception e) {
-                log.error("Failed to track query " + queryId, e);
+                log.error("Failed to track query {}", queryId, e);
                 throw e;
             }
 
@@ -213,7 +167,7 @@ public class ActiveQueryTracker implements AutoCloseable {
         userDn = userDn.trim().toLowerCase();
 
         if (log.isTraceEnabled()) {
-            log.trace("Fetching total queries for user='" + userDn + "', queryLogic='" + queryLogic + "'");
+            log.trace("Fetching total queries for user='{}', queryLogic='{}'", userDn, queryLogic);
         }
 
         return getTotalChildrenWithLock(getUserQueryLogicPath(userDn, queryLogic));
@@ -235,7 +189,7 @@ public class ActiveQueryTracker implements AutoCloseable {
         system = system.trim();
 
         if (log.isTraceEnabled()) {
-            log.trace("Fetching total queries for system='" + system + "', queryLogic='" + queryLogic + "'");
+            log.trace("Fetching total queries for system='{}', queryLogic='{}'", system, queryLogic);
         }
 
         return getTotalChildrenWithLock(getSystemQueryLogicPath(system, queryLogic));
@@ -255,7 +209,7 @@ public class ActiveQueryTracker implements AutoCloseable {
         try {
             return getTotalChildren(path);
         } catch (Exception e) {
-            log.error("Failed to get total children for path " + path, e);
+            log.error("Failed to get total children for path {}", path, e);
             throw e;
         } finally {
             clientLock.unlock();
@@ -282,8 +236,8 @@ public class ActiveQueryTracker implements AutoCloseable {
         userDn = userDn.trim().toLowerCase();
 
         if (log.isTraceEnabled()) {
-            log.trace("Checking if total queries meets limit for user='" + userDn + "', queryLimit=" + queryLimit + ", queryLogicsAlreadyCounted="
-                            + queryLogicsAlreadyCounted + ", initialTotal=" + initialTotal);
+            log.trace("Checking if total queries meets limit for user='{}', queryLimit={}, queryLogicsAlreadyCounted={}, initialTotal={}", userDn, queryLimit,
+                            queryLogicsAlreadyCounted, initialTotal);
         }
 
         return totalQueriesMeetsLimit(userDn, queryLimit, queryLogicsAlreadyCounted, initialTotal, this::getUserPath, this::getUserQueryLogicPath);
@@ -309,8 +263,8 @@ public class ActiveQueryTracker implements AutoCloseable {
         system = system.trim();
 
         if (log.isTraceEnabled()) {
-            log.trace("Checking if total queries meets limit for system='" + system + "', queryLimit=" + queryLimit + ", queryLogicsAlreadyCounted="
-                            + queryLogicsAlreadyCounted + ", initialTotal=" + initialTotal);
+            log.trace("Checking if total queries meets limit for system='{}', queryLimit={}, queryLogicsAlreadyCounted={}, initialTotal={}", system, queryLimit,
+                            queryLogicsAlreadyCounted, initialTotal);
         }
 
         return totalQueriesMeetsLimit(system, queryLimit, queryLogicsAlreadyCounted, initialTotal, this::getSystemPath, this::getSystemQueryLogicPath);
@@ -359,7 +313,7 @@ public class ActiveQueryTracker implements AutoCloseable {
                 // If this exception occurs, the owner node does not exist. There are no active queries for the owner. Simply return false.
                 return false;
             } catch (Exception e) {
-                log.error("Failed to count total queries for owner='" + owner + "'", e);
+                log.error("Failed to count total queries for owner='{}'", owner, e);
                 throw e;
             }
         } finally {
@@ -387,7 +341,7 @@ public class ActiveQueryTracker implements AutoCloseable {
                 return stat.getNumChildren();
             }
         } catch (Exception e) {
-            log.error("Failed to obtain total children for path='" + path + "'", e);
+            log.error("Failed to obtain total children for path='{}'", path, e);
             throw e;
         }
     }
@@ -506,29 +460,5 @@ public class ActiveQueryTracker implements AutoCloseable {
      */
     private String getSystemQueryIdPath(String system, String queryLogic, String queryId) {
         return getSystemQueryLogicPath(system, queryLogic) + "/" + queryId;
-    }
-
-    /**
-     * Close the underlying client used by this {@link ActiveQueryTracker}. NOTE: all ephemeral nodes for {@link QueryHeartbeat} instances created by this
-     * {@link ActiveQueryTracker} will be deleted.
-     */
-    @Override
-    public void close() {
-        if (client != null) {
-            clientLock.lock();
-            try {
-                if (client != null) {
-                    try {
-                        client.close();
-                    } catch (Exception e) {
-                        log.error("Failed to close client", e);
-                    } finally {
-                        client = null;
-                    }
-                }
-            } finally {
-                clientLock.unlock();
-            }
-        }
     }
 }
