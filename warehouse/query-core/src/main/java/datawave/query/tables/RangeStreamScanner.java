@@ -397,9 +397,10 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
                     log.error(e);
                 }
             }
-            if (uncaughtExceptionHandler.getThrowable() != null) {
-                log.error("Exception discovered on hasNext call", uncaughtExceptionHandler.getThrowable());
-                Throwables.propagate(uncaughtExceptionHandler.getThrowable());
+            if (uncaughtExceptionHandler.hasUncaughtException()) {
+                Throwable throwable = uncaughtExceptionHandler.getUncaughtException().getLeft();
+                log.error("Exception discovered on hasNext call", throwable);
+                Throwables.propagate(throwable);
             }
         }
         return (null != currentEntry);

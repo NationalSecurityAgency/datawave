@@ -264,7 +264,8 @@ services:
       - TRUSTSTORE_TYPE=JKS
       - TRUSTSTORE_PASSWORD=ChangeIt
     ports:
-      - "9443:8443"
+      - "9443:8443" # web server
+      - "9990:9990" # wildfly admin
     volumes:
       - ./stack:/stack:ro
       - ./logs:/logs

@@ -96,7 +96,17 @@ public class DocumentIdProducer implements RunnableWithContext {
         }
     }
 
-    private Scanner createScanner() throws TableNotFoundException {
+    /**
+     * Create a scanner for the field index and configure it with an execution hint and consistency level.
+     * <p>
+     * This is a search scan, so it is governed by the search hint rather than the retrieval hint. Both are required, because the document scheduler relies on
+     * its scans being routed to a dedicated executor pool.
+     *
+     * @return a configured scanner
+     * @throws TableNotFoundException
+     *             if the table does not exist
+     */
+    protected Scanner createScanner() throws TableNotFoundException {
         // this check exists because datawave can produce day ranges for certain unit tests. The document scheduler is optimized for shard-specific plans and
         // thus is not compatible with day ranges.
         Range scanRange = Range.exact(range.getStartKey().getRow());
@@ -106,11 +116,17 @@ public class DocumentIdProducer implements RunnableWithContext {
             throw new RuntimeException("Scan range differed from input range");
         }
 
-        Preconditions.checkArgument(context.getTableName().equals(config.getRetrievalScanHintTable()), "Table name did not match execution hint");
+        String tableName = context.getTableName();
+
+        Preconditions.checkNotNull(tableName);
+        Preconditions.checkNotNull(config.getSearchScanHintTable(), "SearchScanHintTable cannot be null");
+        Preconditions.checkNotNull(config.getSearchExecutorPool(), "SearchExecutorPool cannot be null");
+        Preconditions.checkArgument(tableName.equals(config.getSearchScanHintTable()), "Table name did not match execution hint");
+        Preconditions.checkNotNull(config.getSearchConsistencyLevel(), "SearchConsistencyLevel cannot be null");
 
         //  @formatter:off
         ScannerBuilder builder = ScannerBuilder.create(config.getClient())
-                .setTableName(context.getTableName())
+                .setTableName(tableName)
                 .setAuthorizations(config.getAuthorizations())
                 .setConsistencyLevel(config.getSearchConsistencyLevel())
                 .setScanType(config.getSearchScanHintPool())

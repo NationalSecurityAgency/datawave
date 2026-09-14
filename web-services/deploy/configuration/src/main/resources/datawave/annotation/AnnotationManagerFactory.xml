@@ -18,6 +18,9 @@
         but can be overridden by system properties -->
     <context:property-placeholder location="classpath:/datawave/query/database.properties" system-properties-mode="OVERRIDE" ignore-unresolvable="true" order="0" />
 
+    <!-- Default response rewriter is a no-op that returns responses unchanged. -->
+    <bean id="AnnotationResponseRewriter" class="datawave.webservice.common.rest.NoOpResponseRewriter" />
+
     <bean id="AnnotationManagerConfig" scope="prototype" class="datawave.webservice.annotation.AnnotationManagerConfig">
         <property name="annotationTableName" value="${annotation.table.name}"/>
         <property name="annotationSourceTableName" value="${annotation.source.table.name}"/>
