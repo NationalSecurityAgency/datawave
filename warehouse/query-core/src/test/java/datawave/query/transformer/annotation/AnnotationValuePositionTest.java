@@ -14,6 +14,7 @@ import datawave.annotation.protobuf.v1.BoundaryType;
 import datawave.annotation.protobuf.v1.SegmentBoundary;
 import datawave.annotation.protobuf.v1.SegmentValue;
 import datawave.data.normalizer.Normalizer;
+import datawave.query.transformer.annotation.model.AllHits;
 
 class AnnotationValuePositionTest {
     private static SegmentBoundary boundary(long start) {
@@ -35,6 +36,23 @@ class AnnotationValuePositionTest {
         assertEquals(0, view.getValues(0).get(0).getBoundaryIndex());
         assertEquals(1, view.getValues(1).get(1).getValueIndex());
         assertEquals("best", view.getValues(1).get(1).getValue().getValue());
+    }
+
+    @Test
+    void matcherIndexResolvesAgainstFinalScoreSortedValues() throws AllHitsException {
+        SegmentBoundary boundary = boundary(0);
+        TreeMap<SegmentBoundary,java.util.List<SegmentValue>> sorted = new TreeMap<>(new BoundaryComparator());
+        // This is the final list consumed by AllHitsFactory: score ascending.
+        sorted.put(boundary, java.util.List.of(SegmentValue.newBuilder().setValue("low").setScore(.1f).build(),
+                        SegmentValue.newBuilder().setValue("high").setScore(.9f).build()));
+        AnnotationPositionView view = AnnotationPositionView.of(sorted, Normalizer.NOOP_NORMALIZER);
+
+        java.util.List<SegmentHit> hits = new StandaloneAnnotationMatcher(Collections.singleton(Pattern.compile("high"))).match(view, 0, 0);
+        AllHits result = new AllHitsFactory().create("annotation", hits, sorted);
+
+        assertEquals(1, hits.size());
+        assertEquals(1, hits.get(0).getValueHitIndex());
+        assertEquals("high", result.getKeywordResultList().get(0).getContext().get(0).getHits().iterator().next().getLabel());
     }
 
     @Test

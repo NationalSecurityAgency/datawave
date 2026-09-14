@@ -61,6 +61,6 @@ mvn -pl warehouse/query-core -am -DskipITs \
 
 - Added immutable `AnnotationPositionView` and `ValuePosition` types. Boundary positions use sorted boundary ordinals, while value indexes remain indexes into the score-sorted lists passed to `AllHitsFactory`; semantic boundary order is independent of value score order.
 - Added `StandaloneAnnotationMatcher` and changed `AnnotationHitsTransformer` standalone searching to build one normalized view per annotation and match normalized whole values with the existing score threshold, full regex semantics, value indexes, and context behavior. Phrase matching remains disabled.
-- Added focused tests in `AnnotationValuePositionTest` for boundary/value indexes, full matching, score thresholds, and once-per-value normalization.
-- Validation passed: `mvn -pl warehouse/query-core -am -DskipITs -Dtest=AnnotationValuePositionTest,StandaloneAnnotationMatcherTest,AnnotationHitsTransformerTest,AllHitsFactoryTest -Dsurefire.failIfNoSpecifiedTests=false test` (103 tests, 0 failures, 0 errors). Checkstyle passed; output contained only existing repository import-control warnings.
+- Added focused tests in `AnnotationValuePositionTest` for boundary/value indexes, full matching, score thresholds, once-per-value normalization, and the factory contract resolving a hit index against the final score-sorted value list.
+- Validation passed: `mvn -pl warehouse/query-core -am -DskipITs -Dtest=AnnotationValuePositionTest,StandaloneAnnotationMatcherTest,AnnotationHitsTransformerTest,AllHitsFactoryTest -Dsurefire.failIfNoSpecifiedTests=false test` (104 tests, 0 failures, 0 errors). Checkstyle passed; output contained only existing repository import-control warnings.
 

@@ -1,6 +1,7 @@
 package datawave.query.transformer.annotation;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTimeout;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -77,7 +78,12 @@ class OrderedAnnotationMatcherTest {
         assertEquals(2, matcher("x", "x").match(view("x,x"), .5f, true).size());
 
         AnnotationPositionView overlapping = view("a", "b", "a", "b");
-        assertEquals(2, matcher("a", "b").match(overlapping, .5f, false).size());
+        List<AnnotationPhraseOccurrence> occurrences = matcher("a", "b").match(overlapping, .5f, false);
+        assertEquals(2, occurrences.size());
+        assertEquals(Arrays.asList(0, 1), Arrays.asList(occurrences.get(0).getConstituents().get(0).getBoundaryIndex(),
+                        occurrences.get(0).getConstituents().get(1).getBoundaryIndex()));
+        assertEquals(Arrays.asList(2, 3), Arrays.asList(occurrences.get(1).getConstituents().get(0).getBoundaryIndex(),
+                        occurrences.get(1).getConstituents().get(1).getBoundaryIndex()));
     }
 
     @Test
@@ -85,6 +91,20 @@ class OrderedAnnotationMatcherTest {
         List<Pattern> duplicate = Arrays.asList(Pattern.compile("a"), Pattern.compile("a"));
         assertEquals(1, new OrderedAnnotationMatcher(duplicate).match(view("a", "a"), .5f, false).size());
         assertTrue(matcher("a", "b").match(view("a", "b"), .5f, false).get(0).getConstituents().size() == 2);
+    }
+
+    @Test
+    void proximityConstructorPreservesOrderAndFlagsAndRequiresExactDistanceOne() {
+        List<StandalonePatternExpression> components = Arrays.asList(new StandalonePatternExpression("new"), new StandalonePatternExpression("york"));
+        ProximityExpression expression = new ProximityExpression(true, components, 1);
+        AnnotationPhraseOccurrence occurrence = new OrderedAnnotationMatcher(expression).match(view("new", "york"), .5f, false).get(0);
+        assertEquals(Arrays.asList(0, 1),
+                        Arrays.asList(occurrence.getConstituents().get(0).getBoundaryIndex(), occurrence.getConstituents().get(1).getBoundaryIndex()));
+
+        ProximityExpression caseInsensitive = new ProximityExpression(true, Arrays.asList(new StandalonePatternExpression("NEW")), 1);
+        assertEquals(1, new OrderedAnnotationMatcher(caseInsensitive).match(view("new"), .5f, false).size());
+        assertThrows(IllegalArgumentException.class, () -> new OrderedAnnotationMatcher(new ProximityExpression(true, components, 2)));
+        assertThrows(IllegalArgumentException.class, () -> new OrderedAnnotationMatcher(new ProximityExpression(false, components, 1)));
     }
 
     @Test

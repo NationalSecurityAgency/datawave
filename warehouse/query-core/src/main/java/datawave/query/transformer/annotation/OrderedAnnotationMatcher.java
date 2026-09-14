@@ -34,8 +34,8 @@ public final class OrderedAnnotationMatcher {
     }
 
     public OrderedAnnotationMatcher(ProximityExpression expression) {
-        if (expression == null || !expression.isOrdered()) {
-            throw new IllegalArgumentException("an ordered proximity expression is required");
+        if (expression == null || !expression.isOrdered() || expression.getDistance() != 1) {
+            throw new IllegalArgumentException("an ordered distance-1 proximity expression is required");
         }
         List<Pattern> patterns = new ArrayList<>();
         for (StandalonePatternExpression component : expression.getComponents()) {
