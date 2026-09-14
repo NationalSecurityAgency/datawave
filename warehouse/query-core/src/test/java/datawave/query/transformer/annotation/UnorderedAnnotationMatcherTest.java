@@ -1,7 +1,9 @@
 package datawave.query.transformer.annotation;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTimeout;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -75,6 +77,31 @@ class UnorderedAnnotationMatcherTest {
         assertEquals(1, matcher(1, "a", "b").match(view("b,a"), .5f, true).size());
         assertEquals(1, matcher(1, "a", "b").match(view("a,b", "x,y"), .5f, true).size());
         assertEquals(1, matcher(1, "x", "x").match(view("x,x"), .5f, true).size());
+    }
+
+    @Test
+    void configuredLongerDistanceAllowsFourComponentSpan() {
+        UnorderedAnnotationMatcher fourComponents = matcher(4, "a", "b", "c", "d");
+
+        assertEquals(1, fourComponents.match(view("a", "b", "c", "x", "d"), .5f, false).size());
+        assertEquals(0, matcher(3, "a", "b", "c", "d").match(view("a", "b", "c", "x", "d"), .5f, false).size());
+    }
+
+    @Test
+    void aggressivelyPrunesManyAlternativesOutsideTheAllowedWindow() {
+        TreeMap<SegmentBoundary,List<SegmentValue>> map = new TreeMap<>(new BoundaryComparator());
+        for (int boundaryIndex = 0; boundaryIndex < 40; boundaryIndex++) {
+            List<SegmentValue> values = new ArrayList<>();
+            for (int valueIndex = 0; valueIndex < 20; valueIndex++) {
+                values.add(value("a"));
+                values.add(value("b"));
+                values.add(value("c"));
+                values.add(value("d"));
+            }
+            map.put(boundary(boundaryIndex), values);
+        }
+        AnnotationPositionView positionView = AnnotationPositionView.of(map, Normalizer.NOOP_NORMALIZER);
+        assertTimeout(Duration.ofSeconds(2), () -> assertEquals(0, matcher(1, "a", "b", "c", "d").match(positionView, .5f, false).size()));
     }
 
     @Test
