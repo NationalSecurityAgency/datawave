@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.microservice</groupId>
         <artifactId>datawave-microservice-service-parent</artifactId>
-        <version>5.0.14</version>
+        <version>5.0.15</version>
         <relativePath>../../../microservice-service-parent/pom.xml</relativePath>
     </parent>
     <artifactId>modification-service</artifactId>
@@ -19,7 +19,7 @@
     </scm>
     <properties>
         <start-class>datawave.microservice.modification.ModificationService</start-class>
-        <version.datawave>7.44.1</version.datawave>
+        <version.datawave>8.0.0</version.datawave>
         <version.datawave.authorization-api>4.0.5</version.datawave.authorization-api>
         <version.datawave.modification-api>1.0.4</version.datawave.modification-api>
         <version.datawave.query-api>1.0.4</version.datawave.query-api>
