@@ -1,4 +1,4 @@
-<module name="org.slf4j.impl" xmlns="urn:jboss:module:1.6">
+<module name="org.slf4j.impl" xmlns="urn:jboss:module:1.9">
 
     <properties>
         <property name="jboss.api" value="private"/>
@@ -9,6 +9,7 @@
     </resources>
 
     <dependencies>
+        <module name="java.logging"/>
         <module name="org.slf4j"/>
         <module name="org.jboss.logmanager"/>
     </dependencies>

@@ -60,10 +60,7 @@ public final class DatePartitioner {
         // If no field index holes were found, we can return early with the original query date range.
         if (fieldIndexHolesByDatatype.isEmpty()) {
             log.debug("No field index holes found for query fields");
-            SortedMap<Pair<Date,Date>,Set<String>> fullTimeline = new TreeMap<>();
-            Pair<Date,Date> range = Pair.of(beginDate, endDate);
-            fullTimeline.put(range, Collections.emptySet());
-            return fullTimeline;
+            return fullRange(beginDate, endDate);
         } else {
             if (log.isDebugEnabled()) {
                 log.debug("Field index holes found for query fields " + fieldIndexHolesByDatatype.keySet());
@@ -76,10 +73,11 @@ public final class DatePartitioner {
         // Now create a timeline of index segments from begin date to end date
         SortedSet<IndexFieldHoleBoundary> timeline = createTimeline(fieldIndexHoles, beginDate, endDate);
 
-        // if we found no holes that overlapped our date range, then we are done
+        // if we found no holes that overlapped our date range, then we are done. createTimeline always synthesizes boundaries for the query range, so this
+        // is defensive: callers rely on a non-null timeline that covers the whole query date range.
         if (timeline.isEmpty()) {
             log.debug("No field index holes overlapping query range found");
-            return null;
+            return fullRange(beginDate, endDate);
         } else {
             if (log.isDebugEnabled()) {
                 log.debug("Timeline contains " + timeline.size() + " boundaries to be examined");
@@ -137,6 +135,21 @@ public final class DatePartitioner {
         ensureConsistency(reducedTimeline, beginDate, endDate);
 
         return reducedTimeline;
+    }
+
+    /**
+     * Return a timeline consisting of a single sub-range covering the entire query date range, with no unindexed fields.
+     *
+     * @param beginDate
+     *            the query's begin date
+     * @param endDate
+     *            the query's end date
+     * @return a timeline containing the one full-coverage sub-range
+     */
+    private static SortedMap<Pair<Date,Date>,Set<String>> fullRange(Date beginDate, Date endDate) {
+        SortedMap<Pair<Date,Date>,Set<String>> fullTimeline = new TreeMap<>();
+        fullTimeline.put(Pair.of(beginDate, endDate), Collections.emptySet());
+        return fullTimeline;
     }
 
     /**
@@ -199,7 +212,9 @@ public final class DatePartitioner {
     }
 
     /**
-     * Collapse the datatypes such that if one datatype is unindexed for a field, then consider them all unindexed
+     * Collapse the datatypes such that if one datatype is unindexed for a field, then consider them all unindexed. Each field's resulting hole set is the union
+     * of its holes across every datatype: holes that overlap, nest inside one another, or are merely contiguous (separated by no more than the 1ms that
+     * day-aligned ranges leave between them) are merged into a single range, and only a gap of at least a full day leaves two ranges separate.
      *
      * @param fieldIndexHolesByDatatype
      * @return The map of fields to their index holes (datatype agnostic)
@@ -207,34 +222,37 @@ public final class DatePartitioner {
     private static Map<String,IndexFieldHole> collapseDatatypes(Map<String,Map<String,IndexFieldHole>> fieldIndexHolesByDatatype) {
         Map<String,IndexFieldHole> collapsedDatatypes = new HashMap<>();
 
-        // to do this, create a timeline of boundaries and then collapse consecutive begins and consecutive ends for each field
+        // to do this, merge each field's hole date ranges, across all of its datatypes, into their union
         for (Map.Entry<String,Map<String,IndexFieldHole>> holes : fieldIndexHolesByDatatype.entrySet()) {
             String field = holes.getKey();
-            SortedSet<IndexFieldHoleBoundary> boundaries = new TreeSet<>();
+
+            // gather the hole date ranges of every datatype for this field, ordered by start date
+            SortedSet<Pair<Date,Date>> ranges = new TreeSet<>();
             for (IndexFieldHole hole : holes.getValue().values()) {
-                for (Pair<Date,Date> range : hole.getDateRanges()) {
-                    boundaries.add(new IndexFieldHoleBoundary(range.getLeft(), true, field));
-                    boundaries.add(new IndexFieldHoleBoundary(range.getRight(), false, field));
-                }
+                ranges.addAll(hole.getDateRanges());
             }
+
             SortedSet<Pair<Date,Date>> collapsedRanges = new TreeSet<>();
             Date lastStart = null;
             Date lastEnd = null;
-            for (IndexFieldHoleBoundary next : boundaries) {
-                if (next.isStart()) {
-                    if (lastEnd != null) {
-                        collapsedRanges.add(Pair.of(lastStart, lastEnd));
-                        lastStart = null;
-                        lastEnd = null;
-                    }
-                    // retain only the first date in a series of starts
-                    if (lastStart == null) {
-                        lastStart = next.getBoundary();
-                    }
-                } else {
-                    // retain the last date in a series of ends
-                    lastEnd = next.getBoundary();
+            for (Pair<Date,Date> range : ranges) {
+                // Close out the pending range only if this hole starts strictly after the pending one ends, leaving a real gap between them. A hole that
+                // starts within, or immediately (1ms) after, the pending range is contiguous with it and must be merged in: leaving two back-to-back
+                // ranges for the same field would produce two sub-ranges with identical unindexed field sets, which ensureConsistency rejects as a fatal
+                // error.
+                if (lastEnd != null && range.getLeft().getTime() > oneMsAfter(lastEnd).getTime()) {
+                    collapsedRanges.add(Pair.of(lastStart, lastEnd));
+                    lastStart = null;
+                    lastEnd = null;
                 }
+                // retain only the first date in a series of merged holes
+                if (lastStart == null) {
+                    lastStart = range.getLeft();
+                }
+                // Extend the pending range to the latest end seen so far rather than adopting this hole's end outright. A hole nested inside a longer one
+                // ends first, and taking its end would drop the remainder of the enclosing hole from the merged range and wrongly report those days as
+                // indexed for a datatype that has no index over them.
+                lastEnd = lastEnd == null ? range.getRight() : max(lastEnd, range.getRight());
             }
             if (lastEnd != null) {
                 collapsedRanges.add(Pair.of(lastStart, lastEnd));
@@ -287,6 +305,10 @@ public final class DatePartitioner {
      */
     private static SortedSet<Pair<Date,Date>> getHolesOverlappingOriginalQueryDateRange(Date beginDate, Date endDate, IndexFieldHole fieldIndexHole) {
         SortedSet<Pair<Date,Date>> holes = fieldIndexHole.getDateRanges();
+        // A hole with no date ranges contributes no boundaries at all.
+        if (holes.isEmpty()) {
+            return Collections.emptySortedSet();
+        }
         // If the earliest date range falls after the original query date range, or the latest date range falls before the original query range, then none
         // of the holes fall within the date range.
         if (isOutsideDateRange(beginDate, endDate, holes.first(), holes.last())) {
