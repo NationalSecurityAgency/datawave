@@ -133,9 +133,8 @@ public class ExcerptTest extends AbstractQueryTest {
     @BeforeEach
     public void setupLogic() {
         setClientForTest(client);
-        logic.setFullTableScanEnabled(true);
 
-        givenDate("19000101", "20240101");
+        givenDate("20121231", "20130102");
 
         extraParameters.clear();
         extraParameters.put("include.grouping.context", "true");
