@@ -67,5 +67,6 @@ Suggested command:
 - Added the internal `AnnotationHit` contract, made `AnnotationHitsTransformer.SegmentHit` implement it, and added non-serialized `PhraseHit` with constituent hits, complete phrase span, mode/distance metadata, and boundary-counted phrase-wide context.
 - Added `AllHitsFactory.createFromHits` overloads using a distinct method name. They expand phrase constituents and delegate through the existing virtual four-argument `create` method, preserving configurable factory interception and the legacy `create(... List<SegmentHit> ...)` APIs.
 - Added focused `AnnotationHitFactoryTest` coverage for complete-phrase context bounds and subclass interception. Existing response model classes were not changed; existing TreeSet hit handling continues to collapse identical serialized term hits.
-- Validation passed: `mvn -q -pl warehouse/query-core -DskipITs -Dtest=AllHitsFactoryTest,AnnotationHitFactoryTest,OrderedAnnotationMatcherTest,UnorderedAnnotationMatcherTest -Dsurefire.failIfNoSpecifiedTests=false test`.
-- Checkstyle passed with the repository's pre-existing import-control warnings. No transformer/query wiring was added.
+- Validation passed with the full reactor command: `mvn -pl warehouse/query-core -am -DskipITs -Dtest=AllHitsFactoryTest,AnnotationHitFactoryTest,OrderedAnnotationMatcherTest,UnorderedAnnotationMatcherTest -Dsurefire.failIfNoSpecifiedTests=false test` (32 tests, 0 failures, 0 errors).
+- Checkstyle passed with the repository's pre-existing import-control warnings.
+- The remaining occurrence-to-`PhraseHit` matcher adaptation is deferred because transformer/query wiring is explicitly out of scope until Task 09.

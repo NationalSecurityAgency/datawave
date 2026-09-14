@@ -392,6 +392,20 @@ public class ShardQueryLogicAnnotationHitsTest extends AbstractQueryTest {
     }
 
     @Test
+    public void allHitsQueryConfigIsNotRequiredForShardQueryLogic() throws Exception {
+        logic.setAllHitsQueryConfig(null);
+        givenQuery("UUID == 'NO_SUCH_UUID'");
+        runTestQuery(Collections.emptySet());
+    }
+
+    @Test
+    public void annotationConfigIsNotRequiredForShardQueryLogic() throws Exception {
+        logic.setAllHitsQueryConfig(new AllHitsQueryConfig());
+        givenQuery("UUID == 'NO_SUCH_UUID'");
+        runTestQuery(Collections.emptySet());
+    }
+
+    @Test
     public void annotationHitsNoAnnotationsTest() throws Exception {
         withAnnotationHits();
 

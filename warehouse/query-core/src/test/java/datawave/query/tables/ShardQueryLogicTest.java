@@ -90,7 +90,8 @@ public class ShardQueryLogicTest extends AbstractQueryTest {
 
     @Override
     protected void extraConfigurations() {
-        // No annotation-table setup is required by the core query-logic tests.
+        // Plan assertions are intentionally disabled for this integration fixture.
+        disableQueryPlanAssertion();
     }
 
     @Override

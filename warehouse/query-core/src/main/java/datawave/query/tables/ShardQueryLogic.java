@@ -437,25 +437,30 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         loadQueryParameters(config, settings);
 
         String expandedQuery = expandQueryMacros(settings.getQuery());
+        annotationSearchExpressions = null;
         String querySyntax = getValidQuerySyntax(settings);
         QueryParser configuredParser = Constants.JEXL.equals(querySyntax) ? null : getQueryParser(querySyntax);
         String jexlQueryString;
         if (Constants.JEXL.equals(querySyntax)) {
             jexlQueryString = expandedQuery;
             AllHitsQueryConfig annotationConfig = getAllHitsQueryConfig();
-            annotationSearchExpressions = annotationConfig.getQueryExpressionExtractor() != null
-                            ? annotationConfig.getQueryExpressionExtractor().extract(jexlQueryString)
-                            : new JexlSearchExpressionExtractor(
-                                            annotationConfig.getQueryTermExtractor() == null ? null : annotationConfig.getQueryTermExtractor().getFields(),
-                                            annotationConfig.getTermNormalizer()).extract(jexlQueryString);
+            if (annotationConfig != null && annotationConfig.isEnabled()) {
+                annotationSearchExpressions = annotationConfig.getQueryExpressionExtractor() != null
+                                ? annotationConfig.getQueryExpressionExtractor().extract(jexlQueryString)
+                                : new JexlSearchExpressionExtractor(
+                                                annotationConfig.getQueryTermExtractor() == null ? null : annotationConfig.getQueryTermExtractor().getFields(),
+                                                annotationConfig.getTermNormalizer()).extract(jexlQueryString);
+            }
         } else {
             jexlQueryString = configuredParser.parse(expandedQuery).getOriginalQuery();
             if (configuredParser instanceof LuceneSyntaxQueryParser) {
                 AllHitsQueryConfig annotationConfig = getAllHitsQueryConfig();
-                LuceneSearchExpressionExtractor extractor = new LuceneSearchExpressionExtractor((LuceneSyntaxQueryParser) configuredParser,
-                                annotationConfig.getQueryTermExtractor() == null ? null : annotationConfig.getQueryTermExtractor().getFields(),
-                                annotationConfig.getTermNormalizer());
-                annotationSearchExpressions = extractor.extract(expandedQuery, jexlQueryString);
+                if (annotationConfig != null && annotationConfig.isEnabled()) {
+                    LuceneSearchExpressionExtractor extractor = new LuceneSearchExpressionExtractor((LuceneSyntaxQueryParser) configuredParser,
+                                    annotationConfig.getQueryTermExtractor() == null ? null : annotationConfig.getQueryTermExtractor().getFields(),
+                                    annotationConfig.getTermNormalizer());
+                    annotationSearchExpressions = extractor.extract(expandedQuery, jexlQueryString);
+                }
             }
         }
 
