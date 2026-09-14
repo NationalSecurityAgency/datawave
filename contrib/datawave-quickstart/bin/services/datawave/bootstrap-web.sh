@@ -3,7 +3,7 @@
 DW_WILDFLY_VERSION="${DW_WILDFLY_VERSION:-$(mvn -o -q -f ${DW_CLOUD_HOME}/docker/pom.xml help:evaluate -DforceStdout -Dexpression=version.quickstart.wildfly | tail -1)}"
 DW_WILDFLY_DIST_SHA512_CHECKSUM="${DW_WILDFLY_DIST_SHA512_CHECKSUM:-$(mvn -o -q -f ${DW_CLOUD_HOME}/docker/pom.xml help:evaluate -DforceStdout -Dexpression=sha512.checksum.wildfly | tail -1)}"
 
-DW_WILDFLY_DIST_URI="${DW_WILDFLY_DIST_URI:-https://download.jboss.org/wildfly/${DW_WILDFLY_VERSION}.Final/wildfly-${DW_WILDFLY_VERSION}.Final.tar.gz}"
+DW_WILDFLY_DIST_URI="${DW_WILDFLY_DIST_URI:-https://github.com/wildfly/wildfly/releases/download/${DW_WILDFLY_VERSION}/wildfly-${DW_WILDFLY_VERSION}.tar.gz}"
 DW_WILDFLY_DIST="$( basename "${DW_WILDFLY_DIST_URI}" )"
 DW_WILDFLY_BASEDIR="wildfly-install"
 DW_WILDFLY_SYMLINK="wildfly"
