@@ -34,7 +34,6 @@ import datawave.ingest.mapreduce.handler.tokenize.ContentIndexingColumnBasedHand
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.table.config.ShardTableConfigHelper;
 import datawave.ingest.table.config.TableConfigHelper;
-import datawave.ingest.util.BloomFilterWrapper;
 import datawave.policy.IngestPolicyEnforcer;
 import datawave.table.constants.TableName;
 
@@ -55,8 +54,7 @@ import datawave.table.constants.TableName;
  * {@link BenchmarkEventGenerator#MIN_FIELDS} and {@link BenchmarkEventGenerator#MAX_FIELDS} fields, covering every concrete normalizer type and rotating event
  * and field visibilities.
  * <p>
- * Iteration counts are overridable with {@code -Ddatawave.benchmark.iterations=N} and {@code -Ddatawave.benchmark.warmup=N};
- * {@code -Ddatawave.benchmark.scenarios=off|on|both} selects the bloom-filter arm for a profiler run.
+ * Iteration counts are overridable with {@code -Ddatawave.benchmark.iterations=N} and {@code -Ddatawave.benchmark.warmup=N}.
  */
 public class IngestHotPathBenchmark {
 
@@ -64,15 +62,6 @@ public class IngestHotPathBenchmark {
 
     private static final int WARMUP_ITERATIONS = Integer.getInteger("datawave.benchmark.warmup", 1500);
     private static final int MEASURED_ITERATIONS = Integer.getInteger("datawave.benchmark.iterations", 5000);
-
-    /**
-     * Iteration budget for the bloom-filter arms. Tokenizing a paragraph turns one field into hundreds of indexed terms, and {@code createBloomFilter} runs
-     * once per term over the whole field map, so the quadratic term is driven by token count rather than field count and a single event costs orders of
-     * magnitude more than with bloom filtering off. These arms get their own much smaller budget so the suite terminates in reasonable time; the medians are
-     * still taken over whole events.
-     */
-    private static final int BLOOM_WARMUP = Integer.getInteger("datawave.benchmark.bloom.warmup", 5);
-    private static final int BLOOM_ITERATIONS = Integer.getInteger("datawave.benchmark.bloom.iterations", 25);
 
     /** Events per pool. Never below the generator's floor. */
     private static final int EVENT_COUNT = Math.max(BenchmarkEventGenerator.DEFAULT_EVENT_COUNT, Integer.getInteger("datawave.benchmark.events", 250));
@@ -154,23 +143,15 @@ public class IngestHotPathBenchmark {
      */
     public static class InstrumentedHandler extends ContentIndexingColumnBasedHandler<Text> {
         final AtomicLong flattenCalls = new AtomicLong();
-        final AtomicLong bloomFilterBuilds = new AtomicLong();
 
         void resetCounts() {
             flattenCalls.set(0);
-            bloomFilterBuilds.set(0);
         }
 
         @Override
         protected byte[] flatten(ColumnVisibility vis) {
             flattenCalls.incrementAndGet();
             return super.flatten(vis);
-        }
-
-        @Override
-        protected BloomFilterWrapper createBloomFilter(Multimap<String,NormalizedContentInterface> fields) {
-            bloomFilterBuilds.incrementAndGet();
-            return super.createBloomFilter(fields);
         }
 
         @Override
@@ -214,13 +195,12 @@ public class IngestHotPathBenchmark {
         final long bytesPerEvent;
         final long keysPerPass;
         final long flattenPerPass;
-        final long bloomPerPass;
         final long totalFieldsPerPass;
         /** keys/pass split by kind: event, field index, global index, term frequency. */
         final long[] keyKinds;
 
         Result(String name, int events, double meanFields, int minFields, int maxFields, long medianNanos, long meanNanos, long p90Nanos, long bytesPerEvent,
-                        long keysPerPass, long flattenPerPass, long bloomPerPass, long totalFieldsPerPass, long[] keyKinds) {
+                        long keysPerPass, long flattenPerPass, long totalFieldsPerPass, long[] keyKinds) {
             this.name = name;
             this.events = events;
             this.meanFields = meanFields;
@@ -232,7 +212,6 @@ public class IngestHotPathBenchmark {
             this.bytesPerEvent = bytesPerEvent;
             this.keysPerPass = keysPerPass;
             this.flattenPerPass = flattenPerPass;
-            this.bloomPerPass = bloomPerPass;
             this.totalFieldsPerPass = totalFieldsPerPass;
             this.keyKinds = keyKinds;
         }
@@ -249,7 +228,7 @@ public class IngestHotPathBenchmark {
 
     private final List<Result> results = new ArrayList<>();
 
-    private Configuration baseConfiguration(String dataTypeName, boolean bloomEnabled, FieldMode mode, DataVariety variety, String uniformType) {
+    private Configuration baseConfiguration(String dataTypeName, FieldMode mode, DataVariety variety, String uniformType) {
         Configuration conf = new Configuration();
         conf.set(dataTypeName + DataTypeHelper.Properties.INGEST_POLICY_ENFORCER_CLASS, IngestPolicyEnforcer.NoOpIngestPolicyEnforcer.class.getName());
         conf.set(DataTypeHelper.Properties.DATA_NAME, dataTypeName);
@@ -307,7 +286,6 @@ public class IngestHotPathBenchmark {
             conf.set(dataTypeName + ".data.default.type.class", uniformType);
         }
 
-        conf.setBoolean(ShardedDataTypeHandler.SHARD_ININDEX_BLOOM, bloomEnabled);
         return conf;
     }
 
@@ -322,34 +300,31 @@ public class IngestHotPathBenchmark {
         TypeRegistry.reset();
         if (!jvmWarmed) {
             jvmWarmed = true;
-            measure("jvm-warmup", BenchmarkEventGenerator.fixedFieldCounts(20, 30), false, FieldMode.INDEXED, DataVariety.DIVERSE, CountingType.class.getName(),
+            measure("jvm-warmup", BenchmarkEventGenerator.fixedFieldCounts(20, 30), FieldMode.INDEXED, DataVariety.DIVERSE, CountingType.class.getName(),
                             UNIFORM_VALUE, MARKED_FIELD_STRIDE, 3000, 3000);
             results.clear();
             TypeRegistry.reset();
         }
     }
 
-    private Result measure(String name, int[] fieldCounts, boolean bloomEnabled) throws Exception {
-        return measure(name, fieldCounts, bloomEnabled, FieldMode.INDEXED, DataVariety.DIVERSE, CountingType.class.getName(), UNIFORM_VALUE,
-                        MARKED_FIELD_STRIDE);
+    private Result measure(String name, int[] fieldCounts) throws Exception {
+        return measure(name, fieldCounts, FieldMode.INDEXED, DataVariety.DIVERSE, CountingType.class.getName(), UNIFORM_VALUE, MARKED_FIELD_STRIDE);
     }
 
-    private Result measure(String name, int[] fieldCounts, boolean bloomEnabled, FieldMode mode, DataVariety variety, String uniformType, String uniformValue,
-                    int markedStride) throws Exception {
-        int warmup = bloomEnabled ? BLOOM_WARMUP : WARMUP_ITERATIONS;
-        int iterations = bloomEnabled ? BLOOM_ITERATIONS : MEASURED_ITERATIONS;
-        return measure(name, fieldCounts, bloomEnabled, mode, variety, uniformType, uniformValue, markedStride, warmup, iterations);
+    private Result measure(String name, int[] fieldCounts, FieldMode mode, DataVariety variety, String uniformType, String uniformValue, int markedStride)
+                    throws Exception {
+        return measure(name, fieldCounts, mode, variety, uniformType, uniformValue, markedStride, WARMUP_ITERATIONS, MEASURED_ITERATIONS);
     }
 
-    private Result measure(String name, int[] fieldCounts, boolean bloomEnabled, FieldMode mode, DataVariety variety, String uniformType, String uniformValue,
-                    int markedStride, int warmupIterations, int measuredIterations) throws Exception {
-        return measure(name, fieldCounts, bloomEnabled, mode, variety, uniformType, uniformValue, markedStride, warmupIterations, measuredIterations, null);
+    private Result measure(String name, int[] fieldCounts, FieldMode mode, DataVariety variety, String uniformType, String uniformValue, int markedStride,
+                    int warmupIterations, int measuredIterations) throws Exception {
+        return measure(name, fieldCounts, mode, variety, uniformType, uniformValue, markedStride, warmupIterations, measuredIterations, null);
     }
 
-    private Result measure(String name, int[] fieldCounts, boolean bloomEnabled, FieldMode mode, DataVariety variety, String uniformType, String uniformValue,
-                    int markedStride, int warmupIterations, int measuredIterations, String contentOverride) throws Exception {
+    private Result measure(String name, int[] fieldCounts, FieldMode mode, DataVariety variety, String uniformType, String uniformValue, int markedStride,
+                    int warmupIterations, int measuredIterations, String contentOverride) throws Exception {
         String dataTypeName = "bench" + SCENARIO_SEQ.incrementAndGet();
-        Configuration conf = baseConfiguration(dataTypeName, bloomEnabled, mode, variety, uniformType);
+        Configuration conf = baseConfiguration(dataTypeName, mode, variety, uniformType);
         TypeRegistry.reset();
         TypeRegistry.getInstance(conf);
 
@@ -380,8 +355,7 @@ public class IngestHotPathBenchmark {
         handler.resetCounts();
         long keysPerPass = 0;
         long[] keyKinds = new long[KEY_KIND_COUNT];
-        // a full structural pass is unaffordable with bloom filtering on, so sample the pool instead
-        int structuralEvents = bloomEnabled ? Math.min(poolSize, 4) : poolSize;
+        int structuralEvents = poolSize;
         for (int p = 0; p < structuralEvents; p++) {
             Multimap<BulkIngestKey,Value> out = handler.processBulk(null, pool.get(p), fieldSets.get(p), null);
             keysPerPass += out.size();
@@ -390,7 +364,6 @@ public class IngestHotPathBenchmark {
             }
         }
         long flattenPerPass = handler.flattenCalls.get();
-        long bloomPerPass = handler.bloomFilterBuilds.get();
 
         long[] samples = new long[measuredIterations];
         long allocStart = THREAD_BEAN.getCurrentThreadAllocatedBytes();
@@ -427,7 +400,7 @@ public class IngestHotPathBenchmark {
         }
 
         Result r = new Result(name, structuralEvents, totalFields / (double) poolSize, min, max, median, mean, p90, bytesPerEvent, keysPerPass, flattenPerPass,
-                        bloomPerPass, fieldsCounted, keyKinds);
+                        fieldsCounted, keyKinds);
         results.add(r);
         return r;
     }
@@ -464,21 +437,12 @@ public class IngestHotPathBenchmark {
     // ---------------------------------------------------------------- scenarios
 
     /**
-     * Sweeps a fixed event size across the generator's range with bloom filtering off and on. Per-key cost that stays flat as event size grows indicates linear
-     * scaling; per-key cost that itself grows indicates a quadratic term.
+     * Sweeps a fixed event size across the generator's range. Per-key cost that stays flat as event size grows indicates linear scaling; per-key cost that
+     * itself grows indicates a quadratic term.
      */
     public void benchmarkCreateColumnsScaling() throws Exception {
-        // bloom is opt-in here: see benchmarkBloomVersusTokenCount for why it cannot run over this data
-        String arms = System.getProperty("datawave.benchmark.scenarios", "off");
-        if (!"on".equals(arms)) {
-            for (int fields : SWEEP_FIELD_COUNTS) {
-                measure("bloom-off/" + fields, BenchmarkEventGenerator.fixedFieldCounts(EVENT_COUNT, fields), false);
-            }
-        }
-        if (!"off".equals(arms)) {
-            for (int fields : SWEEP_FIELD_COUNTS) {
-                measure("bloom-on/" + fields, BenchmarkEventGenerator.fixedFieldCounts(EVENT_COUNT, fields), true);
-            }
+        for (int fields : SWEEP_FIELD_COUNTS) {
+            measure("fields/" + fields, BenchmarkEventGenerator.fixedFieldCounts(EVENT_COUNT, fields));
         }
         printTable();
     }
@@ -491,8 +455,8 @@ public class IngestHotPathBenchmark {
         int[] variable = BenchmarkEventGenerator.variableFieldCounts(EVENT_COUNT);
         int mean = (int) Math.round(Arrays.stream(variable).average().orElse(30));
 
-        Result fixed = measure("fixed at mean", BenchmarkEventGenerator.fixedFieldCounts(EVENT_COUNT, mean), false);
-        Result mixed = measure("mixed 15-45", variable, false);
+        Result fixed = measure("fixed at mean", BenchmarkEventGenerator.fixedFieldCounts(EVENT_COUNT, mean));
+        Result mixed = measure("mixed 15-45", variable);
 
         printTable();
         System.out.printf("mixed-size pool: %d events, %d..%d fields, mean %.1f%n", mixed.events, mixed.minFields, mixed.maxFields, mixed.meanFields);
@@ -501,70 +465,11 @@ public class IngestHotPathBenchmark {
     }
 
     /**
-     * Quantifies how bloom filtering scales against the number of tokens in a single tokenized field. {@code createBloomFilter} runs once per indexed term and
-     * each build walks the whole field map, so on a tokenized field the quadratic term is driven by token count, not field count. The full event pool, whose
-     * long content field produces several hundred tokens, does not complete in usable time with bloom filtering on; this sweep bounds the problem by holding
-     * the token count small and reporting the growth so the full-size cost can be extrapolated rather than waited for.
-     */
-    public void benchmarkBloomVersusTokenCount() throws Exception {
-        System.out.println();
-        System.out.println("=== bloom filtering versus tokens in one tokenized field (4 events) ===");
-        System.out.printf("%-8s %14s %14s %10s %10s%n", "tokens", "bloom off(ns)", "bloom on(ns)", "ratio", "builds");
-
-        for (int tokens : new int[] {5, 10, 20, 40}) {
-            Result off = measureTokenSweep(tokens, false);
-            Result on = measureTokenSweep(tokens, true);
-            System.out.printf("%-8d %14d %14d %9.1fx %10d%n", tokens, off.medianNanos, on.medianNanos, on.medianNanos / (double) off.medianNanos,
-                            on.bloomPerPass / on.events);
-        }
-        System.out.println();
-        results.clear();
-    }
-
-    /** One point of the token sweep: a 4-event pool whose long content field carries {@code tokens} tokens. */
-    private Result measureTokenSweep(int tokens, boolean bloomEnabled) throws Exception {
-        String content = BenchmarkEventGenerator.contentWithTokens(tokens);
-        int warmup = bloomEnabled ? 2 : 50;
-        int iterations = bloomEnabled ? 8 : 200;
-        return measure("tok" + tokens, BenchmarkEventGenerator.fixedFieldCounts(4, BenchmarkEventGenerator.MIN_FIELDS), bloomEnabled, FieldMode.INDEXED,
-                        DataVariety.DIVERSE, CountingType.class.getName(), UNIFORM_VALUE, MARKED_FIELD_STRIDE, warmup, iterations, content);
-    }
-
-    /**
-     * The audit predicted {@code createBloomFilter} runs once per forward-indexed term rather than once per event. Asserted over a full pass of the mixed-size
-     * pool: builds should exceed the event count, should be at least one per field, and {@code flatten} should track them two to one, which together pin both
-     * calls to the per-term loop rather than the per-event scope.
-     */
-    public void bloomFilterIsBuiltOncePerIndexedTerm() throws Exception {
-        // a short content override keeps the bloom arm affordable; see benchmarkBloomVersusTokenCount
-        int[] variable = BenchmarkEventGenerator.fixedFieldCounts(4, BenchmarkEventGenerator.MIN_FIELDS);
-        String shortContent = BenchmarkEventGenerator.contentWithTokens(5);
-        Result off = measure("bloom-off", variable, false, FieldMode.INDEXED, DataVariety.DIVERSE, CountingType.class.getName(), UNIFORM_VALUE,
-                        MARKED_FIELD_STRIDE, 20, 50, shortContent);
-        Result on = measure("bloom-on", variable, true, FieldMode.INDEXED, DataVariety.DIVERSE, CountingType.class.getName(), UNIFORM_VALUE,
-                        MARKED_FIELD_STRIDE, 2, 6, shortContent);
-
-        checkEquals(0, off.bloomPerPass, "bloom filter should not be built when disabled");
-        check(on.bloomPerPass > on.events, "expected more than one build per event, got " + on.bloomPerPass + " over " + on.events + " events");
-        check(on.bloomPerPass >= on.totalFieldsPerPass,
-                        "expected at least one build per field, got " + on.bloomPerPass + " for " + on.totalFieldsPerPass + " fields");
-        // Two flattens per indexed term come from createColumns (the shard event loop plus the forward
-        // term loop). The tokenized data adds more: flushTokenOffsetCache calls getVisibility once per
-        // term-frequency entry and once for TERM_COUNT, so flatten runs ahead of 2x builds rather than
-        // equalling it.
-        check(on.flattenPerPass >= 2 * on.bloomPerPass,
-                        "flatten should be at least twice the indexed term count, got " + on.flattenPerPass + " against " + on.bloomPerPass + " builds");
-
-        System.out.printf("over %d events (%d fields total): %d bloom builds, %d flatten calls%n", on.events, on.totalFieldsPerPass, on.bloomPerPass,
-                        on.flattenPerPass);
-    }
-
-    /**
      * The audit predicted the event ColumnVisibility is re-flattened once per field, once per forward term and once per reverse term, rather than once per
      * event.
      */
     public void visibilityIsFlattenedPerFieldNotPerEvent() throws Exception {
-        Result r = measure("flatten-probe", BenchmarkEventGenerator.variableFieldCounts(EVENT_COUNT), false);
+        Result r = measure("flatten-probe", BenchmarkEventGenerator.variableFieldCounts(EVENT_COUNT));
         check(r.flattenPerPass > r.events, "expected far more flatten calls than events, got " + r.flattenPerPass + " over " + r.events);
         check(r.flattenPerPass >= 2 * r.totalFieldsPerPass, "expected at least two flatten calls per field");
         System.out.printf("flatten calls over %d events (%d fields): %d (%.2f per field)%n", r.events, r.totalFieldsPerPass, r.flattenPerPass,
@@ -602,7 +507,7 @@ public class IngestHotPathBenchmark {
     /** Normalizes every event in the pool once and returns the total normalizer invocations. */
     private long countNormalizations(int[] fieldCounts, FieldMode mode, String uniformType, String uniformValue) throws Exception {
         String dataTypeName = "norm" + SCENARIO_SEQ.incrementAndGet();
-        Configuration conf = baseConfiguration(dataTypeName, false, mode, DataVariety.UNIFORM, uniformType);
+        Configuration conf = baseConfiguration(dataTypeName, mode, DataVariety.UNIFORM, uniformType);
         TypeRegistry.reset();
         TypeRegistry.getInstance(conf);
 
@@ -646,7 +551,7 @@ public class IngestHotPathBenchmark {
     private void timeNormalization(String label, int[] fieldCounts, FieldMode mode, String uniformType, String uniformValue) throws Exception {
         DataVariety variety = uniformValue == null ? DataVariety.DIVERSE : DataVariety.UNIFORM;
         String dataTypeName = "normt" + SCENARIO_SEQ.incrementAndGet();
-        Configuration conf = baseConfiguration(dataTypeName, false, mode, variety, uniformType);
+        Configuration conf = baseConfiguration(dataTypeName, mode, variety, uniformType);
         TypeRegistry.reset();
         TypeRegistry.getInstance(conf);
 
@@ -696,20 +601,19 @@ public class IngestHotPathBenchmark {
         checkEquals(BenchmarkEventGenerator.MIN_FIELDS, Arrays.stream(variable).min().orElse(0), "smallest event size");
         checkEquals(BenchmarkEventGenerator.MAX_FIELDS, maxFields, "largest event size");
 
-        Result r = measure("type-coverage", variable, false);
+        Result r = measure("type-coverage", variable);
         System.out.printf("pool: %d events, %d..%d fields (mean %.1f), %d types, %d keys/pass%n", r.events, r.minFields, r.maxFields, r.meanFields,
                         BenchmarkEventGenerator.TYPE_COUNT, r.keysPerPass);
     }
 
     /** Scenarios run when no arguments are given. {@code profile} is deliberately excluded: it duplicates work the others already do. */
-    private static final String[] DEFAULT_SCENARIOS = {"scaling", "variable", "bloom", "normalization", "structural"};
+    private static final String[] DEFAULT_SCENARIOS = {"scaling", "variable", "normalization", "structural"};
 
     /**
      * Entry point. With no arguments every scenario in {@link #DEFAULT_SCENARIOS} runs in order; otherwise each argument names one:
      * <ul>
      * <li>{@code scaling} — key generation over a fixed-size field sweep</li>
      * <li>{@code variable} — a variable-size pool against a fixed pool at the same mean</li>
-     * <li>{@code bloom} — bloom filtering against token count, on a bounded pool</li>
      * <li>{@code normalization} — the {@code getEventFields} phase</li>
      * <li>{@code structural} — the deterministic call counts; throws {@link IllegalStateException} if one does not hold</li>
      * <li>{@code profile} — the mixed-size workload alone, so a JFR recording covers only that</li>
@@ -724,7 +628,6 @@ public class IngestHotPathBenchmark {
 
     private static void run(String scenario) throws Exception {
         if ("structural".equals(scenario)) {
-            run("bloom-builds");
             run("flatten");
             run("normalizer-calls");
             run("generator-coverage");
@@ -740,12 +643,8 @@ public class IngestHotPathBenchmark {
             benchmark.benchmarkCreateColumnsScaling();
         } else if ("variable".equals(scenario)) {
             benchmark.benchmarkVariableEventSizes();
-        } else if ("bloom".equals(scenario)) {
-            benchmark.benchmarkBloomVersusTokenCount();
         } else if ("normalization".equals(scenario)) {
             benchmark.benchmarkNormalizationPhase();
-        } else if ("bloom-builds".equals(scenario)) {
-            benchmark.bloomFilterIsBuiltOncePerIndexedTerm();
         } else if ("flatten".equals(scenario)) {
             benchmark.visibilityIsFlattenedPerFieldNotPerEvent();
         } else if ("normalizer-calls".equals(scenario)) {
@@ -755,21 +654,14 @@ public class IngestHotPathBenchmark {
         } else if ("profile".equals(scenario)) {
             benchmark.profileMixedWorkload();
         } else {
-            System.err.println("unknown scenario '" + scenario + "'; expected one of scaling, variable, bloom, normalization, structural, profile");
+            System.err.println("unknown scenario '" + scenario + "'; expected one of scaling, variable, normalization, structural, profile");
             System.exit(2);
         }
     }
 
-    /** The mixed-size workload on its own, so a profiler recording covers only it. Select an arm with {@code -Ddatawave.benchmark.scenarios=off|on|both}. */
+    /** The mixed-size workload on its own, so a profiler recording covers only it. */
     private void profileMixedWorkload() throws Exception {
-        String arms = System.getProperty("datawave.benchmark.scenarios", "both");
-        int[] variable = BenchmarkEventGenerator.variableFieldCounts(EVENT_COUNT);
-        if (!"on".equals(arms)) {
-            measure("mixed bloom-off", variable, false);
-        }
-        if (!"off".equals(arms)) {
-            measure("mixed bloom-on", variable, true);
-        }
+        measure("mixed", BenchmarkEventGenerator.variableFieldCounts(EVENT_COUNT));
         printTable();
     }
 
@@ -788,10 +680,9 @@ public class IngestHotPathBenchmark {
 
     private void printTable() {
         System.out.println();
-        System.out.println("=== ingest hot path (" + EVENT_COUNT + " events; " + MEASURED_ITERATIONS + " iterations, " + BLOOM_ITERATIONS
-                        + " for bloom arms) ===");
-        System.out.printf("%-20s %7s %12s %12s %12s %12s %10s %10s %9s %8s %12s%n", "scenario", "events", "fields", "median(ns)", "mean(ns)", "p90(ns)",
-                        "ns/key", "keys/pass", "flatten", "bloom", "bytes/event");
+        System.out.println("=== ingest hot path (" + EVENT_COUNT + " events; " + MEASURED_ITERATIONS + " iterations) ===");
+        System.out.printf("%-20s %7s %12s %12s %12s %12s %10s %10s %9s %12s%n", "scenario", "events", "fields", "median(ns)", "mean(ns)", "p90(ns)", "ns/key",
+                        "keys/pass", "flatten", "bytes/event");
         for (Result r : results) {
             String fieldDesc = r.minFields == r.maxFields ? Integer.toString(r.minFields)
                             : String.format("%d-%d(%.1f)", r.minFields, r.maxFields, r.meanFields);
@@ -799,8 +690,8 @@ public class IngestHotPathBenchmark {
             for (int k = 0; k < KEY_KIND_COUNT; k++) {
                 kinds.append(k == 0 ? "" : "/").append(KEY_KIND_NAMES[k]).append(':').append(r.keyKinds[k]);
             }
-            System.out.printf("%-20s %7d %12s %12d %12d %12d %10.1f %10d %9d %8d %12d  %s%n", r.name, r.events, fieldDesc, r.medianNanos, r.meanNanos,
-                            r.p90Nanos, r.nanosPerKey(), r.keysPerPass, r.flattenPerPass, r.bloomPerPass, r.bytesPerEvent, kinds);
+            System.out.printf("%-20s %7d %12s %12d %12d %12d %10.1f %10d %9d %12d  %s%n", r.name, r.events, fieldDesc, r.medianNanos, r.meanNanos, r.p90Nanos,
+                            r.nanosPerKey(), r.keysPerPass, r.flattenPerPass, r.bytesPerEvent, kinds);
         }
         System.out.println();
         results.clear();
