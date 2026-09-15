@@ -17,8 +17,6 @@ import com.google.common.base.Objects;
  */
 public class MetadataWithEarliestDate {
 
-    public static final String IGNORED_NORMALIZER_CLASS = null;
-
     // The column family (COLF) this instance is tracking
     private final Text columnFamily;
 
