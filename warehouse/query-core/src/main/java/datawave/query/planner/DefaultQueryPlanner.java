@@ -2435,9 +2435,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             if (sourceLimit > 0) {
                 addOption(cfg, QueryOptions.LIMIT_SOURCES, Long.toString(sourceLimit), false);
             }
-            if (config.getCollectTimingDetails()) {
-                addOption(cfg, QueryOptions.COLLECT_TIMING_DETAILS, Boolean.toString(true), false);
-            }
             if (config.getSendTimingToStatsd()) {
                 addOption(cfg, QueryOptions.STATSD_HOST_COLON_PORT, config.getStatsdHost() + ':' + Integer.toString(config.getStatsdPort()), false);
                 addOption(cfg, QueryOptions.STATSD_MAX_QUEUE_SIZE, Integer.toString(config.getStatsdMaxQueueSize()), false);
@@ -2491,18 +2488,13 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
             // only serialize the filter if not empty
             if (!config.getDatatypeFilter().isEmpty()) {
-                cfg.addOption(QueryOptions.DATATYPE_FILTER, config.getDatatypeFilterAsString());
+                addOption(cfg, QueryOptions.DATATYPE_FILTER, config.getDatatypeFilterAsString(), false);
             }
 
             addOption(cfg, QueryOptions.CONTENT_EXPANSION_FIELDS, getContentExpansionFields(), false);
 
-            if (config.isDebugMultithreadedSources()) {
-                addOption(cfg, QueryOptions.DEBUG_MULTITHREADED_SOURCES, Boolean.toString(config.isDebugMultithreadedSources()), false);
-            }
-
-            if (config.isLimitFieldsPreQueryEvaluation()) {
-                addOption(cfg, QueryOptions.LIMIT_FIELDS_PRE_QUERY_EVALUATION, Boolean.toString(config.isLimitFieldsPreQueryEvaluation()), false);
-            }
+            addOption(cfg, QueryOptions.DEBUG_MULTITHREADED_SOURCES, Boolean.toString(config.isDebugMultithreadedSources()), false);
+            addOption(cfg, QueryOptions.LIMIT_FIELDS_PRE_QUERY_EVALUATION, Boolean.toString(config.isLimitFieldsPreQueryEvaluation()), false);
 
             if (config.getLimitFieldsField() != null) {
                 addOption(cfg, QueryOptions.LIMIT_FIELDS_FIELD, config.getLimitFieldsField(), false);
@@ -2727,16 +2719,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         }
     }
 
-    public static void addOption(IteratorSetting cfg, String option, String value, boolean allowBlankValue) {
-        if (StringUtils.isNotBlank(option) && (allowBlankValue || StringUtils.isNotBlank(value))) {
-            // If blank value, then we need to change it to something else or it
-            // will fail in InputFormatBase when run
-            // through the MapReduce api.
-            if (StringUtils.isBlank(value) && allowBlankValue) {
-                value = " ";
-            }
-            cfg.addOption(option, value);
-        }
+    public static <T> void addOption(IteratorSetting cfg, String option, T value, boolean allowBlankValues) {
+        QueryOptions.addOption(cfg, option, value, allowBlankValues);
     }
 
     /**
@@ -2820,14 +2804,10 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         addOption(cfg, QueryOptions.FILTER_MASKED_VALUES, Boolean.toString(config.getFilterMaskedValues()), false);
 
         // Include the EVENT_DATATYPE as a field
-        if (config.getIncludeDataTypeAsField()) {
-            addOption(cfg, QueryOptions.INCLUDE_DATATYPE, Boolean.toString(true), false);
-        }
+        addOption(cfg, QueryOptions.INCLUDE_DATATYPE, Boolean.toString(config.getIncludeDataTypeAsField()), false);
 
         // Include the RECORD_ID as a field
-        if (!config.getIncludeRecordId()) {
-            addOption(cfg, QueryOptions.INCLUDE_RECORD_ID, Boolean.toString(false), false);
-        }
+        addOption(cfg, QueryOptions.INCLUDE_RECORD_ID, Boolean.toString(config.getIncludeRecordId()), false);
 
         // Conditionally include CHILD_COUNT, DESCENDANT_COUNT, HAS_CHILDREN
         // and/or PARENT_UID fields, plus
