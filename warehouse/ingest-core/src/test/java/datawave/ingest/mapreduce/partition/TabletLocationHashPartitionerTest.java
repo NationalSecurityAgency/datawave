@@ -13,6 +13,7 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import datawave.ingest.mapreduce.handler.shard.ShardIdFactory;
+import datawave.ingest.mapreduce.job.SplitsCacheFactory;
 import datawave.ingest.mapreduce.job.TableSplitsCache;
 
 public class TabletLocationHashPartitionerTest {
@@ -33,7 +34,8 @@ public class TabletLocationHashPartitionerTest {
         conf = new Configuration();
         conf.setBoolean(TableSplitsCache.REFRESH_SPLITS, false);
 
-        TableSplitsCache.getCurrentCache(conf).clear();
+        TableSplitsCache.clear();
+        SplitsCacheFactory.clearInstance();
 
         partitioner = new TabletLocationHashPartitioner();
         partitioner.setConf(conf);
@@ -50,6 +52,9 @@ public class TabletLocationHashPartitionerTest {
     public void testLocationHashPartitioner() throws Exception {
         conf.setInt(ShardIdFactory.NUM_SHARDS, SHARDS_PER_DAY);
         new TestShardGenerator(conf, temporaryFolder.newFolder(), NUM_DAYS, SHARDS_PER_DAY, TOTAL_TSERVERS, "shard");
+        TableSplitsCache.clear();
+        SplitsCacheFactory.clearInstance();
+
         TabletLocationHashPartitioner partitionerTwo = new TabletLocationHashPartitioner();
         partitionerTwo.setConf(conf);
 
