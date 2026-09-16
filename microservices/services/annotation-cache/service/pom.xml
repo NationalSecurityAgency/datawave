@@ -19,7 +19,7 @@
         <version.datawave.annotation-cache-api>1.0.0-SNAPSHOT</version.datawave.annotation-cache-api>
         <version.datawave.annotation-messaging>1.0.0-SNAPSHOT</version.datawave.annotation-messaging>
         <version.datawave.starter>4.0.9</version.datawave.starter>
-        <version.hazelcast.service>4.0.5-SNAPSHOT</version.hazelcast.service>
+        <version.hazelcast.service>4.0.8-SNAPSHOT</version.hazelcast.service>
     </properties>
 
     <dependencyManagement>
