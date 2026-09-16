@@ -1,4 +1,4 @@
-package datawave.zookeeper;
+package datawave.core.common.zookeeper;
 
 import java.util.Objects;
 import java.util.StringJoiner;
@@ -11,7 +11,6 @@ import org.apache.curator.framework.CuratorFrameworkFactory;
 import com.google.common.base.Preconditions;
 
 import static org.apache.commons.lang.StringUtils.lowerCase;
-import static org.apache.commons.lang.StringUtils.trim;
 
 /**
  * A configurable Zookeeper client builder that can provide instances {@link CuratorFrameworkFactory} and {@link CuratorFramework}.

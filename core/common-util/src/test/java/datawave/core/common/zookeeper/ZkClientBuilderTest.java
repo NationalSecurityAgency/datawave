@@ -1,4 +1,4 @@
-package datawave.zookeeper;
+package datawave.core.common.zookeeper;
 
 import static java.nio.file.Files.write;
 

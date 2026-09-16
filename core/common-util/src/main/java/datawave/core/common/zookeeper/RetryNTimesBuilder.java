@@ -1,4 +1,4 @@
-package datawave.zookeeper;
+package datawave.core.common.zookeeper;
 
 import java.util.Objects;
 import java.util.StringJoiner;

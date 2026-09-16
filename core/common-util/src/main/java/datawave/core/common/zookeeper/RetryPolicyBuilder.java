@@ -1,4 +1,4 @@
-package datawave.zookeeper;
+package datawave.core.common.zookeeper;
 
 import org.apache.curator.RetryPolicy;
 
