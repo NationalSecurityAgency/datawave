@@ -146,7 +146,7 @@ class ZkClientBuilderTest {
             ZkClientBuilder builder = new ZkClientBuilder().setConnectString(cfgFile.toString());
 
             assertThatThrownBy(builder::createFactoryBuilder).isInstanceOf(IllegalArgumentException.class)
-                            .hasMessageContaining("Unable to parse quorum peer " + "config: ");
+                            .hasMessageContaining("Unable to parse quorum peer config from file:");
         }
 
         @Test
