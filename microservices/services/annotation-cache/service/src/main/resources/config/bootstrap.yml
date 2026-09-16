@@ -1,3 +1,7 @@
+annotation-cache:
+  max-cache-age: 1h
+  max-fetch-age: 5m
+
 spring:
   application:
     name: annotation-cache
