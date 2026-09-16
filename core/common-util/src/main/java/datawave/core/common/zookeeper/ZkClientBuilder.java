@@ -10,7 +10,6 @@ import org.apache.curator.framework.CuratorFrameworkFactory;
 
 import com.google.common.base.Preconditions;
 
-
 /**
  * A configurable Zookeeper client builder that can provide instances {@link CuratorFrameworkFactory} and {@link CuratorFramework}.
  */
