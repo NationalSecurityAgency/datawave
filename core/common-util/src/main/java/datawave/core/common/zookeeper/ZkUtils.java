@@ -61,12 +61,15 @@ public final class ZkUtils {
         }
         return connectString;
     }
-    
+
     /**
      * Return a {@link Path} for the given filepath if it points to a valid file.
-     * @param filepath the filepath
+     *
+     * @param filepath
+     *            the filepath
      * @return the {@link Path}
-     * @throws Exception if the filepath cannot be parsed as a URI or does not point to a regular file
+     * @throws Exception
+     *             if the filepath cannot be parsed as a URI or does not point to a regular file
      */
     private static Path getPath(String filepath) throws Exception {
         URI uri = new URI(filepath);
