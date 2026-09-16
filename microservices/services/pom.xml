@@ -19,6 +19,7 @@
                 </property>
             </activation>
             <modules>
+                <module>annotation/messaging</module>
                 <module>annotation-cache</module>
             </modules>
         </profile>

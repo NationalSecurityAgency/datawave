@@ -121,11 +121,18 @@ spring:
   cloud:
     stream:
       bindings:
+        annotationSource-out-0:
+          content-type: application/x-protobuf
+        logAnnotationSink-in-0:
+          content-type: application/x-protobuf
         # mirrors the real accumuloAnnotationSink-in-0 binding concurrency configured in production (annotation.yml); used to
         # verify that annotation.writers.accumulo.concurrency (bound via placeholder in bootstrap.yml) stays in sync with it.
         accumuloAnnotationSink-in-0:
+          content-type: application/x-protobuf
           consumer:
             concurrency: 5
+        dumpAnnotationSink-in-0:
+          content-type: application/x-protobuf
 
 annotation:
   writers:

@@ -31,6 +31,8 @@ import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.core.common.result.ConnectionPool;
 import datawave.microservice.annotation.common.AnnotationSupplier;
 import datawave.microservice.annotation.common.config.AnnotationSerializerConfiguration;
+import datawave.microservice.annotation.messaging.AnnotationMessagingConfiguration;
+import datawave.microservice.annotation.messaging.AnnotationProtobufMessageConverter;
 import datawave.microservice.annotation.service.config.AnnotationServiceConfig;
 import datawave.microservice.annotation.util.lookup.service.LookupService;
 import datawave.microservice.annotation.writers.accumulo.config.AccumuloAnnotationWriterConfig;
@@ -48,7 +50,7 @@ import datawave.microservice.annotation.writers.file.config.FileAnnotationWriter
  */
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = {AnnotationServiceConfig.class, AnnotationSerializerConfiguration.class, AccumuloAnnotationWriterConfig.class,
-        FileAnnotationWriterConfig.class, AnnotationAckTracker.class, AnnotationControllerV1.class,
+        AnnotationMessagingConfiguration.class, FileAnnotationWriterConfig.class, AnnotationAckTracker.class, AnnotationControllerV1.class,
         AnnotationServiceStartupTest.AnnotationServiceStartupTestConfiguration.class})
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @ActiveProfiles({"AnnotationServiceStartupTest", "accumulo-enabled", "file-enabled"})
@@ -81,6 +83,8 @@ public class AnnotationServiceStartupTest {
         assertTrue(context.containsBean("fileAnnotationWriter"), "expected fileAnnotationWriter (enabled in shipped annotation.yml)");
         assertTrue(context.containsBean("fileAnnotationWriterProperties"), "expected fileAnnotationWriterProperties (enabled in shipped annotation.yml)");
         assertTrue(context.containsBean("annotationSource"), "expected the annotationSource message producer to be present");
+        assertTrue(context.getBean("annotationProtobufMessageConverter") instanceof AnnotationProtobufMessageConverter,
+                        "expected the shared annotation protobuf message converter to be present");
         assertTrue(context.containsBean("annotationControllerV1"), "expected the annotation write/read controller to be present");
 
         // log and dump writers are disabled in the shipped annotation.yml topology; confirm they stay absent here too

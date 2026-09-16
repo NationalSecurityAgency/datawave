@@ -13,6 +13,7 @@
     <url>https://code.nsa.gov/datawave-annotation-service</url>
     <modules>
         <module>api</module>
+        <module>messaging</module>
     </modules>
     <scm>
         <connection>scm:git:${project.scm.url}</connection>
