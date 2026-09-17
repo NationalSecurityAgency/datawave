@@ -1,10 +1,9 @@
 package datawave.ingest.mapreduce.partition;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.text.DecimalFormat;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configuration;
@@ -16,7 +15,7 @@ import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 import org.apache.log4j.Logger;
 
 import datawave.ingest.mapreduce.job.BulkIngestKey;
-import datawave.ingest.mapreduce.job.SplitsFile;
+import datawave.ingest.mapreduce.job.SplitsCache;
 
 /**
  * Range partitioner that uses a split file with the format: {@code tableName<tab>splitPoint<tab>tabletLocation}
@@ -36,14 +35,14 @@ public class MultiTableRangePartitioner extends Partitioner<BulkIngestKey,Value>
     private DecimalFormat formatter = new DecimalFormat("000");
     private Configuration conf;
     private PartitionLimiter partitionLimiter;
-    protected Object semaphore = new Object();
+    private SplitsCache splitsCache;
 
     private void readCacheFilesIfNecessary() {
         if (cacheFilesRead) {
             return;
         }
 
-        synchronized (semaphore) {
+        synchronized (this) {
             if (cacheFilesRead) {
                 return;
             }
@@ -61,7 +60,7 @@ public class MultiTableRangePartitioner extends Partitioner<BulkIngestKey,Value>
             }
 
             try {
-                if (SplitsFile.getSplits(conf).isEmpty()) {
+                if (!splitsCache.hasSplits()) {
                     log.error("Non-sharded splits by table cannot be empty.  If this is a development system, please create at least one split in one of the non-sharded tables (see bin/ingest/seed_index_splits.sh).");
                     throw new IOException("splits by table cannot be empty");
                 }
@@ -77,21 +76,24 @@ public class MultiTableRangePartitioner extends Partitioner<BulkIngestKey,Value>
     @Override
     public int getPartition(BulkIngestKey key, Value value, int numPartitions) {
         readCacheFilesIfNecessary();
+        holder.clear();
 
         String tableName = key.getTableName().toString();
+        key.getKey().getRow(holder);
 
-        List<Text> cutPointArray = null;
+        int splitSize;
+        int exactIndex;
         try {
-            cutPointArray = SplitsFile.getSplits(conf, tableName);
-        } catch (IOException e) {
-            log.error("Failed to read splits in MultiTableRangePartitioner for  " + tableName);
-        }
-        if (null == cutPointArray) {
+            splitSize = splitsCache.getSplitsCount(tableName);
+            exactIndex = splitsCache.getExactIndex(tableName, holder);
+        } catch (UncheckedIOException e) {
+            log.error("Failed to read splits in MultiTableRangePartitioner for " + tableName, e);
             return (tableName.hashCode() & Integer.MAX_VALUE) % numPartitions;
         }
-        key.getKey().getRow(holder);
-        int index = Collections.binarySearch(cutPointArray, holder);
-        index = calculateIndex(index, numPartitions, tableName, cutPointArray.size());
+
+        // Note that cut-point length may be used by derived classes
+        // even though its not used below
+        int index = calculateIndex(exactIndex, numPartitions, tableName, splitSize);
 
         index = partitionLimiter.limit(numPartitions, index);
 
@@ -118,6 +120,7 @@ public class MultiTableRangePartitioner extends Partitioner<BulkIngestKey,Value>
     public void setConf(Configuration conf) {
         this.conf = conf;
         partitionLimiter = new PartitionLimiter(conf);
+        splitsCache = SplitsCache.getInstance(conf);
         if (partitionLimiter.getNumPartitions() == 0) {
             partitionLimiter.setMaxPartitions(Integer.MAX_VALUE);
         }
