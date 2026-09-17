@@ -110,6 +110,9 @@ public class BalancedShardPartitioner extends Partitioner<BulkIngestKey,Value> i
             if (missingShardIdCount < 10) {
                 log.warn("shardId didn't have a partition assigned to it: " + shardId);
                 missingShardIdCount++;
+                if (missingShardIdCount == 10) {
+                    log.warn("Suppressing further missing shard warnings for this partitioner.");
+                }
             }
             return (shardId.hashCode() & Integer.MAX_VALUE);
         } else {
