@@ -11,6 +11,10 @@ import org.springframework.context.annotation.Configuration;
 public class AnnotationCacheProperties {
     private Duration maxCacheAge = Duration.ofHours(1);
     private Duration maxFetchAge = Duration.ofMinutes(5);
+    private boolean reconciliationEnabled = true;
+    private Duration reconciliationInterval = Duration.ofMinutes(5);
+    private Duration reconciliationSettleDelay = Duration.ofSeconds(15);
+    private int reconciliationMaxMapsPerRun = 1000;
 
     public Duration getMaxCacheAge() {
         return maxCacheAge;
@@ -26,5 +30,37 @@ public class AnnotationCacheProperties {
 
     public void setMaxFetchAge(Duration maxFetchAge) {
         this.maxFetchAge = maxFetchAge;
+    }
+
+    public boolean isReconciliationEnabled() {
+        return reconciliationEnabled;
+    }
+
+    public void setReconciliationEnabled(boolean reconciliationEnabled) {
+        this.reconciliationEnabled = reconciliationEnabled;
+    }
+
+    public Duration getReconciliationInterval() {
+        return reconciliationInterval;
+    }
+
+    public void setReconciliationInterval(Duration reconciliationInterval) {
+        this.reconciliationInterval = reconciliationInterval;
+    }
+
+    public Duration getReconciliationSettleDelay() {
+        return reconciliationSettleDelay;
+    }
+
+    public void setReconciliationSettleDelay(Duration reconciliationSettleDelay) {
+        this.reconciliationSettleDelay = reconciliationSettleDelay;
+    }
+
+    public int getReconciliationMaxMapsPerRun() {
+        return reconciliationMaxMapsPerRun;
+    }
+
+    public void setReconciliationMaxMapsPerRun(int reconciliationMaxMapsPerRun) {
+        this.reconciliationMaxMapsPerRun = reconciliationMaxMapsPerRun;
     }
 }
