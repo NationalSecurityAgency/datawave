@@ -2,6 +2,7 @@ package datawave.microservice.annotationCache;
 
 import static datawave.microservice.annotationCache.api.Constants.ANNOTATIONS_MAP;
 import static datawave.microservice.annotationCache.api.Constants.ID_TYPE_PARAMETER;
+import static datawave.microservice.annotationCache.api.Constants.PERSISTENCE_MODE_PARAMETER;
 import static datawave.microservice.annotationCache.api.Constants.REGION_ID_PARAMETER;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -28,6 +29,7 @@ import com.hazelcast.map.IMap;
 
 import datawave.annotation.protobuf.v1.Annotation;
 import datawave.annotation.protobuf.v1.AnnotationMessage;
+import datawave.microservice.annotationCache.api.PersistenceMode;
 import datawave.microservice.annotationCache.api.RegionConfiguration;
 
 class LoadCacheConsumerTest {
@@ -71,8 +73,12 @@ class LoadCacheConsumerTest {
 
     @Test
     void rejectsMessageWithoutSourceRegion() {
-        AnnotationMessage message = AnnotationMessage.newBuilder().putParameters(ID_TYPE_PARAMETER, ID_TYPE).addAnnotations(annotation("doc", "annotation"))
+        // @formatter:off
+        AnnotationMessage message = AnnotationMessage.newBuilder()
+                        .putParameters(ID_TYPE_PARAMETER, ID_TYPE)
+                        .addAnnotations(annotation("doc", "annotation"))
                         .build();
+        // @formatter:on
 
         assertThrows(IllegalArgumentException.class, () -> consumer.accept(message));
         verify(hazelcastInstance, never()).getMap(any(String.class));
@@ -80,8 +86,12 @@ class LoadCacheConsumerTest {
 
     @Test
     void rejectsRemoteMessageWithoutIdentifierType() {
-        AnnotationMessage message = AnnotationMessage.newBuilder().putParameters(REGION_ID_PARAMETER, REMOTE_REGION)
-                        .addAnnotations(annotation("doc", "annotation")).build();
+        // @formatter:off
+        AnnotationMessage message = AnnotationMessage.newBuilder()
+                        .putParameters(REGION_ID_PARAMETER, REMOTE_REGION)
+                        .addAnnotations(annotation("doc", "annotation"))
+                        .build();
+        // @formatter:on
 
         assertThrows(IllegalArgumentException.class, () -> consumer.accept(message));
         verify(hazelcastInstance, never()).getMap(any(String.class));
@@ -149,12 +159,17 @@ class LoadCacheConsumerTest {
 
         @SuppressWarnings("unchecked")
         ArgumentCaptor<AnnotationMessage> valueCaptor = ArgumentCaptor.forClass(AnnotationMessage.class);
-        verify(annotationMap).putTransient(eq("first"), valueCaptor.capture(), eq(0L), eq(TimeUnit.SECONDS), eq(0L), eq(TimeUnit.SECONDS));
-        verify(annotationMap).putTransient(eq("second"), valueCaptor.capture(), eq(0L), eq(TimeUnit.SECONDS), eq(0L), eq(TimeUnit.SECONDS));
+        // @formatter:off
+        verify(annotationMap).putTransient(
+                        eq("first"), valueCaptor.capture(), eq(0L), eq(TimeUnit.SECONDS), eq(0L), eq(TimeUnit.SECONDS));
+        verify(annotationMap).putTransient(
+                        eq("second"), valueCaptor.capture(), eq(0L), eq(TimeUnit.SECONDS), eq(0L), eq(TimeUnit.SECONDS));
+        // @formatter:on
 
         assertEquals(1, valueCaptor.getAllValues().get(0).getAnnotationsCount());
         assertEquals(first, valueCaptor.getAllValues().get(0).getAnnotations(0));
         assertEquals(REMOTE_REGION, valueCaptor.getAllValues().get(0).getParametersOrThrow(REGION_ID_PARAMETER));
+        assertEquals(PersistenceMode.WRITE_THROUGH.value(), valueCaptor.getAllValues().get(0).getParametersOrThrow(PERSISTENCE_MODE_PARAMETER));
         assertEquals(1, valueCaptor.getAllValues().get(1).getAnnotationsCount());
         assertEquals(second, valueCaptor.getAllValues().get(1).getAnnotations(0));
     }
@@ -174,8 +189,10 @@ class LoadCacheConsumerTest {
     void unlocksEntryWhenTransientInsertionFails() {
         String mapName = ANNOTATIONS_MAP + ID_TYPE + ":doc";
         IMap<String,AnnotationMessage> annotationMap = annotationMap(mapName, 120, 30);
-        doThrow(new IllegalStateException("failure")).when(annotationMap).putTransient(any(), any(), eq(120L), eq(TimeUnit.SECONDS), eq(30L),
-                        eq(TimeUnit.SECONDS));
+        // @formatter:off
+        doThrow(new IllegalStateException("failure")).when(annotationMap).putTransient(
+                        any(), any(), eq(120L), eq(TimeUnit.SECONDS), eq(30L), eq(TimeUnit.SECONDS));
+        // @formatter:on
 
         assertThrows(IllegalStateException.class, () -> consumer.accept(message(REMOTE_REGION, ID_TYPE, annotation("doc", "annotation"))));
         verify(annotationMap).unlock("annotation");
@@ -195,7 +212,13 @@ class LoadCacheConsumerTest {
     }
 
     private AnnotationMessage message(String region, String idType, Annotation... annotations) {
-        return AnnotationMessage.newBuilder().putParameters(REGION_ID_PARAMETER, region).putParameters(ID_TYPE_PARAMETER, idType)
-                        .addAllAnnotations(java.util.List.of(annotations)).build();
+        // @formatter:off
+        return AnnotationMessage.newBuilder()
+                        .putParameters(REGION_ID_PARAMETER, region)
+                        .putParameters(ID_TYPE_PARAMETER, idType)
+                        .putParameters(PERSISTENCE_MODE_PARAMETER, PersistenceMode.WRITE_THROUGH.value())
+                        .addAllAnnotations(java.util.List.of(annotations))
+                        .build();
+        // @formatter:on
     }
 }

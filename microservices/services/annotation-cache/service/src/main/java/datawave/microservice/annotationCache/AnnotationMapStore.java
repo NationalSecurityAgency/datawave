@@ -1,5 +1,8 @@
 package datawave.microservice.annotationCache;
 
+import static datawave.microservice.annotationCache.api.Constants.PERSISTENCE_MODE_PARAMETER;
+import static datawave.microservice.annotationCache.api.Constants.REGION_ID_PARAMETER;
+
 import java.util.Collection;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -13,7 +16,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.AmqpException;
 import org.springframework.amqp.rabbit.connection.CorrelationData;
-import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.support.MessageBuilder;
@@ -26,18 +28,27 @@ import com.hazelcast.map.MapStore;
 
 import datawave.annotation.protobuf.v1.AnnotationMessage;
 import datawave.microservice.annotationCache.api.AnnotationStorageException;
+import datawave.microservice.annotationCache.api.PersistenceMode;
+import datawave.microservice.annotationCache.api.RegionConfiguration;
 
 @Component
 public class AnnotationMapStore implements MapStore<String,Object>, HazelcastInstanceAware, MapLoaderLifecycleSupport {
+    public static final String AMQP_CORRELATION_DATA_HEADER = "amqp_correlationData";
+    public static final String AMQP_PUBLISH_CONFIRM_CORRELATION_HEADER = "amqp_publishConfirmCorrelation";
     private static Logger log = LoggerFactory.getLogger(AnnotationMapStore.class);
 
     private HazelcastInstance hazelcastInstance;
 
-    private final StreamBridge streamBridge;
+    private final AnnotationMessagePublisher publisher;
+    private final String localRegion;
 
-    public AnnotationMapStore(StreamBridge streamBridge) {
-        this.streamBridge = streamBridge;
-        log.info("injected bridge: " + streamBridge);
+    public AnnotationMapStore(AnnotationMessagePublisher publisher, RegionConfiguration regionConfiguration) {
+        this.publisher = publisher;
+        if (regionConfiguration == null || regionConfiguration.getName() == null || regionConfiguration.getName().isBlank()) {
+            throw new IllegalStateException("region.name must be configured for the annotation map store");
+        }
+        this.localRegion = regionConfiguration.getName();
+        log.info("Initialized annotation MapStore for region {}", localRegion);
     }
 
     // this is done by hazelcast to inject the instance
@@ -66,30 +77,49 @@ public class AnnotationMapStore implements MapStore<String,Object>, HazelcastIns
     public void store(String s, Object o) {
         if (!(o instanceof AnnotationMessage)) {
             // not storing an annotation, bypass anything that might be on the queue
-            log.trace("ignoring non-annotation object of type: " + o.getClass() + " value: " + o);
+            log.trace("Ignoring non-annotation value for key {}: {}", s, o == null ? "null" : o.getClass().getName());
             return;
         }
 
-        // TODO verify the object is new, may have put an existing object
+        AnnotationMessage annotationMessage = (AnnotationMessage) o;
+        PersistenceMode persistenceMode;
+        String configuredMode = annotationMessage.getParametersOrDefault(PERSISTENCE_MODE_PARAMETER, PersistenceMode.WRITE_THROUGH.value());
+        try {
+            persistenceMode = PersistenceMode.fromValue(configuredMode);
+        } catch (IllegalArgumentException e) {
+            throw new AnnotationStorageException("Invalid persistence mode for annotation " + s + ": " + configuredMode, e);
+        }
+
+        if (persistenceMode == PersistenceMode.CACHE_ONLY) {
+            log.debug("Skipping RabbitMQ publication of cache-only annotation {}", s);
+            return;
+        }
+
+        String sourceRegion = annotationMessage.getParametersOrDefault(REGION_ID_PARAMETER, "");
+        if (!sourceRegion.isBlank() && !localRegion.equals(sourceRegion)) {
+            log.debug("Skipping RabbitMQ publication of annotation {} originating in region {}", s, sourceRegion);
+            return;
+        }
+        if (sourceRegion.isBlank()) {
+            log.warn("Annotation {} has no source region; treating it as a local write-through annotation for compatibility", s);
+        }
 
         String correlationId = UUID.randomUUID().toString();
         CorrelationData correlationData = new CorrelationData(correlationId);
 
-        Message<AnnotationMessage> message = MessageBuilder.withPayload((AnnotationMessage) o).setHeader("amqp_correlationData", correlationData)
-                        .setHeader("amqp_publishConfirmCorrelation", correlationData).build();
+        Message<AnnotationMessage> message = MessageBuilder.withPayload(annotationMessage).setHeader(AMQP_CORRELATION_DATA_HEADER, correlationData)
+                        .setHeader(AMQP_PUBLISH_CONFIRM_CORRELATION_HEADER, correlationData).build();
 
         log.info("Sending message synchronously, ID: {}", correlationId);
 
         try {
-            log.info("sending with streamBridge");
-            boolean sent = streamBridge.send("persisted-out-0", message);
+            boolean sent = publisher.send(message);
 
             if (!sent) {
                 throw new AnnotationStorageException("StreamBridge failed to hand off the message to the internal channel.");
             }
 
-            // 2. BLOCK the current thread until RabbitMQ responds with an ACK/NACK (or times out)
-            // Adjust timeout (e.g., 5 seconds) to match your SLA requirements
+            // BLOCK the current thread until RabbitMQ responds with an ACK/NACK (or times out)
             CorrelationData.Confirm confirm = correlationData.getFuture().get(5, TimeUnit.SECONDS);
 
             if (correlationData.getReturned() != null) {
@@ -106,8 +136,11 @@ public class AnnotationMapStore implements MapStore<String,Object>, HazelcastIns
         } catch (MessagingException | AmqpException e) {
             log.info("caught messaging exception", e);
             throw new AnnotationStorageException("Problem sending message", e);
-        } catch (ExecutionException | InterruptedException | TimeoutException e) {
+        } catch (ExecutionException | TimeoutException e) {
             throw new AnnotationStorageException("Failed to send message", e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new AnnotationStorageException("Interrupted while waiting for message confirmation", e);
         }
     }
 
