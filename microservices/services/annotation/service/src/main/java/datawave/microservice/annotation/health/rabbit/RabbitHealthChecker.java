@@ -32,6 +32,7 @@ import datawave.microservice.annotation.health.rabbit.config.RabbitHealthPropert
 import datawave.microservice.annotation.health.rabbit.config.RabbitHealthProperties.ExchangeProperties;
 import datawave.microservice.annotation.health.rabbit.config.RabbitHealthProperties.ManagementProperties;
 import datawave.microservice.annotation.health.rabbit.config.RabbitHealthProperties.QueueProperties;
+import datawave.microservice.annotation.service.AnnotationControllerV1;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -43,15 +44,15 @@ import lombok.extern.slf4j.Slf4j;
  * The poll rate used by the health checker differs depending on whether RabbitMQ is healthy or not. While this is configurable, the default behavior is to use
  * a slow poll rate when healthy, and a faster poll rate when unhealthy.
  * <p>
- * Once a problem is detected, the isHealthy method will return false, allowing request handling to reject annotation requests and causing the health endpoint
- * to report the annotation service as RABBITMQ_UNHEALTHY.
+ * Once a problem is detected, the isHealthy method will return false, which in turn will cause the {@link AnnotationControllerV1} to reject annotation
+ * requests, and cause the health endpoint to report the annotation service as RABBITMQ_UNHEALTHY.
  * <p>
  * If properly configured, the RabbitHealthChecker can attempt to repair the RabbitMQ configuration if a problem is detected. Any exchanges, queues, or bindings
  * which are missing will be created, and any exchanges, or bindings which have an invalid configuration will be deleted, and recreated. Queues with invalid
  * configurations will only be deleted, and recreated if they are empty.
  * <p>
- * Regardless, health checks will continue to be performed. Once we determine that RabbitMQ is healthy, request handling can resume processing messages, and the
- * health endpoint will report the annotation service as UP.
+ * Regardless, health checks will continue to be performed. Once we determine that RabbitMQ is healthy, the {@link AnnotationControllerV1} rest endpoint will
+ * resume processing messages, and the health endpoint will report the annotation service as UP.
  *
  */
 @Slf4j
@@ -223,7 +224,7 @@ public class RabbitHealthChecker implements HealthChecker, HealthIndicator {
      * Performs a health check of RabbitMQ.
      * <p>
      * This method is synchronized with the isHealthy method to ensure that the health check is given time to complete before deciding whether to accept an
-     * annotation request
+     * annotation request via the {@link AnnotationControllerV1}
      * <p>
      * RabbitMQ is considered to be healthy if the cluster, exchanges, queues, and bindings are configured as specified in the {@link RabbitHealthProperties}.
      * If we are not able to determine the health of the cluster, exchanges, queues, and bindings (perhaps due to the management API being unavailable, or the
@@ -567,7 +568,7 @@ public class RabbitHealthChecker implements HealthChecker, HealthIndicator {
      * Used to determine whether RabbitMQ is healthy.
      * <p>
      * This method is synchronized with the runHealthCheck method to ensure that the health check is given time to complete before deciding whether to accept an
-     * annotation request
+     * annotation request via the {@link AnnotationControllerV1}
      *
      * @return true if RabbitMQ is healthy, false if RabbitMQ is unhealthy
      */
