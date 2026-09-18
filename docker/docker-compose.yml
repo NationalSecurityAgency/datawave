@@ -118,10 +118,10 @@ services:
     profiles: [datawave-stack]
     image: *stack-image
     user: zookeeper
-    entrypoint: ["/usr/lib/zookeeper/bin/zkServer.sh"]
+    entrypoint: ["/opt/zookeeper/bin/zkServer.sh"]
     command: ["--config", "/etc/zookeeper/conf.dist", "start-foreground"]
     environment:
-      - ZOOBINDIR=/usr/lib/zookeeper/bin
+      - ZOOBINDIR=/opt/zookeeper/bin
       - ZOO_LOG_DIR=/var/log/zookeeper
     ports:
       - "2181:2181"
