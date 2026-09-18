@@ -3,6 +3,7 @@ package datawave.microservice.annotationCache.config;
 import static datawave.microservice.annotationCache.api.Constants.ANNOTATIONS_MAP;
 import static datawave.microservice.annotationCache.api.Constants.DOC_ANNOTATIONS_MAP;
 import static datawave.microservice.annotationCache.api.Constants.ID_TYPE_PARAMETER;
+import static datawave.microservice.annotationCache.api.Constants.PERSISTENCE_MODE_PARAMETER;
 import static datawave.microservice.annotationCache.api.Constants.REGION_ID_PARAMETER;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -37,6 +38,7 @@ import datawave.annotation.protobuf.v1.AnnotationMessage;
 import datawave.microservice.annotationCache.AnnotationMapStore;
 import datawave.microservice.annotationCache.AnnotationSyncListener;
 import datawave.microservice.annotationCache.LoadCacheConsumer;
+import datawave.microservice.annotationCache.api.PersistenceMode;
 import datawave.microservice.annotationCache.api.RegionConfiguration;
 
 /** Exercises local write-through and federated transient insertion against a real Hazelcast member. */
@@ -121,8 +123,8 @@ class FederatedCacheIntegrationTest {
 
     private AnnotationMessage message(String region, String annotationId) {
         Annotation annotation = Annotation.newBuilder().setDocumentId(DOCUMENT_ID).setAnnotationId(annotationId).build();
-        return AnnotationMessage.newBuilder().putParameters(REGION_ID_PARAMETER, region).putParameters(ID_TYPE_PARAMETER, ID_TYPE).addAnnotations(annotation)
-                        .build();
+        return AnnotationMessage.newBuilder().putParameters(REGION_ID_PARAMETER, region).putParameters(ID_TYPE_PARAMETER, ID_TYPE)
+                        .putParameters(PERSISTENCE_MODE_PARAMETER, PersistenceMode.WRITE_THROUGH.value()).addAnnotations(annotation).build();
     }
 
     private void await(String description, BooleanSupplier condition) throws InterruptedException {
