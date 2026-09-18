@@ -1,6 +1,7 @@
 package datawave.microservice.annotationCache;
 
 import static datawave.microservice.annotationCache.api.Constants.ANNOTATIONS_MAP;
+import static datawave.microservice.annotationCache.api.Constants.DOC_ANNOTATIONS_MAP;
 import static datawave.microservice.annotationCache.api.Constants.ID_TYPE_PARAMETER;
 import static datawave.microservice.annotationCache.api.Constants.REGION_ID_PARAMETER;
 
@@ -19,6 +20,7 @@ import com.hazelcast.map.IMap;
 import datawave.annotation.protobuf.v1.Annotation;
 import datawave.annotation.protobuf.v1.AnnotationMessage;
 import datawave.microservice.annotationCache.api.RegionConfiguration;
+import datawave.microservice.annotationCache.api.entryProcessor.AppendAnnotationIdProcessor;
 
 /** Consumes federated annotation messages and makes them available in the local Hazelcast cache. */
 @Configuration
@@ -72,6 +74,7 @@ public class LoadCacheConsumer {
 
         String mapName = ANNOTATIONS_MAP + idType + ":" + documentId;
         IMap<String,AnnotationMessage> annotationMap = hazelcastInstance.getMap(mapName);
+        IMap<String,java.util.Set<String>> documentIndex = hazelcastInstance.getMap(DOC_ANNOTATIONS_MAP);
 
         // The normal producer writes one annotation per message. Normalize a batched message so that every map key still contains exactly its annotation.
         AnnotationMessage cacheValue = annotationMessage.getAnnotationsCount() == 1 ? annotationMessage
@@ -81,18 +84,20 @@ public class LoadCacheConsumer {
         // the message again while retaining the TTL and max-idle behavior configured for the annotation map.
         annotationMap.lock(annotationId);
         try {
-            if (annotationMap.containsKey(annotationId)) {
+            if (!annotationMap.containsKey(annotationId)) {
+                MapConfig mapConfig = hazelcastInstance.getConfig().findMapConfig(mapName);
+                annotationMap.putTransient(annotationId, cacheValue, mapConfig.getTimeToLiveSeconds(), TimeUnit.SECONDS, mapConfig.getMaxIdleSeconds(),
+                                TimeUnit.SECONDS);
+                log.info("Stored annotation {} federated from region {} in local cache {}", annotationId,
+                                annotationMessage.getParametersOrThrow(REGION_ID_PARAMETER), mapName);
+            } else {
                 log.debug("Annotation {} already exists in local cache {}", annotationId, mapName);
-                return;
             }
-
-            MapConfig mapConfig = hazelcastInstance.getConfig().findMapConfig(mapName);
-            annotationMap.putTransient(annotationId, cacheValue, mapConfig.getTimeToLiveSeconds(), TimeUnit.SECONDS, mapConfig.getMaxIdleSeconds(),
-                            TimeUnit.SECONDS);
-            log.info("Stored annotation {} federated from region {} in local cache {}", annotationId,
-                            annotationMessage.getParametersOrThrow(REGION_ID_PARAMETER), mapName);
         } finally {
             annotationMap.unlock(annotationId);
         }
+
+        // Keep the derived index update idempotent and perform it even when the annotation already existed. This repairs an index missed by a previous event.
+        documentIndex.executeOnKey(idType + ":" + documentId, new AppendAnnotationIdProcessor(annotationId));
     }
 }
