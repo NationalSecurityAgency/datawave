@@ -1,9 +1,12 @@
 package datawave.microservice.config.metrics;
 
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.concurrent.TimeUnit;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.convert.DurationUnit;
 
 import com.codahale.metrics.ScheduledReporter;
 
@@ -21,6 +24,8 @@ public class MetricsConfigurationProperties {
     private int port = 54321;
     private long interval = 30L;
     private TimeUnit intervalUnit = TimeUnit.SECONDS;
+    @DurationUnit(ChronoUnit.SECONDS)
+    private Duration timeout;
 
     public Class<? extends MetricsReporterFactory> getFactoryClass() {
         return factoryClass;
@@ -60,5 +65,13 @@ public class MetricsConfigurationProperties {
 
     public void setIntervalUnit(TimeUnit intervalUnit) {
         this.intervalUnit = intervalUnit;
+    }
+
+    public Duration getTimeout() {
+        return timeout;
+    }
+
+    public void setTimeout(Duration timeout) {
+        this.timeout = timeout;
     }
 }
