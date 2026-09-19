@@ -48,6 +48,7 @@ import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.rfile.RFile;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.conf.DefaultConfiguration;
+import org.apache.accumulo.core.conf.Property;
 import org.apache.accumulo.core.data.LoadPlan;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.file.FileOperations;
@@ -55,6 +56,7 @@ import org.apache.accumulo.core.file.FileSKVIterator;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.spi.crypto.NoCryptoServiceFactory;
 import org.apache.accumulo.minicluster.MiniAccumuloCluster;
+import org.apache.accumulo.minicluster.MiniAccumuloConfig;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
@@ -68,12 +70,14 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
+import org.apache.hadoop.util.Shell;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.easymock.EasyMock;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
@@ -141,8 +145,13 @@ public class BulkIngestMapFileLoaderTest {
     @BeforeClass
     public static void setupClass() throws AccumuloSecurityException, AccumuloException, TableExistsException, TableNotFoundException, IOException,
                     InterruptedException, URISyntaxException {
+        if (Shell.WINDOWS && !Shell.hasWinutilsPath()) {
+            return;
+        }
         tmpDir = temporaryFolder.newFolder();
-        cluster = new MiniAccumuloCluster(tmpDir, PASSWORD);
+        MiniAccumuloConfig config = new MiniAccumuloConfig(tmpDir, PASSWORD);
+        config.setSiteConfig(Map.of(Property.INSTANCE_VOLUMES.getKey(), new File(tmpDir, "accumulo").toURI().toString()));
+        cluster = new MiniAccumuloCluster(config);
         cluster.start();
 
         workPath = Paths.get(tmpDir.getAbsolutePath(), "datawave", "ingest", "work");
@@ -462,7 +471,9 @@ public class BulkIngestMapFileLoaderTest {
 
     @AfterClass
     public static void teardownClass() throws IOException {
-        cluster.close();
+        if (cluster != null) {
+            cluster.close();
+        }
     }
 
     @Test
@@ -788,9 +799,9 @@ public class BulkIngestMapFileLoaderTest {
 
     @Before
     public void setup() throws Exception {
-        systemProperties = new ArrayList<>();
-
         testDriverLevel = BulkIngestMapFileLoaderTest.logger.getLevel();
+        Assume.assumeTrue("MiniAccumuloCluster requires winutils.exe on Windows", !Shell.WINDOWS || Shell.hasWinutilsPath());
+        systemProperties = new ArrayList<>();
         BulkIngestMapFileLoaderTest.logger.setLevel(Level.ALL);
     }
 
