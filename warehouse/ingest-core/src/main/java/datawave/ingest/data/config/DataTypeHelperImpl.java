@@ -60,13 +60,13 @@ public class DataTypeHelperImpl implements DataTypeHelper {
     }
 
     private void initType(final Configuration config) {
-        if (type != null && TypeRegistry.hasInstance())
-            return;
+        if (type == null || !TypeRegistry.hasInstance()) {
+            final String t = ConfigurationHelper.isNull(config, Properties.DATA_NAME, String.class);
+            TypeRegistry.getInstance(config);
+            type = TypeRegistry.getType(t);
+        }
 
-        final String t = ConfigurationHelper.isNull(config, Properties.DATA_NAME, String.class);
-        TypeRegistry.getInstance(config);
-        type = TypeRegistry.getType(t);
-
+        fieldsToDowncase.clear();
         String[] downcaseFields = config.getStrings(type.typeName() + Properties.DOWNCASE_FIELDS, Properties.DEFAULT_DOWNCASE_FIELDS);
         for (String s : downcaseFields) {
             fieldsToDowncase.add(s.toLowerCase());
