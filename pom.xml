@@ -1590,6 +1590,20 @@
             <name>Open Source Geospatial Foundation Repository</name>
             <url>https://repo.osgeo.org/repository/release/</url>
         </repository>
+        <!-- Accumulo 4.0.0-SNAPSHOT is published here and nowhere else. Snapshots
+             only: releases come from Central, and enabling them here would let a
+             snapshot repository answer for released artifacts too. -->
+        <repository>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+            <id>apache-snapshots</id>
+            <name>Apache Snapshot Repository</name>
+            <url>https://repository.apache.org/content/repositories/snapshots</url>
+        </repository>
     </repositories>
     <pluginRepositories>
         <pluginRepository>
