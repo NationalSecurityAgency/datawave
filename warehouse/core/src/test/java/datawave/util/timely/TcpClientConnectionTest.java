@@ -1,5 +1,7 @@
 package datawave.util.timely;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThrows;
@@ -21,6 +23,19 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.Test;
 
 public class TcpClientConnectionTest {
+
+    @Test
+    public void writesUtf8ThroughConnectedSocket() throws IOException {
+        TrackingSocket socket = new TrackingSocket(false);
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        socket.outputStream = output;
+        String metric = "put caf\u00e9 1 2 tag=\u20ac\n";
+        try (TcpClient client = new TcpClient("localhost", 4242, () -> socket)) {
+            client.write(metric);
+            client.flush();
+            assertArrayEquals(metric.getBytes(UTF_8), output.toByteArray());
+        }
+    }
 
     @Test
     public void reconnectClosesOldSocket() throws Exception {
