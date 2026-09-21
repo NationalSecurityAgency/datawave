@@ -1,6 +1,7 @@
 package datawave.webservice.query.runner;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -12,6 +13,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.ArgumentMatchers.notNull;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -54,7 +56,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -2586,123 +2587,51 @@ public class ExtendedQueryExecutorBeanTest {
         assertNotNull(result3, "Expected a non-null response");
     }
 
-    @Disabled
-    // TODO: Fix Query duplicate method
+    // Verify that duplication creates a new query with the requested settings without changing its template.
     @SuppressWarnings({"unchecked", "rawtypes"})
     @Test
     public void testDuplicateQuery_HappyPath() throws Exception {
-        // Set local test input
+        QueryImpl template = new QueryImpl();
+        template.setId(UUID.randomUUID());
+        template.setQueryName("original");
+        template.setQuery("original query");
+        template.setOwner("userSid");
+        template.setColumnVisibility("A&B");
+        Map<String,List<String>> originalSettings = template.toMap();
+        Date beginDate = new Date(1000);
+        Date endDate = new Date(2000);
+        Date expirationDate = new Date(3000);
         String queryLogicName = "queryLogicName";
-        String query = "query";
-        String newQueryName = "newQueryName";
-        String queryVisibility = "A&B";
-        long currentTime = System.currentTimeMillis();
-        Date beginDate = new Date(currentTime - 5000);
-        Date endDate = new Date(currentTime - 1000);
-        String queryAuthorizations = "AUTH_1";
-        Date expirationDate = new Date(currentTime + 9999);
-        int pagesize = 10;
-        int pageTimeout = -1;
-        Long maxResultsOverride = null;
-        QueryPersistence persistenceMode = QueryPersistence.PERSISTENT;
-        String parameters = "invalidparam; valid:param";
-        boolean trace = true;
-        String userName = "userName";
-        String userSid = "userSid";
-        String userDN = "userDN";
-        SubjectIssuerDNPair userDNpair = SubjectIssuerDNPair.of(userDN);
-        List<String> dnList = Collections.singletonList(userDN);
-        UUID queryId = UUID.randomUUID();
-        String systemFrom = "test";
 
-        MultivaluedMap<String,String> queryParameters = new MultivaluedMapImpl<>();
-        queryParameters.putSingle(QueryParameters.QUERY_STRING, query);
-        queryParameters.putSingle(QueryParameters.QUERY_NAME, newQueryName);
-        queryParameters.putSingle(QueryParameters.QUERY_BEGIN, DefaultQueryParameters.formatDate(beginDate));
-        queryParameters.putSingle(QueryParameters.QUERY_END, DefaultQueryParameters.formatDate(endDate));
-        queryParameters.putSingle(QueryParameters.QUERY_EXPIRATION, DefaultQueryParameters.formatDate(expirationDate));
-        queryParameters.putSingle(QueryParameters.QUERY_AUTHORIZATIONS, queryAuthorizations);
-        queryParameters.putSingle(QueryParameters.QUERY_PARAMS, parameters);
-        queryParameters.putSingle(QueryParameters.QUERY_PAGESIZE, String.valueOf(pagesize));
-        queryParameters.putSingle(QueryParameters.QUERY_PAGETIMEOUT, String.valueOf(pageTimeout));
-        queryParameters.putSingle(QueryParameters.QUERY_PERSISTENCE, persistenceMode.name());
-        queryParameters.putSingle(QueryParameters.QUERY_TRACE, String.valueOf(trace));
-        queryParameters.putSingle(QueryParameters.QUERY_SYSTEM_FROM, systemFrom);
-        queryParameters.putSingle(ColumnVisibilitySecurityMarking.VISIBILITY_MARKING, queryVisibility);
-
-        ColumnVisibilitySecurityMarking marking = new ColumnVisibilitySecurityMarking();
-        marking.validate(queryParameters);
-
-        QueryParameters qp = new DefaultQueryParameters();
-        qp.validate(queryParameters);
-
-        MultivaluedMap<String,String> op = MapUtils.toMultivaluedMap(qp.getUnknownParameters(MapUtils.toMultiValueMap(queryParameters)));
-        op.putSingle(PrivateAuditConstants.LOGIC_CLASS, queryLogic1.getClass().getSimpleName());
-        op.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, queryVisibility);
-        op.putSingle(PrivateAuditConstants.USER_DN, userDN);
-
-        // Set expectations of the create logic
-        when(this.context.getCallerPrincipal()).thenReturn(this.principal);
-        when(this.principal.getName()).thenReturn(userName);
-        when(this.principal.getShortName()).thenReturn(userSid);
-        when(this.principal.getUserDN()).thenReturn(userDNpair);
-        when(this.principal.getDNs()).thenReturn(new String[] {userDN});
-        when(this.principal.getProxyServers()).thenReturn(new ArrayList<>(0));
-        queryLogic1.validate(queryParameters);
-        when(this.queryLogic1.getAuditType(null)).thenReturn(AuditType.NONE);
-        when(this.principal.getAuthorizations()).thenReturn((Collection) Arrays.asList(Arrays.asList(queryAuthorizations)));
-        when(this.cache.get(queryId.toString())).thenReturn(this.runningQuery);
-        when(this.runningQuery.getSettings()).thenReturn(this.query);
-        when(this.query.getOwner()).thenReturn(userSid);
-        QueryImpl newQuery1 = new QueryImpl();
-        newQuery1.setId(UUID.randomUUID());
-        newQuery1.setQuery(query);
-        newQuery1.setQueryName(newQueryName);
-        newQuery1.setBeginDate(beginDate);
-        newQuery1.setEndDate(endDate);
-        newQuery1.setExpirationDate(expirationDate);
-        newQuery1.setDnList(Collections.singletonList(userDN));
-        when(this.query.duplicate(newQueryName)).thenReturn(newQuery1);
-        when(context.getCallerPrincipal()).thenReturn(principal);
-        when(this.queryLogicFactory.getQueryLogic(queryLogicName, principal)).thenReturn((QueryLogic) this.queryLogic1);
-        when(this.queryLogic1.getLogicName()).thenReturn(queryLogicName);
-        when(this.queryLogic1.getMaxPageSize()).thenReturn(100);
-        QueryImpl newQuery2 = new TestQuery(newQuery1);
-        when(persister.create(eq(userDNpair.subjectDN()), eq(dnList), eq(marking), eq(queryLogicName), eq(qp), eq(op))).thenReturn(newQuery2);
-        when(this.queryLogic1.getAuditType(newQuery2)).thenReturn(AuditType.NONE);
-        when(this.queryLogic1.getConnectionPriority()).thenReturn(Priority.NORMAL);
-        when(this.queryLogic1.getConnPoolName()).thenReturn("connPool1");
-        when(this.connectionFactory.getTrackingMap(isA(StackTraceElement[].class))).thenReturn(null);
-        this.query.populateTrackingMap(null);
-        when(this.connectionFactory.getClient(userDN.toLowerCase(), new ArrayList<>(0), "connPool1", Priority.NORMAL, null)).thenReturn(this.client);
-        when(this.qlCache.add(newQuery1.getId().toString(), userSid, this.queryLogic1, this.client)).thenReturn(true);
-        when(this.queryLogic1.getCollectQueryMetrics()).thenReturn(false);
-        when(this.queryLogic1.initialize(eq(this.client), isA(Query.class), isA(Set.class))).thenReturn(this.genericConfiguration);
-        this.queryLogic1.setupQuery(this.genericConfiguration);
-        when(this.queryLogic1.getTransformIterator(eq(newQuery2))).thenReturn(this.transformIterator);
-        when(this.genericConfiguration.getQueryString()).thenReturn(query);
-        when(this.qlCache.poll(newQuery1.getId().toString())).thenReturn(null);
-
-        // Run the test
-        QueryExecutorBean subject = new QueryExecutorBean();
-        ReflectionTestUtils.setField(subject, "ctx", context);
-        ReflectionTestUtils.setField(subject, "connectionFactory", connectionFactory);
-        ReflectionTestUtils.setField(subject, "responseObjectFactory", responseObjectFactory);
-        ReflectionTestUtils.setField(subject, "qlCache", qlCache);
-        ReflectionTestUtils.setField(subject, "queryCache", cache);
-        ReflectionTestUtils.setField(subject, "closedQueryCache", closedCache);
-        ReflectionTestUtils.setField(subject, "persister", persister);
+        QueryExecutorBean subject = subjectForDuplicateQuery(template);
+        when(queryLogicFactory.getQueryLogic(queryLogicName, principal)).thenReturn((QueryLogic) queryLogic1);
+        when(queryLogic1.getLogicName()).thenReturn(queryLogicName);
         ReflectionTestUtils.setField(subject, "queryLogicFactory", queryLogicFactory);
-        ReflectionTestUtils.setField(subject, "queryExpirationConf", queryExpirationConf);
-        ReflectionTestUtils.setField(subject, "metrics", metrics);
-        ReflectionTestUtils.setField(subject, "traceInfos", traceInfos);
-        ReflectionTestUtils.setField(subject, "qp", new DefaultQueryParameters());
-        ReflectionTestUtils.setField(subject, "metricFactory", new QueryMetricFactoryImpl());
-        GenericResponse<String> result1 = subject.duplicateQuery(queryId.toString(), newQueryName, queryLogicName, query, queryVisibility, beginDate, endDate,
-                        queryAuthorizations, expirationDate, pagesize, pageTimeout, maxResultsOverride, persistenceMode, parameters, trace);
+        GenericResponse<String> expected = new GenericResponse<>();
+        expected.setResult("created-query-id");
+        doAnswer(invocation -> {
+            MultivaluedMap<String,String> settings = invocation.getArgument(1);
+            assertEquals("newQueryName", settings.getFirst(QueryParameters.QUERY_NAME));
+            assertEquals("new query", settings.getFirst(QueryParameters.QUERY_STRING));
+            assertEquals(queryLogicName, settings.getFirst(QueryParameters.QUERY_LOGIC_NAME));
+            assertEquals("AUTH_1", settings.getFirst(QueryParameters.QUERY_AUTHORIZATIONS));
+            assertEquals(DefaultQueryParameters.formatDate(beginDate), settings.getFirst(QueryParameters.QUERY_BEGIN));
+            assertEquals(DefaultQueryParameters.formatDate(endDate), settings.getFirst(QueryParameters.QUERY_END));
+            assertEquals(DefaultQueryParameters.formatDate(expirationDate), settings.getFirst(QueryParameters.QUERY_EXPIRATION));
+            assertEquals("10", settings.getFirst(QueryParameters.QUERY_PAGESIZE));
+            assertEquals("5", settings.getFirst(QueryParameters.QUERY_PAGETIMEOUT));
+            assertEquals("20", settings.getFirst(QueryParameters.QUERY_MAX_RESULTS_OVERRIDE));
+            assertEquals(QueryPersistence.TRANSIENT.name(), settings.getFirst(QueryParameters.QUERY_PERSISTENCE));
+            assertEquals("A&B", settings.getFirst(ColumnVisibilitySecurityMarking.VISIBILITY_MARKING));
+            assertNotEquals(template.getId(), UUID.fromString(settings.getFirst(QueryImpl.QUERY_ID)));
+            return expected;
+        }).when(subject).createQuery(eq(queryLogicName), any());
 
-        // Verify results
-        assertNotNull(result1, "Expected a non-null response");
+        GenericResponse<String> result = subject.duplicateQuery(template.getId().toString(), "newQueryName", queryLogicName, "new query", null, beginDate,
+                        endDate, "AUTH_1", expirationDate, 10, 5, 20L, QueryPersistence.TRANSIENT, null, false);
+
+        assertSame(expected, result);
+        assertEquals(originalSettings, template.toMap());
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -2755,79 +2684,34 @@ public class ExtendedQueryExecutorBeanTest {
         });
     }
 
-    @Disabled
-    @SuppressWarnings({"unchecked", "rawtypes"})
+    // Verify that a creation failure is reported as a duplication error with its original cause.
     @Test
     public void testDuplicateQuery_UncheckedExceptionThrownDuringCreateQuery() throws Exception {
-        // Set local test input
-        String queryLogicName = "queryLogicName";
-        String query = "query";
-        String newQueryName = "newQueryName";
-        String queryVisibility = "A&B";
-        long currentTime = System.currentTimeMillis();
-        Date beginDate = new Date(currentTime - 5000);
-        Date endDate = new Date(currentTime - 1000);
-        String queryAuthorizations = "AUTH_1";
-        Date expirationDate = new Date(currentTime + 9999);
-        int pagesize = 10;
-        int pageTimeout = -1;
-        Long maxResultsOverride = null;
-        QueryPersistence persistenceMode = QueryPersistence.PERSISTENT;
-        String parameters = "invalidparam; valid:param";
-        boolean trace = true;
-        String userName = "userName";
-        String userSid = "userSid";
-        String userDN = "userDN";
-        SubjectIssuerDNPair userDNpair = SubjectIssuerDNPair.of(userDN);
-        UUID queryId = UUID.randomUUID();
+        QueryImpl template = new QueryImpl();
+        template.setId(UUID.randomUUID());
+        template.setQueryLogicName("queryLogicName");
+        template.setOwner("userSid");
+        QueryExecutorBean subject = subjectForDuplicateQuery(template);
+        IllegalStateException failure = new IllegalStateException("INTENTIONALLY THROWN UNCHECKED TEST EXCEPTION");
+        doThrow(failure).when(subject).createQuery(eq(template.getQueryLogicName()), any());
 
-        // Set expectations of the create logic
-        when(this.context.getCallerPrincipal()).thenReturn(this.principal);
-        when(this.principal.getName()).thenReturn(userName);
-        when(this.principal.getShortName()).thenReturn(userSid);
-        when(this.principal.getUserDN()).thenReturn(userDNpair);
-        when(this.principal.getDNs()).thenReturn(new String[] {userDN});
-        when(this.principal.getProxyServers()).thenReturn(new ArrayList<>(0));
-        when(this.queryLogic1.getAuditType(null)).thenReturn(AuditType.NONE);
-        when(this.principal.getAuthorizations()).thenReturn((Collection) Arrays.asList(Arrays.asList(queryAuthorizations)));
-        when(this.cache.get(queryId.toString())).thenReturn(this.runningQuery);
-        when(this.runningQuery.getSettings()).thenReturn(this.query);
-        when(this.query.getOwner()).thenReturn(userSid);
-        QueryImpl newQuery1 = new QueryImpl();
-        newQuery1.setId(UUID.randomUUID());
-        when(this.query.duplicate(newQueryName)).thenReturn(newQuery1);
-        when(this.queryLogicFactory.getQueryLogic(queryLogicName, principal)).thenReturn((QueryLogic) this.queryLogic1);
-        when(this.queryLogic1.getLogicName()).thenReturn(queryLogicName);
-        when(this.queryLogic1.getMaxPageSize()).thenReturn(100);
-        QueryImpl newQuery2 = new TestQuery(newQuery1);
+        DatawaveWebApplicationException result = assertThrows(DatawaveWebApplicationException.class, () -> subject.duplicateQuery(template.getId().toString(),
+                        "newQueryName", null, null, null, null, null, null, null, null, null, null, null, null, false));
 
-        when(this.queryLogic1.getAuditType(newQuery2)).thenReturn(AuditType.NONE);
-        Exception uncheckedException = new IllegalStateException("INTENTIONALLY THROWN UNCHECKED TEST EXCEPTION");
-        when(this.queryLogic1.getConnectionPriority()).thenThrow(uncheckedException);
-        this.queryLogic1.close();
-        this.persister.remove(newQuery2);
-        when(this.qlCache.poll(newQuery1.getId().toString())).thenReturn(null);
+        assertEquals(500, result.getResponse().getStatus());
+        assertEquals(DatawaveErrorCode.QUERY_DUPLICATION_ERROR.getErrorCode(), ((QueryException) result.getCause()).getErrorCode());
+        assertSame(failure, result.getCause().getCause());
+    }
 
-        // Run the test
-        QueryExecutorBean subject = new QueryExecutorBean();
+    private QueryExecutorBean subjectForDuplicateQuery(QueryImpl template) {
+        when(context.getCallerPrincipal()).thenReturn(principal);
+        when(principal.getShortName()).thenReturn(template.getOwner());
+        when(cache.get(template.getId().toString())).thenReturn(runningQuery);
+        when(runningQuery.getSettings()).thenReturn(template);
+        QueryExecutorBean subject = spy(new QueryExecutorBean());
         ReflectionTestUtils.setField(subject, "ctx", context);
-        ReflectionTestUtils.setField(subject, "connectionFactory", connectionFactory);
-        ReflectionTestUtils.setField(subject, "responseObjectFactory", responseObjectFactory);
-        ReflectionTestUtils.setField(subject, "qlCache", qlCache);
         ReflectionTestUtils.setField(subject, "queryCache", cache);
-        ReflectionTestUtils.setField(subject, "closedQueryCache", closedCache);
-        ReflectionTestUtils.setField(subject, "persister", persister);
-        ReflectionTestUtils.setField(subject, "queryLogicFactory", queryLogicFactory);
-        ReflectionTestUtils.setField(subject, "queryExpirationConf", queryExpirationConf);
-        ReflectionTestUtils.setField(subject, "metrics", metrics);
-        ReflectionTestUtils.setField(subject, "traceInfos", traceInfos);
-        ReflectionTestUtils.setField(subject, "qp", new DefaultQueryParameters());
-        ReflectionTestUtils.setField(subject, "metricFactory", new QueryMetricFactoryImpl());
-
-        assertThrows(DatawaveWebApplicationException.class, () -> {
-            subject.duplicateQuery(queryId.toString(), newQueryName, queryLogicName, query, queryVisibility, beginDate, endDate, queryAuthorizations,
-                            expirationDate, pagesize, pageTimeout, maxResultsOverride, persistenceMode, parameters, trace);
-        });
+        return subject;
     }
 
     @Test
