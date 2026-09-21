@@ -269,7 +269,7 @@ public class IteratorBuildingVisitorTest {
     }
 
     @Test
-    @Ignore
+    @Ignore("IteratorBuildingVisitor rejects a top-level negation without a positive candidate source")
     public void NeTest() throws Exception {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("F1 != 'v1'");
         Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
@@ -286,7 +286,6 @@ public class IteratorBuildingVisitorTest {
     }
 
     @Test
-    @Ignore
     public void excludedOrTest() throws Exception {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("F1 == 'v1' || !(F2 == 'v2')");
         Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
@@ -302,7 +301,6 @@ public class IteratorBuildingVisitorTest {
     }
 
     @Test
-    @Ignore
     public void nestedExcludeOnlyTest() throws Exception {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("F1 == 'v1' && (!(F2 == 'v2') || !(F3 == 'v3'))");
         Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
@@ -1002,6 +1000,10 @@ public class IteratorBuildingVisitorTest {
         Assert.assertTrue(result != null);
         SeekableNestedIterator seekableNestedIterator = new SeekableNestedIterator(result, env);
         seekableNestedIterator.seek(docRange, Collections.emptySet(), true);
+        if (seekableNestedIterator.isContextRequired()) {
+            // Negated unions evaluate against the candidate document supplied by the caller.
+            seekableNestedIterator.setContext(docRange.getStartKey());
+        }
         seekableNestedIterator.initialize();
 
         // asserts for a hit or miss
