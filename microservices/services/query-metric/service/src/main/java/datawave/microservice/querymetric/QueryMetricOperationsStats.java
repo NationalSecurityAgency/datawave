@@ -331,18 +331,18 @@ public class QueryMetricOperationsStats {
                 if (lifecycle.equals(BaseQueryMetric.Lifecycle.CLOSED) || lifecycle.equals(BaseQueryMetric.Lifecycle.CANCELLED)) {
                     long createDate = queryMetric.getCreateDate().getTime();
                     // write ELAPSED_TIME
-                    this.queryStatsToWriteToTimely.add("put dw.query.metrics.ELAPSED_TIME " + createDate + " " + queryMetric.getElapsedTime() + " HOST="
-                                    + host + getCommonTags() + "\n");
-                    this.queryStatsToWriteToTimely.add("put dw.query.metrics.ELAPSED_TIME " + createDate + " " + queryMetric.getElapsedTime() + " USER="
-                                    + user + getCommonTags() + "\n");
+                    this.queryStatsToWriteToTimely.add("put dw.query.metrics.ELAPSED_TIME " + createDate + " " + queryMetric.getElapsedTime() + " HOST=" + host
+                                    + getCommonTags() + "\n");
+                    this.queryStatsToWriteToTimely.add("put dw.query.metrics.ELAPSED_TIME " + createDate + " " + queryMetric.getElapsedTime() + " USER=" + user
+                                    + getCommonTags() + "\n");
                     this.queryStatsToWriteToTimely.add("put dw.query.metrics.ELAPSED_TIME " + createDate + " " + queryMetric.getElapsedTime() + " QUERY_LOGIC="
                                     + logic + getCommonTags() + "\n");
 
                     // write NUM_RESULTS
-                    this.queryStatsToWriteToTimely.add("put dw.query.metrics.NUM_RESULTS " + createDate + " " + queryMetric.getNumResults() + " HOST="
-                                    + host + getCommonTags() + "\n");
-                    this.queryStatsToWriteToTimely.add("put dw.query.metrics.NUM_RESULTS " + createDate + " " + queryMetric.getNumResults() + " USER="
-                                    + user + getCommonTags() + "\n");
+                    this.queryStatsToWriteToTimely.add("put dw.query.metrics.NUM_RESULTS " + createDate + " " + queryMetric.getNumResults() + " HOST=" + host
+                                    + getCommonTags() + "\n");
+                    this.queryStatsToWriteToTimely.add("put dw.query.metrics.NUM_RESULTS " + createDate + " " + queryMetric.getNumResults() + " USER=" + user
+                                    + getCommonTags() + "\n");
                     this.queryStatsToWriteToTimely.add("put dw.query.metrics.NUM_RESULTS " + createDate + " " + queryMetric.getNumResults() + " QUERY_LOGIC="
                                     + logic + getCommonTags() + "\n");
                 } else if (lifecycle.equals(BaseQueryMetric.Lifecycle.INITIALIZED)) {
@@ -369,8 +369,7 @@ public class QueryMetricOperationsStats {
                     throw new IllegalArgumentException("Timely tag names normalize to duplicate key: " + normalizedKey);
                 }
             });
-            return " " + normalizedTags.entrySet().stream().map(e -> e.getKey() + "=" + e.getValue())
-                            .collect(Collectors.joining(" "));
+            return " " + normalizedTags.entrySet().stream().map(e -> e.getKey() + "=" + e.getValue()).collect(Collectors.joining(" "));
         } else {
             return "";
         }
@@ -410,8 +409,8 @@ public class QueryMetricOperationsStats {
                 });
                 this.userCountMap.clear();
                 this.logicCountMap.entrySet().forEach(entry -> {
-                    this.queryStatsToWriteToTimely.add("put dw.query.metrics.COUNT " + now + " " + entry.getValue() + " QUERY_LOGIC="
-                                    + entry.getKey() + getCommonTags() + "\n");
+                    this.queryStatsToWriteToTimely.add(
+                                    "put dw.query.metrics.COUNT " + now + " " + entry.getValue() + " QUERY_LOGIC=" + entry.getKey() + getCommonTags() + "\n");
                 });
                 this.logicCountMap.clear();
             }

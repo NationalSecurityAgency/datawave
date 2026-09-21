@@ -86,8 +86,8 @@ class TimelyMetricsReporterConnectionTest {
 
     @Test
     void factoryConfiguresConnectTimeout() {
-        TimelyMetricsReporter reporter = new TimelyMetricsReporterFactory().forRegistry(new MetricRegistry())
-                        .withConnectTimeout(123, TimeUnit.MILLISECONDS).build("localhost", 4242);
+        TimelyMetricsReporter reporter = new TimelyMetricsReporterFactory().forRegistry(new MetricRegistry()).withConnectTimeout(123, TimeUnit.MILLISECONDS)
+                        .build("localhost", 4242);
 
         assertEquals(123, reporter.connectTimeoutMillis);
         assertThrows(IllegalArgumentException.class,
