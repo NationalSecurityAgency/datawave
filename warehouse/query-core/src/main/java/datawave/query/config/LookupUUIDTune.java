@@ -94,7 +94,6 @@ public class LookupUUIDTune implements Profile {
     public void configure(QueryPlanner planner) {
         if (planner instanceof DefaultQueryPlanner) {
             DefaultQueryPlanner dqp = DefaultQueryPlanner.class.cast(planner);
-            dqp.setCacheDataTypes(enableCaching);
 
             if (transforms != null) {
                 dqp.setTransformRules(transforms);
