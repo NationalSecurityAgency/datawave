@@ -590,14 +590,12 @@ public class EventDataQueryExpressionVisitorTest {
     }
 
     @Test
-    @Ignore
-    // TODO: will we ever be able to get this to work?
     public void testRangeFunction() throws Exception {
-        String originalQuery = "f:between(BAZ,5,12)";
+        // Numeric bounds are normalized and functions are expanded before event filters are built.
+        String originalQuery = "f:between(BAZ,'+aE5','+bE1.2')";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
+        script = FunctionIndexQueryExpansionVisitor.expandFunctions(config, helper, helper2, script);
         final Map<String,ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
-
-        // printJexlScript(script);
 
         Key p1 = createKey("BAZ", "6");
         Key p2 = createKey("BAZ", "1");
@@ -606,8 +604,10 @@ public class EventDataQueryExpressionVisitorTest {
         assertNotNull(filter.get("BAZ"));
 
         assertTrue(filter.get("BAZ").apply(p1));
-        assertTrue(filter.get("BAZ").apply(p2));
+        assertFalse(filter.get("BAZ").apply(p2));
         assertFalse(filter.get("BAZ").apply(p3));
+        assertTrue(filter.get("BAZ").apply(createKey("BAZ", "5")));
+        assertTrue(filter.get("BAZ").apply(createKey("BAZ", "12")));
 
         assertNull(filter.get("BAR"));
     }
@@ -632,8 +632,7 @@ public class EventDataQueryExpressionVisitorTest {
     }
 
     @Test
-    @Ignore
-    // TODO: This may never happen - e.g: function expansion has happened by now.
+    @Ignore("Grouped query identifiers must be rewritten before expression filters are built")
     public void testAndSameGroupingOnQuery() throws Exception {
         String originalQuery = "FOO.1 == 'abc' && FOO.2 == 'def'";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
@@ -654,8 +653,7 @@ public class EventDataQueryExpressionVisitorTest {
     }
 
     @Test
-    @Ignore
-    // TODO: This may never happen - e.g: function expansion has happened by now.
+    @Ignore("Expression filters use base field names, not the grouped map keys expected here")
     public void testAndSameGroupingOnBoth() throws Exception {
         String originalQuery = "FOO.1 == 'abc' && FOO.2 == 'def'";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
