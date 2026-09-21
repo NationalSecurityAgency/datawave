@@ -8,6 +8,7 @@ import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -216,6 +217,7 @@ public class TableSplitsCacheTest {
         JobConf mocked = EasyMock.createMock(JobConf.class);
 
         EasyMock.expect(mocked.getTrimmed("fs.defaultFS", "file:///")).andReturn("file:///").anyTimes();
+        EasyMock.expect(mocked.iterator()).andReturn(Collections.emptyIterator()).anyTimes();
 
         mocked.get(EasyMock.anyObject(String.class), EasyMock.anyObject(String.class));
         EasyMock.expectLastCall().andAnswer(() -> {
@@ -377,7 +379,7 @@ public class TableSplitsCacheTest {
         }
     }
 
-    @Test(expected = IOException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testUpdateNoFile() throws IOException {
         logger.info("testUpdateNoFile called...");
         setupConfiguration();
