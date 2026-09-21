@@ -11,6 +11,7 @@ import org.springframework.context.annotation.Configuration;
 public class AnnotationCacheProperties {
     private Duration maxCacheAge = Duration.ofHours(1);
     private Duration maxFetchAge = Duration.ofMinutes(5);
+    private Duration federationLockWait = Duration.ofSeconds(5);
     private boolean reconciliationEnabled = true;
     private Duration reconciliationInterval = Duration.ofMinutes(5);
     private Duration reconciliationSettleDelay = Duration.ofSeconds(15);
@@ -30,6 +31,14 @@ public class AnnotationCacheProperties {
 
     public void setMaxFetchAge(Duration maxFetchAge) {
         this.maxFetchAge = maxFetchAge;
+    }
+
+    public Duration getFederationLockWait() {
+        return federationLockWait;
+    }
+
+    public void setFederationLockWait(Duration federationLockWait) {
+        this.federationLockWait = federationLockWait;
     }
 
     public boolean isReconciliationEnabled() {
