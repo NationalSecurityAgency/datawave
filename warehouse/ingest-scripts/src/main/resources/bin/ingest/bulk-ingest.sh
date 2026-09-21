@@ -32,10 +32,7 @@ for f in ../../config/*-config.xml; do
   INGEST_CONFIG[i++]=$(basename $f)
 done
 
-#
-# Transform the classpath into a comma-separated list also
-#
-LIBJARS=$(echo $CLASSPATH | sed 's/:/,/g')
+LIBJARS=$DISTRIBUTED_CACHE_JARS
 
 #
 # Ingest parameters
