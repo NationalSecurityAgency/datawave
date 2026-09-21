@@ -379,18 +379,19 @@ public class TableSplitsCacheTest {
         }
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testUpdateNoFile() throws IOException {
         logger.info("testUpdateNoFile called...");
         setupConfiguration();
-        setSplitsCacheDir(String.format("/random/dir%s/must/not/exist", (int) (Math.random() * 100) + 1));
+        File nonDirectory = File.createTempFile("splits-cache", ".tmp");
         try {
+            setSplitsCacheDir(new Path(nonDirectory.toURI()).toString());
             TableSplitsCache uut = TableSplitsCache.getCurrentCache(createMockJobConf());
-            uut.update();
             Assert.assertNotNull("TableSplitsCache constructor failed to construct an instance.", uut);
-            Assert.assertNull("TableSplitsCache should have no splits", uut.getSplits());
+            uut.update();
+            Assert.assertThrows(IOException.class, uut::getSplits);
         } finally {
-
+            Assert.assertTrue("Failed to remove temporary file", nonDirectory.delete());
             logger.info("testUpdateNoFile completed.");
         }
 
