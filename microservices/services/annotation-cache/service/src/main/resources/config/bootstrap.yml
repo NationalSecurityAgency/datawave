@@ -1,6 +1,7 @@
 annotation-cache:
   max-cache-age: 1h
   max-fetch-age: 5m
+  federation-lock-wait: 5s
   reconciliation-enabled: true
   reconciliation-interval: 5m
   reconciliation-settle-delay: 15s

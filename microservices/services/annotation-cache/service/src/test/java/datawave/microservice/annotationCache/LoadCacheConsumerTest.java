@@ -7,9 +7,11 @@ import static datawave.microservice.annotationCache.api.Constants.PERSISTENCE_MO
 import static datawave.microservice.annotationCache.api.Constants.REGION_ID_PARAMETER;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -32,8 +34,10 @@ import com.hazelcast.map.IMap;
 
 import datawave.annotation.protobuf.v1.Annotation;
 import datawave.annotation.protobuf.v1.AnnotationMessage;
+import datawave.microservice.annotationCache.api.AnnotationStorageException;
 import datawave.microservice.annotationCache.api.PersistenceMode;
 import datawave.microservice.annotationCache.api.RegionConfiguration;
+import datawave.microservice.annotationCache.config.AnnotationCacheProperties;
 
 class LoadCacheConsumerTest {
     private static final String LOCAL_REGION = "local";
@@ -43,6 +47,7 @@ class LoadCacheConsumerTest {
     private HazelcastInstance hazelcastInstance;
     private Config config;
     private RegionConfiguration regionConfiguration;
+    private AnnotationCacheProperties properties;
     private IMap<String,Set<String>> documentIndex;
     private Consumer<AnnotationMessage> consumer;
 
@@ -56,18 +61,52 @@ class LoadCacheConsumerTest {
 
         regionConfiguration = new RegionConfiguration();
         regionConfiguration.setName(LOCAL_REGION);
-        consumer = new LoadCacheConsumer(hazelcastInstance, regionConfiguration).loadCache();
+        properties = new AnnotationCacheProperties();
+        consumer = new LoadCacheConsumer(hazelcastInstance, regionConfiguration, properties).loadCache();
     }
 
     @Test
     void constructorRequiresRegionConfiguration() {
-        assertThrows(IllegalStateException.class, () -> new LoadCacheConsumer(hazelcastInstance, null));
+        assertThrows(IllegalStateException.class, () -> new LoadCacheConsumer(hazelcastInstance, null, properties));
 
         RegionConfiguration missingName = new RegionConfiguration();
-        assertThrows(IllegalStateException.class, () -> new LoadCacheConsumer(hazelcastInstance, missingName));
+        assertThrows(IllegalStateException.class, () -> new LoadCacheConsumer(hazelcastInstance, missingName, properties));
 
         missingName.setName("  ");
-        assertThrows(IllegalStateException.class, () -> new LoadCacheConsumer(hazelcastInstance, missingName));
+        assertThrows(IllegalStateException.class, () -> new LoadCacheConsumer(hazelcastInstance, missingName, properties));
+    }
+
+    @Test
+    void federationLockWaitDefaultsToFiveSeconds() throws Exception {
+        String mapName = ANNOTATIONS_MAP + ID_TYPE + ":doc";
+        IMap<String,AnnotationMessage> annotationMap = annotationMap(mapName, 120, 30);
+
+        consumer.accept(message(REMOTE_REGION, ID_TYPE, annotation("doc", "annotation")));
+
+        verify(annotationMap).tryLock("annotation", 5000, TimeUnit.MILLISECONDS);
+    }
+
+    @Test
+    void federationLockWaitRejectsInvalidDurations() {
+        java.time.Duration[] invalidValues = {null, java.time.Duration.ZERO, java.time.Duration.ofNanos(-1), java.time.Duration.ofNanos(999_999)};
+        for (java.time.Duration invalidValue : invalidValues) {
+            AnnotationCacheProperties properties = new AnnotationCacheProperties();
+            properties.setFederationLockWait(invalidValue);
+            assertThrows(IllegalStateException.class, () -> new LoadCacheConsumer(hazelcastInstance, regionConfiguration, properties));
+        }
+    }
+
+    @Test
+    void federationLockWaitAcceptsOneMillisecond() throws Exception {
+        AnnotationCacheProperties properties = new AnnotationCacheProperties();
+        properties.setFederationLockWait(java.time.Duration.ofMillis(1));
+        consumer = new LoadCacheConsumer(hazelcastInstance, regionConfiguration, properties).loadCache();
+        String mapName = ANNOTATIONS_MAP + ID_TYPE + ":doc";
+        IMap<String,AnnotationMessage> annotationMap = annotationMap(mapName, 120, 30);
+
+        consumer.accept(message(REMOTE_REGION, ID_TYPE, annotation("doc", "annotation")));
+
+        verify(annotationMap).tryLock("annotation", 1, TimeUnit.MILLISECONDS);
     }
 
     @Test
@@ -127,14 +166,14 @@ class LoadCacheConsumerTest {
     }
 
     @Test
-    void storesRemoteAnnotationInDocumentMapWithoutInvokingMapStore() {
+    void storesRemoteAnnotationInDocumentMapWithoutInvokingMapStore() throws Exception {
         String mapName = ANNOTATIONS_MAP + ID_TYPE + ":doc";
         IMap<String,AnnotationMessage> annotationMap = annotationMap(mapName, 120, 30);
         AnnotationMessage message = message(REMOTE_REGION, ID_TYPE, annotation("doc", "annotation"));
 
         consumer.accept(message);
 
-        verify(annotationMap).lock("annotation");
+        verify(annotationMap).tryLock("annotation", 5000, TimeUnit.MILLISECONDS);
         verify(annotationMap).putTransient("annotation", message, 120, TimeUnit.SECONDS, 30, TimeUnit.SECONDS);
         verify(annotationMap).unlock("annotation");
         verify(annotationMap, never()).put(any(), any());
@@ -143,22 +182,21 @@ class LoadCacheConsumerTest {
     }
 
     @Test
-    void leavesExistingImmutableAnnotationUntouched() {
+    void leavesExistingImmutableAnnotationUntouched() throws Exception {
         String mapName = ANNOTATIONS_MAP + ID_TYPE + ":doc";
         IMap<String,AnnotationMessage> annotationMap = annotationMap(mapName, 120, 30);
         when(annotationMap.containsKey("annotation")).thenReturn(true);
 
         consumer.accept(message(REMOTE_REGION, ID_TYPE, annotation("doc", "annotation")));
 
-        verify(annotationMap).lock("annotation");
-        verify(annotationMap, never()).putTransient(any(), any(), eq(120L), eq(TimeUnit.SECONDS), eq(30L), eq(TimeUnit.SECONDS));
+        verify(annotationMap).tryLock("annotation", 5000, TimeUnit.MILLISECONDS);
         verify(annotationMap).unlock("annotation");
         verify(documentIndex).executeOnKey(eq(ID_TYPE + ":doc"), any());
         verifyNoInteractions(config);
     }
 
     @Test
-    void normalizesBatchedMessagesToOneAnnotationPerEntry() {
+    void normalizesBatchedMessagesToOneAnnotationPerEntry() throws Exception {
         String mapName = ANNOTATIONS_MAP + ID_TYPE + ":doc";
         IMap<String,AnnotationMessage> annotationMap = annotationMap(mapName, 0, 0);
         Annotation first = annotation("doc", "first");
@@ -183,7 +221,7 @@ class LoadCacheConsumerTest {
     }
 
     @Test
-    void usesEachAnnotationsDocumentMapForBatchedMessages() {
+    void usesEachAnnotationsDocumentMapForBatchedMessages() throws Exception {
         IMap<String,AnnotationMessage> firstMap = annotationMap(ANNOTATIONS_MAP + ID_TYPE + ":first-doc", 0, 0);
         IMap<String,AnnotationMessage> secondMap = annotationMap(ANNOTATIONS_MAP + ID_TYPE + ":second-doc", 0, 0);
 
@@ -196,7 +234,7 @@ class LoadCacheConsumerTest {
     }
 
     @Test
-    void retriesWhenDocumentIndexUpdateFails() {
+    void retriesWhenDocumentIndexUpdateFails() throws Exception {
         String mapName = ANNOTATIONS_MAP + ID_TYPE + ":doc";
         IMap<String,AnnotationMessage> annotationMap = annotationMap(mapName, 120, 30);
         doThrow(new IllegalStateException("index failure")).when(documentIndex).executeOnKey(eq(ID_TYPE + ":doc"), any());
@@ -206,7 +244,7 @@ class LoadCacheConsumerTest {
     }
 
     @Test
-    void repairsIndexForAnnotationAlreadyInCache() {
+    void repairsIndexForAnnotationAlreadyInCache() throws Exception {
         String mapName = ANNOTATIONS_MAP + ID_TYPE + ":doc";
         IMap<String,AnnotationMessage> annotationMap = annotationMap(mapName, 120, 30);
         when(annotationMap.containsKey("annotation")).thenReturn(true);
@@ -218,7 +256,35 @@ class LoadCacheConsumerTest {
     }
 
     @Test
-    void unlocksEntryWhenTransientInsertionFails() {
+    void failsAndLeavesLockUnreleasedWhenLockCannotBeAcquired() throws Exception {
+        String mapName = ANNOTATIONS_MAP + ID_TYPE + ":doc";
+        IMap<String,AnnotationMessage> annotationMap = annotationMap(mapName, 120, 30);
+        AnnotationCacheProperties properties = new AnnotationCacheProperties();
+        properties.setFederationLockWait(java.time.Duration.ofMillis(150));
+        consumer = new LoadCacheConsumer(hazelcastInstance, regionConfiguration, properties).loadCache();
+        when(annotationMap.tryLock("annotation", 150L, TimeUnit.MILLISECONDS)).thenReturn(false);
+
+        assertThrows(AnnotationStorageException.class, () -> consumer.accept(message(REMOTE_REGION, ID_TYPE, annotation("doc", "annotation"))));
+        verify(annotationMap, never()).unlock("annotation");
+        verify(documentIndex, never()).executeOnKey(any(), any());
+    }
+
+    @Test
+    void restoresInterruptWhenLockAcquisitionIsInterrupted() throws Exception {
+        String mapName = ANNOTATIONS_MAP + ID_TYPE + ":doc";
+        IMap<String,AnnotationMessage> annotationMap = annotationMap(mapName, 120, 30);
+        when(annotationMap.tryLock("annotation", 5000L, TimeUnit.MILLISECONDS)).thenThrow(new InterruptedException());
+
+        try {
+            assertThrows(AnnotationStorageException.class, () -> consumer.accept(message(REMOTE_REGION, ID_TYPE, annotation("doc", "annotation"))));
+            assertTrue(Thread.currentThread().isInterrupted());
+        } finally {
+            Thread.interrupted();
+        }
+    }
+
+    @Test
+    void unlocksEntryWhenTransientInsertionFails() throws Exception {
         String mapName = ANNOTATIONS_MAP + ID_TYPE + ":doc";
         IMap<String,AnnotationMessage> annotationMap = annotationMap(mapName, 120, 30);
         // @formatter:off
@@ -227,16 +293,20 @@ class LoadCacheConsumerTest {
         // @formatter:on
 
         assertThrows(IllegalStateException.class, () -> consumer.accept(message(REMOTE_REGION, ID_TYPE, annotation("doc", "annotation"))));
+        verify(annotationMap).tryLock("annotation", 5000, TimeUnit.MILLISECONDS);
         verify(annotationMap).unlock("annotation");
         verify(documentIndex, never()).executeOnKey(any(), any());
     }
 
     @SuppressWarnings("unchecked")
-    private IMap<String,AnnotationMessage> annotationMap(String mapName, int ttlSeconds, int maxIdleSeconds) {
+    private IMap<String,AnnotationMessage> annotationMap(String mapName, int ttlSeconds, int maxIdleSeconds) throws Exception {
         IMap<String,AnnotationMessage> annotationMap = mock(IMap.class);
         when(hazelcastInstance.<String,AnnotationMessage> getMap(mapName)).thenReturn(annotationMap);
         MapConfig mapConfig = new MapConfig(mapName).setTimeToLiveSeconds(ttlSeconds).setMaxIdleSeconds(maxIdleSeconds);
         when(config.findMapConfig(mapName)).thenReturn(mapConfig);
+        doReturn(true).when(annotationMap).tryLock(any(), anyLong(), any());
+        // add default explicit behavior to return false
+        when(annotationMap.containsKey(any())).thenReturn(false);
         return annotationMap;
     }
 

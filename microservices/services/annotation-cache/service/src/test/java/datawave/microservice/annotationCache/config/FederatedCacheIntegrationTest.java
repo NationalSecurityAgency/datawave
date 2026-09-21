@@ -7,6 +7,7 @@ import static datawave.microservice.annotationCache.api.Constants.PERSISTENCE_MO
 import static datawave.microservice.annotationCache.api.Constants.REGION_ID_PARAMETER;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -19,6 +20,10 @@ import static org.mockito.Mockito.verify;
 import java.time.Duration;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
@@ -38,6 +43,7 @@ import datawave.annotation.protobuf.v1.AnnotationMessage;
 import datawave.microservice.annotationCache.AnnotationMapStore;
 import datawave.microservice.annotationCache.AnnotationSyncListener;
 import datawave.microservice.annotationCache.LoadCacheConsumer;
+import datawave.microservice.annotationCache.api.AnnotationStorageException;
 import datawave.microservice.annotationCache.api.PersistenceMode;
 import datawave.microservice.annotationCache.api.RegionConfiguration;
 
@@ -82,7 +88,7 @@ class FederatedCacheIntegrationTest {
 
         RegionConfiguration region = new RegionConfiguration();
         region.setName(LOCAL_REGION);
-        Consumer<AnnotationMessage> consumer = new LoadCacheConsumer(hazelcastInstance, region).loadCache();
+        Consumer<AnnotationMessage> consumer = new LoadCacheConsumer(hazelcastInstance, region, properties).loadCache();
 
         // The queue also receives locally produced messages. They must be ignored because the originating write is already in this cluster.
         consumer.accept(localMessage);
@@ -106,6 +112,38 @@ class FederatedCacheIntegrationTest {
         consumer.accept(duplicate);
         assertEquals(remoteMessage, annotations.get("remote-annotation"));
         verify(mapStore, never()).store(eq("remote-annotation"), any());
+    }
+
+    @Test
+    void federatedConsumerTimesOutWhenAnnotationLockIsContended() throws Exception {
+        AnnotationCacheProperties properties = new AnnotationCacheProperties();
+        properties.setMaxCacheAge(Duration.ofSeconds(30));
+        properties.setMaxFetchAge(Duration.ofSeconds(10));
+        properties.setFederationLockWait(Duration.ofMillis(150));
+
+        AnnotationSyncListener listener = new AnnotationSyncListener();
+        Config config = isolatedConfig();
+        new AnnotationCacheConfiguration(properties).configureMaps(config, mock(AnnotationMapStore.class), listener);
+        hazelcastInstance = Hazelcast.newHazelcastInstance(config);
+        listener.setHazelcastInstance(hazelcastInstance);
+
+        IMap<String,AnnotationMessage> annotations = hazelcastInstance.getMap(ANNOTATIONS_MAP + CACHE_KEY);
+        RegionConfiguration region = new RegionConfiguration();
+        region.setName(LOCAL_REGION);
+        Consumer<AnnotationMessage> consumer = new LoadCacheConsumer(hazelcastInstance, region, properties).loadCache();
+
+        annotations.lock("contended");
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        try {
+            Future<?> attempt = executor.submit(() -> consumer.accept(message(REMOTE_REGION, "contended")));
+            ExecutionException failure = assertThrows(ExecutionException.class, () -> attempt.get(2, TimeUnit.SECONDS));
+            assertTrue(failure.getCause() instanceof AnnotationStorageException);
+            assertTrue(failure.getCause().getMessage().contains("Timed out acquiring Hazelcast lock"));
+            assertTrue(annotations.get("contended") == null);
+        } finally {
+            executor.shutdownNow();
+            annotations.unlock("contended");
+        }
     }
 
     private Config isolatedConfig() {

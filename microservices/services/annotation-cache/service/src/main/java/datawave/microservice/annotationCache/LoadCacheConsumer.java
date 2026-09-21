@@ -5,6 +5,7 @@ import static datawave.microservice.annotationCache.api.Constants.DOC_ANNOTATION
 import static datawave.microservice.annotationCache.api.Constants.ID_TYPE_PARAMETER;
 import static datawave.microservice.annotationCache.api.Constants.REGION_ID_PARAMETER;
 
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
@@ -19,24 +20,32 @@ import com.hazelcast.map.IMap;
 
 import datawave.annotation.protobuf.v1.Annotation;
 import datawave.annotation.protobuf.v1.AnnotationMessage;
+import datawave.microservice.annotationCache.api.AnnotationStorageException;
 import datawave.microservice.annotationCache.api.RegionConfiguration;
 import datawave.microservice.annotationCache.api.entryProcessor.AppendAnnotationIdProcessor;
+import datawave.microservice.annotationCache.config.AnnotationCacheProperties;
 
 /** Consumes federated annotation messages and makes them available in the local Hazelcast cache. */
 @Configuration
 public class LoadCacheConsumer {
     private static final Logger log = LoggerFactory.getLogger(LoadCacheConsumer.class);
-
     private final HazelcastInstance hazelcastInstance;
     private final String localRegion;
+    private final Duration federationLockWait;
 
-    public LoadCacheConsumer(HazelcastInstance hazelcastInstance, RegionConfiguration regionConfiguration) {
+    public LoadCacheConsumer(HazelcastInstance hazelcastInstance, RegionConfiguration regionConfiguration, AnnotationCacheProperties properties) {
         this.hazelcastInstance = hazelcastInstance;
         if (regionConfiguration == null || regionConfiguration.getName() == null || regionConfiguration.getName().isBlank()) {
             throw new IllegalStateException("region.name must be configured for the federated annotation consumer");
         }
+        if (properties == null || properties.getFederationLockWait() == null || properties.getFederationLockWait().isZero()
+                        || properties.getFederationLockWait().isNegative() || properties.getFederationLockWait().toMillis() <= 0) {
+            throw new IllegalStateException("annotation-cache.federation-lock-wait must be positive");
+        }
         this.localRegion = regionConfiguration.getName();
-        log.info("LoadCacheConsumer activated for region {} with Hazelcast: {}", localRegion, hazelcastInstance);
+        this.federationLockWait = properties.getFederationLockWait();
+        log.info("LoadCacheConsumer activated for region {} with Hazelcast: {} and federation lock wait {}", localRegion, hazelcastInstance,
+                        federationLockWait);
     }
 
     @Bean
@@ -82,8 +91,13 @@ public class LoadCacheConsumer {
 
         // Federated messages have already passed through a MapStore in their originating region. A transient put prevents the local MapStore from publishing
         // the message again while retaining the TTL and max-idle behavior configured for the annotation map.
-        annotationMap.lock(annotationId);
+        boolean lockAcquired = false;
         try {
+            lockAcquired = annotationMap.tryLock(annotationId, federationLockWait.toMillis(), TimeUnit.MILLISECONDS);
+            if (!lockAcquired) {
+                throw new AnnotationStorageException("Timed out acquiring Hazelcast lock for federated annotation " + annotationId);
+            }
+
             if (!annotationMap.containsKey(annotationId)) {
                 MapConfig mapConfig = hazelcastInstance.getConfig().findMapConfig(mapName);
                 annotationMap.putTransient(annotationId, cacheValue, mapConfig.getTimeToLiveSeconds(), TimeUnit.SECONDS, mapConfig.getMaxIdleSeconds(),
@@ -93,8 +107,13 @@ public class LoadCacheConsumer {
             } else {
                 log.debug("Annotation {} already exists in local cache {}", annotationId, mapName);
             }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new AnnotationStorageException("Interrupted acquiring Hazelcast lock for federated annotation " + annotationId, e);
         } finally {
-            annotationMap.unlock(annotationId);
+            if (lockAcquired) {
+                annotationMap.unlock(annotationId);
+            }
         }
 
         // Keep the derived index update idempotent and perform it even when the annotation already existed. This repairs an index missed by a previous event.
