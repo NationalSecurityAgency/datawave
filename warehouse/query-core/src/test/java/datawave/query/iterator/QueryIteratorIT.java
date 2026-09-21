@@ -439,7 +439,7 @@ public class QueryIteratorIT extends EasyMockSupport {
      * @throws IOException
      *             if something goes wrong
      */
-    @Ignore
+    @Ignore("Ivarators require a non-null start key; an infinite-start range is unsupported")
     @Test
     public void indexOnly_trailingRegex_infiniteRange_secondEvent_test() throws IOException {
         // build an infinite range to make sure the wait window / yielding framework can handle it

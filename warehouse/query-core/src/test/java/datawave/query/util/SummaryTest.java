@@ -161,8 +161,7 @@ public class SummaryTest extends AbstractQueryTest {
         planAndExecuteQuery();
     }
 
-    // TODO: remove @Disabled after we can except no argument in function
-    @Disabled
+    @Disabled("SummaryOptions.validate requires at least one argument")
     @Test
     public void testWithNoArg() throws Exception {
         Map<String,String> extraParameters = new HashMap<>();

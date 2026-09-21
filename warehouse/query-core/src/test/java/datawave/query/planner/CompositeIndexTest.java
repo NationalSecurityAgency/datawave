@@ -451,7 +451,7 @@ public class CompositeIndexTest extends AbstractQueryTest {
 
     // the bounded range is fixed by the QueryPropertyMarkerSourceConsolidator
     // if ASTValidation is enabled the query will fail on the first visitor, InvertSwappedNodes
-    @Disabled
+    @Disabled("AST validation rejects the malformed marker before its sources can be consolidated")
     @Test
     public void testRecordOfIncorrectQueryStringWorking() throws Exception {
         // original "((_Bounded_ = true) && (GEO >= '0500aa' && GEO <= '050355'))";

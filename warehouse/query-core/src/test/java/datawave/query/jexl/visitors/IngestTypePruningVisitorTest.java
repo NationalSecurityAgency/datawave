@@ -607,7 +607,7 @@ public class IngestTypePruningVisitorTest {
         test(query, query, metadata);
     }
 
-    @Ignore
+    @Ignore("Negation must be pushed down before pruning; the expected result also conflicts with mutually exclusive null fields")
     @Test
     public void testFilterFunctionExcludeExpandedIntoMutuallyExclusiveFields() {
         // there might be an exclude like #EXCLUDE(MODEL_FIELD, '.*.*')

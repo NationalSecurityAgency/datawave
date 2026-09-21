@@ -284,7 +284,7 @@ public class ProducerConsumerBufferTest {
         assertEquals(Integer.valueOf(1), queue.take());
     }
 
-    @Ignore
+    @Ignore("Manual throughput comparison with one million items and 75 threads; not a bounded correctness test")
     @Test
     public void overheadTest() throws InterruptedException, ExecutionException {
         ExecutorService pool = Executors.newFixedThreadPool(75);

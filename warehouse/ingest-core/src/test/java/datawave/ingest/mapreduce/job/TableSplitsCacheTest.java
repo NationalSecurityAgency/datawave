@@ -576,7 +576,7 @@ public class TableSplitsCacheTest {
 
     }
 
-    @Ignore
+    @Ignore("Manual memory diagnostic builds about 16 million entries and has no correctness assertions")
     @Test
     public void testTrieSize() {
         Map<Text,String> map = new HashMap<>();

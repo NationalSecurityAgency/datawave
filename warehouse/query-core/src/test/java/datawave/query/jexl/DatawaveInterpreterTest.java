@@ -562,7 +562,7 @@ public class DatawaveInterpreterTest {
         testInputs(array);
     }
 
-    @Ignore
+    @Ignore("Future null semantics conflict with the current union of field values; see #1604")
     @Test
     public void testFilterFunctionMultiFieldedIsNull_future() {
         // Once #1604 is complete these tests will evaluate correctly
@@ -622,7 +622,7 @@ public class DatawaveInterpreterTest {
         testInputs(array);
     }
 
-    @Ignore
+    @Ignore("Expected results depend on field order, but the interpreter unions field values; see #1604")
     @Test
     public void testFilterFunctionsMultiFieldedIsNotNull() {
         // Once #1604 is complete these tests will evaluate correctly

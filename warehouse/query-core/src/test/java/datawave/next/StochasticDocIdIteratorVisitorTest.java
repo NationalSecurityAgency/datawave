@@ -132,7 +132,7 @@ public class StochasticDocIdIteratorVisitorTest extends FieldIndexDataTestUtil {
         }
     }
 
-    @Disabled
+    @Disabled("DocIdIteratorVisitor does not execute a union of positive and negated terms")
     @Test
     public void testNestedUnionWithNegations() {
         for (int i = 0; i < max; i++) {
