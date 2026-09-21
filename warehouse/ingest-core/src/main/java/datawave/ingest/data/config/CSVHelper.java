@@ -254,7 +254,8 @@ public class CSVHelper extends DataTypeHelperImpl {
         this.dropField = config.get(this.getType().typeName() + DROP_FIELD, this.dropField);
 
         this.multiFieldSizeThreshold = getNonNegativeInt(config, this.getType().typeName() + MULTI_VALUED_THRESHOLD, this.multiFieldSizeThreshold);
-        this.multiValuedThresholdAction = getThresholdAction(config, this.getType().typeName() + MULTI_VALUED_THRESHOLD_ACTION, this.multiValuedThresholdAction);
+        this.multiValuedThresholdAction = getThresholdAction(config, this.getType().typeName() + MULTI_VALUED_THRESHOLD_ACTION,
+                        this.multiValuedThresholdAction);
         this.multiValuedThresholdReplacement = config.get(this.getType().typeName() + MULTI_VALUED_THRESHOLD_FIELD_REPLACEMENT,
                         this.multiValuedThresholdReplacement);
         this.multiValuedTruncateField = config.get(this.getType().typeName() + MULTI_VALUED_TRUNCATE_FIELD, this.multiValuedTruncateField);

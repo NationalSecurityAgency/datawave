@@ -163,7 +163,8 @@ public class QueryMetricsWriter {
             throw new IllegalArgumentException("Timely tags must not contain line breaks");
         }
         String tagSuffix = StringUtils.isBlank(tags) ? "" : " " + tags;
-        return String.format(Locale.ROOT, "put %s %d %s%s\n", sanitizeTimelyToken(metricName), timestamp, sanitizeTimelyToken(String.valueOf(value)), tagSuffix);
+        return String.format(Locale.ROOT, "put %s %d %s%s\n", sanitizeTimelyToken(metricName), timestamp, sanitizeTimelyToken(String.valueOf(value)),
+                        tagSuffix);
     }
 
     static String formatTimelyTags(Set<String> configuredMetricTags, Map<String,String> metricValues) {

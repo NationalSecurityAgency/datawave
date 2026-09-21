@@ -10,8 +10,8 @@ import com.codahale.metrics.ScheduledReporter;
 import com.ryantenney.metrics.spring.config.annotation.EnableMetrics;
 import com.ryantenney.metrics.spring.config.annotation.MetricsConfigurerAdapter;
 
-import datawave.metrics.MetricsReporterFactory;
 import datawave.metrics.MetricsReporterBuilder;
+import datawave.metrics.MetricsReporterFactory;
 import datawave.metrics.TimeoutConfigurableMetricsReporterBuilder;
 
 /**

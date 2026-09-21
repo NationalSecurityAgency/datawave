@@ -20,12 +20,10 @@ class MetricsCdiConfigurationTest {
 
         PlainBuilder plain = new PlainBuilder();
         MetricsCdiConfiguration.configureTimeout(plain, -1);
-        IllegalArgumentException unsupported = assertThrows(IllegalArgumentException.class,
-                        () -> MetricsCdiConfiguration.configureTimeout(plain, 125));
+        IllegalArgumentException unsupported = assertThrows(IllegalArgumentException.class, () -> MetricsCdiConfiguration.configureTimeout(plain, 125));
         assertEquals("dw.metrics.reporter.timeout.millis is not supported by " + PlainBuilder.class.getName(), unsupported.getMessage());
 
-        IllegalArgumentException invalid = assertThrows(IllegalArgumentException.class,
-                        () -> MetricsCdiConfiguration.configureTimeout(capable, 0));
+        IllegalArgumentException invalid = assertThrows(IllegalArgumentException.class, () -> MetricsCdiConfiguration.configureTimeout(capable, 0));
         assertEquals("dw.metrics.reporter.timeout.millis must be positive", invalid.getMessage());
     }
 

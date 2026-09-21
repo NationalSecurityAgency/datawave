@@ -28,10 +28,8 @@ class TimelyPropertiesTest {
 
     @Test
     void enabledTimelyRequiresValidPort() {
-        assertFails("port must be between 1 and 65535", PREFIX + "enabled=true", PREFIX + "host=localhost", PREFIX + "protocol=TCP",
-                        PREFIX + "port=0");
-        assertFails("port must be between 1 and 65535", PREFIX + "enabled=true", PREFIX + "host=localhost", PREFIX + "protocol=TCP",
-                        PREFIX + "port=65536");
+        assertFails("port must be between 1 and 65535", PREFIX + "enabled=true", PREFIX + "host=localhost", PREFIX + "protocol=TCP", PREFIX + "port=0");
+        assertFails("port must be between 1 and 65535", PREFIX + "enabled=true", PREFIX + "host=localhost", PREFIX + "protocol=TCP", PREFIX + "port=65536");
     }
 
     @Test
@@ -42,8 +40,7 @@ class TimelyPropertiesTest {
     @Test
     void validTcpAndUdpEndpointsStart() {
         assertStarts(PREFIX + "enabled=true", PREFIX + "host=localhost", PREFIX + "port=4242", PREFIX + "protocol=TCP");
-        assertStarts(PREFIX + "enabled=true", PREFIX + "host=localhost", PREFIX + "port=4242", PREFIX + "protocol=UDP",
-                        PREFIX + "connect-timeout-millis=0");
+        assertStarts(PREFIX + "enabled=true", PREFIX + "host=localhost", PREFIX + "port=4242", PREFIX + "protocol=UDP", PREFIX + "connect-timeout-millis=0");
     }
 
     @Test
