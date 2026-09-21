@@ -17,8 +17,33 @@ THIS_DIR="${THIS_SCRIPT%/*}"
 # Check that there are no other instances of this script running
 acquire_lock_file $(basename "$0") || exit 1
 
-#read from the datawave metadata table to create the edge key version file and save it locally with the rest of the config files
-"$THIS_DIR/create-edgekey-version-cache.sh" --update "$THIS_DIR/../../config"
+# Read from the DataWave metadata table to create the edge-key version file. Generate it
+# in a temporary directory so a failed or empty update cannot replace the last good copy.
+EDGE_KEY_CACHE_DIR="$THIS_DIR/../../config"
+EDGE_KEY_CACHE_FILE="$EDGE_KEY_CACHE_DIR/edge-key-version.txt"
+EDGE_KEY_CACHE_TMP_DIR=$(mktemp -d "$EDGE_KEY_CACHE_DIR/.edge-key-cache.XXXXXXXX") || {
+    echo "[ERROR] Unable to create a temporary directory for $EDGE_KEY_CACHE_FILE"
+    exit 1
+}
+
+if ! "$THIS_DIR/create-edgekey-version-cache.sh" --update "$EDGE_KEY_CACHE_TMP_DIR"; then
+    echo "[ERROR] create-edgekey-version-cache.sh failed while generating $EDGE_KEY_CACHE_FILE"
+    rm -r -f "$EDGE_KEY_CACHE_TMP_DIR"
+    exit 1
+fi
+
+if [[ ! -s "$EDGE_KEY_CACHE_TMP_DIR/edge-key-version.txt" ]]; then
+    echo "[ERROR] create-edgekey-version-cache.sh did not generate a nonempty $EDGE_KEY_CACHE_FILE"
+    rm -r -f "$EDGE_KEY_CACHE_TMP_DIR"
+    exit 1
+fi
+
+if ! mv "$EDGE_KEY_CACHE_TMP_DIR/edge-key-version.txt" "$EDGE_KEY_CACHE_FILE"; then
+    echo "[ERROR] Unable to install the generated edge-key cache at $EDGE_KEY_CACHE_FILE"
+    rm -r -f "$EDGE_KEY_CACHE_TMP_DIR"
+    exit 1
+fi
+rm -r -f "$EDGE_KEY_CACHE_TMP_DIR"
 
 # Swap the job cache directory
 echo Old job cache dir is $JOB_CACHE_DIR
