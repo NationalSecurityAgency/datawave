@@ -1,7 +1,6 @@
 #!/bin/bash
 
-# For this to work, the webserver must be running in the quickstart docker image.
-# To do that, change --accumulo to --web or --webdebug in the docker-compose.yml.
+# For this to work, the webservice container must be running.
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 

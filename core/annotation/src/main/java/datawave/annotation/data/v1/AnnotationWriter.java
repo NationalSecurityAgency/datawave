@@ -3,6 +3,7 @@ package datawave.annotation.data.v1;
 import java.util.Optional;
 
 import datawave.annotation.protobuf.v1.Annotation;
+import datawave.annotation.protobuf.v1.AnnotationSource;
 
 /**
  * Write contract for annotation data stores.
@@ -10,6 +11,15 @@ import datawave.annotation.protobuf.v1.Annotation;
  * Implementations are responsible for validating writable annotation data, assigning store-managed identifiers when needed, and persisting annotation changes.
  */
 public interface AnnotationWriter {
+
+    /**
+     * Adds a new annotation source.
+     *
+     * @param annotationSource
+     *            the annotation source to add; callers should not pre-populate store-managed ids
+     * @return the persisted annotation source, including any ids assigned by the writer
+     */
+    Optional<AnnotationSource> addAnnotationSource(AnnotationSource annotationSource);
 
     /**
      * Adds a new annotation.

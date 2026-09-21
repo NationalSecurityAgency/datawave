@@ -18,7 +18,7 @@ datawave:
           jobJarName: "MapReduceQueryCoreJob.jar"
           description: "MapReduce job that runs a query and either puts the results into a table or files in HDFS"
           hdfsUri: "hdfs://${HADOOP_HOST}:9000/"
-          jobTracker: "${HADOOP_HOST}:8021"
+          jobTracker: "${YARN_HOST}:8032"
           requiredRuntimeParameters:
             queryId: java.lang.String
             format: datawave.microservice.mapreduce.bulkresults.map.SerializationFormat
@@ -51,4 +51,4 @@ datawave:
             password: '${accumulo.password}'
         'OozieJob':
           hdfsUri: "hdfs://${HADOOP_HOST}:9000/"
-          jobTracker: "${HADOOP_HOST}:8021"
+          jobTracker: "${YARN_HOST}:8032"

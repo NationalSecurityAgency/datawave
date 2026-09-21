@@ -1,5 +1,11 @@
 package datawave.query.edge;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -9,8 +15,7 @@ import java.util.Set;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import datawave.core.iterators.ColumnRangeIterator;
 import datawave.core.query.configuration.GenericQueryConfiguration;
@@ -90,26 +95,23 @@ public class ExtendedEdgeQueryLogicTest extends EdgeQueryFunctionalTest {
         // a bare, unfielded LUCENE term is mapped to _ANYFIELD_ and is not supported by edge queries
         QueryImpl q = configQuery("JUPITER", auths);
         q.addParameter("query.syntax", "LUCENE");
-        try {
-            runLogic(q, auths);
-            Assert.fail("expected an IllegalArgumentException for an unfielded edge query");
-        } catch (IllegalArgumentException e) {
-            String message = e.getMessage();
-            Assert.assertNotNull(message);
-            Assert.assertTrue("error should mention unfielded terms, but was: " + message, message.contains("unfielded terms"));
-        }
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> runLogic(q, auths));
+        String message = e.getMessage();
+        assertNotNull(message);
+        assertTrue(message.contains("unfielded terms"), "error should mention unfielded terms, but was: " + message);
     }
 
-    @Test(expected = UnsupportedOperationException.class)
-    public void testUnknownFunction() throws Exception {
+    @Test
+    public void testUnknownFunction() {
+        assertThrows(UnsupportedOperationException.class, () -> {
+            QueryImpl q = configQuery("SOURCE == 'SUN' && (filter:includeregex(SINK, 'earth|mars'))", auths);
 
-        QueryImpl q = configQuery("SOURCE == 'SUN' && (filter:includeregex(SINK, 'earth|mars'))", auths);
+            EdgeQueryLogic logic = runLogic(q, auths);
 
-        EdgeQueryLogic logic = runLogic(q, auths);
+            List<String> expected = new ArrayList<>();
 
-        List<String> expected = new ArrayList<>();
-
-        compareResults(logic, factory, expected);
+            compareResults(logic, factory, expected);
+        });
     }
 
     @Test
@@ -144,7 +146,7 @@ public class ExtendedEdgeQueryLogicTest extends EdgeQueryFunctionalTest {
             ita.next();
             counter++;
         }
-        Assert.assertTrue(counter > 0);
+        assertTrue(counter > 0);
     }
 
     @Test
@@ -160,7 +162,7 @@ public class ExtendedEdgeQueryLogicTest extends EdgeQueryFunctionalTest {
             ita.next();
             counter++;
         }
-        Assert.assertTrue(counter > 0);
+        assertTrue(counter > 0);
     }
 
     /**
@@ -182,7 +184,7 @@ public class ExtendedEdgeQueryLogicTest extends EdgeQueryFunctionalTest {
         logic.setupQuery(config);
         String actualQueryString = config.getQueryString();
 
-        Assert.assertEquals(expectedQueryString, actualQueryString);
+        assertEquals(expectedQueryString, actualQueryString);
     }
 
     @Test
@@ -198,14 +200,14 @@ public class ExtendedEdgeQueryLogicTest extends EdgeQueryFunctionalTest {
 
         List<String> sources = logic.getSelectors(q);
 
-        Assert.assertTrue(sources.containsAll(expected));
+        assertTrue(sources.containsAll(expected));
 
         q = configQuery("SOURCE == 'MARS' OR SOURCE == 'JUPITER' OR SOURCE == 'VENUS'", auths);
         q.addParameter("query.syntax", "JEXL");
 
         sources = logic.getSelectors(q);
 
-        Assert.assertTrue(sources.containsAll(expected));
+        assertTrue(sources.containsAll(expected));
     }
 
     @Test
@@ -225,7 +227,7 @@ public class ExtendedEdgeQueryLogicTest extends EdgeQueryFunctionalTest {
         try {
             logic = runLogic(q, auths, 1);
             compareResults(logic, factory, expected);
-            Assert.fail("Expected to fail because the scan limit was reached");
+            fail("Expected to fail because the scan limit was reached");
         } catch (ColumnRangeIterator.ScanLimitReached e) {
             // expected
         }

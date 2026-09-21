@@ -5,6 +5,14 @@ ENV MAVEN_HOME=/usr/share/maven
 COPY --from=builder /usr/share/maven /usr/share/maven
 RUN ln -s /usr/share/maven/bin/mvn /usr/bin/mvn
 
+USER root
+
+# Keep operating-system dependencies ahead of build arguments and source so
+# ordinary DataWave changes can reuse this comparatively expensive layer.
+RUN dnf -y update && \
+    dnf -y install sudo findutils gcc-c++ openssl python3 openssh openssh-server openssh-clients openssl-libs java-11-openjdk-devel which bc wget git iproute && \
+    dnf clean all
+
 ARG DATAWAVE_COMMIT_ID
 ARG DATAWAVE_BRANCH_NAME
 ARG DATAWAVE_JAVA_HOME
@@ -27,8 +35,6 @@ ARG HADOOP_DIST_SHA512_CHECKSUM
 ARG WILDFLY_DIST_SHA512_CHECKSUM
 ARG ZOOKEEPER_DIST_SHA512_CHECKSUM
 ARG DW_BUILD_CACHE_OPTIONS
-
-USER root
 
 ENV USER=root
 ENV HADOOP_IDENT_STRING=root
@@ -72,17 +78,14 @@ ENV DW_ACCUMULO_BIND_HOST=localhost
 
 COPY . /opt/datawave
 
-RUN dnf -y update
-RUN dnf -y install sudo findutils
-RUN find /opt/datawave -type d -exec chmod 0750 {} \;
-RUN find /opt/datawave -type f -exec chmod 0640 {} \;
-RUN find /opt/datawave -name "*.sh" -type f -exec chmod 0750 {} \;
+# Git preserves executable modes, but retain the historical guarantee that all
+# shell scripts are runnable. Avoid chmod'ing every source file, which creates
+# a second full copy of the source layer in Docker's overlay filesystem.
+RUN find /opt/datawave -type f -name "*.sh" -exec chmod 0750 {} +
 
 # Install dependencies, configure password-less/zero-prompt SSH...
-RUN dnf -y install gcc-c++ openssl python3 openssh openssh-server openssh-clients openssl-libs java-11-openjdk-devel which bc wget git iproute && \
-    /bin/bash -c "source /opt/datawave/contrib/datawave-quickstart/bin/env.sh && jdkIsConfigured" && \
+RUN /bin/bash -c "source /opt/datawave/contrib/datawave-quickstart/bin/env.sh && jdkIsConfigured" && \
     echo "source /opt/datawave/contrib/datawave-quickstart/bin/env.sh" >> ~/.bashrc && \
-    dnf clean all && \
     ssh-keygen -q -N "" -t rsa -f ~/.ssh/id_rsa && \
     cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys && \
     chmod 0600 ~/.ssh/authorized_keys && \
@@ -102,11 +105,11 @@ WORKDIR /opt/datawave
 
 # Create new Git repo and configure environment...
 
-RUN git init && \
+RUN git init --quiet && \
     git add . && \
     git config user.email "root@localhost.local" && \
     git config user.name "Root User" && \
-    git commit -m "Source Branch :: $DATAWAVE_BRANCH_NAME :: Source Commit :: $DATAWAVE_COMMIT_ID"
+    git commit --quiet -m "Source Branch :: $DATAWAVE_BRANCH_NAME :: Source Commit :: $DATAWAVE_COMMIT_ID"
 
 # This works exactly like the setup for a non-containerized instance of the datawave-quickstart
 # environment. That is, ~/.bashrc and datawave-quickstart/bin/env.sh are sourced, bootstrapping

@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>gov.nsa.datawave.microservice</groupId>
     <artifactId>datawave-microservice-parent</artifactId>
-    <version>4.0.13-SNAPSHOT</version>
+    <version>4.0.14-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>DataWave Microservices Parent</name>
     <description>DataWave mircoservices provide functionality previously contained in the DataWave
@@ -31,10 +31,10 @@
     </distributionManagement>
     <properties>
         <container.registry>ghcr.io</container.registry>
+        <datawave.build.jdk.version.range>[11,12)</datawave.build.jdk.version.range>
         <image.prefix>datawave/</image.prefix>
         <java.version>11</java.version>
-        <maven.compiler.source>${java.version}</maven.compiler.source>
-        <maven.compiler.target>${java.version}</maven.compiler.target>
+        <maven.compiler.release>11</maven.compiler.release>
         <maven.release.arguments>-Ddist</maven.release.arguments>
         <maven.release.profiles>dist</maven.release.profiles>
         <project.artifactId>${project.artifactId}</project.artifactId>
@@ -53,6 +53,9 @@
         <sonar.sourceEncoding>UTF-8</sonar.sourceEncoding>
         <spotbugs.excludes.file />
         <surefire.forkCount>1C</surefire.forkCount>
+        <surefire.maxMemory>1024m</surefire.maxMemory>
+        <surefire.reuseForks>false</surefire.reuseForks>
+        <version.datawave-commons-security>8.0.0</version.datawave-commons-security>
         <version.hadoop>3.3.4</version.hadoop>
         <!-- 2.14.X is the maximum version of jackson without snakeyaml version 2 causing spring-boot 2.7.1 conflict -->
         <version.jackson>2.14.3</version.jackson>
@@ -65,6 +68,11 @@
     </properties>
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>gov.nsa.datawave.commons</groupId>
+                <artifactId>datawave-commons-security</artifactId>
+                <version>${version.datawave-commons-security}</version>
+            </dependency>
             <!-- Don't sort the import scope dependencies. The first declared version of a dependency in dependencyManagement will prevail. -->
             <?SORTPOM IGNORE?>
             <dependency>
@@ -370,9 +378,9 @@
                         <configFile>eclipse/Eclipse-Datawave-Codestyle.xml</configFile>
                         <lineEnding>LF</lineEnding>
                         <removeTrailingWhitespace>true</removeTrailingWhitespace>
-                        <compilerSource>${maven.compiler.source}</compilerSource>
-                        <compilerCompliance>${maven.compiler.source}</compilerCompliance>
-                        <compilerTargetPlatform>${maven.compiler.target}</compilerTargetPlatform>
+                        <compilerSource>${maven.compiler.release}</compilerSource>
+                        <compilerCompliance>${maven.compiler.release}</compilerCompliance>
+                        <compilerTargetPlatform>${maven.compiler.release}</compilerTargetPlatform>
                     </configuration>
                     <dependencies>
                         <dependency>
@@ -468,13 +476,13 @@
                     <version>3.5.2</version>
                     <configuration>
                         <skipTests>${skipUTs}</skipTests>
-                        <reuseForks>false</reuseForks>
+                        <reuseForks>${surefire.reuseForks}</reuseForks>
                         <forkCount>${surefire.forkCount}</forkCount>
                         <threadCount>1</threadCount>
                         <threadCountClasses>1</threadCountClasses>
                         <threadCountMethods>0</threadCountMethods>
                         <threadCountSuites>0</threadCountSuites>
-                        <argLine>-XX:+TieredCompilation -XX:TieredStopAtLevel=1  -Dfile.encoding=UTF8 -Duser.timezone=GMT -Xmx1024m -Dapple.awt.UIElement=true -Djava.security.krb5.realm= -Djava.security.krb5.kdc= -Dcom.google.protobuf.use_unsafe_pre22_gencode</argLine>
+                        <argLine>-XX:+TieredCompilation -XX:TieredStopAtLevel=1  -Dfile.encoding=UTF8 -Duser.timezone=GMT -Xmx${surefire.maxMemory} -Dapple.awt.UIElement=true -Djava.security.krb5.realm= -Djava.security.krb5.kdc= -Dcom.google.protobuf.use_unsafe_pre22_gencode</argLine>
                         <redirectTestOutputToFile>true</redirectTestOutputToFile>
                         <runOrder>random</runOrder>
                     </configuration>
@@ -590,7 +598,7 @@
                                     <onlyWhenRelease>true</onlyWhenRelease>
                                 </requireReleaseDeps>
                                 <requireJavaVersion>
-                                    <version>${java.version}</version>
+                                    <version>${datawave.build.jdk.version.range}</version>
                                 </requireJavaVersion>
                             </rules>
                             <fail>true</fail>
@@ -640,6 +648,12 @@
         </plugins>
     </build>
     <profiles>
+        <profile>
+            <id>java17</id>
+            <properties>
+                <datawave.build.jdk.version.range>[17,18)</datawave.build.jdk.version.range>
+            </properties>
+        </profile>
         <profile>
             <id>autoformat</id>
             <activation>

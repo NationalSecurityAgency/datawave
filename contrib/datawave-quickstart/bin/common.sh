@@ -341,7 +341,7 @@ function getDataWaveVersion() {
 function allUninstall() {
    # ${DW_CLOUD_DATA} will be removed by default. To keep it, use '--keep-data' flag
 
-   # Uninstalls all registered services. 
+   # Uninstalls all registered services.
    if servicesAreRunning ; then
       echo "Stop running services before uninstalling!"
       allStatus

@@ -204,9 +204,8 @@ public class LongRunningQueryTest {
         ShardQueryConfiguration config = (ShardQueryConfiguration) logic.initialize(client, query, Collections.singleton(auths));
         logic.setupQuery(config);
 
-        QueryExpirationProperties conf = new QueryExpirationProperties();
-        conf.setMaxLongRunningTimeoutRetries(1000);
-        RunningQueryTimingImpl timing = new RunningQueryTimingImpl(conf, 1);
+        // Set a very low pageShortCircuitTimeoutMs to force timeouts and partial results with zero results
+        RunningQueryTimingImpl timing = new RunningQueryTimingImpl(60000, 30000, 10, 1000);
         RunningQuery runningQuery = new RunningQuery(null, client, AccumuloConnectionFactory.Priority.NORMAL, logic, query, "", datawavePrincipal, timing, null,
                         new QueryMetricFactoryImpl());
         runningQuery.setExecutor(executor);

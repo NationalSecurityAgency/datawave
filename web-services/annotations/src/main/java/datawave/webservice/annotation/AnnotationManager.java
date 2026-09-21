@@ -14,9 +14,5 @@ public interface AnnotationManager {
 
     Response getAnnotation(String idType, String id, String annotationId);
 
-    Response addAnnotation(String idType, String id, String body);
-
-    Response updateAnnotation(String idType, String id, String annotationId, String body);
-
     Response getAnnotationSegment(String idType, String id, String annotationId, String segmentId);
 }

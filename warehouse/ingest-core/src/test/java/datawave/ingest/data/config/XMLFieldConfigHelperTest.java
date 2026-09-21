@@ -1,9 +1,12 @@
 package datawave.ingest.data.config;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -14,9 +17,12 @@ import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.Scanner;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import com.sun.net.httpserver.HttpServer;
 
@@ -26,6 +32,7 @@ import datawave.data.type.HexStringType;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.NoOpType;
 import datawave.data.type.Type;
+import datawave.ingest.config.IngestConfigurationFactory;
 import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.data.config.ingest.BaseIngestHelper;
 import datawave.ingest.mapreduce.SimpleDataTypeHandler;
@@ -59,8 +66,10 @@ public class XMLFieldConfigHelperTest {
 
         try {
             FieldConfigHelper helper = XMLFieldConfigHelper.load(requestUrl, ingestHelper);
+
             assertTrue(helper.isIndexedField("A"));
             assertFalse(helper.isIndexedField("B"));
+
         } finally {
             server.stop(0);
 
@@ -394,5 +403,150 @@ public class XMLFieldConfigHelperTest {
         assertType(LcNoDiacriticsType.class, ingestHelper.getDataTypes("F"));
         assertType(HexStringType.class, ingestHelper.getDataTypes("G"));
         assertType(DateType.class, ingestHelper.getDataTypes("H"));
+    }
+
+    @Test
+    void testCachingBehaviorWillCallBaseMethods() throws Exception {
+        // test intent is to verify each is*Field accessor dispatches to the matching FieldInfo attribute
+        // (i.e. no copy/paste error) and that a single lookup memoizes the fully-resolved FieldInfo
+
+        String input = "<?xml version=\"1.0\"?>\n" + "<fieldConfig>\n"
+                        + "    <default stored=\"true\" indexed=\"false\" reverseIndexed=\"false\" tokenized=\"false\" reverseTokenized=\"false\" indexType=\"datawave.data.type.LcNoDiacriticsType\"/>\n"
+                        + "    <nomatch stored=\"true\" indexed=\"true\" reverseIndexed=\"true\" tokenized=\"true\"  reverseTokenized=\"true\" indexType=\"datawave.data.type.HexStringType\"/>\n"
+                        + "    <field name=\"A\" stored=\"true\" indexed=\"true\" reverseIndexed=\"false\" tokenized=\"true\" reverseTokenized=\"false\"/>\n"
+                        + "    <field name=\"B\" stored=\"true\" indexed=\"false\" reverseIndexed=\"true\" tokenized=\"true\" reverseTokenized=\"false\"/>\n"
+                        + "    <field name=\"C\" stored=\"false\" indexed=\"true\" reverseIndexed=\"true\" tokenized=\"true\" reverseTokenized=\"false\"/>\n"
+                        + "</fieldConfig>";
+
+        String field = "A";
+        XMLFieldConfigHelper helper = new XMLFieldConfigHelper(IOUtils.toInputStream(input, UTF_8), ingestHelper);
+        FieldLookupCache<String,XMLFieldConfigHelper.FieldInfo> cache = helper.getResolvedFields();
+
+        // a single lookup resolves and memoizes the whole FieldInfo for the field
+        assertEquals(0, cache.size());
+        helper.isStoredField(field);
+        assertEquals(1, cache.size());
+
+        XMLFieldConfigHelper.FieldInfo info = cache.asMap().get(field);
+        assertNotNull(info);
+        assertTrue(info.stored);
+        assertTrue(info.indexed);
+        assertFalse(info.reverseIndexed);
+        assertTrue(info.tokenized);
+        assertFalse(info.reverseTokenized);
+
+        // each accessor returns the matching flag on the resolved FieldInfo
+        assertEquals(info.stored, helper.isStoredField(field));
+        assertEquals(info.indexed, helper.isIndexedField(field));
+        assertEquals(info.reverseIndexed, helper.isReverseIndexedField(field));
+        assertEquals(info.tokenized, helper.isTokenizedField(field));
+        assertEquals(info.reverseTokenized, helper.isReverseTokenizedField(field));
+        assertEquals(info.indexed && !info.stored, helper.isIndexOnlyField(field));
+
+        // flags across A/B/C give every attribute a distinct value signature, so an accessor
+        // dispatching to the wrong attribute fails on at least one of the three fields
+        assertTrue(helper.isStoredField("B"));
+        assertFalse(helper.isIndexedField("B"));
+        assertTrue(helper.isReverseIndexedField("B"));
+        assertTrue(helper.isTokenizedField("B"));
+        assertFalse(helper.isReverseTokenizedField("B"));
+        assertFalse(helper.isIndexOnlyField("B"));
+
+        assertFalse(helper.isStoredField("C"));
+        assertTrue(helper.isIndexedField("C"));
+        assertTrue(helper.isReverseIndexedField("C"));
+        assertTrue(helper.isTokenizedField("C"));
+        assertFalse(helper.isReverseTokenizedField("C"));
+        assertTrue(helper.isIndexOnlyField("C"));
+
+        // repeated lookups of a known field return the same cached FieldInfo instance
+        assertSame(info, cache.asMap().get(field));
+
+        // two different unknown fields resolve to the same shared no-match FieldInfo instance
+        helper.isStoredField("UNKNOWNONE");
+        helper.isStoredField("UNKNOWNTWO");
+        XMLFieldConfigHelper.FieldInfo noMatchOne = cache.asMap().get("UNKNOWNONE");
+        XMLFieldConfigHelper.FieldInfo noMatchTwo = cache.asMap().get("UNKNOWNTWO");
+        assertNotNull(noMatchOne);
+        assertSame(noMatchOne, noMatchTwo);
+    }
+
+    /**
+     * The field config XML used by the cache option tests. {@code A}, {@code B} and {@code C} differ from the nomatch defaults, so an evicted and re-resolved
+     * field is still distinguishable from a field the config says nothing about.
+     */
+    private static final String CACHE_TEST_CONFIG = "<?xml version=\"1.0\"?>\n" + "<fieldConfig>\n"
+                    + "    <default stored=\"true\" indexed=\"false\" reverseIndexed=\"false\" tokenized=\"false\" reverseTokenized=\"false\" indexType=\"datawave.data.type.LcNoDiacriticsType\"/>\n"
+                    + "    <nomatch stored=\"false\" indexed=\"false\" reverseIndexed=\"false\" tokenized=\"false\" reverseTokenized=\"false\" indexType=\"datawave.data.type.LcNoDiacriticsType\"/>\n"
+                    + "    <field name=\"A\" indexed=\"true\"/>\n" + "    <field name=\"B\" indexed=\"true\"/>\n" + "    <field name=\"C\" indexed=\"true\"/>\n"
+                    + "</fieldConfig>";
+
+    private XMLFieldConfigHelper cacheTestHelper(FieldLookupCache<String,XMLFieldConfigHelper.FieldInfo> cache) throws Exception {
+        return new XMLFieldConfigHelper(IOUtils.toInputStream(CACHE_TEST_CONFIG, UTF_8), ingestHelper, null, cache);
+    }
+
+    /**
+     * Verify that an unconfigured datatype keeps the historical unbounded cache, whether the helper is built through load or directly.
+     */
+    @Test
+    void shouldDefaultToAnUnboundedCache() throws Exception {
+        assertEquals(FieldLookupCache.UNBOUNDED, cacheTestHelper(new FieldLookupCache<>()).getResolvedFields().getMaxSize());
+
+        XMLFieldConfigHelper loaded = XMLFieldConfigHelper.load("config/sample-field-config.xml", ingestHelper, conf);
+        assertEquals(FieldLookupCache.UNBOUNDED, loaded.getResolvedFields().getMaxSize());
+    }
+
+    /**
+     * Verify that the cache settings declared for the datatype reach the helper loaded for it.
+     */
+    @Test
+    void shouldLoadCacheOptionsFromConfiguration() {
+        conf.set("test" + FieldConfigHelperConstants.FIELD_CONFIG_CACHE_MAX_SIZE, "2");
+        conf.set("test" + FieldConfigHelperConstants.FIELD_CONFIG_CACHE_OVERFLOW_POLICY, "CLEAR");
+
+        XMLFieldConfigHelper helper = XMLFieldConfigHelper.load("config/sample-field-config.xml", ingestHelper, conf);
+
+        assertEquals(2, helper.getResolvedFields().getMaxSize());
+        assertEquals(FieldLookupCache.OverflowPolicy.CLEAR, helper.getResolvedFields().getOverflowPolicy());
+    }
+
+    /**
+     * Verify that the cache settings reach the helper along the path production actually takes -- {@code BaseIngestHelper.setup} asks
+     * {@link datawave.ingest.config.IngestConfiguration} for the helper, rather than calling load itself.
+     */
+    @Test
+    void shouldLoadCacheOptionsThroughIngestConfiguration() {
+        conf.set("test" + FieldConfigHelperConstants.FIELD_CONFIG_FILE, "config/sample-field-config.xml");
+        conf.set("test" + FieldConfigHelperConstants.FIELD_CONFIG_CACHE_MAX_SIZE, "2");
+        conf.set("test" + FieldConfigHelperConstants.FIELD_CONFIG_CACHE_OVERFLOW_POLICY, "CLEAR");
+
+        FieldConfigHelper helper = IngestConfigurationFactory.getIngestConfiguration().getFieldConfigHelper(conf, ingestHelper.getType(), ingestHelper);
+
+        assertEquals(2, ((XMLFieldConfigHelper) helper).getResolvedFields().getMaxSize());
+        assertEquals(FieldLookupCache.OverflowPolicy.CLEAR, ((XMLFieldConfigHelper) helper).getResolvedFields().getOverflowPolicy());
+    }
+
+    /**
+     * Verify that a bounded cache stays within its bound under either overflow policy while still answering correctly for the fields it did not keep -- the
+     * ones a {@code BYPASS} cache never got to store, and the ones a {@code CLEAR} cache has since cleared away.
+     */
+    @ParameterizedTest
+    @EnumSource(FieldLookupCache.OverflowPolicy.class)
+    void shouldBoundTheCacheAndStillResolveFieldsItDidNotKeep(FieldLookupCache.OverflowPolicy policy) throws Exception {
+        conf.set("test" + FieldConfigHelperConstants.FIELD_CONFIG_CACHE_MAX_SIZE, "2");
+        conf.set("test" + FieldConfigHelperConstants.FIELD_CONFIG_CACHE_OVERFLOW_POLICY, policy.name());
+
+        XMLFieldConfigHelper helper = cacheTestHelper(FieldLookupCache.parse(conf, "test", FieldConfigHelperConstants.FIELD_CONFIG_CACHE));
+        FieldLookupCache<String,XMLFieldConfigHelper.FieldInfo> cache = helper.getResolvedFields();
+
+        for (String field : new String[] {"A", "B", "C", "UNKNOWN"}) {
+            helper.isIndexedField(field);
+            assertTrue(cache.size() <= 2, "cache grew past its bound");
+        }
+
+        assertTrue(helper.isIndexedField("A"));
+        assertTrue(helper.isIndexedField("B"));
+        assertTrue(helper.isIndexedField("C"));
+        assertFalse(helper.isIndexedField("UNKNOWN"));
     }
 }

@@ -43,6 +43,12 @@ jobs:
       GITHUB_USERNAME: ${{ secrets.GHCR_WRITE_USER_NAME }}
       GITHUB_PASSWORD: ${{ secrets.GHCR_WRITE_ACCESS_TOKEN }}
       DW_BUILD_CACHE_OPTIONS: ${{ needs.configure-runner.outputs.cache_settings }}
+      # Without this compose derives the project name from the directory, so every
+      # compose job on a runner shares the project "docker" -- and `up --no-recreate`
+      # then attaches to another job's containers instead of starting its own. A
+      # unique name also labels this job's containers, networks and volumes with
+      # com.docker.compose.project, which is what makes the teardown below scoped.
+      COMPOSE_PROJECT_NAME: dw-${{ github.run_id }}-${{ github.run_attempt }}-${{ inputs.allow-snapshots && 'snap' || 'rel' }}
     steps:
       - name: Set owner of working dir and m2 dir recursively
         #Needed because compose can leave around files owned by root.
@@ -54,10 +60,34 @@ jobs:
         uses: actions/checkout@v6
         with:
           ref: ${{ inputs.ref || github.sha }}
+      # TODO: remove this once added to the runners
+      - name: Install RPM build tools
+        run: |
+          if command -v rpmbuild >/dev/null 2>&1; then
+            exit 0
+          elif command -v dnf >/dev/null 2>&1; then
+            sudo dnf install -y rpm-build
+          elif command -v apt-get >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y rpm
+          else
+            echo "::error::Unsupported package manager"
+            exit 1
+          fi
       # Clean up free space
       - uses: ./.github/actions/free-space
         with:
           tool-cache: false
+          # Self-hosted runners are persistent, so `docker image prune --all` deletes
+          # the layer cache every build depends on and can remove images a co-tenant
+          # job is still using. Hosted runners are disposable, so let it run there.
+          docker-images: ${{ needs.configure-runner.outputs.runner != 'self-hosted' }}
+      - name: Log in to the Container registry
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.GITHUB_REGISTRY }}
+          username: ${{ secrets.GHCR_WRITE_USER_NAME }}
+          password: ${{ secrets.GHCR_WRITE_ACCESS_TOKEN }}
       - name: Configure Maven Settings
         run: |
           mkdir -p ~/.m2
@@ -97,35 +127,45 @@ jobs:
             ${{ runner.os }}-maven-build-
             ${{ runner.os }}-maven-format-
             ${{ runner.os }}-maven-
-      # Builds the quickstart and microservice docker images and runs a query test
+      # Builds the DataWave runtime images. Hadoop, ZooKeeper, and Accumulo use
+      # published stack images instead of being rebuilt inside quickstart.
       - name: Docker Compose Update POMs to use Snapshots
         if: ${{ inputs.allow-snapshots }}
         run: |
           export MAVEN_OPTS="${{ env.MAVEN_OPTS }}"
-          mvn --show-version --batch-mode --errors -Dutils -Dservices -Dstarters \
+          mvn --show-version --batch-mode --errors -T1C -Dutils -Dservices -Dstarters \
               versions:update-properties versions:update-parent -DallowSnapshots=true -Dincludes=gov.nsa.*
       - name: Docker Compose Build
         run: |
           export MAVEN_OPTS="${{ env.MAVEN_OPTS }}"
-          mvn --show-version --batch-mode --errors -Dutils -Dservices -Dstarters \
-              -Pcompose -Dmicroservice-docker -Dquickstart-docker ${{ needs.configure-runner.outputs.cache_settings }} -Ddeploy -Dtar -DskipTests \
+          mvn --show-version --batch-mode --errors -T1C -Dutils -Dservices -Dstarters \
+              -Pcompose -Dmicroservice-docker -Ddocker-release ${{ needs.configure-runner.outputs.cache_settings }} -Ddeploy -Dtar -DskipTests \
               -Djkube.container-image.tags.1=latest \
               clean install
       - name: Docker Compose Clear Space
         run: |
-          # free up some space so that we don't run out
-          docker system prune -f
+          # free up some space so that we don't run out. This runs before the stack
+          # starts, so there is nothing of this job's to reclaim yet -- the targets are
+          # build cache and dangling layers. `until=24h` keeps a concurrently running
+          # job's freshly built images and cache out of scope; a bare `system prune`
+          # would delete them out from under it.
+          docker builder prune --force --filter "until=24h"
+          docker image prune --force --filter "until=24h"
           export MAVEN_OPTS="${{ env.MAVEN_OPTS }}"
           mvn --show-version --batch-mode --errors -Dutils -Dservices -Dstarters \
               -Pcompose -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -DskipTests ${{ needs.configure-runner.outputs.cache_settings }} clean
-      - name: Docker Compose Accumulo Start
+      - name: Docker Compose Stack Start
         run: |
           cd docker
           export DW_HOST_IP=127.0.0.1
           ./bootstrap.sh
           echo "Starting docker compose"
-          docker compose up -d --no-recreate
-      - name: Docker Compose Ingest Tests
+          docker compose down --volumes --remove-orphans
+          docker compose up -d --wait --wait-timeout 600
+      # Ahead of the query tests, which pass whether or not the shard table is split.
+      - name: Docker Compose Verify Shard Splits
+        run: ./docker/scripts/verifySplits.sh
+      - name: Docker Compose Microservice Query Integration Tests
         run: |
           cd docker/scripts
           ./testAll.sh
@@ -134,19 +174,15 @@ jobs:
         run: |
           cd docker
           docker compose logs
-      - name: Docker Compose Web Start
-        run: |
-          cd docker
-          export DW_HOST_IP=127.0.0.1
-          echo "Starting datawave web"
-          docker compose exec quickstart bash -c "source ~/.bashrc && datawaveWebStart"
       - name: Docker Compose Web Tests
         run: |
-          cd docker
-          export DW_HOST_IP=127.0.0.1
-          docker compose exec quickstart bash -c "source ~/.bashrc && datawaveWebTest --blacklist-files QueryMetrics" || true
+          HOST_PORT=localhost:9443 DW_DATAWAVE_WEB_REMOTE=true \
+            bash contrib/datawave-quickstart/bin/services/datawave/test-web/run.sh --blacklist-files QueryMetrics || true
       - name: Final Operations
+        if: always()
         run: |
+          cd docker
+          docker compose down --volumes --remove-orphans
           if [[ "${{ needs.configure-runner.outputs.runner }}" == "self-hosted" ]]; then
-            sudo chown -R $(whoami) . ~/.m2 || true   
+            sudo chown -R $(whoami) .. ~/.m2 || true
           fi

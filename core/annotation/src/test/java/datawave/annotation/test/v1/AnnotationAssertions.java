@@ -1,17 +1,18 @@
 package datawave.annotation.test.v1;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import org.assertj.core.api.Assertions;
 
 import datawave.annotation.protobuf.v1.Annotation;
 import datawave.annotation.protobuf.v1.AnnotationSource;
@@ -32,17 +33,23 @@ public class AnnotationAssertions {
     }
 
     public static void assertMetadataEqual(Map<String,String> expectedMetadata, List<Map.Entry<String,String>> observedMetadata) {
-        Map<String,String> testMetadata = new HashMap<>(expectedMetadata);
-        for (Map.Entry<String,String> observedMetadataItem : observedMetadata) {
-            String key = observedMetadataItem.getKey();
-            String expectedValue = testMetadata.remove(key);
-            String observedValue = observedMetadataItem.getValue();
-            assertNotNull(expectedValue, "unexpected metadata key " + key);
-            assertEquals(expectedValue, observedValue, "unexpected metadata value for key " + key);
-        }
+        Map<String,String> observedMetadataMap = observedMetadata.stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        Assertions.assertThat(observedMetadataMap).containsExactlyInAnyOrderEntriesOf(expectedMetadata);
+    }
 
-        if (!testMetadata.isEmpty()) {
-            fail("did not see expected metadata entries " + testMetadata);
+    public static void assertAnnotationListsEqual(List<Annotation> expectedAnnotationsTemplate, List<Annotation> actualAnnotations) {
+        // Comparing by annotation id first gives us a clear AssertJ-generated diff of missing/unexpected annotations on failure,
+        // rather than the size-only assertion this replaces.
+        // @formatter:off
+        Assertions.assertThat(expectedAnnotationsTemplate)
+                        .usingElementComparator(Comparator.comparing(Annotation::getAnnotationId))
+                        .containsExactlyInAnyOrderElementsOf(actualAnnotations);
+        // @formatter:on
+
+        // The id sets are now known to match; assert full field equality for each corresponding pair.
+        Map<String,Annotation> actualById = actualAnnotations.stream().collect(Collectors.toMap(Annotation::getAnnotationId, a -> a));
+        for (Annotation expected : expectedAnnotationsTemplate) {
+            assertAnnotationsEqual(expected, actualById.get(expected.getAnnotationId()));
         }
     }
 
@@ -65,20 +72,7 @@ public class AnnotationAssertions {
         Map<String,Segment> resultByUID = indexSegments(result);
         Set<String> resultUIDs = resultByUID.keySet();
 
-        List<String> missing = new ArrayList<>(expectedUIDs);
-        missing.removeAll(resultUIDs);
-
-        List<String> extra = new ArrayList<>(resultUIDs);
-        extra.removeAll(expectedUIDs);
-
-        List<String> mismatchMessages = new ArrayList<>();
-        if (!missing.isEmpty()) {
-            mismatchMessages.add("Results are missing expected uids: " + missing);
-        }
-        if (!extra.isEmpty()) {
-            mismatchMessages.add("Results have extra uids: " + extra);
-        }
-        assertTrue(mismatchMessages.isEmpty(), "Mismatch in uuids observed: " + mismatchMessages);
+        Assertions.assertThat(resultUIDs).as("Mismatch in segment uids observed").containsExactlyInAnyOrderElementsOf(expectedUIDs);
 
         List<String> mismatchedSegmentMessages = new ArrayList<>();
         for (Map.Entry<String,Segment> expectedSegmentEntry : expectedByUID.entrySet()) {
