@@ -29,7 +29,6 @@ import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.commons.jexl3.parser.ParseException;
 import org.junit.Assert;
 import org.junit.ClassRule;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
@@ -269,20 +268,10 @@ public class IteratorBuildingVisitorTest {
     }
 
     @Test
-    @Ignore("IteratorBuildingVisitor rejects a top-level negation without a positive candidate source")
-    public void NeTest() throws Exception {
+    public void topLevelNeTest() throws Exception {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("F1 != 'v1'");
-        Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
-
-        List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new AbstractMap.SimpleEntry(
-                        new Key("row", "fi" + Constants.NULL + "F1", "v0" + Constants.NULL + "dataType" + Constants.NULL + "123.345.456"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(
-                        new Key("row", "fi" + Constants.NULL + "F1", "v1" + Constants.NULL + "dataType" + Constants.NULL + "123.345.456"), new Value()));
-
-        vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, hit, source, false, null, Collections.emptySet(), Collections.emptySet(),
-                        Collections.singleton("F2"));
-
+        IllegalStateException exception = Assert.assertThrows(IllegalStateException.class, () -> script.jjtAccept(getDefault(), null));
+        Assert.assertEquals("Root node cannot be a negation", exception.getMessage());
     }
 
     @Test
