@@ -30,6 +30,12 @@ public class ScanResult {
     private boolean timeout = false;
     private boolean allowPartialIntersections = false;
 
+    // True when every key in results is known to satisfy the expression represented by this result.
+    private boolean subtractionSafe = true;
+
+    // True when the result set contains every match in the scan context. The set may still contain conservative candidates.
+    private boolean matchComplete = true;
+
     /**
      * Default constructor does not allow partial intersections
      */
@@ -60,8 +66,11 @@ public class ScanResult {
         if (other.isTimeout()) {
             // a union can have one or both sides timeout, the entire union
             // is considered a timeout
-            this.timeout = true;
+            setTimeout(true);
         }
+        this.subtractionSafe &= other.isSubtractionSafe();
+        this.matchComplete &= other.isMatchComplete();
+        this.source = null;
         addKeys(other.getResults());
     }
 
@@ -76,9 +85,30 @@ public class ScanResult {
      */
     public void intersect(ScanResult other) {
 
+        if (!isMatchComplete()) {
+            // An incomplete left side is not a safe universe for an intersection. A complete right side is: every real intersection match must occur there,
+            // although the retained keys still require event-level confirmation against the incomplete expression.
+            this.subtractionSafe = false;
+            this.source = null;
+            if (other.isMatchComplete()) {
+                this.results.clear();
+                updateMinMax();
+                addKeys(other.getResults());
+                this.matchComplete = true;
+                this.timeout = false;
+            } else {
+                this.timeout |= other.isTimeout();
+            }
+            return;
+        }
+
         Preconditions.checkArgument(!isTimeout(), "Left side of intersection should never be a timeout");
 
         if (other.isTimeout()) {
+
+            // Retaining the left side, either in full or in part, preserves all possible intersection
+            // matches but cannot prove that every retained key matched the partial right side.
+            this.subtractionSafe = false;
 
             if (!allowPartialIntersections) {
                 return;
@@ -94,6 +124,15 @@ public class ScanResult {
             return;
         }
 
+        if (!other.isMatchComplete()) {
+            // The right side is only a confirmed subset. Retaining it would discard candidates that may match an unevaluated branch, so keep the complete
+            // left-side candidate universe and defer confirmation to event evaluation.
+            this.subtractionSafe = false;
+            return;
+        }
+
+        this.subtractionSafe &= other.isSubtractionSafe();
+
         if (!isIntersectionPossible(other)) {
             log.info("Intersection not possible, skipping");
             results.clear();
@@ -102,6 +141,23 @@ public class ScanResult {
 
         this.results.retainAll(other.getResults());
         updateMinMax();
+    }
+
+    /**
+     * Removes only keys that are proven to match {@code other}. The result remains complete because unconfirmed candidates are retained. It is safe to use the
+     * remaining keys as confirmed matches of the negation only when {@code other} was both subtraction-safe and complete.
+     *
+     * @param other
+     *            the result to subtract
+     */
+    public void subtractConfirmedMatches(ScanResult other) {
+        boolean exact = other.isSubtractionSafe() && other.isMatchComplete();
+        if (other.isSubtractionSafe()) {
+            results.removeAll(other.getResults());
+            updateMinMax();
+        }
+        this.subtractionSafe &= exact;
+        this.source = null;
     }
 
     /**
@@ -272,6 +328,9 @@ public class ScanResult {
 
     public void setTimeout(boolean timeout) {
         this.timeout = timeout;
+        if (timeout) {
+            this.matchComplete = false;
+        }
     }
 
     public void setAllowPartialIntersections(boolean allowPartialIntersections) {
@@ -280,6 +339,28 @@ public class ScanResult {
 
     public boolean isTimeout() {
         return timeout;
+    }
+
+    /**
+     * @return true when every returned key is a confirmed match and may safely be subtracted by a negating parent
+     */
+    public boolean isSubtractionSafe() {
+        return subtractionSafe;
+    }
+
+    protected void setSubtractionSafe(boolean subtractionSafe) {
+        this.subtractionSafe = subtractionSafe;
+    }
+
+    /**
+     * @return true when the result contains every possible match in its scan context
+     */
+    public boolean isMatchComplete() {
+        return matchComplete;
+    }
+
+    protected void setMatchComplete(boolean matchComplete) {
+        this.matchComplete = matchComplete;
     }
 
     public Key getMin() {

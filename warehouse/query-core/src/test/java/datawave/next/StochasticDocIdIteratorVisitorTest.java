@@ -16,7 +16,6 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,6 +29,7 @@ import com.google.common.base.Preconditions;
 public class StochasticDocIdIteratorVisitorTest extends FieldIndexDataTestUtil {
 
     private static final Logger log = LoggerFactory.getLogger(StochasticDocIdIteratorVisitorTest.class);
+    private static final long RANDOM_SEED = 0xD0C1D17L;
 
     private final Set<String> fields = Set.of("FIELD_A", "FIELD_B");
     private final Set<String> datatypes = Set.of("datatype-a");
@@ -61,7 +61,7 @@ public class StochasticDocIdIteratorVisitorTest extends FieldIndexDataTestUtil {
     }
 
     private final Range range = new Range(row);
-    private final Random rand = new Random();
+    private final Random rand = new Random(RANDOM_SEED);
 
     private final Set<String> selectedTerms = new HashSet<>();
 
@@ -132,7 +132,6 @@ public class StochasticDocIdIteratorVisitorTest extends FieldIndexDataTestUtil {
         }
     }
 
-    @Disabled("DocIdIteratorVisitor does not execute a union of positive and negated terms")
     @Test
     public void testNestedUnionWithNegations() {
         for (int i = 0; i < max; i++) {
@@ -242,18 +241,19 @@ public class StochasticDocIdIteratorVisitorTest extends FieldIndexDataTestUtil {
 
     private void buildExpectedForNestedUnion() {
         expected = new HashSet<>();
-        if (isTermExecutable(terms[2])) {
-            expected.addAll(uids[2]);
-        }
-        if (isTermExecutable(terms[1])) {
-            expected.addAll(uids[1]);
-        }
-
         if (isTermExecutable(terms[0])) {
-            if (!expected.isEmpty()) {
-                expected.retainAll(uids[0]);
-            } else if (!isTermExecutable(terms[1]) && !isTermExecutable(terms[2])) {
-                expected.addAll(uids[0]);
+            expected.addAll(uids[0]);
+            if (isTermExecutable(terms[1]) && isTermExecutable(terms[2])) {
+                Set<Integer> union = new HashSet<>(uids[1]);
+                union.addAll(uids[2]);
+                expected.retainAll(union);
+            }
+        } else {
+            if (isTermExecutable(terms[1])) {
+                expected.addAll(uids[1]);
+            }
+            if (isTermExecutable(terms[2])) {
+                expected.addAll(uids[2]);
             }
         }
     }
@@ -331,15 +331,23 @@ public class StochasticDocIdIteratorVisitorTest extends FieldIndexDataTestUtil {
     }
 
     private void buildExpectedForNestedUnionWithNegation() {
-        Set<Integer> left = new HashSet<>(uids[0]);
-        left.retainAll(uids[1]);
-
-        Set<Integer> right = new HashSet<>(uids[0]);
-        right.removeAll(uids[2]);
-
         expected = new HashSet<>();
-        expected.addAll(left);
-        expected.addAll(right);
+        if (!isTermExecutable(terms[0])) {
+            return;
+        }
+
+        expected.addAll(uids[0]);
+        if (isTermExecutable(terms[1]) && isTermExecutable(terms[2])) {
+            Set<Integer> left = new HashSet<>(uids[0]);
+            left.retainAll(uids[1]);
+
+            Set<Integer> right = new HashSet<>(uids[0]);
+            right.removeAll(uids[2]);
+
+            expected.clear();
+            expected.addAll(left);
+            expected.addAll(right);
+        }
     }
 
     private void driveTest() {
@@ -455,6 +463,7 @@ public class StochasticDocIdIteratorVisitorTest extends FieldIndexDataTestUtil {
     }
 
     private void logState() {
+        log.info("random seed: {}", RANDOM_SEED);
         for (int i = 0; i < terms.length; i++) {
             log.info("{} :: {}", terms[i], uids[i]);
         }

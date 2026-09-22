@@ -1,6 +1,10 @@
 package datawave.next;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -15,7 +19,7 @@ public class DocIdIteratorVisitorTest extends FieldIndexDataTestUtil {
     private String query;
     private final Range range = new Range(row);
 
-    private final Set<String> indexedFields = Set.of("FIELD_A", "FIELD_B", "FIELD_C");
+    private final Set<String> indexedFields = Set.of("FIELD_A", "FIELD_B", "FIELD_C", "FIELD_D");
 
     @BeforeEach
     public void setup() {
@@ -78,6 +82,126 @@ public class DocIdIteratorVisitorTest extends FieldIndexDataTestUtil {
         withQuery("FIELD_A == 'value-a' && (FIELD_Z == 'value-z' || FIELD_C == 'value-c')");
         drive();
         assertResultSize(5);
+    }
+
+    @Test
+    public void testNestedNegatedUnionWithUnindexedTermsRetainsAnchorCandidates() {
+        writeRange("FIELD_A", "value-a", 1, 4);
+        writeIndex("FIELD_B", "value-b", "datatype-a", 1);
+        writeIndex("FIELD_X", "value-x", "datatype-a", 2);
+        writeIndex("FIELD_Y", "value-y", "datatype-a", 3);
+
+        withQuery("FIELD_A == 'value-a' && (FIELD_B == 'value-b' || !(FIELD_X == 'value-x' || FIELD_Y == 'value-y'))");
+        drive();
+
+        assertResultUids(1, 2, 3, 4);
+    }
+
+    @Test
+    public void testNestedNegatedConjunctionWithUnindexedTermRetainsUnconfirmedCandidates() {
+        writeRange("FIELD_A", "value-a", 1, 4);
+        writeIndex("FIELD_D", "value-d", "datatype-a", 1);
+        writeRange("FIELD_B", "value-b", 2, 3);
+
+        // FIELD_X is intentionally absent from indexedFields, so the FIELD_B hits do not prove the conjunction.
+        withQuery("FIELD_A == 'value-a' && (FIELD_D == 'value-d' || !(FIELD_X == 'value-x' && FIELD_B == 'value-b'))");
+        drive();
+
+        assertResultUids(1, 2, 3, 4);
+    }
+
+    @Test
+    public void testIncompleteUnionDoesNotNarrowAnchorCandidates() {
+        writeRange("FIELD_A", "value-a", 1, 4);
+        writeIndex("FIELD_B", "value-b", "datatype-a", 1);
+
+        // FIELD_X is intentionally absent from indexedFields, so FIELD_B is only a confirmed subset of the union.
+        withQuery("FIELD_A == 'value-a' && (FIELD_X == 'value-x' || FIELD_B == 'value-b')");
+        drive();
+
+        assertResultUids(1, 2, 3, 4);
+    }
+
+    @Test
+    public void testIncompleteUnionBeforeAnchorDoesNotNarrowAnchorCandidates() {
+        writeRange("FIELD_A", "value-a", 1, 4);
+        writeIndex("FIELD_B", "value-b", "datatype-a", 1);
+
+        // FIELD_X is intentionally absent from indexedFields. Child order must not let the incomplete union bound the complete anchor scan.
+        withQuery("(FIELD_X == 'value-x' || FIELD_B == 'value-b') && FIELD_A == 'value-a'");
+        drive();
+
+        assertResultUids(1, 2, 3, 4);
+    }
+
+    @Test
+    public void testEmptyIncompleteUnionBeforeAnchorDoesNotShortCircuit() {
+        writeRange("FIELD_A", "value-a", 1, 4);
+
+        // FIELD_X is unindexed and FIELD_B has no hits, so the empty union remains incomplete and cannot prove the intersection empty.
+        withQuery("(FIELD_X == 'value-x' || FIELD_B == 'value-b') && FIELD_A == 'value-a'");
+        drive();
+
+        assertResultUids(1, 2, 3, 4);
+    }
+
+    @Test
+    public void testMultipleIncompleteUnionsBeforeAnchorDoNotShortCircuit() {
+        writeRange("FIELD_A", "value-a", 1, 4);
+        writeIndex("FIELD_C", "value-c", "datatype-a", 1);
+
+        withQuery("(FIELD_X == 'value-x' || FIELD_B == 'value-b') && (FIELD_Y == 'value-y' || FIELD_C == 'value-c') && FIELD_A == 'value-a'");
+        drive();
+
+        assertResultUids(1, 2, 3, 4);
+    }
+
+    @Test
+    public void testIncompleteEmptyNestedIntersectionDoesNotBoundNegation() {
+        writeRange("FIELD_A", "value-a", 1, 4);
+        writeIndex("FIELD_C", "value-c", "datatype-a", 1);
+
+        withQuery("FIELD_A == 'value-a' && ((FIELD_X == 'value-x' || FIELD_B == 'value-b') && !(FIELD_C == 'value-c'))");
+        drive();
+
+        assertResultUids(2, 3, 4);
+    }
+
+    @Test
+    public void testExactEmptyNestedIntersectionKeepsUnionComplete() {
+        writeRange("FIELD_D", "value-d", 1, 4);
+        writeRange("FIELD_B", "value-b", 1, 2);
+        writeIndex("FIELD_C", "value-c", "datatype-a", 2);
+
+        withQuery("FIELD_D == 'value-d' && ((FIELD_A == 'value-a' && FIELD_B == 'value-b') || FIELD_C == 'value-c')");
+        drive();
+
+        assertResultUids(2);
+    }
+
+    @Test
+    public void testNestedComplementsPreserveUnsafeContext() {
+        writeRange("FIELD_A", "value-a", 1, 4);
+        writeRange("FIELD_B", "value-b", 1, 2);
+        writeRange("FIELD_C", "value-c", 2, 3);
+
+        // FIELD_X makes the anchor a conservative candidate set. Nested complements must not turn it back into a subtraction-safe result.
+        withQuery("(FIELD_A == 'value-a' && FIELD_X == 'value-x') && !(!(FIELD_B == 'value-b') || !(FIELD_C == 'value-c'))");
+        drive();
+
+        assertResultUids(1, 2, 3, 4);
+    }
+
+    @Test
+    public void testNestedUnionOfNegationsUsesDeMorganSemantics() {
+        writeRange("FIELD_A", "value-a", 1, 5);
+        writeRange("FIELD_B", "value-b", 1, 2);
+        writeRange("FIELD_C", "value-c", 2, 3);
+
+        withQuery("FIELD_A == 'value-a' && (!(FIELD_B == 'value-b') || !(FIELD_C == 'value-c'))");
+        drive();
+
+        assertResultUids(1, 3, 4, 5);
     }
 
     @Test
@@ -245,6 +369,15 @@ public class DocIdIteratorVisitorTest extends FieldIndexDataTestUtil {
 
         Set<Key> ids = DocIdIteratorVisitor.getDocIds(script, range, source, datatypes, null, indexedFields);
         results.addAll(ids);
+    }
+
+    private void assertResultUids(Integer... expected) {
+        SortedSet<Integer> actual = new TreeSet<>();
+        for (Key result : results) {
+            String columnFamily = result.getColumnFamily().toString();
+            actual.add(Integer.parseInt(columnFamily.substring(columnFamily.lastIndexOf('-') + 1)) - 1_000);
+        }
+        assertEquals(new TreeSet<>(Set.of(expected)), actual);
     }
 
     @Override
