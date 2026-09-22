@@ -201,7 +201,7 @@
                                         <onlyWhenRelease>true</onlyWhenRelease>
                                     </requireReleaseDeps>
                                     <requireJavaVersion>
-                                        <version>${java.version}</version>
+                                        <version>${datawave.build.jdk.version.range}</version>
                                     </requireJavaVersion>
                                 </rules>
                                 <fail>true</fail>
