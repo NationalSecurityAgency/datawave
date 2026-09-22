@@ -21,7 +21,6 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import datawave.data.type.LcNoDiacriticsType;
@@ -632,7 +631,6 @@ public class EventDataQueryExpressionVisitorTest {
     }
 
     @Test
-    @Ignore("Grouped query identifiers must be rewritten before expression filters are built")
     public void testAndSameGroupingOnQuery() throws Exception {
         String originalQuery = "FOO.1 == 'abc' && FOO.2 == 'def'";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
@@ -643,31 +641,41 @@ public class EventDataQueryExpressionVisitorTest {
         Key p2 = createKey("FOO", "def");
         Key p3 = createKey("FOO", "ghi");
 
+        assertEquals(Set.of("FOO"), filter.keySet());
         assertNotNull(filter.get("FOO"));
+        // Dotted identifiers are ant-style references, so the filter conservatively keeps every value for the base field.
+        assertTrue(filter.get("FOO").getFieldValues().isEmpty());
 
         assertTrue(filter.get("FOO").apply(p1));
         assertTrue(filter.get("FOO").apply(p2));
-        assertFalse(filter.get("FOO").apply(p3));
+        assertTrue(filter.get("FOO").apply(p3));
 
+        assertNull(filter.get("FOO.1"));
+        assertNull(filter.get("FOO.2"));
         assertNull(filter.get("BAR"));
     }
 
     @Test
-    @Ignore("Expression filters use base field names, not the grouped map keys expected here")
     public void testAndSameGroupingOnBoth() throws Exception {
         String originalQuery = "FOO.1 == 'abc' && FOO.2 == 'def'";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
         final Map<String,ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
 
-        Key p1 = createKey("FOO", "abc");
-        Key p2 = createKey("FOO", "def");
-        Key p3 = createKey("FOO", "ghi");
+        Key p1 = createKey("FOO.1", "abc");
+        Key p2 = createKey("FOO.2", "def");
+        Key p3 = createKey("FOO.3", "ghi");
 
+        assertEquals(Set.of("FOO"), filter.keySet());
         assertNotNull(filter.get("FOO"));
+        // Dotted identifiers are ant-style references, so the filter conservatively keeps every value for the base field.
+        assertTrue(filter.get("FOO").getFieldValues().isEmpty());
 
-        assertTrue(filter.get("FOO.1").apply(p1));
-        assertTrue(filter.get("FOO.2").apply(p2));
-        assertFalse(filter.get("FOO").apply(p3));
+        assertTrue(filter.get("FOO").apply(p1));
+        assertTrue(filter.get("FOO").apply(p2));
+        assertTrue(filter.get("FOO").apply(p3));
+
+        assertNull(filter.get("FOO.1"));
+        assertNull(filter.get("FOO.2"));
 
         assertNull(filter.get("BAR"));
     }
