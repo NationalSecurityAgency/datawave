@@ -17,7 +17,6 @@ import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -59,7 +58,6 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
     public LookupProperties lookupProperties;
 
     @Test
-    @Disabled
     public void testLookupUUIDSuccess() throws Exception {
         DatawaveUserDetails authUser = createUserDetails();
         MultiValueMap<String,String> uuidParams = createUUIDParams();
@@ -163,7 +161,6 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
     }
 
     @Test
-    @Disabled
     public void testBatchLookupUUIDSuccess() throws Exception {
         DatawaveUserDetails authUser = createUserDetails();
 
@@ -266,9 +263,7 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
         // @formatter:on
     }
 
-    // this test randomly fails
     @Test
-    @Disabled
     public void testLookupContentUUIDSuccess() throws Exception {
         DatawaveUserDetails authUser = createUserDetails();
         MultiValueMap<String,String> uuidParams = createUUIDParams();
@@ -315,13 +310,15 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
 
         Set<String> contentQueryIds = null;
         // wait for the initial event query to be closed
+        int expectedContentQueryCount = (int) Math.ceil((double) pageSize / lookupProperties.getBatchLookupLimit());
         startTime = System.currentTimeMillis();
         while ((System.currentTimeMillis() - startTime) < TEST_WAIT_TIME_MILLIS && contentQueryIds == null) {
             final String eventQueryId = queryId;
             List<QueryStatus> queryStatuses = queryStorageCache.getQueryStatus();
-            if (queryStatuses.size() == 1 + Math.ceil((double) pageSize / lookupProperties.getBatchLookupLimit())) {
-                contentQueryIds = queryStatuses.stream().map(QueryStatus::getQueryKey).map(QueryKey::getQueryId)
-                                .filter(contentQueryId -> !contentQueryId.equals(eventQueryId)).collect(Collectors.toSet());
+            Set<String> candidateContentQueryIds = queryStatuses.stream().map(QueryStatus::getQueryKey).map(QueryKey::getQueryId)
+                            .filter(contentQueryId -> !contentQueryId.equals(eventQueryId)).collect(Collectors.toSet());
+            if (candidateContentQueryIds.size() == expectedContentQueryCount) {
+                contentQueryIds = candidateContentQueryIds;
             }
             // add a config object to the query status, which would normally be added by the executor service
             for (QueryStatus status : queryStatuses) {
@@ -428,9 +425,7 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
         // @formatter:on
     }
 
-    // Test is randomly failing so disabling for now
     @Test
-    @Disabled
     public void testBatchLookupContentUUIDSuccess() throws Exception {
         DatawaveUserDetails authUser = createUserDetails();
 
@@ -478,13 +473,15 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
 
         Set<String> contentQueryIds = null;
         // wait for the initial event query to be closed
+        int expectedContentQueryCount = (int) Math.ceil((double) pageSize / lookupProperties.getBatchLookupLimit());
         startTime = System.currentTimeMillis();
         while ((System.currentTimeMillis() - startTime) < TEST_WAIT_TIME_MILLIS && contentQueryIds == null) {
             final String eventQueryId = queryId;
             List<QueryStatus> queryStatuses = queryStorageCache.getQueryStatus();
-            if (queryStatuses.size() == 1 + Math.ceil((double) pageSize / lookupProperties.getBatchLookupLimit())) {
-                contentQueryIds = queryStatuses.stream().map(QueryStatus::getQueryKey).map(QueryKey::getQueryId)
-                                .filter(contentQueryId -> !contentQueryId.equals(eventQueryId)).collect(Collectors.toSet());
+            Set<String> candidateContentQueryIds = queryStatuses.stream().map(QueryStatus::getQueryKey).map(QueryKey::getQueryId)
+                            .filter(contentQueryId -> !contentQueryId.equals(eventQueryId)).collect(Collectors.toSet());
+            if (candidateContentQueryIds.size() == expectedContentQueryCount) {
+                contentQueryIds = candidateContentQueryIds;
             }
             // add a config object to the query status, which would normally be added by the executor service
             for (QueryStatus status : queryStatuses) {
@@ -602,7 +599,6 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
     }
 
     @Test
-    @Disabled
     public void testBatchLookupUUIDFailure_noLookupUUIDPairs() throws Exception {
         DatawaveUserDetails authUser = createUserDetails();
 
@@ -630,7 +626,6 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
     }
 
     @Test
-    @Disabled
     public void testBatchLookupUUIDFailure_mixedQueryLogics() throws Exception {
         DatawaveUserDetails authUser = createUserDetails();
 
@@ -660,7 +655,6 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
     }
 
     @Test
-    @Disabled
     public void testBatchLookupUUIDFailure_nullUUIDType() throws Exception {
         DatawaveUserDetails authUser = createUserDetails();
 
@@ -690,7 +684,6 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
     }
 
     @Test
-    @Disabled
     public void testBatchLookupUUIDFailure_emptyUUIDFieldValue() throws Exception {
         DatawaveUserDetails authUser = createUserDetails();
 
@@ -720,7 +713,6 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
     }
 
     @Test
-    @Disabled
     public void testBatchLookupUUIDFailure_invalidUUIDPair() throws Exception {
         DatawaveUserDetails authUser = createUserDetails();
 
@@ -750,7 +742,6 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
     }
 
     @Test
-    @Disabled
     public void testBatchLookupUUIDFailure_tooManyTerms() throws Exception {
         DatawaveUserDetails authUser = createUserDetails();
 
@@ -788,7 +779,6 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
     }
 
     @Test
-    @Disabled
     public void testBatchLookupUUIDFailure_nonLookupQueryLogic() throws Exception {
         DatawaveUserDetails authUser = createUserDetails();
 
