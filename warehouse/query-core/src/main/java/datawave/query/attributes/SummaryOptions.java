@@ -28,9 +28,6 @@ public class SummaryOptions implements Serializable {
     private static final String VIEWS_PARAMETER = "VIEWS";
     private static final String ONLY_PARAMETER = "ONLY";
 
-    // TODO: until it works without arguments
-    private static final String TRUE = "TRUE";
-
     public static final int DEFAULT_SIZE = 150;
 
     private int summarySize;
@@ -74,8 +71,7 @@ public class SummaryOptions implements Serializable {
 
         SummaryOptions summaryOptions = new SummaryOptions();
 
-        // TODO: this is in here for when we can make accepting functions with no arguments work
-        // if passed no parameters, return of summary of default size
+        // An empty function uses the default summary size.
         if (string.isBlank()) {
             summaryOptions.summarySize = DEFAULT_SIZE;
             return summaryOptions;

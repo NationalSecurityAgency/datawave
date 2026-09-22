@@ -225,8 +225,10 @@ public class AccumuloSyntaxParserTokenManager {
                             jjCheckNAddStates(6, 8);
                             break;
                         case 5:
-                            if (curChar == 40)
+                            if (curChar == 40) {
                                 jjAddStates(9, 12);
+                                jjCheckNAdd(20);
+                            }
                             break;
                         case 6:
                         case 7:
