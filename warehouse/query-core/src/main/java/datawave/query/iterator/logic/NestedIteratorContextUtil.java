@@ -88,7 +88,7 @@ public class NestedIteratorContextUtil {
         Set<NestedIterator<T>> nullSources = new HashSet<>();
         for (NestedIterator<T> contextRequiredIterator : sourcesToMove) {
             contextRequiredIterator.setContext(context);
-            T result = contextRequiredIterator.move(context);
+            T result = contextRequiredIterator.moveContext(context);
             if (result == null) {
                 // beyond the end of the iterator
                 nullSources.add(contextRequiredIterator);

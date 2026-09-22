@@ -6,6 +6,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -40,6 +41,8 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
 
     // temporary stores of uninitialized streams of iterators
     private List<NestedIterator<T>> includes, contextIncludes, contextExcludes;
+    private Set<NestedIterator<T>> activeIncludes;
+    private boolean pendingNonEventResult;
 
     private Map<T,T> transforms;
     private Util.Transformer<T> transformer;
@@ -100,8 +103,11 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
         transforms = new HashMap<>();
 
         try {
+            activeIncludes = newIdentitySet();
+            activeIncludes.addAll(includes);
+            pendingNonEventResult = false;
             includeHeads = TreeMultimap.create(keyComp, itrComp);
-            initSubtree(includeHeads, includes, transformer, transforms, false);
+            initSubtree(includeHeads, includes, activeIncludes, transformer, transforms, false);
 
             if (contextIncludes.size() > 0) {
                 contextIncludeHeads = TreeMultimap.create(keyComp, itrComp);
@@ -168,6 +174,8 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
 
         prev = next;
         prevDocument = document;
+        boolean previousPendingNonEventResult = pendingNonEventResult;
+        Set<NestedIterator<T>> candidateIncludes = newIdentitySet();
 
         SortedSet<T> candidateSet = new TreeSet<>(Util.keyComparator());
         T lowest;
@@ -181,8 +189,14 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
             if (evaluationContext != null) {
                 if (contextIncludes.size() > 0) {
                     // get the lowest union and add it for contextRequiredIncludes
-                    lowestContextInclude = NestedIteratorContextUtil.union(evaluationContext, contextIncludes, contextIncludeHeads, contextIncludeNullHeads,
-                                    transformer);
+                    try {
+                        lowestContextInclude = NestedIteratorContextUtil.union(evaluationContext, contextIncludes, contextIncludeHeads, contextIncludeNullHeads,
+                                        transformer);
+                    } catch (WaitWindowOverrunException e) {
+                        e.setYieldKey(waitWindowObserver.createYieldKey((Key) evaluationContext, true,
+                                        id + ": retry context while advancing contextIncludes in OrIterator.next()"));
+                        throw e;
+                    }
                     if (lowestContextInclude != null) {
                         candidateSet.add(lowestContextInclude);
                     }
@@ -198,8 +212,8 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
                             candidateSet.add(evaluationContext);
                         }
                     } catch (WaitWindowOverrunException e) {
-                        // contextExcludes could be farther than the includes, so we don't want to use a yieldKey from the exception
-                        e.setYieldKey(Pair.of(null, id + ": yield while advancing contextExcludes in OrIterator.next()"));
+                        e.setYieldKey(waitWindowObserver.createYieldKey((Key) evaluationContext, true,
+                                        id + ": retry context while advancing contextExcludes in OrIterator.next()"));
                         throw e;
                     }
                 }
@@ -219,6 +233,7 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
                     // build it from the includeHeads
                     next = transforms.get(lowest);
                     document = Util.buildNewDocument(includeHeads.get(lowest));
+                    candidateIncludes.addAll(includeHeads.get(lowest));
                 } else {
                     // nothing to build it from all we know is that it wasn't in the exclude set
                     next = evaluationContext;
@@ -227,6 +242,9 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
 
                 // regardless of where we hit make sure to advance includeHeads if it matches there
                 if (includeHeads != null && includeHeads.containsKey(lowest)) {
+                    // Keep both candidate states until advancing succeeds. If a child fails, the caller must still know whether either the returning or
+                    // candidate value depended only on non-event fields.
+                    pendingNonEventResult = previousPendingNonEventResult || containsOnlyNonEventFields(candidateIncludes);
                     includeHeads = advanceIterators(lowest);
                 }
             }
@@ -253,6 +271,8 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
             // key because a match in any candidate of an OrIterator can cause a valid result
             waitWindowObserver.propagateException(possibleYieldKey, true, true, e);
         }
+
+        pendingNonEventResult = containsOnlyNonEventFields(candidateIncludes);
 
         // the loop couldn't find a new next, so set next to null because we're done after this
         if (prev == next) {
@@ -303,8 +323,15 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
             throw new IllegalStateException("Tried to call move when already at or beyond move point: topkey=" + prev + ", movekey=" + minimum);
         }
 
+        // A cached include was evaluated using the previous context. A newer context can produce an earlier match through a deferred include or exclude.
+        // Return that contextual match without consuming the cached include so that both results remain ordered and available to the parent iterator.
+        T transformedNext = next == null ? null : transformer.transform(next);
+        if (transformedNext != null && transformedNext.compareTo(minimum) > 0 && useContextCandidateBefore(minimum, next)) {
+            return prev;
+        }
+
         // test if the cached next is already beyond the minimum
-        if (next != null && next.compareTo(minimum) >= 0) {
+        if (transformedNext != null && transformedNext.compareTo(minimum) >= 0) {
             // simply advance to next
             return next();
         }
@@ -372,6 +399,7 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
         }
 
         SortedSet<NestedIterator<T>> includedItrs = includeHeads.removeAll(key);
+        List<NestedIterator<T>> exhausted = new ArrayList<>();
         try {
             transforms.remove(key);
             for (NestedIterator<T> itr : includedItrs) {
@@ -380,6 +408,8 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
                     T transform = transformer.transform(next);
                     transforms.put(transform, next);
                     includeHeads.put(transform, itr);
+                } else {
+                    exhausted.add(itr);
                 }
             }
         } catch (WaitWindowOverrunException e) {
@@ -390,6 +420,8 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
             // make sure the yield key is not past what we are moving to
             e.setYieldKey(this.waitWindowObserver.createYieldKey((Key) key, true, id + ": to in OrIterator.advanceIterators()"));
             throw e;
+        } finally {
+            exhausted.forEach(activeIncludes::remove);
         }
 
         if (log.isDebugEnabled()) {
@@ -414,6 +446,7 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
             log.debug(id + ": moving iterators for " + key + " to " + to + ": " + includeHeads.keySet());
         }
         SortedSet<NestedIterator<T>> includedItrs = includeHeads.removeAll(key);
+        List<NestedIterator<T>> exhausted = new ArrayList<>();
         try {
             transforms.remove(key);
             for (NestedIterator<T> itr : includedItrs) {
@@ -422,6 +455,8 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
                     T transform = transformer.transform(next);
                     transforms.put(transform, next);
                     includeHeads.put(transform, itr);
+                } else {
+                    exhausted.add(itr);
                 }
             }
         } catch (WaitWindowOverrunException e) {
@@ -432,12 +467,156 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
             // make sure the yield key is not past what we are moving to
             e.setYieldKey(this.waitWindowObserver.createYieldKey((Key) to, true, id + ": to in OrIterator.moveIterators()"));
             throw e;
+        } finally {
+            exhausted.forEach(activeIncludes::remove);
         }
         if (log.isDebugEnabled()) {
             log.debug(id + ": moved iterators for " + key + " to " + to + ": " + includeHeads.keySet());
         }
 
         return includeHeads;
+    }
+
+    @Override
+    public T moveContext(T context) {
+        evaluationContext = context;
+        if (!isContextRequired()) {
+            return move(context);
+        }
+        if (null == includeHeads) {
+            throw new IllegalStateException("initialize() was never called");
+        }
+
+        // Discard only cached values below the requested context. A later sourced include must remain cached because a deferred branch can still match an
+        // intervening context.
+        if (next == null) {
+            next();
+        }
+        T transformedNext = next == null ? null : transformer.transform(next);
+        while (transformedNext != null && transformedNext.compareTo(context) < 0) {
+            next();
+            transformedNext = next == null ? null : transformer.transform(next);
+        }
+
+        if (transformedNext != null && transformedNext.compareTo(context) == 0) {
+            return next();
+        }
+        return useExactContextCandidate() ? prev : null;
+    }
+
+    private static <T> Set<NestedIterator<T>> newIdentitySet() {
+        return Collections.newSetFromMap(new IdentityHashMap<>());
+    }
+
+    private boolean containsOnlyNonEventFields(Collection<NestedIterator<T>> candidateIncludes) {
+        if (candidateIncludes.isEmpty()) {
+            return false;
+        }
+        for (NestedIterator<T> include : candidateIncludes) {
+            if (!include.isNonEventField()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Evaluate only the context-required branches and return their candidate when it sorts before a cached include. The cached include and its document remain
+     * untouched for the next call.
+     */
+    private boolean useContextCandidateBefore(T minimum, T upperBound) {
+        if (evaluationContext == null || !isContextRequired() || evaluationContext.compareTo(minimum) < 0
+                        || evaluationContext.compareTo(transformer.transform(upperBound)) >= 0) {
+            return false;
+        }
+
+        SortedSet<T> candidates = new TreeSet<>(Util.keyComparator());
+        T lowestContextInclude = null;
+
+        if (!contextExcludes.isEmpty()) {
+            try {
+                T intersectExclude = NestedIteratorContextUtil.intersect(evaluationContext, contextExcludes, contextExcludeHeads, contextExcludeNullHeads,
+                                transformer);
+                if (!evaluationContext.equals(intersectExclude)) {
+                    if (evaluationContext.compareTo(transformer.transform(upperBound)) >= 0) {
+                        return false;
+                    }
+                    prev = evaluationContext;
+                    prevDocument = Util.buildNewDocument(Collections.emptyList());
+                    checkWaitWindow(prev, "context candidate", "OrIterator.move()");
+                    return true;
+                }
+            } catch (WaitWindowOverrunException e) {
+                e.setYieldKey(waitWindowObserver.createYieldKey((Key) evaluationContext, true,
+                                id + ": retry context while advancing contextExcludes in OrIterator.move()"));
+                throw e;
+            }
+        }
+
+        try {
+            if (!contextIncludes.isEmpty()) {
+                lowestContextInclude = NestedIteratorContextUtil.union(evaluationContext, contextIncludes, contextIncludeHeads, contextIncludeNullHeads,
+                                transformer);
+                if (lowestContextInclude != null) {
+                    candidates.add(lowestContextInclude);
+                }
+            }
+        } catch (WaitWindowOverrunException e) {
+            Pair<Key,String> retryContext = waitWindowObserver.createYieldKey((Key) evaluationContext, true, id + ": retry context in OrIterator.move()");
+            waitWindowObserver.propagateException(retryContext, true, true, e);
+        }
+
+        if (candidates.isEmpty() || candidates.first().compareTo(transformer.transform(upperBound)) >= 0) {
+            return false;
+        }
+
+        prev = candidates.first();
+        if (prev.equals(lowestContextInclude)) {
+            prevDocument = Util.buildNewDocument(contextIncludeHeads.get(prev));
+        } else {
+            prevDocument = Util.buildNewDocument(Collections.emptyList());
+        }
+        checkWaitWindow(prev, "context candidate", "OrIterator.move()");
+        return true;
+    }
+
+    private boolean useExactContextCandidate() {
+        if (!contextExcludes.isEmpty()) {
+            try {
+                T contextExclude = NestedIteratorContextUtil.intersect(evaluationContext, contextExcludes, contextExcludeHeads, contextExcludeNullHeads,
+                                transformer);
+                if (!evaluationContext.equals(contextExclude)) {
+                    prev = evaluationContext;
+                    prevDocument = Util.buildNewDocument(Collections.emptyList());
+                    checkWaitWindow(prev, "exact context candidate", "OrIterator.moveContext()");
+                    return true;
+                }
+            } catch (WaitWindowOverrunException e) {
+                e.setYieldKey(waitWindowObserver.createYieldKey((Key) evaluationContext, true,
+                                id + ": retry context while evaluating contextExcludes in OrIterator.moveContext()"));
+                throw e;
+            }
+        }
+
+        T contextInclude = null;
+        try {
+            if (!contextIncludes.isEmpty()) {
+                contextInclude = NestedIteratorContextUtil.union(evaluationContext, contextIncludes, contextIncludeHeads, contextIncludeNullHeads, transformer);
+            }
+        } catch (WaitWindowOverrunException e) {
+            Pair<Key,String> retryContext = waitWindowObserver.createYieldKey((Key) evaluationContext, true,
+                            id + ": retry context in OrIterator.moveContext()");
+            waitWindowObserver.propagateException(retryContext, true, true, e);
+        }
+
+        if (!evaluationContext.equals(contextInclude)) {
+            return false;
+        }
+
+        prev = evaluationContext;
+        prevDocument = Util.buildNewDocument(contextIncludeHeads.get(prev));
+        checkWaitWindow(prev, "exact context candidate", "OrIterator.moveContext()");
+        return true;
     }
 
     public Collection<NestedIterator<T>> leaves() {
@@ -472,7 +651,8 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
     }
 
     private static <T extends Comparable<T>> TreeMultimap<T,NestedIterator<T>> initSubtree(TreeMultimap<T,NestedIterator<T>> subtree,
-                    Iterable<NestedIterator<T>> sources, Util.Transformer<T> transformer, Map<T,T> transforms, boolean anded) {
+                    Iterable<NestedIterator<T>> sources, Set<NestedIterator<T>> activeSources, Util.Transformer<T> transformer, Map<T,T> transforms,
+                    boolean anded) {
         try {
             for (NestedIterator<T> src : sources) {
                 src.initialize();
@@ -483,7 +663,11 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
                         transforms.put(transform, next);
                     }
                     subtree.put(transform, src);
-                } else if (anded) {
+                } else {
+                    activeSources.remove(src);
+                    if (!anded) {
+                        continue;
+                    }
                     // If a source has no valid records, it shouldn't throw an exception. It should just return no results.
                     // For an And, once one source is exhausted, the entire tree is exhausted
                     return Util.getEmpty();
@@ -534,10 +718,15 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
 
     @Override
     public boolean isNonEventField() {
-        for (NestedIterator<T> include : includes) {
+        Iterable<NestedIterator<T>> currentIncludes = activeIncludes == null ? includes : activeIncludes;
+        for (NestedIterator<T> include : currentIncludes) {
             if (include.isNonEventField()) {
                 return true;
             }
+        }
+
+        if (pendingNonEventResult) {
+            return true;
         }
 
         for (NestedIterator<T> itr : contextIncludes) {
