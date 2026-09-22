@@ -72,10 +72,9 @@ public class FileAnnotationWriterTest {
             assertTrue(result.isPresent(), "expected the write to succeed");
 
             try (Stream<java.nio.file.Path> files = Files.list(tempDir)) {
-                java.nio.file.Path writtenFile = files.filter(p -> !Files.isDirectory(p)).findFirst()
-                                .orElseThrow(() -> new AssertionError("expected a file to have been written"));
-                assertTrue(writtenFile.getFileName().toString().startsWith("annotation-"),
-                                "expected the written file to be named with the annotation-specific prefix, but was: " + writtenFile.getFileName());
+                assertTrue(files.filter(p -> !Files.isDirectory(p)).map(p -> p.getFileName().toString())
+                                .anyMatch(name -> name.startsWith("annotation-") && name.endsWith(".json")),
+                                "expected an annotation-prefixed JSON file to have been written");
             }
         } finally {
             try (Stream<java.nio.file.Path> walk = Files.walk(tempDir)) {
