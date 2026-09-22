@@ -22,6 +22,7 @@ import static datawave.query.iterator.QueryOptions.UNIQUE_FIELDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
@@ -49,7 +50,6 @@ import org.easymock.EasyMock;
 import org.easymock.EasyMockSupport;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -433,21 +433,23 @@ public class QueryIteratorIT extends EasyMockSupport {
     }
 
     /**
-     * The wait window / yielding framework can handle a key with an infinite start range, however an ivarator should never be handed a range with an infinite
-     * start range -- ever.
-     *
-     * @throws IOException
-     *             if something goes wrong
+     * The wait window and yielding framework can handle an infinite start range, but an ivarator needs a shard key to build its field-index ranges. Verify that
+     * this unsupported combination is rejected at the query iterator boundary instead of failing later while the ivarator tree is built.
      */
-    @Ignore("Ivarators require a non-null start key; an infinite-start range is unsupported")
     @Test
-    public void indexOnly_trailingRegex_infiniteRange_secondEvent_test() throws IOException {
-        // build an infinite range to make sure the wait window / yielding framework can handle it
+    public void indexOnly_trailingRegex_infiniteRange_rejected_test() {
         Range seekRange = new Range(null, true, (Key) null, true);
         String query = "((_Value_ = true) && (INDEX_ONLY_FIELD1 =~ 'ap.*'))";
-        Map.Entry<Key,Map<String,List<String>>> secondEvent = getBaseExpectedEvent("123.345.457");
-        secondEvent.getValue().put("INDEX_ONLY_FIELD1", List.of("apple"));
-        indexOnly_test(seekRange, query, false, addEvent("123.345.457"), List.of(secondEvent));
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                        () -> indexOnly_test(seekRange, query, false, addEvent("123.345.457"), Collections.emptyList()));
+        assertEquals(QueryIterator.IVARATOR_INFINITE_START_ERROR, exception.getMessage());
+    }
+
+    @Test
+    public void event_infiniteRange_supported_test() throws IOException {
+        Range seekRange = new Range(null, true, (Key) null, true);
+        event_test(seekRange, "EVENT_FIELD1 == 'a'", false, null, Collections.emptyList(), Collections.emptyList());
     }
 
     @Test

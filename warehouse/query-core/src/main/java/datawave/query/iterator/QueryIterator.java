@@ -105,6 +105,7 @@ import datawave.query.jexl.functions.IdentityAggregator;
 import datawave.query.jexl.functions.KeyAdjudicator;
 import datawave.query.jexl.visitors.DelayedNonEventSubTreeVisitor;
 import datawave.query.jexl.visitors.IteratorBuildingVisitor;
+import datawave.query.jexl.visitors.IvaratorRequiredVisitor;
 import datawave.query.jexl.visitors.SatisfactionVisitor;
 import datawave.query.jexl.visitors.VariableNameVisitor;
 import datawave.query.postprocessing.tf.TFFactory;
@@ -164,6 +165,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 SourceFactory<Key,Value>, SortedKeyValueIterator<Key,Value> {
 
     private static final Logger log = Logger.getLogger(QueryIterator.class);
+    static final String IVARATOR_INFINITE_START_ERROR = "Ivarator queries require a finite start key";
 
     protected SortedKeyValueIterator<Key,Value> source;
     protected SortedKeyValueIterator<Key,Value> sourceForDeepCopies;
@@ -372,6 +374,10 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
 
     @Override
     public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
+        if (range.isInfiniteStartKey() && IvaratorRequiredVisitor.isIvaratorRequired(getScript())) {
+            throw new IllegalArgumentException(IVARATOR_INFINITE_START_ERROR);
+        }
+
         // preserve the original range for use with the Final Document tracking iterator because it is placed after the ResultCountingIterator
         // so the FinalDocumentTracking iterator needs the start key with the count already appended
         this.originalRange = range;
