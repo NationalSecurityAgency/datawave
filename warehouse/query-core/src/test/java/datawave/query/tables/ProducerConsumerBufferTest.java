@@ -12,9 +12,10 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 public class ProducerConsumerBufferTest {
@@ -284,77 +285,41 @@ public class ProducerConsumerBufferTest {
         assertEquals(Integer.valueOf(1), queue.take());
     }
 
-    @Ignore("Manual throughput comparison with one million items and 75 threads; not a bounded correctness test")
     @Test
-    public void overheadTest() throws InterruptedException, ExecutionException {
-        ExecutorService pool = Executors.newFixedThreadPool(75);
+    public void concurrentProducersAndConsumersTest() throws InterruptedException, ExecutionException, TimeoutException {
+        int producerCount = 4;
+        int consumerCount = 3;
+        int itemCount = 1000;
+        ExecutorService pool = Executors.newFixedThreadPool(producerCount + consumerCount);
+        List<Integer> data = Collections.synchronizedList(new ArrayList<>());
+        List<Future<?>> consumers = new ArrayList<>();
+        List<Future<?>> producers = new ArrayList<>();
 
-        long start = System.currentTimeMillis();
-        // Thread t = createProducer(queue, 0, 1, 1000000);
-        // t.start();
-        Future t = pool.submit(producerRunnable(queue, 0, 1, 1000000));
-        List<Integer> data = new ArrayList<>();
-        // Thread c = createConsumer(queue, data);
-        // c.start();
-        Future c = pool.submit(consumerRunnable(queue, data));
-
-        // t.join();
-        t.get();
-
-        queue.close();
-        // c.join();
-        c.get();
-        long end = System.currentTimeMillis();
-        long total = (end - start);
-
-        queue = new ProducerConsumerBuffer<>(25);
-        start = System.currentTimeMillis();
-        // List<Thread> producers = new ArrayList<>();
-        // for (int i = 0; i < 50; i++) {
-        // producers.add(createProducer(queue, i, 50, 1000000));
-        // }
-        // producers.forEach(Thread::start);
-        List<Future> producers = new ArrayList<>();
-        for (int i = 0; i < 25; i++) {
-            producers.add(pool.submit(producerRunnable(queue, i, 25, 1000000)));
-        }
-
-        data = new ArrayList<>();
-        c = pool.submit(consumerRunnable(queue, data));
-        // c = createConsumer(queue, data);
-        // c.start();
-
-        // producers.forEach(p -> {
-        // try {
-        // p.join();
-        // } catch (InterruptedException e) {
-        // throw new RuntimeException(e);
-        // }
-        // });
-        producers.forEach(f -> {
-            try {
-                f.get();
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            } catch (ExecutionException e) {
-                throw new RuntimeException(e);
+        try {
+            for (int i = 0; i < consumerCount; i++) {
+                consumers.add(pool.submit(consumerRunnable(queue, data)));
             }
-        });
-        queue.close();
-        // c.join();
-        c.get();
-        end = System.currentTimeMillis();
-        long totalMultiProducer = (end - start);
+            for (int i = 0; i < producerCount; i++) {
+                producers.add(pool.submit(producerRunnable(queue, i, producerCount, itemCount)));
+            }
 
-        start = System.currentTimeMillis();
-        data = new ArrayList<>();
-        for (int i = 0; i < 1000000; i++) {
-            data.add(i);
+            for (Future<?> producer : producers) {
+                producer.get(10, TimeUnit.SECONDS);
+            }
+            queue.close();
+            for (Future<?> consumer : consumers) {
+                consumer.get(10, TimeUnit.SECONDS);
+            }
+        } finally {
+            queue.close();
+            pool.shutdownNow();
         }
-        end = System.currentTimeMillis();
-        System.out.println("1 thread no locking time:" + (end - start));
-        System.out.println("1 producer 1 consumer time:" + total);
-        System.out.println("25 producers 1 consumer time: " + totalMultiProducer);
+
+        Collections.sort(data);
+        assertEquals(itemCount, data.size());
+        for (int i = 0; i < itemCount; i++) {
+            assertEquals(Integer.valueOf(i), data.get(i));
+        }
     }
 
     @Test
