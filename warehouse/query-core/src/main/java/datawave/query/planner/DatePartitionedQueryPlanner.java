@@ -451,6 +451,11 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
         // Get the relevant date ranges and the sets of fields that have gaps in those ranges
         SortedMap<Pair<Date,Date>,Set<String>> dateRanges = getSubQueryDateRanges(shardQueryConfig);
 
+        // if only one date range, then lets defer to the existing
+        if (dateRanges.size() == 1) {
+            return this.queryPlanner.reprocess(shardQueryConfig, shardQueryConfig.getQuery(), scannerFactory);
+        }
+
         // create a clone of the config for the sub plan callables as the planningConfig may be updated dynamically
         ShardQueryConfiguration planningConfig = new ShardQueryConfiguration(shardQueryConfig);
 
