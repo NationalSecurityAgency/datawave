@@ -2,7 +2,7 @@
 
 ## Overview
 
-This package contains the classes necessary for enforcing concurrent query limits for users and systems across a group of web servers. Query limit enforcement is done through the [QueryLimiter](QueryLimiter.java) class. Given a user, system, and query logic, it can determine if any of the following limits have been exceeded:
+This package contains the classes necessary for enforcing concurrent query limits for users and systems across a group of web servers. Query limit enforcement is done through the [QueryLimiter](QueryLimiter.java) class via its implementation, [QueryLimiterImpl](QueryLimiterImpl.java). Given a user, system, and query logic, it can determine if any of the following limits have been exceeded:
 
 - The max allowed concurrent queries for the user.
 - The max allowed concurrent queries of the query logic for the user.
@@ -18,10 +18,10 @@ Information about active queries is tracked and managed in Zookeeper where the f
 
 ## Configuration
 
-The QueryLimiter bean is typically defined in the file [QueryLimiterFactory.xml](../../../../../../../../deploy/configuration/src/main/resources/datawave/query/QueryLimiterFactory.xml) within the datawave-ws-deploy-configuration module. At a minimum, the following beans must be configured:
-- A single [QueryLimiter](QueryLimiter.java) instance. This acts as the entrypoint to the query limit feature.
+The `QueryLimiter` bean requires the following beans to be configured. See [QueryLimiterFactory.xml](../../../../../../../../deploy/configuration/src/main/resources/datawave/query/QueryLimiterFactory.xml) and [ZookeeperFactory.xml](../../../../../../../../deploy/configuration/src/main/resources/datawave/query/ZookeeperFactory.xml) for example configurations.
+- A [ZkClientBuilder](../../../zookeeper/ZkClientBuilder.java) instance with the bean id `defaultZkClientBuilder`. This configures the Zookeeper client that will be used for Zookeeper operations.
 - A single [QueryLimitConfiguration](QueryLimitConfiguration.java) instance. This contains the configured limits used by the `QueryLimiter` instance.
-- A single [QueryHeartbeatCache](QueryHeartbeatCache.java) instance. This cache contains and maintains connnections to Zookeeper for active queries.
+- A single [QueryHeartbeatCache](QueryHeartbeatCache.java) instance. This cache contains and maintains connections to Zookeeper for active queries. The implementing class is [QueryHeartbeatCacheImpl](QueryHeartbeatCacheImpl.java).
 
 Limits may be defined and customized on a per-user and per-system basis. They also may be defined for groups of query logics. On a platform-wide basis, the following may be configured:
 - The default concurrent user query limit. This is the total concurrent queries a user may have running across all systems. May be overridden per user.
@@ -50,11 +50,11 @@ When using regex patterns in the configurations above, there is the possibility 
 ## Implementation
 
 Checking limits and marking as active/inactive is done through the [QueryLimiter](QueryLimiter.java) class. The three main methods for interacting with the query limit feature are:
-- `QueryLimiter.checkForLimits()`: Will check if any limits will be met if a new query is created with the given user, query logic, and the current system.
-- `QueryLimiter.countQueryTowardsLimits()`: Will mark a new query as active.
-- `QueryLimiter.stopCountingQueryTowardsLimits()`: Will mark a query as no longer active.
+- `QueryLimiter.checkLimits()`: Will check if any limits will be met if a new query is created with the given user, query logic, and the current system.
+- `QueryLimiter.markActive()`: Will mark a new query as active.
+- `QueryLimiter.markInactive()`: Will mark a query as no longer active.
 
-When a query is marked as active via `QueryLimiter.countQueryTowardsLimits()`, it will delegate to the [ActiveQueryTracker](ActiveQueryTracker.java) class, which will in turn create nodes in Zookeeper under the namespace `ActiveQueries`. When `ActiveQueryTracker.trackQuery()` is called, the following nodes will be created:
+When a query is marked as active via `QueryLimiter.markActive()`, it will delegate to the [ActiveQueryTracker](ActiveQueryTracker.java) class, which will in turn create nodes in Zookeeper under the namespace `ActiveQueries`. When `ActiveQueryTracker.trackQuery()` is called, the following nodes will be created:
 
 ```
 # Container nodes (will be eligible for auto-cleanup by Zookeeper if they are empty)

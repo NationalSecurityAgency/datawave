@@ -359,7 +359,7 @@ public class QueryExecutorBeanTest {
         Arrays.sort(dns);
         List<String> dnList = Arrays.asList(dns);
 
-        when(queryLimiter.checkForLimits(userDN.toLowerCase(), null, queryLogicName)).thenReturn(QueryLimiterResponse.hasNotMetLimit());
+        when(queryLimiter.checkLimits(userDN.toLowerCase(), null, queryLogicName)).thenReturn(QueryLimiterResponse.hasNotMetLimit());
         when(ctx.getCallerPrincipal()).thenReturn(principal);
         when(persister.create(eq(userDN), eq(dnList), any(SecurityMarking.class), eq(queryLogicName), any(QueryParameters.class), eq(optionalParameters)))
                         .thenReturn(q);
@@ -625,7 +625,7 @@ public class QueryExecutorBeanTest {
 
         MultivaluedMap<String,String> optionalParameters = createNewQueryParameters(q, queryParameters);
 
-        when(queryLimiter.checkForLimits(userDN.toLowerCase(), null, queryLogicName)).thenReturn(QueryLimiterResponse.hasNotMetLimit());
+        when(queryLimiter.checkLimits(userDN.toLowerCase(), null, queryLogicName)).thenReturn(QueryLimiterResponse.hasNotMetLimit());
         when(ctx.getCallerPrincipal()).thenReturn(principal);
         when(logic.getAuditType(null)).thenReturn(AuditType.NONE);
         when(persister.create(any(), any(), any(), any(), any(), any())).thenReturn(q);
