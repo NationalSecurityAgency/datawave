@@ -206,8 +206,8 @@ public class AnnotationCacheReconciler implements MembershipListener, LifecycleL
     }
 
     /**
-     * Publishes requests recorded by this member into the shared control map. Conditional updates preserve the oldest request time, preventing a later event
-     * from postponing an already due reconciliation indefinitely.
+     * Publishes requests recorded by this member into the shared control map. Conditional updates retain the most recent request timestamp, so events are
+     * debounced until the configured settle delay has elapsed. The periodic deadline remains a fallback if requests continue arriving or an event is missed.
      */
     private void publishLocalRequest(IMap<String,Long> control) {
         long requestedAt = localRequest.getAndSet(0);
@@ -219,7 +219,7 @@ public class AnnotationCacheReconciler implements MembershipListener, LifecycleL
         }
     }
 
-    /** Atomically stores the later request timestamp without overwriting a newer request. */
+    /** Atomically stores the newer timestamp, without overwriting an existing timestamp that is already at least as recent. */
     private void setIfLater(IMap<String,Long> control, String key, long timestamp) {
         while (true) {
             Long existing = control.get(key);
