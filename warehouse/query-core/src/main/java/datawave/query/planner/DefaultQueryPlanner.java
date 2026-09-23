@@ -384,6 +384,39 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         setPushdownThreshold(other.getPushdownThreshold());
         setVisitorManager(other.getVisitorManager());
         setTransformRules(other.getTransformRules() == null ? null : new ArrayList<>(other.transformRules));
+
+        // copy the gathered metadata and futures
+        seedMetadata(other);
+    }
+
+    public void seedMetadata(DefaultQueryPlanner other) {
+        compositeMetadata = other.compositeMetadata;
+        typeMetadata = other.typeMetadata;
+        contentExpansionFields = other.contentExpansionFields;
+        serializedIvaratorDirs = other.serializedIvaratorDirs;
+        indexedFields = other.indexedFields;
+        indexOnlyFields = other.indexOnlyFields;
+        nonEventFields = other.nonEventFields;
+        termFrequencyFields = other.termFrequencyFields;
+
+        compositeMetadataCallable = other.compositeMetadataCallable;
+        typeMetadataCallable = other.typeMetadataCallable;
+        contentExpansionFieldsCallable = other.contentExpansionFieldsCallable;
+        ivaratorCacheDirCallable = other.ivaratorCacheDirCallable;
+        indexedFieldsCallable = other.indexedFieldsCallable;
+        indexOnlyFieldsCallable = other.indexOnlyFieldsCallable;
+        nonEventFieldsCallable = other.nonEventFieldsCallable;
+        termFrequencyFieldsCallable = other.termFrequencyFieldsCallable;
+
+        compositeMetadataFuture = other.compositeMetadataFuture;
+        typeMetadataFuture = other.typeMetadataFuture;
+        contentExpansionFieldsFuture = other.contentExpansionFieldsFuture;
+        ivaratorCacheDirFuture = other.ivaratorCacheDirFuture;
+        indexedFieldsFuture = other.indexedFieldsFuture;
+        indexOnlyFieldsFuture = other.indexOnlyFieldsFuture;
+        nonEventFieldsFuture = other.nonEventFieldsFuture;
+        termFrequencyFieldsFuture = other.termFrequencyFieldsFuture;
+
     }
 
     public void setMetadataHelper(final MetadataHelper metadataHelper) {
@@ -635,7 +668,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      */
     public CloseableIterable<QueryData> reprocess(ShardQueryConfiguration config, Query settings, ScannerFactory scannerFactory) throws DatawaveQueryException {
 
-        startConcurrentExecution(config);
+        executor = Executors.newFixedThreadPool(1);
 
         settingFuture = null;
 

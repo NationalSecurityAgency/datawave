@@ -435,6 +435,9 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
             try {
                 planner.process(shardQueryConfig, query, settings, scannerFactory);
 
+                // copy the metadata into the base query planner (avoid having to rescan for the metadata in subplans)
+                this.queryPlanner.seedMetadata(planner);
+
                 // Our initial plan and planned script will both be the initial planned script
                 this.initialPlan = this.plannedScript = planner.getPlannedScript();
             } finally {
@@ -453,7 +456,9 @@ public class DatePartitionedQueryPlanner extends QueryPlanner implements Cloneab
 
         // if only one date range, then lets defer to the existing
         if (dateRanges.size() == 1) {
-            return this.queryPlanner.reprocess(shardQueryConfig, shardQueryConfig.getQuery(), scannerFactory);
+            CloseableIterable iterable = this.queryPlanner.reprocess(shardQueryConfig, shardQueryConfig.getQuery(), scannerFactory);
+            plannedScript = shardQueryConfig.getQueryString();
+            return iterable;
         }
 
         // create a clone of the config for the sub plan callables as the planningConfig may be updated dynamically
