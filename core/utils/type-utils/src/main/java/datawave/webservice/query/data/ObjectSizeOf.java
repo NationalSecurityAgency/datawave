@@ -86,6 +86,7 @@ public interface ObjectSizeOf {
         public static final short REFERENCE = 4;
         // The size of the basic Number constructs (and Boolean and Character) is 16: roundUp(8 + primitiveSize)
         public static final short NUMBER_SIZE = 16;
+        private static final UnsafeAccess UNSAFE_ACCESS = initUnsafeAccess();
 
         // Class name cache to avoid flood of NoSuchMethodException on reflective "sizeInBytes" invocation
         private static Set<String> noSuchMethodCache = ConcurrentHashMap.newKeySet();
@@ -164,18 +165,15 @@ public interface ObjectSizeOf {
                                                 size += getPrimitiveObjectSize(field.getType());
                                             } else {
                                                 size += REFERENCE;
-                                                boolean accessible = field.isAccessible();
-                                                field.setAccessible(true);
                                                 try {
-                                                    Object fieldObject = field.get(o);
+                                                    Object fieldObject = getFieldValue(field, o);
                                                     if (fieldObject != null) {
                                                         stack.push(new ObjectInstance(fieldObject));
                                                     }
-                                                } catch (Exception e) {
+                                                } catch (Throwable t) {
                                                     // cannot get to field, so ignore it in this size calculation
-                                                    e.printStackTrace();
+                                                    log.debug("Unable to access field {} on {}", field.getName(), o.getClass().getName(), t);
                                                 }
-                                                field.setAccessible(accessible);
                                             }
                                         }
                                         c = c.getSuperclass();
@@ -192,6 +190,55 @@ public interface ObjectSizeOf {
             }
 
             return totalSize;
+        }
+
+        private static UnsafeAccess initUnsafeAccess() {
+            try {
+                Class<?> unsafeClass = Class.forName("sun.misc.Unsafe");
+                Field unsafeField = unsafeClass.getDeclaredField("theUnsafe");
+                unsafeField.setAccessible(true);
+                Object unsafe = unsafeField.get(null);
+                Method objectFieldOffset = unsafeClass.getMethod("objectFieldOffset", Field.class);
+                Method getObject = unsafeClass.getMethod("getObject", Object.class, long.class);
+                return new UnsafeAccess(unsafe, objectFieldOffset, getObject);
+            } catch (Throwable t) {
+                log.debug("Unable to initialize Unsafe for object sizing fallback", t);
+                return null;
+            }
+        }
+
+        private static Object getFieldValue(Field field, Object target) throws IllegalAccessException {
+            if (field.trySetAccessible()) {
+                return field.get(target);
+            }
+            if (UNSAFE_ACCESS != null) {
+                try {
+                    return UNSAFE_ACCESS.getObject(target, field);
+                } catch (ReflectiveOperationException e) {
+                    IllegalAccessException wrapped = new IllegalAccessException(
+                                    "Unable to access field " + field.getName() + " on " + target.getClass().getName());
+                    wrapped.initCause(e);
+                    throw wrapped;
+                }
+            }
+            throw new IllegalAccessException("Unable to access field " + field.getName() + " on " + target.getClass().getName());
+        }
+
+        private static class UnsafeAccess {
+            private final Object unsafe;
+            private final Method objectFieldOffset;
+            private final Method getObject;
+
+            private UnsafeAccess(Object unsafe, Method objectFieldOffset, Method getObject) {
+                this.unsafe = unsafe;
+                this.objectFieldOffset = objectFieldOffset;
+                this.getObject = getObject;
+            }
+
+            private Object getObject(Object target, Field field) throws ReflectiveOperationException {
+                long offset = (Long) objectFieldOffset.invoke(unsafe, field);
+                return getObject.invoke(unsafe, target, offset);
+            }
         }
 
         public static long roundUp(long size) {
