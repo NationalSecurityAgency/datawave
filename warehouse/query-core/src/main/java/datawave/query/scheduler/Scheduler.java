@@ -14,14 +14,15 @@ import datawave.core.query.configuration.Result;
 import datawave.core.query.logic.QueryCheckpoint;
 import datawave.core.query.logic.QueryKey;
 import datawave.query.CloseableIterable;
-import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.config.ImmutableShardQueryConfiguration;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.tables.stats.ScanSessionStats;
 
 public abstract class Scheduler implements CloseableIterable<Result> {
     protected Collection<IteratorSetting> settings = Lists.newArrayList();
 
-    public abstract BatchScanner createBatchScanner(ShardQueryConfiguration config, ScannerFactory scannerFactory, QueryData qd) throws TableNotFoundException;
+    public abstract BatchScanner createBatchScanner(ImmutableShardQueryConfiguration config, ScannerFactory scannerFactory, QueryData qd)
+                    throws TableNotFoundException;
 
     /**
      * Returns the scan session stats provided by this scheduler

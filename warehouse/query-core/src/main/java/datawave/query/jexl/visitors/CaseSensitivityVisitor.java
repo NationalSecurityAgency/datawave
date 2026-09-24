@@ -17,7 +17,7 @@ import org.apache.commons.jexl3.parser.ASTReferenceExpression;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
 
-import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.config.ImmutableShardQueryConfiguration;
 import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.util.MetadataHelper;
@@ -29,10 +29,10 @@ import datawave.query.util.MetadataHelper;
  */
 public class CaseSensitivityVisitor extends ShortCircuitBaseVisitor {
 
-    private ShardQueryConfiguration config;
+    private ImmutableShardQueryConfiguration config;
     private MetadataHelper helper;
 
-    public CaseSensitivityVisitor(ShardQueryConfiguration config, MetadataHelper helper) {
+    public CaseSensitivityVisitor(ImmutableShardQueryConfiguration config, MetadataHelper helper) {
         this.config = config;
         this.helper = helper;
     }
@@ -50,7 +50,7 @@ public class CaseSensitivityVisitor extends ShortCircuitBaseVisitor {
      *            the metadata helper
      * @return the provided script
      */
-    public static <T extends JexlNode> T upperCaseIdentifiers(ShardQueryConfiguration config, MetadataHelper helper, T script) {
+    public static <T extends JexlNode> T upperCaseIdentifiers(ImmutableShardQueryConfiguration config, MetadataHelper helper, T script) {
         CaseSensitivityVisitor visitor = new CaseSensitivityVisitor(config, helper);
 
         script.jjtAccept(visitor, null);

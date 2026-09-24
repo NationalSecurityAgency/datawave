@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import com.google.common.base.Preconditions;
 
 import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.configuration.ImmutableGenericQueryConfiguration;
 import datawave.query.tables.stats.ScanSessionStats;
 
 /**
@@ -18,7 +19,7 @@ public class RangeStreamScannerBuilder extends SessionBuilder<RangeStreamScanner
 
     private static final Logger log = LoggerFactory.getLogger(RangeStreamScannerBuilder.class);
 
-    private GenericQueryConfiguration config;
+    private ImmutableGenericQueryConfiguration config;
 
     /**
      * Static access enforces AccumuloClient requirement
@@ -48,7 +49,7 @@ public class RangeStreamScannerBuilder extends SessionBuilder<RangeStreamScanner
      *            the query config
      * @return this builder
      */
-    public RangeStreamScannerBuilder setConfig(GenericQueryConfiguration config) {
+    public RangeStreamScannerBuilder setConfig(ImmutableGenericQueryConfiguration config) {
         this.config = config;
         return this;
     }

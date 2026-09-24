@@ -42,7 +42,7 @@ import datawave.data.type.GeometryType;
 import datawave.data.type.PointType;
 import datawave.data.type.Type;
 import datawave.query.attributes.AttributeFactory;
-import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.config.ImmutableShardQueryConfiguration;
 import datawave.query.jexl.ArithmeticJexlEngines;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
@@ -85,7 +85,8 @@ public class GeoWaveFunctionsDescriptor implements JexlFunctionArgumentDescripto
         }
 
         @Override
-        public JexlNode getIndexQuery(ShardQueryConfiguration config, MetadataHelper helper, DateIndexHelper dateIndexHelper, Set<String> datatypeFilter) {
+        public JexlNode getIndexQuery(ImmutableShardQueryConfiguration config, MetadataHelper helper, DateIndexHelper dateIndexHelper,
+                        Set<String> datatypeFilter) {
             int maxEnvelopes = Math.max(1, config.getGeoWaveMaxEnvelopes());
             if (isSpatialRelationship(name)) {
                 Geometry geom = AbstractGeometryNormalizer.parseGeometry(JexlNodes.getIdentifierOrLiteralAsString(args.get(1)));
@@ -130,7 +131,7 @@ public class GeoWaveFunctionsDescriptor implements JexlFunctionArgumentDescripto
             return indexType;
         }
 
-        protected static JexlNode getIndexNode(JexlNode node, Geometry geometry, Envelope env, ShardQueryConfiguration config, MetadataHelper helper) {
+        protected static JexlNode getIndexNode(JexlNode node, Geometry geometry, Envelope env, ImmutableShardQueryConfiguration config, MetadataHelper helper) {
             if (node.jjtGetNumChildren() > 0) {
                 List<JexlNode> list = Lists.newArrayList();
                 for (int i = 0; i < node.jjtGetNumChildren(); i++) {
@@ -148,7 +149,8 @@ public class GeoWaveFunctionsDescriptor implements JexlFunctionArgumentDescripto
             return node;
         }
 
-        protected static JexlNode getIndexNode(JexlNode node, Geometry geometry, List<Envelope> envs, ShardQueryConfiguration config, MetadataHelper helper) {
+        protected static JexlNode getIndexNode(JexlNode node, Geometry geometry, List<Envelope> envs, ImmutableShardQueryConfiguration config,
+                        MetadataHelper helper) {
             if (node.jjtGetNumChildren() > 0) {
                 List<JexlNode> list = Lists.newArrayList();
                 for (int i = 0; i < node.jjtGetNumChildren(); i++) {
@@ -166,13 +168,14 @@ public class GeoWaveFunctionsDescriptor implements JexlFunctionArgumentDescripto
             return node;
         }
 
-        protected static JexlNode getIndexNode(String fieldName, Geometry geometry, Envelope env, ShardQueryConfiguration config, MetadataHelper helper) {
+        protected static JexlNode getIndexNode(String fieldName, Geometry geometry, Envelope env, ImmutableShardQueryConfiguration config,
+                        MetadataHelper helper) {
             List<Envelope> envs = new ArrayList<>();
             envs.add(env);
             return getIndexNode(fieldName, geometry, envs, config, helper);
         }
 
-        protected static JexlNode getIndexNode(String fieldName, Geometry geometry, List<Envelope> envs, ShardQueryConfiguration config,
+        protected static JexlNode getIndexNode(String fieldName, Geometry geometry, List<Envelope> envs, ImmutableShardQueryConfiguration config,
                         MetadataHelper helper) {
             List<JexlNode> indexNodes = new ArrayList<>();
             Set<IndexType> indexTypes = getIndexTypes(fieldName, helper);
@@ -208,8 +211,8 @@ public class GeoWaveFunctionsDescriptor implements JexlFunctionArgumentDescripto
             return indexNode;
         }
 
-        protected static JexlNode generateGeoWaveRanges(String fieldName, Geometry geometry, List<Envelope> envs, ShardQueryConfiguration config, Index index,
-                        int maxExpansion) {
+        protected static JexlNode generateGeoWaveRanges(String fieldName, Geometry geometry, List<Envelope> envs, ImmutableShardQueryConfiguration config,
+                        Index index, int maxExpansion) {
             Collection<ByteArrayRange> allRanges = new ArrayList<>();
             int maxRanges = maxExpansion / envs.size();
             for (Envelope env : envs) {

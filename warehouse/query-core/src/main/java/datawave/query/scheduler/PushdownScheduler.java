@@ -34,7 +34,7 @@ import datawave.core.query.configuration.Result;
 import datawave.core.query.logic.QueryCheckpoint;
 import datawave.core.query.logic.QueryKey;
 import datawave.mr.bulk.RfileResource;
-import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.config.ImmutableShardQueryConfiguration;
 import datawave.query.tables.BatchScannerSession;
 import datawave.query.tables.BatchScannerSessionBuilder;
 import datawave.query.tables.ScanSessionManager;
@@ -57,7 +57,7 @@ public class PushdownScheduler extends Scheduler {
     /**
      * Configuration reference.
      */
-    protected final ShardQueryConfiguration config;
+    protected final ImmutableShardQueryConfiguration config;
 
     /**
      * Count for the number of QueryPlans that we have
@@ -80,36 +80,36 @@ public class PushdownScheduler extends Scheduler {
     protected MetadataHelper metadataHelper;
 
     @Deprecated(forRemoval = true, since = "7.40.0")
-    public PushdownScheduler(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelperFactory metaFactory) {
+    public PushdownScheduler(ImmutableShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelperFactory metaFactory) {
         this(config, scannerFactory, metaFactory.createMetadataHelper(config.getClient(), config.getMetadataTableName(), config.getAuthorizations()));
     }
 
     @Deprecated(forRemoval = true, since = "7.40.0")
-    protected PushdownScheduler(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper) {
+    protected PushdownScheduler(ImmutableShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper) {
         this(config, helper);
     }
 
     /**
-     * Constructor that accepts a {@link ShardQueryConfiguration} and a {@link MetadataHelperFactory}
+     * Constructor that accepts a {@link ImmutableShardQueryConfiguration} and a {@link MetadataHelperFactory}
      *
      * @param config
      *            the shard query config
      * @param metaFactory
      *            the metadata helper factory
      */
-    public PushdownScheduler(ShardQueryConfiguration config, MetadataHelperFactory metaFactory) {
+    public PushdownScheduler(ImmutableShardQueryConfiguration config, MetadataHelperFactory metaFactory) {
         this(config, metaFactory.createMetadataHelper(config.getClient(), config.getMetadataTableName(), config.getAuthorizations()));
     }
 
     /**
-     * Constructor that accepts a {@link ShardQueryConfiguration} and a {@link MetadataHelper}
+     * Constructor that accepts a {@link ImmutableShardQueryConfiguration} and a {@link MetadataHelper}
      *
      * @param config
      *            the shard query config
      * @param helper
      *            the metadata helper
      */
-    protected PushdownScheduler(ShardQueryConfiguration config, MetadataHelper helper) {
+    protected PushdownScheduler(ImmutableShardQueryConfiguration config, MetadataHelper helper) {
         this.config = config;
         this.metadataHelper = helper;
         customizedFunctionList = Lists.newArrayList();
@@ -261,10 +261,11 @@ public class PushdownScheduler extends Scheduler {
     /*
      * (non-Javadoc)
      *
-     * @see Scheduler#createBatchScanner(ShardQueryConfiguration, datawave.query.tables.ScannerFactory, datawave.webservice.query.configuration.QueryData)
+     * @see Scheduler#createBatchScanner(ImmutableShardQueryConfiguration, datawave.query.tables.ScannerFactory,
+     * datawave.webservice.query.configuration.QueryData)
      */
     @Override
-    public BatchScanner createBatchScanner(ShardQueryConfiguration config, ScannerFactory scannerFactory, QueryData qd) throws TableNotFoundException {
+    public BatchScanner createBatchScanner(ImmutableShardQueryConfiguration config, ScannerFactory scannerFactory, QueryData qd) throws TableNotFoundException {
         return scannerFactory.newScanner(config, qd, config.getShardTableName());
     }
 
