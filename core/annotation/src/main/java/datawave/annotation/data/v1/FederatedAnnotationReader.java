@@ -224,12 +224,17 @@ public class FederatedAnnotationReader implements AnnotationReader {
             log.warn("Interrupted while retrieving {}", formatOperationDescription(messageTemplate, templateArgs));
         }
 
-        // Anything still pending did not complete before the timeout elapsed.
+        // Anything still pending did not complete before the timeout elapsed (or we were interrupted while waiting). Cancel these
+        // rather than merely abandoning them: with the caller-provided executor typically being an unbounded cached thread pool,
+        // a DAO call that blocks indefinitely (e.g. a hung Accumulo scan) would otherwise permanently occupy a pooled thread that
+        // is never reclaimed, since it never returns to idle. Interrupting gives blocking DAO implementations a chance to unwind.
         if (!pendingDaos.isEmpty()) {
             long elapsed = System.currentTimeMillis() - (deadline - daoTimeoutMillis);
-            if (log.isDebugEnabled()) {
-                for (String daoName : pendingDaos.values()) {
-                    log.debug("Timeout retrieving {} from {} after {}ms", formatOperationDescription(messageTemplate, templateArgs), daoName, elapsed);
+            for (Map.Entry<Future<T>,String> pending : pendingDaos.entrySet()) {
+                pending.getKey().cancel(true);
+                if (log.isDebugEnabled()) {
+                    log.debug("Timeout retrieving {} from {} after {}ms", formatOperationDescription(messageTemplate, templateArgs), pending.getValue(),
+                                    elapsed);
                 }
             }
         }

@@ -28,8 +28,8 @@ public class AnnotationValidators {
             .addCheck(b -> b.getPointsList().isEmpty(), "All boundary must not contain points");
 
     private static final Validator<SegmentBoundary> spanBoundaryValidator = Validator.<SegmentBoundary>create()
-            .addCheck(SegmentBoundary::hasEnd, "Span boundary must have a start value")
-            .addCheck(SegmentBoundary::hasStart, "Span boundary must have an end value")
+            .addCheck(SegmentBoundary::hasEnd, "Span boundary must have an end value")
+            .addCheck(SegmentBoundary::hasStart, "Span boundary must have a start value")
             .addCheck(b -> b.getPointsList().isEmpty(), "Span boundary must not contain points");
 
     private static final Validator<SegmentBoundary> pointsBoundaryValidator = Validator.<SegmentBoundary>create()

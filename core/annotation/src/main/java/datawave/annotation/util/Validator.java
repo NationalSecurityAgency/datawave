@@ -81,7 +81,7 @@ public class Validator<T> {
      *            the type of member object we'll be validating
      */
     public <U> Validator<T> addMemberValidator(Function<T,List<U>> memberSupplier, Validator<U> validator, String messageContext) {
-        return addMemberValidator(memberSupplier, u -> validator, "");
+        return addMemberValidator(memberSupplier, u -> validator, messageContext);
     }
 
     /**
