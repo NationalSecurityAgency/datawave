@@ -7,9 +7,12 @@ import static datawave.test.framework.util.MetadataColumn.TF;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 
@@ -226,5 +229,51 @@ public class IngestMetadataTest {
         // the accessor is a view, so it reflects generation, and stays read-only afterwards
         assertEquals(metadata.plan(), metadata.getFieldMetadata().size());
         assertThrows(UnsupportedOperationException.class, () -> metadata.getFieldMetadata().add(new FieldMetadata("FIELD")));
+    }
+
+    /**
+     * Expected results are computed from raw values while queries match normalized ones, so two of a field's values sharing a normalized form (e.g. {@code Tt}
+     * and {@code tt}) would make a query return more events than expected. Many values over a short alphabetic value space makes such a collision near certain
+     * unless it is prevented.
+     */
+    @Test
+    public void testValuesAreDistinctAfterNormalization() {
+        //  @formatter:off
+        IngestMetadata metadata = IngestMetadataBuilder.builder()
+                .setMetadataColumns(List.of(I, E, TF))
+                .addNormalizers(List.of(new LcNoDiacriticsType(), new NumberType(), new NoOpType()))
+                .enableAlphabeticFields()
+                .enableNumericFields()
+                .setSeed(20260924L)
+                .build();
+        //  @formatter:on
+        metadata.createEvents(25, 100);
+
+        for (FieldMetadata field : metadata.getFieldMetadata()) {
+            Type<?> normalizer = field.getNormalizers().get(0);
+            Set<String> normalized = new HashSet<>();
+            for (String value : field.getValues()) {
+                assertTrue(normalized.add(normalizer.normalize(value)), "field " + field.getFieldName() + " has values colliding on " + value);
+            }
+        }
+    }
+
+    /**
+     * TF combos are only generated with {@link LcNoDiacriticsType}, so a TF configuration without it would skip every TF combo and leave content functions
+     * untested without any sign of it.
+     */
+    @Test
+    public void testTermFrequencyRequiresLcNoDiacriticsType() {
+        //  @formatter:off
+        IngestMetadataBuilder builder = IngestMetadataBuilder.builder()
+                .setMetadataColumns(List.of(I, E, TF))
+                .addNormalizers(List.of(new NumberType(), new NoOpType()))
+                .enableAlphabeticFields();
+        //  @formatter:on
+        Exception e = assertThrows(IllegalArgumentException.class, builder::build);
+        assertEquals("the TF metadata column requires an LcNoDiacriticsType normalizer", e.getMessage());
+
+        // without TF, LcNoDiacriticsType is not required: 3 metadata column combinations x 2 normalizers x 2 offsets x 1 field name type, plus the ID field
+        assertEquals(13, new IngestMetadata(List.of(I, E), List.of(new NumberType(), new NoOpType()), true, false, 10, 0L).plan());
     }
 }

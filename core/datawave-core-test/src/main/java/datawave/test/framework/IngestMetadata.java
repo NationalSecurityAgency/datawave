@@ -24,6 +24,7 @@ import datawave.test.framework.generators.field.FieldNameGenerator;
 import datawave.test.framework.generators.field.NumericFieldNameGenerator;
 import datawave.test.framework.generators.id.ModuloEventIdGenerator;
 import datawave.test.framework.generators.id.SequentialEventIdGenerator;
+import datawave.test.framework.generators.value.DistinctNormalizedValueGenerator;
 import datawave.test.framework.generators.value.LinearNumberGenerator;
 import datawave.test.framework.generators.value.PhraseGenerator;
 import datawave.test.framework.generators.value.RandomAlphabeticGenerator;
@@ -93,6 +94,9 @@ public class IngestMetadata {
         for (Type<?> normalizer : baseNormalizers) {
             Preconditions.checkArgument(isSupportedNormalizer(normalizer), "normalizer not supported: %s", normalizer.getClass().getName());
         }
+        // TF combos are only paired with LcNoDiacriticsType, so without one every TF combo would be skipped and content functions silently go untested
+        Preconditions.checkArgument(!baseMetadataColumns.contains(TF) || baseNormalizers.stream().anyMatch(LcNoDiacriticsType.class::isInstance),
+                        "the TF metadata column requires an LcNoDiacriticsType normalizer");
         this.baseMetadataColumns = List.copyOf(baseMetadataColumns);
         this.baseNormalizers = List.copyOf(baseNormalizers);
         this.alphabeticFieldsEnabled = alphabeticFieldsEnabled;
@@ -282,7 +286,8 @@ public class IngestMetadata {
                     field.setNormalizers(List.of(normalizer));
 
                     ValueGenerator<?> valueGenerator = isContentCombo ? PhraseGenerator.create(random) : getValueGeneratorForType(normalizer);
-                    field.setValueGenerator(valueGenerator);
+                    // expected results match raw values but queries match normalized ones, so values must not collide once normalized
+                    field.setValueGenerator(DistinctNormalizedValueGenerator.of(valueGenerator, normalizer));
                     field.setEventIdGenerator(ModuloEventIdGenerator.create(modCount));
 
                     field.setOffset(offset);

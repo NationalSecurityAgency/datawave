@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -131,5 +132,49 @@ public class FieldMetadataTest {
 
         // a value with no backing events resolves to empty rather than failing
         assertEquals(List.of(), metadata.getEventIdsForValue("absent"));
+    }
+
+    /**
+     * The value and event id lookups are indexed from the lists, so the lists are copied on the way in and read-only on the way out. Otherwise a change made
+     * through either reference would leave the lookups disagreeing with the lists they were built from.
+     */
+    @Test
+    public void testListsAreCopiedAndReadOnly() {
+        List<String> values = new ArrayList<>(List.of("a", "b"));
+        List<Integer> eventIds = new ArrayList<>(List.of(1, 2, 3, 4));
+
+        FieldMetadata metadata = new FieldMetadata("A");
+        metadata.setValues(values);
+        metadata.setEventIds(eventIds);
+        assertEquals(List.of(1, 3), metadata.getEventIdsForValue("a"));
+
+        values.set(0, "z");
+        eventIds.set(0, 9);
+        assertEquals(List.of("a", "b"), metadata.getValues());
+        assertEquals(List.of(1, 2, 3, 4), metadata.getEventIds());
+        assertEquals(List.of(1, 3), metadata.getEventIdsForValue("a"));
+        assertEquals("a", metadata.getValueForEventId(1));
+
+        assertThrows(UnsupportedOperationException.class, () -> metadata.getValues().add("c"));
+        assertThrows(UnsupportedOperationException.class, () -> metadata.getEventIds().add(5));
+
+        metadata.setMetadataColumns(List.of(I, E));
+        metadata.setNormalizers(new ArrayList<>(List.of(new LcNoDiacriticsType())));
+        assertThrows(UnsupportedOperationException.class, () -> metadata.getMetadataColumns().add(T));
+        assertThrows(UnsupportedOperationException.class, () -> metadata.getNormalizers().add(new LcNoDiacriticsType()));
+    }
+
+    /**
+     * Populated values are held the same way as those set directly.
+     */
+    @Test
+    public void testPopulatedValuesAreReadOnly() {
+        FieldMetadata metadata = new FieldMetadata("A");
+        metadata.setValueGenerator(PresetGenerator.of(List.of("a", "b")));
+        metadata.setEventIdGenerator(ModuloEventIdGenerator.create(1));
+        metadata.populateValues(4, 2);
+
+        assertThrows(UnsupportedOperationException.class, () -> metadata.getValues().add("c"));
+        assertThrows(UnsupportedOperationException.class, () -> metadata.getEventIds().add(5));
     }
 }

@@ -3,6 +3,7 @@ package datawave.test.framework;
 import static datawave.test.framework.util.MetadataColumn.T;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -39,9 +40,25 @@ public class FieldMetadata {
     private List<Type<?>> normalizers;
     private List<String> datatypes;
 
+    /**
+     * Passed to the {@link EventIdGenerator} so fields sharing a generator shape land on overlapping-but-distinct event ids.
+     */
     private int offset;
+
+    /**
+     * The ids of the events this field appears in. The event at position {@code i} carries {@code values.get(i % values.size())}.
+     */
     private List<Integer> eventIds = null;
+
+    /**
+     * Maps an event id back to its position in {@link #eventIds}, so {@link #getValueForEventId(int)} can resolve a value without a scan. Rebuilt whenever the
+     * event ids are replaced.
+     */
     private Map<Integer,Integer> eventIdIndex = null;
+
+    /**
+     * The values the field can take, assigned round-robin across {@link #eventIds}. A value may have no backing events if there are more values than event ids.
+     */
     private List<String> values = null;
 
     // built on first use and discarded whenever the values or event ids change, so repeated query generation does not rescan the event ids per value
@@ -67,7 +84,7 @@ public class FieldMetadata {
      */
     public void setNormalizers(List<Type<?>> normalizers) {
         Preconditions.checkNotNull(normalizers, "normalizers cannot be null");
-        this.normalizers = normalizers;
+        this.normalizers = List.copyOf(normalizers);
         addTypeColumnIfNormalized();
     }
 
@@ -104,7 +121,7 @@ public class FieldMetadata {
         Preconditions.checkNotNull(values, "values cannot be null");
         // an empty list would make the value-to-event mapping divide by zero
         Preconditions.checkArgument(!values.isEmpty(), "values cannot be empty");
-        this.values = values;
+        this.values = List.copyOf(values);
         this.eventIdsByValue = null;
     }
 
@@ -133,7 +150,8 @@ public class FieldMetadata {
     }
 
     public List<MetadataColumn> getMetadataColumns() {
-        return metadataColumns;
+        // held mutably so the type column can be derived, but never handed out that way
+        return metadataColumns == null ? null : Collections.unmodifiableList(metadataColumns);
     }
 
     public List<String> getDatatypes() {
@@ -207,14 +225,15 @@ public class FieldMetadata {
 
         setEventIds(eventIdGenerator.generateWithinBound(eventCount));
 
-        values = new ArrayList<>();
-        eventIdsByValue = null;
+        List<String> generated = new ArrayList<>();
         // valuesPerField is a fixed property of the field's configuration and must not vary with the event distribution, otherwise the number of queries
         // generated from these values (one per distinct value) would change whenever the event count changes. A value with no backing events is a valid
         // "matches nothing" test case; writers must skip persisting such a value rather than this method dropping it from the list.
         for (int i = 0; i < valuesPerField; i++) {
-            values.add(String.valueOf(valueGenerator.next()));
+            generated.add(String.valueOf(valueGenerator.next()));
         }
+        values = List.copyOf(generated);
+        eventIdsByValue = null;
     }
 
     public List<Integer> getEventIds() {
@@ -223,7 +242,7 @@ public class FieldMetadata {
 
     public void setEventIds(List<Integer> eventIds) {
         Preconditions.checkNotNull(eventIds, "eventIds cannot be null");
-        this.eventIds = eventIds;
+        this.eventIds = List.copyOf(eventIds);
         this.eventIdIndex = new HashMap<>();
         for (int i = 0; i < eventIds.size(); i++) {
             eventIdIndex.put(eventIds.get(i), i);
