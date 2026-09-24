@@ -8,6 +8,7 @@ import static datawave.query.transformer.annotation.AnnotationHitsTransformer.TI
 import static datawave.query.util.WiseGuysIngest.caponeUID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -85,6 +86,7 @@ import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.planner.TimedVisitorManager;
 import datawave.query.transformer.DocumentTransform;
 import datawave.query.transformer.DocumentTransformer;
+import datawave.query.transformer.RemoveHitTermGroupingContextTransform;
 import datawave.query.transformer.annotation.AllHitsException;
 import datawave.query.transformer.annotation.AllHitsFactory;
 import datawave.query.transformer.annotation.AllHitsFactoryErrorOnly;
@@ -532,6 +534,52 @@ public class ShardQueryLogicTest extends AbstractQueryTest {
                         "the same AnnotationHitsTransformer instance should be reused (via updateConfig()) rather than reconstructed");
 
         logic.close();
+    }
+
+    @Test
+    public void stripHitTermGroupingContextTransformAddedWhenParameterIsSetTest() throws Exception {
+        assertNotNull(hitTermGroupingContextTransform("true"),
+                        "the strip.hit.term.grouping.context parameter should have added a RemoveHitTermGroupingContextTransform");
+    }
+
+    @Test
+    public void stripHitTermGroupingContextTransformNotAddedWhenParameterIsFalseTest() throws Exception {
+        assertNull(hitTermGroupingContextTransform("false"), "a false strip.hit.term.grouping.context parameter should not add the transform");
+    }
+
+    @Test
+    public void stripHitTermGroupingContextTransformNotAddedByDefaultTest() throws Exception {
+        assertNull(hitTermGroupingContextTransform(null), "the hit term grouping context should be left alone unless the query asks for it to be stripped");
+    }
+
+    /**
+     * Runs a query far enough to build the webservice transform chain.
+     *
+     * @param parameterValue
+     *            the value of the strip.hit.term.grouping.context parameter, or null to leave it unset
+     * @return the RemoveHitTermGroupingContextTransform in the chain, or null if it was not added
+     */
+    private DocumentTransform hitTermGroupingContextTransform(String parameterValue) throws Exception {
+        if (parameterValue != null) {
+            givenParameter(QueryParameters.STRIP_HIT_TERM_GROUPING_CONTEXT, parameterValue);
+        }
+        givenQuery("UUID=='CAPONE'");
+        givenDate("20091231", "20150101");
+
+        setClientForTest(this.client);
+        this.logic.setFullTableScanEnabled(true);
+        QueryImpl settings = getSettings();
+        logic.setMaxEvaluationPipelines(1);
+        logic.setHitList(true);
+
+        GenericQueryConfiguration config = logic.initialize(client, settings, Collections.singleton(getAuths()));
+        logic.setupQuery(config);
+
+        try {
+            return ((DocumentTransformer) logic.getTransformer(settings)).containsTransform(RemoveHitTermGroupingContextTransform.class);
+        } finally {
+            logic.close();
+        }
     }
 
     @Test
